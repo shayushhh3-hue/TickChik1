@@ -28,9 +28,9 @@ export function buildSite(root){
   const acct=`<div id="tcAcct" hidden><button type="button" id="tcAcctBtn" aria-haspopup="true" aria-expanded="false" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div id="tcAcctMenu" hidden><div class="who"></div><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="/api/db/export" class="own" hidden>גיבוי הנתונים (קובץ)</a><a href="import.html" class="own" hidden>ייבוא נתונים</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
 <style>
-#tcAcct{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));inset-inline-end:16px;z-index:55;font-family:Heebo,Arial,sans-serif}
+#tcAcct{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;z-index:55;font-family:Heebo,Arial,sans-serif}
 #tcAcctBtn{width:40px;height:40px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#2e4a66;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgb(30 52 78 / .14)}
-#tcAcctMenu{position:absolute;bottom:48px;inset-inline-end:0;min-width:210px;background:#fff;border:1px solid #dfe4ea;border-radius:12px;box-shadow:0 8px 28px rgb(30 52 78 / .18);padding:6px;display:flex;flex-direction:column}
+#tcAcctMenu{position:absolute;bottom:48px;right:0;min-width:210px;background:#fff;border:1px solid #dfe4ea;border-radius:12px;box-shadow:0 8px 28px rgb(30 52 78 / .18);padding:6px;display:flex;flex-direction:column}
 #tcAcctMenu[hidden]{display:none}
 #tcAcctMenu .who{font-size:12.5px;color:#657587;padding:8px 10px;border-bottom:1px solid #eef1f4;margin-bottom:4px;direction:ltr;text-align:right;word-break:break-all}
 #tcAcctMenu a,#tcAcctMenu button{display:block;text-align:start;padding:9px 10px;border-radius:8px;font:inherit;font-size:14px;color:#1b2a3c;text-decoration:none;background:none;border:0;cursor:pointer}
