@@ -104,6 +104,13 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .tabs button .ti{display:block;width:21px;height:21px;flex:none}
 .tabs button[aria-selected="true"]{background:rgb(255 255 255 / .16);color:#fff;font-weight:700;box-shadow:inset -3px 0 0 #E3B678}
 .tabs button[aria-selected="true"] .ti{color:#E9C58E}
+.tsub{display:flex;flex-direction:column;gap:1px;margin:-2px 0 6px;padding-inline-start:44px;position:relative}
+.tsub::before{content:"";position:absolute;inset-inline-start:22px;top:4px;bottom:4px;width:1px;background:rgb(255 255 255 / .18)}
+#tab_risk[aria-selected="false"] + .tsub{display:none}
+.tabs .tsub button{min-height:34px;padding:7px 10px;font-size:13.5px;font-weight:400;color:#B9C6D6;border-radius:8px}
+.tabs .tsub button:hover{color:#fff}
+.tabs .tsub button.on{color:#fff;font-weight:600;background:rgb(255 255 255 / .09)}
+#riskNav{display:none}
 .tabs button:focus-visible,.sbclose:focus-visible{outline:2px solid #fff;outline-offset:-2px}
 .hero .top{padding-inline-start:54px}
 @media (prefers-reduced-motion:reduce){.tabsbar,.navtab{transition:none}}
@@ -1215,6 +1222,7 @@ section.fold > .fold-h h2{margin:0}
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
     <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
+    <div class="tsub" id="riskSub" role="group" aria-label="החלקים של בקרה וסיכון"></div>
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
   </nav></div>
@@ -15849,14 +15857,19 @@ function foldBoot(){
     const body=document.createElement('div'); body.className='fold-b'; body.id='fb_'+id; while(head.nextSibling)body.appendChild(head.nextSibling); s.appendChild(body);
     const b=document.createElement('button'); b.type='button'; b.className='fold-t'; b.setAttribute('aria-controls',body.id); b.setAttribute('aria-label','להציג או להסתיר'); b.innerHTML='<span class="chev" aria-hidden="true"></span>'; head.insertBefore(b,head.firstChild);
     head.classList.add('fold-h'); s.classList.add('fold'); s.classList.toggle('open',foldIs(id)); b.setAttribute('aria-expanded',String(foldIs(id)))}
+  const sub=$('riskSub'); if(sub&&!sub.children.length)sub.innerHTML=[...pane.querySelectorAll(':scope > section')].map(s=>{const id=s.getAttribute('aria-labelledby');return `<button type="button" data-rsub="${id}">${FOLD_LBL[id]||(s.querySelector('h2')||{}).textContent||id}</button>`}).join('');
   const nav=$('riskNav'); if(nav&&!nav.children.length)nav.innerHTML=[...pane.querySelectorAll(':scope > section')].map(s=>{const id=s.getAttribute('aria-labelledby');return `<button type="button" class="chip" data-fold="${id}" aria-pressed="${foldIs(id)}">${FOLD_LBL[id]||(s.querySelector('h2')||{}).textContent||id}</button>`}).join('');
 }
 document.addEventListener('click',ev=>{
+  const r=ev.target.closest('#riskSub [data-rsub]'); if(r){const id=r.dataset.rsub; const t=$('tab_risk'); if(t&&t.getAttribute('aria-selected')!=='true')t.click(); else if(t){const sb=document.querySelector('.sbclose'); if(sb&&getComputedStyle(sb).display!=='none')sb.click()}
+    for(const x of document.querySelectorAll('#riskSub [data-rsub]'))x.classList.toggle('on',x===r);
+    setTimeout(()=>{if(!foldIs(id))foldSet(id,true); const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(s)try{s.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},80); return}
   const c=ev.target.closest('#riskNav [data-fold]'); if(c){const id=c.dataset.fold; if(!foldIs(id))foldSet(id,true); const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(s)setTimeout(()=>{try{s.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},30); return}
   const hd=ev.target.closest('[data-pane="risk"] section.fold > .fold-h'); if(!hd)return; if(ev.target.closest('button:not(.fold-t),a,select,input,label'))return;
   const s=hd.parentElement, id=s.getAttribute('aria-labelledby'); foldSet(id,!foldIs(id));
 });
-function riskNavSync(){const nav=$('riskNav'); if(!nav)return; for(const c of nav.querySelectorAll('[data-fold]')){const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+c.dataset.fold+'"]'); c.hidden=!s||getComputedStyle(s).display==='none'}}
+function riskNavSync(){for(const c of document.querySelectorAll('#riskSub [data-rsub]')){const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+c.dataset.rsub+'"]'); c.hidden=!s||getComputedStyle(s).display==='none'}
+  const nav=$('riskNav'); if(!nav)return; for(const c of nav.querySelectorAll('[data-fold]')){const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+c.dataset.fold+'"]'); c.hidden=!s||getComputedStyle(s).display==='none'}}
 try{foldBoot();riskNavSync()}catch(e){}
 window.__fold={is:foldIs,set:foldSet,sync:riskNavSync};
 let HOLD_LITE=true; try{HOLD_LITE=localStorage.getItem('tr_holdlite')!=='0'}catch(e){}
@@ -18972,7 +18985,7 @@ const HEADL={search:'מחקר',plan:'תוכנית ותחזית',history:'מבט 
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
-  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','history','settings']){const hb=$('tab_'+g);if(hb)box.appendChild(hb)}}catch(e){}}
+  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','history','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
 function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.querySelector('[data-pane="'+t+'"]');if(!pane)return;
   let row=pane.querySelector(':scope>.subtabs');
   if(list.length<2){if(row)row.remove();return}
