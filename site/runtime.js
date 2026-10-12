@@ -164,7 +164,7 @@ export async function boot(){
     const imgs=[]; for(const im of (opts.images||[])){try{imgs.push({type:'image',source:{type:'base64',media_type:im.type||'image/jpeg',data:await b64(im)}})}catch(e){}}
     const messages=turns.map((t,i)=>i===turns.length-1&&imgs.length?{role:t.role,content:[...imgs,{type:'text',text:t.content}]}:{role:t.role,content:t.content});
     const tier=opts.modelTier==='quick'||opts.modelTier==='complex'?opts.modelTier:'default';
-    const body={model:MODELS[tier],max_tokens:tier==='quick'?4096:8192,messages};
+    const body={model:MODELS[tier],max_tokens:8192,messages};
     if(opts.json)body.system='Reply with a single JSON value and nothing else: no prose, no code fences.';
     const r=await call('POST','/ask',body,opts.signal);
     const text=((r&&r.content)||[]).filter(c=>c.type==='text').map(c=>c.text).join('');

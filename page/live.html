@@ -17794,7 +17794,7 @@ async function pdfRead(f,pass,maxImg){
     text+=line+'\n\n';
     const pTxt=tc.items.reduce((t,it)=>t+(it.str||'').trim().length,0);
     // pages with a good text layer need only the first few images (for tables whose columns the text scrambles); a scanned page always gets one
-    if(imgs.length<maxImg&&(pTxt<200||imgs.length<3)){try{const vp=pg.getViewport({scale:1.45}),cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
+    if(imgs.length<maxImg&&pTxt<200){try{const vp=pg.getViewport({scale:1.45}),cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
       await pg.render({canvasContext:cx,viewport:vp}).promise;const bl=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.8));if(bl)imgs.push(bl)}catch(e){}}
   }
   try{doc.destroy()}catch(e){}
@@ -17830,9 +17830,9 @@ async function readStatement0(fromText){
     for(let ci=0;ci<nCh;ci++){
       if(nCh>1)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת עד דקה…`;
       const part=imgs.slice(ci*step,(ci+1)*step), from=ci*step+1;
-      const opts={cache:false,signal:upCtl.signal}; if(part.length)opts.images=part; if(($('upQuick')&&$('upQuick').checked)||sheetsOnly)opts.modelTier='quick';
+      const opts={cache:false,signal:upCtl.signal}; if(part.length)opts.images=part; const autoQ=!part.length&&hasText; if(($('upQuick')&&$('upQuick').checked)||sheetsOnly||autoQ)opts.modelTier='quick';
       upProg(pDone,nCh>1?`Claude קורא, חלק ${ci+1} מתוך ${nCh}`:'Claude קורא את הקבצים'); upTick(true);
-      let o; try{o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}
+      let o; try{try{o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}catch(e1){if(!(autoQ&&e1&&e1.code==='invalid_json'))throw e1; o=null} if(autoQ&&!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length))){opts.modelTier='default'; upProg(pDone,'קורא שוב בקפידה'); o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}}
       catch(e){if(!ci||(e&&e.code==='cancelled'))throw e; partial=e; break}
       outs.push(o&&typeof o==='object'?o:{}); sent=Math.min(imgs.length,(ci+1)*step);
     }
