@@ -16,7 +16,10 @@ import {buildSite} from '../tools/build.js';
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
 const env=process.env;
-const DATA_DIR=env.DATA_DIR||'/data';
+// Railway tells the service where its Volume is mounted; use that, whatever path was typed when it was added
+const DATA_DIR=env.RAILWAY_VOLUME_MOUNT_PATH||env.DATA_DIR||'/data';
+// on Railway without a Volume, everything written is lost at the next deploy
+const PERSIST=!env.RAILWAY_ENVIRONMENT||!!env.RAILWAY_VOLUME_MOUNT_PATH;
 const PORT=+env.PORT||3000;
 const OWNER_EMAIL=String(env.OWNER_EMAIL||'').trim().toLowerCase();
 const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5').split(',').map(s=>s.trim()).filter(Boolean);
@@ -76,7 +79,7 @@ export function createApp({store,siteDir,jobs=true}={}){
   app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
   const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:u.role==='owner',mustChange:!!u.must_change});
-  app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user)}:{me:null,signup:!!invite()}));
+  app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user),...(req.user.role==='owner'?{persist:PERSIST}:{})}:{me:null,signup:!!invite()}));
   app.post('/api/password',needUser,(req,res)=>{const {old,password}=req.body||{}; if(!store.checkPassword(req.user,old))return res.status(400).json({error:{code:'bad_login',message:'הסיסמה הנוכחית לא נכונה.'}});
     try{store.setPassword(req.user.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})} res.json({ok:true})});
 
@@ -197,6 +200,7 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   const store=new Store(dbFile); bootstrap(store);
   const siteDir=path.join(ROOT,'site'); try{buildSite(ROOT)}catch(e){log('build failed:',e.message)}
   const app=createApp({store,siteDir});
+  if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log});
   // no prices yet (a new server, or an import without them): fetch them now instead of waiting for the hourly run
