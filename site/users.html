@@ -46,6 +46,9 @@ code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace
   <p style="margin:12px 0 0"><button class="btn pri" type="submit">הוספה</button> <button class="btn" type="button" id="gen">סיסמה אקראית</button></p>
   <p class="err" id="addErr" role="alert"></p></form>
   <p class="muted" style="margin:6px 0 0">את הסיסמה הראשונית מעבירים לשותף בעצמך (בהודעה). הדף לא שולח אותה.</p></div>
+<div class="card"><h2>החיבור ל-Claude (צ׳יקו וקריאת דוחות)</h2>
+  <p style="margin:0"><button class="btn" type="button" id="aiChk">בדיקת החיבור</button> <span id="aiRes" class="muted" role="status"></span></p>
+  <p class="muted" style="margin:8px 0 0">שולח שאלה קטנה אחת ל-Claude עם המפתח שב-Railway, ואומר אם זה עובד ומה צריך לתקן אם לא.</p></div>
 <div class="card"><h2>הרשמה עם קוד הזמנה</h2>
   <div id="inv"><p class="muted">טוען…</p></div>
   <p class="err" id="invErr" role="alert"></p>
@@ -77,6 +80,9 @@ async function load(){
     ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button><button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button></span>`}</div>`).join('');
 }
 $('gen').onclick=()=>{$('pw').value=rnd()};
+$('aiChk').onclick=async()=>{const b=$('aiChk'),o=$('aiRes'); b.disabled=true; o.className='muted'; o.textContent='בודק…';
+  try{const r=await call('POST','/ask/check',{}); if(r.ok){o.className='ok';o.textContent='עובד ✓ (Claude ענה תוך '+(r.ms/1000).toFixed(1)+' שניות)'}else{o.className='err';o.textContent=r.message}}
+  catch(x){o.className='err';o.textContent=x.message} b.disabled=false};
 $('add').addEventListener('submit',async e=>{e.preventDefault();$('addErr').textContent='';
   try{await call('POST','/users',{email:$('em').value,name:$('nm').value,password:$('pw').value}); $('addErr').innerHTML=`<span class="ok">נוסף. מסור לו: המייל <code>${esc($('em').value)}</code> והסיסמה <code>${esc($('pw').value)}</code></span>`; $('em').value='';$('nm').value='';$('pw').value=''; load()}
   catch(x){$('addErr').textContent=x.message}});

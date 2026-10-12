@@ -127,19 +127,38 @@ export function createApp({store,siteDir,jobs=true}={}){
   });
 
   // ---- צ׳יקו: the page's Claude request, with the server's key ----
+  // Claude's errors in plain Hebrew, so the page can say what is wrong (and the owner can fix it in Railway)
+  const NOKEY='צ׳יקו לא מחובר: חסר המשתנה ANTHROPIC_API_KEY ב-Railway.';
+  const askErr=(status,type,msg)=>{const m=String(msg||'');
+    if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון Anthropic. צריך להטעין קרדיט ב-console.anthropic.com (Billing).'];
+    if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API של Anthropic נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.'];
+    if(status===404||type==='not_found_error')return [502,'upstream_error','המודל של Claude לא זמין בחשבון Anthropic הזה ('+m.slice(0,80)+').'];
+    if(status===429||type==='rate_limit_error')return [429,'rate_limited','Claude ביקש להאט (מגבלת קצב בחשבון Anthropic). נסה שוב בעוד דקה.'];
+    if(status===529||type==='overloaded_error')return [503,'upstream_error','Claude עמוס כרגע. נסה שוב בעוד כמה דקות.'];
+    if(status===413||/too large|too long|prompt is too long/i.test(m))return [413,'prompt_too_large','הקובץ גדול מדי בשביל Claude. נסה פחות עמודים.'];
+    if(status===400)return [400,'invalid_argument','Claude דחה את הבקשה: '+m.slice(0,200)];
+    return [502,'upstream_error','Claude לא ענה'+(status?' (HTTP '+status+')':'')+'. נסה שוב.']};
+  async function askClaude(body){
+    if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
+    let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(280000)})}
+    catch(e){const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('ask failed:',to?'timeout':String(e&&e.message||e)); return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לענות בזמן (יותר מ-4 דקות). נסה קובץ קצר יותר או שוב בעוד רגע.':'אין חיבור ל-Claude מהשרת. נסה שוב.'}}}}
+    const text=await r.text();
+    if(r.ok)return {status:200,text};
+    let type='',msg=''; try{const e=JSON.parse(text).error||{};type=e.type||'';msg=e.message||''}catch(e){}
+    const [st,code,message]=askErr(r.status,type,msg); log('ask failed:',r.status,type,msg.slice(0,160));
+    return {status:st,json:{error:{code,message}}};
+  }
   app.post('/api/ask',needUser,async(req,res)=>{
-    if(!env.ANTHROPIC_API_KEY)return res.status(503).json({error:{code:'upstream_error',message:'ANTHROPIC_API_KEY is not set'}});
     const body=req.body||{}; if(!ALLOWED_MODELS.includes(body.model))return res.status(400).json({error:{code:'invalid_argument',message:'model not allowed'}});
-    try{
-      const r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body)});
-      const text=await r.text();
-      if(r.ok){res.status(200).type('application/json').send(text);return}
-      let msg=''; try{msg=(JSON.parse(text).error||{}).message||''}catch(e){}
-      if(r.status===429)return res.status(429).json({error:{code:'rate_limited',message:msg||'rate limited'}});
-      if(r.status===401||r.status===403)return res.status(502).json({error:{code:'upstream_error',message:'the Claude API key was refused: '+msg}});
-      if(r.status===400)return res.status(400).json({error:{code:'invalid_argument',message:msg||'bad request'}});
-      res.status(502).json({error:{code:'upstream_error',message:msg||('Claude API HTTP '+r.status)}});
-    }catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}
+    const out=await askClaude(body);
+    if(out.text!=null){res.status(200).type('application/json').send(out.text);return}
+    res.status(out.status).json(out.json);
+  });
+  // the owner checks the connection to Claude with one tiny question
+  app.post('/api/ask/check',needOwner,async(req,res)=>{
+    const t0=Date.now(); const out=await askClaude({model:ALLOWED_MODELS.find(m=>/haiku/.test(m))||ALLOWED_MODELS[0],max_tokens:16,messages:[{role:'user',content:'Reply with the single word: ok'}]});
+    if(out.text!=null)return res.json({ok:true,ms:Date.now()-t0});
+    res.json({ok:false,message:out.json.error.message});
   });
 
   // ---- prices now ----

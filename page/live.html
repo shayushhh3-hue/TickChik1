@@ -17882,7 +17882,7 @@ async function readStatement0(fromText){
   }catch(e){
     upFailed=true;
     const c=e&&e.code;
-    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. אפשר לנסות שוב או להזין ידנית.';
+    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
     if(c==='rate_limited')coolStart();
   }
   upTick(false); upCtl=null; OVER=0; $('btnRead').disabled=!canWrite||coolLeft()>0; $('btnStop').hidden=true; showStaged();
