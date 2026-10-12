@@ -1,8 +1,8 @@
 // The price refresh: which symbols, fetch, write quotes/latest. Shared by the hourly job and the on-demand function.
-import {fetchAll, buildQuotesDoc} from './quotes.js';
+import {fetchAll, buildQuotesDoc, timedFetch} from './quotes.js';
 import {usOpen, ilOpen} from './market.js';
 
-export async function refreshQuotes(fs,{fetch:f=globalThis.fetch,now=new Date(),log=()=>{},reason=''}={}){
+export async function refreshQuotes(fs,{fetch:f=timedFetch,now=new Date(),log=()=>{},reason=''}={}){
   const [P,S,Q,W]=await Promise.all([fs.getDoc('portfolio/main'),fs.getDoc('settings/main'),fs.getDoc('quotes/latest'),Promise.resolve().then(()=>fs.listDocs('watch')).catch(()=>[])]);
   const positions=(P.exists&&P.data.positions)||[];
   const syms=new Set(positions.map(p=>p.sym).filter(Boolean));

@@ -1,3 +1,5 @@
+// every outside call has a time limit: one stuck connection must never hold the price update forever
+export const timedFetch=(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||AbortSignal.timeout(12000)});
 // Market prices for the page: Yahoo Finance (US and Tel Aviv), Stooq as a fallback for US tickers, the Bank of Israel
 // representative rate and the live USD/ILS rate. Plain fetch, so the same code runs in GitHub Actions and in the
 // Cloudflare function. Nothing here is advice: numbers in, numbers out.
@@ -20,7 +22,7 @@ export function tickerFor(sym,pos,map){
 const dayOf=(ts,off)=>{const d=new Date((ts+off)*1000);return d.toISOString().slice(0,10)};
 
 // one ticker from Yahoo's chart endpoint: last price, previous close, their dates, currency
-export async function yahooChart(ticker,{fetch:f=globalThis.fetch,range='10d'}={}){
+export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
   let last=null;
   for(const host of YH){
     try{
@@ -43,7 +45,7 @@ export async function yahooChart(ticker,{fetch:f=globalThis.fetch,range='10d'}={
 }
 
 // Stooq daily history (US tickers as msft.us); last two closes
-export async function stooqDaily(ticker,{fetch:f=globalThis.fetch}={}){
+export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
   const s=ticker.toLowerCase().replace(/-/g,'-')+'.us';
   const r=await f(`https://stooq.com/q/d/l/?s=${encodeURIComponent(s)}&i=d`,{headers:{'user-agent':UA}});
   if(!r.ok)throw new Error('HTTP '+r.status);
@@ -54,7 +56,7 @@ export async function stooqDaily(ticker,{fetch:f=globalThis.fetch}={}){
 }
 
 // the Bank of Israel representative rate for the dollar
-export async function boiUsd({fetch:f=globalThis.fetch}={}){
+export async function boiUsd({fetch:f=timedFetch}={}){
   for(const u of ['https://boi.org.il/PublicApi/GetExchangeRates?asJson=true','https://www.boi.org.il/PublicApi/GetExchangeRates?asJson=true']){
     try{const r=await f(u,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok)continue;
       const j=await r.json(); const L=j.exchangeRates||j.ExchangeRates||(Array.isArray(j)?j:[]);
@@ -68,7 +70,7 @@ export async function boiUsd({fetch:f=globalThis.fetch}={}){
 }
 
 // everything the quotes document needs: {quotes:{SYM:{px,prev,...}}, fx:{rate,boi,live}, errors:[]}
-export async function fetchAll(symbols,{positions=[],map={},fetch:f=globalThis.fetch,concurrency=6,log=()=>{}}={}){
+export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,concurrency=6,log=()=>{}}={}){
   const posOf=Object.fromEntries(positions.map(p=>[p.sym,p]));
   const out={}, errors=[], idx={};
   const need=[...new Set(symbols)].filter(Boolean);

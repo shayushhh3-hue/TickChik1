@@ -166,7 +166,7 @@ export function createApp({store,siteDir,jobs=true}={}){
   app.post('/api/prices',needUser,async(req,res)=>{
     try{
       if(Date.now()-pxLast.at<3*60*1000&&pxLast.res)return res.json({...pxLast.res,cached:true});
-      if(!pxBusy)pxBusy=refreshQuotes(store,{log,reason:(req.user.role==='owner'?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}).finally(()=>{pxBusy=null});
+      if(!pxBusy)pxBusy=Promise.race([refreshQuotes(store,{log,reason:(req.user.role==='owner'?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('price update took too long')),120000))]).finally(()=>{pxBusy=null});
       const r=await pxBusy; pxLast={at:Date.now(),res:r}; res.json({ok:true,...r});
     }catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}
   });
@@ -199,4 +199,6 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   const app=createApp({store,siteDir});
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log});
+  // no prices yet (a new server, or an import without them): fetch them now instead of waiting for the hourly run
+  if(!store.getDoc('quotes/latest').exists)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('first price update failed:',e.message)),5000);
 }
