@@ -28,7 +28,7 @@ try{localStorage.setItem('tr_bot_tip','2099-01-01');localStorage.setItem('tr_pro
 export async function withPage(docs,user,fn,{fonts=false,timeout=45000}={}){
   if(!fs.existsSync(PAGE))throw new Error('site/index.html is missing; run node tools/build.js');
   const exe=['/opt/pw-browsers/chromium','/opt/pw-browsers/chromium-1187/chrome-linux/chrome'].find(p=>fs.existsSync(p));
-  const b=await chromium.launch(exe?{executablePath:exe}:{});
+  const b=await chromium.launch({...(exe?{executablePath:exe}:{}),args:['--disable-dev-shm-usage','--no-sandbox']});
   try{
     const ctx=await b.newContext({viewport:{width:1100,height:900},timezoneId:'Asia/Jerusalem',locale:'he-IL'});
     const pg=await ctx.newPage(); const errs=[]; pg.on('pageerror',e=>errs.push(e.message));
