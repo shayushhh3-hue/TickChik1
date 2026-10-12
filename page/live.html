@@ -15045,13 +15045,14 @@ const ilParts=(()=>{let f=null; return d=>{try{
   f=f||new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Jerusalem',hourCycle:'h23',weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   const o={}; for(const p of f.formatToParts(d))o[p.type]=p.value; const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(o.weekday);
   return wd<0?null:{wd,h:(+o.hour)%24,mi:+o.minute,day:Math.round(Date.UTC(+o.year,+o.month-1,+o.day)/864e5)}}catch(e){return null}}})();
-const pxSlot=d=>{const p=ilParts(d); return !!p&&PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.mi===PXRUN.min};
+// on the site the server also refreshes every 5 minutes while Tel Aviv or New York trades
+const pxSlot=d=>{const p=ilParts(d); return !!p&&((PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.mi===PXRUN.min)||(p.mi%5===0&&mktOpen(d)))};
 // the last run at or before a moment and the first one after it (Israel is a whole number of hours from UTC, so its :40 is UTC's :40)
 function pxRuns(now){
-  const H=36e5, t0=(now||new Date()).getTime(); let t=Math.floor(t0/H)*H+PXRUN.min*6e4; if(t>t0)t-=H;
+  const H=3e5, t0=(now||new Date()).getTime(); const t=Math.floor(t0/H)*H;
   let last=null,next=null;
-  for(let i=0,u=t;i<200;i++,u-=H)if(pxSlot(new Date(u))){last=new Date(u);break}
-  for(let i=0,u=t+H;i<200;i++,u+=H)if(pxSlot(new Date(u))){next=new Date(u);break}
+  for(let i=0,u=t;i<2400;i++,u-=H)if(pxSlot(new Date(u))){last=new Date(u);break}
+  for(let i=0,u=t+H;i<2400;i++,u+=H)if(pxSlot(new Date(u))){next=new Date(u);break}
   return {last,next};
 }
 // late: the last two runs that were due (each gets 15 minutes to finish) both passed without a refresh. Without the schedule, a day, as before
@@ -15229,7 +15230,7 @@ function alertsOf(m){
     u.why={src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(+R.usdCap,0))} מהתיק בדולרים`],['בפועל',`${nn(pct(m.usdPct))} · ${nn(ils(m.usdPct/100*m.total))}`],['שער הדולר',nn(Q.usdIls.toFixed(3))]],tab:'settings',tl:'לשנות את התקרה'};u.each=[{key:'usd:cap',text:u[2]}]}
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   if(tsum>0) for(const k in GROUPS){const d=m.groups[k].w-(+S.targets[k]||0); if(Math.abs(d)>=R.drift){A.push(['warn','סטייה',`${GROUPS[k]} ${d>0?'מעל':'מתחת'} ליעד ב-${Math.abs(d).toFixed(1)} נק׳ אחוז (${ils(Math.abs(d)/100*m.total)}).`,[GROUPS[k]]]);A[A.length-1].why=whyDrift(k,d,m)}}
-  if(pxLate()) A.push(['warn','נתונים',`המחירים עודכנו ${ago(Q.updatedAt)}, ועדכון שעתי לא הגיע מאז. עד העדכון הבא הבקרה מחושבת לפי המחירים האלה.`]);
+  if(pxLate()) A.push(['warn','נתונים',`המחירים עודכנו ${ago(Q.updatedAt)}, ועדכון מתוכנן לא הגיע מאז. עד העדכון הבא הבקרה מחושבת לפי המחירים האלה.`]);
   const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
   const noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))]; if(noPx.length) A.push(['warn','מחיר',`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".`,noPx]);
   if(PL.items.length){const ps=planState(mAllNow()),can=PL.items.filter(i=>i.status==='todo'&&ps.sch.when[i.sym]===0).map(i=>i.sym);
