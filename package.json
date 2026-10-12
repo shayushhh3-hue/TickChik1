@@ -1,0 +1,24 @@
+{
+  "name": "tik-chik",
+  "version": "1.0.0",
+  "description": "תיק צ׳יק – חדר המסחר שלי: the portfolio page as a standalone site",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "test": "node --test tests/unit.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodemailer": "^10.1.0",
+    "playwright": "^1.57.0"
+  },
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "firebase": "12.19.0"
+  }
+}
