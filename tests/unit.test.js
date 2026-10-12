@@ -120,6 +120,43 @@ test('sign-in, documents, permissions, partners, live changes, export',async()=>
   }finally{srv.close()}
 });
 
+test('sign-up with the invite code',async()=>{
+  const {store,srv,req,jar}=await startApp();
+  try{
+    const reg=(who,body)=>req(who,'POST','/api/register',body);
+    // closed until the owner sets a code
+    assert.equal((await req('x','GET','/api/me')).j.signup,false);
+    let r=await reg('a',{email:'new@example.com',password:'new-pass-123',code:'ANYTHING'}); assert.equal(r.status,403); assert.equal(r.j.error.code,'closed');
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    assert.equal((await req('a','GET','/api/invite')).status,403,'only the owner sees the code');
+    r=await req('o','POST','/api/invite',{}); const code=r.j.code; assert.match(code,/^[A-Z0-9]{8}$/);
+    assert.equal((await req('x','GET','/api/me')).j.signup,true);
+    // a wrong code, a short password, a taken address
+    r=await reg('a',{email:'new@example.com',password:'new-pass-123',code:'WRONG123'}); assert.equal(r.j.error.code,'bad_code');
+    r=await reg('a',{email:'new@example.com',password:'short',code}); assert.equal(r.j.error.code,'short_password');
+    r=await reg('a',{email:'owner@example.com',password:'new-pass-123',code}); assert.equal(r.j.error.code,'exists');
+    // the right code, typed in lower case with spaces: signed in at once, a partner, no forced password change
+    r=await reg('a',{email:'New@Example.com',password:'new-pass-123',code:' '+code.toLowerCase().slice(0,4)+' '+code.toLowerCase().slice(4)}); assert.equal(r.status,200,JSON.stringify(r.j));
+    assert.equal(r.j.me.owner,false); assert.equal(r.j.me.mustChange,false);
+    const me=(await req('a','GET','/api/me')).j.me; assert.equal(me.email,'new@example.com');
+    assert.equal((await req('a','GET','/api/db/doc?path=portfolio/main')).status,403,'not the owner\'s portfolio');
+    assert.equal((await req('a','PUT','/api/db/doc?path=data/users/'+me.id+'/portfolio',{positions:[]})).status,200,'their own');
+    // a new code stops the old one; closing stops sign-up; the registered user still signs in
+    const c2=(await req('o','POST','/api/invite',{})).j.code; assert.notEqual(c2,code);
+    r=await reg('b',{email:'b@example.com',password:'b-pass-1234',code}); assert.equal(r.j.error.code,'bad_code');
+    assert.equal((await req('o','POST','/api/invite',{code:'my code 2026'})).j.code,'MYCODE2026');
+    assert.equal((await req('o','POST','/api/invite',{code:'א'})).status,400);
+    assert.equal((await req('o','DELETE','/api/invite')).status,200);
+    r=await reg('b',{email:'b@example.com',password:'b-pass-1234',code:'MYCODE2026'}); assert.equal(r.j.error.code,'closed');
+    assert.equal((await req('x','GET','/api/me')).j.signup,false);
+    jar.a=''; assert.equal((await req('a','POST','/api/login',{email:'new@example.com',password:'new-pass-123'})).status,200);
+    // guessing codes hits the brake
+    await req('o','POST','/api/invite',{}); let last;
+    for(let i=0;i<13;i++)last=await reg('g',{email:'g'+i+'@example.com',password:'g-pass-1234',code:'GUESS'+i+'XX'});
+    assert.equal(last.status,429);
+  }finally{srv.close()}
+});
+
 test('צ׳יקו: the server key, the model list, errors',async()=>{
   const {srv,req}=await startApp();
   try{

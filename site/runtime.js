@@ -35,6 +35,10 @@ const CSS=`
 #tcGate .btn:disabled{opacity:.6;cursor:default}
 #tcGate .note{font-size:12.5px;color:#64748b;margin:16px 0 0;line-height:1.6;text-align:center}
 #tcGate .err{color:#b91c1c;font-size:13.5px;margin:12px 0 0;min-height:1em}
+#tcGate .alt{margin:18px 0 0;padding-top:14px;border-top:1px solid #eef1f4;text-align:center;font-size:14px;color:#45566b}
+#tcGate .lnk{border:0;background:none;padding:4px 2px;font:inherit;font-weight:600;color:#2e6da4;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+#tcGate .hint{font-size:12px;color:#64748b;margin:4px 0 0}
+#tcGate input.code{direction:ltr;text-align:left;letter-spacing:.08em;text-transform:uppercase}
 `;
 function gateEl(){
   let el=document.getElementById('tcGate');
@@ -43,7 +47,8 @@ function gateEl(){
     (document.body||document.documentElement).appendChild(el)}
   return el;
 }
-let GATE_DONE=null;
+let GATE_DONE=null, SIGNUP=false;
+const INVITE=(()=>{try{return new URLSearchParams(location.search).get('invite')||''}catch(e){return ''}})();
 function showGate(kind,x={}){
   const el=gateEl(), head=`<h1 id="tcGateH">תיק צ׳יק</h1><p class="sub">חדר המסחר שלי</p>`;
   if(kind==='loading'){el.innerHTML=`<div class="card">${head}<p class="sub">טוען…</p></div>`;return}
@@ -51,11 +56,34 @@ function showGate(kind,x={}){
     el.innerHTML=`<div class="card">${head}<form id="tcLogin" novalidate><label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
       <label for="tcPass">סיסמה</label><input id="tcPass" type="password" autocomplete="current-password" required>
       <button class="btn" type="submit">כניסה</button><p class="err" id="tcErr" role="alert">${esc(x.err||'')}</p></form>
-      <p class="note">הנתונים שלך נשמרים בחשבון שלך ואינם גלויים למשתמשים אחרים. אין הרשמה: את החשבון פותח בעל הדף.</p></div>`;
-    const f=document.getElementById('tcLogin'); setTimeout(()=>{try{document.getElementById(x.email?'tcPass':'tcEmail').focus()}catch(e){}},30);
+      ${SIGNUP?'<p class="alt">משתמש חדש? <button type="button" class="lnk" id="tcToReg">הרשמה עם קוד הזמנה</button></p>':''}
+      <p class="note">הנתונים שלך נשמרים בחשבון שלך ואינם גלויים למשתמשים אחרים.${SIGNUP?'':' את החשבון פותח בעל הדף.'}</p></div>`;
+    const f=document.getElementById('tcLogin'), toReg=document.getElementById('tcToReg');
+    if(toReg)toReg.addEventListener('click',()=>showGate('register',{email:document.getElementById('tcEmail').value})); setTimeout(()=>{try{document.getElementById(x.email?'tcPass':'tcEmail').focus()}catch(e){}},30);
     f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button'); b.disabled=true; document.getElementById('tcErr').textContent='';
       try{const r=await call('POST','/login',{email:document.getElementById('tcEmail').value,password:document.getElementById('tcPass').value}); location.reload()}
       catch(e){b.disabled=false; document.getElementById('tcErr').textContent=e.message||'הכניסה לא הצליחה.'}});
+    return;
+  }
+  if(kind==='register'){
+    el.innerHTML=`<div class="card">${head}<p class="sub">הרשמה עם קוד הזמנה מבעל הדף</p><form id="tcReg" novalidate>
+      <label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
+      <label for="tcPass">סיסמה (8 תווים לפחות)</label><input id="tcPass" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="tcPass2">הסיסמה שוב</label><input id="tcPass2" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="tcCode">קוד הזמנה</label><input id="tcCode" class="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required value="${esc(x.code||INVITE)}">
+      <button class="btn" type="submit">הרשמה</button><p class="err" id="tcErr" role="alert">${esc(x.err||'')}</p></form>
+      <p class="alt">כבר יש לך חשבון? <button type="button" class="lnk" id="tcToLog">כניסה</button></p>
+      <p class="note">כל משתמש רואה רק את התיק של עצמו. התיק שלך לא גלוי למשתמשים אחרים.</p></div>`;
+    const f=document.getElementById('tcReg'); setTimeout(()=>{try{document.getElementById('tcEmail').focus()}catch(e){}},30);
+    document.getElementById('tcToLog').addEventListener('click',()=>showGate('login',{email:document.getElementById('tcEmail').value}));
+    f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button[type=submit]'), er=document.getElementById('tcErr'); er.textContent='';
+      const v=id=>document.getElementById(id).value, pw=v('tcPass');
+      if(pw.length<8){er.textContent='סיסמה של 8 תווים לפחות.';return}
+      if(pw!==v('tcPass2')){er.textContent='שתי הסיסמאות לא זהות.';return}
+      if(!v('tcCode').trim()){er.textContent='צריך קוד הזמנה מבעל הדף.';return}
+      b.disabled=true;
+      try{await call('POST','/register',{email:v('tcEmail'),password:pw,code:v('tcCode')}); location.replace(location.pathname)}
+      catch(e){b.disabled=false; er.textContent=e.message||'ההרשמה לא הצליחה.'}});
     return;
   }
   if(kind==='change'){
@@ -88,7 +116,7 @@ const addL=(map,k,f)=>{const s=map.get(k)||new Set(); s.add(f); map.set(k,s); re
 export async function boot(){
   showGate('loading');
   let who=null; try{who=await call('GET','/me')}catch(e){showGate('error',{err:'השרת לא זמין כרגע. נסה שוב בעוד רגע.'});return {use:async()=>null}}
-  if(!who||!who.me){showGate('login');return {use:()=>new Promise(()=>{})}}
+  if(!who||!who.me){SIGNUP=!!who&&!!who.signup; showGate(SIGNUP&&INVITE?'register':'login',INVITE&&!SIGNUP?{err:'ההרשמה סגורה כרגע. בקש מבעל הדף קוד הזמנה חדש.'}:{}); return {use:()=>new Promise(()=>{})}}
   const me=who.me;
   if(me.mustChange){await new Promise(r=>{GATE_DONE=r;showGate('change')})}
   hideGate();

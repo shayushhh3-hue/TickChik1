@@ -5,7 +5,8 @@ import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
-import {randomBytes} from 'node:crypto';
+import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
+import {sendMail, esc as mesc} from './mail.js';
 import {Store, canRead, canWrite} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {startJobs} from './jobs.js';
@@ -40,18 +41,42 @@ export function createApp({store,siteDir,jobs=true}={}){
   app.use('/api',(req,res,next)=>{res.setHeader('cache-control','no-store');next()});
 
   // ---- sign in / out ----
-  const tries=new Map(); // ip -> [timestamps], a soft brake on password guessing
+  const tries=new Map(); // ip -> [timestamps], a soft brake on guessing passwords and invite codes
+  const brake=req=>{const ip=req.ip||'?', now=Date.now(), L=(tries.get(ip)||[]).filter(t=>now-t<10*60*1000); tries.set(ip,L); return {over:L.length>=12,miss:()=>L.push(now),clear:()=>tries.delete(ip)}};
+  const TOO_MANY={error:{code:'rate_limited',message:'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.'}};
   app.post('/api/login',(req,res)=>{
-    const ip=req.ip||'?', now=Date.now(), L=(tries.get(ip)||[]).filter(t=>now-t<10*60*1000); tries.set(ip,L);
-    if(L.length>=12)return res.status(429).json({error:{code:'rate_limited',message:'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.'}});
+    const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
     const {email,password}=req.body||{}; const u=store.userByEmail(email);
-    if(!u||!store.checkPassword(u,password)){L.push(now);return res.status(401).json({error:{code:'bad_login',message:'המייל או הסיסמה לא נכונים.'}})}
-    tries.delete(ip); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
+    if(!u||!store.checkPassword(u,password)){b.miss();return res.status(401).json({error:{code:'bad_login',message:'המייל או הסיסמה לא נכונים.'}})}
+    b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
     res.json({ok:true,me:me(u)});
   });
+  // ---- sign-up with the owner's invite code (no code set = sign-up closed) ----
+  const invite=()=>{try{const v=JSON.parse(store.getMeta('invite')||'null');return v&&v.code?v:null}catch(e){return null}};
+  const norm=c=>String(c||'').trim().toUpperCase().replace(/[\s-]/g,'');
+  const sameCode=(a,b)=>{const x=createHash('sha256').update(norm(a)).digest(), y=createHash('sha256').update(norm(b)).digest(); return timingSafeEqual(x,y)};
+  app.post('/api/register',(req,res)=>{
+    const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
+    const inv=invite(); if(!inv)return res.status(403).json({error:{code:'closed',message:'ההרשמה סגורה כרגע. בקש מבעל הדף קוד הזמנה.'}});
+    const {email,password,code,name}=req.body||{};
+    if(!sameCode(code,inv.code)){b.miss();return res.status(403).json({error:{code:'bad_code',message:'קוד ההזמנה לא נכון.'}})}
+    let u; try{u=store.addUser({email,name:String(name||'').slice(0,60),password,role:'friend',mustChange:false})}
+    catch(e){if(e.message!=='exists')b.miss(); return res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה. אפשר להיכנס איתה.'}[e.message]||e.message}})}
+    b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
+    log('new sign-up:',u.email);
+    sendMail({subject:'תיק צ׳יק – נרשם משתמש חדש',text:`${u.email} נרשם לאתר עם קוד ההזמנה.\nאפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".`,html:`<p dir="rtl"><b>${mesc(u.email)}</b> נרשם לאתר עם קוד ההזמנה.</p><p dir="rtl">אפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".</p>`}).catch(()=>{});
+    res.json({ok:true,me:me(u)});
+  });
+  // the owner sets, replaces or closes the invite code
+  const CODE_ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const newCode=()=>[...randomBytes(8)].map(x=>CODE_ABC[x%CODE_ABC.length]).join('');
+  app.get('/api/invite',needOwner,(req,res)=>{const v=invite(); res.json({code:v?v.code:null,setAt:v?v.setAt:null})});
+  app.post('/api/invite',needOwner,(req,res)=>{let c=norm((req.body||{}).code); if(c&&!/^[A-Z0-9]{6,24}$/.test(c))return res.status(400).json({error:{code:'invalid_argument',message:'קוד של 6 עד 24 אותיות באנגלית וספרות.'}});
+    if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); res.json(v)});
+  app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
   const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:u.role==='owner',mustChange:!!u.must_change});
-  app.get('/api/me',(req,res)=>res.json({me:req.user?me(req.user):null}));
+  app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user)}:{me:null,signup:!!invite()}));
   app.post('/api/password',needUser,(req,res)=>{const {old,password}=req.body||{}; if(!store.checkPassword(req.user,old))return res.status(400).json({error:{code:'bad_login',message:'הסיסמה הנוכחית לא נכונה.'}});
     try{store.setPassword(req.user.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})} res.json({ok:true})});
 

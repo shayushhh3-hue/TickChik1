@@ -28,6 +28,9 @@ input[type=email]{direction:ltr;text-align:left}
 .u{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0;border-top:1px solid #eef1f4}
 .u:first-child{border-top:0}
 .u .em{direction:ltr;font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.inv{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 0}
+.inv .cd{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.12em;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:9px;padding:4px 12px}
+.inv .ln{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#45566b;word-break:break-all;flex-basis:100%}
 .u .tag{font-size:11.5px;background:#e8eef6;color:#1e344e;border-radius:5px;padding:0 6px}
 .u .acts{margin-inline-start:auto;display:flex;gap:6px}
 code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace;background:#f1f5f9;border-radius:5px;padding:1px 5px}
@@ -43,6 +46,10 @@ code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace
   <p style="margin:12px 0 0"><button class="btn pri" type="submit">הוספה</button> <button class="btn" type="button" id="gen">סיסמה אקראית</button></p>
   <p class="err" id="addErr" role="alert"></p></form>
   <p class="muted" style="margin:6px 0 0">את הסיסמה הראשונית מעבירים לשותף בעצמך (בהודעה). הדף לא שולח אותה.</p></div>
+<div class="card"><h2>הרשמה עם קוד הזמנה</h2>
+  <div id="inv"><p class="muted">טוען…</p></div>
+  <p class="err" id="invErr" role="alert"></p>
+  <p class="muted" style="margin:6px 0 0">מי שיש לו את הקוד יכול להירשם לבד, במסך הכניסה ← "הרשמה עם קוד הזמנה", ולבחור סיסמה משלו. קוד חדש מבטל את הקודם; משתמשים שכבר נרשמו לא נפגעים. כל נרשם משתמש בצ׳יקו על חשבון מפתח ה-API שלך, אז כדאי לתת את הקוד רק למי שאתה מכיר, ולסגור את ההרשמה כשאין צורך.</p></div>
 <div class="card"><h2>מי נכנס</h2><div id="list"><p class="muted">טוען…</p></div></div>
 <div class="card"><h2>הסיסמה שלי</h2>
   <form id="mine" novalidate><div class="row2"><div><label for="old">הסיסמה הנוכחית</label><input id="old" type="password" autocomplete="current-password"></div><div><label for="new">סיסמה חדשה</label><input id="new" type="password" autocomplete="new-password" minlength="8"></div></div>
@@ -53,10 +60,18 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function call(method,url,body){const r=await fetch('/api'+url,{method,credentials:'same-origin',headers:{'x-tc':'1',...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let j=null;try{j=await r.json()}catch(e){} if(!r.ok)throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status)); return j}
 const rnd=()=>{const a='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const b=crypto.getRandomValues(new Uint8Array(12));return [...b].map(x=>a[x%a.length]).join('')};
+async function loadInv(){
+  let v; try{v=await call('GET','/invite')}catch(e){$('inv').innerHTML='<p class="err">'+esc(e.message)+'</p>';return}
+  if(!v.code){$('inv').innerHTML='<p>ההרשמה <b>סגורה</b>: רק אתה פותח חשבונות.</p><p style="margin:10px 0 0"><button class="btn pri" type="button" data-inv="new">פתיחת הרשמה (יצירת קוד)</button></p>';return}
+  const link=location.origin+'/?invite='+encodeURIComponent(v.code);
+  $('inv').innerHTML=`<p style="margin:0">ההרשמה <b>פתוחה</b> עם הקוד:</p><div class="inv"><span class="cd">${esc(v.code)}</span><button class="btn" type="button" data-copy="${esc(v.code)}">העתקת הקוד</button><button class="btn" type="button" data-copy="${esc(link)}">העתקת קישור הרשמה</button><span class="ln">${esc(link)}</span></div>
+    <p style="margin:12px 0 0"><button class="btn" type="button" data-inv="new">קוד חדש</button> <button class="btn danger" type="button" data-inv="close">סגירת ההרשמה</button></p>`;
+}
 async function load(){
   let me; try{me=(await call('GET','/me')).me}catch(e){me=null}
   if(!me){location.href='./';return}
   if(!me.owner){document.querySelector('main').innerHTML='<h1>משתמשים</h1><p>רק בעל הדף מנהל משתמשים.</p><a class="btn" href="./">חזרה</a>';return}
+  loadInv();
   const {users}=await call('GET','/users');
   $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
     ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button><button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button></span>`}</div>`).join('');
@@ -66,6 +81,11 @@ $('add').addEventListener('submit',async e=>{e.preventDefault();$('addErr').text
   try{await call('POST','/users',{email:$('em').value,name:$('nm').value,password:$('pw').value}); $('addErr').innerHTML=`<span class="ok">נוסף. מסור לו: המייל <code>${esc($('em').value)}</code> והסיסמה <code>${esc($('pw').value)}</code></span>`; $('em').value='';$('nm').value='';$('pw').value=''; load()}
   catch(x){$('addErr').textContent=x.message}});
 document.addEventListener('click',async e=>{
+  const c=e.target.closest('[data-copy]'); if(c){try{await navigator.clipboard.writeText(c.dataset.copy); const t=c.textContent; c.textContent='הועתק ✓'; setTimeout(()=>{c.textContent=t},1500)}catch(x){prompt('להעתקה:',c.dataset.copy)} return}
+  const iv=e.target.closest('[data-inv]'); if(iv){$('invErr').textContent='';
+    if(iv.dataset.inv==='close'&&!confirm('לסגור את ההרשמה? הקוד הנוכחי יפסיק לעבוד. משתמשים שכבר נרשמו ממשיכים להיכנס כרגיל.'))return;
+    if(iv.dataset.inv==='new'&&document.querySelector('#inv .cd')&&!confirm('ליצור קוד חדש? הקוד הנוכחי יפסיק לעבוד.'))return;
+    try{await call(iv.dataset.inv==='close'?'DELETE':'POST','/invite',iv.dataset.inv==='close'?undefined:{}); loadInv()}catch(x){$('invErr').textContent=x.message} return}
   const r=e.target.closest('[data-reset]'); if(r){const pw=rnd(); if(!confirm('לקבוע ל-'+r.dataset.em+' סיסמה ראשונית חדשה? הוא ינותק ויתבקש לבחור סיסמה בכניסה הבאה.'))return;
     try{await call('POST','/users/'+r.dataset.reset+'/password',{password:pw}); alert('הסיסמה החדשה של '+r.dataset.em+':\n'+pw); load()}catch(x){alert(x.message)} return}
   const d=e.target.closest('[data-del]'); if(d){if(!confirm('להסיר את '+d.dataset.em+'? כל הנתונים שלו (התיק, ההגדרות, הדוחות) יימחקו לצמיתות.'))return;
