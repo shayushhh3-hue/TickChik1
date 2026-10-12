@@ -26,7 +26,7 @@ export function buildSite(root){
 </script>
 `;
   const acct=`<div id="tcAcct" hidden><button type="button" id="tcAcctBtn" aria-haspopup="true" aria-expanded="false" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-<div id="tcAcctMenu" hidden><div class="who"></div><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="/api/db/export" class="own" hidden>גיבוי הנתונים (קובץ)</a><a href="import.html" class="own" hidden>ייבוא נתונים</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
+<div id="tcAcctMenu" hidden><div class="who"></div><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="/api/db/export">גיבוי הנתונים שלי (קובץ)</a><a href="import.html">שחזור מגיבוי</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
 <style>
 #tcAcct{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;z-index:55;font-family:Heebo,Arial,sans-serif}
 #tcAcctBtn{width:40px;height:40px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#2e4a66;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgb(30 52 78 / .14)}

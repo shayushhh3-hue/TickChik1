@@ -115,9 +115,9 @@ export function createApp({store,siteDir,jobs=true}={}){
     let where=null; if(req.query.wf){where={f:String(req.query.wf),op:String(req.query.wo||'=='),v:req.query.wv===undefined?null:JSON.parse(String(req.query.wv))}}
     res.json({docs:store.listDocs(p,{orderBy:req.query.orderBy?String(req.query.orderBy):null,dir:req.query.dir==='desc'?'desc':'asc',limit:+req.query.limit||0,where})})});
   // one import or export at a time, the owner only: the whole set of documents as {path: data}
-  app.post('/api/db/import',needOwner,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[]; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(p.startsWith('data/users/'))continue; ws.push({path:p,data:d})}
+  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?p.startsWith('data/users/'):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
     store.batch(ws); res.json({ok:true,n:ws.length})});
-  app.get('/api/db/export',needOwner,(req,res)=>{const out={}; for(const [p,d] of store.allDocs()){if(p.startsWith('data/users/'))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
+  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?p.startsWith('data/users/'):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
