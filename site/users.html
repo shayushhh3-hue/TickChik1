@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>תיק צ׳יק – משתמשים</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f3f5f8;color:#1e293b;font-family:Heebo,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.6}
+main{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;color:#1e344e;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin:16px 0}
+h2{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:13px;color:#45566b;margin:10px 0 3px}
+input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:9px}
+input[type=email]{direction:ltr;text-align:left}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;background:#fff;border-radius:9px;padding:7px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;color:#1e293b;text-decoration:none}
+.btn.pri{background:#1e344e;color:#fff;border-color:#1e344e}
+.btn.danger{color:#b42318;border-color:#f3c3be}
+.muted{color:#64748b;font-size:13px}
+.err{color:#b91c1c;font-size:13.5px;min-height:1em;margin:8px 0 0}
+.ok{color:#15803d;font-size:13.5px}
+.u{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0;border-top:1px solid #eef1f4}
+.u:first-child{border-top:0}
+.u .em{direction:ltr;font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.u .tag{font-size:11.5px;background:#e8eef6;color:#1e344e;border-radius:5px;padding:0 6px}
+.u .acts{margin-inline-start:auto;display:flex;gap:6px}
+code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace;background:#f1f5f9;border-radius:5px;padding:1px 5px}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><h1>משתמשים ושותפים</h1><a class="btn" href="./">חזרה לתיק ›</a></div>
+<p class="muted">כל שותף נכנס עם המייל והסיסמה שתקבע לו, ורואה רק את התיק של עצמו – לא את שלך. בכניסה הראשונה הוא מתבקש לבחור סיסמה משלו.</p>
+<div class="card"><h2>שותף חדש</h2>
+  <form id="add" novalidate><div class="row2"><div><label for="em">מייל</label><input id="em" type="email" autocomplete="off" required></div><div><label for="nm">שם (לא חובה)</label><input id="nm" type="text" autocomplete="off"></div></div>
+  <label for="pw">סיסמה ראשונית (8 תווים לפחות)</label><input id="pw" type="text" autocomplete="off" minlength="8">
+  <p style="margin:12px 0 0"><button class="btn pri" type="submit">הוספה</button> <button class="btn" type="button" id="gen">סיסמה אקראית</button></p>
+  <p class="err" id="addErr" role="alert"></p></form>
+  <p class="muted" style="margin:6px 0 0">את הסיסמה הראשונית מעבירים לשותף בעצמך (בהודעה). הדף לא שולח אותה.</p></div>
+<div class="card"><h2>מי נכנס</h2><div id="list"><p class="muted">טוען…</p></div></div>
+<div class="card"><h2>הסיסמה שלי</h2>
+  <form id="mine" novalidate><div class="row2"><div><label for="old">הסיסמה הנוכחית</label><input id="old" type="password" autocomplete="current-password"></div><div><label for="new">סיסמה חדשה</label><input id="new" type="password" autocomplete="new-password" minlength="8"></div></div>
+  <p style="margin:12px 0 0"><button class="btn" type="submit">החלפה</button></p><p class="err" id="mineErr" role="alert"></p></form></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function call(method,url,body){const r=await fetch('/api'+url,{method,credentials:'same-origin',headers:{'x-tc':'1',...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let j=null;try{j=await r.json()}catch(e){} if(!r.ok)throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status)); return j}
+const rnd=()=>{const a='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const b=crypto.getRandomValues(new Uint8Array(12));return [...b].map(x=>a[x%a.length]).join('')};
+async function load(){
+  let me; try{me=(await call('GET','/me')).me}catch(e){me=null}
+  if(!me){location.href='./';return}
+  if(!me.owner){document.querySelector('main').innerHTML='<h1>משתמשים</h1><p>רק בעל הדף מנהל משתמשים.</p><a class="btn" href="./">חזרה</a>';return}
+  const {users}=await call('GET','/users');
+  $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
+    ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button><button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button></span>`}</div>`).join('');
+}
+$('gen').onclick=()=>{$('pw').value=rnd()};
+$('add').addEventListener('submit',async e=>{e.preventDefault();$('addErr').textContent='';
+  try{await call('POST','/users',{email:$('em').value,name:$('nm').value,password:$('pw').value}); $('addErr').innerHTML=`<span class="ok">נוסף. מסור לו: המייל <code>${esc($('em').value)}</code> והסיסמה <code>${esc($('pw').value)}</code></span>`; $('em').value='';$('nm').value='';$('pw').value=''; load()}
+  catch(x){$('addErr').textContent=x.message}});
+document.addEventListener('click',async e=>{
+  const r=e.target.closest('[data-reset]'); if(r){const pw=rnd(); if(!confirm('לקבוע ל-'+r.dataset.em+' סיסמה ראשונית חדשה? הוא ינותק ויתבקש לבחור סיסמה בכניסה הבאה.'))return;
+    try{await call('POST','/users/'+r.dataset.reset+'/password',{password:pw}); alert('הסיסמה החדשה של '+r.dataset.em+':\n'+pw); load()}catch(x){alert(x.message)} return}
+  const d=e.target.closest('[data-del]'); if(d){if(!confirm('להסיר את '+d.dataset.em+'? כל הנתונים שלו (התיק, ההגדרות, הדוחות) יימחקו לצמיתות.'))return;
+    try{await call('DELETE','/users/'+d.dataset.del); load()}catch(x){alert(x.message)}}
+});
+$('mine').addEventListener('submit',async e=>{e.preventDefault();$('mineErr').textContent='';
+  try{await call('POST','/password',{old:$('old').value,password:$('new').value}); $('mineErr').innerHTML='<span class="ok">הסיסמה הוחלפה.</span>'; $('old').value='';$('new').value=''}catch(x){$('mineErr').textContent=x.message}});
+load();
+</script>
+</body>
+</html>

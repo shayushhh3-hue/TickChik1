@@ -1,14 +1,12 @@
 # תיק צ׳יק – חדר המסחר שלי
 
-האתר של "תיק צ׳יק": הדף שנבנה ב-Claude, כאתר עצמאי. הדף עצמו (`page/live.html`) לא השתנה; האתר נותן לו כניסה עם Google, מסד נתונים, את צ׳יקו דרך שרת, ואת המשימות המתוזמנות.
+הדף שנבנה ב-Claude, כאתר עצמאי על שרת אחד (Railway). הדף עצמו (`page/live.html`) לא השתנה; השרת נותן לו מסד נתונים, כניסה במייל וסיסמה, את צ׳יקו, עדכון מחירים ומשימות מתוזמנות.
 
-- **`site/`** – מה ש-Cloudflare Pages מגיש: `index.html` (נבנה מהדף ב-`tools/build.py` בזמן הפריסה), `runtime.js` (המתאם ל-Firebase ולפונקציות), `config.js` (ההגדרות שלך; מתחילים מ-`config.example.js`), `import.html` (ייבוא חד-פעמי מהגרסה ב-Claude).
-- **`functions/api/`** – הפונקציות: `ask.js` (צ׳יקו: מוסיף את מפתח Claude ובודק שהמשתמש מוזמן), `prices.js` (רענון מחירים לפי דרישה).
-- **`jobs/`** – המשימות המתוזמנות (GitHub Actions): `prices.js` כל שעה, `nightly.js` סגירת היום, `morning.js` הודעת הבוקר, `monthly.js` סוף חודש, `report.js` דוחות.
-- **`shared/`** – קוד משותף: קידוד המסמכים (`docenc.js`), Firestore דרך REST (`fsrest.js`), מחירים (`quotes.js`), שעות מסחר (`market.js`).
-- **`firebase/firestore.rules`** – מי רואה מה.
-- **`SETUP.md`** – מדריך ההקמה, צעד אחר צעד.
+- **`server/`** – השרת (Express + SQLite): `index.js` (כניסה, מסמכים, עדכונים חיים, צ׳יקו, מחירים), `store.js` (מסד הנתונים והרשאות: מי רואה מה), `jobs.js` + `tasks.js` (המשימות לפי שעון ישראל), `headless.js` (מריץ את הדף בלי מסך לדוחות ולהתראות), `mail.js`.
+- **`site/`** – מה שהדפדפן מקבל: `index.html` (נבנה מהדף ב-`tools/build.js`), `runtime.js` (מחבר את הדף לשרת), `users.html` (שותפים), `import.html` (ייבוא וגיבוי).
+- **`shared/`** – מחירים (`quotes.js`: Yahoo Finance, Stooq, בנק ישראל), שעות מסחר (`market.js`).
+- **`SETUP.md`** – ההקמה ב-Railway, צעד אחר צעד.
 
-פיתוח: `npm install` ← `python3 tools/build.py page/live.html` ← `npm test` (בדיקות יחידה; בדיקות הדף והמשימות רצות עם Playwright ונתוני דוגמה).
+פיתוח: `npm install` ← `npm run build` ← `npm test` ← `DATA_DIR=./data OWNER_EMAIL=… OWNER_PASSWORD=… npm start`.
 
 לא ייעוץ השקעות: הדף מציג עובדות, מספרים ודירוג התאמה, בלי המלצות קנייה או מכירה.

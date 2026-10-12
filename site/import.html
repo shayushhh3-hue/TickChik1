@@ -9,69 +9,51 @@
 <style>
 :root{color-scheme:light}
 body{margin:0;background:#f3f5f8;color:#1e293b;font-family:Heebo,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.6}
-main{max-width:640px;margin:0 auto;padding:28px 16px}
+main{max-width:640px;margin:0 auto;padding:24px 16px}
 h1{font-size:24px;color:#1e344e;margin:0 0 4px}
-.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:16px 0}
-.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #cbd5e1;background:#fff;border-radius:10px;padding:9px 16px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:#1e293b}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin:16px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #cbd5e1;background:#fff;border-radius:10px;padding:9px 16px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;color:#1e293b;text-decoration:none}
 .btn.pri{background:#1e344e;color:#fff;border-color:#1e344e}.btn:disabled{opacity:.55;cursor:default}
 .muted{color:#64748b;font-size:13.5px}.err{color:#b91c1c}.ok{color:#15803d}
 table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:start}th{color:#475569;font-weight:600}
-progress{width:100%;height:12px}
 code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#f1f5f9;padding:1px 5px;border-radius:5px}
 </style>
-<script src="config.js"></script>
 </head>
 <body>
 <main>
-<h1>ייבוא נתונים לתיק צ׳יק</h1>
-<p class="muted">פעם אחת, במעבר מהגרסה ב-Claude: בוחרים את קובץ הייצוא (JSON) והנתונים נכתבים למסד של האתר. רק בעל הדף יכול להריץ את זה.</p>
-<div class="card" id="auth"><p id="who">בודק את ההתחברות…</p><button class="btn" type="button" id="signin" hidden>כניסה עם Google</button></div>
-<div class="card" id="pick" hidden>
+<h1>ייבוא נתונים</h1>
+<p class="muted">פעם אחת, במעבר מהגרסה ב-Claude, או לשחזור מגיבוי: בוחרים קובץ JSON (<code>{docs: {נתיב: מסמך}}</code>) והנתונים נכתבים לאתר. רק בעל הדף. מסמך קיים באותו נתיב מוחלף; נתונים פרטיים של שותפים לא מיובאים.</p>
+<div class="card">
   <p><input type="file" id="file" accept="application/json,.json"></p>
   <div id="summary"></div>
-  <p><button class="btn pri" type="button" id="go" disabled>ייבוא</button> <span id="state" class="muted"></span></p>
-  <progress id="prog" value="0" max="1" hidden></progress>
-  <p id="log" class="muted" style="white-space:pre-wrap"></p>
+  <p><button class="btn pri" type="button" id="go" disabled>ייבוא</button> <a class="btn" href="./">חזרה לתיק ›</a></p>
+  <p id="log" class="muted"></p>
 </div>
 </main>
-<script type="module">
-import {encodeDoc} from './docenc.js';
-const SDK='https://www.gstatic.com/firebasejs/12.19.0/';
-const cfg=window.TC_CONFIG||{}; const $=id=>document.getElementById(id);
+<script>
+const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-if(!cfg.firebase||!cfg.firebase.apiKey){$('who').innerHTML='<span class="err">חסר config.js (ראה SETUP.md).</span>'}
-else{
-  const [{initializeApp},A,F]=await Promise.all([import(SDK+'firebase-app.js'),import(SDK+'firebase-auth.js'),import(SDK+'firebase-firestore.js')]);
-  const app=initializeApp(cfg.firebase), auth=A.getAuth(app), db=F.initializeFirestore(app,{ignoreUndefinedProperties:true});
-  const owner=String(cfg.ownerEmail||'').toLowerCase();
-  $('signin').addEventListener('click',async()=>{try{await A.signInWithPopup(auth,new A.GoogleAuthProvider())}catch(e){$('who').innerHTML='<span class="err">הכניסה לא הצליחה: '+esc(e.code||e.message)+'</span>'}});
-  A.onAuthStateChanged(auth,u=>{
-    if(!u){$('who').textContent='יש להיכנס עם חשבון Google של בעל הדף.';$('signin').hidden=false;$('pick').hidden=true;return}
-    if(String(u.email||'').toLowerCase()!==owner){$('who').innerHTML='<span class="err">החשבון '+esc(u.email)+' אינו בעל הדף. </span><button class="btn" id="out" type="button">יציאה</button>';$('out').onclick=()=>A.signOut(auth);$('pick').hidden=true;return}
-    $('who').innerHTML='מחובר כבעל הדף: <code>'+esc(u.email)+'</code>'; $('signin').hidden=true; $('pick').hidden=false;
-  });
-  let DOCS=null;
-  $('file').addEventListener('change',async()=>{
-    const f=$('file').files[0]; DOCS=null; $('go').disabled=true; $('summary').textContent=''; if(!f)return;
-    try{const j=JSON.parse(await f.text()); const docs=j.docs||j; if(!docs||typeof docs!=='object')throw new Error('לא נמצאו מסמכים בקובץ');
-      DOCS=Object.entries(docs).filter(([p,d])=>d&&typeof d==='object'&&p.split('/').length%2===0&&!p.startsWith('data/users/'));
-      const by={}; for(const [p] of DOCS){const c=p.split('/')[0];by[c]=(by[c]||0)+1}
-      $('summary').innerHTML='<table><tr><th>אוסף</th><th>מסמכים</th></tr>'+Object.entries(by).map(([c,n])=>`<tr><td><code>${esc(c)}</code></td><td>${n}</td></tr>`).join('')+'</table><p class="muted">'+(j.exportedAt?'יוצא ב-'+esc(j.exportedAt)+'. ':'')+'מסמך קיים באותו נתיב יוחלף.</p>';
-      $('go').disabled=!DOCS.length;
-    }catch(e){$('summary').innerHTML='<span class="err">'+esc(e.message)+'</span>'}
-  });
-  $('go').addEventListener('click',async()=>{
-    if(!DOCS)return; $('go').disabled=true; $('prog').hidden=false; $('prog').max=DOCS.length; let done=0, errs=[];
-    for(let i=0;i<DOCS.length;i+=150){
-      const part=DOCS.slice(i,i+150);
-      try{const b=F.writeBatch(db); for(const [p,d] of part)b.set(F.doc(db,p),encodeDoc(d)); await b.commit(); done+=part.length}
-      catch(e){ // one by one, to find the bad one
-        for(const [p,d] of part){try{await F.setDoc(F.doc(db,p),encodeDoc(d));done++}catch(e2){errs.push(p+': '+(e2.code||e2.message))}}}
-      $('prog').value=done+errs.length; $('state').textContent=`${done} מתוך ${DOCS.length}`;
-    }
-    $('log').innerHTML=errs.length?'<span class="err">לא נכתבו '+errs.length+':</span>\n'+esc(errs.slice(0,30).join('\n')):'<span class="ok">הייבוא הסתיים. אפשר לפתוח את הדף הראשי.</span>';
-  });
-}
+let DOCS=null;
+fetch('/api/me',{credentials:'same-origin'}).then(r=>r.json()).then(j=>{if(!j.me||!j.me.owner){document.querySelector('.card').innerHTML='<p class="err">רק בעל הדף יכול לייבא. <a href="./">לכניסה</a></p>'}});
+$('file').addEventListener('change',async()=>{
+  const f=$('file').files[0]; DOCS=null; $('go').disabled=true; $('summary').textContent=''; if(!f)return;
+  try{const j=JSON.parse(await f.text()); const docs=j.docs||j; if(!docs||typeof docs!=='object')throw new Error('לא נמצאו מסמכים בקובץ');
+    DOCS=Object.fromEntries(Object.entries(docs).filter(([p,d])=>d&&typeof d==='object'&&p.split('/').length%2===0&&!p.startsWith('data/users/')));
+    const by={}; for(const p of Object.keys(DOCS)){const c=p.split('/')[0];by[c]=(by[c]||0)+1}
+    $('summary').innerHTML='<table><tr><th>אוסף</th><th>מסמכים</th></tr>'+Object.entries(by).map(([c,n])=>`<tr><td><code>${esc(c)}</code></td><td>${n}</td></tr>`).join('')+'</table>'+(j.exportedAt?'<p class="muted">יוצא ב-'+esc(j.exportedAt)+'</p>':'');
+    $('go').disabled=!Object.keys(DOCS).length;
+  }catch(e){$('summary').innerHTML='<span class="err">'+esc(e.message)+'</span>'}
+});
+$('go').addEventListener('click',async()=>{
+  if(!DOCS)return; $('go').disabled=true; $('log').textContent='מייבא…';
+  const keys=Object.keys(DOCS); let done=0, errs=[];
+  // parts of up to ~6MB each (the chart documents are large)
+  const parts=[]; let cur={}, size=0; for(const k of keys){const n=JSON.stringify(DOCS[k]).length; if(size+n>6e6&&Object.keys(cur).length){parts.push(cur);cur={};size=0} cur[k]=DOCS[k]; size+=n} if(Object.keys(cur).length)parts.push(cur);
+  for(const part of parts){
+    try{const r=await fetch('/api/db/import',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1','content-type':'application/json'},body:JSON.stringify({docs:part})}); const j=await r.json(); if(!r.ok)throw new Error((j.error&&j.error.message)||r.status); done+=j.n}
+    catch(e){errs.push(e.message)} $('log').textContent=`${done} מתוך ${keys.length}`}
+  $('log').innerHTML=errs.length?'<span class="err">חלק לא נכתב: '+esc(errs.slice(0,3).join(' | '))+'</span>':'<span class="ok">הייבוא הסתיים ('+done+' מסמכים). אפשר לחזור לתיק.</span>';
+});
 </script>
 </body>
 </html>

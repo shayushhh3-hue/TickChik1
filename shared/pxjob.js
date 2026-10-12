@@ -3,7 +3,7 @@ import {fetchAll, buildQuotesDoc} from './quotes.js';
 import {usOpen, ilOpen} from './market.js';
 
 export async function refreshQuotes(fs,{fetch:f=globalThis.fetch,now=new Date(),log=()=>{},reason=''}={}){
-  const [P,S,Q,W]=await Promise.all([fs.getDoc('portfolio/main'),fs.getDoc('settings/main'),fs.getDoc('quotes/latest'),fs.listDocs('watch').catch(()=>[])]);
+  const [P,S,Q,W]=await Promise.all([fs.getDoc('portfolio/main'),fs.getDoc('settings/main'),fs.getDoc('quotes/latest'),Promise.resolve().then(()=>fs.listDocs('watch')).catch(()=>[])]);
   const positions=(P.exists&&P.data.positions)||[];
   const syms=new Set(positions.map(p=>p.sym).filter(Boolean));
   for(const w of W)for(const k of ['syms','marks','held'])for(const s of ((w.data||{})[k]||[]))if(typeof s==='string'&&/^[A-Z0-9.\-^]{1,12}$/.test(s))syms.add(s);

@@ -1,6 +1,5 @@
 node_modules/
 site/index.html
-site/docenc.js
+data/
 *.log
 .DS_Store
-docs-project.md

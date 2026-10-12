@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
-export const PAGE=path.resolve(HERE,'..','..','site','index.html');
+export const PAGE=path.resolve(HERE,'..','site','index.html');
 
 function stub(docs,user){
   return `window.__D=${JSON.stringify(docs)};window.__W=[];
@@ -26,7 +26,7 @@ try{localStorage.setItem('tr_bot_tip','2099-01-01');localStorage.setItem('tr_pro
 }
 
 export async function withPage(docs,user,fn,{fonts=false,timeout=45000}={}){
-  if(!fs.existsSync(PAGE))throw new Error('site/index.html is missing; run tools/build.py');
+  if(!fs.existsSync(PAGE))throw new Error('site/index.html is missing; run node tools/build.js');
   const exe=['/opt/pw-browsers/chromium','/opt/pw-browsers/chromium-1187/chrome-linux/chrome'].find(p=>fs.existsSync(p));
   const b=await chromium.launch(exe?{executablePath:exe}:{});
   try{
