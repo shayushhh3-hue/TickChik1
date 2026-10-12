@@ -15020,9 +15020,10 @@ const I18N_OK=c=>typeof c==='string'&&/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(c);
 // replace an element's HTML only when the page's own source for it changed; while the page is translated the text on screen
 // differs from the source, so the source written last is compared instead
 const setH=(el,h)=>{if(!el)return false; if(I18N.on?el.__h===h:el.innerHTML===h)return false; el.__h=h; el.innerHTML=h; return true};
-const sgn=(x,d=0)=>(x>=0?'+':'−')+ils(Math.abs(x),d);
+const LRM='\u200E'; // keeps a leading + or − on the left of its number inside Hebrew text
+const sgn=(x,d=0)=>LRM+(x>=0?'+':'−')+ils(Math.abs(x),d);
 const pct=(x,d=1)=>Number(x).toFixed(d)+'%';
-const spct=(x,d=1)=>(x>=0?'+':'−')+Math.abs(x).toFixed(d)+'%';
+const spct=(x,d=1)=>LRM+(x>=0?'+':'−')+Math.abs(x).toFixed(d)+'%';
 const hm=iso=>{const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 const ago=iso=>{const m=Math.max(0,Math.round((Date.now()-new Date(iso))/6e4));return m<60?`לפני ${m} דקות`:m<1440?`לפני ${Math.round(m/60)} שעות`:`לפני ${Math.round(m/1440)} ימים`};
 const dmy=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':d.getDate()+'.'+(d.getMonth()+1)};
@@ -15391,7 +15392,7 @@ function renderPlan(mAll){
     const ch=p=>`<button type="button" class="chip" data-ob="${esc(p.sym)}" aria-pressed="${sel.has(p.sym)}"${dis}>${esc(lab(p.sym))}</button>`, of=pos.filter(p=>isF(p.sym)), os=pos.filter(p=>!isF(p.sym));
     const h=of.length&&os.length?`<div class="bg"><span class="bl">קרנות</span>${of.map(ch).join('')}</div><div class="bg"><span class="bl">מניות</span>${os.map(ch).join('')}</div>`:pos.map(ch).join(''); setH($('obChips'),h);
     $('obGo').disabled=!canWrite||!sel.size}}
-  $('pBal').textContent=(st.bal<0?'−':'')+ils(Math.abs(st.bal)); $('pBal').className='v'+(st.bal<0?' down':'');
+  $('pBal').textContent=(st.bal<0?LRM+'−':'')+ils(Math.abs(st.bal)); $('pBal').className='v'+(st.bal<0?' down':'');
   $('pBalD').textContent='מזומן, ועוד הפקדות, פחות קניות'; $('pBase').textContent=ils(st.base,2);
   $('pDone').textContent=`${done} / ${act.length}`; $('pBar').style.width=(act.length?done/act.length*100:0)+'%';
   $('pLeft').textContent=ils(Math.max(0,need-st.bal)); {const nF=todo.filter(i=>isF(i.sym)).length, nS=todo.length-nF; $('pLeftD').textContent=`${nF&&nS?nF+' קרנות ו-'+nS+' מניות':todo.length+(nF?' קרנות':' ניירות')}, ${ils(need)} במחירי היום`}
@@ -15613,10 +15614,10 @@ function renderComove(m){
   const rule=CM.pairRule||{min:0.8,sig:0.28,n:CM.days}, has=o=>by[o.a]&&by[o.b];
   const lvl=r=>{const a=Math.abs(r);return a>=0.8?'חזק':a>=0.5?'בינוני עד חזק':'בינוני'};
   const pcard=(o,opp)=>{const days=!o.n, n=o.n||MD, k=o.n?(opp?o.n-o.sameN:o.sameN):Math.round((opp?1-o.same:o.same)*MD);
-    return `<div class="gc"><div class="gh"><b>${esc(by[o.a].name)} <span class="nm">ו-</span>${esc(by[o.b].name)}</b><span class="tg">${days?'יום-יום':'חודשי'}</span></div>
+    return `<div class="gc"><div class="gh"><b><bdi>${esc(by[o.a].name)}</bdi> <span class="nm">ו-</span><bdi>${esc(by[o.b].name)}</bdi></b><span class="tg">${days?'יום-יום':'חודשי'}</span></div>
       ${meter(k,n,opp?'tl':'',(days?'ימים ':'חודשים ')+(opp?'זזו בכיוונים הפוכים':'עלו או ירדו יחד'))}
       ${o.why?`<p class="cowhy">${esc(o.why)}</p>`:''}
-      <div class="gf"><span class="sym">${esc(lab(o.a))} · ${esc(o.b)}</span><span title="מדד הקשר ${o.r.toFixed(2)} בסולם שבין 1− ל-1">${opp?'קשר הפוך ':'קשר '}${lvl(o.r)}</span></div></div>`};
+      <div class="gf"><span><span class="sym">${esc(lab(o.a))}</span> · <span class="sym">${esc(lab(o.b))}</span></span><span title="מדד הקשר ${o.r.toFixed(2)} בסולם שבין 1− ל-1">${opp?'קשר הפוך ':'קשר '}${lvl(o.r)}</span></div></div>`};
   // show the first few, keep the rest one tap away
   const plist=(arr,opp,lim)=>{const c=arr.map(o=>pcard(o,opp)); if(c.length<=lim)return c.join('');
     return c.slice(0,lim).join('')+`<details class="mp"><summary><span class="s1">הצג עוד ${c.length-lim}</span><span class="s2">הצג פחות</span></summary><div class="gg">${c.slice(lim).join('')}</div></details>`};
@@ -15642,7 +15643,7 @@ function renderComove(m){
       $('ltLead').innerHTML=`לאורך שנים (${all.length} צמדים, נתונים חודשיים מ-${(LT.from||'').slice(0,4)||'1962'} ועד היום) הקשרים חלשים בהרבה מאשר בבדיקות הקצרות: הממוצע הוא <bdi class="n">${avg.toFixed(2)}</bdi> והגבוה ביותר <bdi class="n">${top.r.toFixed(2)}</bdi> (<bdi>${esc(by[top.a].name)}</bdi> ו-<bdi>${esc(by[top.b].name)}</bdi>). מה שמוצג כאן מתאר את החודשים האחרונים, לא חוק קבוע.`}
   }
   const strongOpp=op.concat(mOp).some(o=>o.r<=-rule.min);
-  $('prOppNote').textContent=(strongOpp?'':`אין בתיק צמד שנע בכיוונים הפוכים בקשר חזק (מתחת ל-${rule.min}−). `)+'מוצגים צמדים שהקשר ההפוך שלהם מובהק, כלומר לא סביר שהוא מקרי, גם אם עוצמתו בינונית.';
+  $('prOppNote').textContent=(strongOpp?'':`אין בתיק צמד שנע בכיוונים הפוכים בקשר חזק (מתחת ל-${LRM}−${rule.min}). `)+'מוצגים צמדים שהקשר ההפוך שלהם מובהק, כלומר לא סביר שהוא מקרי, גם אם עוצמתו בינונית.';
 }
 let HS=null, HSUM=[], DY=null, TP=[], dyBusy=false;
 // Months between a sale and the first purchase of the same security in the same account.
@@ -15700,7 +15701,7 @@ function renderHistory(){
   const fx=Q.usdIls, accts=HS.accounts||[HS]; HSUM=[];
   const open=new Set([...document.querySelectorAll('#backWrap details[open]')].map(d=>d.dataset.k));
   $('backWrap').innerHTML=accts.map(A=>{
-    const usd=A.ccy==='USD', f=(x,d=0)=>usd?'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d||2,maximumFractionDigits:d||2}):ils(x,d), sg=x=>(x>=0?'+':'−')+f(Math.abs(x));
+    const usd=A.ccy==='USD', f=(x,d=0)=>usd?'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d||2,maximumFractionDigits:d||2}):ils(x,d), sg=x=>LRM+(x>=0?'+':'−')+f(Math.abs(x));
     const dep=A.deposits.reduce((t,d)=>t+d.amount,0), mx=model(P,Q,A.acct), now=usd?mx.total/fx:mx.total, res=now-dep, name=ACCTS[A.acct]||A.acct;
     const ev=[...A.deposits.map(d=>({date:d.date,t:'הפקדה לחשבון',amt:d.amount,k:'d'})),...(A.snapshots||[]).map(x=>({date:x.date,t:'שווי החשבון בדוח',amt:x.value,k:'s'})),{date:new Date().toISOString().slice(0,10),t:'שווי החשבון היום',amt:now,k:'s'}].sort((a,b)=>a.date<b.date?-1:1);
     let cum=0;
@@ -15713,7 +15714,7 @@ function renderHistory(){
     if(mx.pos.some(p=>p.noCost===false)&&P.positions.some(p=>p.acct===A.acct&&p.costEst))notes.push('העלות בשקלים של הניירות בחשבון הזה מוערכת לפי שער דולר משוער ביום הקנייה.');
     notes.push(`ההפקדות ידועות עד ${dmy(A.through)}. אם הופקד כסף נוסף אחרי התאריך הזה, התוצאה מול ההפקדות נמוכה יותר ממה שמוצג.`);
     const fee=A.feesUsd!=null?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">$${A.feesUsd}</span><div class="d">${A.tradesCount} עסקאות, $${A.feeUsdPerTrade} לכל אחת${A.feesNote?' '+esc(A.feesNote):''} · כ-${ils(A.feesUsd*fx)}, ${pct(dep?A.feesUsd*fx/dep*100:0)} מההפקדות</div></div>`
-      :`<div class="cell"><div class="k">${A.realizedUsd!=null?'תוצאת המכירות':'עסקאות'}</div><span class="v ${A.realizedUsd!=null?(A.realizedUsd>=0?'up':'down'):''}">${A.realizedUsd!=null?(A.realizedUsd>=0?'+':'−')+'$'+Math.abs(A.realizedUsd).toFixed(2):A.tradesCount}</span><div class="d">${A.tradesCount} תנועות בתקופה</div></div>`;
+      :`<div class="cell"><div class="k">${A.realizedUsd!=null?'תוצאת המכירות':'עסקאות'}</div><span class="v ${A.realizedUsd!=null?(A.realizedUsd>=0?'up':'down'):''}">${A.realizedUsd!=null?LRM+(A.realizedUsd>=0?'+':'−')+'$'+Math.abs(A.realizedUsd).toFixed(2):A.tradesCount}</span><div class="d">${A.tradesCount} תנועות בתקופה</div></div>`;
     HSUM.push(`${name}: הופקדו ${f(dep)}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)} (${spct(dep?res/dep*100:0)}).`+(A.feesUsd!=null?` עמלות $${A.feesUsd}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
     const k='tr_'+A.acct;
     return `<section aria-label="מבט לאחור: ${esc(name)}">
@@ -16161,7 +16162,7 @@ function anaPlan(F){
     rows.push({k:(F.depS===false||F.depI===false)?'warn':'ok',t:'הפקדה חודשית',x:parts.join('. ')+'.',nav:{t:'plan',l:ANAV.plan}})}
   else rows.push({k:'unset',t:'הפקדה חודשית',x:'לא הוגדר סכום הפקדה חודשי.',nav:{t:'plan',l:ANAV.plan}});
   if(F.tsum>0){const off=F.groups.filter(g=>g.off).sort((a,b)=>Math.abs(b.dev)-Math.abs(a.dev));
-    rows.push({k:off.length?'warn':'ok',t:'יעדי הקצאה',x:off.length?`${off.length===1?'קבוצה אחת רחוקה':off.length+' קבוצות רחוקות'} מהיעד ביותר מ-${R.drift} נק׳ אחוז: ${off.slice(0,3).map(g=>`${g.name} ${(g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)}`).join(', ')}.`:`כל הקבוצות בטווח של ${R.drift} נק׳ אחוז מהיעד שקבעת.`,nav:{t:'settings',l:ANAV.settings}})}
+    rows.push({k:off.length?'warn':'ok',t:'יעדי הקצאה',x:off.length?`${off.length===1?'קבוצה אחת רחוקה':off.length+' קבוצות רחוקות'} מהיעד ביותר מ-${R.drift} נק׳ אחוז: ${off.slice(0,3).map(g=>`${g.name} ${LRM+(g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)}`).join(', ')}.`:`כל הקבוצות בטווח של ${R.drift} נק׳ אחוז מהיעד שקבעת.`,nav:{t:'settings',l:ANAV.settings}})}
   else rows.push({k:'unset',t:'יעדי הקצאה',x:'לא הוגדרו יעדים, ולכן אי אפשר לבדוק אם ההקצאה תואמת את התוכנית.',nav:{t:'settings',l:'לקבוע יעדים'}});
   const crit=F.A.filter(a=>a[0]==='crit');
   rows.push({k:crit.length?'crit':'ok',t:'הכללים שלך',x:crit.length?`${crit.length===1?'חריגה אחת':crit.length+' חריגות'} מהכללים: ${[...new Set(crit.map(a=>a[1]==='ריכוז'?(/לנייר בודד/.test(a[2])?'נייר בודד מעל הסף':'קבוצה מעל הסף'):a[1]==='יתרה'?'יתרה שלילית בתוכנית':a[1]==='מטבע'?'חשיפה לדולר מעל התקרה':a[1]))].join(', ')}.`:'התיק עומד בכללי הריכוז והירידה שקבעת.',nav:{t:'settings',l:ANAV.settings}});
@@ -16853,7 +16854,7 @@ const cN=(n,t,cls)=>({t,n:Math.round(n*100)/100,cls}), cG=(n,t)=>cN(n,t,n>=0?'up
 // the period's movements as on a statement: newest first, deposits and trades in one table, the amount signed as money in (+) or out (−)
 function tradeTable(tr,dp){
   const all=[...tr.map(x=>({...x,k:'t'})),...(dp||[]).map(d=>({...d,k:'d'}))].sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(a.k===b.k?0:a.k==='d'?1:-1));
-  const acc=x=>x.plan?'תוכנית ההגדלה':(ACCTS[x.acct]||x.acct), sm=(v,c)=>(v>=0?'+':'−')+money(Math.abs(v),c);
+  const acc=x=>x.plan?'תוכנית ההגדלה':(ACCTS[x.acct]||x.acct), sm=(v,c)=>LRM+(v>=0?'+':'−')+money(Math.abs(v),c);
   return {t:'table',xl:'תנועות',heads:['תאריך','חשבון','סוג תנועה','נייר','כמות','מחיר יחידה','סכום כולל'],w:[0.95,1.05,1.3,0.95,0.75,1.05,1.15],num:[1,0,0,0,1,1,1],
     rows:all.map(x=>{
       if(x.k==='d')return [dFull(x.date),acc(x),{t:'הפקדה',b:1},'—','—','—',cN(x.amount,sm(x.amount,x.ccy))];
