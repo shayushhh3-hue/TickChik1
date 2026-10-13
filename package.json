@@ -8,7 +8,8 @@
   "scripts": {
     "build": "node tools/build.js",
     "start": "node --disable-warning=ExperimentalWarning server/index.js",
-    "test": "node --disable-warning=ExperimentalWarning --test tests/unit.test.js tests/page-math.test.js"
+    "test": "node --disable-warning=ExperimentalWarning --test tests/unit.test.js tests/page-math.test.js",
+    "test:browser": "node --disable-warning=ExperimentalWarning --test tests/browser.test.js"
   },
   "dependencies": {
     "express": "5.1.0",
