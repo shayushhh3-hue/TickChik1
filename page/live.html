@@ -15223,7 +15223,7 @@ function pxNextTxt(now){
 const freshTxt=()=>`${Q.priceLabel||''} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
 // an open page keeps that line true as the hours pass, and redraws when the prices turn late (or stop being late)
 let FRESH='', LATE=null;
-setInterval(()=>{try{if(!P||!Q||!Q.updatedAt||noPf())return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
+setInterval(()=>{try{if(pxHonest()){render();return} if(!P||!Q||!Q.updatedAt||noPf())return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
   const l=pxLate(); if(LATE!==null&&l!==LATE){LATE=l; render()} else LATE=l}catch(e){}},60000);
 window.__px={runs:pxRuns,late:pxLate,next:pxNextTxt,fresh:()=>Q&&Q.updatedAt?freshTxt():''};
 
@@ -15487,7 +15487,7 @@ function render(){
     <td class="num"><span class="n">${ils(p.val)}</span>${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
     <td class="num"><span class="n">${p.cost?ils(p.cost):'—'}</span></td>
     <td class="num">${d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`}</td></tr>`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)}`+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)}`+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n)=>`<tr class="sec"><td colspan="8">${t} · ${n}</td></tr>`;
   $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num"><span class="n">${ils(m.cash)}</span></td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
@@ -17824,9 +17824,13 @@ async function pset(name,data){
 function mergeQ(){
   if(!RAWQ)return; const prices={...(RAWQ.prices||{})}, stale={...(RAWQ.stale||{})};
   if(P)for(const p of P.positions||[])if(prices[p.sym]==null&&+p.px>0){prices[p.sym]=+p.px;stale[p.sym]='מחיר מהדוח'}
-  Q={...RAWQ,prices,stale};
+  Q={...RAWQ,prices,stale}; pxHonest();
   try{srchQ()}catch(e){}
 }
+// "מסחר חי" is true only while prices keep coming (every 5 minutes in trading hours). An hour without a new price, and the
+// label says what it is: the last prices that arrived (the line under the name adds when, and whether the markets are open)
+function pxHonest(){if(!Q||!/מסחר חי/.test(Q.priceLabel||''))return false; const age=Q.updatedAt?Date.now()-new Date(Q.updatedAt).getTime():Infinity;
+  if(age<=60*6e4)return false; Q.priceLabel='המחירים האחרונים שהתקבלו'; Q.live=false; return true}
 function wipeNote(){const el=$('wipeList');if(!el)return;
   el.textContent='התיק והמזומן, התוכנית (כולל קניות והפקדות), ההיסטוריה והגרפים של התיק, הדוחות השמורים, סימוני "בדקתי", התרגומים השמורים של הדף'+(OWNER?', ההתראות השמורות':LOCAL?'':window.__tc?', רשימת הסימולים לעדכון המחירים':', רשימת הסימולים שנשלחה לבעל הדף')+' והעותק השמור בדפדפן הזה'}
 function whoNote(){wipeNote(); try{renderPrivacy()}catch(e){}
