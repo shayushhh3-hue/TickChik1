@@ -4,6 +4,7 @@
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, esc as mesc} from './mail.js';
@@ -232,6 +233,29 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.use('/api',(req,res)=>res.status(404).json({error:{code:'not_found',message:'no such call'}}));
 
   // ---- the site ----
+  // the page is about 4 MB of text; compressed it is about 1 MB. Each file is compressed once per version (in the
+  // background, so a request never waits on more than its own file), and sent compressed when the browser accepts it.
+  const ZC=new Map(), TYPES={html:'text/html; charset=utf-8',js:'text/javascript; charset=utf-8',css:'text/css; charset=utf-8',json:'application/json; charset=utf-8',svg:'image/svg+xml',webmanifest:'application/manifest+json',txt:'text/plain; charset=utf-8'};
+  const squeeze=(file,st,enc)=>{const key=file+'|'+enc, c=ZC.get(key); if(c&&c.mtime===st.mtimeMs&&c.size===st.size)return c.p;
+    const p=new Promise((ok,no)=>{const raw=fs.readFileSync(file); const done=(e,b)=>e?no(e):ok({body:b,etag:`"${enc}-${st.size.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`});
+      if(enc==='br')zlib.brotliCompress(raw,{params:{[zlib.constants.BROTLI_PARAM_QUALITY]:9,[zlib.constants.BROTLI_PARAM_SIZE_HINT]:raw.length}},done); else zlib.gzip(raw,{level:9},done)});
+    ZC.set(key,{mtime:st.mtimeMs,size:st.size,p}); p.catch(()=>ZC.delete(key)); return p};
+  app.use(async(req,res,next)=>{
+    if(req.method!=='GET'&&req.method!=='HEAD')return next();
+    const ae=String(req.headers['accept-encoding']||''), enc=/\bbr\b/.test(ae)?'br':/\bgzip\b/.test(ae)?'gzip':null; if(!enc)return next();
+    let rel; try{rel=decodeURIComponent(req.path)}catch(e){return next()} if(rel.endsWith('/'))rel+='index.html';
+    const ext=(rel.match(/\.([a-z]+)$/)||[])[1]; if(!TYPES[ext]||rel.includes('..'))return next();
+    const file=path.join(siteDir,rel); if(!file.startsWith(path.resolve(siteDir)+path.sep))return next();
+    let st; try{st=fs.statSync(file)}catch(e){return next()} if(!st.isFile()||st.size<4096)return next();
+    let z; try{z=await squeeze(file,st,enc)}catch(e){return next()}
+    res.setHeader('vary','accept-encoding'); res.setHeader('etag',z.etag); res.setHeader('content-type',TYPES[ext]);
+    res.setHeader('cache-control',ext==='html'||/config\.js$/.test(rel)?'no-cache':'public, max-age=0');
+    res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin');
+    if(req.headers['if-none-match']===z.etag)return res.status(304).end();
+    res.setHeader('content-encoding',enc); res.setHeader('content-length',z.body.length);
+    if(req.method==='HEAD')return res.end(); res.end(z.body);
+  });
+  app.locals.squeezeSite=()=>{const f=path.join(siteDir,'index.html'); try{const st=fs.statSync(f); for(const e of ['br','gzip'])squeeze(f,st,e).catch(()=>{})}catch(e){}};
   app.use(express.static(siteDir,{index:'index.html',etag:true,setHeaders:(res,p)=>{if(/\.html$/.test(p)||/config\.js$/.test(p))res.setHeader('cache-control','no-cache'); res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin')}}));
   app.use((req,res)=>res.status(404).send('לא נמצא'));
   return app;
@@ -251,7 +275,7 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(!fs.existsSync(DATA_DIR)){log(`DATA_DIR ${DATA_DIR} does not exist: creating it. On Railway, add a Volume mounted at ${DATA_DIR} or the data is lost on every deploy.`)}
   const store=new Store(dbFile); bootstrap(store);
   const siteDir=path.join(ROOT,'site'); try{buildSite(ROOT)}catch(e){log('build failed:',e.message)}
-  const app=createApp({store,siteDir});
+  const app=createApp({store,siteDir}); app.locals.squeezeSite();
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});

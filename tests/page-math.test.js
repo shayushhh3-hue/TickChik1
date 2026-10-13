@@ -133,3 +133,23 @@ test('the date in Israel, not in UTC', ()=>{
   assert.equal(F.ilDay('2026-10-12T22:30:00Z'),'2026-10-13','01:30 in Israel is already the 13th');
   assert.equal(F.ilDay('2026-10-12T20:59:00Z'),'2026-10-12');
 });
+
+// ---- what Claude's sentences may not say ----
+const A=load(['HEW','ANA_ADVICE','ANA_SOFT','ANA_SOFT_OK','anaAdvice','ANA_MOVE','ANA_CAUSE','ANA_EVENT','anaInvented','ANA_UP','anaWrongWay','anaNumSet','anaBad','anaReject'],{});
+const FACTS=JSON.stringify({usd_ils:'3.055',holdings:[{sym:'NVDA',weight:'12.0%',last_day:'‎−2.10%',vs_cost:'‎+35.0%'},{sym:'KO',weight:'5.0%',last_day:'‎+1.50%'}],
+  movers:['NVDA ‎−2.10% (‎−₪45)','KO ‎+1.50% (‎+₪12)'],last_trading_day:'‎−₪33 (‎−0.20%)'});
+const SET=A.anaNumSet(FACTS);
+test('Claude: no buy or sell advice, in any wording', ()=>{
+  for(const s of ['כדאי לקנות עוד NVDA.','תמכור את KO.','זו הזדמנות קנייה.','מומלץ לממש רווחים.','אני ממליץ להחזיק את הנייר.','כדאי להקטין את החשיפה.','I recommend that you buy more.','You should sell KO.','שווה לקנות עכשיו.'])
+    assert.equal(A.anaAdvice(s),true,s);
+  for(const s of ['כדאי לבדוק את הכללים שלך.','האנליסטים ממליצים בממוצע על קנייה.','לפי התוכנית שלך, יש מספיק מזומן לקנות את הבא בתור.','אני לא נותן המלצות לקנות או למכור.','כדאי להוסיף יעד בהגדרות.','הקנייה האחרונה הייתה בספטמבר.'])
+    assert.equal(A.anaAdvice(s),false,s);
+});
+test('Claude: no reason the facts do not give, no move the wrong way, no number of another holding', ()=>{
+  for(const s of ['NVDA ירדה בגלל דוח רבעוני חלש.','המניות ירדו על רקע עליית הריבית.','KO עלתה בעקבות הודעה על דיבידנד.'])assert.equal(A.anaReject(s,SET),true,s);
+  for(const s of ['התיק ירד בעיקר בגלל הירידה של NVDA.','השווי בשקלים ירד בגלל ירידת הדולר.','זה חשוב בגלל שהתיק ירד מתחת לכלל שקבעת.','NVDA היא חברת שבבים.','NVDA ירדה 2.1% ביום המסחר האחרון.','NVDA ירדה 2% ביום המסחר האחרון.','KO עלתה 1.5%.','NVDA עלתה 35% מאז הקנייה.'])
+    assert.equal(A.anaReject(s,SET),false,s);
+  assert.equal(A.anaReject('NVDA עלתה 2.1% היום.',SET),true,'NVDA went down 2.1%');
+  assert.equal(A.anaReject('NVDA ירדה 1.5% היום.',SET),true,'1.5% is KO\'s move');
+  assert.equal(A.anaReject('NVDA ירדה 7.3% היום.',SET),true,'a number that is not in the facts');
+});

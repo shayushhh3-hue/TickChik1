@@ -13,7 +13,9 @@ async function call(method,url,body,signal){
   let r;
   try{r=await fetch(API+url,{method,credentials:'same-origin',headers:{'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body),signal})}
   catch(e){if(e&&e.name==='AbortError')throw {code:'cancelled',message:'cancelled'};throw {code:'server_unavailable',message:String(e&&e.message||e)}}
-  let j=null; try{j=await r.json()}catch(e){}
+  let j=null, bad=false; try{j=await r.json()}catch(e){bad=true}
+  // an answer that is not what the server sends (a proxy page, a cut connection) is an error, never "no data"
+  if(r.ok&&(bad||j===null||typeof j!=='object'))throw {code:'invalid_response',message:'התשובה מהשרת לא תקינה',status:r.status};
   if(r.ok)return j;
   const code=(j&&j.error&&j.error.code)||(r.status===401||r.status===403?'not_granted':r.status===429?'rate_limited':r.status===413?'too_large':r.status>=500?'upstream_error':'invalid_argument');
   const err={code,message:(j&&j.error&&j.error.message)||('HTTP '+r.status),status:r.status};
@@ -111,6 +113,9 @@ function stream(){
     const c=p.slice(0,p.lastIndexOf('/')); for(const f of (COL_L.get(c)||[]))f()};
   ES.onerror=()=>{}; // the browser reconnects by itself
 }
+// the page shows a line while a document it follows has failed to load, and hides it once that document loads
+const tell=(path,ok,e)=>{try{window.dispatchEvent(new CustomEvent('tc-load',{detail:{path,ok,code:e&&e.code}}))}catch(x){}};
+const retry=(e,i,load,alive)=>{if(i>=3||!e||e.code==='not_granted'||e.code==='permission_denied'||e.code==='cancelled')return; setTimeout(()=>{if(alive())load()},[5000,20000,60000][i])};
 const addL=(map,k,f)=>{const s=map.get(k)||new Set(); s.add(f); map.set(k,s); return()=>{s.delete(f)}};
 
 export async function boot(){
@@ -134,7 +139,7 @@ export async function boot(){
     set:async d=>{await call('PUT','/db/doc?path='+enc(p),d)},
     update:async d=>{await call('PATCH','/db/doc?path='+enc(p),d)},
     delete:async()=>{await call('DELETE','/db/doc?path='+enc(p))},
-    onSnapshot:(cb,onErr)=>{let live=true, seq=0; const load=async()=>{const n=++seq; try{const r=await call('GET','/db/doc?path='+enc(p)); if(live&&n===seq)cb(snap(id,r))}catch(e){if(live&&onErr)onErr(e)}};
+    onSnapshot:(cb,onErr)=>{let live=true, seq=0, tries=0; const load=async()=>{const n=++seq; try{const r=await call('GET','/db/doc?path='+enc(p)); tries=0; if(live&&n===seq){tell(p,true);cb(snap(id,r))}}catch(e){if(live&&n===seq){tell(p,false,e); if(onErr)onErr(e); retry(e,tries++,load,()=>live)}}};
       load(); const off=addL(DOC_L,p,load); return()=>{live=false;off()}},
     collection:c=>colRef(p+'/'+c)
   }};
@@ -145,7 +150,7 @@ export async function boot(){
     orderBy:(f,d)=>colRef(p,{...q,orderBy:f,dir:d||'asc'}),
     limit:n=>colRef(p,{...q,limit:n}),
     get:async()=>{const r=await call('GET','/db/list?'+new URLSearchParams({path:p,...q})); const docs=(r.docs||[]).map(d=>snap(d.id,{exists:true,data:d.data})); return {docs,size:docs.length,empty:!docs.length}},
-    onSnapshot:(cb,onErr)=>{let live=true, seq=0; const self=colRef(p,q); const load=async()=>{const n=++seq; try{const s=await self.get(); if(live&&n===seq)cb(s)}catch(e){if(live&&onErr)onErr(e)}};
+    onSnapshot:(cb,onErr)=>{let live=true, seq=0, tries=0; const self=colRef(p,q); const load=async()=>{const n=++seq; try{const s=await self.get(); tries=0; if(live&&n===seq)cb(s)}catch(e){if(live&&n===seq){if(onErr)onErr(e); retry(e,tries++,load,()=>live)}}};
       load(); const off=addL(COL_L,p,load); return()=>{live=false;off()}}
   });
   const dbNS={doc:docRef,collection:p=>colRef(p)};

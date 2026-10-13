@@ -7,6 +7,8 @@ import {tickerFor} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 
 const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
+// every call out has a time limit, so one site that hangs cannot hold up the whole night (and every job queued after it)
+const fetchFor=(ms)=>(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||AbortSignal.timeout(ms)});
 // the owner's documents the page needs to run headless (nothing of the partners is read)
 export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/main','history/prices','history/daily','quotes/latest','research/latest','research/candidates','research/longterm','research/comove','alerts/ack','alerts/state'];
 export function ownerDocs(store){const out={}; for(const p of OWNER_DOCS){const d=store.getDoc(p); if(d.exists)out[p]=d.data} return out}
@@ -26,8 +28,9 @@ export async function nightlyTask(store,{log,maxSeries=90}={}){
   const keys=new Set(held.filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s)));
   for(const w of store.listDocs('watch'))for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(s))keys.add(s);
   const map=((docs['settings/main']||{}).symMap)||{};
-  let ok=0; const fails=[];
+  let ok=0; const fails=[], until=Date.now()+12*60e3;
   for(const key of [...keys].slice(0,maxSeries)){
+    if(Date.now()>until){fails.push('stopped after 12 minutes');break}
     const t=key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
     try{const d=await series(t,'1y','1d'); let w=null; try{w=await series(t,'5y','1wk')}catch(e){}
       const old=store.getDoc('quotes/c_'+key.replace(':','_'));
@@ -48,7 +51,7 @@ export async function closesFor(key,map={}){
   return doc;
 }
 async function series(t,range,interval){
-  const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=${range}&interval=${interval}&includePrePost=false`,{headers:{'user-agent':UA}});
+  const r=await fetchFor(20000)(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=${range}&interval=${interval}&includePrePost=false`,{headers:{'user-agent':UA}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json(); const res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)throw new Error('no result');
   const off=+res.meta.gmtoffset||0, k=res.meta.currency==='ILA'?0.01:1, cl=((res.indicators||{}).quote||[{}])[0].close||[];
@@ -59,7 +62,7 @@ async function series(t,range,interval){
 async function usSnapshot(store,now,log){
   const US={}; const base='https://raw.githubusercontent.com/rreichel3/US-Stock-Symbols/main/';
   for(const ex of ['nasdaq','nyse','amex']){
-    const r=await fetch(base+ex+'/'+ex+'_full_tickers.json'); if(!r.ok){log('mirror',ex,r.status);continue}
+    const r=await fetchFor(60000)(base+ex+'/'+ex+'_full_tickers.json'); if(!r.ok){log('mirror',ex,r.status);continue}
     for(const x of await r.json()){const s=String(x.symbol||'').trim().replace(/\//g,'.').replace(/\^/g,'-'); if(!/^[A-Z][A-Z.\-]{0,5}$/.test(s))continue;
       const px=parseFloat(String(x.lastsale||'').replace(/[$,]/g,'')), pc=String(x.pctchange||''); const pct=/^-?[\d.]+%?$/.test(pc.replace(/,/g,''))?parseFloat(pc.replace(/[%,]/g,'')):0;
       if(px>0)US[s]=[Math.round(px*1e4)/1e4,Math.round(pct*100)/100]}

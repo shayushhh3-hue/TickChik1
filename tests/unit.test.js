@@ -377,3 +377,29 @@ test('privacy: no portfolio numbers or e-mail addresses in the log',async()=>{
   try{assert.equal(await sendMail({subject:'הודעת הבוקר: התיק 76,543 ₪',text:'שווי התיק 76,543 ₪, a@b.com'}),false)}finally{console.log=orig; if(keep.R)process.env.RESEND_API_KEY=keep.R; if(keep.U)process.env.MAIL_USER=keep.U}
   assert.equal(lines.length,1); assert.ok(!/76,543|a@b\.com|הודעת הבוקר/.test(lines[0]),lines[0]);
 });
+
+// ---- stability ----
+test('the site is sent compressed when the browser accepts it, and the same file when it does not',async()=>{
+  const zlib=await import('node:zlib'), os=await import('node:os'), path=await import('node:path');
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tcsite-')); const html='<!doctype html><title>x</title>'+'<p>תיק צ׳יק</p>'.repeat(5000); fs.writeFileSync(path.join(dir,'index.html'),html); fs.writeFileSync(path.join(dir,'small.js'),'1');
+  const {createApp}=await import('../server/index.js'); const app=createApp({store:new Store(':memory:'),siteDir:dir,jobs:false});
+  const srv=await new Promise(r=>{const s=app.listen(0,'127.0.0.1',()=>r(s))}); const base='http://127.0.0.1:'+srv.address().port;
+  const raw=(u,h)=>new Promise((ok,no)=>http.get(base+u,{headers:h},res=>{const b=[];res.on('data',c=>b.push(c));res.on('end',()=>ok({status:res.statusCode,h:res.headers,body:Buffer.concat(b)}))}).on('error',no));
+  try{
+    let r=await raw('/',{'accept-encoding':'gzip, deflate, br'}); assert.equal(r.h['content-encoding'],'br'); assert.equal(zlib.brotliDecompressSync(r.body).toString(),html); assert.ok(r.body.length<html.length/5); assert.equal(r.h.vary,'accept-encoding'); assert.equal(r.h['cache-control'],'no-cache');
+    const tag=r.h.etag; r=await raw('/',{'accept-encoding':'br','if-none-match':tag}); assert.equal(r.status,304);
+    r=await raw('/index.html',{'accept-encoding':'gzip'}); assert.equal(r.h['content-encoding'],'gzip'); assert.equal(zlib.gunzipSync(r.body).toString(),html);
+    r=await raw('/',{'accept-encoding':'identity'}); assert.equal(r.h['content-encoding'],undefined); assert.equal(r.body.toString(),html);
+    r=await raw('/small.js',{'accept-encoding':'br'}); assert.equal(r.h['content-encoding'],undefined,'a small file is sent as it is');
+    r=await raw('/../../etc/passwd',{'accept-encoding':'br'}); assert.notEqual(r.status,200);
+  }finally{srv.close(); fs.rmSync(dir,{recursive:true,force:true})}
+});
+
+test('jobs: one that hangs does not hold the queue; a job already waiting is not queued twice',async()=>{
+  const {startJobs}=await import('../server/jobs.js'); const ran=[], lines=[];
+  const J=startJobs(new Store(':memory:'),{log:(...a)=>lines.push(a.join(' ')),every:1e9,limits:{slow:150},schedule:[
+    {name:'slow',when:()=>false,run:()=>new Promise(()=>{})},{name:'b',when:()=>false,run:async()=>{ran.push('b')}}]});
+  try{J.run('slow'); J.run('b'); J.run('b'); assert.equal(J.queue.filter(j=>j.name==='b').length,1);
+    await new Promise(r=>setTimeout(r,400)); assert.deepEqual(ran,['b']); assert.ok(lines.some(l=>/slow still running/.test(l)))}
+  finally{J.stop()}
+});

@@ -15,19 +15,25 @@ export const SCHEDULE=[
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})}
 ];
 
-export function startJobs(store,{log=console.log,every=20000,dataDir}={}){
+// the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
+export const LIMIT={prices:4*60e3,nightly:25*60e3};
+export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), queue=[]; let busy=false;
   const pump=async()=>{
-    if(busy||!queue.length)return; busy=true; const j=queue.shift(); const t0=Date.now();
-    try{log(`job ${j.name} started`); await j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}); log(`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`)}
+    if(busy||!queue.length)return; busy=true; const j=queue.shift(); const t0=Date.now(), ms=limits[j.name]||fallback; let to;
+    try{log(`job ${j.name} started`);
+      const r=await Promise.race([j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}).then(()=>'done'),new Promise(ok=>{to=setTimeout(()=>ok('late'),ms)})]);
+      log(r==='late'?`job ${j.name} still running after ${Math.round(ms/60e3)} minutes; the queue goes on`:`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`)}
     catch(e){log(`job ${j.name} failed:`,e&&e.stack||e)}
-    busy=false; setTimeout(pump,0);
+    clearTimeout(to); busy=false; setTimeout(pump,0);
   };
+  // a job already waiting is not queued twice (prices every 5 minutes behind a slow job)
+  const enqueue=j=>{if(!queue.some(q=>q.name===j.name))queue.push(j)};
   const tick=()=>{const now=new Date(), p=ilParts(now); const slot=`${p.iso} ${p.h}:${p.min}`;
-    for(const j of SCHEDULE){const k=j.name+'@'+slot; if(!done.has(k)&&j.when(p,now)){done.add(k);queue.push(j)}}
+    for(const j of schedule){const k=j.name+'@'+slot; if(!done.has(k)&&j.when(p,now)){done.add(k);enqueue(j)}}
     if(done.size>500)for(const k of [...done].slice(0,250))done.delete(k);
     pump()};
   const iv=setInterval(tick,every); tick();
-  log('scheduler on: '+SCHEDULE.map(j=>j.name).join(', ')+' (Israel time)');
-  return {stop:()=>clearInterval(iv),run:name=>{const j=SCHEDULE.find(x=>x.name===name);if(!j)return false;queue.push(j);pump();return true}};
+  log('scheduler on: '+schedule.map(j=>j.name).join(', ')+' (Israel time)');
+  return {stop:()=>clearInterval(iv),run:name=>{const j=schedule.find(x=>x.name===name);if(!j)return false;enqueue(j);pump();return true},queue};
 }
