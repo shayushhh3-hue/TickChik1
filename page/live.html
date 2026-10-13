@@ -17876,6 +17876,33 @@ async function readStatement0(fromText){
       sym:canonSym(r&&r.sym,r&&r.name).slice(0,12), name:String(r&&r.name||'').replace(/[<>]/g,'').slice(0,60),
       qty:numOr(r&&r.qty,0), ccy:(r&&r.ccy==='ILS')||/^TA(125|90)$/i.test(String(r&&r.sym||''))?'ILS':'USD', costIls:numOr(r&&r.costIls,null), px:/^TA(125|90)$/i.test(String(r&&r.sym||''))&&!(r&&r.ccy==='ILS')?null:numOr(r&&r.px,null), group:NUMSYM.test(String(r&&r.sym||''))?'il':GK.includes(r&&r.group)?r.group:'tech'})).filter(r=>r.sym&&r.qty>0).slice(0,80);
     if(rows.length&&pick==='auto'&&!known){st.textContent=out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".';try{$('upAcct').focus()}catch(e){}}
+    else if(!rows.length&&txs.some(t=>t.side==='deposit'||t.side==='withdraw')){
+      // a screen of deposits (or withdrawals) and no holdings list: the money goes to the account's history, and what came
+      // in after the account's last statement is added to its cash, so the account's value counts it
+      const flows=txs.filter(t=>(t.side==='deposit'||t.side==='withdraw')&&t.amount>0);
+      if(pick==='auto'&&!known){st.textContent=`זיהיתי ${flows.length===1?'הפקדה אחת':flows.length+' הפקדות'}, אבל לא לאיזה חשבון הן שייכות. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".`;try{$('upAcct').focus()}catch(e){}}
+      else{
+        if(!DRAFT)DRAFT=draftFromP(); DRAFT.flowKeys=DRAFT.flowKeys||[];
+        const fk=t=>ac+'|'+t.date+'|'+Math.round(+t.amount)+'|'+t.side, HA=((HS&&HS.accounts)||[]).find(x=>x.acct===ac), saved=new Set(((HA&&HA.deposits)||[]).map(d=>ac+'|'+d.date+'|'+Math.round(Math.abs(+d.amount))+'|'+(+d.amount<0?'withdraw':'deposit')));
+        const asOf=(DRAFT.asOf||{})[ac]||null; let addI=0,addU=0,before=0,dup=0;
+        DRAFT.cash[ac]=DRAFT.cash[ac]||{ILS:0,USD:0};
+        for(const t of flows){const k=fk(t); if(saved.has(k)||DRAFT.flowKeys.includes(k)){dup++;continue}
+          if(!asOf||t.date<=asOf){before++;continue}
+          const v=(t.side==='withdraw'?-1:1)*t.amount; if(t.ccy==='USD'){DRAFT.cash[ac].USD=Math.round((+DRAFT.cash[ac].USD+v)*100)/100;addU+=v}else{DRAFT.cash[ac].ILS=Math.round((+DRAFT.cash[ac].ILS+v)*100)/100;addI+=v}
+          DRAFT.flowKeys.push(k)}
+        DRAFT.tx=(DRAFT.tx||[]).filter(t=>!(t.acct===ac&&(t.side==='deposit'||t.side==='withdraw'))).concat(flows.map(t=>({...t,acct:ac})));
+        pfDirty(); renderMine(true); renderTx(); upStep(3);
+        const sum=flows.reduce((x,t)=>x+(t.side==='withdraw'?-1:1)*t.amount*(t.ccy==='USD'?((Q&&Q.usdIls)||3.3):1),0);
+        const amt=[addI?ils(Math.abs(addI)):'',addU?'$'+Math.abs(addU).toLocaleString('en-US',{maximumFractionDigits:2}):''].filter(Boolean).join(' ו-');
+        pDone.push(flows.length===1?'זוהתה הפקדה אחת':`זוהו ${flows.length} הפקדות`); upProg(pDone,'נשאר לך: לבדוק ולשמור');
+        const wd=flows.some(t=>t.side==='withdraw'), cnt=n=>n===1?(wd?'תנועה אחת':'הפקדה אחת'):n+(wd?' תנועות':' הפקדות');
+        st.textContent=`זוהו ${flows.length===1?(wd?'משיכה אחת':'הפקדה אחת'):flows.length+(wd?' הפקדות ומשיכות':' הפקדות')} בחשבון ${ACCTS[ac]} (סך הכול ${ils(Math.round(sum))}). `+
+          (amt?`${amt} מהן אחרי הדוח האחרון של החשבון${asOf?' ('+dFull(asOf)+')':''}, ולכן נוספו ליתרת המזומן שלו ולשווי התיק. `:'')+
+          (before?`${cnt(before)} ${asOf?'מלפני '+dFull(asOf)+(before===1?', כבר כלולה בדוח':', כבר כלולות בדוח'):'(לחשבון אין תאריך דוח, לכן המזומן לא שונה)'}. `:'')+
+          (dup?`${cnt(dup)} כבר ${dup===1?'נרשמה':'נרשמו'} קודם, ולא ${dup===1?'נוספה':'נוספו'} שוב. `:'')+
+          'ההפקדות נשמרות גם בהיסטוריה. לחץ על "שמור את התיק".'+(asOf?' אם הכסף כבר הושקע בניירות, עדיף להעלות צילום של רשימת האחזקות במקום.':'');
+      }
+    }
     else if(!rows.length){st.textContent='לא מצאתי אחזקות בקבצים האלה.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'')}
     else{
       if(!DRAFT)DRAFT=draftFromP();
