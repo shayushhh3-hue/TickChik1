@@ -842,6 +842,8 @@ td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .hello-c p{margin:0;font-size:14px;line-height:1.65}
 .hello-c .hl{font-weight:700;font-size:15px}
 .hello-c p:empty{display:none}
+.hello-l{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.6}
+.ana-basis .tag{margin-inline-end:4px}
 .chat-foot{border-top:1px solid var(--line);background:var(--surface);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
 .chat-sugg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
 .chat-sugg::-webkit-scrollbar{display:none}
@@ -1265,6 +1267,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   html{scroll-padding-block-end:calc(84px + env(safe-area-inset-bottom,0px))}   /* a focused field never ends up under the bar */
   .chatfab{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
   body #tcAcct{bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+  body.chat-open #tcAcct{display:none}   /* the chat fills the phone screen; the account button would sit on its suggestions */
   .toast,.bottip,.i18np{bottom:calc(130px + env(safe-area-inset-bottom,0px))}
 }
 @media (min-width:1200px){
@@ -16536,7 +16539,7 @@ function anaDayHtml(F,det,res,st,crisis){
 function anaQaHtml(F,q,ans,st){
   let body;
   if(st.note==='thinking')body=anaWait('Claude עונה מתוך נתוני התיק…');
-  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note">התשובה מבוססת רק על נתוני התיק שבדף${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. היא לא ייעוץ השקעות.</p></div>`;
+  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של Claude, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
   else if(ans)body=`<p>לא הצלחתי לענות על זה רק מתוך נתוני התיק. אפשר לנסח אחרת, או לפתוח את הניתוח המלא.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else if(st.note==='noai')body=`<p class="ana-err">שאלות חופשיות זמינות כש-Claude מחובר לדף. הניתוח המחושב זמין תמיד:</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else body=`<p class="ana-err">${esc(ANA_QERR[st.note]||ANA_QERR.upstream_error)}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
@@ -16557,13 +16560,15 @@ function anaScroll(id){try{const log=$('anaOut'), a=log.querySelector('[data-car
   log.scrollTo({top:Math.max(0,top-12),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}catch(e){}}
 function anaFocus(id){anaScroll(id); try{const a=$('anaOut').querySelector('[data-card="'+id+'"]'); if(a)a.focus({preventScroll:true})}catch(e){}}
 function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySelector('#anaHelloSt'); if(st){st.textContent=botStatus();return}} const nm=String((S&&S.name)||'').trim();
-  const a=document.createElement('article'); a.className='msg bot hello'; a.innerHTML=`<div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card hello-c"><p class="hl">${greetW()}${nm?', '+esc(nm):''}. אני צ׳יקו, עוזר התיק שלך.</p><p id="anaHelloSt">${esc(botStatus())}</p><p>אני מסביר את המספרים שהדף חישב מהתיק שלך, ומראה איפה בדף בודקים כל דבר. אני לא ממליץ לקנות או למכור.</p><p id="anaHelloAi"></p></div>`; box.prepend(a); anaHelloAi()}
+  const a=document.createElement('article'); a.className='msg bot hello'; a.innerHTML=`<div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card hello-c"><p class="hl">${greetW()}${nm?', '+esc(nm):''}. אני צ׳יקו, עוזר התיק שלך.</p><p id="anaHelloSt">${esc(botStatus())}</p><ul class="hello-l"><li><b>על מה אני עונה:</b> מה הזיז את התיק, איפה הוא מרוכז, אם הוא עומד בכללים ובתוכנית שלך, ומה כדאי לבדוק.</li><li><b>מאיפה:</b> רק מהנתונים שבדף: האחזקות, המחירים (עם שעת העדכון), הכללים והתוכנית שלך. כל תשובה אומרת לאיזה מועד היא נכונה ומה חסר.</li><li><b>מה לא:</b> לא המלצות לקנות או למכור, לא תחזיות מחיר, ולא חדשות שאין בדף.</li></ul><p id="anaHelloAi"></p></div>`; box.prepend(a); anaHelloAi()}
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כש-Claude מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
-  if(!hasPf())L.push({k:'start',t:'איך מתחילים?'});
-  L.push({k:'analyze',t:'נתח לי את התיק'});
-  if(on)L.push({k:'day',t:'סכם לי את היום'},{k:'q',q:'מה הסיכון הכי גדול בתיק שלי?',t:'מה הסיכון הכי גדול?'},{k:'q',q:'האם התיק עומד בתוכנית שלי?',t:'האם אני עומד בתוכנית?'},{k:'q',q:'מה כדאי לבדוק לפני ההפקדה הבאה?',t:'מה לבדוק לפני ההפקדה?'});
+  if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
+  else{L.push({k:'analyze',t:'נתח לי את התיק'});
+    if(on){const plan=MTOT()>0;
+      L.push({k:'day',t:'סכם לי את היום'},{k:'q',q:'מה הסיכון הכי גדול בתיק שלי?',t:'מה הסיכון הכי גדול?'});
+      if(plan)L.push({k:'q',q:'האם התיק עומד בתוכנית שלי?',t:'האם אני עומד בתוכנית?'},{k:'q',q:'מה כדאי לבדוק לפני ההפקדה הבאה?',t:'מה לבדוק לפני ההפקדה?'})}}
   const h=L.map(x=>`<button type="button" class="sg" data-ana="${x.k}"${x.q?` data-q="${esc(x.q)}"`:''}${ANA_BUSY?' disabled':''}>${esc(x.t)}</button>`).join(''); setH(el,h)}
 function fabSync(){const f=$('chatFab'), d=$('anaBox'); if(!f||!d)return; f.hidden=!PFK||!d.hidden; if(!d.hidden){try{botTipClose()}catch(e){}}}
 function anaOpen(src,toInput){const d=$('anaBox'); if(!d)return; const was=!d.hidden;
