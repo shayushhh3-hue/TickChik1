@@ -135,7 +135,7 @@ test('the date in Israel, not in UTC', ()=>{
 });
 
 // ---- what Claude's sentences may not say ----
-const A=load(['HEW','ANA_ADVICE','ANA_SOFT','ANA_SOFT_OK','anaAdvice','ANA_MOVE','ANA_CAUSE','ANA_EVENT','anaInvented','ANA_UP','anaWrongWay','anaNumSet','anaBad','anaReject'],{});
+const A=load(['HEW','ANA_ADVICE','ANA_SOFT','ANA_SOFT_OK','anaAdvice','ANA_MOVE','ANA_CAUSE','ANA_EVENT','anaInvented','ANA_UP','anaWrongWay','ANA_FUTURE','ANA_FUTURE_OK','anaPromise','anaNumSet','anaBad','anaReject'],{});
 const FACTS=JSON.stringify({usd_ils:'3.055',holdings:[{sym:'NVDA',weight:'12.0%',last_day:'‎−2.10%',vs_cost:'‎+35.0%'},{sym:'KO',weight:'5.0%',last_day:'‎+1.50%'}],
   movers:['NVDA ‎−2.10% (‎−₪45)','KO ‎+1.50% (‎+₪12)'],last_trading_day:'‎−₪33 (‎−0.20%)'});
 const SET=A.anaNumSet(FACTS);
@@ -161,4 +161,50 @@ test('dates: a date from another year carries the year, so old data never reads 
   assert.equal(F.dmy(`${y-1}-10-09T12:00:00Z`),`9.10.${yy}`);
   assert.equal(F.dmyy(`${y}-03-09T12:00:00Z`),`9.3.${String(y).slice(2)}`);
   assert.equal(F.dmy(''),''); assert.equal(F.dmy('not a date'),'');
+});
+
+// "why did the portfolio move today": computed by the page, never by Claude. A made-up day: four holdings, two currencies.
+test('why it moved: contributions add up, the movers and the offset are named, the unknowns are listed', ()=>{
+  const F=load(['GROUPS','WHY_FLAT','whyMove'],{});
+  const pos=[
+    {sym:'AAA',name:'A',group:'tech',ccy:'USD',qty:10,px:90,w:30,dayPct:-10,dayIls:-10*10*3.7},   // fell from 100 to 90
+    {sym:'BBB',name:'B',group:'tech',ccy:'USD',qty:5,px:50,w:20,dayPct:-2,dayIls:5*(50-50/0.98)*3.7},   // fell 2%
+    {sym:'CCC',name:'C',group:'fin',ccy:'ILS',qty:100,px:10.5,w:25,dayPct:5,dayIls:100*0.5},
+    {sym:'DDD',name:'D',group:'il',ccy:'ILS',qty:10,px:60,w:20,dayPct:null,dayIls:0}];
+  const dayIls=pos.reduce((t,p)=>t+p.dayIls,0), inv=10*90*3.7+5*50*3.7+1050+600;
+  const m={pos,dayIls,dayPct:dayIls/(inv-dayIls)*100,hasDay:true};
+  const Q={stale:{DDD:'מחיר קודם'},usdIls:3.7,fxPrev:{rate:3.6,now:3.7,date:'2026-10-12'},usDate:'2026-10-13',ilDate:'2026-10-13',prevLabel:'סגירה 12.10'};
+  const W=F.whyMove(m,Q,{cash:[{acct:'x',amount:100,ccy:'USD'}]},{maxPos:25});
+  assert.equal(W.dir,'down'); near(W.ils,dayIls,1e-9);
+  assert.equal(W.top[0].sym,'AAA','the biggest mover first'); near(W.items.reduce((t,x)=>t+x.ils,0),dayIls,1e-9,'the parts add up to the whole');
+  assert.ok(W.top.every(x=>x.ils<0),'only holdings that moved with the portfolio carry it');
+  assert.deepEqual(W.against.map(x=>x.sym),['CCC']); assert.equal(W.excluded[0].sym,'DDD'); assert.equal(W.excluded[0].why,'מחיר קודם');
+  assert.deepEqual({down:W.breadth.down,up:W.breadth.up,n:W.breadth.n},{down:2,up:1,n:3});
+  assert.ok(W.patterns.some(p=>p.k==='one'&&p.sym==='AAA'),'one holding made most of it');
+  assert.ok(W.patterns.some(p=>p.k==='group'&&p.name==='טכנולוגיה'),'one group made most of it');
+  // the dollar: (10×100 + 5×(50/0.98) + 100 cash) × (3.7 − 3.6), at yesterday's prices
+  near(W.fx.ils,(10*100+5*50/0.98+100)*0.1,1e-6); near(W.fx.pct,(3.7/3.6-1)*100,1e-9);
+  assert.deepEqual(W.heavy.map(h=>h.sym),['AAA'],'a mover above the cap for one holding');
+  // no previous close for the dollar from the same source: unknown, not zero
+  assert.equal(F.whyMove(m,{...Q,fxPrev:null},{cash:[]},{}).fx.unknown,true);
+  // a flat day names no movers; a 40% move is flagged to check
+  const flat=F.whyMove({...m,dayPct:0.01,dayIls:0.4},Q,{cash:[]},{}); assert.equal(flat.dir,'flat'); assert.equal(flat.top.length,0);
+  assert.deepEqual(flat.patterns.map(p=>p.k),['fx'],'on a flat day only the dollar\'s own move is worth naming');
+  assert.equal(F.whyMove({...m,dayPct:0.01,dayIls:0.4},{...Q,fxPrev:null},{cash:[]},{}).patterns.length,0);
+  const odd=F.whyMove({...m,pos:[{...pos[0],dayPct:-40}]},Q,{cash:[]},{}); assert.equal(odd.odd[0].sym,'AAA');
+});
+
+test('questions the page answers by itself: buy or sell, the future, and why it moved', ()=>{
+  const F=load(['Q_WHY','Q_ADVICE','Q_FUTURE'],{});
+  for(const q of ['למה התיק ירד היום?','מדוע התיק שלי עלה?','מה הזיז את התיק היום?','למה הייתה ירידה בתיק'])assert.ok(F.Q_WHY.test(q),q);
+  for(const q of ['האם כדאי לקנות NVDA?','כדאי למכור את CAT?','תמליץ לי מה לקנות','מה לעשות, למכור?','should I sell MSFT'])assert.ok(F.Q_ADVICE.test(q),q);
+  for(const q of ['האם CAT תעלה מחר?','כמה ירוויח התיק בשנה הבאה?','מה יקרה לשוק בשבוע הבא?','תחזה לי את המחיר'])assert.ok(F.Q_FUTURE.test(q),q);
+  for(const q of ['מה הסיכון הכי גדול בתיק שלי?','האם התיק עומד בתוכנית שלי?','כמה דולרים יש לי?'])assert.ok(!F.Q_WHY.test(q)&&!F.Q_ADVICE.test(q)&&!F.Q_FUTURE.test(q),q);
+});
+
+test('Claude: no forecast said as known, no promise, no alarm, no "the rise proves it was right"', ()=>{
+  for(const x of ['המניה תעלה בשבוע הבא.','השוק ימשיך לרדת.','NVDA צפויה לעלות.','זו תשואה מובטחת.','בוודאות זה יחזור.','דחוף לבדוק את התיק עכשיו!','זו קריסה של השוק.','העלייה הוכיחה שההשקעה נכונה.','The stock will rise.'])
+    assert.equal(A.anaPromise(x),true,x);
+  for(const x of ['אי אפשר לדעת בוודאות מה יקרה.','אף אחד לא יודע אם השוק יעלה.','התיק ירד ב-1.16% היום.','NVDA עלתה 2% ביום המסחר האחרון.','התחזית בדף היא הנחה שלך, לא ידיעה.','כדאי לבדוק את הריכוז מול הכללים שלך.'])
+    assert.equal(A.anaPromise(x),false,x);
 });

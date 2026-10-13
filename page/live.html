@@ -1223,6 +1223,9 @@ section.fold > .fold-h h2{margin:0}
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
 .tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
+.whybtn{font:inherit;font-size:12.5px;font-weight:600;min-height:28px;padding:2px 10px;border-radius:999px;border:1px solid rgb(255 255 255 / .35);background:rgb(255 255 255 / .08);color:#fff;cursor:pointer;align-self:center}
+.whybtn:hover{background:rgb(255 255 255 / .16)} .whybtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.why-l{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6}
 /* nothing that matters is cut off with "…" on a phone: these wrap to a second line instead (the one-line previews of the
    alert groups stay, their full list is right under them) */
 @media (max-width:759px){.stat .v,.stat .d,.sit .nm b,.fitrow .nm b,.secp .pf .v{white-space:normal;overflow:visible;text-overflow:clip}}
@@ -1322,7 +1325,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="worth">
         <div class="k">שווי התיק</div>
         <span class="big" id="kTotal">—</span>
-        <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span></div>
+        <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
         <button class="status" id="kStatus" type="button" hidden></button>
       </div>
@@ -15443,6 +15446,7 @@ function render(){
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
+  {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
   $('kPnlD').textContent=m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:''):'אין נתוני עלות';
@@ -16241,7 +16245,16 @@ function anaWrongWay(x,set){
     const sg=H[ks[0]].signed.filter(same(p)); if(sg.length&&sg.every(v=>u?v<0:v>0))return true}
   return false;
 }
-const anaReject=(x,set)=>anaBad(x,set).length>0||anaAdvice(x)||anaInvented(x,set)||anaWrongWay(x,set);
+// the future as if known, a promise, pressure or alarm (the plan's "financial safety"): "המניה תעלה", "תשואה מובטחת", "דחוף",
+// "קריסה", "הוכיחה שההשקעה נכונה". A sentence that says it does NOT know or promise ("אי אפשר לדעת בוודאות") stays.
+const ANA_FUTURE=new RegExp(`${ANA_B}(?:יעלה|יעלו|תעלה|תרד|ירדו בהמשך|ימשיך|ימשיכו|תמשיך|יתאושש|יתאוששו|תתאושש|יחזור|יחזרו|תחזור|יזנק|תזנק|יזנקו|יקרוס|תקרוס|יקרסו|צפוי(?:ה|ים)? ל(?:עלות|רדת|זנק|התאושש))${ANA_E}`
+  +`|(?:בוודאות|בטוח ש|ודאי ש|מובטח|מובטחת|אין סיכוי ש|חייב(?:ת|ים)? לעלות|לא יכול(?:ה)? לרדת)`
+  +`|(?:דחוף|בדחיפות|פאניקה|קטסטרופ|קריסה|לפני שיהיה מאוחר|הזדמנות של פעם|אסון)`
+  +`|(?:הוכיח|הוכיחה|הוכיחו|מוכיח|מוכיחה)[^.]{0,25}(?:נכונ|צדק|טוב)`
+  +`|\\b(?:will (?:rise|fall|go up|go down|recover)|guaranteed|for sure)\\b`,'i');
+const ANA_FUTURE_OK=/(לא|אין|אי אפשר|אף אחד לא|איני|אינו|אינה)\s+(?:\S+\s+){0,3}(?:לדעת|יודע|יודעת|בוודאות|מובטח|מובטחת|לחזות|צפוי)/;
+const anaPromise=x=>ANA_FUTURE.test(x)&&!ANA_FUTURE_OK.test(x);
+const anaReject=(x,set)=>anaBad(x,set).length>0||anaAdvice(x)||anaInvented(x,set)||anaWrongWay(x,set)||anaPromise(x);
 // ---- ana:end ----
 function alertNav(a){const cat=a[1], it=(a[3]||[]).filter(Boolean);
   if((cat==='ירידה'||cat==='דוחות'||cat==='דירוג')&&it.length===1&&SECKEY.test(it[0]))return {t:'sec:'+it[0],l:'לדף של '+it[0]};
@@ -16291,6 +16304,49 @@ function alertDigest(){
 window.__model.alerts=alertDigest;
 
 // ---- the facts: computed here, the same way the rest of the page computes them ----
+// ---- why:start ----
+// "למה התיק זז היום?" is answered here, in code, not by a language model: the change of every holding from its previous
+// close, in shekels at today's dollar rate; which holdings and groups carried it; how wide it was; the dollar's own move
+// when its previous close is known; and what is not included. Nothing here names an outside cause (news, rates, reports):
+// the page has no such source, so the explanation says so instead of guessing.
+const WHY_FLAT=0.05;
+function whyMove(m,Q,P,R){
+  const st=Q.stale||{}, with_=m.pos.filter(p=>p.dayPct!=null), tot=m.dayIls, dir=m.dayPct==null||Math.abs(m.dayPct)<WHY_FLAT?'flat':tot<0?'down':'up';
+  const out={has:with_.length>0,ils:tot,pct:m.dayPct,dir,n:m.pos.length,counted:with_.length};
+  out.items=with_.map(p=>({sym:p.sym,name:p.name,group:p.group,ils:p.dayIls,pct:p.dayPct,w:p.w,share:tot?p.dayIls/tot:0})).sort((a,b)=>Math.abs(b.ils)-Math.abs(a.ils));
+  // who carried it: holdings that moved with the portfolio, largest first, until they make up 80% of the change (at most 4)
+  const same=out.items.filter(x=>dir==='flat'?false:Math.sign(x.ils)===Math.sign(tot)); out.top=[]; let acc=0;
+  for(const x of same){if(out.top.length>=4||(acc>=0.8&&out.top.length))break; out.top.push(x); acc+=x.share}
+  out.against=dir==='flat'?[]:out.items.filter(x=>Math.sign(x.ils)===-Math.sign(tot)&&Math.abs(x.ils)>=0.5);
+  out.againstIls=out.against.reduce((t,x)=>t+x.ils,0);
+  const g={}; for(const x of out.items){(g[x.group]=g[x.group]||{id:x.group,name:GROUPS[x.group]||x.group,ils:0,n:0}).ils+=x.ils; g[x.group].n++}
+  out.groups=Object.values(g).map(x=>({...x,share:tot?x.ils/tot:0})).sort((a,b)=>Math.abs(b.ils)-Math.abs(a.ils));
+  out.breadth={down:with_.filter(p=>p.dayPct<=-WHY_FLAT).length,up:with_.filter(p=>p.dayPct>=WHY_FLAT).length,n:with_.length};
+  out.breadth.flat=out.breadth.n-out.breadth.down-out.breadth.up;
+  out.excluded=m.pos.filter(p=>p.dayPct==null).map(p=>({sym:p.sym,why:st[p.sym]||'אין מחיר סגירה קודם'}));
+  out.oldPx=with_.filter(p=>st[p.sym]).map(p=>({sym:p.sym,why:st[p.sym]}));
+  out.odd=with_.filter(p=>Math.abs(p.dayPct)>=25).map(p=>({sym:p.sym,pct:p.dayPct}));   // a change this big may be a split or a bad price
+  // the dollar: its effect on the dollar part at yesterday's prices (the change above is at today's rate, so this is extra)
+  const fp=Q.fxPrev, fx=Q.usdIls, usdP=m.pos.filter(p=>p.ccy==='USD');
+  if(fp&&fp.rate>0&&fx>0&&Math.abs((fp.now||0)-fx)<1e-6){
+    const base=usdP.reduce((t,p)=>t+p.qty*(p.dayPct!=null?p.px/(1+p.dayPct/100):p.px),0)+(P.cash||[]).filter(c=>c.ccy==='USD').reduce((t,c)=>t+(+c.amount||0),0);
+    out.fx={from:fp.rate,to:fx,pct:(fx/fp.rate-1)*100,ils:base*(fx-fp.rate),date:fp.date||null}}
+  else out.fx=usdP.length?{unknown:true}:null;
+  out.days={us:Q.usDate||'',il:Q.ilDate||'',prev:Q.prevLabel||''};
+  // what the data itself shows about the move (each line is a fact from the numbers above, not a cause)
+  const pt=[], pc=x=>Math.round(Math.abs(x)*100);
+  if(dir!=='flat'&&out.top[0]&&out.top[0].share>=0.5)pt.push({k:'one',sym:out.top[0].sym,share:pc(out.top[0].share)});
+  const g0=out.groups[0]; if(dir!=='flat'&&g0&&g0.n>=2&&g0.share>=0.6)pt.push({k:'group',name:g0.name,share:pc(g0.share),n:g0.n});
+  const k=dir==='down'?out.breadth.down:out.breadth.up; if(dir!=='flat'&&out.breadth.n>=5&&k/out.breadth.n>=0.7)pt.push({k:'broad',k2:k,n:out.breadth.n});
+  if(out.against.length&&Math.abs(out.againstIls)>=Math.abs(tot)*0.2)pt.push({k:'offset',n:out.against.length,ils:out.againstIls});
+  if(out.fx&&!out.fx.unknown&&Math.abs(out.fx.ils)>=Math.max(1,Math.abs(tot)*0.2))pt.push({k:'fx',pct:out.fx.pct,ils:out.fx.ils});
+  out.patterns=pt;
+  // how the portfolio's own make-up shapes it: a mover above the cap the user set for one holding
+  out.heavy=R&&+R.maxPos>0?out.top.filter(x=>x.w>R.maxPos).map(x=>({sym:x.sym,w:x.w,cap:+R.maxPos})):[];
+  return out;
+}
+// ---- why:end ----
+window.__model.why=()=>{const W=whyMove(mAllNow(),Q,P,S.rules||{}); return {total:W.ils,parts:W.items.reduce((t,x)=>t+x.ils,0),W}};
 function anaFacts(){
   if(!P||!Q||!Q.prices||!Q.usdIls)return {empty:'loading'};
   if(!((P.positions||[]).length||(P.cash||[]).length))return {empty:'nopf'};
@@ -16429,6 +16485,12 @@ function anaFactsAI(F,issues,checks){
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
     from_peak:(()=>{try{const cr=crisisInfo(m);return cr&&cr.peak?`${spct(-cr.peak.pct)} מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))})`:null}catch(e){return null}})(),
     movers:m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).slice(0,6).map(p=>`${lab(p.sym)} ${spct(p.dayPct,2)} (${sgn(p.dayIls)})`),
+    // the day's move as the page computed it (whyMove): who carried it, by group, the offset, the dollar; the cause is not known
+    day_breakdown:(()=>{try{const W=whyMove(m,Q,P,R); if(!W.has||W.dir==='flat')return null;
+      return {carried_by:W.top.map(x=>`${lab(x.sym)} ${sgn(x.ils)} (${Math.round(Math.abs(x.share)*100)}% מהשינוי)`),by_group:W.groups.slice(0,3).map(g=>`${g.name} ${sgn(g.ils)}`),
+        offset:W.against.length?`${W.against.length} ניירות בכיוון ההפוך, ${sgn(W.againstIls)}`:null,
+        usd_rate:W.fx&&!W.fx.unknown?`${W.fx.from.toFixed(3)} ← ${W.fx.to.toFixed(3)}: ${sgn(W.fx.ils)} על החלק הדולרי, לא כלול בשינוי היומי`:'השפעת השער על היום לא ידועה',
+        cause_of_price_moves:'לא ידוע לדף: אין מקור חדשות'}}catch(e){return null}})(),
     vs_cost:m.cost?`${sgn(m.pnl)} (${spct(m.pnlPct)}), מחושב ל-${m.pos.length-m.missingCost} מתוך ${m.pos.length} ניירות`:null,
     vs_deposits:F.vd?`${sgn(F.vd.diff)} (${spct(F.vd.pct)}) מול ${ils(F.vd.dep)} שהופקדו`:null,
     top3:`${F.top3.map(p=>lab(p.sym)+' '+pct(p.w)).join(', ')}; יחד ${pct(F.top3w)}`,
@@ -16555,6 +16617,51 @@ function anaQaHtml(F,q,ans,st){
   else body=`<p class="ana-err">${esc(ANA_QERR[st.note]||ANA_QERR.upstream_error)}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
   return body;
 }
+// the "why" card: six short parts, each only when it has something to say (the plan's answer shape)
+const WHY_PT={one:x=>`נייר אחד, ${lab(x.sym)}, אחראי ל-${x.share}% מהשינוי.`,group:x=>`${x.share}% מהשינוי באו מקבוצת ${x.name} (${x.n} ניירות).`,
+  broad:x=>`התנועה רחבה: ${x.k2} מתוך ${x.n} ניירות זזו באותו כיוון, ולא רק נייר אחד.`,offset:x=>`${x.n} ${x.n===1?'נייר זז':'ניירות זזו'} בכיוון ההפוך וקיזזו ${sgn(x.ils)}.`,
+  fx:x=>`גם שער הדולר זז (${spct(x.pct,2)}), ובשקלים זה עוד ${sgn(x.ils)} על החלק הדולרי.`};
+function anaWhyHtml(F,W){
+  const dw=dayWord(), up=W.ils>=0, ch=`<span class="n ${up?'up':'down'}">${sgn(W.ils)} (${spct(W.pct,2)})</span>`;
+  const title=W.dir==='down'?'למה התיק ירד':W.dir==='up'?'למה התיק עלה':'מה קרה בתיק';
+  const head=anaHead(`${title} ${dw.startsWith('היום')?'היום':'ביום המסחר האחרון'}?`,anaWhen(F),anaTag(F));
+  if(!W.has)return head+`<p>אין עדיין שינוי יומי לניירות בתיק: חסרים מחירי הסגירה הקודמים שלהם. אחרי עדכון המחירים הבא אפשר לשאול שוב.</p>`;
+  const sym=x=>`<b class="sym">${esc(lab(x.sym))}</b>`, money=v=>`<span class="n ${v>=0?'up':'down'}">${sgn(v)}</span>`;
+  const s1=`<p>${esc(dw)} התיק ${W.dir==='flat'?'כמעט לא זז':W.dir==='down'?'ירד':'עלה'}: ${ch}.${F.live?'':' '+tx(F.priceNote)}</p><p class="note">השינוי מחושב מהמחיר של כל נייר מול מחיר הסגירה הקודם שלו${W.days.prev?' ('+esc(W.days.prev)+')':''}, בכמויות שבתיק עכשיו, בשקלים לפי השער הנוכחי. קניות, מכירות והפקדות לא נכללות בו. ${termBtn('contrib')}</p>`;
+  const list=(W.top.length?W.top:W.items.slice(0,3));
+  const s2=`<ul class="why-l">${list.map(x=>`<li>${sym(x)} ${money(x.ils)} <span class="nm">${tx(spct(x.pct,2))} במחיר${W.dir!=='flat'?' · '+Math.round(Math.abs(x.share)*100)+'% מהשינוי':''}</span></li>`).join('')}</ul>`
+    +(W.against.length?`<p>בכיוון ההפוך: ${W.against.slice(0,3).map(x=>sym(x)+' '+money(x.ils)).join(', ')}${W.against.length>3?` ועוד ${W.against.length-3}`:''}.</p>`:'')
+    +`<p>${W.breadth.down} ${W.breadth.down===1?'נייר ירד':'ניירות ירדו'}, ${W.breadth.up} עלו${W.breadth.flat?` ו-${W.breadth.flat} כמעט לא זזו`:''}, מתוך ${W.breadth.n} שיש להם מחיר סגירה קודם.</p>`
+    +(W.groups.length>1?`<p>לפי קבוצות: ${W.groups.slice(0,3).map(g=>`${esc(g.name)} ${money(g.ils)}`).join(' · ')}.</p>`:'');
+  const s3=(W.patterns.length?`<ul class="why-l">${W.patterns.map(x=>`<li><span class="tag mkt">מהנתונים</span> ${tx(WHY_PT[x.k](x))}</li>`).join('')}</ul>`:'')
+    +`<p class="note">למה המחירים עצמם זזו (חדשות, דוחות, ריבית): לדף אין מקור כזה, ולכן הוא לא קובע סיבה. גם כתבה מאותו יום לא מוכיחה לבדה שהיא הסיבה.</p>`;
+  const s4=[...W.heavy.map(h=>`<li>${sym(h)} הוא ${tx(pct(h.w))} מהתיק, מעל התקרה שקבעת לנייר בודד (${tx(pct(h.cap,0))}), ולכן תנועה שלו מורגשת בתיק יותר.</li>`),
+    W.fx&&!W.fx.unknown?`<li>שער הדולר: ${tx(W.fx.from.toFixed(3))} ← ${tx(W.fx.to.toFixed(3))}${W.fx.date?' (מול '+dmy(W.fx.date)+')':''}. על החלק הדולרי זה ${money(W.fx.ils)}, שלא נכלל בשינוי למעלה.</li>`:'',
+    `<li>השינוי הוא ${tx(pct(Math.abs(W.pct||0),2))} משווי הניירות בתיק.</li>`].filter(Boolean);
+  const unk=['הסיבה לתנועת המחירים: לדף אין מקור חדשות או דוחות של היום.'];
+  if(W.excluded.length)unk.push(`לא נכללו, כי אין להם שינוי יומי: ${W.excluded.map(x=>lab(x.sym)+' ('+x.why+')').join(', ')}.`);
+  if(W.oldPx.length)unk.push(`נכללו עם מחיר שאינו מהיום: ${W.oldPx.map(x=>lab(x.sym)+' ('+x.why+')').join(', ')}.`);
+  if(W.fx&&W.fx.unknown)unk.push('השפעת שער הדולר על היום: אין שער סגירה קודם מאותו מקור, ולכן השינוי מחושב רק לפי השער הנוכחי.');
+  if(W.days.us&&W.days.il&&W.days.us!==W.days.il)unk.push(`הבורסות לא באותו יום מסחר: ארה״ב ${dmy(W.days.us)}, תל אביב ${dmy(W.days.il)}.`);
+  if(W.odd.length)unk.push(`שינוי חריג שכדאי לאמת: ${W.odd.map(x=>lab(x.sym)+' '+spct(x.pct,1)).join(', ')}. ייתכן פיצול מניה או מחיר שגוי.`);
+  const nx=[...W.top.slice(0,2).map(x=>({t:'sec:'+x.sym,l:'לדף של '+lab(x.sym)})),...(W.heavy.length?[{t:'risk',l:ANAV.risk}]:[]),{t:'history',l:'למבט לאחור'}];
+  return head+anaSec(1,'מה קרה?',s1)+anaSec(2,'מה הנתונים מראים?',s2)+anaSec(3,'מה עשוי להסביר את השינוי?',s3)+anaSec(4,'איך התיק מושפע?',`<ul class="why-l">${s4.join('')}</ul>`)
+    +anaSec(5,'מה עדיין לא ידוע?',`<ul class="why-l">${unk.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`)
+    +anaSec(6,'מה אפשר לבדוק בהמשך?',`<div class="ana-navs">${nx.map(n=>anaNavBtn(n)).join('')}</div>`)
+    +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של Claude. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p></footer>`;
+}
+// questions the page answers by itself, before (and instead of) asking Claude: a request for a buy or sell decision, a
+// request to know the future, and "why did it move" (computed above)
+const Q_WHY=/(למה|מדוע|מה הסיבה|איך זה ש).{0,30}(ירד|עלה|זז|השתנ|נפל|קפץ|ירידה|עלייה)|מה (הזיז|גרם ל|קרה ל).{0,12}תיק|^(why|what moved)/i;
+const Q_ADVICE=/(כדאי|שווה|האם (ל|כדאי)|צריך|מה לעשות|תמליץ|ממליץ|המלצה|תגיד לי (אם|מה)).{0,40}(לקנות|למכור|להחזיק|לממש|להיכנס|לצאת|קנייה|מכירה)|^(לקנות|למכור)\b|(should i (buy|sell))/i;
+const Q_FUTURE=/(תעלה|יעלה|תרד|ירד מחר|ירד בשבוע|ירד בחודש|יגיע ל|תגיע ל|מה יקרה|תחזית בטוחה|בוודאות|לחזות|תחזה|כמה (ת|י)רוויח|יקפוץ|תקפוץ|will (it|the) )/i;
+function anaLimitHtml(kind){
+  const advice=kind==='advice';
+  return anaHead(advice?'על החלטה לקנות או למכור':'על מה שיקרה בשוק')+`<p>${advice?'אני לא ממליץ לקנות, למכור או להחזיק נייר. הדף מסביר את המספרים של התיק שלך, והחלטה כזו היא שלך.':'אני לא יודע מה יקרה במחירים, ואף אחד לא יודע את זה בוודאות. לא אחזה מחיר או תשואה.'}</p>
+    <p><b>מה כן אפשר לבדוק:</b></p><ul class="why-l">${advice?'<li>האם הנייר או הקבוצה שלו מעל הכללים שקבעת (ריכוז, ירידה מהעלות).</li><li>איזה חלק מהתיק הוא, וכמה הוא הזיז את התיק לאחרונה.</li><li>האם הוא מתאים לתוכנית ולמדיניות שכתבת.</li>':'<li>מה קרה עד עכשיו: השינוי היומי ומבט לאחור.</li><li>תרחישים בתחזית, לפי הנחה שאתה קובע (לא נבואה).</li><li>כמה התיק תלוי בנייר, בתחום או בדולר.</li>'}</ul>
+    <div class="ana-navs">${advice?anaNavBtn({t:'risk',l:ANAV.risk})+anaNavBtn({t:'settings',l:ANAV.settings}):anaNavBtn({t:'forecast',l:ANAV.forecast})+anaNavBtn({t:'history',l:'למבט לאחור'})}</div>
+    <p class="note">${advice?'להחלטה שמתאימה לך אישית אפשר לפנות ליועץ השקעות בעל רישיון.':'התחזית בדף היא חישוב לפי תשואה שאתה מניח, לא ידיעה.'}</p>`;
+}
 // ---- the conversation: messages in order, newest at the bottom ----
 let ANA_RET=null, ANA_LASTX=null;
 const anaPhone=()=>matchMedia('(max-width:759px)').matches, anaDock=()=>matchMedia('(min-width:1100px)').matches;
@@ -16576,6 +16683,7 @@ function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAM
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
   else{L.push({k:'analyze',t:'נתח לי את התיק'});
+    try{const m=mAllNow(); if(m&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)L.push({k:'why',t:m.dayIls<0?'למה התיק ירד היום?':'למה התיק עלה היום?'})}catch(e){}
     if(on){const plan=MTOT()>0;
       L.push({k:'day',t:'סכם לי את היום'},{k:'q',q:'מה הסיכון הכי גדול בתיק שלי?',t:'מה הסיכון הכי גדול?'});
       if(plan)L.push({k:'q',q:'האם התיק עומד בתוכנית שלי?',t:'האם אני עומד בתוכנית?'},{k:'q',q:'מה כדאי לבדוק לפני ההפקדה הבאה?',t:'מה לבדוק לפני ההפקדה?'})}}
@@ -16773,12 +16881,17 @@ async function anaRun(kind,q,o){
   let qq='';
   if(kind==='q'){qq=String(q||'').replace(/\s+/g,' ').trim().slice(0,300); if(!qq)return;
     if(qq.length<40&&/נתח|ניתוח|analy/i.test(qq))return anaRun('analyze',null,{...o,said:qq});
-    if(qq.length<40&&/^(סכם|סיכום)/.test(qq))return anaRun('day',null,{...o,said:qq})}
+    if(qq.length<40&&/^(סכם|סיכום)/.test(qq))return anaRun('day',null,{...o,said:qq});
+    if(Q_ADVICE.test(qq))return anaRun('advice',null,{...o,said:qq});
+    if(Q_FUTURE.test(qq))return anaRun('future',null,{...o,said:qq});
+    if(Q_WHY.test(qq))return anaRun('why',null,{...o,said:qq})}
+  if(kind==='advice'||kind==='future'){anaOpen(o.src); anaUser(o.said||'',!o.said); const sid='c'+(++ANA_SEQ); anaCard(sid,anaLimitHtml(kind)); if(o.fromInput)anaScroll(sid); else anaFocus(sid); anaLive('התשובה מוכנה'); return}
   anaOpen(o.src);
-  if(o.first)anaSys('התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':qq),!o.said&&!o.fromInput);
+  if(o.first)anaSys('התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':kind==='why'?'למה התיק זז היום?':qq),!o.said&&!o.fromInput);
   const F=anaFacts(), id='c'+(++ANA_SEQ), shown=()=>{if(o.fromInput)anaScroll(id); else anaFocus(id)};
   anaLive('צ׳יקו עונה…');
   if(F.empty){anaCard(id,anaHead(F.empty==='nopf'?'אין עדיין תיק לנתח':'הנתונים עוד נטענים')+`<p>${F.empty==='nopf'?'כדי לנתח את התיק צריך קודם להוסיף אותו: צילום מסך, קובץ, או הקלדה של כמה שורות.':'המחירים ונתוני התיק עוד נטענים. נסה שוב בעוד רגע.'}</p>${F.empty==='nopf'?`<div class="ana-navs">${anaNavBtn({t:'mine',l:'להוספת תיק'})}</div>`:''}`); shown(); anaLive('התשובה מוכנה'); return}
+  if(kind==='why'){anaCard(id,anaWhyHtml(F,whyMove(F.m,Q,P,F.R))); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
   const issues=anaIssues(F), first=!!o.first, ai=!!SAMPLE&&!SAMPLE_OFF&&!first;
   if(kind==='analyze'){
     const det={bottom:anaBottom(F,issues),strengths:anaStrengths(F),plan:anaPlan(F),actions:anaActions(F,issues)}, st={ai:null,note:ai?'thinking':first?'first':'noai'};
@@ -16808,7 +16921,7 @@ async function anaRun(kind,q,o){
   if(ans.text){ANA_TURNS.push({q:qq,a:ans.text}); ANA_TURNS=ANA_TURNS.slice(-4)}
 }
 try{
-  document.addEventListener('click',e=>{const b=e.target.closest('#anaBox [data-ana], #anaEntry [data-ana], #crisisBox [data-ana]'); if(!b)return; const k=b.dataset.ana;
+  document.addEventListener('click',e=>{const b=e.target.closest('#anaBox [data-ana], #anaEntry [data-ana], #crisisBox [data-ana], .hero [data-ana]'); if(!b)return; const k=b.dataset.ana;
     if(k==='stop'){try{ANA_CTL&&ANA_CTL.abort()}catch(x){}return}
     if(k==='sec'){if(!ANA_BUSY)anaExplain(b.dataset.sym,{src:b});return}
     if(k==='hide'){anaClose();return}
@@ -18819,6 +18932,10 @@ const TERMS={
   beta:['ביטא','כמה המניה נוטה לזוז ביחס לשוק. 1 זה כמו השוק, מעל 1 תנודתית יותר, מתחת ל-1 רגועה יותר.'],
   stop:['סף בדיקה לירידה','מאיזו ירידה ממחיר הקנייה הדף מסמן נייר לבדיקה. זו לא פקודת מכירה.'],
   hold:['תקופת החזקה מינימלית','כלל שקבעת לעצמך כדי לא למכור מהר מדי. הדף מסמן מכירות שבוצעו לפניה.'],
+  contrib:['תרומה לשינוי','כמה שקלים כל נייר הוסיף לשינוי של התיק או הוריד ממנו. נייר גדול שזז מעט יכול לתרום יותר מנייר קטן שזז הרבה.'],
+  expo:['חשיפה','כמה מהתיק תלוי בנכס, בתחום או בגורם מסוים. חשיפה של 40% לטכנולוגיה אומרת שכשהתחום זז, 40% מהתיק זזים איתו.'],
+  conc:['ריכוזיות','חלק גדול מהתיק נמצא בכמה ניירות או בתחום אחד. תיק מרוכז זז חזק יותר כשהם זזים, לטוב ולרע.'],
+  bench:['מדד השוואה','מדד שמשווים אליו את התיק, למשל ת״א 125 או S&P 500. ההשוואה הוגנת רק כשהמדד דומה לתיק: אותו שוק, אותו מטבע ואותה תקופה.'],
   fit:['דירוג התאמה','כמה נייר מתאים לתיק שלך לפי הכללים, היעדים וסוג המשקיע שבחרת: פיזור, איכות, תמחור ועוד. זה דירוג התאמה, לא המלצה לקנות.']};
 const TERM_AT=[['#hCore','core'],['label[for=inRate]','rate'],['label[for=inTax]','tax'],['label[for=rDrift]','drift'],['label[for=rUsd]','usd'],['label[for=rStop]','stop'],['label[for=rHold]','hold'],['#hAlloc','alloc'],['#hWatch','fit']];
 function termBtn(k){const t=TERMS[k]; return `<button type="button" class="term" data-term="${k}" aria-label="מה זה ${esc(t[0])}?" aria-expanded="false">?</button>`}

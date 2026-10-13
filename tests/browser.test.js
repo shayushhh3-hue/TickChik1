@@ -12,6 +12,7 @@ const R=new URL('..',import.meta.url).pathname;
 let claude, seen=[], srv, U, store, browser, docs;
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const p=JSON.stringify(JSON.parse(b).messages||[]); seen.push(p);
+    if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
     const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']}):'{"answer":""}';
     res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1}}))});
   await new Promise(r=>claude.listen(0,'127.0.0.1',r));
@@ -21,6 +22,9 @@ before(async()=>{
   buildSite(R); store=new Store(':memory:'); bootstrap(store); docs=fixture();
   for(const [p,d] of Object.entries(docs))store.setDoc(p,d,{silent:true}); store.setDoc('quotes/c_NVDA',closes(),{silent:true});
   store.addUser({email:'new@example.com',password:'friend-pass-1',role:'friend'});
+  // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
+  const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
+  store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
   const app=createApp({store,siteDir:R+'site',jobs:false}); srv=await new Promise(r=>{const s=app.listen(0,'127.0.0.1',()=>r(s))}); U='http://127.0.0.1:'+srv.address().port+'/';
   try{browser=await (await import('playwright')).chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage']})}catch(e){browser=null}
 });
@@ -32,7 +36,7 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
   await pg.waitForFunction(who==='new'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
@@ -120,7 +124,7 @@ test('the chat: what it answers from; an answer is marked as interpretation, wit
   const h=await pg.evaluate(()=>({hello:document.querySelector('#anaOut .hello-l')?.textContent||'',sugg:[...document.querySelectorAll('#anaSugg .sg')].map(x=>x.textContent),acct:getComputedStyle(document.getElementById('tcAcct')).display}));
   assert.match(h.hello,/על מה אני עונה/); assert.match(h.hello,/לא המלצות/); assert.ok(h.sugg.includes('האם אני עומד בתוכנית?'),'there is a monthly plan');
   assert.equal(h.acct,'none','the account button steps aside while the chat fills the phone');
-  await pg.fill('#anaQ','למה התיק זז היום?'); await pg.click('#anaForm .chat-send');
+  await pg.fill('#anaQ','מה הסיכון הכי גדול בתיק שלי?'); await pg.click('#anaForm .chat-send');   // ("why did it move" is answered by the page itself)
   await pg.waitForFunction(()=>!!document.querySelector('#anaOut .ana-basis'),null,{timeout:15000});
   const b=await pg.evaluate(()=>document.querySelector('#anaOut .ana-basis').textContent);
   assert.match(b,/פרשנות/); assert.match(b,/נכון ל-/); assert.match(b,/נבדקו מול הנתונים/); assert.match(b,/לא ייעוץ/);
@@ -185,4 +189,42 @@ test('hard cases: a large portfolio, prices from yesterday, a broken server answ
     await pg.waitForFunction(()=>/₪/.test(document.getElementById('kTotal').textContent)&&document.getElementById('loadErr').hidden,null,{timeout:20000});
     await ctx.close();
   }
+});
+
+test('why it moved: computed by the page in six parts, the parts add up, nothing is sent to Claude',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); const n0=seen.length;
+  await pg.click('#kWhy'); await pg.waitForFunction(()=>[...document.querySelectorAll('#anaOut .ana-sec h4')].some(h=>/מה עדיין לא ידוע/.test(h.textContent)),null,{timeout:10000});
+  const c=await pg.evaluate(()=>{const card=[...document.querySelectorAll('#anaOut .msg.bot')].pop(); return {h:[...card.querySelectorAll('.ana-sec h4')].map(h=>h.textContent.replace(/^\d+\.\s*/,'')),txt:card.textContent,
+    hero:document.getElementById('kDay').textContent, sums:window.__model&&window.__model.why?window.__model.why():null}});
+  assert.deepEqual(c.h,['מה קרה?','מה הנתונים מראים?','מה עשוי להסביר את השינוי?','איך התיק מושפע?','מה עדיין לא ידוע?','מה אפשר לבדוק בהמשך?']);
+  assert.match(c.txt,/לדף אין מקור כזה/,'no outside cause is named'); assert.match(c.txt,/השפעת שער הדולר על היום/,'the dollar\'s day is unknown in the fixture, and it says so');
+  assert.match(c.txt,/נכללו עם מחיר שאינו מהיום: TA125/,'old prices are named'); assert.match(c.txt,/לא המלצה/);
+  assert.ok(c.sums&&Math.abs(c.sums.parts-c.sums.total)<0.01,'the holdings\' parts add up to the day\'s change: '+JSON.stringify(c.sums));
+  assert.equal(seen.length,n0,'Claude is not asked'); assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('the chat answers by itself when asked to decide or to know the future, and says when Claude fails',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.click('#chatFab'); await pg.waitForTimeout(300);
+  const ask=async q=>{const n=await pg.evaluate(()=>document.querySelectorAll('#anaOut .msg.bot').length); await pg.fill('#anaQ',q); await pg.click('#anaForm .chat-send');
+    await pg.waitForFunction(n=>document.querySelectorAll('#anaOut .msg.bot').length>n&&!document.querySelector('#anaOut .ana-wait'),n,{timeout:15000}); await pg.waitForTimeout(200);
+    return pg.evaluate(()=>[...document.querySelectorAll('#anaOut .msg.bot')].pop().textContent)};
+  const n0=seen.length;
+  assert.match(await ask('האם כדאי לקנות NVDA?'),/לא ממליץ לקנות, למכור או להחזיק/);
+  assert.match(await ask('האם CAT תעלה מחר?'),/לא יודע מה יקרה/);
+  assert.match(await ask('למה התיק ירד היום?'),/מה עדיין לא ידוע/);
+  assert.equal(seen.length,n0,'none of these went to Claude');
+  assert.match(await ask('FAILTEST מה מצב התיק?'),/עמוס|נסה שוב|לא התקבלה|Claude/,'a failure of the AI is said plainly');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('a partner\'s question carries only their own portfolio to Claude',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'p2'}); await pg.click('#chatFab'); await pg.waitForTimeout(300); const n0=seen.length;
+  await pg.fill('#anaQ','מה יש לבעלים של האתר בתיק?'); await pg.click('#anaForm .chat-send');
+  await pg.waitForFunction(n0=>true,n0); await pg.waitForTimeout(2500);
+  const sent=seen.slice(n0).join(' ');
+  assert.ok(sent.includes('KO'),'their own holding is there'); for(const s of ['RKLB','NVDA','CAT','owner@example.com'])assert.ok(!sent.includes(s),s+' must not be sent');
+  await ctx.close();
 });

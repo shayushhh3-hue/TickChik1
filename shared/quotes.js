@@ -111,6 +111,9 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
     if(prices[sym]!=null)stale[sym]='מחיר קודם'; else if(posOf[sym]&&+posOf[sym].px>0){prices[sym]=+posOf[sym].px;stale[sym]='מחיר מהדוח'}
   }
   const fx=fetched.fx||{}; const usdIls=fx.live&&fx.live.px>0?round(fx.live.px,4):fx.boi?round(fx.boi.rate,4):old.usdIls;
+  // the dollar's previous close, from the same Yahoo answer: with it the page can say how much of a day's change came from the
+  // rate. Only when this run's rate is that same market rate; otherwise unknown (null), never a guess
+  const fxPrev=fx.live&&fx.live.px>0&&fx.live.prev>0?{rate:round(fx.live.prev,4),date:fx.live.prevDate||null,now:round(fx.live.px,4)}:null;
   const fxLabel=fx.boi?`יציג בנק ישראל ${dm(fx.boi.date)}${fx.live&&fx.live.px>0?' · שער שוק '+round(fx.live.px,3):''}`:fx.live?'שער שוק':(old.fxLabel||'');
   // a price we hold but did not refresh this time (past the symbol cap, or nobody holds it now) is marked as old
   for(const sym of Object.keys(prices))if(!symbols.includes(sym)&&!stale[sym]){const d=(meta[sym]||{}).date; stale[sym]=d?'סגירה '+dm(d):'מחיר קודם'}
@@ -120,7 +123,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const failed=symbols.length>0&&got===0;
   const priceLabel=failed?'המחירים האחרונים שהתקבלו':usLive?'מסחר חי, עיכוב של עד 15 דקות':ilLive?`מסחר חי בתל אביב${usDate?' · ארה״ב: סגירה '+dm(usDate):''}`:usDate?`סגירה ${dm(usDate)}`:(old.priceLabel||'');
   const usD=usDate||old.usDate||'', ilD=ilDate||old.ilDate||'';
-  return {prices,prev:prevC,stale,meta,usdIls,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
+  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
     source:'Yahoo Finance, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,

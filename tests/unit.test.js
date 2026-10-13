@@ -457,3 +457,10 @@ test('prices for every US security: a change the mirror does not give is unknown
   assert.deepEqual(us.AAA,[10,1.5]); assert.deepEqual(us.DDD,[3,-2.25]);
   assert.deepEqual(us.BBB,[5,null],'"NA" is not a change of 0%'); assert.deepEqual(us.CCC,[7.25,null],'an empty field is not a change of 0%');
 });
+test('prices: the dollar\'s previous close is kept only when this run\'s rate is the market rate',()=>{
+  const q={px:510,prev:500,closeDate:'2026-10-12',ccy:'USD',src:'yahoo',time:'t'};
+  let d=buildQuotesDoc({prev:{},fetched:{quotes:{MSFT:q},index:{},errors:[],fx:{live:{px:3.7123,prev:3.6801,prevDate:'2026-10-09'},boi:{rate:3.70,date:'2026-10-12'}}},symbols:['MSFT'],now:new Date('2026-10-12T15:00:00Z'),usOpen:true});
+  assert.equal(d.usdIls,3.7123); assert.deepEqual(d.fxPrev,{rate:3.6801,date:'2026-10-09',now:3.7123});
+  d=buildQuotesDoc({prev:{usdIls:3.7},fetched:{quotes:{MSFT:q},index:{},errors:[],fx:{boi:{rate:3.70,date:'2026-10-12'}}},symbols:['MSFT'],now:new Date('2026-10-12T15:00:00Z'),usOpen:true});
+  assert.equal(d.fxPrev,null,'the Bank of Israel rate has no previous close in the same answer: unknown');
+});
