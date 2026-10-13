@@ -403,3 +403,49 @@ test('jobs: one that hangs does not hold the queue; a job already waiting is not
     await new Promise(r=>setTimeout(r,400)); assert.deepEqual(ran,['b']); assert.ok(lines.some(l=>/slow still running/.test(l)))}
   finally{J.stop()}
 });
+
+// ---- analysts' data from Yahoo Finance ----
+const yq=(o)=>({quoteSummary:{result:[o],error:null}});
+const YSUM={
+  NVDA:yq({financialData:{grossMargins:{raw:0.75},operatingMargins:{raw:0.6},profitMargins:{raw:0.55},freeCashflow:{raw:50},totalRevenue:{raw:200},returnOnEquity:{raw:1.1},debtToEquity:{raw:12.5},currentRatio:{raw:4.2},
+    recommendationMean:{raw:1.4},recommendationKey:'strong_buy',numberOfAnalystOpinions:{raw:58},targetMeanPrice:{raw:225.4},revenueGrowth:{raw:0.62},earningsGrowth:{raw:0.7},currentPrice:{raw:180.1}},
+    summaryDetail:{trailingPE:{raw:51.2},forwardPE:{raw:31.5},dividendYield:{raw:0.0002},beta:{raw:1.9}},defaultKeyStatistics:{'52WeekChange':{raw:0.35}},
+    calendarEvents:{earnings:{earningsDate:[{raw:Date.parse('2026-11-19T21:00:00Z')/1000}]}},recommendationTrend:{trend:[{period:'0m',strongBuy:20,buy:30,hold:6,sell:1,strongSell:1}]},price:{currency:'USD'}}),
+  'TEVA.TA':yq({financialData:{profitMargins:{raw:0.09},numberOfAnalystOpinions:{raw:4},recommendationMean:{raw:2.7},targetMeanPrice:{raw:7500},currentPrice:{raw:6200}},summaryDetail:{trailingPE:{raw:23}},price:{currency:'ILA'}}),
+  KO:yq({financialData:{numberOfAnalystOpinions:{raw:0}},summaryDetail:{dividendYield:{raw:0.03}},price:{currency:'USD'}})
+};
+function fakeYahoo({crumbFail=false}={}){const seen=[]; return {seen,f:async(u,o={})=>{u=String(u); seen.push(u);
+  if(u.startsWith('https://fc.yahoo.com'))return new Response('',{status:404,headers:{'set-cookie':'A3=d=AQABBC; Domain=.yahoo.com; Path=/'}});
+  if(u.includes('/v1/test/getcrumb'))return crumbFail?new Response('',{status:401}):(o.headers&&/A3=/.test(o.headers.cookie)?new Response('Ab3cD.eF'):new Response('',{status:403}));
+  const m=u.match(/quoteSummary\/([^?]+)\?.*crumb=([^&]+)/); if(m){const t=decodeURIComponent(m[1]); if(decodeURIComponent(m[2])!=='Ab3cD.eF')return new Response('',{status:401});
+    return YSUM[t]?new Response(JSON.stringify(YSUM[t]),{headers:{'content-type':'application/json'}}):new Response(JSON.stringify({quoteSummary:{result:null,error:{code:'Not Found'}}}),{status:404})}
+  return new Response('',{status:500})}}}
+test('analysts: Yahoo Finance into the same documents the page reads, the old figures kept where Yahoo has none',async()=>{
+  const {researchTask,figures}=await import('../server/research.js'); const s=new Store(':memory:'); const Y=fakeYahoo();
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'},{sym:'TA125'},{sym:'1159250'}]});
+  s.setDoc('watch/u_a',{held:['KO'],marks:['TLV:TEVA'],seen:['ZZZZ'],syms:[]});
+  s.setDoc('research/latest',{companies:{NVDA:{f:7,z:9.1,roic:40,inv:{consensus:'Buy'},rating:'Hold'}},events:[],source:'stockanalysis.com',updatedAt:'2026-10-09T13:14:53Z'});
+  s.setDoc('research/universe',{keys:['NVDA','KO','QQQQ']}); s.setDoc('research/fit',{rows:{NVDA:[1,2,3,8,5,6,7,8,'Buy',1,1,'2026-01-01',1]},n:1,updatedAt:'2026-10-11T19:50:17Z'});
+  s.setDoc('research/candidates',{items:[{sym:'KO',name:'Coca-Cola',pe:20,dy:2.5,group:'cons'}],updatedAt:'2026-10-07T18:30:00Z'});
+  const now=new Date('2026-10-14T01:15:00Z'); const st=await researchTask(s,{fetch:Y.f,now,pause:0});
+  assert.equal(st.ok,3); assert.equal(st.none,2,'ZZZZ and QQQQ are not covered'); assert.equal(st.fail,0);
+  const L=s.getDoc('research/latest').data, n=L.companies.NVDA;
+  assert.equal(L.source,'Yahoo Finance'); assert.equal(L.updatedAt,now.toISOString());
+  assert.equal(n.gm,75); assert.equal(n.pm,55); assert.equal(n.fcfm,25); assert.equal(n.de,0.13); assert.equal(n.rating,'Strong Buy'); assert.equal(n.target,225.4); assert.equal(n.analysts,58);
+  assert.equal(n.next,'2026-11-19'); assert.equal(n.revg,62); assert.equal(n.beta,1.9); assert.deepEqual(n.votes,{buy:50,hold:6,sell:2});
+  assert.equal(n.f,7); assert.equal(n.z,9.1); assert.equal(n.roic,40,'what Yahoo does not give stays'); assert.equal(n.inv,undefined,'the second source is no longer updated, so it goes');
+  assert.ok(L.companies.KO,'a partner\'s holding is in the shared document (each partner sees only their own)');
+  const tv=s.getDoc('research/s_TLV_TEVA').data; assert.equal(tv.target,75,'agorot to shekels'); assert.equal(tv.rating,'Hold','a mean of 2.7 is Hold'); assert.equal(tv.source,'Yahoo Finance');
+  assert.equal(s.getDoc('research/s_KO').data.rating,undefined,'no analysts, no rating'); assert.equal(s.getDoc('research/s_KO').data.dy,3);
+  const F=s.getDoc('research/fit').data; assert.deepEqual(F.rows.NVDA,[55,110,0.13,8,51.2,31.5,0.02,62,'Strong Buy',225.4,58,'2026-11-19',1.9]); assert.equal(F.source,'Yahoo Finance');
+  assert.equal(s.getDoc('research/candidates').data.items[0].dy,3); assert.equal(s.getDoc('research/candidates').data.items[0].name,'Coca-Cola');
+  assert.ok(!Y.seen.some(u=>/TA125|1159250/.test(u)),'index funds and security numbers are not asked');
+  assert.equal(JSON.parse(s.getMeta('researchStatus')).ok,3);
+  assert.equal(figures({},now).rating,null);
+});
+test('analysts: when Yahoo will not open a session, nothing is overwritten and the status says so',async()=>{
+  const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]}); s.setDoc('research/latest',{companies:{NVDA:{rating:'Hold'}},updatedAt:'2026-10-09T13:14:53Z'});
+  const st=await researchTask(s,{fetch:fakeYahoo({crumbFail:true}).f,pause:0});
+  assert.equal(st.stopped,'session'); assert.equal(s.getDoc('research/latest').data.updatedAt,'2026-10-09T13:14:53Z'); assert.equal(s.getDoc('research/latest').data.companies.NVDA.rating,'Hold');
+});

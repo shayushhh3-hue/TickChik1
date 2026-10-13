@@ -1610,7 +1610,7 @@ section.fold > .fold-h h2{margin:0}
       <div class="row"><h2 id="hRate">דירוג ודוחות</h2><span class="sub" id="rFresh"></span></div>
       <div class="panel scroll">
         <table>
-          <thead><tr><th>נייר</th><th>ציון פיננסי</th><th class="num">צמיחת הכנסות</th><th class="num">רווח נקי מההכנסות</th><th class="num">מכפיל רווח</th><th>קונצנזוס אנליסטים</th><th class="num">מחיר יעד</th><th>Investing.com</th><th>הדוח הבא</th></tr></thead>
+          <thead><tr><th>נייר</th><th>ציון פיננסי</th><th class="num">צמיחת הכנסות</th><th class="num">רווח נקי מההכנסות</th><th class="num">מכפיל רווח</th><th>קונצנזוס אנליסטים</th><th class="num">מחיר יעד</th><th id="rInvH">Investing.com</th><th>הדוח הבא</th></tr></thead>
           <tbody id="rateRows"><tr><td colspan="9" class="empty">הדירוג יופיע כאן אחרי שנתוני החברות ייטענו.</td></tr></tbody>
         </table>
       </div>
@@ -1620,7 +1620,7 @@ section.fold > .fold-h h2{margin:0}
       </div>
       <details class="panel"><summary>איך מחושב הציון הפיננסי</summary>
         <p class="note">ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.</p>
-        <p class="note">הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, ומוצגים משני מקורות: stockanalysis.com ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.</p>
+        <p class="note" id="rSrcNote">הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, ומוצגים משני מקורות: stockanalysis.com ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.</p>
       </details>
     </section>
   </div>
@@ -16529,7 +16529,7 @@ function secFacts(k){
       price:pr&&pr.px?{last:(pr.ccy==='USD'?'$':'₪')+fmtN(pr.px),last_day:pr.chg!=null?spct(pr.chg*100,2):null,label:pr.label||''}:null},
     in_portfolio:p?{quantity:String(+(+p.qty).toFixed(3)),weight:pct(p.w),value:ils(p.val),group:GROUPS[p.group]||'',vs_cost:p.cost?spct((p.costVal-p.cost)/p.cost*100):null,last_day:p.dayPct!=null?`${spct(p.dayPct,2)} (${sgn(p.dayIls)})`:null,currency:p.ccy==='USD'?'דולר':'שקל'}:null,
     rules:{max_per_security:pct(+R.maxPos||0,0),max_per_group:pct(+R.maxGroup||0,0)},
-    analysts:rs&&(rs.rating||rs.target)?{consensus:RATE_HE[rs.rating]||rs.rating||null,count:rs.analysts||null,target:rs.target?'$'+Number(rs.target).toLocaleString('en-US'):null,source:'stockanalysis.com'}:null,
+    analysts:rs&&(rs.rating||rs.target)?{consensus:RATE_HE[rs.rating]||rs.rating||null,count:rs.analysts||null,target:rs.target?'$'+Number(rs.target).toLocaleString('en-US'):null,source:rs.source||'stockanalysis.com'}:null,
     financials:rs?{pe:n1(rs.pe),forward_pe:n1(rs.fpe),dividend_yield:rs.dy?pct(rs.dy):null,revenue_growth:rs.revg!=null?spct(rs.revg):null,net_margin:rs.pm!=null?pct(rs.pm):null,roe:rs.roe!=null?pct(rs.roe):null,debt_to_equity:n1(rs.de,2),next_report:rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):null,grade:fsc?`${fsc.grade} (${fsc.score})`:null,source:'stockanalysis.com'}:null,
     investor_profile:hasRisk()?RISK[riskOf()]:null,
     ...anaPerson()};
@@ -16549,7 +16549,7 @@ function anaExplainHtml(F,k,ans,st){
   const sec=(t,tag,x,cls)=>x?`<section class="ana-sec${cls?' '+cls:''}"><h4>${t}${tag?' '+tag:''}</h4><p>${tx(x)}</p></section>`:'';
   const f=ans.f, any=Object.values(f).some(Boolean);
   return head+(any?sec('מה זה','<span class="tag gen">ידע כללי</span>',f.what)+sec('מה המספרים אומרים','<span class="tag an">ניתוח</span>',f.numbers)+sec('בתיק שלי','<span class="tag an">ניתוח</span>',f.mine)+sec('למה לשים לב','<span class="tag an">ניתוח</span>',f.watch)+sec('מה לא יודעים','',f.unknown,'muted'):'<p>לא הצלחתי להסביר את הנייר הזה מתוך הנתונים.</p>')
-    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של Claude, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: stockanalysis.com':''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
+    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של Claude, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: '+esc((F.analysts&&F.analysts.source)||'stockanalysis.com'):''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
 }
 // "צ׳יקו, הסבר לי את הנייר הזה": what it is (general knowledge, marked as such), what its figures say at the person's level, its place in the portfolio
 async function anaExplain(k,o){
@@ -16840,7 +16840,8 @@ function renderRatings(m){
   if(!RS){return}
   $('rFresh').textContent=`נתוני החברות: ${rsWhen(RS.updatedAt)} · מקור: ${RS.source||''}`;
   const rows=m.pos.filter(p=>RS.companies&&RS.companies[p.sym]).map(p=>({p,c:RS.companies[p.sym],fs:finScore(RS.companies[p.sym])})).sort((a,b)=>(b.fs?b.fs.score:-1)-(a.fs?a.fs.score:-1));
-  const none=m.pos.filter(p=>!(RS.companies&&RS.companies[p.sym])).map(p=>p.sym);
+  const none=m.pos.filter(p=>!(RS.companies&&RS.companies[p.sym])).map(p=>p.sym), inv=rows.some(r=>r.c.inv);
+  {const h=$('rInvH'); if(h)h.hidden=!inv; const n=$('rSrcNote'); if(n)n.textContent='הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, לפי '+(RS.source||'stockanalysis.com')+(inv?' ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.':'.')}
   $('rateRows').innerHTML=rows.map(({p,c,fs})=>{
     const up=c.target&&p.ccy==='USD'?(c.target/p.px-1)*100:null, dd=c.next?daysTo(c.next):null;
     const nx=c.next?`<span class="n">${dmy(c.next)}</span> ${dd!=null&&dd>=0&&dd<=7?`<span class="flag">${dd===0?'היום':'בעוד '+dd+' ימים'}</span>`:dd!=null&&dd<0?'<span class="nm">ממתין לעדכון</span>':''}`:'—';
@@ -16849,9 +16850,9 @@ function renderRatings(m){
     <td class="num"><span class="n ${c.revg<0?'down':''}">${c.revg!=null?spct(c.revg):'—'}</span></td>
     <td class="num"><span class="n ${c.pm<0?'down':''}">${c.pm!=null?pct(c.pm):'—'}</span></td>
     <td class="num"><span class="n">${c.pe!=null?c.pe.toFixed(1):'הפסד'}</span>${c.fpe!=null?`<div class="nm">צפוי ${c.fpe>999?'999+':c.fpe.toFixed(1)}</div>`:''}</td>
-    <td>${esc(RATE_HE[c.rating]||c.rating||'—')}<div class="nm">${c.analysts?c.analysts+' אנליסטים':''}</div></td>
+    <td>${esc(RATE_HE[c.rating]||c.rating||'—')}<div class="nm">${c.analysts?c.analysts+' אנליסטים':''}${c.votes?` · <span class="n">${c.votes.buy}/${c.votes.hold}/${c.votes.sell}</span> קנייה/החזק/מכירה`:''}</div></td>
     <td class="num">${c.target?`<span class="n">$${c.target.toFixed(0)}</span>${up!=null?`<div class="nm"><span class="n ${up>=0?'up':'down'}">${spct(up)}</span></div>`:''}`:'—'}</td>
-    <td>${c.inv?`${esc(RATE_HE[c.inv.consensus]||c.inv.consensus||'—')}${c.inv.consensus&&c.rating&&c.inv.consensus!==c.rating?' <span class="flag">שונה</span>':''}<div class="nm"><span class="n">${c.inv.buy??'–'}/${c.inv.hold??'–'}/${c.inv.sell??'–'}</span> קנייה/החזק/מכירה${c.inv.target?` · יעד <span class="n">$${(+c.inv.target).toFixed(0)}</span>`:''}</div>`:'<span class="nm">עוד לא נטען</span>'}</td>
+    ${inv?'<td>':'<td hidden>'}${c.inv?`${esc(RATE_HE[c.inv.consensus]||c.inv.consensus||'—')}${c.inv.consensus&&c.rating&&c.inv.consensus!==c.rating?' <span class="flag">שונה</span>':''}<div class="nm"><span class="n">${c.inv.buy??'–'}/${c.inv.hold??'–'}/${c.inv.sell??'–'}</span> קנייה/החזק/מכירה${c.inv.target?` · יעד <span class="n">$${(+c.inv.target).toFixed(0)}</span>`:''}</div>`:'<span class="nm">עוד לא נטען</span>'}</td>
     <td>${nx}</td></tr>`}).join('')+(none.length?`<tr><td colspan="9" class="nm">ללא דירוג: ${esc(none.join(', '))} (קרנות מדד, אין להן דוחות של חברה אחת).</td></tr>`:'');
   const ev=(RS.events||[]).slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,12);
   if(ev.length)$('evList').innerHTML=ev.map(e=>`<li><span><span class="sym">${esc(lab(e.sym))}</span> <span class="nm">${dmy(e.date)}</span><br>${esc(e.text)}</span></li>`).join('');
@@ -19041,7 +19042,7 @@ function renderSec(){SECHOV=-1;
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
     <details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
     <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
-    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?'stockanalysis.com'+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
+    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||'stockanalysis.com')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
     ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}

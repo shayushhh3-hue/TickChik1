@@ -3,6 +3,7 @@
 import {ilParts, ilOpen, usOpen} from '../shared/market.js';
 import {pricesTask, nightlyTask, morningTask, monthlyTask, reportTask} from './tasks.js';
 import {backupTask} from './backup.js';
+import {researchTask} from './research.js';
 
 export const SCHEDULE=[
   // prices: every 5 minutes while Tel Aviv or New York trades, and on the hour's :40 from 10:40 to 23:40 (closing prices)
@@ -12,11 +13,13 @@ export const SCHEDULE=[
   {name:'monthly', when:p=>p.d===1&&p.h===8&&p.min===50, run:async(s,o)=>{await monthlyTask(s,o); await reportTask(s,{...o,kind:'month'})}},
   {name:'weekly',  when:p=>p.wd===5&&p.h===13&&p.min===50, run:(s,o)=>reportTask(s,{...o,kind:'week'})},
   {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
+  // analysts' views and company figures, after the US close: Tuesday to Saturday at 01:15
+  {name:'research',when:p=>p.wd>=2&&p.wd<=6&&p.h===1&&p.min===15, run:(s,o)=>researchTask(s,o)},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})}
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={prices:4*60e3,nightly:25*60e3};
+export const LIMIT={prices:4*60e3,nightly:25*60e3,research:30*60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), queue=[]; let busy=false;
   const pump=async()=>{

@@ -3,3 +3,5 @@ site/index.html
 data/
 *.log
 .DS_Store
+bidi/
+*.png
