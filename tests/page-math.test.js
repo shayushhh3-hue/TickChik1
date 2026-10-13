@@ -247,3 +247,18 @@ test('exposures: shares add up to the whole, nothing counted twice, unknowns say
   assert.equal(E.ccy.find(r=>r.k==='ILS').val,2000+500,'shekel holdings and shekel cash');
   assert.equal(SR.exposures(mOf([]),{cash:[]},{usdIls:3.7},()=>''),null);
 });
+
+test('crisis center: the comparison point, the move since then by holding, and the market blend', ()=>{
+  const F=load(['stateKey','stateTop','periodMove','stateBench'],{});
+  const now=new Date('2026-10-13T12:00:00Z').getTime(), DY={points:{'2026-10-01':{v:1000,dep:900,px:{A:100}},'2026-10-06':{v:1100,dep:900},'2026-10-10':{v:1050,dep:1000}}};
+  assert.equal(F.stateKey(DY,7,now),'2026-10-06'); assert.equal(F.stateKey(DY,30,now),null,'no point that old: none, not zero');
+  assert.deepEqual(F.stateTop(DY,'all',now),{k:'2026-10-06',v:1100});
+  const m={acct:'all',total:1200,pos:[{sym:'A',name:'A',group:'tech',ccy:'ILS',qty:2,px:110,w:20},{sym:'B',name:'B',group:'fin',ccy:'USD',qty:1,px:50,w:15}]};
+  const pm=F.periodMove(m,DY,'2026-10-01',3.7,1000);
+  assert.equal(pm.change,200); assert.equal(pm.dep,100,'deposits since then'); assert.equal(pm.price,20,'A rose 10 on 2 units'); assert.deepEqual(pm.missing,['B']);
+  assert.equal(F.periodMove(m,DY,'2026-10-06',3.7,1000).hasPx,false,'a point without prices cannot be split by holding');
+  const B=F.stateBench({dayPct:0.5,pos:[{ccy:'USD',val:600},{ccy:'ILS',val:400}]},{bench:{SPX:{px:101,prev:100,date:'2026-10-12'},TA125:{px:99,prev:100,date:'2026-10-13'}}});
+  near(B.us.pct,1,1e-9); near(B.il.pct,-1,1e-9); near(B.blend,0.6*1+0.4*-1,1e-9);
+  assert.equal(F.stateBench({dayPct:0,pos:[{ccy:'USD',val:1}]},{bench:{}}).none,true);
+  assert.equal(F.stateBench({dayPct:0,pos:[{ccy:'USD',val:1},{ccy:'ILS',val:1}]},{bench:{SPX:{px:1,prev:1}}}).blend,null,'half the portfolio has no index: no blend');
+});

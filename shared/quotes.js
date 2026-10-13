@@ -10,6 +10,8 @@ const YH=['https://query1.finance.yahoo.com','https://query2.finance.yahoo.com']
 
 // the page's own symbols for index funds, priced from their index while no direct quote source is configured
 export const PROXY={TA125:{index:'^TA125.TA',label:'לפי מדד ת״א 125'},TA90:{index:'^TA90.TA',label:'לפי מדד ת״א 90'}};
+// two broad indices for "what did the market do on the same day" (the crisis center), from the same Yahoo source
+export const BENCH={SPX:{t:'^GSPC',name:'S&P 500'},TA125:{t:'^TA125.TA',name:'ת״א 125'}};
 
 export function tickerFor(sym,pos,map){
   if(map&&map[sym])return map[sym];
@@ -85,7 +87,8 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   });
   let i=0; await Promise.all(Array.from({length:Math.min(concurrency,tasks.length)},async()=>{while(i<tasks.length){const k=i++;await tasks[k]()}}));
   const [boi,live]=await Promise.all([boiUsd({fetch:f}).catch(()=>null),yahooChart('USDILS=X',{fetch:f}).catch(()=>null)]);
-  return {quotes:out,index:idx,fx:{boi,live},errors};
+  const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}}));
+  return {quotes:out,index:idx,fx:{boi,live},bench,errors};
 }
 
 // the next quotes/latest document, from the fetched prices and the stored one
@@ -123,7 +126,9 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const failed=symbols.length>0&&got===0;
   const priceLabel=failed?'המחירים האחרונים שהתקבלו':usLive?'מסחר חי, עיכוב של עד 15 דקות':ilLive?`מסחר חי בתל אביב${usDate?' · ארה״ב: סגירה '+dm(usDate):''}`:usDate?`סגירה ${dm(usDate)}`:(old.priceLabel||'');
   const usD=usDate||old.usDate||'', ilD=ilDate||old.ilDate||'';
-  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
+  // the indices: this run's values, or the last ones with their dates when this run did not get them
+  const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
+  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
     source:'Yahoo Finance, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,

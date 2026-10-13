@@ -1223,6 +1223,11 @@ section.fold > .fold-h h2{margin:0}
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
 .tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
+.state .stl{display:inline-flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+#stateBody{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.stc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.stc h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px} .stc p{margin:0;line-height:1.6} .stc .btn{align-self:flex-start}
+.stq{margin:0;display:flex;flex-direction:column;gap:10px} .stq dt{font-weight:600;font-size:14px} .stq dd{margin:2px 0 0;color:var(--ink2);font-size:13.5px;line-height:1.55}
 .st-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:12px 0}
 .st-form label{min-width:150px} .st-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%}
 .st-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:6px 0 10px;font-size:14px}
@@ -1711,6 +1716,15 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="gg" id="prOpp"><div class="empty">הצמדים יופיעו כאן אחרי שנתוני המחירים היומיים ייטענו.</div></div>
     </section>
     <aside class="callout"><b>חשוב לדעת.</b> <span id="ltLead">הבדיקה ארוכת הטווח תופיע כאן אחרי טעינת הנתונים.</span></aside>
+  </div>
+
+  <div class="pane" data-pane="state" hidden>
+    <section aria-labelledby="hState" class="state">
+      <div class="row"><h2 id="hState">מה קורה בתיק</h2><span class="sub" id="stateWhen"></span></div>
+      <p class="note" style="margin:0 0 10px">עובדות מהמספרים שבדף, בלי תחזית ובלי המלצה. <span class="stl"><span class="tag mkt">נתון</span> מהדוחות ומהבורסה · <span class="tag fin">חישוב</span> של הדף מהנתונים · <span class="tag an">סימולציה</span> תרחיש שבוחרים · <span class="tag gen">הסבר</span> ניסוח במילים</span></p>
+      <div class="chips" role="group" aria-label="התקופה" id="statePer"></div>
+      <div id="stateBody" aria-live="polite"><div class="empty">תמונת המצב תופיע כאן אחרי שהתיק והמחירים ייטענו.</div></div>
+    </section>
   </div>
 
   <div class="pane" data-pane="ratings" hidden>
@@ -15530,6 +15544,7 @@ function render(){
   renderRisk(m);
   renderComove(m);
   try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){}
+  if(document.body.dataset.page==='state'){try{renderState()}catch(e){}}
 
   // allocation
   const maxW=Math.max(40,...Object.values(m.groups).map(g=>g.w),...Object.values(S.targets).map(x=>+x||0));
@@ -15880,6 +15895,87 @@ document.addEventListener('input',ev=>{const t=ev.target; if(!t.closest||!t.clos
 document.addEventListener('change',ev=>{const t=ev.target; if(t&&(t.id==='stGroup'||t.id==='stCo')){if(t.id==='stGroup')ST.group=t.value; else ST.co=+t.value||0; stSave(); renderStress(EXPM)}});
 function stSave(){try{localStorage.setItem('tr_stress',JSON.stringify(ST))}catch(e){}}
 window.__model.stress=()=>EXPM?stressRun(EXPM,P,Q,stScen(EXPM).sc):null;
+// ---- the crisis center: "מה קורה בתיק" (numbers from whyMove, periodMove, stateBench, exposures, stressRun) ----
+let SPER='day'; try{const v=localStorage.getItem('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
+const STAG={fact:'<span class="tag mkt">נתון</span>',calc:'<span class="tag fin">חישוב</span>',sim:'<span class="tag an">סימולציה</span>',expl:'<span class="tag gen">הסבר</span>'};
+const stSec=(tag,title,body)=>`<div class="stc"><h3>${STAG[tag]} ${title}</h3>${body}</div>`;
+const stTry=(f,title)=>{try{return f()}catch(e){return `<div class="stc"><h3>${title}</h3><p class="note">החלק הזה לא זמין כרגע: החישוב נכשל. שאר החלקים לא מושפעים.</p></div>`}};
+function renderState(){
+  const body=$('stateBody'), per=$('statePer'); if(!body)return;
+  if(!P||!Q||!Q.prices||!Q.usdIls){body.innerHTML='<div class="empty">התיק והמחירים עוד נטענים.</div>';return}
+  if(!hasPf()){body.innerHTML='<div class="empty">עוד אין כאן תיק. אחרי שתוסיף אותו, כאן תופיע תמונת המצב.</div>';setH(per,'');return}
+  const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules||{}, usd=Q.usdIls, depNow=(()=>{try{return HS?depTotal():null}catch(e){return null}})();
+  const keys={week:stateKey(DY,7),month:stateKey(DY,30)}, top=stateTop(DY,acct); keys.peak=top?top.k:null;
+  const avail={day:m.hasDay,week:!!keys.week,month:!!keys.month,peak:!!keys.peak}; if(!avail[SPER])SPER='day';
+  setH(per,[['day','יום המסחר האחרון'],['week','שבוע'],['month','חודש'],['peak','מהשיא']].map(([k,l])=>`<button type="button" class="chip" data-sper="${k}" aria-pressed="${k===SPER}"${avail[k]?'':' disabled title="אין נקודת השוואה שמורה לתקופה הזו"'}>${l}</button>`).join(''));
+  const ageH=Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/36e5:null, live=/מסחר חי/.test(Q.priceLabel||'')&&ageH!=null&&ageH<2;
+  $('stateWhen').textContent=Q.updatedAt?freshTxt():'';
+  const warn=!live&&ageH!=null&&ageH>=2?`<p class="dup" role="status">המחירים מ-${dmy(Q.updatedAt)} ${hm(Q.updatedAt)} (${ago(Q.updatedAt)}). מה שמוצג כאן נכון למועד הזה, לא לעכשיו.</p>`:'';
+  const W=whyMove(m,Q,P,R), PM=SPER==='day'?null:periodMove(m,DY,keys[SPER],usd,depNow);
+  const noPx=[...new Set((P.positions||[]).filter(p=>(acct==='all'||p.acct===acct)&&(Q.prices||{})[p.sym]==null).map(p=>p.sym))];   // a partial portfolio says so
+  const money=v=>`<span class="n ${v>=0?'up':'down'}">${sgn(v)}</span>`;
+  // 1. the snapshot
+  const snap=stTry(()=>{let b=`<p>שווי התיק עכשיו: <b class="n">${ils(m.total)}</b>.</p>`;
+    if(SPER==='day')b+=W.has?`<p>${esc(dayWord())} השווי זז ב-${money(W.ils)} (${tx(spct(W.pct,2))}), מהמחירים בלבד: כל נייר מול מחיר הסגירה הקודם שלו, בכמויות של היום.</p>`:'<p>אין שינוי יומי: חסרים מחירי סגירה קודמים.</p>';
+    else if(!PM)b+='<p>אין נתון שמור לתחילת התקופה הזו.</p>';
+    else{b+=PM.change!=null?`<p>מ-${dmy(PM.key)}: ${ils(PM.vThen)} ← ${ils(PM.vNow)}, שינוי של ${money(PM.change)} (${tx(spct(PM.change/PM.vThen*100))}).</p>`:'<p>אין שווי שמור לתחילת התקופה בחשבון הזה.</p>';
+      b+=PM.dep!=null?`<p>מתוך זה הפקדות ומשיכות: ${money(PM.dep)}${PM.change!=null?`; כל השאר, ${money(PM.change-PM.dep)}, הוא תנועת השוק והקניות והמכירות`:''}.</p>`:'<p class="note">ההפקדות בתקופה לא ידועות לחשבון הזה, ולכן השינוי כולל אותן.</p>'}
+    if(noPx.length)b+=`<p class="note">לא נכללו בשווי, כי אין להם מחיר: ${esc(noPx.map(lab).join(', '))}.</p>`;
+    return stSec('fact','תמונת מצב',warn+b)},'תמונת מצב');
+  // 2. who carried it
+  const carry=stTry(()=>{const items=SPER==='day'?W.items:PM?PM.items:[]; if(SPER!=='day'&&PM&&!PM.hasPx)return stSec('calc','מי הזיז את התיק','<p>לנקודה של תחילת התקופה לא נשמרו מחירים לכל נייר, ולכן אי אפשר לפרק לפי ניירות.</p>');
+    if(!items.length)return stSec('calc','מי הזיז את התיק','<p>אין נתון לפירוק לפי ניירות.</p>');
+    const tot=items.reduce((t,i)=>t+i.ils,0), gs={}; for(const i of items)(gs[i.group]=gs[i.group]||{n:GROUPS[i.group]||i.group,v:0}).v+=i.ils;
+    const miss=SPER==='day'?W.excluded.map(x=>x.sym):PM?PM.missing:[];
+    return stSec('calc','מי הזיז את התיק',`<ul class="why-l">${items.slice(0,5).map(i=>`<li><b class="sym">${esc(lab(i.sym))}</b> ${money(i.ils)} <span class="nm">${tx(spct(i.pct,2))} במחיר</span></li>`).join('')}</ul>
+      <p>לפי קבוצות: ${Object.values(gs).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,3).map(g=>`${esc(g.n)} ${money(g.v)}`).join(' · ')}. סך מהמחירים: ${money(tot)}.</p>
+      ${miss.length?`<p class="note">לא נכללו (אין מחיר לתחילת התקופה): ${esc(miss.map(lab).join(', '))}.</p>`:''}${SPER!=='day'?'<p class="note">כל נייר נמדד בכמות של היום; דולרים לפי השער של היום.</p>':''}`)},'מי הזיז את התיק');
+  // 3. exposures
+  const expo=stTry(()=>{const E=exposures(m,P,Q,k=>{try{const it=itemOf(k);return (it&&it.sec)||''}catch(e){return ''}}); if(!E)return '';
+    const C=E.conc, usdR=E.ccy.find(r=>r.k==='USD'), cap=+R.maxPos||0;
+    return stSec('calc','חשיפות עיקריות',`<ul class="why-l"><li>הנייר הגדול: <b class="sym">${C.top1?esc(lab(C.top1.sym)):'—'}</b> ${C.top1?tx(pct(C.top1.w)):''}${cap&&C.top1&&C.top1.w>cap?` (מעל הכלל שלך, ${tx(pct(cap,0))})`:''}; שלושת הגדולים ${tx(pct(C.top3))}.</li>
+      <li>לפי ענף: ${E.sector.slice(0,3).map(r=>`${esc(r.label)} ${tx(pct(r.w))}`).join(' · ')}.</li><li>בדולרים: ${tx(pct(usdR?usdR.w:0))} מהתיק.</li>
+      <li>חפיפה בין קרנות למניות: ${E.overlap.status==='none-held'?'אין קרנות בתיק.':'לא ידועה (אין לדף את הרכב הקרנות).'}</li></ul>
+      <button type="button" class="btn sm" data-gofold="hExp">לחשיפות המלאות</button>`)},'חשיפות עיקריות');
+  // 4. the market on the same day
+  const mkt=stTry(()=>{if(SPER!=='day')return stSec('fact','השוק באותה תקופה','<p class="note">יש לדף נתוני מדד רק ליום המסחר האחרון, לא לתקופות ארוכות יותר.</p>');
+    const B=stateBench(m,Q); if(B.none)return stSec('fact','השוק באותו יום','<p class="note">אין כרגע נתוני מדד. הם יגיעו עם עדכון המחירים הבא.</p>');
+    const row=(x,lbl)=>x?`<li>${esc(x.name)}: ${tx(spct(x.pct,2))}${x.date?` <span class="nm">(${dmy(x.date)})</span>`:''}</li>`:`<li>${lbl}: אין נתון.</li>`;
+    return stSec('fact','השוק באותו יום',`<ul class="why-l">${row(B.us,'S&P 500')}${row(B.il,'ת״א 125')}
+      ${B.blend!=null?`<li>${STAG.calc} שקלול לפי התיק שלך (${tx(pct(B.wUS*100,0))} נסחרים בארה״ב, ${tx(pct(B.wIL*100,0))} בתל אביב): ${tx(spct(B.blend,2))}. התיק: ${tx(spct(B.pf,2))}.</li>`:''}</ul>
+      <p class="note">למה המדדים האלה: הם המדדים הרחבים של שתי הבורסות שבהן הניירות שלך נסחרים. מה המגבלות: שינוי מחיר בלבד, כל מדד במטבע שלו, ליום המסחר האחרון של כל בורסה${B.dates.length===2&&B.dates[0]!==B.dates[1]?' (ימים שונים)':''}. התיק מרוכז יותר מהמדדים, ולכן זו תמונת רקע ולא ציון.</p>`)},'השוק באותו יום');
+  // 5. stress
+  const sim=stTry(()=>{const rs=[20,30,40].map(x=>({x,R:stressRun(m,P,Q,{kind:'all',pct:-x})})).filter(o=>o.R);
+    return stSec('sim','מה אם המחירים יורדים עוד',`<ul class="why-l">${rs.map(o=>`<li>ירידה אחידה של ${o.x}% בכל הניירות: ${ils(o.R.before)} ← <b class="n">${ils(o.R.after)}</b> (${money(o.R.d)})</li>`).join('')}</ul>
+      <p class="note">תרחיש, לא תחזית: כל נייר יורד באותו אחוז, המזומן והשער לא זזים.</p><button type="button" class="btn sm" data-gofold="hStress">למבחן הלחץ המלא</button>`)},'מה אם המחירים יורדים עוד');
+  // 6. what the user set
+  const goals=stTry(()=>{const pr=(S.profile||{}), L=[];
+    L.push(+S.years>0?`אופק ההשקעה שקבעת: ${S.years} שנים.`:'לא קבעת אופק השקעה.');
+    L.push(PURPOSE[pr.purpose]?`בשביל מה: ${PURPOSE[pr.purpose]}.`:'לא כתבת בשביל מה אתה משקיע.');
+    L.push(+S.goal>0?`יעד כספי: ${ils(+S.goal)}.`:'לא קבעת יעד כספי.');
+    L.push('מתי תצטרך את הכסף ומשיכות מתוכננות: אין לזה עדיין שדה בדף.');
+    return stSec('fact','מה שהגדרת',`<ul class="why-l">${L.map(x=>`<li>${tx(x)}</li>`).join('')}</ul><p class="note">הדף לא יודע מה המצב הכלכלי שלך או כמה הפסד אתה יכול לשאת, ולא מניח. הוא לא משנה את הפרופיל או את התיק.</p>
+      <button type="button" class="btn sm" data-prof="edit">לעדכן אופק ומטרה</button>`)},'מה שהגדרת');
+  // 7. the calm checklist
+  const chk=stTry(()=>{const E=exposures(m,P,Q,()=>''), C=E&&E.conc, cap=+R.maxPos||0, gcap=+R.maxGroup||0, gmax=E?E.group.filter(r=>r.k!=='cash')[0]:null;
+    const asOf=Object.entries(P.asOf||{}).map(([a,d])=>`${acctName(a)} ${dmy(d)}`).join(', ');
+    const Qs=[['האם הנתונים בתיק מעודכנים?',`מחירים: ${Q.updatedAt?dmy(Q.updatedAt)+' '+hm(Q.updatedAt)+(live?' (מסחר חי)':''):'אין'}${asOf?`; הכמויות לפי: ${asOf}`:''}.`],
+      ['אילו החזקות תרמו לשינוי?',W.top.length?W.top.slice(0,3).map(x=>lab(x.sym)).join(', ')+'.':'אין שינוי יומי לפרק.'],
+      ['האם יש ריכוזיות גבוהה?',C&&C.top1?`הנייר הגדול ${pct(C.top1.w)}${cap?(C.top1.w>cap?', מעל הכלל שלך':', בתוך הכלל שלך'):''}; הקבוצה הגדולה ${gmax?gmax.label+' '+pct(gmax.w):'—'}${gcap&&gmax?(gmax.w>gcap?', מעל הכלל שלך':', בתוך הכלל שלך'):''}.`:'—'],
+      ['האם יש חפיפה בין נכסים?',E&&E.funds.length?'לא ידוע: אין לדף את הרכב הקרנות.':'אין קרנות בתיק, אז אין חפיפה בין קרן למניה.'],
+      ['מהו טווח ההשקעה שהגדרת?',+S.years>0?`${S.years} שנים.`:'לא הוגדר.'],
+      ['האם הזנת מטרות או משיכות קרובות?',(+S.goal>0?'יש יעד כספי. ':'אין יעד כספי. ')+'משיכות מתוכננות: אין שדה כזה עדיין.'],
+      ['מה עוד חסר כדי להבין את המצב?',[...noPx.map(x=>lab(x)+' בלי מחיר'),...W.excluded.map(x=>lab(x.sym)+' בלי שינוי יומי'),W.fx&&W.fx.unknown?'השפעת הדולר על היום':'',E&&E.funds.length?'הרכב הקרנות':'','הסיבה לתנועת המחירים (אין מקור חדשות)'].filter(Boolean).join('; ')+'.']];
+    return stSec('calc','שאלות לבדוק בשקט',`<dl class="stq">${Qs.map(([q,a])=>`<div><dt>${q}</dt><dd>${tx(a)}</dd></div>`).join('')}</dl><p class="note">אלה שאלות להבנה, לא הוראות לפעולה.</p>`)},'שאלות לבדוק בשקט');
+  // 8. in words
+  const ai=!!SAMPLE&&!SAMPLE_OFF;
+  const words=stSec('expl','במילים',ai?'<p>צ׳יקו יכול לנסח את זה במילים, רק מהמספרים שבדף.</p><button type="button" class="btn sm pri" data-ana="crisis">צ׳יקו, הסבר במילים</button>':'<p class="note">הסבר במילים זמין כש-Claude מחובר. כל מה שלמעלה מחושב בדף, גם בלעדיו.</p>');
+  body.innerHTML=snap+carry+expo+mkt+sim+goals+chk+words;
+}
+window.__model.stateSim=()=>{const m=model(P,Q,acct,acct==='all'?planAdj():null); return [20,30,40].map(x=>ils(stressRun(m,P,Q,{kind:'all',pct:-x}).after))};
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('#statePer [data-sper]'); if(b&&!b.disabled){SPER=b.dataset.sper; try{localStorage.setItem('tr_sper',SPER)}catch(e){} renderState(); return}
+  const g=ev.target.closest('[data-gofold]'); if(g){const id=g.dataset.gofold; showTab('risk',true); try{foldSet(id,true)}catch(e){} setTimeout(()=>{const s=document.querySelector(`[data-pane="risk"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60)}});
 // Groups of holdings whose daily moves point the same way; the groups come from research/comove, weights are live.
 function renderComove(m){
   if(!CM||!CM.groups)return;
@@ -16452,6 +16548,36 @@ function stressRun(m,P,Q,sc){
   return {before:T,after:T+d,d,pct:d/T*100,rows,hit,hitVal:hit.reduce((t,r)=>t+r.val,0)+(cashD?usdCash:0),cash:{val:m.cash,usd:usdCash,d:cashD},missing};
 }
 // ---- risk:end ----
+// ---- state:start ----
+// The crisis center ("מה קורה בתיק", stage 6): the move over a period from a saved daily point, the market on the same day,
+// and the questions worth checking. Facts and the page's own arithmetic only; what is missing is said, never filled in.
+// a saved daily point at least n days back (the latest one that old), within 120 days; null when there is none
+function stateKey(DY,n,now=Date.now()){const keys=DY&&DY.points?Object.keys(DY.points).sort():[], lim=new Date(now-n*864e5).toISOString().slice(0,10), old=new Date(now-120*864e5).toISOString().slice(0,10);
+  const k=keys.filter(k=>k<=lim&&k>=old).pop(); return k||null}
+// the highest saved value in the last 90 days (for "from the peak")
+function stateTop(DY,acct,now=Date.now()){const pts=DY&&DY.points?DY.points:{}; let best=null;
+  for(const k of Object.keys(pts)){if(now-new Date(k+'T12:00:00')>90*864e5)continue; const p=pts[k], v=acct&&acct!=='all'?(p.by&&p.by[acct]!=null?p.by[acct]:p[acct]):p.v; if(v>0&&(!best||v>best.v))best={k,v}}
+  return best}
+// the move from a saved point to now: the value then and now, the money put in since, and what the prices alone did to the
+// holdings held now (each at its price that day; dollars at today's rate, so the dollar's own move is not in it)
+function periodMove(m,DY,key,usd,depNow){
+  const p=DY&&DY.points&&key?DY.points[key]:null; if(!p)return null;
+  const one=m.acct&&m.acct!=='all', vThen=one?(p.by&&p.by[m.acct]!=null?p.by[m.acct]:p[m.acct]):p.v;
+  const items=m.pos.map(x=>{const t=p.px&&p.px[x.sym]; if(!(t>0))return {sym:x.sym,missing:true}; return {sym:x.sym,name:x.name,group:x.group,w:x.w,ils:x.qty*(x.px-t)*(x.ccy==='USD'?usd:1),pct:(x.px/t-1)*100}});
+  const ok=items.filter(i=>!i.missing).sort((a,b)=>Math.abs(b.ils)-Math.abs(a.ils)), price=ok.reduce((t,i)=>t+i.ils,0);
+  const dep=!one&&depNow!=null&&p.dep!=null?depNow-p.dep:null;
+  return {key,vThen:vThen>0?vThen:null,vNow:m.total,change:vThen>0?m.total-vThen:null,dep,price,items:ok,missing:items.filter(i=>i.missing).map(i=>i.sym),hasPx:!!p.px};
+}
+// the market on the last trading day: the two indices, price only in their own currency, and a blend by the portfolio's
+// split between what trades in the US and in Tel Aviv. A context for the day, not a benchmark verdict.
+function stateBench(m,Q){
+  const B=Q&&Q.bench||{}, g=k=>B[k]&&B[k].prev>0?{name:B[k].name||k,pct:(B[k].px/B[k].prev-1)*100,date:B[k].date||null}:null, us=g('SPX'), il=g('TA125');
+  const inv=m.pos.reduce((t,p)=>t+p.val,0); if(!inv||!(us||il))return {none:true};
+  const wUS=m.pos.filter(p=>p.ccy==='USD').reduce((t,p)=>t+p.val,0)/inv, wIL=1-wUS;
+  const blend=(wUS>0&&!us)||(wIL>0&&!il)?null:(us?wUS*us.pct:0)+(il?wIL*il.pct:0);
+  return {us,il,wUS,wIL,blend,pf:m.dayPct,dates:[us&&us.date,il&&il.date].filter(Boolean)};
+}
+// ---- state:end ----
 // ---- why:start ----
 // "למה התיק זז היום?" is answered here, in code, not by a language model: the change of every holding from its previous
 // close, in shekels at today's dollar rate; which holdings and groups carried it; how wide it was; the dollar's own move
@@ -16711,7 +16837,7 @@ function anaCleanDay(raw,set){
 }
 
 // ---- drawing ----
-const tx=t=>esc(t).replace(/[−+]?[₪$]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?/g,(x,o,str)=>{let i=o-1;while(i>=0&&/[\s(]/.test(str[i]))i--;return /[A-Za-z]/.test(str[i]||'')?x:'<span class="n">'+x+'</span>'});
+const tx=t=>esc(t).replace(/\d{1,2}:\d{2}(?!\d)|[−+]?[₪$]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?/g,(x,o,str)=>{let i=o-1;while(i>=0&&/[\s(]/.test(str[i]))i--;return /[A-Za-z]/.test(str[i]||'')?x:'<span class="n">'+x+'</span>'});
 const anaTile=(k,v,s,c)=>`<div class="mtile"><div class="k">${k}</div><div class="v${c?' '+c:''}">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
 const anaSec=(n,t,b)=>`<section class="ana-sec"><h4>${n?n+'. ':''}${t}</h4>${b}</section>`;
 const ANA_AV='';
@@ -17004,13 +17130,13 @@ function crisisLines(m,cr,A){
   const L=[];
   if(cr.day)L.push(['היום',`התיק ירד היום ב-${Math.abs(cr.day.pct).toFixed(2)}% (${ils(Math.abs(cr.day.ils))}).`]);
   if(cr.peak)L.push(['מהשיא',`מהשיא של ${dmy(cr.peak.date)} התיק נמוך ב-${cr.peak.pct.toFixed(1)}% (${ils(Math.abs(cr.peak.ils))}), אחרי שמנכים את ההפקדות שנוספו מאז.`]);
-  if(cr.breadth.n)L.push(['מי ירד',cr.market?`${cr.breadth.down} מתוך ${cr.breadth.n} ניירות ירדו היום: זו תנועה של השוק כולו, לא של חברה אחת.`:cr.one?`${lab(cr.top[0].sym)} לבדו אחראי ל-${pct(cr.share,0)} מהירידה של היום: זו תנועה של נייר אחד, לא של השוק.`:`${cr.breadth.down} מתוך ${cr.breadth.n} ניירות ירדו היום${cr.top.length?`, בעיקר ${cr.top.map(p=>lab(p.sym)+' '+sgn(p.dayIls)).join(', ')}`:''}.`]);
+  if(cr.breadth.n)L.push(['מי ירד',cr.market?`${cr.breadth.down} מתוך ${cr.breadth.n} ניירות בתיק ירדו היום: תנועה רחבה בתיק, לא של נייר אחד.`:cr.one?`${lab(cr.top[0].sym)} לבדו אחראי ל-${pct(cr.share,0)} מהירידה של היום בתיק.`:`${cr.breadth.down} מתוך ${cr.breadth.n} ניירות ירדו היום${cr.top.length?`, בעיקר ${cr.top.map(p=>lab(p.sym)+' '+sgn(p.dayIls)).join(', ')}`:''}.`]);
   if(m.cost)L.push(['מול העלות',`מול מחיר הקנייה התיק ${m.pnl>=0?'עדיין':'עכשיו'} ${sgn(m.pnl)} (${spct(m.pnlPct)}).`]);
   const crit=(A||[]).filter(a=>a[0]==='crit').length, drops=(A||[]).filter(a=>a[1]==='ירידה').length;
   L.push(['מול הכללים',crit?`${crit===1?'כלל אחד שקבעת נחצה':crit+' כללים שקבעת נחצו'}; הם מופיעים בבקרה.`:drops?`אף תקרה לא נחצתה; ${drops===1?'נייר אחד עבר':drops+' ניירות עברו'} את סף הבדיקה של ירידה מהעלות.`:'אף כלל שקבעת לא נחצה.']);
   if(+S.years>0)L.push(['האופק',`האופק שקבעת: ${S.years} שנים. יום אחד הוא חלק קטן ממנו.`]);
   {const pol=String(S.policy||'').trim().replace(/\s+/g,' '); if(pol)L.push(['המדיניות',`המדיניות שכתבת לעצמך: "${pol.length>140?pol.slice(0,140).replace(/\s\S*$/,'')+'…':pol}"`])}
-  L.push(['מה לא להסיק','ירידה של יום או של שבוע לא אומרת כלום על החברות עצמן. מה שקובע אם יש מה לבדוק הם הכללים שקבעת, לא הצבע של המספר.']);
+  L.push(['מה לא להסיק','ירידה של יום או של שבוע לבדה לא מספרת מה קרה בחברות עצמן. מה שקובע אם יש מה לבדוק הם הכללים שקבעת, לא הצבע של המספר.']);
   return L;
 }
 function crisisKey(cr){return isoDay(Date.now())+(cr.day?'d':'')+(cr.peak?'p':'')}
@@ -17018,7 +17144,7 @@ function renderCrisis(m,A){
   const el=$('crisisBox'); if(!el)return; const cr=notifOn('שוק')?crisisInfo(m):null; let off=''; try{off=localStorage.getItem('tr_crisis')||''}catch(e){}
   if(!cr||off===crisisKey(cr)){el.hidden=true;return}
   const was=el.hidden, L=crisisLines(m,cr,A);
-  setH(el,`<div class="cr-h">${niH('info','cr-ic',true)}<div><h2 id="hCrisis">השוק רועש. בוא נבין מה באמת קורה בתיק שלך.</h2><p class="sub">עובדות בלבד, מהמספרים שבדף. בלי תחזית ובלי המלצה.</p></div></div><ul class="cr-l">${L.map(x=>`<li>${tx(x[1])}</li>`).join('')}</ul><div class="acts"><button class="btn sm pri" type="button" data-ana="crisis">צ׳יקו, מה באמת קורה?</button><button class="btn sm" type="button" data-tab="risk">לסיכון ולכללים</button><button class="btn sm" type="button" data-crisis="ok">הבנתי</button></div>`);
+  setH(el,`<div class="cr-h">${niH('info','cr-ic',true)}<div><h2 id="hCrisis">השוק רועש. בוא נבין מה באמת קורה בתיק שלך.</h2><p class="sub">עובדות בלבד, מהמספרים שבדף. בלי תחזית ובלי המלצה.</p></div></div><ul class="cr-l">${L.map(x=>`<li>${tx(x[1])}</li>`).join('')}</ul><div class="acts"><button class="btn sm pri" type="button" data-ana="crisis">צ׳יקו, מה באמת קורה?</button><button class="btn sm" type="button" data-tab="state">למרכז המצב</button><button class="btn sm" type="button" data-tab="risk">לסיכון ולכללים</button><button class="btn sm" type="button" data-crisis="ok">הבנתי</button></div>`);
   el.hidden=false; if(was)try{chime('sys')}catch(e){}
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-crisis="ok"]'); if(!b)return; try{const cr=crisisInfo(mAllNow()); if(cr)localStorage.setItem('tr_crisis',crisisKey(cr))}catch(e){} const el=$('crisisBox'); if(el)el.hidden=true});
@@ -17069,7 +17195,7 @@ async function anaRun(kind,q,o){
   if(ans.text){ANA_TURNS.push({q:qq,a:ans.text}); ANA_TURNS=ANA_TURNS.slice(-4)}
 }
 try{
-  document.addEventListener('click',e=>{const b=e.target.closest('#anaBox [data-ana], #anaEntry [data-ana], #crisisBox [data-ana], .hero [data-ana]'); if(!b)return; const k=b.dataset.ana;
+  document.addEventListener('click',e=>{const b=e.target.closest('#anaBox [data-ana], #anaEntry [data-ana], #crisisBox [data-ana], .hero [data-ana], #stateBody [data-ana]'); if(!b)return; const k=b.dataset.ana;
     if(k==='stop'){try{ANA_CTL&&ANA_CTL.abort()}catch(x){}return}
     if(k==='sec'){if(!ANA_BUSY)anaExplain(b.dataset.sym,{src:b});return}
     if(k==='hide'){anaClose();return}
@@ -19591,9 +19717,9 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','search','plan','forecast','history','reports','ratings','watch','risk','settings','mine'];
-const NAVG={overview:['overview'],mine:['mine'],plan:['plan','forecast'],risk:['risk'],search:['search','ratings','watch'],history:['history','reports'],settings:['settings']};
-const SUBL={plan:'מה לעשות בהפקדה הבאה',forecast:'תחזית התיק',search:'חיפוש נייר',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const TABS=['overview','search','plan','forecast','history','reports','ratings','watch','risk','state','settings','mine'];
+const NAVG={overview:['overview'],mine:['mine'],plan:['plan','forecast'],risk:['risk','state'],search:['search','ratings','watch'],history:['history','reports'],settings:['settings']};
+const SUBL={plan:'מה לעשות בהפקדה הבאה',forecast:'תחזית התיק',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
 const HEADL={search:'מחקר',plan:'תוכנית ותחזית',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
@@ -19616,6 +19742,7 @@ function showTab(t,user){
   try{subTabs(t)}catch(e){}
   try{localStorage.setItem('tab',t)}catch(e){}
   if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){}}
+  if(t==='state'){try{renderState()}catch(e){}}
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
   if(t==='search'){try{loadSymDb().then(()=>{if(SV==='fit')setSV('fit');else srchRender()});loadAllQ().then(()=>srchQ());loadFit().then(()=>{if(SV==='fit')renderFit()})}catch(e){}}
   try{if(user){const pn=document.querySelector('[data-pane="'+t+'"]'),bh=0,top=pn.getBoundingClientRect().top+window.scrollY-bh-10;if(window.scrollY>top)window.scrollTo(0,Math.max(0,top))}}catch(e){}

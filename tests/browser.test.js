@@ -245,3 +245,32 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   }
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
+  const center=async()=>{const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.querySelector('[data-pane="risk"] .subtabs [data-tab="state"]').click()); await pg.waitForTimeout(700);
+    const r=await pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('stateBody').textContent.replace(/\s+/g,' '),tags:[...document.querySelectorAll('#stateBody .stc h3 .tag')].map(x=>x.textContent),ox:document.documentElement.scrollWidth>innerWidth+1,cur:document.querySelector('#botbar [aria-current="page"]')?.dataset.bb}));
+    return {ctx,pg,r}};
+  try{
+    // a down day (the fixture): the change, who carried it, concentration above the rule, the market, three scenarios
+    let {ctx,pg,r}=await center();
+    assert.equal(r.page,'state'); assert.equal(r.cur,'risk','the bar marks "בקרה"'); assert.equal(r.ox,false);
+    assert.deepEqual([...new Set(r.tags)].sort(),['הסבר','חישוב','נתון','סימולציה'].sort(),'each part says what it is');
+    assert.match(r.txt,/השווי זז ב-\u200e?−₪/); assert.match(r.txt,/מעל הכלל שלך/); assert.match(r.txt,/S&P 500/); assert.match(r.txt,/שקלול לפי התיק שלך/);
+    assert.match(r.txt,/ירידה אחידה של 20% בכל הניירות/); assert.match(r.txt,/הסיבה לתנועת המחירים \(אין מקור חדשות\)/);
+    for(const v of await pg.evaluate(()=>window.__model.stateSim()))assert.ok(r.txt.includes(v),'the scenario shows the computed value '+v);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // an up day, and no index data: said, not invented
+    const up={...Q0,prices:Object.fromEntries(Object.entries(Q0.prices).map(([k,v])=>[k,Q0.prev[k]*1.02])),bench:{}};
+    store.setDoc('quotes/latest',up,{silent:true}); ({ctx,pg,r}=await center());
+    assert.match(r.txt,/השווי זז ב-\u200e?\+₪/); assert.match(r.txt,/אין כרגע נתוני מדד/); await ctx.close();
+    // old prices: the warning says how old, nothing is called live
+    const old=new Date(Date.now()-30*36e5).toISOString(); store.setDoc('quotes/latest',{...Q0,updatedAt:old,attemptAt:old},{silent:true}); ({ctx,pg,r}=await center());
+    assert.match(r.txt,/מה שמוצג כאן נכון למועד הזה, לא לעכשיו/); assert.doesNotMatch(r.txt,/\(מסחר חי\)/); await ctx.close();
+    // a holding without a price: named as missing
+    store.setDoc('quotes/latest',Q0,{silent:true}); store.setDoc('portfolio/main',{...P0,positions:[...P0.positions,{sym:'NOPX',name:'No price',qty:1,ccy:'USD',acct:'exc',group:'tech',costIls:100}]},{silent:true});
+    ({ctx,pg,r}=await center()); assert.match(r.txt,/NOPX/); await ctx.close();
+  }finally{store.setDoc('quotes/latest',Q0,{silent:true}); store.setDoc('portfolio/main',P0,{silent:true})}
+});

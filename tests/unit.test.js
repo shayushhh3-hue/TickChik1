@@ -464,3 +464,10 @@ test('prices: the dollar\'s previous close is kept only when this run\'s rate is
   d=buildQuotesDoc({prev:{usdIls:3.7},fetched:{quotes:{MSFT:q},index:{},errors:[],fx:{boi:{rate:3.70,date:'2026-10-12'}}},symbols:['MSFT'],now:new Date('2026-10-12T15:00:00Z'),usOpen:true});
   assert.equal(d.fxPrev,null,'the Bank of Israel rate has no previous close in the same answer: unknown');
 });
+test('prices: the two indices are kept with their dates; a run that misses one keeps the last value',()=>{
+  const q={px:510,prev:500,closeDate:'2026-10-12',ccy:'USD',src:'yahoo',time:'t'};
+  let d=buildQuotesDoc({prev:{},fetched:{quotes:{MSFT:q},index:{},errors:[],bench:{SPX:{px:5800,prev:5850,date:'2026-10-12',prevDate:'2026-10-09'},TA125:{px:2900,prev:2890,date:'2026-10-13'}}},symbols:['MSFT'],now:new Date('2026-10-13T08:00:00Z')});
+  assert.equal(d.bench.SPX.name,'S&P 500'); assert.equal(d.bench.SPX.date,'2026-10-12'); assert.equal(d.bench.TA125.prev,2890);
+  d=buildQuotesDoc({prev:d,fetched:{quotes:{MSFT:q},index:{},errors:[],bench:{TA125:{px:2950,prev:2900,date:'2026-10-14'}}},symbols:['MSFT'],now:new Date('2026-10-14T08:00:00Z')});
+  assert.equal(d.bench.SPX.date,'2026-10-12','the old S&P value stays, with its own date'); assert.equal(d.bench.TA125.date,'2026-10-14');
+});
