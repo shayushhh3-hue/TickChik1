@@ -1223,6 +1223,13 @@ section.fold > .fold-h h2{margin:0}
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
 .tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
+/* nothing that matters is cut off with "…" on a phone: these wrap to a second line instead (the one-line previews of the
+   alert groups stay, their full list is right under them) */
+@media (max-width:759px){.stat .d,.sit .nm b,.fitrow .nm b,.secp .pf .v{white-space:normal;overflow:visible;text-overflow:clip}}
+/* chart legends: a short line with the marker the chart ends in (circle or square), so a series is told by shape too */
+.legend i.lg-l1,.legend i.lg-l2{width:18px;height:3px;border-radius:2px;position:relative;overflow:visible}
+.legend i.lg-l1::after,.legend i.lg-l2::after{content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;transform:translate(-50%,-50%);background:inherit}
+.legend i.lg-l1::after{border-radius:50%} .legend i.lg-l2::after{border-radius:1.5px}
 /* readable and reachable (stage 3.5): unpressed chips on the dark header 5.4:1; every control at least 24px (WCAG 2.2
    target size), a little more on touch screens */
 .hero .chip:not([aria-pressed="true"]){color:#EEF2F7}
@@ -1476,7 +1483,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <label for="inTax">מס רווחי הון (%)<input type="number" id="inTax" min="0" max="50" step="1"></label>
           <label for="inGoal">היעד שלי, אחרי מס (₪)<input type="number" id="inGoal" min="0" step="10000" placeholder="לדוגמה 1000000"></label>
         </div>
-        <div class="legend" style="margin-block:16px 6px"><span><i class="lg-l1"></i>שווי אחרי מס</span><span><i class="lg-l2"></i>מה שהשקעת</span></div>
+        <div class="legend" style="margin-block:16px 6px"><span><i class="lg-l1"></i>שווי אחרי מס</span><span><i class="lg-l2"></i>מה שהשקעת</span><span>ציר אופקי: שנים מהיום</span></div>
         <div class="chart" id="chart2"><svg id="svg2" viewBox="0 0 640 260" role="img" aria-label="תחזית שווי התיק מול סך ההפקדות לאורך השנים"></svg><div class="tip" id="tip2" hidden></div></div>
         <p class="note" id="fwdNote"></p>
       </div>
@@ -15842,18 +15849,21 @@ function renderTrend(){
   const tk3=niceTicks(Math.min(...pts.map(p=>Math.min(p.val,p.dep)))*0.96,Math.max(...pts.map(p=>Math.max(p.val,p.dep)))*1.03,3), minV=tk3[0], maxV=tk3[tk3.length-1];
   const x=t=>L+(W-L-Rm)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>H-Bm-(H-T-Bm)*(v-minV)/(maxV-minV), kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';
   let g='';
-  for(const v of tk3){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="2 5"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`}
-  HS.monthly.forEach((r,i)=>{if(i%2===0){const p=pts[i];g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${+r.ym.slice(5)}/${r.ym.slice(2,4)}</text>`}});
+  for(const v of tk3){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="2 5"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`}
+  HS.monthly.forEach((r,i)=>{if(i%2===0){const p=pts[i];g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${+r.ym.slice(5)}/${r.ym.slice(2,4)}</text>`}});
   const stepD=pts.map((p,i)=>(i?`L${x(p.t).toFixed(1)} ${y(pts[i-1].dep).toFixed(1)}L`:'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join('');
   const lineV=pts.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.val).toFixed(1)).join(' ');
   g+=`<path d="${stepD}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/><path d="${lineV}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
-  g+=`<circle cx="${x(t1)}" cy="${y(pts[pts.length-1].val)}" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2.5"/>`;
+  // a month whose value was reconstructed, not read from a statement, is a hollow dot on the line (and "משוחזר" in the table)
+  for(const p of pts.filter(p=>p.est))g+=`<circle cx="${x(p.t)}" cy="${y(p.val)}" r="4" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>`;
+  // shapes as well as colors (WCAG 1.4.1): the value ends in a circle, the deposits in a square, as in the legend
+  g+=`<rect x="${x(t1)-5}" y="${y(pts[pts.length-1].dep)-5}" width="10" height="10" rx="1.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/><circle cx="${x(t1)}" cy="${y(pts[pts.length-1].val)}" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2.5"/>`;
   const e=pts[pts.length-1]; let y1=y(e.val),y2=y(e.dep); if(Math.abs(y1-y2)<14){const mid=(y1+y2)/2,sg=e.val>=e.dep?1:-1;y1=mid-7*sg;y2=mid+7*sg}
   g+=`<text x="${x(e.t)+8}" y="${y1+4}" font-size="12" font-weight="600" fill="var(--ink)" font-family="var(--mono)">${kf(e.val)}</text><text x="${x(e.t)+8}" y="${y2+4}" font-size="12" fill="var(--ink2)" font-family="var(--mono)">${kf(e.dep)}</text>`;
   g+=`<line id="cross3" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
   $('svg3').setAttribute('viewBox','0 0 '+W+' '+H); $('svg3').innerHTML=g; $('svg3').dataset.geo=JSON.stringify({L,Rm,W,t0,t1});
   const worst=pts.reduce((a,b)=>(b.val-b.dep)<(a.val-a.dep)?b:a), diff=e.val-e.dep;
-  $('trendNote').innerHTML=`<b class="n ${diff>=0?'up':'down'}">${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)})</b> מול מה שהופקד: התיק שווה היום ${ils(e.val)} ומה שהופקד הוא ${ils(e.dep)}.<details class="more"><summary>פרטים על הגרף</summary>הנקודה הנמוכה ביותר הייתה ${esc(worst.label)}, ${sgn(worst.val-worst.dep)}. שווי אקסלנס לפי דוח הברוקר, ובחודשים בלי דוח הוא משוחזר. ${esc(HS.monthlyNote||'')} מהיום נשמרת נקודה אחת לכל יום שבו הדף נפתח.</details>`;
+  $('trendNote').innerHTML=`<b class="n ${diff>=0?'up':'down'}">${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)})</b> מול מה שהופקד: התיק שווה היום ${ils(e.val)} ומה שהופקד הוא ${ils(e.dep)}.${pts.some(p=>p.est)?' עיגול ריק על הקו: שווי משוחזר, לא מדוח.':''}<details class="more"><summary>פרטים על הגרף</summary>הנקודה הנמוכה ביותר הייתה ${esc(worst.label)}, ${sgn(worst.val-worst.dep)}. שווי אקסלנס לפי דוח הברוקר, ובחודשים בלי דוח הוא משוחזר. ${esc(HS.monthlyNote||'')} מהיום נשמרת נקודה אחת לכל יום שבו הדף נפתח.</details>`;
   {const ids=acctIds(), th=$('trendHead'); if(th)setH(th,'<th>מועד</th>'+ids.map(a=>`<th class="num">${esc(acctName(a))} ₪</th>`).join('')+'<th class="num">סך הכול ₪</th><th class="num">הפקדות ₪</th><th class="num">הפרש</th>');
   $('trendRows').innerHTML=pts.slice().reverse().map(p=>{const d=p.val-p.dep;return `<tr><td>${esc(p.label)}${p.est?' <span class="nm">משוחזר</span>':''}</td>${ids.map(a=>`<td class="num"><span class="n">${p.by&&p.by[a]!=null?ils(p.by[a]):'—'}</span></td>`).join('')}<td class="num"><span class="n">${ils(p.val)}</span></td><td class="num"><span class="n">${ils(p.dep)}</span></td><td class="num"><span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(p.dep?d/p.dep*100:0)})</span></td></tr>`}).join('')}
   HSUM.push(`סך הכול: התיק שווה ${ils(e.val)} מול ${ils(e.dep)} שהופקדו, ${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)}).`);
@@ -17637,9 +17647,9 @@ function drawChart(pts){
   const step=Math.pow(10,Math.floor(Math.log10(maxV/4))); const nice=[1,2,2.5,5,10].map(k=>k*step).find(s=>maxV/s<=3)||step*10;
   const x=i=>L+(W-L-Rm)*(n?i/n:0.5), y=v=>H-Bm-(H-T-Bm)*v/maxV, kf=v=>'₪'+(v>=1000?(v/1000).toFixed(v%1000?1:0)+'K':Math.round(v));
   let g='';
-  for(let v=0;v<=maxV;v+=nice) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`;
+  for(let v=0;v<=maxV;v+=nice) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`;
   const every=n<=8?2:n<=18?6:12;
-  pts.forEach((p,i)=>{if(i%every===0)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${+p.ym.slice(5)}/${p.ym.slice(2,4)}</text>`});
+  pts.forEach((p,i)=>{if(i%every===0)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${+p.ym.slice(5)}/${p.ym.slice(2,4)}</text>`});
   const ci=pts.findIndex(p=>p.cur); if(ci>=0)g+=`<line x1="${x(ci)}" x2="${x(ci)}" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 3"/>`;
   const line=(arr,k)=>arr.map((p,i)=>(i?'L':'M')+x(pts.indexOf(p)).toFixed(1)+' '+y(p[k]).toFixed(1)).join(' ');
   // invested is a step series: it jumps in the month of a purchase
@@ -17647,7 +17657,7 @@ function drawChart(pts){
   g+=`<path d="${line(pts,'pd')}" fill="none" stroke="var(--s2)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".75"/><path d="${stepLine(pts,'pi')}" fill="none" stroke="var(--s1)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".75"/>`;
   const act=pts.filter(p=>p.act);
   if(act.length){g+=`<path d="${line(act,'ad')}" fill="none" stroke="var(--s2)" stroke-width="2.5"/><path d="${stepLine(act,'ai')}" fill="none" stroke="var(--s1)" stroke-width="2.5"/>`;
-    const a=act[act.length-1],ax=x(pts.indexOf(a));g+=`<circle cx="${ax}" cy="${y(a.ad)}" r="4" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/><circle cx="${ax}" cy="${y(a.ai)}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>`}
+    const a=act[act.length-1],ax=x(pts.indexOf(a));g+=`<rect x="${ax-4.5}" y="${y(a.ad)-4.5}" width="9" height="9" rx="1.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/><circle cx="${ax}" cy="${y(a.ai)}" r="4.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>`}
   const e=pts[n]; let y1=y(e.pd),y2=y(e.pi); if(Math.abs(y1-y2)<14){const mid=(y1+y2)/2;y1=mid-7;y2=mid+7}
   g+=`<text x="${x(n)+8}" y="${y1+4}" font-size="12" font-weight="600" fill="var(--ink)" font-family="var(--mono)">${kf(e.pd)}</text><text x="${x(n)+8}" y="${y2+4}" font-size="12" fill="var(--ink2)" font-family="var(--mono)">${kf(e.pi)}</text>`;
   g+=`<line id="cross" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><rect id="hit" x="${L}" y="${T}" width="${W-L-Rm}" height="${H-T-Bm}" fill="transparent"/>`;
@@ -17672,16 +17682,16 @@ function drawFwd(raw,planEndY,unreal,missing){
   const step=Math.pow(10,Math.floor(Math.log10(maxV/4))); const nice=[1,2,2.5,5,10].map(k=>k*step).find(s=>maxV/s<=3)||step*10;
   const x=i=>L+(W-L-Rm)*(n?i/n:0), y=v=>H-Bm-(H-T-Bm)*v/maxV, kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';
   let g='';
-  for(let v=0;v<=maxV;v+=nice) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`;
+  for(let v=0;v<=maxV;v+=nice) g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`;
   const every=n<=10?2:5;
-  pts.forEach((p,i)=>{if(i%every===0)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${p.y}</text>`});
+  pts.forEach((p,i)=>{if(i%every===0)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${p.y}</text>`});
   const path=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]).toFixed(1)).join(' ');
   // one soft fill between what you put in and what you would hold after tax
   {let back='';for(let i=n;i>=0;i--)back+=` L${x(i).toFixed(1)} ${y(pts[i].dep).toFixed(1)}`;
    g+=`<path d="${path('net')}${back} Z" fill="rgb(154 103 47 / .14)"/>`}
   g+=`<path d="${path('dep')}" fill="none" stroke="var(--s2)" stroke-width="2.5" stroke-linejoin="round"/><path d="${path('net')}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
   const e=pts[n]; const labs=[{v:e.net,b:1},{v:e.dep,b:0}].map(o=>({...o,yy:y(o.v)})).sort((a,b)=>a.yy-b.yy); for(let i=1;i<labs.length;i++)if(labs[i].yy-labs[i-1].yy<16)labs[i].yy=labs[i-1].yy+16;
-  g+=`<circle cx="${x(n)}" cy="${y(e.net)}" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2.5"/><circle cx="${x(n)}" cy="${y(e.dep)}" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2.5"/>`;
+  g+=`<circle cx="${x(n)}" cy="${y(e.net)}" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2.5"/><rect x="${x(n)-5}" y="${y(e.dep)-5}" width="10" height="10" rx="1.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/>`;
   g+=labs.map(o=>`<text x="${x(n)+10}" y="${o.yy+4}" font-size="13" font-weight="${o.b?700:500}" fill="var(--${o.b?'ink':'ink2'})" font-family="var(--mono)">₪${Math.round(o.v/1000)}K</text>`).join('');
   g+=`<line id="cross2" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
   $('svg2').setAttribute('viewBox','0 0 '+W+' '+H); $('svg2').innerHTML=g; $('svg2').dataset.geo=JSON.stringify({L,Rm,W,n});
@@ -19180,10 +19190,13 @@ function drawSec(){
   const x=t=>L+(t-t0)/((t1-t0)||1)*PW, y=v=>T+(ghi-v)/((ghi-glo)||1)*PH;
   const last=pts[pts.length-1],up=last[1]>=base,GAIN='#2F7A5C',LOSS='#B83A3A',col=up?GAIN:LOSS;
   // grid with price labels on the right (the reading side in a right-to-left page)
-  g.font='11px IBM Plex Mono, monospace';g.textAlign='left';g.textBaseline='middle';
+  g.font='12px IBM Plex Mono, monospace';g.textAlign='left';g.textBaseline='middle';
   for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle='#E6EAEF';g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();g.fillStyle='#657587';g.fillText(fmtN(v),L+PW+8,yy)}
   // baseline: the first price of the range
   const yb=y(base);g.setLineDash([3,4]);g.strokeStyle='#A9B4C0';g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.setLineDash([]);
+  // a stretch with no data (longer than a holiday for this kind of series) is shaded grey and named in the note; the line there only joins the two ends
+  const gapMs=({'יומי':8,'שבועי':21,'חודשי':75}[freq]||Infinity)*864e5, gaps=[]; for(let i=1;i<pts.length;i++)if(pts[i][0]-pts[i-1][0]>gapMs)gaps.push([pts[i-1][0],pts[i][0]]);
+  for(const [a,b] of gaps){g.fillStyle='rgba(101,117,135,.13)';g.fillRect(x(a),T,Math.max(2,x(b)-x(a)),PH)}
   const path=()=>{g.beginPath();pts.forEach((p,i)=>{i?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1]))})};
   const area=()=>{path();g.lineTo(x(t1),yb);g.lineTo(x(t0),yb);g.closePath()};
   // above the baseline in green, below in red: the same line drawn twice under two clips
@@ -19195,10 +19208,10 @@ function drawSec(){
   else if(spanD<=45){for(let t=t0;t<=t1;t+=7*864e5){const dd=new Date(t);ticks.push([t,dd.getDate()+'.'+(dd.getMonth()+1)])}}
   else if(spanD<=400){const m=new Date(dt0.getFullYear(),dt0.getMonth()+1,1);while(m.getTime()<=t1){ticks.push([m.getTime(),HEM[m.getMonth()]+(m.getMonth()===0?' '+m.getFullYear():'')]);m.setMonth(m.getMonth()+1)}}
   else{const yv=new Date(dt0.getFullYear()+1,0,1);while(yv.getTime()<=t1){ticks.push([yv.getTime(),String(yv.getFullYear())]);yv.setFullYear(yv.getFullYear()+1)}}
-  g.fillStyle='#657587';g.textAlign='center';g.textBaseline='alphabetic';g.font='11px Heebo, IBM Plex Mono, sans-serif';let lastX=-1e9;
+  g.fillStyle='#657587';g.textAlign='center';g.textBaseline='alphabetic';g.font='12px Heebo, IBM Plex Mono, sans-serif';let lastX=-1e9;
   for(const [t,lab] of ticks){const xx=x(t);if(xx-lastX<44||xx<L+14||xx>L+PW-14)continue;lastX=xx;g.strokeStyle='#E6EAEF';g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+PH);g.stroke();g.fillText(lab,xx,H-9)}
   // current price tag on the axis
-  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 11px IBM Plex Mono, monospace';const tw=g.measureText(txt).width+12,yy=Math.max(T+8,Math.min(T+PH-8,y(v)));g.fillStyle=fill;const rx=L+PW+4,ry=yy-9;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,18,5):g.rect(rx,ry,tw,18);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+6,yy)};
+  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px IBM Plex Mono, monospace';const tw=g.measureText(txt).width+12,yy=Math.max(T+8,Math.min(T+PH-8,y(v)));g.fillStyle=fill;const rx=L+PW+4,ry=yy-9;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,18,5):g.rect(rx,ry,tw,18);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+6,yy)};
   tag(last[1],'#fff',col);
   g.fillStyle=col;g.beginPath();g.arc(x(last[0]),y(last[1]),3.2,0,7);g.fill();
   // the selected point: a dashed guide and a ringed dot; the words go in the panel above the chart
@@ -19207,7 +19220,9 @@ function drawSec(){
   secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq);
   SECV={pts,x,L,PW};
   const ch=last[1]/base-1;const late=days!==Infinity&&t0>from+days*864e5*0.25;
-  note.textContent=`${pts.length} נקודות (${freq}).`+(late?' הנתונים מתחילים מאוחר יותר מתחילת הטווח; ההיסטוריה המלאה תימשך בלילה הקרוב.':'');
+  const itc=itemOf(SEC), ils=pr?pr.ccy==='ILS':String(SEC).startsWith('TLV:')||(itc&&(itc.t==='T'||(itc.t==='H'&&itc.ex==='TLV'))), cur=ils?'בשקלים':'בדולרים', dm=t=>dmy(new Date(t).toISOString());
+  note.textContent=`${pts.length} נקודות (${freq}), מחירי סגירה ${cur}. השינוי בגרף הוא של המחיר בלבד, בלי דיבידנדים.`+(late?' הנתונים מתחילים מאוחר יותר מתחילת הטווח; ההיסטוריה המלאה תימשך בלילה הקרוב.':'')
+    +(gaps.length?` באפור: ${gaps.length===1?'תקופה':'תקופות'} בלי נתונים (${gaps.slice(0,3).map(([a,b])=>dm(a)+'–'+dm(b)).join(', ')}${gaps.length>3?' ועוד':''}); הקו שם רק מחבר בין שתי הנקודות.`:'');
 }
 const HEDAY=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 function fullDate(t){const d=new Date(t);return 'יום '+HEDAY[d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()}
@@ -19221,7 +19236,7 @@ function secReadout(pts,base,last,hp,freq){const el=$('secRead');if(!el)return;e
     el.innerHTML=`<b>${RNGL[SECRNG]||''}</b>: מ-${dateLab(first[0],last[0]-first[0])} עד ${dateLab(last[0],last[0]-first[0])} · פתיחה ${P(base)} ← אחרון ${P(last[1])} · <b>${pc(chAll)}</b> ${upAll?'עלייה':'ירידה'}`+
       `<span class="hint">גע או עבור עם העכבר על הגרף כדי לראות תאריך ומחיר. הקו המקווקו הוא מחיר הפתיחה של הטווח: ירוק מעליו, אדום מתחתיו.</span>`}}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
-function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1)}
+function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
 function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.getBoundingClientRect(),px=ev.clientX-r.left;let best=-1,bd=1e9;SECV.pts.forEach((p,i)=>{const d=Math.abs(SECV.x(p[0])-px);if(d<bd){bd=d;best=i}});if(best!==SECHOV){SECHOV=best;drawSec()}}
 function secHoverOff(){if(SECHOV!==-1){SECHOV=-1;drawSec()}}
 // ---- "what fits my portfolio": every security with figures, ranked by the viewer's own rules (not a buy call) ----
