@@ -296,3 +296,24 @@ test('explain my portfolio: six parts from the portfolio, a checked summary, que
       assert.deepEqual(r,{page:'risk',chat:false,kind:'usd'},'the question opens the dollar scenario')}
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
+
+test('the level of explanation: chosen in the chat, saved, and the cards say more (or how it is computed)',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.click('#chatFab'); await pg.waitForTimeout(300);
+  const pressed=()=>pg.evaluate(()=>[...document.querySelectorAll('#anaOut .hello .lv-ctl [aria-pressed="true"]')].map(b=>b.dataset.lv).join());
+  assert.equal(await pressed(),'mid');
+  await pg.click('#anaSugg [data-ana="explain"]'); await pg.waitForFunction(()=>{const c=[...document.querySelectorAll('#anaOut .ana-card')].pop(); return c&&/שאלות שיכולות לעזור/.test(c.textContent)&&!c.querySelector('.ana-wait')},null,{timeout:15000});
+  const notes=()=>pg.evaluate(()=>{const c=[...document.querySelectorAll('#anaOut .ana-card')].pop(); return [...c.querySelectorAll('.ex-lv b')].map(b=>b.textContent)});
+  assert.deepEqual(await notes(),[],'"מכיר את היסודות": no extra notes');
+  await pg.click('#anaOut .ana-card .ana-ft .lv-ctl [data-lv="new"]'); await pg.waitForTimeout(300);
+  let n=await notes(); assert.ok(n.length>=5&&n.every(x=>/במילים פשוטות/.test(x)),JSON.stringify(n));
+  assert.equal(await pressed(),'new','every switch shows the new level');
+  assert.equal(await pg.evaluate(()=>document.activeElement&&document.activeElement.dataset.lv),'new','focus stays on the choice after the card is drawn again');
+  await pg.click('#anaOut .ana-card .ana-ft .lv-ctl [data-lv="pro"]'); await pg.waitForTimeout(1500);
+  n=await notes(); assert.ok(n.length>=5&&n.every(x=>/איך זה מחושב/.test(x)),JSON.stringify(n));
+  assert.equal(store.getDoc('settings/main').data.profile.level,'pro','saved in the profile');
+  await pg.fill('#anaQ','למה התיק ירד היום?'); await pg.click('#anaForm .chat-send'); await pg.waitForTimeout(800);
+  const why=await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent); assert.match(why,/איך זה מחושב: תרומה = כמות/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+  {const d=store.getDoc('settings/main').data; store.setDoc('settings/main',{...d,profile:{...d.profile,level:'mid'}},{silent:true})}
+});

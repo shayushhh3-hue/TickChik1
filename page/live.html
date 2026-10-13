@@ -1230,6 +1230,7 @@ section.fold > .fold-h h2{margin:0}
 .stq{margin:0;display:flex;flex-direction:column;gap:10px} .stq dt{font-weight:600;font-size:14px} .stq dd{margin:2px 0 0;color:var(--ink2);font-size:13.5px;line-height:1.55}
 .stq dd .ex-go{display:block;margin-top:6px}
 .ex-lv{padding:8px 10px;background:var(--sunk);border-radius:8px;max-width:none;font-size:12.5px;line-height:1.6;color:var(--ink2)}
+.lv-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2)} .lv-ctl .chips{flex:none}
 .st-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:12px 0}
 .st-form label{min-width:150px} .st-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%}
 .st-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:6px 0 10px;font-size:14px}
@@ -1941,11 +1942,11 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       </fieldset>
       <p class="note">התשובה קובעת את המשקלות בדירוג "מה מתאים לתיק" ובמניות במעקב. זה דירוג התאמה, לא המלצה לקנות.</p>
       <fieldset class="risk3"><legend>כמה אתה מכיר את שוק ההון?</legend>
-        <label class="rk"><input type="radio" name="pfLevel" value="new"><b>מתחיל</b><span>הסברים פשוטים, וכל מונח מוסבר.</span></label>
-        <label class="rk"><input type="radio" name="pfLevel" value="mid"><b>מכיר את היסודות</b><span>בלי להסביר את היסודות בכל פעם.</span></label>
-        <label class="rk"><input type="radio" name="pfLevel" value="pro"><b>מנוסה</b><span>תמציתי ומקצועי, עם המספרים.</span></label>
+        <label class="rk"><input type="radio" name="pfLevel" value="new"><b>מתחיל</b><span>משפטים פשוטים, וכל מונח מוסבר במילים פשוטות.</span></label>
+        <label class="rk"><input type="radio" name="pfLevel" value="mid"><b>מכיר את היסודות</b><span>תשואות, הקצאה וחשיפות, בלי להסביר את היסודות בכל פעם.</span></label>
+        <label class="rk"><input type="radio" name="pfLevel" value="pro"><b>מנוסה</b><span>תמציתי, וגם איך כל מספר מחושב, ההנחות והמגבלות.</span></label>
       </fieldset>
-      <p class="note">לפי זה צ׳יקו מתאים את עומק ההסברים. בלי בחירה: "מכיר את היסודות".</p>
+      <p class="note">לפי זה צ׳יקו מתאים את עומק ההסברים. בלי בחירה: "מכיר את היסודות". הרמה לא נקבעת לפי גודל התיק, ואפשר לשנות אותה גם בשיחה עם צ׳יקו.</p>
       <div class="prof-g">
         <label for="pfPurpose"><span>בשביל מה אתה משקיע? <span class="opt">(לא חובה)</span></span><select id="pfPurpose"><option value="">לא צוין</option><option value="home">דירה</option><option value="pension">פנסיה וטווח ארוך</option><option value="save">חיסכון כללי</option><option value="kids">ילדים ולימודים</option><option value="income">הכנסה שוטפת</option><option value="other">אחר</option></select></label>
         <label for="pfYears">אופק ההשקעה (שנים)<input type="number" id="pfYears" min="1" max="40" step="1" inputmode="numeric"></label>
@@ -16893,7 +16894,7 @@ const anaTag=F=>F.live?'<span class="ana-tag ok">מסחר חי</span>':F.ageH!=n
 function anaReportHtml(F,issues,det,st){
   const m=F.m, ai=st.ai||{}, R=F.R, cashW=m.total?m.cash/m.total*100:0;
   const hero=`<div class="ana-hero"><div class="k">שווי התיק</div><div class="v"><span class="n">${ils(m.total)}</span></div><div class="d">${m.cost?`<span class="${m.pnl>=0?'up':'down'}">${tx(`${sgn(m.pnl)} (${spct(m.pnlPct)})`)}</span> מול מחיר הקנייה${m.missingCost?tx(` · מחושב ל-${m.pos.length-m.missingCost} מתוך ${m.pos.length} ניירות`):''}`:'אין מחירי קנייה, ולכן אין חישוב רווח והפסד.'}</div>${F.live?'':`<p class="ana-dn">${tx(F.priceNote)}</p>`}</div>`;
-  const bl=`<section class="ana-bl" aria-label="השורה התחתונה"><h4>השורה התחתונה</h4><p>${tx(ai.bottom||det.bottom)}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${ai.bottom?'ניסוח: Claude, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף'}</span>`}</section>`;
+  const bl=`<section class="ana-bl" aria-label="השורה התחתונה"><h4>השורה התחתונה</h4><p>${tx(ai.bottom||det.bottom)}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${ai.bottom?'ניסוח: Claude, לפי המספרים שהדף חישב'+(ai.lv&&ai.lv!==levelOf()?`, ברמה "${LEVEL[ai.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
   const tiles=[
     anaTile('מספר ניירות',String(m.pos.length),tx([F.stocks.length?`${F.stocks.length} מניות`:'',F.funds.length?(F.funds.length===1?'קרן אחת':`${F.funds.length} קרנות`):''].filter(Boolean).join(' · '))),
     anaTile('מזומן',pct(cashW),ils(m.cash)),
@@ -16903,19 +16904,19 @@ function anaReportHtml(F,issues,det,st){
     anaTile('חשיפה לדולר',pct(m.usdPct),+R.usdCap>0?`התקרה שלך ${nn(pct(+R.usdCap,0))}`:`לפי שער ${nn(Q.usdIls.toFixed(3))}`,+R.usdCap>0&&m.usdPct>+R.usdCap?'down':'')].join('');
   const mx=Math.max(1,...F.groups.map(g=>Math.max(g.w,g.t)));
   const alloc=`<div class="ana-al">${F.groups.map(g=>`<div class="ana-ar${g.over?' over':g.off?' off':''}"><span class="nm1">${esc(g.name)}</span><div class="tr" role="img" aria-label="${esc(g.name)}: ${pct(g.w)}${F.tsum>0?', היעד '+pct(g.t,0):''}"><i style="width:${(g.w/mx*100).toFixed(1)}%"></i>${F.tsum>0?`<u style="inset-inline-start:calc(${(g.t/mx*100).toFixed(1)}% - 1px)"></u>`:''}</div><span class="vals"><b>${pct(g.w)}</b>${F.tsum>0?` <small>יעד ${pct(g.t,0)}</small>`:''}</span></div>`).join('')}</div>
-    <p class="note">${F.tsum>0?`הפס הוא המצב בפועל והקו האנכי הוא היעד שלך. כתום: רחוק מהיעד ביותר מ-${R.drift} נק׳ אחוז. אדום: מעל הסף של ${pct(R.maxGroup,0)} לקבוצה.`:'לא הוגדרו יעדי הקצאה, ולכן מוצג רק המצב בפועל.'} כל נייר נספר בקבוצה אחת, וחשיפה עקיפה דרך קרנות לא נכללת בחלוקה.</p>`;
+    <p class="note">${F.tsum>0?`הפס הוא המצב בפועל והקו האנכי הוא היעד שלך. כתום: רחוק מהיעד ביותר מ-${R.drift} נק׳ אחוז. אדום: מעל הסף של ${pct(R.maxGroup,0)} לקבוצה.`:'לא הוגדרו יעדי הקצאה, ולכן מוצג רק המצב בפועל.'} כל נייר נספר בקבוצה אחת, וחשיפה עקיפה דרך קרנות לא נכללת בחלוקה.</p>${lvP(LVN.anaAlloc)}`;
   const itH=i=>{const x=(ai.items&&ai.items[i.id])||{}, d=ANA_DEF[i.cat]||{}, why=x.why||d.why, chk=x.check||d.check, cav=anaCav(i);
     return `<li class="ana-it ${i.sev}"><div class="h"><b>${tx(i.title||i.cat)}</b><span class="rs ${i.sev}">${ANA_SEV[i.sev]}</span>${i.acked?'<span class="ackt">סימנת שבדקת</span>':''}</div><p>${tx(i.text)}</p>${why?`<p class="x"><b>למה זה חשוב?</b> ${tx(why)}</p>`:''}${chk?`<p class="x"><b>מה אפשר לבדוק?</b> ${tx(chk)}</p>`:''}${cav?`<p class="cav">${tx(cav)}</p>`:''}${i.rows?`<details class="why"><summary>על מה זה מבוסס</summary><div class="wy"><dl>${i.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl></div></details>`:''}${anaNavBtn(i.nav)}</li>`};
-  const its=issues.length?`<ul class="ana-its">${issues.slice(0,3).map(itH).join('')}</ul>`+(issues.length>3?`<details class="ana-more"><summary>עוד ${issues.length-3} ${issues.length-3===1?'נושא':'נושאים'}: ${esc([...new Set(issues.slice(3).map(i=>i.cat))].join(', '))}</summary><ul class="ana-its">${issues.slice(3).map(itH).join('')}</ul></details>`:''):'<p class="ana-ok">לפי הכללים שקבעת, אין כרגע דבר שדורש את תשומת לבך.</p>';
+  const its=(issues.length?`<ul class="ana-its">${issues.slice(0,3).map(itH).join('')}</ul>`+(issues.length>3?`<details class="ana-more"><summary>עוד ${issues.length-3} ${issues.length-3===1?'נושא':'נושאים'}: ${esc([...new Set(issues.slice(3).map(i=>i.cat))].join(', '))}</summary><ul class="ana-its">${issues.slice(3).map(itH).join('')}</ul></details>`:''):'<p class="ana-ok">לפי הכללים שקבעת, אין כרגע דבר שדורש את תשומת לבך.</p>')+lvP(LVN.anaIssues);
   const strengths=ai.strengths&&ai.strengths.length>=2?ai.strengths:det.strengths;
   const stH=strengths.length?`<ul class="ana-st">${strengths.map(s=>`<li><span>${tx(s)}</span></li>`).join('')}</ul>`:'<p class="note">לא נמצאה נקודת חוזק שאפשר לבסס על הנתונים הקיימים.</p>';
-  const plH=`${ai.plan?`<p class="ana-pp">${tx(ai.plan)}</p>`:''}<div class="ana-pl">${det.plan.map(r=>`<div class="ana-pr"><span class="rs ${r.k==='fact'?'info':r.k}">${r.k==='info'?'מעקב':r.k==='fact'?'נתון':ANA_SEV[r.k]}</span><div><b>${esc(r.t)}</b>${tx(r.x)}</div>${anaNavBtn(r.nav)}</div>`).join('')}</div>`;
+  const plH=`${ai.plan?`<p class="ana-pp">${tx(ai.plan)}</p>`:''}<div class="ana-pl">${det.plan.map(r=>`<div class="ana-pr"><span class="rs ${r.k==='fact'?'info':r.k}">${r.k==='info'?'מעקב':r.k==='fact'?'נתון':ANA_SEV[r.k]}</span><div><b>${esc(r.t)}</b>${tx(r.x)}</div>${anaNavBtn(r.nav)}</div>`).join('')}</div>${lvP(LVN.anaPlan)}`;
   const acts=det.actions.map((a,k)=>({...a,why:(ai.actWhy&&ai.actWhy['k'+(k+1)])||a.why}));
   const acH=`<ol class="ana-ac">${acts.map(a=>`<li><div><b>${tx(a.title)}</b><p>${tx(a.why)}</p>${anaNavBtn(a.nav)}</div></li>`).join('')}</ol>`;
   const err=st.note==='first'?`<p class="ana-info">זה הניתוח שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.${SAMPLE&&!SAMPLE_OFF?' אפשר לבקש גם ניסוח והסבר של Claude: <button type="button" class="btn sm" data-ana="analyze">ניסוח של Claude</button>':''}</p>`
     :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(ANA_ERR[st.note]||ANA_ERR.upstream_error)}${st.retry?' <button type="button" class="btn sm" data-ana="analyze">נסה שוב</button>':''}</p>`:'';
-  const chk=st.ai?`<p>${st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של Claude הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של Claude נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
-  const ft=`<footer class="ana-ft">${err}${F.miss.length?`<b>מה חסר לניתוח מלא</b><ul>${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}${chk}<p>המספרים חושבו בדף מנתוני התיק שלך. הניתוח הוא כלי עזר לקבלת החלטות ואינו תחליף לייעוץ השקעות המותאם אישית. אין לבצע שינוי בתיק על סמך נתון שלא אומת.</p></footer>`;
+  const chk=st.ai?`<p>${!st.ai.checked?'Claude לא החזיר ניסוח שאפשר להשתמש בו, ולכן כל הניסוחים כאן מחושבים בדף.':st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של Claude הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של Claude נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
+  const ft=`<footer class="ana-ft">${err}${F.miss.length?`<b>מה חסר לניתוח מלא</b><ul>${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}${chk}<p>המספרים חושבו בדף מנתוני התיק שלך. הניתוח הוא כלי עזר לקבלת החלטות ואינו תחליף לייעוץ השקעות המותאם אישית. אין לבצע שינוי בתיק על סמך נתון שלא אומת.</p>${lvCtl()}</footer>`;
   return anaHead('ניתוח התיק שלך',anaWhen(F),anaTag(F))+hero+bl+anaSec(1,'תמונת מצב',`<div class="mine3">${tiles}</div>`)+anaSec(2,'הקצאת התיק',alloc)
     +anaSec(3,`מה דורש את תשומת הלב שלך?${issues.length?` <span class="cnt">${issues.length}</span>`:''}`,its)+anaSec(4,'נקודות חוזק',stH)+anaSec(5,'האם התיק עומד בתוכנית?',plH)
     +anaSec(6,acts.length===3?'שלוש הפעולות שהייתי בודק':'הפעולות שהייתי בודק',acH)+ft;
@@ -16946,12 +16947,12 @@ function anaWhyHtml(F,W){
   const head=anaHead(`${title} ${dw.startsWith('היום')?'היום':'ביום המסחר האחרון'}?`,anaWhen(F),anaTag(F));
   if(!W.has)return head+`<p>אין עדיין שינוי יומי לניירות בתיק: חסרים מחירי הסגירה הקודמים שלהם. אחרי עדכון המחירים הבא אפשר לשאול שוב.</p>`;
   const sym=x=>`<b class="sym">${esc(lab(x.sym))}</b>`, money=v=>`<span class="n ${v>=0?'up':'down'}">${sgn(v)}</span>`;
-  const s1=`<p>${esc(dw)} התיק ${W.dir==='flat'?'כמעט לא זז':W.dir==='down'?'ירד':'עלה'}: ${ch}.${F.live?'':' '+tx(F.priceNote)}</p><p class="note">השינוי מחושב מהמחיר של כל נייר מול מחיר הסגירה הקודם שלו${W.days.prev?' ('+esc(W.days.prev)+')':''}, בכמויות שבתיק עכשיו, בשקלים לפי השער הנוכחי. קניות, מכירות והפקדות לא נכללות בו. ${termBtn('contrib')}</p>`;
+  const s1=`<p>${esc(dw)} התיק ${W.dir==='flat'?'כמעט לא זז':W.dir==='down'?'ירד':'עלה'}: ${ch}.${F.live?'':' '+tx(F.priceNote)}</p><p class="note">השינוי מחושב מהמחיר של כל נייר מול מחיר הסגירה הקודם שלו${W.days.prev?' ('+esc(W.days.prev)+')':''}, בכמויות שבתיק עכשיו, בשקלים לפי השער הנוכחי. קניות, מכירות והפקדות לא נכללות בו. ${termBtn('contrib')}</p>${lvP(LVN.why1)}`;
   const list=(W.top.length?W.top:W.items.slice(0,3));
   const s2=`<ul class="why-l">${list.map(x=>`<li>${sym(x)} ${money(x.ils)} <span class="nm">${tx(spct(x.pct,2))} במחיר${W.dir!=='flat'?' · '+Math.round(Math.abs(x.share)*100)+'% מהשינוי':''}</span></li>`).join('')}</ul>`
     +(W.against.length?`<p>בכיוון ההפוך: ${W.against.slice(0,3).map(x=>sym(x)+' '+money(x.ils)).join(', ')}${W.against.length>3?` ועוד ${W.against.length-3}`:''}.</p>`:'')
     +`<p>${W.breadth.down} ${W.breadth.down===1?'נייר ירד':'ניירות ירדו'}, ${W.breadth.up} עלו${W.breadth.flat?` ו-${W.breadth.flat} כמעט לא זזו`:''}, מתוך ${W.breadth.n} שיש להם מחיר סגירה קודם.</p>`
-    +(W.groups.length>1?`<p>לפי קבוצות: ${W.groups.slice(0,3).map(g=>`${esc(g.name)} ${money(g.ils)}`).join(' · ')}.</p>`:'');
+    +(W.groups.length>1?`<p>לפי קבוצות: ${W.groups.slice(0,3).map(g=>`${esc(g.name)} ${money(g.ils)}`).join(' · ')}.</p>`:'')+lvP(LVN.why2);
   const s3=(W.patterns.length?`<ul class="why-l">${W.patterns.map(x=>`<li><span class="tag mkt">מהנתונים</span> ${tx(WHY_PT[x.k](x))}</li>`).join('')}</ul>`:'')
     +`<p class="note">למה המחירים עצמם זזו (חדשות, דוחות, ריבית): לדף אין מקור כזה, ולכן הוא לא קובע סיבה. גם כתבה מאותו יום לא מוכיחה לבדה שהיא הסיבה.</p>`;
   const s4=[...W.heavy.map(h=>`<li>${sym(h)} הוא ${tx(pct(h.w))} מהתיק, מעל התקרה שקבעת לנייר בודד (${tx(pct(h.cap,0))}), ולכן תנועה שלו מורגשת בתיק יותר.</li>`),
@@ -16967,7 +16968,7 @@ function anaWhyHtml(F,W){
   return head+anaSec(1,'מה קרה?',s1)+anaSec(2,'מה הנתונים מראים?',s2)+anaSec(3,'מה עשוי להסביר את השינוי?',s3)+anaSec(4,'איך התיק מושפע?',`<ul class="why-l">${s4.join('')}</ul>`)
     +anaSec(5,'מה עדיין לא ידוע?',`<ul class="why-l">${unk.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`)
     +anaSec(6,'מה אפשר לבדוק בהמשך?',`<div class="ana-navs">${nx.map(n=>anaNavBtn(n)).join('')}</div>`)
-    +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של Claude. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p></footer>`;
+    +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של Claude. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p>${lvCtl()}</footer>`;
 }
 // ---- "הסבר את התיק שלי": the words for pfExplain()'s numbers, in six parts (the plan's list), and the level of explanation ----
 const secOfIt=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}};
@@ -17016,8 +17017,8 @@ const exNav=n=>n.prof?(canWrite?`<button type="button" class="btn sm" data-prof=
 function anaExplainPfHtml(F,X,st){
   const lv=levelOf(), w=X.what, e=X.expo, c=X.conc, sym=s=>`<b class="sym">${esc(lab(s))}</b>`, head=anaHead('הסבר התיק שלך',anaWhen(F),anaTag(F));
   if(!w.n)return head+`<p>בתיק יש כרגע רק מזומן: ${tx(ils(w.cash))}. אחרי שיתווספו ניירות, כאן יופיעו מה יש בתיק, החשיפות והריכוז.</p>`;
-  const lvN=k=>lv==='new'&&EXB[k]?`<p class="note ex-lv"><b>במילים פשוטות:</b> ${tx(EXB[k])}</p>`:lv==='pro'&&EXM[k]?`<p class="note ex-lv"><b>איך זה מחושב:</b> ${tx(EXM[k])}</p>`:'';
-  const sum=st.sum&&st.sum.text, bl=`<section class="ana-bl" aria-label="בקצרה"><h4>בקצרה</h4><p>${tx(sum||exSum(X))}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${sum?'ניסוח: Claude, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף'}</span>`}</section>`;
+  const lvN=k=>lvP({new:EXB[k],pro:EXM[k]});
+  const sum=st.sum&&st.sum.text, bl=`<section class="ana-bl" aria-label="בקצרה"><h4>בקצרה</h4><p>${tx(sum||exSum(X))}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${sum?'ניסוח: Claude, לפי המספרים שהדף חישב'+(st.sum.lv&&st.sum.lv!==lv?`, ברמה "${LEVEL[st.sum.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
   const s1=`<p>${tx(`${w.n===1?'נייר אחד':w.n+' ניירות'}: ${w.stocks===1?'מניה בודדת אחת':w.stocks+' מניות בודדות'}${w.funds?` ו-${w.funds===1?'קרן אחת':w.funds+' קרנות'}`:''}, ב-${w.groups===1?'קבוצה אחת':w.groups+' קבוצות'}. שווי כולל ${ils(w.total)}${w.cash>0.5?`, מתוכו ${ils(w.cash)} במזומן`:''}.`)}</p>`
     +`<ul class="why-l">${w.top.map(p=>`<li>${sym(p.sym)} <span class="nm">${esc(p.name||'')}</span> · ${tx(pct(p.w))} · ${esc(GROUPS[p.group]||p.group)}</li>`).join('')}</ul>`
     +(w.more?`<p class="note">ועוד ${w.more===1?'נייר אחד':w.more+' ניירות'}, כל אחד ${tx(pct(w.nextW))} מהתיק או פחות.</p>`:'')+lvN('what');
@@ -17039,7 +17040,7 @@ function anaExplainPfHtml(F,X,st){
   const err=st.note==='first'?'<p class="ana-info">זה ההסבר שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.</p>'
     :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc((ANA_ERR[st.note]||ANA_ERR.upstream_error).replace('הניתוח המחושב','ההסבר המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="explain">נסה שוב</button>':''}</p>`:'';
   const chk=st.sum&&st.sum.replaced?`<p>בדיקת מספרים: ${st.sum.replaced===1?'משפט אחד':st.sum.replaced+' משפטים'} של Claude ${st.sum.replaced===1?'הוסר, כי הופיע בו':'הוסרו, כי הופיע בהם'} מספר שלא נמצא בנתוני התיק, הערכה של התיק או ניסוח של המלצה.</p>`:'';
-  const ft=`<footer class="ana-ft">${err}${chk}<p>מבוסס רק על התיק שלך כפי שהוא בדף: האחזקות, המחירים והשער, והכללים וההגדרות שקבעת. רמת ההסבר: "${esc(LEVEL[lv])}". זה הסבר של מה שיש בתיק, לא בדיקה אם הוא מתאים לך ולא המלצה.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">לבדיקה מול הכללים שלך</button></div></footer>`;
+  const ft=`<footer class="ana-ft">${err}${chk}<p>מבוסס רק על התיק שלך כפי שהוא בדף: האחזקות, המחירים והשער, והכללים וההגדרות שקבעת. זה הסבר של מה שיש בתיק, לא בדיקה אם הוא מתאים לך ולא המלצה.</p>${lvCtl()}<div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">לבדיקה מול הכללים שלך</button></div></footer>`;
   return head+bl+anaSec(1,'מה יש בתיק',s1)+anaSec(2,'מה בולט',s2)+anaSec(3,'החשיפות המרכזיות '+termBtn('expo'),s3)
     +anaSec(4,'נקודות ריכוז '+termBtn('conc'),s4)+anaSec(5,'מה חסר',s5)+anaSec(6,'שאלות שיכולות לעזור',s6)+ft;
 }
@@ -17088,7 +17089,7 @@ function anaScroll(id){try{const log=$('anaOut'), a=log.querySelector('[data-car
   log.scrollTo({top:Math.max(0,top-12),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}catch(e){}}
 function anaFocus(id){anaScroll(id); try{const a=$('anaOut').querySelector('[data-card="'+id+'"]'); if(a)a.focus({preventScroll:true})}catch(e){}}
 function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySelector('#anaHelloSt'); if(st){st.textContent=botStatus();return}} const nm=String((S&&S.name)||'').trim();
-  const a=document.createElement('article'); a.className='msg bot hello'; a.innerHTML=`<div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card hello-c"><p class="hl">${greetW()}${nm?', '+esc(nm):''}. אני צ׳יקו, עוזר התיק שלך.</p><p id="anaHelloSt">${esc(botStatus())}</p><ul class="hello-l"><li><b>על מה אני עונה:</b> מה הזיז את התיק, איפה הוא מרוכז, אם הוא עומד בכללים ובתוכנית שלך, ומה כדאי לבדוק.</li><li><b>מאיפה:</b> רק מהנתונים שבדף: האחזקות, המחירים (עם שעת העדכון), הכללים והתוכנית שלך. כל תשובה אומרת לאיזה מועד היא נכונה ומה חסר.</li><li><b>מה לא:</b> לא המלצות לקנות או למכור, לא תחזיות מחיר, ולא חדשות שאין בדף.</li></ul><p id="anaHelloAi"></p></div>`; box.prepend(a); anaHelloAi()}
+  const a=document.createElement('article'); a.className='msg bot hello'; a.innerHTML=`<div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card hello-c"><p class="hl">${greetW()}${nm?', '+esc(nm):''}. אני צ׳יקו, עוזר התיק שלך.</p><p id="anaHelloSt">${esc(botStatus())}</p><ul class="hello-l"><li><b>על מה אני עונה:</b> מה הזיז את התיק, איפה הוא מרוכז, אם הוא עומד בכללים ובתוכנית שלך, ומה כדאי לבדוק.</li><li><b>מאיפה:</b> רק מהנתונים שבדף: האחזקות, המחירים (עם שעת העדכון), הכללים והתוכנית שלך. כל תשובה אומרת לאיזה מועד היא נכונה ומה חסר.</li><li><b>מה לא:</b> לא המלצות לקנות או למכור, לא תחזיות מחיר, ולא חדשות שאין בדף.</li></ul>${lvCtl()}<p id="anaHelloAi"></p></div>`; box.prepend(a); anaHelloAi()}
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כש-Claude מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
@@ -17134,10 +17135,32 @@ const ANA_RULES=`כללים מחייבים:
 // figure comes from and the principles it works by.
 const LEVEL={new:'מתחיל',mid:'מכיר את היסודות',pro:'מנוסה'};
 const PURPOSE={home:'דירה',pension:'פנסיה וטווח ארוך',save:'חיסכון כללי',kids:'ילדים ולימודים',income:'הכנסה שוטפת',other:'אחר'};
-const levelOf=()=>{const l=S&&S.profile&&S.profile.level;return LEVEL[l]?l:'mid'};
+const levelOf=()=>{const l=(S&&S.profile&&S.profile.level)||(S&&S.level);return LEVEL[l]?l:'mid'};
 const purposeOf=()=>{const p=S&&S.profile&&S.profile.purpose;return PURPOSE[p]?p:''};
 // what צ׳יקו is told about the person. The level sets the depth; the goal lets him connect the state of the portfolio to it
 function anaPerson(){return {knowledge_level:LEVEL[levelOf()],investor_goal:{purpose:purposeOf()?PURPOSE[purposeOf()]:null,horizon_years:+S.years>0?+S.years:null,goal_after_tax:+S.goal>0?ils(+S.goal):null}}}
+// ---- stage 7: the level of explanation is the person's choice (never the size of the portfolio), and can be changed in the
+// chat. A beginner gets each computed part in plain words as well; an experienced user also how it is computed, the
+// assumptions and the limits. Nobody gets fewer numbers.
+const lvP=o=>{const lv=levelOf(); return lv==='new'&&o&&o.new?`<p class="note ex-lv"><b>במילים פשוטות:</b> ${tx(o.new)}</p>`:lv==='pro'&&o&&o.pro?`<p class="note ex-lv"><b>איך זה מחושב:</b> ${tx(o.pro)}</p>`:''};
+const LVN={
+  why1:{new:'זה ההפרש בין שווי התיק עכשיו לשווי שלו בסגירה של יום המסחר הקודם. בשעות המסחר הוא משתנה כל הזמן.'},
+  why2:{new:'כל נייר "תורם" לשינוי לפי כמה כסף יש בו וכמה הוא זז. נייר גדול שזז קצת יכול לתרום יותר מנייר קטן שזז הרבה.',
+    pro:'תרומה = כמות × (מחיר − סגירה קודמת) × שער היום, וסכום התרומות הוא השינוי. "רחבה": לפחות 70% מהניירות זזו באותו כיוון. השפעת הדולר = החלק הדולרי במחירי הסגירה הקודמים × (השער היום − השער הקודם), והיא לא נכללת בשינוי.'},
+  anaAlloc:{new:'הקצאה היא איך הכסף מחולק בין קבוצות. היעד הוא החלוקה שאתה רוצה, והפס מראה כמה המצב רחוק ממנה.',
+    pro:'משקל קבוצה = שווי הניירות בה חלקי השווי הכולל, כולל מזומן. כל נייר נספר בקבוצה אחת, זו שקבעת לו.'},
+  anaIssues:{new:'"חריגה" היא משהו שעבר כלל שקבעת לעצמך, ו"לבדיקה" הוא משהו שכדאי להסתכל עליו. אף אחד מהם הוא לא הוראה לקנות או למכור.',
+    pro:'הנושאים באים ממנוע הבקרה של הדף, לפי הכללים שבהגדרות; ב"על מה זה מבוסס" מופיעים המספרים והסף של כל אחד.'},
+  anaPlan:{pro:'מול העלות = (שווי − עלות) ÷ עלות, לא משוקלל זמן. מול ההפקדות = שווי − סך ההפקדות נטו. היעד אחרי מס: מס רווחי הון בשיעור שבהגדרות, על הרווח מול העלות.'}};
+function lvCtl(){const lv=levelOf(); return `<div class="lv-ctl"><span>רמת ההסבר:</span><div class="chips" role="group" aria-label="רמת ההסבר">${Object.keys(LEVEL).map(k=>`<button type="button" class="chip" data-lv="${k}" aria-pressed="${k===lv}">${LEVEL[k]}</button>`).join('')}</div></div>`}
+const ANA_REDRAW={};   // the cards drawn again when the level changes: card id -> draw
+function lvSet(k,from){if(!LEVEL[k])return; const was=levelOf();
+  if(k!==was){if(S.profile)S.profile={...S.profile,level:k}; else S.level=k; if(canWrite)changed()}
+  const box=$('anaOut'); for(const [id,f] of Object.entries(ANA_REDRAW)){if(box&&box.querySelector('[data-card="'+id+'"]')){try{f()}catch(e){}} else delete ANA_REDRAW[id]}
+  for(const b of document.querySelectorAll('.lv-ctl [data-lv]'))b.setAttribute('aria-pressed',String(b.dataset.lv===k));
+  if(from){const nb=(from==='hello'?document.querySelector('#anaOut .hello'):box&&box.querySelector('[data-card="'+from+'"]'))?.querySelector('.lv-ctl [data-lv="'+k+'"]'); try{nb&&nb.focus({preventScroll:true})}catch(e){}}
+  anaLive(`רמת ההסבר: ${LEVEL[k]}${canWrite?'':'. השינוי לא נשמר, כי אין כאן הרשאת עריכה.'}`)}
+document.addEventListener('click',ev=>{const b=ev.target.closest('.lv-ctl [data-lv]'); if(!b)return; ev.preventDefault(); const c=b.closest('[data-card]'); lvSet(b.dataset.lv,c?c.dataset.card:b.closest('.hello')?'hello':null)});
 // the facts about one security: its data, the analysts' and the company's figures, and its place in the viewer's portfolio
 function secFacts(k){
   const it=itemOf(k); if(!it)return null;
@@ -17303,13 +17326,13 @@ async function anaRun(kind,q,o){
   const F=anaFacts(), id='c'+(++ANA_SEQ), shown=()=>{if(o.fromInput)anaScroll(id); else anaFocus(id)};
   anaLive('צ׳יקו עונה…');
   if(F.empty){anaCard(id,anaHead(F.empty==='nopf'?'אין עדיין תיק לנתח':'הנתונים עוד נטענים')+`<p>${F.empty==='nopf'?'כדי לנתח את התיק צריך קודם להוסיף אותו: צילום מסך, קובץ, או הקלדה של כמה שורות.':'המחירים ונתוני התיק עוד נטענים. נסה שוב בעוד רגע.'}</p>${F.empty==='nopf'?`<div class="ana-navs">${anaNavBtn({t:'mine',l:'להוספת תיק'})}</div>`:''}`); shown(); anaLive('התשובה מוכנה'); return}
-  if(kind==='why'){anaCard(id,anaWhyHtml(F,whyMove(F.m,Q,P,F.R))); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
+  if(kind==='why'){const W=whyMove(F.m,Q,P,F.R), draw=()=>anaCard(id,anaWhyHtml(F,W)); ANA_REDRAW[id]=draw; draw(); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
   const issues=anaIssues(F), first=!!o.first, ai=!!SAMPLE&&!SAMPLE_OFF&&!first;
   if(kind==='explain'){
     const ctx={R:F.R,years:+S.years||0,goal:+S.goal||0,tsum:F.tsum,co:F.co,coTo:CM&&CM.to||null}, st={sum:null,note:ai?'thinking':first?'first':'noai'};
     let E=exposures(F.m,P,Q,secOfIt), X=E?pfExplain(F.m,E,ctx):null;
     if(!X){anaCard(id,anaHead('הסבר התיק שלך')+'<p>אין עדיין שווי לחשב: חסרים מחירים לניירות בתיק.</p>'); shown(); anaLive('התשובה מוכנה'); return}
-    const draw=()=>anaCard(id,anaExplainPfHtml(F,X,st)); draw(); shown();
+    const draw=()=>anaCard(id,anaExplainPfHtml(F,X,st)); ANA_REDRAW[id]=draw; draw(); shown();
     // the sectors come from the page's symbol list; when it is still loading, the card is drawn again once it is in
     if(!SYMDB){ANA_BUSY=true; anaBusyUi(true); try{await Promise.race([loadSymDb(),new Promise(r=>setTimeout(r,3000))])}catch(e){}finally{ANA_BUSY=false; anaBusyUi(false)}
       E=exposures(F.m,P,Q,secOfIt); if(E){X=pfExplain(F.m,E,ctx); draw()}}
@@ -17317,16 +17340,16 @@ async function anaRun(kind,q,o){
     const txt=JSON.stringify(pfExplainAI(F,X)), set=anaNumSet(txt);
     const prompt=`אתה "צ׳יקו", עוזר התיק בדף "תיק צ׳יק". המשתמש ביקש: "הסבר את התיק שלי".\nFACTS הוא JSON שהדף חישב מתוך התיק האמיתי של המשתמש, וזה המקור היחיד שלך.\n\n${ANA_RULES}\n9. כתוב 2 עד 4 משפטים: מה יש בתיק, מה בולט בו ואיפה הוא מרוכז, ברמה של knowledge_level. רק תיאור: בלי לשפוט אם התיק טוב, מאוזן, מסוכן או מתאים, ובלי לומר מה לעשות.\n\nהחזר JSON בלבד, במבנה הזה: {"summary":"2 עד 4 משפטים"}\n\nFACTS:\n${txt}`;
     const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('ההסבר מוכן, בלי ניסוח של Claude');return}
-    st.sum=anaCleanSum(raw,set); st.note='ai'; draw(); anaLive('ההסבר מוכן'); return}
+    st.sum=anaCleanSum(raw,set); st.sum.lv=levelOf(); st.note='ai'; draw(); anaLive('ההסבר מוכן'); return}
   if(kind==='analyze'){
     const det={bottom:anaBottom(F,issues),strengths:anaStrengths(F),plan:anaPlan(F),actions:anaActions(F,issues)}, st={ai:null,note:ai?'thinking':first?'first':'noai'};
-    const draw=()=>anaCard(id,anaReportHtml(F,issues,det,st)); draw(); shown();
+    const draw=()=>anaCard(id,anaReportHtml(F,issues,det,st)); ANA_REDRAW[id]=draw; draw(); shown();
     const top=issues.find(i=>!i.acked); ANA_LASTX=top?{k:'q',q:`מה המשמעות של "${top.title}" לתיק שלי?`,t:`מה המשמעות של "${top.title}"?`}:null; anaSugg();
     if(!ai){anaLive('הניתוח מוכן');return}
     const txt=JSON.stringify(anaFactsAI(F,issues,anaActions(F,issues))), set=anaNumSet(txt);
     const prompt=`אתה "צ׳יקו", עוזר התיק בדף "תיק צ׳יק". המשתמש ביקש: "נתח לי את התיק".\nFACTS הוא JSON שהדף חישב מתוך התיק האמיתי של המשתמש, וזה המקור היחיד שלך.\n\n${ANA_RULES}\n\nהחזר JSON בלבד, במבנה הזה:\n{"bottom":"2 עד 3 משפטים: השורה התחתונה של התיק","items":[{"id":"מזהה מתוך FACTS.issues","why":"משפט אחד: למה זה חשוב","check":"משפט אחד: מה אפשר לבדוק"}],"strengths":["עד 3 משפטים קצרים על מה שעובד טוב בתיק"],"plan":"1 עד 2 משפטים: האם התיק עומד בתוכנית, לפי plan, goal, targets_set, rules ו-user_policy","actions":[{"id":"מזהה מתוך FACTS.checks","why":"משפט אחד: למה כדאי לבדוק את זה עכשיו"}]}\nitems: רק עבור id שקיימים ב-FACTS.issues, לפי סדר החשיבות, עד 6. actions: משפט אחד לכל בדיקה ב-FACTS.checks, באותו סדר. הכותרת והמסך של כל בדיקה כבר נקבעו בדף; אל תוסיף בדיקות.\nהמבנה: מה המצב, מה המשמעות, ומה כדאי לבדוק.\n\nFACTS:\n${txt}`;
     const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('הניתוח מוכן, בלי ניסוח של Claude');return}
-    st.ai=anaClean(raw,set,issues); st.note='ai'; draw(); anaLive('הניתוח מוכן'); return}
+    st.ai=anaClean(raw,set,issues); st.ai.lv=levelOf(); st.note='ai'; draw(); anaLive('הניתוח מוכן'); return}
   if(kind==='day'||kind==='crisis'){
     const crisis=kind==='crisis', cr=crisis?crisisInfo(F.m):null, det0=anaDayDet(F,issues);
     const det=crisis&&cr?{lines:crisisLines(F.m,cr,alertsOf(F.m)).map(x=>x[1]),action:det0.action,reason:det0.reason}:det0, st={note:ai?'thinking':'noai'}; let res=null;
@@ -18960,7 +18983,7 @@ function profOpen(src){
   {const has=!!(p.email||p.phone); for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=!has} const cn=$('pfContactNote'); if(cn)cn.hidden=!has}
   $('pfLang').innerHTML=langOpts(I18N_OK(p.lang)?p.lang:(I18N.lang||'he'));
   for(const r of d.querySelectorAll('[name=pfRisk]'))r.checked=r.value===p.risk;
-  for(const r of d.querySelectorAll('[name=pfLevel]'))r.checked=r.value===(p.level||'');
+  for(const r of d.querySelectorAll('[name=pfLevel]'))r.checked=r.value===(p.level||S.level||'');
   $('pfPurpose').value=PURPOSE[p.purpose]?p.purpose:''; $('pfYears').value=+S.years>0?+S.years:'';
   $('pfDep').innerHTML=depOpts(+S.depDay||0);
   $('pfErr').textContent=''; for(const x of d.querySelectorAll('[aria-invalid]'))x.removeAttribute('aria-invalid');

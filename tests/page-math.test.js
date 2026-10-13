@@ -291,3 +291,12 @@ test('explain: the questions follow what the user set; no caps, no cost, only ca
   const cashOnly=mOf([],1000); X=EX.pfExplain(cashOnly,EX.exposures(cashOnly,{cash:[{ccy:'ILS',amount:1000}]},Qx,()=>''),{R:{maxPos:10},years:0});
   assert.equal(X.what.n,0); assert.deepEqual(X.notable.map(x=>x.k),['cash']); assert.deepEqual(X.questions.map(q=>q.k),['when','cash','targets','goal']);
 });
+
+test('the level of explanation: the person\'s choice, else "מכיר את היסודות"; never the size of the portfolio', ()=>{
+  const G2={S:{},P:{positions:Array.from({length:80},(_,i)=>({sym:'S'+i,qty:1000}))}}, L=load(['LEVEL','levelOf'],G2);
+  assert.equal(L.levelOf(),'mid','a large portfolio does not make an expert');
+  G2.S={level:'new'}; assert.equal(L.levelOf(),'new','picked in the chat before there is a profile');
+  G2.S={profile:{level:'pro'},level:'new'}; assert.equal(L.levelOf(),'pro','the profile wins');
+  G2.S={profile:{level:''},level:'new'}; assert.equal(L.levelOf(),'new');
+  G2.S={profile:{level:'expert'}}; assert.equal(L.levelOf(),'mid','an unknown value is not trusted');
+});
