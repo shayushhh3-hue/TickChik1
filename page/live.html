@@ -1217,6 +1217,7 @@ section.fold > .fold-h h2{margin:0}
 /* navigation by screen size: a phone gets a bottom bar (the four places used most, and "עוד" opens the drawer with the
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
+.tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
 @media (max-width:759px){
   .botbar{display:flex;position:fixed;z-index:42;inset-inline:0;bottom:0;gap:2px;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));background:var(--navy);box-shadow:0 -4px 18px rgb(30 52 78 / .18)}
   .botbar button{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border:0;border-radius:10px;background:none;color:#C9D4E2;font:inherit;font-size:12px;font-weight:500;line-height:1.2;cursor:pointer}
