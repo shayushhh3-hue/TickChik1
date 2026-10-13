@@ -13,7 +13,8 @@ let claude, seen=[], srv, U, store, browser, docs;
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const p=JSON.stringify(JSON.parse(b).messages||[]); seen.push(p);
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
-    const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']}):'{"answer":""}';
+    const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
+      :p.includes('הסבר את התיק שלי')?JSON.stringify({summary:'בתיק 12 ניירות, ורובו בטכנולוגיה. התיק מאוזן היטב. שלושת הגדולים הם 39.5% ממנו.'}):'{"answer":""}';
     res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1}}))});
   await new Promise(r=>claude.listen(0,'127.0.0.1',r));
   Object.assign(process.env,{ANTHROPIC_BASE_URL:'http://127.0.0.1:'+claude.address().port,ANTHROPIC_API_KEY:'sk-test',OWNER_EMAIL:'owner@example.com',OWNER_PASSWORD:'owner-pass-123'});
@@ -100,8 +101,8 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   assert.equal(s.dlg,false,'no questions before there is a portfolio'); assert.match(s.fresh,/עוד אין כאן תיק/);
   await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true}); await pg.click('#botbar [data-bb="mine"]');
   await pg.fill('#listText','MSFT 1 1500'); await pg.click('#btnList'); await pg.click('#btnPfSave'); await pg.waitForTimeout(2000);
-  s=await pg.evaluate(()=>({ana:!document.getElementById('anaBox').hidden,dlg:!document.getElementById('profDlg').hidden}));
-  assert.ok(s.ana&&!s.dlg,'צ׳יקו explains the new portfolio first');
+  s=await pg.evaluate(()=>({ana:!document.getElementById('anaBox').hidden,dlg:!document.getElementById('profDlg').hidden,card:[...document.querySelectorAll('#anaOut .ana-ch h3')].map(h=>h.textContent).pop(),sys:document.querySelector('#anaOut .msg.sys')?.textContent||''}));
+  assert.ok(s.ana&&!s.dlg,'צ׳יקו explains the new portfolio first'); assert.equal(s.card,'הסבר התיק שלך'); assert.match(s.sys,/ההסבר הראשון/);
   await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click());
   await pg.waitForFunction(()=>{const t=document.getElementById('botTip'); if(t&&!t.hidden){const x=t.querySelector('[data-bottip]:not([data-bottip="go"])'); x&&x.click()} return !document.getElementById('profDlg').hidden},null,{timeout:15000});
   const f=await pg.evaluate(()=>({email:document.getElementById('pfEmail').closest('label').hidden,phone:document.getElementById('pfPhone').closest('label').hidden}));
@@ -273,4 +274,25 @@ test('the crisis center: up and down days, old prices, concentration, a missing 
     store.setDoc('quotes/latest',Q0,{silent:true}); store.setDoc('portfolio/main',{...P0,positions:[...P0.positions,{sym:'NOPX',name:'No price',qty:1,ccy:'USD',acct:'exc',group:'tech',costIls:100}]},{silent:true});
     ({ctx,pg,r}=await center()); assert.match(r.txt,/NOPX/); await ctx.close();
   }finally{store.setDoc('quotes/latest',Q0,{silent:true}); store.setDoc('portfolio/main',P0,{silent:true})}
+});
+
+test('explain my portfolio: six parts from the portfolio, a checked summary, questions that lead to their screen',T,async t=>{
+  if(skip())return t.skip('no browser');
+  for(const W of [390,1280]){const {ctx,pg}=await open(W); await pg.click('#chatFab'); await pg.waitForTimeout(300); const n0=seen.length;
+    assert.equal(await pg.evaluate(()=>document.querySelector('#anaSugg .sg').textContent),'הסבר את התיק שלי','the first suggestion');
+    await pg.click('#anaSugg [data-ana="explain"]');
+    await pg.waitForFunction(()=>{const c=[...document.querySelectorAll('#anaOut .ana-card')].pop(); return c&&/שאלות שיכולות לעזור/.test(c.textContent)&&!c.querySelector('.ana-wait')},null,{timeout:15000});
+    const c=await pg.evaluate(()=>{const card=[...document.querySelectorAll('#anaOut .ana-card')].pop(); return {h:[...card.querySelectorAll('.ana-sec h4')].map(h=>h.textContent.replace(/^\d+\.\s*/,'').replace('?','').trim()),
+      sum:card.querySelector('.ana-bl p').textContent,txt:card.textContent,q:[...card.querySelectorAll('.stq dt')].length,go:[...card.querySelectorAll('.stq [data-anav]')].map(b=>b.dataset.anav),
+      ox:document.documentElement.scrollWidth>innerWidth+1}});
+    assert.deepEqual(c.h,['מה יש בתיק','מה בולט','החשיפות המרכזיות','נקודות ריכוז','מה חסר','שאלות שיכולות לעזור']);
+    assert.match(c.sum,/ורובו בטכנולוגיה/,'Claude\'s wording of the summary'); assert.doesNotMatch(c.txt,/מאוזן היטב|39\.5%/,'a judgement and a number not in the data are removed');
+    assert.match(c.txt,/2 משפטים של Claude הוסרו/); assert.match(c.txt,/NVDA הוא 16\.4% מהתיק, מעל הכלל שקבעת/); assert.match(c.txt,/מחיר שאינו מהמסחר האחרון: TA125/);
+    assert.match(c.txt,/לא בדיקה אם הוא מתאים לך ולא המלצה/); assert.equal(c.q,4); assert.ok(!c.ox,'nothing sideways');
+    const sent=seen.slice(n0).join(' '); assert.ok(sent.includes('by_sector'),'the summary was asked for');
+    assert.ok(!/investor_goal\":|goal_after_tax|@example\.com|דנה/.test(sent.split('FACTS:').pop()),'no goal, name or e-mail in the facts sent');
+    if(W===390){await pg.click('.stq [data-anav="fold:hStress:usd"]'); await pg.waitForTimeout(700);
+      const r=await pg.evaluate(()=>({page:document.body.dataset.page,chat:!document.getElementById('anaBox').hidden,kind:document.querySelector('#stKind [aria-pressed="true"]')?.dataset.stk}));
+      assert.deepEqual(r,{page:'risk',chat:false,kind:'usd'},'the question opens the dollar scenario')}
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
 });

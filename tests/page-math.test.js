@@ -195,7 +195,10 @@ test('why it moved: contributions add up, the movers and the offset are named, t
 });
 
 test('questions the page answers by itself: buy or sell, the future, and why it moved', ()=>{
-  const F=load(['Q_WHY','Q_ADVICE','Q_FUTURE'],{});
+  const F=load(['Q_WHY','Q_ADVICE','Q_FUTURE','Q_EXPLAIN'],{});
+  for(const q of ['הסבר את התיק שלי','תסביר לי את התיק','ספר לי על התיק שלי','מה יש לי בתיק?','explain my portfolio'])assert.ok(F.Q_EXPLAIN.test(q),q);
+  for(const q of ['הסבר לי את הנייר הזה','מה הסיכון הכי גדול בתיק שלי?'])assert.ok(!F.Q_EXPLAIN.test(q),q);
+  assert.ok(F.Q_WHY.test('תסביר לי למה התיק ירד'),'a "why" question stays a "why" question (it is checked first)');
   for(const q of ['למה התיק ירד היום?','מדוע התיק שלי עלה?','מה הזיז את התיק היום?','למה הייתה ירידה בתיק'])assert.ok(F.Q_WHY.test(q),q);
   for(const q of ['האם כדאי לקנות NVDA?','כדאי למכור את CAT?','תמליץ לי מה לקנות','מה לעשות, למכור?','should I sell MSFT'])assert.ok(F.Q_ADVICE.test(q),q);
   for(const q of ['האם CAT תעלה מחר?','כמה ירוויח התיק בשנה הבאה?','מה יקרה לשוק בשבוע הבא?','תחזה לי את המחיר'])assert.ok(F.Q_FUTURE.test(q),q);
@@ -261,4 +264,30 @@ test('crisis center: the comparison point, the move since then by holding, and t
   near(B.us.pct,1,1e-9); near(B.il.pct,-1,1e-9); near(B.blend,0.6*1+0.4*-1,1e-9);
   assert.equal(F.stateBench({dayPct:0,pos:[{ccy:'USD',val:1}]},{bench:{}}).none,true);
   assert.equal(F.stateBench({dayPct:0,pos:[{ccy:'USD',val:1},{ccy:'ILS',val:1}]},{bench:{SPX:{px:1,prev:1}}}).blend,null,'half the portfolio has no index: no blend');
+});
+
+// "הסבר את התיק שלי" (stage 7): what is in it, what stands out, concentration against the user's caps, and the questions
+const EX=load(['GROUPS','SEC_HE','isF','exposures','pfExplain'],{FUNDOF:FUNDS});
+const secs=k=>({MSFT:'Technology',KO:'Consumer Staples'}[k]||'');
+const exM=()=>mOf([pos('MSFT',5000,{ccy:'USD',cost:4000,costVal:5000}),pos('KO',3000,{ccy:'USD',group:'cons',cost:3500,costVal:3000}),
+  pos('TA125',2000,{group:'il',noCost:true,cost:0,costVal:0}),pos('ZZZ',1000,{ccy:'USD',cost:1000,costVal:1000})],500);
+test('explain: what is in the portfolio, what stands out, and where it is above the caps the user set', ()=>{
+  FUNDS.TA125=true; const m=exM(), E=EX.exposures(m,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},secs);
+  const X=EX.pfExplain(m,E,{R:{maxPos:10,maxGroup:40},years:0,goal:0,tsum:0});
+  assert.deepEqual([X.what.n,X.what.stocks,X.what.funds,X.what.total],[4,3,1,11500]); near(X.what.cashW,500/11500*100,1e-9);
+  assert.deepEqual(X.notable.map(x=>x.k),['group','gain','loss'],'no cash line under 10%'); near(X.notable[0].w,6000/11500*100,1e-9);
+  assert.deepEqual([X.notable[1].sym,X.notable[1].ils,X.notable[2].sym,X.notable[2].ils],['MSFT',1000,'KO',-500],'a holding without a cost is not a gain or a loss');
+  assert.deepEqual(X.conc.overPos.map(x=>x.sym),['MSFT','KO','TA125']); assert.deepEqual(X.conc.overGroup.map(g=>g.label),['טכנולוגיה']);
+  assert.deepEqual(X.expo.unknownSector,['ZZZ']); near(X.expo.usdW,9000/11500*100,1e-9);
+  assert.deepEqual(X.questions.map(q=>q.k),['pos','sector','usd','when'],'four at most, the most specific first');
+  assert.equal(X.questions[0].sym,'MSFT');
+});
+test('explain: the questions follow what the user set; no caps, no cost, only cash', ()=>{
+  const P={cash:[{ccy:'ILS',amount:500}]}, Qx={usdIls:3.7};
+  let X=EX.pfExplain(exM(),EX.exposures(exM(),P,Qx,secs),{R:{},years:2,goal:500000,tsum:100});
+  assert.deepEqual(X.conc.overPos,[],'no cap set, nothing is "above" it'); assert.equal(X.questions[0].k,'top','the largest holding is still a question');
+  assert.ok(X.questions.some(q=>q.k==='short'&&q.years===2),'a short horizon with most of the money in securities');
+  assert.ok(!X.questions.some(q=>q.k==='targets'||q.k==='goal'),'targets and a goal are set');
+  const cashOnly=mOf([],1000); X=EX.pfExplain(cashOnly,EX.exposures(cashOnly,{cash:[{ccy:'ILS',amount:1000}]},Qx,()=>''),{R:{maxPos:10},years:0});
+  assert.equal(X.what.n,0); assert.deepEqual(X.notable.map(x=>x.k),['cash']); assert.deepEqual(X.questions.map(q=>q.k),['when','cash','targets','goal']);
 });

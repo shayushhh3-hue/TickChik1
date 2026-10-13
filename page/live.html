@@ -1228,6 +1228,8 @@ section.fold > .fold-h h2{margin:0}
 .stc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 .stc h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px} .stc p{margin:0;line-height:1.6} .stc .btn{align-self:flex-start}
 .stq{margin:0;display:flex;flex-direction:column;gap:10px} .stq dt{font-weight:600;font-size:14px} .stq dd{margin:2px 0 0;color:var(--ink2);font-size:13.5px;line-height:1.55}
+.stq dd .ex-go{display:block;margin-top:6px}
+.ex-lv{padding:8px 10px;background:var(--sunk);border-radius:8px;max-width:none;font-size:12.5px;line-height:1.6;color:var(--ink2)}
 .st-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:12px 0}
 .st-form label{min-width:150px} .st-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%}
 .st-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:6px 0 10px;font-size:14px}
@@ -1390,7 +1392,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
         <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
         <div class="ana-chips" role="group" aria-label="להתחיל שיחה עם צ׳יקו">
-          <button type="button" class="btn pri" data-ana="analyze">נתח לי את התיק</button>
+          <button type="button" class="btn pri" data-ana="explain">הסבר את התיק שלי</button>
+          <button type="button" class="btn" data-ana="analyze">נתח לי את התיק</button>
           <button type="button" class="btn" data-ana="day" data-needs-ai hidden>סכם לי את היום</button>
           <button type="button" class="btn" data-ana="q" data-q="מה הסיכון הכי גדול בתיק שלי?" data-needs-ai hidden>מה הסיכון הכי גדול?</button>
           <button type="button" class="btn" data-ana="open" data-needs-ai hidden>לשאול שאלה</button>
@@ -16460,6 +16463,9 @@ function alertNav(a){const cat=a[1], it=(a[3]||[]).filter(Boolean);
   const t=ACAT[cat]; return t?{t,l:ANAV[t]}:null}
 const anaNavBtn=(n,cls)=>n?`<button type="button" class="btn sm${cls?' '+cls:''}" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'';
 function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));return}
+  // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
+  if(t.startsWith('fold:')){const [,id,stk]=t.split(':'); if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab('risk',true); try{setNav(false)}catch(e){} try{foldSet(id,true)}catch(e){}
+    setTimeout(()=>{const s=document.querySelector(`[data-pane="risk"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60); return}
   if(t==='fit'){showTab('search',true);try{setSV('fit')}catch(e){}return}
   if(TABS.includes(t)){showTab(t,true);try{setNav(false)}catch(e){}}}
 const anaStrip=h=>String(h==null?'':h).replace(/<[^>]*>/g,'').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
@@ -16621,6 +16627,43 @@ function whyMove(m,Q,P,R){
 }
 // ---- why:end ----
 window.__model.why=()=>{const W=whyMove(mAllNow(),Q,P,S.rules||{}); return {total:W.ils,parts:W.items.reduce((t,x)=>t+x.ils,0),W}};
+// ---- explain:start ----
+// "הסבר את התיק שלי" (stage 7): what is in the portfolio, what stands out, the main exposures, where it is concentrated, and
+// the questions only the person can answer. Built from the holdings, the prices, exposures() and the user's own settings
+// (c: {R, years, goal, tsum, co, coTo}); nothing general is presented as a fact about this portfolio, and nothing here
+// judges whether the portfolio fits the person. Numbers and keys only: the words are in EXN and EXQ.
+function pfExplain(m,E,c){
+  c=c||{}; const R=c.R||{}, pos=m.pos, T=m.total, inv=pos.reduce((t,p)=>t+p.val,0);
+  const funds=pos.filter(p=>isF(p.sym)), gs=E.group.filter(r=>r.k!=='cash');
+  const what={n:pos.length,stocks:pos.length-funds.length,funds:funds.length,groups:gs.length,total:T,cash:m.cash,cashW:T?m.cash/T*100:0,
+    top:pos.slice(0,5).map(p=>({sym:p.sym,name:p.name,group:p.group,w:p.w})),more:Math.max(0,pos.length-5),nextW:pos[5]?pos[5].w:null};
+  // what stands out: the largest group, the biggest gain and the biggest loss against cost, and cash when it is a large part
+  const cost=pos.filter(p=>!p.noCost&&p.cost>0).map(p=>({sym:p.sym,ils:p.costVal-p.cost,pct:(p.costVal/p.cost-1)*100})).sort((a,b)=>b.ils-a.ils);
+  const notable=[];
+  if(gs[0])notable.push({k:'group',label:gs[0].label,w:gs[0].w,n:gs[0].syms.length});
+  if(cost.length&&cost[0].ils>0)notable.push({k:'gain',...cost[0]});
+  if(cost.length&&cost[cost.length-1].ils<0)notable.push({k:'loss',...cost[cost.length-1]});
+  if(what.cashW>=10)notable.push({k:'cash',w:what.cashW,val:m.cash});
+  const sector=E.sector.filter(r=>r.k!=='cash'), usdW=(E.ccy.find(r=>r.k==='USD')||{w:0}).w;
+  const expo={sector:sector.slice(0,3),sectorMore:Math.max(0,sector.length-3),ccy:E.ccy,market:E.market.filter(r=>r.k!=='cash'),usdW,funds:E.funds,unknownSector:E.unknownSector};
+  // where it is concentrated, and against the caps the user set
+  const C=E.conc, cap=+R.maxPos||0, gcap=+R.maxGroup||0;
+  const conc={top1:C.top1,top3:C.top3,top5:C.top5,nEff:C.nEff,n:C.n,cap,gcap,
+    overPos:cap>0?pos.filter(p=>p.w>cap).map(p=>({sym:p.sym,w:p.w})):[],overGroup:gcap>0?gs.filter(r=>r.w>gcap).map(r=>({label:r.label,w:r.w})):[],
+    co:c.co&&c.co.strong&&c.co.strong.length?{w:c.co.w,groups:c.co.strong.map(g=>({name:g.name,syms:g.syms,w:g.w})),to:c.coTo||null}:null};
+  // questions only the person can answer, each opened by a fact above; at most four, the most specific first
+  const q=[], yrs=+c.years||0, inSec=T?inv/T*100:0, s0=sector.find(r=>r.k!=='fund'&&r.k!=='?');
+  const big=conc.overPos[0]||(C.top1&&C.top1.w>=10?C.top1:null); if(big)q.push({k:conc.overPos.length?'pos':'top',sym:big.sym,w:big.w,cap});
+  if(s0&&s0.w>=30)q.push({k:'sector',label:s0.label,w:s0.w,n:s0.syms.length});
+  if(usdW>=50)q.push({k:'usd',w:usdW});
+  if(!yrs)q.push({k:'when'}); else if(yrs<=3&&inSec>=50)q.push({k:'short',years:yrs,w:inSec});
+  if(funds.length)q.push({k:'funds',syms:funds.map(p=>p.sym)});
+  if(what.cashW>=10)q.push({k:'cash',w:what.cashW});
+  if(!(+c.tsum>0))q.push({k:'targets'});
+  if(!(+c.goal>0))q.push({k:'goal'});
+  return {what,notable,expo,conc,questions:q.slice(0,4)};
+}
+// ---- explain:end ----
 function anaFacts(){
   if(!P||!Q||!Q.prices||!Q.usdIls)return {empty:'loading'};
   if(!((P.positions||[]).length||(P.cash||[]).length))return {empty:'nopf'};
@@ -16837,7 +16880,9 @@ function anaCleanDay(raw,set){
 }
 
 // ---- drawing ----
-const tx=t=>esc(t).replace(/\d{1,2}:\d{2}(?!\d)|[−+]?[₪$]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?/g,(x,o,str)=>{let i=o-1;while(i>=0&&/[\s(]/.test(str[i]))i--;return /[A-Za-z]/.test(str[i]||'')?x:'<span class="n">'+x+'</span>'});
+// numbers in Hebrew text, each kept left-to-right in one piece; "‎−₪223 (‎−13.5%)" is one piece, so a line never breaks
+// between the amount and its percent (in a right-to-left line that break would show the brackets the wrong way)
+const tx=t=>esc(t).replace(/\d{1,2}:\d{2}(?!\d)|[−+][₪$]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%? \(‎?[−+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%\)|[−+]?[₪$]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?/g,(x,o,str)=>{let i=o-1;while(i>=0&&/[\s(]/.test(str[i]))i--;return /[A-Za-z]/.test(str[i]||'')?x:'<span class="n">'+x+'</span>'});
 const anaTile=(k,v,s,c)=>`<div class="mtile"><div class="k">${k}</div><div class="v${c?' '+c:''}">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
 const anaSec=(n,t,b)=>`<section class="ana-sec"><h4>${n?n+'. ':''}${t}</h4>${b}</section>`;
 const ANA_AV='';
@@ -16924,11 +16969,103 @@ function anaWhyHtml(F,W){
     +anaSec(6,'מה אפשר לבדוק בהמשך?',`<div class="ana-navs">${nx.map(n=>anaNavBtn(n)).join('')}</div>`)
     +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של Claude. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p></footer>`;
 }
+// ---- "הסבר את התיק שלי": the words for pfExplain()'s numbers, in six parts (the plan's list), and the level of explanation ----
+const secOfIt=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}};
+const EXN={group:x=>`הקבוצה הגדולה: ${x.label}, ${pct(x.w)} מהתיק (${x.n===1?'נייר אחד':x.n+' ניירות'}).`,
+  gain:x=>`הרווח הגדול מול העלות: ${lab(x.sym)}, ${sgn(x.ils)} (${spct(x.pct)}).`,
+  loss:x=>`הירידה הגדולה מול העלות: ${lab(x.sym)}, ${sgn(x.ils)} (${spct(x.pct)}).`,
+  cash:x=>`מזומן: ${pct(x.w)} מהתיק (${ils(x.val)}).`};
+// each question: [the question, the fact or the general point behind it, where to look]
+const EXQ={
+  pos:x=>[`${lab(x.sym)} הוא ${pct(x.w)} מהתיק, מעל הכלל שקבעת לנייר בודד (${pct(x.cap,0)}). המשקל הזה מכוון?`,`כל שינוי של 10% במחיר שלו מזיז את כל התיק ב-${pct(x.w/10,1)}.`,{t:'fold:hExp',l:'לחשיפות'}],
+  top:x=>[`${lab(x.sym)} הוא ${pct(x.w)} מהתיק. זה המשקל שרצית, או שהוא גדל עם המחיר?`,`כל שינוי של 10% במחיר שלו מזיז את כל התיק ב-${pct(x.w/10,1)}.`,{t:'fold:hExp',l:'לחשיפות'}],
+  sector:x=>[`${pct(x.w)} מהתיק בענף ${x.label} (${x.n===1?'נייר אחד':x.n+' ניירות'}). זה מכוון?`,'חברות מאותו ענף מושפעות לא פעם מאותם גורמים, ולכן עשויות לזוז יחד.',{t:'fold:hExp',l:'לחשיפות לפי ענף'}],
+  usd:x=>[`${pct(x.w)} מהתיק בדולרים. באיזה מטבע תשתמש בכסף כשתצטרך אותו?`,'כשהדולר זז מול השקל, השווי בשקלים זז גם בלי שינוי במחירי המניות.',{t:'fold:hStress:usd',l:'לתרחיש של ירידת הדולר'}],
+  when:()=>['מתי אתה צפוי להזדקק לכסף הזה?','לא הוגדר אופק השקעה, ולכן אי אפשר לקשר את התנודות של התיק לזמן שעומד לרשותך.',{prof:1,l:'לעדכן אופק ומטרה'}],
+  short:x=>[`האופק שקבעת הוא ${x.years===1?'שנה אחת':x.years+' שנים'}, ו-${pct(x.w,0)} מהתיק בניירות ערך ולא במזומן. אם הם יהיו נמוכים כשתצטרך את הכסף, תוכל לחכות?`,'מחירי ניירות ערך יכולים להישאר נמוכים גם כמה שנים. זה הסבר כללי, לא הערכה של התיק שלך.',{t:'forecast',l:ANAV.forecast}],
+  funds:x=>[`מה יש בתוך ${x.syms.map(lab).join(', ')}?`,'לדף אין את ההרכב של הקרנות, ולכן החשיפה דרכן לענפים ולחברות לא נספרה.',{t:'sec:'+x.syms[0],l:'לדף של '+lab(x.syms[0])}],
+  cash:x=>[`${pct(x.w)} מהתיק במזומן. הוא מחכה להשקעה, או שמור למשהו?`,'מזומן בשקלים לא עולה ולא יורד עם השוק.',{t:'plan',l:ANAV.plan}],
+  targets:()=>['איך היית רוצה שהתיק יתחלק בין הקבוצות?','לא הוגדרו יעדי הקצאה, ולכן אי אפשר לבדוק אם החלוקה של היום היא מה שתכננת.',{t:'settings',l:'לקבוע יעדים'}],
+  goal:()=>['כמה כסף תרצה שיהיה בתיק בסוף התקופה?','לא הוגדר יעד כספי, ולכן אין בדיקה אם קצב ההפקדות מספיק כדי להגיע אליו.',{t:'forecast',l:'לקבוע יעד'}]};
+// the level: a beginner gets each part in plain words, an experienced user how it is computed; nobody gets less data
+const EXB={what:'כל נייר הוא חלק מהתיק. האחוז ליד נייר הוא כמה מהכסף שלך נמצא בו.',
+  notable:'"מול העלות" הוא ההפרש בין השווי היום למה ששילמת. כל עוד לא מכרת, זה רווח או הפסד שעוד לא מומש.',
+  expo:'חשיפה היא כמה מהתיק תלוי בדבר אחד: ענף, מטבע או שוק. כשהדבר הזה זז, החלק הזה של התיק זז איתו.',
+  conc:'ריכוז הוא כמה מהתיק נמצא בכמה ניירות גדולים. תיק מרוכז זז חזק יותר כשהם זזים, לטוב ולרע.',
+  miss:'כשנתון חסר, הדף כותב את זה ולא משלים אותו בניחוש.',
+  ask:'המספרים לא יודעים מה אתה מתכנן. את התשובות לשאלות האלה רק אתה יודע.'};
+const EXM={what:'משקל = שווי הנייר (כמות × מחיר אחרון × שער) חלקי השווי הכולל, כולל מזומן. נייר שמוחזק בכמה חשבונות נספר פעם אחת.',
+  notable:'מול העלות = השווי היום פחות העלות בשקלים מהדוחות שהעלית, בלי דיבידנדים, מס ועמלות. ניירות בלי עלות לא נכללים.',
+  expo:'ענף: לפי רשימת הניירות של הדף; קרן נספרת כקרן. מטבע: מטבע המסחר של הנייר, ומזומן לפי המטבע שלו. בורסה: מקום המסחר, לא מקום הפעילות של החברה.',
+  conc:'"כמו N ניירות שווים" = 1 חלקי סכום ריבועי המשקלים של הניירות, בלי מזומן. "נעים יחד": מתנועות יומיות בעבר, לא תחזית.',
+  ask:'השאלות נבחרות לפי ספים קבועים: נייר מעל הכלל שלך או מעל 10%, ענף מעל 30%, דולר מעל 50%, מזומן מעל 10%, ונתונים שלא הוגדרו.'};
+function exMiss(F,X){const L=[];
+  if(!F.live)L.push(F.priceNote);
+  if(F.noPx.length)L.push(`אין מחיר ל-${F.noPx.map(lab).join(', ')}, ולכן ${F.noPx.length===1?'הוא לא נכלל':'הם לא נכללים'} בחישובים.`);
+  if(F.staleSyms.length)L.push(`מחיר שאינו מהמסחר האחרון: ${F.staleSyms.map(k=>lab(k)+' ('+((Q.stale||{})[k]||'מחיר ישן')+')').join(', ')}.`);
+  if(F.m.missingCost)L.push(`ל-${F.m.missingCost===1?'נייר אחד':F.m.missingCost+' ניירות'} אין מחיר קנייה, ולכן ${F.m.missingCost===1?'הוא לא נכלל':'הם לא נכללים'} ברווח ובהפסד מול העלות.`);
+  if(X.expo.funds.length)L.push(`ההרכב של ${X.expo.funds.map(lab).join(', ')}: לדף אין מקור כזה.`);
+  if(X.expo.unknownSector.length)L.push(`הענף של ${X.expo.unknownSector.map(lab).join(', ')}: לא מופיע ברשימת הניירות של הדף.`);
+  if(X.conc.co&&X.conc.co.to&&(Date.now()-new Date(X.conc.co.to))/864e5>14)L.push(`"נעים יחד" מחושב מנתונים עד ${dmy(X.conc.co.to)}, והם לא מתעדכנים כרגע.`);
+  return L}
+function exSum(X){const w=X.what, g=X.notable.find(x=>x.k==='group'), u=X.expo.usdW, L=[`בתיק ${w.n===1?'נייר אחד':w.n+' ניירות'} בשווי ${ils(w.total)}.`];
+  if(g)L.push(`הכי הרבה כסף נמצא בקבוצת ${g.label}: ${pct(g.w)} מהתיק.`);
+  if(w.n>=3)L.push(`שלושת הניירות הגדולים הם ${pct(X.conc.top3)} ממנו${u>=50?`, ו-${pct(u)} ממנו בדולרים`:''}.`); else if(u>=50)L.push(`${pct(u)} מהתיק בדולרים.`);
+  return L.join(' ')}
+const exNav=n=>n.prof?(canWrite?`<button type="button" class="btn sm" data-prof="edit">${esc(n.l)}</button>`:''):anaNavBtn(n);
+function anaExplainPfHtml(F,X,st){
+  const lv=levelOf(), w=X.what, e=X.expo, c=X.conc, sym=s=>`<b class="sym">${esc(lab(s))}</b>`, head=anaHead('הסבר התיק שלך',anaWhen(F),anaTag(F));
+  if(!w.n)return head+`<p>בתיק יש כרגע רק מזומן: ${tx(ils(w.cash))}. אחרי שיתווספו ניירות, כאן יופיעו מה יש בתיק, החשיפות והריכוז.</p>`;
+  const lvN=k=>lv==='new'&&EXB[k]?`<p class="note ex-lv"><b>במילים פשוטות:</b> ${tx(EXB[k])}</p>`:lv==='pro'&&EXM[k]?`<p class="note ex-lv"><b>איך זה מחושב:</b> ${tx(EXM[k])}</p>`:'';
+  const sum=st.sum&&st.sum.text, bl=`<section class="ana-bl" aria-label="בקצרה"><h4>בקצרה</h4><p>${tx(sum||exSum(X))}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${sum?'ניסוח: Claude, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף'}</span>`}</section>`;
+  const s1=`<p>${tx(`${w.n===1?'נייר אחד':w.n+' ניירות'}: ${w.stocks===1?'מניה בודדת אחת':w.stocks+' מניות בודדות'}${w.funds?` ו-${w.funds===1?'קרן אחת':w.funds+' קרנות'}`:''}, ב-${w.groups===1?'קבוצה אחת':w.groups+' קבוצות'}. שווי כולל ${ils(w.total)}${w.cash>0.5?`, מתוכו ${ils(w.cash)} במזומן`:''}.`)}</p>`
+    +`<ul class="why-l">${w.top.map(p=>`<li>${sym(p.sym)} <span class="nm">${esc(p.name||'')}</span> · ${tx(pct(p.w))} · ${esc(GROUPS[p.group]||p.group)}</li>`).join('')}</ul>`
+    +(w.more?`<p class="note">ועוד ${w.more===1?'נייר אחד':w.more+' ניירות'}, כל אחד ${tx(pct(w.nextW))} מהתיק או פחות.</p>`:'')+lvN('what');
+  const s2=(X.notable.length?`<ul class="why-l">${X.notable.map(x=>`<li>${tx(EXN[x.k](x))}</li>`).join('')}</ul>`:'<p class="note">אין מספיק נתונים כדי לציין נייר בולט.</p>')+lvN('notable');
+  const row=rs=>rs.map(r=>`${esc(r.label)} ${tx(pct(r.w))}`).join(' · ');
+  const s3=`<ul class="why-l"><li><b>ענף:</b> ${row(e.sector)}${e.sectorMore?` · ועוד ${e.sectorMore}`:''}</li><li><b>מטבע:</b> ${row(e.ccy)}</li><li><b>בורסה:</b> ${row(e.market)}</li></ul>`
+    +(e.funds.length?`<p class="note">${esc(e.funds.map(lab).join(', '))} ${e.funds.length===1?'נספרת כקרן':'נספרות כקרנות'}, כי לא ידוע אילו חברות יש בהן.</p>`:'')+lvN('expo');
+  const t1=c.top1, L4=[];
+  if(t1)L4.push(`הנייר הגדול: ${sym(t1.sym)} ${tx(pct(t1.w))}${c.cap?(t1.w>c.cap?`, מעל הכלל שלך (עד ${tx(pct(c.cap,0))})`:`; הכלל שלך: עד ${tx(pct(c.cap,0))}`):''}.`);
+  if(c.n>=3)L4.push(`3 הגדולים: ${tx(pct(c.top3))}${c.n>=5?` · 5 הגדולים: ${tx(pct(c.top5))}`:''}.`);
+  if(c.nEff)L4.push(`התיק מפוזר כמו ${tx(c.nEff.toFixed(1))} ניירות באותו גודל, מתוך ${c.n}.`);
+  if(c.overPos.length>1)L4.push(`${c.overPos.length} ניירות מעל הכלל שלך לנייר בודד: ${c.overPos.map(x=>sym(x.sym)+' '+tx(pct(x.w))).join(', ')}.`);
+  for(const g of c.overGroup)L4.push(`קבוצת ${esc(g.label)}: ${tx(pct(g.w))}, מעל הכלל שלך לקבוצה (עד ${tx(pct(c.gcap,0))}).`);
+  if(c.co)L4.push(`${tx(pct(c.co.w))} מהתיק בניירות שעלו וירדו יחד ברוב הימים: ${esc(c.co.groups.map(g=>g.name).join(', '))}.`);
+  const s4=`<ul class="why-l">${L4.map(x=>`<li>${x}</li>`).join('')}</ul>${lvN('conc')}`;
+  const miss=exMiss(F,X);
+  const s5=(miss.length?`<ul class="why-l">${miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:'<p>אין נתון חסר מהסוגים שהדף בודק: מחירים, מחירי קנייה, ענף והרכב קרנות.</p>')+lvN('miss');
+  const s6=X.questions.length?`<dl class="stq">${X.questions.map(x=>{const [q,b,n]=EXQ[x.k](x); return `<div><dt>${tx(q)}</dt><dd>${tx(b)}${n?`<span class="ex-go">${exNav(n)}</span>`:''}</dd></div>`}).join('')}</dl>${lvN('ask')}`:'<p class="note">אין כרגע שאלה שהנתונים מעלים.</p>';
+  const err=st.note==='first'?'<p class="ana-info">זה ההסבר שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.</p>'
+    :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc((ANA_ERR[st.note]||ANA_ERR.upstream_error).replace('הניתוח המחושב','ההסבר המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="explain">נסה שוב</button>':''}</p>`:'';
+  const chk=st.sum&&st.sum.replaced?`<p>בדיקת מספרים: ${st.sum.replaced===1?'משפט אחד':st.sum.replaced+' משפטים'} של Claude ${st.sum.replaced===1?'הוסר, כי הופיע בו':'הוסרו, כי הופיע בהם'} מספר שלא נמצא בנתוני התיק, הערכה של התיק או ניסוח של המלצה.</p>`:'';
+  const ft=`<footer class="ana-ft">${err}${chk}<p>מבוסס רק על התיק שלך כפי שהוא בדף: האחזקות, המחירים והשער, והכללים וההגדרות שקבעת. רמת ההסבר: "${esc(LEVEL[lv])}". זה הסבר של מה שיש בתיק, לא בדיקה אם הוא מתאים לך ולא המלצה.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">לבדיקה מול הכללים שלך</button></div></footer>`;
+  return head+bl+anaSec(1,'מה יש בתיק',s1)+anaSec(2,'מה בולט',s2)+anaSec(3,'החשיפות המרכזיות '+termBtn('expo'),s3)
+    +anaSec(4,'נקודות ריכוז '+termBtn('conc'),s4)+anaSec(5,'מה חסר',s5)+anaSec(6,'שאלות שיכולות לעזור',s6)+ft;
+}
+// what Claude receives for the summary: the computed figures, formatted; no names of people, no goals (not needed here)
+function pfExplainAI(F,X){
+  const w=X.what, e=X.expo, c=X.conc, now=new Date().toISOString(), rows=rs=>rs.map(r=>`${r.label} ${pct(r.w)}`);
+  return {as_of:`${dmy(now)} ${hm(now)}`,prices:{label:Q.priceLabel||'',updated:Q.updatedAt?`${dmy(Q.updatedAt)} ${hm(Q.updatedAt)}`:'',live:F.live},
+    total:ils(w.total),cash:`${ils(w.cash)} (${pct(w.cashW)})`,holdings_count:w.n,stocks_count:w.stocks,funds_count:w.funds,groups_count:w.groups,
+    largest:w.top.map(p=>`${lab(p.sym)} ${pct(p.w)} (${GROUPS[p.group]||p.group})`),stands_out:X.notable.map(x=>EXN[x.k](x)),
+    by_sector:rows(e.sector),by_currency:rows(e.ccy),by_market:rows(e.market),
+    concentration:{largest:c.top1?`${lab(c.top1.sym)} ${pct(c.top1.w)}`:null,top3:pct(c.top3),top5:c.n>=5?pct(c.top5):null,like_equal_holdings:c.nEff?c.nEff.toFixed(1):null,
+      your_rule_single:c.cap?pct(c.cap,0):null,your_rule_group:c.gcap?pct(c.gcap,0):null,above_your_rules:[...c.overPos.map(x=>`${lab(x.sym)} ${pct(x.w)}`),...c.overGroup.map(g=>`${g.label} ${pct(g.w)}`)]},
+    moves_together:c.co?{share:pct(c.co.w),groups:c.co.groups.map(g=>g.name)}:null,
+    missing:exMiss(F,X),knowledge_level:LEVEL[levelOf()]};
+}
+// a judgement of the portfolio ("מאוזן", "מסוכן", "מתאים לך") is not an explanation of what is in it
+const EX_JUDGE=new RegExp(`${ANA_B}(?:מתאים|מתאימה|מתאימים|מסוכן|מסוכנת|מסוכנים|מאוזן|מאוזנת|בריא|בריאה|מצוין|מצוינת|גרוע|גרועה|חכם|נבון)${ANA_E}`);
+function anaCleanSum(raw,set){const out={text:'',replaced:0}, t=raw&&typeof raw==='object'?raw.summary:typeof raw==='string'?raw:'';
+  out.text=String(t||'').replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean).slice(0,5).filter(s=>{const bad=anaReject(s,set)||EX_JUDGE.test(s); if(bad)out.replaced++; return !bad}).join(' ');
+  return out}
 // questions the page answers by itself, before (and instead of) asking Claude: a request for a buy or sell decision, a
 // request to know the future, and "why did it move" (computed above)
 const Q_WHY=/(למה|מדוע|מה הסיבה|איך זה ש).{0,30}(ירד|עלה|זז|השתנ|נפל|קפץ|ירידה|עלייה)|מה (הזיז|גרם ל|קרה ל).{0,12}תיק|^(why|what moved)/i;
 const Q_ADVICE=/(כדאי|שווה|האם (ל|כדאי)|צריך|מה לעשות|תמליץ|ממליץ|המלצה|תגיד לי (אם|מה)).{0,40}(לקנות|למכור|להחזיק|לממש|להיכנס|לצאת|קנייה|מכירה)|^(לקנות|למכור)\b|(should i (buy|sell))/i;
 const Q_FUTURE=/(תעלה|יעלה|תרד|ירד מחר|ירד בשבוע|ירד בחודש|יגיע ל|תגיע ל|מה יקרה|תחזית בטוחה|בוודאות|לחזות|תחזה|כמה (ת|י)רוויח|יקפוץ|תקפוץ|will (it|the) )/i;
+const Q_EXPLAIN=/(?:ת?סביר|הסבר|תאר|ספר)(?:\s+לי)?\s+(?:את|על)\s+ה?תיק|מה\s+(?:יש|נמצא)\s+(?:לי\s+)?בתיק|explain\s+(?:my\s+)?portfolio/i;
 function anaLimitHtml(kind){
   const advice=kind==='advice';
   return anaHead(advice?'על החלטה לקנות או למכור':'על מה שיקרה בשוק')+`<p>${advice?'אני לא ממליץ לקנות, למכור או להחזיק נייר. הדף מסביר את המספרים של התיק שלך, והחלטה כזו היא שלך.':'אני לא יודע מה יקרה במחירים, ואף אחד לא יודע את זה בוודאות. לא אחזה מחיר או תשואה.'}</p>
@@ -16956,7 +17093,7 @@ function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
-  else{L.push({k:'analyze',t:'נתח לי את התיק'});
+  else{L.push({k:'explain',t:'הסבר את התיק שלי'},{k:'analyze',t:'נתח לי את התיק'});
     try{const m=mAllNow(); if(m&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)L.push({k:'why',t:m.dayIls<0?'למה התיק ירד היום?':'למה התיק עלה היום?'})}catch(e){}
     if(on){const plan=MTOT()>0;
       L.push({k:'day',t:'סכם לי את היום'},{k:'q',q:'מה הסיכון הכי גדול בתיק שלי?',t:'מה הסיכון הכי גדול?'});
@@ -17158,15 +17295,29 @@ async function anaRun(kind,q,o){
     if(qq.length<40&&/^(סכם|סיכום)/.test(qq))return anaRun('day',null,{...o,said:qq});
     if(Q_ADVICE.test(qq))return anaRun('advice',null,{...o,said:qq});
     if(Q_FUTURE.test(qq))return anaRun('future',null,{...o,said:qq});
-    if(Q_WHY.test(qq))return anaRun('why',null,{...o,said:qq})}
+    if(Q_WHY.test(qq))return anaRun('why',null,{...o,said:qq});
+    if(qq.length<50&&Q_EXPLAIN.test(qq))return anaRun('explain',null,{...o,said:qq})}
   if(kind==='advice'||kind==='future'){anaOpen(o.src); anaUser(o.said||'',!o.said); const sid='c'+(++ANA_SEQ); anaCard(sid,anaLimitHtml(kind)); if(o.fromInput)anaScroll(sid); else anaFocus(sid); anaLive('התשובה מוכנה'); return}
   anaOpen(o.src);
-  if(o.first)anaSys('התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':kind==='why'?'למה התיק זז היום?':qq),!o.said&&!o.fromInput);
+  if(o.first)anaSys(kind==='explain'?'התיק נשמר. זה ההסבר הראשון שלו, מהנתונים שבדף.':'התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='explain'?'הסבר את התיק שלי':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':kind==='why'?'למה התיק זז היום?':qq),!o.said&&!o.fromInput);
   const F=anaFacts(), id='c'+(++ANA_SEQ), shown=()=>{if(o.fromInput)anaScroll(id); else anaFocus(id)};
   anaLive('צ׳יקו עונה…');
   if(F.empty){anaCard(id,anaHead(F.empty==='nopf'?'אין עדיין תיק לנתח':'הנתונים עוד נטענים')+`<p>${F.empty==='nopf'?'כדי לנתח את התיק צריך קודם להוסיף אותו: צילום מסך, קובץ, או הקלדה של כמה שורות.':'המחירים ונתוני התיק עוד נטענים. נסה שוב בעוד רגע.'}</p>${F.empty==='nopf'?`<div class="ana-navs">${anaNavBtn({t:'mine',l:'להוספת תיק'})}</div>`:''}`); shown(); anaLive('התשובה מוכנה'); return}
   if(kind==='why'){anaCard(id,anaWhyHtml(F,whyMove(F.m,Q,P,F.R))); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
   const issues=anaIssues(F), first=!!o.first, ai=!!SAMPLE&&!SAMPLE_OFF&&!first;
+  if(kind==='explain'){
+    const ctx={R:F.R,years:+S.years||0,goal:+S.goal||0,tsum:F.tsum,co:F.co,coTo:CM&&CM.to||null}, st={sum:null,note:ai?'thinking':first?'first':'noai'};
+    let E=exposures(F.m,P,Q,secOfIt), X=E?pfExplain(F.m,E,ctx):null;
+    if(!X){anaCard(id,anaHead('הסבר התיק שלך')+'<p>אין עדיין שווי לחשב: חסרים מחירים לניירות בתיק.</p>'); shown(); anaLive('התשובה מוכנה'); return}
+    const draw=()=>anaCard(id,anaExplainPfHtml(F,X,st)); draw(); shown();
+    // the sectors come from the page's symbol list; when it is still loading, the card is drawn again once it is in
+    if(!SYMDB){ANA_BUSY=true; anaBusyUi(true); try{await Promise.race([loadSymDb(),new Promise(r=>setTimeout(r,3000))])}catch(e){}finally{ANA_BUSY=false; anaBusyUi(false)}
+      E=exposures(F.m,P,Q,secOfIt); if(E){X=pfExplain(F.m,E,ctx); draw()}}
+    if(!ai){anaLive('ההסבר מוכן');return}
+    const txt=JSON.stringify(pfExplainAI(F,X)), set=anaNumSet(txt);
+    const prompt=`אתה "צ׳יקו", עוזר התיק בדף "תיק צ׳יק". המשתמש ביקש: "הסבר את התיק שלי".\nFACTS הוא JSON שהדף חישב מתוך התיק האמיתי של המשתמש, וזה המקור היחיד שלך.\n\n${ANA_RULES}\n9. כתוב 2 עד 4 משפטים: מה יש בתיק, מה בולט בו ואיפה הוא מרוכז, ברמה של knowledge_level. רק תיאור: בלי לשפוט אם התיק טוב, מאוזן, מסוכן או מתאים, ובלי לומר מה לעשות.\n\nהחזר JSON בלבד, במבנה הזה: {"summary":"2 עד 4 משפטים"}\n\nFACTS:\n${txt}`;
+    const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('ההסבר מוכן, בלי ניסוח של Claude');return}
+    st.sum=anaCleanSum(raw,set); st.note='ai'; draw(); anaLive('ההסבר מוכן'); return}
   if(kind==='analyze'){
     const det={bottom:anaBottom(F,issues),strengths:anaStrengths(F),plan:anaPlan(F),actions:anaActions(F,issues)}, st={ai:null,note:ai?'thinking':first?'first':'noai'};
     const draw=()=>anaCard(id,anaReportHtml(F,issues,det,st)); draw(); shown();
@@ -17215,7 +17366,8 @@ try{
   addEventListener('resize',()=>{const d=$('anaBox'); if(d&&!d.hidden)d.setAttribute('aria-modal',anaPhone()?'true':'false')});
 }catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-anav]'); if(!b)return; e.preventDefault(); if(b.closest('#anaBox')&&!anaDock())anaClose(true); anaGo(b.dataset.anav)});
-window.__ana={facts:anaFacts,issues:anaIssues,factsAI:anaFactsAI,numSet:anaNumSet,bad:anaBad,clean:anaClean,run:anaRun,open:anaOpen,close:anaClose};
+window.__ana={facts:anaFacts,issues:anaIssues,factsAI:anaFactsAI,numSet:anaNumSet,bad:anaBad,clean:anaClean,run:anaRun,open:anaOpen,close:anaClose,
+  explain:()=>{const F=anaFacts(); if(F.empty)return null; const E=exposures(F.m,P,Q,secOfIt); return E?pfExplain(F.m,E,{R:F.R,years:+S.years||0,goal:+S.goal||0,tsum:F.tsum,co:F.co,coTo:CM&&CM.to||null}):null}};
 function renderRules(m){
   const sec=$('rulesSec'); if(!sec)return; const R=S.rules, rows=[];
   const chip=k=>`<span class="rs ${k}">${{ok:'תקין',warn:'לבדיקה',crit:'חריגה',na:'אין נתונים',unset:'לא הוגדר'}[k]}</span>`;
@@ -18139,7 +18291,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.closest('#btnRefresh')){refreshPage();return}
   if(ev.target.closest('#btnUpd')){goUpload();return}
   const btp=ev.target.closest('[data-bottip]'); if(btp){botTipClose(); if(btp.dataset.bottip==='go'){const k=$('botTipGo').dataset.ana||'analyze'; anaRun(k,null,{src:$('chatFab')})} else {try{$('chatFab').focus({preventScroll:true})}catch(e){}} return}
-  const pfb=ev.target.closest('[data-prof]'); if(pfb){if(pfb.dataset.prof==='edit')profOpen(pfb); else profClose(true); return}
+  const pfb=ev.target.closest('[data-prof]'); if(pfb){if(pfb.dataset.prof==='edit'){if(pfb.closest('#anaBox')&&!anaDock())anaClose(true); profOpen(pfb)} else profClose(true); return}
   if(ev.target.closest('[data-depban]')){try{localStorage.setItem('tr_depban',ymNow())}catch(e){} renderDepBan(); return}
   const i18b=ev.target.closest('[data-i18n]'); if(i18b){if(i18b.dataset.i18n==='go'){I18N.stop='';i18nPump();i18nPill()} else {if(S.profile&&S.profile.lang&&S.profile.lang!=='he'&&canWrite){S.profile={...S.profile,lang:'he'};changed()} i18nSet('he')} return}
   const vw=ev.target.closest('[data-view]'); if(vw){setView(vw.dataset.view);return}
@@ -18653,7 +18805,7 @@ async function savePf(){
       if(U0.HS&&JSON.stringify(U0.HS)!==JSON.stringify(HS)){HS=cl(U0.HS);await pset('history',U0.HS)}
       mergeQ(); render(); $('pfSaved').textContent='השמירה בוטלה. התיק חזר למצב שלפניה.'},15000);
     upStep(0); st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+txNote+(gone.length?(purged?`. ${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`, אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
-    if(!(U0.P&&(U0.P.positions||[]).length))setTimeout(()=>{try{showTab('overview',true);anaRun('analyze',null,{first:true})}catch(e){}},350);
+    if(!(U0.P&&(U0.P.positions||[]).length))setTimeout(()=>{try{showTab('overview',true);anaRun('explain',null,{first:true})}catch(e){}},350);
     const miss=pos.filter(p=>!RAWQ||(RAWQ.prices||{})[p.sym]==null).map(p=>p.sym);
     if(miss.length)$('upState').textContent=`עדיין אין מחיר חי ל-${[...new Set(miss)].join(', ')}. עד שיתווסף, מוצג המחיר מהדוח.`;
   }catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
