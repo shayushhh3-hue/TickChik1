@@ -1325,7 +1325,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
     <button type="button" role="tab" id="tab_plan" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span>תוכנית</span></button>
-    <button type="button" role="tab" id="tab_forecast" data-tab="forecast" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>תחזית</span></button>
+    <button type="button" role="tab" id="tab_forecast" data-tab="forecast" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>יעד ותרחישים</span></button>
     <button type="button" role="tab" id="tab_history" data-tab="history" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
     <button type="button" role="tab" id="tab_reports" data-tab="reports" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg><span>דוחות</span></button>
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
@@ -1502,7 +1502,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <section aria-labelledby="hFlows">
       <div class="row"><h2 id="hFlows">כסף שתצטרך, או שתוסיף</h2><span class="sub" id="flowsSub"></span></div>
       <div class="panel flows">
-        <p class="note" style="margin:0;max-width:none">משיכה שאתה מתכנן (למשל מקדמה לדירה) או הפקדה חד-פעמית. הדף מראה כמה זמן נשאר, איזה חלק מהתיק של היום זה, וכמה מזומן יש בתיק. זו מסגרת להבנה, לא בדיקה שהתיק מתאים למטרה ולא המלצה. התחזית למטה לא כוללת את הסכומים האלה.</p>
+        <p class="note" style="margin:0;max-width:none">משיכה שאתה מתכנן (למשל מקדמה לדירה) או הפקדה חד-פעמית. הדף מראה כמה זמן נשאר, איזה חלק מהתיק של היום זה, וכמה מזומן יש בתיק. זו מסגרת להבנה, לא בדיקה שהתיק מתאים למטרה ולא המלצה. החישוב למטה לא כולל את הסכומים האלה.</p>
         <div id="flowsList"></div>
         <form id="flowForm" class="form fl-form" novalidate>
           <label for="flWhen">מתי (חודש ושנה)<input type="month" id="flWhen" placeholder="2027-06"></label>
@@ -1531,7 +1531,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <label for="inGoal">היעד שלי, אחרי מס (₪)<input type="number" id="inGoal" min="0" step="10000" placeholder="לדוגמה 1000000"></label>
         </div>
         <div class="legend" style="margin-block:16px 6px"><span><i class="lg-l1"></i>שווי אחרי מס</span><span><i class="lg-l2"></i>מה שהשקעת</span><span>ציר אופקי: שנים מהיום</span></div>
-        <div class="chart" id="chart2"><svg id="svg2" viewBox="0 0 640 260" role="img" aria-label="תחזית שווי התיק מול סך ההפקדות לאורך השנים"></svg><div class="tip" id="tip2" hidden></div></div>
+        <div class="chart" id="chart2"><svg id="svg2" viewBox="0 0 640 260" role="img" aria-label="שווי התיק לפי ההנחות שלך מול סך ההפקדות לאורך השנים"></svg><div class="tip" id="tip2" hidden></div></div>
         <p class="note" id="fwdNote"></p>
       </div>
     </section>
@@ -1777,7 +1777,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       </div>
       <details class="panel"><summary>איך מחושב הציון הפיננסי</summary>
         <p class="note">ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.</p>
-        <p class="note" id="rSrcNote">הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, ומוצגים משני מקורות: stockanalysis.com ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.</p>
+        <p class="note" id="rSrcNote">הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, לפי המקור שכתוב ליד הנתונים.</p>
       </details>
     </section>
   </div>
@@ -1870,7 +1870,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <h3>העקרונות של תיק צ׳יק</h3>
         <ul class="princ">
           <li><b>מידע וניתוח, לא ייעוץ.</b> תיק צ׳יק מסביר מספרים ולא ממליץ לקנות או למכור. ייעוץ השקעות אישי ניתן רק על ידי בעל רישיון.</li>
-          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> תחזית היא הנחה שלך, לא נבואה, וליד כל הערכה כתוב כמה היא בטוחה.</li>
+          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> חישוב לעתיד הוא לפי הנחה שלך, לא נבואה, וליד כל הערכה כתוב כמה היא בטוחה.</li>
           <li><b>בלי לחץ לפעול.</b> מעט התראות, ורק כשכלל שקבעת לעצמך נחצה. הדף לא מודד הצלחה בכמה פעמים נכנסת, אלא במה שהבנת.</li>
           <li><b>שקיפות.</b> ליד כל מספר כתוב מאיפה הוא ומתי עודכן, מה נתון, מה פרשנות ומה הדף לא יודע.</li>
           <li><b>מותאם לך.</b> ההסברים לפי כמה אתה מכיר את השוק, והמספרים מקושרים למטרה ולאופק שקבעת.</li>
@@ -1983,7 +1983,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <label for="pfPurpose"><span>בשביל מה אתה משקיע? <span class="opt">(לא חובה)</span></span><select id="pfPurpose"><option value="">לא צוין</option><option value="home">דירה</option><option value="pension">פנסיה וטווח ארוך</option><option value="save">חיסכון כללי</option><option value="kids">ילדים ולימודים</option><option value="income">הכנסה שוטפת</option><option value="other">אחר</option></select></label>
         <label for="pfYears">אופק ההשקעה (שנים)<input type="number" id="pfYears" min="1" max="40" step="1" inputmode="numeric"></label>
       </div>
-      <p class="note">האופק משמש גם בתחזית ובתרחישים. צ׳יקו מקשר את המצב של התיק למטרה ולאופק, בלי להמליץ.</p>
+      <p class="note">האופק משמש גם בחישוב היעד ובתרחישים. צ׳יקו מקשר את המצב של התיק למטרה ולאופק, בלי להמליץ.</p>
       <label for="pfDep">באיזה יום בחודש אתה מפקיד<select id="pfDep"></select></label>
       <p class="note" id="pfDepNote"></p>
       <p class="note">הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם.<span id="pfContactNote"> המייל והטלפון לא חובה: הדף לא שולח אליהם הודעות ולא מעביר אותם ל-Claude. אפשר למחוק אותם כאן.</span></p>
@@ -15769,7 +15769,7 @@ function renderDividends(m){
   $('dvNet').textContent=ils(g*(1-WH)); $('dvNetD').textContent='25% מנוכים במקור, כמו בדוחות שלך';
   $('dvYld').textContent=pct(m.total?g/m.total*100:0,2); $('dvYldD').textContent=`על תיק של ${ils(m.total)}`;
   $('divRows').innerHTML=rows.map(r=>`<tr><td><span class="sym">${esc(lab(r.p.sym))}</span><div class="nm">${esc(r.p.name)}</div></td><td class="num"><span class="n">${pct(r.dy,2)}</span></td><td class="num"><span class="n">${ils(r.p.val)}</span></td><td class="num"><span class="n">${ils(r.g,1)}</span></td><td class="num"><span class="n">${ils(r.g*(1-WH),1)}</span></td></tr>`).join('')||'<tr><td colspan="5" class="empty">אין בתיק ניירות שמחלקים דיבידנד.</td></tr>';
-  {const d=divReinvest(g); $('divRe').innerHTML=g>0?`אם הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש בתיק: בעוד ${nn(d.Y)} שנים, בתשואה של ${nn(pct(d.R))} בשנה (ההנחה שלך בתחזית), הוא מצטבר לכ-${nn(ils(d.fv))}, לעומת ${nn(ils(d.flat))} אם הוא נשאר במזומן. זה אפקט הריבית דריבית, לא תחזית.`:''}
+  {const d=divReinvest(g); $('divRe').innerHTML=g>0?`אם הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש בתיק: בעוד ${nn(d.Y)} שנים, בתשואה של ${nn(pct(d.R))} בשנה (ההנחה שלך במסך היעד), הוא מצטבר לכ-${nn(ils(d.fv))}, לעומת ${nn(ils(d.flat))} אם הוא נשאר במזומן. זה אפקט הריבית דריבית, לא תחזית.`:''}
   $('divNote').textContent='הצפי מניח שכל חברה תמשיך לחלק באותו שיעור ושהמחיר והכמות לא ישתנו. חברה יכולה להגדיל, לקצץ או לבטל דיבידנד. מועדי החלוקה לא מוצגים, כי אין לי להם מקור נתונים. קרנות המדד לא נכללות.';
 }
 function renderDecomp(){
@@ -16434,8 +16434,8 @@ function renderDesk(m,A){
 // facts it was given, and a sentence that fails the check (or reads as a buy/sell call) is replaced by the page's own
 // sentence. Nothing here writes data or acts on the portfolio; the buttons only open screens of the page.
 let SAMPLE=null, SAMPLE_OFF=false, ANA_READY=false, LAST_A=null, ANA_BUSY=false, ANA_CTL=null, ANA_SEQ=0, ANA_TURNS=[];
-const ANAV={overview:'לסקירה',mine:'לתיק שלי',plan:'לתוכנית ההפקדה',forecast:'לתחזית וליעד',risk:'לבדיקת הסיכון',settings:'לכללים וליעדים',ratings:'לדירוג החברות',history:'להיסטוריה',watch:'למניות במעקב',fit:'למה שמתאים לתיק'};
-const ANAVD='risk = ריכוז, תנודתיות וניירות שנעים יחד; settings = כללים, יעדי הקצאה ומדיניות; plan = תוכנית ההפקדה החודשית; forecast = יעד כספי ותחזית; mine = האחזקות ומחירי הקנייה; ratings = ציון פיננסי ודוחות קרובים; history = פעולות ומכירות; watch = מניות במעקב; fit = מניות שמתאימות לכללים של המשתמש';
+const ANAV={overview:'לסקירה',mine:'לתיק שלי',plan:'לתוכנית ההפקדה',forecast:'ליעד ולתרחישים',risk:'לבדיקת הסיכון',settings:'לכללים וליעדים',ratings:'לדירוג החברות',history:'להיסטוריה',watch:'למניות במעקב',fit:'למה שמתאים לתיק'};
+const ANAVD='risk = ריכוז, תנודתיות וניירות שנעים יחד; settings = כללים, יעדי הקצאה ומדיניות; plan = תוכנית ההפקדה החודשית; forecast = יעד כספי ותרחישים לפי הנחה של המשתמש; mine = האחזקות ומחירי הקנייה; ratings = ציון פיננסי ודוחות קרובים; history = פעולות ומכירות; watch = מניות במעקב; fit = מניות שמתאימות לכללים של המשתמש';
 // which screen answers each alert category of the page's own alert engine
 const ACAT={'ריכוז':'risk','סטייה':'settings','ירידה':'mine','מחיר':'mine','הפקדה':'plan','הגדלה':'plan','יתרה':'plan','דוחות':'ratings','דירוג':'ratings','מדיניות':'history','חסר':'mine','נעים יחד':'risk','מטבע':'settings'};
 const ACTT={'ריכוז':'לבדוק את הריכוז בתיק','סטייה':'להשוות את ההקצאה ליעדים','ירידה':'לבדוק מה השתנה בנייר שירד','מחיר':'להשלים מחירים חסרים','נתונים':'לוודא שהמחירים עדכניים','הפקדה':'לסמן את הפקדת החודש','יתרה':'לבדוק את היתרה בתוכנית','דוחות':'לעבור על הדוחות הקרובים','דירוג':'לבדוק ציון פיננסי נמוך','מדיניות':'לבדוק מכירות מוקדמות','חסר':'להשלים מחירי קנייה','נעים יחד':'לבדוק ניירות שנעים יחד','הגדלה':'לבדוק את הבא בתור בתוכנית','מטבע':'לבדוק את החשיפה לדולר','חפיפה':'לבדוק חפיפה בין קרנות למניות'};
@@ -17126,9 +17126,9 @@ const Q_EXPLAIN=/(?:ת?סביר|הסבר|תאר|ספר)(?:\s+לי)?\s+(?:את|ע
 function anaLimitHtml(kind){
   const advice=kind==='advice';
   return anaHead(advice?'על החלטה לקנות או למכור':'על מה שיקרה בשוק')+`<p>${advice?'אני לא ממליץ לקנות, למכור או להחזיק נייר. הדף מסביר את המספרים של התיק שלך, והחלטה כזו היא שלך.':'אני לא יודע מה יקרה במחירים, ואף אחד לא יודע את זה בוודאות. לא אחזה מחיר או תשואה.'}</p>
-    <p><b>מה כן אפשר לבדוק:</b></p><ul class="why-l">${advice?'<li>האם הנייר או הקבוצה שלו מעל הכללים שקבעת (ריכוז, ירידה מהעלות).</li><li>איזה חלק מהתיק הוא, וכמה הוא הזיז את התיק לאחרונה.</li><li>האם הוא מתאים לתוכנית ולמדיניות שכתבת.</li>':'<li>מה קרה עד עכשיו: השינוי היומי ומבט לאחור.</li><li>תרחישים בתחזית, לפי הנחה שאתה קובע (לא נבואה).</li><li>כמה התיק תלוי בנייר, בתחום או בדולר.</li>'}</ul>
+    <p><b>מה כן אפשר לבדוק:</b></p><ul class="why-l">${advice?'<li>האם הנייר או הקבוצה שלו מעל הכללים שקבעת (ריכוז, ירידה מהעלות).</li><li>איזה חלק מהתיק הוא, וכמה הוא הזיז את התיק לאחרונה.</li><li>האם הוא מתאים לתוכנית ולמדיניות שכתבת.</li>':'<li>מה קרה עד עכשיו: השינוי היומי ומבט לאחור.</li><li>תרחישים במסך היעד, לפי הנחה שאתה קובע (לא נבואה).</li><li>כמה התיק תלוי בנייר, בתחום או בדולר.</li>'}</ul>
     <div class="ana-navs">${advice?anaNavBtn({t:'risk',l:ANAV.risk})+anaNavBtn({t:'settings',l:ANAV.settings}):anaNavBtn({t:'forecast',l:ANAV.forecast})+anaNavBtn({t:'history',l:'למבט לאחור'})}</div>
-    <p class="note">${advice?'להחלטה שמתאימה לך אישית אפשר לפנות ליועץ השקעות בעל רישיון.':'התחזית בדף היא חישוב לפי תשואה שאתה מניח, לא ידיעה.'}</p>`;
+    <p class="note">${advice?'להחלטה שמתאימה לך אישית אפשר לפנות ליועץ השקעות בעל רישיון.':'החישוב לעתיד בדף הוא לפי תשואה שאתה מניח, לא ידיעה.'}</p>`;
 }
 // ---- the conversation: messages in order, newest at the bottom ----
 let ANA_RET=null, ANA_LASTX=null;
@@ -17237,8 +17237,8 @@ function secFacts(k){
       price:pr&&pr.px?{last:(pr.ccy==='USD'?'$':'₪')+fmtN(pr.px),last_day:pr.chg!=null?spct(pr.chg*100,2):null,label:pr.label||''}:null},
     in_portfolio:p?{quantity:String(+(+p.qty).toFixed(3)),weight:pct(p.w),value:ils(p.val),group:GROUPS[p.group]||'',vs_cost:p.cost?spct((p.costVal-p.cost)/p.cost*100):null,last_day:p.dayPct!=null?`${spct(p.dayPct,2)} (${sgn(p.dayIls)})`:null,currency:p.ccy==='USD'?'דולר':'שקל'}:null,
     rules:{max_per_security:pct(+R.maxPos||0,0),max_per_group:pct(+R.maxGroup||0,0)},
-    analysts:rs&&(rs.rating||rs.target)?{consensus:RATE_HE[rs.rating]||rs.rating||null,count:rs.analysts||null,target:rs.target?'$'+Number(rs.target).toLocaleString('en-US'):null,source:rs.source||'stockanalysis.com'}:null,
-    financials:rs?{pe:n1(rs.pe),forward_pe:n1(rs.fpe),dividend_yield:rs.dy?pct(rs.dy):null,revenue_growth:rs.revg!=null?spct(rs.revg):null,net_margin:rs.pm!=null?pct(rs.pm):null,roe:rs.roe!=null?pct(rs.roe):null,debt_to_equity:n1(rs.de,2),next_report:rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):null,grade:fsc?`${fsc.grade} (${fsc.score})`:null,source:'stockanalysis.com'}:null,
+    analysts:rs&&(rs.rating||rs.target)?{consensus:RATE_HE[rs.rating]||rs.rating||null,count:rs.analysts||null,target:rs.target?'$'+Number(rs.target).toLocaleString('en-US'):null,source:rs.source||(RS&&RS.source)||'מקור לא ידוע'}:null,
+    financials:rs?{pe:n1(rs.pe),forward_pe:n1(rs.fpe),dividend_yield:rs.dy?pct(rs.dy):null,revenue_growth:rs.revg!=null?spct(rs.revg):null,net_margin:rs.pm!=null?pct(rs.pm):null,roe:rs.roe!=null?pct(rs.roe):null,debt_to_equity:n1(rs.de,2),next_report:rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):null,grade:fsc?`${fsc.grade} (${fsc.score})`:null,source:rs.source||(RS&&RS.source)||'מקור לא ידוע'}:null,
     investor_profile:hasRisk()?RISK[riskOf()]:null,
     ...anaPerson()};
 }
@@ -17257,7 +17257,7 @@ function anaExplainHtml(F,k,ans,st){
   const sec=(t,tag,x,cls)=>x?`<section class="ana-sec${cls?' '+cls:''}"><h4>${t}${tag?' '+tag:''}</h4><p>${tx(x)}</p></section>`:'';
   const f=ans.f, any=Object.values(f).some(Boolean);
   return head+(any?sec('מה זה','<span class="tag gen">ידע כללי</span>',f.what)+sec('מה המספרים אומרים','<span class="tag an">ניתוח</span>',f.numbers)+sec('בתיק שלי','<span class="tag an">ניתוח</span>',f.mine)+sec('למה לשים לב','<span class="tag an">ניתוח</span>',f.watch)+sec('מה לא יודעים','',f.unknown,'muted'):'<p>לא הצלחתי להסביר את הנייר הזה מתוך הנתונים.</p>')
-    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של Claude, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: '+esc((F.analysts&&F.analysts.source)||'stockanalysis.com'):''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
+    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של Claude, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: '+esc((F.analysts&&F.analysts.source)||(F.financials&&F.financials.source)||'מקור לא ידוע'):''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
 }
 // "צ׳יקו, הסבר לי את הנייר הזה": what it is (general knowledge, marked as such), what its figures say at the person's level, its place in the portfolio
 async function anaExplain(k,o){
@@ -17279,7 +17279,7 @@ function renderSources(){
   R.push(['שער הדולר',Q&&Q.usdIls?`${Q.usdIls.toFixed(3)}${Q.fxLabel?' · '+esc(Q.fxLabel):''}.`:'עוד לא נטען.']);
   R.push(['אנליסטים ודוחות כספיים',RS&&RS.updatedAt?(rsStale(RS.updatedAt)?`${esc(RS.source||'')} · נכון ל-${dmy(RS.updatedAt)}. הנתונים האלה הגיעו עם המעבר לאתר, ואין כרגע עדכון שלהם באתר. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`:`${esc(RS.source||'')} · ${when(RS.updatedAt)}. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`):'עוד לא נטענו.']);
   R.push(['גרפים והיסטוריה','Yahoo Finance, מתעדכנים בלילה שאחרי יום המסחר (ב׳–ו׳ ב-23:50); ערכי סוף חודש נכתבים ב-1 בחודש.']);
-  R.push(['איך מחושב','שווי = כמות × מחיר × שער. רווח מול עלות = השווי פחות העלות מהדוחות שהעלית. היום = מול סגירת יום המסחר הקודם. הציון הפיננסי, הדירוג והתחזית מוסברים בכפתורי "?" שלידם; כולם חישוב של הדף, לא תחזית שוק.']);
+  R.push(['איך מחושב','שווי = כמות × מחיר × שער. רווח מול עלות = השווי פחות העלות מהדוחות שהעלית. היום = מול סגירת יום המסחר הקודם. הציון הפיננסי, הדירוג וחישוב היעד מוסברים בכפתורי "?" שלידם; כולם חישוב של הדף, לא תחזית שוק.']);
   R.push(['מה הדף לא יודע','הרכב הקרנות, חדשות, ואירועים אחרי העדכון האחרון. כשנתון חסר, הדף כותב שהוא חסר במקום להשלים אותו.']);
   setH(el,R.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join(''));
 }
@@ -17549,7 +17549,7 @@ function renderGoal(mAll){
     const Yh=+S.years>0?+S.years:0, pu=purposeOf(), fitH=k!=null&&k>0&&Yh?(k<=Yh*12?` זה בתוך האופק שקבעת (${Yh} שנים).`:` זה אחרי האופק שקבעת (${Yh} שנים). מה שמקרב את היעד הוא ההפקדה החודשית והתשואה; אפשר לבדוק בתרחישים.`):'';
     if($('hGoalOv'))$('hGoalOv').textContent='היעד שלי'+(pu?': '+PURPOSE[pu]:'');
     const core=`<div class="gl-h">${pu?`<span class="gl-p">${esc(PURPOSE[pu])}</span>`:''}<span class="gl-v">${ils(goal)}</span><span class="sub">היום, אחרי מס: ${ils(netNow)} · ${pct(p,0)} מהיעד</span></div><div class="gbar" role="img" aria-label="${pct(p,0)} מהיעד"><i style="width:${p.toFixed(1)}%"></i></div><p class="gl-eta">${k===0?'הגעת ליעד.':k==null?'בקצב הנוכחי היעד לא מושג בתוך 60 שנה.':`בקצב הנוכחי תגיע ליעד ${whenH(k)}.`}${esc(fitH)}</p>`;
-    gh=core+`<p class="note">${basis}</p>`; ov=core+`<button class="btn sm" type="button" data-tab="forecast">לתחזית ולתרחישים</button>`}
+    gh=core+`<p class="note">${basis}</p>`; ov=core+`<button class="btn sm" type="button" data-tab="forecast">ליעד ולתרחישים</button>`}
   else gh=`<p class="gl-eta">עוד לא קבעת יעד. הקלד סכום בשדה "היעד שלי" למטה, והדף יראה כמה מהדרך כבר עברת ומתי תגיע אליו בקצב הנוכחי.</p>`;
   setH($('goalBox'),gh);
   $('goalOvSec').hidden=!ov; if(ov)setH($('goalOv'),ov);
@@ -17612,7 +17612,7 @@ function renderRatings(m){
   $('rFresh').textContent=`נתוני החברות: ${rsWhen(RS.updatedAt)} · מקור: ${RS.source||''}`;
   const rows=m.pos.filter(p=>RS.companies&&RS.companies[p.sym]).map(p=>({p,c:RS.companies[p.sym],fs:finScore(RS.companies[p.sym])})).sort((a,b)=>(b.fs?b.fs.score:-1)-(a.fs?a.fs.score:-1));
   const none=m.pos.filter(p=>!(RS.companies&&RS.companies[p.sym])).map(p=>p.sym), inv=rows.some(r=>r.c.inv);
-  {const h=$('rInvH'); if(h)h.hidden=!inv; const n=$('rSrcNote'); if(n)n.textContent='הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, לפי '+(RS.source||'stockanalysis.com')+(inv?' ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.':'.')}
+  {const h=$('rInvH'); if(h)h.hidden=!inv; const n=$('rSrcNote'); if(n)n.textContent='הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, לפי '+(RS.source||'המקור שכתוב ליד הנתונים')+(inv?' ו-Investing.com. התווית ״שונה״ מופיעה כשהקונצנזוס בשני המקורות לא זהה.':'.')}
   $('rateRows').innerHTML=rows.map(({p,c,fs})=>{
     const up=c.target&&p.ccy==='USD'?(c.target/p.px-1)*100:null, dd=c.next?daysTo(c.next):null;
     const nx=c.next?`<span class="n">${dmy(c.next)}</span> ${dd!=null&&dd>=0&&dd<=7?`<span class="flag">${dd===0?'היום':'בעוד '+dd+' ימים'}</span>`:dd!=null&&dd<0?'<span class="nm">ממתין לעדכון</span>':''}`:'—';
@@ -18039,7 +18039,7 @@ function buildRange(kind,key){
     B.push(...activityBlocks(da,db,'כל התנועות בשנה'));
     if(r.cur){
       B.push({t:'h',title:'מבט קדימה'});
-      B.push({t:'list',lines:[`תוכנית ההגדלה: הוגדלו ${txtOf('pDone')}, נשאר לממן ${txtOf('pLeft')}, סיום משוער ${txtOf('pEnd')}.`,`תחזית לפי ההנחות שהגדרת: שווי אחרי מס ${txtOf('fVal')}, מתוכו רווח נטו ${txtOf('fNet')}. ${txtOf('fwdNote')}`]});
+      B.push({t:'list',lines:[`תוכנית ההגדלה: הוגדלו ${txtOf('pDone')}, נשאר לממן ${txtOf('pLeft')}, סיום משוער ${txtOf('pEnd')}.`,`חישוב לפי ההנחות שהגדרת (לא תחזית): שווי אחרי מס ${txtOf('fVal')}, מתוכו רווח נטו ${txtOf('fNet')}. ${txtOf('fwdNote')}`]});
       const rk=domTable('riskRows'); if(rk){B.push({t:'h',title:'סיכון: כמה כל נייר זז',sub:txtOf('riskSrc')});B.push({t:'table',xl:'סיכון',heads:rk.heads,w:[1.6,0.8,1.3,1.1,1.2,1.1],num:[0,1,1,1,1,1],rows:rk.rows.map(r=>r.map((c,i)=>i===0?{t:String(c).split('\n')[0],b:1,sub:String(c).split('\n')[1]||''}:typeof c==='number'?{t:String(c),n:c}:String(c)))})}
       B.push(...alertBlocks());
     }
@@ -19870,7 +19870,7 @@ function renderSec(){SECHOV=-1;
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
     <details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
     <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
-    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||'stockanalysis.com')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
+    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
     ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
@@ -20039,8 +20039,8 @@ window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
 const TABS=['overview','search','plan','forecast','history','reports','ratings','watch','risk','state','settings','mine'];
 const NAVG={overview:['overview'],mine:['mine'],plan:['plan','forecast'],risk:['risk','state'],search:['search','ratings','watch'],history:['history','reports'],settings:['settings']};
-const SUBL={plan:'מה לעשות בהפקדה הבאה',forecast:'תחזית התיק',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
-const HEADL={search:'מחקר',plan:'תוכנית ותחזית',history:'מבט לאחור',settings:'הגדרות'};
+const SUBL={plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const HEADL={search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}

@@ -395,3 +395,13 @@ test('a security nobody held yet: the first explanation says what it waits for, 
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('quotes/latest',q0,{silent:true})}
 });
+
+test('trust: a calculation on the user\'s assumption is never called a forecast; every "תחזית" on screen is a "not"',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280); const seen9=[];
+  for(const id of ['overview','plan','forecast','risk','settings']){await pg.evaluate(id=>document.querySelector('[data-tab="'+id+'"]').click(),id); await pg.waitForTimeout(400);
+    seen9.push(...await pg.evaluate(()=>{const r=[]; const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT); let n; while(n=w.nextNode()){const e=n.parentElement; if(!e||e.offsetParent===null)continue; for(const m of n.data.matchAll(/(\S+\s+){0,2}תחזית/g))r.push(m[0])} return r}))}
+  assert.ok(seen9.length>0,'the page does say what is not a forecast');
+  for(const x of seen9)assert.match(x,/(^|\s)ו?לא\s+(\S+\s+)?תחזית/,'"תחזית" only as "not a forecast": '+x);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
