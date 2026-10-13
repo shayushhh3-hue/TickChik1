@@ -674,13 +674,13 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .nopf [data-pane="overview"]>:not(#welcome),.nopf .hero .main,.nopf .hero .tapewrap,.nopf #acctChips{display:none}
 /* 13.10 (stage 3.2): the full header only on the overview; on every other tab one short line (the value, the day, the
    alerts chip), so the tab's own content starts on the first screen */
-body:not([data-tab="overview"]) .hero .side,body:not([data-tab="overview"]) .hero .taperow,body:not([data-tab="overview"]) .hero .worth>.d{display:none}
-body:not([data-tab="overview"]) .hero .main{display:block}
-body:not([data-tab="overview"]) .hero .worth{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:10px 18px 12px}
-body:not([data-tab="overview"]) .hero .worth>.k{font-size:12px}
-body:not([data-tab="overview"]) .hero .big{display:inline-block;font-size:24px}
-body:not([data-tab="overview"]) .hero .dayline{margin-top:0}
-body:not([data-tab="overview"]) .hero .status{margin-top:0;align-self:center}
+body:not([data-page="overview"]) .hero .side,body:not([data-page="overview"]) .hero .taperow,body:not([data-page="overview"]) .hero .worth>.d{display:none}
+body:not([data-page="overview"]) .hero .main{display:block}
+body:not([data-page="overview"]) .hero .worth{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:10px 18px 12px}
+body:not([data-page="overview"]) .hero .worth>.k{font-size:12px}
+body:not([data-page="overview"]) .hero .big{display:inline-block;font-size:24px}
+body:not([data-page="overview"]) .hero .dayline{margin-top:0}
+body:not([data-page="overview"]) .hero .status{margin-top:0;align-self:center}
 .lg{position:relative;width:30px;height:30px;border-radius:27%;background:linear-gradient(150deg,#2B2E35 0%,#17191E 60%,#0E0F12 100%);box-shadow:inset 0 0 0 1px rgb(255 255 255 / .08),0 1px 2px rgb(0 0 0 / .18);display:inline-grid;place-items:center;overflow:hidden;flex:none;vertical-align:middle;font-family:var(--mono);font-weight:700;font-size:9px;letter-spacing:.02em;color:#EAF0F6;line-height:1}
 .lg.lt{background:#FFFFFF;box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgb(46 74 102 / .08)} .lg.br{box-shadow:inset 0 0 0 1px rgb(255 255 255 / .12),0 1px 2px rgb(0 0 0 / .15)}
 .lg i{font-style:normal;display:block} .lg.on i{display:none} .lg .sp{position:absolute;inset:12%;background-repeat:no-repeat;background-size:2000% auto} .lg.lt .sp{inset:9%}
@@ -1214,6 +1214,32 @@ section.fold > .fold-h h2{margin:0}
 .wi-r{width:100%;accent-color:var(--navy);margin-top:6px}
 @media (prefers-reduced-motion:no-preference){.pane:not([hidden]){animation:panein .18s ease-out}}
 @keyframes panein{from{opacity:.4}to{opacity:1}}
+/* navigation by screen size: a phone gets a bottom bar (the four places used most, and "עוד" opens the drawer with the
+   rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
+.botbar{display:none}
+@media (max-width:759px){
+  .botbar{display:flex;position:fixed;z-index:42;inset-inline:0;bottom:0;gap:2px;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));background:var(--navy);box-shadow:0 -4px 18px rgb(30 52 78 / .18)}
+  .botbar button{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border:0;border-radius:10px;background:none;color:#C9D4E2;font:inherit;font-size:12px;font-weight:500;line-height:1.2;cursor:pointer}
+  .botbar button svg{width:22px;height:22px;flex:none}
+  .botbar button[aria-current="page"],.botbar button.on{color:#fff;font-weight:700;background:rgb(255 255 255 / .12)}
+  .botbar button[aria-current="page"] svg,.botbar button.on svg{color:#E9C58E}
+  .botbar button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+  .botbar .bbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wrap:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),textarea,select):focus) .botbar{display:none}
+  .navtab{display:none}
+  .hero .top{padding-inline-start:18px}
+  .wrap{padding-block-end:calc(150px + env(safe-area-inset-bottom,0px))}
+  .chatfab{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+  body #tcAcct{bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+  .toast,.bottip,.i18np{bottom:calc(130px + env(safe-area-inset-bottom,0px))}
+}
+@media (min-width:1200px){
+  .tabsbar{width:232px;transform:none;visibility:visible;transition:none;box-shadow:none}
+  .navtab,.scrim,.sbclose{display:none}
+  body{padding-inline-start:232px}
+  .hero .top{padding-inline-start:18px}
+  .i18np{inset-inline-start:248px}
+}
 </style>
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
@@ -1235,6 +1261,13 @@ section.fold > .fold-h h2{margin:0}
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
   </nav></div>
+  <nav class="botbar" id="botbar" aria-label="ניווט מהיר">
+    <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span class="bbl">סקירה</span></button>
+    <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span class="bbl">התיק שלי</span></button>
+    <button type="button" data-bb="risk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span class="bbl">בקרה</span></button>
+    <button type="button" data-bb="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span class="bbl">תוכנית</span></button>
+    <button type="button" data-bb="more" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="bbl">עוד</span></button>
+  </nav>
   <header class="hero" id="hero">
     <div class="top">
       <div class="brand"><h1>תיק צ׳יק</h1><span class="brand-sub">חדר המסחר שלי</span><span class="live" id="fresh">טוען נתוני תיק…</span><button type="button" class="pxnow" id="pxNow" hidden>לעדכן מחירים עכשיו</button></div>
@@ -19233,9 +19266,11 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   setH(row,want)}
 function showTab(t,user){
   if(!TABS.includes(t))t='overview';
-  document.body.dataset.tab=t;
-  for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',b.dataset.tab===t);
+  document.body.dataset.page=t;   // not data-tab: a click anywhere would then count as a click on a tab button
+  // aria-selected belongs to tabs only; the buttons in the text that lead to a tab are plain buttons
+  for(const b of document.querySelectorAll('[role="tab"][data-tab]'))b.setAttribute('aria-selected',b.dataset.tab===t);
   {const hb=$('tab_'+navGroup(t));if(hb)hb.setAttribute('aria-selected','true')}
+  try{bbSync(t)}catch(e){}
   for(const s of document.querySelectorAll('[data-pane]'))s.hidden=s.dataset.pane!==t;
   try{subTabs(t)}catch(e){}
   try{localStorage.setItem('tab',t)}catch(e){}
@@ -19245,9 +19280,14 @@ function showTab(t,user){
   try{if(user){const pn=document.querySelector('[data-pane="'+t+'"]'),bh=0,top=pn.getBoundingClientRect().top+window.scrollY-bh-10;if(window.scrollY>top)window.scrollTo(0,Math.max(0,top))}}catch(e){}
 }
 // the drawer: opens from the edge tab, closes on a pick, the scrim, the X or Escape; the edge tab tucks away while scrolling down
-function setNav(o){const bar=$('tabsbar');bar.classList.toggle('open',o);$('scrim').hidden=!o;$('navtab').setAttribute('aria-expanded',String(o));
+function setNav(o){const bar=$('tabsbar'),more=document.querySelector('#botbar [data-bb="more"]');bar.classList.toggle('open',o);$('scrim').hidden=!o;$('navtab').setAttribute('aria-expanded',String(o));if(more)more.setAttribute('aria-expanded',String(o));
   if(o){$('navtab').classList.remove('away');const sel=bar.querySelector('[aria-selected="true"]')||bar.querySelector('[data-tab]');try{sel.focus({preventScroll:true})}catch(e){}}
-  else if(document.activeElement&&bar.contains(document.activeElement)){try{$('navtab').focus({preventScroll:true})}catch(e){}}}
+  else if(document.activeElement&&bar.contains(document.activeElement)){const nt=$('navtab'),back=getComputedStyle(nt).display!=='none'?nt:more&&getComputedStyle(more).display!=='none'?more:null;if(back){try{back.focus({preventScroll:true})}catch(e){}}}}
+// the phone's bottom bar: the current place is marked; "עוד" is marked for the places that live in the drawer
+const BB_ON=['overview','mine','risk','plan'];
+function bbSync(t){const g=navGroup(t),on=BB_ON.includes(g)?g:'more';
+  for(const b of document.querySelectorAll('#botbar [data-bb]')){const x=b.dataset.bb;if(x===on&&x!=='more')b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');b.classList.toggle('on',x==='more'&&on==='more')}}
+$('botbar').addEventListener('click',e=>{const b=e.target.closest('[data-bb]');if(!b)return;if(b.dataset.bb==='more'){setNav(true);return}showTab(b.dataset.bb,true)});
 {let rzT=null,lastW=innerWidth;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(Math.abs(innerWidth-lastW)>40){lastW=innerWidth;try{render()}catch(e){}}},250)})}
 $('navtab').addEventListener('click',()=>setNav(true));$('scrim').addEventListener('click',()=>setNav(false));$('navclose').addEventListener('click',()=>setNav(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('tabsbar').classList.contains('open'))setNav(false)});
