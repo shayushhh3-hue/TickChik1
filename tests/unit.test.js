@@ -471,3 +471,28 @@ test('prices: the two indices are kept with their dates; a run that misses one k
   d=buildQuotesDoc({prev:d,fetched:{quotes:{MSFT:q},index:{},errors:[],bench:{TA125:{px:2950,prev:2900,date:'2026-10-14'}}},symbols:['MSFT'],now:new Date('2026-10-14T08:00:00Z')});
   assert.equal(d.bench.SPX.date,'2026-10-12','the old S&P value stays, with its own date'); assert.equal(d.bench.TA125.date,'2026-10-14');
 });
+
+test('e-mail: nothing automatic goes out without the owner\'s consent, per kind; the page sees what happened',async()=>{
+  const {sendAllowed, mailAllowed, mailNote}=await import('../server/mail.js');
+  const env0={k:process.env.RESEND_API_KEY,to:process.env.MAIL_TO}, f0=globalThis.fetch, sent=[];
+  globalThis.fetch=async(u,o)=>{if(String(u).includes('api.resend.com')){sent.push(JSON.parse(o.body));return new Response('{"id":"x"}',{status:200})} return f0(u,o)};
+  try{
+    const s=new Store(':memory:'), msg={subject:'test',text:'₪1,234',html:'<p>x</p>'};
+    process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='owner@example.com';
+    s.setDoc('settings/main',{name:'x'});
+    assert.equal(mailAllowed(s,'reports'),false,'off when never chosen');
+    assert.equal(await sendAllowed(s,'reports',msg),false); assert.equal(sent.length,0);
+    assert.equal(s.getDoc('system/mail').data.last.reports.result,'off');
+    s.setDoc('settings/main',{name:'x',mail:{reports:true}});
+    assert.equal(await sendAllowed(s,'reports',msg),true); assert.equal(sent.length,1);
+    assert.equal(await sendAllowed(s,'morning',msg),false,'one kind on does not turn on the others'); assert.equal(sent.length,1);
+    const st=s.getDoc('system/mail').data; assert.equal(st.ready,true); assert.equal(st.last.reports.result,'sent'); assert.equal(st.last.morning.result,'off');
+    assert.ok(!JSON.stringify(st).includes('1,234')&&!JSON.stringify(st).includes('@'),'no content and no address in the status');
+    delete process.env.RESEND_API_KEY; assert.equal(await sendAllowed(s,'reports',msg),false); assert.equal(s.getDoc('system/mail').data.last.reports.result,'not_ready');
+    // the backup copy: off in the settings means no mail, the backup on disk still happens
+    const {backupTask}=await import('../server/backup.js'); process.env.RESEND_API_KEY='re_test';
+    const dir=fs.mkdtempSync('/tmp/tc-bk-'); const r=await backupTask(s,{dataDir:dir}); assert.equal(r.mailed,false); assert.ok(fs.existsSync(r.file)); assert.equal(sent.length,1);
+    s.setDoc('settings/main',{name:'x',mail:{backup:true}}); const r2=await backupTask(s,{dataDir:dir}); assert.equal(r2.mailed,true); assert.equal(sent.length,2);
+    fs.rmSync(dir,{recursive:true,force:true});
+  }finally{globalThis.fetch=f0; if(env0.k==null)delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY=env0.k; if(env0.to==null)delete process.env.MAIL_TO; else process.env.MAIL_TO=env0.to}
+});

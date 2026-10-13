@@ -1,7 +1,7 @@
 // The scheduled work, as functions over the store. The page itself (run headless) computes the daily point, the
 // alerts and the reports, so their numbers are the same as in the browser.
 import {withPage, applyWrites} from './headless.js';
-import {sendMail, wrapHtml, esc} from './mail.js';
+import {sendAllowed, wrapHtml, esc} from './mail.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {tickerFor} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
@@ -110,7 +110,7 @@ export async function morningTask(store,{log}={}){
     const url=process.env.SITE_URL||''; const when=`מחירים נכון ל-${A.pricesAt?new Date(A.pricesAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):'?'}`;
     const text=`בוקר טוב. ${head}.\n\n${fresh.map(i=>`[${SEV[i.sev]||i.sev}] ${i.cat?i.cat+': ':''}${i.text}`).join('\n')}\n\n${when}${url?'\nלפתיחת הדף: '+url:''}\n\nעובדות מהתיק שלך בלבד; לא המלצה לקנות או למכור.`;
     const html=wrapHtml('הודעת הבוקר',`<p>בוקר טוב. <b>${esc(head)}.</b></p><ul style="padding-inline-start:18px;margin:8px 0">${fresh.map(i=>`<li style="margin:6px 0"><span style="display:inline-block;min-width:56px;color:${color[i.sev]||'#1e293b'};font-weight:700">${esc(SEV[i.sev]||i.sev)}</span> ${i.cat?'<b>'+esc(i.cat)+':</b> ':''}${esc(i.text)}</li>`).join('')}</ul><p style="color:#64748b;font-size:13px">${esc(when)}</p>${url?`<p><a href="${esc(url)}" style="color:#1e344e;font-weight:700">לפתיחת הדף ›</a></p>`:''}`);
-    await sendMail({subject:`תיק צ׳יק – הודעת הבוקר: ${head}`,text,html});
+    await sendAllowed(store,'morning',{subject:`תיק צ׳יק – הודעת הבוקר: ${head}`,text,html},log);
   }
   store.setDoc('alerts/state',{date:p.iso,keys:items.map(i=>i.key),moveDate:fresh.length?p.iso:(state.moveDate||null),sent:fresh.length,updatedAt:now.toISOString()});
 }
@@ -170,8 +170,8 @@ export async function reportTask(store,{log,kind='week'}={}){
     if(r.error){log(r.spec,'→',r.error);continue}
     store.setDoc('reports/archive/items/'+r.doc.id,r.doc);
     const file=(r.doc.id.startsWith('week')?'doch-shvui':r.doc.id.startsWith('month')?'doch-hodshi':r.doc.id.startsWith('quarter')?'doch-rivoni':r.doc.id.startsWith('half')?'doch-hatzi-shnati':'doch-shnati')+'-'+p.iso+'.pdf';
-    await sendMail({subject:`תיק צ׳יק – ${r.doc.title}${r.doc.period?' · '+r.doc.period:''}`,text:r.lines.join('\n')+'\n\nהדוח המלא מצורף ושמור בארכיון בדף. עובדות ומספרים בלבד; לא המלצה לקנות או למכור.',
-      html:wrapHtml(r.doc.title,`<p>${r.lines.map(esc).join('<br>')}</p><p style="color:#64748b;font-size:13px">הדוח המלא מצורף כ-PDF, וגם שמור בארכיון בדף.</p>`),attachments:[{filename:file,content:Buffer.from(r.pdf,'base64'),contentType:'application/pdf'}]});
+    await sendAllowed(store,'reports',{subject:`תיק צ׳יק – ${r.doc.title}${r.doc.period?' · '+r.doc.period:''}`,text:r.lines.join('\n')+'\n\nהדוח המלא מצורף ושמור בארכיון בדף. עובדות ומספרים בלבד; לא המלצה לקנות או למכור.',
+      html:wrapHtml(r.doc.title,`<p>${r.lines.map(esc).join('<br>')}</p><p style="color:#64748b;font-size:13px">הדוח המלא מצורף כ-PDF, וגם שמור בארכיון בדף.</p>`),attachments:[{filename:file,content:Buffer.from(r.pdf,'base64'),contentType:'application/pdf'}]},log);
     log(`${r.spec} → ${r.doc.id} saved, ${Math.round(r.pdf.length*3/4/1024)} KB PDF`);
   }
   return out.filter(r=>!r.error).map(r=>r.doc.id);

@@ -1231,6 +1231,7 @@ section.fold > .fold-h h2{margin:0}
 .stq dd .ex-go{display:block;margin-top:6px}
 .ex-lv{padding:8px 10px;background:var(--sunk);border-radius:8px;max-width:none;font-size:12.5px;line-height:1.6;color:var(--ink2)}
 .lv-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2)} .lv-ctl .chips{flex:none}
+.mailbox{display:flex;flex-direction:column;gap:8px} .mailbox[hidden]{display:none}
 .st-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:12px 0}
 .st-form label{min-width:150px} .st-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%}
 .st-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:6px 0 10px;font-size:14px}
@@ -1785,6 +1786,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="sndrow"><label class="check" for="sndMsg"><input type="checkbox" id="sndMsg">צליל כשצ׳יקו עונה</label><button type="button" class="btn sm" data-sndtry="msg">לנסות</button></div>
         <div class="sndrow"><label class="check" for="sndSys"><input type="checkbox" id="sndSys">צליל להתראת מערכת: חריגה חדשה, מחירים שהתעדכנו, תזכורת הפקדה</label><button type="button" class="btn sm" data-sndtry="sys">לנסות</button></div>
         <p class="note" style="margin:0;max-width:none">צלילים קצרים ושקטים, רק כשהדף פתוח. הדפדפן משמיע אותם אחרי שנגעת בדף.</p>
+        <div class="mailbox" id="mailBox" hidden>
+          <h3 style="margin:8px 0 0">מיילים</h3>
+          <p class="note" style="margin:0;max-width:none">שום מייל אוטומטי לא נשלח בלי שתבחר: כל סוג כבוי עד שתפעיל אותו כאן. המייל כולל מספרים מהתיק שלך. הדוחות נשמרים בארכיון בדף גם בלי מייל.</p>
+          <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
+          <div id="mailList"></div>
+        </div>
       </div>
     </section>
 
@@ -16078,7 +16085,7 @@ function renderTrend(){
   // one saved point per day, refreshed when the quotes are at least 50 minutes newer than the saved one
   const cur=DY&&DY.points&&DY.points[today], fresh=Q.updatedAt&&ilDay(Q.updatedAt)===today;
   if(db&&canWrite&&DY&&fresh&&!dyBusy&&(!cur||new Date(Q.updatedAt)-new Date(cur.at)>50*6e4)){
-    dyBusy=true; const pt={v:Math.round(mAll.total*100)/100,dep:Math.round(depNow*100)/100,exc:Math.round(ex*100)/100,blink:Math.round(bl*100)/100,by:Object.fromEntries(Object.entries(byNow).map(([a,v])=>[a,Math.round(v*100)/100])),at:Q.updatedAt,px:Object.fromEntries(mAll.pos.map(p=>[p.sym,Math.round(p.px*100)/100]))};
+    dyBusy=true; const pt={v:Math.round(mAll.total*100)/100,dep:Math.round(depNow*100)/100,exc:Math.round(ex*100)/100,blink:Math.round(bl*100)/100,by:Object.fromEntries(Object.entries(byNow).map(([a,v])=>[a,Math.round(v*100)/100])),at:Q.updatedAt,fx:Math.round(Q.usdIls*1e4)/1e4,px:Object.fromEntries(mAll.pos.map(p=>[p.sym,Math.round(p.px*100)/100]))};
     const ref=pd('daily'); (DY.exists?ref.update({points:{[today]:pt}}):ref.set({points:{[today]:pt}})).catch(()=>{}).then(()=>{setTimeout(()=>{dyBusy=false},60000)});
   }
 }
@@ -17254,6 +17261,19 @@ function renderNotif(){const el=$('notifList'); if(!el)return; setH(el,NOTIF.map
   for(const i of el.querySelectorAll('[data-notif]'))i.checked=notifOn(i.dataset.notif);
   const n=NOTIF.filter(x=>!notifOn(x[0])).length, s=$('notifSub'); if(s)s.textContent=n?`${n} קטגוריות כבויות`:'הכול פעיל'}
 function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){const el=$(id); if(el){el.checked=sndOn(k); el.disabled=!canWrite}}}
+// ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
+// switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
+let MAILST=null;
+const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף']];
+const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
+function renderMail(){
+  const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
+  if(!renderMail.asked){renderMail.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}}
+  const M=(S&&S.mail)||{}, L=(MAILST&&MAILST.last)||{}, list=$('mailList');
+  $('mailState').textContent=!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת.':'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.';
+  if(!list.querySelector('[data-mail]'))setH(list,MAILK.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''));
+  for(const [k] of MAILK){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
+document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.mail||!canWrite)return; S.mail={...(S.mail||{}),[el.dataset.mail]:el.checked}; changed()});
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset)return;
   if(el.dataset.notif){if(!canWrite)return; sndQuiet(); S.notif=Object.assign({},S.notif||{}); if(el.checked)delete S.notif[el.dataset.notif]; else S.notif[el.dataset.notif]=false; changed(); return}
   if(el.id==='sndMsg'||el.id==='sndSys'){if(!canWrite)return; const k=el.id==='sndMsg'?'msg':'sys'; S.sounds=Object.assign({},S.sounds||{}); if(el.checked)delete S.sounds[k]; else S.sounds[k]=false; changed(); if(el.checked)chime(k,true)}});
@@ -17794,6 +17814,32 @@ function cashSec(m){
   return B;
 }
 
+// ---- stage 7: the weekly summary also says how the exposures moved, what is not known and what to check. Only from what
+// was saved: the exposures at the start of the week come from the prices saved that day, at today's quantities (a trade
+// during the week is not in it), and from that day's dollar rate when it was saved (daily points carry it from 14.10.2026).
+function weekExpo(m,ref,fxThen,fxNow){
+  if(!ref)return null; const v0=p=>{const a=ref[p.sym]; return a>0?p.qty*a*(p.ccy==='USD'?(fxThen||fxNow):1):null};
+  const rows=m.pos.map(p=>({p,a:v0(p)})), ok=rows.filter(r=>r.a!=null), miss=rows.filter(r=>r.a==null).map(r=>r.p.sym); if(!ok.length)return null;
+  const T0=ok.reduce((t,r)=>t+r.a,0)+m.cash, T1=ok.reduce((t,r)=>t+r.p.val,0)+m.cash;   // the same holdings at both ends; cash as today
+  const by=f=>{const o={}; for(const r of ok){const k=f(r.p); (o[k]=o[k]||{k,a:0,b:0}).a+=r.a; o[k].b+=r.p.val} return Object.values(o).map(x=>({k:x.k,w0:x.a/T0*100,w1:x.b/T1*100,d:x.b/T1*100-x.a/T0*100}))};
+  return {usd:by(p=>p.ccy==='USD'?'USD':'ILS').find(x=>x.k==='USD')||{k:'USD',w0:0,w1:0,d:0},groups:by(p=>p.group).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)),miss,n:ok.length,fxKnown:fxThen>0}}
+function weekBlocks(m,X,ch,dk,dep){
+  const B=[{t:'h',title:'שינויים בחשיפות',sub:X?`מתחילת השבוע (${dmy(dk)}) עד היום, באותן כמויות`:''}];
+  if(!X)B.push({t:'empty',text:'לא נשמרו מחירים לתחילת השבוע, ולכן אין כאן השוואה של חשיפות. הדף לא משלים נתון שלא נשמר.'});
+  else{const moved=X.groups.filter(x=>Math.abs(x.d)>=0.5).slice(0,3);
+    B.push({t:'list',lines:[`ניירות שנסחרים בדולר: ${pct(X.usd.w0)} ← ${pct(X.usd.w1)}.`,...moved.map(g=>`${GROUPS[g.k]||g.k}: ${pct(g.w0)} ← ${pct(g.w1)}.`),...(moved.length?[]:['אף קבוצה לא זזה ביותר מחצי נקודת אחוז.'])]});
+    B.push({t:'note',text:`האחוזים הם מהשווי של ${X.n===1?'הנייר':X.n+' הניירות'} שנשמר להם מחיר בתחילת השבוע, יחד עם המזומן של היום. השינוי בא מתנועת המחירים בלבד: הכמויות הן של היום, כך שקנייה או מכירה בשבוע (בחלק "תנועות בתיק") לא נכללת כאן.`+(X.fxKnown?'':' השער בשני הצדדים הוא של היום, כי השער של תחילת השבוע לא נשמר.')})}
+  const U=['הסיבות לתנועות המחירים: לדף אין מקור חדשות או דוחות, ולכן הוא לא קובע סיבה.'];
+  if(X&&X.miss.length)U.push(`לא נשמר מחיר לתחילת השבוע ל-${X.miss.map(lab).join(', ')}.`);
+  const funds=m.pos.filter(p=>isF(p.sym)); if(funds.length)U.push(`ההרכב של ${funds.map(p=>lab(p.sym)).join(', ')}: לדף אין מקור כזה.`);
+  const st=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)); if(st.length)U.push(`מחיר שאינו מהמסחר האחרון: ${st.map(lab).join(', ')}.`);
+  B.push({t:'h',title:'מה לא ידוע'},{t:'list',lines:U});
+  const Qs=[], cap=+((S.rules||{}).usdCap)||0;
+  if(X)for(const c of ch.filter(c=>Math.abs(c.pct)>=8).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct)).slice(0,2))Qs.push(`${lab(c.sym)} זז ${spct(c.pct)} השבוע. השתנה משהו בחברה עצמה? בדף הנייר יש את הדוחות, הציון ודעת האנליסטים.`);
+  if(X&&Math.abs(X.usd.d)>=2)Qs.push(`החלק הדולרי עבר מ-${pct(X.usd.w0)} ל-${pct(X.usd.w1)}. ${cap?`זה עדיין בתוך התקרה שקבעת (${pct(cap,0)})?`:'זה מה שרצית?'}`);
+  if(dep>0.5)Qs.push(`הופקדו ${ils(dep)} השבוע. הם כבר מושקעים לפי התוכנית?`);
+  B.push({t:'h',title:'שאלות לבדוק'},Qs.length?{t:'list',lines:Qs}:{t:'empty',text:'אין שאלה שהנתונים של השבוע מעלים.'});
+  return B}
 function buildWeek(endT){
   const B=[], to=endT||Date.now(), from=to-7*864e5, live=!endT, hd=repHead('דוח שבועי',live,Q.usdIls);
   if(TP.filter(p=>p.t<=to+1).length<2)return {...hd,period:'7 הימים האחרונים',blocks:[{t:'empty',text:'אין עדיין מספיק היסטוריה כדי לסכם שבוע.'}].concat(alertBlocks())};
@@ -17816,6 +17862,7 @@ function buildWeek(endT){
   B.push({t:'h',title:'מי הוביל ומי נגרר',sub:since});
   const pick=ch.slice(0,5).concat(ch.slice(-5).filter(c=>!ch.slice(0,5).includes(c)));
   if(pick.length)B.push({t:'hbars',items:pick.map(c=>({label:c.sym,sub:c.name,v:c.pct,txt:`${spct(c.pct)}  ${sgn(c.ils)}`})),xl:{name:'מובילים ונגררים',heads:['נייר','שינוי %','שינוי ₪'],rows:ch.map(c=>[c.sym,Math.round(c.pct*100)/100,Math.round(c.ils*100)/100])}}); else B.push({t:'empty',text:'אין נתוני מחירים להשוואה.'});
+  B.push(...weekBlocks(m,weekExpo(m,ref,dk?DY.points[dk].fx:null,fx),ch,dk,dep));
   B.push(...holdSecs(m),...cashSec(m));
   B.push(...activityBlocks(isoDay(from),isoDay(to),'תנועות בתיק השבוע'));
   B.push(...earningsBlocks(isoDay(from),isoDay(to),live?7:0));
@@ -18279,7 +18326,7 @@ $('chart').addEventListener('pointerleave',()=>{$('tip').hidden=true;const c=$('
 const MAP={inMonthly:['monthly'],inMonthlyIdx:['monthlyIdx'],obMonthly:['monthly'],inFee:['minFeeIls'],inYears:['years'],inRate:['ratePct'],inTax:['taxPct'],inGoal:['goal'],rMaxPos:['rules','maxPos'],rMaxGroup:['rules','maxGroup'],rStop:['rules','stopLoss'],rDrift:['rules','drift'],rHold:['rules','minHoldMonths'],rUsd:['rules','usdCap'],inDepDay:['depDay']};
 function fillInputs(){
   for(const id in MAP){const el=$(id); if(document.activeElement===el)continue; const [a,b]=MAP[id]; el.value=b?S[a][b]:S[a]; if(id==='rUsd'&&!(+el.value))el.value=''}
-  $('inFrac').checked=!!S.fractional; try{renderNotif();renderSnd();renderAccts();renderPxAlerts()}catch(e){}
+  $('inFrac').checked=!!S.fractional; try{renderNotif();renderSnd();renderAccts();renderPxAlerts()}catch(e){} try{renderMail()}catch(e){}
   if(document.activeElement!==$('policy'))$('policy').value=S.policy||'';
   if($('inName')&&document.activeElement!==$('inName'))$('inName').value=S.name||'';
   {const d=$('inDepDay'); if(d)d.disabled=!canWrite}

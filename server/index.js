@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
-import {sendMail, esc as mesc} from './mail.js';
+import {sendMail, mailNote, esc as mesc} from './mail.js';
 import {Store, canRead, canWrite, partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {startJobs} from './jobs.js';
@@ -272,6 +272,7 @@ export function bootstrap(store){
     else{store.addUser({email:OWNER_EMAIL,name:env.OWNER_NAME||'',password:pw,role:'owner'});log('owner created')}
   }
   if(!store.getMeta('instance'))store.setMeta('instance',randomBytes(8).toString('hex'));
+  mailNote(store,null);   // system/mail: whether sending is set up (the page shows it next to the consent switches)
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1])){

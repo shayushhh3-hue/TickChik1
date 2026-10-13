@@ -2,16 +2,16 @@
 // 1. A full copy of the database file (all users, all data) on the same disk, the last 14 days. It protects against a bad
 //    write, a mistaken delete or a broken update. It does NOT protect against losing the disk itself, and nobody can
 //    download it through the site (it holds the partners' private data).
-// 2. When e-mail is set up (Resend), the owner's own data (the same file as "גיבוי הנתונים שלי") is mailed to the owner,
-//    compressed. That copy lives outside Railway. Partners' data is never in it.
+// 2. When e-mail is set up (Resend) and the owner switched the copy on in the settings (מיילים), the owner's own data (the
+//    same file as "גיבוי הנתונים שלי") is mailed to the owner, compressed. That copy lives outside Railway. Partners' data
+//    is never in it.
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import {sendMail} from './mail.js';
+import {sendAllowed, mailReady, mailAllowed} from './mail.js';
 
 const NAME=/^tikchik-(\d{4}-\d\d-\d\d)\.sqlite$/;
 const dirOf=dataDir=>path.join(dataDir,'backups');
-const mailReady=()=>!!(process.env.RESEND_API_KEY||(process.env.MAIL_USER&&process.env.MAIL_PASS));
 
 export function backupNow(store,{dataDir,keep=14,now=new Date()}={}){
   const dir=dirOf(dataDir); fs.mkdirSync(dir,{recursive:true});
@@ -35,12 +35,13 @@ export function ownerExport(store){
 
 export async function backupTask(store,{log=()=>{},dataDir,now=new Date()}={}){
   const r=backupNow(store,{dataDir,now}); log(`backup: ${path.basename(r.file)} ${(r.size/1e6).toFixed(1)}MB, ${r.removed} old removed`);
-  if(!mailReady()){log('backup: e-mail is not set up, so no copy outside Railway');return {...r,mailed:false}}
+  // the copy by e-mail, only when the owner switched it on in the settings (sendAllowed notes "off" or "not set up" otherwise)
+  if(!mailReady()||!mailAllowed(store,'backup')){await sendAllowed(store,'backup',{},log); return {...r,mailed:false}}
   const gz=zlib.gzipSync(Buffer.from(JSON.stringify(ownerExport(store))));
   const day=now.toISOString().slice(0,10);
-  const ok=await sendMail({subject:`תיק צ׳יק – גיבוי יומי ${day}`,text:'מצורף גיבוי של הנתונים שלך מהאתר (קובץ JSON דחוס). לשחזור: 👤 ← שחזור מגיבוי, אחרי פתיחת הקובץ (gunzip).',
+  const ok=await sendAllowed(store,'backup',{subject:`תיק צ׳יק – גיבוי יומי ${day}`,text:'מצורף גיבוי של הנתונים שלך מהאתר (קובץ JSON דחוס). לשחזור: 👤 ← שחזור מגיבוי, אחרי פתיחת הקובץ (gunzip).',
     html:'<p dir="rtl">מצורף גיבוי של הנתונים שלך מהאתר (קובץ JSON דחוס).</p><p dir="rtl">לשחזור: 👤 ← שחזור מגיבוי, אחרי פתיחת הקובץ.</p>',
-    attachments:[{filename:`tikchik-backup-${day}.json.gz`,content:gz}]}).catch(e=>{log('backup mail failed:',e.message);return false});
+    attachments:[{filename:`tikchik-backup-${day}.json.gz`,content:gz}]},log);
   if(ok)store.setMeta('lastBackupMail',new Date().toISOString());
   return {...r,mailed:!!ok};
 }
@@ -49,5 +50,5 @@ export function backupStatus(store,{dataDir}={}){
   const dir=dirOf(dataDir); let files=[];
   try{files=fs.readdirSync(dir).filter(f=>NAME.test(f)).sort().reverse().map(f=>({name:f,size:fs.statSync(path.join(dir,f)).size}))}catch(e){}
   let last=null; try{last=JSON.parse(store.getMeta('lastBackup')||'null')}catch(e){}
-  return {last,files,mail:mailReady(),lastMail:store.getMeta('lastBackupMail')};
+  return {last,files,mail:mailReady(),mailOn:mailAllowed(store,'backup'),lastMail:store.getMeta('lastBackupMail')};
 }

@@ -317,3 +317,26 @@ test('the level of explanation: chosen in the chat, saved, and the cards say mor
   assert.deepEqual(pg.errs,[]); await ctx.close();
   {const d=store.getDoc('settings/main').data; store.setDoc('settings/main',{...d,profile:{...d.profile,level:'mid'}},{silent:true})}
 });
+
+test('the weekly summary: how the exposures moved (only from saved prices), what is not known, questions; e-mails need consent',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const dump=R=>R.R.blocks.map(b=>b.t==='h'?'## '+b.title:b.t==='list'?b.lines.join('\n'):b.text||'').join('\n');
+  let {ctx,pg}=await open(1280); await pg.waitForFunction(()=>window.__rep&&window.__rep.ready(),null,{timeout:20000});
+  let w=dump(await pg.evaluate(()=>window.__rep.build('week','')));
+  assert.match(w,/## שינויים בחשיפות\nלא נשמרו מחירים לתחילת השבוע/,'no saved prices: said, nothing compared'); assert.match(w,/## מה לא ידוע\nהסיבות לתנועות המחירים: לדף אין מקור/);
+  assert.match(w,/## שאלות לבדוק/); await ctx.close();
+  const d0=store.getDoc('history/daily').data, k=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  store.setDoc('history/daily',{points:{...d0.points,[k]:{at:new Date(Date.now()-6*864e5).toISOString(),v:24000,dep:19800,fx:3.6,px:{MSFT:470,NVDA:160,AAPL:225,CAT:560,JPM:285,V:340,KO:70,PG:160,UNH:350,RKLB:44,TA125:61}}}},{silent:true});
+  try{({ctx,pg}=await open(1280)); await pg.waitForFunction(()=>window.__rep&&window.__rep.ready(),null,{timeout:20000});
+    w=dump(await pg.evaluate(()=>window.__rep.build('week','')));
+    assert.match(w,/ניירות שנסחרים בדולר: \d+\.\d% ← \d+\.\d%/); assert.match(w,/מהשווי של 11 הניירות שנשמר להם מחיר/); assert.match(w,/לא נשמר מחיר לתחילת השבוע ל-TA90/);
+    assert.doesNotMatch(w,/השער בשני הצדדים/,'the rate of that day was saved and used'); assert.match(w,/NVDA זז ‎\+13\.7% השבוע/);
+    // the e-mail switches: the owner's, all off until chosen, saved per kind
+    await tab(pg,'settings'); await pg.waitForTimeout(600);
+    const m0=await pg.evaluate(()=>({hidden:document.getElementById('mailBox').hidden,on:[...document.querySelectorAll('[data-mail]')].map(i=>i.checked)}));
+    assert.deepEqual(m0,{hidden:false,on:[false,false,false]});
+    await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
+    assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
+    ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();
+  }finally{store.setDoc('history/daily',d0,{silent:true}); const s0=store.getDoc('settings/main').data; delete s0.mail; store.setDoc('settings/main',s0,{silent:true})}
+});

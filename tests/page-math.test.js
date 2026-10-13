@@ -300,3 +300,13 @@ test('the level of explanation: the person\'s choice, else "מכיר את היס
   G2.S={profile:{level:''},level:'new'}; assert.equal(L.levelOf(),'new');
   G2.S={profile:{level:'expert'}}; assert.equal(L.levelOf(),'mid','an unknown value is not trusted');
 });
+
+test('the weekly summary: exposures at the start of the week only from saved prices, the same holdings at both ends', ()=>{
+  const W=load(['weekExpo'],{});
+  const m={cash:100,pos:[{sym:'US',ccy:'USD',group:'tech',qty:10,val:10*11*3.7},{sym:'IL',ccy:'ILS',group:'il',qty:100,val:100*5},{sym:'NEW',ccy:'USD',group:'tech',qty:1,val:370}]};
+  assert.equal(W.weekExpo(m,null,3.6,3.7),null,'nothing saved: no comparison, not a guess');
+  const X=W.weekExpo(m,{US:10,IL:5},3.6,3.7);
+  assert.deepEqual(X.miss,['NEW'],'a holding without a saved price is left out and named'); assert.equal(X.n,2); assert.equal(X.fxKnown,true);
+  const T0=10*10*3.6+500+100, T1=407+500+100; near(X.usd.w0,360/T0*100,1e-9); near(X.usd.w1,407/T1*100,1e-9);
+  const Y=W.weekExpo(m,{US:10,IL:5},undefined,3.7); assert.equal(Y.fxKnown,false); near(Y.usd.w0,370/(370+600)*100,1e-9,'without a saved rate: today\'s, and it says so');
+});

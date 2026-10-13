@@ -83,7 +83,8 @@ async function loadBk(){
   try{const b=await call('GET','/backup/status'); const last=b.last?new Date(b.last.at).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):null;
     $('bk').innerHTML=`<p style="margin:0">${last?`הגיבוי האחרון: <b>${esc(last)}</b> (${(b.last.size/1e6).toFixed(1)}MB). נשמרים ${b.files.length} גיבויים יומיים, עד 14.`:'עוד אין גיבוי.'}</p>`+
       `<p class="muted" style="margin:6px 0 0">הגיבויים היומיים נשמרים על הדיסק של Railway, ומגינים מטעות או ממחיקה. הם לא מגינים מאובדן הדיסק עצמו.</p>`+
-      (b.mail?`<p class="ok" style="margin:6px 0 0">עותק של הנתונים שלך נשלח אליך במייל כל לילה${b.lastMail?' (אחרון: '+esc(new Date(b.lastMail).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}))+')':''}.</p>`:`<p class="err" style="margin:6px 0 0">אין עותק מחוץ ל-Railway: המייל (Resend) לא מוגדר. כשתגדיר אותו, עותק של הנתונים שלך יישלח אליך כל לילה.</p>`)}
+      (b.mail&&!b.mailOn?`<p class="err" style="margin:6px 0 0">המייל מוגדר, אבל העותק במייל כבוי. מפעילים אותו בדף: הגדרות ← ההתראות והצלילים שלי ← מיילים.</p>`
+      :b.mail?`<p class="ok" style="margin:6px 0 0">עותק של הנתונים שלך נשלח אליך במייל כל לילה${b.lastMail?' (אחרון: '+esc(new Date(b.lastMail).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}))+')':''}.</p>`:`<p class="err" style="margin:6px 0 0">אין עותק מחוץ ל-Railway: המייל (Resend) לא מוגדר. כשתגדיר אותו, עותק של הנתונים שלך יישלח אליך כל לילה.</p>`)}
   catch(x){$('bk').innerHTML='<p class="err">'+esc(x.message)+'</p>'}
 }
 $('bkNow').onclick=async()=>{const b=$('bkNow'); b.disabled=true; $('bkRes').textContent='מגבה…';
