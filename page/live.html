@@ -1448,6 +1448,7 @@ section.fold > .fold-h h2{margin:0}
       <div class="panel">
         <div class="chart" id="chart3"><svg id="svg3" viewBox="0 0 640 260" role="img" aria-label="שווי התיק מול סך ההפקדות, חודש אחר חודש"></svg><div class="tip" id="tip3" hidden></div></div>
         <div class="note" id="trendNote"></div>
+        <div class="dup tx" id="calcFix" hidden></div>
       </div>
       <details class="panel"><summary>הנתונים בטבלה</summary>
         <div class="scroll"><table>
@@ -15013,6 +15014,50 @@ function normPlan(d){
 }
 const setTrack=()=>{PL=TRACK==='idx'?PLD.idx:PLD};
 const allDep=()=>PLD.deposits.concat((PLD.idx&&PLD.idx.deposits)||[]), allBuy=()=>PLD.purchases.concat((PLD.idx&&PLD.idx.purchases)||[]);
+// ---- calc:start ---- deposits, plan marks and fees, as the numbers on screen use them (tests/page-math.test.js)
+// the date in Israel: a point saved between midnight and 03:00 belongs to the new day, not to yesterday in UTC
+const ilDay=d=>{const x=d==null?new Date():new Date(d); try{return x.toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'})}catch(e){return x.toISOString().slice(0,10)}};
+const usdRate=()=>(Q&&+Q.usdIls>0)?+Q.usdIls:0;
+// money in, net, from the history: the saved total of deposits, less the withdrawals that were saved before 13.10.2026
+// without being taken off it (newer ones are taken off when saved, and marked inDep)
+function depNet(){
+  if(!HS)return 0; let w=0;
+  for(const A of HS.accounts||[])for(const d of A.deposits||[])if(+d.amount<0&&!d.inDep)w+=Math.abs(+d.amount)*((d.ccy||A.ccy)==='USD'?usdRate():1);
+  return Math.round(((+HS.depIlsNow||0)-w)*100)/100;
+}
+// a deposit or a purchase ticked in the plan is already inside a statement dated on or after the day it was ticked
+const stmtDay=a=>{const x=P&&P.asOf; return typeof x==='string'?x:((x&&x[a])||'')};
+const markDay=x=>x&&x.at?ilDay(x.at):'';
+const coveredBy=(day,accts)=>!!day&&accts.some(a=>{const s=stmtDay(a); return !!s&&s>=day});
+function planOpen(){
+  const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
+  const deps=allDep().filter(d=>!coveredBy(markDay(d),depA));
+  const buys=allBuy().filter(x=>{const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
+  return {deps,buys};
+}
+// the plan's deposits that the history does not hold yet (a history deposit within 10 days and 2% of the amount is the same money)
+function planDepExtra(){
+  const H=[]; for(const A of (HS&&HS.accounts)||[])for(const d of A.deposits||[])if(+d.amount>0)H.push({day:d.date,ils:+d.amount*((d.ccy||A.ccy)==='USD'?usdRate():1)});
+  const used=new Set(); let t=0;
+  for(const d of allDep()){const day=markDay(d), amt=+d.amount||0;
+    const i=day?H.findIndex((h,j)=>!used.has(j)&&Math.abs(new Date(h.day)-new Date(day))<=10*864e5&&Math.abs(h.ils-amt)<=Math.max(1,amt*0.02)):-1;
+    if(i>=0)used.add(i); else t+=amt}
+  return t;
+}
+const depTotal=()=>Math.round((depNet()+planDepExtra())*100)/100;
+// fees of one account in shekels, at today's dollar rate: each trade's own fee when the statement gave one, otherwise the
+// account's fixed fee per US trade (feeUsdPerTrade); plus the fee rows saved apart (A.fees). The account's feesNote only
+// describes them: the ₪3 it names is the TA-125 trade's own feeIls.
+function feesOf(A,fx){
+  const per=+A.feeUsdPerTrade||0, trades=[]; let own=0;
+  for(const t of A.trades||[]){if(t.div)continue; const il=t.ccy==='ILS', vol=Math.abs(+t.qty||0)*(+t.px||0)*(il?1:fx);
+    const fee=t.fee!=null&&isFinite(+t.fee)?(+t.fee)*(il?1:fx):t.feeIls!=null?+t.feeIls:(per&&!il?per*fx:0);
+    if(t.fee!=null||t.feeIls!=null)own++; trades.push({ym:String(t.date||'').slice(0,7),fee,vol})}
+  const rows=(A.fees||[]).reduce((s,f)=>s+(+f.amount||0)*(f.ccy==='USD'?fx:1),0);
+  const tr=trades.reduce((s,x)=>s+x.fee,0);
+  return {ils:tr+rows,trades,tradeIls:tr,rowsIls:rows,per,own,known:per>0||own>0||rows>0};
+}
+// ---- calc:end ----
 const TM=()=>TRACK==='idx'?(+S.monthlyIdx||0):(+S.monthly||0), MTOT=()=>(+S.monthly||0)+(+S.monthlyIdx||0);
 const idxCash=()=>{const x=PLD.idx;return x?(+x.opening||0)+x.deposits.reduce((t,d)=>t+(+d.amount||0),0)-x.purchases.reduce((t,d)=>t+(+d.paidIls||0),0):0};
 const MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -15148,7 +15193,7 @@ function pxBoot(){
 window.__pxd={fire:pxFire,auto:pxAuto,open:mktOpen,us:usOpen,il:ilOpen,state:()=>({mcp:!!MCP,pxf:PXF,off:PXOFF,q:PXQ})};
 
 // ---- pure model -------------------------------------------------------
-const planAdj=()=>({dep:allDep().reduce((t,d)=>t+(+d.amount||0),0),buys:allBuy().map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1}))});
+const planAdj=()=>{const o=planOpen(); return {dep:o.deps.reduce((t,d)=>t+(+d.amount||0),0),buys:o.buys.map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1}))}};
 const mAllNow=()=>model(P,Q,'all',planAdj());
 // adj: deposits and purchases ticked in the expansion plan, applied on top of the statement data.
 function model(P,Q,acct,adj){
@@ -15176,7 +15221,7 @@ function model(P,Q,acct,adj){
   for(const k in groups)groups[k].w=total?groups[k].val/total*100:0;
   const cost=pos.reduce((s,p)=>s+p.cost,0), costVal=pos.reduce((s,p)=>s+p.costVal,0);
   const dayIls=pos.reduce((s,p)=>s+p.dayIls,0), dayBase=inv-dayIls;
-  return {dayIls,dayPct:dayBase>0?dayIls/dayBase*100:null,hasDay:pos.some(p=>p.dayPct!=null),pos,groups,cash,baseCash,total,usdPct:total?usd/total*100:0,cost,pnl:costVal-cost,pnlPct:cost?(costVal-cost)/cost*100:0,missingCost:pos.filter(p=>p.noCost).length};
+  return {acct,dayIls,dayPct:dayBase>0?dayIls/dayBase*100:null,hasDay:pos.some(p=>p.dayPct!=null),pos,groups,cash,baseCash,total,usdPct:total?usd/total*100:0,cost,pnl:costVal-cost,pnlPct:cost?(costVal-cost)/cost*100:0,missingCost:pos.filter(p=>p.noCost).length};
 }
 function planDeposit(m,targets,budget){
   const T=m.total+budget, out=[]; let sumGap=0;
@@ -15549,34 +15594,53 @@ function renderDecomp(){
   for(const p of P.positions){const px=(Q.prices||{})[p.sym]; if(px==null||p.costIls==null)continue;
     const val=p.qty*px*(p.ccy==='USD'?fx:1), un=val-p.costIls;
     if(p.ccy==='USD'&&p.costUsd!=null){const pe=(p.qty*px-p.costUsd)*fx; priceEff+=pe; fxEff+=un-pe} else {priceEff+=un; if(p.ccy==='USD')noUsd++}}
-  const real=HS.accounts.reduce((t,a)=>t+(a.realizedUsd||0),0)*fx, div=HS.accounts.reduce((t,a)=>t+((a.divGrossUsd||0)-(a.divTaxUsd||0)),0)*fx, fees=-(HS.accounts.reduce((t,a)=>t+(a.feesUsd||0),0)*fx+3);
-  const total=m.total-(HS.depIlsNow||0), other=total-(priceEff+fxEff+real+div+fees);
-  const rows=[['מחירי המניות שבתיק היום',priceEff,'כמה הניירות שאתה מחזיק עלו או ירדו בדולרים מאז הקנייה'],['שער הדולר',fxEff,'ההבדל בין שער הדולר ביום הקנייה לשער היום'],['מכירות שבוצעו',real,'רווח או הפסד שכבר מומש בניירות שנמכרו'],['דיבידנדים, נטו',div,'אחרי ניכוי מס במקור'],['עמלות קנייה ומכירה',fees,'באקסלנס בלבד'],['הפרשי המרה ואחר',other,'מרווחי המרת מטבע, מזומן בדולרים ועיגולים']];
+  const real=HS.accounts.reduce((t,a)=>t+(a.realizedUsd||0),0)*fx, div=HS.accounts.reduce((t,a)=>t+((a.divGrossUsd||0)-(a.divTaxUsd||0)),0)*fx, fees=-HS.accounts.reduce((t,a)=>t+feesOf(a,fx).ils,0);
+  const total=m.total-depNet(), other=total-(priceEff+fxEff+real+div+fees);
+  const rows=[['מחירי המניות שבתיק היום',priceEff,'כמה הניירות שאתה מחזיק עלו או ירדו בדולרים מאז הקנייה'],['שער הדולר',fxEff,'ההבדל בין שער הדולר ביום הקנייה לשער היום'],['מכירות שבוצעו',real,'רווח או הפסד שכבר מומש בניירות שנמכרו'],['דיבידנדים, נטו',div,'אחרי ניכוי מס במקור'],['עמלות קנייה ומכירה',fees,(()=>{const n=HS.accounts.filter(a=>feesOf(a,fx).ils>0).map(a=>ACCTS[a.acct]||a.acct); return n.length?'לפי הדוחות של '+n.join(' ו'):'לא נמצאו עמלות בדוחות'})()],['הפרשי המרה ואחר',other,'מרווחי המרת מטבע, מזומן בדולרים ועיגולים']];
   const mx=Math.max(1,...rows.map(r=>Math.abs(r[1])),Math.abs(total));
   $('decRows').innerHTML=rows.map(r=>`<div class="drow" title="${esc(r[2])}"><div>${r[0]}<div class="nm">${esc(r[2])}</div></div>${bar(r[1],mx)}<span class="n ${r[1]>=0?'up':'down'}">${sgn(r[1])}</span></div>`).join('')+`<div class="drow tot"><div>התוצאה מול ההפקדות</div>${bar(total,mx)}<span class="n ${total>=0?'up':'down'}">${sgn(total)}</span></div>`;
   $('decNote').textContent='הפירוק מחושב על נתוני הדוחות, בלי סימוני תוכנית ההגדלה. ההפרדה בין מחיר המניה לשער הדולר מדויקת באקסלנס, ובבלינק היא מוערכת כי שער הדולר ביום הקנייה שם משוער.'+(noUsd?` ל-${noUsd} ניירות חסר מחיר קנייה בדולרים, והם נספרים כולם תחת מחירי המניות.`:'');
   HSUM.push(`פירוק התוצאה: מחירי המניות ${sgn(priceEff)}, שער הדולר ${sgn(fxEff)}, מכירות ${sgn(real)}, דיבידנדים ${sgn(div)}, עמלות ${sgn(fees)}, אחר ${sgn(other)}.`);
 }
+// ---- 13.10.2026: the calculations of deposits, fees and the plan were corrected. Once, the numbers before and after,
+// on the viewer's own data; nothing saved changes, only how it is added up.
+function calcFixNote(){
+  const el=$('calcFix'); if(!el)return; let off=false; try{off=localStorage.getItem('tr_calcfix_1310')==='1'}catch(e){}
+  if(off||!HS||!P||!Q){el.hidden=true;return}
+  const fx=Q.usdIls, L=[];
+  const depOld=(+HS.depIlsNow||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0), depNew=depTotal();
+  if(Math.abs(depOld-depNew)>=1){const w=(+HS.depIlsNow||0)-depNet(), p=depOld-(+HS.depIlsNow||0)-planDepExtra();
+    L.push(`סך ההפקדות: <b class="n">${ils(depNew)}</b> במקום <b class="n">${ils(depOld)}</b>.`+(w>=1?` משיכות של <span class="n">${ils(w)}</span> לא קוזזו עד היום.`:'')+(p>=1?` הפקדות של <span class="n">${ils(p)}</span> שסימנת בתוכנית נספרו פעמיים, כי הן כבר מופיעות בהיסטוריה.`:''))}
+  const fOld=HS.accounts&&HS.accounts.length?(HS.accounts||[]).reduce((t,a)=>t+(+a.feesUsd||0),0)*fx+3:0, fNew=(HS.accounts||[]).reduce((t,a)=>t+feesOf(a,fx).ils,0);
+  if(Math.abs(fOld-fNew)>=1)L.push(`עמלות בפירוק התוצאה: <b class="n">${ils(fNew)}</b> במקום <b class="n">${ils(fOld)}</b>. עכשיו הן מחושבות מהעסקאות עצמן: קריאה חוזרת של אותו דוח לא מכפילה אותן, ואין יותר ₪3 קבועים שנוספו לכל תיק.`);
+  const vOld=(()=>{try{return model(P,Q,'all',{dep:allDep().reduce((t,d)=>t+(+d.amount||0),0),buys:allBuy().map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1}))}).total}catch(e){return null}})(), vNew=mAllNow().total;
+  if(vOld!=null&&Math.abs(vOld-vNew)>=1)L.push(`שווי התיק בתצוגת "הכל": <b class="n">${ils(vNew)}</b> במקום <b class="n">${ils(vOld)}</b>. קניות והפקדות שסימנת בתוכנית לפני הדוח האחרון כבר כלולות בדוח, והן נספרו פעמיים.`);
+  if(!L.length){el.hidden=true;return}
+  setH(el,`<b>תיקון בחישובים (13.10)</b><ul>${L.map(x=>`<li>${x}</li>`).join('')}</ul><div style="margin-top:8px">שום נתון שמור לא השתנה, רק אופן החישוב. <button class="btn sm" type="button" id="calcFixOk">הבנתי</button></div>`); el.hidden=false;
+}
+document.addEventListener('click',ev=>{if(!ev.target.closest('#calcFixOk'))return; try{localStorage.setItem('tr_calcfix_1310','1')}catch(e){} const el=$('calcFix'); if(el)el.hidden=true});
 function renderFees(){
   if(!HS||!HS.accounts||!Q)return;
-  const fx=Q.usdIls, by={}; let free=0, freeAcc=[];
+  const fx=Q.usdIls, by={}, withFees=[], free=[]; let freeN=0, extra=0, dep=0;
   for(const A of HS.accounts){
-    const per=A.feeUsdPerTrade||0;
-    if(!per&&!A.trades.some(t=>t.feeIls)){const n=A.trades.filter(t=>!t.div).length; if(n){free+=n;freeAcc.push(ACCTS[A.acct]||A.acct)} continue}
-    for(const t of A.trades){ if(t.div)continue; const ym=t.date.slice(0,7), il=t.ccy==='ILS', fee=t.feeIls!=null?t.feeIls:per*fx, vol=Math.abs(t.qty)*t.px*(il?1:fx);
-      const r=by[ym]||(by[ym]={n:0,fee:0,vol:0}); r.n++; r.fee+=fee; r.vol+=vol }
+    const fz=feesOf(A,fx), n=fz.trades.length;
+    if(!fz.known){if(n){freeN+=n;free.push(ACCTS[A.acct]||A.acct)} continue}
+    withFees.push(A); extra+=fz.rowsIls;
+    dep+=(A.deposits||[]).reduce((x,d)=>x+(+d.amount||0)*((d.ccy||A.ccy)==='USD'?fx:1),0);
+    for(const t of fz.trades){const r=by[t.ym]||(by[t.ym]={n:0,fee:0,vol:0}); r.n++; r.fee+=t.fee; r.vol+=t.vol}
   }
-  const yms=Object.keys(by).sort(); if(!yms.length)return;
-  const tot=yms.reduce((t,k)=>t+by[k].fee,0), vol=yms.reduce((t,k)=>t+by[k].vol,0), n=yms.reduce((t,k)=>t+by[k].n,0), dep=HS.accounts.filter(a=>a.ccy!=='USD').reduce((t,a)=>t+a.deposits.reduce((x,d)=>x+d.amount,0),0);
-  $('feeSrc').textContent=`אקסלנס, ${dmy(yms[0]+'-01').slice(2)}/${yms[0].slice(2,4)} עד ${+yms[yms.length-1].slice(5)}/${yms[yms.length-1].slice(2,4)}`;
+  const yms=Object.keys(by).filter(Boolean).sort(); if(!yms.length)return;
+  const tot=yms.reduce((t,k)=>t+by[k].fee,0)+extra, vol=yms.reduce((t,k)=>t+by[k].vol,0), n=yms.reduce((t,k)=>t+by[k].n,0), names=withFees.map(A=>ACCTS[A.acct]||A.acct);
+  $('feeSrc').textContent=`${names.join(', ')}, ${dmy(yms[0]+'-01').slice(2)}/${yms[0].slice(2,4)} עד ${+yms[yms.length-1].slice(5)}/${yms[yms.length-1].slice(2,4)}`;
   $('feTot').textContent=ils(tot); $('feTotD').textContent=`${n} עסקאות ב-${yms.length} חודשים`;
-  $('feDep').textContent=pct(dep?tot/dep*100:0); $('feDepD').textContent=`מתוך ${ils(dep)} שהופקדו לאקסלנס`;
+  $('feDep').textContent=pct(dep>0?tot/dep*100:0); $('feDepD').textContent=`מתוך ${ils(dep)} שהופקדו ל${names.join(' ול')}`;
   $('feVol').textContent=pct(vol?tot/vol*100:0,2); $('feVolD').textContent=`היקף קניות ומכירות של ${ils(vol)}`;
   $('feAvg').textContent=ils(n?tot/n:0,1); $('feAvgD').textContent=`עסקה ממוצעת: ${ils(n?vol/n:0)}`;
   let cum=0;
   $('feeRows').innerHTML=yms.map(k=>{const r=by[k]; cum+=r.fee; return `<tr><td>${MONTHS[+k.slice(5)-1]} ${k.slice(2,4)}</td><td class="num"><span class="n">${r.n}</span></td><td class="num"><span class="n">${ils(r.vol)}</span></td><td class="num"><span class="n down">−${ils(r.fee)}</span></td><td class="num"><span class="n">${pct(r.vol?r.fee/r.vol*100:0,2)}</span></td><td class="num"><span class="n down">−${ils(cum)}</span></td></tr>`}).join('');
-  $('feeNote2').textContent=`העמלה באקסלנס היא $6 לכל קנייה או מכירה של נייר אמריקאי, והיא מומרת כאן לשקלים לפי שער הדולר של היום. `+(free?`ב${freeAcc.join(', ')} בוצעו ${free} עסקאות בלי עמלת קנייה או מכירה נראית בתנועות. `:'')+'מרווח המרת המטבע, 2 אגורות לדולר באקסלנס, לא נכלל כאן והוא חלק מ״הפרשי המרה ואחר״ בפירוק התוצאה.';
-  HSUM.push(`עמלות מצטברות: ${ils(tot)} על ${n} עסקאות, ${pct(dep?tot/dep*100:0)} מההפקדות לאקסלנס.`);
+  const per=withFees.filter(A=>+A.feeUsdPerTrade>0).map(A=>`ב${ACCTS[A.acct]||A.acct} $${+A.feeUsdPerTrade} לכל קנייה או מכירה של נייר אמריקאי, כשהדוח לא מציין עמלה אחרת`);
+  $('feeNote2').textContent=(per.length?`העמלה ${per.join('; ')}. `:'')+'עמלה בדולרים מומרת לשקלים לפי שער הדולר של היום. '+(extra?`הסכום הכולל כולל ${ils(extra)} של עמלות שנרשמו בנפרד מהעסקאות. `:'')+(freeN?`ב${free.join(', ')} בוצעו ${freeN} עסקאות בלי עמלת קנייה או מכירה נראית בתנועות. `:'')+(withFees.some(A=>A.acct==='exc')?'מרווח המרת המטבע, 2 אגורות לדולר באקסלנס, לא נכלל כאן':'מרווח המרת המטבע לא נכלל כאן')+', והוא חלק מ״הפרשי המרה ואחר״ בפירוק התוצאה.';
+  HSUM.push(`עמלות מצטברות: ${ils(tot)} על ${n} עסקאות, ${pct(dep>0?tot/dep*100:0)} מההפקדות ל${names.join(' ול')}.`);
 }
 function renderRisk(m){
   if(!PX||!PX.px)return;
@@ -15667,7 +15731,7 @@ const MSHORT=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','י�
 // Month-end values from statements and reconstruction, then one point per day saved by the page itself.
 function renderTrend(){
   if(!HS||!HS.monthly||!P||!Q)return;
-  const mAll=mAllNow(), planDep=allDep().reduce((t,d)=>t+(+d.amount||0),0), depNow=(HS.depIlsNow||0)+planDep, today=new Date().toISOString().slice(0,10);
+  const mAll=mAllNow(), depNow=depTotal(), today=ilDay();
   const pts=HS.monthly.map(r=>{const d=new Date(+r.ym.slice(0,4),+r.ym.slice(5),0);return {t:+d,label:`סוף ${MSHORT[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,exc:r.exc,blink:r.blink,by:r.by||{exc:r.exc,blink:r.blink},val:r.tot!=null?r.tot:(r.exc||0)+(r.blink||0),dep:r.dep,est:!!r.excEst}});
   const lastT=pts.length?pts[pts.length-1].t:0;
   for(const k of Object.keys((DY&&DY.points)||{}).sort()){ if(k===today)continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(t>lastT)pts.push({t,label:dmy(k)+'.'+k.slice(2,4),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:x.v,dep:x.dep}) }
@@ -15693,8 +15757,9 @@ function renderTrend(){
   {const ids=acctIds(), th=$('trendHead'); if(th)setH(th,'<th>מועד</th>'+ids.map(a=>`<th class="num">${esc(acctName(a))} ₪</th>`).join('')+'<th class="num">סך הכול ₪</th><th class="num">הפקדות ₪</th><th class="num">הפרש</th>');
   $('trendRows').innerHTML=pts.slice().reverse().map(p=>{const d=p.val-p.dep;return `<tr><td>${esc(p.label)}${p.est?' <span class="nm">משוחזר</span>':''}</td>${ids.map(a=>`<td class="num"><span class="n">${p.by&&p.by[a]!=null?ils(p.by[a]):'—'}</span></td>`).join('')}<td class="num"><span class="n">${ils(p.val)}</span></td><td class="num"><span class="n">${ils(p.dep)}</span></td><td class="num"><span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(p.dep?d/p.dep*100:0)})</span></td></tr>`}).join('')}
   HSUM.push(`סך הכול: התיק שווה ${ils(e.val)} מול ${ils(e.dep)} שהופקדו, ${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)}).`);
+  try{calcFixNote()}catch(e){}
   // one saved point per day, refreshed when the quotes are at least 50 minutes newer than the saved one
-  const cur=DY&&DY.points&&DY.points[today], fresh=Q.updatedAt&&new Date(Q.updatedAt).toISOString().slice(0,10)===today;
+  const cur=DY&&DY.points&&DY.points[today], fresh=Q.updatedAt&&ilDay(Q.updatedAt)===today;
   if(db&&canWrite&&DY&&fresh&&!dyBusy&&(!cur||new Date(Q.updatedAt)-new Date(cur.at)>50*6e4)){
     dyBusy=true; const pt={v:Math.round(mAll.total*100)/100,dep:Math.round(depNow*100)/100,exc:Math.round(ex*100)/100,blink:Math.round(bl*100)/100,by:Object.fromEntries(Object.entries(byNow).map(([a,v])=>[a,Math.round(v*100)/100])),at:Q.updatedAt,px:Object.fromEntries(mAll.pos.map(p=>[p.sym,Math.round(p.px*100)/100]))};
     const ref=pd('daily'); (DY.exists?ref.update({points:{[today]:pt}}):ref.set({points:{[today]:pt}})).catch(()=>{}).then(()=>{setTimeout(()=>{dyBusy=false},60000)});
@@ -15717,7 +15782,7 @@ function renderHistory(){
   $('backWrap').innerHTML=accts.map(A=>{
     const usd=A.ccy==='USD', f=(x,d=0)=>usd?'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d||2,maximumFractionDigits:d||2}):ils(x,d), sg=x=>LRM+(x>=0?'+':'−')+f(Math.abs(x));
     const dep=A.deposits.reduce((t,d)=>t+d.amount,0), mx=model(P,Q,A.acct), now=usd?mx.total/fx:mx.total, res=now-dep, name=ACCTS[A.acct]||A.acct;
-    const ev=[...A.deposits.map(d=>({date:d.date,t:'הפקדה לחשבון',amt:d.amount,k:'d'})),...(A.snapshots||[]).map(x=>({date:x.date,t:'שווי החשבון בדוח',amt:x.value,k:'s'})),{date:new Date().toISOString().slice(0,10),t:'שווי החשבון היום',amt:now,k:'s'}].sort((a,b)=>a.date<b.date?-1:1);
+    const ev=[...A.deposits.map(d=>({date:d.date,t:'הפקדה לחשבון',amt:d.amount,k:'d'})),...(A.snapshots||[]).map(x=>({date:x.date,t:'שווי החשבון בדוח',amt:x.value,k:'s'})),{date:ilDay(),t:'שווי החשבון היום',amt:now,k:'s'}].sort((a,b)=>a.date<b.date?-1:1);
     let cum=0;
     const rows=ev.map(e=>{if(e.k==='d')cum+=e.amt;const d=e.k==='s'&&cum?(e.amt-cum):null;
       return `<tr><td><span class="n">${dmy(e.date)}.${e.date.slice(2,4)}</span></td><td>${esc(e.t)}</td><td class="num"><span class="n">${e.k==='d'?'+':''}${f(e.amt)}</span></td><td class="num">${d==null?'<span class="nm">סך הכול '+f(cum)+'</span>':`<span class="n ${d>=0?'up':'down'}">${sg(d)} (${spct(d/cum*100)})</span>`}</td></tr>`}).join('');
@@ -15727,9 +15792,9 @@ function renderHistory(){
     if(A.realizedUsd!=null)notes.push(`מכירות שבוצעו: ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש של $${Math.abs(A.realizedUsd).toFixed(2)} לפני עמלות (${A.realizedNote||''}).`);
     if(mx.pos.some(p=>p.noCost===false)&&P.positions.some(p=>p.acct===A.acct&&p.costEst))notes.push('העלות בשקלים של הניירות בחשבון הזה מוערכת לפי שער דולר משוער ביום הקנייה.');
     notes.push(`ההפקדות ידועות עד ${dmy(A.through)}. אם הופקד כסף נוסף אחרי התאריך הזה, התוצאה מול ההפקדות נמוכה יותר ממה שמוצג.`);
-    const fee=A.feesUsd!=null?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">$${A.feesUsd}</span><div class="d">${A.tradesCount} עסקאות, $${A.feeUsdPerTrade} לכל אחת${A.feesNote?' '+esc(A.feesNote):''} · כ-${ils(A.feesUsd*fx)}, ${pct(dep?A.feesUsd*fx/dep*100:0)} מההפקדות</div></div>`
+    const fz=feesOf(A,fx), depIls=usd?dep*fx:dep, fee=fz.ils>0?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">${ils(fz.ils)}</span><div class="d">${fz.trades.length} עסקאות${fz.per&&fz.own<fz.trades.length?`, $${fz.per} לעסקה בנייר אמריקאי כשהדוח לא מציין עמלה`:''}${A.feesNote?' '+esc(A.feesNote):''} · ${pct(depIls>0?fz.ils/depIls*100:0)} מההפקדות</div></div>`
       :`<div class="cell"><div class="k">${A.realizedUsd!=null?'תוצאת המכירות':'עסקאות'}</div><span class="v ${A.realizedUsd!=null?(A.realizedUsd>=0?'up':'down'):''}">${A.realizedUsd!=null?LRM+(A.realizedUsd>=0?'+':'−')+'$'+Math.abs(A.realizedUsd).toFixed(2):A.tradesCount}</span><div class="d">${A.tradesCount} תנועות בתקופה</div></div>`;
-    HSUM.push(`${name}: הופקדו ${f(dep)}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)} (${spct(dep?res/dep*100:0)}).`+(A.feesUsd!=null?` עמלות $${A.feesUsd}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
+    HSUM.push(`${name}: הופקדו ${f(dep)}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)} (${spct(dep?res/dep*100:0)}).`+(fz.ils>0?` עמלות ${ils(fz.ils)}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
     const k='tr_'+A.acct;
     return `<section aria-label="מבט לאחור: ${esc(name)}">
       <div class="row"><h2>מבט לאחור: ${esc(name)}</h2><span class="sub">${esc(A.source||'')}</span></div>
@@ -16108,7 +16173,7 @@ function anaFacts(){
   const goal=Math.max(0,+S.goal||0); let gl=null;
   if(goal>0){const tr=Math.max(0,+S.taxPct||0)/100, netNow=m.total-Math.max(0,m.pnl||0)*tr; gl={goal,netNow,pct:Math.max(0,Math.min(100,netNow/goal*100)),k:goalMonths(m.total,MTOT(),+S.ratePct||0,m.pnl,goal)}}
   let vd=null;
-  if(HS&&HS.depIlsNow!=null){const dep=(+HS.depIlsNow||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0); if(dep>0)vd={dep,diff:m.total-dep,pct:(m.total-dep)/dep*100,cover:coverNote()}}
+  if(HS&&HS.depIlsNow!=null){const dep=depTotal(); if(dep>0)vd={dep,diff:m.total-dep,pct:(m.total-dep)/dep*100,cover:coverNote()}}
   const miss=[];
   if(m.missingCost)miss.push(`ל-${m.missingCost} ניירות אין מחיר קנייה, ולכן הרווח וההפסד מחושבים רק לשאר הניירות.`);
   if(!(tsum>0))miss.push('לא הוגדרו יעדי הקצאה, ולכן אין בדיקה של סטייה מהתוכנית.');
@@ -16513,11 +16578,15 @@ function crisisInfo(m){
   if(!m||!(m.total>0))return null;
   const out={day:null,peak:null};
   if(m.hasDay&&m.dayPct!=null&&m.dayPct<=CR_DAY)out.day={pct:m.dayPct,ils:m.dayIls};
-  // the peak: the highest saved daily value of the last 90 days; deposits added since are taken off the comparison
-  try{const keys=DY&&DY.points?Object.keys(DY.points).filter(k=>DY.points[k]&&DY.points[k].v>0&&Date.now()-new Date(k+'T12:00:00')<=90*864e5).sort():[];
-    if(keys.length>=3){let best=null; for(const k of keys){const p=DY.points[k]; if(!best||p.v>best.v)best={k,v:p.v,dep:p.dep}}
-      const depNow=HS?(HS.depIlsNow||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0):null;
-      const depAdj=depNow!=null&&best.dep!=null?Math.max(0,depNow-best.dep):0, ref=best.v+depAdj, drop=ref-m.total, pct=ref>0?drop/ref*100:0;
+  // the peak: the highest saved daily value of the last 90 days, of the same account(s) as m; money put in or taken out
+  // since then moves the comparison by the same amount
+  try{const one=m.acct&&m.acct!=='all', valOf=p=>!p?null:!one?p.v:(p.by&&p.by[m.acct]!=null?p.by[m.acct]:p[m.acct]!=null?p[m.acct]:null);
+    const keys=DY&&DY.points?Object.keys(DY.points).filter(k=>valOf(DY.points[k])>0&&Date.now()-new Date(k+'T12:00:00')<=90*864e5).sort():[];
+    if(keys.length>=3){let best=null; for(const k of keys){const p=DY.points[k], v=valOf(p); if(!best||v>best.v)best={k,v,dep:p.dep}}
+      let depAdj=0;
+      if(!one){const depNow=HS?depTotal():null; if(depNow!=null&&best.dep!=null)depAdj=depNow-best.dep}
+      else{const A=((HS&&HS.accounts)||[]).find(a=>a.acct===m.acct); for(const d of (A&&A.deposits)||[])if(d.date>best.k)depAdj+=(+d.amount||0)*((d.ccy||A.ccy)==='USD'?usdRate():1)}
+      const ref=best.v+depAdj, drop=ref-m.total, pct=ref>0?drop/ref*100:0;
       if(pct>=CR_PEAK)out.peak={date:best.k,pct,ils:drop}}}catch(e){}
   if(!out.day&&!out.peak)return null;
   const dn=m.pos.filter(p=>p.dayIls!=null&&p.dayIls<0).sort((a,b)=>a.dayIls-b.dayIls), nd=m.pos.filter(p=>p.dayPct!=null).length;
@@ -16632,12 +16701,12 @@ function renderRules(m){
 }
 // ---- since the previous visit: the last saved daily point before today is the record of that visit ----
 function renderSince(){
-  const sec=$('sinceSec'); if(!sec)return; const today=new Date().toISOString().slice(0,10);
+  const sec=$('sinceSec'); if(!sec)return; const today=ilDay();
   const key=Object.keys((DY&&DY.points)||{}).filter(k=>k<today&&DY.points[k]&&DY.points[k].v>0).sort().pop();
   const days=key?Math.round((new Date(today)-new Date(key))/864e5):0;
   if(!key||days<2||!P||!Q){sec.hidden=true;return}   // a daily visitor already sees the day's change above
   const pt=DY.points[key], m=mAllNow(), fx=Q.usdIls, L=[], row=(k,v)=>L.push(`<li><span>${k}</span><span>${v}</span></li>`);
-  const dv=m.total-pt.v, depNow=HS?(HS.depIlsNow||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0):null, dDep=depNow!=null&&pt.dep!=null?depNow-pt.dep:0;
+  const dv=m.total-pt.v, depNow=HS?depTotal():null, dDep=depNow!=null&&pt.dep!=null?depNow-pt.dep:0;
   row('שווי התיק',`${nn(ils(m.total))}, ${nn(sgn(dv),dv>=0?'up':'down')} (${nn(spct(pt.v?dv/pt.v*100:0),dv>=0?'up':'down')})`+(Math.abs(dDep)>1?` · מתוכם ${nn(sgn(dDep))} הפקדות ו-${nn(sgn(dv-dDep),dv-dDep>=0?'up':'down')} שינוי בשוק`:''));
   if(pt.px){
     const ch=m.pos.map(p=>{const a=pt.px[p.sym];return a>0?{p,pc:(p.px/a-1)*100,il:p.qty*(p.px-a)*(p.ccy==='USD'?fx:1)}:null}).filter(x=>x&&Math.abs(x.pc)>=0.05).sort((a,b)=>Math.abs(b.il)-Math.abs(a.il)).slice(0,4);
@@ -16761,7 +16830,6 @@ const ymFull=ym=>MONTHS[+ym.slice(5)-1]+' '+ym.slice(0,4);
 const ymS=ym=>MSHORT[+ym.slice(5)-1]+' '+ym.slice(2,4);
 const dFull=iso=>{const d=new Date(iso);return d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear()};
 const isoDay=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const depTotal=()=>((HS&&HS.depIlsNow)||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0);
 function seriesMap(){
   const m={}; for(const r of (HS&&HS.monthly)||[])m[r.ym]={val:(r.exc||0)+(r.blink||0),dep:r.dep||0};
   if(P&&Q&&HS)m[ymNow()]={val:mAllNow().total,dep:depTotal(),now:true};
@@ -17108,7 +17176,7 @@ function buildRange(kind,key){
     B.push(...activityBlocks(da,db,'תנועות בתיק בתקופה'));
     if(r.cur)B.push(...alertBlocks());
   }else{
-    const fx=Q.usdIls, acc=(HS&&HS.accounts)||[], fees=acc.reduce((t,a)=>t+(a.feesUsd||0),0)*fx, div=acc.reduce((t,a)=>t+((a.divGrossUsd||0)-(a.divTaxUsd||0)),0)*fx, real=acc.reduce((t,a)=>t+(a.realizedUsd||0),0)*fx, act=activity(da,db);
+    const fx=Q.usdIls, acc=(HS&&HS.accounts)||[], fees=acc.reduce((t,a)=>t+feesOf(a,fx).ils,0), div=acc.reduce((t,a)=>t+((a.divGrossUsd||0)-(a.divTaxUsd||0)),0)*fx, real=acc.reduce((t,a)=>t+(a.realizedUsd||0),0)*fx, act=activity(da,db);
     const verdict=`${st.pos} מתוך ${st.n} חודשים חיוביים. החודש הטוב ביותר: ${ymFull(st.best.ym)} (${sgn(st.best.gain)}). החלש ביותר: ${ymFull(st.worst.ym)} (${sgn(st.worst.gain)}).`;
     B.push(...sumSec({lbl:r.cur?'רווח / הפסד מתחילת השנה':'רווח / הפסד בשנה',r,live,m,startLbl:'שווי בתחילת השנה',startSub,endLbl:r.cur?'שווי היום':'שווי בסוף השנה',depLbl:'הופקד בשנה',fx:fxE,stat:['תנודתיות חודשית',st.vol==null?'—':pct(st.vol)],verdict}));
     if(sn)B.push({t:'note',text:sn});
@@ -17728,7 +17796,7 @@ function historyWithTx(){
   const T=DRAFT.tx||[]; if(!T.length)return null;
   const H=HS?JSON.parse(JSON.stringify(HS)):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; let added=0;
   for(const ac of acctIds()){const mine=T.filter(t=>t.acct===ac); if(!mine.length)continue;
-    let A=H.accounts.find(x=>x.acct===ac); if(!A){A=H.accounts[H.accounts.length]={acct:ac,ccy:acctCcy(ac),trades:[],deposits:[],realizedUsd:0,feesUsd:0,divGrossUsd:0,divTaxUsd:0,source:'דוחות וצילומים שהועלו בדף'}}
+    let A=H.accounts.find(x=>x.acct===ac); if(!A){A=H.accounts[H.accounts.length]={acct:ac,ccy:acctCcy(ac),trades:[],deposits:[],realizedUsd:0,divGrossUsd:0,divTaxUsd:0,source:'דוחות וצילומים שהועלו בדף'}}
     A.trades=A.trades||[]; A.deposits=A.deposits||[];
     const tk=t=>[t.date,t.sym,+(+t.qty).toFixed(4),Math.round((+t.px||0)*100)].join('|'), have=new Set(A.trades.map(tk)), dk=d=>d.date+'|'+Math.round(+d.amount), haveD=new Set(A.deposits.map(dk));
     for(const t of mine){
@@ -17736,11 +17804,14 @@ function historyWithTx(){
         const r={date:t.date,sym:t.sym,qty:t.side==='sell'?-qty:qty,px:Math.round(px*10000)/10000,ccy:t.ccy}; if(t.side==='div')r.div=true; if(t.amount!=null)r.total=t.amount; if(t.fee!=null)r.fee=t.fee;
         if(!have.has(tk(r))){A.trades.push(r);have.add(tk(r));added++}}
       else if(t.side==='deposit'&&t.amount>0){const d={date:t.date,amount:t.amount,ccy:t.ccy}; if(!haveD.has(dk(d))){A.deposits.push(d);haveD.add(dk(d));added++;H.depIlsNow=Math.round(((+H.depIlsNow||0)+(t.ccy==='USD'?t.amount*(Q?Q.usdIls:3.3):t.amount))*100)/100}}
-      else if(t.side==='withdraw'&&t.amount>0){const d={date:t.date,amount:-t.amount,ccy:t.ccy}; if(!haveD.has(dk(d))){A.deposits.push(d);haveD.add(dk(d));added++}}
-      else if(t.side==='fee'&&t.amount>0){A.feesUsd=Math.round(((+A.feesUsd||0)+(t.ccy==='USD'?t.amount:t.amount/(Q?Q.usdIls:3.3)))*100)/100;added++}
+      // a withdrawal comes off the money put in (inDep: already taken off depIlsNow)
+      else if(t.side==='withdraw'&&t.amount>0){const d={date:t.date,amount:-t.amount,ccy:t.ccy,inDep:true}; if(!haveD.has(dk(d))){A.deposits.push(d);haveD.add(dk(d));added++;H.depIlsNow=Math.round(((+H.depIlsNow||0)-(t.ccy==='USD'?t.amount*(Q?Q.usdIls:3.3):t.amount))*100)/100}}
+      // a fee row is kept as a record, once, so reading the same statement again does not count it twice
+      else if(t.side==='fee'&&t.amount>0){A.fees=A.fees||[]; const f={date:t.date,amount:t.amount,ccy:t.ccy==='USD'?'USD':'ILS'}, fk=x=>x.date+'|'+Math.round(+x.amount*100)+'|'+x.ccy; if(!A.fees.some(x=>fk(x)===fk(f))){A.fees.push(f);added++}}
     }
     A.trades.sort((a,b)=>a.date<b.date?-1:1); A.deposits.sort((a,b)=>a.date<b.date?-1:1);
-    A.realizedUsd=realizedOf(A.trades.filter(t=>!t.div)); A.feesUsd=Math.round(((+A.feesUsd||0)+mine.filter(t=>t.fee>0&&t.side!=='fee').reduce((s,t)=>s+(t.ccy==='USD'?t.fee:t.fee/(Q?Q.usdIls:3.3)),0))*100)/100;
+    // a trade's own fee stays on the trade itself (fee); feesOf adds them up, so nothing is added twice
+    A.realizedUsd=realizedOf(A.trades.filter(t=>!t.div));
     A.tradesCount=A.trades.length; const ds=A.trades.map(t=>t.date).concat(A.deposits.map(d=>d.date)).sort(); if(ds.length){A.from=ds[0];A.through=ds[ds.length-1]}
   }
   return {H,added};

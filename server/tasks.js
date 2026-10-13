@@ -111,6 +111,12 @@ export async function morningTask(store,{log}={}){
   store.setDoc('alerts/state',{date:p.iso,keys:items.map(i=>i.key),moveDate:fresh.length?p.iso:(state.moveDate||null),sent:fresh.length,updatedAt:now.toISOString()});
 }
 
+// the money put in, net: as the page's depNet (withdrawals saved before 13.10.2026 were not yet taken off depIlsNow)
+export function depNetOf(h,fx){
+  if(!h||h.depIlsNow==null)return null; let w=0;
+  for(const A of h.accounts||[])for(const d of A.deposits||[])if(+d.amount<0&&!d.inDep)w+=Math.abs(+d.amount)*((d.ccy||A.ccy)==='USD'?(+fx||0):1);
+  return Math.round(((+h.depIlsNow||0)-w)*100)/100;
+}
 // the 1st of the month: the month-end row in history/main and the month's closes in history/prices
 export async function monthlyTask(store,{log,ym=null}={}){
   const now=new Date(), p=ilParts(now);
@@ -122,7 +128,7 @@ export async function monthlyTask(store,{log,ym=null}={}){
   let by=last&&last.by?{...last.by}:null, tot=last?last.v:null, dep=last?last.dep:null;
   if(!by){by={};tot=0;for(const x of positions){const px=prices[x.sym];if(!(px>0))continue;const v=(+x.qty||0)*px*(x.ccy==='USD'?(fx||0):1);by[x.acct]=(by[x.acct]||0)+v;tot+=v}
     for(const c of ((P.exists&&P.data.cash)||[])){const v=(+c.amount||0)*(c.ccy==='USD'?(fx||0):1);by[c.acct]=(by[c.acct]||0)+v;tot+=v}
-    for(const k in by)by[k]=Math.round(by[k]*100)/100; tot=Math.round(tot*100)/100; if(H.exists)dep=H.data.depIlsNow||null}
+    for(const k in by)by[k]=Math.round(by[k]*100)/100; tot=Math.round(tot*100)/100; if(H.exists)dep=depNetOf(H.data,fx)}
   const row={ym,exc:by.exc!=null?by.exc:null,blink:by.blink!=null?by.blink:null,tot,by,dep,fx,excEst:!last,at:now.toISOString()};
   const h=H.exists?H.data:{};
   store.setDoc('history/main',{...h,monthly:(h.monthly||[]).filter(r=>r.ym!==ym).concat([row]).sort((a,b)=>a.ym<b.ym?-1:1),updatedAt:now.toISOString()});
