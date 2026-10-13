@@ -2,6 +2,7 @@
 // heavy); a job that is due while another runs waits its turn. A missed run (the server was down) is not made up.
 import {ilParts, ilOpen, usOpen} from '../shared/market.js';
 import {pricesTask, nightlyTask, morningTask, monthlyTask, reportTask} from './tasks.js';
+import {backupTask} from './backup.js';
 
 export const SCHEDULE=[
   // prices: every 5 minutes while Tel Aviv or New York trades, and on the hour's :40 from 10:40 to 23:40 (closing prices)
@@ -10,14 +11,15 @@ export const SCHEDULE=[
   {name:'morning', when:p=>p.h===7&&p.min===50, run:(s,o)=>morningTask(s,o)},
   {name:'monthly', when:p=>p.d===1&&p.h===8&&p.min===50, run:async(s,o)=>{await monthlyTask(s,o); await reportTask(s,{...o,kind:'month'})}},
   {name:'weekly',  when:p=>p.wd===5&&p.h===13&&p.min===50, run:(s,o)=>reportTask(s,{...o,kind:'week'})},
+  {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})}
 ];
 
-export function startJobs(store,{log=console.log,every=20000}={}){
+export function startJobs(store,{log=console.log,every=20000,dataDir}={}){
   const done=new Set(), queue=[]; let busy=false;
   const pump=async()=>{
     if(busy||!queue.length)return; busy=true; const j=queue.shift(); const t0=Date.now();
-    try{log(`job ${j.name} started`); await j.run(store,{log:(...a)=>log(`[${j.name}]`,...a)}); log(`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`)}
+    try{log(`job ${j.name} started`); await j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}); log(`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`)}
     catch(e){log(`job ${j.name} failed:`,e&&e.stack||e)}
     busy=false; setTimeout(pump,0);
   };

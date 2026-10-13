@@ -12,6 +12,8 @@ import {refreshQuotes} from '../shared/pxjob.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
 import {buildSite} from '../tools/build.js';
+import {ilParts} from '../shared/market.js';
+import {backupStatus, backupNow} from './backup.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -22,11 +24,14 @@ const DATA_DIR=env.RAILWAY_VOLUME_MOUNT_PATH||env.DATA_DIR||'/data';
 const PERSIST=!env.RAILWAY_ENVIRONMENT||!!env.RAILWAY_VOLUME_MOUNT_PATH;
 const PORT=+env.PORT||3000;
 const OWNER_EMAIL=String(env.OWNER_EMAIL||'').trim().toLowerCase();
-const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5').split(',').map(s=>s.trim()).filter(Boolean);
+const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages';
+// Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request
+const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
+const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=2;
 const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
-export function createApp({store,siteDir,jobs=true}={}){
+export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const app=express();
   app.disable('x-powered-by');
   app.set('trust proxy',1);
@@ -141,22 +146,69 @@ export function createApp({store,siteDir,jobs=true}={}){
     if(status===413||/too large|too long|prompt is too long/i.test(m))return [413,'prompt_too_large','הקובץ גדול מדי בשביל Claude. נסה פחות עמודים.'];
     if(status===400)return [400,'invalid_argument','Claude דחה את הבקשה: '+m.slice(0,200)];
     return [502,'upstream_error','Claude לא ענה'+(status?' (HTTP '+status+')':'')+'. נסה שוב.']};
-  async function askClaude(body){
+  async function askClaude(body,signal){
     if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
-    let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(280000)})}
-    catch(e){const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('ask failed:',to?'timeout':String(e&&e.message||e)); return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לענות בזמן (יותר מ-4 דקות). נסה קובץ קצר יותר או שוב בעוד רגע.':'אין חיבור ל-Claude מהשרת. נסה שוב.'}}}}
-    const text=await r.text();
+    const sig=signal?AbortSignal.any([signal,AbortSignal.timeout(280000)]):AbortSignal.timeout(280000);
+    let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body),signal:sig})}
+    catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}};
+      const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('ask failed:',to?'timeout':String(e&&e.message||e)); return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לענות בזמן (יותר מ-4 דקות). נסה קובץ קצר יותר או שוב בעוד רגע.':'אין חיבור ל-Claude מהשרת. נסה שוב.'}}}}
+    let text; try{text=await r.text()}catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}}; throw e}
     if(r.ok)return {status:200,text};
     let type='',msg=''; try{const e=JSON.parse(text).error||{};type=e.type||'';msg=e.message||''}catch(e){}
     const [st,code,message]=askErr(r.status,type,msg); log('ask failed:',r.status,type,msg.slice(0,160));
     return {status:st,json:{error:{code,message}}};
   }
+  // only the kinds of request the page makes: a model from the list, a capped answer length, plain text and image turns,
+  // an optional system line. Anything else (tools, other settings) is dropped or refused.
+  function cleanAsk(b){
+    if(!b||typeof b!=='object')return {err:'bad request'};
+    if(!ALLOWED_MODELS.includes(b.model))return {err:'model not allowed'};
+    const msgs=Array.isArray(b.messages)?b.messages:null; if(!msgs||!msgs.length||msgs.length>AI_MAX_TURNS)return {err:'bad messages'};
+    let imgs=0; const out=[];
+    for(const m of msgs){
+      if(!m||(m.role!=='user'&&m.role!=='assistant'))return {err:'bad role'};
+      if(typeof m.content==='string'){out.push({role:m.role,content:m.content});continue}
+      if(!Array.isArray(m.content)||!m.content.length)return {err:'bad content'};
+      const parts=[];
+      for(const c of m.content){
+        if(c&&c.type==='text'&&typeof c.text==='string')parts.push({type:'text',text:c.text});
+        else if(c&&c.type==='image'&&c.source&&c.source.type==='base64'&&/^image\/(jpeg|png|webp|gif)$/.test(c.source.media_type)&&typeof c.source.data==='string'){
+          if(++imgs>AI_MAX_IMAGES)return {err:'too many images'}; parts.push({type:'image',source:{type:'base64',media_type:c.source.media_type,data:c.source.data}})}
+        else return {err:'bad content block'};
+      }
+      out.push({role:m.role,content:parts});
+    }
+    const body={model:b.model,max_tokens:Math.max(1,Math.min(AI_MAX_TOKENS,Math.floor(+b.max_tokens||1024))),messages:out};
+    if(typeof b.system==='string'&&b.system)body.system=b.system.slice(0,AI_MAX_SYSTEM);
+    return {body};
+  }
+  const inflight=new Map(); // user id -> requests running now
   app.post('/api/ask',needUser,async(req,res)=>{
-    const body=req.body||{}; if(!ALLOWED_MODELS.includes(body.model))return res.status(400).json({error:{code:'invalid_argument',message:'model not allowed'}});
-    const out=await askClaude(body);
-    if(out.text!=null){res.status(200).type('application/json').send(out.text);return}
+    const c=cleanAsk(req.body); if(c.err)return res.status(400).json({error:{code:'invalid_argument',message:c.err}});
+    const u=req.user, owner=u.role==='owner', day=ilParts(new Date()).iso;
+    if(!owner){
+      if(store.aiUsage(u.id,day).calls>=AI_DAILY)return res.status(429).json({error:{code:'quota_exceeded',message:`הגעת למכסה היומית של צ׳יקו (${AI_DAILY} פניות ביום). המכסה מתחדשת בחצות.`}});
+      if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'בקשה קודמת ל-Claude עדיין רצה. נסה שוב בעוד רגע.'}});
+    }
+    store.aiAdd(u.id,day,{calls:1}); inflight.set(u.id,(inflight.get(u.id)||0)+1);
+    // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
+    const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
+    let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
+    if(out.aborted){log('ask cancelled by the page');return}
+    if(out.text!=null){
+      try{const us=(JSON.parse(out.text).usage)||{}; store.aiAdd(u.id,day,{input:(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0),output:us.output_tokens||0})}catch(e){}
+      res.status(200).type('application/json').send(out.text);return}
     res.status(out.status).json(out.json);
   });
+  // the owner sees who used Claude how much (calls and tokens, today and the last 30 days)
+  app.get('/api/ai/usage',needOwner,(req,res)=>{
+    const today=ilParts(new Date()).iso, from=ilParts(new Date(Date.now()-29*864e5)).iso;
+    const users=store.users(), byId=Object.fromEntries(users.map(x=>[x.id,x])), month=store.aiSince(from), day=store.aiSince(today);
+    const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,calls30:m.calls||0,input30:m.input||0,output30:m.output||0}});
+    for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,calls30:m.calls,input30:m.input,output30:m.output});
+    res.json({limit:AI_DAILY,models:ALLOWED_MODELS,rows});
+  });
+  app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
   // the owner checks the connection to Claude with one tiny question
   app.post('/api/ask/check',needOwner,async(req,res)=>{
     const t0=Date.now(); const out=await askClaude({model:ALLOWED_MODELS.find(m=>/haiku/.test(m))||ALLOWED_MODELS[0],max_tokens:16,messages:[{role:'user',content:'Reply with the single word: ok'}]});
@@ -202,7 +254,9 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   const app=createApp({store,siteDir});
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
-  if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log});
+  if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
+  // a first copy right away when today has none (a new server, or after an update)
+  if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
   // no prices yet (a new server, or an import without them): fetch them now instead of waiting for the hourly run
   if(!store.getDoc('quotes/latest').exists)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('first price update failed:',e.message)),5000);
 }

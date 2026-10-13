@@ -18,7 +18,8 @@ export class Store{
       create index if not exists docs_coll on docs(coll);
       create table if not exists users(id text primary key, email text unique not null, name text, hash text not null, salt text not null, role text not null, created_at text not null, must_change integer default 0);
       create table if not exists sessions(sid text primary key, uid text not null, created_at text not null, expires_at text not null, ua text);
-      create table if not exists meta(k text primary key, v text not null);`);
+      create table if not exists meta(k text primary key, v text not null);
+      create table if not exists ai_usage(uid text not null, day text not null, calls integer not null default 0, input integer not null default 0, output integer not null default 0, primary key(uid,day));`);
     this.listeners=new Set();
   }
   // ---- documents ----
@@ -46,6 +47,10 @@ export class Store{
   // ---- meta ----
   getMeta(k){const r=this.db.prepare('select v from meta where k=?').get(k);return r?r.v:null}
   setMeta(k,v){this.db.prepare('insert into meta(k,v) values(?,?) on conflict(k) do update set v=excluded.v').run(k,String(v))}
+  // ---- Claude usage per user per day (Israel date) ----
+  aiUsage(uid,day){return this.db.prepare('select calls, input, output from ai_usage where uid=? and day=?').get(uid,day)||{calls:0,input:0,output:0}}
+  aiAdd(uid,day,{calls=0,input=0,output=0}={}){this.db.prepare('insert into ai_usage(uid,day,calls,input,output) values(?,?,?,?,?) on conflict(uid,day) do update set calls=calls+excluded.calls, input=input+excluded.input, output=output+excluded.output').run(uid,day,calls|0,input|0,output|0)}
+  aiSince(day){return this.db.prepare('select uid, sum(calls) calls, sum(input) input, sum(output) output from ai_usage where day>=? group by uid').all(day)}
   // ---- users ----
   static hash(pw,salt){return scryptSync(String(pw),salt,64).toString('hex')}
   userByEmail(email){return this.db.prepare('select * from users where email=?').get(String(email||'').trim().toLowerCase())||null}

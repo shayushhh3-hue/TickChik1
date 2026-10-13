@@ -49,6 +49,12 @@ code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace
 <div class="card"><h2>החיבור ל-Claude (צ׳יקו וקריאת דוחות)</h2>
   <p style="margin:0"><button class="btn" type="button" id="aiChk">בדיקת החיבור</button> <span id="aiRes" class="muted" role="status"></span></p>
   <p class="muted" style="margin:8px 0 0">שולח שאלה קטנה אחת ל-Claude עם המפתח שב-Railway, ואומר אם זה עובד ומה צריך לתקן אם לא.</p></div>
+<div class="card"><h2>שימוש ב-Claude</h2>
+  <div id="aiUse"><p class="muted">טוען…</p></div>
+  <p class="muted" style="margin:6px 0 0">כל פנייה לצ׳יקו או קריאת דוח היא פנייה אחת. לשותפים יש מכסה יומית; לך אין. טוקנים הם יחידת החיוב של Anthropic: מה שנשלח ל-Claude ומה שהוא כתב.</p></div>
+<div class="card"><h2>גיבויים</h2>
+  <div id="bk"><p class="muted">טוען…</p></div>
+  <p style="margin:10px 0 0"><button class="btn" type="button" id="bkNow">גיבוי עכשיו</button> <span id="bkRes" class="muted" role="status"></span></p></div>
 <div class="card"><h2>הרשמה עם קוד הזמנה</h2>
   <div id="inv"><p class="muted">טוען…</p></div>
   <p class="err" id="invErr" role="alert"></p>
@@ -63,6 +69,22 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function call(method,url,body){const r=await fetch('/api'+url,{method,credentials:'same-origin',headers:{'x-tc':'1',...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let j=null;try{j=await r.json()}catch(e){} if(!r.ok)throw new Error((j&&j.error&&j.error.message)||('HTTP '+r.status)); return j}
 const rnd=()=>{const a='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const b=crypto.getRandomValues(new Uint8Array(12));return [...b].map(x=>a[x%a.length]).join('')};
+const n0=x=>Number(x||0).toLocaleString('en-US');
+async function loadUse(){
+  try{const u=await call('GET','/ai/usage');
+    $('aiUse').innerHTML=`<p style="margin:0 0 8px">מכסה יומית לשותף: <b>${u.limit}</b> פניות. מודלים מותרים: <code>${esc(u.models.join(', '))}</code></p><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="text-align:start">משתמש</th><th>היום</th><th>30 יום</th><th>טוקנים שנשלחו</th><th>טוקנים שנכתבו</th></tr>`+
+      u.rows.map(r=>`<tr style="border-top:1px solid #eef1f4"><td class="em" style="padding:6px 0;direction:ltr;text-align:right">${esc(r.email)}${r.owner?' (אתה)':''}</td><td style="text-align:center">${n0(r.today)}</td><td style="text-align:center">${n0(r.calls30)}</td><td style="text-align:center">${n0(r.input30)}</td><td style="text-align:center">${n0(r.output30)}</td></tr>`).join('')+'</table>'}
+  catch(x){$('aiUse').innerHTML='<p class="err">'+esc(x.message)+'</p>'}
+}
+async function loadBk(){
+  try{const b=await call('GET','/backup/status'); const last=b.last?new Date(b.last.at).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):null;
+    $('bk').innerHTML=`<p style="margin:0">${last?`הגיבוי האחרון: <b>${esc(last)}</b> (${(b.last.size/1e6).toFixed(1)}MB). נשמרים ${b.files.length} גיבויים יומיים, עד 14.`:'עוד אין גיבוי.'}</p>`+
+      `<p class="muted" style="margin:6px 0 0">הגיבויים היומיים נשמרים על הדיסק של Railway, ומגינים מטעות או ממחיקה. הם לא מגינים מאובדן הדיסק עצמו.</p>`+
+      (b.mail?`<p class="ok" style="margin:6px 0 0">עותק של הנתונים שלך נשלח אליך במייל כל לילה${b.lastMail?' (אחרון: '+esc(new Date(b.lastMail).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}))+')':''}.</p>`:`<p class="err" style="margin:6px 0 0">אין עותק מחוץ ל-Railway: המייל (Resend) לא מוגדר. כשתגדיר אותו, עותק של הנתונים שלך יישלח אליך כל לילה.</p>`)}
+  catch(x){$('bk').innerHTML='<p class="err">'+esc(x.message)+'</p>'}
+}
+$('bkNow').onclick=async()=>{const b=$('bkNow'); b.disabled=true; $('bkRes').textContent='מגבה…';
+  try{await call('POST','/jobs/backup',{}); setTimeout(()=>{loadBk(); $('bkRes').textContent='בוצע'; b.disabled=false},2500)}catch(x){$('bkRes').textContent=x.message; b.disabled=false}};
 async function loadInv(){
   let v; try{v=await call('GET','/invite')}catch(e){$('inv').innerHTML='<p class="err">'+esc(e.message)+'</p>';return}
   if(!v.code){$('inv').innerHTML='<p>ההרשמה <b>סגורה</b>: רק אתה פותח חשבונות.</p><p style="margin:10px 0 0"><button class="btn pri" type="button" data-inv="new">פתיחת הרשמה (יצירת קוד)</button></p>';return}
@@ -74,7 +96,7 @@ async function load(){
   let me; try{me=(await call('GET','/me')).me}catch(e){me=null}
   if(!me){location.href='./';return}
   if(!me.owner){document.querySelector('main').innerHTML='<h1>משתמשים</h1><p>רק בעל הדף מנהל משתמשים.</p><a class="btn" href="./">חזרה</a>';return}
-  loadInv();
+  loadInv(); loadUse(); loadBk();
   const {users}=await call('GET','/users');
   $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
     ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button><button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button></span>`}</div>`).join('');
