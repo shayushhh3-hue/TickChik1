@@ -267,7 +267,7 @@ test('crisis center: the comparison point, the move since then by holding, and t
 });
 
 // "הסבר את התיק שלי" (stage 7): what is in it, what stands out, concentration against the user's caps, and the questions
-const EX=load(['GROUPS','SEC_HE','isF','exposures','pfExplain'],{FUNDOF:FUNDS});
+const EX=load(['GROUPS','SEC_HE','isF','exposures','pfExplain','flowsView'],{FUNDOF:FUNDS});
 const secs=k=>({MSFT:'Technology',KO:'Consumer Staples'}[k]||'');
 const exM=()=>mOf([pos('MSFT',5000,{ccy:'USD',cost:4000,costVal:5000}),pos('KO',3000,{ccy:'USD',group:'cons',cost:3500,costVal:3000}),
   pos('TA125',2000,{group:'il',noCost:true,cost:0,costVal:0}),pos('ZZZ',1000,{ccy:'USD',cost:1000,costVal:1000})],500);
@@ -309,4 +309,18 @@ test('the weekly summary: exposures at the start of the week only from saved pri
   assert.deepEqual(X.miss,['NEW'],'a holding without a saved price is left out and named'); assert.equal(X.n,2); assert.equal(X.fxKnown,true);
   const T0=10*10*3.6+500+100, T1=407+500+100; near(X.usd.w0,360/T0*100,1e-9); near(X.usd.w1,407/T1*100,1e-9);
   const Y=W.weekExpo(m,{US:10,IL:5},undefined,3.7); assert.equal(Y.fxKnown,false); near(Y.usd.w0,370/(370+600)*100,1e-9,'without a saved rate: today\'s, and it says so');
+});
+
+test('planned money in and out: months left, a share of today\'s value, past dates kept apart; the nearest withdrawal is a question', ()=>{
+  const now=Date.UTC(2026,9,14), m={total:200000,cash:5000};
+  const V=EX.flowsView([{id:'a',ym:'2027-04',kind:'out',amount:50000,note:'דירה'},{id:'b',ym:'2026-08',kind:'out',amount:1000},{id:'c',ym:'2026-12',kind:'in',amount:20000},{ym:'bad',amount:5},{ym:'2027-01',amount:0}],m,3,now);
+  assert.deepEqual(V.rows.map(r=>[r.id,r.months,r.past]),[['b',-2,true],['c',2,false],['a',6,false]],'sorted by date; bad rows dropped');
+  near(V.rows[2].share,25,1e-9); assert.equal(V.next.id,'a','the nearest withdrawal still ahead, not a deposit and not a past one'); assert.equal(V.rows[2].inHorizon,true);
+  assert.equal(EX.flowsView([{ym:'2031-01',kind:'out',amount:1}],m,3,now).rows[0].inHorizon,false,'after the horizon the user set');
+  assert.equal(EX.flowsView(null,m,0,now).next,null);
+  FUNDS.TA125=true; const mm=exM(), E=EX.exposures(mm,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},secs);
+  const X=EX.pfExplain(mm,E,{R:{maxPos:10,maxGroup:40},years:0,flows:EX.flowsView([{ym:'2027-04',kind:'out',amount:5750}],mm,0,now)});
+  assert.deepEqual(X.questions.slice(0,2).map(q=>q.k),['pos','flow']); near(X.questions[1].share,50,1e-9); assert.equal(X.questions[1].months,6);
+  const far=EX.pfExplain(mm,E,{R:{},years:0,flows:EX.flowsView([{ym:'2031-04',kind:'out',amount:5750}],mm,0,now)});
+  assert.ok(!far.questions.some(q=>q.k==='flow'),'a withdrawal more than 3 years away is not asked about');
 });

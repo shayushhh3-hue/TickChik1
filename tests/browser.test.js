@@ -340,3 +340,30 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();
   }finally{store.setDoc('history/daily',d0,{silent:true}); const s0=store.getDoc('settings/main').data; delete s0.mail; store.setDoc('settings/main',s0,{silent:true})}
 });
+
+test('planned money out and in: entered once, framed in today\'s numbers, asked about, and sent to Claude only when ticked',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const d=new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+18); const ym=d.toISOString().slice(0,7);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'forecast'); await pg.waitForTimeout(400);
+    await pg.fill('#flWhen',ym); await pg.selectOption('#flKind','out'); await pg.fill('#flAmt','5000'); await pg.fill('#flNote','מקדמה'); await pg.click('#flAdd'); await pg.waitForTimeout(1500);
+    const li=await pg.evaluate(()=>document.getElementById('flowsList').textContent);
+    assert.match(li,/משיכה: ₪5,000/); assert.match(li,/בעוד 18 חודשים/); assert.match(li,/מהשווי של התיק היום/); assert.match(li,/לא הערכה של התיק שלך/);
+    const sv=store.getDoc('settings/main').data; assert.equal(sv.flows.length,1); assert.equal(sv.flows[0].ym,ym); assert.equal(sv.flowsAI,undefined,'not shared with Claude until ticked');
+    await pg.click('#chatFab'); await pg.waitForTimeout(300); await pg.click('#anaSugg [data-ana="explain"]');
+    await pg.waitForFunction(()=>{const c=[...document.querySelectorAll('#anaOut .ana-card')].pop(); return c&&/תכננת למשוך/.test(c.textContent)&&!c.querySelector('.ana-wait')},null,{timeout:15000});
+    // the rules in the prompt name the field; what matters is whether the facts carry it
+    const ask=async()=>{const n0=seen.length; await pg.fill('#anaQ','מה הסיכון הכי גדול בתיק שלי?'); await pg.click('#anaForm .chat-send'); await pg.waitForTimeout(2500); const all=seen.slice(n0).join(' '); assert.ok(all.includes('ענה על שאלה'),'the question was sent'); return all.split('FACTS:').pop()};
+    let sent=await ask(); assert.ok(!sent.includes('planned_cash_flows'),'without the tick nothing about it goes');
+    await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click()); await tab(pg,'forecast'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.getElementById('flAI').scrollIntoView({block:'center'})); await pg.click('#flAI'); await pg.waitForTimeout(1200);
+    assert.equal(store.getDoc('settings/main').data.flowsAI,true);
+    await pg.click('#chatFab'); await pg.waitForTimeout(300); sent=await ask();
+    assert.ok(sent.includes('planned_cash_flows')&&sent.includes('₪5,000'),'with the tick: date and amount'); assert.ok(!sent.includes('מקדמה'),'never the note');
+    await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click()); await tab(pg,'risk'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.querySelector('[data-pane="risk"] .subtabs [data-tab="state"]').click()); await pg.waitForTimeout(700);
+    assert.match(await pg.evaluate(()=>document.getElementById('stateBody').textContent),/משיכה של ₪5,000 בעוד 18 חודשים/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); const s0=store.getDoc('settings/main').data; delete s0.flows; delete s0.flowsAI; store.setDoc('settings/main',s0,{silent:true})}
+});
