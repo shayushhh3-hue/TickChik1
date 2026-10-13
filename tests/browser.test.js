@@ -23,6 +23,7 @@ before(async()=>{
   buildSite(R); store=new Store(':memory:'); bootstrap(store); docs=fixture();
   for(const [p,d] of Object.entries(docs))store.setDoc(p,d,{silent:true}); store.setDoc('quotes/c_NVDA',closes(),{silent:true});
   store.addUser({email:'new@example.com',password:'friend-pass-1',role:'friend'});
+  store.addUser({email:'n2@example.com',password:'friend-pass-3',role:'friend'});   // a second new user, for a security nobody held
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
@@ -37,9 +38,9 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
+  await pg.waitForFunction(who==='new'||who==='n2'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -100,7 +101,10 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   let s=await pg.evaluate(()=>({dlg:!document.getElementById('profDlg').hidden,fresh:document.getElementById('fresh').textContent,sugg:[...document.querySelectorAll('#anaSugg .sg')].map(x=>x.textContent)}));
   assert.equal(s.dlg,false,'no questions before there is a portfolio'); assert.match(s.fresh,/עוד אין כאן תיק/);
   await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true}); await pg.click('#botbar [data-bb="mine"]');
-  await pg.fill('#listText','MSFT 1 1500'); await pg.click('#btnList'); await pg.click('#btnPfSave'); await pg.waitForTimeout(2000);
+  await pg.fill('#listText','MSFT 1 1500'); await pg.click('#btnList'); await pg.click('#btnPfSave');
+  // the first result is real: the price of the new holding is read again after the save, so the explanation has a value
+  await pg.waitForFunction(()=>/מה יש בתיק/.test([...document.querySelectorAll('#anaOut .ana-card')].pop()?.textContent||''),null,{timeout:15000}); await pg.waitForTimeout(300);
+  assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent),/הכללים עדיין ברירת המחדל של הדף/,'rules nobody chose are named as the default');
   s=await pg.evaluate(()=>({ana:!document.getElementById('anaBox').hidden,dlg:!document.getElementById('profDlg').hidden,card:[...document.querySelectorAll('#anaOut .ana-ch h3')].map(h=>h.textContent).pop(),sys:document.querySelector('#anaOut .msg.sys')?.textContent||''}));
   assert.ok(s.ana&&!s.dlg,'צ׳יקו explains the new portfolio first'); assert.equal(s.card,'הסבר התיק שלך'); assert.match(s.sys,/ההסבר הראשון/);
   await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click());
@@ -287,10 +291,16 @@ test('explain my portfolio: six parts from the portfolio, a checked summary, que
       ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.deepEqual(c.h,['מה יש בתיק','מה בולט','החשיפות המרכזיות','נקודות ריכוז','מה חסר','שאלות שיכולות לעזור']);
     assert.match(c.sum,/ורובו בטכנולוגיה/,'Claude\'s wording of the summary'); assert.doesNotMatch(c.txt,/מאוזן היטב|39\.5%/,'a judgement and a number not in the data are removed');
-    assert.match(c.txt,/2 משפטים של Claude הוסרו/); assert.match(c.txt,/NVDA הוא 16\.4% מהתיק, מעל הכלל שקבעת/); assert.match(c.txt,/מחיר שאינו מהמסחר האחרון: TA125/);
+    assert.match(c.txt,/2 משפטים של Claude הוסרו/); assert.match(c.txt,/מחיר שאינו מהמסחר האחרון: TA125/);
+    // the fixture's rules are the page's defaults, and nobody said they are theirs: they are named as the default
+    assert.match(c.txt,/NVDA הוא 16\.4% מהתיק, מעל ברירת המחדל של הדף לנייר בודד/); assert.match(c.txt,/הכללים עדיין ברירת המחדל של הדף/); assert.doesNotMatch(c.txt,/הכלל שקבעת/);
     assert.match(c.txt,/לא בדיקה אם הוא מתאים לך ולא המלצה/); assert.equal(c.q,4); assert.ok(!c.ox,'nothing sideways');
     const sent=seen.slice(n0).join(' '); assert.ok(sent.includes('by_sector'),'the summary was asked for');
     assert.ok(!/investor_goal\":|goal_after_tax|@example\.com|דנה/.test(sent.split('FACTS:').pop()),'no goal, name or e-mail in the facts sent');
+    if(W===1280){await pg.click('#anaOut .ana-card .rl-def [data-rules="mine"]'); await pg.waitForTimeout(1500);
+      const t2=await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent);
+      assert.match(t2,/מעל הכלל שקבעת לנייר בודד/); assert.doesNotMatch(t2,/הכללים עדיין ברירת המחדל/); assert.ok(store.getDoc('settings/main').data.rulesAt,'saved');
+      const d=store.getDoc('settings/main').data; delete d.rulesAt; store.setDoc('settings/main',d,{silent:true})}
     if(W===390){await pg.click('.stq [data-anav="fold:hStress:usd"]'); await pg.waitForTimeout(700);
       const r=await pg.evaluate(()=>({page:document.body.dataset.page,chat:!document.getElementById('anaBox').hidden,kind:document.querySelector('#stKind [aria-pressed="true"]')?.dataset.stk}));
       assert.deepEqual(r,{page:'risk',chat:false,kind:'usd'},'the question opens the dollar scenario')}
@@ -366,4 +376,22 @@ test('planned money out and in: entered once, framed in today\'s numbers, asked 
     assert.match(await pg.evaluate(()=>document.getElementById('stateBody').textContent),/משיכה של ₪5,000 בעוד 18 חודשים/);
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); const s0=store.getDoc('settings/main').data; delete s0.flows; delete s0.flowsAI; store.setDoc('settings/main',s0,{silent:true})}
+});
+
+test('a security nobody held yet: the first explanation says what it waits for, and appears when the price comes',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const q0=store.getDoc('quotes/latest').data, {ctx,pg}=await open(390,{who:'n2'});
+  try{
+    await pg.click('#botbar [data-bb="mine"]'); await pg.fill('#listText','ZZZQ 3 900'); await pg.click('#btnList'); await pg.click('#btnPfSave');
+    await pg.waitForFunction(()=>/הסבר התיק שלך/.test(document.getElementById('anaOut')?.textContent||''),null,{timeout:20000}); await pg.waitForTimeout(300);
+    const card=()=>pg.evaluate(()=>[...document.querySelectorAll('#anaOut .msg.bot:not(.hello) .ana-card')].map(c=>c.textContent));
+    let c=await card(); assert.equal(c.length,1); assert.match(c[0],/המחירים של ZZZQ עוד לא הגיעו/); assert.match(c[0],/כל 5 דקות/);
+    await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click()); await pg.waitForTimeout(200);
+    store.setDoc('quotes/latest',{...q0,prices:{...q0.prices,ZZZQ:120},prev:{...q0.prev,ZZZQ:118},updatedAt:new Date().toISOString()});
+    await pg.waitForFunction(()=>/מה יש בתיק/.test([...document.querySelectorAll('#anaOut .msg.bot:not(.hello) .ana-card')].pop()?.textContent||''),null,{timeout:15000});
+    c=await card(); assert.equal(c.length,1,'the same card, drawn again'); 
+    const st=await pg.evaluate(()=>({chat:!document.getElementById('anaBox').hidden,dot:document.getElementById('chatFab').classList.contains('new')}));
+    assert.deepEqual(st,{chat:false,dot:true},'the chat does not open by itself; its button shows there is something new');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('quotes/latest',q0,{silent:true})}
 });

@@ -1232,6 +1232,7 @@ section.fold > .fold-h h2{margin:0}
 .ex-lv{padding:8px 10px;background:var(--sunk);border-radius:8px;max-width:none;font-size:12.5px;line-height:1.6;color:var(--ink2)}
 .lv-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink2)} .lv-ctl .chips{flex:none}
 .mailbox{display:flex;flex-direction:column;gap:8px} .mailbox[hidden]{display:none}
+.rl-def{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:var(--info-bg);color:var(--info-ink);font-size:13px;line-height:1.6} .rl-def p{margin:0}
 .flows{display:flex;flex-direction:column;gap:12px}
 .fl-form input[type=month],.fl-form input[type=text],.fl-form select{font:inherit;font-size:13.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);width:100%;min-height:34px}
 @media (max-width:560px){.fl-form input[type=month],.fl-form input[type=text],.fl-form select{font-size:16px}}
@@ -16305,6 +16306,14 @@ function offerUndo(msg,fn,ms,label){undoFn=fn; $('toastMsg').textContent=msg; $(
 async function doUndo(){const f=undoFn; undoFn=null; clearTimeout(undoT); if(!f){$('toast').hidden=true;return}
   $('toastUndo').disabled=true; try{await f(); $('toastMsg').textContent='בוטל'}catch(e){$('toastMsg').textContent='הביטול לא הצליח'} setTimeout(()=>{if(!undoFn)$('toast').hidden=true},1600)}
 // a rule, a target or the goal was typed over: after a short pause, offer the values from before the typing
+// ---- stage 8: rules nobody chose are not "the rules you set". Until the user changes a rule or says "these are my
+// rules", rules with the page's default values are named as the default, with a way to check them ----
+const rulesDefault=()=>!!S&&!S.rulesAt&&Object.keys(DEF.rules).every(k=>+((S.rules||{})[k])===+DEF.rules[k]);
+function rulesNote(){if(!rulesDefault())return ''; const R=S.rules;
+  return `<div class="rl-def"><p>הכללים עדיין ברירת המחדל של הדף: עד ${pct(R.maxPos,0)} לנייר בודד, עד ${pct(R.maxGroup,0)} לקבוצה, ובדיקה בירידה של ${pct(R.stopLoss,0)} מהעלות. החריגות נבדקות מולם, אז כדאי לבדוק שהם מתאימים לך.</p><div class="ana-navs"><button type="button" class="btn sm" data-rules="go">לכללים בהגדרות</button>${canWrite?'<button type="button" class="btn sm" data-rules="mine">אלה הכללים שלי</button>':''}</div></div>`}
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-rules]'); if(!b)return;
+  if(b.dataset.rules==='mine'){if(!canWrite)return; S.rulesAt=new Date().toISOString(); changed(); for(const n of document.querySelectorAll('.rl-def'))n.remove(); try{for(const f of Object.values(ANA_REDRAW))f()}catch(e){} return}
+  if(b.closest('#anaBox')&&!anaDock())anaClose(true); showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const h=$('hRules'); if(h)h.scrollIntoView({block:'start'})},60)});
 function settingTouched(before){if(!setBefore)setBefore=before; clearTimeout(setT); setT=setTimeout(()=>{const b=setBefore; setBefore=null; if(b===JSON.stringify(S))return;
   offerUndo('ההגדרות עודכנו',()=>{S=mergeSettings(JSON.parse(b));fillInputs();changed()})},1600)}
 // ---- the timeline: what was actually done, newest month first ----
@@ -16416,7 +16425,7 @@ function renderDesk(m,A){
   const nc=nextChecks(A,m)[0], urgent=nc&&(nc.sev==='crit'||nc.sev==='warn');
   const act=!nc?'אין פעולה נדרשת כרגע.':urgent?`${esc(nc.title)}.${nc.sev==='crit'?' ההחלטה אצלך: להתאים את התיק לכלל, או לעדכן את הכלל.':''}`:`אין פעולה דחופה. בהזדמנות: ${esc(nc.title)}.`;
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${topH}<p class="dk-act"><b>הפעולה הבאה שלי:</b>${act}${goB(nc&&nc.nav)}</p><p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${(nC||nW)&&rulesDefault()?rulesNote():''}${topH}<p class="dk-act"><b>הפעולה הבאה שלי:</b>${act}${goB(nc&&nc.nav)}</p><p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
@@ -16785,7 +16794,7 @@ function anaOverlap(m){
 function anaBottom(F,issues){
   const m=F.m, crit=issues.filter(i=>i.sev==='crit'), warn=issues.filter(i=>i.sev==='warn'), L=[];
   L.push(`התיק שווה ${ils(m.total)}`+(m.cost?`, ${sgn(m.pnl)} (${spct(m.pnlPct)}) מול מחיר הקנייה`:'')+(F.top3.length>=3?`, ושלושת הניירות הגדולים הם ${pct(F.top3w)} ממנו`:'')+'.');
-  if(crit.length)L.push(`יש ${crit.length===1?'חריגה אחת':crit.length+' חריגות'} מהכללים שקבעת. הבולטת: ${crit[0].lead}`);
+  if(crit.length)L.push(`יש ${crit.length===1?'חריגה אחת':crit.length+' חריגות'} ${rulesDefault()?'מהכללים (ברירת המחדל של הדף)':'מהכללים שקבעת'}. הבולטת: ${crit[0].lead}`);
   else if(warn.length)L.push(`אין חריגות מהכללים, ויש ${warn.length===1?'נושא אחד':warn.length+' נושאים'} לבדיקה. הראשון: ${warn[0].lead}`);
   else L.push('התיק עומד בכל הכללים שקבעת.');
   if(!(F.tsum>0))L.push('לא הוגדרו יעדי הקצאה, ולכן עוד אין בדיקה מול תוכנית.');
@@ -16961,7 +16970,7 @@ function anaReportHtml(F,issues,det,st){
   const chk=st.ai?`<p>${!st.ai.checked?'Claude לא החזיר ניסוח שאפשר להשתמש בו, ולכן כל הניסוחים כאן מחושבים בדף.':st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של Claude הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של Claude נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
   const ft=`<footer class="ana-ft">${err}${F.miss.length?`<b>מה חסר לניתוח מלא</b><ul>${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}${chk}<p>המספרים חושבו בדף מנתוני התיק שלך. הניתוח הוא כלי עזר לקבלת החלטות ואינו תחליף לייעוץ השקעות המותאם אישית. אין לבצע שינוי בתיק על סמך נתון שלא אומת.</p>${lvCtl()}</footer>`;
   return anaHead('ניתוח התיק שלך',anaWhen(F),anaTag(F))+hero+bl+anaSec(1,'תמונת מצב',`<div class="mine3">${tiles}</div>`)+anaSec(2,'הקצאת התיק',alloc)
-    +anaSec(3,`מה דורש את תשומת הלב שלך?${issues.length?` <span class="cnt">${issues.length}</span>`:''}`,its)+anaSec(4,'נקודות חוזק',stH)+anaSec(5,'האם התיק עומד בתוכנית?',plH)
+    +anaSec(3,`מה דורש את תשומת הלב שלך?${issues.length?` <span class="cnt">${issues.length}</span>`:''}`,rulesNote()+its)+anaSec(4,'נקודות חוזק',stH)+anaSec(5,'האם התיק עומד בתוכנית?',plH)
     +anaSec(6,acts.length===3?'שלוש הפעולות שהייתי בודק':'הפעולות שהייתי בודק',acH)+ft;
 }
 function anaDayHtml(F,det,res,st,crisis){
@@ -17021,7 +17030,7 @@ const EXN={group:x=>`הקבוצה הגדולה: ${x.label}, ${pct(x.w)} מהתי
   cash:x=>`מזומן: ${pct(x.w)} מהתיק (${ils(x.val)}).`};
 // each question: [the question, the fact or the general point behind it, where to look]
 const EXQ={
-  pos:x=>[`${lab(x.sym)} הוא ${pct(x.w)} מהתיק, מעל הכלל שקבעת לנייר בודד (${pct(x.cap,0)}). המשקל הזה מכוון?`,`כל שינוי של 10% במחיר שלו מזיז את כל התיק ב-${pct(x.w/10,1)}.`,{t:'fold:hExp',l:'לחשיפות'}],
+  pos:x=>[`${lab(x.sym)} הוא ${pct(x.w)} מהתיק, מעל ${rulesDefault()?'ברירת המחדל של הדף':'הכלל שקבעת'} לנייר בודד (${pct(x.cap,0)}). המשקל הזה מכוון?`,`כל שינוי של 10% במחיר שלו מזיז את כל התיק ב-${pct(x.w/10,1)}.`,{t:'fold:hExp',l:'לחשיפות'}],
   top:x=>[`${lab(x.sym)} הוא ${pct(x.w)} מהתיק. זה המשקל שרצית, או שהוא גדל עם המחיר?`,`כל שינוי של 10% במחיר שלו מזיז את כל התיק ב-${pct(x.w/10,1)}.`,{t:'fold:hExp',l:'לחשיפות'}],
   sector:x=>[`${pct(x.w)} מהתיק בענף ${x.label} (${x.n===1?'נייר אחד':x.n+' ניירות'}). זה מכוון?`,'חברות מאותו ענף מושפעות לא פעם מאותם גורמים, ולכן עשויות לזוז יחד.',{t:'fold:hExp',l:'לחשיפות לפי ענף'}],
   usd:x=>[`${pct(x.w)} מהתיק בדולרים. באיזה מטבע תשתמש בכסף כשתצטרך אותו?`,'כשהדולר זז מול השקל, השווי בשקלים זז גם בלי שינוי במחירי המניות.',{t:'fold:hStress:usd',l:'לתרחיש של ירידת הדולר'}],
@@ -17057,7 +17066,7 @@ function exMiss(F,X){const L=[];
   return L}
 function exSum(X){const w=X.what, g=X.notable.find(x=>x.k==='group'), u=X.expo.usdW, L=[`בתיק ${w.n===1?'נייר אחד':w.n+' ניירות'} בשווי ${ils(w.total)}.`];
   if(g)L.push(`הכי הרבה כסף נמצא בקבוצת ${g.label}: ${pct(g.w)} מהתיק.`);
-  if(w.n>=3)L.push(`שלושת הניירות הגדולים הם ${pct(X.conc.top3)} ממנו${u>=50?`, ו-${pct(u)} ממנו בדולרים`:''}.`); else if(u>=50)L.push(`${pct(u)} מהתיק בדולרים.`);
+  if(w.n>3)L.push(`שלושת הניירות הגדולים הם ${pct(X.conc.top3)} ממנו${u>=50?`, ו-${pct(u)} ממנו בדולרים`:''}.`); else if(u>=50)L.push(`${pct(u)} מהתיק בדולרים.`);
   return L.join(' ')}
 const exNav=n=>n.prof?(canWrite?`<button type="button" class="btn sm" data-prof="edit">${esc(n.l)}</button>`:''):anaNavBtn(n);
 function anaExplainPfHtml(F,X,st){
@@ -17073,13 +17082,14 @@ function anaExplainPfHtml(F,X,st){
   const s3=`<ul class="why-l"><li><b>ענף:</b> ${row(e.sector)}${e.sectorMore?` · ועוד ${e.sectorMore}`:''}</li><li><b>מטבע:</b> ${row(e.ccy)}</li><li><b>בורסה:</b> ${row(e.market)}</li></ul>`
     +(e.funds.length?`<p class="note">${esc(e.funds.map(lab).join(', '))} ${e.funds.length===1?'נספרת כקרן':'נספרות כקרנות'}, כי לא ידוע אילו חברות יש בהן.</p>`:'')+lvN('expo');
   const t1=c.top1, L4=[];
-  if(t1)L4.push(`הנייר הגדול: ${sym(t1.sym)} ${tx(pct(t1.w))}${c.cap?(t1.w>c.cap?`, מעל הכלל שלך (עד ${tx(pct(c.cap,0))})`:`; הכלל שלך: עד ${tx(pct(c.cap,0))}`):''}.`);
-  if(c.n>=3)L4.push(`3 הגדולים: ${tx(pct(c.top3))}${c.n>=5?` · 5 הגדולים: ${tx(pct(c.top5))}`:''}.`);
+  const rw=rulesDefault()?'ברירת המחדל':'הכלל שלך';
+  if(t1)L4.push(`הנייר הגדול: ${sym(t1.sym)} ${tx(pct(t1.w))}${c.cap?(t1.w>c.cap?`, מעל ${rw} (עד ${tx(pct(c.cap,0))})`:`; ${rw}: עד ${tx(pct(c.cap,0))}`):''}.`);
+  if(c.n>3)L4.push(`3 הגדולים: ${tx(pct(c.top3))}${c.n>5?` · 5 הגדולים: ${tx(pct(c.top5))}`:''}.`);
   if(c.nEff)L4.push(`התיק מפוזר כמו ${tx(c.nEff.toFixed(1))} ניירות באותו גודל, מתוך ${c.n}.`);
-  if(c.overPos.length>1)L4.push(`${c.overPos.length} ניירות מעל הכלל שלך לנייר בודד: ${c.overPos.map(x=>sym(x.sym)+' '+tx(pct(x.w))).join(', ')}.`);
-  for(const g of c.overGroup)L4.push(`קבוצת ${esc(g.label)}: ${tx(pct(g.w))}, מעל הכלל שלך לקבוצה (עד ${tx(pct(c.gcap,0))}).`);
+  if(c.overPos.length>1)L4.push(`${c.overPos.length} ניירות מעל ${rw} לנייר בודד: ${c.overPos.map(x=>sym(x.sym)+' '+tx(pct(x.w))).join(', ')}.`);
+  for(const g of c.overGroup)L4.push(`קבוצת ${esc(g.label)}: ${tx(pct(g.w))}, מעל ${rw} לקבוצה (עד ${tx(pct(c.gcap,0))}).`);
   if(c.co)L4.push(`${tx(pct(c.co.w))} מהתיק בניירות שעלו וירדו יחד ברוב הימים: ${esc(c.co.groups.map(g=>g.name).join(', '))}.`);
-  const s4=`<ul class="why-l">${L4.map(x=>`<li>${x}</li>`).join('')}</ul>${lvN('conc')}`;
+  const s4=`<ul class="why-l">${L4.map(x=>`<li>${x}</li>`).join('')}</ul>${rulesNote()}${lvN('conc')}`;
   const miss=exMiss(F,X);
   const s5=(miss.length?`<ul class="why-l">${miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:'<p>אין נתון חסר מהסוגים שהדף בודק: מחירים, מחירי קנייה, ענף והרכב קרנות.</p>')+lvN('miss');
   const s6=X.questions.length?`<dl class="stq">${X.questions.map(x=>{const [q,b,n]=EXQ[x.k](x); return `<div><dt>${tx(q)}</dt><dd>${tx(b)}${n?`<span class="ex-go">${exNav(n)}</span>`:''}</dd></div>`}).join('')}</dl>${lvN('ask')}`:'<p class="note">אין כרגע שאלה שהנתונים מעלים.</p>';
@@ -17203,6 +17213,9 @@ const LVN={
   anaPlan:{pro:'מול העלות = (שווי − עלות) ÷ עלות, לא משוקלל זמן. מול ההפקדות = שווי − סך ההפקדות נטו. היעד אחרי מס: מס רווחי הון בשיעור שבהגדרות, על הרווח מול העלות.'}};
 function lvCtl(){const lv=levelOf(); return `<div class="lv-ctl"><span>רמת ההסבר:</span><div class="chips" role="group" aria-label="רמת ההסבר">${Object.keys(LEVEL).map(k=>`<button type="button" class="chip" data-lv="${k}" aria-pressed="${k===lv}">${LEVEL[k]}</button>`).join('')}</div></div>`}
 const ANA_REDRAW={};   // the cards drawn again when the level changes: card id -> draw
+let ANA_PENDX=null;   // an explanation that waits for its first prices: {id, o}; drawn when they come (anaPendX)
+function anaPendX(){const p=ANA_PENDX; if(!p||ANA_BUSY)return; const box=$('anaOut'); if(!box||!box.querySelector('[data-card="'+p.id+'"]')){ANA_PENDX=null;return}
+  const F=anaFacts(); if(F.empty||!exposures(F.m,P,Q,secOfIt))return; ANA_PENDX=null; anaRun('explain',null,{...p.o,redraw:p.id})}
 function lvSet(k,from){if(!LEVEL[k])return; const was=levelOf();
   if(k!==was){if(S.profile)S.profile={...S.profile,level:k}; else S.level=k; if(canWrite)changed()}
   const box=$('anaOut'); for(const [id,f] of Object.entries(ANA_REDRAW)){if(box&&box.querySelector('[data-card="'+id+'"]')){try{f()}catch(e){}} else delete ANA_REDRAW[id]}
@@ -17383,9 +17396,9 @@ async function anaRun(kind,q,o){
     if(Q_WHY.test(qq))return anaRun('why',null,{...o,said:qq});
     if(qq.length<50&&Q_EXPLAIN.test(qq))return anaRun('explain',null,{...o,said:qq})}
   if(kind==='advice'||kind==='future'){anaOpen(o.src); anaUser(o.said||'',!o.said); const sid='c'+(++ANA_SEQ); anaCard(sid,anaLimitHtml(kind)); if(o.fromInput)anaScroll(sid); else anaFocus(sid); anaLive('התשובה מוכנה'); return}
-  anaOpen(o.src);
-  if(o.first)anaSys(kind==='explain'?'התיק נשמר. זה ההסבר הראשון שלו, מהנתונים שבדף.':'התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='explain'?'הסבר את התיק שלי':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':kind==='why'?'למה התיק זז היום?':qq),!o.said&&!o.fromInput);
-  const F=anaFacts(), id='c'+(++ANA_SEQ), shown=()=>{if(o.fromInput)anaScroll(id); else anaFocus(id)};
+  if(!o.redraw)anaOpen(o.src);
+  if(o.redraw){}else if(o.first)anaSys(kind==='explain'?'התיק נשמר. זה ההסבר הראשון שלו, מהנתונים שבדף.':'התיק נשמר. זה הניתוח הראשון שלו, מהנתונים שבדף.'); else anaUser(o.said||(kind==='analyze'?'נתח לי את התיק':kind==='explain'?'הסבר את התיק שלי':kind==='day'?'סכם לי את היום':kind==='crisis'?'מה באמת קורה בתיק?':kind==='why'?'למה התיק זז היום?':qq),!o.said&&!o.fromInput);
+  const F=anaFacts(), id=o.redraw||'c'+(++ANA_SEQ), shown=()=>{if(o.fromInput||o.redraw)anaScroll(id); else anaFocus(id)};
   anaLive('צ׳יקו עונה…');
   if(F.empty){anaCard(id,anaHead(F.empty==='nopf'?'אין עדיין תיק לנתח':'הנתונים עוד נטענים')+`<p>${F.empty==='nopf'?'כדי לנתח את התיק צריך קודם להוסיף אותו: צילום מסך, קובץ, או הקלדה של כמה שורות.':'המחירים ונתוני התיק עוד נטענים. נסה שוב בעוד רגע.'}</p>${F.empty==='nopf'?`<div class="ana-navs">${anaNavBtn({t:'mine',l:'להוספת תיק'})}</div>`:''}`); shown(); anaLive('התשובה מוכנה'); return}
   if(kind==='why'){const W=whyMove(F.m,Q,P,F.R), draw=()=>anaCard(id,anaWhyHtml(F,W)); ANA_REDRAW[id]=draw; draw(); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
@@ -17393,7 +17406,9 @@ async function anaRun(kind,q,o){
   if(kind==='explain'){
     const ctx={R:F.R,years:+S.years||0,goal:+S.goal||0,tsum:F.tsum,co:F.co,coTo:CM&&CM.to||null,flows:flowsView(S.flows,F.m,+S.years||0)}, st={sum:null,note:ai?'thinking':first?'first':'noai'};
     let E=exposures(F.m,P,Q,secOfIt), X=E?pfExplain(F.m,E,ctx):null;
-    if(!X){anaCard(id,anaHead('הסבר התיק שלך')+'<p>אין עדיין שווי לחשב: חסרים מחירים לניירות בתיק.</p>'); shown(); anaLive('התשובה מוכנה'); return}
+    if(!X){const wait=[...new Set((P.positions||[]).map(p=>p.sym))];
+      anaCard(id,anaHead('הסבר התיק שלך')+`<p>${wait.length?`המחירים של ${esc(wait.map(lab).join(', '))} עוד לא הגיעו, ובלי מחיר אין שווי לחשב.`:'אין עדיין שווי לחשב.'} המחירים מתעדכנים כל 5 דקות כשהבורסה בתל אביב או בניו יורק פתוחה, ובשאר הזמן פעם בשעה. כשהם יגיעו, ההסבר יופיע כאן.</p>`);
+      ANA_PENDX={id,o}; shown(); anaLive('ממתין למחירים'); return}
     const draw=()=>anaCard(id,anaExplainPfHtml(F,X,st)); ANA_REDRAW[id]=draw; draw(); shown();
     // the sectors come from the page's symbol list; when it is still loading, the card is drawn again once it is in
     if(!SYMDB){ANA_BUSY=true; anaBusyUi(true); try{await Promise.race([loadSymDb(),new Promise(r=>setTimeout(r,3000))])}catch(e){}finally{ANA_BUSY=false; anaBusyUi(false)}
@@ -18413,7 +18428,7 @@ async function save(){
 }
 document.addEventListener('input',ev=>{
   const el=ev.target;
-  if(MAP[el.id]){const sb=JSON.stringify(S), v=el.value===''?0:+el.value,[a,b]=MAP[el.id]; if(b)S[a][b]=v; else S[a]=v; changed(); if(b==null?a==='goal':a==='rules')settingTouched(sb)}
+  if(MAP[el.id]){const sb=JSON.stringify(S), v=el.value===''?0:+el.value,[a,b]=MAP[el.id]; if(b)S[a][b]=v; else S[a]=v; if(b&&a==='rules')S.rulesAt=new Date().toISOString(); changed(); if(b==null?a==='goal':a==='rules')settingTouched(sb)}
   else if(el.id==='inFrac'){S.fractional=el.checked;changed()}
   else if(WIK[el.id]){WI[WIK[el.id]]=+el.value||0;try{renderGoal(mAllNow())}catch(e){}}
   else if(el.dataset.pf&&DRAFT){const p=DRAFT.positions[+el.dataset.i],f=el.dataset.pf; if(!p)return;
@@ -18917,6 +18932,16 @@ async function readStatement0(fromText){
   upTick(false); upCtl=null; OVER=0; $('btnRead').disabled=!canWrite||coolLeft()>0; $('btnStop').hidden=true; showStaged();
   {const el=$('upProg'), run=el&&el.querySelector('li.now'); if(run&&/Claude/.test(run.textContent))run.remove(); if(el&&upFailed)el.hidden=true}
 }
+// ---- stage 8 (onboarding): a new holding's price as soon as it can be had. The server's view of the shared prices
+// includes a holding once it is saved, so the prices are read again; a security nobody held before gets an update request
+// on the site (the server's /api/prices, cached there for 3 minutes). Waits at most 12 seconds; never blocks the save.
+async function pxAfterSave(syms){
+  if(LOCAL||!db||!syms.length)return; const reread=async()=>{try{const s=await db.doc('quotes/latest').get(); if(s&&s.exists){RAWQ=s.data(); mergeQ(); render(); try{anaPendX()}catch(e){}}}catch(e){}};
+  const missing=()=>syms.filter(k=>!RAWQ||(RAWQ.prices||{})[k]==null);
+  await reread(); if(!missing().length||!window.__tc)return;
+  try{const m=MCP||await window.claude.use('mcp'); if(m)await m.callTool(PXSRV,'fire_trigger',{trigger_id:PXTRIG,text:'תיק נשמר עם ניירות חדשים'},{cache:false})}catch(e){}
+  await reread()}
+const pxAfterSaveMax=syms=>Promise.race([pxAfterSave(syms),new Promise(r=>setTimeout(r,12000))]);
 async function savePf(){
   if(!DRAFT)return; const st=$('pfSaved');
   const pos=DRAFT.positions.filter(p=>p.sym&&+p.qty>0).map(p=>{const o={...p,sym:String(p.sym).toUpperCase().replace(/[^A-Z0-9.]/g,'').slice(0,12),name:String(p.name||p.sym).slice(0,60),qty:+p.qty,
@@ -18945,7 +18970,10 @@ async function savePf(){
       if(U0.HS&&JSON.stringify(U0.HS)!==JSON.stringify(HS)){HS=cl(U0.HS);await pset('history',U0.HS)}
       mergeQ(); render(); $('pfSaved').textContent='השמירה בוטלה. התיק חזר למצב שלפניה.'},15000);
     upStep(0); st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+txNote+(gone.length?(purged?`. ${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`, אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
-    if(!(U0.P&&(U0.P.positions||[]).length))setTimeout(()=>{try{showTab('overview',true);anaRun('explain',null,{first:true})}catch(e){}},350);
+    {const added=[...now].filter(x=>!before.has(x)), firstPf=!(U0.P&&(U0.P.positions||[]).length);
+      // the first explanation waits (at most 12 seconds) for the prices of what was just saved
+      const go=added.length?pxAfterSaveMax(added):Promise.resolve();
+      if(firstPf)go.then(()=>{try{showTab('overview',true);anaRun('explain',null,{first:true})}catch(e){}})}
     const miss=pos.filter(p=>!RAWQ||(RAWQ.prices||{})[p.sym]==null).map(p=>p.sym);
     if(miss.length)$('upState').textContent=`עדיין אין מחיר חי ל-${[...new Set(miss)].join(', ')}. עד שיתווסף, מוצג המחיר מהדוח.`;
   }catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
@@ -20081,7 +20109,7 @@ try{refreshBack()}catch(e){}
   ARCON=!LOCAL; arcUi();
   if(ARCON){try{db.collection(PATHS.arc).orderBy('createdAt','desc').limit(80).onSnapshot(s=>{ARC=s.docs.map(d=>({id:d.id,...d.data()}));renderArc()},()=>{})}catch(e){ARCON=false;arcUi()}}
   pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();render()}else{$('fresh').textContent='עדיין אין נתוני תיק.';render()}},fail);
-  db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();render();try{pxOnQuotes()}catch(e){}}},fail);
+  db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();render();try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
   pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}render()},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();render()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};render()},fail);
