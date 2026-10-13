@@ -3,7 +3,7 @@ export const timedFetch=(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||Abor
 // Market prices for the page: Yahoo Finance (US and Tel Aviv), Stooq as a fallback for US tickers, the Bank of Israel
 // representative rate and the live USD/ILS rate. Plain fetch, so the same code runs in GitHub Actions and in the
 // Cloudflare function. Nothing here is advice: numbers in, numbers out.
-import {dm} from './market.js';
+import {dm, nyParts, ilParts} from './market.js';
 
 const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
 const YH=['https://query1.finance.yahoo.com','https://query2.finance.yahoo.com'];
@@ -92,15 +92,17 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
 export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new Date(),usOpen=false,ilOpen=false}){
   const prices={...(old.prices||{})}, prevC={...(old.prev||{})}, stale={}, meta={...(old.meta||{})};
   const posOf=Object.fromEntries(positions.map(p=>[p.sym,p]));
-  let usDate='', prevDate='';
+  let usDate='', prevDate='', ilDate='', got=0;
   for(const sym of symbols){
     const q=fetched.quotes[sym];
-    if(q){prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time};
+    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
+      if(q.ccy!=='USD'&&q.closeDate>ilDate)ilDate=q.closeDate;
       if(q.src==='stooq')stale[sym]='סגירה '+dm(q.closeDate);
       continue}
     const ix=fetched.index[sym];
     if(ix&&PROXY[sym]&&ix.prev>0){ // an index fund priced from its index, from the last close we have
+      got++; if(ix.closeDate>ilDate)ilDate=ix.closeDate;
       const m=meta[sym]||{}; let base=prevC[sym];
       if(m.src==='index'&&m.date&&ix.closeDate>m.date&&prices[sym]>0)base=prices[sym];
       if(!(base>0))base=prices[sym]>0?prices[sym]:(posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:null);
@@ -110,8 +112,19 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   }
   const fx=fetched.fx||{}; const usdIls=fx.live&&fx.live.px>0?round(fx.live.px,4):fx.boi?round(fx.boi.rate,4):old.usdIls;
   const fxLabel=fx.boi?`יציג בנק ישראל ${dm(fx.boi.date)}${fx.live&&fx.live.px>0?' · שער שוק '+round(fx.live.px,3):''}`:fx.live?'שער שוק':(old.fxLabel||'');
-  const priceLabel=usOpen?'מסחר חי, עיכוב של עד 15 דקות':ilOpen?`מסחר חי בתל אביב · ארה״ב: סגירה ${usDate?dm(usDate):''}`.trim():usDate?`סגירה ${dm(usDate)}`:(old.priceLabel||'');
+  // a price we hold but did not refresh this time (past the symbol cap, or nobody holds it now) is marked as old
+  for(const sym of Object.keys(prices))if(!symbols.includes(sym)&&!stale[sym]){const d=(meta[sym]||{}).date; stale[sym]=d?'סגירה '+dm(d):'מחיר קודם'}
+  // "live" only when the data says so: the market is open by the clock AND today's trades arrived (on a holiday, or when
+  // every fetch failed, the last close is shown as a close)
+  const usLive=usOpen&&!!usDate&&usDate===nyParts(now).iso, ilLive=ilOpen&&!!ilDate&&ilDate===ilParts(now).iso;
+  const failed=symbols.length>0&&got===0;
+  const priceLabel=failed?'המחירים האחרונים שהתקבלו':usLive?'מסחר חי, עיכוב של עד 15 דקות':ilLive?`מסחר חי בתל אביב${usDate?' · ארה״ב: סגירה '+dm(usDate):''}`:usDate?`סגירה ${dm(usDate)}`:(old.priceLabel||'');
+  const usD=usDate||old.usDate||'', ilD=ilDate||old.ilDate||'';
   return {prices,prev:prevC,stale,meta,usdIls,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
-    source:'Yahoo Finance, בנק ישראל',updatedAt:now.toISOString(),errors:(fetched.errors||[]).slice(0,40)};
+    source:'Yahoo Finance, בנק ישראל',
+    // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
+    updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
+    usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive,
+    errors:(fetched.errors||[]).slice(0,40)};
 }
 const round=(x,n=2)=>{const k=Math.pow(10,n);return Math.round(x*k)/k};

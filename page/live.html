@@ -15071,7 +15071,7 @@ function pxNextTxt(now){
   return ' ·\u00a0'+['העדכון','הבא',...(dd<=0?[]:dd===1?['מחר']:['ביום',HDAY[b.wd]]),hm(n)].join('\u00a0');
 }
 // the line under the title: what the prices are, when they were refreshed, when the next refresh is due
-const freshTxt=()=>`${Q.priceLabel||''} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${mktOpen()?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
+const freshTxt=()=>`${Q.priceLabel||''} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
 // an open page keeps that line true as the hours pass, and redraws when the prices turn late (or stop being late)
 let FRESH='', LATE=null;
 setInterval(()=>{try{if(!P||!Q||!Q.updatedAt)return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
@@ -15089,11 +15089,16 @@ const tzParts=(()=>{const F={}; return (tz,d)=>{try{
   F[tz]=F[tz]||new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',weekday:'short',hour:'2-digit',minute:'2-digit'});
   const o={}; for(const p of F[tz].formatToParts(d))o[p.type]=p.value;
   return {wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(o.weekday),t:(+o.hour)%24*60+(+o.minute)}}catch(e){return null}}})();
-// New York 9:30-16:00, Monday to Friday (holidays are not known here; a refresh on one only repeats the last close)
-const usOpen=now=>{const p=tzParts('America/New_York',now||new Date()); return !!p&&p.wd>=1&&p.wd<=5&&p.t>=570&&p.t<960};
-// Tel Aviv 10:00-17:30 Monday to Thursday, until 14:15 on Friday
-const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); return !!p&&p.wd>=1&&p.wd<=5&&p.t>=600&&p.t<(p.wd===5?855:1050)};
+// New York 9:30-16:00, Monday to Friday, without the NYSE's holidays and with its 13:00 early closes (the NYSE calendar
+// for 2026-2027). Tel Aviv holidays are not listed: the price document says when no trade arrived today.
+const NYSE_CLOSED=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']), NYSE_EARLY=new Set(['2026-11-27','2026-12-24','2027-11-26']);
+const tzDay=(tz,d)=>{try{return (d||new Date()).toLocaleDateString('en-CA',{timeZone:tz})}catch(e){return ''}};
+const usOpen=now=>{const p=tzParts('America/New_York',now||new Date()), day=tzDay('America/New_York',now); return !!p&&p.wd>=1&&p.wd<=5&&!NYSE_CLOSED.has(day)&&p.t>=570&&p.t<(NYSE_EARLY.has(day)?780:960)};
+// Tel Aviv 10:00-17:30 Monday to Thursday, until 14:00 on Friday
+const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); return !!p&&p.wd>=1&&p.wd<=5&&p.t>=600&&p.t<(p.wd===5?840:1050)};
 const mktOpen=now=>usOpen(now)||ilOpen(now);
+// "today" only when the last trades are from today; on a weekend or a holiday the move is the last trading day's
+const dayWord=()=>{const lt=Q&&Q.lastTradeDay; return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
 const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}catch(e){PXF=null} if(PXF&&!(Date.now()-new Date(PXF.at)<PXWAIT*6e4))PXF=null};
 const pxSave=()=>{try{if(PXF)localStorage.setItem('tr_pxfire',JSON.stringify(PXF));else localStorage.removeItem('tr_pxfire')}catch(e){}};
@@ -15110,7 +15115,7 @@ function pxGaveUp(){PXF=null; PXOFF='late'; pxSave(); pxLine(); offerUndo('עד�
 // the quotes document changed: a refresh that was in flight has landed when the prices are newer than its start
 function pxOnQuotes(){
   const first=!PXQ; PXQ=true;
-  if(PXF&&Q&&Q.updatedAt&&new Date(Q.updatedAt)>new Date(PXF.at))pxDone(); else pxLine();
+  if(PXF&&Q&&Q.updatedAt&&new Date(Q.updatedAt)>new Date(PXF.at))pxDone(); else if(PXF&&Q&&Q.attemptAt&&new Date(Q.attemptAt)>new Date(PXF.at))pxGaveUp(); else pxLine(); // a run that brought no prices: say so now, not after 4 minutes
   if(first)pxAuto('open');
 }
 // start the task; the answer says only that it was started, the prices arrive through the database
@@ -15286,7 +15291,7 @@ function render(){
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF)$('fresh').textContent=FRESH; LATE=pxLate();
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
-  const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} היום`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
+  const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
   $('kPnlD').textContent=m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:''):'אין נתוני עלות';
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
@@ -17948,7 +17953,7 @@ async function savePf(){
     let txNote=''; try{const hx=historyWithTx(); if(hx){await pset('history',hx.H); HS=hx.H; txNote=hx.added?` נוספו ${hx.added} פעולות להיסטוריה.`:' הפעולות כבר היו בהיסטוריה.'} DRAFT.tx=[]; renderTx()}catch(e){txNote=' הפעולות לא נשמרו, נסה שוב.'}
     const now=new Set(pos.map(p=>p.sym)), gone=[...before].filter(x=>!now.has(x)), purged=gone.length?await purgeSyms(gone):true;
     const arcHit=gone.length?ARC.filter(e=>{const t=JSON.stringify(e.R||'')+JSON.stringify(e.snap||'');return gone.some(x=>t.includes('"'+x+'"'))}).length:0;
-    if(!OWNER&&!LOCAL&&MYID){const syms=[...new Set(pos.filter(p=>p.ccy==='USD'&&/^[A-Z]{1,5}$/.test(p.sym)).map(p=>p.sym))].slice(0,40);
+    if(!OWNER&&!LOCAL&&MYID){const syms=[...new Set(pos.filter(p=>(p.ccy==='USD'&&/^[A-Z][A-Z.\-]{0,5}$/.test(p.sym))||/^\d{5,9}$/.test(p.sym)||/^TA(125|90)$/.test(p.sym)).map(p=>p.sym))].slice(0,40);
       watchSave({held:syms}).catch(()=>{})}
     if(U0.P)offerUndo('התיק נשמר',async()=>{
       await pset('portfolio',U0.P); P=cl(U0.P); DRAFT=null; dDirty=false;
