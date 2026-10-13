@@ -81,7 +81,8 @@ export function access(user,p){
   if(!user)return '';
   const seg=p.split('/'), owner=user.role==='owner';
   if(seg[0]==='data'&&seg[1]==='users')return seg[2]===user.id?'rw':'';
-  if(seg[0]==='watch')return seg[1]===user.id?'rw':owner?'r':'';
+  // each person's list of symbols is theirs alone; the price job reads them on the server, not through this matrix
+  if(seg[0]==='watch')return seg[1]===user.id?'rw':'';
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(['portfolio','plan','settings','history','reports','alerts'].includes(seg[0]))return owner?'rw':'';
@@ -89,3 +90,28 @@ export function access(user,p){
 }
 export const canRead=(u,p)=>access(u,p)!=='';
 export const canWrite=(u,p)=>access(u,p)==='rw';
+
+// ---- the shared documents as a partner sees them: only the securities of their own portfolio, history, settings and
+// watch list. The prices, the monthly closes and the research all cover everybody's securities (the owner's and the
+// other partners'), and a list of what someone holds is private even without the quantities.
+const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm']);
+export function symsOfUser(store,uid){
+  const out=new Set(), walk=v=>{if(Array.isArray(v)){for(const x of v)walk(x)}else if(isMap(v)){for(const [k,x] of Object.entries(v)){if(k==='sym'&&typeof x==='string')out.add(x); else walk(x)}}};
+  for(const d of ['portfolio','history','settings']){const r=store.getDoc(`data/users/${uid}/${d}`); if(r.exists)walk(r.data)}
+  const st=store.getDoc(`data/users/${uid}/settings`); if(st.exists&&isMap(st.data.pxAlerts))for(const k of Object.keys(st.data.pxAlerts))out.add(k.replace(/^TLV:/,''));
+  const w=store.getDoc('watch/'+uid); if(w.exists)for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(typeof s==='string')out.add(s.replace(/^TLV:/,''));
+  return out;
+}
+export function partnerView(store,user,p,data){
+  if(!user||user.role==='owner'||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
+  const ok=symsOfUser(store,user.id), has=s=>ok.has(s), pick=m=>isMap(m)?Object.fromEntries(Object.entries(m).filter(([k])=>has(k))):m;
+  const both=a=>Array.isArray(a)?a.filter(o=>o&&has(o.a)&&has(o.b)):a, only=a=>Array.isArray(a)?a.filter(has):a;
+  if(p==='quotes/latest'){const {errors,...rest}=data; return {...rest,prices:pick(data.prices),prev:pick(data.prev),stale:pick(data.stale),meta:pick(data.meta)}}
+  if(p==='history/prices')return {...data,px:pick(data.px)};
+  if(p==='research/latest')return {...data,companies:pick(data.companies),events:Array.isArray(data.events)?data.events.filter(e=>!e||!e.sym||has(e.sym)):data.events};
+  if(p==='research/longterm')return {...data,pairs:both(data.pairs)};
+  // research/comove
+  return {...data,groups:Array.isArray(data.groups)?data.groups.map(g=>({...g,syms:only(g&&g.syms)})).filter(g=>g.syms&&g.syms.length>1):data.groups,
+    pairs:both(data.pairs),opposite:both(data.opposite),solo:only(data.solo),nodata:only(data.nodata),
+    whyPairs:isMap(data.whyPairs)?Object.fromEntries(Object.entries(data.whyPairs).filter(([k])=>k.split('|').every(has))):data.whyPairs};
+}

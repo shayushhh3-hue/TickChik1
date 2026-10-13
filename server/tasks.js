@@ -131,7 +131,7 @@ export async function monthlyTask(store,{log,ym=null}={}){
   let idx=months.indexOf(ym); if(idx<0){months.push(ym);months.sort();idx=months.indexOf(ym);for(const s of Object.values(ser))s.splice(idx,0,null)}
   for(const s of new Set([...Object.keys(ser),...positions.map(x=>x.sym)])){const arr=ser[s]||(ser[s]=new Array(months.length).fill(null)); while(arr.length<months.length)arr.push(null); const v=src[s]; if(v>0)arr[idx]=Math.round(v*1e4)/1e4}
   store.setDoc('history/prices',{...px,months,px:ser,updatedAt:now.toISOString()});
-  log(`month ${ym}: total ${tot} ₪, ${months.length} months of closes${last?'':' (estimated from the positions)'}`);
+  log(`month ${ym}: saved, ${months.length} months of closes${last?'':' (estimated from the positions)'}`);
   return row;
 }
 

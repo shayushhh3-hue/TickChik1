@@ -3,7 +3,8 @@
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import {Store, access} from '../server/store.js';
+import {Store, access, partnerView} from '../server/store.js';
+import fs from 'node:fs';
 import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.js';
 import {ilOpen, usOpen, inPxWindow} from '../shared/market.js';
 
@@ -43,7 +44,7 @@ test('access: the same matrix as the artifact',()=>{
   const O={id:'u_o',role:'owner'}, F={id:'u_f',role:'friend'}, G={id:'u_g',role:'friend'};
   for(const p of ['portfolio/main','plan/main','settings/main','history/main','history/daily','reports/archive/items/x','alerts/state'])assert.equal(access(O,p),'rw',p),assert.equal(access(F,p),'',p);
   for(const p of ['quotes/latest','quotes/c_MSFT','research/latest','history/prices'])assert.equal(access(O,p),'rw',p),assert.equal(access(F,p),'r',p);
-  assert.equal(access(F,'watch/u_f'),'rw'); assert.equal(access(F,'watch/u_g'),''); assert.equal(access(O,'watch/u_f'),'r');
+  assert.equal(access(F,'watch/u_f'),'rw'); assert.equal(access(F,'watch/u_g'),''); assert.equal(access(O,'watch/u_f'),'','a partner\'s list of symbols is theirs alone');
   assert.equal(access(F,'data/users/u_f/settings/main'),'rw'); assert.equal(access(F,'data/users/u_g/settings/main'),''); assert.equal(access(O,'data/users/u_f/settings/main'),'','the owner does not see a partner\'s portfolio');
   assert.equal(access(null,'quotes/latest'),'');
 });
@@ -299,4 +300,80 @@ test('market hours',()=>{
   assert.equal(usOpen(new Date('2027-03-26T15:00:00Z')),false,'Good Friday 2027');
   // Tel Aviv on Friday: until 14:00
   assert.equal(ilOpen(new Date('2026-10-16T10:50:00Z')),true); assert.equal(ilOpen(new Date('2026-10-16T11:05:00Z')),false);
+});
+
+// ---- privacy ----
+// the page's redaction, taken from the page itself so the test checks the code that runs
+const PAGE=fs.readFileSync(new URL('../page/live.html',import.meta.url),'utf8');
+const redactPII=new Function(PAGE.slice(PAGE.indexOf('// ---- redact:start'),PAGE.indexOf('// ---- redact:end'))+';return redactPII')();
+test('privacy: personal details out of a statement\'s text, the holdings untouched',()=>{
+  const r=redactPII([
+    'שם הלקוח: ישראל ישראלי ת.ז. 012345674 מספר חשבון: 123-456789/12 תאריך 30/09/2026',
+    'חשבון מספר \u202a654321\u202c :',
+    '012345674 :ז.ת',
+    'כתובת: הרצל 12, תל אביב תאריך הדוח 30.09.2026 · מיקוד 6100000',
+    'טלפון 054-1234567 · a.b@gmail.com · IBAN IL62 0108 0000 0009 9999 999',
+    'לכבוד\nישראל ישראלי\nרח\' הרצל 12',
+    'TEVA,629014,100,3512.00,351200.00',
+    'טבע תעשיות 629014 100 35.12 3,512.00 · אחוז מהתיק 4.2',
+    'יתרת מזומן בחשבון,12345.67 · מענק 500 ש"ח · Security ID: 1159250 · paid 123456789',
+    'עמוד 1 · 654321',
+    'חשבון,נייר,כמות,שווי\n777888,KO,10,700',
+  ].join('\n'),{first:'ישראל',last:'ישראלי'});
+  const t=r.text;
+  for(const gone of ['012345674','123-456789/12','654321','הרצל','6100000','054-1234567','a.b@gmail.com','IL62','ישראלי','777888'])assert.ok(!t.includes(gone),gone+' was removed');
+  for(const kept of ['30/09/2026','30.09.2026','TEVA,629014,100,3512.00,351200.00','629014 100 35.12 3,512.00','4.2','12345.67','מענק 500','1159250','123456789','KO,10,700'])assert.ok(t.includes(kept),kept+' was kept');
+  assert.deepEqual(Object.keys(r.kinds).sort(),['acct','addr','id','mail','name','phone']);
+  assert.equal(redactPII('MSFT 3 4200\nNVDA 1.5 900',{}).n,0,'a plain list of holdings has nothing to remove');
+});
+
+test('privacy: a partner sees only their own securities in the shared documents',()=>{
+  const s=new Store(':memory:');
+  const O={id:'u_o',role:'owner'}, A={id:'u_a',role:'friend'};
+  s.setDoc('data/users/u_a/portfolio',{positions:[{sym:'KO',qty:1}]}); s.setDoc('watch/u_a',{syms:['V'],held:['KO'],marks:[],seen:['1159250']});
+  s.setDoc('data/users/u_a/settings',{pxAlerts:{'TLV:629014':{above:40}}});
+  const Q={prices:{MSFT:500,KO:70,V:300,NVDA:180,'1159250':4.1,'629014':35},prev:{MSFT:490,KO:69,NVDA:170},stale:{NVDA:'מחיר קודם'},meta:{MSFT:{},KO:{}},usdIls:3.1,priceLabel:'x',errors:['NVDA: down','RDW: down'],got:5,of:6};
+  const a=partnerView(s,A,'quotes/latest',Q);
+  assert.deepEqual(Object.keys(a.prices).sort(),['1159250','629014','KO','V']); assert.deepEqual(Object.keys(a.prev),['KO']); assert.deepEqual(a.stale,{});
+  assert.equal(a.errors,undefined,'the failures name everybody\'s symbols'); assert.equal(a.usdIls,3.1); assert.equal(a.priceLabel,'x');
+  assert.equal(partnerView(s,O,'quotes/latest',Q),Q,'the owner sees everything');
+  assert.deepEqual(Object.keys(partnerView(s,A,'history/prices',{months:['2026-09'],px:{MSFT:[1],KO:[2]}}).px),['KO']);
+  assert.deepEqual(Object.keys(partnerView(s,A,'research/latest',{companies:{MSFT:{},KO:{}},events:[]}).companies),['KO']);
+  const cm=partnerView(s,A,'research/comove',{groups:[{name:'g',syms:['MSFT','KO','V']},{name:'h',syms:['NVDA','KO']}],pairs:[{a:'KO',b:'V'},{a:'KO',b:'MSFT'}],opposite:[],solo:['KO','META'],nodata:['TA125'],whyPairs:{'KO|V':'x','KO|MSFT':'y'}});
+  assert.deepEqual(cm.groups.map(g=>g.syms),[['KO','V']]); assert.deepEqual(cm.pairs,[{a:'KO',b:'V'}]); assert.deepEqual(cm.solo,['KO']); assert.deepEqual(cm.nodata,[]); assert.deepEqual(Object.keys(cm.whyPairs),['KO|V']);
+  assert.deepEqual(partnerView(s,A,'research/longterm',{pairs:[{a:'KO',b:'V'},{a:'MSFT',b:'KO'}]}).pairs,[{a:'KO',b:'V'}]);
+  assert.deepEqual(partnerView(s,A,'research/candidates',{items:[{sym:'PG'}]}),{items:[{sym:'PG'}]},'the general candidates list is the same for all');
+});
+
+test('privacy: over the API, partners and the owner do not see each other\'s symbols',async()=>{
+  const {store,srv,base,req,jar}=await startApp();
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    const mk=async(who,email)=>{await req('o','POST','/api/users',{email,password:'first-pass-1'}); const r=await req(who,'POST','/api/login',{email,password:'first-pass-1'}); await req(who,'POST','/api/password',{old:'first-pass-1',password:'my-own-pass'}); return r.j.me.id};
+    const a=await mk('a','a@example.com'), b=await mk('b','b@example.com');
+    assert.equal((await req('a','PUT','/api/db/doc?path=watch/'+a,{held:['KO'],syms:[],marks:[],seen:[]})).status,200);
+    assert.equal((await req('b','PUT','/api/db/doc?path=watch/'+b,{held:['PEP'],syms:[],marks:[],seen:[]})).status,200);
+    store.setDoc('quotes/latest',{prices:{MSFT:500,KO:70,PEP:150},usdIls:3.1,errors:['PEP: x']});
+    let r=await req('a','GET','/api/db/doc?path=quotes/latest'); assert.deepEqual(Object.keys(r.j.data.prices),['KO'],'not the owner\'s MSFT, not B\'s PEP');
+    r=await req('o','GET','/api/db/doc?path=quotes/latest'); assert.deepEqual(Object.keys(r.j.data.prices).sort(),['KO','MSFT','PEP']);
+    assert.equal((await req('a','GET','/api/db/list?path=quotes')).status,403,'no listing of the shared collections');
+    assert.equal((await req('a','GET','/api/db/list?path=research')).status,403);
+    assert.equal((await req('o','GET','/api/db/doc?path=watch/'+a)).status,403,'the owner does not see a partner\'s list');
+    assert.equal((await req('o','GET','/api/db/list?path=watch')).status,403);
+    r=await req('o','GET','/api/db/export'); assert.ok(!Object.keys(r.j.docs).some(p=>p.startsWith('watch/')),'nor in the export');
+    r=await req('o','POST','/api/db/import',{docs:{['watch/'+a]:{held:['X']}}}); assert.equal(r.j.n,0,'and the import does not write it');
+    r=await req('a','GET','/api/db/export'); assert.ok(r.j.docs['watch/'+a]&&!r.j.docs['watch/'+b]);
+    // the live stream does not tell a partner which charts the server refreshes
+    const ctl=new AbortController(), got=[]; const sr=await fetch(base+'/api/db/stream',{headers:{cookie:jar.a},signal:ctl.signal});
+    const rd=sr.body.getReader(); const pump=(async()=>{try{for(;;){const {value,done}=await rd.read(); if(done)break; got.push(new TextDecoder().decode(value))}}catch(e){}})();
+    await new Promise(r=>setTimeout(r,100)); store.setDoc('quotes/c_MSFT',{closes:[]}); store.setDoc('quotes/latest',{prices:{}}); await new Promise(r=>setTimeout(r,200)); ctl.abort(); await pump;
+    assert.deepEqual(got.join('').split('\n').filter(l=>l.startsWith('data: ')).map(l=>JSON.parse(l.slice(6)).path),['quotes/latest']);
+  }finally{srv.close()}
+});
+
+test('privacy: no portfolio numbers or e-mail addresses in the log',async()=>{
+  const {sendMail}=await import('../server/mail.js'); const lines=[], orig=console.log; console.log=(...a)=>lines.push(a.join(' '));
+  const keep={R:process.env.RESEND_API_KEY,U:process.env.MAIL_USER}; delete process.env.RESEND_API_KEY; delete process.env.MAIL_USER;
+  try{assert.equal(await sendMail({subject:'הודעת הבוקר: התיק 76,543 ₪',text:'שווי התיק 76,543 ₪, a@b.com'}),false)}finally{console.log=orig; if(keep.R)process.env.RESEND_API_KEY=keep.R; if(keep.U)process.env.MAIL_USER=keep.U}
+  assert.equal(lines.length,1); assert.ok(!/76,543|a@b\.com|הודעת הבוקר/.test(lines[0]),lines[0]);
 });

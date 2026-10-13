@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, esc as mesc} from './mail.js';
-import {Store, canRead, canWrite} from './store.js';
+import {Store, canRead, canWrite, partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
@@ -71,7 +71,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     let u; try{u=store.addUser({email,name:String(name||'').slice(0,60),password,role:'friend',mustChange:false})}
     catch(e){if(e.message!=='exists')b.miss(); return res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה. אפשר להיכנס איתה.'}[e.message]||e.message}})}
     b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
-    log('new sign-up:',u.email);
+    log('new sign-up:',u.id);
     sendMail({subject:'תיק צ׳יק – נרשם משתמש חדש',text:`${u.email} נרשם לאתר עם קוד ההזמנה.\nאפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".`,html:`<p dir="rtl"><b>${mesc(u.email)}</b> נרשם לאתר עם קוד ההזמנה.</p><p dir="rtl">אפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".</p>`}).catch(()=>{});
     res.json({ok:true,me:me(u)});
   });
@@ -104,12 +104,12 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const m=p.match(/^quotes\/c_((?:TLV_)?[A-Z0-9.\-]{1,10})$/);
     if(m&&(!d.exists||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>7*864e5))){
       const key=m[1].replace(/^TLV_/,'TLV:'); try{const doc=await chartOnce(key); return res.json({exists:true,data:doc,id:'c_'+m[1]})}catch(e){}}
-    res.json(d)});
+    res.json(d.exists?{...d,data:partnerView(store,req.user,p,d.data)}:d)});
   const CHARTS=new Map();
   const chartOnce=key=>{if(CHARTS.has(key))return CHARTS.get(key); const pr=(async()=>{
       const map=(store.getDoc('settings/main').data||{}).symMap||{};
       let doc; try{doc=await closesFor(key,map)}catch(e){doc={key,missing:true,updatedAt:new Date().toISOString()}}
-      store.setDoc('quotes/c_'+key.replace(':','_'),doc,{silent:true}); return doc})().finally(()=>setTimeout(()=>CHARTS.delete(key),60000));
+      store.setDoc('quotes/c_'+key.replace(':','_'),doc,{silent:true}); return doc})().finally(()=>setTimeout(()=>CHARTS.delete(key),60000).unref());
     CHARTS.set(key,pr); return pr};
   app.put('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canWrite(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}}); const s=JSON.stringify(req.body); if(s.length>2e6)return res.status(413).json({error:{code:'too_large',message:'document too large'}});
@@ -119,17 +119,17 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.delete('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canWrite(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}}); store.deleteDoc(p); res.json({ok:true})});
   app.get('/api/db/list',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2===0)return res.status(400).json({error:{code:'invalid_argument',message:'bad collection'}});
-    if(!canRead(req.user,p+'/x'))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
+    if(!canRead(req.user,p+'/x')||(req.user.role!=='owner'&&!(p+'/').startsWith('data/users/'+req.user.id+'/')))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
     let where=null; if(req.query.wf){where={f:String(req.query.wf),op:String(req.query.wo||'=='),v:req.query.wv===undefined?null:JSON.parse(String(req.query.wv))}}
     res.json({docs:store.listDocs(p,{orderBy:req.query.orderBy?String(req.query.orderBy):null,dir:req.query.dir==='desc'?'desc':'asc',limit:+req.query.limit||0,where})})});
   // one import or export at a time, the owner only: the whole set of documents as {path: data}
-  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?p.startsWith('data/users/'):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
+  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
     store.batch(ws); res.json({ok:true,n:ws.length})});
-  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?p.startsWith('data/users/'):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
+  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
-    const user=req.user; const off=store.onChange(ev=>{if(canRead(user,ev.path))res.write(`data: ${JSON.stringify(ev)}\n\n`)});
+    const user=req.user; const off=store.onChange(ev=>{if(canRead(user,ev.path)&&(user.role==='owner'||!ev.path.startsWith('quotes/c_')))res.write(`data: ${JSON.stringify(ev)}\n\n`)});
     const ping=setInterval(()=>{try{res.write(':ping\n\n')}catch(e){}},25000);
     req.on('close',()=>{off();clearInterval(ping)});
   });
@@ -220,9 +220,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   let pxLast={at:0,res:null}, pxBusy=null;
   app.post('/api/prices',needUser,async(req,res)=>{
     try{
-      if(Date.now()-pxLast.at<3*60*1000&&pxLast.res)return res.json({...pxLast.res,cached:true});
-      if(!pxBusy)pxBusy=Promise.race([refreshQuotes(store,{log,reason:(req.user.role==='owner'?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('price update took too long')),120000))]).finally(()=>{pxBusy=null});
-      const r=await pxBusy; pxLast={at:Date.now(),res:r}; res.json({ok:true,...r});
+      if(Date.now()-pxLast.at<3*60*1000&&pxLast.res){const {errors,...rest}=pxLast.res; return res.json({...(req.user.role==='owner'?pxLast.res:{...rest,errors:(errors||[]).length}),cached:true})}
+      if(!pxBusy){let to; pxBusy=Promise.race([refreshQuotes(store,{log,reason:(req.user.role==='owner'?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}),new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error('price update took too long')),120000)})]).finally(()=>{clearTimeout(to);pxBusy=null})}
+      const r=await pxBusy; pxLast={at:Date.now(),res:r}; const {errors,...rest}=r; res.json({ok:true,...(req.user.role==='owner'?r:{...rest,errors:(errors||[]).length})});
     }catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}
   });
 
@@ -241,7 +241,7 @@ export function bootstrap(store){
   // the owner, from the environment, once; later password changes live in the database
   if(OWNER_EMAIL&&!store.userByEmail(OWNER_EMAIL)){
     const pw=env.OWNER_PASSWORD||''; if(pw.length<8){log('OWNER_PASSWORD missing or shorter than 8 characters: the owner cannot sign in yet');}
-    else{store.addUser({email:OWNER_EMAIL,name:env.OWNER_NAME||'',password:pw,role:'owner'});log('owner created:',OWNER_EMAIL)}
+    else{store.addUser({email:OWNER_EMAIL,name:env.OWNER_NAME||'',password:pw,role:'owner'});log('owner created')}
   }
   if(!store.getMeta('instance'))store.setMeta('instance',randomBytes(8).toString('hex'));
 }

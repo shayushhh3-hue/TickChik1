@@ -27,7 +27,9 @@ export function backupNow(store,{dataDir,keep=14,now=new Date()}={}){
 }
 
 export function ownerExport(store){
-  const docs={}; for(const [p,d] of store.allDocs()){if(p.startsWith('data/users/'))continue; docs[p]=d}
+  // the owner's data only: not the partners' areas, and not their lists of symbols
+  const own=(store.users().find(u=>u.role==='owner')||{}).id;
+  const docs={}; for(const [p,d] of store.allDocs()){if(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+own))continue; docs[p]=d}
   return {exportedAt:new Date().toISOString(),source:'tik-chik site, daily backup',docs};
 }
 
