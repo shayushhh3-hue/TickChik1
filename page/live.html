@@ -1270,6 +1270,10 @@ section.fold > .fold-h h2{margin:0}
     <div class="depban" id="depBan" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
     <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
+    <!-- 13.10 (stage 3.1): what needs attention comes first, the holdings after it -->
+    <section aria-labelledby="hDesk" id="deskSec" hidden>
+      <div class="panel desk" id="desk" tabindex="-1"></div>
+    </section>
     <section aria-labelledby="hHold" id="holdSec" class="hold lite">
       <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
       <div class="panel scroll">
@@ -1279,8 +1283,7 @@ section.fold > .fold-h h2{margin:0}
         </table>
       </div>
     </section>
-    <section aria-labelledby="hDesk" id="deskSec" hidden>
-      <div class="panel desk" id="desk" tabindex="-1"></div>
+    <section aria-labelledby="hAnaE" id="anaSec" hidden>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
         <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
         <div class="ana-chips" role="group" aria-label="להתחיל שיחה עם צ׳יקו">
@@ -16058,7 +16061,7 @@ document.addEventListener('click',ev=>{
 window.__pxal={hits:pxAlertHits,set:pxAlertSet,price:pxKeyPrice};
 function whyH(w){if(!w)return'';return `<details class="why"><summary>למה אני רואה את זה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
 function renderDesk(m,A){
-  const sec=$('deskSec'); if(!sec)return; sec.hidden=false;
+  const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
   const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length, st=nC?'crit':nW?'warn':'ok';
   let s;
   if(m.hasDay&&m.dayPct!=null){
@@ -18646,6 +18649,7 @@ const greetW=()=>{const hr=new Date().getHours();return hr<5?'לילה טוב':h
 function botTip(){
   const el=$('botTip'); if(!el||!SETK)return; const today=isoDay(Date.now()); let seen=''; try{seen=localStorage.getItem('tr_bot_tip')||''}catch(e){}
   if(seen===today||!$('anaBox').hidden||!$('profDlg').hidden||!$('repDlg').hidden||!PFK)return;
+  if(!$('toast').hidden){if((botTip.w=(botTip.w||0)+1)<=20)setTimeout(botTip,1500); return}
   const nm=String((S&&S.name)||'').trim();
   $('botTipT').textContent=`${greetW()}${nm?', '+nm:''}. אני צ׳יקו, עוזר התיק שלך. ${botStatus()}`;
   const go=$('botTipGo'); go.dataset.ana=hasPf()?'analyze':'start'; go.textContent=hasPf()?'נתח לי את התיק':'איך מתחילים?';
