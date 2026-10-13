@@ -1067,6 +1067,7 @@ section.fold > .fold-h h2{margin:0}
 .hold .hsub{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .hold.lite th:nth-child(3),.hold.lite td:nth-child(3),.hold.lite th:nth-child(4),.hold.lite td:nth-child(4),.hold.lite th:nth-child(7),.hold.lite td:nth-child(7){display:none}
 .hold .sec td{display:table-cell!important}
+.hold .pxold{color:var(--warn);font-size:12px}
 .briefd{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0}
 .briefd summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 16px}
 .briefd summary::-webkit-details-marker{display:none}
@@ -1096,6 +1097,8 @@ section.fold > .fold-h h2{margin:0}
   .hold tbody td:nth-child(7){grid-area:cost;text-align:start;font-size:12px;color:var(--muted)}
   .hold tbody td:nth-child(8){grid-area:pnl;text-align:end;font-size:12.5px}
   .hold tbody td:nth-child(3)::before{content:"כמות "} .hold tbody td:nth-child(4)::before{content:"מחיר "} .hold tbody td:nth-child(7)::before{content:"עלות "} .hold tbody td:nth-child(6)::before{content:"משקל "}
+  .hold tbody tr:not(.sec) td:nth-child(2):not(:empty)::before{content:"יומי ";color:var(--muted);font-size:12px}
+  .hold tbody tr:not(.sec) td:nth-child(8):not(:empty)::before{content:"מול עלות ";color:var(--muted);font-size:12px}
   .hold.lite tbody td:nth-child(3),.hold.lite tbody td:nth-child(4),.hold.lite tbody td:nth-child(7){display:none}
 }
 /* v133 */
@@ -1218,6 +1221,23 @@ section.fold > .fold-h h2{margin:0}
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
 .tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
+/* the holdings editor on a phone: each row is a card with a label over every field, so quantity and cost are not
+   hidden off to the side */
+@media (max-width:759px){
+  table.pf,table.pf tbody{display:block;width:100%}
+  table.pf thead{display:none}
+  table.pf tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"sym sym acct acct" "name name name del" "qty qty ccy ccy" "cost cost px px" "grp grp grp grp";gap:8px 10px;padding:12px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  table.pf td{display:flex;flex-direction:column;gap:4px;padding:0;white-space:normal;min-width:0}
+  table.pf td[data-l]::before{content:attr(data-l);font-size:12px;color:var(--muted)}
+  table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
+  table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
+  table.pf td:nth-child(7){grid-area:px} table.pf td:nth-child(8){grid-area:grp} table.pf td:nth-child(9){grid-area:del}
+  table.pf td.pfx{justify-content:flex-end;align-items:flex-end}
+  table.pf td.pfx .btn{min-height:40px}
+  table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:40px}
+  table.pf tr:has(>td.empty){display:block;padding:0;border:0;background:none}
+  table.pf td.empty{display:block;grid-area:auto}
+}
 @media (max-width:759px){
   .botbar{display:flex;position:fixed;z-index:42;inset-inline:0;bottom:0;gap:2px;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));background:var(--navy);box-shadow:0 -4px 18px rgb(30 52 78 / .18)}
   .botbar button{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border:0;border-radius:10px;background:none;color:#C9D4E2;font:inherit;font-size:12px;font-weight:500;line-height:1.2;cursor:pointer}
@@ -1230,6 +1250,7 @@ section.fold > .fold-h h2{margin:0}
   .navtab{display:none}
   .hero .top{padding-inline-start:18px}
   .wrap{padding-block-end:calc(150px + env(safe-area-inset-bottom,0px))}
+  html{scroll-padding-block-end:calc(84px + env(safe-area-inset-bottom,0px))}   /* a focused field never ends up under the bar */
   .chatfab{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
   body #tcAcct{bottom:calc(74px + env(safe-area-inset-bottom,0px))}
   .toast,.bottip,.i18np{bottom:calc(130px + env(safe-area-inset-bottom,0px))}
@@ -1307,7 +1328,7 @@ section.fold > .fold-h h2{margin:0}
         <li><b>קבל תמונת מצב</b>הסקירה אומרת מה השתנה, למה, והאם צריך לעשות משהו.</li>
       </ol>
       <button class="btn pri" type="button" data-tab="mine">הוסף תיק עכשיו</button>
-      <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בלשונית "התיק שלי".</p>
+      <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
     <div class="viewsw" role="group" aria-label="רמת הפירוט בסקירה"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה רגועה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div>
     <div class="depban" id="depBan" hidden></div>
@@ -1738,6 +1759,38 @@ section.fold > .fold-h h2{margin:0}
       </div>
       <p class="note" id="depNote"></p>
     </details>
+
+    <section aria-labelledby="hData" id="dataSec">
+      <div class="row"><h2 id="hData">פרטיות ונתונים</h2></div>
+      <div class="panel" id="privPanel" style="display:flex;flex-direction:column;gap:12px">
+        <h3>הפרטיות שלי</h3>
+        <dl class="priv" id="privList"></dl>
+      </div>
+      <div class="panel" id="srcPanel" style="display:flex;flex-direction:column;gap:12px">
+        <h3>מאיפה הנתונים ואיך הם מחושבים</h3>
+        <dl class="priv" id="srcList"></dl>
+      </div>
+      <div class="panel" id="princPanel" style="display:flex;flex-direction:column;gap:10px">
+        <h3>העקרונות של תיק צ׳יק</h3>
+        <ul class="princ">
+          <li><b>מידע וניתוח, לא ייעוץ.</b> תיק צ׳יק מסביר מספרים ולא ממליץ לקנות או למכור. ייעוץ השקעות אישי ניתן רק על ידי בעל רישיון.</li>
+          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> תחזית היא הנחה שלך, לא נבואה, וליד כל הערכה כתוב כמה היא בטוחה.</li>
+          <li><b>בלי לחץ לפעול.</b> מעט התראות, ורק כשכלל שקבעת לעצמך נחצה. הדף לא מודד הצלחה בכמה פעמים נכנסת, אלא במה שהבנת.</li>
+          <li><b>שקיפות.</b> ליד כל מספר כתוב מאיפה הוא ומתי עודכן, מה נתון, מה פרשנות ומה הדף לא יודע.</li>
+          <li><b>מותאם לך.</b> ההסברים לפי כמה אתה מכיר את השוק, והמספרים מקושרים למטרה ולאופק שקבעת.</li>
+        </ul>
+      </div>
+      <div class="panel" id="wipePanel" style="display:flex;flex-direction:column;gap:10px">
+        <h3>מחיקת נתונים</h3>
+        <p class="note" style="margin:0">הדף לא שומר את הקבצים שהעלית, רק את מה שמופיע בטבלה אחרי "שמור את התיק". כשמסירים נייר מהטבלה ושומרים, הוא נמחק גם מהתוכנית, מההיסטוריה ומההתראות. כאן אפשר למחוק את הכול בבת אחת.</p>
+        <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipe" type="button">מחק את כל הנתונים שלי</button><span class="saved" id="wipeState" role="status" style="font-size:13px"></span></div>
+        <div class="wipeask" id="wipeAsk" hidden role="alertdialog" aria-labelledby="wipeQ">
+          <p id="wipeQ"><b>למחוק הכול לצמיתות?</b> יימחקו: <span id="wipeList"></span>. אי אפשר לשחזר.</p>
+          <label for="wipeSet"><input type="checkbox" id="wipeSet"> למחוק גם את ההגדרות, הכללים והפרופיל שלי (אחוזי יעד, כללי סיכון, המדיניות שכתבתי, השם, המייל, הטלפון, השפה ויום ההפקדה)</label>
+          <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipeNo" type="button">ביטול</button><button class="btn danger" id="btnWipeYes" type="button">כן, מחק הכול</button></div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <div class="pane" data-pane="mine" hidden>
@@ -1791,34 +1844,6 @@ section.fold > .fold-h h2{margin:0}
         <div class="form" id="cashForm" style="margin-top:8px"></div>
       </div>
       <div class="acts"><button class="btn" id="btnPfReset" type="button">בטל שינויים</button><button class="btn pri" id="btnPfSave" type="button">שמור את התיק</button></div>
-      <div class="panel" id="privPanel" style="display:flex;flex-direction:column;gap:12px">
-        <h3>הפרטיות שלי</h3>
-        <dl class="priv" id="privList"></dl>
-      </div>
-      <div class="panel" id="srcPanel" style="display:flex;flex-direction:column;gap:12px">
-        <h3>מאיפה הנתונים ואיך הם מחושבים</h3>
-        <dl class="priv" id="srcList"></dl>
-      </div>
-      <div class="panel" id="princPanel" style="display:flex;flex-direction:column;gap:10px">
-        <h3>העקרונות של תיק צ׳יק</h3>
-        <ul class="princ">
-          <li><b>מידע וניתוח, לא ייעוץ.</b> תיק צ׳יק מסביר מספרים ולא ממליץ לקנות או למכור. ייעוץ השקעות אישי ניתן רק על ידי בעל רישיון.</li>
-          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> תחזית היא הנחה שלך, לא נבואה, וליד כל הערכה כתוב כמה היא בטוחה.</li>
-          <li><b>בלי לחץ לפעול.</b> מעט התראות, ורק כשכלל שקבעת לעצמך נחצה. הדף לא מודד הצלחה בכמה פעמים נכנסת, אלא במה שהבנת.</li>
-          <li><b>שקיפות.</b> ליד כל מספר כתוב מאיפה הוא ומתי עודכן, מה נתון, מה פרשנות ומה הדף לא יודע.</li>
-          <li><b>מותאם לך.</b> ההסברים לפי כמה אתה מכיר את השוק, והמספרים מקושרים למטרה ולאופק שקבעת.</li>
-        </ul>
-      </div>
-      <div class="panel" id="wipePanel" style="display:flex;flex-direction:column;gap:10px">
-        <h3>מחיקת נתונים</h3>
-        <p class="note" style="margin:0">הדף לא שומר את הקבצים שהעלית, רק את מה שמופיע בטבלה אחרי "שמור את התיק". כשמסירים נייר מהטבלה ושומרים, הוא נמחק גם מהתוכנית, מההיסטוריה ומההתראות. כאן אפשר למחוק את הכול בבת אחת.</p>
-        <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipe" type="button">מחק את כל הנתונים שלי</button><span class="saved" id="wipeState" role="status" style="font-size:13px"></span></div>
-        <div class="wipeask" id="wipeAsk" hidden role="alertdialog" aria-labelledby="wipeQ">
-          <p id="wipeQ"><b>למחוק הכול לצמיתות?</b> יימחקו: <span id="wipeList"></span>. אי אפשר לשחזר.</p>
-          <label for="wipeSet"><input type="checkbox" id="wipeSet"> למחוק גם את ההגדרות, הכללים והפרופיל שלי (אחוזי יעד, כללי סיכון, המדיניות שכתבתי, השם, המייל, הטלפון, השפה ויום ההפקדה)</label>
-          <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipeNo" type="button">ביטול</button><button class="btn danger" id="btnWipeYes" type="button">כן, מחק הכול</button></div>
-        </div>
-      </div>
     </section>
   </div>
 
@@ -15431,11 +15456,11 @@ function render(){
     const lk=SECKEY.test(p.sym);
     return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s')}<span class="sym">${esc(lab(p.sym))}</span>${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
     <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${sgn(p.dayIls)}</span></div>`}</td>
-    <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span>${old?`<div class="nm">${esc(old)}</div>`:''}</td>
-    <td class="num"><span class="n">${ils(p.val)}</span></td><td class="num"><span class="n">${pct(p.w)}</span></td>
+    <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
+    <td class="num"><span class="n">${ils(p.val)}</span>${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
     <td class="num"><span class="n">${p.cost?ils(p.cost):'—'}</span></td>
     <td class="num">${d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`}</td></tr>`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)} · לחיצה על נייר פותחת את הדף שלו`}
+  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)}`+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n)=>`<tr class="sec"><td colspan="8">${t} · ${n}</td></tr>`;
   $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num"><span class="n">${ils(m.cash)}</span></td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
@@ -17772,7 +17797,7 @@ function wipeNote(){const el=$('wipeList');if(!el)return;
 function whoNote(){wipeNote(); try{renderPrivacy()}catch(e){}
   $('pfWho').textContent=OWNER?'זה התיק שלך. מי שמוזמן לדף רואה רק את התיק של עצמו, לא את שלך.'
     :LOCAL?'אין לך הרשאת שמירה בדף הזה, לכן התיק שלך נשמר רק בדפדפן הזה ולא יופיע במכשיר אחר. אף אחד אחר לא רואה אותו.'
-    :window.__tc?'התיק, התוכנית והכללים שלך נשמרים באזור פרטי שלך באתר, ואף משתמש אחר לא רואה אותם באתר, גם לא בעל האתר. רשימת הסימולים שלך (בלי כמויות וסכומים) נשמרת בשרת רק כדי לעדכן את המחירים שלהם. הפרטים המלאים: "הפרטיות שלי" למטה.'
+    :window.__tc?'התיק, התוכנית והכללים שלך נשמרים באזור פרטי שלך באתר, ואף משתמש אחר לא רואה אותם באתר, גם לא בעל האתר. רשימת הסימולים שלך (בלי כמויות וסכומים) נשמרת בשרת רק כדי לעדכן את המחירים שלהם. הפרטים המלאים: "פרטיות ונתונים" בהגדרות.'
     :'התיק, התוכנית והכללים שלך נשמרים בחשבון שלך ואינם גלויים לאף משתמש אחר, כולל בעל הדף. רק רשימת הסימולים שלך (מוחזקים, סימניות וניירות שפתחת בחיפוש, בלי כמויות וסכומים) נשלחת לבעל הדף, כדי שהמחירים והנתונים שלהם יתעדכנו.';
 }
 
@@ -17816,16 +17841,17 @@ function renderMine(force){
   const pane=document.querySelector('[data-pane="mine"]');
   if(!force&&pane.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
   const opt=(v,cur,l)=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`, dis=canWrite?'':' disabled', nv=v=>v==null||v===''?'':esc(v);
+  // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>`<tr>
-    <td><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}></td>
-    <td><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
-    <td><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
-    <td><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
-    <td><select data-pf="ccy" data-i="${i}" aria-label="מטבע"${dis}>${opt('USD',p.ccy,'דולר')}${opt('ILS',p.ccy,'שקל')}</select></td>
-    <td><input type="number" data-pf="costIls" data-i="${i}" value="${nv(p.costIls)}" min="0" step="0.01" placeholder="לא ידוע" aria-label="עלות כוללת בשקלים"${dis}></td>
-    <td><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
-    <td><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td><button class="btn sm" type="button" data-pfdel="${i}"${dis}>הסר</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}></td>
+    <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
+    <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
+    <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
+    <td data-l="מטבע"><select data-pf="ccy" data-i="${i}" aria-label="מטבע"${dis}>${opt('USD',p.ccy,'דולר')}${opt('ILS',p.ccy,'שקל')}</select></td>
+    <td data-l="עלות כוללת ₪"><input type="number" data-pf="costIls" data-i="${i}" value="${nv(p.costIls)}" min="0" step="0.01" placeholder="לא ידוע" aria-label="עלות כוללת בשקלים"${dis}></td>
+    <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
+    <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
+    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
@@ -18178,8 +18204,9 @@ async function savePf(){
   const pos=DRAFT.positions.filter(p=>p.sym&&+p.qty>0).map(p=>{const o={...p,sym:String(p.sym).toUpperCase().replace(/[^A-Z0-9.]/g,'').slice(0,12),name:String(p.name||p.sym).slice(0,60),qty:+p.qty,
       ccy:p.ccy==='ILS'?'ILS':'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
   if(!pos.length){const had=P&&(P.positions||[]).length;
-    st.textContent=had?'הטבלה ריקה, ולכן אין מה לשמור. כדי למחוק את כל מה ששמור עד עכשיו, אשר את המחיקה בחלון האדום למטה.':'אין אחזקות לשמור.';
-    if(had&&canWrite){$('wipeAsk').hidden=false;try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}
+    st.textContent=had?'הטבלה ריקה, ולכן אין מה לשמור. כדי למחוק את כל מה ששמור עד עכשיו, יש לאשר את המחיקה בהגדרות.':'אין אחזקות לשמור.';
+    // deleting everything lives in the settings ("פרטיות ונתונים"); an emptied table leads there, to the same confirmation
+    if(had&&canWrite){showTab('settings',true);$('wipeAsk').hidden=false;$('wipeState').textContent='הטבלה ב"התיק שלי" ריקה. כדי למחוק את כל מה ששמור, יש לאשר כאן.';try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}
     return}
   const cash=[]; for(const a of Object.keys(DRAFT.cash||{}))for(const c of ['ILS','USD'])if(DRAFT.cash[a]&&+DRAFT.cash[a][c])cash.push({acct:a,amount:+DRAFT.cash[a][c],ccy:c});
   const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},okBoth:!!DRAFT.okBoth,updatedAt:new Date().toISOString()};
@@ -19297,7 +19324,7 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 try{navBoot()}catch(e){}
 try{srchBoot()}catch(e){}
 {let t=(location.hash||'').slice(1); if(!TABS.includes(t)){try{t=localStorage.getItem('tab')}catch(e){t=''}} showTab(t||'overview')}
-try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('mine');$('wipeState').textContent=wipeMsg(w==='ok')}}catch(e){}
+try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('settings');$('wipeState').textContent=wipeMsg(w==='ok');try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}}catch(e){}
 try{i18nBoot()}catch(e){}
 try{termsBoot()}catch(e){}
 render();
