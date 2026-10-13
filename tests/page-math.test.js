@@ -208,3 +208,42 @@ test('Claude: no forecast said as known, no promise, no alarm, no "the rise prov
   for(const x of ['אי אפשר לדעת בוודאות מה יקרה.','אף אחד לא יודע אם השוק יעלה.','התיק ירד ב-1.16% היום.','NVDA עלתה 2% ביום המסחר האחרון.','התחזית בדף היא הנחה שלך, לא ידיעה.','כדאי לבדוק את הריכוז מול הכללים שלך.'])
     assert.equal(A.anaPromise(x),false,x);
 });
+
+// stress scenarios: arithmetic on today's values, checked by hand (made-up portfolios)
+const FUNDS={}, SR=load(['GROUPS','SEC_HE','isF','exposures','stressRun'],{FUNDOF:FUNDS});
+const pos=(sym,val,o={})=>({sym,name:sym,group:'tech',ccy:'ILS',qty:1,px:val,val,w:0,dayPct:null,dayIls:0,...o});
+const mOf=(ps,cash=0,acct='all')=>{const total=ps.reduce((t,p)=>t+p.val,0)+cash; for(const p of ps)p.w=p.val/total*100; return {acct,pos:ps,cash,total,groups:{}}};
+test('stress: the plan\'s case — 100,000 ₪, a uniform 25% drop: 75,000, −25,000, −25%', ()=>{
+  const m=mOf([pos('A',40000),pos('B',35000,{group:'fin'}),pos('C',25000,{group:'health'})]);
+  const R=SR.stressRun(m,{positions:[],cash:[]},{usdIls:3.7,prices:{A:1,B:1,C:1}},{kind:'all',pct:-25});
+  assert.equal(R.before,100000); assert.equal(R.after,75000); assert.equal(R.d,-25000); assert.equal(R.pct,-25);
+});
+test('stress: part of the portfolio falls — by weight, not the same percent on everything', ()=>{
+  const m=mOf([pos('A',40000),pos('B',35000,{group:'fin'}),pos('C',25000,{group:'health'})]);
+  const Q={usdIls:3.7,prices:{A:1,B:1,C:1}}, P={positions:[],cash:[]};
+  let R=SR.stressRun(m,P,Q,{kind:'group',group:'tech',pct:-25}); assert.equal(R.d,-10000); assert.equal(R.after,90000); assert.equal(R.pct,-10); assert.deepEqual(R.hit.map(r=>r.sym),['A']);
+  R=SR.stressRun(m,P,Q,{kind:'groups',by:{tech:-30,fin:-10}}); assert.equal(R.d,-12000-3500); assert.equal(R.hit.length,2,'health is not in the scenario');
+  R=SR.stressRun(m,P,Q,{kind:'co',syms:['B','C'],pct:-20}); assert.equal(R.d,-12000);
+});
+test('stress: cash keeps its value; a dollar drop hits dollar holdings and dollar cash only', ()=>{
+  const m=mOf([pos('US',37000,{ccy:'USD'}),pos('IL',20000)],3700+1000);
+  const P={positions:[],cash:[{acct:'x',ccy:'USD',amount:1000},{acct:'x',ccy:'ILS',amount:1000}]}, Q={usdIls:3.7,prices:{US:1,IL:1}};
+  let R=SR.stressRun(m,P,Q,{kind:'all',pct:-20}); assert.equal(R.d,-(37000+20000)*0.2,'cash is not in the drop'); assert.equal(R.cash.d,0);
+  R=SR.stressRun(m,P,Q,{kind:'usd',pct:-10}); assert.equal(R.d,-3700-370,'10% of the dollar holding and of the 3,700 ₪ of dollars'); assert.deepEqual(R.hit.map(r=>r.sym),['US']);
+});
+test('stress: a holding without a price is left out and named; an empty portfolio gives nothing', ()=>{
+  const m=mOf([pos('A',1000)]); const P={positions:[{sym:'A'},{sym:'NOPX'}],cash:[]};
+  const R=SR.stressRun(m,P,{usdIls:3.7,prices:{A:1}},{kind:'all',pct:-40}); assert.deepEqual(R.missing,['NOPX']); assert.equal(R.d,-400);
+  assert.equal(SR.stressRun(mOf([]),{positions:[],cash:[]},{usdIls:3.7,prices:{}},{kind:'all',pct:-20}),null);
+});
+test('exposures: shares add up to the whole, nothing counted twice, unknowns say so', ()=>{
+  FUNDS.TA125=true;
+  const m=mOf([pos('MSFT',5000,{ccy:'USD'}),pos('KO',3000,{ccy:'USD',group:'cons'}),pos('TA125',2000,{group:'il'}),pos('ZZZ',1000,{ccy:'USD'})],500);
+  const E=SR.exposures(m,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},k=>({MSFT:'Technology',KO:'Consumer Staples'}[k]||''));
+  for(const k of ['group','sector','ccy','market','kind']){const t=E[k].reduce((s,r)=>s+r.val,0); near(t,11500,1e-6,k+' adds up to the whole'); near(E[k].reduce((s,r)=>s+r.w,0),100,1e-9,k)}
+  assert.equal(E.sector.find(r=>r.k==='fund').val,2000,'a fund is a fund, its sectors are not known');
+  assert.deepEqual(E.unknownSector,['ZZZ']); assert.equal(E.overlap.status,'unknown','held funds without their holdings: unknown, not "none"');
+  near(E.conc.top1.w,5000/11500*100,1e-9); near(E.conc.nEff,1/((5/11)**2+(3/11)**2+(2/11)**2+(1/11)**2),1e-9);
+  assert.equal(E.ccy.find(r=>r.k==='ILS').val,2000+500,'shekel holdings and shekel cash');
+  assert.equal(SR.exposures(mOf([]),{cash:[]},{usdIls:3.7},()=>''),null);
+});

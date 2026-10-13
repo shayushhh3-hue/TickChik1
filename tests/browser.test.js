@@ -228,3 +228,20 @@ test('a partner\'s question carries only their own portfolio to Claude',T,async 
   assert.ok(sent.includes('KO'),'their own holding is there'); for(const s of ['RKLB','NVDA','CAT','owner@example.com'])assert.ok(!sent.includes(s),s+' must not be sent');
   await ctx.close();
 });
+
+test('exposures and a stress test: the shares, the unknown overlap, a scenario whose bars match its numbers',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.setItem('tr_fold',JSON.stringify({hExp:true,hStress:true}))}catch(e){}});
+  await tab(pg,'risk'); await pg.waitForTimeout(800);
+  await pg.evaluate(()=>{for(const id of ['hExp','hStress']){const s=document.querySelector(`section[aria-labelledby="${id}"]`); if(!s.classList.contains('open'))s.querySelector('.fold-t').click()}}); await pg.waitForTimeout(400);
+  const e=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+  assert.match(e.txt,/הנייר הגדול/); assert.match(e.txt,/חפיפה בין קרנות למניות: לא ידועה/,'fund holdings are unknown, said so'); assert.equal(e.ox,false,'no sideways scroll');
+  for(const [k,re] of [['all',/ירידה אחידה של 20%/],['usd',/הדולר יורד ב-10%/],['group',/בקבוצת/]]){
+    await pg.click(`#stKind [data-stk="${k}"]`); await pg.waitForTimeout(300);
+    const r=await pg.evaluate(()=>{const R=window.__model.stress(), v=[...document.querySelectorAll('#stOut .st-bar [data-v]')].map(b=>+b.dataset.v), d=+document.querySelector('#stOut [data-d]').dataset.d;
+      return {R:{before:Math.round(R.before),after:Math.round(R.after),d:Math.round(R.d)},v,d,txt:document.getElementById('stOut').textContent}});
+    assert.match(r.txt,re); assert.match(r.txt,/תרחיש, לא תחזית/); assert.match(r.txt,/ההנחות/); assert.match(r.txt,/מה לא נכלל/);
+    assert.deepEqual(r.v,[r.R.before,r.R.after],k+': the bars show the computed values'); assert.equal(r.d,r.R.d,k+': the change shown is the computed one');
+  }
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});

@@ -1223,6 +1223,15 @@ section.fold > .fold-h h2{margin:0}
    rest); a wide screen keeps the menu open at the side; in between the drawer opens from the edge tab as before */
 .botbar{display:none}
 .tabsbar.open{z-index:56}   /* an open drawer covers the account button too */
+.st-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:12px 0}
+.st-form label{min-width:150px} .st-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%}
+.st-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:6px 0 10px;font-size:14px}
+.st-bars{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.st-bar{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.st-bar .tr{position:relative;height:14px;background:var(--sunk);border-radius:6px} .st-bar .tr i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--s1);border-radius:6px;min-width:2px} .st-bar .tr i.lo{background:var(--s2)}
+.st-bar .n{font-family:var(--mono);font-size:13px}
+.st-d{margin:4px 0 10px;font-size:14px}
+#stOut h4{margin:12px 0 6px;font-size:13.5px}
 .whybtn{font:inherit;font-size:12.5px;font-weight:600;min-height:28px;padding:2px 10px;border-radius:999px;border:1px solid rgb(255 255 255 / .35);background:rgb(255 255 255 / .08);color:#fff;cursor:pointer;align-self:center}
 .whybtn:hover{background:rgb(255 255 255 / .16)} .whybtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .why-l{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6}
@@ -1651,6 +1660,18 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="row"><h2 id="hMix">איפה התיק חורג מהתוכנית?</h2><span class="sub" id="mixSub"></span></div>
         <div class="panel mix" id="mix"><div class="empty">החלוקה לקבוצות תופיע כאן.</div></div>
       </section>
+    <section aria-labelledby="hExp">
+      <div class="row"><h2 id="hExp">למה התיק חשוף?</h2><span class="sub" id="expSub"></span></div>
+      <div class="panel exp" id="expBox"><div class="empty">החשיפות יופיעו כאן אחרי שהתיק והמחירים ייטענו.</div></div>
+    </section>
+    <section aria-labelledby="hStress">
+      <div class="row"><h2 id="hStress">מה אם המחירים יורדים? מבחן לחץ</h2><span class="sub" id="stSub">תרחיש שאתה בוחר, לא תחזית</span></div>
+      <div class="panel stress" id="stBox">
+        <div class="chips" role="group" aria-label="סוג התרחיש" id="stKind"></div>
+        <div class="st-form" id="stForm"></div>
+        <div id="stOut" aria-live="polite"></div>
+      </div>
+    </section>
     <section aria-labelledby="hPnl">
         <div class="row"><h2 id="hPnl">מי מרוויח ומי מפסיד בתיק?</h2><span class="sub" id="pnlSub"></span></div>
         <div class="panel movers" id="pnl" style="padding-inline:0"><div class="empty">הרווח או ההפסד מול מחיר הקנייה יופיע כאן.</div></div>
@@ -15508,6 +15529,7 @@ function render(){
   renderDividends(m);
   renderRisk(m);
   renderComove(m);
+  try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){}
 
   // allocation
   const maxW=Math.max(40,...Object.values(m.groups).map(g=>g.w),...Object.values(S.targets).map(x=>+x||0));
@@ -15777,6 +15799,87 @@ function renderRisk(m){
 let CM=null, LT=null;
 // Year each security started trading; shown small in the risk table. Left out where it could not be confirmed.
 const LISTED={KO:1919,CAT:1929,JNJ:1944,UNH:1984,MSFT:1986,O:1994,AMZN:1997,AEHR:1997,NVDA:1999,GOOGL:2004,V:2008,META:2012,PLTR:2020,RKLB:2021,RDW:2021,MBLY:2022};
+// ---- drawing the exposures and the stress test (the numbers come from exposures() and stressRun() above) ----
+let EXPV='sector', EXPM=null, ST={kind:'all',pct:20,group:'',by:{},co:0,usd:10};
+try{const v=localStorage.getItem('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('tr_stress')||'null'); if(s&&typeof s==='object')ST={...ST,...s,by:{...(s.by||{})}}}catch(e){}
+const EXPL={sector:'ענף',ccy:'מטבע',market:'בורסה',kind:'סוג',group:'הקבוצות שלי'};
+const EXPN={sector:'לפי הענף ברשימת הניירות של הדף. קרן מוצגת כקרן, כי לא ידוע אילו חברות יש בה.',ccy:'ניירות שנסחרים בדולר ומזומן בדולרים. קרן שנסחרת בשקל יכולה להחזיק נכסים בחו״ל, וזה לא נספר כאן.',
+  market:'לפי הבורסה שבה הנייר נסחר, לא לפי המדינה שבה החברה פועלת.',kind:'מניות בודדות, קרנות ומזומן.',group:'הקבוצות שקבעת לכל נייר (אותן קבוצות של היעדים).'};
+const expBars=rows=>{const mx=Math.max(1,...rows.map(r=>r.w)); return `<div class="ana-al">${rows.map(r=>`<div class="ana-ar"><span class="nm1">${esc(r.label)}</span><div class="tr" role="img" aria-label="${esc(r.label)}: ${pct(r.w)}"><i style="width:${(r.w/mx*100).toFixed(1)}%"></i></div><span class="vals"><b>${pct(r.w)}</b> <small>${ils(r.val)}</small></span></div>`).join('')}</div>`};
+function renderExposure(m){
+  const box=$('expBox'); if(!box||!m)return; EXPM=m;
+  const secOf=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}};
+  if(!SYMDB&&!renderExposure.asked){renderExposure.asked=true; try{loadSymDb().then(()=>{try{renderExposure(EXPM)}catch(e){}})}catch(e){}}
+  const E=exposures(m,P,Q,secOf); if(!E){box.innerHTML='<div class="empty">אין עדיין תיק עם מחירים.</div>';return}
+  const C=E.conc, cap=+((S.rules||{}).maxPos)||0;
+  $('expSub').textContent=`${C.n} ניירות · ${ils(E.total)} · מחירים: ${Q.priceLabel||''}`;
+  const tiles=`<div class="mine3">${anaTile('הנייר הגדול',C.top1?pct(C.top1.w):'—',C.top1?esc(lab(C.top1.sym))+(cap?` · הכלל שלך עד ${pct(cap,0)}`:''):'',C.top1&&cap&&C.top1.w>cap?'down':'')}${anaTile('3 הגדולים',pct(C.top3),'מהתיק')}${anaTile('5 הגדולים',pct(C.top5),'מהתיק')}${anaTile('כמו ניירות שווים',C.nEff?C.nEff.toFixed(1):'—',`מתוך ${C.n} ניירות`)}</div>
+    <p class="note">"כמו ניירות שווים": התיק מפוזר כמו תיק של ${C.nEff?C.nEff.toFixed(1):'—'} ניירות באותו גודל. ככל שהמספר קטן מ-${C.n}, יותר מהתיק תלוי בכמה ניירות גדולים. ${termBtn('conc')}</p>`;
+  const rows=E[EXPV]||E.sector;
+  const unk=EXPV==='sector'&&E.unknownSector.length?`<p class="note">אין ענף ברשימה עבור: ${esc(E.unknownSector.map(lab).join(', '))}.</p>`:'';
+  const ov=E.overlap.status==='unknown-possible'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה.</b> ${esc(E.overlap.text)} כדי לחשב אותה צריך את ההרכב של הקרנות, ואין לדף מקור כזה.</p>`
+    :E.overlap.status==='unknown'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה,</b> כי אין לדף את ההרכב של ${esc(E.funds.map(lab).join(', '))}. זה לא אומר שאין חפיפה.</p>`:'';
+  const co=CM&&CM.to?`<p class="note">גורמים משותפים: ניירות שזזים יחד מופיעים בחלק "נעים יחד", לפי ${CM.days||'?'} ימי מסחר עד ${dmy(CM.to)}${(Date.now()-new Date(CM.to))/864e5>14?' (הנתון הזה לא מתעדכן כרגע)':''}.</p>`:'';
+  box.innerHTML=tiles+`<div class="chips" role="group" aria-label="חלוקה לפי" style="margin:14px 0 10px">${Object.keys(EXPL).map(k=>`<button type="button" class="chip" data-expv="${k}" aria-pressed="${k===EXPV}">${EXPL[k]}</button>`).join('')}</div>`
+    +expBars(rows)+`<p class="note">${EXPN[EXPV]} ${termBtn('expo')}</p>`+unk+ov+co;
+}
+function stScen(m){
+  const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
+  if(!groups.includes(ST.group))ST.group=groups.sort((a,b)=>(m.groups[b]||{val:0}).val-(m.groups[a]||{val:0}).val)[0]||'';
+  const n=v=>Math.max(0,Math.min(95,+v||0));
+  if(ST.kind==='group')return {sc:{kind:'group',group:ST.group,pct:-n(ST.pct)},label:`ירידה של ${n(ST.pct)}% בקבוצת ${GROUPS[ST.group]||ST.group}, ושאר התיק בלי שינוי`};
+  if(ST.kind==='groups'){const by={}; for(const g of groups)by[g]=-n(ST.by[g]); return {sc:{kind:'groups',by},label:'ירידה שונה לכל קבוצה, לפי מה שקבעת למטה'}}
+  if(ST.kind==='co'&&co.length){const g=co[Math.max(0,Math.min(co.length-1,+ST.co||0))]; return {sc:{kind:'co',syms:g.syms,pct:-n(ST.pct)},label:`ירידה של ${n(ST.pct)}% בניירות של "${g.name}", שזזו יחד ברוב הימים`,co:g}}
+  if(ST.kind==='usd')return {sc:{kind:'usd',pct:-n(ST.usd)},label:`הדולר יורד ב-${n(ST.usd)}% מול השקל, והמחירים בדולרים בלי שינוי`};
+  return {sc:{kind:'all',pct:-n(ST.pct)},label:`ירידה אחידה של ${n(ST.pct)}% בכל הניירות`};
+}
+function renderStress(m){
+  const kb=$('stKind'), fm=$('stForm'), out=$('stOut'); if(!kb||!m)return; EXPM=m;
+  const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
+  if(ST.kind==='co'&&!co.length)ST.kind='all';
+  const K=[['all','ירידה אחידה'],['group','קבוצה אחת'],['groups','לכל קבוצה'],...(co.length?[['co','ניירות שנעים יחד']]:[]),['usd','הדולר יורד']];
+  setH(kb,K.map(([k,l])=>`<button type="button" class="chip" data-stk="${k}" aria-pressed="${k===ST.kind}">${l}</button>`).join(''));
+  const num=(id,v,l)=>`<label for="${id}">${l}<input type="number" id="${id}" min="0" max="95" step="1" value="${esc(String(v))}" inputmode="numeric"></label>`;
+  const { sc, label, co:cg }=stScen(m);
+  const f=ST.kind==='all'?`<div class="chips" role="group" aria-label="גודל הירידה">${[20,30,40].map(v=>`<button type="button" class="chip" data-stp="${v}" aria-pressed="${+ST.pct===v}">${v}%</button>`).join('')}</div>${num('stPct',ST.pct,'או ירידה של (%)')}`
+    :ST.kind==='group'?`<label for="stGroup">הקבוצה<select id="stGroup">${groups.map(g=>`<option value="${g}"${g===ST.group?' selected':''}>${esc(GROUPS[g]||g)}</option>`).join('')}</select></label>${num('stPct',ST.pct,'ירידה של (%)')}`
+    :ST.kind==='groups'?`<div class="st-gs">${groups.map(g=>num('stg_'+g,ST.by[g]||0,(GROUPS[g]||g)+': ירידה של (%)')).join('')}</div>`
+    :ST.kind==='co'?`<label for="stCo">הקבוצה<select id="stCo">${co.map((g,i)=>`<option value="${i}"${i===(+ST.co||0)?' selected':''}>${esc(g.name)}</option>`).join('')}</select></label>${num('stPct',ST.pct,'ירידה של (%)')}`
+    :num('stUsd',ST.usd,'הדולר יורד ב- (%)');
+  if(fm.dataset.k!==ST.kind+'|'+groups.join()){fm.dataset.k=ST.kind+'|'+groups.join(); setH(fm,f)}
+  const R=stressRun(m,P,Q,sc); if(!R){out.innerHTML='<div class="empty">אין עדיין תיק עם מחירים.</div>';return}
+  const mx=Math.max(R.before,R.after)||1, bar=(k,v,c)=>`<div class="st-bar"><span class="k">${k}</span><div class="tr"><i class="${c}" style="width:${(v/mx*100).toFixed(1)}%"></i></div><b class="n" data-v="${Math.round(v)}">${ils(v)}</b></div>`;
+  const hit=R.hit.slice(0,6).map(r=>`<li><b class="sym">${esc(lab(r.sym))}</b> <span class="n down">${sgn(r.d)}</span> <span class="nm">(${tx(spct(r.chg,0))}, מ-${ils(r.val)} ל-${ils(r.after)})</span></li>`).join('')+(R.hit.length>6?`<li class="nm">ועוד ${R.hit.length-6} ניירות</li>`:'');
+  const as=[label,'כל נייר שבתרחיש משתנה בדיוק באחוז הזה, בבת אחת. לא מניחים קשר בין ניירות מעבר למה שכתוב כאן.',
+    sc.kind==='usd'?`המחירים בדולרים נשארים כפי שהם; משתנה רק השער (${Q.usdIls.toFixed(3)} היום).`:'שער הדולר נשאר כפי שהוא היום ('+Q.usdIls.toFixed(3)+').',
+    'בלי הפקדות, משיכות, קניות או מכירות.'];
+  const ex=[sc.kind==='usd'?(R.cash.usd>0?'המזומן בשקלים לא משתנה (המזומן בדולרים כן).':'המזומן לא משתנה.'):'המזומן לא משתנה.',
+    ...(R.missing.length?[`ניירות בלי מחיר לא נכללו בשווי ובתרחיש: ${R.missing.map(lab).join(', ')}.`]:[]),
+    ...(sc.kind==='usd'?['ניירות שנסחרים בשקלים לא משתנים, גם אם הם מחזיקים נכסים בחו״ל.']:[]),
+    ...(cg?[`הקבוצה "${cg.name}" נבנתה מתנועות יומיות עד ${CM&&CM.to?dmy(CM.to):'?'}.`]:[]),
+    'דיבידנדים, מס ועמלות.'];
+  const cov=`${R.rows.length} ניירות עם מחיר מתוך ${R.rows.length+R.missing.length}; התרחיש פוגע ב-${R.hit.length} מהם (${pct(R.hitVal/R.before*100)} מהשווי).`;
+  out.innerHTML=`<div class="st-h"><span class="tag an">תרחיש, לא תחזית</span> <b>${esc(label)}</b></div>
+    <div class="st-bars" role="img" aria-label="שווי היום ${ils(R.before)}, בתרחיש ${ils(R.after)}">${bar('היום',R.before,'')}${bar('בתרחיש',R.after,'lo')}</div>
+    <p class="st-d">השינוי בתרחיש: <b class="n ${R.d<0?'down':R.d>0?'up':''}" data-d="${Math.round(R.d)}">${sgn(R.d)} (${spct(R.pct)})</b></p>
+    ${R.hit.length?`<h4>הניירות שמושפעים</h4><ul class="why-l">${hit}</ul>`:'<p class="note">התרחיש לא פוגע באף נייר בתיק.</p>'}
+    <h4>ההנחות</h4><ul class="why-l">${as.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>
+    <h4>מה לא נכלל</h4><ul class="why-l">${ex.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>
+    <p class="note">על מה זה מבוסס: הכמויות בתיק, המחירים (${esc(Q.priceLabel||'')}${Q.updatedAt?', עודכנו '+esc(ago(Q.updatedAt)):''}) והשער. ${tx(cov)}</p>
+    <p class="note">זו תוצאה מתמטית של התרחיש שבחרת, לא תחזית ולא מודל סיכון: בפועל ניירות יורדים בשיעורים שונים ובזמנים שונים, וחלקם עולים.</p>`;
+}
+document.addEventListener('click',ev=>{
+  const v=ev.target.closest('[data-expv]'); if(v){EXPV=v.dataset.expv; try{localStorage.setItem('tr_expv',EXPV)}catch(e){} renderExposure(EXPM); return}
+  const k=ev.target.closest('#stKind [data-stk]'); if(k){ST.kind=k.dataset.stk; stSave(); renderStress(EXPM); return}
+  const p=ev.target.closest('#stForm [data-stp]'); if(p){ST.pct=+p.dataset.stp; const i=$('stPct'); if(i)i.value=ST.pct; for(const b of document.querySelectorAll('#stForm [data-stp]'))b.setAttribute('aria-pressed',String(b===p)); stSave(); renderStress(EXPM)}});
+document.addEventListener('input',ev=>{const t=ev.target; if(!t.closest||!t.closest('#stForm'))return;
+  if(t.id==='stPct')ST.pct=+t.value||0; else if(t.id==='stUsd')ST.usd=+t.value||0; else if(t.id==='stGroup')ST.group=t.value; else if(t.id==='stCo')ST.co=+t.value||0; else if(t.id.startsWith('stg_'))ST.by[t.id.slice(4)]=+t.value||0;
+  if(t.id==='stPct')for(const b of document.querySelectorAll('#stForm [data-stp]'))b.setAttribute('aria-pressed',String(+b.dataset.stp===ST.pct));
+  stSave(); renderStress(EXPM)});
+document.addEventListener('change',ev=>{const t=ev.target; if(t&&(t.id==='stGroup'||t.id==='stCo')){if(t.id==='stGroup')ST.group=t.value; else ST.co=+t.value||0; stSave(); renderStress(EXPM)}});
+function stSave(){try{localStorage.setItem('tr_stress',JSON.stringify(ST))}catch(e){}}
+window.__model.stress=()=>EXPM?stressRun(EXPM,P,Q,stScen(EXPM).sc):null;
 // Groups of holdings whose daily moves point the same way; the groups come from research/comove, weights are live.
 function renderComove(m){
   if(!CM||!CM.groups)return;
@@ -16031,7 +16134,7 @@ function setView(v,keep){VIEW=v==='calm'?'calm':'full'; if(!keep){try{localStora
 try{if(VIEW==='calm')document.querySelector('.wrap').classList.add('calm')}catch(e){}
 let MORE=false; try{MORE=localStorage.getItem('tr_more')==='1'}catch(e){}
 // ---- v135: the control tab folds. Each section's heading toggles it; a chip row at the top jumps to it ----
-const FOLD_OPEN=new Set(['hCtl','hKpi']), FOLD_LBL={hCtl:'בקרה',hKpi:'תמונת מצב',hHeat:'מה זז היום',hRulesOv:'הכללים',hMix:'הקצאה מול יעד',hPnl:'רווח לפי נייר',hCore:'ליבה ולוויינים',hCo:'נעים יחד',hRk:'מטלטלים את התיק',hPr:'צמדים',hOp:'מאזנים'};
+const FOLD_OPEN=new Set(['hCtl','hKpi']), FOLD_LBL={hCtl:'בקרה',hKpi:'תמונת מצב',hHeat:'מה זז היום',hRulesOv:'הכללים',hMix:'הקצאה מול יעד',hExp:'חשיפות',hStress:'מבחן לחץ',hPnl:'רווח לפי נייר',hCore:'ליבה ולוויינים',hCo:'נעים יחד',hRk:'מטלטלים את התיק',hPr:'צמדים',hOp:'מאזנים'};
 let FOLD={}; try{FOLD=JSON.parse(localStorage.getItem('tr_fold')||'{}')||{}}catch(e){FOLD={}}
 function foldIs(id){return FOLD[id]!=null?!!FOLD[id]:FOLD_OPEN.has(id)}
 function foldSet(id,on){FOLD[id]=!!on; try{localStorage.setItem('tr_fold',JSON.stringify(FOLD))}catch(e){} const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(!s)return; s.classList.toggle('open',!!on); const b=s.querySelector('.fold-t'); if(b)b.setAttribute('aria-expanded',String(!!on)); const c=document.querySelector('#riskNav [data-fold="'+id+'"]'); if(c)c.setAttribute('aria-pressed',String(!!on))}
@@ -16304,6 +16407,51 @@ function alertDigest(){
 window.__model.alerts=alertDigest;
 
 // ---- the facts: computed here, the same way the rest of the page computes them ----
+// ---- risk:start ----
+// Exposures and stress scenarios (stage 5), from what the page already has: holdings, prices, the dollar rate, the user's
+// groups, and the sector in the symbol list. Nothing is shown that cannot be computed from these: a fund's holdings are not
+// known, so its overlap with direct holdings is "unknown", never "none". A scenario is arithmetic on today's values under
+// the assumptions the user picks: not a forecast and not a risk model (no correlation between holdings is assumed).
+const SEC_HE={'Technology':'טכנולוגיה','Information Technology':'טכנולוגיה','Finance':'פיננסים','Financials':'פיננסים','Financial Services':'פיננסים',
+  'Health Care':'בריאות','Healthcare':'בריאות','Consumer Discretionary':'צריכה מחזורית','Consumer Cyclical':'צריכה מחזורית','Consumer Staples':'צריכה בסיסית',
+  'Consumer Defensive':'צריכה בסיסית','Industrials':'תעשייה','Energy':'אנרגיה','Utilities':'תשתיות','Telecommunications':'תקשורת','Communication Services':'תקשורת',
+  'Real Estate':'נדל״ן','REITs':'נדל״ן','Basic Materials':'חומרים','Materials':'חומרים','Miscellaneous':'אחר'};
+function exposures(m,P,Q,secOf){
+  const T=m.total; if(!(T>0))return null;
+  const pos=m.pos.slice().sort((a,b)=>b.val-a.val), inv=pos.reduce((t,p)=>t+p.val,0), W=v=>v/T*100;
+  const cashBy={ILS:0,USD:0}; for(const c of P.cash||[]){if(m.acct&&m.acct!=='all'&&c.acct!==m.acct)continue; const v=c.ccy==='USD'?(+c.amount||0)*Q.usdIls:(+c.amount||0); cashBy[c.ccy==='USD'?'USD':'ILS']+=v}
+  const top=n=>pos.slice(0,n).reduce((t,p)=>t+W(p.val),0);
+  const conc={n:pos.length,top1:pos[0]?{sym:pos[0].sym,w:W(pos[0].val)}:null,top3:top(3),top5:top(5),
+    nEff:inv>0?1/pos.reduce((t,p)=>t+(p.val/inv)**2,0):0};   // "as many equal holdings as": 1/sum of squared weights, holdings only
+  const by=(key,lab)=>{const o={}; for(const p of pos){const k=key(p); (o[k]=o[k]||{k,label:lab(k),val:0,syms:[]}).val+=p.val; o[k].syms.push(p.sym)} return o};
+  const list=(o,cash)=>{const rows=Object.values(o); if(cash>0.005)rows.push({k:'cash',label:'מזומן',val:cash,syms:[]}); return rows.map(r=>({...r,w:W(r.val)})).sort((a,b)=>b.val-a.val)};
+  const isFund=p=>isF(p.sym);
+  const sec=by(p=>isFund(p)?'fund':(secOf&&SEC_HE[secOf(p.sym)])||'?',k=>k==='fund'?'קרנות (ההרכב לא ידוע)':k==='?'?'לא ידוע':k);
+  const out={total:T,conc,
+    group:list(by(p=>p.group,k=>GROUPS[k]||k),m.cash),
+    sector:list(sec,m.cash),
+    ccy:(()=>{const r=list(by(p=>p.ccy==='USD'?'USD':'ILS',k=>k==='USD'?'דולר':'שקל'),0); for(const k of ['USD','ILS'])if(cashBy[k]>0.005){const x=r.find(y=>y.k===k)||(r.push({k,label:k==='USD'?'דולר':'שקל',val:0,syms:[],w:0}),r[r.length-1]); x.val+=cashBy[k]; x.w=W(x.val); x.cash=cashBy[k]} return r.sort((a,b)=>b.val-a.val)})(),
+    market:list(by(p=>p.ccy==='USD'?'us':'il',k=>k==='us'?'נסחרים בארה״ב':'נסחרים בתל אביב'),m.cash),
+    kind:list(by(p=>isFund(p)?'fund':'stock',k=>k==='fund'?'קרנות':'מניות'),m.cash)};
+  out.unknownSector=(sec['?']||{syms:[]}).syms;
+  out.funds=pos.filter(isFund).map(p=>p.sym);
+  // overlap: possible when a broad fund and single stocks of the same market are both held; its size is not known
+  const ov=typeof anaOverlap==='function'?anaOverlap(m):null; out.overlap=ov?{status:'unknown-possible',text:ov.text}:out.funds.length?{status:'unknown'}:{status:'none-held'};
+  return out;
+}
+// one scenario on today's values. sc: {kind:'all'|'group'|'groups'|'co'|'usd', pct (negative = down), group, by:{group:pct}, syms}
+function stressRun(m,P,Q,sc){
+  const T=m.total; if(!(T>0))return null;
+  const f=p=>sc.kind==='all'?sc.pct:sc.kind==='group'?(p.group===sc.group?sc.pct:0):sc.kind==='groups'?(+((sc.by||{})[p.group])||0):sc.kind==='co'?((sc.syms||[]).includes(p.sym)?sc.pct:0):sc.kind==='usd'?(p.ccy==='USD'?sc.pct:0):0;
+  const rows=m.pos.map(p=>{const c=f(p)||0, d=p.val*c/100; return {sym:p.sym,name:p.name,group:p.group,ccy:p.ccy,val:p.val,chg:c,d,after:p.val+d}});
+  // cash keeps its value, except dollars when the scenario is the dollar
+  let usdCash=0; for(const c of P.cash||[]){if(m.acct&&m.acct!=='all'&&c.acct!==m.acct)continue; if(c.ccy==='USD')usdCash+=(+c.amount||0)*Q.usdIls}
+  const cashD=sc.kind==='usd'?usdCash*sc.pct/100:0, d=rows.reduce((t,r)=>t+r.d,0)+cashD;
+  const missing=[...new Set((P.positions||[]).filter(p=>(m.acct==='all'||!m.acct||p.acct===m.acct)&&(Q.prices||{})[p.sym]==null).map(p=>p.sym))];
+  const hit=rows.filter(r=>r.d!==0).sort((a,b)=>a.d-b.d);
+  return {before:T,after:T+d,d,pct:d/T*100,rows,hit,hitVal:hit.reduce((t,r)=>t+r.val,0)+(cashD?usdCash:0),cash:{val:m.cash,usd:usdCash,d:cashD},missing};
+}
+// ---- risk:end ----
 // ---- why:start ----
 // "למה התיק זז היום?" is answered here, in code, not by a language model: the change of every holding from its previous
 // close, in shekels at today's dollar rate; which holdings and groups carried it; how wide it was; the dollar's own move
