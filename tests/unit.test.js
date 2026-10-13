@@ -449,3 +449,11 @@ test('analysts: when Yahoo will not open a session, nothing is overwritten and t
   const st=await researchTask(s,{fetch:fakeYahoo({crumbFail:true}).f,pause:0});
   assert.equal(st.stopped,'session'); assert.equal(s.getDoc('research/latest').data.updatedAt,'2026-10-09T13:14:53Z'); assert.equal(s.getDoc('research/latest').data.companies.NVDA.rating,'Hold');
 });
+test('prices for every US security: a change the mirror does not give is unknown (null), not 0%',async()=>{
+  const {usSnapshot}=await import('../server/tasks.js'); const s=new Store(':memory:'); const real=globalThis.fetch;
+  globalThis.fetch=async u=>String(u).includes('/nasdaq/')?new Response(JSON.stringify([{symbol:'AAA',lastsale:'$10.00',pctchange:'1.5%'},{symbol:'BBB',lastsale:'$5',pctchange:'NA'},{symbol:'CCC',lastsale:'$7.25',pctchange:''},{symbol:'DDD',lastsale:'$3',pctchange:'-2.25%'}]),{status:200}):new Response('',{status:404});
+  try{await usSnapshot(s,new Date('2026-10-14T00:40:00Z'),()=>{})}finally{globalThis.fetch=real}
+  const us=s.getDoc('quotes/all').data.us;
+  assert.deepEqual(us.AAA,[10,1.5]); assert.deepEqual(us.DDD,[3,-2.25]);
+  assert.deepEqual(us.BBB,[5,null],'"NA" is not a change of 0%'); assert.deepEqual(us.CCC,[7.25,null],'an empty field is not a change of 0%');
+});

@@ -153,3 +153,12 @@ test('Claude: no reason the facts do not give, no move the wrong way, no number 
   assert.equal(A.anaReject('NVDA ירדה 1.5% היום.',SET),true,'1.5% is KO\'s move');
   assert.equal(A.anaReject('NVDA ירדה 7.3% היום.',SET),true,'a number that is not in the facts');
 });
+
+test('dates: a date from another year carries the year, so old data never reads as current', ()=>{
+  const F=load(['dmy','dmyy'],{});
+  const y=new Date().getFullYear(), yy=String(y-1).slice(2);
+  assert.equal(F.dmy(`${y}-03-09T12:00:00Z`),'9.3');
+  assert.equal(F.dmy(`${y-1}-10-09T12:00:00Z`),`9.10.${yy}`);
+  assert.equal(F.dmyy(`${y}-03-09T12:00:00Z`),`9.3.${String(y).slice(2)}`);
+  assert.equal(F.dmy(''),''); assert.equal(F.dmy('not a date'),'');
+});

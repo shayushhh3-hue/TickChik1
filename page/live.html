@@ -1902,7 +1902,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <p class="note">האופק משמש גם בתחזית ובתרחישים. צ׳יקו מקשר את המצב של התיק למטרה ולאופק, בלי להמליץ.</p>
       <label for="pfDep">באיזה יום בחודש אתה מפקיד<select id="pfDep"></select></label>
       <p class="note" id="pfDepNote"></p>
-      <p class="note">הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם. המייל והטלפון לא חובה: הדף לא שולח אליהם הודעות ולא מעביר אותם ל-Claude.</p>
+      <p class="note">הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם.<span id="pfContactNote"> המייל והטלפון לא חובה: הדף לא שולח אליהם הודעות ולא מעביר אותם ל-Claude. אפשר למחוק אותם כאן.</span></p>
     </form>
     <div class="prof-f"><p class="perr" id="pfErr" role="alert"></p><button type="button" class="btn" data-prof="later" id="pfLater">אחר כך</button><button type="submit" form="profForm" class="btn pri">שמירה</button></div>
   </section>
@@ -15171,7 +15171,9 @@ const pct=(x,d=1)=>Number(x).toFixed(d)+'%';
 const spct=(x,d=1)=>LRM+(x>=0?'+':'−')+Math.abs(x).toFixed(d)+'%';
 const hm=iso=>{const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 const ago=iso=>{const m=Math.max(0,Math.round((Date.now()-new Date(iso))/6e4));return m<60?`לפני ${m} דקות`:m<1440?`לפני ${Math.round(m/60)} שעות`:`לפני ${Math.round(m/1440)} ימים`};
-const dmy=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':d.getDate()+'.'+(d.getMonth()+1)};
+// day.month; a date from another year also carries the year (12.10.25), so last year's data never reads as this year's
+const dmy=iso=>{if(!iso)return'';const d=new Date(iso);if(isNaN(d))return'';const y=d.getFullYear();return d.getDate()+'.'+(d.getMonth()+1)+(y!==new Date().getFullYear()?'.'+String(y).slice(2):'')};
+const dmyy=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':d.getDate()+'.'+(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2)};
 
 // ---- v128: when the prices are refreshed. The scheduled task runs Monday to Friday at :40, from 10:40 to 23:40 Israel time
 // (the Tel Aviv session, which trades Monday to Friday since January 2026, then New York). The page knows the schedule, so the
@@ -15211,7 +15213,7 @@ function pxNextTxt(now){
 const freshTxt=()=>`${Q.priceLabel||''} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
 // an open page keeps that line true as the hours pass, and redraws when the prices turn late (or stop being late)
 let FRESH='', LATE=null;
-setInterval(()=>{try{if(!P||!Q||!Q.updatedAt)return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
+setInterval(()=>{try{if(!P||!Q||!Q.updatedAt||noPf())return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
   const l=pxLate(); if(LATE!==null&&l!==LATE){LATE=l; render()} else LATE=l}catch(e){}},60000);
 window.__px={runs:pxRuns,late:pxLate,next:pxNextTxt,fresh:()=>Q&&Q.updatedAt?freshTxt():''};
 
@@ -15241,8 +15243,11 @@ const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}
 const pxSave=()=>{try{if(PXF)localStorage.setItem('tr_pxfire',JSON.stringify(PXF));else localStorage.removeItem('tr_pxfire')}catch(e){}};
 const pxCan=()=>!!MCP&&OWNER&&!LOCAL&&!PXF&&!PXOFF&&!!Q&&!!Q.updatedAt;
 // what the header line says while a refresh is in flight, and the button for a refresh the page may not start by itself yet
+// without a portfolio the line under the name says so, instead of the price times of securities the user does not hold
+const noPf=()=>!!document.querySelector('.wrap.nopf');
 function pxLine(){
   const el=$('fresh'), b=$('pxNow'); if(!el)return;
+  if(noPf()){const t='עוד אין כאן תיק. אחרי שתוסיף אותו, יופיעו כאן השווי שלו והשינוי היומי.'; if(el.textContent!==t)el.textContent=t; el.classList.remove('busy'); if(b)b.hidden=true; return}
   if(PXF){el.textContent=`מעדכן מחירים… התחיל ${hm(PXF.at)}, בדרך כלל כדקה וחצי`; el.classList.add('busy'); if(b)b.hidden=true; return}
   el.classList.remove('busy'); if(Q&&Q.updatedAt){const t=freshTxt(); if(t!==FRESH||el.textContent!==t){FRESH=t; el.textContent=t}}
   if(b)b.hidden=!(pxCan()&&mktOpen()&&pxAge()>=PXMAN&&PXQ);
@@ -15414,7 +15419,7 @@ function renderOb(){
 let PFK=false;
 function render(){
   setTimeout(()=>{try{riskNavSync()}catch(e){}},0);
-  try{document.querySelector('.wrap').classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length)))}catch(e){}
+  try{const w=document.querySelector('.wrap'), was=w.classList.contains('nopf'); w.classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length))); if(was!==w.classList.contains('nopf'))pxLine()}catch(e){}
   try{renderOb()}catch(e){}
   try{fabSync()}catch(e){}
   try{renderMe()}catch(e){}
@@ -15426,7 +15431,7 @@ function render(){
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
-  FRESH=freshTxt(); if(!PXF)$('fresh').textContent=FRESH; LATE=pxLate();
+  FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
@@ -15826,7 +15831,7 @@ function renderTrend(){
   const mAll=mAllNow(), depNow=depTotal(), today=ilDay();
   const pts=HS.monthly.map(r=>{const d=new Date(+r.ym.slice(0,4),+r.ym.slice(5),0);return {t:+d,label:`סוף ${MSHORT[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,exc:r.exc,blink:r.blink,by:r.by||{exc:r.exc,blink:r.blink},val:r.tot!=null?r.tot:(r.exc||0)+(r.blink||0),dep:r.dep,est:!!r.excEst}});
   const lastT=pts.length?pts[pts.length-1].t:0;
-  for(const k of Object.keys((DY&&DY.points)||{}).sort()){ if(k===today)continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(t>lastT)pts.push({t,label:dmy(k)+'.'+k.slice(2,4),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:x.v,dep:x.dep}) }
+  for(const k of Object.keys((DY&&DY.points)||{}).sort()){ if(k===today)continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(t>lastT)pts.push({t,label:dmyy(k),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:x.v,dep:x.dep}) }
   const byNow=Object.fromEntries(acctIds().map(a=>[a,model(P,Q,a).total])), ex=byNow.exc||0, bl=byNow.blink||0;
   pts.push({t:Date.now(),label:'היום',exc:ex,blink:bl,by:byNow,val:mAll.total,dep:depNow,now:true});
   TP=pts;
@@ -16566,7 +16571,8 @@ function anaOpen(src,toInput){const d=$('anaBox'); if(!d)return; const was=!d.hi
   d.setAttribute('aria-modal',anaPhone()?'true':'false'); fabSync(); anaHello(); anaSugg();
   if(toInput)setTimeout(()=>{try{const i=$('anaQ'); (i&&!$('anaForm').hidden?i:$('anaSugg').querySelector('button')||d.querySelector('.chat-x')).focus()}catch(e){}},40)}
 function anaClose(quiet){const d=$('anaBox'); if(!d||d.hidden)return; d.hidden=true; document.body.classList.remove('chat-open'); $('chatFab').setAttribute('aria-expanded','false'); fabSync();
-  if(!quiet){try{const r=ANA_RET&&document.contains(ANA_RET)&&ANA_RET.offsetParent!==null?ANA_RET:$('chatFab'); if(r&&!r.hidden)r.focus({preventScroll:true})}catch(e){}} ANA_RET=null}
+  if(!quiet){try{const r=ANA_RET&&document.contains(ANA_RET)&&ANA_RET.offsetParent!==null?ANA_RET:$('chatFab'); if(r&&!r.hidden)r.focus({preventScroll:true})}catch(e){}} ANA_RET=null
+  setTimeout(()=>{try{profMaybe()}catch(e){}},1200)}   // the profile waits while צ׳יקו is open (after the first save he explains the portfolio first)
 function anaBusyUi(on){for(const b of document.querySelectorAll('#anaEntry .ana-chips button, #anaSugg button, #anaForm button'))b.disabled=on}
 function anaAvail(){const on=!!SAMPLE&&!SAMPLE_OFF; for(const el of document.querySelectorAll('#anaBox [data-needs-ai], #anaEntry [data-needs-ai]'))el.hidden=!on;
   const n=$('anaNote'); if(n)n.textContent=on||!ANA_READY?'':'הניתוח המחושב זמין תמיד. סיכום היום ושאלות חופשיות זמינים כש-Claude מחובר לדף.';
@@ -16932,11 +16938,13 @@ function renderRatings(m){
     <td title="${fs?esc(fs.parts.map(x=>x[0]+' '+Math.round(x[1]*20)+'/20').join(' · ')):''}">${fs?`<span class="n">${fs.score}</span><span class="gr ${fs.grade}">${fs.grade}</span><span class="meter"><i style="width:${fs.score}%"></i></span>`:'<span class="nm">אין מספיק נתונים</span>'}</td>
     <td class="num"><span class="n ${c.revg<0?'down':''}">${c.revg!=null?spct(c.revg):'—'}</span></td>
     <td class="num"><span class="n ${c.pm<0?'down':''}">${c.pm!=null?pct(c.pm):'—'}</span></td>
-    <td class="num"><span class="n">${c.pe!=null?c.pe.toFixed(1):'הפסד'}</span>${c.fpe!=null?`<div class="nm">צפוי ${c.fpe>999?'999+':c.fpe.toFixed(1)}</div>`:''}</td>
+    <td class="num">${c.pe!=null?`<span class="n">${c.pe.toFixed(1)}</span>`:c.pm!=null&&c.pm<0?'<span class="nm" title="החברה הפסדית בשנה האחרונה, ולכן אין לה מכפיל רווח">הפסד</span>':'<span class="nm" title="אין נתון מהמקור">—</span>'}${c.fpe!=null?`<div class="nm">צפוי ${c.fpe>999?'999+':c.fpe.toFixed(1)}</div>`:''}</td>
     <td>${esc(RATE_HE[c.rating]||c.rating||'—')}<div class="nm">${c.analysts?c.analysts+' אנליסטים':''}${c.votes?` · <span class="n">${c.votes.buy}/${c.votes.hold}/${c.votes.sell}</span> קנייה/החזק/מכירה`:''}</div></td>
     <td class="num">${c.target?`<span class="n">$${c.target.toFixed(0)}</span>${up!=null?`<div class="nm"><span class="n ${up>=0?'up':'down'}">${spct(up)}</span></div>`:''}`:'—'}</td>
     ${inv?'<td>':'<td hidden>'}${c.inv?`${esc(RATE_HE[c.inv.consensus]||c.inv.consensus||'—')}${c.inv.consensus&&c.rating&&c.inv.consensus!==c.rating?' <span class="flag">שונה</span>':''}<div class="nm"><span class="n">${c.inv.buy??'–'}/${c.inv.hold??'–'}/${c.inv.sell??'–'}</span> קנייה/החזק/מכירה${c.inv.target?` · יעד <span class="n">$${(+c.inv.target).toFixed(0)}</span>`:''}</div>`:'<span class="nm">עוד לא נטען</span>'}</td>
-    <td>${nx}</td></tr>`}).join('')+(none.length?`<tr><td colspan="9" class="nm">ללא דירוג: ${esc(none.join(', '))} (קרנות מדד, אין להן דוחות של חברה אחת).</td></tr>`:'');
+    <td>${nx}</td></tr>`}).join('')+(()=>{const nf=none.filter(k=>isF(k)), no=none.filter(k=>!isF(k));   // only funds lack company reports; for the rest the source simply has no data now
+      return (nf.length?`<tr><td colspan="9" class="nm">קרנות ותעודות סל: ${esc(nf.join(', '))}. אין להן דוחות של חברה אחת, ולכן אין להן דירוג.</td></tr>`:'')
+        +(no.length?`<tr><td colspan="9" class="nm">אין כרגע נתונים: ${esc(no.join(', '))}. המקור לא מסקר אותם, או שהנתונים עוד לא הגיעו.</td></tr>`:'')})();
   const ev=(RS.events||[]).slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,12);
   if(ev.length)$('evList').innerHTML=ev.map(e=>`<li><span><span class="sym">${esc(lab(e.sym))}</span> <span class="nm">${dmy(e.date)}</span><br>${esc(e.text)}</span></li>`).join('');
 }
@@ -18391,6 +18399,7 @@ function profOpen(src){
   const d=$('profDlg'); if(!d||!canWrite)return; if(d.hidden)PROF_RET=src||document.activeElement;
   const p=S.profile||{};
   $('pfFirst').value=p.first||S.name||''; $('pfLast').value=p.last||''; $('pfEmail').value=p.email||''; $('pfPhone').value=p.phone||'';
+  {const has=!!(p.email||p.phone); for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=!has} const cn=$('pfContactNote'); if(cn)cn.hidden=!has}
   $('pfLang').innerHTML=langOpts(I18N_OK(p.lang)?p.lang:(I18N.lang||'he'));
   for(const r of d.querySelectorAll('[name=pfRisk]'))r.checked=r.value===p.risk;
   for(const r of d.querySelectorAll('[name=pfLevel]'))r.checked=r.value===(p.level||'');
@@ -18421,9 +18430,11 @@ function profSave(){
   S.name=f; S.depDay=(dep>=1&&dep<=28)||dep===DEP_LAST?dep:0; if(yrs>=1&&yrs<=40)S.years=yrs;
   changed(); profClose(); i18nSync(); try{fillInputs()}catch(e){}
   offerUndo('הפרופיל נשמר',()=>{S=mergeSettings(JSON.parse(before));fillInputs();changed();i18nSync()})}
-// shown once by itself to a viewer who has no profile yet (new or existing), unless they chose "אחר כך" in the last two weeks
+// shown once by itself to a viewer who has a portfolio but no profile yet, unless they chose "אחר כך" in the last two weeks
 function profMaybe(){
   if(!SETK||!canWrite||S.profile||!MYID)return; const d=$('profDlg'); if(!d||!d.hidden)return;
+  if(!P||!((P.positions||[]).length||(P.cash||[]).length))return;   // a new user adds the portfolio first; the questions come after
+  {const t=$('botTip'); if(t&&!t.hidden){setTimeout(()=>{try{profMaybe()}catch(e){}},9000);return}}   // one thing at a time
   {const a=$('anaBox'); if(a&&!a.hidden)return}
   try{const t=localStorage.getItem('tr_prof_later'); if(t&&Date.now()-new Date(t).getTime()<14*864e5)return}catch(e){}
   profOpen(null)}
@@ -19031,7 +19042,8 @@ function lgLoad(sh){if(LGTRY.has(sh))return;LGTRY.add(sh);let rel='logos/'+sh+'.
   const use=u=>{const im=new Image();im.onload=()=>{LGOK.set(sh,u);lgFillAll(sh)};im.onerror=()=>{if(u!==rel&&!tried){tried=1;use(rel)}else{LGERR.add(sh);lgNote()}};im.src=u};
   try{fetch(rel).then(r=>{LGDBG[sh]=r.status+' '+(r.headers.get('content-type')||'?');if(!r.ok)throw 0;return r.blob()}).then(bl=>{LGDBG[sh]+=' '+bl.type+' '+bl.size;use(URL.createObjectURL(bl))}).catch(e=>{LGDBG[sh]=(LGDBG[sh]||'')+' err:'+(e&&e.message||e);tried=1;use(rel)})}catch(e){LGDBG[sh]='throw:'+(e&&e.message||e);tried=1;use(rel)}}
 const LGDBG={};
-function lgNote(){const n=$('sqNote');if(n&&LGERR.size&&!/הלוגואים/.test(n.textContent))n.textContent+=' הלוגואים לא נטענו בדפדפן הזה ('+[...LGERR].slice(0,2).map(x=>x+': '+(LGDBG[x]||'-').slice(0,40)).join(' · ')+').'}
+// a plain sentence for the reader; the technical detail goes to the console only
+function lgNote(){const n=$('sqNote');if(n&&LGERR.size&&!/הלוגואים/.test(n.textContent)){n.textContent+=' חלק מהלוגואים לא נטענו, ובמקומם מוצגות אותיות.';try{console.warn('logos failed',[...LGERR].map(x=>x+': '+(LGDBG[x]||'-')).join(' · '))}catch(e){}}}
 function lgPosCss(c,r,rows){return `${(c/(LGCOLS-1)*100).toFixed(3)}% ${(r/(rows-1)*100).toFixed(3)}%`}
 function lgFillAll(sh){const u=LGOK.get(sh);if(!u)return;document.querySelectorAll('.lg[data-sh="'+sh+'"]:not(.on)').forEach(el=>{el.classList.add('on');const b=document.createElement('b');b.className='sp';b.style.backgroundImage=`url("${u}")`;b.style.backgroundPosition=lgPosCss(+el.dataset.c,+el.dataset.r,+el.dataset.rows);el.appendChild(b)})}
 function logoHtml(k,cls){k=String(k||'');const sym=k.replace(/^TLV:/,''),ini=esc(/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:''),ps=lgPos(k);
@@ -19360,7 +19372,7 @@ try{refreshBack()}catch(e){}
   const os=$('obSkip'); if(os)os.addEventListener('click',()=>{try{localStorage.setItem('tr_ob_skip','1')}catch(e){}$('obNext').hidden=true});
   ARCON=!LOCAL; arcUi();
   if(ARCON){try{db.collection(PATHS.arc).orderBy('createdAt','desc').limit(80).onSnapshot(s=>{ARC=s.docs.map(d=>({id:d.id,...d.data()}));renderArc()},()=>{})}catch(e){ARCON=false;arcUi()}}
-  pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();render()}else{$('fresh').textContent='עדיין אין נתוני תיק.';render()}},fail);
+  pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();render()}else{$('fresh').textContent='עדיין אין נתוני תיק.';render()}},fail);
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();render();try{pxOnQuotes()}catch(e){}}},fail);
   pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}render()},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();render()}},fail);

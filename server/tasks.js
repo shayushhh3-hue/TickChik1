@@ -59,13 +59,14 @@ async function series(t,range,interval){
   if(!d.length)throw new Error('empty'); return {d,c};
 }
 // the nightly GitHub mirror of the nasdaq.com screener → quotes/all and the bucket series quotes/h_<prefix>
-async function usSnapshot(store,now,log){
+export async function usSnapshot(store,now,log){
   const US={}; const base='https://raw.githubusercontent.com/rreichel3/US-Stock-Symbols/main/';
   for(const ex of ['nasdaq','nyse','amex']){
     const r=await fetchFor(60000)(base+ex+'/'+ex+'_full_tickers.json'); if(!r.ok){log('mirror',ex,r.status);continue}
     for(const x of await r.json()){const s=String(x.symbol||'').trim().replace(/\//g,'.').replace(/\^/g,'-'); if(!/^[A-Z][A-Z.\-]{0,5}$/.test(s))continue;
-      const px=parseFloat(String(x.lastsale||'').replace(/[$,]/g,'')), pc=String(x.pctchange||''); const pct=/^-?[\d.]+%?$/.test(pc.replace(/,/g,''))?parseFloat(pc.replace(/[%,]/g,'')):0;
-      if(px>0)US[s]=[Math.round(px*1e4)/1e4,Math.round(pct*100)/100]}
+      // a change the mirror does not give (an empty or "NA" field) stays unknown: null, shown as "—", never as 0%
+      const px=parseFloat(String(x.lastsale||'').replace(/[$,]/g,'')), pc=String(x.pctchange||''); const pct=/^-?[\d.]+%?$/.test(pc.replace(/,/g,''))?parseFloat(pc.replace(/[%,]/g,'')):null;
+      if(px>0)US[s]=[Math.round(px*1e4)/1e4,pct==null||!isFinite(pct)?null:Math.round(pct*100)/100]}
   }
   if(!Object.keys(US).length)return;
   let snapDate=null; const cand={};
