@@ -27,16 +27,19 @@ const PORT=+env.PORT||3000;
 const OWNER_EMAIL=String(env.OWNER_EMAIL||'').trim().toLowerCase();
 const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 // Reading uploaded files (statements, screenshots, pasted reports) uses the strongest model there is, in this order: when
-// the first is not open to the key, is overloaded, or declines, the next one reads (the owner's choice, 14.10.2026).
+// the first is not open to the key, is overloaded, has reached its rate limit, or declines, the next one reads (the
+// owner's choice, 14.10.2026).
 // Only file reading may use these; צ׳יקו's chat stays on ALLOWED_MODELS.
 const FILE_MODELS=String(env.FILE_MODELS||'claude-fable-5-1,claude-opus-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 // the quick read of a file, which the strongest model checks: it streams the same way, with no next model
 const FILE_QUICK_MODELS=String(env.FILE_QUICK_MODELS||'claude-haiku-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages';
-// Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request
+// Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request. A statement
+// counts once: the quick read that runs next to the strongest model's read has a cap of its own, of the same size.
 const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
-// a partner's calls at once: reading a file is two (the quick read and the strongest model's check), plus the chat
-const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=3;
+// a partner's calls at once, as the owner's: five files read at once (each a quick read and a check), and room for the
+// chat and for a translation of the page (two calls at once)
+const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=16;
 // these models think before they answer (always on), and the thinking counts in the answer's length: more room, more time
 // Railway keeps a request open up to 15 minutes while data flows: one read gets 12 minutes, and all the models together 14
 const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000, AI_FILE_BUDGET=14*60*1000;
@@ -148,17 +151,22 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // ---- צ׳יקו: the page's Claude request, with the server's key ----
   // Claude's errors in plain Hebrew, so the page can say what is wrong (and the owner can fix it in Railway)
   const NOKEY='צ׳יקו לא מחובר: חסר המשתנה ANTHROPIC_API_KEY ב-Railway.';
+  // a problem in the site's own set-up (no key, no credit, a key or a model that Anthropic refuses): the owner gets the
+  // details, a partner a plain line, since nothing in their own account can fix it (marked site:true until it is sent)
+  const SITE_ERR='Claude לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.';
+  const forUser=(u,j)=>{const e=j&&j.error; if(!e||!e.site)return j; const {site,...rest}=e; return {...j,error:u&&u.role==='owner'?rest:{...rest,message:SITE_ERR}}};
   const askErr=(status,type,msg)=>{const m=String(msg||'');
-    if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון Anthropic. צריך להטעין קרדיט ב-console.anthropic.com (Billing).'];
-    if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API של Anthropic נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.'];
-    if(status===404||type==='not_found_error')return [502,'upstream_error','המודל של Claude לא זמין בחשבון Anthropic הזה ('+m.slice(0,80)+').'];
-    if(status===429||type==='rate_limit_error')return [429,'rate_limited','Claude ביקש להאט (מגבלת קצב בחשבון Anthropic). נסה שוב בעוד דקה.'];
+    if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון Anthropic. צריך להטעין קרדיט ב-console.anthropic.com (Billing).',true];
+    if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API של Anthropic נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.',true];
+    if(status===404||type==='not_found_error')return [502,'upstream_error','המודל של Claude לא זמין בחשבון Anthropic הזה ('+m.slice(0,80)+').',true];
+    if(status===429||type==='rate_limit_error')return [429,'rate_limited','Claude ביקש להאט: האתר הגיע למגבלת הקצב שלו מול Anthropic. נסה שוב בעוד דקה.'];
     if(status===529||type==='overloaded_error')return [503,'upstream_error','Claude עמוס כרגע. נסה שוב בעוד כמה דקות.'];
     if(status===413||/too large|too long|prompt is too long/i.test(m))return [413,'prompt_too_large','הקובץ גדול מדי בשביל Claude. נסה פחות עמודים.'];
     if(status===400)return [400,'invalid_argument','Claude דחה את הבקשה: '+m.slice(0,200)];
     return [502,'upstream_error','Claude לא ענה'+(status?' (HTTP '+status+')':'')+'. נסה שוב.']};
+  // nobill: Anthropic answered with an error before any work (or no call was made), so nothing was billed
   async function askClaude(body,signal){
-    if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
+    if(!env.ANTHROPIC_API_KEY)return {status:503,nobill:true,json:{error:{code:'sampling_disabled',message:NOKEY,site:true}}};
     const sig=signal?AbortSignal.any([signal,AbortSignal.timeout(280000)]):AbortSignal.timeout(280000);
     let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body),signal:sig})}
     catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}};
@@ -166,21 +174,22 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     let text; try{text=await r.text()}catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}}; throw e}
     if(r.ok)return {status:200,text};
     let type='',msg=''; try{const e=JSON.parse(text).error||{};type=e.type||'';msg=e.message||''}catch(e){}
-    const [st,code,message]=askErr(r.status,type,msg); log('ask failed:',r.status,type,msg.slice(0,160));
-    return {status:st,json:{error:{code,message}}};
+    const [st,code,message,site]=askErr(r.status,type,msg); log('ask failed:',r.status,type,msg.slice(0,160));
+    return {status:st,nobill:true,json:{error:{code,message,...(site?{site}:{})}}};
   }
   // ---- reading files: streamed from Claude (an answer can take minutes, and nothing would arrive until its end), put
-  // together here into one ordinary answer. A model that is not open to the key, is overloaded, or declines (stop_reason
+  // together here into one ordinary answer. A model that is not open to the key, is overloaded, has reached its rate limit
+  // (each model has its own; several statements read at once can reach the strongest model's), or declines (stop_reason
   // "refusal") hands over to the next one on FILE_MODELS; the answer says which model read and which could not.
-  const retryable=(st,type,msg)=>st===404||st===403||st===529||type==='not_found_error'||type==='permission_error'||type==='overloaded_error'||(st===400&&/model/i.test(msg||''));
+  const retryable=(st,type,msg)=>st===404||st===403||st===429||st===529||type==='not_found_error'||type==='permission_error'||type==='rate_limit_error'||type==='overloaded_error'||(st===400&&/model/i.test(msg||''));
   async function claudeStream(body,signal,ms=AI_FILE_TIMEOUT){
-    if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
+    if(!env.ANTHROPIC_API_KEY)return {status:503,nobill:true,json:{error:{code:'sampling_disabled',message:NOKEY,site:true}}};
     const sig=AbortSignal.any([signal,AbortSignal.timeout(ms)].filter(Boolean)), late='Claude לא סיים לקרוא בזמן (יותר מ-'+Math.max(1,Math.round(ms/60000))+' דקות). נסה פחות עמודים או צילומים.';
     let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({...body,stream:true}),signal:sig})}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read failed:',to?'timeout':String(e&&e.message||e));
       return {status:504,json:{error:{code:'upstream_error',message:to?late:'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
     if(!r.ok){let type='',msg=''; try{const e=JSON.parse(await r.text()).error||{};type=e.type||'';msg=e.message||''}catch(e){}
-      const [st,code,message]=askErr(r.status,type,msg); return {status:st,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message}}}}
+      const [st,code,message,site]=askErr(r.status,type,msg); return {status:st,nobill:true,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message,...(site?{site}:{})}}}}
     const dec=new TextDecoder(); let buf='', text='', stop=null, why=null, usage={}, model=body.model, id='', err=null, out=false;
     try{for await(const chunk of r.body){buf+=dec.decode(chunk,{stream:true}); let i;
       while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i); buf=buf.slice(i+2); const data=ev.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join(''); if(!data)continue;
@@ -191,7 +200,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
         else if(j.type==='error')err=j.error||{type:'api_error',message:'stream error'}}}}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read stream failed:',to?'timeout':String(e&&e.message||e));
       return {status:504,json:{error:{code:'upstream_error',message:to?late:'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
-    if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message}}}}
+    if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message,site]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message,...(site?{site}:{})}}}}
     // Claude declined (an ordinary answer with stop_reason "refusal"; what it wrote so far is dropped). Anthropic's guide
     // "Refusals and fallback" (September 2026): the next model is the way to go, except for "reasoning_extraction", which
     // has no fallback. Billed, and so counted here: a decline after some output, or one in the bio, frontier_llm or
@@ -200,27 +209,29 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       return {status:502,retry:cat!=='reasoning_extraction',why:'refusal'+(cat?' ('+cat+')':''),spent:billed?{model,usage}:null,json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}}}
     return {message:{id,type:'message',role:'assistant',model,content:[{type:'text',text}],stop_reason:stop,usage}};
   }
-  async function readFiles(req,res,body,u,day){
+  async function readFiles(req,res,body,u,day,quick){
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
     // Railway closes a request that sends nothing for 5 minutes: after a while, the answer starts with spaces (valid JSON
     // whitespace) until it is ready; an error after that point is sent as {"error":...} with the status already 200
     let started=false; const beat=setInterval(()=>{try{if(!started){res.status(200).type('application/json'); started=true} res.write(' ')}catch(e){}},Math.max(20,+env.AI_KEEPALIVE_MS||15000));
-    const tried=[], att=[]; let out=null;
+    const tried=[], att=[]; let out=null, free=true;
     const count=(model,us={},calls=1)=>{const inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
       store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,model,{calls,input:inp,output:us.output_tokens||0})};
     // the next model starts only while there is time left for it in Railway's 15 minutes
     const end=Date.now()+(+env.AI_FILE_BUDGET_MS||AI_FILE_BUDGET);
     const chain=FILE_MODELS.includes(body.model)?FILE_MODELS.slice(FILE_MODELS.indexOf(body.model)):[body.model];
     try{for(const m of chain){const left=end-Date.now(); if(att.length&&left<2*60*1000)break;
-        att.push(m); out=await claudeStream({...body,model:m},ctl.signal,Math.min(AI_FILE_TIMEOUT,left));
+        att.push(m); out=await claudeStream({...body,model:m},ctl.signal,Math.min(AI_FILE_TIMEOUT,left)); if(!out.nobill)free=false;
         if(out.spent)count(out.spent.model||m,out.spent.usage);
-        if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+'), the next model reads')}}
+        if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+')'+(m!==chain[chain.length-1]?', the next model reads':''))}}
     finally{clearInterval(beat)}
     if(out.aborted){log('read cancelled by the page');return}
     if(out.message){count(out.message.model,out.message.usage||{});
       const txt=JSON.stringify({...out.message,fallbackFrom:tried}); return started?res.end(txt):res.status(200).type('application/json').send(txt)}
-    if(att.length>1)out.json.error.message+=` (נוסו: ${att.join(', ')})`;
-    return started?res.end(JSON.stringify(out.json)):res.status(out.status).json(out.json);
+    // nothing was read and nothing was billed (every model answered with an error at once): the read does not count
+    if(free)store.aiAdd(u.id,day,quick?{quick:-1}:{calls:-1});
+    if(att.length>1&&u.role==='owner')out.json.error.message+=` (נוסו: ${att.join(', ')})`;
+    const j=forUser(u,out.json); return started?res.end(JSON.stringify(j)):res.status(out.status).json(j);
   }
   // only the kinds of request the page makes: a model from the list, a capped answer length, plain text and image turns,
   // an optional system line. Anything else (tools, other settings) is dropped or refused.
@@ -251,28 +262,32 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/ask',needUser,async(req,res)=>{
     const c=cleanAsk(req.body); if(c.err)return res.status(400).json({error:{code:'invalid_argument',message:c.err}});
     const u=req.user, owner=u.role==='owner', day=ilParts(new Date()).iso;
+    // the quick read of a statement: counted apart, so that a statement is one call of the daily quota
+    const quick=c.files&&FILE_QUICK_MODELS.includes(c.body.model)&&!FILE_MODELS.includes(c.body.model);
     if(!owner){
-      if(store.aiUsage(u.id,day).calls>=AI_DAILY)return res.status(429).json({error:{code:'quota_exceeded',message:`הגעת למכסה היומית של צ׳יקו (${AI_DAILY} פניות ביום). המכסה מתחדשת בחצות.`}});
-      if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'בקשה קודמת ל-Claude עדיין רצה. נסה שוב בעוד רגע.'}});
+      const use=store.aiUsage(u.id,day);
+      if(quick?use.quick>=AI_DAILY:use.calls>=AI_DAILY)return res.status(429).json({error:{code:'quota_exceeded',message:quick?`הגעת למכסה היומית של הקריאות המהירות (${AI_DAILY} ביום). המכסה מתחדשת בחצות.`:`הגעת למכסה היומית: ${AI_DAILY} פניות ביום לצ׳יקו ולקריאת דוחות. המכסה מתחדשת בחצות.`}});
+      if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'יותר מדי בקשות ל-Claude רצות עכשיו. נסה שוב בעוד רגע.'}});
     }
-    store.aiAdd(u.id,day,{calls:1}); inflight.set(u.id,(inflight.get(u.id)||0)+1);
-    if(c.files){try{return await readFiles(req,res,c.body,u,day)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}}
+    store.aiAdd(u.id,day,quick?{quick:1}:{calls:1}); inflight.set(u.id,(inflight.get(u.id)||0)+1);
+    if(c.files){try{return await readFiles(req,res,c.body,u,day,quick)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}}
     // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
     let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
     if(out.aborted){log('ask cancelled by the page');return}
+    if(out.nobill)store.aiAdd(u.id,day,{calls:-1});   // Anthropic answered with an error at once: nothing billed, so it does not count
     if(out.text!=null){
       try{const J=JSON.parse(out.text), us=J.usage||{}, inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
         store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,J.model||c.body.model,{calls:1,input:inp,output:us.output_tokens||0})}catch(e){}
       res.status(200).type('application/json').send(out.text);return}
-    res.status(out.status).json(out.json);
+    res.status(out.status).json(forUser(u,out.json));
   });
   // the owner sees who used Claude how much (calls and tokens, today and the last 30 days)
   app.get('/api/ai/usage',needOwner,(req,res)=>{
     const today=ilParts(new Date()).iso, from=ilParts(new Date(Date.now()-29*864e5)).iso;
     const users=store.users(), byId=Object.fromEntries(users.map(x=>[x.id,x])), month=store.aiSince(from), day=store.aiSince(today);
-    const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,calls30:m.calls||0,input30:m.input||0,output30:m.output||0}});
-    for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,calls30:m.calls,input30:m.input,output30:m.output});
+    const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,quickToday:d.quick||0,calls30:m.calls||0,quick30:m.quick||0,input30:m.input||0,output30:m.output||0}});
+    for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,quickToday:0,calls30:m.calls,quick30:m.quick||0,input30:m.input,output30:m.output});
     res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,fileQuick:FILE_QUICK_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
   app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));

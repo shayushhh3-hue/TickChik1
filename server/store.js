@@ -21,6 +21,8 @@ export class Store{
       create table if not exists meta(k text primary key, v text not null);
       create table if not exists ai_usage(uid text not null, day text not null, calls integer not null default 0, input integer not null default 0, output integer not null default 0, primary key(uid,day));
       create table if not exists ai_models(day text not null, model text not null, calls integer not null default 0, input integer not null default 0, output integer not null default 0, primary key(day,model));`);
+    // the quick reads of statements, counted apart from the daily quota (14.10.2026): a database from before gets the column
+    if(!this.db.prepare("select 1 from pragma_table_info('ai_usage') where name='quick'").get())this.db.exec('alter table ai_usage add column quick integer not null default 0');
     this.listeners=new Set();
   }
   // ---- documents ----
@@ -49,12 +51,14 @@ export class Store{
   getMeta(k){const r=this.db.prepare('select v from meta where k=?').get(k);return r?r.v:null}
   setMeta(k,v){this.db.prepare('insert into meta(k,v) values(?,?) on conflict(k) do update set v=excluded.v').run(k,String(v))}
   // ---- Claude usage per user per day (Israel date) ----
-  aiUsage(uid,day){return this.db.prepare('select calls, input, output from ai_usage where uid=? and day=?').get(uid,day)||{calls:0,input:0,output:0}}
-  aiAdd(uid,day,{calls=0,input=0,output=0}={}){this.db.prepare('insert into ai_usage(uid,day,calls,input,output) values(?,?,?,?,?) on conflict(uid,day) do update set calls=calls+excluded.calls, input=input+excluded.input, output=output+excluded.output').run(uid,day,calls|0,input|0,output|0)}
+  // calls: what counts in the daily quota (a question to צ׳יקו, a statement read by the strongest model); quick: the quick
+  // read of a statement that runs next to that read, with a cap of its own
+  aiUsage(uid,day){return this.db.prepare('select calls, input, output, quick from ai_usage where uid=? and day=?').get(uid,day)||{calls:0,input:0,output:0,quick:0}}
+  aiAdd(uid,day,{calls=0,input=0,output=0,quick=0}={}){this.db.prepare('insert into ai_usage(uid,day,calls,input,output,quick) values(?,?,?,?,?,?) on conflict(uid,day) do update set calls=calls+excluded.calls, input=input+excluded.input, output=output+excluded.output, quick=quick+excluded.quick').run(uid,day,calls|0,input|0,output|0,quick|0)}
   // per model and day, for the cost: the models differ a lot in price
   aiModelAdd(day,model,{calls=0,input=0,output=0}={}){this.db.prepare('insert into ai_models(day,model,calls,input,output) values(?,?,?,?,?) on conflict(day,model) do update set calls=calls+excluded.calls, input=input+excluded.input, output=output+excluded.output').run(day,String(model||'?').slice(0,60),calls,input,output)}
   aiModelsSince(day){return this.db.prepare('select model, sum(calls) calls, sum(input) input, sum(output) output from ai_models where day>=? group by model order by model').all(day)}
-  aiSince(day){return this.db.prepare('select uid, sum(calls) calls, sum(input) input, sum(output) output from ai_usage where day>=? group by uid').all(day)}
+  aiSince(day){return this.db.prepare('select uid, sum(calls) calls, sum(input) input, sum(output) output, sum(quick) quick from ai_usage where day>=? group by uid').all(day)}
   // ---- users ----
   static hash(pw,salt){return scryptSync(String(pw),salt,64).toString('hex')}
   userByEmail(email){return this.db.prepare('select * from users where email=?').get(String(email||'').trim().toLowerCase())||null}

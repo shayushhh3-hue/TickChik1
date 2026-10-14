@@ -15315,7 +15315,8 @@ window.__px={runs:pxRuns,late:pxLate,next:pxNextTxt,fresh:()=>Q&&Q.updatedAt?fre
 // "Claude Code Remote" connector (the artifact declares it; the first call asks the owner once). It fires when the owner opens
 // the page, or returns to it, during trading hours with prices older than PXAUTO minutes, and from the refresh button
 // (PXMAN minutes). The task writes quotes/latest about a minute and a half later and the page redraws from the database.
-// Friends' pages never call it (the task belongs to the owner), and a page with no connector works exactly as before.
+// In Claude, friends' pages never call it (the task belongs to the owner), and a page with no connector works exactly as
+// before. On the site every signed-in user's page may: there it is the server's /api/prices (one run at a time, cached 3 minutes).
 const PXTRIG='trig_01QQojeH9m3qraU4GRF2di7P', PXSRV='Claude Code Remote', PXAUTO=15, PXMAN=10, PXWAIT=4;
 let MCP=null, PXF=null, PXOFF='', PXQ=false;
 const tzParts=(()=>{const F={}; return (tz,d)=>{try{
@@ -15335,7 +15336,9 @@ const dayWord=()=>{const lt=Q&&Q.lastTradeDay; return !lt||lt>=tzDay('Asia/Jerus
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
 const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}catch(e){PXF=null} if(PXF&&!(Date.now()-new Date(PXF.at)<PXWAIT*6e4))PXF=null};
 const pxSave=()=>{try{if(PXF)localStorage.setItem('tr_pxfire',JSON.stringify(PXF));else localStorage.removeItem('tr_pxfire')}catch(e){}};
-const pxCan=()=>!!MCP&&OWNER&&!LOCAL&&!PXF&&!PXOFF&&!!Q&&!!Q.updatedAt;
+// on the site every signed-in user may (the server runs one refresh at a time and answers from it for 3 minutes); in
+// Claude only the owner, through his own connection to the scheduled task
+const pxCan=()=>!!MCP&&(OWNER||!!window.__tc)&&!LOCAL&&!PXF&&!PXOFF&&!!Q&&!!Q.updatedAt;
 // what the header line says while a refresh is in flight, and the button for a refresh the page may not start by itself yet
 // without a portfolio the line under the name says so, instead of the price times of securities the user does not hold
 const noPf=()=>!!document.querySelector('.wrap.nopf');
@@ -15369,9 +15372,10 @@ async function pxFire(src){
     return false;
   }
 }
-// on open, or on return to the page: only when a market is open, the prices are old, and the owner already allowed it (a first use asks, so it waits for a click)
+// on open, or on return to the page: only when a market is open, the prices are old, there is a portfolio to price (a new
+// user's first save asks for its own prices), and the owner already allowed it (a first use asks, so it waits for a click)
 async function pxAuto(src){
-  if(!(pxCan()&&mktOpen()&&pxAge()>=PXAUTO)){pxLine();return}
+  if(!(pxCan()&&!noPf()&&mktOpen()&&pxAge()>=PXAUTO)){pxLine();return}
   let st='prompt'; try{const pm=await window.claude.use('permissions'); st=pm?await pm.state('mcp:'+PXSRV):'prompt'}catch(e){st='prompt'}
   if(st==='granted')pxFire(src); else pxLine();
 }
@@ -16472,6 +16476,8 @@ const ANA_SEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקי�
 const ANA_ERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו, לכן מוצג הניתוח המחושב בלבד. המכסה מתחדשת בחצות.',noai:'Claude לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',not_granted:'לא אושר שימוש ב-Claude מהדף, לכן מוצג הניתוח המחושב בלבד.',sampling_disabled:'Claude לא זמין בחשבון הזה, לכן מוצג הניתוח המחושב בלבד.',not_declared:'Claude לא זמין בדף הזה, לכן מוצג הניתוח המחושב בלבד.',capability_disabled:'Claude לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',capability_removed:'Claude לא זמין בגרסת האפליקציה הזו, לכן מוצג הניתוח המחושב בלבד.',rate_limited:'יותר מדי בקשות ל-Claude כרגע. הניתוח המחושב מוצג; אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'הניסוח של Claude לא הגיע בפורמט תקין, לכן מוצג הניתוח המחושב.',refused:'Claude לא ענה על הבקשה הזו, לכן מוצג הניתוח המחושב.',empty_completion:'Claude לא החזיר ניסוח, לכן מוצג הניתוח המחושב.',cancelled:'הניסוח של Claude נעצר. מוצג הניתוח המחושב.',session_expired:'צריך להתחבר מחדש ל-Claude. בינתיים מוצג הניתוח המחושב.',prompt_too_large:'הנתונים גדולים מדי לשליחה, לכן מוצג הניתוח המחושב.',upstream_error:'Claude לא ענה הפעם, לכן מוצג הניתוח המחושב.'};
 const ANA_QERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו. המכסה מתחדשת בחצות.',not_granted:'לא אושר שימוש ב-Claude מהדף, ולכן אין תשובה לשאלה.',sampling_disabled:'Claude לא זמין בחשבון הזה.',rate_limited:'יותר מדי בקשות ל-Claude כרגע. אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'התשובה של Claude לא הגיעה בפורמט תקין.',refused:'Claude לא ענה על השאלה הזו. אפשר לנסח אחרת.',empty_completion:'Claude לא החזיר תשובה. אפשר לנסח אחרת.',cancelled:'השאלה נעצרה.',session_expired:'צריך להתחבר מחדש ל-Claude.',prompt_too_large:'הנתונים גדולים מדי לשליחה.',upstream_error:'Claude לא ענה הפעם.'};
 const ANA_OFF=['quota_exceeded','not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'];
+// on the site Claude is reached through the site's own key, so "not available" is the site's, never the viewer's account
+const anaMsg=(D,c)=>window.__tc&&c==='sampling_disabled'?(D===ANA_ERR?'Claude לא זמין באתר כרגע, לכן מוצג הניתוח המחושב בלבד.':'Claude לא זמין באתר כרגע.'):(D[c]||D.upstream_error);
 // ---- ana:start ---- what Claude's sentences may not say (tests/page-math.test.js)
 // advice: buy or sell said to the person, in any form; "לקנות", "למכור", "ממליצים" only when they quote the analysts,
 // the person's own plan or rule, or say that no advice is given
@@ -16978,7 +16984,7 @@ function anaReportHtml(F,issues,det,st){
   const acts=det.actions.map((a,k)=>({...a,why:(ai.actWhy&&ai.actWhy['k'+(k+1)])||a.why}));
   const acH=`<ol class="ana-ac">${acts.map(a=>`<li><div><b>${tx(a.title)}</b><p>${tx(a.why)}</p>${anaNavBtn(a.nav)}</div></li>`).join('')}</ol>`;
   const err=st.note==='first'?`<p class="ana-info">זה הניתוח שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.${SAMPLE&&!SAMPLE_OFF?' אפשר לבקש גם ניסוח והסבר של Claude: <button type="button" class="btn sm" data-ana="analyze">ניסוח של Claude</button>':''}</p>`
-    :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(ANA_ERR[st.note]||ANA_ERR.upstream_error)}${st.retry?' <button type="button" class="btn sm" data-ana="analyze">נסה שוב</button>':''}</p>`:'';
+    :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note))}${st.retry?' <button type="button" class="btn sm" data-ana="analyze">נסה שוב</button>':''}</p>`:'';
   const chk=st.ai?`<p>${!st.ai.checked?'Claude לא החזיר ניסוח שאפשר להשתמש בו, ולכן כל הניסוחים כאן מחושבים בדף.':st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של Claude הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של Claude נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
   const ft=`<footer class="ana-ft">${err}${F.miss.length?`<b>מה חסר לניתוח מלא</b><ul>${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}${chk}<p>המספרים חושבו בדף מנתוני התיק שלך. הניתוח הוא כלי עזר לקבלת החלטות ואינו תחליף לייעוץ השקעות המותאם אישית. אין לבצע שינוי בתיק על סמך נתון שלא אומת.</p>${lvCtl()}</footer>`;
   return anaHead('ניתוח התיק שלך',anaWhen(F),anaTag(F))+hero+bl+anaSec(1,'תמונת מצב',`<div class="mine3">${tiles}</div>`)+anaSec(2,'הקצאת התיק',alloc)
@@ -16989,7 +16995,7 @@ function anaDayHtml(F,det,res,st,crisis){
   const r=res&&res.lines.length?res:det, src=res&&res.lines.length?'ניסוח: Claude, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף';
   const body=st.note==='thinking'?`<ul class="ana-day">${det.lines.map(l=>`<li>${tx(l)}</li>`).join('')}</ul>${anaWait(crisis?'Claude מסביר מה קורה…':'Claude מסכם את היום…')}`
     :`<ul class="ana-day">${r.lines.map(l=>`<li>${tx(l)}</li>`).join('')}</ul>${r.action?`<p class="ana-need ${r.action==='כן'?'warn':'ok'}"><b>פעולה נדרשת: ${r.action}</b>${r.reason?' · '+esc(r.reason):''}</p>`:''}<p class="note">${src}${res&&res.replaced?` · ${res.replaced===1?'שורה אחת הוסרה':res.replaced+' שורות הוסרו'} כי הופיע בה מספר שלא נמצא בנתוני התיק.`:''}</p>`;
-  const err=st.note&&!['thinking','ai'].includes(st.note)?`<p class="ana-err">${esc((ANA_ERR[st.note]||ANA_ERR.upstream_error).replace('הניתוח המחושב','הסיכום המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="'+(crisis?'crisis':'day')+'">נסה שוב</button>':''}</p>`:'';
+  const err=st.note&&!['thinking','ai'].includes(st.note)?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note).replace('הניתוח המחושב','הסיכום המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="'+(crisis?'crisis':'day')+'">נסה שוב</button>':''}</p>`:'';
   return anaHead(crisis?'מה באמת קורה בתיק':'סיכום היום',anaWhen(F),anaTag(F))+body+err;
 }
 function anaQaHtml(F,q,ans,st){
@@ -16998,7 +17004,7 @@ function anaQaHtml(F,q,ans,st){
   else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של Claude, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
   else if(ans)body=`<p>לא הצלחתי לענות על זה רק מתוך נתוני התיק. אפשר לנסח אחרת, או לפתוח את הניתוח המלא.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else if(st.note==='noai')body=`<p class="ana-err">שאלות חופשיות זמינות כש-Claude מחובר לדף. הניתוח המחושב זמין תמיד:</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
-  else body=`<p class="ana-err">${esc(ANA_QERR[st.note]||ANA_QERR.upstream_error)}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
+  else body=`<p class="ana-err">${esc(anaMsg(ANA_QERR,st.note))}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
   return body;
 }
 // the "why" card: six short parts, each only when it has something to say (the plan's answer shape)
@@ -17106,7 +17112,7 @@ function anaExplainPfHtml(F,X,st){
   const s5=(miss.length?`<ul class="why-l">${miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:'<p>אין נתון חסר מהסוגים שהדף בודק: מחירים, מחירי קנייה, ענף והרכב קרנות.</p>')+lvN('miss');
   const s6=X.questions.length?`<dl class="stq">${X.questions.map(x=>{const [q,b,n]=EXQ[x.k](x); return `<div><dt>${tx(q)}</dt><dd>${tx(b)}${n?`<span class="ex-go">${exNav(n)}</span>`:''}</dd></div>`}).join('')}</dl>${lvN('ask')}`:'<p class="note">אין כרגע שאלה שהנתונים מעלים.</p>';
   const err=st.note==='first'?'<p class="ana-info">זה ההסבר שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.</p>'
-    :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc((ANA_ERR[st.note]||ANA_ERR.upstream_error).replace('הניתוח המחושב','ההסבר המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="explain">נסה שוב</button>':''}</p>`:'';
+    :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note).replace('הניתוח המחושב','ההסבר המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="explain">נסה שוב</button>':''}</p>`:'';
   const chk=st.sum&&st.sum.replaced?`<p>בדיקת מספרים: ${st.sum.replaced===1?'משפט אחד':st.sum.replaced+' משפטים'} של Claude ${st.sum.replaced===1?'הוסר, כי הופיע בו':'הוסרו, כי הופיע בהם'} מספר שלא נמצא בנתוני התיק, הערכה של התיק או ניסוח של המלצה.</p>`:'';
   const ft=`<footer class="ana-ft">${err}${chk}<p>מבוסס רק על התיק שלך כפי שהוא בדף: האחזקות, המחירים והשער, והכללים וההגדרות שקבעת. זה הסבר של מה שיש בתיק, לא בדיקה אם הוא מתאים לך ולא המלצה.</p>${lvCtl()}<div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">לבדיקה מול הכללים שלך</button></div></footer>`;
   return head+bl+anaSec(1,'מה יש בתיק',s1)+anaSec(2,'מה בולט',s2)+anaSec(3,'החשיפות המרכזיות '+termBtn('expo'),s3)
@@ -17265,7 +17271,7 @@ function anaExplainHtml(F,k,ans,st){
   const s=F.security, nm=esc(s.hebrew_name||s.name||k), head=anaHead(`צ׳יקו על ${nm}`,`${esc(s.type)}${s.sector?' · '+esc(s.sector):''}`);
   if(st.note==='thinking')return head+anaWait('Claude מסביר את הנייר…');
   if(st.note==='noai')return head+'<p class="ana-err">ההסבר זמין כש-Claude מחובר לדף. הנתונים עצמם מופיעים בדף הנייר.</p>';
-  if(!ans)return head+`<p class="ana-err">${esc(ANA_QERR[st.note]||ANA_QERR.upstream_error)}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="sec" data-sym="${esc(k)}">נסה שוב</button></div>`:''}`;
+  if(!ans)return head+`<p class="ana-err">${esc(anaMsg(ANA_QERR,st.note))}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="sec" data-sym="${esc(k)}">נסה שוב</button></div>`:''}`;
   const sec=(t,tag,x,cls)=>x?`<section class="ana-sec${cls?' '+cls:''}"><h4>${t}${tag?' '+tag:''}</h4><p>${tx(x)}</p></section>`:'';
   const f=ans.f, any=Object.values(f).some(Boolean);
   return head+(any?sec('מה זה','<span class="tag gen">ידע כללי</span>',f.what)+sec('מה המספרים אומרים','<span class="tag an">ניתוח</span>',f.numbers)+sec('בתיק שלי','<span class="tag an">ניתוח</span>',f.mine)+sec('למה לשים לב','<span class="tag an">ניתוח</span>',f.watch)+sec('מה לא יודעים','',f.unknown,'muted'):'<p>לא הצלחתי להסביר את הנייר הזה מתוך הנתונים.</p>')
@@ -18563,13 +18569,13 @@ function stageFiles(list,from){const all=[...(list||[])].filter(Boolean), ok=all
   if(coolLeft()>0){coolNote();return}
   clearTimeout(upT); if(!upBusy)$('upState').textContent=STAGED.length>1?`${STAGED.length} קבצים ברשימה. מתחיל לקרוא, כל קובץ בנפרד…`:'מתחיל לקרוא…';
   upT=setTimeout(()=>{if(STAGED.length&&coolLeft()<=0)readStatement()},1200)}
-// Each document is read on its own, and several at once (the owner: up to 5; a partner, whose calls at once are limited
-// on the server: one, since a read is two calls). Screenshots picked together are one read, as parts of one screen. What
+// Each document is read on its own, and several at once (on the site up to 5, for the owner and for a partner alike; in
+// Claude one, since the calls go through the viewer's own account). Screenshots picked together are one read, as parts of one screen. What
 // each read finds goes into the table as soon as it is ready; the holdings of an account come from its newest statement
 // (an older one adds only its transactions). After "slow down" nothing new is sent until the viewer asks again.
 let upBusy=false, UPQ=false, upT=0, upFailed=false, coolN=0, coolT=0;
 const JOBS=[], HOLD={}; let JOBN=0, JT=0, pumpT=0;
-const jobMax=()=>window.__tc&&OWNER?5:1;
+const jobMax=()=>window.__tc?5:1;
 const isPic=f=>/^image\//.test((f&&f.type)||'');
 function newJob(files,fromText){return {id:++JOBN,files,fromText:!!fromText,name:fromText?'הטקסט שהודבק':files.length===1?(files[0].name||'צילום מסך'):`${files.length} צילומי מסך`,state:'wait',done:[],now:'',msg:'',tick:0,ctl:new AbortController(),failed:false,
   pick:($('upAcct')&&$('upAcct').value)||'auto',quick:!!($('upQuick')&&$('upQuick').checked),pass:($('upPass')&&$('upPass').value)||'',text:fromText?(($('upText')&&$('upText').value)||'').trim():''}}
@@ -18607,7 +18613,7 @@ function drawTick(){clearInterval(JT); JT=0; if(!JOBS.some(j=>j.state==='run'&&j
   f(); JT=setInterval(f,1000)}
 const coolLeft=()=>Math.max(0,Math.ceil(((window.__cool||0)-Date.now())/1000));
 function coolNote(){const s=coolLeft(), st=$('upState'); if(!st)return;
-  if(s>0){$('btnRead').disabled=true;st.textContent=`Claude ביקש להאט. אפשר להמשיך בעוד ${s} שניות. הקבצים נשארים ברשימה, לא צריך לבחור אותם שוב.`+(coolN>=3?' אם זה חוזר שוב ושוב, ייתכן שהגעת למגבלת השימוש בחשבון Claude שלך. אפשר להקליד את הניירות ב"הקלדה מהירה".':'')}
+  if(s>0){$('btnRead').disabled=true;st.textContent=`Claude ביקש להאט. אפשר להמשיך בעוד ${s} שניות. הקבצים נשארים ברשימה, לא צריך לבחור אותם שוב.`+(coolN>=3?(window.__tc?' אם זה חוזר שוב ושוב, כנראה יש עומס על Claude באתר כרגע. אפשר להקליד את הניירות ב"הקלדה מהירה".':' אם זה חוזר שוב ושוב, ייתכן שהגעת למגבלת השימוש בחשבון Claude שלך. אפשר להקליד את הניירות ב"הקלדה מהירה".'):'')}
   else{clearInterval(coolT);coolT=0;window.__cool=0;$('btnRead').disabled=!canWrite;st.textContent=STAGED.length?'אפשר להמשיך. לחץ על "קרא שוב".':'אפשר להמשיך.'}}
 function coolStart(){if(coolLeft()>0){coolNote();return} coolN++;window.__cool=Date.now()+Math.min(120,30*Math.pow(2,coolN-1))*1000;clearInterval(coolT);coolT=setInterval(coolNote,1000);coolNote()}
 async function readStatement(fromText){
@@ -19226,7 +19232,7 @@ async function readStatement0(J){
   }catch(e){
     J.failed=true;
     const c=e&&e.code;
-    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
+    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?(window.__tc&&e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message:'Claude ביקש להאט.'):c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
     if(c==='rate_limited')coolStart();
   }
   upTick(false); J.ctl=null; if(/Claude/.test(J.now))J.now=''; showStaged(); renderJobs();
@@ -19502,7 +19508,7 @@ const I18N_ATTRS=['placeholder','aria-label','title'];
 const I18N_SKIP=new Set(['SCRIPT','STYLE','TEXTAREA','NOSCRIPT']);
 const I18N_NOT='[translate="no"],.notr,.msg.me:not(.pg),#policy,.sym';
 const I18N_BADC=['invalid_json','refused','empty_completion','prompt_too_large','invalid_request','transform_error'];
-const I18N_MSG={quota_exceeded:'המכסה היומית של צ׳יקו נגמרה, הדף מוצג בעברית · Daily Claude limit reached',not_granted:'התרגום לא אושר, הדף מוצג בעברית · Translation was not allowed',noai:'Claude לא זמין כאן, הדף מוצג בעברית · Claude is not available here',
+const I18N_MSG={quota_exceeded:'המכסה היומית של צ׳יקו נגמרה, הדף מוצג בעברית · Daily limit reached',not_granted:'התרגום לא אושר, הדף מוצג בעברית · Translation was not allowed',noai:'Claude לא זמין כאן, הדף מוצג בעברית · Claude is not available here',
   rate_limited:'Claude ביקש להאט · Translation paused',upstream_error:'התרגום נקטע · Translation interrupted',session_expired:'צריך להתחבר מחדש ל-Claude · Sign in to Claude again',cap:'התרגום נעצר · Translation stopped'};
 function i18nRe(){
   const names=[S&&S.name,S&&S.profile&&S.profile.first,S&&S.profile&&S.profile.last].map(x=>String(x||'').trim()).filter(x=>x.length>=2&&I18N_HE.test(x)&&x.length<=32);
@@ -20413,7 +20419,7 @@ try{refreshBack()}catch(e){}
   setView(VIEW||(OWNER?'full':'calm'),true);
   whoNote(); srchDb();
   try{pxBoot()}catch(e){}
-  if(OWNER&&!LOCAL){try{window.claude.use('mcp').then(m=>{MCP=m||null;if(PXQ)pxAuto('open')}).catch(()=>{})}catch(e){}}
+  if((OWNER||window.__tc)&&!LOCAL){try{window.claude.use('mcp').then(m=>{MCP=m||null;if(PXQ)pxAuto('open')}).catch(()=>{})}catch(e){}}
   try{window.claude.use('sample').then(s=>{SAMPLE=s||null;ANA_READY=true;anaAvail()}).catch(()=>{ANA_READY=true;anaAvail()})}catch(e){ANA_READY=true;anaAvail()}
   const os=$('obSkip'); if(os)os.addEventListener('click',()=>{try{localStorage.setItem('tr_ob_skip','1')}catch(e){}$('obNext').hidden=true});
   ARCON=!LOCAL; arcUi();

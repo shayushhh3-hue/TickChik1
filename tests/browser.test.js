@@ -19,7 +19,7 @@ before(async()=>{
     // that is not there (ZZZQ) and misses one (NVDA). QUICKSPELL: the quick read spells Alphabet GOOG, the strong one GOOGL.
     // QUICKGROUP: the quick read puts MSFT in another group. QUICKACCT: the quick read takes the file for Blink's.
     // QUICKCUT: a long statement, and the quick read's answer is cut in the middle. OLDREPORT: a statement of 31.12.2025.
-    // QUICKFAIL: the quick read fails. NOFABLE: the strongest model is not open to the key.
+    // QUICKFAIL: the quick read fails. NOFABLE: the strongest model is not open to the key. RATE429: every model is at its rate limit.
     const isRead=p.includes('You extract holdings'), bad=p.includes('QUICKBAD'), cutQ=p.includes('QUICKCUT'), old=p.includes('OLDREPORT');
     const txs=cutQ?Array.from({length:12},(_,i)=>({date:`2026-09-${10+i}`,sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:400+i,amount:400+i,ccy:'USD',fee:1}))
       :old?[{date:'2025-11-02',sym:'MSFT',name:'Microsoft',side:'div',qty:null,px:null,amount:12,ccy:'USD',fee:null},{date:'2025-12-15',sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:380,amount:380,ccy:'USD',fee:1}]:[];
@@ -45,6 +45,7 @@ before(async()=>{
       ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text}}); ev('content_block_stop',{index:0});
       ev('message_delta',{delta:{stop_reason:stop},usage:{output_tokens:300}}); ev('message_stop',{}); res.end()};
     if(isRead&&!J.stream){res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',model:J.model,content:[{type:'text',text:readOut(true)}],stop_reason:'end_turn',usage:{input_tokens:2000,output_tokens:200}})); return}
+    if(J.stream&&p.includes('RATE429')){res.writeHead(429,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'rate_limit_error',message:'rate limit'}})); return}
     if(J.stream&&J.model==='claude-haiku-5-5'){
       if(p.includes('QUICKFAIL')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
       await new Promise(r=>setTimeout(r,m2?{fwd:{mar:100,jun:500,sep:900},rev:{mar:900,jun:500,sep:100}}[(p.match(/ORDER:(\w+)/)||[])[1]||'fwd'][m2]:100)); const q=readOut(true); stream(cutQ?q.slice(0,Math.floor(q.length*0.7)):q,cutQ?'max_tokens':'end_turn'); return}
@@ -63,6 +64,7 @@ before(async()=>{
   store.addUser({email:'new@example.com',password:'friend-pass-1',role:'friend'});
   store.addUser({email:'n2@example.com',password:'friend-pass-3',role:'friend'});   // a second new user, for a security nobody held
   store.addUser({email:'r3@example.com',password:'friend-pass-4',role:'friend'});   // a new user who reads statements and saves
+  store.addUser({email:'r4@example.com',password:'friend-pass-5',role:'friend'});   // a new user who reads several statements at once
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
@@ -77,9 +79,9 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
+  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -602,6 +604,30 @@ test('several reports at once, in any order: the newest holds the holdings, whic
     assert.ok(!lines.some(l=>/לא שיניתי מה שערכת/.test(l)),order+': nothing is taken for the viewer\'s own change');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }
+});
+
+test('a partner reads like the owner: several reports at once, prices on request, and a limit is the site\'s, never their own Claude\'s',T,async t=>{
+  if(skip())return t.skip('no browser');
+  let px=0; const {ctx,pg}=await open(390,{who:'r4',route:(r,u)=>{if(u.includes('/api/prices')){px++; r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'}); return true}}});
+  await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(300); const R=reader(pg);
+  // three reports at once: like the owner's, all three reads (each a quick read and a check) go out together, none waits its turn
+  const n0=bodies.length, csv=x=>({name:x+'.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nMULTI:'+x+',,0,0\n')});
+  await pg.setInputFiles('#upFile',[csv('mar'),csv('jun'),csv('sep')]);
+  for(let i=0;i<100&&bodies.length<n0+6;i++)await new Promise(r=>setTimeout(r,50));
+  const sent=bodies.slice(n0); assert.equal(sent.length,6); assert.ok(sent[5].at-sent[0].at<1000,'the three reads run at the same time, as the owner\'s do');
+  assert.equal(await pg.evaluate(()=>/ממתין לתורו/.test(document.getElementById('upProg').textContent)),false,'no file waits for its turn');
+  await pg.waitForFunction(()=>/הסתיימה הקריאה של 3 קבצים/.test(document.getElementById('upState').textContent),null,{timeout:30000});
+  assert.deepEqual((await R.rows()).filter(r=>r.acct==='exc').map(r=>r.sym+':'+r.qty).sort(),['MSFT:3','NVDA:6'],'the newest report holds the holdings');
+  // prices: a partner may ask for a refresh on the site, as the owner may (on open, when the prices are old and a market is open, it is asked for by itself)
+  assert.equal(await pg.evaluate(()=>window.__pxd.state().mcp),true);
+  if(!await pg.evaluate(()=>!!window.__pxd.state().pxf))assert.equal(await pg.evaluate(()=>window.__pxd.fire('click')),true);
+  assert.ok(px>=1,'the partner\'s page asked the site for new prices');
+  // the strongest models are all at their rate limit: the site says it is the site's limit, and nothing points to the viewer's own Claude
+  await pg.setInputFiles('#upFile',[{name:'busy.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nRATE429,,0,0\n')},{name:'ok.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nAAPL,Apple,1,700\n')}]);
+  await pg.waitForFunction(()=>[...document.querySelectorAll('#upProg li[data-job]')].some(li=>/busy\.csv/.test(li.textContent)&&/האתר הגיע למגבלת הקצב שלו/.test(li.textContent)),null,{timeout:30000});
+  await pg.waitForFunction(()=>/Claude ביקש להאט\. אפשר להמשיך בעוד/.test(document.getElementById('upState').textContent),null,{timeout:5000});
+  assert.doesNotMatch(await pg.evaluate(()=>document.body.innerText),/חשבון Claude/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
 test('picking files: a pick that brings nothing back is said plainly; a file the browser gives with no size is still read',T,async t=>{

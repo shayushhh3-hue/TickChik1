@@ -22,6 +22,8 @@ before(async()=>{
       if(said.includes('LATEKEY')){res.writeHead(401,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'authentication_error',message:'invalid x-api-key'}}));return}
       if(j.model==='claude-haiku-5-5'&&said.includes('HAIKUDOWN')){res.writeHead(529,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}}));return}
       if(j.model==='claude-fable-5-1'&&said.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}}));return}
+      if(said.includes('ALL429')){res.writeHead(429,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'rate_limit_error',message:'rate limit'}}));return}
+      if(j.model==='claude-fable-5-1'&&said.includes('FABLE429')){res.writeHead(429,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'rate_limit_error',message:'Number of request tokens has exceeded your per-minute rate limit'}}));return}
       res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
       ev('message_start',{message:{id:'m2',type:'message',role:'assistant',model:j.model,content:[],usage:{input_tokens:1000,output_tokens:1}}}); ev('ping',{});
       // REFUSE: declined before any output (not billed); REFUSEMID: after some output (billed); REFUSEX: reasoning_extraction (billed, no fallback)
@@ -233,6 +235,66 @@ test('Claude limits: request shape, no Opus, a daily quota per partner, usage, s
     await new Promise(r=>setTimeout(r,300)); ctl.abort(); assert.equal(await pending,'AbortError');
     await new Promise(r=>setTimeout(r,400)); assert.equal(claudeClosed,before+1,'the call to Claude was cancelled');
   }finally{srv.close()}
+});
+
+test('a partner reads statements like the owner: one call for a statement, several at once, and the next model at a rate limit',async()=>{
+  const {srv,req}=await startApp();
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    assert.equal((await req('o','POST','/api/users',{email:'rd@example.com',password:'rd-pass-1234'})).status,200);
+    await req('p','POST','/api/login',{email:'rd@example.com',password:'rd-pass-1234'});
+    const read=(who,model,text)=>req(who,'POST','/api/ask',{purpose:'files',model,max_tokens:1000,messages:[{role:'user',content:text}]});
+    // three statements at once (AI_DAILY_LIMIT=3 in this run), each a quick read and the strongest model's check: six calls at once
+    const all=await Promise.all([1,2,3].flatMap(i=>[read('p','claude-haiku-5-5','SLOWFILE quick '+i),read('p','claude-fable-5-1','SLOWFILE check '+i)]));
+    assert.deepEqual(all.map(r=>r.status),[200,200,200,200,200,200],'more than three calls at once');
+    assert.deepEqual(all.map(r=>r.j.model),['claude-haiku-5-5','claude-fable-5-1','claude-haiku-5-5','claude-fable-5-1','claude-haiku-5-5','claude-fable-5-1']);
+    const row=async()=>(await req('o','GET','/api/ai/usage')).j.rows.find(x=>x.email==='rd@example.com');
+    let u=await row(); assert.equal(u.today,3,'three statements are three calls of the quota'); assert.equal(u.quickToday,3,'their quick reads are counted apart'); assert.equal(u.quick30,3);
+    let r=await read('p','claude-fable-5-1','one more'); assert.equal(r.status,429); assert.equal(r.j.error.code,'quota_exceeded'); assert.match(r.j.error.message,/צ׳יקו/);
+    r=await read('p','claude-haiku-5-5','one more'); assert.equal(r.status,429); assert.equal(r.j.error.code,'quota_exceeded'); assert.match(r.j.error.message,/הקריאות המהירות/,'the quick reads have a cap of their own');
+    r=await req('p','POST','/api/ask',{model:'claude-haiku-5-5',max_tokens:10,messages:[{role:'user',content:'hi'}]}); assert.equal(r.j.error.code,'quota_exceeded','a chat with Haiku is not a quick read: it counts in the quota');
+    // the strongest model has reached its rate limit: the next model reads
+    const n=(await req('o','GET','/api/ai/usage')).j.rows.find(x=>x.owner);
+    r=await read('o','claude-fable-5-1','FABLE429 read this'); assert.equal(r.status,200); assert.equal(r.j.model,'claude-opus-5-5'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
+    r=await read('o','claude-haiku-5-5','read quickly'); assert.equal(r.status,200);
+    const o=(await req('o','GET','/api/ai/usage')).j.rows.find(x=>x.owner); assert.equal(o.today-n.today,1); assert.equal(o.quickToday-n.quickToday,1,'the owner\'s quick reads are counted apart too');
+  }finally{srv.close()}
+});
+
+test('a partner: a call Anthropic refused at once does not count, and a problem in the site\'s set-up is the site\'s, in plain words',async()=>{
+  const {srv,req}=await startApp();
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    assert.equal((await req('o','POST','/api/users',{email:'rf@example.com',password:'rf-pass-1234'})).status,200);
+    await req('p','POST','/api/login',{email:'rf@example.com',password:'rf-pass-1234'});
+    const chat=(who,text)=>req(who,'POST','/api/ask',{model:'claude-haiku-5-5',max_tokens:10,messages:[{role:'user',content:text}]});
+    const read=(who,model,text)=>req(who,'POST','/api/ask',{purpose:'files',model,max_tokens:1000,messages:[{role:'user',content:text}]});
+    const row=async()=>(await req('o','GET','/api/ai/usage')).j.rows.find(x=>x.email==='rf@example.com');
+    // Anthropic says "slow down" at once, to every model: nothing was billed, so nothing is counted
+    let r=await chat('p','RATELIMIT'); assert.equal(r.j.error.code,'rate_limited'); assert.match(r.j.error.message,/האתר הגיע למגבלת הקצב שלו/);
+    r=await read('p','claude-fable-5-1','ALL429 read'); assert.equal(r.j.error.code,'rate_limited'); assert.doesNotMatch(r.j.error.message,/נוסו|claude-/,'a partner is not shown model names');
+    r=await read('p','claude-haiku-5-5','ALL429 read'); assert.equal(r.j.error.code,'rate_limited');
+    let u=await row(); assert.equal(u.today,0); assert.equal(u.quickToday,0);
+    // no credit on the site's key: the owner is told what to do, a partner that it is the site's and not theirs
+    r=await chat('o','CREDIT'); assert.equal(r.j.error.code,'sampling_disabled'); assert.match(r.j.error.message,/console\.anthropic\.com/); assert.equal(r.j.error.site,undefined);
+    r=await chat('p','CREDIT'); assert.equal(r.j.error.code,'sampling_disabled'); assert.equal(r.j.error.message,'Claude לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.'); assert.equal(r.j.error.site,undefined);
+    r=await read('p','claude-fable-5-1','BADKEY read'); assert.equal(r.j.error.code,'sampling_disabled'); assert.doesNotMatch(r.j.error.message,/Railway|API/);
+    r=await read('o','claude-fable-5-1','BADKEY read'); assert.match(r.j.error.message,/Railway/);
+    u=await row(); assert.equal(u.today,0,'refused at once: not counted');
+    // what was read counts as before
+    r=await read('p','claude-fable-5-1','read this'); assert.equal(r.status,200); u=await row(); assert.equal(u.today,1);
+  }finally{srv.close()}
+});
+
+test('store: an older database gets the count of quick reads, and keeps its numbers',async()=>{
+  const {DatabaseSync}=await import('node:sqlite'); const dir=fs.mkdtempSync('/tmp/tc-mig-'), f=dir+'/tc.db';
+  const old=new DatabaseSync(f); old.exec("create table ai_usage(uid text not null, day text not null, calls integer not null default 0, input integer not null default 0, output integer not null default 0, primary key(uid,day)); insert into ai_usage values('u1','2026-10-14',5,100,20)"); old.close();
+  try{
+    const s=new Store(f); assert.deepEqual({...s.aiUsage('u1','2026-10-14')},{calls:5,input:100,output:20,quick:0});
+    s.aiAdd('u1','2026-10-14',{quick:2}); s.aiAdd('u1','2026-10-14',{calls:1}); assert.deepEqual({...s.aiUsage('u1','2026-10-14')},{calls:6,input:100,output:20,quick:2});
+    assert.equal(s.aiSince('2026-10-01')[0].quick,2); assert.deepEqual({...s.aiUsage('u2','2026-10-14')},{calls:0,input:0,output:0,quick:0});
+    s.db.close(); const s2=new Store(f); assert.equal(s2.aiUsage('u1','2026-10-14').quick,2,'opened again: the column is there once'); s2.db.close();
+  }finally{fs.rmSync(dir,{recursive:true,force:true})}
 });
 
 test('backups: a daily copy of the database, the last 14 kept, the owner\'s own data for mail',async()=>{
