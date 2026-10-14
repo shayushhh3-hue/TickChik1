@@ -524,8 +524,12 @@ test('reading files: the strongest model, the next one when it cannot read, a lo
     const t=await raw.text(); assert.equal(raw.status,200); assert.match(t,/^ +\{/); assert.equal(JSON.parse(t).content[0].text,'{"ok":"read"}');
     // a failure after the answer has started comes as {"error":...} (the status is already 200)
     r=await ask('SLOWFILE LATEKEY'); assert.equal(r.status,200); assert.equal(r.j.error.code,'sampling_disabled');
+    // no time left in Railway's 15 minutes for the next model: the first model's answer is the answer, nothing more is sent
+    process.env.AI_FILE_BUDGET_MS=String(2*60*1000+300); const n0=claudeSeen.length;
+    r=await ask('SLOWFILE NOFABLE'); assert.equal(r.j.error&&r.j.error.code!=null,true); assert.equal(claudeSeen.length-n0,1,'the next model did not start'); assert.ok(!/נוסו/.test(r.j.error.message));
+    delete process.env.AI_FILE_BUDGET_MS;
     const u=(await req('o','GET','/api/ai/usage')).j, by=Object.fromEntries(u.byModel.map(x=>[x.model,x]));
     assert.deepEqual(u.fileModels,['claude-fable-5-1','claude-opus-5-5']); assert.equal(by['claude-fable-5-1'].calls,3,'two reads, and the declined one, which is billed too'); assert.equal(by['claude-fable-5-1'].input,3000);
     assert.equal(by['claude-opus-5-5'].calls,2); assert.equal(by['claude-fable-5-1'].output,100);
-  }finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; srv.close()}
+  }finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; delete process.env.AI_FILE_BUDGET_MS; srv.close()}
 });

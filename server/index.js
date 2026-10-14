@@ -35,7 +35,8 @@ const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messa
 const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
 const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=2;
 // these models think before they answer (always on), and the thinking counts in the answer's length: more room, more time
-const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000;
+// Railway keeps a request open up to 15 minutes while data flows: one read gets 12 minutes, and all the models together 14
+const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000, AI_FILE_BUDGET=14*60*1000;
 const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
 export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
@@ -169,12 +170,12 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // together here into one ordinary answer. A model that is not open to the key, is overloaded, or declines (stop_reason
   // "refusal") hands over to the next one on FILE_MODELS; the answer says which model read and which could not.
   const retryable=(st,type,msg)=>st===404||st===403||st===529||type==='not_found_error'||type==='permission_error'||type==='overloaded_error'||(st===400&&/model/i.test(msg||''));
-  async function claudeStream(body,signal){
+  async function claudeStream(body,signal,ms=AI_FILE_TIMEOUT){
     if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
-    const sig=AbortSignal.any([signal,AbortSignal.timeout(AI_FILE_TIMEOUT)].filter(Boolean));
+    const sig=AbortSignal.any([signal,AbortSignal.timeout(ms)].filter(Boolean)), late='Claude לא סיים לקרוא בזמן (יותר מ-'+Math.max(1,Math.round(ms/60000))+' דקות). נסה פחות עמודים או צילומים.';
     let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({...body,stream:true}),signal:sig})}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read failed:',to?'timeout':String(e&&e.message||e));
-      return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לקרוא בזמן (יותר מ-12 דקות). נסה פחות עמודים או צילומים.':'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
+      return {status:504,json:{error:{code:'upstream_error',message:to?late:'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
     if(!r.ok){let type='',msg=''; try{const e=JSON.parse(await r.text()).error||{};type=e.type||'';msg=e.message||''}catch(e){}
       const [st,code,message]=askErr(r.status,type,msg); return {status:st,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message}}}}
     const dec=new TextDecoder(); let buf='', text='', stop=null, usage={}, model=body.model, id='', err=null;
@@ -186,7 +187,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
         else if(j.type==='message_delta'){if(j.delta&&j.delta.stop_reason)stop=j.delta.stop_reason; if(j.usage)usage={...usage,...j.usage}}
         else if(j.type==='error')err=j.error||{type:'api_error',message:'stream error'}}}}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read stream failed:',to?'timeout':String(e&&e.message||e));
-      return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לקרוא בזמן (יותר מ-12 דקות). נסה פחות עמודים או צילומים.':'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
+      return {status:504,json:{error:{code:'upstream_error',message:to?late:'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
     if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message}}}}
     // a declined read is still billed for what was sent (and thought): it is counted, then the next model reads
     if(stop==='refusal')return {status:502,retry:true,why:'refusal',spent:{model,usage},json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}};
@@ -200,7 +201,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const tried=[], att=[]; let out=null;
     const count=(model,us={},calls=1)=>{const inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
       store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,model,{calls,input:inp,output:us.output_tokens||0})};
-    try{for(const m of FILE_MODELS.slice(Math.max(0,FILE_MODELS.indexOf(body.model)))){att.push(m); out=await claudeStream({...body,model:m},ctl.signal);
+    // the next model starts only while there is time left for it in Railway's 15 minutes
+    const end=Date.now()+(+env.AI_FILE_BUDGET_MS||AI_FILE_BUDGET);
+    try{for(const m of FILE_MODELS.slice(Math.max(0,FILE_MODELS.indexOf(body.model)))){const left=end-Date.now(); if(att.length&&left<2*60*1000)break;
+        att.push(m); out=await claudeStream({...body,model:m},ctl.signal,Math.min(AI_FILE_TIMEOUT,left));
         if(out.spent)count(out.spent.model||m,out.spent.usage);
         if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+'), the next model reads')}}
     finally{clearInterval(beat)}
