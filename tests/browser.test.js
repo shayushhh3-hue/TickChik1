@@ -10,29 +10,35 @@ import {fixture,closes} from './fixture.js';
 
 const R=new URL('..',import.meta.url).pathname;
 let claude, seen=[], bodies=[], srv, U, store, browser, docs;
+const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens});
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
-    // reading a file. The quick read (Haiku) is an ordinary answer; the strongest model's read is streamed, as the server
-    // asks for it, and takes a while (SLOWCHECK: longer). QUICKBAD: the quick read gets MSFT's quantity wrong, sees a
-    // security that is not there (ZZZQ) and misses one (NVDA). QUICKSPELL: the quick read spells Alphabet GOOG, the strong
-    // one GOOGL. QUICKGROUP: the quick read puts MSFT in another group. QUICKACCT: the quick read takes the file for Blink's.
+    // reading a file: both reads stream, as the server asks for them. The quick read (Haiku) answers at once; the strongest
+    // model's read takes a while (SLOWCHECK: longer). QUICKBAD: the quick read gets MSFT's quantity wrong, sees a security
+    // that is not there (ZZZQ) and misses one (NVDA). QUICKSPELL: the quick read spells Alphabet GOOG, the strong one GOOGL.
+    // QUICKGROUP: the quick read puts MSFT in another group. QUICKACCT: the quick read takes the file for Blink's.
+    // QUICKCUT: a long statement, and the quick read's answer is cut in the middle. OLDREPORT: a statement of 31.12.2025.
     // QUICKFAIL: the quick read fails. NOFABLE: the strongest model is not open to the key.
-    const isRead=p.includes('You extract holdings'), bad=p.includes('QUICKBAD');
+    const isRead=p.includes('You extract holdings'), bad=p.includes('QUICKBAD'), cutQ=p.includes('QUICKCUT'), old=p.includes('OLDREPORT');
+    const txs=cutQ?Array.from({length:12},(_,i)=>({date:`2026-09-${10+i}`,sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:400+i,amount:400+i,ccy:'USD',fee:1}))
+      :old?[{date:'2025-11-02',sym:'MSFT',name:'Microsoft',side:'div',qty:null,px:null,amount:12,ccy:'USD',fee:null},{date:'2025-12-15',sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:380,amount:380,ccy:'USD',fee:1}]:[];
     const readOut=q=>{const pos=q&&bad?[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:4200,group:'tech'},{sym:'ZZZQ',name:'Phantom',qty:1,ccy:'USD',costIls:50,group:'tech'}]
         :[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'},...(bad?[{sym:'NVDA',name:'NVIDIA',qty:6,ccy:'USD',costIls:3150,group:'tech'}]:[])];
       if(p.includes('QUICKSPELL'))pos.push({sym:q?'GOOG':'GOOGL',name:'Alphabet Class A',qty:2,ccy:'USD',costIls:1500,group:'tech'});
       if(q&&p.includes('QUICKGROUP'))pos[0]={...pos[0],group:'cons'};
-      return JSON.stringify({broker:q&&p.includes('QUICKACCT')?'blink':'exc',asOf:'2026-10-01',cashIls:100,cashUsd:0,transactions:[],positions:pos})};
-    if(isRead&&!J.stream){if(p.includes('QUICKFAIL')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
-      res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',model:J.model,content:[{type:'text',text:readOut(true)}],stop_reason:'end_turn',usage:{input_tokens:2000,output_tokens:200}})); return}
+      return JSON.stringify({broker:q&&p.includes('QUICKACCT')?'blink':'exc',asOf:old?'2025-12-31':TODAY,cashIls:100,cashUsd:0,positions:pos,transactions:txs})};
+    const stream=(text,stop)=>{res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
+      ev('message_start',{message:{id:'m',type:'message',role:'assistant',model:J.model,content:[],usage:{input_tokens:2000,output_tokens:1}}});
+      ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text}}); ev('content_block_stop',{index:0});
+      ev('message_delta',{delta:{stop_reason:stop},usage:{output_tokens:300}}); ev('message_stop',{}); res.end()};
+    if(isRead&&!J.stream){res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',model:J.model,content:[{type:'text',text:readOut(true)}],stop_reason:'end_turn',usage:{input_tokens:2000,output_tokens:200}})); return}
+    if(J.stream&&J.model==='claude-haiku-5-5'){
+      if(p.includes('QUICKFAIL')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
+      await new Promise(r=>setTimeout(r,100)); const q=readOut(true); stream(cutQ?q.slice(0,Math.floor(q.length*0.7)):q,cutQ?'max_tokens':'end_turn'); return}
     if(J.stream){await new Promise(r=>setTimeout(r,p.includes('SLOWCHECK')?4000:1500));
       if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
-      const out=readOut(false);
-      res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
-      ev('message_start',{message:{id:'m',type:'message',role:'assistant',model:J.model,content:[],usage:{input_tokens:2000,output_tokens:1}}});
-      ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text:out}}); ev('content_block_stop',{index:0});
-      ev('message_delta',{delta:{stop_reason:'end_turn'},usage:{output_tokens:300}}); ev('message_stop',{}); res.end(); return}
+      stream(readOut(false),'end_turn'); return}
     const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
       :p.includes('הסבר את התיק שלי')?JSON.stringify({summary:'בתיק 12 ניירות, ורובו בטכנולוגיה. התיק מאוזן היטב. שלושת הגדולים הם 39.5% ממנו.'}):'{"answer":""}';
     res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1}}))});
@@ -446,7 +452,7 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   let n0=await R.pick('statement.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNVDA,NVIDIA,6,3150\nQUICKBAD,,0,0\n');
   await R.quick(); let rows=await R.rows();
   assert.deepEqual(rows.filter(r=>['MSFT','ZZZQ','NVDA'].includes(r.sym)).map(r=>[r.sym,r.qty]),[['MSFT',2],['ZZZQ',1]],'the quick read is in the table while the check runs');
-  assert.deepEqual(bodies.slice(n0).map(b=>[b.model,b.stream]).sort(),[['claude-fable-5-1',true],['claude-haiku-5-5',false]],'both reads started together');
+  assert.deepEqual(bodies.slice(n0).map(b=>[b.model,b.stream,b.max_tokens]).sort(),[['claude-fable-5-1',true,32000],['claude-haiku-5-5',true,32000]],'both reads started together, both with room for a long statement');
   assert.match(await R.state(),/בקריאה מהירה\. המודל החזק ביותר של Claude בודק אותם עכשיו/);
   await R.done(); rows=await R.rows();
   const pick=s=>rows.find(r=>r.sym===s);
@@ -477,7 +483,7 @@ test('reading a file: a quick read fills the table, the strongest model checks i
     assert.match(await R.state(),/עצרת את הבדיקה של המודל החזק ביותר\. הטבלה היא מהקריאה המהירה/); assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2)}
   // the strongest model is not open to the key: the next one checks. A long check: spaces keep the request open (Railway
   // closes a quiet one), and the page reads past them
-  const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(/"purpose":"files"/.test(q.request().postData()||''))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
+  const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(/"claude-fable-5-1"/.test(q.request().postData()||''))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
   try{n0=await R.pick('statement3.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNOFABLE,,0,0\n'); await R.done()}finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; pg.off('response',onRes)}
   assert.deepEqual(bodies.slice(n0).map(b=>b.model).sort(),['claude-fable-5-1','claude-haiku-5-5','claude-opus-5-5']);
   assert.ok(bodies.slice(n0).filter(b=>b.stream).every(b=>b.max_tokens>8192),'room for the strong models\' thinking');
@@ -485,7 +491,16 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   assert.equal(raw.length,1); assert.match(raw[0],/^ {3,}\{/,'spaces kept the request open while Claude was reading');
   // the quick read fails: the strongest model's read fills the table
   await R.pick('statement4.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKFAIL,,0,0\n'); await R.done();
-  rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/הקריאה המהירה לא הצליחה, והמודל החזק ביותר קרא את הדוח/);
+  rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/הקריאה המהירה לא הצליחה \(Claude עמוס כרגע\), והמודל החזק ביותר קרא את הדוח/,'it says why');
+  // a long statement: the quick read's answer is cut in the middle; the holdings are kept, and the check completes the transactions
+  await R.pick('statement8.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKCUT,,0,0\n'); await R.quick();
+  assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/התשובה של הקריאה המהירה נקטעה כי הדוח ארוך/);
+  await R.done(); assert.match(await R.state(),/פעולות: 12 \(בקריאה המהירה \d+\)/);
+  // an older statement than the one in the table: the holdings stay, its transactions are added
+  const before=(await R.rows()).map(r=>r.acct+':'+r.sym+':'+r.qty).sort();
+  await R.pick('statement9.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nOLDREPORT,,0,0\n'); await R.done();
+  assert.deepEqual((await R.rows()).map(r=>r.acct+':'+r.sym+':'+r.qty).sort(),before,'the holdings are not replaced');
+  assert.ok((await R.state()).includes(`הדוח הזה מ-31.12.2025, ישן יותר מהדוח שכבר בטבלה לחשבון אקסלנס (מ-${dF(TODAY)}), ולכן האחזקות והמזומן לא הוחלפו. נוספו ממנו 2 פעולות`),await R.state());
   assert.match(await R.prog(),/נקרא עם Claude Fable 5\.1/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });

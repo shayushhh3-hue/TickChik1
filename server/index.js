@@ -30,6 +30,8 @@ const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-
 // the first is not open to the key, is overloaded, or declines, the next one reads (the owner's choice, 14.10.2026).
 // Only file reading may use these; צ׳יקו's chat stays on ALLOWED_MODELS.
 const FILE_MODELS=String(env.FILE_MODELS||'claude-fable-5-1,claude-opus-5-5').split(',').map(s=>s.trim()).filter(Boolean);
+// the quick read of a file, which the strongest model checks: it streams the same way, with no next model
+const FILE_QUICK_MODELS=String(env.FILE_QUICK_MODELS||'claude-haiku-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages';
 // Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request
 const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
@@ -208,7 +210,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,model,{calls,input:inp,output:us.output_tokens||0})};
     // the next model starts only while there is time left for it in Railway's 15 minutes
     const end=Date.now()+(+env.AI_FILE_BUDGET_MS||AI_FILE_BUDGET);
-    try{for(const m of FILE_MODELS.slice(Math.max(0,FILE_MODELS.indexOf(body.model)))){const left=end-Date.now(); if(att.length&&left<2*60*1000)break;
+    const chain=FILE_MODELS.includes(body.model)?FILE_MODELS.slice(FILE_MODELS.indexOf(body.model)):[body.model];
+    try{for(const m of chain){const left=end-Date.now(); if(att.length&&left<2*60*1000)break;
         att.push(m); out=await claudeStream({...body,model:m},ctl.signal,Math.min(AI_FILE_TIMEOUT,left));
         if(out.spent)count(out.spent.model||m,out.spent.usage);
         if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+'), the next model reads')}}
@@ -224,7 +227,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   function cleanAsk(b){
     if(!b||typeof b!=='object')return {err:'bad request'};
     const files=b.purpose==='files';
-    if(!(files?FILE_MODELS:ALLOWED_MODELS).includes(b.model))return {err:'model not allowed'};
+    if(!(files?[...FILE_MODELS,...FILE_QUICK_MODELS]:ALLOWED_MODELS).includes(b.model))return {err:'model not allowed'};
     const msgs=Array.isArray(b.messages)?b.messages:null; if(!msgs||!msgs.length||msgs.length>AI_MAX_TURNS)return {err:'bad messages'};
     let imgs=0; const out=[];
     for(const m of msgs){
@@ -270,7 +273,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const users=store.users(), byId=Object.fromEntries(users.map(x=>[x.id,x])), month=store.aiSince(from), day=store.aiSince(today);
     const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,calls30:m.calls||0,input30:m.input||0,output30:m.output||0}});
     for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,calls30:m.calls,input30:m.input,output30:m.output});
-    res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,rows,byModel:store.aiModelsSince(from)});
+    res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,fileQuick:FILE_QUICK_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
   app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
   // the analysts' data: when it last ran and how it went, and how old each document is

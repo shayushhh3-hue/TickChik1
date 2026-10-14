@@ -7,7 +7,7 @@
 const API='/api';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isMap=v=>v&&typeof v==='object'&&!Array.isArray(v);
-const MODELS={quick:'claude-haiku-5-5',default:'claude-sonnet-5-5',complex:'claude-sonnet-5-5',files:'claude-fable-5-1'};
+const MODELS={quick:'claude-haiku-5-5',default:'claude-sonnet-5-5',complex:'claude-sonnet-5-5',files:'claude-fable-5-1',quickfiles:'claude-haiku-5-5'};
 // reading uploaded files goes to the strongest model; the server falls back to the next one when it cannot read (FILE_MODELS)
 const MODEL_NAMES={'claude-fable-5-1':'Claude Fable 5.1','claude-opus-5-5':'Claude Opus 5.5','claude-sonnet-5-5':'Claude Sonnet 5.5','claude-haiku-5-5':'Claude Haiku 5.5'};
 
@@ -175,8 +175,10 @@ export async function boot(){
     if(!turns.length||turns[turns.length-1].role!=='user')turns.push({role:'user',content:'.'});
     const imgs=[]; for(const im of (opts.images||[])){try{imgs.push({type:'image',source:{type:'base64',media_type:im.type||'image/jpeg',data:await b64(im)}})}catch(e){}}
     const messages=turns.map((t,i)=>i===turns.length-1&&imgs.length?{role:t.role,content:[...imgs,{type:'text',text:t.content}]}:{role:t.role,content:t.content});
-    const tier=['quick','complex','files'].includes(opts.modelTier)?opts.modelTier:'default';
-    const body={model:MODELS[tier],max_tokens:tier==='files'?32000:8192,messages}; if(tier==='files')body.purpose='files';
+    // files / quickfiles: reading a statement, through the server's streaming path, with room for a long answer (a
+    // statement of half a year can have hundreds of transactions; the model's thinking counts in the same limit)
+    const tier=['quick','complex','files','quickfiles'].includes(opts.modelTier)?opts.modelTier:'default', fileRead=tier==='files'||tier==='quickfiles';
+    const body={model:MODELS[tier],max_tokens:fileRead?32000:8192,messages}; if(fileRead)body.purpose='files';
     if(opts.json)body.system='Reply with a single JSON value and nothing else: no prose, no code fences.';
     const r=await call('POST','/ask',body,opts.signal);
     const text=((r&&r.content)||[]).filter(c=>c.type==='text').map(c=>c.text).join('');

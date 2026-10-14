@@ -20,6 +20,7 @@ before(async()=>{
     // reading files: streamed. NOFABLE: the strongest model is not open to the key; REFUSE: it declines; SLOWFILE: it takes a while
     if(j.stream){if(said.includes('SLOWFILE'))await new Promise(r=>setTimeout(r,400));
       if(said.includes('LATEKEY')){res.writeHead(401,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'authentication_error',message:'invalid x-api-key'}}));return}
+      if(j.model==='claude-haiku-5-5'&&said.includes('HAIKUDOWN')){res.writeHead(529,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}}));return}
       if(j.model==='claude-fable-5-1'&&said.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}}));return}
       res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
       ev('message_start',{message:{id:'m2',type:'message',role:'assistant',model:j.model,content:[],usage:{input_tokens:1000,output_tokens:1}}}); ev('ping',{});
@@ -519,6 +520,10 @@ test('reading files: the strongest model, the next one when it cannot read, a lo
     const sent=claudeSeen[claudeSeen.length-1].body; assert.equal(sent.stream,true); assert.equal(sent.max_tokens,32000,'room for the thinking, capped'); assert.equal(sent.purpose,undefined,'only the page\'s fields go to Claude');
     assert.equal((await req('o','POST','/api/ask',{model:'claude-fable-5-1',max_tokens:10,messages:[{role:'user',content:'hi'}]})).status,400,'the chat does not get the strongest model');
     assert.equal((await ask('x',{model:'claude-sonnet-5-5'})).status,400,'file reading uses only the file models');
+    // the quick read of a file: Haiku, streamed the same way and with the same room, and with no next model when it fails
+    r=await ask('read quickly',{model:'claude-haiku-5-5'}); assert.equal(r.status,200); assert.equal(r.j.model,'claude-haiku-5-5'); assert.deepEqual(r.j.fallbackFrom,[]);
+    {const q=claudeSeen[claudeSeen.length-1].body; assert.equal(q.stream,true); assert.equal(q.max_tokens,32000)}
+    {const n=claudeSeen.length; r=await ask('HAIKUDOWN',{model:'claude-haiku-5-5'}); assert.equal(r.j.error.code,'upstream_error'); assert.equal(claudeSeen.length-n,1,'no next model for the quick read')}
     r=await ask('NOFABLE read this'); assert.equal(r.status,200); assert.equal(r.j.model,'claude-opus-5-5'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
     const fab=async()=>((await req('o','GET','/api/ai/usage')).j.byModel.find(x=>x.model==='claude-fable-5-1')||{calls:0});
     let f0=await fab(); r=await ask('REFUSE read this'); assert.equal(r.j.model,'claude-opus-5-5','a refusal hands over to the next model'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
