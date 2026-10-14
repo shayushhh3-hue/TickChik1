@@ -26,10 +26,16 @@ const PERSIST=!env.RAILWAY_ENVIRONMENT||!!env.RAILWAY_VOLUME_MOUNT_PATH;
 const PORT=+env.PORT||3000;
 const OWNER_EMAIL=String(env.OWNER_EMAIL||'').trim().toLowerCase();
 const ALLOWED_MODELS=String(env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean);
+// Reading uploaded files (statements, screenshots, pasted reports) uses the strongest model there is, in this order: when
+// the first is not open to the key, is overloaded, or declines, the next one reads (the owner's choice, 14.10.2026).
+// Only file reading may use these; צ׳יקו's chat stays on ALLOWED_MODELS.
+const FILE_MODELS=String(env.FILE_MODELS||'claude-fable-5-1,claude-opus-5-5').split(',').map(s=>s.trim()).filter(Boolean);
 const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages';
 // Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request
 const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
 const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=2;
+// these models think before they answer (always on), and the thinking counts in the answer's length: more room, more time
+const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000;
 const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
 export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
@@ -159,11 +165,57 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const [st,code,message]=askErr(r.status,type,msg); log('ask failed:',r.status,type,msg.slice(0,160));
     return {status:st,json:{error:{code,message}}};
   }
+  // ---- reading files: streamed from Claude (an answer can take minutes, and nothing would arrive until its end), put
+  // together here into one ordinary answer. A model that is not open to the key, is overloaded, or declines (stop_reason
+  // "refusal") hands over to the next one on FILE_MODELS; the answer says which model read and which could not.
+  const retryable=(st,type,msg)=>st===404||st===403||st===529||type==='not_found_error'||type==='permission_error'||type==='overloaded_error'||(st===400&&/model/i.test(msg||''));
+  async function claudeStream(body,signal){
+    if(!env.ANTHROPIC_API_KEY)return {status:503,json:{error:{code:'sampling_disabled',message:NOKEY}}};
+    const sig=AbortSignal.any([signal,AbortSignal.timeout(AI_FILE_TIMEOUT)].filter(Boolean));
+    let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({...body,stream:true}),signal:sig})}
+    catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read failed:',to?'timeout':String(e&&e.message||e));
+      return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לקרוא בזמן (יותר מ-12 דקות). נסה פחות עמודים או צילומים.':'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
+    if(!r.ok){let type='',msg=''; try{const e=JSON.parse(await r.text()).error||{};type=e.type||'';msg=e.message||''}catch(e){}
+      const [st,code,message]=askErr(r.status,type,msg); return {status:st,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message}}}}
+    const dec=new TextDecoder(); let buf='', text='', stop=null, usage={}, model=body.model, id='', err=null;
+    try{for await(const chunk of r.body){buf+=dec.decode(chunk,{stream:true}); let i;
+      while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i); buf=buf.slice(i+2); const data=ev.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join(''); if(!data)continue;
+        let j; try{j=JSON.parse(data)}catch(e){continue}
+        if(j.type==='message_start'&&j.message){usage={...(j.message.usage||{})}; model=j.message.model||model; id=j.message.id||''}
+        else if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta')text+=j.delta.text||'';
+        else if(j.type==='message_delta'){if(j.delta&&j.delta.stop_reason)stop=j.delta.stop_reason; if(j.usage)usage={...usage,...j.usage}}
+        else if(j.type==='error')err=j.error||{type:'api_error',message:'stream error'}}}}
+    catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read stream failed:',to?'timeout':String(e&&e.message||e));
+      return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לקרוא בזמן (יותר מ-12 דקות). נסה פחות עמודים או צילומים.':'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
+    if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message}}}}
+    // a declined read is still billed for what was sent (and thought): it is counted, then the next model reads
+    if(stop==='refusal')return {status:502,retry:true,why:'refusal',spent:{model,usage},json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}};
+    return {message:{id,type:'message',role:'assistant',model,content:[{type:'text',text}],stop_reason:stop,usage}};
+  }
+  async function readFiles(req,res,body,u,day){
+    const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
+    // Railway closes a request that sends nothing for 5 minutes: after a while, the answer starts with spaces (valid JSON
+    // whitespace) until it is ready; an error after that point is sent as {"error":...} with the status already 200
+    let started=false; const beat=setInterval(()=>{try{if(!started){res.status(200).type('application/json'); started=true} res.write(' ')}catch(e){}},Math.max(20,+env.AI_KEEPALIVE_MS||15000));
+    const tried=[], att=[]; let out=null;
+    const count=(model,us={},calls=1)=>{const inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
+      store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,model,{calls,input:inp,output:us.output_tokens||0})};
+    try{for(const m of FILE_MODELS.slice(Math.max(0,FILE_MODELS.indexOf(body.model)))){att.push(m); out=await claudeStream({...body,model:m},ctl.signal);
+        if(out.spent)count(out.spent.model||m,out.spent.usage);
+        if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+'), the next model reads')}}
+    finally{clearInterval(beat)}
+    if(out.aborted){log('read cancelled by the page');return}
+    if(out.message){count(out.message.model,out.message.usage||{});
+      const txt=JSON.stringify({...out.message,fallbackFrom:tried}); return started?res.end(txt):res.status(200).type('application/json').send(txt)}
+    if(att.length>1)out.json.error.message+=` (נוסו: ${att.join(', ')})`;
+    return started?res.end(JSON.stringify(out.json)):res.status(out.status).json(out.json);
+  }
   // only the kinds of request the page makes: a model from the list, a capped answer length, plain text and image turns,
   // an optional system line. Anything else (tools, other settings) is dropped or refused.
   function cleanAsk(b){
     if(!b||typeof b!=='object')return {err:'bad request'};
-    if(!ALLOWED_MODELS.includes(b.model))return {err:'model not allowed'};
+    const files=b.purpose==='files';
+    if(!(files?FILE_MODELS:ALLOWED_MODELS).includes(b.model))return {err:'model not allowed'};
     const msgs=Array.isArray(b.messages)?b.messages:null; if(!msgs||!msgs.length||msgs.length>AI_MAX_TURNS)return {err:'bad messages'};
     let imgs=0; const out=[];
     for(const m of msgs){
@@ -179,9 +231,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       }
       out.push({role:m.role,content:parts});
     }
-    const body={model:b.model,max_tokens:Math.max(1,Math.min(AI_MAX_TOKENS,Math.floor(+b.max_tokens||1024))),messages:out};
+    const body={model:b.model,max_tokens:Math.max(1,Math.min(files?AI_MAX_TOKENS_FILES:AI_MAX_TOKENS,Math.floor(+b.max_tokens||1024))),messages:out};
     if(typeof b.system==='string'&&b.system)body.system=b.system.slice(0,AI_MAX_SYSTEM);
-    return {body};
+    return {body,files};
   }
   const inflight=new Map(); // user id -> requests running now
   app.post('/api/ask',needUser,async(req,res)=>{
@@ -192,12 +244,14 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'בקשה קודמת ל-Claude עדיין רצה. נסה שוב בעוד רגע.'}});
     }
     store.aiAdd(u.id,day,{calls:1}); inflight.set(u.id,(inflight.get(u.id)||0)+1);
+    if(c.files){try{return await readFiles(req,res,c.body,u,day)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}}
     // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
     let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
     if(out.aborted){log('ask cancelled by the page');return}
     if(out.text!=null){
-      try{const us=(JSON.parse(out.text).usage)||{}; store.aiAdd(u.id,day,{input:(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0),output:us.output_tokens||0})}catch(e){}
+      try{const J=JSON.parse(out.text), us=J.usage||{}, inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
+        store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,J.model||c.body.model,{calls:1,input:inp,output:us.output_tokens||0})}catch(e){}
       res.status(200).type('application/json').send(out.text);return}
     res.status(out.status).json(out.json);
   });
@@ -207,7 +261,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const users=store.users(), byId=Object.fromEntries(users.map(x=>[x.id,x])), month=store.aiSince(from), day=store.aiSince(today);
     const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,calls30:m.calls||0,input30:m.input||0,output30:m.output||0}});
     for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,calls30:m.calls,input30:m.input,output30:m.output});
-    res.json({limit:AI_DAILY,models:ALLOWED_MODELS,rows});
+    res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
   app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
   // the analysts' data: when it last ran and how it went, and how old each document is

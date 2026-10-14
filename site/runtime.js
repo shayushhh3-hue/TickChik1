@@ -7,7 +7,9 @@
 const API='/api';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isMap=v=>v&&typeof v==='object'&&!Array.isArray(v);
-const MODELS={quick:'claude-haiku-5-5',default:'claude-sonnet-5-5',complex:'claude-sonnet-5-5'};
+const MODELS={quick:'claude-haiku-5-5',default:'claude-sonnet-5-5',complex:'claude-sonnet-5-5',files:'claude-fable-5-1'};
+// reading uploaded files goes to the strongest model; the server falls back to the next one when it cannot read (FILE_MODELS)
+const MODEL_NAMES={'claude-fable-5-1':'Claude Fable 5.1','claude-opus-5-5':'Claude Opus 5.5','claude-sonnet-5-5':'Claude Sonnet 5.5','claude-haiku-5-5':'Claude Haiku 5.5'};
 
 async function call(method,url,body,signal){
   let r;
@@ -16,6 +18,8 @@ async function call(method,url,body,signal){
   let j=null, bad=false; try{j=await r.json()}catch(e){bad=true}
   // an answer that is not what the server sends (a proxy page, a cut connection) is an error, never "no data"
   if(r.ok&&(bad||j===null||typeof j!=='object'))throw {code:'invalid_response',message:'התשובה מהשרת לא תקינה',status:r.status};
+  // a long reading answers 200 early (to keep the connection open); a failure after that comes as {"error":...}
+  if(r.ok&&j.error&&j.error.code&&!j.content)throw {code:j.error.code,message:j.error.message||'',status:r.status};
   if(r.ok)return j;
   const code=(j&&j.error&&j.error.code)||(r.status===401||r.status===403?'not_granted':r.status===429?'rate_limited':r.status===413?'too_large':r.status>=500?'upstream_error':'invalid_argument');
   const err={code,message:(j&&j.error&&j.error.message)||('HTTP '+r.status),status:r.status};
@@ -170,11 +174,13 @@ export async function boot(){
     if(!turns.length||turns[turns.length-1].role!=='user')turns.push({role:'user',content:'.'});
     const imgs=[]; for(const im of (opts.images||[])){try{imgs.push({type:'image',source:{type:'base64',media_type:im.type||'image/jpeg',data:await b64(im)}})}catch(e){}}
     const messages=turns.map((t,i)=>i===turns.length-1&&imgs.length?{role:t.role,content:[...imgs,{type:'text',text:t.content}]}:{role:t.role,content:t.content});
-    const tier=opts.modelTier==='quick'||opts.modelTier==='complex'?opts.modelTier:'default';
-    const body={model:MODELS[tier],max_tokens:8192,messages};
+    const tier=['quick','complex','files'].includes(opts.modelTier)?opts.modelTier:'default';
+    const body={model:MODELS[tier],max_tokens:tier==='files'?32000:8192,messages}; if(tier==='files')body.purpose='files';
     if(opts.json)body.system='Reply with a single JSON value and nothing else: no prose, no code fences.';
     const r=await call('POST','/ask',body,opts.signal);
     const text=((r&&r.content)||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    // which model answered, and which could not (the page says so under a reading)
+    sample.last={model:(r&&r.model)||body.model,name:MODEL_NAMES[(r&&r.model)||body.model]||(r&&r.model)||body.model,fallbackFrom:((r&&r.fallbackFrom)||[]).map(m=>MODEL_NAMES[m]||m),tier};
     if(typeof opts.onText==='function'){try{opts.onText({text,delta:text})}catch(e){}}
     return {text,truncated:!!(r&&r.stop_reason==='max_tokens'),modelTierApplied:tier};
   }

@@ -1909,7 +1909,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="dup tx" id="txBox" hidden></div>
         <details><summary class="sub" style="cursor:pointer">עוד אפשרויות ועזרה</summary>
           <div class="form" style="margin-top:10px"><label for="upAcct">החשבון שאליו שייכים הקבצים<select id="upAcct"><option value="auto">זיהוי אוטומטי</option><option value="exc">אקסלנס</option><option value="blink">בלינק</option></select></label></div>
-          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה: התשובה מגיעה מהר יותר, אבל עלולות להיות יותר טעויות בכמויות ובסימולים. בדוק את הטבלה היטב לפני השמירה.</label>
+          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה (מודל קל): התשובה מגיעה מהר יותר, אבל עלולות להיות יותר טעויות בכמויות ובסימולים. בלי הסימון, הקובץ נקרא עם המודל החזק ביותר של Claude, בקפידה ולאט יותר.</label>
           <label for="upText" style="margin-top:10px">הדבקת טקסט הדוח במקום קובץ<textarea id="upText" style="min-height:64px"></textarea></label>
           <button class="btn" id="btnReadText" type="button" style="margin-top:8px">קרא את הטקסט</button>
           <ul class="note" style="margin:12px 0 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;max-width:70ch">
@@ -18840,20 +18840,25 @@ async function readStatement0(fromText){
   const pDone=[(files.length===1?'נפתח קובץ אחד':files.length?`נפתחו ${files.length} קבצים`:'התקבל הטקסט שהודבק')+(imgs.length?`, ${cntH(imgs.length,'תמונה אחת','תמונות')} לקריאה`:'')];
   if(hasText)pDone.push(red.n?'נמחקו מהטקסט לפני השליחה: '+Object.keys(red.kinds).map(k=>RDK[k]).join(', '):'בטקסט לא נמצאו ת״ז, מספר חשבון או כתובת');
   if(imgs.length)pDone.push((imgs.length===1?'התמונה נשלחת':'התמונות נשלחות')+' כמו שהן: מתמונה אי אפשר למחוק פרטים');
-  upCtl=new AbortController(); $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2); st.textContent='Claude קורא את הדוח, זה יכול לקחת עד דקה…';
+  // reading files: the strongest model (the site's server falls back to the next when it cannot read), unless the user
+  // chose "קריאה מהירה". Outside the site (Claude's own artifact view) the strongest tier there is "complex".
+  const quick=!!($('upQuick')&&$('upQuick').checked), FILES_TIER=window.__tc?'files':'complex';
+  upCtl=new AbortController(); $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2); st.textContent=quick?'Claude קורא את הדוח במהירות, זה יכול לקחת עד דקה…':'המודל החזק ביותר של Claude קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
   try{
     // every screenshot is read: when the view takes fewer images per call than were picked, they go in several calls and the answers are merged
     const step=Math.max(1,perCall), nCh=Math.max(1,Math.ceil(imgs.length/step)), outs=[];
     for(let ci=0;ci<nCh;ci++){
-      if(nCh>1)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת עד דקה…`;
+      if(nCh>1)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת ${quick?'עד דקה':'כמה דקות'}…`;
       const part=imgs.slice(ci*step,(ci+1)*step), from=ci*step+1;
-      const opts={cache:false,signal:upCtl.signal}; if(part.length)opts.images=part; const autoQ=!part.length&&hasText; if(($('upQuick')&&$('upQuick').checked)||sheetsOnly||autoQ)opts.modelTier='quick';
+      const opts={cache:false,signal:upCtl.signal}; if(part.length)opts.images=part; const autoQ=quick; opts.modelTier=quick?'quick':FILES_TIER;
       upProg(pDone,nCh>1?`Claude קורא, חלק ${ci+1} מתוך ${nCh}`:'Claude קורא את הקבצים'); upTick(true);
-      let o; try{try{o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}catch(e1){if(!(autoQ&&e1&&e1.code==='invalid_json'))throw e1; o=null} if(autoQ&&!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length))){opts.modelTier='default'; upProg(pDone,'קורא שוב בקפידה'); o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}}
+      let o; try{try{o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}catch(e1){if(!(autoQ&&e1&&e1.code==='invalid_json'))throw e1; o=null} if(autoQ&&!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length))){opts.modelTier=FILES_TIER; upProg(pDone,'קורא שוב בקפידה, עם המודל החזק ביותר'); o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}}
       catch(e){if(!ci||(e&&e.code==='cancelled'))throw e; partial=e; break}
       outs.push(o&&typeof o==='object'?o:{}); sent=Math.min(imgs.length,(ci+1)*step);
     }
     const left=partial&&!hasText?new Set(imgs.slice(sent).map(b=>imgFile.get(b)).filter(Boolean)):new Set();
+    const rd=sample.last, readBy=rd?'נקרא עם '+rd.name+(rd.fallbackFrom&&rd.fallbackFrom.length?` (${rd.fallbackFrom.join(', ')} לא ${rd.fallbackFrom.length===1?'היה זמין':'היו זמינים'}, ולכן קרא המודל הבא)`:''):'';
+    if(readBy)pDone.push(readBy);
     const partNote=partial?(hasText?' חלק מצילומי העמודים לא נשלחו, אבל טקסט הדוח נקרא במלואו.':` נקראו ${sent} מתוך ${imgs.length} צילומים. ${left.size} נשארו ברשימה`+(partial.code==='rate_limited'?', כי Claude ביקש להאט.':'. לחץ על "קרא שוב" כדי לקרוא אותם.')):'';
     const posOf=o=>Array.isArray(o&&o.positions)?o.positions:[];
     const real=outs.filter(o=>!o.derived&&posOf(o).length), use=real.length?real:outs, seen=new Map();
@@ -18906,7 +18911,7 @@ async function readStatement0(fromText){
           'ההפקדות נשמרות גם בהיסטוריה. לחץ על "שמור את התיק".'+(asOf?' אם הכסף כבר הושקע בניירות, עדיף להעלות צילום של רשימת האחזקות במקום.':'');
       }
     }
-    else if(!rows.length){st.textContent='לא מצאתי אחזקות בקבצים האלה.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'')}
+    else if(!rows.length){st.textContent='לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+'.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'')}
     else{
       if(!DRAFT)DRAFT=draftFromP();
       // a statement describes the whole account, so it replaces it; screenshots show parts of it, so they are merged by symbol

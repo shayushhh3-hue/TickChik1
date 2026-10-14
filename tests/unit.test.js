@@ -17,6 +17,16 @@ before(async()=>{
     if(said.includes('BADKEY')){res.writeHead(401,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'authentication_error',message:'invalid x-api-key'}}));return}
     if(said.includes('SLOW')){let done=false; res.on('close',()=>{if(!done)claudeClosed++}); await new Promise(r=>setTimeout(r,1500)); if(res.destroyed)return; done=true}
     if(said.includes('RATELIMIT')){res.writeHead(429,{'content-type':'application/json'});res.end(JSON.stringify({error:{type:'rate_limit_error',message:'slow down'}}));return}
+    // reading files: streamed. NOFABLE: the strongest model is not open to the key; REFUSE: it declines; SLOWFILE: it takes a while
+    if(j.stream){if(said.includes('SLOWFILE'))await new Promise(r=>setTimeout(r,400));
+      if(said.includes('LATEKEY')){res.writeHead(401,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'authentication_error',message:'invalid x-api-key'}}));return}
+      if(j.model==='claude-fable-5-1'&&said.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}}));return}
+      res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
+      ev('message_start',{message:{id:'m2',type:'message',role:'assistant',model:j.model,content:[],usage:{input_tokens:1000,output_tokens:1}}}); ev('ping',{});
+      if(j.model==='claude-fable-5-1'&&said.includes('REFUSE')){ev('message_delta',{delta:{stop_reason:'refusal'},usage:{output_tokens:0}}); ev('message_stop',{}); res.end(); return}
+      ev('content_block_start',{index:0,content_block:{type:'thinking',thinking:''}}); ev('content_block_stop',{index:0});
+      ev('content_block_start',{index:1,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:1,delta:{type:'text_delta',text:'{"ok":'}}); ev('content_block_delta',{index:1,delta:{type:'text_delta',text:'"read"}'}});
+      ev('content_block_stop',{index:1}); ev('message_delta',{delta:{stop_reason:'end_turn'},usage:{output_tokens:50}}); ev('message_stop',{}); res.end(); return}
     res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({id:'m1',type:'message',content:[{type:'text',text:'{"ok":true}'}],stop_reason:'end_turn',usage:{input_tokens:100,output_tokens:20}}))});
   await new Promise(r=>claudeSrv.listen(0,'127.0.0.1',r));
   process.env.ANTHROPIC_BASE_URL='http://127.0.0.1:'+claudeSrv.address().port;
@@ -495,4 +505,27 @@ test('e-mail: nothing automatic goes out without the owner\'s consent, per kind;
     s.setDoc('settings/main',{name:'x',mail:{backup:true}}); const r2=await backupTask(s,{dataDir:dir}); assert.equal(r2.mailed,true); assert.equal(sent.length,2);
     fs.rmSync(dir,{recursive:true,force:true});
   }finally{globalThis.fetch=f0; if(env0.k==null)delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY=env0.k; if(env0.to==null)delete process.env.MAIL_TO; else process.env.MAIL_TO=env0.to}
+});
+
+test('reading files: the strongest model, the next one when it cannot read, a long read kept open, the cost per model',async()=>{
+  const {srv,req,base,jar}=await startApp(), k0=process.env.AI_KEEPALIVE_MS;
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    const ask=(content,o={})=>req('o','POST','/api/ask',{purpose:'files',model:'claude-fable-5-1',max_tokens:999999,messages:[{role:'user',content}],...o});
+    let r=await ask('read this statement'); assert.equal(r.status,200); assert.equal(r.j.model,'claude-fable-5-1'); assert.equal(r.j.content[0].text,'{"ok":"read"}'); assert.deepEqual(r.j.fallbackFrom,[]);
+    const sent=claudeSeen[claudeSeen.length-1].body; assert.equal(sent.stream,true); assert.equal(sent.max_tokens,32000,'room for the thinking, capped'); assert.equal(sent.purpose,undefined,'only the page\'s fields go to Claude');
+    assert.equal((await req('o','POST','/api/ask',{model:'claude-fable-5-1',max_tokens:10,messages:[{role:'user',content:'hi'}]})).status,400,'the chat does not get the strongest model');
+    assert.equal((await ask('x',{model:'claude-sonnet-5-5'})).status,400,'file reading uses only the file models');
+    r=await ask('NOFABLE read this'); assert.equal(r.status,200); assert.equal(r.j.model,'claude-opus-5-5'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
+    r=await ask('REFUSE read this'); assert.equal(r.j.model,'claude-opus-5-5','a refusal hands over to the next model'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
+    // a read that takes long: the answer starts with spaces (JSON allows them) so the connection stays open
+    process.env.AI_KEEPALIVE_MS='60';
+    const raw=await fetch(base+'/api/ask',{method:'POST',headers:{cookie:jar.o,'x-tc':'1','content-type':'application/json'},body:JSON.stringify({purpose:'files',model:'claude-fable-5-1',max_tokens:100,messages:[{role:'user',content:'SLOWFILE read'}]})});
+    const t=await raw.text(); assert.equal(raw.status,200); assert.match(t,/^ +\{/); assert.equal(JSON.parse(t).content[0].text,'{"ok":"read"}');
+    // a failure after the answer has started comes as {"error":...} (the status is already 200)
+    r=await ask('SLOWFILE LATEKEY'); assert.equal(r.status,200); assert.equal(r.j.error.code,'sampling_disabled');
+    const u=(await req('o','GET','/api/ai/usage')).j, by=Object.fromEntries(u.byModel.map(x=>[x.model,x]));
+    assert.deepEqual(u.fileModels,['claude-fable-5-1','claude-opus-5-5']); assert.equal(by['claude-fable-5-1'].calls,3,'two reads, and the declined one, which is billed too'); assert.equal(by['claude-fable-5-1'].input,3000);
+    assert.equal(by['claude-opus-5-5'].calls,2); assert.equal(by['claude-fable-5-1'].output,100);
+  }finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; srv.close()}
 });

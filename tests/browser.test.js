@@ -9,10 +9,18 @@ import http from 'node:http';
 import {fixture,closes} from './fixture.js';
 
 const R=new URL('..',import.meta.url).pathname;
-let claude, seen=[], srv, U, store, browser, docs;
+let claude, seen=[], bodies=[], srv, U, store, browser, docs;
 before(async()=>{
-  claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const p=JSON.stringify(JSON.parse(b).messages||[]); seen.push(p);
+  claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens});
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
+    // reading a file: streamed, as the server asks for it; NOFABLE in the file: the strongest model is not open to the key
+    if(J.stream){if(p.includes('SLOWFILE'))await new Promise(r=>setTimeout(r,500));
+      if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
+      const out=JSON.stringify({broker:'exc',asOf:'2026-10-01',positions:[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'}],cashIls:100,cashUsd:0,transactions:[]});
+      res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
+      ev('message_start',{message:{id:'m',type:'message',role:'assistant',model:J.model,content:[],usage:{input_tokens:2000,output_tokens:1}}});
+      ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text:out}}); ev('content_block_stop',{index:0});
+      ev('message_delta',{delta:{stop_reason:'end_turn'},usage:{output_tokens:300}}); ev('message_stop',{}); res.end(); return}
     const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
       :p.includes('הסבר את התיק שלי')?JSON.stringify({summary:'בתיק 12 ניירות, ורובו בטכנולוגיה. התיק מאוזן היטב. שלושת הגדולים הם 39.5% ממנו.'}):'{"answer":""}';
     res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1}}))});
@@ -403,5 +411,26 @@ test('trust: a calculation on the user\'s assumption is never called a forecast;
     seen9.push(...await pg.evaluate(()=>{const r=[]; const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT); let n; while(n=w.nextNode()){const e=n.parentElement; if(!e||e.offsetParent===null)continue; for(const m of n.data.matchAll(/(\S+\s+){0,2}תחזית/g))r.push(m[0])} return r}))}
   assert.ok(seen9.length>0,'the page does say what is not a forecast');
   for(const x of seen9)assert.match(x,/(^|\s)ו?לא\s+(\S+\s+)?תחזית/,'"תחזית" only as "not a forecast": '+x);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('reading a file: the strongest model reads it, and the page says which model read (and when the next one did)',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300);
+  const read=async(name,csv)=>{const n0=bodies.length; await pg.setInputFiles('#upFile',{name,mimeType:'text/csv',buffer:Buffer.from(csv)});
+    // the read starts 1.2 s after the file is picked; the line of the previous read is still on the screen until then
+    for(let i=0;i<200&&bodies.length===n0;i++)await new Promise(r=>setTimeout(r,100));
+    await pg.waitForFunction(()=>/נקרא עם/.test(document.getElementById('upProg')?.textContent||'')&&!/Claude קורא/.test(document.querySelector('#upProg li.now')?.textContent||'')&&document.getElementById('btnStop').hidden,null,{timeout:20000});
+    await pg.waitForTimeout(300); return {sent:bodies.slice(n0),prog:await pg.evaluate(()=>document.getElementById('upProg').textContent)}};
+  // a long read: the server sends spaces while Claude thinks (Railway closes a quiet request), the page reads past them
+  const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(q.url().includes('/api/ask'))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
+  let r; try{r=await read('statement.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nSLOWFILE,,0,0\n')}finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; pg.off('response',onRes)}
+  assert.equal(raw.length,1); assert.match(raw[0],/^ {3,}\{/,'spaces kept the request open while Claude was reading');
+  assert.deepEqual(r.sent.map(b=>[b.model,b.stream]),[['claude-fable-5-1',true]],'one call, to the strongest model, streamed');
+  assert.ok(r.sent[0].max_tokens>8192,'room for the model\'s thinking'); assert.match(r.prog,/נקרא עם Claude Fable 5\.1/);
+  assert.equal(await pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr, table.pf tbody tr')].some(tr=>/MSFT/.test(tr.innerHTML)&&/\b3\b/.test(tr.innerHTML))),true,'what was read is in the table, waiting to be saved');
+  r=await read('statement2.csv','Symbol,Name,Qty,Cost ILS\nNOFABLE,Microsoft,3,4200\n');
+  assert.deepEqual(r.sent.map(b=>b.model),['claude-fable-5-1','claude-opus-5-5'],'the server hands over to the next model');
+  assert.match(r.prog,/נקרא עם Claude Opus 5\.5 \(Claude Fable 5\.1 לא היה זמין/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
