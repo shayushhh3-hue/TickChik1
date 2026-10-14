@@ -473,6 +473,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .staged{display:flex;flex-wrap:wrap;gap:6px}
 .staged span{display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:var(--surface)}
 .staged button{font:inherit;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 6px;font-size:15px}
+.staged label.more{display:inline-flex;align-items:center;min-height:30px;padding:3px 12px;border:1px dashed var(--accent);border-radius:6px;font-size:12.5px;color:var(--accent-ink);background:var(--accent-soft);cursor:pointer}
 .tracks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .trk{font:inherit;text-align:start;display:flex;flex-direction:column;gap:2px;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r,8px);background:var(--surface);color:var(--ink);cursor:pointer}
 .trk b{font-size:15px}
@@ -1908,7 +1909,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <label class="upb" for="upImg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>צילומי מסך</b><span>מהגלריה או מהמצלמה, כמה שצריך</span><input type="file" id="upImg" multiple accept="image/*"></label>
           <label class="upb" for="upFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><b>PDF או אקסל</b><span>דוח יתרות או תנועות מבית ההשקעות, אחד או כמה</span><input type="file" id="upFile" multiple accept="application/pdf,.pdf,.xlsx,.xls,.csv,.txt"></label>
         </div>
-        <p class="uphint">אפשר לבחור כמה דוחות יחד: באנדרואיד בלחיצה ארוכה על הראשון ואז הקשה על השאר, ובאייפון בכפתור "בחר". כל דוח נקרא בנפרד, וכולם באותו זמן.</p>
+        <p class="uphint">אפשר לבחור כמה דוחות יחד: באנדרואיד בלחיצה ארוכה על הראשון ואז הקשה על השאר, ובאייפון בכפתור "בחר". יש דפדפנים שמעבירים רק קובץ אחד. אז פשוט בוחרים אחד אחרי השני ("+ עוד קובץ"): כל דוח נקרא מיד, וכולם באותו זמן.</p>
         <label class="drop" id="drop" for="upFile"><b>או גרור לכאן קבצים</b><span class="nm" id="dropHint">PDF, Excel, CSV או צילומי מסך · עד 10 קבצים יחד, כל דוח נקרא בנפרד וכולם באותו זמן · אפשר גם להדביק צילום מסך עם Ctrl+V</span></label>
         <ol class="upsteps" id="upSteps" aria-label="שלבי ההעלאה"><li data-s="1"><i>1</i>בוחרים קבצים</li><li data-s="2"><i>2</i>Claude קורא</li><li data-s="3"><i>3</i>בודקים ושומרים</li></ol>
         <div class="staged" id="staged" hidden></div>
@@ -15061,7 +15062,7 @@ BHST	BioHarvest Sciences Inc.	T	TLV		98
 const $=id=>document.getElementById(id);
 // inline status lines (save / upload / read) take the same four colours as the alert cards, chosen from the text
 (function(){
-  const kind=t=>/^(נקראו|נוספו)/.test(t)?(/חישבתי|לא הצלחתי|לא הובנו|ייתכן|לא נקראו/.test(t)?'warn':'ok'):/נכשל|שגיאה|אין הרשא|לא הצלח|לא הצליח|לא זמינ|לא מצאתי|לא התקבלו|בלי אישור|גדול מדי|לא פתחה|אי אפשר לשלוח|נראה ריק|סרוק|שני חשבונות/.test(t)?'err':/יותר מדי|יש שינויים|עדיין אין|לא נשמר|לא נמצא/.test(t)?'warn':/^נשמר|נשמרו|נקרא|הושל|עודכן|סומנה|נוספ|הצלח|נטענ/.test(t)?'ok':'info';
+  const kind=t=>/^(הקריאה המהירה לא הצליחה|הבדיקה של המודל החזק ביותר לא הצליחה|לא הגיעו קבצים|הקבצים שבחרת הגיעו)/.test(t)?'warn':/^קורא \d+ קבצים/.test(t)?'info':/^(נקראו|נוספו)/.test(t)?(/חישבתי|לא הצלחתי|לא הובנו|ייתכן|לא נקראו/.test(t)?'warn':'ok'):/נכשל|שגיאה|אין הרשא|לא הצלח|לא הצליח|לא זמינ|לא מצאתי|לא התקבלו|בלי אישור|גדול מדי|לא פתחה|אי אפשר לשלוח|נראה ריק|סרוק|שני חשבונות/.test(t)?'err':/יותר מדי|יש שינויים|עדיין אין|לא נשמר|לא נמצא/.test(t)?'warn':/^נשמר|נשמרו|נקרא|הושל|עודכן|סומנה|נוספ|הצלח|נטענ/.test(t)?'ok':'info';
   const paint=el=>{const t=String(window.__i18nSrc?window.__i18nSrc(el):(el.textContent||'')).trim();el.classList.remove('ok','warn','err','info');if(!t){el.classList.remove('msg');return}el.classList.add('msg',kind(t))};
   ['saved','planSaved','pfSaved','listState','upState','wipeState'].forEach(id=>{const el=document.getElementById(id);if(!el)return;try{new MutationObserver(()=>paint(el)).observe(el,{childList:true,characterData:true,subtree:true})}catch(e){}paint(el)});
 })();
@@ -18555,8 +18556,10 @@ const FIXED=new Map(), PFS={saves:0,resets:0,gen:0};
 // the first portfolio's explanation, put off because the check corrected the table after the first save: it comes with the next save
 let FIRSTX=false;
 function upStep(n){const ol=$('upSteps');if(!ol)return;[...ol.children].forEach((li,i)=>{li.classList.toggle('on',i+1===n);li.classList.toggle('done',i+1<n)})}
-function showStaged(){const el=$('staged');el.hidden=!STAGED.length;el.innerHTML=STAGED.map((f,i)=>`<span>${esc(f.name||'צילום מסך')}<button type="button" data-unstage="${i}" aria-label="הסר את ${esc(f.name||'צילום מסך')}">×</button></span>`).join('');$('btnRead').hidden=!STAGED.length}
-function stageFiles(list){const ok=[...list].filter(f=>f&&f.size>0);if(!ok.length)return;upStep(1);let over=0;for(const f of ok)if(!STAGED.some(x=>x.name===f.name&&x.size===f.size)){if(STAGED.length<10)STAGED.push(f);else over++}OVER+=over;showTab('mine');showStaged();
+function showStaged(){const el=$('staged');el.hidden=!STAGED.length;el.innerHTML=STAGED.map((f,i)=>`<span>${esc(f.name||'צילום מסך')}<button type="button" data-unstage="${i}" aria-label="הסר את ${esc(f.name||'צילום מסך')}">×</button></span>`).join('')+(STAGED.length<10&&canWrite?'<label class="more" for="upFile">+ עוד קובץ</label>':'');$('btnRead').hidden=!STAGED.length}
+function stageFiles(list,from){const all=[...(list||[])].filter(Boolean), ok=all.filter(f=>f.size>0||(from==='pick'&&f.name));
+  if(!ok.length){if(all.length)$('upState').textContent='הקבצים שבחרת הגיעו מהדפדפן ריקים, ולכן אי אפשר לקרוא אותם. נסה לבחור אותם שוב, אחד אחרי השני, או לפתוח את האתר ב-Chrome.'; return}
+  upStep(1);let over=0;for(const f of ok)if(!STAGED.some(x=>x.name===f.name&&x.size===f.size)){if(STAGED.length<10)STAGED.push(f);else over++}OVER+=over;showTab('mine');showStaged();
   if(coolLeft()>0){coolNote();return}
   clearTimeout(upT); if(!upBusy)$('upState').textContent=STAGED.length>1?`${STAGED.length} קבצים ברשימה. מתחיל לקרוא, כל קובץ בנפרד…`:'מתחיל לקרוא…';
   upT=setTimeout(()=>{if(STAGED.length&&coolLeft()<=0)readStatement()},1200)}
@@ -19336,8 +19339,15 @@ const wipeMsg=ok=>ok?'הושלם. התיק, התוכנית וההיסטוריה 
 
 // files reach the statement reader by picking, dropping anywhere on the page, or pasting a screenshot
 $('candChips').addEventListener('click',e=>{const b=e.target.closest('[data-cf]');if(!b)return;candFilter=b.dataset.cf;try{render()}catch(x){}});
-$('upFile').addEventListener('change',e=>{stageFiles(e.target.files);e.target.value=''});
-$('upImg').addEventListener('change',e=>{stageFiles(e.target.files);e.target.value=''});
+let PICK=null;
+function pickNone(){const p=PICK; PICK=null; if(!p||p.got||Date.now()-p.at<2500)return;
+  $('upState').textContent='לא הגיעו קבצים מהבחירה. אם בחרת כמה קבצים יחד, הדפדפן הזה כנראה לא מעביר בחירה של כמה קבצים. אפשר לבחור אותם אחד אחרי השני (כל קובץ נקרא מיד, וכולם באותו זמן), או לפתוח את האתר ב-Chrome.'}
+const pickBack=()=>{const p=PICK; if(p&&!p.got)setTimeout(()=>{if(PICK===p&&!p.got)pickNone()},1500)};
+for(const id of ['upFile','upImg']){const inp=$(id);
+  inp.addEventListener('click',()=>{PICK={at:Date.now(),got:false}});
+  inp.addEventListener('change',e=>{const fs=e.target.files; if(PICK)PICK.got=!!(fs&&fs.length); if(fs&&fs.length){PICK=null; stageFiles(fs,'pick')} else pickNone(); e.target.value=''});
+  inp.addEventListener('cancel',()=>pickNone())}
+window.addEventListener('focus',pickBack); document.addEventListener('visibilitychange',()=>{if(!document.hidden)pickBack()});
 // screenshots can only be read where the host allows images; otherwise hide the picker so nobody hits a dead end
 try{window.claude&&window.claude.use&&window.claude.use('sample').then(sm=>{if(!sm||!sm.limits)return;return sm.limits().then(c=>{if(!(c&&c.images&&c.images.maxCount)){document.querySelector('label[for=upImg]').style.display='none';document.querySelector('.upbtns').style.gridTemplateColumns='1fr';$('dropHint').textContent='PDF, Excel או CSV · אפשר כמה קבצים יחד · צילומי מסך לא נתמכים בתצוגה הזו. אפשר להעלות את הדוח כ-PDF, או להקליד את הניירות ב"הקלדה מהירה" שלמעלה'}})}).catch(()=>{})}catch(e){}
 $('upPass').addEventListener('keydown',e=>{if(e.key==='Enter')readStatement()});

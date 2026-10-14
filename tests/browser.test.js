@@ -603,3 +603,20 @@ test('several reports at once, in any order: the newest holds the holdings, whic
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }
 });
+
+test('picking files: a pick that brings nothing back is said plainly; a file the browser gives with no size is still read',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(300);
+  // the picker was open for a while and closed with no files (some phone browsers do this when several are chosen)
+  await pg.evaluate(()=>document.getElementById('upFile').dispatchEvent(new Event('click'))); await pg.waitForTimeout(2700);
+  await pg.evaluate(()=>document.getElementById('upFile').dispatchEvent(new Event('cancel')));
+  assert.match(await pg.evaluate(()=>document.getElementById('upState').textContent),/לא הגיעו קבצים מהבחירה\. אם בחרת כמה קבצים יחד, הדפדפן הזה כנראה לא מעביר בחירה של כמה קבצים\. אפשר לבחור אותם אחד אחרי השני/);
+  // a quick close is just a close: nothing is said
+  await pg.evaluate(()=>{document.getElementById('upState').textContent=''; const i=document.getElementById('upFile'); i.dispatchEvent(new Event('click')); i.dispatchEvent(new Event('cancel'))});
+  assert.equal(await pg.evaluate(()=>document.getElementById('upState').textContent),'');
+  // a file whose size the browser does not report is kept and read (here it really is empty, and the page says so)
+  await pg.setInputFiles('#upFile',{name:'nosize.csv',mimeType:'text/csv',buffer:Buffer.alloc(0)});
+  await pg.waitForFunction(()=>/הקובץ נראה ריק/.test(document.getElementById('upState').textContent),null,{timeout:10000});
+  assert.equal(await pg.evaluate(()=>!!document.querySelector('#staged label.more[for="upFile"]')),true,'"+ עוד קובץ" next to the picked files');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
