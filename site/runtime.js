@@ -15,7 +15,8 @@ async function call(method,url,body,signal){
   let r;
   try{r=await fetch(API+url,{method,credentials:'same-origin',headers:{'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body),signal})}
   catch(e){if(e&&e.name==='AbortError')throw {code:'cancelled',message:'cancelled'};throw {code:'server_unavailable',message:String(e&&e.message||e)}}
-  let j=null, bad=false; try{j=await r.json()}catch(e){bad=true}
+  // a stop while the answer is still arriving (a long reading starts its answer early) is a stop, not a broken answer
+  let j=null, bad=false; try{j=await r.json()}catch(e){if((e&&e.name==='AbortError')||(signal&&signal.aborted))throw {code:'cancelled',message:'cancelled'}; bad=true}
   // an answer that is not what the server sends (a proxy page, a cut connection) is an error, never "no data"
   if(r.ok&&(bad||j===null||typeof j!=='object'))throw {code:'invalid_response',message:'התשובה מהשרת לא תקינה',status:r.status};
   // a long reading answers 200 early (to keep the connection open); a failure after that comes as {"error":...}
@@ -181,6 +182,8 @@ export async function boot(){
     const text=((r&&r.content)||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     // which model answered, and which could not (the page says so under a reading)
     sample.last={model:(r&&r.model)||body.model,name:MODEL_NAMES[(r&&r.model)||body.model]||(r&&r.model)||body.model,fallbackFrom:((r&&r.fallbackFrom)||[]).map(m=>MODEL_NAMES[m]||m),tier};
+    // the same, for this call only (two reads can run at once, and sample.last belongs to whichever ended last)
+    if(opts.meta&&typeof opts.meta==='object')Object.assign(opts.meta,sample.last);
     if(typeof opts.onText==='function'){try{opts.onText({text,delta:text})}catch(e){}}
     return {text,truncated:!!(r&&r.stop_reason==='max_tokens'),modelTierApplied:tier};
   }

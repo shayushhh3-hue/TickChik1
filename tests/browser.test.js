@@ -13,10 +13,22 @@ let claude, seen=[], bodies=[], srv, U, store, browser, docs;
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens});
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
-    // reading a file: streamed, as the server asks for it; NOFABLE in the file: the strongest model is not open to the key
-    if(J.stream){if(p.includes('SLOWFILE'))await new Promise(r=>setTimeout(r,500));
+    // reading a file. The quick read (Haiku) is an ordinary answer; the strongest model's read is streamed, as the server
+    // asks for it, and takes a while (SLOWCHECK: longer). QUICKBAD: the quick read gets MSFT's quantity wrong, sees a
+    // security that is not there (ZZZQ) and misses one (NVDA). QUICKSPELL: the quick read spells Alphabet GOOG, the strong
+    // one GOOGL. QUICKGROUP: the quick read puts MSFT in another group. QUICKACCT: the quick read takes the file for Blink's.
+    // QUICKFAIL: the quick read fails. NOFABLE: the strongest model is not open to the key.
+    const isRead=p.includes('You extract holdings'), bad=p.includes('QUICKBAD');
+    const readOut=q=>{const pos=q&&bad?[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:4200,group:'tech'},{sym:'ZZZQ',name:'Phantom',qty:1,ccy:'USD',costIls:50,group:'tech'}]
+        :[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'},...(bad?[{sym:'NVDA',name:'NVIDIA',qty:6,ccy:'USD',costIls:3150,group:'tech'}]:[])];
+      if(p.includes('QUICKSPELL'))pos.push({sym:q?'GOOG':'GOOGL',name:'Alphabet Class A',qty:2,ccy:'USD',costIls:1500,group:'tech'});
+      if(q&&p.includes('QUICKGROUP'))pos[0]={...pos[0],group:'cons'};
+      return JSON.stringify({broker:q&&p.includes('QUICKACCT')?'blink':'exc',asOf:'2026-10-01',cashIls:100,cashUsd:0,transactions:[],positions:pos})};
+    if(isRead&&!J.stream){if(p.includes('QUICKFAIL')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
+      res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',model:J.model,content:[{type:'text',text:readOut(true)}],stop_reason:'end_turn',usage:{input_tokens:2000,output_tokens:200}})); return}
+    if(J.stream){await new Promise(r=>setTimeout(r,p.includes('SLOWCHECK')?4000:1500));
       if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
-      const out=JSON.stringify({broker:'exc',asOf:'2026-10-01',positions:[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'}],cashIls:100,cashUsd:0,transactions:[]});
+      const out=readOut(false);
       res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
       ev('message_start',{message:{id:'m',type:'message',role:'assistant',model:J.model,content:[],usage:{input_tokens:2000,output_tokens:1}}});
       ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text:out}}); ev('content_block_stop',{index:0});
@@ -32,6 +44,7 @@ before(async()=>{
   for(const [p,d] of Object.entries(docs))store.setDoc(p,d,{silent:true}); store.setDoc('quotes/c_NVDA',closes(),{silent:true});
   store.addUser({email:'new@example.com',password:'friend-pass-1',role:'friend'});
   store.addUser({email:'n2@example.com',password:'friend-pass-3',role:'friend'});   // a second new user, for a security nobody held
+  store.addUser({email:'r3@example.com',password:'friend-pass-4',role:'friend'});   // a new user who reads statements and saves
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
@@ -46,9 +59,9 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'||who==='n2'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
+  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -414,23 +427,109 @@ test('trust: a calculation on the user\'s assumption is never called a forecast;
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
-test('reading a file: the strongest model reads it, and the page says which model read (and when the next one did)',T,async t=>{
+// reading a statement: pick the file, then wait for the quick read (the table is filled) and for the check to end
+const reader=pg=>{
+  const sent=()=>bodies.length, prog=()=>pg.evaluate(()=>document.getElementById('upProg').innerText);
+  const rows=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].filter(tr=>tr.querySelector('input[data-pf="sym"]')).map(tr=>({sym:tr.querySelector('input[data-pf="sym"]').value,acct:tr.querySelector('select[data-pf="acct"]').value,qty:+tr.querySelector('input[data-pf="qty"]').value,fixed:tr.classList.contains('fixed'),flag:tr.querySelector('.flag')?.textContent||''})));
+  return {
+    async pick(name,csv){const n0=sent(); await pg.setInputFiles('#upFile',{name,mimeType:'text/csv',buffer:Buffer.from(csv)});
+      // the read starts 1.2 s after the file is picked; until then the previous read's lines are still there
+      for(let i=0;i<200&&sent()===n0;i++)await new Promise(r=>setTimeout(r,50)); return n0},
+    quick:()=>pg.waitForFunction(()=>/בודק את הקריאה/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:20000}),
+    done:()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/Claude/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000}),
+    prog,rows,state:()=>pg.evaluate(()=>document.getElementById('upState').textContent)};
+};
+test('reading a file: a quick read fills the table, the strongest model checks it and corrects it',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300);
-  const read=async(name,csv)=>{const n0=bodies.length; await pg.setInputFiles('#upFile',{name,mimeType:'text/csv',buffer:Buffer.from(csv)});
-    // the read starts 1.2 s after the file is picked; the line of the previous read is still on the screen until then
-    for(let i=0;i<200&&bodies.length===n0;i++)await new Promise(r=>setTimeout(r,100));
-    await pg.waitForFunction(()=>/נקרא עם/.test(document.getElementById('upProg')?.textContent||'')&&!/Claude קורא/.test(document.querySelector('#upProg li.now')?.textContent||'')&&document.getElementById('btnStop').hidden,null,{timeout:20000});
-    await pg.waitForTimeout(300); return {sent:bodies.slice(n0),prog:await pg.evaluate(()=>document.getElementById('upProg').textContent)}};
-  // a long read: the server sends spaces while Claude thinks (Railway closes a quiet request), the page reads past them
-  const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(q.url().includes('/api/ask'))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
-  let r; try{r=await read('statement.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nSLOWFILE,,0,0\n')}finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; pg.off('response',onRes)}
+  const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+  // the quick read is wrong: the table is filled at once, and the check corrects it
+  let n0=await R.pick('statement.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNVDA,NVIDIA,6,3150\nQUICKBAD,,0,0\n');
+  await R.quick(); let rows=await R.rows();
+  assert.deepEqual(rows.filter(r=>['MSFT','ZZZQ','NVDA'].includes(r.sym)).map(r=>[r.sym,r.qty]),[['MSFT',2],['ZZZQ',1]],'the quick read is in the table while the check runs');
+  assert.deepEqual(bodies.slice(n0).map(b=>[b.model,b.stream]).sort(),[['claude-fable-5-1',true],['claude-haiku-5-5',false]],'both reads started together');
+  assert.match(await R.state(),/בקריאה מהירה\. המודל החזק ביותר של Claude בודק אותם עכשיו/);
+  await R.done(); rows=await R.rows();
+  const pick=s=>rows.find(r=>r.sym===s);
+  assert.equal(pick('MSFT').qty,3); assert.equal(pick('NVDA').qty,6);
+  assert.deepEqual([pick('MSFT').flag,pick('NVDA').flag],['תוקן','תוקן'],'what was corrected is marked');
+  assert.equal(pick('ZZZQ').flag,'לבדיקה','what only the quick read saw is kept, for the viewer to check (never removed by itself)');
+  let st=await R.state(), pr=await R.prog();
+  assert.match(st,/Claude Fable 5\.1 בדק את הדוח ותיקן: MSFT: כמות 3 \(בקריאה המהירה 2\)/); assert.match(st,/NVDA: נוסף/);
+  assert.match(st,/לבדיקה שלך: ZZZQ: Claude Fable 5\.1 לא מצא אותו בדוח\. אם הוא לא שלך, הסר אותו/);
+  assert.match(pr,/קריאה מהירה עם Claude Haiku 5\.5/); assert.match(pr,/בדיקה עם Claude Fable 5\.1: 2 תיקונים, נייר אחד לבדיקה/);
+  // the two reads agree (the group is the model's own guess, so a different one is not a correction): nothing changes
+  await R.pick('statement2.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKGROUP,,0,0\n'); await R.done();
+  rows=await R.rows(); assert.ok(!rows.some(r=>r.fixed)); assert.match(await R.prog(),/בדיקה עם Claude Fable 5\.1: הכול תואם/); assert.match(await R.state(),/מצא אותו דבר כמו הקריאה המהירה/);
+  // the same security spelled two ways: one row, the strongest model's spelling
+  await R.pick('statement5.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKSPELL,,0,0\n'); await R.done(); rows=await R.rows();
+  assert.ok(rows.some(r=>r.sym==='GOOGL'&&r.flag==='תוקן')&&!rows.some(r=>r.sym==='GOOG')); assert.match(await R.state(),/GOOGL: סימול GOOGL \(בקריאה המהירה GOOG\)/);
+  // the quick read takes the file for another account: the strongest model's account wins, and the other account is back as it was
+  const blink0=(await R.rows()).filter(r=>r.acct==='blink').map(r=>r.sym+':'+r.qty).sort();
+  await R.pick('statement6.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKACCT,,0,0\n'); await R.quick();
+  assert.ok((await R.rows()).some(r=>r.acct==='blink'&&r.sym==='MSFT'),'the quick read put it in Blink');
+  await R.done(); rows=await R.rows();
+  assert.deepEqual(rows.filter(r=>r.acct==='blink').map(r=>r.sym+':'+r.qty).sort(),blink0,'Blink is as it was');
+  assert.ok(rows.some(r=>r.acct==='exc'&&r.sym==='MSFT'&&r.qty===3)); assert.match(await R.state(),/זיהה שהקבצים שייכים לחשבון אקסלנס, ולא לחשבון בלינק כמו בקריאה המהירה, ולכן הקריאה המהירה בוטלה/);
+  // the viewer stops the check after its answer has begun (spaces are on the way): the table stays as the quick read left it
+  {const k1=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60';
+    try{await R.pick('statement7.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKBAD SLOWCHECK,,0,0\n'); await R.quick(); await pg.waitForTimeout(800);
+      await pg.evaluate(()=>document.getElementById('btnStop').click()); await R.done()}finally{if(k1==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k1}
+    assert.match(await R.state(),/עצרת את הבדיקה של המודל החזק ביותר\. הטבלה היא מהקריאה המהירה/); assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2)}
+  // the strongest model is not open to the key: the next one checks. A long check: spaces keep the request open (Railway
+  // closes a quiet one), and the page reads past them
+  const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(/"purpose":"files"/.test(q.request().postData()||''))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
+  try{n0=await R.pick('statement3.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNOFABLE,,0,0\n'); await R.done()}finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; pg.off('response',onRes)}
+  assert.deepEqual(bodies.slice(n0).map(b=>b.model).sort(),['claude-fable-5-1','claude-haiku-5-5','claude-opus-5-5']);
+  assert.ok(bodies.slice(n0).filter(b=>b.stream).every(b=>b.max_tokens>8192),'room for the strong models\' thinking');
+  assert.match(await R.prog(),/בדיקה עם Claude Opus 5\.5 \(Claude Fable 5\.1 לא היה זמין, ולכן קרא המודל הבא\): הכול תואם/);
   assert.equal(raw.length,1); assert.match(raw[0],/^ {3,}\{/,'spaces kept the request open while Claude was reading');
-  assert.deepEqual(r.sent.map(b=>[b.model,b.stream]),[['claude-fable-5-1',true]],'one call, to the strongest model, streamed');
-  assert.ok(r.sent[0].max_tokens>8192,'room for the model\'s thinking'); assert.match(r.prog,/נקרא עם Claude Fable 5\.1/);
-  assert.equal(await pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr, table.pf tbody tr')].some(tr=>/MSFT/.test(tr.innerHTML)&&/\b3\b/.test(tr.innerHTML))),true,'what was read is in the table, waiting to be saved');
-  r=await read('statement2.csv','Symbol,Name,Qty,Cost ILS\nNOFABLE,Microsoft,3,4200\n');
-  assert.deepEqual(r.sent.map(b=>b.model),['claude-fable-5-1','claude-opus-5-5'],'the server hands over to the next model');
-  assert.match(r.prog,/נקרא עם Claude Opus 5\.5 \(Claude Fable 5\.1 לא היה זמין/);
+  // the quick read fails: the strongest model's read fills the table
+  await R.pick('statement4.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKFAIL,,0,0\n'); await R.done();
+  rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/הקריאה המהירה לא הצליחה, והמודל החזק ביותר קרא את הדוח/);
+  assert.match(await R.prog(),/נקרא עם Claude Fable 5\.1/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('reading a file: what the viewer changed or saved meanwhile stays; "quick only" skips the check',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280,{who:'r3'}); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+  const BAD='Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNVDA,NVIDIA,6,3150\nQUICKBAD,,0,0\n';
+  // the viewer corrects MSFT by hand while the check runs: the hand-made change stays, the rest is corrected
+  await R.pick('a.csv',BAD); await R.quick();
+  await pg.evaluate(()=>{const i=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('input[data-pf="sym"]')?.value==='MSFT').querySelector('input[data-pf="qty"]'); i.value='5'; i.dispatchEvent(new Event('input',{bubbles:true}))});
+  await R.done(); let rows=await R.rows();
+  assert.equal(rows.find(r=>r.sym==='MSFT').qty,5,'the viewer\'s change is not overwritten'); assert.equal(rows.find(r=>r.sym==='NVDA').qty,6); assert.equal(rows.find(r=>r.sym==='ZZZQ').flag,'לבדיקה');
+  assert.match(await R.state(),/לא שיניתי מה שערכת בעצמך \(MSFT\)/);
+  // the viewer saves the quick read before the check ends: the check corrects the saved rows, and asks to save again
+  await pg.evaluate(()=>document.getElementById('btnPfReset').click()); await R.pick('b.csv',BAD.replace('QUICKBAD','QUICKBAD SLOWCHECK')); await R.quick();
+  await pg.evaluate(()=>document.getElementById('btnPfSave').click()); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent),null,{timeout:15000});
+  await R.done(); await pg.waitForTimeout(300); rows=await R.rows();
+  assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mine','the first save does not move away from corrections that are not saved');
+  assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.equal(rows.find(r=>r.sym==='ZZZQ').flag,'לבדיקה');
+  assert.match(await R.state(),/שמרת לפני שהבדיקה הסתיימה, אז לחץ שוב על "שמור את התיק"/);
+  assert.match(await pg.evaluate(()=>document.getElementById('pfSaved').textContent),/יש שינויים שלא נשמרו/);
+  // the corrections saved: now the first portfolio's explanation comes, as it does after a first save
+  await pg.evaluate(()=>document.getElementById('btnPfSave').click());
+  await pg.waitForFunction(()=>document.body.dataset.page==='overview'&&/הסבר התיק שלך/.test(document.getElementById('anaOut')?.textContent||''),null,{timeout:20000});
+  // the viewer moves to another screen while the check runs: when it ends, a note leads back to the table
+  await tab(pg,'mine'); await pg.waitForTimeout(300); await R.pick('d.csv',BAD); await R.quick(); await tab(pg,'overview'); await R.done();
+  // (the save's "undo" note is shown first, for 15 seconds; this one waits for it)
+  await pg.waitForFunction(()=>!document.getElementById('toast').hidden&&/תיקן/.test(document.getElementById('toastMsg').textContent),null,{timeout:40000});
+  assert.match(await pg.evaluate(()=>document.getElementById('toastMsg').textContent),/Claude Fable 5\.1 בדק את הדוח שהעלית ותיקן 2 פרטים בטבלה\. התיקונים עוד לא נשמרו\./);
+  await pg.evaluate(()=>document.getElementById('toastUndo').click()); await pg.waitForTimeout(300);
+  assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mine'); assert.ok((await R.rows()).some(r=>r.fixed));
+  assert.equal(await pg.evaluate(()=>document.getElementById('toast').hidden),true);
+  // the viewer is in a field of the table when the check ends: the corrections wait until the field is left
+  await R.pick('e.csv',BAD); await R.quick();
+  await pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('input[data-pf="sym"]')?.value==='MSFT').querySelector('input[data-pf="name"]').focus());
+  await pg.waitForFunction(()=>/כשתסיים להקליד/.test(document.getElementById('upProg').textContent),null,{timeout:15000});
+  assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2,'nothing moves under the cursor');
+  await pg.evaluate(()=>document.activeElement.blur()); await R.done();
+  assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,3);
+  // "quick only": one call, no check
+  await pg.evaluate(()=>{document.getElementById('btnPfReset').click(); document.getElementById('upQuick').checked=true});
+  const n0=await R.pick('c.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\n');
+  await pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&/נקרא עם/.test(document.getElementById('upProg').textContent),null,{timeout:20000});
+  assert.deepEqual(bodies.slice(n0).map(b=>b.model),['claude-haiku-5-5']); assert.doesNotMatch(await R.prog(),/בדיקה עם/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });

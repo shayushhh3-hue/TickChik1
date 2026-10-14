@@ -33,7 +33,8 @@ const FILE_MODELS=String(env.FILE_MODELS||'claude-fable-5-1,claude-opus-5-5').sp
 const ANTHROPIC=(env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages';
 // Claude limits: what one partner may use per day (the owner is not limited), and the shape of one request
 const AI_DAILY=Math.max(0,Math.floor(+(env.AI_DAILY_LIMIT??40)));
-const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=2;
+// a partner's calls at once: reading a file is two (the quick read and the strongest model's check), plus the chat
+const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000, AI_MAX_INFLIGHT=3;
 // these models think before they answer (always on), and the thinking counts in the answer's length: more room, more time
 // Railway keeps a request open up to 15 minutes while data flows: one read gets 12 minutes, and all the models together 14
 const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000, AI_FILE_BUDGET=14*60*1000;

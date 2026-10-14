@@ -460,6 +460,7 @@ details.mp[open]>summary{margin-bottom:8px}
 .repk select{font:inherit;font-size:12.5px;font-weight:500;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
 label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
 .pf td{padding:4px 5px;white-space:nowrap}
+.pf tr.fixed td{background:var(--warn-bg)}
 .pf input{font-family:var(--mono);direction:ltr;width:86px}
 .pf input.t{font-family:var(--sans);direction:rtl;width:150px}
 .pf input.s{width:78px;font-weight:600}
@@ -1279,6 +1280,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf thead{display:none}
   table.pf tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"sym sym acct acct" "name name name del" "qty qty ccy ccy" "cost cost px px" "grp grp grp grp";gap:8px 10px;padding:12px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
   table.pf td{display:flex;flex-direction:column;gap:4px;padding:0;white-space:normal;min-width:0}
+  table.pf tr.fixed{background:var(--warn-bg);border-color:var(--warn-c)}
+  table.pf td .flag{align-self:flex-start;margin:0}
   table.pf td[data-l]::before{content:attr(data-l);font-size:12px;color:var(--muted)}
   table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
   table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
@@ -1909,7 +1912,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="dup tx" id="txBox" hidden></div>
         <details><summary class="sub" style="cursor:pointer">עוד אפשרויות ועזרה</summary>
           <div class="form" style="margin-top:10px"><label for="upAcct">החשבון שאליו שייכים הקבצים<select id="upAcct"><option value="auto">זיהוי אוטומטי</option><option value="exc">אקסלנס</option><option value="blink">בלינק</option></select></label></div>
-          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה (מודל קל): התשובה מגיעה מהר יותר, אבל עלולות להיות יותר טעויות בכמויות ובסימולים. בלי הסימון, הקובץ נקרא עם המודל החזק ביותר של Claude, בקפידה ולאט יותר.</label>
+          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה בלבד, בלי בדיקה: עלולות להיות יותר טעויות בכמויות ובסימולים. בלי הסימון, הטבלה מתמלאת מקריאה מהירה, ובמקביל המודל החזק ביותר של Claude קורא את הדוח ומתקן אותה.</label>
           <label for="upText" style="margin-top:10px">הדבקת טקסט הדוח במקום קובץ<textarea id="upText" style="min-height:64px"></textarea></label>
           <button class="btn" id="btnReadText" type="button" style="margin-top:8px">קרא את הטקסט</button>
           <ul class="note" style="margin:12px 0 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;max-width:70ch">
@@ -16301,9 +16304,11 @@ function setMore(on,keep){MORE=!!on; if(!keep){try{localStorage.setItem('tr_more
   try{document.querySelector('.wrap').classList.toggle('more',MORE); const b=$('calmMore'); if(b){b.setAttribute('aria-expanded',String(MORE)); b.textContent=MORE?'להסתיר את מה זז היום, הבקרה והכללים':'להציג גם: מה זז היום, בקרה והכללים'}}catch(e){}}
 setMore(MORE,true);
 // ---- undo: one pending action at a time, offered for a few seconds ----
-let undoFn=null, undoT=0, setT=0, setBefore=null;
-function offerUndo(msg,fn,ms,label){undoFn=fn; $('toastMsg').textContent=msg; $('toastUndo').textContent=label||'בטל'; $('toastUndo').disabled=false; $('toast').hidden=false; clearTimeout(undoT); undoT=setTimeout(()=>{$('toast').hidden=true;undoFn=null},ms||9000)}
-async function doUndo(){const f=undoFn; undoFn=null; clearTimeout(undoT); if(!f){$('toast').hidden=true;return}
+let undoFn=null, undoT=0, setT=0, setBefore=null, undoGo=false;
+// quiet: the button leads somewhere (it does not undo), so nothing is said after it
+function offerUndo(msg,fn,ms,label,quiet){undoFn=fn; undoGo=!!quiet; $('toastMsg').textContent=msg; $('toastUndo').textContent=label||'בטל'; $('toastUndo').disabled=false; $('toast').hidden=false; clearTimeout(undoT); undoT=setTimeout(()=>{$('toast').hidden=true;undoFn=null},ms||9000)}
+async function doUndo(){const f=undoFn, go=undoGo; undoFn=null; undoGo=false; clearTimeout(undoT); if(!f){$('toast').hidden=true;return}
+  if(go){$('toast').hidden=true; try{await f()}catch(e){} return}
   $('toastUndo').disabled=true; try{await f(); $('toastMsg').textContent='בוטל'}catch(e){$('toastMsg').textContent='הביטול לא הצליח'} setTimeout(()=>{if(!undoFn)$('toast').hidden=true},1600)}
 // a rule, a target or the goal was typed over: after a short pause, offer the values from before the typing
 // ---- stage 8: rules nobody chose are not "the rules you set". Until the user changes a rule or says "these are my
@@ -18477,7 +18482,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent='';try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
-  if(ev.target.id==='btnPfReset'){dDirty=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
+  if(ev.target.id==='btnPfReset'){dDirty=false;PFS.resets++;FIXED.clear();FIRSTX=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
   if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,px:null,group:'tech'});pfDirty();renderMine(true);return}
   if(ev.target.dataset&&ev.target.dataset.pfdel!=null&&DRAFT){const ix=+ev.target.dataset.pfdel, gone=DRAFT.positions.splice(ix,1)[0];pfDirty();renderMine(true);
     if(gone)offerUndo(`${gone.sym||'השורה'} הוסר מהטבלה`,()=>{if(!DRAFT)return;DRAFT.positions.splice(Math.min(ix,DRAFT.positions.length),0,gone);pfDirty();renderMine(true)});return}
@@ -18536,6 +18541,11 @@ function whoNote(){wipeNote(); try{renderPrivacy()}catch(e){}
 
 // ---- "my portfolio": statement upload and a hand-editable holdings table ----
 let DRAFT=null, dDirty=false, upCtl=null, STAGED=[], OVER=0;
+// rows the strongest model corrected after a quick read ("acct|sym" -> what changed), shown until the next save; and how many
+// saves and discards happened, so a check that finishes later knows what the viewer did meanwhile
+const FIXED=new Map(), PFS={saves:0,resets:0,gen:0};
+// the first portfolio's explanation, put off because the check corrected the table after the first save: it comes with the next save
+let FIRSTX=false;
 function upStep(n){const ol=$('upSteps');if(!ol)return;[...ol.children].forEach((li,i)=>{li.classList.toggle('on',i+1===n);li.classList.toggle('done',i+1<n)})}
 function showStaged(){const el=$('staged');el.hidden=!STAGED.length;el.innerHTML=STAGED.map((f,i)=>`<span>${esc(f.name||'צילום מסך')}<button type="button" data-unstage="${i}" aria-label="הסר את ${esc(f.name||'צילום מסך')}">×</button></span>`).join('');$('btnRead').hidden=!STAGED.length}
 function stageFiles(list){const ok=[...list].filter(f=>f&&f.size>0);if(!ok.length)return;upStep(1);let over=0;for(const f of ok)if(!STAGED.some(x=>x.name===f.name&&x.size===f.size)){if(STAGED.length<10)STAGED.push(f);else over++}OVER+=over;showTab('mine');showStaged();
@@ -18575,8 +18585,9 @@ function renderMine(force){
   if(!force&&pane.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
   const opt=(v,cur,l)=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`, dis=canWrite?'':' disabled', nv=v=>v==null||v===''?'':esc(v);
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
-  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>`<tr>
-    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}></td>
+  const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
+  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
+    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
     <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
@@ -18584,7 +18595,7 @@ function renderMine(force){
     <td data-l="עלות כוללת ₪"><input type="number" data-pf="costIls" data-i="${i}" value="${nv(p.costIls)}" min="0" step="0.01" placeholder="לא ידוע" aria-label="עלות כוללת בשקלים"${dis}></td>
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
@@ -18592,7 +18603,7 @@ function renderMine(force){
   for(const id of ['btnRead','btnReadText','btnAddRow','btnPfSave','btnPfReset','upAcct','btnList','btnWipe','btnWipeYes'])$(id).disabled=!canWrite;
   whoNote();
 }
-function pfDirty(){dDirty=true;$('pfSaved').textContent='יש שינויים שלא נשמרו';renderDup()}
+function pfDirty(){dDirty=true;PFS.gen++;$('pfSaved').textContent='יש שינויים שלא נשמרו';renderDup()}
 // ---- duplicate and total check: the same security twice, the same holdings in both accounts, or a table worth far more than the statement says
 let LASTREAD=null;
 const rowVal=p=>{const px=(Q&&Q.prices&&Q.prices[p.sym]!=null)?Q.prices[p.sym]:(+p.px||0); return +p.qty*px*(p.ccy==='USD'?(Q?Q.usdIls:3.3):1)};
@@ -18840,25 +18851,38 @@ async function readStatement0(fromText){
   const pDone=[(files.length===1?'נפתח קובץ אחד':files.length?`נפתחו ${files.length} קבצים`:'התקבל הטקסט שהודבק')+(imgs.length?`, ${cntH(imgs.length,'תמונה אחת','תמונות')} לקריאה`:'')];
   if(hasText)pDone.push(red.n?'נמחקו מהטקסט לפני השליחה: '+Object.keys(red.kinds).map(k=>RDK[k]).join(', '):'בטקסט לא נמצאו ת״ז, מספר חשבון או כתובת');
   if(imgs.length)pDone.push((imgs.length===1?'התמונה נשלחת':'התמונות נשלחות')+' כמו שהן: מתמונה אי אפשר למחוק פרטים');
-  // reading files: the strongest model (the site's server falls back to the next when it cannot read), unless the user
-  // chose "קריאה מהירה". Outside the site (Claude's own artifact view) the strongest tier there is "complex".
-  const quick=!!($('upQuick')&&$('upQuick').checked), FILES_TIER=window.__tc?'files':'complex';
-  upCtl=new AbortController(); $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2); st.textContent=quick?'Claude קורא את הדוח במהירות, זה יכול לקחת עד דקה…':'המודל החזק ביותר של Claude קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
-  try{
-    // every screenshot is read: when the view takes fewer images per call than were picked, they go in several calls and the answers are merged
-    const step=Math.max(1,perCall), nCh=Math.max(1,Math.ceil(imgs.length/step)), outs=[];
+  // reading files. On the site: a quick read (Haiku) fills the table in about half a minute, and at the same time the
+  // strongest model (Fable 5.1; the server hands over to the next one when it cannot read) reads the same files. When it
+  // finishes, it checks the table and corrects what the quick read got wrong, row by row (the owner's choice, 14.10.2026).
+  // "קריאה מהירה בלבד" skips the check. Outside the site (Claude's own artifact view) there is one read, with the
+  // strongest tier there ("complex").
+  const quick=!!($('upQuick')&&$('upQuick').checked), FILES_TIER=window.__tc?'files':'complex', DUAL=!!window.__tc&&!quick;
+  upCtl=new AbortController(); const sig=upCtl.signal, t0=Date.now();
+  $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2);
+  st.textContent=quick?'Claude קורא את הדוח במהירות, זה יכול לקחת עד דקה…':DUAL?'Claude קורא את הדוח. הטבלה תתמלא תוך כחצי דקה, ובמקביל המודל החזק ביותר של Claude בודק אותה.':'המודל החזק ביותר של Claude קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
+  const step=Math.max(1,perCall), nCh=Math.max(1,Math.ceil(imgs.length/step));
+  const found=o=>!!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length));
+  const ask=(part,from,ci)=>readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)');
+  // one read of all the files: every screenshot is read, in several calls when there are more than one call takes, and the
+  // answers are merged later. It notes which model read: the site tells each call apart, elsewhere the last call says.
+  async function pass(tier,{retry=false,show=null}={}){
+    const outs=[], who={names:[],from:[]}; let cut=null, done=0;
     for(let ci=0;ci<nCh;ci++){
-      if(nCh>1)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת ${quick?'עד דקה':'כמה דקות'}…`;
-      const part=imgs.slice(ci*step,(ci+1)*step), from=ci*step+1;
-      const opts={cache:false,signal:upCtl.signal}; if(part.length)opts.images=part; const autoQ=quick; opts.modelTier=quick?'quick':FILES_TIER;
-      upProg(pDone,nCh>1?`Claude קורא, חלק ${ci+1} מתוך ${nCh}`:'Claude קורא את הקבצים'); upTick(true);
-      let o; try{try{o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}catch(e1){if(!(autoQ&&e1&&e1.code==='invalid_json'))throw e1; o=null} if(autoQ&&!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length))){opts.modelTier=FILES_TIER; upProg(pDone,'קורא שוב בקפידה, עם המודל החזק ביותר'); o=await sample.json(readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)'),opts)}}
-      catch(e){if(!ci||(e&&e.code==='cancelled'))throw e; partial=e; break}
-      outs.push(o&&typeof o==='object'?o:{}); sent=Math.min(imgs.length,(ci+1)*step);
+      if(show)show(ci);
+      const part=imgs.slice(ci*step,(ci+1)*step), from=ci*step+1, opts={cache:false,signal:sig,modelTier:tier}; if(part.length)opts.images=part; if(window.__tc)opts.meta={};
+      let o; try{try{o=await sample.json(ask(part,from,ci),opts)}catch(e1){if(!(retry&&e1&&e1.code==='invalid_json'))throw e1; o=null}
+        if(retry&&!found(o)){opts.modelTier=FILES_TIER; if(opts.meta)opts.meta={}; upProg(pDone,'קורא שוב בקפידה, עם המודל החזק ביותר'); o=await sample.json(ask(part,from,ci),opts)}}
+      catch(e){if(!ci||(e&&e.code==='cancelled'))throw e; cut=e; break}
+      const m=opts.meta&&opts.meta.name?opts.meta:(!DUAL&&sample.last)||null;
+      if(m&&m.name&&!who.names.includes(m.name))who.names.push(m.name); for(const f of (m&&m.fallbackFrom)||[])if(!who.from.includes(f))who.from.push(f);
+      outs.push(o&&typeof o==='object'?o:{}); done=Math.min(imgs.length,(ci+1)*step);
     }
+    return {outs,partial:cut,sent:done,who};
+  }
+  // the answers of one read, put together: one row per security, the account they belong to, the cash, the transactions
+  function gather({outs,partial,sent,who}){
     const left=partial&&!hasText?new Set(imgs.slice(sent).map(b=>imgFile.get(b)).filter(Boolean)):new Set();
-    const rd=sample.last, readBy=rd?'נקרא עם '+rd.name+(rd.fallbackFrom&&rd.fallbackFrom.length?` (${rd.fallbackFrom.join(', ')} לא ${rd.fallbackFrom.length===1?'היה זמין':'היו זמינים'}, ולכן קרא המודל הבא)`:''):'';
-    if(readBy)pDone.push(readBy);
+    const by=who.names.length?who.names.join(', ')+(who.from.length?` (${who.from.join(', ')} לא ${who.from.length===1?'היה זמין':'היו זמינים'}, ולכן קרא המודל הבא)`:''):'';
     const partNote=partial?(hasText?' חלק מצילומי העמודים לא נשלחו, אבל טקסט הדוח נקרא במלואו.':` נקראו ${sent} מתוך ${imgs.length} צילומים. ${left.size} נשארו ברשימה`+(partial.code==='rate_limited'?', כי Claude ביקש להאט.':'. לחץ על "קרא שוב" כדי לקרוא אותם.')):'';
     const posOf=o=>Array.isArray(o&&o.positions)?o.positions:[];
     const real=outs.filter(o=>!o.derived&&posOf(o).length), use=real.length?real:outs, seen=new Map();
@@ -18872,7 +18896,7 @@ async function readStatement0(fromText){
       positions:[...seen.values()],derived:!real.length&&outs.some(o=>o&&o.derived&&posOf(o).length),
       notes:[...new Set(outs.map(o=>String(o&&o.notes||'').trim()).filter(Boolean))].join(' '),
       screens:outs.flatMap(o=>Array.isArray(o&&o.screens)?o.screens.map(x=>String(x).replace(/[<>]/g,'').slice(0,40)):[])};
-    const known=acctIds().includes(out.broker); if(pick==='auto'&&known)ac=out.broker;
+    const known=acctIds().includes(out.broker), acR=pick==='auto'&&known?out.broker:ac;
     const txSeen=new Map(); for(const o of outs)for(const t of (Array.isArray(o&&o.transactions)?o.transactions:[])){
       if(!t||!/^\d{4}-\d\d-\d\d$/.test(String(t.date||''))||!['buy','sell','div','deposit','withdraw','fee'].includes(t.side))continue;
       const sym=canonSym(t.sym,t.name), q=numOr(t.qty,null), px=numOr(t.px,null), amt=numOr(t.amount,null); if(['buy','sell','div'].includes(t.side)&&!sym)continue;
@@ -18880,15 +18904,24 @@ async function readStatement0(fromText){
       txSeen.set(k,{date:t.date,side:t.side,sym,name:String(t.name||'').replace(/[<>]/g,'').slice(0,40),qty:q!=null?Math.abs(q):null,px:px!=null?Math.abs(px):null,amount:amt!=null?Math.abs(amt):null,ccy:t.ccy==='ILS'?'ILS':'USD',fee:numOr(t.fee,null)})}
     const txs=[...txSeen.values()].sort((a,b)=>a.date<b.date?-1:1);
     const accTot=numOr((outs.find(o=>o&&numOr(o.accountTotal,null)!=null)||{}).accountTotal,null), accCcy=(outs.find(o=>o&&o.accountTotalCcy)||{}).accountTotalCcy==='USD'?'USD':'ILS';
-    const rows=(Array.isArray(out&&out.positions)?out.positions:[]).map(r=>({acct:ac,
+    const rows=(Array.isArray(out&&out.positions)?out.positions:[]).map(r=>({acct:acR,
       sym:canonSym(r&&r.sym,r&&r.name).slice(0,12), name:String(r&&r.name||'').replace(/[<>]/g,'').slice(0,60),
       qty:numOr(r&&r.qty,0), ccy:(r&&r.ccy==='ILS')||/^TA(125|90)$/i.test(String(r&&r.sym||''))?'ILS':'USD', costIls:numOr(r&&r.costIls,null), px:/^TA(125|90)$/i.test(String(r&&r.sym||''))&&!(r&&r.ccy==='ILS')?null:numOr(r&&r.px,null), group:NUMSYM.test(String(r&&r.sym||''))?'il':GK.includes(r&&r.group)?r.group:'tech'})).filter(r=>r.sym&&r.qty>0).slice(0,80);
-    if(rows.length&&pick==='auto'&&!known){st.textContent=out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".';try{$('upAcct').focus()}catch(e){}}
-    else if(!rows.length&&txs.some(t=>t.side==='deposit'||t.side==='withdraw')){
+    return {left,by,who,partial,partNote,out,known,ac:acR,txs,accTot,accCcy,rows};
+  }
+  // what one read found goes into the table: a statement replaces its account, screenshots are merged by symbol. dual: the
+  // strongest model is still reading, so the texts say so, and deposits wait for it, since they change the cash. Returns
+  // what it did, for the check that follows.
+  function apply(M,{dual=false,lead=''}={}){
+    const {left,by,partNote,out,known,ac,txs,accTot,accCcy,rows}=M, readBy=by?(dual?'קריאה מהירה עם ':'נקרא עם ')+by:'';
+    if(readBy)pDone.push(readBy);
+    if(rows.length&&pick==='auto'&&!known){st.textContent=lead+(out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".')+(dual?' המודל החזק ביותר עדיין קורא, ואולי יזהה.':''); if(!dual)try{$('upAcct').focus()}catch(e){} return {kind:'acct'}}
+    if(!rows.length&&txs.some(t=>t.side==='deposit'||t.side==='withdraw')){
+      if(dual){st.textContent='בקריאה המהירה זוהו הפקדות. המודל החזק ביותר בודק את הסכומים לפני שהם נוספים ליתרת המזומן…'; return {kind:'flows'}}
       // a screen of deposits (or withdrawals) and no holdings list: the money goes to the account's history, and what came
       // in after the account's last statement is added to its cash, so the account's value counts it
       const flows=txs.filter(t=>(t.side==='deposit'||t.side==='withdraw')&&t.amount>0);
-      if(pick==='auto'&&!known){st.textContent=`זיהיתי ${flows.length===1?'הפקדה אחת':flows.length+' הפקדות'}, אבל לא לאיזה חשבון הן שייכות. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".`;try{$('upAcct').focus()}catch(e){}}
+      if(pick==='auto'&&!known){st.textContent=lead+`זיהיתי ${flows.length===1?'הפקדה אחת':flows.length+' הפקדות'}, אבל לא לאיזה חשבון הן שייכות. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".`;try{$('upAcct').focus()}catch(e){}}
       else{
         if(!DRAFT)DRAFT=draftFromP(); DRAFT.flowKeys=DRAFT.flowKeys||[];
         const fk=t=>ac+'|'+t.date+'|'+Math.round(+t.amount)+'|'+t.side, HA=((HS&&HS.accounts)||[]).find(x=>x.acct===ac), saved=new Set(((HA&&HA.deposits)||[]).map(d=>ac+'|'+d.date+'|'+Math.round(Math.abs(+d.amount))+'|'+(+d.amount<0?'withdraw':'deposit')));
@@ -18904,34 +18937,176 @@ async function readStatement0(fromText){
         const amt=[addI?ils(Math.abs(addI)):'',addU?'$'+Math.abs(addU).toLocaleString('en-US',{maximumFractionDigits:2}):''].filter(Boolean).join(' ו-');
         pDone.push(flows.length===1?'זוהתה הפקדה אחת':`זוהו ${flows.length} הפקדות`); upProg(pDone,'נשאר לך: לבדוק ולשמור');
         const wd=flows.some(t=>t.side==='withdraw'), cnt=n=>n===1?(wd?'תנועה אחת':'הפקדה אחת'):n+(wd?' תנועות':' הפקדות');
-        st.textContent=`זוהו ${flows.length===1?(wd?'משיכה אחת':'הפקדה אחת'):flows.length+(wd?' הפקדות ומשיכות':' הפקדות')} בחשבון ${ACCTS[ac]} (סך הכול ${ils(Math.round(sum))}). `+
+        st.textContent=lead+`זוהו ${flows.length===1?(wd?'משיכה אחת':'הפקדה אחת'):flows.length+(wd?' הפקדות ומשיכות':' הפקדות')} בחשבון ${ACCTS[ac]} (סך הכול ${ils(Math.round(sum))}). `+
           (amt?`${amt} מהן אחרי הדוח האחרון של החשבון${asOf?' ('+dFull(asOf)+')':''}, ולכן נוספו ליתרת המזומן שלו ולשווי התיק. `:'')+
           (before?`${cnt(before)} ${asOf?'מלפני '+dFull(asOf)+(before===1?', כבר כלולה בדוח':', כבר כלולות בדוח'):'(לחשבון אין תאריך דוח, לכן המזומן לא שונה)'}. `:'')+
           (dup?`${cnt(dup)} כבר ${dup===1?'נרשמה':'נרשמו'} קודם, ולא ${dup===1?'נוספה':'נוספו'} שוב. `:'')+
           'ההפקדות נשמרות גם בהיסטוריה. לחץ על "שמור את התיק".'+(asOf?' אם הכסף כבר הושקע בניירות, עדיף להעלות צילום של רשימת האחזקות במקום.':'');
       }
+      return {kind:'flows',done:true};
     }
-    else if(!rows.length){st.textContent='לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+'.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'')}
+    if(!rows.length){
+      if(dual){st.textContent='הקריאה המהירה לא מצאה אחזקות. המודל החזק ביותר של Claude עדיין קורא…'; return {kind:'none'}}
+      st.textContent=lead+'לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+'.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'');
+      return {kind:'none'};
+    }
+    if(!DRAFT)DRAFT=draftFromP();
+    // a statement describes the whole account, so it replaces it; screenshots show parts of it, so they are merged by symbol
+    const merge=!hasText&&imgs.length>0, have=new Set(rows.map(r=>r.sym));
+    const before=new Map(DRAFT.positions.filter(p=>p.acct===ac).map(p=>[canonSym(p.sym,p.name),{...p}])), cash0={ILS:0,USD:0,...(DRAFT.cash[ac]||{})};
+    const asOf0=(DRAFT.asOf||{})[ac]||null, tx0=(DRAFT.tx||[]).filter(t=>t.acct===ac).map(t=>({...t}));
+    for(const k of [...FIXED.keys()])if(k.startsWith(ac+'|')&&(!merge||have.has(k.slice(ac.length+1))))FIXED.delete(k);
+    DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(canonSym(p.sym,p.name))):p.acct!==ac).concat(rows);
+    const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0));
+    DRAFT.cash[ac]=merge?{ILS:cIls||cash0.ILS,USD:cUsd||cash0.USD}:{ILS:cIls,USD:cUsd};
+    if(typeof out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(out.asOf))DRAFT.asOf[ac]=out.asOf;
+    pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; $('passWrap').hidden=true;
+    {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
+      pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'Claude בודק את הקריאה עם המודל החזק ביותר':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
+    LASTREAD={acct:ac,total:accTot,ccy:accCcy,n:rows.length}; if(txs.length){DRAFT.tx=(DRAFT.tx||[]).filter(t=>t.acct!==ac).concat(txs.map(t=>({...t,acct:ac})))} renderTx(); renderDup(); upStep(3);
+    st.textContent=lead+(dual?`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]} בקריאה מהירה. המודל החזק ביותר של Claude בודק אותם עכשיו, ויתקן בטבלה מה שצריך. אפשר כבר לעבור על הטבלה.`
+      :`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`)+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||OVER)?` אפשר עד 10 קבצים בבת אחת, ${skipped+OVER} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+partNote;
+    return {kind:'rows',ac,merge,rows:rows.map(r=>({...r})),cash:{ILS:+DRAFT.cash[ac].ILS||0,USD:+DRAFT.cash[ac].USD||0},cash0,asOf:DRAFT.asOf[ac]||null,asOf0,txs:txs.map(t=>({...t})),tx0,before,derived:!!out.derived,fp:fp(ac),saves:PFS.saves,resets:PFS.resets};
+  }
+  // comparing two reads of one statement: quantities to a ten-thousandth, costs to the shekel, prices to the agora (or a
+  // hundredth of a percent). A row as the viewer would leave it: the same row read back after a save counts as untouched.
+  const numN=v=>numOr(v,null), ccyOf=p=>p.ccy==='ILS'?'ILS':'USD';
+  const eqQ=(x,y)=>Math.abs(x-y)<=Math.max(0.0001,Math.abs(y)*1e-6), eqN=(x,y,t)=>(x==null&&y==null)||(x!=null&&y!=null&&Math.abs(x-y)<=t);
+  const eqP=(x,y)=>eqN(x,y,Math.max(0.01,Math.abs(y||0)*1e-4));
+  const rk=p=>JSON.stringify([canonSym(p.sym,p.name),String(p.name||p.sym||''),+p.qty||0,ccyOf(p),numN(p.costIls),numN(p.px),p.group||'',p.acct||'']);
+  const txK=a=>a.map(t=>[t.date,t.side,t.sym||'',t.qty!=null?(+t.qty).toFixed(4):'',t.amount!=null?Math.round(+t.amount):''].join('|')).sort().join(',');
+  // the strongest model's read against the quick one. Rows the viewer has not touched since the quick read are corrected
+  // and marked "תוקן". A security only the quick read saw is marked "לבדיקה" and never removed: the strongest model leaves
+  // out what it is unsure of (and says so in its notes), and a saved removal also clears the security's plan and history.
+  // What the viewer changed is left as it is and listed. Nothing is saved here: the viewer saves.
+  function check(A,M){
+    const who=M.who.names[0]||'המודל החזק ביותר', notes=M.out.notes?` לפי ${who}: ${String(M.out.notes).slice(0,200)}`:'';
+    if(PFS.resets!==A.resets)return {who,text:`${who} סיים לבדוק, אבל בינתיים ביטלת את השינויים, ולכן הטבלה לא שונתה.`};
+    if(!M.rows.length)return {who,warn:true,text:`${who} לא מצא אחזקות בקבצים, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
+    if(M.out.derived&&!A.derived)return {who,warn:true,text:`${who} לא ראה בקבצים רשימת אחזקות, רק תנועות, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
+    if(!DRAFT)DRAFT=draftFromP();
+    const ac=A.ac, saved=PFS.saves!==A.saves, fx=[], doubt=[], kept=[];
+    const nm=v=>numN(v)==null?'לא ידוע':numN(v).toLocaleString('en-US',{maximumFractionDigits:4}), money=v=>numN(v)==null?'לא ידועה':ils(numN(v));
+    // what was read from the statement (the group is the model's own guess, so two models may differ on it: not compared)
+    const same=(a,b)=>eqQ(+a.qty||0,+b.qty||0)&&ccyOf(a)===ccyOf(b)&&eqN(numN(a.costIls),numN(b.costIls),1)&&eqP(numN(a.px),numN(b.px));
+    const set=b=>({sym:b.sym,name:b.name,qty:b.qty,ccy:b.ccy,costIls:b.costIls,px:b.px,group:b.group});
+    const what=(a,b)=>{const d=[];
+      if(!eqQ(+a.qty||0,+b.qty||0))d.push(`כמות ${nm(b.qty)} (בקריאה המהירה ${nm(a.qty)})`);
+      if(!eqN(numN(a.costIls),numN(b.costIls),1))d.push(`עלות ${money(b.costIls)} (בקריאה המהירה ${money(a.costIls)})`);
+      if(ccyOf(a)!==ccyOf(b))d.push(`מטבע: ${ccyOf(b)==='ILS'?'שקל':'דולר'}`);
+      if(!eqP(numN(a.px),numN(b.px)))d.push(`מחיר בדוח ${nm(b.px)} (בקריאה המהירה ${nm(a.px)})`);
+      return d.join(', ')};
+    const mark=(sym,t,kind='fix')=>{FIXED.set(ac+'|'+sym,{t,kind}); (kind==='fix'?fx:doubt).push(sym+': '+t)};
+    const q=new Map(A.rows.map(r=>[r.sym,r])), f=new Map(M.rows.map(r=>[r.sym,{...r,acct:ac}]));
+    const at=sym=>DRAFT.positions.findIndex(p=>p.acct===ac&&canonSym(p.sym,p.name)===sym);
+    // the same security spelled two ways (GOOG / GOOGL, a TASE number / TA125): paired by name, or by quantity and cost
+    const fOnly=new Set([...f.keys()].filter(k=>!q.has(k))), pairs=new Map();
+    for(const k of [...q.keys()].filter(k=>!f.has(k))){const a=q.get(k), nk=nameKey(a.name);
+      const j=[...fOnly].find(j=>{const b=f.get(j); return (nk.length>=4&&nk===nameKey(b.name))||(eqQ(+a.qty||0,+b.qty||0)&&numN(a.costIls)!=null&&eqN(numN(a.costIls),numN(b.costIls),1))});
+      if(j){pairs.set(k,j); fOnly.delete(j)}}
+    const paired=new Set([...pairs.keys(),...pairs.values()]);
+    for(const [k,j] of pairs){const a=q.get(k), b=f.get(j), i=at(k), c=i>=0?DRAFT.positions[i]:null, ij=at(j);
+      if(ij>=0&&same(DRAFT.positions[ij],b))continue;   // the viewer already has it right
+      if(c&&rk(c)===rk(a)){DRAFT.positions[i]={...c,...set(b)}; mark(j,`סימול ${j} (בקריאה המהירה ${k})`+(same(a,b)?'':', '+what(a,b)))}
+      else kept.push(k)}
+    for(const sym of new Set([...q.keys(),...f.keys()])){
+      if(paired.has(sym))continue;
+      const a=q.get(sym), b=f.get(sym), i=at(sym), c=i>=0?DRAFT.positions[i]:null, was=A.before.get(sym);
+      if(a&&b){if(same(a,b)||(c&&same(c,b)))continue; if(c&&rk(c)===rk(a)){DRAFT.positions[i]={...c,...set(b)}; mark(sym,what(a,b))} else kept.push(sym)}
+      else if(b){
+        if(c){if(!same(c,b)){if(A.merge&&was&&rk(c)===rk(was)){DRAFT.positions[i]={...c,...set(b)}; mark(sym,what(c,b))} else kept.push(sym)}}
+        else if(A.merge&&was)kept.push(sym);   // it was here before the read, and the viewer removed it since
+        else{DRAFT.positions.push(b); mark(sym,`נוסף, ${nm(b.qty)} יחידות. הקריאה המהירה לא ראתה אותו`)}}
+      else if(a&&c&&rk(c)===rk(a)&&!M.partial)mark(sym,`${who} לא מצא אותו ${A.merge?'בצילום':'בדוח'}. אם הוא לא שלך, הסר אותו`,'doubt');
+    }
+    // the cash, the statement's date, the transactions: the same rule
+    const cI=Math.max(0,numOr(M.out.cashIls,0)), cU=Math.max(0,numOr(M.out.cashUsd,0)), want=A.merge?{ILS:cI||+A.cash0.ILS||0,USD:cU||+A.cash0.USD||0}:{ILS:cI,USD:cU};
+    const cur=DRAFT.cash[ac]||{ILS:0,USD:0}, sameC=(x,y)=>eqN(+x.ILS||0,+y.ILS||0,0.5)&&eqN(+x.USD||0,+y.USD||0,0.5);
+    const ct=c=>[+c.ILS?ils(+c.ILS):'',+c.USD?'$'+(+c.USD).toLocaleString('en-US',{maximumFractionDigits:2}):''].filter(Boolean).join(' ו-')||'0';
+    if(!sameC(want,A.cash)&&!sameC(cur,want)){if(sameC(cur,A.cash)){DRAFT.cash[ac]={ILS:want.ILS,USD:want.USD}; fx.push(`מזומן: ${ct(want)} (בקריאה המהירה ${ct(A.cash)})`)} else kept.push('יתרת המזומן')}
+    const d2=typeof M.out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(M.out.asOf)?M.out.asOf:null;
+    if(d2&&d2!==A.asOf&&(((DRAFT.asOf||{})[ac])||null)===A.asOf){DRAFT.asOf[ac]=d2; fx.push(`תאריך הדוח: ${dFull(d2)}`)}
+    let txNote='';
+    if(txK(A.txs)!==txK(M.txs)){
+      if(!saved&&txK((DRAFT.tx||[]).filter(t=>t.acct===ac))===txK(A.txs)){DRAFT.tx=(DRAFT.tx||[]).filter(t=>t.acct!==ac).concat(M.txs.map(t=>({...t,acct:ac}))); fx.push(`פעולות: ${M.txs.length} (בקריאה המהירה ${A.txs.length})`)}
+      else txNote=saved?` הפעולות כבר נשמרו בהיסטוריה לפי הקריאה המהירה, ו-${who} קרא אותן אחרת (${M.txs.length} במקום ${A.txs.length}). בדוק אותן בלשונית "היסטוריה".`:` ${who} קרא את הפעולות אחרת (${M.txs.length} במקום ${A.txs.length}), אבל שינית אותן, ולכן הן נשארו.`}
+    if(M.accTot!=null)LASTREAD={acct:ac,total:M.accTot,ccy:M.accCcy,n:M.rows.length};
+    if(fx.length)pfDirty(); if(fx.length||doubt.length){renderMine(true); renderTx()} renderDup();
+    if(M.partial)txNote+=` ${who} לא הגיע לכל הצילומים, ולכן הבדיקה חלקית.`;
+    return {who,fx,doubt,kept,saved,txNote:txNote+notes};
+  }
+  // the table of one account as it is now, to tell whether the viewer touched it since a read; and putting it back
+  const fp=ac=>JSON.stringify([(DRAFT?DRAFT.positions:[]).filter(p=>p.acct===ac).map(rk).sort(),DRAFT&&DRAFT.cash[ac]?[+DRAFT.cash[ac].ILS||0,+DRAFT.cash[ac].USD||0]:[0,0],(DRAFT&&DRAFT.asOf||{})[ac]||null,txK(((DRAFT&&DRAFT.tx)||[]).filter(t=>t.acct===ac))]);
+  function undoRead(A){
+    DRAFT.positions=DRAFT.positions.filter(p=>p.acct!==A.ac).concat([...A.before.values()].map(p=>({...p})));
+    DRAFT.cash[A.ac]={ILS:+A.cash0.ILS||0,USD:+A.cash0.USD||0}; if(A.asOf0==null)delete DRAFT.asOf[A.ac]; else DRAFT.asOf[A.ac]=A.asOf0;
+    DRAFT.tx=(DRAFT.tx||[]).filter(t=>t.acct!==A.ac).concat(A.tx0.map(t=>({...t}))); for(const k of [...FIXED.keys()])if(k.startsWith(A.ac+'|'))FIXED.delete(k)}
+  // the viewer is typing in the table: the corrections wait until the field is left (at most two minutes), so the rows
+  // do not move under the cursor
+  const typing=()=>{const pane=document.querySelector('[data-pane="mine"]'), el=document.activeElement; return !!(pane&&el&&pane.contains(el)&&/INPUT|SELECT|TEXTAREA/.test(el.tagName))};
+  const idle=()=>typing()?new Promise(r=>{let ok=false; const go=()=>{if(!ok){ok=true; setTimeout(r,50)}}; document.activeElement.addEventListener('blur',go,{once:true}); setTimeout(go,120000)}):null;
+  let main=null, e2=null;
+  try{
+    const show=ci=>{if(nCh>1&&!DUAL)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת ${quick?'עד דקה':'כמה דקות'}…`;
+      upProg(pDone,(DUAL?'Claude קורא במהירות':'Claude קורא')+(nCh>1?`, חלק ${ci+1} מתוך ${nCh}`:DUAL?'':' את הקבצים')); upTick(true,t0)};
+    if(!DUAL){main=gather(await pass(quick?'quick':FILES_TIER,{retry:quick,show})); apply(main)}
     else{
-      if(!DRAFT)DRAFT=draftFromP();
-      // a statement describes the whole account, so it replaces it; screenshots show parts of it, so they are merged by symbol
-      const merge=!hasText&&imgs.length>0, have=new Set(rows.map(r=>r.sym));
-      DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(String(p.sym).toUpperCase())):p.acct!==ac).concat(rows);
-      const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0));
-      DRAFT.cash[ac]=merge?{ILS:cIls||DRAFT.cash[ac].ILS,USD:cUsd||DRAFT.cash[ac].USD}:{ILS:cIls,USD:cUsd};
-      if(typeof out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(out.asOf))DRAFT.asOf[ac]=out.asOf;
-      pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; $('passWrap').hidden=true;
-      {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
-        pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור')}
-      LASTREAD={acct:ac,total:accTot,ccy:accCcy,n:rows.length}; if(txs.length){DRAFT.tx=(DRAFT.tx||[]).filter(t=>t.acct!==ac).concat(txs.map(t=>({...t,acct:ac})))} renderTx(); renderDup(); upStep(3);
-      st.textContent=`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||OVER)?` אפשר עד 10 קבצים בבת אחת, ${skipped+OVER} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+partNote;
+      // both reads start now; the table gets the quick one, and the strongest model's answer checks it
+      let R2=null; const slow=pass(FILES_TIER).then(r=>{R2=r},e=>{e2=e});
+      let M1=null, e1=null; try{M1=gather(await pass('quick',{show}))}catch(e){if((e&&e.code==='cancelled')||sig.aborted)throw {code:'cancelled'}; e1=e}
+      const A=M1?apply(M1,{dual:true}):{kind:'failed'};
+      if(A.kind!=='rows'){upProg(pDone,'Claude קורא עם המודל החזק ביותר'); upTick(true,t0); if(e1)st.textContent='הקריאה המהירה לא הצליחה. המודל החזק ביותר של Claude עדיין קורא…'}
+      await slow;
+      const quickLine=()=>{if(/^קריאה מהירה עם/.test(pDone[pDone.length-1]||''))pDone.pop()};
+      if(e2){
+        const stop=sig.aborted||e2.code==='cancelled', why=!stop&&typeof e2.message==='string'&&/[֐-׿]/.test(e2.message)?` (${e2.message})`:'';
+        if(A.kind==='rows'){main=M1; pDone.push(stop?'הבדיקה נעצרה':'הבדיקה של המודל החזק ביותר לא הצליחה'); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור');
+          st.textContent=(stop?'עצרת את הבדיקה של המודל החזק ביותר.':'הבדיקה של המודל החזק ביותר לא הצליחה'+why+'.')+' הטבלה היא מהקריאה המהירה, ולכן כדאי להשוות אותה לדוח לפני השמירה.'}
+        else if(M1&&!stop&&A.kind!=='failed'){main=M1; quickLine(); apply(M1,{lead:'הבדיקה של המודל החזק ביותר לא הצליחה'+why+(A.kind==='flows'?', ולכן ההפקדות כאן מהקריאה המהירה. השווה את הסכומים לדוח. ':'. ')})}
+        else throw stop?{code:'cancelled'}:e2;
+      }
+      else{
+        const M2=gather(R2); main=M2;
+        if(A.kind==='rows'){main=M1;
+          const w=idle(); if(w){upProg(pDone,'Claude בודק את הקריאה עם המודל החזק ביותר: התיקונים ייכנסו לטבלה כשתסיים להקליד'); await w}
+          const who=M2.who.names[0]||'המודל החזק ביותר', mac=pick==='auto'&&!M2.known?A.ac:M2.ac, line='בדיקה עם '+(M2.by||who);
+          let r;
+          if(mac!==A.ac){
+            // the strongest model says the files belong to another account. If the table is as the quick read left it, the
+            // quick read is taken back and the strongest model's read goes in; otherwise the viewer is told what to do.
+            if(PFS.saves===A.saves&&PFS.resets===A.resets&&fp(A.ac)===A.fp){undoRead(A); quickLine(); pDone.push(line+': חשבון אחר');
+              apply(M2,{lead:`${who} זיהה שהקבצים שייכים לחשבון ${ACCTS[mac]}, ולא לחשבון ${ACCTS[A.ac]} כמו בקריאה המהירה, ולכן הקריאה המהירה בוטלה והטבלה עודכנה לפיו. `}); r={who,fx:['החשבון'],warn:true}}
+            else{r={who,warn:true}; pDone.push(line+': חשבון אחר'); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור');
+              st.textContent=`${who} זיהה שהקבצים שייכים לחשבון ${ACCTS[mac]}, ולא לחשבון ${ACCTS[A.ac]} כמו בקריאה המהירה. `+(PFS.saves!==A.saves
+                ?`השורות כבר נשמרו בחשבון ${ACCTS[A.ac]}. בדוק אותו, ואם צריך, בחר את החשבון הנכון מעל אזור ההעלאה וקרא את הקובץ שוב.`
+                :`כדי לתקן: לחץ על "בטל שינויים", בחר את החשבון הנכון מעל אזור ההעלאה וקרא את הקובץ שוב.`)}}
+          else{r=check(A,M2);
+            if(r.text){pDone.push(line+(r.warn?': יש מה לבדוק':': הטבלה לא שונתה')); upProg(pDone,r.warn?'נשאר לך: לבדוק את הטבלה ולשמור':''); st.textContent=r.text}
+            else if(!r.fx.length&&!r.doubt.length){pDone.push(line+(r.kept.length?': יש הבדלים במה שערכת':': הכול תואם')); upProg(pDone,r.saved&&!r.kept.length?'':'נשאר לך: לבדוק את הטבלה ולשמור');
+              st.textContent=(r.kept.length?`${r.who} קרא את הדוח אחרת ממה שיש עכשיו בטבלה, במה שערכת בעצמך (${r.kept.join(', ')}). לא שיניתי את זה, אבל כדאי להשוות לדוח.`
+                :`${r.who} בדק את הדוח ומצא אותו דבר כמו הקריאה המהירה. `+(r.saved?'מה ששמרת נכון.':'בדוק את הטבלה ולחץ על "שמור את התיק".'))+r.txNote}
+            else{const n2=M2.rows.length, pr2=M2.rows.filter(x=>RAWQ&&(RAWQ.prices||{})[x.sym]!=null).length;
+              pDone.push(line+': '+[r.fx.length?(r.fx.length===1?'תיקון אחד':`${r.fx.length} תיקונים`):'',r.doubt.length?(r.doubt.length===1?'נייר אחד לבדיקה':`${r.doubt.length} ניירות לבדיקה`):''].filter(Boolean).join(', '));
+              pDone.push(`לפי הבדיקה: ${n2===1?'נייר אחד':n2+' ניירות'}, יש מחיר עדכני ל-${pr2} מתוך ${n2}`); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור');
+              st.textContent=(r.fx.length?`${r.who} בדק את הדוח ותיקן: ${r.fx.slice(0,6).join('; ')}${r.fx.length>6?`, ועוד ${r.fx.length-6}`:''}. מה שתוקן מסומן בטבלה ב"תוקן".`:`${r.who} בדק את הדוח.`)
+                +(r.doubt.length?` לבדיקה שלך: ${r.doubt.slice(0,4).join('; ')}.`:'')
+                +(r.kept.length?` לא שיניתי מה שערכת בעצמך (${r.kept.join(', ')}), אבל כדאי להשוות לדוח.`:'')
+                +(r.fx.length?(r.saved?' שמרת לפני שהבדיקה הסתיימה, אז לחץ שוב על "שמור את התיק".':' בדוק את הטבלה ולחץ על "שמור את התיק".'):'')+r.txNote}}
+          // the viewer may be on another screen by now: a short note with a way back (after a save's undo note, not over it)
+          const nfx=(r.fx||[]).length, nd=(r.doubt||[]).length;
+          if((nfx||nd||r.warn||(r.kept||[]).length)&&document.body.dataset.page!=='mine'){
+            const msg=nfx?`${r.who} בדק את הדוח שהעלית ותיקן ${nfx===1?'פרט אחד':nfx+' פרטים'} בטבלה. התיקונים עוד לא נשמרו.`:`${r.who} בדק את הדוח שהעלית, ויש בטבלה מה לבדוק.`;
+            const tell=(n=0)=>{if(undoFn&&!$('toast').hidden&&n<30){setTimeout(()=>tell(n+1),1000);return} offerUndo(msg,()=>showTab('mine',true),30000,'הצג',true)}; tell()}}
+        else apply(M2,{lead:(A.kind==='none'||A.kind==='failed')&&M2.rows.length?(e1?'הקריאה המהירה לא הצליחה, והמודל החזק ביותר קרא את הדוח. ':'הקריאה המהירה לא מצאה אחזקות, והמודל החזק ביותר מצא. '):''});
+      }
     }
-    if(partial&&partial.code==='rate_limited'){const keep=st.textContent; coolStart(); st.textContent=keep+' אפשר להמשיך בעוד '+coolLeft()+' שניות.'; clearInterval(coolT); coolT=setInterval(()=>{if(coolLeft()<=0)coolNote()},1000)}
+    const cut=(main&&main.partial)||(e2&&e2.code==='rate_limited'?e2:null);
+    if(cut&&cut.code==='rate_limited'){const keep=st.textContent; coolStart(); st.textContent=keep+' אפשר להמשיך בעוד '+coolLeft()+' שניות.'; clearInterval(coolT); coolT=setInterval(()=>{if(coolLeft()<=0)coolNote()},1000)}
     else coolN=0;
   }catch(e){
     upFailed=true;
     const c=e&&e.code;
-    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
+    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
     if(c==='rate_limited')coolStart();
   }
   upTick(false); upCtl=null; OVER=0; $('btnRead').disabled=!canWrite||coolLeft()>0; $('btnStop').hidden=true; showStaged();
@@ -18963,22 +19138,26 @@ async function savePf(){
   try{
     const before=new Set(((P&&P.positions)||[]).map(p=>p.sym)), cl=x=>x==null?null:JSON.parse(JSON.stringify(x));
     const U0={P:cl(P),PL:cl(PLD),S:cl(S),HS:cl(HS),DY:DY&&DY.exists?cl(DY.points):null};
-    await pset('portfolio',doc); P=doc; dDirty=false; mergeQ();
+    // what changed while the save was being written (a check of a statement that ended meanwhile, typing) stays unsaved
+    const g0=PFS.gen; await pset('portfolio',doc); P=doc; PFS.saves++; const moved=PFS.gen!==g0; if(!moved){dDirty=false; FIXED.clear()} mergeQ();
     let txNote=''; try{const hx=historyWithTx(); if(hx){await pset('history',hx.H); HS=hx.H; txNote=hx.added?` נוספו ${hx.added} פעולות להיסטוריה.`:' הפעולות כבר היו בהיסטוריה.'} DRAFT.tx=[]; renderTx()}catch(e){txNote=' הפעולות לא נשמרו, נסה שוב.'}
     const now=new Set(pos.map(p=>p.sym)), gone=[...before].filter(x=>!now.has(x)), purged=gone.length?await purgeSyms(gone):true;
     const arcHit=gone.length?ARC.filter(e=>{const t=JSON.stringify(e.R||'')+JSON.stringify(e.snap||'');return gone.some(x=>t.includes('"'+x+'"'))}).length:0;
     if(!OWNER&&!LOCAL&&MYID){const syms=[...new Set(pos.filter(p=>(p.ccy==='USD'&&/^[A-Z][A-Z.\-]{0,5}$/.test(p.sym))||/^\d{5,9}$/.test(p.sym)||/^TA(125|90)$/.test(p.sym)).map(p=>p.sym))].slice(0,40);
       watchSave({held:syms}).catch(()=>{})}
     if(U0.P)offerUndo('התיק נשמר',async()=>{
-      await pset('portfolio',U0.P); P=cl(U0.P); DRAFT=null; dDirty=false;
+      await pset('portfolio',U0.P); P=cl(U0.P); DRAFT=null; dDirty=false; PFS.resets++; FIXED.clear();
       if(gone.length){PLD=normPlan(U0.PL);setTrack();pDirty=false;await pset('plan',U0.PL); S=mergeSettings(U0.S);dirty=false;await pset('settings',U0.S); if(U0.DY){DY={exists:true,points:U0.DY};await pset('daily',{points:U0.DY})}}
       if(U0.HS&&JSON.stringify(U0.HS)!==JSON.stringify(HS)){HS=cl(U0.HS);await pset('history',U0.HS)}
       mergeQ(); render(); $('pfSaved').textContent='השמירה בוטלה. התיק חזר למצב שלפניה.'},15000);
-    upStep(0); st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+txNote+(gone.length?(purged?`. ${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`, אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
-    {const added=[...now].filter(x=>!before.has(x)), firstPf=!(U0.P&&(U0.P.positions||[]).length);
-      // the first explanation waits (at most 12 seconds) for the prices of what was just saved
+    upStep(0); st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+(moved?'. שינויים שנכנסו בזמן השמירה עוד לא נשמרו':'')+txNote+(gone.length?(purged?`. ${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`, אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
+    {const added=[...now].filter(x=>!before.has(x)), firstPf=!(U0.P&&(U0.P.positions||[]).length)||FIRSTX;
+      // the first explanation waits (at most 12 seconds) for the prices of what was just saved, and for the check of a
+      // statement that is still being read (at most 15 minutes). If the check corrected the table, the viewer stays here to
+      // save the corrections, and the explanation comes after that save. It moves to the overview only from this screen.
       const go=added.length?pxAfterSaveMax(added):Promise.resolve();
-      if(firstPf)go.then(()=>{try{showTab('overview',true);anaRun('explain',null,{first:true})}catch(e){}})}
+      if(firstPf)go.then(async()=>{for(let i=0;i<1800&&upBusy;i++)await new Promise(r=>setTimeout(r,500));
+        if(dDirty&&[...FIXED.values()].some(v=>v.kind==='fix')){FIRSTX=true;return} FIRSTX=false; try{if(document.body.dataset.page==='mine')showTab('overview',true); anaRun('explain',null,{first:true})}catch(e){}})}
     const miss=pos.filter(p=>!RAWQ||(RAWQ.prices||{})[p.sym]==null).map(p=>p.sym);
     if(miss.length)$('upState').textContent=`עדיין אין מחיר חי ל-${[...new Set(miss)].join(', ')}. עד שיתווסף, מוצג המחיר מהדוח.`;
   }catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
@@ -19026,7 +19205,7 @@ async function wipeAll(){
   // whatever this browser still holds from an earlier local-mode session
   try{for(const k of Object.keys(localStorage))if(/^tr_/.test(k)&&(k!=='tr_settings'||withSet||!LOCAL))localStorage.removeItem(k); if(withSet)localStorage.removeItem('wholeMode')}catch(e){}
   if(withSet)S=JSON.parse(JSON.stringify(DEF));
-  ACK=[]; P=null; PLD=normPlan(null); setTrack(); pDirty=false; dirty=false; HS=null; DY={exists:false,points:{}}; DRAFT=null; dDirty=false; STAGED=[]; OB_SEL=null; OVER=0;
+  ACK=[]; P=null; PLD=normPlan(null); setTrack(); pDirty=false; dirty=false; HS=null; DY={exists:false,points:{}}; DRAFT=null; dDirty=false; PFS.resets++; FIXED.clear(); FIRSTX=false; STAGED=[]; OB_SEL=null; OVER=0;
   for(const id of ['listText','upText','upPass'])$(id).value=''; $('upFile').value=''; $('upImg').value=''; showStaged(); $('passWrap').hidden=true;
   for(const id of ['upState','listState','pfSaved'])$(id).textContent='';
   $('wipeSet').checked=false; $('wipeAsk').hidden=true; $('btnWipeYes').disabled=!canWrite; $('btnWipeNo').disabled=false;
@@ -19510,7 +19689,7 @@ async function shrinkImg(f){
     const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.85)); return b&&b.size<f.size?b:f}catch(e){return f}}
 window.__up={shrink:shrinkImg,prompt:readPrompt};
 let UPT0=0, UPTT=0;
-function upTick(on){clearInterval(UPTT); UPTT=0; if(!on)return; UPT0=Date.now();
+function upTick(on,from){clearInterval(UPTT); UPTT=0; if(!on)return; UPT0=from||Date.now();
   UPTT=setInterval(()=>{const el=$('upProg'), now=el&&el.querySelector('li.now'); if(!now){clearInterval(UPTT);return} const s=Math.round((Date.now()-UPT0)/1000);
     let t=now.querySelector('.el'); if(!t){t=document.createElement('span');t.className='el n';now.appendChild(t)} t.textContent=` ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`},1000)}
 
