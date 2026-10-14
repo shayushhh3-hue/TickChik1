@@ -1217,6 +1217,11 @@ section.fold > .fold-h h2{margin:0}
 .wmk:hover{background:var(--sunk)}
 .wmk small{font-size:12px}
 .upprog .el{color:var(--muted);font-size:12px;margin-inline-start:6px}
+/* several files read at once: a line for each, with its last message under it */
+.upprog.jobs{gap:8px} .upprog.jobs .jb{flex:1;min-width:0} .upprog.jobs .jb>div:first-child{overflow-wrap:anywhere}
+.upprog.jobs .jm{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5} .upprog.jobs .el{margin:0 6px}
+.upprog.jobs li.bad::before{content:"✕";background-image:none;color:var(--crit-ink);height:auto;align-self:baseline}
+.uphint{font-size:12.5px;color:var(--muted);margin:6px 0 0} @media (pointer:fine){.uphint{display:none}}
 .wi-r{width:100%;accent-color:var(--navy);margin-top:6px}
 @media (prefers-reduced-motion:no-preference){.pane:not([hidden]){animation:panein .18s ease-out}}
 @keyframes panein{from{opacity:.4}to{opacity:1}}
@@ -1901,9 +1906,10 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <p class="note" id="upPriv" style="margin:0">הקבצים נשלחים לקריאה ל-Claude של Anthropic. לפני השליחה נמחקים מהטקסט ת״ז, מספרי חשבון, כתובת, מייל וטלפון. מצילום מסך או מעמוד סרוק אי אפשר למחוק, אז כדאי לחתוך ממנו קודם את השם ומספר החשבון. שום דבר לא נשמר עד "שמור את התיק".</p>
         <div class="upbtns">
           <label class="upb" for="upImg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>צילומי מסך</b><span>מהגלריה או מהמצלמה, כמה שצריך</span><input type="file" id="upImg" multiple accept="image/*"></label>
-          <label class="upb" for="upFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><b>PDF או אקסל</b><span>דוח יתרות או תנועות מבית ההשקעות</span><input type="file" id="upFile" multiple accept="application/pdf,.pdf,.xlsx,.xls,.csv,.txt"></label>
+          <label class="upb" for="upFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><b>PDF או אקסל</b><span>דוח יתרות או תנועות מבית ההשקעות, אחד או כמה</span><input type="file" id="upFile" multiple accept="application/pdf,.pdf,.xlsx,.xls,.csv,.txt"></label>
         </div>
-        <label class="drop" id="drop" for="upFile"><b>או גרור לכאן קבצים</b><span class="nm" id="dropHint">PDF, Excel, CSV או צילומי מסך · עד 10 קבצים יחד, ואפשר להוסיף עוד תוך כדי קריאה · אפשר גם להדביק צילום מסך עם Ctrl+V</span></label>
+        <p class="uphint">אפשר לבחור כמה דוחות יחד: באנדרואיד בלחיצה ארוכה על הראשון ואז הקשה על השאר, ובאייפון בכפתור "בחר". כל דוח נקרא בנפרד, וכולם באותו זמן.</p>
+        <label class="drop" id="drop" for="upFile"><b>או גרור לכאן קבצים</b><span class="nm" id="dropHint">PDF, Excel, CSV או צילומי מסך · עד 10 קבצים יחד, כל דוח נקרא בנפרד וכולם באותו זמן · אפשר גם להדביק צילום מסך עם Ctrl+V</span></label>
         <ol class="upsteps" id="upSteps" aria-label="שלבי ההעלאה"><li data-s="1"><i>1</i>בוחרים קבצים</li><li data-s="2"><i>2</i>Claude קורא</li><li data-s="3"><i>3</i>בודקים ושומרים</li></ol>
         <div class="staged" id="staged" hidden></div>
         <ul class="upprog" id="upProg" hidden></ul>
@@ -18476,8 +18482,10 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnRead'){readStatement();return}
   if(ev.target.id==='btnReadText'){readStatement(true);return}
   if(ev.target.id==='btnList'){addList();return}
-  if(ev.target.dataset&&ev.target.dataset.unstage!=null){ev.preventDefault();STAGED.splice(+ev.target.dataset.unstage,1);showStaged();return}
-  if(ev.target.id==='btnStop'){if(upCtl)upCtl.abort();return}
+  if(ev.target.dataset&&ev.target.dataset.unstage!=null){ev.preventDefault();const gone=STAGED.splice(+ev.target.dataset.unstage,1)[0];
+    for(const J of JOBS)if(J.state==='wait'&&J.files.includes(gone)){J.files=J.files.filter(f=>f!==gone); if(!J.files.length&&!J.fromText){J.state='fail'; J.failed=true; J.msg='הוסר מהרשימה.'}}
+    showStaged(); pump(); return}
+  if(ev.target.id==='btnStop'){stopJobs();return}
   if(ev.target.id==='btnPfSave'){savePf();return}
   if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent='';try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
@@ -18549,23 +18557,68 @@ let FIRSTX=false;
 function upStep(n){const ol=$('upSteps');if(!ol)return;[...ol.children].forEach((li,i)=>{li.classList.toggle('on',i+1===n);li.classList.toggle('done',i+1<n)})}
 function showStaged(){const el=$('staged');el.hidden=!STAGED.length;el.innerHTML=STAGED.map((f,i)=>`<span>${esc(f.name||'צילום מסך')}<button type="button" data-unstage="${i}" aria-label="הסר את ${esc(f.name||'צילום מסך')}">×</button></span>`).join('');$('btnRead').hidden=!STAGED.length}
 function stageFiles(list){const ok=[...list].filter(f=>f&&f.size>0);if(!ok.length)return;upStep(1);let over=0;for(const f of ok)if(!STAGED.some(x=>x.name===f.name&&x.size===f.size)){if(STAGED.length<10)STAGED.push(f);else over++}OVER+=over;showTab('mine');showStaged();
-  if(upBusy){UPQ=true;$('upState').textContent='הקבצים נוספו לרשימה. הם ייקראו מיד כשהקריאה הנוכחית תסתיים.';return}
   if(coolLeft()>0){coolNote();return}
-  clearTimeout(upT);$('upState').textContent=STAGED.length>1?`${STAGED.length} קבצים ברשימה. מתחיל לקרוא…`:'מתחיל לקרוא…';
-  upT=setTimeout(()=>{if(!upBusy&&STAGED.length&&coolLeft()<=0)readStatement()},1200)}
-// one read at a time; files picked while it runs wait in the list and are read right after it; after "slow down" nothing is sent until the viewer asks again
+  clearTimeout(upT); if(!upBusy)$('upState').textContent=STAGED.length>1?`${STAGED.length} קבצים ברשימה. מתחיל לקרוא, כל קובץ בנפרד…`:'מתחיל לקרוא…';
+  upT=setTimeout(()=>{if(STAGED.length&&coolLeft()<=0)readStatement()},1200)}
+// Each document is read on its own, and several at once (the owner: up to 5; a partner, whose calls at once are limited
+// on the server: one, since a read is two calls). Screenshots picked together are one read, as parts of one screen. What
+// each read finds goes into the table as soon as it is ready; the holdings of an account come from its newest statement
+// (an older one adds only its transactions). After "slow down" nothing new is sent until the viewer asks again.
 let upBusy=false, UPQ=false, upT=0, upFailed=false, coolN=0, coolT=0;
+const JOBS=[], HOLD={}; let JOBN=0, JT=0, pumpT=0;
+const jobMax=()=>window.__tc&&OWNER?5:1;
+const isPic=f=>/^image\//.test((f&&f.type)||'');
+function newJob(files,fromText){return {id:++JOBN,files,fromText:!!fromText,name:fromText?'הטקסט שהודבק':files.length===1?(files[0].name||'צילום מסך'):`${files.length} צילומי מסך`,state:'wait',done:[],now:'',msg:'',tick:0,ctl:new AbortController(),failed:false,
+  pick:($('upAcct')&&$('upAcct').value)||'auto',quick:!!($('upQuick')&&$('upQuick').checked),pass:($('upPass')&&$('upPass').value)||'',text:fromText?(($('upText')&&$('upText').value)||'').trim():''}}
+const active=()=>JOBS.filter(j=>j.state==='run'||j.state==='wait');
+function pump(){
+  if(coolLeft()>0){for(const J of JOBS)if(J.state==='wait'){J.state='fail'; J.failed=true; J.msg='לא נשלח: Claude ביקש להאט. הקובץ נשאר ברשימה; לחץ על "קרא שוב" כשאפשר.'}}
+  else while(JOBS.filter(j=>j.state==='run').length<jobMax()){const J=JOBS.find(j=>j.state==='wait'); if(!J)break; J.state='run'; runJob(J)}
+  const going=new Set(active().flatMap(j=>j.files)); upBusy=active().length>0;
+  // "קרא שוב" reads what is in the list and not being read (a file that needed a password, or failed), while others still run
+  $('btnRead').disabled=!canWrite||coolLeft()>0||!STAGED.some(f=>!going.has(f)); $('btnStop').hidden=!upBusy; if(upBusy)upStep(2);
+  renderJobs()}
+async function runJob(J){
+  try{if(J.ctl.signal.aborted){J.failed=true; J.msg='הקריאה נעצרה.'} else await readStatement0(J)}catch(e){J.failed=true; if(!J.msg)J.msg='הקריאה לא הצליחה.'}
+  J.state=J.failed?'fail':'done'; J.tick=0; J.ctl=null; if(/Claude/.test(J.now))J.now='';
+  if(!JOBS.some(j=>j.state==='run'||j.state==='wait'))OVER=0;
+  pump(); showStaged()}
+function stopJobs(){for(const J of JOBS){if(J.state==='wait'){J.state='fail'; J.failed=true; J.msg='הקריאה בוטלה.'} if(J.ctl&&(J.state==='run'||J.state==='wait'))try{J.ctl.abort()}catch(e){}} pump()}
+// the reads on the screen. One read looks as it always did: its steps and its status line. Several reads are one line
+// each (the file, where its read is, how long it has run, its last message), and the status line sums them up.
+function renderJobs(){
+  const el=$('upProg'), st=$('upState'); if(!el||!st||!JOBS.length)return;
+  if(JOBS.length===1){const J=JOBS[0]; el.classList.remove('jobs'); upProg(J.done||[],J.now||''); if(J.failed&&J.state!=='run')el.hidden=true; st.textContent=J.msg||''; drawTick(); return}
+  el.classList.add('jobs'); el.hidden=false;
+  el.innerHTML=JOBS.map(J=>{const last=(J.done||[]).slice(-1)[0]||'', line=J.state==='wait'?'ממתין לתורו':J.state==='run'?(J.now||last):last;
+    return `<li class="${J.state==='run'||J.state==='wait'?'now':J.failed?'bad':''}" data-job="${J.id}"><div class="jb"><div><b><bdi>${esc(J.name)}</bdi></b>${line?`<span> · ${esc(line)}</span>`:''}${J.state==='run'?'<span class="el n"></span>':''}</div>${J.msg&&J.state!=='wait'?`<div class="jm">${esc(J.msg)}</div>`:''}</div></li>`}).join('');
+  const run=JOBS.filter(j=>j.state==='run'||j.state==='wait').length, bad=JOBS.filter(j=>j.failed).length;
+  st.textContent=run?`קורא ${JOBS.length} קבצים, כל אחד בנפרד: ${JOBS.length-run} הסתיימו, ${run} עוד בתהליך. מה שכבר נקרא נמצא בטבלה.`
+    :`הסתיימה הקריאה של ${JOBS.length} קבצים`+(bad?`, ${bad===1?'אחד לא הצליח':bad+' לא הצליחו'} (הפירוט ליד כל קובץ)`:'')+'. בדוק את הטבלה ולחץ על "שמור את התיק".'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'');
+  drawTick()}
+function drawTick(){clearInterval(JT); JT=0; if(!JOBS.some(j=>j.state==='run'&&j.tick))return;
+  const mm=s=>` ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const f=()=>{const el=$('upProg'); if(!el)return;
+    if(JOBS.length===1){const J=JOBS[0], now=el.querySelector('li.now'); if(!now||!J.tick)return; let t=now.querySelector('.el'); if(!t){t=document.createElement('span');t.className='el n';now.appendChild(t)} t.textContent=mm(Math.round((Date.now()-J.tick)/1000)); return}
+    for(const J of JOBS){const t=el.querySelector(`li[data-job="${J.id}"] .el`); if(t&&J.tick)t.textContent=mm(Math.round((Date.now()-J.tick)/1000))}};
+  f(); JT=setInterval(f,1000)}
 const coolLeft=()=>Math.max(0,Math.ceil(((window.__cool||0)-Date.now())/1000));
 function coolNote(){const s=coolLeft(), st=$('upState'); if(!st)return;
   if(s>0){$('btnRead').disabled=true;st.textContent=`Claude ביקש להאט. אפשר להמשיך בעוד ${s} שניות. הקבצים נשארים ברשימה, לא צריך לבחור אותם שוב.`+(coolN>=3?' אם זה חוזר שוב ושוב, ייתכן שהגעת למגבלת השימוש בחשבון Claude שלך. אפשר להקליד את הניירות ב"הקלדה מהירה".':'')}
   else{clearInterval(coolT);coolT=0;window.__cool=0;$('btnRead').disabled=!canWrite;st.textContent=STAGED.length?'אפשר להמשיך. לחץ על "קרא שוב".':'אפשר להמשיך.'}}
-function coolStart(){coolN++;window.__cool=Date.now()+Math.min(120,30*Math.pow(2,coolN-1))*1000;clearInterval(coolT);coolT=setInterval(coolNote,1000);coolNote()}
+function coolStart(){if(coolLeft()>0){coolNote();return} coolN++;window.__cool=Date.now()+Math.min(120,30*Math.pow(2,coolN-1))*1000;clearInterval(coolT);coolT=setInterval(coolNote,1000);coolNote()}
 async function readStatement(fromText){
-  if(upBusy)return; if(coolLeft()>0){coolNote();return}
-  clearTimeout(upT); upBusy=true; upFailed=false; UPQ=false;
-  try{await readStatement0(fromText)}catch(e){upFailed=true}
-  upBusy=false;
-  if(UPQ){UPQ=false; if(STAGED.length&&!upFailed&&coolLeft()<=0)upT=setTimeout(()=>{if(!upBusy&&STAGED.length&&coolLeft()<=0)readStatement()},400)}
+  if(coolLeft()>0){coolNote();return}
+  clearTimeout(upT);
+  // the files of the list not already being read: a read for each document, one for the screenshots, one for pasted text
+  const live=active(), going=new Set(live.flatMap(j=>j.files));
+  if(!live.length)JOBS.length=0;   // a new round: the reads that ended leave the screen
+  const fresh=STAGED.filter(f=>!going.has(f)), docs=fresh.filter(f=>!isPic(f)), pics=fresh.filter(isPic), pasted=fromText&&$('upText').value.trim()&&!live.some(j=>j.fromText);
+  const add=[...docs.map(f=>newJob([f])),...(pics.length?[newJob(pics)]:[]),...(pasted?[newJob([],true)]:[])];
+  // a file read again (after a password was typed): its earlier read no longer asks for one
+  for(const j of JOBS)if(j.needPass&&add.some(n=>n.files.some(f=>j.files.includes(f))))j.needPass=false;
+  if(!add.length){if(!live.length)$('upState').textContent=fromText?'הדבק קודם את טקסט הדוח.':'בחר קובץ או גרור אותו לריבוע.'; pump(); return}
+  JOBS.push(...add); pump();
 }
 const GK=Object.keys(GROUPS).filter(k=>k!=='cash');
 // one key per security, whatever the spelling: BRK.B = BRKB, an Israeli TA-125 tracker = TA125, a lower-case ticker = the ticker
@@ -18839,31 +18892,34 @@ async function pdfRead(f,pass,maxImg){
   try{doc.destroy()}catch(e){}
   return {text,imgs};
 }
-async function readStatement0(fromText){
-  const st=$('upState'), files=STAGED.slice(), pasted=fromText?$('upText').value.trim():'', pick=$('upAcct').value; let ac=acctPick(pick);
-  if(!files.length&&!pasted){st.textContent=fromText?'הדבק קודם את טקסט הדוח.':'בחר קובץ או גרור אותו לריבוע.';return}
+async function readStatement0(J){
+  // this read's own status line, steps and timer (several files can be read at once, each on its own)
+  const st={set textContent(v){J.msg=String(v==null?'':v); renderJobs()}, get textContent(){return J.msg}};
+  const upProg=(done,now)=>{J.done=done.slice(); J.now=now||''; renderJobs()}, upTick=(on,from)=>{J.tick=on?(from||Date.now()):0; renderJobs()};
+  const files=J.files, fromText=J.fromText, pasted=fromText?J.text:'', pick=J.pick; let ac=acctPick(pick);
+  if(!files.length&&!pasted){J.failed=true; st.textContent=fromText?'הדבק קודם את טקסט הדוח.':'בחר קובץ או גרור אותו לריבוע.';return}
   const sample=window.claude&&window.claude.use?await window.claude.use('sample'):null;
-  if(!sample){st.textContent='קריאה אוטומטית לא זמינה בתצוגה הזו. אפשר להזין את האחזקות ידנית בטבלה למטה.';return}
+  if(!sample){J.failed=true; st.textContent='קריאה אוטומטית לא זמינה בתצוגה הזו. אפשר להזין את האחזקות ידנית בטבלה למטה.';return}
   const caps=await (sample.limits?sample.limits().catch(()=>null):null), maxImg=caps&&caps.images?Math.min(caps.images.maxCount||0,8):0, perCall=caps&&caps.images?Math.min(caps.images.maxCount||0,12):0;
   let text=pasted; const imgs=[], imgFile=new Map(); let skipped=0, partial=null, sent=0; st.textContent='פותח את הקבצים…';
   for(const f of files.slice(0,10)){
     const nm=(f.name||'').toLowerCase();
     try{
       if(f.size>2e7)throw {code:'big'};
-      if(f.type==='application/pdf'||nm.endsWith('.pdf')){const r=await pdfRead(f,$('upPass').value,maxImg);text+='\n\n### '+f.name+'\n'+r.text;imgs.push(...r.imgs)}
+      if(f.type==='application/pdf'||nm.endsWith('.pdf')){const r=await pdfRead(f,J.pass,maxImg);text+='\n\n### '+f.name+'\n'+r.text;imgs.push(...r.imgs)}
       else if(/^image\//.test(f.type)){if(!maxImg)throw {code:'noimg'};const sb=await shrinkImg(f);imgs.push(sb);imgFile.set(sb,f)}
       else{if(!window.XLSX)throw {code:'file'};const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
         text+='\n\n'+wb.SheetNames.slice(0,6).map(n=>'### '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}
-    }catch(e){const c=e&&e.code;
-      if(c==='password'){$('passWrap').hidden=false;$('upPass').focus()}
-      st.textContent=c==='password'?($('upPass').value?`הסיסמה לא פתחה את ${f.name}. נסה שוב ולחץ על "קרא שוב".`:`הקובץ ${f.name} מוגן בסיסמה. הקלד אותה למטה ולחץ על "קרא שוב" (או Enter).`):c==='noimg'?'בתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. העלה PDF או Excel, או הקלד את הניירות בתיבה "הקלדה מהירה של התיק" שלמעלה.':c==='big'?`הקובץ ${f.name} גדול מדי.`:`לא הצלחתי לפתוח את ${f.name}. נסה קובץ אחר, או הדבק את טקסט הדוח.`;return}
+    }catch(e){const c=e&&e.code; J.failed=true;
+      if(c==='password'){J.needPass=true; $('passWrap').hidden=false;$('upPass').focus()}
+      st.textContent=c==='password'?(J.pass?`הסיסמה לא פתחה את ${f.name}. נסה שוב ולחץ על "קרא שוב".`:`הקובץ ${f.name} מוגן בסיסמה. הקלד אותה למטה ולחץ על "קרא שוב" (או Enter).`):c==='noimg'?'בתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. העלה PDF או Excel, או הקלד את הניירות בתיבה "הקלדה מהירה של התיק" שלמעלה.':c==='big'?`הקובץ ${f.name} גדול מדי.`:`לא הצלחתי לפתוח את ${f.name}. נסה קובץ אחר, או הדבק את טקסט הדוח.`;return}
   }
   if(imgs.length>12){skipped=imgs.length-12;imgs.length=12}
   // personal details out of the text before it leaves the browser; images cannot be cleaned, and the list says so
   const pf=(S&&S.profile)||{}, red=redactPII(text,{first:pf.first,last:pf.last}); text=red.text;
   const RDK={id:'ת״ז',acct:'מספר חשבון',name:'שם',addr:'כתובת',mail:'מייל',phone:'טלפון'};
   const hasText=text.replace(/[\s,|#]/g,'').length>=40, sheetsOnly=!imgs.length&&files.length>0&&files.every(f=>!/\.pdf$/i.test(f.name||'')&&!/^image\//.test(f.type||'')&&f.type!=='application/pdf')&&text.length<60000;
-  if(!hasText&&!imgs.length){st.textContent=files.some(f=>(f.name||'').toLowerCase().endsWith('.pdf'))?'ה-PDF הזה סרוק ואין בו טקסט, ובתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':'הקובץ נראה ריק.';return}
+  if(!hasText&&!imgs.length){J.failed=true; st.textContent=files.some(f=>(f.name||'').toLowerCase().endsWith('.pdf'))?'ה-PDF הזה סרוק ואין בו טקסט, ובתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':'הקובץ נראה ריק.';return}
   const pDone=[(files.length===1?'נפתח קובץ אחד':files.length?`נפתחו ${files.length} קבצים`:'התקבל הטקסט שהודבק')+(imgs.length?`, ${cntH(imgs.length,'תמונה אחת','תמונות')} לקריאה`:'')];
   if(hasText)pDone.push(red.n?'נמחקו מהטקסט לפני השליחה: '+Object.keys(red.kinds).map(k=>RDK[k]).join(', '):'בטקסט לא נמצאו ת״ז, מספר חשבון או כתובת');
   if(imgs.length)pDone.push((imgs.length===1?'התמונה נשלחת':'התמונות נשלחות')+' כמו שהן: מתמונה אי אפשר למחוק פרטים');
@@ -18872,8 +18928,8 @@ async function readStatement0(fromText){
   // finishes, it checks the table and corrects what the quick read got wrong, row by row (the owner's choice, 14.10.2026).
   // "קריאה מהירה בלבד" skips the check. Outside the site (Claude's own artifact view) there is one read, with the
   // strongest tier there ("complex").
-  const quick=!!($('upQuick')&&$('upQuick').checked), FILES_TIER=window.__tc?'files':'complex', DUAL=!!window.__tc&&!quick;
-  upCtl=new AbortController(); const sig=upCtl.signal, t0=Date.now();
+  const quick=J.quick, FILES_TIER=window.__tc?'files':'complex', DUAL=!!window.__tc&&!quick;
+  const sig=J.ctl.signal, t0=Date.now(); if(sig.aborted){J.failed=true; st.textContent='הקריאה נעצרה.'; return}
   $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2);
   st.textContent=quick?'Claude קורא את הדוח במהירות, זה יכול לקחת עד דקה…':DUAL?'Claude קורא את הדוח. הטבלה תתמלא תוך חצי דקה עד דקה, לפי אורך הדוח, ובמקביל המודל החזק ביותר של Claude בודק אותה.':'המודל החזק ביותר של Claude קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
   const step=Math.max(1,perCall), nCh=Math.max(1,Math.ceil(imgs.length/step));
@@ -18932,15 +18988,18 @@ async function readStatement0(fromText){
     const {left,by,partNote,out,known,ac,txs,accTot,accCcy,rows}=M, readBy=by?(dual?'קריאה מהירה עם ':'נקרא עם ')+by:'';
     const cutNote=M.cut?(dual?' התשובה של הקריאה המהירה נקטעה כי הדוח ארוך, ולכן ייתכן שחסרות בה הפעולות האחרונות. הבדיקה תשלים אותן.':' התשובה נקטעה כי הדוח ארוך, ולכן ייתכן שחסרות הפעולות האחרונות שבו. השווה לדוח לפני השמירה.'):'';
     if(readBy)pDone.push(readBy);
-    const d=isoOf(out.asOf), have0=(((DRAFT?DRAFT.asOf:(P&&P.asOf))||{})[ac])||null;
-    if(rows.length&&d&&have0&&d<have0&&!(pick==='auto'&&!known)){
-      // the holdings and the cash come from the newest statement of the account; an older one adds its transactions
-      if(dual){st.textContent=`הדוח הזה מ-${dFull(d)}, ישן יותר מהדוח שכבר בטבלה לחשבון ${ACCTS[ac]} (מ-${dFull(have0)}). המודל החזק ביותר בודק אותו, ורק הפעולות שבו ייכנסו…`; return {kind:'older'}}
+    const d=isoOf(out.asOf), have0=(((DRAFT?DRAFT.asOf:(P&&P.asOf))||{})[ac])||null, over=JOBS.length>1?0:OVER;
+    const older=!!(d&&have0&&d<have0), onlyTx=!older&&!!out.derived&&((DRAFT?DRAFT.positions:((P&&P.positions)||[])).some(p=>p.acct===ac));
+    if(rows.length&&(older||onlyTx)&&!(pick==='auto'&&!known)){
+      // the holdings and the cash come from the newest statement of the account; an older one adds its transactions. So
+      // does a file with no holdings list (only transactions, the holdings worked out from them) for an account that has some.
+      const why=older?`הדוח הזה מ-${dFull(d)}, ישן יותר מהדוח שכבר בטבלה לחשבון ${ACCTS[ac]} (מ-${dFull(have0)})`:`בקובץ הזה אין רשימת אחזקות, רק פעולות`;
+      if(dual){st.textContent=`${why}. המודל החזק ביותר בודק אותו, ורק הפעולות שבו ייכנסו…`; return {kind:'older'}}
       if(!DRAFT)DRAFT=draftFromP(); const added=mergeTx(ac,txs);
-      if(added.length)pfDirty(); renderTx(); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; $('passWrap').hidden=true; upStep(3);
-      pDone.push(`הדוח מ-${dFull(d)}, ישן יותר מזה שבטבלה (${dFull(have0)})`); if(added.length)pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`);
+      if(added.length)pfDirty(); renderTx(); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true; upStep(3);
+      pDone.push(older?`הדוח מ-${dFull(d)}, ישן יותר מזה שבטבלה (${dFull(have0)})`:'בקובץ אין רשימת אחזקות, רק פעולות'); if(added.length)pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`);
       upProg(pDone,added.length?'נשאר לך: לבדוק את הפעולות ולשמור':'');
-      st.textContent=lead+`הדוח הזה מ-${dFull(d)}, ישן יותר מהדוח שכבר בטבלה לחשבון ${ACCTS[ac]} (מ-${dFull(have0)}), ולכן האחזקות והמזומן לא הוחלפו.`+(added.length?` ${added.length===1?'נוספה ממנו פעולה אחת':`נוספו ממנו ${added.length} פעולות`} לרשימת הפעולות, והן יישמרו בהיסטוריה כשתלחץ על "שמור את התיק".`:txs.length?' כל הפעולות שבו כבר היו ברשימה.':' לא נמצאו בו פעולות.')+cutNote+partNote;
+      st.textContent=lead+`${why}, ולכן האחזקות והמזומן לא הוחלפו.`+(added.length?` ${added.length===1?'נוספה ממנו פעולה אחת':`נוספו ממנו ${added.length} פעולות`} לרשימת הפעולות, והן יישמרו בהיסטוריה כשתלחץ על "שמור את התיק".`:txs.length?' כל הפעולות שבו כבר היו ברשימה.':' לא נמצאו בו פעולות.')+cutNote+partNote;
       return {kind:'older',done:true};
     }
     if(rows.length&&pick==='auto'&&!known){st.textContent=lead+(out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".')+(dual?' המודל החזק ביותר עדיין קורא, ואולי יזהה.':''); if(!dual)try{$('upAcct').focus()}catch(e){} return {kind:'acct'}}
@@ -18959,7 +19018,7 @@ async function readStatement0(fromText){
           if(!asOf||t.date<=asOf){before++;continue}
           const v=(t.side==='withdraw'?-1:1)*t.amount; if(t.ccy==='USD'){DRAFT.cash[ac].USD=Math.round((+DRAFT.cash[ac].USD+v)*100)/100;addU+=v}else{DRAFT.cash[ac].ILS=Math.round((+DRAFT.cash[ac].ILS+v)*100)/100;addI+=v}
           DRAFT.flowKeys.push(k)}
-        DRAFT.tx=(DRAFT.tx||[]).filter(t=>!(t.acct===ac&&(t.side==='deposit'||t.side==='withdraw'))).concat(flows.map(t=>({...t,acct:ac})));
+        mergeTx(ac,flows);
         pfDirty(); renderMine(true); renderTx(); upStep(3);
         const sum=flows.reduce((x,t)=>x+(t.side==='withdraw'?-1:1)*t.amount*(t.ccy==='USD'?((Q&&Q.usdIls)||3.3):1),0);
         const amt=[addI?ils(Math.abs(addI)):'',addU?'$'+Math.abs(addU).toLocaleString('en-US',{maximumFractionDigits:2}):''].filter(Boolean).join(' ו-');
@@ -18975,7 +19034,8 @@ async function readStatement0(fromText){
     }
     if(!rows.length){
       if(dual){st.textContent='הקריאה המהירה לא מצאה אחזקות. המודל החזק ביותר של Claude עדיין קורא…'; return {kind:'none'}}
-      st.textContent=lead+'לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+'.'+(OVER?` אפשר עד 10 קבצים בבת אחת, ${OVER} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'');
+      const added=txs.length&&!(pick==='auto'&&!known)?mergeTx(ac,txs):[]; if(added.length){pfDirty(); renderTx(); pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`); upProg(pDone,'נשאר לך: לבדוק את הפעולות ולשמור')}
+      st.textContent=lead+'לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+(added.length?`, אבל ${added.length===1?'נוספה מהם פעולה אחת':`נוספו מהם ${added.length} פעולות`} לרשימת הפעולות`:'')+'.'+(over?` אפשר עד 10 קבצים בבת אחת, ${over} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'');
       return {kind:'none'};
     }
     if(!DRAFT)DRAFT=draftFromP();
@@ -18985,16 +19045,17 @@ async function readStatement0(fromText){
     const asOf0=(DRAFT.asOf||{})[ac]||null, tx0=(DRAFT.tx||[]).filter(t=>t.acct===ac).map(t=>({...t}));
     for(const k of [...FIXED.keys()])if(k.startsWith(ac+'|')&&(!merge||have.has(k.slice(ac.length+1))))FIXED.delete(k);
     DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(canonSym(p.sym,p.name))):p.acct!==ac).concat(rows);
-    const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0));
-    DRAFT.cash[ac]=merge?{ILS:cIls||cash0.ILS,USD:cUsd||cash0.USD}:{ILS:cIls,USD:cUsd};
+    const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0)), cashRaw=merge?{ILS:cIls||+cash0.ILS||0,USD:cUsd||+cash0.USD||0}:{ILS:cIls,USD:cUsd};
+    DRAFT.cash[ac]={...cashRaw};
     if(typeof out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(out.asOf))DRAFT.asOf[ac]=out.asOf;
-    pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; $('passWrap').hidden=true;
+    if(!merge){reflow(ac); HOLD[ac]=(HOLD[ac]||0)+1}   // a statement replaced the account: the reads before it of this account are older
+    pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true;
     {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
       pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'Claude בודק את הקריאה עם המודל החזק ביותר':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
     LASTREAD={acct:ac,total:accTot,ccy:accCcy,n:rows.length}; const txAdded=mergeTx(ac,txs); renderTx(); renderDup(); upStep(3);
     st.textContent=lead+(dual?`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]} בקריאה מהירה. המודל החזק ביותר של Claude בודק אותם עכשיו, ויתקן בטבלה מה שצריך. אפשר כבר לעבור על הטבלה.`
-      :`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`)+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||OVER)?` אפשר עד 10 קבצים בבת אחת, ${skipped+OVER} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+cutNote+partNote;
-    return {kind:'rows',txAdded,cut:!!M.cut,ac,merge,rows:rows.map(r=>({...r})),cash:{ILS:+DRAFT.cash[ac].ILS||0,USD:+DRAFT.cash[ac].USD||0},cash0,asOf:DRAFT.asOf[ac]||null,asOf0,txs:txs.map(t=>({...t})),tx0,before,derived:!!out.derived,fp:fp(ac),saves:PFS.saves,resets:PFS.resets};
+      :`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`)+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||over)?` אפשר עד 10 קבצים בבת אחת, ${skipped+over} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+cutNote+partNote;
+    return {kind:'rows',job:J.id,hold:HOLD[ac]||0,cashRaw,txAdded,cut:!!M.cut,ac,merge,rows:rows.map(r=>({...r})),cash:{ILS:+DRAFT.cash[ac].ILS||0,USD:+DRAFT.cash[ac].USD||0},cash0,asOf:DRAFT.asOf[ac]||null,asOf0,txs:txs.map(t=>({...t})),tx0,before,derived:!!out.derived,fp:fp(ac),saves:PFS.saves,resets:PFS.resets};
   }
   // comparing two reads of one statement: quantities to a ten-thousandth, costs to the shekel, prices to the agora (or a
   // hundredth of a percent). A row as the viewer would leave it: the same row read back after a save counts as untouched.
@@ -19007,6 +19068,9 @@ async function readStatement0(fromText){
   function mergeTx(ac,txs){if(!DRAFT)DRAFT=draftFromP(); const have=new Set((DRAFT.tx||[]).filter(t=>t.acct===ac).map(tkey)), added=[];
     for(const t of txs){const k=tkey(t); if(have.has(k))continue; have.add(k); added.push(k); (DRAFT.tx=DRAFT.tx||[]).push({...t,acct:ac})} return added}
   const isoOf=v=>typeof v==='string'&&/^\d{4}-\d\d-\d\d$/.test(v)?v:null;
+  // deposits and withdrawals waiting to be saved that came after a statement's date: its cash does not have them yet
+  function reflow(ac){const asOf=(DRAFT.asOf||{})[ac], c=DRAFT.cash[ac]; if(!asOf||!c)return;
+    for(const t of DRAFT.tx||[])if(t.acct===ac&&(t.side==='deposit'||t.side==='withdraw')&&t.date>asOf&&+t.amount>0){const v=(t.side==='withdraw'?-1:1)*t.amount; if(t.ccy==='USD')c.USD=Math.round((+c.USD+v)*100)/100; else c.ILS=Math.round((+c.ILS+v)*100)/100}}
   // why a read did not work, in a few words (the server's message is already in Hebrew)
   const reason=e=>{const c=e&&e.code, m=e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message.split('. ')[0].replace(/\.$/,''):'';
     return c==='invalid_json'?' (התשובה לא הייתה שלמה)':m?` (${m})`:c==='rate_limited'?' (Claude ביקש להאט)':''};
@@ -19016,9 +19080,12 @@ async function readStatement0(fromText){
   // What the viewer changed is left as it is and listed. Nothing is saved here: the viewer saves.
   function check(A,M){
     const who=M.who.names[0]||'המודל החזק ביותר', notes=M.out.notes?` לפי ${who}: ${String(M.out.notes).slice(0,200)}`:'';
+    // another statement of this account, read at the same time and newer, holds the rows of the table now: only this
+    // statement's transactions are checked
+    const sup=(HOLD[A.ac]||0)!==A.hold;
     if(PFS.resets!==A.resets)return {who,text:`${who} סיים לבדוק, אבל בינתיים ביטלת את השינויים, ולכן הטבלה לא שונתה.`};
-    if(!M.rows.length)return {who,warn:true,text:`${who} לא מצא אחזקות בקבצים, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
-    if(M.out.derived&&!A.derived)return {who,warn:true,text:`${who} לא ראה בקבצים רשימת אחזקות, רק תנועות, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
+    if(!sup&&!M.rows.length)return {who,warn:true,text:`${who} לא מצא אחזקות בקבצים, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
+    if(!sup&&M.out.derived&&!A.derived)return {who,warn:true,text:`${who} לא ראה בקבצים רשימת אחזקות, רק תנועות, ולכן הטבלה נשארה כמו בקריאה המהירה. השווה אותה לדוח לפני השמירה.`+notes};
     if(!DRAFT)DRAFT=draftFromP();
     const ac=A.ac, saved=PFS.saves!==A.saves, fx=[], doubt=[], kept=[];
     const nm=v=>numN(v)==null?'לא ידוע':numN(v).toLocaleString('en-US',{maximumFractionDigits:4}), money=v=>numN(v)==null?'לא ידועה':ils(numN(v));
@@ -19032,6 +19099,7 @@ async function readStatement0(fromText){
       if(!eqP(numN(a.px),numN(b.px)))d.push(`מחיר בדוח ${nm(b.px)} (בקריאה המהירה ${nm(a.px)})`);
       return d.join(', ')};
     const mark=(sym,t,kind='fix')=>{FIXED.set(ac+'|'+sym,{t,kind}); (kind==='fix'?fx:doubt).push(sym+': '+t)};
+    if(!sup){
     const q=new Map(A.rows.map(r=>[r.sym,r])), f=new Map(M.rows.map(r=>[r.sym,{...r,acct:ac}]));
     const at=sym=>DRAFT.positions.findIndex(p=>p.acct===ac&&canonSym(p.sym,p.name)===sym);
     // the same security spelled two ways (GOOG / GOOGL, a TASE number / TA125): paired by name, or by quantity and cost
@@ -19055,28 +19123,32 @@ async function readStatement0(fromText){
       else if(a&&c&&rk(c)===rk(a)&&!M.partial)mark(sym,`${who} לא מצא אותו ${A.merge?'בצילום':'בדוח'}. אם הוא לא שלך, הסר אותו`,'doubt');
     }
     // the cash, the statement's date, the transactions: the same rule
-    const cI=Math.max(0,numOr(M.out.cashIls,0)), cU=Math.max(0,numOr(M.out.cashUsd,0)), want=A.merge?{ILS:cI||+A.cash0.ILS||0,USD:cU||+A.cash0.USD||0}:{ILS:cI,USD:cU};
+    const cI=Math.max(0,numOr(M.out.cashIls,0)), cU=Math.max(0,numOr(M.out.cashUsd,0)), raw=A.merge?{ILS:cI||+A.cash0.ILS||0,USD:cU||+A.cash0.USD||0}:{ILS:cI,USD:cU};
+    const want={ILS:Math.round((raw.ILS+(+A.cash.ILS||0)-(+A.cashRaw.ILS||0))*100)/100,USD:Math.round((raw.USD+(+A.cash.USD||0)-(+A.cashRaw.USD||0))*100)/100};
     const cur=DRAFT.cash[ac]||{ILS:0,USD:0}, sameC=(x,y)=>eqN(+x.ILS||0,+y.ILS||0,0.5)&&eqN(+x.USD||0,+y.USD||0,0.5);
     const ct=c=>[+c.ILS?ils(+c.ILS):'',+c.USD?'$'+(+c.USD).toLocaleString('en-US',{maximumFractionDigits:2}):''].filter(Boolean).join(' ו-')||'0';
-    if(!sameC(want,A.cash)&&!sameC(cur,want)){if(sameC(cur,A.cash)){DRAFT.cash[ac]={ILS:want.ILS,USD:want.USD}; fx.push(`מזומן: ${ct(want)} (בקריאה המהירה ${ct(A.cash)})`)} else kept.push('יתרת המזומן')}
+    if(!sameC(want,A.cash)&&!sameC(cur,want)){if(sameC(cur,A.cash)){DRAFT.cash[ac]={ILS:want.ILS,USD:want.USD}; fx.push(`מזומן: ${ct(raw)} (בקריאה המהירה ${ct(A.cashRaw)})`)} else kept.push('יתרת המזומן')}
     const d2=typeof M.out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(M.out.asOf)?M.out.asOf:null;
     if(d2&&d2!==A.asOf&&(((DRAFT.asOf||{})[ac])||null)===A.asOf){DRAFT.asOf[ac]=d2; fx.push(`תאריך הדוח: ${dFull(d2)}`)}
+    }
     let txNote='';
     if(txK(A.txs)!==txK(M.txs)){
       const pend=new Set((DRAFT.tx||[]).filter(t=>t.acct===ac).map(tkey));
       if(!saved&&A.txAdded.every(k=>pend.has(k))){DRAFT.tx=(DRAFT.tx||[]).filter(t=>!(t.acct===ac&&A.txAdded.includes(tkey(t)))); mergeTx(ac,M.txs); fx.push(`פעולות: ${M.txs.length} (בקריאה המהירה ${A.txs.length})`)}
       else txNote=saved?` הפעולות כבר נשמרו בהיסטוריה לפי הקריאה המהירה, ו-${who} קרא אותן אחרת (${M.txs.length} במקום ${A.txs.length}). בדוק אותן בלשונית "היסטוריה".`:` ${who} קרא את הפעולות אחרת (${M.txs.length} במקום ${A.txs.length}), אבל שינית אותן, ולכן הן נשארו.`}
-    if(M.accTot!=null)LASTREAD={acct:ac,total:M.accTot,ccy:M.accCcy,n:M.rows.length};
+    if(M.accTot!=null&&!sup)LASTREAD={acct:ac,total:M.accTot,ccy:M.accCcy,n:M.rows.length};
     if(fx.length)pfDirty(); if(fx.length||doubt.length){renderMine(true); renderTx()} renderDup();
     if(M.partial)txNote+=` ${who} לא הגיע לכל הצילומים, ולכן הבדיקה חלקית.`;
+    if(sup)txNote+=' האחזקות בטבלה הן מדוח חדש יותר של החשבון, ולכן בדוח הזה נבדקו רק הפעולות.';
     return {who,fx,doubt,kept,saved,txNote:txNote+notes};
   }
   // the table of one account as it is now, to tell whether the viewer touched it since a read; and putting it back
-  const fp=ac=>JSON.stringify([(DRAFT?DRAFT.positions:[]).filter(p=>p.acct===ac).map(rk).sort(),DRAFT&&DRAFT.cash[ac]?[+DRAFT.cash[ac].ILS||0,+DRAFT.cash[ac].USD||0]:[0,0],(DRAFT&&DRAFT.asOf||{})[ac]||null,txK(((DRAFT&&DRAFT.tx)||[]).filter(t=>t.acct===ac))]);
+  const fp=ac=>JSON.stringify([(DRAFT?DRAFT.positions:[]).filter(p=>p.acct===ac).map(rk).sort(),DRAFT&&DRAFT.cash[ac]?[+DRAFT.cash[ac].ILS||0,+DRAFT.cash[ac].USD||0]:[0,0],(DRAFT&&DRAFT.asOf||{})[ac]||null]);
   function undoRead(A){
     DRAFT.positions=DRAFT.positions.filter(p=>p.acct!==A.ac).concat([...A.before.values()].map(p=>({...p})));
     DRAFT.cash[A.ac]={ILS:+A.cash0.ILS||0,USD:+A.cash0.USD||0}; if(A.asOf0==null)delete DRAFT.asOf[A.ac]; else DRAFT.asOf[A.ac]=A.asOf0;
-    DRAFT.tx=(DRAFT.tx||[]).filter(t=>!(t.acct===A.ac&&A.txAdded.includes(tkey(t)))); for(const k of [...FIXED.keys()])if(k.startsWith(A.ac+'|'))FIXED.delete(k)}
+    DRAFT.tx=(DRAFT.tx||[]).filter(t=>!(t.acct===A.ac&&A.txAdded.includes(tkey(t)))); for(const k of [...FIXED.keys()])if(k.startsWith(A.ac+'|'))FIXED.delete(k);
+    HOLD[A.ac]=(HOLD[A.ac]||0)+1}
   // the viewer is typing in the table: the corrections wait until the field is left (at most two minutes), so the rows
   // do not move under the cursor
   const typing=()=>{const pane=document.querySelector('[data-pane="mine"]'), el=document.activeElement; return !!(pane&&el&&pane.contains(el)&&/INPUT|SELECT|TEXTAREA/.test(el.tagName))};
@@ -19108,7 +19180,7 @@ async function readStatement0(fromText){
           const w=idle(); if(w){upProg(pDone,'Claude בודק את הקריאה עם המודל החזק ביותר: התיקונים ייכנסו לטבלה כשתסיים להקליד'); await w}
           const who=M2.who.names[0]||'המודל החזק ביותר', mac=pick==='auto'&&!M2.known?A.ac:M2.ac, line='בדיקה עם '+(M2.by||who);
           let r;
-          const d2=isoOf(M2.out.asOf), older=mac===A.ac&&d2&&A.asOf0&&d2<A.asOf0;
+          const d2=isoOf(M2.out.asOf), older=(HOLD[A.ac]||0)===A.hold&&mac===A.ac&&d2&&A.asOf0&&d2<A.asOf0;
           if(older){
             // the quick read took it for the newest statement. If the table is as the quick read left it, the quick read is
             // taken back and only the transactions go in; otherwise the viewer is told.
@@ -19149,13 +19221,12 @@ async function readStatement0(fromText){
     if(cut&&cut.code==='rate_limited'){const keep=st.textContent; coolStart(); st.textContent=keep+' אפשר להמשיך בעוד '+coolLeft()+' שניות.'; clearInterval(coolT); coolT=setInterval(()=>{if(coolLeft()<=0)coolNote()},1000)}
     else coolN=0;
   }catch(e){
-    upFailed=true;
+    J.failed=true;
     const c=e&&e.code;
     st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?'Claude ביקש להאט.':c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
     if(c==='rate_limited')coolStart();
   }
-  upTick(false); upCtl=null; OVER=0; $('btnRead').disabled=!canWrite||coolLeft()>0; $('btnStop').hidden=true; showStaged();
-  {const el=$('upProg'), run=el&&el.querySelector('li.now'); if(run&&/Claude/.test(run.textContent))run.remove(); if(el&&upFailed)el.hidden=true}
+  upTick(false); J.ctl=null; if(/Claude/.test(J.now))J.now=''; showStaged(); renderJobs();
 }
 // ---- stage 8 (onboarding): a new holding's price as soon as it can be had. The server's view of the shared prices
 // includes a holding once it is saved, so the prices are read again; a security nobody held before gets an update request
@@ -19202,7 +19273,7 @@ async function savePf(){
       // save the corrections, and the explanation comes after that save. It moves to the overview only from this screen.
       const go=added.length?pxAfterSaveMax(added):Promise.resolve();
       if(firstPf)go.then(async()=>{for(let i=0;i<1800&&upBusy;i++)await new Promise(r=>setTimeout(r,500));
-        if(dDirty&&[...FIXED.values()].some(v=>v.kind==='fix')){FIRSTX=true;return} FIRSTX=false; try{if(document.body.dataset.page==='mine')showTab('overview',true); anaRun('explain',null,{first:true})}catch(e){}})}
+        if(dDirty){FIRSTX=true;return} FIRSTX=false; try{if(document.body.dataset.page==='mine')showTab('overview',true); anaRun('explain',null,{first:true})}catch(e){}})}
     const miss=pos.filter(p=>!RAWQ||(RAWQ.prices||{})[p.sym]==null).map(p=>p.sym);
     if(miss.length)$('upState').textContent=`עדיין אין מחיר חי ל-${[...new Set(miss)].join(', ')}. עד שיתווסף, מוצג המחיר מהדוח.`;
   }catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
@@ -19236,7 +19307,7 @@ async function wipeAll(){
   st.textContent='מוחק…'; $('btnWipeYes').disabled=true; $('btnWipeNo').disabled=true;
   const run=async f=>{try{await f()}catch(e){ok=false}};
   const pdel=async n=>{if(LOCAL){try{localStorage.removeItem('tr_'+n)}catch(e){}return} await db.doc(PATHS[n]).delete()};
-  clearTimeout(pTimer); clearTimeout(timer); if(upCtl){try{upCtl.abort()}catch(e){}}
+  clearTimeout(pTimer); clearTimeout(timer); stopJobs(); JOBS.length=0; for(const k in HOLD)delete HOLD[k];
   if(db||LOCAL){
     for(const n of ['portfolio','plan','history','daily'])await run(()=>pdel(n));
     await run(async()=>{if(LOCAL){try{localStorage.removeItem('tr_ack')}catch(e){}return} const r=db.doc(PATHS.ack), sn=await r.get(); if(sn&&sn.exists)await r.delete()});
@@ -19269,7 +19340,7 @@ $('upFile').addEventListener('change',e=>{stageFiles(e.target.files);e.target.va
 $('upImg').addEventListener('change',e=>{stageFiles(e.target.files);e.target.value=''});
 // screenshots can only be read where the host allows images; otherwise hide the picker so nobody hits a dead end
 try{window.claude&&window.claude.use&&window.claude.use('sample').then(sm=>{if(!sm||!sm.limits)return;return sm.limits().then(c=>{if(!(c&&c.images&&c.images.maxCount)){document.querySelector('label[for=upImg]').style.display='none';document.querySelector('.upbtns').style.gridTemplateColumns='1fr';$('dropHint').textContent='PDF, Excel או CSV · אפשר כמה קבצים יחד · צילומי מסך לא נתמכים בתצוגה הזו. אפשר להעלות את הדוח כ-PDF, או להקליד את הניירות ב"הקלדה מהירה" שלמעלה'}})}).catch(()=>{})}catch(e){}
-$('upPass').addEventListener('keydown',e=>{if(e.key==='Enter'&&!upCtl)readStatement()});
+$('upPass').addEventListener('keydown',e=>{if(e.key==='Enter')readStatement()});
 const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
 document.addEventListener('dragover',e=>{if(hasFiles(e)&&canWrite){e.preventDefault();$('drop').classList.add('over')}});
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)$('drop').classList.remove('over')});

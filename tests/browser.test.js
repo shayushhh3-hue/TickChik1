@@ -12,7 +12,7 @@ const R=new URL('..',import.meta.url).pathname;
 let claude, seen=[], bodies=[], srv, U, store, browser, docs;
 const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
 before(async()=>{
-  claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens});
+  claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens,at:Date.now()});
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
     // reading a file: both reads stream, as the server asks for them. The quick read (Haiku) answers at once; the strongest
     // model's read takes a while (SLOWCHECK: longer). QUICKBAD: the quick read gets MSFT's quantity wrong, sees a security
@@ -23,7 +23,19 @@ before(async()=>{
     const isRead=p.includes('You extract holdings'), bad=p.includes('QUICKBAD'), cutQ=p.includes('QUICKCUT'), old=p.includes('OLDREPORT');
     const txs=cutQ?Array.from({length:12},(_,i)=>({date:`2026-09-${10+i}`,sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:400+i,amount:400+i,ccy:'USD',fee:1}))
       :old?[{date:'2025-11-02',sym:'MSFT',name:'Microsoft',side:'div',qty:null,px:null,amount:12,ccy:'USD',fee:null},{date:'2025-12-15',sym:'MSFT',name:'Microsoft',side:'buy',qty:1,px:380,amount:380,ccy:'USD',fee:1}]:[];
-    const readOut=q=>{const pos=q&&bad?[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:4200,group:'tech'},{sym:'ZZZQ',name:'Phantom',qty:1,ccy:'USD',costIls:50,group:'tech'}]
+    // MULTI:mar / jun / sep: three reports of one account, of three dates (the newest is today's)
+    const multi=(p.match(/MULTI:(\w+)/)||[])[1], ago=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10);
+    const tx=(d,side,qty,amt)=>({date:d,sym:'MSFT',name:'Microsoft',side,qty,px:qty?amt/qty:null,amount:amt,ccy:'USD',fee:null});
+    const MULTI={mar:{asOf:ago(200),pos:[{sym:'MSFT',name:'Microsoft',qty:1,ccy:'USD',costIls:1400,group:'tech'}],tx:[tx(ago(210),'buy',1,380)]},
+      jun:{asOf:ago(100),pos:[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:2800,group:'tech'}],tx:[tx(ago(130),'buy',1,400),tx(ago(110),'div',null,5)]},
+      sep:{asOf:TODAY,pos:[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'},{sym:'NVDA',name:'NVIDIA',qty:6,ccy:'USD',costIls:3150,group:'tech'}],tx:[tx(ago(40),'buy',1,420),tx(ago(30),'div',null,6),tx(ago(20),'sell',0.5,215)]}};
+    // MULTI2: the same three, all newer than the table, so whichever read ends first replaces the holdings (ORDER: fwd, the
+    // oldest read ends first; rev, the newest). DERIVED: a file with transactions only (the holdings worked out from them).
+    const m2=(p.match(/MULTI2:(\w+)/)||[])[1], M2D={mar:ago(10),jun:ago(5),sep:TODAY};
+    const readOut=q=>{if(m2&&MULTI[m2]){const D=MULTI[m2]; return JSON.stringify({broker:'exc',asOf:M2D[m2],cashIls:100,cashUsd:0,positions:D.pos,transactions:D.tx.map((t,i)=>({...t,date:ago(9-i)}))})}
+      if(multi&&MULTI[multi]){const D=MULTI[multi]; return JSON.stringify({broker:'exc',asOf:D.asOf,cashIls:100,cashUsd:0,positions:D.pos,transactions:D.tx})}
+      if(p.includes('DERIVED'))return JSON.stringify({broker:'exc',asOf:TODAY,cashIls:0,cashUsd:0,derived:true,positions:[{sym:'AMZN',name:'Amazon',qty:4,ccy:'USD',costIls:2600,group:'tech'}],transactions:[tx(ago(3),'buy',4,700)]});
+      const pos=q&&bad?[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:4200,group:'tech'},{sym:'ZZZQ',name:'Phantom',qty:1,ccy:'USD',costIls:50,group:'tech'}]
         :[{sym:'MSFT',name:'Microsoft',qty:3,ccy:'USD',costIls:4200,group:'tech'},...(bad?[{sym:'NVDA',name:'NVIDIA',qty:6,ccy:'USD',costIls:3150,group:'tech'}]:[])];
       if(p.includes('QUICKSPELL'))pos.push({sym:q?'GOOG':'GOOGL',name:'Alphabet Class A',qty:2,ccy:'USD',costIls:1500,group:'tech'});
       if(q&&p.includes('QUICKGROUP'))pos[0]={...pos[0],group:'cons'};
@@ -35,7 +47,7 @@ before(async()=>{
     if(isRead&&!J.stream){res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',model:J.model,content:[{type:'text',text:readOut(true)}],stop_reason:'end_turn',usage:{input_tokens:2000,output_tokens:200}})); return}
     if(J.stream&&J.model==='claude-haiku-5-5'){
       if(p.includes('QUICKFAIL')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}
-      await new Promise(r=>setTimeout(r,100)); const q=readOut(true); stream(cutQ?q.slice(0,Math.floor(q.length*0.7)):q,cutQ?'max_tokens':'end_turn'); return}
+      await new Promise(r=>setTimeout(r,m2?{fwd:{mar:100,jun:500,sep:900},rev:{mar:900,jun:500,sep:100}}[(p.match(/ORDER:(\w+)/)||[])[1]||'fwd'][m2]:100)); const q=readOut(true); stream(cutQ?q.slice(0,Math.floor(q.length*0.7)):q,cutQ?'max_tokens':'end_turn'); return}
     if(J.stream){await new Promise(r=>setTimeout(r,p.includes('SLOWCHECK')?4000:1500));
       if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
       stream(readOut(false),'end_turn'); return}
@@ -501,6 +513,10 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   await R.pick('statement9.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nOLDREPORT,,0,0\n'); await R.done();
   assert.deepEqual((await R.rows()).map(r=>r.acct+':'+r.sym+':'+r.qty).sort(),before,'the holdings are not replaced');
   assert.ok((await R.state()).includes(`הדוח הזה מ-31.12.2025, ישן יותר מהדוח שכבר בטבלה לחשבון אקסלנס (מ-${dF(TODAY)}), ולכן האחזקות והמזומן לא הוחלפו. נוספו ממנו 2 פעולות`),await R.state());
+  // a file with transactions only (its holdings worked out from them): the real holdings stay, its transactions are added
+  await R.pick('statement10.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nDERIVED,,0,0\n'); await R.done();
+  assert.deepEqual((await R.rows()).map(r=>r.acct+':'+r.sym+':'+r.qty).sort(),before,'worked-out holdings do not replace the real ones');
+  assert.match(await R.state(),/בקובץ הזה אין רשימת אחזקות, רק פעולות, ולכן האחזקות והמזומן לא הוחלפו\. נוספה ממנו פעולה אחת/);
   assert.match(await R.prog(),/נקרא עם Claude Fable 5\.1/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
@@ -547,4 +563,43 @@ test('reading a file: what the viewer changed or saved meanwhile stays; "quick o
   await pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&/נקרא עם/.test(document.getElementById('upProg').textContent),null,{timeout:20000});
   assert.deepEqual(bodies.slice(n0).map(b=>b.model),['claude-haiku-5-5']); assert.doesNotMatch(await R.prog(),/בדיקה עם/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('reading several reports at once: each on its own and at the same time; the newest holds the holdings, all add their transactions',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+  const n0=bodies.length, csv=x=>({name:x+'.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nMULTI:'+x+',,0,0\n')});
+  await pg.setInputFiles('#upFile',[csv('mar'),csv('jun'),csv('sep')]);
+  // three reads, each with its quick read and its check, sent together
+  for(let i=0;i<100&&bodies.length<n0+6;i++)await new Promise(r=>setTimeout(r,50));
+  const sent=bodies.slice(n0); assert.equal(sent.length,6); assert.ok(sent[5].at-sent[0].at<1000,'the three reads run at the same time');
+  await pg.waitForFunction(()=>document.getElementById('upProg').classList.contains('jobs')&&document.querySelectorAll('#upProg li[data-job]').length===3,null,{timeout:10000});
+  await pg.waitForFunction(()=>/הסתיימה הקריאה של 3 קבצים/.test(document.getElementById('upState').textContent),null,{timeout:30000});
+  const rows=(await R.rows()).filter(r=>r.acct==='exc');
+  assert.deepEqual(rows.map(r=>r.sym+':'+r.qty).sort(),['MSFT:3','NVDA:6'],'the newest report holds the holdings');
+  const lines=await pg.evaluate(()=>[...document.querySelectorAll('#upProg li[data-job]')].map(li=>li.textContent));
+  for(const x of ['mar','jun'])assert.ok(lines.some(l=>l.includes(x+'.csv')&&/ישן יותר/.test(l)&&/נוספו ממנו|נוספה ממנו/.test(l)),x+': older, so only its transactions');
+  assert.ok(lines.some(l=>l.includes('sep.csv')&&/בדיקה עם Claude Fable 5\.1: הכול תואם/.test(l)&&/מצא אותו דבר/.test(l)),'the newest: checked, and the same');
+  assert.ok(lines.some(l=>l.includes('jun.csv')&&/נוספו 2 פעולות/.test(l)),'a finished file shows what it did');
+  assert.equal(await pg.evaluate(()=>document.querySelectorAll('#txBox tbody tr').length),6,'the transactions of all three, none twice');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('several reports at once, in any order: the newest holds the holdings, whichever read ends first',T,async t=>{
+  if(skip())return t.skip('no browser');
+  for(const order of ['fwd','rev']){
+    const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+    const csv=x=>({name:x+'.csv',mimeType:'text/csv',buffer:Buffer.from(`Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nMULTI2:${x} ORDER:${order},,0,0\n`)});
+    await pg.setInputFiles('#upFile',[csv('mar'),csv('jun'),csv('sep')]);
+    await pg.waitForFunction(()=>/הסתיימה הקריאה של 3 קבצים/.test(document.getElementById('upState').textContent),null,{timeout:30000});
+    assert.deepEqual((await R.rows()).filter(r=>r.acct==='exc').map(r=>r.sym+':'+r.qty).sort(),['MSFT:3','NVDA:6'],order+': the newest report holds the holdings');
+    assert.equal(await pg.evaluate(()=>document.querySelectorAll('#txBox tbody tr').length),6,order+': the transactions of all three, none twice');
+    const lines=await pg.evaluate(()=>[...document.querySelectorAll('#upProg li[data-job]')].map(li=>li.textContent));
+    // the older two give only their transactions: read after the newest ("older"), or replaced by it later (only its
+    // transactions checked). Which of the two depends on when each answer comes (a browser also opens at most 6
+    // connections to one site at a time, so some reads wait for others)
+    for(const x of ['mar','jun'])assert.ok(lines.some(l=>l.includes(x+'.csv')&&/ישן יותר|נבדקו רק הפעולות/.test(l)),order+': '+x+' '+JSON.stringify(lines));
+    assert.ok(!lines.some(l=>/לא שיניתי מה שערכת/.test(l)),order+': nothing is taken for the viewer\'s own change');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }
 });
