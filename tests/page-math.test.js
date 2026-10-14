@@ -12,7 +12,8 @@ const dayAgo=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA',{timeZon
 const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
-  'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx'],G,['allBuy']);
+  'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -114,11 +115,110 @@ test('realized profit: first in, first out', ()=>{
   assert.equal(F.realizedOf([]),0);
 });
 
-test('a period\'s result: the change in value less the change in deposits', ()=>{
+test('a period\'s result: the change in value less the change in deposits; the return counts money in from mid-month', ()=>{
   const S={'2026-01':{val:1000,dep:1000},'2026-02':{val:1300,dep:1200},'2026-03':{val:1100,dep:1200}};
-  const r=F.resultOf(S,['2026-02']); near(r.gain,100); near(r.dep,200); near(r.pct,10);
-  const q=F.resultOf(S,['2026-01','2026-02','2026-03']); assert.equal(q.fromZero,true); near(q.gain,-100); near(q.pct,-100/1200*100);
+  // February: +100 on 1,000 at the start and 200 put in during the month, counted for half of it (Modified Dietz)
+  const r=F.resultOf(S,['2026-02']); near(r.gain,100); near(r.dep,200); near(r.pct,100/(1000+200*0.5)*100);
+  // three months from nothing: January's 1,000 is where the period starts (counted in full), February's 200 for 1.5 of 3 months
+  const q=F.resultOf(S,['2026-01','2026-02','2026-03']); assert.equal(q.fromZero,true); near(q.gain,-100); near(q.pct,-100/(1000+200*1.5/3)*100);
+  // a first month that is not where the money starts: the period starts a month later
+  const n=F.resultOf({...S,'2026-01':{val:1000,dep:1000,nostart:true}},['2026-01','2026-02']); assert.equal(n.first,'2026-02'); assert.equal(n.cut,true); near(n.gain,100);
+  // one month from a table uploaded from the app keeps the app's own return
+  near(F.resultOf({...S,'2026-02':{val:1300,dep:1200,ret:7.5,up:true}},['2026-02']).pct,7.5);
   assert.equal(F.resultOf(S,['2025-05']).ok,false);
+});
+
+test('a monthly table without years: the latest month is the latest one up to today, back one month at a time', ()=>{
+  const r=F.monRows([{month:11,value:100,returnPct:1,flow:0},{month:12,value:110,returnPct:2,flow:5},{month:1,value:120,returnPct:3,flow:0},{month:2,value:130,returnPct:-1,flow:-10}],'2026-02-20');
+  assert.deepEqual(r.map(x=>x.ym),['2025-11','2025-12','2026-01','2026-02']); assert.equal(r[3].part,true); assert.equal(r[3].asOf,'2026-02-20'); assert.equal(r[0].part,undefined);
+  assert.deepEqual([r[3].v,r[3].ret,r[3].flow,r[3].ccy],[130,-1,-10,'ILS']);
+  // newest first, as some apps show it; February is over by March
+  const d=F.monRows([{month:2,value:130},{month:1,value:120},{month:12,value:110}],'2026-03-05');
+  assert.deepEqual(d.map(x=>x.ym),['2025-12','2026-01','2026-02']); assert.equal(d.some(x=>x.part),false);
+  // a month after this one is last year's
+  assert.deepEqual(F.monRows([{month:11,value:1},{month:12,value:2}],'2026-10-14').map(x=>x.ym),['2025-11','2025-12']);
+  // years that are shown are kept; a row without a month or a value is left out
+  assert.deepEqual(F.monRows([{month:5,year:2024,value:1},{month:6,year:2024,value:2},{month:0,value:3},{month:7,value:null}],'2026-10-14').map(x=>x.ym),['2024-05','2024-06']);
+  assert.deepEqual(F.monRows(null,'2026-10-14'),[]);
+  // two screenshots that overlap: a row that shows twice is one month
+  assert.deepEqual(F.monRows([7,8,9,8,9,10].map(m=>({month:m,value:m*100})),'2026-10-14').map(x=>x.ym),['2026-07','2026-08','2026-09','2026-10']);
+  // thirteen months listed oldest first: October comes twice, a year apart
+  assert.deepEqual(F.monRows([10,11,12,1,2,3,4,5,6,7,8,9,10].map((m,i)=>({month:m,value:100+i})),'2026-10-14').map(x=>x.ym).filter(x=>x.endsWith('-10')),['2025-10','2026-10']);
+});
+
+test('the months: a table uploaded from an app, its own returns, and the money in counted once', ()=>{
+  const cur=F.ymNow(), m=k=>F.ymAdd(cur,-k);
+  const up=[{ym:m(3),v:10100,ccy:'ILS',ret:1,flow:10000},{ym:m(2),v:10302,ccy:'ILS',ret:2,flow:0},{ym:m(1),v:15000,ccy:'ILS',ret:-1.5,flow:5000}];
+  G.HS={depIlsNow:0,monthly:[],accounts:[{acct:'exc',ccy:'ILS',trades:[],deposits:[],monthly:up}]}; G.P=null; G.Q=null; G.DY=null; plan();
+  let S=F.monthSeries();
+  assert.deepEqual(S.map(r=>[r.ym,r.src,r.val,r.flow,r.dep]),[[m(3),'up',10100,10000,10000],[m(2),'up',10302,0,10000],[m(1),'up',15000,5000,15000]]);
+  assert.equal(S[0].gain,null,'the first month: its start is not known'); assert.equal(S[0].ret,1); assert.equal(S[0].own,true,'the app\'s own return'); near(S[2].gain,15000-10302-5000);
+  near(F.depUp(),15000,'all the money in comes from the table');
+  // a deposit saved one by one in a month the table covers is not counted again
+  G.HS.accounts[0].deposits=[{date:m(1)+'-10',amount:5000,ccy:'ILS'}]; G.HS.depIlsNow=5000;
+  near(F.depTotal(),15000);
+  // the plan's deposit of such a month is covered by the table too
+  plan([{month:m(1),amount:400,at:m(1)+'-12T10:00:00Z'}]); near(F.planDepExtra(),0); near(F.depTotal(),15000); plan();
+  // with a portfolio: the current month is today's value, and its money in is what came in since the last month-end
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:50,costIls:15000,group:'tech'}],cash:[]}; G.Q={usdIls:3.5,prices:{MSFT:100},prev:{}};
+  S=F.monthSeries(); const now=S[S.length-1]; assert.equal(now.now,true); near(now.val,17500); near(now.flow,0); near(now.gain,2500); near(now.ret,2500/15000*100);
+  // a saved month-end (from a statement) wins over the uploaded table for its month, and its money in is not added again
+  G.HS.monthly=[{ym:m(2),tot:10400,by:{exc:10400},dep:10000}];
+  S=F.monthSeries(); const two=S.find(r=>r.ym===m(2)); assert.equal(two.src,'saved'); assert.equal(two.val,10400); near(F.depUp(),15000-5000,'month -2 is the statement\'s now');
+  // another account that holds something today but has no monthly data: those months are only part of the portfolio
+  G.HS.monthly=[]; G.P.positions.push({sym:'KO',acct:'blink',ccy:'USD',qty:1,costIls:200,group:'cons'});
+  S=F.monthSeries(); assert.deepEqual(S.filter(r=>r.miss).map(r=>r.ym),[m(3),m(2),m(1)]); assert.deepEqual(S[0].miss,['blink']);
+  // money put in long before the table (₪50,000 a year ago): it is in the total, but no month of the table and not this
+  // month shows it as money in
+  G.P.positions=G.P.positions.filter(p=>p.acct==='exc'); G.HS.accounts[0].deposits.push({date:m(12)+'-05',amount:50000,ccy:'ILS'}); G.HS.depIlsNow=55000;
+  S=F.monthSeries(); const n2=S[S.length-1]; near(F.depTotal(),65000); near(n2.flow,0); near(n2.gain,2500); near(S.find(r=>r.ym===m(1)).flow,5000); near(S.find(r=>r.ym===m(3)).dep,60000,0.01,'the deposits so far include what came before the table');
+  // a month with no row of its own still has its money in: the months before it count it in their deposits so far
+  G.HS.accounts[0].deposits=[{date:m(1)+'-10',amount:5000,ccy:'ILS'}]; G.HS.depIlsNow=5000; G.HS.accounts[0].monthly=up.slice(0,2);   // the table ends at month -2
+  S=F.monthSeries(); near(S.find(r=>r.ym===m(2)).dep,10000,0.01,'month -1 has no row, but its ₪5,000 is not counted before it'); near(S[S.length-1].flow,0);
+  // the reports of someone whose only month is this one: from the start, as before
+  G.HS={depIlsNow:0,monthly:[],accounts:[]}; const M=F.seriesMap(); assert.deepEqual(Object.keys(M),[cur]); assert.equal(M[cur].nostart,undefined); assert.equal(F.resultOf(M,[cur]).ok,true);
+  G.HS=null; G.P=null; G.Q=null;
+});
+
+test('the months of two accounts: one that opened later counts as 0 before; one whose start is not known leaves the month partial', ()=>{
+  const cur=F.ymNow(), m=k=>F.ymAdd(cur,-k); G.P=null; G.Q=null; G.DY=null; plan();
+  const exc=[{ym:m(4),v:20000,ccy:'ILS',ret:1,flow:0},{ym:m(3),v:20200,ccy:'ILS',ret:1,flow:0},{ym:m(2),v:20400,ccy:'ILS',ret:1,flow:0},{ym:m(1),v:20600,ccy:'ILS',ret:1,flow:0}];
+  // Blink opened two months ago: its first month is mostly its own money in
+  const blink=[{ym:m(2),v:990,ccy:'ILS',ret:-1,flow:1000},{ym:m(1),v:1010,ccy:'ILS',ret:2,flow:0}];
+  G.HS={depIlsNow:0,monthly:[],accounts:[{acct:'exc',ccy:'ILS',monthly:exc},{acct:'blink',ccy:'ILS',monthly:blink}]};
+  let S=F.monthSeries(); assert.deepEqual(S.map(r=>[r.ym,!!r.miss]),[[m(4),false],[m(3),false],[m(2),false],[m(1),false]]);
+  near(S[2].val,21390); assert.equal(S[2].ret==null||!S[2].own,true,'two accounts: the return is the page\'s, not one app\'s');
+  // a Blink table that starts later but not at its opening: the months before it are only Excellence's
+  G.HS.accounts[1].monthly=[{ym:m(2),v:5000,ccy:'ILS',ret:1,flow:0},{ym:m(1),v:5050,ccy:'ILS',ret:1,flow:0}];
+  S=F.monthSeries(); assert.deepEqual(S.map(r=>[r.ym,(r.miss||[]).join()]),[[m(4),'blink'],[m(3),'blink'],[m(2),''],[m(1),'']]);
+  assert.equal(S[0].gain,null); assert.equal(S[2].gain,null,'the month after a partial one has no start to measure from');
+  // a plan deposit of a month: covered when its amount is one table's money in that month, or when every account has the
+  // month's table; not by another account's table alone
+  G.HS.accounts[1].monthly=blink; assert.equal(F.planCovered(m(2)+'-10',600),true,'both accounts have the month\'s table');
+  G.HS.accounts[0].monthly=exc.slice(0,2);
+  assert.equal(F.planCovered(m(2)+'-10',1000),true); assert.equal(F.planCovered(m(2)+'-10',600),false);
+  G.HS=null;
+});
+
+test('the history keeps currency conversions and monthly results; a month "so far" never replaces a whole one', ()=>{
+  G.HS=null; G.Q={usdIls:3.5,prices:{},prev:{}};
+  G.DRAFT={tx:[{acct:'blink',date:'2026-07-17',side:'fx',amount:94.92,ccy:'ILS',toCcy:'USD',toAmount:null},{acct:'blink',date:'2026-07-15',side:'deposit',amount:600,ccy:'ILS'}],
+    monthly:{exc:[{ym:'2026-08',v:100,ccy:'ILS',ret:1,flow:0},{ym:'2026-09',v:110,ccy:'ILS',ret:2,flow:5,part:true,asOf:'2026-09-14'}]}};
+  let hx=F.historyWithTx(); const B=hx.H.accounts.find(a=>a.acct==='blink'), E=hx.H.accounts.find(a=>a.acct==='exc');
+  assert.deepEqual(B.fx,[{date:'2026-07-17',amount:94.92,ccy:'ILS',toCcy:'USD'}]); near(hx.H.depIlsNow,600,0.005,'a conversion is not money in');
+  assert.equal(E.monthly.length,2); assert.equal(hx.months,2); assert.equal(hx.added,2);
+  // read again: the amount received completes the conversion; September as a whole month replaces "so far"
+  G.HS=hx.H; G.DRAFT={tx:[{acct:'blink',date:'2026-07-17',side:'fx',amount:94.92,ccy:'ILS',toCcy:'USD',toAmount:25.61}],monthly:{exc:[{ym:'2026-09',v:111,ccy:'ILS',ret:2.1,flow:5}]}};
+  hx=F.historyWithTx(); const B2=hx.H.accounts.find(a=>a.acct==='blink'), E2=hx.H.accounts.find(a=>a.acct==='exc');
+  assert.equal(B2.fx.length,1); assert.equal(B2.fx[0].toAmount,25.61); const sep=E2.monthly.find(r=>r.ym==='2026-09'); assert.equal(sep.part,undefined); assert.equal(sep.v,111);
+  // a later "so far" of a month that is already whole does not replace it
+  G.HS=hx.H; G.DRAFT={tx:[],monthly:{exc:[{ym:'2026-09',v:50,ccy:'ILS',ret:0,flow:0,part:true,asOf:'2026-09-20'}]}};
+  hx=F.historyWithTx(); assert.equal(hx.H.accounts.find(a=>a.acct==='exc').monthly.find(r=>r.ym==='2026-09').v,111); assert.equal(hx.months,0);
+  // uploaded again: each month keeps the time it was first uploaded (a month-end saved in between still comes after it)
+  const at0=hx.H.accounts.find(a=>a.acct==='exc').monthly.find(r=>r.ym==='2026-08').at;
+  G.HS=hx.H; G.DRAFT={tx:[],monthly:{exc:[{ym:'2026-08',v:100,ccy:'ILS',ret:1,flow:0}]}}; hx=F.historyWithTx();
+  assert.equal(hx.H.accounts.find(a=>a.acct==='exc').monthly.find(r=>r.ym==='2026-08').at,at0);
+  G.HS=null; G.DRAFT=null; G.Q=null;
 });
 
 test('the forecast and the plan\'s split of a deposit', ()=>{

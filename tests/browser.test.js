@@ -9,7 +9,7 @@ import http from 'node:http';
 import {fixture,closes} from './fixture.js';
 
 const R=new URL('..',import.meta.url).pathname;
-let claude, seen=[], bodies=[], srv, U, store, browser, docs;
+let claude, seen=[], bodies=[], srv, U, store, browser, docs, R5;
 const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens,at:Date.now()});
@@ -32,7 +32,15 @@ before(async()=>{
     // MULTI2: the same three, all newer than the table, so whichever read ends first replaces the holdings (ORDER: fwd, the
     // oldest read ends first; rev, the newest). DERIVED: a file with transactions only (the holdings worked out from them).
     const m2=(p.match(/MULTI2:(\w+)/)||[])[1], M2D={mar:ago(10),jun:ago(5),sep:TODAY};
-    const readOut=q=>{if(m2&&MULTI[m2]){const D=MULTI[m2]; return JSON.stringify({broker:'exc',asOf:M2D[m2],cashIls:100,cashUsd:0,positions:D.pos,transactions:D.tx.map((t,i)=>({...t,date:ago(9-i)}))})}
+    // FLOWSCREEN: a screen of deposits and currency conversions, no holdings. MONTHLY: an app's table of monthly results
+    // (no years shown), the last three months and this one, by the month in Israel
+    const ilNow=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Jerusalem'})), mo=k=>new Date(ilNow.getFullYear(),ilNow.getMonth()-k,1).getMonth()+1;
+    const FLOWS={broker:'exc',asOf:null,cashIls:0,cashUsd:0,positions:[],monthly:[],transactions:[{date:ago(200),side:'deposit',amount:600,ccy:'ILS'},{date:ago(198),side:'fx',amount:94.92,ccy:'ILS',toCcy:'USD',toAmount:null},
+      {date:ago(230),side:'fx',amount:187.58,ccy:'USD',toCcy:'ILS',toAmount:690.3},{date:ago(260),side:'deposit',amount:100,ccy:'ILS'}]};
+    const MONTHS={broker:'exc',asOf:null,cashIls:0,cashUsd:0,positions:[],transactions:[],monthly:[{month:mo(3),value:10100,ccy:'ILS',returnPct:1,flow:10000},{month:mo(2),value:10302,ccy:'ILS',returnPct:2,flow:0},
+      {month:mo(1),value:15000,ccy:'ILS',returnPct:-1.5,flow:5000},{month:mo(0),value:15100,ccy:'ILS',returnPct:0.67,flow:0}]};
+    const readOut=q=>{if(p.includes('FLOWSCREEN'))return JSON.stringify(FLOWS); if(p.includes('MONTHLY'))return JSON.stringify(MONTHS);
+      if(m2&&MULTI[m2]){const D=MULTI[m2]; return JSON.stringify({broker:'exc',asOf:M2D[m2],cashIls:100,cashUsd:0,positions:D.pos,transactions:D.tx.map((t,i)=>({...t,date:ago(9-i)}))})}
       if(multi&&MULTI[multi]){const D=MULTI[multi]; return JSON.stringify({broker:'exc',asOf:D.asOf,cashIls:100,cashUsd:0,positions:D.pos,transactions:D.tx})}
       if(p.includes('DERIVED'))return JSON.stringify({broker:'exc',asOf:TODAY,cashIls:0,cashUsd:0,derived:true,positions:[{sym:'AMZN',name:'Amazon',qty:4,ccy:'USD',costIls:2600,group:'tech'}],transactions:[tx(ago(3),'buy',4,700)]});
       const pos=q&&bad?[{sym:'MSFT',name:'Microsoft',qty:2,ccy:'USD',costIls:4200,group:'tech'},{sym:'ZZZQ',name:'Phantom',qty:1,ccy:'USD',costIls:50,group:'tech'}]
@@ -65,6 +73,7 @@ before(async()=>{
   store.addUser({email:'n2@example.com',password:'friend-pass-3',role:'friend'});   // a second new user, for a security nobody held
   store.addUser({email:'r3@example.com',password:'friend-pass-4',role:'friend'});   // a new user who reads statements and saves
   store.addUser({email:'r4@example.com',password:'friend-pass-5',role:'friend'});   // a new user who reads several statements at once
+  R5=store.addUser({email:'r5@example.com',password:'friend-pass-6',role:'friend'}).id;   // a new user who keeps deposits and monthly results, no holdings
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
@@ -79,9 +88,9 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
+  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -627,6 +636,41 @@ test('a partner reads like the owner: several reports at once, prices on request
   await pg.waitForFunction(()=>[...document.querySelectorAll('#upProg li[data-job]')].some(li=>/busy\.csv/.test(li.textContent)&&/האתר הגיע למגבלת הקצב שלו/.test(li.textContent)),null,{timeout:30000});
   await pg.waitForFunction(()=>/Claude ביקש להאט\. אפשר להמשיך בעוד/.test(document.getElementById('upState').textContent),null,{timeout:5000});
   assert.doesNotMatch(await pg.evaluate(()=>document.body.innerText),/חשבון Claude/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('deposits, conversions and monthly results without holdings: kept in the history, and the monthly table shows them',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'r5'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(300);
+  const pick=async(name,csv)=>{const n0=bodies.length; await pg.setInputFiles('#upFile',{name,mimeType:'text/csv',buffer:Buffer.from(csv)}); for(let i=0;i<200&&bodies.length===n0;i++)await new Promise(r=>setTimeout(r,50))};
+  const idle=()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/Claude/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000});
+  // a screen of deposits and conversions: the strongest model's numbers go in; a conversion is not a deposit
+  await pick('flows.csv','Date,Action,Amount\n2026-04-01,FLOWSCREEN,600\n'); await idle();
+  let st=await pg.evaluate(()=>document.getElementById('upState').textContent);
+
+  assert.match(st,/זוהו 2 הפקדות בחשבון אקסלנס/); assert.match(st,/המרות המט״ח נשמרות בהיסטוריה של חשבון אקסלנס, והן לא נספרות כהפקדה/);
+  const tx=await pg.evaluate(()=>document.getElementById('txBox').innerText);
+  assert.match(tx,/המרת מט״ח/); assert.match(tx,/₪94\.92 לדולרים/); assert.match(tx,/\$187\.58 לשקלים \(₪690\.3\)/);
+  // a table of monthly results
+  await pick('returns.csv','Month,Value,Return,Deposits\nMONTHLY,10100,1%,10000\n2,10302,2%,0\n3,15000,-1.5%,5000\n'); await idle();
+  st=await pg.evaluate(()=>document.getElementById('upState').textContent);
+  assert.match(st,/טבלת התשואות של חשבון אקסלנס \(.+\) תישמר בהיסטוריה/);
+  assert.equal(await pg.evaluate(()=>document.querySelectorAll('#monBox tbody tr').length),4,'the table read, before it is saved');
+  // saved with no holdings in the table
+  await pg.evaluate(()=>document.getElementById('btnPfSave').click());
+  await pg.waitForFunction(()=>/נשמר בהיסטוריה/.test(document.getElementById('pfSaved').textContent),null,{timeout:15000});
+  assert.match(await pg.evaluate(()=>document.getElementById('pfSaved').textContent),/נוספו 4 פעולות להיסטוריה\. נשמרו 4 חודשים מטבלת התשואות\. עוד אין כאן רשימת אחזקות/);
+  const H=store.getDoc(`data/users/${R5}/history`).data, A=H.accounts.find(a=>a.acct==='exc');
+  assert.equal(A.deposits.length,2); assert.equal(H.depIlsNow,700,'the two deposits; the conversions are not money in'); assert.equal(A.fx.length,2); assert.equal(A.fx.find(x=>x.ccy==='USD').toAmount,690.3);
+  assert.equal(A.monthly.length,4); assert.equal(A.monthly.filter(r=>r.part).length,1,'the current month is only "so far"');
+  // the history tab: the monthly table, newest first, with the app's own returns
+  await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="more"]'); (document.getElementById('tab_history')||document.querySelector('[data-tab="history"]')).click()}); await pg.waitForTimeout(500);
+  const rows=await pg.evaluate(()=>[...document.querySelectorAll('#monRows tr')].map(tr=>tr.innerText.replace(/\s+/g,' ').trim()));
+  assert.equal(rows.length,4); assert.match(rows[0],/עד \d/,'the current month, as of the day it was read'); assert.match(rows[1],/₪15,000/); assert.match(rows[1],/\+₪5,000/); assert.match(rows[1],/−1\.50%/);
+  assert.match(rows[3],/\+₪10,000/); assert.match(rows[3],/\+1\.00%/); assert.doesNotMatch(rows[3],/\+₪100\b/,'the first month has no result in shekels: its start is not known');
+  assert.match(rows[2],/\+₪202/,'the next one has: its value less the month before and the money put in');
+  assert.match(await pg.evaluate(()=>document.getElementById('monNote').textContent),/האחוזים של .+ הם של בית ההשקעות, כפי שהופיעו בטבלה שהעלית מהאפליקציה/);
+  assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'no sideways scroll on a phone');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
