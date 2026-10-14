@@ -23,7 +23,10 @@ before(async()=>{
       if(j.model==='claude-fable-5-1'&&said.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'});res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}}));return}
       res.writeHead(200,{'content-type':'text/event-stream'}); const ev=(t,d)=>res.write(`event: ${t}\ndata: ${JSON.stringify({type:t,...d})}\n\n`);
       ev('message_start',{message:{id:'m2',type:'message',role:'assistant',model:j.model,content:[],usage:{input_tokens:1000,output_tokens:1}}}); ev('ping',{});
-      if(j.model==='claude-fable-5-1'&&said.includes('REFUSE')){ev('message_delta',{delta:{stop_reason:'refusal'},usage:{output_tokens:0}}); ev('message_stop',{}); res.end(); return}
+      // REFUSE: declined before any output (not billed); REFUSEMID: after some output (billed); REFUSEX: reasoning_extraction (billed, no fallback)
+      if(j.model==='claude-fable-5-1'&&said.includes('REFUSE')){const mid=said.includes('REFUSEMID'), cat=said.includes('REFUSEX')?'reasoning_extraction':mid?'general_harms':null;
+        if(mid){ev('content_block_start',{index:0,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:0,delta:{type:'text_delta',text:'{"pos'}})}
+        ev('message_delta',{delta:{stop_reason:'refusal',stop_details:{type:'refusal',category:cat,explanation:'x'}},usage:{output_tokens:mid?7:0}}); ev('message_stop',{}); res.end(); return}
       ev('content_block_start',{index:0,content_block:{type:'thinking',thinking:''}}); ev('content_block_stop',{index:0});
       ev('content_block_start',{index:1,content_block:{type:'text',text:''}}); ev('content_block_delta',{index:1,delta:{type:'text_delta',text:'{"ok":'}}); ev('content_block_delta',{index:1,delta:{type:'text_delta',text:'"read"}'}});
       ev('content_block_stop',{index:1}); ev('message_delta',{delta:{stop_reason:'end_turn'},usage:{output_tokens:50}}); ev('message_stop',{}); res.end(); return}
@@ -517,7 +520,12 @@ test('reading files: the strongest model, the next one when it cannot read, a lo
     assert.equal((await req('o','POST','/api/ask',{model:'claude-fable-5-1',max_tokens:10,messages:[{role:'user',content:'hi'}]})).status,400,'the chat does not get the strongest model');
     assert.equal((await ask('x',{model:'claude-sonnet-5-5'})).status,400,'file reading uses only the file models');
     r=await ask('NOFABLE read this'); assert.equal(r.status,200); assert.equal(r.j.model,'claude-opus-5-5'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
-    r=await ask('REFUSE read this'); assert.equal(r.j.model,'claude-opus-5-5','a refusal hands over to the next model'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
+    const fab=async()=>((await req('o','GET','/api/ai/usage')).j.byModel.find(x=>x.model==='claude-fable-5-1')||{calls:0});
+    let f0=await fab(); r=await ask('REFUSE read this'); assert.equal(r.j.model,'claude-opus-5-5','a refusal hands over to the next model'); assert.deepEqual(r.j.fallbackFrom,['claude-fable-5-1']);
+    assert.equal((await fab()).calls,f0.calls,'declined before any output, in a category that is not billed: not counted');
+    f0=await fab(); r=await ask('REFUSEMID read this'); assert.equal(r.j.model,'claude-opus-5-5'); assert.equal(r.j.content[0].text,'{"ok":"read"}','what the first model wrote before it declined is dropped');
+    assert.equal((await fab()).calls,f0.calls+1,'declined after some output: billed, so counted');
+    let n1=claudeSeen.length; r=await ask('REFUSEX read this'); assert.equal(r.status,502); assert.equal(r.j.error.code,'refused'); assert.equal(claudeSeen.length-n1,1,'reasoning_extraction: no next model');
     // a read that takes long: the answer starts with spaces (JSON allows them) so the connection stays open
     process.env.AI_KEEPALIVE_MS='60';
     const raw=await fetch(base+'/api/ask',{method:'POST',headers:{cookie:jar.o,'x-tc':'1','content-type':'application/json'},body:JSON.stringify({purpose:'files',model:'claude-fable-5-1',max_tokens:100,messages:[{role:'user',content:'SLOWFILE read'}]})});
@@ -529,7 +537,7 @@ test('reading files: the strongest model, the next one when it cannot read, a lo
     r=await ask('SLOWFILE NOFABLE'); assert.equal(r.j.error&&r.j.error.code!=null,true); assert.equal(claudeSeen.length-n0,1,'the next model did not start'); assert.ok(!/נוסו/.test(r.j.error.message));
     delete process.env.AI_FILE_BUDGET_MS;
     const u=(await req('o','GET','/api/ai/usage')).j, by=Object.fromEntries(u.byModel.map(x=>[x.model,x]));
-    assert.deepEqual(u.fileModels,['claude-fable-5-1','claude-opus-5-5']); assert.equal(by['claude-fable-5-1'].calls,3,'two reads, and the declined one, which is billed too'); assert.equal(by['claude-fable-5-1'].input,3000);
-    assert.equal(by['claude-opus-5-5'].calls,2); assert.equal(by['claude-fable-5-1'].output,100);
+    assert.deepEqual(u.fileModels,['claude-fable-5-1','claude-opus-5-5']); assert.equal(by['claude-fable-5-1'].calls,4,'two reads and the two billed declines'); assert.equal(by['claude-fable-5-1'].input,4000);
+    assert.equal(by['claude-opus-5-5'].calls,3); assert.equal(by['claude-fable-5-1'].output,107);
   }finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; delete process.env.AI_FILE_BUDGET_MS; srv.close()}
 });

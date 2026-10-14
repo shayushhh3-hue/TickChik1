@@ -178,19 +178,23 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       return {status:504,json:{error:{code:'upstream_error',message:to?late:'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
     if(!r.ok){let type='',msg=''; try{const e=JSON.parse(await r.text()).error||{};type=e.type||'';msg=e.message||''}catch(e){}
       const [st,code,message]=askErr(r.status,type,msg); return {status:st,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message}}}}
-    const dec=new TextDecoder(); let buf='', text='', stop=null, usage={}, model=body.model, id='', err=null;
+    const dec=new TextDecoder(); let buf='', text='', stop=null, why=null, usage={}, model=body.model, id='', err=null, out=false;
     try{for await(const chunk of r.body){buf+=dec.decode(chunk,{stream:true}); let i;
       while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i); buf=buf.slice(i+2); const data=ev.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trim()).join(''); if(!data)continue;
         let j; try{j=JSON.parse(data)}catch(e){continue}
         if(j.type==='message_start'&&j.message){usage={...(j.message.usage||{})}; model=j.message.model||model; id=j.message.id||''}
-        else if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta')text+=j.delta.text||'';
-        else if(j.type==='message_delta'){if(j.delta&&j.delta.stop_reason)stop=j.delta.stop_reason; if(j.usage)usage={...usage,...j.usage}}
+        else if(j.type==='content_block_delta'&&j.delta){out=true; if(j.delta.type==='text_delta')text+=j.delta.text||''}
+        else if(j.type==='message_delta'){if(j.delta&&j.delta.stop_reason)stop=j.delta.stop_reason; why=(j.delta&&j.delta.stop_details)||j.stop_details||why; if(j.usage)usage={...usage,...j.usage}}
         else if(j.type==='error')err=j.error||{type:'api_error',message:'stream error'}}}}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read stream failed:',to?'timeout':String(e&&e.message||e));
       return {status:504,json:{error:{code:'upstream_error',message:to?late:'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
     if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message}}}}
-    // a declined read is still billed for what was sent (and thought): it is counted, then the next model reads
-    if(stop==='refusal')return {status:502,retry:true,why:'refusal',spent:{model,usage},json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}};
+    // Claude declined (an ordinary answer with stop_reason "refusal"; what it wrote so far is dropped). Anthropic's guide
+    // "Refusals and fallback" (September 2026): the next model is the way to go, except for "reasoning_extraction", which
+    // has no fallback. Billed, and so counted here: a decline after some output, or one in the bio, frontier_llm or
+    // reasoning_extraction categories.
+    if(stop==='refusal'){const cat=why&&why.category||null, billed=out||['bio','frontier_llm','reasoning_extraction'].includes(cat);
+      return {status:502,retry:cat!=='reasoning_extraction',why:'refusal'+(cat?' ('+cat+')':''),spent:billed?{model,usage}:null,json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}}}
     return {message:{id,type:'message',role:'assistant',model,content:[{type:'text',text}],stop_reason:stop,usage}};
   }
   async function readFiles(req,res,body,u,day){
