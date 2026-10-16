@@ -1329,6 +1329,9 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   .botbar button svg{width:22px;height:22px;flex:none}
   .botbar button[aria-current="page"],.botbar button.on{color:#fff;font-weight:700;background:rgb(255 255 255 / .12)}
   .botbar button[aria-current="page"] svg,.botbar button.on svg{color:#E9C58E}
+  .botbar button{position:relative;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .15s,color .15s}
+  .botbar button:active{background:rgb(255 255 255 / .18)}
+  .botbar button[aria-current="page"]::before,.botbar button.on::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:#E9C58E}
   .botbar button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
   .botbar .bbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wrap:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),textarea,select):focus) .botbar{display:none}
