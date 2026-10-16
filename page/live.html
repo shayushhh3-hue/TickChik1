@@ -7,7 +7,7 @@
    The top block states what the portfolio is worth and what it did today; under it a diverging bar list shows which
    holdings moved it. Tabs keep the rest one click away. Display + text: Heebo. Figures: IBM Plex Mono. */
 :root{
-  --navy:#2E4A66; --navy2:#3A5A7A; --navy3:#557799;
+  --navy:#1F3A5F; --navy2:#2B4C78; --navy3:#4A6C96;
   --bg:#F6F7F9; --surface:#FFFFFF; --sunk:#EEF1F5; --ink:#1B2A3C; --ink2:#45566B; --muted:#5B6B7D;
   --line:#DFE4EA; --accent:#9A672F; --accent-ink:#7A4F22; --accent-soft:#FAF3EA; --on-accent:#FFFFFF; --focus:#2E6DA4;
   --gain:#2F7A5C; --loss:#B83A3A;
@@ -17,7 +17,7 @@
   --info-c:#4F7CA8; --info-bg:#EEF3F8; --info-ink:#27496D;
   --bar-up:#3A9D7F; --bar-down:#C9534F;
   --s1:#4F7CA8; --s2:#B07A3A; --grid:#DFE4EA;
-  --r:10px; --shadow:0 1px 2px rgb(30 52 78 / .05),0 4px 14px rgb(30 52 78 / .06);
+  --r:16px; --shadow:0 2px 4px rgb(20 40 70 / .04),0 10px 28px rgb(20 40 70 / .08);
   --sans:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
   --display:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Heebo","Arial Hebrew",monospace;
@@ -42,7 +42,7 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 .chip:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 
 /* ---- top block ---- */
-.hero{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+.hero{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
 .top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line)}
 .brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .live{font-size:12px;color:var(--muted)}
