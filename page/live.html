@@ -118,6 +118,15 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 
 section{display:flex;flex-direction:column;gap:10px;min-width:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;min-width:0}
+.mixh{display:flex;flex-direction:column;gap:14px}
+.mixbar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--sunk);gap:2px}
+.mixbar i{display:block;min-width:3px;height:100%}
+.mixlist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 24px}
+.mixlist li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13.5px}
+.mixlist li>i{width:10px;height:10px;border-radius:50%}
+.mixlist .gv{color:var(--muted);font-size:12px}
+.mixlist .gw{font-weight:700}
+.mixlist .over{color:var(--loss)}
 @media (max-width:640px){.panel{padding:14px}.pane{gap:24px}}
 .row{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:baseline;justify-content:space-between}
 .today{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px 16px;align-items:start}
@@ -1372,6 +1381,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       </div>
       <div class="side">
         <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
+        <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
+        <div class="stat" id="kDepBox"><div class="k">מול ההפקדות</div><span class="v" id="kDep">—</span><div class="d" id="kDepD"></div></div>
         <div class="stat"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
         <div class="stat"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
         <div class="stat"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
@@ -1412,6 +1423,10 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <tbody id="rows"><tr><td colspan="8" class="empty">האחזקות שלך יופיעו כאן אחרי שתעלה את התיק.</td></tr></tbody>
         </table>
       </div>
+    </section>
+    <section aria-labelledby="hMixH" id="mixHome" hidden>
+      <div class="row"><h2 id="hMixH">פיזור התיק</h2><span class="sub" id="mixHomeSub"></span></div>
+      <div class="panel mixh"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור התיק לפי קבוצות"></div><ul class="mixlist" id="mixList"></ul></div>
     </section>
     <section aria-labelledby="hAnaE" id="anaSec" hidden>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
@@ -15671,6 +15686,15 @@ function renderOb(){
 }
 // ---- render -----------------------------------------------------------
 let PFK=false;
+// the spread of the portfolio by group, on the home screen: from the same groups the control uses (the cap is the user's own)
+function renderMixHome(m){
+  const sec=$('mixHome'); if(!sec)return; const gs=Object.keys(GROUPS).map(k=>({id:k,...m.groups[k]})).filter(g=>g&&g.val>0).sort((a,b)=>b.val-a.val);
+  if(!gs.length||!(m.total>0)){sec.hidden=true;return}
+  const cap=+((S&&S.rules)||{}).maxGroup||0, tot=gs.reduce((t,g)=>t+g.val,0);
+  sec.hidden=false; $('mixHomeSub').textContent=cap>0?`הסף שהגדרת לקבוצה: ${pct(cap,0)}`:'';
+  $('mixBar').innerHTML=gs.map(g=>`<i title="${esc(GROUPS[g.id])} ${pct(g.val/tot*100)}" style="width:${g.val/tot*100}%;background:${GCOL[g.id]||'#94A3B8'}"></i>`).join('');
+  $('mixList').innerHTML=gs.map(g=>{const w=g.val/tot*100, over=cap>0&&g.id!=='cash'&&w>cap; return `<li><i style="background:${GCOL[g.id]||'#94A3B8'}"></i><span>${esc(GROUPS[g.id])} <span class="gv n">${ils(g.val)}</span></span><span class="gw n${over?' over':''}">${pct(w)}${over?' ▲':''}</span></li>`}).join('');
+}
 function render(){
   setTimeout(()=>{try{riskNavSync()}catch(e){}},0);
   try{const w=document.querySelector('.wrap'), was=w.classList.contains('nopf'); w.classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length))); if(was!==w.classList.contains('nopf'))pxLine()}catch(e){}
@@ -15687,10 +15711,20 @@ function render(){
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
+  try{renderMixHome(m)}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
   $('kPnlD').textContent=m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:''):'אין נתוני עלות';
+  // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
+  // uploaded tables, the deposits); otherwise "—" and the reason
+  {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
+    try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r}}catch(e){}
+    try{const dt=HS?depTotal():0; if(dt>0)dp={dep:dt,diff:m.total-dt,pct:(m.total-dt)/dt*100}}catch(e){}
+    if(y){yk.textContent=y.cut||y.fromZero?'מ'+ymFull(y.first):'מתחילת השנה'; ye.textContent=spct(y.pct,1); ye.className='v '+(y.pct>=0?'up':'down'); yd.textContent=sgn(y.gain)}
+    else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
+    if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
+    else{de.textContent='—'; de.className='v'; dd.textContent='אין רישום הפקדות'}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
 
   // alerts: the same engine the assistant uses (alertsOf)
