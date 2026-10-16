@@ -1222,6 +1222,11 @@ section.fold > .fold-h h2{margin:0}
 .msg-by .av.chiko{width:30px;height:30px}
 .chatfab .fab-av{width:38px;height:38px;margin-inline-start:-10px;box-shadow:0 0 0 2px #fff}
 .ae-h{align-items:center}
+.ana-entry{background:linear-gradient(180deg,var(--surface) 0%,var(--sunk) 100%)}
+.ae-now{margin:0;padding:10px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;line-height:1.5;display:flex;gap:8px;align-items:baseline}
+.ae-now b{font-weight:700}
+.ae-now i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--ok-c);transform:translateY(-1px)}
+.ae-now.warn i{background:var(--warn-c)} .ae-now.crit i{background:var(--crit-c)}
 .term{font:inherit;font-size:12px;font-weight:700;width:18px;height:18px;padding:0;margin-inline-start:6px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink2);cursor:pointer;vertical-align:middle;line-height:1;display:inline-grid;place-items:center}
 .term:hover{background:var(--sunk);border-color:var(--navy3)}
 .term:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
@@ -1437,6 +1442,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <section aria-labelledby="hAnaE" id="anaSec" hidden>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
         <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
+        <p class="ae-now" id="aeNow" role="status" hidden></p>
         <div class="ana-chips" role="group" aria-label="להתחיל שיחה עם צ׳יקו">
           <button type="button" class="btn pri" data-ana="explain">הסבר את התיק שלי</button>
           <button type="button" class="btn" data-ana="analyze">נתח לי את התיק</button>
@@ -15693,6 +15699,13 @@ function renderOb(){
 // ---- render -----------------------------------------------------------
 let PFK=false;
 // the spread of the portfolio by group, on the home screen: from the same groups the control uses (the cap is the user's own)
+// Chiko's card: the one thing that stands out today, from the same checks as the alerts (facts, not a model's answer)
+function renderAnaNow(m){
+  const el=$('aeNow'); if(!el)return; if(!m.pos.length){el.hidden=true;return}
+  const is=anaIssues(anaFacts()), top=is.find(i=>i.sev!=='info')||null, n=is.filter(i=>i.sev!=='info').length;
+  el.className='ae-now'+(top?' '+top.sev:''); el.hidden=false;
+  el.innerHTML=top?`<i aria-hidden="true"></i><span><b>מה בולט היום:</b> ${esc(top.title)}${n>1?` (ועוד ${n-1===1?'נושא אחד':(n-1)+' נושאים'} לבדיקה)`:''}.</span>`:`<i aria-hidden="true"></i><span><b>מה בולט היום:</b> אין חריגות מהכללים שהגדרת.</span>`;
+}
 function renderMixHome(m){
   const sec=$('mixHome'); if(!sec)return; const gs=Object.keys(GROUPS).map(k=>({id:k,...m.groups[k]})).filter(g=>g&&g.val>0).sort((a,b)=>b.val-a.val);
   if(!gs.length||!(m.total>0)){sec.hidden=true;return}
@@ -15718,6 +15731,7 @@ function render(){
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
   try{renderMixHome(m)}catch(e){}
+  try{renderAnaNow(m)}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
