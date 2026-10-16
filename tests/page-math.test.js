@@ -13,7 +13,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap'],G,['allBuy']);
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -219,6 +219,48 @@ test('the history keeps currency conversions and monthly results; a month "so fa
   G.HS=hx.H; G.DRAFT={tx:[],monthly:{exc:[{ym:'2026-08',v:100,ccy:'ILS',ret:1,flow:0}]}}; hx=F.historyWithTx();
   assert.equal(hx.H.accounts.find(a=>a.acct==='exc').monthly.find(r=>r.ym==='2026-08').at,at0);
   G.HS=null; G.DRAFT=null; G.Q=null;
+});
+
+test('a deposit read from a screenshot, dated earlier: the saved month-ends and daily points from its month on hold it', ()=>{
+  G.Q={usdIls:3.5,prices:{},prev:{}}; plan();
+  // month-ends of August and September saved with 1,000 in; a deposit of 600 on 20.9 is read now, with one of 100 on 5.10
+  G.HS={depIlsNow:1000,accounts:[{acct:'exc',ccy:'ILS',deposits:[{date:'2026-07-01',amount:1000}],trades:[]}],
+    monthly:[{ym:'2026-07',exc:1000,tot:1000,dep:1000,at:'2026-08-01T00:00:00Z'},{ym:'2026-08',exc:1010,tot:1010,dep:1000,at:'2026-09-01T00:00:00Z'},{ym:'2026-09',exc:1020,tot:1020,dep:1000,at:'2026-10-01T00:00:00Z'}]};
+  G.DY={exists:true,points:{'2026-09-15':{v:1015,dep:1000},'2026-09-25':{v:1018,dep:1000},'2026-10-03':{v:1130,dep:1000}}};
+  G.DRAFT={tx:[{acct:'exc',date:'2026-09-20',side:'deposit',amount:600,ccy:'ILS'},{acct:'exc',date:'2026-10-05',side:'deposit',amount:100,ccy:'ILS'}]};
+  const hx=F.historyWithTx(); const dep=ym=>hx.H.monthly.find(r=>r.ym===ym).dep;
+  assert.equal(hx.bumps.length,2); near(hx.H.depIlsNow,1700);
+  assert.equal(dep('2026-07'),1000,'before the deposit: unchanged'); assert.equal(dep('2026-08'),1000); assert.equal(dep('2026-09'),1600,'September holds the 600 of 20.9; October has no saved row yet');
+  const d=F.dailyBumped(G.DY.points,hx.bumps);
+  assert.deepEqual(Object.keys(d),['2026-09-25','2026-10-03'],'a point before the deposit stays'); near(d['2026-09-25'].dep,1600); near(d['2026-10-03'].dep,1600,'the 100 of 5.10 is after it');
+  // the month flows then: September +600 (its own gain apart), October +100 so far
+  G.HS=hx.H; G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,group:'tech'}],cash:[{acct:'exc',ccy:'ILS',amount:700}]}; G.Q={usdIls:3.5,prices:{MSFT:200},prev:{}};
+  const rows=F.monthSeries(), sep=rows.find(r=>r.ym==='2026-09'), aug=rows.find(r=>r.ym==='2026-08');
+  near(sep.flow,600); near(sep.gain,1020-1010-600); near(aug.flow,0);
+  // a withdrawal comes off from its day on; one that a ticked plan deposit already stood for moves nothing
+  G.DRAFT={tx:[{acct:'exc',date:'2026-08-10',side:'withdraw',amount:50,ccy:'ILS'}]}; const h2=F.historyWithTx();
+  assert.equal(h2.bumps.length,1); near(h2.bumps[0].ils,-50); near(h2.H.monthly.find(r=>r.ym==='2026-08').dep,950); near(h2.H.monthly.find(r=>r.ym==='2026-09').dep,1550); near(h2.H.monthly.find(r=>r.ym==='2026-07').dep,1000);
+  G.HS=h2.H; plan([{month:'2026-09',amount:300,at:'2026-09-12T10:00:00Z'}]); near(F.planDepExtra(),300,'the ticked deposit is extra until the history holds it');
+  G.DRAFT={tx:[{acct:'exc',date:'2026-09-14',side:'deposit',amount:300,ccy:'ILS'}]}; const h3=F.historyWithTx();
+  assert.equal(h3.bumps.length,0,'the plan already counted it, so no saved total moves'); near(h3.H.monthly.find(r=>r.ym==='2026-09').dep,1550);
+  // a deposit a table's month already stands for moves nothing either, unless a saved month-end held the month before the table
+  G.HS=h3.H; plan(); G.HS.accounts[0].monthly=[{ym:'2026-11',v:2000,ccy:'ILS',ret:1,flow:400,at:'2026-12-01T00:00:00Z'}];
+  G.DRAFT={tx:[{acct:'exc',date:'2026-11-03',side:'deposit',amount:400,ccy:'ILS'}]}; const h4=F.historyWithTx(); assert.equal(h4.bumps.length,0);
+  G.HS=h4.H; G.HS.accounts[0].monthly=[{ym:'2026-09',v:1500,ccy:'ILS',ret:1,flow:200,at:'2026-10-02T00:00:00Z'}];
+  G.DRAFT={tx:[{acct:'exc',date:'2026-09-28',side:'deposit',amount:200,ccy:'ILS'}]}; const h5=F.historyWithTx(); assert.equal(h5.bumps.length,1,'the September month-end was saved before the table, so its deposits are its own');
+  G.HS=null; G.DY=null; G.DRAFT=null; G.P=null; G.Q=null; plan();
+});
+
+test('a transaction dated after today was read a year too late; the day an account is known for', ()=>{
+  assert.equal(F.dateBack('2026-10-20','2026-10-15'),'2025-10-20'); assert.equal(F.dateBack('2028-02-29','2026-10-15'),null,'two years off: left out');
+  assert.equal(F.dateBack('2028-02-29','2027-03-01'),'2027-02-28'); assert.equal(F.dateBack('2026-10-16','2026-10-15'),'2025-10-16');
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1}],cash:[],asOf:{exc:'2026-09-30'},updatedAt:'2026-10-12T10:00:00Z'};
+  assert.equal(F.knownDay('exc',null),'2026-10-12','the saved portfolio has no seen day: the day it was saved');
+  assert.equal(F.knownDay('blink',null),null,'an account with nothing saved');
+  assert.equal(F.knownDay('exc',{asOf:{exc:'2026-09-30'},seen:{exc:'2026-10-14'}}),'2026-10-14','read from a screenshot after the statement');
+  assert.equal(F.knownDay('exc',{asOf:{exc:'2026-10-20'},seen:{exc:'2026-10-14'}}),'2026-10-20','the statement is the later one');
+  G.P.seen={exc:'2026-10-13'}; assert.equal(F.knownDay('exc',null),'2026-10-13');
+  G.P=null;
 });
 
 test('the forecast and the plan\'s split of a deposit', ()=>{
