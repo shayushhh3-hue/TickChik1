@@ -1118,7 +1118,13 @@ section.fold > .fold-h h2{margin:0}
   .hold tbody tr:not(.sec) td:nth-child(2):not(:empty)::before{content:"יומי ";color:var(--muted);font-size:12px}
   .hold tbody tr:not(.sec) td:nth-child(8):not(:empty)::before{content:"מול עלות ";color:var(--muted);font-size:12px}
   .hold.lite tbody td:nth-child(3),.hold.lite tbody td:nth-child(4),.hold.lite tbody td:nth-child(7){display:none}
+  .hold tbody td:nth-child(1) .lg.s{width:32px;height:32px;font-size:10px;margin-inline-end:8px;vertical-align:middle}
+  .hold tbody td:nth-child(5){font-size:16px;font-weight:700}
 }
+.spark{display:block;margin-top:3px}
+.spark.u{color:var(--gain)} .spark.d{color:var(--loss)}
+.hold tbody td:nth-child(2) .spark{margin-inline-start:auto}
+@media (min-width:761px){.hold tbody td:nth-child(2) .spark{margin-inline-start:auto}}
 /* v133 */
 .crisis{background:#eef4fb;border-color:#c9dbf0;display:flex;flex-direction:column;gap:12px}
 .crisis .cr-h{display:flex;gap:12px;align-items:flex-start}
@@ -15755,13 +15761,18 @@ function render(){
     return `<div class="mrow${SECKEY.test(p.sym)?' secl':''}" data-sec="${esc(p.sym)}" title="${esc(p.name)}: ${spct(p.dayPct,2)}, ${sgn(p.dayIls)}"><span class="sym">${esc(lab(p.sym))}</span><div class="mbar"><i class="${u?'u':'d'}" style="width:${(Math.abs(p.dayPct)/mx*50).toFixed(1)}%"></i></div><span class="n">${spct(p.dayPct,2)}</span><span class="n mi">${sgn(p.dayIls)}</span></div>`}).join(''):'<div class="empty">אין נתוני שינוי יומי.</div>';
 
   // holdings
+  // a small line of the price over the days the page saved (the last 30), only from saved prices and only with 3 or more
+  const dayKeys=Object.keys((DY&&DY.points)||{}).sort().slice(-30);
+  const spark=sym=>{const v=dayKeys.map(k=>{const q=DY.points[k]&&DY.points[k].px; return q&&+q[sym]>0?+q[sym]:null}).filter(x=>x!=null); if(v.length<3)return '';
+    const lo=Math.min(...v), hi=Math.max(...v), W=64, H=18, y=x=>hi===lo?H/2:H-2-(x-lo)/(hi-lo)*(H-4), pts=v.map((x,i)=>`${(i/(v.length-1)*W).toFixed(1)},${y(x).toFixed(1)}`).join(' ');
+    return `<svg class="spark ${v[v.length-1]>=v[0]?'u':'d'}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`};
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
     const fl=(p.w>R.maxPos?'<span class="flag crit">ריכוז</span>':'')+(dp!=null&&dp<=-R.stopLoss?'<span class="flag">ירידה</span>':'');
     const pxs=p.ccy==='USD'?'$'+p.px.toFixed(2):ils(p.px,2), old=(Q.stale||{})[p.sym];
     const lk=SECKEY.test(p.sym);
     return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s')}<span class="sym">${esc(lab(p.sym))}</span>${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
-    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${sgn(p.dayIls)}</span></div>`}</td>
+    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
     <td class="num"><span class="n">${ils(p.val)}</span>${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
     <td class="num"><span class="n">${p.cost?ils(p.cost):'—'}</span></td>
