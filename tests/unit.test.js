@@ -323,6 +323,7 @@ test('quotes: Yahoo, agorot, Stooq, the Bank of Israel, index funds',async()=>{
     return res(500,'x')};
   const a=await yahooChart('ABRA.TA',{fetch:f}); assert.equal(a.px,123.45); assert.equal(a.ccy,'ILS');
   assert.equal(tickerFor('BRK.B'),'BRK-B'); assert.equal(tickerFor('ABRA',{ccy:'ILS'}),'ABRA.TA');
+  assert.equal(tickerFor('SAP.DE'),'SAP.DE','an exchange suffix stays'); assert.equal(tickerFor('7203.T'),'7203.T'); assert.equal(tickerFor('0700.HK'),'0700.HK');
   const all=await fetchAll(['MSFT','BAD','TA125'],{positions:[{sym:'TA125',ccy:'ILS',px:61.92}],fetch:f});
   assert.equal(all.quotes.BAD.src,'stooq'); assert.ok(all.index.TA125); assert.equal(all.fx.boi.rate,3.074);
   const doc=buildQuotesDoc({prev:{prices:{TA125:61.92},prev:{TA125:61.5}},fetched:all,symbols:['MSFT','BAD','TA125'],positions:[],now:new Date('2026-10-12T08:00:00Z'),ilOpen:true});

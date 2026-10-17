@@ -10,6 +10,7 @@ import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc} from './mail.js';
 import {Store, canRead, canWrite, partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
+import {yahooSearch} from '../shared/quotes.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
 import {buildSite} from '../tools/build.js';
@@ -304,6 +305,12 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
 
   // ---- prices now ----
   let pxLast={at:0,res:null}, pxBusy=null;
+  // a symbol search across markets, through the server (the browser cannot call Yahoo). Cached an hour per query
+  const SYMQ=new Map();
+  app.get('/api/symsearch',needUser,async(req,res)=>{const q=String(req.query.q||'').trim().slice(0,40); if(q.length<1)return res.json({items:[]});
+    const c=SYMQ.get(q.toLowerCase()); if(c&&Date.now()-c.at<36e5)return res.json({items:c.items,cached:true});
+    try{const items=await yahooSearch(q); SYMQ.set(q.toLowerCase(),{at:Date.now(),items}); if(SYMQ.size>500)SYMQ.delete(SYMQ.keys().next().value); res.json({items})}
+    catch(e){res.status(502).json({error:'החיפוש לא זמין כרגע: '+(e&&e.message||e)})}});
   app.post('/api/prices',needUser,async(req,res)=>{
     try{
       if(Date.now()-pxLast.at<3*60*1000&&pxLast.res){const {errors,...rest}=pxLast.res; return res.json({...(req.user.role==='owner'?pxLast.res:{...rest,errors:(errors||[]).length}),cached:true})}

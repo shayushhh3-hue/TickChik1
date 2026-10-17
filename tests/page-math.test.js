@@ -13,7 +13,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay'],G,['allBuy']);
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -30,6 +30,15 @@ test('model: value, weights, dollars, cash, cost, the day', ()=>{
   near(Object.values(m.groups).reduce((t,g)=>t+g.w,0),100,1e-6);
   assert.equal(m.acct,'all');
   const b=F.model(G.P,G.Q,'blink'); near(b.total,175+35); assert.equal(b.acct,'blink');
+});
+
+test('model: a security priced in another currency uses that currency\'s rate, or waits for it', ()=>{
+  G.P={positions:[{sym:'SAP.DE',acct:'exc',ccy:'USD',qty:2,costIls:800,group:'tech'},{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:300,group:'tech'}],cash:[]};
+  G.Q={usdIls:3.5,prices:{'SAP.DE':100,MSFT:100},prev:{'SAP.DE':98},meta:{'SAP.DE':{ccy:'EUR'}},rates:{EUR:{rate:4}}};
+  let m=F.model(G.P,G.Q,'all'); const sap=m.pos.find(p=>p.sym==='SAP.DE');
+  near(sap.val,800,1e-6); assert.equal(sap.ccy,'EUR','the quote currency wins over the table'); near(sap.dayIls,2*2*4); near(m.usdPct,100,1e-6,'every foreign currency counts toward the currency cap');
+  G.Q={usdIls:3.5,prices:{'SAP.DE':100,MSFT:100},meta:{'SAP.DE':{ccy:'EUR'}}};
+  m=F.model(G.P,G.Q,'all'); assert.equal(m.pos.length,1,'no rate yet: left out, never priced as dollars'); assert.deepEqual(m.noRate,['SAP.DE']); near(m.total,350);
 });
 
 test('model: a missing price, an empty portfolio, no division by zero', ()=>{
@@ -355,7 +364,7 @@ test('Claude: no forecast said as known, no promise, no alarm, no "the rise prov
 });
 
 // stress scenarios: arithmetic on today's values, checked by hand (made-up portfolios)
-const FUNDS={}, SR=load(['GROUPS','SEC_HE','isF','exposures','stressRun'],{FUNDOF:FUNDS});
+const FUNDS={}, SR=load(['GROUPS','SEC_HE','isF','CCYHE','exposures','stressRun'],{FUNDOF:FUNDS});
 const pos=(sym,val,o={})=>({sym,name:sym,group:'tech',ccy:'ILS',qty:1,px:val,val,w:0,dayPct:null,dayIls:0,...o});
 const mOf=(ps,cash=0,acct='all')=>{const total=ps.reduce((t,p)=>t+p.val,0)+cash; for(const p of ps)p.w=p.val/total*100; return {acct,pos:ps,cash,total,groups:{}}};
 test('stress: the plan\'s case — 100,000 ₪, a uniform 25% drop: 75,000, −25,000, −25%', ()=>{
@@ -409,7 +418,7 @@ test('crisis center: the comparison point, the move since then by holding, and t
 });
 
 // "הסבר את התיק שלי" (stage 7): what is in it, what stands out, concentration against the user's caps, and the questions
-const EX=load(['GROUPS','SEC_HE','isF','exposures','pfExplain','flowsView'],{FUNDOF:FUNDS});
+const EX=load(['GROUPS','SEC_HE','isF','CCYHE','exposures','pfExplain','flowsView'],{FUNDOF:FUNDS});
 const secs=k=>({MSFT:'Technology',KO:'Consumer Staples'}[k]||'');
 const exM=()=>mOf([pos('MSFT',5000,{ccy:'USD',cost:4000,costVal:5000}),pos('KO',3000,{ccy:'USD',group:'cons',cost:3500,costVal:3000}),
   pos('TA125',2000,{group:'il',noCost:true,cost:0,costVal:0}),pos('ZZZ',1000,{ccy:'USD',cost:1000,costVal:1000})],500);

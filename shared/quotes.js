@@ -20,8 +20,13 @@ export function tickerFor(sym,pos,map){
   if(PROXY[sym])return null;
   if(/^\d{5,9}$/.test(sym))return sym+'.TA';
   if(pos&&pos.ccy==='ILS'&&!/\.TA$/.test(sym))return sym+'.TA';
+  // a suffix of two or three letters is an exchange (SAP.DE, 0700.HK), and so are the one-letter exchanges Yahoo uses
+  // (7203.T Tokyo, SHEL.L London, .F Frankfurt, .V Vancouver); any other single letter is a share class (BRK.B)
+  if(/\.[A-Z]{2,3}$/.test(sym)||/\.[TLFV]$/.test(sym))return sym;
   return sym.replace(/\./g,'-');
 }
+// the currencies a page can hold besides the shekel and the dollar; each is fetched against the shekel when a quote uses it
+export const CCYS=['EUR','GBP','JPY','CHF','CAD','AUD','HKD','SEK','NOK','DKK','SGD','INR','CNY','BRL','MXN','KRW','TWD'];
 
 const dayOf=(ts,off)=>{const d=new Date((ts+off)*1000);return d.toISOString().slice(0,10)};
 
@@ -89,9 +94,12 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   });
   let i=0; await Promise.all(Array.from({length:Math.min(concurrency,tasks.length)},async()=>{while(i<tasks.length){const k=i++;await tasks[k]()}}));
   const [boi,live]=await Promise.all([boiUsd({fetch:f}).catch(()=>null),yahooChart('USDILS=X',{fetch:f}).catch(()=>null)]);
+  // other currencies seen in this run's quotes, against the shekel
+  const needCcy=[...new Set(Object.values(out).map(q=>q&&q.ccy).filter(c=>c&&CCYS.includes(c)))], rates={};
+  await Promise.all(needCcy.map(async c=>{try{const q=await yahooChart(c+'ILS=X',{fetch:f}); if(q&&q.px>0)rates[c]={rate:q.px,prev:q.prev||null,date:q.closeDate}}catch(e){}}));
   const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}
     if(b.fut){try{const q=await yahooChart(b.fut,{fetch:f}); if(q&&q.px>0&&q.prev>0&&bench[k])bench[k].fut={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}}));
-  return {quotes:out,index:idx,fx:{boi,live},bench,errors};
+  return {quotes:out,index:idx,fx:{boi,live},bench,rates,errors};
 }
 
 // the next quotes/latest document, from the fetched prices and the stored one
@@ -101,9 +109,9 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   let usDate='', prevDate='', ilDate='', got=0;
   for(const sym of symbols){
     const q=fetched.quotes[sym];
-    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time};
+    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
-      if(q.ccy!=='USD'&&q.closeDate>ilDate)ilDate=q.closeDate;
+      if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
       if(q.src==='stooq')stale[sym]='סגירה '+dm(q.closeDate);
       continue}
     const ix=fetched.index[sym];
@@ -131,7 +139,8 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const usD=usDate||old.usDate||'', ilD=ilDate||old.ilDate||'';
   // the indices: this run's values, or the last ones with their dates when this run did not get them
   const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
-  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
+  const rates={...(old.rates||{})}; for(const [c,v] of Object.entries(fetched.rates||{}))if(v&&v.rate>0)rates[c]={rate:round(v.rate,4),prev:v.prev?round(v.prev,4):null,date:v.date||null};
+  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
     source:'Yahoo Finance, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
@@ -139,3 +148,11 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
     errors:(fetched.errors||[]).slice(0,40)};
 }
 const round=(x,n=2)=>{const k=Math.pow(10,n);return Math.round(x*k)/k};
+
+// a name or symbol search across markets, for the page: symbol, name, exchange, type. Names are data, nothing more
+export async function yahooSearch(q,{fetch:f=timedFetch}={}){
+  const u=`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&listsCount=0&enableFuzzyQuery=false`;
+  const r=await f(u,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json(); return ((j&&j.quotes)||[]).filter(x=>x&&x.symbol&&/^(EQUITY|ETF|MUTUALFUND|INDEX)$/.test(x.quoteType||''))
+    .map(x=>({sym:String(x.symbol).toUpperCase().slice(0,16),name:String(x.longname||x.shortname||x.symbol).slice(0,80),exch:String(x.exchDisp||x.exchange||'').slice(0,24),type:x.quoteType==='ETF'?'etf':x.quoteType==='EQUITY'?'stock':x.quoteType==='INDEX'?'index':'fund'}));
+}
