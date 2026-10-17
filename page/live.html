@@ -1235,6 +1235,20 @@ section.fold > .fold-h h2{margin:0}
 .hparts li .nm{color:var(--muted);font-size:12px;display:block}
 .hparts .tr{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden} .hparts .tr i{display:block;height:100%;background:var(--gain)} .hparts li.warn .tr i{background:var(--warn-c)} .hparts li.crit .tr i{background:var(--loss)}
 .hparts .pt{font-family:var(--mono);font-weight:700;text-align:end}
+.pickp summary{cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap} .pickp summary h3{margin:0}
+.pickh{margin:14px 0 6px;font-size:13px;color:var(--ink2);font-weight:600}
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:10px}
+.pick{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font:inherit;color:var(--ink);min-height:92px;position:relative;-webkit-tap-highlight-color:transparent}
+.pick .lg{width:36px;height:36px;border-radius:10px;font-size:12px} .pick .sym{font-size:12.5px} .pick .nm{font-size:11px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick[aria-pressed="true"]{border-color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy);background:var(--sunk)}
+.pick[aria-pressed="true"]::after{content:"✓";position:absolute;top:6px;inset-inline-start:8px;font-size:12px;font-weight:700;color:var(--navy)}
+.pick input{width:72px;min-height:32px;font-size:14px;padding:3px 6px;text-align:center}
+.pick.held{border-style:dashed} .pick.held .nm{color:var(--ok,#2f9e5b)}
+.flag.pick{background:var(--info-bg,#EEF3F8);color:var(--info-ink,#27496D)}
+.idxrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.idx{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12.5px;box-shadow:var(--shadow)}
+.idx b{font-weight:600} .idx .n{font-size:12.5px} .idx small{color:var(--muted);font-size:11px}
+.idxrow .chip{border:1px solid var(--line);border-radius:999px;min-height:30px}
 .hkind{margin-inline:4px} .hkind .chip{min-height:32px}
 @media (max-width:640px){.hkind{margin-inline:0}}
 .ana-entry{background:linear-gradient(180deg,var(--surface) 0%,var(--sunk) 100%)}
@@ -1437,6 +1451,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
     <div class="viewsw" role="group" aria-label="רמת הפירוט בסקירה"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה רגועה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div>
+    <div class="idxrow" id="idxRow" hidden aria-label="המדדים שבחרת"></div>
     <div class="depban" id="depBan" hidden></div>
     <div id="taxBanner" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
@@ -2040,6 +2055,18 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           </ul>
         </details>
       </div>
+      <details class="panel pickp" id="pickBox">
+        <summary><h3 style="display:inline">או סימון מהיר: אילו מהמניות הגדולות יש לך?</h3><span class="sub" id="pickSub"></span></summary>
+        <p class="note" style="margin:10px 0 0">לחץ על לוגו וכתוב כמה יחידות יש לך. זו נקודת פתיחה, לא כפילות: כשתעלה דוח או צילום של אותו חשבון, הכמות מהדוח תחליף את מה שסימנת כאן (לא תתווסף אליה), והדף יראה לך את ההבדל.</p>
+        <div class="form" style="margin-top:10px;grid-template-columns:minmax(0,220px)"><label for="pickAcct">החשבון שבו הניירות<select id="pickAcct"></select></label></div>
+        <div class="pickgrid" id="pickGrid" role="group" aria-label="מניות גדולות לסימון"></div>
+        <h4 class="pickh">קרנות סל נפוצות</h4>
+        <div class="pickgrid" id="pickGridF" role="group" aria-label="קרנות סל לסימון"></div>
+        <h4 class="pickh">אילו מדדים להציג בדף הבית?</h4>
+        <div class="chips" id="pickIdx" role="group" aria-label="מדדים להצגה"></div>
+        <p class="note" style="margin:6px 0 0">המדדים מוצגים בדף הבית עם השינוי היומי, ובמדדי ארה״ב גם החוזים העתידיים (מה שהשוק מצפה לפתיחה). זה מידע, לא המלצה.</p>
+        <div class="acts" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" id="btnPickAdd" type="button">הוסף לטבלה</button><button class="btn" id="btnPickSkip" type="button">דלג</button><span class="saved" id="pickState" role="status" style="font-size:13px"></span></div>
+      </details>
       <div class="panel" style="display:flex;flex-direction:column;gap:10px">
         <h3>או הקלדה מהירה, בלי קבצים</h3>
         <p class="note" style="margin:0">כתוב שורה לכל נייר: סימול, כמות, ועלות כוללת בשקלים אם אתה יודע. אפשר גם להעתיק מהאפליקציה של הבנק. שורה עם המילה "מזומן" נקלטת כיתרת מזומן.</p>
@@ -15288,7 +15315,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.acctadd||!canWrite)return; const a=el.dataset.acctadd, ids=acctIds();
   if(el.checked){if(!ids.includes(a))acctSet([...ids,a])} else {if(acctHasData(a)||ids.length<=1){el.checked=true;return} acctSet(ids.filter(x=>x!==a))}});
 window.__accts={ids:acctIds,name:acctName,ccy:acctCcy,set:acctSet,brokers:()=>Object.keys(BROKERS)};
-const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIls:0,fractional:true,policy:'',targets:{},depDay:0,taxMonth:4,taxDay:30,taxDone:0,
+const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIls:0,fractional:true,policy:'',targets:{},depDay:0,taxMonth:4,taxDay:30,taxDone:0,bench:['SPX','TA125'],
   rules:{maxPos:10,maxGroup:40,stopLoss:15,maxUsd:90,usdCap:0,drift:5,minHoldMonths:12}};
 let P=null,Q=null,S=JSON.parse(JSON.stringify(DEF)),acct='all',db=null,canWrite=true,dirty=false,timer=null,saving=false;
 const PDEF={start:'',opening:0,mode:'cheap',items:[],deposits:[],purchases:[]};
@@ -15856,6 +15883,7 @@ function render(){
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
   try{renderHealth(m)}catch(e){}
+  try{renderIdx()}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
@@ -19085,7 +19113,7 @@ function renderMine(force){
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
-    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}</td>
+    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
     <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
@@ -19097,8 +19125,8 @@ function renderMine(force){
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
-  renderDup(); renderTx();
-  for(const id of ['btnRead','btnReadText','btnAddRow','btnPfSave','btnPfReset','upAcct','btnList','btnWipe','btnWipeYes'])$(id).disabled=!canWrite;
+  renderDup(); renderTx(); try{pickInit()}catch(e){}
+  for(const id of ['btnRead','btnReadText','btnAddRow','btnPfSave','btnPfReset','upAcct','btnList','btnWipe','btnWipeYes','btnPickAdd','btnPickSkip','pickAcct'])$(id).disabled=!canWrite;
   whoNote();
 }
 function pfDirty(){dDirty=true;PFS.gen++;$('pfSaved').textContent='יש שינויים שלא נשמרו';renderDup()}
@@ -19227,6 +19255,58 @@ function dupAcct(acct){
 // local parser: no Claude, no files, no rate limits - one line per security
 const GRP={tech:'MSFT NVDA AAPL GOOGL GOOG META AMZN TSLA AMD INTC ORCL CRM AVGO PLTR AEHR NFLX ADBE CSCO QCOM TSM ASML MBLY',fin:'JPM V MA AXP BAC WFC GS MS C BRK.B BRKB PYPL SCHW',ind:'CAT LMT RTX GE BA HON DE UPS NOC GD MMM',health:'JNJ UNH PFE LLY MRK ABBV TMO ABT AMGN',cons:'KO PEP WMT O MCD PG COST NKE SBUX HD DIS',space:'RKLB RDW SPCX ASTS LUNR',il:'TA125 TA90'};
 function groupOf(sym){if(NUMSYM.test(sym))return 'il'; for(const k in GRP)if(GRP[k].split(' ').includes(sym))return k;return 'tech'}
+// ---- the quick pick: the big names as logos, a quantity for each, into the table with src:'pick'. A later statement or
+// screenshot of the same account replaces the row (apply() merges by symbol), and says so; nothing is counted twice
+const PICKS=[['AAPL','Apple'],['MSFT','Microsoft'],['NVDA','NVIDIA'],['AMZN','Amazon'],['GOOGL','Alphabet'],['META','Meta'],['TSLA','Tesla'],['BRK.B','Berkshire'],['AVGO','Broadcom'],['JPM','JPMorgan'],['V','Visa'],['MA','Mastercard'],['LLY','Eli Lilly'],['UNH','UnitedHealth'],['XOM','Exxon'],['JNJ','J&J'],['PG','P&G'],['COST','Costco'],['HD','Home Depot'],['NFLX','Netflix'],['KO','Coca-Cola'],['AMD','AMD'],['PLTR','Palantir'],['INTC','Intel']];
+const PICKF=[['SPY','S&P 500 ETF'],['VOO','Vanguard S&P 500'],['QQQ','Nasdaq 100 ETF'],['VTI','כל השוק האמריקאי'],['VT','כל העולם'],['TA125','ת״א 125']];
+const BENCHK={SPX:'S&P 500',NDX:'נאסד״ק 100',DJI:'דאו ג׳ונס',RUT:'ראסל 2000',TA125:'ת״א 125',TA35:'ת״א 35'};
+const benchSel=()=>{const b=Array.isArray(S&&S.bench)?S.bench.filter(k=>BENCHK[k]):[]; return b.length?b:['SPX','TA125']};
+function pickTile([sym,name]){const held=(P&&P.positions||[]).find(p=>p.sym===sym);
+  return `<button type="button" class="pick${held?' held':''}" data-pick="${esc(sym)}" aria-pressed="false" title="${esc(name)}${held?' · כבר בתיק: '+(+held.qty)+' יחידות':''}">${logoHtml(sym,'s')}<span class="sym">${esc(lab(sym))}</span><span class="nm">${held?'בתיק: '+(+held.qty):esc(name)}</span></button>`}
+function pickInit(){
+  const g=$('pickGrid'), gf=$('pickGridF'); if(!g||g.dataset.ok)return; g.dataset.ok='1';
+  g.innerHTML=PICKS.map(pickTile).join(''); gf.innerHTML=PICKF.map(pickTile).join('');
+  for(const sh of new Set([...PICKS,...PICKF].map(x=>(lgPos(x[0])||[])[0]).filter(Boolean)))lgLoad(sh);
+  const a=$('pickAcct'); a.innerHTML=acctOpts(); 
+  $('pickIdx').innerHTML=Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${benchSel().includes(k)}">${BENCHK[k]}</button>`).join('');
+  const box=$('pickBox'); box.open=!(P&&(P.positions||[]).length); pickSub();
+}
+function pickSub(){const n=document.querySelectorAll('.pick[aria-pressed="true"]').length; const el=$('pickSub'); if(el)el.textContent=n?`${n} סומנו`:'בלי קבצים, בשתי לחיצות'}
+document.addEventListener('click',e=>{
+  const t=e.target.closest&&e.target.closest('.pick'); if(t&&!e.target.closest('input')){const on=t.getAttribute('aria-pressed')!=='true'; t.setAttribute('aria-pressed',String(on));
+    let inp=t.querySelector('input'); if(on&&!inp){inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.step='0.0001'; inp.placeholder='כמות'; inp.setAttribute('aria-label','כמות של '+t.dataset.pick); inp.inputMode='decimal'; t.appendChild(inp); inp.focus()} else if(!on&&inp)inp.remove();
+    pickSub(); return}
+  const b=e.target.closest&&e.target.closest('#pickIdx .chip'); if(b){if(!canWrite)return; const k=b.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; b.setAttribute('aria-pressed',String(nx.includes(k))); changed(); return}
+  const ib=e.target.closest&&e.target.closest('#idxRow [data-bench]'); if(ib){if(!canWrite)return; const k=ib.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; changed(); return}
+  if(e.target.closest&&e.target.closest('#idxEdit')){IDX_EDIT=!IDX_EDIT; try{renderIdx()}catch(x){} return}
+  if(e.target.closest&&e.target.closest('#btnPickSkip')){const box=$('pickBox'); box.open=false; for(const t of box.querySelectorAll('.pick[aria-pressed="true"]')){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()} pickSub(); try{$('listText').focus()}catch(x){} return}
+  if(e.target.closest&&e.target.closest('#btnPickAdd'))pickAdd();
+});
+function pickAdd(){
+  const st=$('pickState'), ac=acctPick($('pickAcct').value), rows=[], noQty=[];
+  for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){const sym=t.dataset.pick, q=+((t.querySelector('input')||{}).value)||0; if(!(q>0)){noQty.push(lab(sym));continue}
+    const nm=([...PICKS,...PICKF].find(x=>x[0]===sym)||[sym,sym])[1];
+    rows.push({acct:ac,sym,name:NAMEOF[sym]||nm,qty:q,ccy:/^TA\d+$/.test(sym)||NUMSYM.test(sym)?'ILS':'USD',costIls:null,px:null,group:groupOf(sym),src:'pick'})}
+  if(!rows.length){st.textContent=noQty.length?`כתוב כמות ל: ${noQty.join(', ')}.`:'לא סומן נייר. לחץ על לוגו, ואז כתוב כמות.';return}
+  if(!DRAFT)DRAFT=draftFromP();
+  const have=new Set(rows.map(r=>r.sym)), was=DRAFT.positions.filter(p=>p.acct===ac&&have.has(p.sym)).map(p=>`${lab(p.sym)} (${+p.qty} → ${+rows.find(r=>r.sym===p.sym).qty})`);
+  DRAFT.positions=DRAFT.positions.filter(p=>!(p.acct===ac&&have.has(p.sym))).concat(rows);
+  (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();
+  for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){if(!noQty.includes(lab(t.dataset.pick))){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()}}
+  pickSub(); pfDirty(); renderMine(true);
+  st.textContent=`${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(was.length?` הוחלפה הכמות של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
+  try{$('pfRows').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}
+}
+// the indices the person follows, on the home page: today's change, and for a US index also its future
+let IDX_EDIT=false;
+function renderIdx(){
+  const el=$('idxRow'); if(!el)return; const B=(Q&&Q.bench)||{}, sel=benchSel(), live=!!(Q&&Q.live);
+  const items=sel.map(k=>{const b=B[k]; if(!b||!(b.prev>0))return `<span class="idx" title="אין עדיין נתון"><b>${esc(BENCHK[k]||k)}</b><small>—</small></span>`;
+    const pc=(b.px/b.prev-1)*100, f=b.fut&&b.fut.prev>0?(b.fut.px/b.fut.prev-1)*100:null, fresh=b.date&&(Date.now()-new Date(b.date))/864e5<1.5;
+    return `<span class="idx"><b>${esc(b.name||BENCHK[k]||k)}</b><span class="n ${pc>=0?'up':'down'}">${pc>=0?'▲':'▼'} ${Math.abs(pc).toFixed(2)}%</span>${!fresh&&b.date?`<small>סגירה ${dmy(b.date)}</small>`:''}${f!=null?`<small title="החוזה העתידי על המדד: מה שהשוק מצפה לפתיחה הבאה">חוזים <span class="n ${f>=0?'up':'down'}">${f>=0?'+':'−'}${Math.abs(f).toFixed(2)}%</span></small>`:''}</span>`});
+  const edit=IDX_EDIT?`<span class="chips" role="group" aria-label="בחירת מדדים">${Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${sel.includes(k)}"${canWrite?'':' disabled'}>${BENCHK[k]}</button>`).join('')}</span>`:'';
+  el.hidden=!(P&&(P.positions||[]).length)&&!IDX_EDIT; el.innerHTML=items.join('')+(canWrite?`<button type="button" class="chip" id="idxEdit" aria-expanded="${IDX_EDIT}" title="אילו מדדים להציג">${IDX_EDIT?'סגור':'מדדים'}</button>`:'')+edit;
+}
 function addList(){
   const st=$('listState'), raw=$('listText').value.replace(/[‎‏‪-‮]/g,''), lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   if(!lines.length){st.textContent='כתוב לפחות שורה אחת.';return}
@@ -19578,6 +19658,10 @@ async function readStatement0(J){
     pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true;
     {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
       pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'Claude בודק את הקריאה עם המודל החזק ביותר':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
+    // rows the person had picked by hand for this account: the read replaced them (merge by symbol), so the quantities
+    // are the statement's, once. Shown with the difference, so a changed number reads as a correction, not a duplicate
+    const pickedNote=(()=>{const L=[]; let gone=0; for(const [k,p0] of before){if(p0.src!=='pick')continue; const r=rows.find(r=>canonSym(r.sym,r.name)===k); if(r){const q0=+p0.qty,q1=+r.qty; L.push(`${lab(r.sym)}: סימנת ${+q0.toFixed(4)}, ${merge?'בצילום':'בדוח'} ${+q1.toFixed(4)}${Math.abs(q0-q1)<1e-6?' (זהה)':''}`)} else if(!merge)gone++}
+      if(!L.length&&!gone)return ''; return ` ${L.length?`${L.length===1?'נייר אחד שסימנת ידנית הוחלף':L.length+' ניירות שסימנת ידנית הוחלפו'} בכמות מה${merge?'צילום':'דוח'}, לא נוספו פעמיים: ${L.join(' · ')}.`:''}${gone?` ${gone===1?'נייר אחד שסימנת ידנית לא מופיע בדוח ולכן הוסר':gone+' ניירות שסימנת ידנית לא מופיעים בדוח ולכן הוסרו'}.`:''}`})();
     const mon0=(((DRAFT.monthly||{})[ac])||[]).map(r=>({...r}));
     LASTREAD={acct:ac,total:accTot,ccy:accCcy,n:rows.length}; const txAdded=mergeTx(ac,txs); if(mon.length)monPut(ac,mon); renderTx(); renderDup(); upStep(3);
     // deposits and withdrawals among the transactions: the holdings and the cash already hold them (the list is from the
@@ -19586,7 +19670,7 @@ async function readStatement0(J){
     st.textContent=lead+(dual?`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]} בקריאה מהירה. המודל החזק ביותר של Claude בודק אותם עכשיו, ויתקן בטבלה מה שצריך. אפשר כבר לעבור על הטבלה.`
       :`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`)+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')
       +(nDep?` ${nDep===1?'ההפקדה שברשימה נספרת':'ההפקדות והמשיכות שברשימה נספרות'} בסך ההפקדות, בהיסטוריה ובטבלת התשואה החודשית. יתרת המזומן לא שונתה בגלל${nDep===1?'ה':'ן'}, כי רשימת האחזקות היא מאותו מועד; אם הכסף עדיין במזומן ולא מופיע בטבלה, עדכן שם את יתרת המזומן.`:'')
-      +(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||over)?` אפשר עד 10 קבצים בבת אחת, ${skipped+over} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+cutNote+partNote;
+      +pickedNote+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||over)?` אפשר עד 10 קבצים בבת אחת, ${skipped+over} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+cutNote+partNote;
     return {kind:'rows',job:J.id,hold:HOLD[ac]||0,cashRaw,txAdded,mon:mon.map(r=>({...r})),mon0,cut:!!M.cut,ac,merge,rows:rows.map(r=>({...r})),cash:{ILS:+DRAFT.cash[ac].ILS||0,USD:+DRAFT.cash[ac].USD||0},cash0,asOf:DRAFT.asOf[ac]||null,asOf0,seen0,txs:txs.map(t=>({...t})),tx0,before,derived:!!out.derived,fp:fp(ac),saves:PFS.saves,resets:PFS.resets};
   }
   // comparing two reads of one statement: quantities to a ten-thousandth, costs to the shekel, prices to the agora (or a

@@ -10,8 +10,10 @@ const YH=['https://query1.finance.yahoo.com','https://query2.finance.yahoo.com']
 
 // the page's own symbols for index funds, priced from their index while no direct quote source is configured
 export const PROXY={TA125:{index:'^TA125.TA',label:'לפי מדד ת״א 125'},TA90:{index:'^TA90.TA',label:'לפי מדד ת״א 90'}};
-// two broad indices for "what did the market do on the same day" (the crisis center), from the same Yahoo source
-export const BENCH={SPX:{t:'^GSPC',name:'S&P 500'},TA125:{t:'^TA125.TA',name:'ת״א 125'}};
+// the indices a person can follow on the home page (and the two the crisis center compares with), from the same Yahoo
+// source. A US index also carries its front-month future (`fut`), which trades almost around the clock
+export const BENCH={SPX:{t:'^GSPC',name:'S&P 500',fut:'ES=F'},NDX:{t:'^NDX',name:'נאסד״ק 100',fut:'NQ=F'},DJI:{t:'^DJI',name:'דאו ג׳ונס',fut:'YM=F'},RUT:{t:'^RUT',name:'ראסל 2000',fut:'RTY=F'},
+  TA125:{t:'^TA125.TA',name:'ת״א 125'},TA35:{t:'^TA35.TA',name:'ת״א 35'}};
 
 export function tickerFor(sym,pos,map){
   if(map&&map[sym])return map[sym];
@@ -87,7 +89,8 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   });
   let i=0; await Promise.all(Array.from({length:Math.min(concurrency,tasks.length)},async()=>{while(i<tasks.length){const k=i++;await tasks[k]()}}));
   const [boi,live]=await Promise.all([boiUsd({fetch:f}).catch(()=>null),yahooChart('USDILS=X',{fetch:f}).catch(()=>null)]);
-  const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}}));
+  const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}
+    if(b.fut){try{const q=await yahooChart(b.fut,{fetch:f}); if(q&&q.px>0&&q.prev>0&&bench[k])bench[k].fut={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}}));
   return {quotes:out,index:idx,fx:{boi,live},bench,errors};
 }
 
