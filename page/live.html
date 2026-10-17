@@ -1222,6 +1222,18 @@ section.fold > .fold-h h2{margin:0}
 .msg-by .av.chiko{width:30px;height:30px}
 .chatfab .fab-av{width:38px;height:38px;margin-inline-start:-10px;box-shadow:0 0 0 2px #fff}
 .ae-h{align-items:center}
+.dd2{display:flex;gap:6px} .dd2 select{flex:1 1 0;min-width:0}
+.health{display:flex;flex-direction:column;gap:12px}
+.hscore{display:flex;align-items:center;gap:16px}
+.hring{--p:0;--c:var(--gain);width:84px;height:84px;border-radius:50%;flex:none;background:conic-gradient(var(--c) calc(var(--p)*1%),var(--sunk) 0);display:grid;place-items:center;position:relative}
+.hring::after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--surface)}
+.hnum{position:relative;z-index:1;font-family:var(--mono);font-size:26px;font-weight:700}
+.hlab{display:flex;flex-direction:column;gap:3px} .hlab b{font-size:16px} .hlab span{color:var(--muted);font-size:13px}
+.hparts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 24px}
+.hparts li{display:grid;grid-template-columns:minmax(0,1fr) 90px 44px;gap:10px;align-items:center;font-size:13px}
+.hparts li .nm{color:var(--muted);font-size:12px;display:block}
+.hparts .tr{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden} .hparts .tr i{display:block;height:100%;background:var(--gain)} .hparts li.warn .tr i{background:var(--warn-c)} .hparts li.crit .tr i{background:var(--loss)}
+.hparts .pt{font-family:var(--mono);font-weight:700;text-align:end}
 .hkind{margin-inline:4px} .hkind .chip{min-height:32px}
 @media (max-width:640px){.hkind{margin-inline:0}}
 .ana-entry{background:linear-gradient(180deg,var(--surface) 0%,var(--sunk) 100%)}
@@ -1425,6 +1437,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     </section>
     <div class="viewsw" role="group" aria-label="רמת הפירוט בסקירה"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה רגועה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div>
     <div class="depban" id="depBan" hidden></div>
+    <div id="taxBanner" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
     <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
     <!-- 13.10 (stage 3.1): what needs attention comes first, the holdings after it -->
@@ -1443,6 +1456,11 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <section aria-labelledby="hMixH" id="mixHome" hidden>
       <div class="row"><h2 id="hMixH">פיזור התיק</h2><span class="sub" id="mixHomeSub"></span></div>
       <div class="panel mixh"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור התיק לפי קבוצות"></div><ul class="mixlist" id="mixList"></ul></div>
+    </section>
+    <section id="healthHome" aria-labelledby="hHealth" hidden>
+      <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
+      <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul>
+        <p class="note">המדד מחושב רק מהכללים שקבעת (ריכוז, קבוצות, סטייה מיעד, ירידות, דולר) ומאיכות הנתונים. 100 = התיק עומד בכל הכללים בשוליים נוחים. הוא לא מודד תשואה ולא צופה אותה, ולא ממליץ לקנות או למכור.</p></div>
     </section>
     <section aria-labelledby="hAnaE" id="anaSec" hidden>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
@@ -1532,6 +1550,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <label for="inMonthly">הפקדה חודשית למניות (₪)<input type="number" id="inMonthly" min="0" step="50"></label>
           <label for="inMonthlyIdx">הפקדה חודשית למדדים (₪)<input type="number" id="inMonthlyIdx" min="0" step="50"></label>
           <label for="inDepDay">יום ההפקדה בחודש<select id="inDepDay"></select></label>
+          <label for="inTaxMonth" id="taxLab">תזכורת לדוח השנתי לרשות המיסים<span class="dd2"><select id="inTaxDay" aria-label="יום"></select><select id="inTaxMonth" aria-label="חודש"></select></span></label>
           <label for="inFee">עמלת מינימום לעסקה (₪)<input type="number" id="inFee" min="0" step="0.5"></label>
           <div><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px">—</span></div>
         </div>
@@ -15264,7 +15283,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.acctadd||!canWrite)return; const a=el.dataset.acctadd, ids=acctIds();
   if(el.checked){if(!ids.includes(a))acctSet([...ids,a])} else {if(acctHasData(a)||ids.length<=1){el.checked=true;return} acctSet(ids.filter(x=>x!==a))}});
 window.__accts={ids:acctIds,name:acctName,ccy:acctCcy,set:acctSet,brokers:()=>Object.keys(BROKERS)};
-const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIls:0,fractional:true,policy:'',targets:{},depDay:0,
+const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIls:0,fractional:true,policy:'',targets:{},depDay:0,taxMonth:4,taxDay:30,taxDone:0,
   rules:{maxPos:10,maxGroup:40,stopLoss:15,maxUsd:90,usdCap:0,drift:5,minHoldMonths:12}};
 let P=null,Q=null,S=JSON.parse(JSON.stringify(DEF)),acct='all',db=null,canWrite=true,dirty=false,timer=null,saving=false;
 const PDEF={start:'',opening:0,mode:'cheap',items:[],deposits:[],purchases:[]};
@@ -15698,6 +15717,24 @@ function ladder(entries,opening,monthly,mode){
 window.__model={model,planDeposit,project,schedule,ladder};
 
 // ---- the alert engine: one list of [severity, category, text, items, rich] per model; the overview and the assistant both use it ----
+// the annual tax-return reminder: S.taxMonth/S.taxDay is the date the person set (month 0 = off); S.taxDone is the year
+// they marked as sent. Shown from 45 days before the date until 21 days after it
+function taxDue(){
+  const mo=+S.taxMonth||0, d=Math.max(1,Math.min(31,+S.taxDay||30)); if(!mo)return null;
+  const now=new Date(), y0=now.getFullYear(), mk=y=>{const dt=new Date(y,mo-1,Math.min(d,new Date(y,mo,0).getDate())); return dt};
+  let due=mk(y0); if((now-due)/864e5>21)due=mk(y0+1);
+  const days=Math.round((new Date(due.getFullYear(),due.getMonth(),due.getDate())-new Date(y0,now.getMonth(),now.getDate()))/864e5), year=due.getFullYear();
+  const iso=`${year}-${String(due.getMonth()+1).padStart(2,'0')}-${String(due.getDate()).padStart(2,'0')}`;
+  return {iso,year,days,done:+S.taxDone===year,show:days<=45&&days>=-21&&+S.taxDone!==year};
+}
+function renderTaxBanner(){
+  const el=$('taxBanner'); if(!el)return; let tx=null; try{tx=taxDue()}catch(e){}
+  if(!tx||!tx.show||!P||!(P.positions||[]).length){el.hidden=true;return}
+  el.hidden=false; el.innerHTML=`<div class="dup tx ${tx.days<=7?'warn':''}"><b>תזכורת: הדוח השנתי לרשות המיסים.</b> המועד שקבעת: <span class="n">${dmy(tx.iso)}</span>${tx.days>0?`, בעוד <span class="n">${tx.days}</span> ימים`:tx.days===0?', היום':`, עבר לפני <span class="n">${-tx.days}</span> ימים`}. המועד בפועל תלוי במצבך; בדוק באתר רשות המיסים או אצל רואה חשבון.
+    <div class="acts" style="margin-top:8px"><button type="button" class="btn sm" id="taxDoneBtn"${canWrite?'':' disabled'}>שלחתי את הדוח ל-${tx.year}</button> <button type="button" class="btn sm ghost" id="taxGoBtn">לשנות תאריך</button></div></div>`;
+}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#taxGoBtn')){showTab('settings',true); setTimeout(()=>{const el=$('inTaxMonth'); if(el){el.scrollIntoView({block:'center'}); el.focus()}},150)}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#taxDoneBtn'); if(!b||!canWrite)return; try{const tx=taxDue(); if(tx){S.taxDone=tx.year; changed()}}catch(x){}});
 function alertsOf(m){
   const R=S.rules, stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   const A=[]; const rich=(sev,cat,lead,items,short)=>[sev,cat,lead+' '+items.join(' · ')+'.',short||items.map(x=>x.split(' ')[0]),{lead,items}];
@@ -15727,6 +15764,8 @@ function alertsOf(m){
   if(m.missingCost) A.push(['info','חסר',`ל-${m.missingCost} ניירות אין מחיר קנייה, ולכן הרווח וההפסד שלהם לא מחושבים.`]);
   try{const cr=crisisInfo(m); if(cr){const L=crisisLines(m,cr,A), t=cr.day?`התיק ירד היום ${Math.abs(cr.day.pct).toFixed(1)}% (${ils(Math.abs(cr.day.ils))})${cr.market?`; ${cr.breadth.down} מתוך ${cr.breadth.n} ניירות ירדו, תנועה של השוק כולו`:cr.one?`; ${lab(cr.top[0].sym)} אחראי ל-${pct(cr.share,0)} מהירידה`:''}.`:`התיק נמוך ב-${cr.peak.pct.toFixed(1)}% מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))}).`;
     A.push(['info','שוק',t,[]]); const a=A[A.length-1]; a.why={src:'analysis',rows:L.map(x=>[x[0],esc(x[1])]),tab:'risk',tl:'לסיכון ולכללים'}; a.each=[{key:'mkt:'+isoDay(Date.now()),text:t}]}}catch(e){}
+  try{const tx=taxDue(); if(tx&&tx.show){const t=tx.days>0?`הדוח השנתי לרשות המיסים: המועד שקבעת, ${dmy(tx.iso)}, בעוד ${tx.days===1?'יום אחד':tx.days+' ימים'}.`:tx.days===0?`הדוח השנתי לרשות המיסים: המועד שקבעת הוא היום (${dmy(tx.iso)}).`:`הדוח השנתי לרשות המיסים: המועד שקבעת, ${dmy(tx.iso)}, עבר לפני ${-tx.days===1?'יום':(-tx.days)+' ימים'}.`;
+    A.push([tx.days<=7?'warn':'info','מס',t+' אחרי ששלחת, סמן זאת בדף הבית.',[]]); const a=A[A.length-1]; a.why={src:'rule',rows:[['התאריך שקבעת',dmy(tx.iso)],['מה זה','תזכורת בלבד. המועד בפועל תלוי במצבך ובהחלטות רשות המיסים; בדוק באתר הרשות או אצל רואה חשבון.']],tab:'settings',tl:'לשנות את התאריך'}; a.each=[{key:`tax:${tx.year}:${tx.days<=7?'week':'month'}`,text:t}]}}catch(e){}
   const AF=A.filter(a=>notifOn(a[1]));
   if(!AF.some(a=>a[0]!=='info')) AF.unshift(['ok','תקין',AF.length<A.length?'אין התראות בקטגוריות שבחרת להציג.':'התיק עומד בכל הכללים שקבעת.']);
   return AF;
@@ -15756,6 +15795,35 @@ function renderAnaNow(m){
   el.className='ae-now'+(top?' '+top.sev:''); el.hidden=false;
   el.innerHTML=top?`<i aria-hidden="true"></i><span><b>מה בולט היום:</b> ${esc(top.title)}${n>1?` (ועוד ${n-1===1?'נושא אחד':(n-1)+' נושאים'} לבדיקה)`:''}.</span>`:`<i aria-hidden="true"></i><span><b>מה בולט היום:</b> אין חריגות מהכללים שהגדרת.</span>`;
 }
+// the health index: 0-100 from the person's own rules and the data quality. Every part is shown with what it measures,
+// so the number is never a black box. It is not a return, a forecast, or a recommendation
+function healthOf(m){
+  if(!m||!(m.total>0)||!m.pos.length)return null;
+  const R=(S&&S.rules)||{}, parts=[], lin=(x,ok,bad)=>x<=ok?1:x>=bad?0:1-(x-ok)/(bad-ok);
+  const top=m.pos.reduce((a,p)=>p.w>a?p.w:a,0), capP=+R.maxPos||0;
+  if(capP)parts.push({k:'pos',t:'ריכוז בנייר בודד',w:22,s:lin(top,capP*0.8,capP*1.5),d:`הגדול ביותר ${pct(top)} · הכלל עד ${pct(capP,0)}`});
+  const gTop=Math.max(0,...Object.keys(GROUPS).filter(k=>k!=='cash').map(k=>(m.groups[k]||{w:0}).w)), capG=+R.maxGroup||0;
+  if(capG)parts.push({k:'grp',t:'ריכוז בקבוצה',w:18,s:lin(gTop,capG*0.85,capG*1.4),d:`הגדולה ביותר ${pct(gTop)} · הכלל עד ${pct(capG,0)}`});
+  {const inv=m.pos.reduce((t,p)=>t+p.val,0), nEff=inv>0?1/m.pos.reduce((t,p)=>t+(p.val/inv)**2,0):0; parts.push({k:'div',t:'פיזור',w:18,s:Math.max(0,Math.min(1,(nEff-1)/9)),d:`כמו ${nEff.toFixed(1)} ניירות שווים · 10 ומעלה = מלא`})}
+  const tsum=Object.values((S&&S.targets)||{}).reduce((t,v)=>t+(+v||0),0), dr=+R.drift||0;
+  if(tsum>0&&dr){const worst=Math.max(0,...Object.keys(GROUPS).map(k=>Math.abs((m.groups[k]||{w:0}).w-(+S.targets[k]||0)))); parts.push({k:'drift',t:'סטייה מהיעדים',w:14,s:lin(worst,dr*0.6,dr*2.5),d:`הסטייה הגדולה ${worst.toFixed(1)} נק׳ · הכלל ${dr} נק׳`})}
+  const sl=+R.stopLoss||0; if(sl){const costed=m.pos.filter(p=>p.cost>0), dnV=costed.filter(p=>(p.costVal-p.cost)/p.cost*100<=-sl).reduce((t,p)=>t+p.val,0), base=costed.reduce((t,p)=>t+p.val,0);
+    parts.push({k:'dd',t:'ניירות מתחת לסף הירידה',w:14,s:base>0?1-Math.min(1,dnV/base*2.5):1,d:base>0?`${pct(dnV/base*100)} מהשווי ירדו יותר מ-${sl}% מהעלות`:'אין נתוני עלות'})}
+  const uc=+R.usdCap||0; if(uc)parts.push({k:'usd',t:'חשיפה לדולר',w:10,s:lin(m.usdPct,uc*0.9,uc*1.3),d:`${pct(m.usdPct)} בדולרים · הכלל עד ${pct(uc,0)}`});
+  {const noPx=(P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).length, old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)).length, late=(()=>{try{return !!pxLate()}catch(e){return false}})();
+    const bad=noPx*2+old+(late?1:0)+(m.missingCost||0); parts.push({k:'data',t:'איכות הנתונים',w:4,s:Math.max(0,1-bad*0.2),d:bad?[noPx?noPx+' בלי מחיר':'',old?old+' עם מחיר ישן':'',m.missingCost?m.missingCost+' בלי עלות':'',late?'המחירים לא עודכנו':''].filter(Boolean).join(' · '):'מחירים ועלויות מלאים'})}
+  const W=parts.reduce((t,x)=>t+x.w,0), score=Math.round(parts.reduce((t,x)=>t+x.w*x.s,0)/W*100);
+  for(const x of parts){x.pts=Math.round(x.s*100); x.lvl=x.s>=0.75?'ok':x.s>=0.4?'warn':'crit'}
+  return {score,parts,label:score>=80?'בריא לפי הכללים שלך':score>=60?'יש מה לבדוק':'חורג מהכללים שלך',lvl:score>=80?'ok':score>=60?'warn':'crit'};
+}
+function renderHealth(m){
+  const sec=$('healthHome'); if(!sec)return; const H=healthOf(m); if(!H){sec.hidden=true;return}
+  sec.hidden=false; const ring=$('hRing'); ring.style.setProperty('--p',H.score); ring.style.setProperty('--c',H.lvl==='ok'?'var(--gain)':H.lvl==='warn'?'var(--warn-c)':'var(--loss)'); ring.setAttribute('aria-label',`${H.score} מתוך 100`);
+  $('hNum').textContent=H.score; $('hLab').textContent=H.label; const low=H.parts.filter(x=>x.lvl!=='ok').sort((a,b)=>(1-b.s)*b.w-(1-a.s)*a.w);   // the parts that cost the most points first
+  $('hWhy').textContent=low.length?`מוריד את המדד: ${low.slice(0,2).map(x=>x.t).join(', ')}`:'כל הבדיקות בטווח שקבעת';
+  $('healthSub').textContent=`${H.parts.length} בדיקות · משקלים לפי הכללים שלך`;
+  $('hParts').innerHTML=H.parts.map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('');
+}
 function renderMixHome(m){
   const sec=$('mixHome'); if(!sec)return; const gs=Object.keys(GROUPS).map(k=>({id:k,...m.groups[k]})).filter(g=>g&&g.val>0).sort((a,b)=>b.val-a.val);
   if(!gs.length||!(m.total>0)){sec.hidden=true;return}
@@ -15782,6 +15850,7 @@ function render(){
   $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
+  try{renderHealth(m)}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
@@ -15808,7 +15877,7 @@ function render(){
   const okRow=A.filter(a=>a[0]==='ok').map(a=>`<li class="alert ok" data-line="${esc(line(a))}" data-sev="ok">${niH('ok')}<span><span class="tag">${tagFor.ok}</span> ${esc(a[2])}</span></li>`).join('');
   const alH=okRow+grp; if(alH!==lastAl){lastAl=alH;$('alerts').innerHTML=alH}
   LAST_A=A; try{alertsChime(A)}catch(e){}
-  renderDesk(m,A); renderRules(m); renderBrief(m,A); renderCore(m); try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){}
+  renderDesk(m,A); renderRules(m); renderBrief(m,A); renderCore(m); try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
   // hero status, movers, ticker tape and heat board
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
   ks.hidden=false; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
@@ -17676,7 +17745,7 @@ let AL_SEEN=null;
 function alertsChime(A){const now=new Set(A.filter(a=>a[0]==='crit'||a[0]==='warn').map(a=>a[1]+'|'+a[2])); if(AL_SEEN){for(const k of now)if(!AL_SEEN.has(k)){chime('sys');break}} AL_SEEN=now}
 // which alert categories reach this person. A category switched off is left out of the control list, the desk, the status chip,
 // the reports and the morning message (they all read the same list)
-const NOTIF=[['ריכוז','נייר או קבוצה מעל התקרה שקבעת'],['ירידה','נייר שירד מהעלות מעבר לסף הבדיקה'],['שוק','ירידה חדה בתיק או בשוק: מה באמת קורה'],['מטבע','חשיפה לדולר מעל התקרה'],['סטייה','קבוצה רחוקה מיעד ההקצאה'],['הפקדה','תזכורת יום ההפקדה וסימון ההפקדה'],['דוחות','דוח כספי קרוב של חברה בתיק'],['דירוג','שינוי בדירוג האנליסטים'],['נתונים','מחירים שלא התעדכנו בזמן'],['מחיר','נייר בלי מחיר, או עם מחיר ישן'],['יעד','מחיר שקבעת לנייר נחצה, מעל או מתחת'],['יתרה','מזומן שלא מספיק להפקדה הבאה'],['הגדלה','ניירות שהתוכנית מגדילה'],['מדיניות','סתירה בין התיק למדיניות שכתבת'],['חסר','נתון חסר שמונע חישוב']];
+const NOTIF=[['מס','תזכורת לדוח השנתי לרשות המיסים, לפי התאריך שקבעת'],['ריכוז','נייר או קבוצה מעל התקרה שקבעת'],['ירידה','נייר שירד מהעלות מעבר לסף הבדיקה'],['שוק','ירידה חדה בתיק או בשוק: מה באמת קורה'],['מטבע','חשיפה לדולר מעל התקרה'],['סטייה','קבוצה רחוקה מיעד ההקצאה'],['הפקדה','תזכורת יום ההפקדה וסימון ההפקדה'],['דוחות','דוח כספי קרוב של חברה בתיק'],['דירוג','שינוי בדירוג האנליסטים'],['נתונים','מחירים שלא התעדכנו בזמן'],['מחיר','נייר בלי מחיר, או עם מחיר ישן'],['יעד','מחיר שקבעת לנייר נחצה, מעל או מתחת'],['יתרה','מזומן שלא מספיק להפקדה הבאה'],['הגדלה','ניירות שהתוכנית מגדילה'],['מדיניות','סתירה בין התיק למדיניות שכתבת'],['חסר','נתון חסר שמונע חישוב']];
 function notifOn(cat){return !(S&&S.notif&&S.notif[cat]===false)}
 function renderNotif(){const el=$('notifList'); if(!el)return; setH(el,NOTIF.map(([c,d])=>`<label class="check nt"><input type="checkbox" data-notif="${esc(c)}"${canWrite?'':' disabled'}><span><b>${esc(c)}</b> · ${esc(d)}</span></label>`).join(''));
   for(const i of el.querySelectorAll('[data-notif]'))i.checked=notifOn(i.dataset.notif);
@@ -18786,7 +18855,7 @@ $('chart').addEventListener('pointermove',hover);
 $('chart').addEventListener('pointerleave',()=>{$('tip').hidden=true;const c=$('svg').querySelector('#cross');if(c)c.setAttribute('visibility','hidden')});
 
 // ---- settings ---------------------------------------------------------
-const MAP={inMonthly:['monthly'],inMonthlyIdx:['monthlyIdx'],obMonthly:['monthly'],inFee:['minFeeIls'],inYears:['years'],inRate:['ratePct'],inTax:['taxPct'],inGoal:['goal'],rMaxPos:['rules','maxPos'],rMaxGroup:['rules','maxGroup'],rStop:['rules','stopLoss'],rDrift:['rules','drift'],rHold:['rules','minHoldMonths'],rUsd:['rules','usdCap'],inDepDay:['depDay']};
+const MAP={inTaxMonth:['taxMonth'],inTaxDay:['taxDay'],inMonthly:['monthly'],inMonthlyIdx:['monthlyIdx'],obMonthly:['monthly'],inFee:['minFeeIls'],inYears:['years'],inRate:['ratePct'],inTax:['taxPct'],inGoal:['goal'],rMaxPos:['rules','maxPos'],rMaxGroup:['rules','maxGroup'],rStop:['rules','stopLoss'],rDrift:['rules','drift'],rHold:['rules','minHoldMonths'],rUsd:['rules','usdCap'],inDepDay:['depDay']};
 function fillInputs(){
   for(const id in MAP){const el=$(id); if(document.activeElement===el)continue; const [a,b]=MAP[id]; el.value=b?S[a][b]:S[a]; if(id==='rUsd'&&!(+el.value))el.value=''}
   $('inFrac').checked=!!S.fractional; try{renderNotif();renderSnd();renderAccts();renderPxAlerts()}catch(e){} try{renderMail()}catch(e){}
@@ -19977,6 +20046,7 @@ document.addEventListener('keydown',e=>{const d=$('profDlg'); if(!d||d.hidden)re
     if(!d.contains(cur)){e.preventDefault();a.focus()} else if(e.shiftKey&&cur===a){e.preventDefault();z.focus()} else if(!e.shiftKey&&cur===z){e.preventDefault();a.focus()}}},true);
 try{$('profForm').addEventListener('submit',e=>{e.preventDefault();profSave()})}catch(e){}
 try{$('inDepDay').innerHTML=depOpts(0)}catch(e){}
+try{$('inTaxMonth').innerHTML='<option value="0">כבוי</option>'+MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join(''); $('inTaxDay').innerHTML=Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}catch(e){}
 
 // ---- the page in the viewer's language --------------------------------------------------------------------------------------
 // The page is written in Hebrew. For any other language, the interface text that is on screen goes to Claude in batches,
