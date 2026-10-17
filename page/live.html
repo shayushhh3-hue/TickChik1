@@ -1,36 +1,39 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>תיק צ׳יק – חדר המסחר שלי</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Assistant:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Assistant:wght@400;600&family=Frank+Ruhl+Libre:wght@700;800&display=swap">
 <style>
 /* Layout: a broker's daily sheet. Palette: deep steel blue (hero, nav, text) ~60%, cool slate page with white cards ~30%,
    bronze ~10% (actions, goal progress, active marks), sage green for gains, muted brick for losses. Soft shadows, small radius, no gradients or glow.
    The top block states what the portfolio is worth and what it did today; under it a diverging bar list shows which
    holdings moved it. Tabs keep the rest one click away. Display + text: Heebo. Figures: IBM Plex Mono. */
 :root{
-  --navy:#1F3A5F; --navy2:#2B4C78; --navy3:#4A6C96;
-  --bg:#F6F7F9; --surface:#FFFFFF; --sunk:#EEF1F5; --ink:#1B2A3C; --ink2:#45566B; --muted:#5B6B7D;
-  --line:#DFE4EA; --accent:#9A672F; --accent-ink:#7A4F22; --accent-soft:#FAF3EA; --on-accent:#FFFFFF; --focus:#2E6DA4;
-  --gain:#2F7A5C; --loss:#B83A3A;
-  --ok-c:#3A9D7F; --ok-bg:#EEF7F3; --ok-ink:#1F5C46;
-  --warn-c:#D69A2D; --warn-bg:#FBF5E8; --warn:#7A4E10;
-  --crit-c:#C9534F; --crit-bg:#FBEFEE; --crit-ink:#8E2B2B;
-  --info-c:#4F7CA8; --info-bg:#EEF3F8; --info-ink:#27496D;
-  --bar-up:#3A9D7F; --bar-down:#C9534F;
-  --s1:#4F7CA8; --s2:#B07A3A; --grid:#DFE4EA;
-  --r:16px; --shadow:0 2px 4px rgb(20 40 70 / .04),0 10px 28px rgb(20 40 70 / .08);
+  /* 17.10: the page's own look. Deep teal ink for the dark surfaces (the hero, the menus), a cool mist behind the
+     cards, and the gold of Chiko's horns as the one accent. Numbers in the text face, lining and tabular, not a mono. */
+  --navy:#10303B; --navy2:#174551; --navy3:#2C6473;
+  --gold:#D8A33F; --gold-ink:#1B2B31; --gold-soft:#FBF3E1;
+  --bg:#EDF0F0; --surface:#FFFFFF; --sunk:#E6EAEA; --ink:#1B2B31; --ink2:#45565C; --muted:#64737A;
+  --line:#D8DEDE; --accent:#A8762A; --accent-ink:#7E5716; --accent-soft:#FBF3E1; --on-accent:#1B2B31; --focus:#1F6F86;
+  --gain:#1F8A5B; --loss:#C6392F;
+  --ok-c:#2E9A74; --ok-bg:#E8F5EF; --ok-ink:#1B5E45;
+  --warn-c:#CF8A1D; --warn-bg:#FBF3E1; --warn:#6E4C0E;
+  --crit-c:#C6392F; --crit-bg:#FBEDEB; --crit-ink:#8C2A22;
+  --info-c:#2C6473; --info-bg:#E8F0F2; --info-ink:#1F4A55;
+  --bar-up:#2E9A74; --bar-down:#C6392F;
+  --s1:#2C6473; --s2:#D8A33F; --grid:#D8DEDE;
+  --r:12px; --shadow:0 1px 2px rgb(16 48 59 / .06),0 6px 18px rgb(16 48 59 / .05);
   --sans:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
-  --display:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Heebo","Arial Hebrew",monospace;
+  --display:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
+  --mono:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
 }
 /* Single light theme by choice: the owner wants a bright page whatever the device setting. */
 :root{color-scheme:light}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;font-variant-numeric:lining-nums tabular-nums}
 .wrap{max-width:1080px;margin-inline:auto;padding-inline:16px;padding-block:14px 48px;display:flex;flex-direction:column;gap:18px}
 .n{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
 h1{font-size:15px;font-weight:700;line-height:1.2;margin:0}
-h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0;text-wrap:balance;letter-spacing:0;line-height:1.25}
 h3{font-size:13.5px;font-weight:700;margin:0}
 .sub{color:var(--muted);font-size:12px;margin:0}
 .up{color:var(--gain)} .down{color:var(--loss)}
@@ -42,25 +45,25 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 .chip:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 
 /* ---- top block ---- */
-.hero{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
-.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line)}
+.hero{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 34px rgb(16 48 59 / .18);display:flex;flex-direction:column;overflow:hidden}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid var(--gold)}
 .brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .live{font-size:12px;color:var(--muted)}
 .main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:stretch}
 @media (max-width:760px){.main{grid-template-columns:minmax(0,1fr)}}
 .worth{display:flex;flex-direction:column;gap:2px;min-width:0;padding:18px}
 .k{font-size:12px;color:var(--muted);font-weight:500}
-.big{font-weight:700;font-size:clamp(30px,5vw,38px);line-height:1.1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:block;text-align:right}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(36px,6vw,50px);line-height:1.05;letter-spacing:-.01em;font-variant-numeric:lining-nums tabular-nums;direction:ltr;unicode-bidi:isolate;display:block;text-align:right}
 .dayline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-top:6px}
 .dayline .v{font-weight:700;font-size:17px;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
 .dayline .d{font-size:14px;color:var(--ink2)}
 .worth>.d{font-size:12px;color:var(--muted);margin-top:6px}
 .status{font:inherit;font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;border:0;cursor:pointer;background:var(--ok-bg);color:var(--ok-ink);align-self:flex-start;margin-top:10px}
 .status.warn{background:var(--warn-bg);color:var(--warn)} .status.crit{background:var(--crit-bg);color:var(--crit-ink)}
-.hero h1{font-size:17px;letter-spacing:.2px}
+.hero h1{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:0}
 .brand-sub{font-size:12.5px;font-weight:600;color:var(--ink2);padding-inline-start:10px;border-inline-start:1px solid rgb(255 255 255 / .3)}
 .hero{--ink:#FFFFFF;--ink2:#D5DEE9;--muted:#A9B8CA;--line:rgb(255 255 255 / .14);--sunk:rgb(255 255 255 / .07);--surface:rgb(255 255 255 / .08);--gain:#8FD8B4;--loss:#F4A29C;--ok-bg:rgb(143 216 180 / .16);--ok-ink:#C4EBD6;--warn-bg:rgb(227 182 120 / .2);--warn:#F2D4A2;--crit-bg:rgb(244 162 156 / .18);--crit-ink:#FACBC7;background:var(--navy);border-color:var(--navy)}
-.hero .chip[aria-pressed="true"]{background:#E3B678;color:#1B2A3C;font-weight:700}
+.hero .chip[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);font-weight:700}
 .hero .chips{border-color:rgb(255 255 255 / .22)}
 .hero .tapewrap{background:rgb(0 0 0 / .14)}
 .side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-inline-start:1px solid var(--line)}
@@ -102,8 +105,8 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .tabs button{font:inherit;font-size:14.5px;font-weight:500;display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;padding:12px;border:0;border-radius:10px;background:none;color:#D5DEE9;cursor:pointer;text-align:start}
 .tabs button:hover{background:rgb(255 255 255 / .07);color:#fff}
 .tabs button .ti{display:block;width:21px;height:21px;flex:none}
-.tabs button[aria-selected="true"]{background:rgb(255 255 255 / .16);color:#fff;font-weight:700;box-shadow:inset -3px 0 0 #E3B678}
-.tabs button[aria-selected="true"] .ti{color:#E9C58E}
+.tabs button[aria-selected="true"]{background:rgb(255 255 255 / .12);color:#fff;font-weight:700;box-shadow:inset -3px 0 0 var(--gold)}
+.tabs button[aria-selected="true"] .ti{color:var(--gold)}
 .tsub{display:flex;flex-direction:column;gap:1px;margin:-2px 0 6px;padding-inline-start:44px;position:relative}
 .tsub::before{content:"";position:absolute;inset-inline-start:22px;top:4px;bottom:4px;width:1px;background:rgb(255 255 255 / .18)}
 #tab_risk[aria-selected="false"] + .tsub{display:none}
@@ -266,8 +269,8 @@ textarea{font-family:var(--sans);direction:rtl;min-height:90px;resize:vertical;l
 label.check{flex-direction:row;align-items:center;gap:8px}
 .btn{font:inherit;font-size:12.5px;font-weight:500;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .btn:hover{background:var(--sunk)}
-.btn.sm{padding:2px 8px;font-size:12px} .btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
-.btn.pri:hover{background:var(--navy2)}
+.btn.sm{padding:2px 8px;font-size:12px} .btn.pri{background:var(--gold);border-color:var(--gold);color:var(--gold-ink);font-weight:600}
+.btn.pri:hover{background:#E2B04E;border-color:#E2B04E}
 .btn:disabled{opacity:.5;cursor:default}
 .arc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .arc li{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 2px;border-top:1px solid var(--line)}
@@ -1361,10 +1364,10 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   .botbar button{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border:0;border-radius:10px;background:none;color:#C9D4E2;font:inherit;font-size:12px;font-weight:500;line-height:1.2;cursor:pointer}
   .botbar button svg{width:22px;height:22px;flex:none}
   .botbar button[aria-current="page"],.botbar button.on{color:#fff;font-weight:700;background:rgb(255 255 255 / .12)}
-  .botbar button[aria-current="page"] svg,.botbar button.on svg{color:#E9C58E}
+  .botbar button[aria-current="page"] svg,.botbar button.on svg{color:var(--gold)}
   .botbar button{position:relative;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .15s,color .15s}
   .botbar button:active{background:rgb(255 255 255 / .18)}
-  .botbar button[aria-current="page"]::before,.botbar button.on::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:#E9C58E}
+  .botbar button[aria-current="page"]::before,.botbar button.on::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
   .botbar button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
   .botbar .bbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wrap:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),textarea,select):focus) .botbar{display:none}
