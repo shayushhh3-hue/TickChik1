@@ -1222,6 +1222,8 @@ section.fold > .fold-h h2{margin:0}
 .msg-by .av.chiko{width:30px;height:30px}
 .chatfab .fab-av{width:38px;height:38px;margin-inline-start:-10px;box-shadow:0 0 0 2px #fff}
 .ae-h{align-items:center}
+.hkind{margin-inline:4px} .hkind .chip{min-height:32px}
+@media (max-width:640px){.hkind{margin-inline:0}}
 .ana-entry{background:linear-gradient(180deg,var(--surface) 0%,var(--sunk) 100%)}
 .ae-now{margin:0;padding:10px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;line-height:1.5;display:flex;gap:8px;align-items:baseline}
 .ae-now b{font-weight:700}
@@ -1430,7 +1432,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="panel desk" id="desk" tabindex="-1"></div>
     </section>
     <section aria-labelledby="hHold" id="holdSec" class="hold lite">
-      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
+      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
       <div class="panel scroll">
         <table>
           <thead><tr><th>נייר</th><th class="num">שינוי יומי</th><th class="num">כמות</th><th class="num">מחיר</th><th class="num">שווי ₪</th><th class="num">משקל</th><th class="num">עלות ₪</th><th class="num">רווח / הפסד</th></tr></thead>
@@ -1615,6 +1617,51 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         </table>
         <p class="note" id="divNote" style="margin-top:10px"></p>
         <p class="note" id="divRe" style="margin-top:6px"></p>
+      </div>
+    </section>
+    <section aria-labelledby="hDivCalc" id="divCalc">
+      <div class="row"><h2 id="hDivCalc">מחשבון דיבידנדים</h2><span class="sub" id="divCalcSub"></span></div>
+      <div class="panel">
+        <div class="form">
+          <label for="dcAmt">סכום מושקע (₪)<input type="number" id="dcAmt" min="0" step="1000"></label>
+          <label for="dcYld">תשואת דיבידנד שנתית (%)<input type="number" id="dcYld" min="0" max="30" step="0.1"></label>
+          <label for="dcGrow">גידול שנתי בדיבידנד (%)<input type="number" id="dcGrow" min="-20" max="30" step="0.5" value="0"></label>
+          <label for="dcPx">שינוי מחיר שנתי (%)<input type="number" id="dcPx" min="-20" max="30" step="0.5" value="0"></label>
+          <label for="dcMon">הפקדה חודשית (₪)<input type="number" id="dcMon" min="0" step="100"></label>
+          <label for="dcTax">מס על הדיבידנד (%)<input type="number" id="dcTax" min="0" max="60" step="1" value="25"></label>
+          <label for="dcYears">שנים<input type="number" id="dcYears" min="1" max="40" step="1"></label>
+          <label class="check" for="dcRe" style="align-self:end;padding-bottom:6px"><input type="checkbox" id="dcRe" checked> הדיבידנד נטו מושקע מחדש</label>
+        </div>
+        <div class="strip" style="margin-top:14px">
+          <div class="cell"><div class="k">דיבידנד בשנה הראשונה, נטו</div><span class="v" id="dcNow">—</span><div class="d" id="dcNowD">&nbsp;</div></div>
+          <div class="cell"><div class="k" id="dcEndK">דיבידנד בשנה האחרונה, נטו</div><span class="v" id="dcEnd">—</span><div class="d" id="dcEndD">&nbsp;</div></div>
+          <div class="cell"><div class="k">סך דיבידנדים נטו בתקופה</div><span class="v" id="dcCum">—</span><div class="d" id="dcCumD">&nbsp;</div></div>
+          <div class="cell"><div class="k">שווי בסוף התקופה</div><span class="v" id="dcVal">—</span><div class="d" id="dcValD">&nbsp;</div></div>
+        </div>
+        <details style="margin-top:10px"><summary>שנה אחר שנה</summary>
+          <div class="scroll"><table><thead><tr><th class="num">שנה</th><th class="num">שווי ₪</th><th class="num">דיבידנד ברוטו ₪</th><th class="num">מס ₪</th><th class="num">נטו ₪</th><th class="num">נטו מצטבר ₪</th></tr></thead><tbody id="dcRows"></tbody></table></div>
+        </details>
+        <p class="note" id="dcGot" style="margin-top:10px"></p>
+        <p class="note">זה ארגז חול לחישוב: הדיבידנד מחושב על השווי בכל חודש לפי התשואה שהזנת, והמס לפי האחוז שהזנת (ברירת המחדל 25%, כמו הניכוי במקור בדוחות; המס בפועל תלוי במצבך ובאמנת המס). שינוי במחיר או בדיבידנד הוא הנחה שלך, לא תחזית. מה שמקלידים כאן לא נשמר בשרת ולא משנה את התוכנית.</p>
+      </div>
+    </section>
+    <section aria-labelledby="hFxCalc" id="fxCalc">
+      <div class="row"><h2 id="hFxCalc">מחשבון מט״ח: למה בשקלים זה מינוס כשבדולרים זה פלוס</h2><span class="sub" id="fxCalcSub"></span></div>
+      <div class="panel">
+        <div class="form">
+          <label for="fcUsd">הושקע בדולרים ($)<input type="number" id="fcUsd" min="0" step="100"></label>
+          <label for="fcFx0">שער הדולר בקנייה (₪)<input type="number" id="fcFx0" min="1" max="10" step="0.001"></label>
+          <label for="fcChg">המניות השתנו בדולרים (%)<input type="number" id="fcChg" min="-100" max="500" step="0.5"></label>
+          <label for="fcFx1">שער הדולר היום (₪)<input type="number" id="fcFx1" min="1" max="10" step="0.001"></label>
+        </div>
+        <div class="strip" style="margin-top:14px">
+          <div class="cell"><div class="k">רווח או הפסד מהמחירים</div><span class="v" id="fcPx">—</span><div class="d" id="fcPxD">&nbsp;</div></div>
+          <div class="cell"><div class="k">השפעת שער הדולר</div><span class="v" id="fcFxE">—</span><div class="d" id="fcFxED">&nbsp;</div></div>
+          <div class="cell"><div class="k">יחד, בשקלים</div><span class="v" id="fcTot">—</span><div class="d" id="fcTotD">&nbsp;</div></div>
+          <div class="cell"><div class="k">שער האיזון</div><span class="v" id="fcBe">—</span><div class="d" id="fcBeD">&nbsp;</div></div>
+        </div>
+        <p class="wi-out" id="fcOut"></p>
+        <p class="note">הסכום בדולרים מוכפל בשער היום ובשער הקנייה; ההפרש בין השניים הוא השפעת השער, והשאר הוא שינוי המחירים. הנתונים ההתחלתיים נלקחים מהתיק כשיש לדף שער קנייה ממוצע מהדוחות, ואפשר לשנות כל מספר. זה ארגז חול: לא נשמר ולא משנה דבר.</p>
       </div>
     </section>
   </div>
@@ -15796,7 +15843,12 @@ function render(){
     <td class="num">${d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`}</td></tr>`};
   {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)}`+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n)=>`<tr class="sec"><td colspan="8">${t} · ${n}</td></tr>`;
-  $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
+  // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
+  for(const b of document.querySelectorAll('.hkind .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
+  const hvRows=HV==='stock'?sP:HV==='fund'?fP:null;
+  if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HV==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
+      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק</td></tr>`}
+  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num"><span class="n">${ils(m.cash)}</span></td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   renderPlan(mAllNow());
@@ -15808,7 +15860,7 @@ function render(){
   renderDecomp();
   renderFees();
   renderProfile(m);
-  renderDividends(m);
+  renderDividends(m); try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
   renderRisk(m);
   renderComove(m);
   try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){}
@@ -16004,6 +16056,61 @@ function renderDividends(m){
   {const d=divReinvest(g); $('divRe').innerHTML=g>0?`אם הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש בתיק: בעוד ${nn(d.Y)} שנים, בתשואה של ${nn(pct(d.R))} בשנה (ההנחה שלך במסך היעד), הוא מצטבר לכ-${nn(ils(d.fv))}, לעומת ${nn(ils(d.flat))} אם הוא נשאר במזומן. זה אפקט הריבית דריבית, לא תחזית.`:''}
   $('divNote').textContent='הצפי מניח שכל חברה תמשיך לחלק באותו שיעור ושהמחיר והכמות לא ישתנו. חברה יכולה להגדיל, לקצץ או לבטל דיבידנד. מועדי החלוקה לא מוצגים, כי אין לי להם מקור נתונים. קרנות המדד לא נכללות.';
 }
+// dividend calculator: a sandbox on the viewer's numbers (value, yield, monthly deposit) or any numbers typed in
+const DC={set:false};
+function divCalcSeed(m){
+  if(DC.set||!m)return; const y=(()=>{try{if(!RS||!RS.companies)return null; let g=0; for(const p of m.pos){const d=(RS.companies[p.sym]||{}).dy; if(d>0)g+=p.val*d/100} return m.total>0&&g>0?g/m.total*100:null}catch(e){return null}})();
+  // seeded again until the company data is in (or after a few tries), so the yield comes from the portfolio when it can
+  DC.n=(DC.n||0)+1; if(m.total>0){$('dcAmt').value=Math.round(m.total); DC.set=!!(RS&&RS.companies)||DC.n>5}
+  $('dcYld').value=y!=null?(+y.toFixed(2)):($('dcYld').value||2); $('dcMon').value=$('dcMon').value||(+S.monthly||0); $('dcYears').value=$('dcYears').value||Math.max(1,Math.min(40,+S.years||10));
+  $('dcPx').value=$('dcPx').value||0;
+}
+function divCalcRun(a){
+  const Y=Math.max(1,Math.min(40,Math.round(a.years)||1)), rp=Math.pow(1+a.px/100,1/12)-1, t=Math.min(1,Math.max(0,a.tax/100)); let V=a.amt, y=a.yld/100, cum=0; const rows=[];
+  for(let k=1;k<=Y;k++){let g=0,tx=0;
+    for(let mth=0;mth<12;mth++){V*=1+rp; const d=V*y/12, x=d*t; g+=d; tx+=x; if(a.re)V+=d-x; V+=a.mon}
+    cum+=g-tx; rows.push({k,V,g,tx,net:g-tx,cum}); y*=1+a.grow/100}
+  return rows;
+}
+function renderDivCalc(m){
+  const box=$('divCalc'); if(!box)return; if(m)divCalcSeed(m);
+  const v=id=>+($(id).value)||0, a={amt:v('dcAmt'),yld:v('dcYld'),grow:v('dcGrow'),px:v('dcPx'),mon:v('dcMon'),tax:v('dcTax'),years:v('dcYears'),re:$('dcRe').checked};
+  const rows=divCalcRun(a), f=rows[0], l=rows[rows.length-1];
+  $('divCalcSub').textContent=a.amt>0?`על ${ils(a.amt)}${a.mon?` ועוד ${ils(a.mon)} בחודש`:''} · ${pct(a.yld,2)} בשנה`:'הזן סכום ותשואת דיבידנד';
+  $('dcNow').textContent=ils(f.net); $('dcNowD').textContent=`כ-${ils(f.net/12)} בחודש · לפני מס ${ils(f.g)}`;
+  $('dcEndK').textContent=`דיבידנד בשנה ${rows.length}, נטו`; $('dcEnd').textContent=ils(l.net); $('dcEndD').textContent=`כ-${ils(l.net/12)} בחודש`;
+  $('dcCum').textContent=ils(l.cum); $('dcCumD').textContent=`${rows.length} שנים · מס ששולם ${ils(rows.reduce((s,r)=>s+r.tx,0))}`;
+  $('dcVal').textContent=ils(l.V); $('dcValD').textContent=a.re?'כולל הדיבידנד שהושקע מחדש':'הדיבידנד לא מושקע מחדש';
+  $('dcRows').innerHTML=rows.map(r=>`<tr><td class="num"><span class="n">${r.k}</span></td><td class="num"><span class="n">${ils(r.V)}</span></td><td class="num"><span class="n">${ils(r.g)}</span></td><td class="num"><span class="n">${ils(r.tx)}</span></td><td class="num"><span class="n">${ils(r.net)}</span></td><td class="num"><span class="n">${ils(r.cum)}</span></td></tr>`).join('');
+  // what the statements say was actually received
+  let got=''; try{if(HS&&HS.accounts&&Q){const g=HS.accounts.reduce((s,x)=>s+(+x.divGrossUsd||0),0), tx=HS.accounts.reduce((s,x)=>s+(+x.divTaxUsd||0),0); if(g>0)got=`לפי הדוחות שלך התקבלו עד היום דיבידנדים של $${g.toFixed(2)} ברוטו, נוכה מס של $${tx.toFixed(2)}, ונטו ${ils((g-tx)*Q.usdIls)} לפי השער היום.`; else got='בדוחות שנקראו עד היום לא רשומים דיבידנדים שהתקבלו.'}}catch(e){}
+  $('dcGot').textContent=got;
+}
+// FX calculator: the same dollars at two exchange rates. Seeded from the portfolio when the statements give an average buy rate
+const FC={set:false};
+function fxCalcSeed(m){
+  if(FC.set||!Q||!(Q.usdIls>0))return; FC.n=(FC.n||0)+1; FC.set=!!(HS&&HS.accounts)||FC.n>5;   // the buy rate comes from the history, which loads after the first render
+  let usd=0, costUsd=0, costIlsU=0, known=true; for(const p of (P&&P.positions)||[]){if(p.ccy!=='USD')continue; const px=(Q.prices||{})[p.sym]; if(px==null)continue; usd+=p.qty*px; if(p.costUsd!=null)costUsd+=+p.costUsd; else known=false; if(p.costIls!=null)costIlsU+=+p.costIls}
+  const A=(HS&&HS.accounts)||[], fxI=A.reduce((s,a)=>s+(+a.fxIls||0),0), fxU=A.reduce((s,a)=>s+(+a.fxUsd||0),0), avg=fxU>0?fxI/fxU:null;
+  const base=known&&costUsd>0?costUsd:(avg&&costIlsU>0?costIlsU/avg:0);
+  $('fcUsd').value=base>0?Math.round(base):($('fcUsd').value||10000);
+  $('fcFx0').value=avg?avg.toFixed(3):($('fcFx0').value||(Q.usdIls*1.05).toFixed(3));
+  $('fcChg').value=base>0&&usd>0?(+((usd/base-1)*100).toFixed(1)):($('fcChg').value||10);
+  $('fcFx1').value=Q.usdIls.toFixed(3);
+  $('fxCalcSub').textContent=base>0?(known&&costUsd>0?'המספרים מהתיק שלך: עלות בדולרים מהדוחות':'המספרים מהתיק שלך: העלות בדולרים מוערכת לפי שער הקנייה הממוצע'):'דוגמה. אפשר להקליד את המספרים שלך';
+}
+function renderFxCalc(){
+  const box=$('fxCalc'); if(!box)return; fxCalcSeed();
+  const v=id=>+($(id).value)||0, usd=v('fcUsd'), f0=v('fcFx0'), f1=v('fcFx1'), chg=v('fcChg'); if(!(usd>0&&f0>0&&f1>0)){$('fcOut').textContent='';return}
+  const now=usd*(1+chg/100), pxE=(now-usd)*f1, fxE=usd*(f1-f0), tot=now*f1-usd*f0, be=f0/(1+chg/100);
+  const put=(id,x,d)=>{const e=$(id); e.textContent=sgn(x); e.className='v '+(x>=0?'up':'down'); $(id+'D').textContent=d};
+  put('fcPx',pxE,`${spct(chg,1)} על $${Math.round(usd).toLocaleString('en-US')}, בשער היום`); put('fcFxE',fxE,`הדולר ${f1>=f0?'עלה':'ירד'} מ-${f0.toFixed(3)} ל-${f1.toFixed(3)} (${spct((f1/f0-1)*100,1)})`);
+  put('fcTot',tot,`${ils(usd*f0)} הפכו ל-${ils(now*f1)} (${spct(tot/(usd*f0)*100,1)})`);
+  const bl=$('fcBe'); bl.textContent=be.toFixed(3); bl.className='v'; $('fcBeD').textContent=`מעל שער ${be.toFixed(3)} ₪ התוצאה בשקלים חיובית`;
+  $('fcOut').innerHTML=chg>0&&tot<0?`המניות עלו ${nn(spct(chg,1))} בדולרים, אבל הדולר ירד ${nn(spct((f1/f0-1)*100,1))}. ירידת השער גרעה ${nn(ils(-fxE))}, יותר ממה שהמחירים הוסיפו, ולכן בשקלים התוצאה היא ${nn(sgn(tot),'down')}. הדולרים עצמם לא נעלמו: ${nn('$'+Math.round(now).toLocaleString('en-US'))} במקום ${nn('$'+Math.round(usd).toLocaleString('en-US'))}.`
+    :chg<0&&tot>0?`המניות ירדו ${nn(spct(chg,1))} בדולרים, אבל הדולר עלה ${nn(spct((f1/f0-1)*100,1))} והוסיף ${nn(ils(fxE))}. בשקלים התוצאה היא ${nn(sgn(tot),'up')}.`
+    :`מחירים: ${nn(sgn(pxE))}. שער: ${nn(sgn(fxE))}. יחד בשקלים: ${nn(sgn(tot),tot>=0?'up':'down')}.`;
+}
 function renderDecomp(){
   if(!HS||!HS.accounts||!P||!Q)return;
   const fx=Q.usdIls, m=model(P,Q,'all'); let priceEff=0, fxEff=0, noUsd=0;
@@ -16083,6 +16190,8 @@ let CM=null, LT=null;
 // Year each security started trading; shown small in the risk table. Left out where it could not be confirmed.
 const LISTED={KO:1919,CAT:1929,JNJ:1944,UNH:1984,MSFT:1986,O:1994,AMZN:1997,AEHR:1997,NVDA:1999,GOOGL:2004,V:2008,META:2012,PLTR:2020,RKLB:2021,RDW:2021,MBLY:2022};
 // ---- drawing the exposures and the stress test (the numbers come from exposures() and stressRun() above) ----
+let HV='all'; try{const v=localStorage.getItem('tr_holdv'); if(['all','stock','fund'].includes(v))HV=v}catch(e){}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hkind .chip'); if(!b)return; HV=b.dataset.hv; try{localStorage.setItem('tr_holdv',HV)}catch(x){} try{render()}catch(x){}});
 let EXPV='sector', EXPM=null, ST={kind:'all',pct:20,group:'',by:{},co:0,usd:10};
 try{const v=localStorage.getItem('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
 try{const s=JSON.parse(localStorage.getItem('tr_stress')||'null'); if(s&&typeof s==='object')ST={...ST,...s,by:{...(s.by||{})}}}catch(e){}
@@ -17765,6 +17874,7 @@ function renderSince(){
   const h='<ul>'+L.join('')+'</ul>'; setH($('since'),h);
 }
 // ---- the goal, three scenarios and the what-if sandbox: all from the same projection the forecast chart uses ----
+document.addEventListener('input',e=>{const t=e.target; if(!t)return; if(t.closest&&t.closest('#divCalc')){try{renderDivCalc()}catch(x){}} else if(t.closest&&t.closest('#fxCalc')){try{renderFxCalc()}catch(x){}}});
 const WIK={wiMonthly:'m',wiYears:'y',wiRate:'r',wiCrash:'c',wiMonthlyR:'m',wiYearsR:'y',wiRateR:'r',wiCrashR:'c'}, WI={m:0,y:0,r:0,c:0};
 function fwdNet(start,monthly,years,rate,unreal){const p=project(start,monthly,Math.max(1,Math.min(60,Math.round(years))),rate).pop(), tr=Math.max(0,+S.taxPct||0)/100;return p.val-Math.max(0,p.val-(p.dep-(unreal||0)))*tr}
 function goalMonths(start,monthly,rate,unreal,goal){const r=Math.pow(1+rate/100,1/12)-1, tr=Math.max(0,+S.taxPct||0)/100; let v=start,d=start; const net=()=>v-Math.max(0,v-(d-(unreal||0)))*tr;
