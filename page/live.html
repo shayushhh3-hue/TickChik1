@@ -905,6 +905,7 @@ td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .prof-b .opt{color:var(--muted);font-weight:400}
 .prof-b .note{max-width:none}
 .risk3{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.gen3{flex-direction:row;flex-wrap:wrap} .gen3 .rk{flex:1 1 140px}
 .risk3 legend{font-size:12.5px;font-weight:500;color:var(--ink2);margin-bottom:6px;padding:0}
 .rk{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--surface)}
 .rk input{grid-row:span 2;width:18px;height:18px;margin:0;accent-color:var(--navy)}
@@ -2085,6 +2086,10 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <label for="pfEmail"><span>מייל <span class="opt">(לא חובה)</span></span><input type="email" id="pfEmail" maxlength="80" autocomplete="email" inputmode="email" dir="ltr"></label>
         <label for="pfPhone"><span>טלפון <span class="opt">(לא חובה)</span></span><input type="tel" id="pfPhone" maxlength="20" autocomplete="tel" inputmode="tel" dir="ltr"></label>
       </div>
+      <fieldset class="risk3 gen3"><legend>איך לפנות אליך</legend>
+        <label class="rk"><input type="radio" name="pfGender" value="m"><b>בלשון זכר</b></label>
+        <label class="rk"><input type="radio" name="pfGender" value="f"><b>בלשון נקבה</b></label>
+      </fieldset>
       <label for="pfLang">באיזו שפה להציג את הדף<select id="pfLang" translate="no"></select></label>
       <p class="note">בכל שפה חוץ מעברית, Claude מתרגם את הדף, והתרגום נשמר כדי שלא יתורגם שוב. מספרים וסכומים לא עוברים תרגום. הדוחות להורדה נשארים בעברית.</p>
       <fieldset class="risk3"><legend>איזה משקיע אתה?</legend>
@@ -17632,7 +17637,8 @@ const purposeOf=()=>{const p=S&&S.profile&&S.profile.purpose;return PURPOSE[p]?p
 // planned money in and out goes to Claude only when the user ticked "לכלול בשאלות לצ׳יקו", and without the note they wrote
 function anaFlowsAI(m){if(!S.flowsAI)return {}; const v=flowsView(S.flows,m,+S.years||0).rows.filter(r=>!r.past); if(!v.length)return {};
   return {planned_cash_flows:v.map(r=>({when:r.ym.slice(5)+'.'+r.ym.slice(0,4),in_months:r.months,kind:r.kind==='out'?'משיכה':'הפקדה חד-פעמית',amount:ils(r.amount),share_of_portfolio_today:r.share!=null?pct(r.share):null}))}}
-function anaPerson(){return {knowledge_level:LEVEL[levelOf()],investor_goal:{purpose:purposeOf()?PURPOSE[purposeOf()]:null,horizon_years:+S.years>0?+S.years:null,goal_after_tax:+S.goal>0?ils(+S.goal):null}}}
+const femOn=()=>!!(S&&S.profile&&S.profile.gender==='f');
+function anaPerson(){return {address_form:femOn()?'female (לשון נקבה: את, שלך, תוכלי)':'male (לשון זכר)',knowledge_level:LEVEL[levelOf()],investor_goal:{purpose:purposeOf()?PURPOSE[purposeOf()]:null,horizon_years:+S.years>0?+S.years:null,goal_after_tax:+S.goal>0?ils(+S.goal):null}}}
 // ---- stage 7: the level of explanation is the person's choice (never the size of the portfolio), and can be changed in the
 // chat. A beginner gets each computed part in plain words as well; an experienced user also how it is computed, the
 // assumptions and the limits. Nobody gets fewer numbers.
@@ -19995,6 +20001,7 @@ function profOpen(src){
   {const has=!!(p.email||p.phone); for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=!has} const cn=$('pfContactNote'); if(cn)cn.hidden=!has}
   $('pfLang').innerHTML=langOpts(I18N_OK(p.lang)?p.lang:(I18N.lang||'he'));
   for(const r of d.querySelectorAll('[name=pfRisk]'))r.checked=r.value===p.risk;
+  for(const r of d.querySelectorAll('[name=pfGender]'))r.checked=r.value===(p.gender||'m');
   for(const r of d.querySelectorAll('[name=pfLevel]'))r.checked=r.value===(p.level||S.level||'');
   $('pfPurpose').value=PURPOSE[p.purpose]?p.purpose:''; $('pfYears').value=+S.years>0?+S.years:'';
   $('pfDep').innerHTML=depOpts(+S.depDay||0);
@@ -20011,7 +20018,7 @@ function profClose(later){
 function profSave(){
   const d=$('profDlg'), f=$('pfFirst').value.trim().slice(0,24), l=$('pfLast').value.trim().slice(0,32), em=$('pfEmail').value.trim().slice(0,80), ph=$('pfPhone').value.trim().slice(0,20);
   const rk=(d.querySelector('[name=pfRisk]:checked')||{}).value||'', lang=$('pfLang').value, dep=+$('pfDep').value||0, bad=[];
-  const lv=(d.querySelector('[name=pfLevel]:checked')||{}).value||'', pu=$('pfPurpose').value||'', yrs=Math.round(+$('pfYears').value)||0;
+  const lv=(d.querySelector('[name=pfLevel]:checked')||{}).value||'', pu=$('pfPurpose').value||'', yrs=Math.round(+$('pfYears').value)||0, gn=(d.querySelector('[name=pfGender]:checked')||{}).value||'';
   const mark=(id,on)=>{const el=$(id); if(on)el.setAttribute('aria-invalid','true'); else el.removeAttribute('aria-invalid')};
   mark('pfFirst',!f); if(!f)bad.push('שם פרטי');
   const emOk=!em||/^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/.test(em); mark('pfEmail',!emOk); if(!emOk)bad.push('כתובת מייל תקינה, או להשאיר ריק');
@@ -20019,7 +20026,7 @@ function profSave(){
   if(!RISK[rk])bad.push('איזה משקיע אתה');
   if(bad.length){$('pfErr').textContent='חסר: '+bad.join('; ')+'.'; const x=d.querySelector('[aria-invalid=true]')||(!RISK[rk]?d.querySelector('[name=pfRisk]'):null); try{x&&x.focus()}catch(e){} return}
   const before=JSON.stringify(S);
-  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',risk:rk,level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',gender:gn==='f'?'f':gn==='m'?'m':'',risk:rk,level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
   S.name=f; S.depDay=(dep>=1&&dep<=28)||dep===DEP_LAST?dep:0; if(yrs>=1&&yrs<=40)S.years=yrs;
   changed(); profClose(); i18nSync(); try{fillInputs()}catch(e){}
   offerUndo('הפרופיל נשמר',()=>{S=mergeSettings(JSON.parse(before));fillInputs();changed();i18nSync()})}
@@ -20082,18 +20089,29 @@ function i18nGood(k,t){
   if(!I18N.heScript&&I18N_HE.test(t.replace(/⟦\d+⟧/g,'')))return false;
   return true}
 const i18nIn=el=>!!el&&!el.closest(I18N_NOT)&&!el.closest('script,style,textarea,noscript');
+// ---- the feminine form of address: the same walker as the translation, with a local dictionary instead of Claude ----
+const FEM_PH=[['אתה מוכן','את מוכנה'],['מוכן לתנודות','מוכנה לתנודות'],['אתה מכיר','את מכירה'],['מכיר את היסודות','מכירה את היסודות'],['איזה משקיע אתה','איזו משקיעה את'],['אתה יכול','את יכולה'],['אתה צריך','את צריכה'],['אתה מחזיק','את מחזיקה'],['שאתה מחזיק','שאת מחזיקה'],['אתה מאשר','את מאשרת'],['אתה מתקן','את מתקנת'],['אתה משקיע','את משקיעה'],['אתה מפקיד','את מפקידה'],['אתה שואל','את שואלת'],['אתה בוחר','את בוחרת'],['אתה קובע','את קובעת'],['אתה מחליט','את מחליטה'],['אתה מסמן','את מסמנת'],['אוהב ללכת על בטוח','אוהבת ללכת על בטוח'],['אוהב סיכון','אוהבת סיכון'],['תעלה את התיק','תעלי את התיק'],['שתעלה את','שתעלי את'],['תעלה קובץ','תעלי קובץ'],['תעלה צילום','תעלי צילום'],['תעלה דוח','תעלי דוח'],['תראה כאן','תראי כאן'],['תקבל תמונת','תקבלי תמונת'],['תקבל מייל','תקבלי מייל'],['תקבל הודעה','תקבלי הודעה'],['בעל התיק','בעלת התיק'],['משקיע חדש','משקיעה חדשה'],['משקיע מנוסה','משקיעה מנוסה'],['בדוק ושמור','בדקי ושמרי'],['שמור את','שמרי את'],['לחץ על','לחצי על'],['תקן את','תקני את'],['תהיה מוכן','תהיי מוכנה'],['כשתהיה מוכן','כשתהיי מוכנה'],['אם תרצה','אם תרצי']];
+// one word each: only forms that are second-person in this page's text. Nouns and adjectives that look the same (לחץ, תקן,
+// שמור, סגור, רשום, בטוח, תהיה, תמשיך) are left out and handled in the phrases above
+const FEM_W={'אתה':'את','הוסף':'הוסיפי','בדוק':'בדקי','קבע':'קבעי','קבל':'קבלי','סמן':'סמני','העלה':'העלי','בחר':'בחרי','הזן':'הזיני','פתח':'פתחי','קרא':'קראי','נסה':'נסי','שלח':'שלחי','הכנס':'הכניסי','עדכן':'עדכני','מחק':'מחקי','הורד':'הורידי','חזור':'חזרי','התחל':'התחילי','הגדר':'הגדירי','צור':'צרי','בטל':'בטלי','שאל':'שאלי','הפקד':'הפקידי','תן':'תני','הקלד':'הקלידי','גרור':'גררי','המתן':'המתיני','הצג':'הציגי','הסתר':'הסתירי','חפש':'חפשי','הוסיפו':'הוסיפו',
+  'תוכל':'תוכלי','תסמן':'תסמני','תבחר':'תבחרי','תגדיר':'תגדירי','תשאל':'תשאלי','תעדכן':'תעדכני','תבדוק':'תבדקי','תצטרך':'תצטרכי','תרצה':'תרצי','תמצא':'תמצאי','תוסיף':'תוסיפי','תפתח':'תפתחי','תלחץ':'תלחצי','תקליד':'תקלידי','תזין':'תזיני','תחליט':'תחליטי','תשמור':'תשמרי','תמחק':'תמחקי','תכתוב':'תכתבי','תענה':'תעני','תחזור':'תחזרי','תתחיל':'תתחילי','תדע':'תדעי','תבין':'תביני','תזכור':'תזכרי','תחשוב':'תחשבי','תנסה':'תנסי','תראה':'תראי',
+  'מוזמן':'מוזמנת','רשאי':'רשאית','זכאי':'זכאית'};
+const FEM_RE=new RegExp('(^|[^\\u05d0-\\u05ea])(ו|ש|כש|וכש|)('+Object.keys(FEM_W).sort((a,b)=>b.length-a.length).join('|')+')(?![\\u05d0-\\u05ea])','g');
+const FEM_PHRE=FEM_PH.map(([a,b])=>[new RegExp('(^|[^\\u05d0-\\u05ea])(ו|ש|כש|וכש|)'+a+'(?![\\u05d0-\\u05ea])','g'),b]);
+function femOf(t){let o=t; for(const [re,b] of FEM_PHRE)o=o.replace(re,(x,p,pre)=>p+pre+b); o=o.replace(FEM_RE,(x,p,pre,w)=>p+pre+FEM_W[w]); return o}
+const femLookup=key=>{const t=femOf(key); I18N.map.set(key,t); return t};
 function i18nNode(n,q){
   const v=n.nodeValue, r=I18N.orig.get(n);
   if(r&&v===r.out)return; if(!v||!I18N_HE.test(v))return;
   const tp=i18nTpl(v); if(!I18N_HE.test(tp.key))return;
-  const t=I18N.map.get(tp.key);
+  const t=I18N.fem?femLookup(tp.key):I18N.map.get(tp.key);
   if(t!=null){const out=i18nFill(t,tp); I18N.orig.set(n,{src:v,out}); I18N.nodes.add(n); if(out!==v)n.nodeValue=out; return}
   if(q)q.push([n,tp.key])}
 function i18nAttr(el,a,q){
   const v=el.getAttribute(a); if(!v)return; let rs=I18N.attrs.get(el); const r=rs&&rs[a];
   if(r&&v===r.out)return; if(!I18N_HE.test(v))return;
   const tp=i18nTpl(v); if(!I18N_HE.test(tp.key))return;
-  const t=I18N.map.get(tp.key);
+  const t=I18N.fem?femLookup(tp.key):I18N.map.get(tp.key);
   if(t!=null){const out=i18nFill(t,tp); if(!rs){rs={};I18N.attrs.set(el,rs)} rs[a]={src:v,out}; I18N.els.add(el); if(out!==v)el.setAttribute(a,out); return}
   if(q)q.push([el,tp.key])}
 function i18nWalk(root,q){
@@ -20147,6 +20165,7 @@ Reply with JSON only, in this shape: {"t":["…","…"]} with exactly ${keys.len
 Strings:
 ${JSON.stringify(keys)}`}
 function i18nPump(){
+  if(I18N.fem)return;
   if(!I18N.on||!I18N.ready||I18N.stop)return;
   if(!SAMPLE){if(ANA_READY&&I18N.pend.size)i18nStopWith('noai');return}
   if(SAMPLE_OFF){if(I18N.pend.size)i18nStopWith('not_granted');return}
@@ -20174,6 +20193,7 @@ function i18nStopWith(code){
   if(!I18N.map.size&&(I18N.stop==='not_granted'||I18N.stop==='noai'))i18nDir(true,'he');
   i18nPill()}
 function i18nPill(){
+  if(I18N.fem){const p=$('i18nPill'); if(p)p.hidden=true; return}
   const el=$('i18nPill'); if(!el)return;
   if(!I18N.on){el.hidden=true;return}
   const tt=el.querySelector('.tx'), go=el.querySelector('[data-i18n="go"]'), sp=el.querySelector('.sp'), left=I18N.pend.size+I18N.fly.size;
@@ -20190,7 +20210,7 @@ function i18nPut(lang,d){if(!d||d.lang!==lang||!Array.isArray(d.pairs))return 0;
 function i18nSaveSoon(){if(!I18N.dirty)return; clearTimeout(I18N.saveT); I18N.saveT=setTimeout(i18nSave,4000)}
 // one private document per language, under 230KB: what was translated first (what is on screen) is kept first
 async function i18nSave(){
-  if(!I18N.dirty||!I18N.on)return; I18N.dirty=false; const lang=I18N.lang, pairs=[]; let bytes=0;
+  if(!I18N.dirty||!I18N.on||I18N.fem)return; I18N.dirty=false; const lang=I18N.lang, pairs=[]; let bytes=0;
   for(const [k,v] of I18N.map){if(I18N.eph.has(k))continue; const b=k.length*2+v.length*3+8; if(bytes+b>230000)break; bytes+=b; pairs.push([k,v])}
   const doc={lang,v:1,at:new Date().toISOString(),pairs};
   try{localStorage.setItem('tr_i18n_'+lang,JSON.stringify(doc))}catch(e){}
@@ -20208,9 +20228,17 @@ function i18nOff(){
   Object.assign(I18N,{on:false,ready:false,stop:'',busy:0,calls:0,total:0,done:0,map:new Map(),orig:new WeakMap(),attrs:new WeakMap()});
   for(const s of [I18N.nodes,I18N.els,I18N.pend,I18N.fly,I18N.bad,I18N.eph,I18N.tries])s.clear();
   I18N.ver++; clearTimeout(I18N.saveT); clearTimeout(I18N.timer)}
+function i18nFemSet(on){
+  on=!!on; if(on===!!I18N.fem&&(!on||I18N.on))return;
+  if(I18N.on)i18nOff(); I18N.fem=on; I18N.lang='he'; i18nDir(true,'he'); i18nPill(); if(!on){try{render()}catch(e){}return}
+  I18N.on=true; I18N.ver++; I18N.heScript=false; I18N.re=null;
+  I18N.obs=new MutationObserver(i18nMut);
+  I18N.obs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:I18N_ATTRS.concat(['hidden','open'])});
+  i18nScan(); I18N.ready=true;
+}
 function i18nSet(lang){
-  lang=I18N_OK(lang)?lang:'he'; if(lang===I18N.lang&&(lang==='he'||I18N.on))return;
-  if(I18N.on)i18nOff(); I18N.lang=lang; try{localStorage.setItem('tr_lang',lang)}catch(e){}
+  lang=I18N_OK(lang)?lang:'he'; if(lang===I18N.lang&&(lang==='he'||I18N.on)&&!I18N.fem)return;
+  if(I18N.on)i18nOff(); I18N.fem=false; I18N.lang=lang; try{localStorage.setItem('tr_lang',lang)}catch(e){}
   if(lang==='he'){i18nDir(true,'he');i18nPill();try{render()}catch(e){}return}
   I18N.on=true; I18N.ver++; I18N.heScript=lang==='yi'; I18N.re=null;
   i18nDir(I18N_RTL.has(lang.split('-')[0]),lang);
@@ -20224,9 +20252,10 @@ async function i18nReady(){
   if(p&&!I18N.loaded[lang]){I18N.loaded[lang]=1; try{const s=await db.doc(p).get(); if(s&&s.exists&&I18N.lang===lang)i18nPut(lang,s.data())}catch(e){}}
   if(I18N.lang!==lang||!I18N.on)return; I18N.ready=true; i18nScan(); i18nPump(); i18nPill()}
 // the language comes from the profile once the settings are known; until then, from this browser's last choice
-function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lang)?S.profile.lang:'he'; if(want!==I18N.lang)i18nSet(want); else if(I18N.on&&!I18N.ready)i18nReady()}
+function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lang)?S.profile.lang:'he'; if(want==='he'){if(I18N.lang!=='he')i18nSet('he'); i18nFemSet(femOn()); return} if(want!==I18N.lang)i18nSet(want); else if(I18N.on&&!I18N.ready)i18nReady()}
 function i18nBoot(){let l=''; try{l=localStorage.getItem('tr_lang')||''}catch(e){} if(I18N_OK(l)&&l!=='he')i18nSet(l)}
 // the original Hebrew of an element, for code that reads its own status lines
+window.__i18nState=()=>({on:!!I18N.on,fem:!!I18N.fem,lang:I18N.lang,gender:(S&&S.profile&&S.profile.gender)||'',setk:SETK});
 window.__i18nSrc=el=>{if(!I18N.on)return el.textContent||''; let s=''; const w=document.createTreeWalker(el,4); let n; while(n=w.nextNode()){const r=I18N.orig.get(n); s+=r&&n.nodeValue===r.out?r.src:n.nodeValue} return s};
 document.addEventListener('click',()=>{if(I18N.on)i18nSoon(350)},true);
 document.addEventListener('toggle',()=>{if(I18N.on)i18nSoon(80)},true);
