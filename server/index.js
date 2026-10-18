@@ -374,6 +374,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
   // a first copy right away when today has none (a new server, or after an update)
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
-  // no prices yet (a new server, or an import without them): fetch them now instead of waiting for the hourly run
-  if(!store.getDoc('quotes/latest').exists)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('first price update failed:',e.message)),5000);
+  // no prices yet (a new server, or an import without them), or prices older than a quarter hour (a deploy): fetch them now
+  // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it
+  {const q=store.getDoc('quotes/latest'); const age=q.exists&&q.data.updatedAt?Date.now()-new Date(q.data.updatedAt).getTime():Infinity;
+    if(!q.exists||age>15*60e3)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('price update at start failed:',e.message)),5000);}
 }

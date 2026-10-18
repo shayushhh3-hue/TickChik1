@@ -7,7 +7,7 @@ import {Store, access, partnerView} from '../server/store.js';
 import fs from 'node:fs';
 import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.js';
 import {ilOpen, usOpen, inPxWindow, lastSession, pxDue, ilParts} from '../shared/market.js';
-import {mayaFund, isIlFund} from '../shared/quotes.js';
+import {mayaFund, isIlFund, fundFromJson} from '../shared/quotes.js';
 
 // a stand-in for Claude's API, on a local port
 let claudeSrv, claudeSeen=[], claudeClosed=0;
@@ -397,6 +397,10 @@ test('prices: an Israeli mutual fund comes from Maya, read defensively, in the s
   const a=await mayaFund('5129283',{fetch:f}); assert.equal(a.px,1234.56); assert.equal(a.closeDate,'2026-10-16'); assert.equal(a.ccy,'ILS'); assert.equal(a.src,'maya'); assert.ok(Math.abs(a.prev-1234.56/1.0125)<1e-6);
   const b=await mayaFund('5117585',{fetch:f}); assert.equal(b.px,987.6); assert.equal(b.closeDate,'2026-10-16'); assert.ok(Math.abs(b.prev-987.6/0.995)<1e-6);
   await assert.rejects(()=>mayaFund('5127790',{fetch:f}),/no price field; keys: FundName,Category/);
+  // fields that look like a price or a date but are not: a fee, a ratio, the fund's start date
+  const tricky=fundFromJson({ManagementFeeRate:0.75,FundStartDate:'01/03/2011',TrusteeFeeRate:0.03,Prices:{PurchasePrice:1240,RedemptionPrice:1234},YearYield:12.5,DayYield:0.4},new Date('2026-10-18T15:00:00Z'));
+  assert.equal(tricky.px,1234,'the redemption price, not a fee or the purchase price'); assert.equal(tricky.closeDate,'','the start date is not the price date'); assert.ok(Math.abs(tricky.prev-1234/1.004)<1e-6);
+  assert.equal(fundFromJson({ManagementFeeRate:0.75,FundStartDate:'01/03/2011'}),null,'no price at all');
   assert.equal(isIlFund('5129283'),true); assert.equal(isIlFund('1159250'),false); assert.equal(isIlFund('MSFT'),false);
   // through fetchAll: the fund never goes to Yahoo; the stored price (in shekels) sets the scale of Maya's agorot
   hit=[]; const all=await fetchAll(['5129283'],{positions:[{sym:'5129283',ccy:'ILS',px:11.9}],fetch:f});

@@ -57,21 +57,26 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
 // exchange's own disclosure site (an interface its pages use, not a documented one): the fund's details, read defensively
 // for the redemption price, its date and the day's change, so a renamed field is logged rather than mistaken for a price.
 export const isIlFund=sym=>/^5\d{6}$/.test(String(sym||''));
-const MAYA_H={'user-agent':UA,accept:'application/json','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
+const MAYA_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
 const flat=(o,pre='',d=0,out={})=>{if(o&&typeof o==='object'&&d<4){for(const [k,v] of Object.entries(o)){if(v&&typeof v==='object'&&!Array.isArray(v))flat(v,pre+k+'.',d+1,out); else if(Array.isArray(v))v.slice(0,3).forEach((x,i)=>flat(x,pre+k+'['+i+'].',d+1,out)); else out[pre+k]=v}} return out};
 const numOf=v=>{if(typeof v==='number')return v; if(typeof v==='string'){const n=+v.replace(/[,\s₪%]/g,''); return isNaN(n)?null:n} return null};
 const dateOf=v=>{if(!v)return ''; const s=String(v); let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return `${m[1]}-${m[2]}-${m[3]}`;
   m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; return ''};
-export function fundFromJson(j){
+export function fundFromJson(j,now=new Date()){
   const F=flat(j); const keys=Object.keys(F);
-  const pick=(re,ok)=>{for(const k of keys){if(re.test(k.split('.').pop())){const v=ok(F[k]); if(v)return v}} return null};
-  const px=pick(/^(redemption|redeem|pidyon|sell|unit(value)?|last|close)?(price|rate|value|nav)$|^(redemption|sell|unit)price|^lastprice|^unitvalueprice|^price$|^rate$/i,v=>{const n=numOf(v); return n>0?n:null})
-    ||pick(/price|rate|nav/i,v=>{const n=numOf(v); return n>0&&n<1e7?n:null});
+  const pick=(re,ok,not)=>{for(const k of keys){const last=k.split('.').pop(); if(re.test(last)&&!(not&&not.test(last))){const v=ok(F[k]); if(v)return v}} return null};
+  const num=v=>{const n=numOf(v); return n>0&&n<1e7?n:null};
+  // the redemption price first (what a unit is worth), then a unit or last price, then any price-like field that is not a fee or a ratio
+  const px=pick(/^(redemption|redeem|pidyon|sell)[_ ]?(price|rate|value)$/i,num)
+    ||pick(/^(unit[_ ]?(value)?[_ ]?|last[_ ]?|close[_ ]?|closing[_ ]?)(price|rate|value|nav)$|^(price|rate|nav)$/i,num)
+    ||pick(/price|nav|shaar/i,num,/fee|commission|change|yield|percent|pct|tax|ratio|size|amount|min|max|units?$|purchase|buy|start|open/i);
   if(!(px>0))return null;
-  const date=pick(/date|time|asof|updated/i,v=>dateOf(v))||'';
-  const chg=pick(/(day|daily)(yield|change|return|pct|percent)|(yield|change|return)(day|daily)|dayrate|dailyrate|changepercent|percentchange/i,v=>{const n=numOf(v); return n==null||Math.abs(n)>60?null:n});
+  // the price's date: a field that names the price or an update, never the fund's start date; and only a recent one
+  const recent=v=>{const d=dateOf(v); if(!d)return ''; const t=new Date(d+'T12:00:00Z').getTime(), n=now.getTime(); return t<=n+864e5&&n-t<90*864e5?d:''};
+  const date=pick(/((price|rate|nav|value|update|trade|last|data)[_ ]?date)|(date[_ ]?(price|rate|nav|update|trade|last))|^date$|^asof|lastupdate|updatedat|^time$/i,recent,/start|inception|establish|found|end|expir|issue|report|publish/i)||'';
+  const chg=pick(/(day|daily)[_ ]?(yield|change|return|pct|percent)|(yield|change|return)[_ ]?(day|daily)|dayrate|dailyrate|changepercent|percentchange/i,v=>{const n=numOf(v); return n==null||Math.abs(n)>60?null:n});
   const prev=chg!=null?px/(1+chg/100):null;
-  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():Date.now(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg};
+  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg};
 }
 export async function mayaFund(id,{fetch:f=timedFetch}={}){
   let last=null;
@@ -117,11 +122,12 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   const tasks=need.map(sym=>async()=>{
     const pr=PROXY[sym]&&!(map&&map[sym]);
     const t=pr?PROXY[sym].index:tickerFor(sym,posOf[sym],map);
-    if(isIlFund(sym)&&!(map&&map[sym])){try{out[sym]=await mayaFund(sym,{fetch:f});return}catch(e){log('fund price failed '+sym+' (maya): '+(e&&e.message||e))}}
+    let mayaErr=null;
+    if(isIlFund(sym)&&!(map&&map[sym])){try{out[sym]=await mayaFund(sym,{fetch:f});return}catch(e){mayaErr=e; log('fund price failed '+sym+' (maya): '+(e&&e.message||e))}}
     try{const q=await yahooChart(t,{fetch:f}); if(pr)idx[sym]=q; else out[sym]=q}
     catch(e){
       if(!pr&&!/\.TA$/.test(t)){try{out[sym]=await stooqDaily(t,{fetch:f});return}catch(e2){}}
-      errors.push(sym+': '+(e&&e.message||e)); log('quote failed '+sym+' ('+t+'): '+(e&&e.message||e));
+      errors.push(sym+': '+(mayaErr?'מאיה: '+String(mayaErr&&mayaErr.message||mayaErr).slice(0,160)+' · Yahoo: ':'')+(e&&e.message||e)); log('quote failed '+sym+' ('+t+'): '+(e&&e.message||e));
     }
   });
   let i=0; await Promise.all(Array.from({length:Math.min(concurrency,tasks.length)},async()=>{while(i<tasks.length){const k=i++;await tasks[k]()}}));
