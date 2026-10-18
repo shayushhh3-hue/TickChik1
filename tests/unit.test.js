@@ -7,6 +7,7 @@ import {Store, access, partnerView} from '../server/store.js';
 import fs from 'node:fs';
 import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.js';
 import {ilOpen, usOpen, inPxWindow, lastSession, pxDue, ilParts} from '../shared/market.js';
+import {mayaFund, isIlFund} from '../shared/quotes.js';
 
 // a stand-in for Claude's API, on a local port
 let claudeSrv, claudeSeen=[], claudeClosed=0;
@@ -384,6 +385,27 @@ test('market hours',()=>{
   const due=iso=>pxDue(ilParts(new Date(iso)),new Date(iso));
   assert.equal(due('2026-10-18T15:40:00Z'),true,'Sunday 18:40'); assert.equal(due('2026-10-18T16:40:00Z'),false); assert.equal(due('2026-10-17T07:40:00Z'),true,'Saturday 10:40');
   assert.equal(due('2026-10-12T08:05:00Z'),true,'Monday while Tel Aviv trades'); assert.equal(due('2026-10-12T20:40:00Z'),true); assert.equal(due('2026-10-18T15:35:00Z'),false);
+});
+
+test('prices: an Israeli mutual fund comes from Maya, read defensively, in the scale of the price we hold',async()=>{
+  // three shapes the fund details might take: nested with a redemption price and a day's change, flat with a unit value, and one without any price
+  const shapes={a:{FundDetails:{FundId:5129283,FundName:'הראל מחקה NASDAQ 100',RedemptionPrice:'1,234.56',PurchasePrice:1240.1,DayYield:1.25,LastUpdateDate:'16/10/2026'}},
+    b:{UnitValuePrice:987.6,RateDate:'2026-10-16T00:00:00',DailyYieldPercent:-0.5},
+    c:{FundName:'x',Category:'y'}};
+  const res=(status,body)=>({ok:status<400,status,json:async()=>body,text:async()=>JSON.stringify(body)});
+  let hit=[]; const f=async(u,o)=>{hit.push(u); assert.equal(o.headers['x-maya-with'],'allow'); const id=(u.match(/(\d{7})/)||[])[1]; return id==='5129283'?res(200,shapes.a):id==='5117585'?res(200,shapes.b):id==='5127790'?res(200,shapes.c):res(404,{})};
+  const a=await mayaFund('5129283',{fetch:f}); assert.equal(a.px,1234.56); assert.equal(a.closeDate,'2026-10-16'); assert.equal(a.ccy,'ILS'); assert.equal(a.src,'maya'); assert.ok(Math.abs(a.prev-1234.56/1.0125)<1e-6);
+  const b=await mayaFund('5117585',{fetch:f}); assert.equal(b.px,987.6); assert.equal(b.closeDate,'2026-10-16'); assert.ok(Math.abs(b.prev-987.6/0.995)<1e-6);
+  await assert.rejects(()=>mayaFund('5127790',{fetch:f}),/no price field; keys: FundName,Category/);
+  assert.equal(isIlFund('5129283'),true); assert.equal(isIlFund('1159250'),false); assert.equal(isIlFund('MSFT'),false);
+  // through fetchAll: the fund never goes to Yahoo; the stored price (in shekels) sets the scale of Maya's agorot
+  hit=[]; const all=await fetchAll(['5129283'],{positions:[{sym:'5129283',ccy:'ILS',px:11.9}],fetch:f});
+  assert.ok(all.quotes['5129283']); assert.ok(!hit.some(u=>u.includes('yahoo')&&u.includes('5129283')),'no Yahoo call for a mutual fund');
+  const d=buildQuotesDoc({prev:{},fetched:all,symbols:['5129283'],positions:[{sym:'5129283',ccy:'ILS',px:11.9}],now:new Date('2026-10-18T15:00:00Z')});
+  assert.equal(d.prices['5129283'],12.3456,'agorot became shekels'); assert.equal(d.meta['5129283'].src,'maya'); assert.equal(d.meta['5129283'].date,'2026-10-16'); assert.equal(d.stale['5129283'],undefined); assert.equal(d.ilDate,'2026-10-16');
+  // a stored price already in agorot keeps Maya's scale
+  const e=buildQuotesDoc({prev:{prices:{'5129283':1200}},fetched:all,symbols:['5129283'],positions:[],now:new Date('2026-10-18T15:00:00Z')});
+  assert.equal(e.prices['5129283'],1234.56);
 });
 
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{

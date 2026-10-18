@@ -53,6 +53,37 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
   throw last||new Error('yahoo failed');
 }
 
+// Israeli mutual funds (a seven-digit number starting with 5) are not on Yahoo. Their daily price comes from Maya, the
+// exchange's own disclosure site (an interface its pages use, not a documented one): the fund's details, read defensively
+// for the redemption price, its date and the day's change, so a renamed field is logged rather than mistaken for a price.
+export const isIlFund=sym=>/^5\d{6}$/.test(String(sym||''));
+const MAYA_H={'user-agent':UA,accept:'application/json','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
+const flat=(o,pre='',d=0,out={})=>{if(o&&typeof o==='object'&&d<4){for(const [k,v] of Object.entries(o)){if(v&&typeof v==='object'&&!Array.isArray(v))flat(v,pre+k+'.',d+1,out); else if(Array.isArray(v))v.slice(0,3).forEach((x,i)=>flat(x,pre+k+'['+i+'].',d+1,out)); else out[pre+k]=v}} return out};
+const numOf=v=>{if(typeof v==='number')return v; if(typeof v==='string'){const n=+v.replace(/[,\s₪%]/g,''); return isNaN(n)?null:n} return null};
+const dateOf=v=>{if(!v)return ''; const s=String(v); let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return `${m[1]}-${m[2]}-${m[3]}`;
+  m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; return ''};
+export function fundFromJson(j){
+  const F=flat(j); const keys=Object.keys(F);
+  const pick=(re,ok)=>{for(const k of keys){if(re.test(k.split('.').pop())){const v=ok(F[k]); if(v)return v}} return null};
+  const px=pick(/^(redemption|redeem|pidyon|sell|unit(value)?|last|close)?(price|rate|value|nav)$|^(redemption|sell|unit)price|^lastprice|^unitvalueprice|^price$|^rate$/i,v=>{const n=numOf(v); return n>0?n:null})
+    ||pick(/price|rate|nav/i,v=>{const n=numOf(v); return n>0&&n<1e7?n:null});
+  if(!(px>0))return null;
+  const date=pick(/date|time|asof|updated/i,v=>dateOf(v))||'';
+  const chg=pick(/(day|daily)(yield|change|return|pct|percent)|(yield|change|return)(day|daily)|dayrate|dailyrate|changepercent|percentchange/i,v=>{const n=numOf(v); return n==null||Math.abs(n)>60?null:n});
+  const prev=chg!=null?px/(1+chg/100):null;
+  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():Date.now(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg};
+}
+export async function mayaFund(id,{fetch:f=timedFetch}={}){
+  let last=null;
+  for(const u of [`https://mayaapi.tase.co.il/api/fund/details?fundId=${encodeURIComponent(id)}`,`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}`]){
+    try{const r=await f(u,{headers:MAYA_H}); if(!r.ok){last=new Error('HTTP '+r.status);continue}
+      const j=await r.json(); const q=fundFromJson(j); if(q)return q;
+      last=new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(','))}
+    catch(e){last=e}
+  }
+  throw last||new Error('maya failed');
+}
+
 // Stooq daily history (US tickers as msft.us); last two closes
 export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
   const s=ticker.toLowerCase().replace(/-/g,'-')+'.us';
@@ -86,6 +117,7 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   const tasks=need.map(sym=>async()=>{
     const pr=PROXY[sym]&&!(map&&map[sym]);
     const t=pr?PROXY[sym].index:tickerFor(sym,posOf[sym],map);
+    if(isIlFund(sym)&&!(map&&map[sym])){try{out[sym]=await mayaFund(sym,{fetch:f});return}catch(e){log('fund price failed '+sym+' (maya): '+(e&&e.message||e))}}
     try{const q=await yahooChart(t,{fetch:f}); if(pr)idx[sym]=q; else out[sym]=q}
     catch(e){
       if(!pr&&!/\.TA$/.test(t)){try{out[sym]=await stooqDaily(t,{fetch:f});return}catch(e2){}}
@@ -109,6 +141,11 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   let usDate='', prevDate='', ilDate='', got=0;
   for(const sym of symbols){
     const q=fetched.quotes[sym];
+    if(q&&q.src==='maya'){ // Maya quotes funds in agorot or in shekels; the price we hold says which (a fund never moves a hundredfold)
+      const base=prices[sym]>0?prices[sym]:posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:0, k=base>0?q.px/base:1;
+      if(k>40&&k<250){q.px/=100; if(q.prev)q.prev/=100} else if(k>0.004&&k<0.025){q.px*=100; if(q.prev)q.prev*=100}
+      if(!(q.px>0))continue; prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4); got++;
+      meta[sym]={src:'maya',ccy:'ILS',...(q.closeDate?{date:q.closeDate,at:q.time}:{})}; if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate; continue}
     if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
@@ -150,7 +187,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
   const rates={...(old.rates||{})}; for(const [c,v] of Object.entries(fetched.rates||{}))if(v&&v.rate>0)rates[c]={rate:round(v.rate,4),prev:v.prev?round(v.prev,4):null,date:v.date||null};
   return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
-    source:'Yahoo Finance, בנק ישראל',
+    source:'Yahoo Finance, מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
     usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag,

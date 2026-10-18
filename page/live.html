@@ -15836,6 +15836,13 @@ function alertsOf(m){
     A.push(['warn','מחיר',`מחירי ${g.name} של ${n===1?g.syms[0]:n+' ניירות'} הם מסגירת ${dmy(g.have)}: יום המסחר של ${dayOfIso(g.want)} ${dmy(g.want)} עוד לא התקבל מהמקור, והשווי של היום לא כולל אותו.`,g.syms]);
     A[A.length-1].why={src:'px',rows:[['המחיר שיש',`סגירת ${dmy(g.have)}`],['יום המסחר האחרון ב'+g.name,`${dayOfIso(g.want)} ${dmy(g.want)}`],['הניירות',g.syms.join(', ')],['מה הלאה',`עדכון המחירים הבא: ${((pxNextTxt()||'').replace(/^ ·\u00a0העדכון\u00a0הבא\u00a0/,'')||'בקרוב').replace(/\u00a0/g,' ')}. כשהיום הזה יגיע, השווי יתעדכן לבד`]]};
     A[A.length-1].each=[{key:'lag:'+g.k+':'+g.want,text:A[A.length-1][2]}]}
+  // securities no source prices at all ("מחיר קודם", "מחיר מהדוח"): their value stands where the last report or update left it.
+  // A tenth of the portfolio or more is a warning with the share, because the total is then not today's
+  {const noSrc=m.pos.filter(p=>/^(מחיר קודם|מחיר מהדוח)$/.test((Q.stale||{})[p.sym]||'')&&!lagged.has(p.sym)), w=noSrc.reduce((t,p)=>t+(p.w||0),0);
+    if(noSrc.length&&w>=10){const syms=noSrc.map(p=>p.sym), fund=noSrc.every(p=>isF(p.sym)||/^5\d{6}$/.test(p.sym));
+      A.push(['warn','מחיר',`ל-${syms.length===1?syms[0]:syms.length+' '+(fund?'קרנות':'ניירות')} (${pct(w,0)} מהתיק) אין עדיין מקור מחיר: השווי שלהם הוא לפי המחיר האחרון שהיה, מהדוח או מעדכון קודם, ולא לפי המחיר של היום.`,syms]);
+      A[A.length-1].why={src:'px',rows:[['הניירות',syms.join(', ')],['חלקם בתיק',pct(w,1)],['מה זה אומר',`השווי הכולל ו"החודש עד היום" לא כוללים את התנועה שלהם מאז המחיר האחרון`],['מה הלאה',fund?'קרנות נאמנות ישראליות נקראות ממאיה (אתר הבורסה) בעדכון המחירים הבא; אם המחיר לא יגיע גם אז, ספר לבעל האתר':'אפשר להזין "מחיר בדוח" בלשונית "התיק שלי", או לחכות לעדכון הבא']]};
+      A[A.length-1].each=[{key:'nosrc:'+syms.join(','),text:A[A.length-1][2]}]; syms.forEach(x=>lagged.add(x))}}
   const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!lagged.has(k)); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
   if(m.noRate&&m.noRate.length) A.push(['warn','מחיר',`ל-${m.noRate.join(', ')} יש מחיר במטבע שעדיין אין לדף שער שלו מול השקל, ולכן הם לא נכללים בשווי התיק. השער מגיע בעדכון המחירים הבא.`,m.noRate]);
   const noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))]; if(noPx.length) A.push(['warn','מחיר',`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".`,noPx]);
