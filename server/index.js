@@ -1,5 +1,5 @@
 // תיק צ׳יק – the server. One Node process on Railway: serves the site, keeps the documents in SQLite, signs people in
-// with e-mail and password, answers the page's data calls, forwards צ׳יקו to Claude with the server's key, refreshes
+// with e-mail and password, answers the page's data calls, forwards צ׳יקו to צ׳יקו with the server's key, refreshes
 // prices on demand, and runs the scheduled jobs in-process. Nothing secret reaches the browser.
 import express from 'express';
 import path from 'node:path';
@@ -149,29 +149,29 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     req.on('close',()=>{off();clearInterval(ping)});
   });
 
-  // ---- צ׳יקו: the page's Claude request, with the server's key ----
+  // ---- צ׳יקו: the page's צ׳יקו request, with the server's key ----
   // Claude's errors in plain Hebrew, so the page can say what is wrong (and the owner can fix it in Railway)
   const NOKEY='צ׳יקו לא מחובר: חסר המשתנה ANTHROPIC_API_KEY ב-Railway.';
   // a problem in the site's own set-up (no key, no credit, a key or a model that Anthropic refuses): the owner gets the
   // details, a partner a plain line, since nothing in their own account can fix it (marked site:true until it is sent)
-  const SITE_ERR='Claude לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.';
+  const SITE_ERR='צ׳יקו לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.';
   const forUser=(u,j)=>{const e=j&&j.error; if(!e||!e.site)return j; const {site,...rest}=e; return {...j,error:u&&u.role==='owner'?rest:{...rest,message:SITE_ERR}}};
   const askErr=(status,type,msg)=>{const m=String(msg||'');
-    if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון Anthropic. צריך להטעין קרדיט ב-console.anthropic.com (Billing).',true];
-    if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API של Anthropic נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.',true];
-    if(status===404||type==='not_found_error')return [502,'upstream_error','המודל של Claude לא זמין בחשבון Anthropic הזה ('+m.slice(0,80)+').',true];
-    if(status===429||type==='rate_limit_error')return [429,'rate_limited','Claude ביקש להאט: האתר הגיע למגבלת הקצב שלו מול Anthropic. נסה שוב בעוד דקה.'];
-    if(status===529||type==='overloaded_error')return [503,'upstream_error','Claude עמוס כרגע. נסה שוב בעוד כמה דקות.'];
-    if(status===413||/too large|too long|prompt is too long/i.test(m))return [413,'prompt_too_large','הקובץ גדול מדי בשביל Claude. נסה פחות עמודים.'];
-    if(status===400)return [400,'invalid_argument','Claude דחה את הבקשה: '+m.slice(0,200)];
-    return [502,'upstream_error','Claude לא ענה'+(status?' (HTTP '+status+')':'')+'. נסה שוב.']};
+    if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון ספק המודל. צריך להטעין קרדיט ב-console.anthropic.com (Billing).',true];
+    if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.',true];
+    if(status===404||type==='not_found_error')return [502,'upstream_error','המודל שנבחר לא זמין בחשבון הזה ('+m.slice(0,80)+').',true];
+    if(status===429||type==='rate_limit_error')return [429,'rate_limited','צ׳יקו ביקש להאט: האתר הגיע למגבלת הקצב שלו. נסה שוב בעוד דקה.'];
+    if(status===529||type==='overloaded_error')return [503,'upstream_error','צ׳יקו עמוס כרגע. נסה שוב בעוד כמה דקות.'];
+    if(status===413||/too large|too long|prompt is too long/i.test(m))return [413,'prompt_too_large','הקובץ גדול מדי בשביל צ׳יקו. נסה פחות עמודים.'];
+    if(status===400)return [400,'invalid_argument','צ׳יקו דחה את הבקשה: '+m.slice(0,200)];
+    return [502,'upstream_error','צ׳יקו לא ענה'+(status?' (HTTP '+status+')':'')+'. נסה שוב.']};
   // nobill: Anthropic answered with an error before any work (or no call was made), so nothing was billed
   async function askClaude(body,signal){
     if(!env.ANTHROPIC_API_KEY)return {status:503,nobill:true,json:{error:{code:'sampling_disabled',message:NOKEY,site:true}}};
     const sig=signal?AbortSignal.any([signal,AbortSignal.timeout(280000)]):AbortSignal.timeout(280000);
     let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify(body),signal:sig})}
     catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}};
-      const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('ask failed:',to?'timeout':String(e&&e.message||e)); return {status:504,json:{error:{code:'upstream_error',message:to?'Claude לא סיים לענות בזמן (יותר מ-4 דקות). נסה קובץ קצר יותר או שוב בעוד רגע.':'אין חיבור ל-Claude מהשרת. נסה שוב.'}}}}
+      const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('ask failed:',to?'timeout':String(e&&e.message||e)); return {status:504,json:{error:{code:'upstream_error',message:to?'צ׳יקו לא סיים לענות בזמן (יותר מ-4 דקות). נסה קובץ קצר יותר או שוב בעוד רגע.':'אין חיבור לצ׳יקו מהשרת. נסה שוב.'}}}}
     let text; try{text=await r.text()}catch(e){if(signal&&signal.aborted)return {status:499,aborted:true,json:{error:{code:'cancelled',message:'cancelled'}}}; throw e}
     if(r.ok)return {status:200,text};
     let type='',msg=''; try{const e=JSON.parse(text).error||{};type=e.type||'';msg=e.message||''}catch(e){}
@@ -185,10 +185,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const retryable=(st,type,msg)=>st===404||st===403||st===429||st===529||type==='not_found_error'||type==='permission_error'||type==='rate_limit_error'||type==='overloaded_error'||(st===400&&/model/i.test(msg||''));
   async function claudeStream(body,signal,ms=AI_FILE_TIMEOUT){
     if(!env.ANTHROPIC_API_KEY)return {status:503,nobill:true,json:{error:{code:'sampling_disabled',message:NOKEY,site:true}}};
-    const sig=AbortSignal.any([signal,AbortSignal.timeout(ms)].filter(Boolean)), late='Claude לא סיים לקרוא בזמן (יותר מ-'+Math.max(1,Math.round(ms/60000))+' דקות). נסה פחות עמודים או צילומים.';
+    const sig=AbortSignal.any([signal,AbortSignal.timeout(ms)].filter(Boolean)), late='צ׳יקו לא סיים לקרוא בזמן (יותר מ-'+Math.max(1,Math.round(ms/60000))+' דקות). נסה פחות עמודים או צילומים.';
     let r; try{r=await fetch(ANTHROPIC,{method:'POST',headers:{'x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({...body,stream:true}),signal:sig})}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read failed:',to?'timeout':String(e&&e.message||e));
-      return {status:504,json:{error:{code:'upstream_error',message:to?late:'אין חיבור ל-Claude כרגע. נסה שוב.'}}}}
+      return {status:504,json:{error:{code:'upstream_error',message:to?late:'אין חיבור לצ׳יקו כרגע. נסה שוב.'}}}}
     if(!r.ok){let type='',msg=''; try{const e=JSON.parse(await r.text()).error||{};type=e.type||'';msg=e.message||''}catch(e){}
       const [st,code,message,site]=askErr(r.status,type,msg); return {status:st,nobill:true,retry:retryable(r.status,type,msg),why:type||('HTTP '+r.status),json:{error:{code,message,...(site?{site}:{})}}}}
     const dec=new TextDecoder(); let buf='', text='', stop=null, why=null, usage={}, model=body.model, id='', err=null, out=false;
@@ -200,14 +200,14 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
         else if(j.type==='message_delta'){if(j.delta&&j.delta.stop_reason)stop=j.delta.stop_reason; why=(j.delta&&j.delta.stop_details)||j.stop_details||why; if(j.usage)usage={...usage,...j.usage}}
         else if(j.type==='error')err=j.error||{type:'api_error',message:'stream error'}}}}
     catch(e){if(signal&&signal.aborted)return {aborted:true}; const to=e&&(e.name==='TimeoutError'||e.name==='AbortError'); log('read stream failed:',to?'timeout':String(e&&e.message||e));
-      return {status:504,json:{error:{code:'upstream_error',message:to?late:'החיבור ל-Claude נקטע באמצע הקריאה. נסה שוב.'}}}}
+      return {status:504,json:{error:{code:'upstream_error',message:to?late:'החיבור לצ׳יקו נקטע באמצע הקריאה. נסה שוב.'}}}}
     if(err){const st=err.type==='overloaded_error'?529:502, [s2,code,message,site]=askErr(st,err.type,err.message); return {status:s2,retry:retryable(st,err.type,err.message),why:err.type,json:{error:{code,message,...(site?{site}:{})}}}}
     // Claude declined (an ordinary answer with stop_reason "refusal"; what it wrote so far is dropped). Anthropic's guide
     // "Refusals and fallback" (September 2026): the next model is the way to go, except for "reasoning_extraction", which
     // has no fallback. Billed, and so counted here: a decline after some output, or one in the bio, frontier_llm or
     // reasoning_extraction categories.
     if(stop==='refusal'){const cat=why&&why.category||null, billed=out||['bio','frontier_llm','reasoning_extraction'].includes(cat);
-      return {status:502,retry:cat!=='reasoning_extraction',why:'refusal'+(cat?' ('+cat+')':''),spent:billed?{model,usage}:null,json:{error:{code:'refused',message:'Claude סירב לקרוא את הקובץ הזה.'}}}}
+      return {status:502,retry:cat!=='reasoning_extraction',why:'refusal'+(cat?' ('+cat+')':''),spent:billed?{model,usage}:null,json:{error:{code:'refused',message:'צ׳יקו סירב לקרוא את הקובץ הזה.'}}}}
     return {message:{id,type:'message',role:'assistant',model,content:[{type:'text',text}],stop_reason:stop,usage}};
   }
   async function readFiles(req,res,body,u,day,quick){
@@ -268,7 +268,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!owner){
       const use=store.aiUsage(u.id,day);
       if(quick?use.quick>=AI_DAILY:use.calls>=AI_DAILY)return res.status(429).json({error:{code:'quota_exceeded',message:quick?`הגעת למכסה היומית של הקריאות המהירות (${AI_DAILY} ביום). המכסה מתחדשת בחצות.`:`הגעת למכסה היומית: ${AI_DAILY} פניות ביום לצ׳יקו ולקריאת דוחות. המכסה מתחדשת בחצות.`}});
-      if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'יותר מדי בקשות ל-Claude רצות עכשיו. נסה שוב בעוד רגע.'}});
+      if((inflight.get(u.id)||0)>=AI_MAX_INFLIGHT)return res.status(429).json({error:{code:'rate_limited',message:'יותר מדי בקשות לצ׳יקו רצות עכשיו. נסה שוב בעוד רגע.'}});
     }
     store.aiAdd(u.id,day,quick?{quick:1}:{calls:1}); inflight.set(u.id,(inflight.get(u.id)||0)+1);
     if(c.files){try{return await readFiles(req,res,c.body,u,day,quick)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}}

@@ -270,7 +270,7 @@ test('the chat answers by itself when asked to decide or to know the future, and
   assert.match(await ask('האם CAT תעלה מחר?'),/לא יודע מה יקרה/);
   assert.match(await ask('למה התיק ירד היום?'),/מה עדיין לא ידוע/);
   assert.equal(seen.length,n0,'none of these went to Claude');
-  assert.match(await ask('FAILTEST מה מצב התיק?'),/עמוס|נסה שוב|לא התקבלה|Claude/,'a failure of the AI is said plainly');
+  assert.match(await ask('FAILTEST מה מצב התיק?'),/עמוס|נסה שוב|לא התקבלה|צ׳יקו/,'a failure of the AI is said plainly');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
@@ -341,7 +341,7 @@ test('explain my portfolio: six parts from the portfolio, a checked summary, que
       ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.deepEqual(c.h,['מה יש בתיק','מה בולט','החשיפות המרכזיות','נקודות ריכוז','מה חסר','שאלות שיכולות לעזור']);
     assert.match(c.sum,/ורובו בטכנולוגיה/,'Claude\'s wording of the summary'); assert.doesNotMatch(c.txt,/מאוזן היטב|39\.5%/,'a judgement and a number not in the data are removed');
-    assert.match(c.txt,/2 משפטים של Claude הוסרו/); assert.match(c.txt,/מחיר שאינו מהמסחר האחרון: TA125/);
+    assert.match(c.txt,/2 משפטים של צ׳יקו הוסרו/); assert.match(c.txt,/מחיר שאינו מהמסחר האחרון: TA125/);
     // the fixture's rules are the page's defaults, and nobody said they are theirs: they are named as the default
     assert.match(c.txt,/NVDA הוא 16\.4% מהתיק, מעל ברירת המחדל של הדף לנייר בודד/); assert.match(c.txt,/הכללים עדיין ברירת המחדל של הדף/); assert.doesNotMatch(c.txt,/הכלל שקבעת/);
     assert.match(c.txt,/לא בדיקה אם הוא מתאים לך ולא המלצה/); assert.equal(c.q,4); assert.ok(!c.ox,'nothing sideways');
@@ -465,7 +465,7 @@ const reader=pg=>{
       // the read starts 1.2 s after the file is picked; until then the previous read's lines are still there
       for(let i=0;i<200&&sent()===n0;i++)await new Promise(r=>setTimeout(r,50)); return n0},
     quick:()=>pg.waitForFunction(()=>/בודק את הקריאה/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:20000}),
-    done:()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/Claude/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000}),
+    done:()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/צ׳יקו|המנוע/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000}),
     prog,rows,state:()=>pg.evaluate(()=>document.getElementById('upState').textContent)};
 };
 test('reading a file: a quick read fills the table, the strongest model checks it and corrects it',T,async t=>{
@@ -476,19 +476,19 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   await R.quick(); let rows=await R.rows();
   assert.deepEqual(rows.filter(r=>['MSFT','ZZZQ','NVDA'].includes(r.sym)).map(r=>[r.sym,r.qty]),[['MSFT',2],['ZZZQ',1]],'the quick read is in the table while the check runs');
   assert.deepEqual(bodies.slice(n0).map(b=>[b.model,b.stream,b.max_tokens]).sort(),[['claude-fable-5-1',true,32000],['claude-haiku-5-5',true,32000]],'both reads started together, both with room for a long statement');
-  assert.match(await R.state(),/בקריאה מהירה\. המודל החזק ביותר של Claude בודק אותם עכשיו/);
+  assert.match(await R.state(),/בקריאה מהירה\. המנוע המעמיק של צ׳יקו בודק אותם עכשיו/);
   await R.done(); rows=await R.rows();
   const pick=s=>rows.find(r=>r.sym===s);
   assert.equal(pick('MSFT').qty,3); assert.equal(pick('NVDA').qty,6);
   assert.deepEqual([pick('MSFT').flag,pick('NVDA').flag],['תוקן','תוקן'],'what was corrected is marked');
   assert.equal(pick('ZZZQ').flag,'לבדיקה','what only the quick read saw is kept, for the viewer to check (never removed by itself)');
   let st=await R.state(), pr=await R.prog();
-  assert.match(st,/Claude Fable 5\.1 בדק את הדוח ותיקן: MSFT: כמות 3 \(בקריאה המהירה 2\)/); assert.match(st,/NVDA: נוסף/);
-  assert.match(st,/לבדיקה שלך: ZZZQ: Claude Fable 5\.1 לא מצא אותו בדוח\. אם הוא לא שלך, הסר אותו/);
-  assert.match(pr,/קריאה מהירה עם Claude Haiku 5\.5/); assert.match(pr,/בדיקה עם Claude Fable 5\.1: 2 תיקונים, נייר אחד לבדיקה/);
+  assert.match(st,/המנוע המעמיק בדק את הדוח ותיקן: MSFT: כמות 3 \(בקריאה המהירה 2\)/); assert.match(st,/NVDA: נוסף/);
+  assert.match(st,/לבדיקה שלך: ZZZQ: המנוע המעמיק לא מצא אותו בדוח\. אם הוא לא שלך, הסר אותו/);
+  assert.match(pr,/קריאה מהירה עם המנוע המהיר/); assert.match(pr,/בדיקה עם המנוע המעמיק: 2 תיקונים, נייר אחד לבדיקה/);
   // the two reads agree (the group is the model's own guess, so a different one is not a correction): nothing changes
   await R.pick('statement2.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKGROUP,,0,0\n'); await R.done();
-  rows=await R.rows(); assert.ok(!rows.some(r=>r.fixed)); assert.match(await R.prog(),/בדיקה עם Claude Fable 5\.1: הכול תואם/); assert.match(await R.state(),/מצא אותו דבר כמו הקריאה המהירה/);
+  rows=await R.rows(); assert.ok(!rows.some(r=>r.fixed)); assert.match(await R.prog(),/בדיקה עם המנוע המעמיק: הכול תואם/); assert.match(await R.state(),/מצא אותו דבר כמו הקריאה המהירה/);
   // the same security spelled two ways: one row, the strongest model's spelling
   await R.pick('statement5.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKSPELL,,0,0\n'); await R.done(); rows=await R.rows();
   assert.ok(rows.some(r=>r.sym==='GOOGL'&&r.flag==='תוקן')&&!rows.some(r=>r.sym==='GOOG')); assert.match(await R.state(),/GOOGL: סימול GOOGL \(בקריאה המהירה GOOG\)/);
@@ -503,18 +503,18 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   {const k1=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60';
     try{await R.pick('statement7.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKBAD SLOWCHECK,,0,0\n'); await R.quick(); await pg.waitForTimeout(800);
       await pg.evaluate(()=>document.getElementById('btnStop').click()); await R.done()}finally{if(k1==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k1}
-    assert.match(await R.state(),/עצרת את הבדיקה של המודל החזק ביותר\. הטבלה היא מהקריאה המהירה/); assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2)}
+    assert.match(await R.state(),/עצרת את הבדיקה של המנוע המעמיק\. הטבלה היא מהקריאה המהירה/); assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2)}
   // the strongest model is not open to the key: the next one checks. A long check: spaces keep the request open (Railway
   // closes a quiet one), and the page reads past them
   const k0=process.env.AI_KEEPALIVE_MS; process.env.AI_KEEPALIVE_MS='60'; const raw=[]; const onRes=async q=>{if(/"claude-fable-5-1"/.test(q.request().postData()||''))raw.push(await q.text().catch(()=>''))}; pg.on('response',onRes);
   try{n0=await R.pick('statement3.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nNOFABLE,,0,0\n'); await R.done()}finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; pg.off('response',onRes)}
   assert.deepEqual(bodies.slice(n0).map(b=>b.model).sort(),['claude-fable-5-1','claude-haiku-5-5','claude-opus-5-5']);
   assert.ok(bodies.slice(n0).filter(b=>b.stream).every(b=>b.max_tokens>8192),'room for the strong models\' thinking');
-  assert.match(await R.prog(),/בדיקה עם Claude Opus 5\.5 \(Claude Fable 5\.1 לא היה זמין, ולכן קרא המודל הבא\): הכול תואם/);
+  assert.match(await R.prog(),/בדיקה עם המנוע החזק \(המנוע המעמיק לא היה זמין, ולכן קרא המודל הבא\): הכול תואם/);
   assert.equal(raw.length,1); assert.match(raw[0],/^ {3,}\{/,'spaces kept the request open while Claude was reading');
   // the quick read fails: the strongest model's read fills the table
   await R.pick('statement4.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKFAIL,,0,0\n'); await R.done();
-  rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/הקריאה המהירה לא הצליחה \(Claude עמוס כרגע\), והמודל החזק ביותר קרא את הדוח/,'it says why');
+  rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/הקריאה המהירה לא הצליחה \(צ׳יקו עמוס כרגע\), והמנוע המעמיק קרא את הדוח/,'it says why');
   // a long statement: the quick read's answer is cut in the middle; the holdings are kept, and the check completes the transactions
   await R.pick('statement8.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nQUICKCUT,,0,0\n'); await R.quick();
   assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,3); assert.match(await R.state(),/התשובה של הקריאה המהירה נקטעה כי הדוח ארוך/);
@@ -528,7 +528,7 @@ test('reading a file: a quick read fills the table, the strongest model checks i
   await R.pick('statement10.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nDERIVED,,0,0\n'); await R.done();
   assert.deepEqual((await R.rows()).map(r=>r.acct+':'+r.sym+':'+r.qty).sort(),before,'worked-out holdings do not replace the real ones');
   assert.match(await R.state(),/בקובץ הזה אין רשימת אחזקות, רק פעולות, ולכן האחזקות והמזומן לא הוחלפו\. נוספה ממנו פעולה אחת/);
-  assert.match(await R.prog(),/נקרא עם Claude Fable 5\.1/);
+  assert.match(await R.prog(),/נקרא עם המנוע המעמיק/);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
@@ -557,7 +557,7 @@ test('reading a file: what the viewer changed or saved meanwhile stays; "quick o
   await tab(pg,'mine'); await pg.waitForTimeout(300); await R.pick('d.csv',BAD); await R.quick(); await tab(pg,'overview'); await R.done();
   // (the save's "undo" note is shown first, for 15 seconds; this one waits for it)
   await pg.waitForFunction(()=>!document.getElementById('toast').hidden&&/תיקן/.test(document.getElementById('toastMsg').textContent),null,{timeout:40000});
-  assert.match(await pg.evaluate(()=>document.getElementById('toastMsg').textContent),/Claude Fable 5\.1 בדק את הדוח שהעלית ותיקן 2 פרטים בטבלה\. התיקונים עוד לא נשמרו\./);
+  assert.match(await pg.evaluate(()=>document.getElementById('toastMsg').textContent),/המנוע המעמיק בדק את הדוח שהעלית ותיקן 2 פרטים בטבלה\. התיקונים עוד לא נשמרו\./);
   await pg.evaluate(()=>document.getElementById('toastUndo').click()); await pg.waitForTimeout(300);
   assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mine'); assert.ok((await R.rows()).some(r=>r.fixed));
   assert.equal(await pg.evaluate(()=>document.getElementById('toast').hidden),true);
@@ -590,7 +590,7 @@ test('reading several reports at once: each on its own and at the same time; the
   assert.deepEqual(rows.map(r=>r.sym+':'+r.qty).sort(),['MSFT:3','NVDA:6'],'the newest report holds the holdings');
   const lines=await pg.evaluate(()=>[...document.querySelectorAll('#upProg li[data-job]')].map(li=>li.textContent));
   for(const x of ['mar','jun'])assert.ok(lines.some(l=>l.includes(x+'.csv')&&/ישן יותר/.test(l)&&/נוספו ממנו|נוספה ממנו/.test(l)),x+': older, so only its transactions');
-  assert.ok(lines.some(l=>l.includes('sep.csv')&&/בדיקה עם Claude Fable 5\.1: הכול תואם/.test(l)&&/מצא אותו דבר/.test(l)),'the newest: checked, and the same');
+  assert.ok(lines.some(l=>l.includes('sep.csv')&&/בדיקה עם המנוע המעמיק: הכול תואם/.test(l)&&/מצא אותו דבר/.test(l)),'the newest: checked, and the same');
   assert.ok(lines.some(l=>l.includes('jun.csv')&&/נוספו 2 פעולות/.test(l)),'a finished file shows what it did');
   assert.equal(await pg.evaluate(()=>document.querySelectorAll('#txBox tbody tr').length),6,'the transactions of all three, none twice');
   assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -634,8 +634,8 @@ test('a partner reads like the owner: several reports at once, prices on request
   // the strongest models are all at their rate limit: the site says it is the site's limit, and nothing points to the viewer's own Claude
   await pg.setInputFiles('#upFile',[{name:'busy.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nRATE429,,0,0\n')},{name:'ok.csv',mimeType:'text/csv',buffer:Buffer.from('Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\nAAPL,Apple,1,700\n')}]);
   await pg.waitForFunction(()=>[...document.querySelectorAll('#upProg li[data-job]')].some(li=>/busy\.csv/.test(li.textContent)&&/האתר הגיע למגבלת הקצב שלו/.test(li.textContent)),null,{timeout:30000});
-  await pg.waitForFunction(()=>/Claude ביקש להאט\. אפשר להמשיך בעוד/.test(document.getElementById('upState').textContent),null,{timeout:5000});
-  assert.doesNotMatch(await pg.evaluate(()=>document.body.innerText),/חשבון Claude/);
+  await pg.waitForFunction(()=>/צ׳יקו ביקש להאט\. אפשר להמשיך בעוד/.test(document.getElementById('upState').textContent),null,{timeout:5000});
+  assert.doesNotMatch(await pg.evaluate(()=>document.body.innerText),/חשבון Claude|Claude|Anthropic/,'no model name anywhere on the page');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
@@ -643,7 +643,7 @@ test('deposits, conversions and monthly results without holdings: kept in the hi
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'r5'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(300);
   const pick=async(name,csv)=>{const n0=bodies.length; await pg.setInputFiles('#upFile',{name,mimeType:'text/csv',buffer:Buffer.from(csv)}); for(let i=0;i<200&&bodies.length===n0;i++)await new Promise(r=>setTimeout(r,50))};
-  const idle=()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/Claude/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000});
+  const idle=()=>pg.waitForFunction(()=>document.getElementById('btnStop').hidden&&!/צ׳יקו|המנוע/.test(document.querySelector('#upProg li.now')?.textContent||''),null,{timeout:30000});
   // a screen of deposits and conversions: the strongest model's numbers go in; a conversion is not a deposit
   await pick('flows.csv','Date,Action,Amount\n2026-04-01,FLOWSCREEN,600\n'); await idle();
   let st=await pg.evaluate(()=>document.getElementById('upState').textContent);

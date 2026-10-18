@@ -1615,7 +1615,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <div class="fl-add"><button class="btn" type="submit" id="flAdd">הוסף</button><span class="saved" id="flErr" role="status"></span></div>
         </form>
         <label class="check" for="flAI"><input type="checkbox" id="flAI">לכלול את הסכומים והתאריכים בתשובות של צ׳יקו (בלי מה שכתבת ב"בשביל מה")</label>
-        <p class="note" style="margin:0;max-width:none">נשמר עם ההגדרות שלך, באזור שרק אתה רואה, ונמחק עם "מחק את כל הנתונים שלי". בלי הסימון, זה לא נשלח ל-Claude.</p>
+        <p class="note" style="margin:0;max-width:none">נשמר עם ההגדרות שלך, באזור שרק אתה רואה, ונמחק עם "מחק את כל הנתונים שלי". בלי הסימון, זה לא נשלח לצ׳יקו.</p>
       </div>
     </section>
     <section aria-labelledby="hFwd">
@@ -2051,14 +2051,14 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <p class="note" id="pfWho"></p>
       <div class="panel up" id="upPanel">
         <h3>העלאה: דוח או צילומי מסך</h3>
-        <p class="note" id="upPriv" style="margin:0">הקבצים נשלחים לקריאה ל-Claude של Anthropic. לפני השליחה נמחקים מהטקסט ת״ז, מספרי חשבון, כתובת, מייל וטלפון. מצילום מסך או מעמוד סרוק אי אפשר למחוק, אז כדאי לחתוך ממנו קודם את השם ומספר החשבון. שום דבר לא נשמר עד "שמור את התיק".</p>
+        <p class="note" id="upPriv" style="margin:0">הקבצים נשלחים לקריאה לשירות הבינה המלאכותית שמפעיל את צ׳יקו. לפני השליחה נמחקים מהטקסט ת״ז, מספרי חשבון, כתובת, מייל וטלפון. מצילום מסך או מעמוד סרוק אי אפשר למחוק, אז כדאי לחתוך ממנו קודם את השם ומספר החשבון. שום דבר לא נשמר עד "שמור את התיק".</p>
         <div class="upbtns">
           <label class="upb" for="upImg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>צילומי מסך</b><span>מהגלריה או מהמצלמה, כמה שצריך</span><input type="file" id="upImg" multiple accept="image/*"></label>
           <label class="upb" for="upFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><b>PDF או אקסל</b><span>דוח יתרות או תנועות מבית ההשקעות, אחד או כמה</span><input type="file" id="upFile" multiple accept="application/pdf,.pdf,.xlsx,.xls,.csv,.txt"></label>
         </div>
         <p class="uphint">אפשר לבחור כמה דוחות יחד: באנדרואיד בלחיצה ארוכה על הראשון ואז הקשה על השאר, ובאייפון בכפתור "בחר". יש דפדפנים שמעבירים רק קובץ אחד. אז פשוט בוחרים אחד אחרי השני ("+ עוד קובץ"): כל דוח נקרא מיד, וכולם באותו זמן.</p>
         <label class="drop" id="drop" for="upFile"><b>או גרור לכאן קבצים</b><span class="nm" id="dropHint">PDF, Excel, CSV או צילומי מסך · עד 10 קבצים יחד, כל דוח נקרא בנפרד וכולם באותו זמן · אפשר גם להדביק צילום מסך עם Ctrl+V</span></label>
-        <ol class="upsteps" id="upSteps" aria-label="שלבי ההעלאה"><li data-s="1"><i>1</i>בוחרים קבצים</li><li data-s="2"><i>2</i>Claude קורא</li><li data-s="3"><i>3</i>בודקים ושומרים</li></ol>
+        <ol class="upsteps" id="upSteps" aria-label="שלבי ההעלאה"><li data-s="1"><i>1</i>בוחרים קבצים</li><li data-s="2"><i>2</i>צ׳יקו קורא</li><li data-s="3"><i>3</i>בודקים ושומרים</li></ol>
         <div class="staged" id="staged" hidden></div>
         <ul class="upprog" id="upProg" hidden></ul>
         <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnRead" type="button" hidden>קרא שוב</button><button class="btn" id="btnStop" type="button" hidden>עצור</button><span class="saved" id="upState" role="status" style="font-size:13.5px;color:var(--ink)"></span></div>
@@ -2067,7 +2067,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="dup tx" id="monBox" hidden></div>
         <details><summary class="sub" style="cursor:pointer">עוד אפשרויות ועזרה</summary>
           <div class="form" style="margin-top:10px"><label for="upAcct">החשבון שאליו שייכים הקבצים<select id="upAcct"><option value="auto">זיהוי אוטומטי</option><option value="exc">אקסלנס</option><option value="blink">בלינק</option></select></label></div>
-          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה בלבד, בלי בדיקה: עלולות להיות יותר טעויות בכמויות ובסימולים. בלי הסימון, הטבלה מתמלאת מקריאה מהירה, ובמקביל המודל החזק ביותר של Claude קורא את הדוח ומתקן אותה.</label>
+          <label class="check" for="upQuick" style="margin-top:10px"><input type="checkbox" id="upQuick">קריאה מהירה בלבד, בלי בדיקה: עלולות להיות יותר טעויות בכמויות ובסימולים. בלי הסימון, הטבלה מתמלאת מקריאה מהירה, ובמקביל המנוע המעמיק של צ׳יקו קורא את הדוח ומתקן אותה.</label>
           <label for="upText" style="margin-top:10px">הדבקת טקסט הדוח במקום קובץ<textarea id="upText" style="min-height:64px"></textarea></label>
           <button class="btn" id="btnReadText" type="button" style="margin-top:8px">קרא את הטקסט</button>
           <ul class="note" style="margin:12px 0 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;max-width:70ch">
@@ -2144,7 +2144,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <label class="rk"><input type="radio" name="pfGender" value="f"><b>בלשון נקבה</b></label>
       </fieldset>
       <label for="pfLang">באיזו שפה להציג את הדף<select id="pfLang" translate="no"></select></label>
-      <p class="note">בכל שפה חוץ מעברית, Claude מתרגם את הדף, והתרגום נשמר כדי שלא יתורגם שוב. מספרים וסכומים לא עוברים תרגום. הדוחות להורדה נשארים בעברית.</p>
+      <p class="note">בכל שפה חוץ מעברית הדף מתורגם אוטומטית, והתרגום נשמר כדי שלא יתורגם שוב. מספרים וסכומים לא עוברים תרגום. הדוחות להורדה נשארים בעברית.</p>
       <fieldset class="risk3"><legend>איזה משקיע אתה?</legend>
         <label class="rk"><input type="radio" name="pfRisk" value="safe"><b>אוהב ללכת על בטוח</b><span>פחות תנודות, גם במחיר של צמיחה איטית יותר.</span></label>
         <label class="rk"><input type="radio" name="pfRisk" value="mid"><b>באמצע</b><span>איזון בין יציבות לצמיחה.</span></label>
@@ -2164,7 +2164,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <p class="note">האופק משמש גם בחישוב היעד ובתרחישים. צ׳יקו מקשר את המצב של התיק למטרה ולאופק, בלי להמליץ.</p>
       <label for="pfDep">באיזה יום בחודש אתה מפקיד<select id="pfDep"></select></label>
       <p class="note" id="pfDepNote"></p>
-      <p class="note">הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם.<span id="pfContactNote"> המייל והטלפון לא חובה: הדף לא שולח אליהם הודעות ולא מעביר אותם ל-Claude. אפשר למחוק אותם כאן.</span></p>
+      <p class="note">הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם.<span id="pfContactNote"> המייל והטלפון לא חובה: הדף לא שולח אליהם הודעות ולא מעביר אותם לצ׳יקו. אפשר למחוק אותם כאן.</span></p>
     </form>
     <div class="prof-f"><p class="perr" id="pfErr" role="alert"></p><button type="button" class="btn" data-prof="later" id="pfLater">אחר כך</button><button type="submit" form="profForm" class="btn pri">שמירה</button></div>
   </section>
@@ -15230,7 +15230,7 @@ BHST	BioHarvest Sciences Inc.	T	TLV		98
 const $=id=>document.getElementById(id);
 // inline status lines (save / upload / read) take the same four colours as the alert cards, chosen from the text
 (function(){
-  const kind=t=>/^(הקריאה המהירה לא הצליחה|הבדיקה של המודל החזק ביותר לא הצליחה|לא הגיעו קבצים|הקבצים שבחרת הגיעו)/.test(t)?'warn':/^קורא \d+ קבצים/.test(t)?'info':/^(נקראו|נוספו)/.test(t)?(/חישבתי|לא הצלחתי|לא הובנו|ייתכן|לא נקראו/.test(t)?'warn':'ok'):/נכשל|שגיאה|אין הרשא|לא הצלח|לא הצליח|לא זמינ|לא מצאתי|לא התקבלו|בלי אישור|גדול מדי|לא פתחה|אי אפשר לשלוח|נראה ריק|סרוק|שני חשבונות/.test(t)?'err':/יותר מדי|יש שינויים|עדיין אין|לא נשמר|לא נמצא/.test(t)?'warn':/^נשמר|נשמרו|נקרא|הושל|עודכן|סומנה|נוספ|הצלח|נטענ/.test(t)?'ok':'info';
+  const kind=t=>/^(הקריאה המהירה לא הצליחה|הבדיקה של המנוע המעמיק לא הצליחה|לא הגיעו קבצים|הקבצים שבחרת הגיעו)/.test(t)?'warn':/^קורא \d+ קבצים/.test(t)?'info':/^(נקראו|נוספו)/.test(t)?(/חישבתי|לא הצלחתי|לא הובנו|ייתכן|לא נקראו/.test(t)?'warn':'ok'):/נכשל|שגיאה|אין הרשא|לא הצלח|לא הצליח|לא זמינ|לא מצאתי|לא התקבלו|בלי אישור|גדול מדי|לא פתחה|אי אפשר לשלוח|נראה ריק|סרוק|שני חשבונות/.test(t)?'err':/יותר מדי|יש שינויים|עדיין אין|לא נשמר|לא נמצא/.test(t)?'warn':/^נשמר|נשמרו|נקרא|הושל|עודכן|סומנה|נוספ|הצלח|נטענ/.test(t)?'ok':'info';
   const paint=el=>{const t=String(window.__i18nSrc?window.__i18nSrc(el):(el.textContent||'')).trim();el.classList.remove('ok','warn','err','info');if(!t){el.classList.remove('msg');return}el.classList.add('msg',kind(t))};
   ['saved','planSaved','pfSaved','listState','upState','wipeState'].forEach(id=>{const el=document.getElementById(id);if(!el)return;try{new MutationObserver(()=>paint(el)).observe(el,{childList:true,characterData:true,subtree:true})}catch(e){}paint(el)});
 })();
@@ -15688,7 +15688,7 @@ async function pxFire(src){
     PXF=null; pxSave();
     PXOFF=c==='not_in_manifest'||c==='not_granted'||c==='consent_required'||c==='approval_required'||c==='blocked_by_policy'||c==='capability_disabled'||c==='capability_removed'?'denied':'error';
     pxLine();
-    offerUndo(PXOFF==='denied'?'עדכון המחירים מהדף לא אושר. המחירים ימשיכו להתעדכן כל שעה.':c==='server_not_connected'||c==='needs_reauth'?'החיבור ל-Claude Code Remote לא זמין עכשיו. המחירים ימשיכו להתעדכן כל שעה.':'עדכון המחירים לא הופעל ('+(e&&e.message?String(e.message).slice(0,80):c||'שגיאה')+').',null,7000,'סגור');
+    offerUndo(PXOFF==='denied'?'עדכון המחירים מהדף לא אושר. המחירים ימשיכו להתעדכן כל שעה.':c==='server_not_connected'||c==='needs_reauth'?'החיבור לצ׳יקו Code Remote לא זמין עכשיו. המחירים ימשיכו להתעדכן כל שעה.':'עדכון המחירים לא הופעל ('+(e&&e.message?String(e.message).slice(0,80):c||'שגיאה')+').',null,7000,'סגור');
     return false;
   }
 }
@@ -16491,7 +16491,7 @@ function renderState(){
     return stSec('calc','שאלות לבדוק בשקט',`<dl class="stq">${Qs.map(([q,a])=>`<div><dt>${q}</dt><dd>${tx(a)}</dd></div>`).join('')}</dl><p class="note">אלה שאלות להבנה, לא הוראות לפעולה.</p>`)},'שאלות לבדוק בשקט');
   // 8. in words
   const ai=!!SAMPLE&&!SAMPLE_OFF;
-  const words=stSec('expl','במילים',ai?'<p>צ׳יקו יכול לנסח את זה במילים, רק מהמספרים שבדף.</p><button type="button" class="btn sm pri" data-ana="crisis">צ׳יקו, הסבר במילים</button>':'<p class="note">הסבר במילים זמין כש-Claude מחובר. כל מה שלמעלה מחושב בדף, גם בלעדיו.</p>');
+  const words=stSec('expl','במילים',ai?'<p>צ׳יקו יכול לנסח את זה במילים, רק מהמספרים שבדף.</p><button type="button" class="btn sm pri" data-ana="crisis">צ׳יקו, הסבר במילים</button>':'<p class="note">הסבר במילים זמין כשצ׳יקו מחובר. כל מה שלמעלה מחושב בדף, גם בלעדיו.</p>');
   body.innerHTML=snap+carry+expo+mkt+sim+goals+chk+words;
 }
 window.__model.stateSim=()=>{const m=model(P,Q,acct,acct==='all'?planAdj():null); return [20,30,40].map(x=>ils(stressRun(m,P,Q,{kind:'all',pct:-x}).after))};
@@ -16847,15 +16847,15 @@ function renderPrivacy(){
   if(window.__tc&&!LOCAL){ // the site: a server on Railway, Claude through the owner's key, e-mail only when set up
     R.push(['איפה',OWNER?'בבסיס הנתונים של האתר, על שרת ב-Railway (שירות אחסון בענן). כל לילה נשמר עותק בשרת, ואם הגדרת מייל והפעלת את העותק במייל, עותק של הנתונים שלך נשלח גם אליך.':'באזור פרטי שלך בבסיס הנתונים של האתר, על שרת ב-Railway (שירות אחסון בענן) שבעל האתר מנהל. כל לילה נשמר עותק בשרת.']);
     R.push(['מי רואה',OWNER?'רק אתה. כל שותף רואה רק את התיק של עצמו, ומקבל מהשרת מחירים ונתוני אנליסטים רק לניירות שלו. רשימות המעקב של השותפים לא מוצגות לך.':'רק אתה. שותפים אחרים לא רואים את התיק שלך ולא את רשימת הניירות שלך.']);
-    if(!OWNER)R.push(['מה בעל האתר רואה','באתר: את המייל שלך ברשימת המשתמשים, וכמה פניות ל-Claude שלחת בכל יום, בלי התוכן. את התיק ואת רשימת הניירות שלך הוא לא רואה. כמי שמנהל את השרת, יש לו גישה טכנית לבסיס הנתונים ולגיבויים.']);
-    R.push(['מה נשלח ל-Claude','Claude הוא שירות של Anthropic. הבקשות עוברות דרך השרת של האתר, עם מפתח ה-API של '+(OWNER?'האתר (שלך)':'בעל האתר')+'. כשאתה מעלה קובץ או מדביק טקסט של דוח: הדף מוחק קודם מהטקסט ת״ז, מספרי חשבון, לקוח ותיק, כתובות, מיילים, טלפונים ואת השם שלך (ליד "שם הלקוח" או "לכבוד", או כמו שכתבת בפרופיל), ורק אז שולח. המחיקה אוטומטית, ופרט שכתוב בצורה לא רגילה עלול לעבור. צילומי מסך ועמודים סרוקים נשלחים כתמונה, כמו שהם, ומהם אי אפשר למחוק: כדאי לחתוך מהם את השם ומספר החשבון לפני ההעלאה. '+'כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח ל-Claude, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' המשימות המתוזמנות בשרת (הודעת הבוקר, הדוחות וההתראות) מחשבות מהנתונים שלך בשרת עצמו, בלי Claude.':'')]);
+    if(!OWNER)R.push(['מה בעל האתר רואה','באתר: את המייל שלך ברשימת המשתמשים, וכמה פניות לצ׳יקו שלחת בכל יום, בלי התוכן. את התיק ואת רשימת הניירות שלך הוא לא רואה. כמי שמנהל את השרת, יש לו גישה טכנית לבסיס הנתונים ולגיבויים.']);
+    R.push(['מה נשלח לשירות הבינה המלאכותית','צ׳יקו נעזר בשירות בינה מלאכותית חיצוני. הבקשות עוברות דרך השרת של האתר, עם מפתח ה-API של '+(OWNER?'האתר (שלך)':'בעל האתר')+'. כשאתה מעלה קובץ או מדביק טקסט של דוח: הדף מוחק קודם מהטקסט ת״ז, מספרי חשבון, לקוח ותיק, כתובות, מיילים, טלפונים ואת השם שלך (ליד "שם הלקוח" או "לכבוד", או כמו שכתבת בפרופיל), ורק אז שולח. המחיקה אוטומטית, ופרט שכתוב בצורה לא רגילה עלול לעבור. צילומי מסך ועמודים סרוקים נשלחים כתמונה, כמו שהם, ומהם אי אפשר למחוק: כדאי לחתוך מהם את השם ומספר החשבון לפני ההעלאה. '+'כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' המשימות המתוזמנות בשרת (הודעת הבוקר, הדוחות וההתראות) מחשבות מהנתונים שלך בשרת עצמו, בלי שירות חיצוני.':'')]);
     R.push(['הודעות',OWNER?'מיילים אוטומטיים נשלחים רק אם שליחת מייל (Resend) מוגדרת באתר, ורק מה שהפעלת ב"מיילים" (בהגדרות, תחת "ההתראות והצלילים שלי"): הודעת הבוקר, הדוחות וגיבוי לילי של הנתונים שלך. הודעה כשמישהו נרשם נשלחת כשהמייל מוגדר. בלי מייל לא נשלח דבר, והלוג של השרת לא שומר את התוכן. תזכורת ההפקדה מופיעה גם בדף ביום שבחרת.':'האתר לא שולח לך מיילים ולא SMS. תזכורת ההפקדה מופיעה בדף ביום שבחרת.']);
     R.push(['לכמה זמן','עד שתמחק. הכפתור "מחק את כל הנתונים שלי" למטה מוחק הכול מהאתר מיד. העותקים הליליים בשרת נמחקים לבד אחרי 14 יום'+(OWNER?', ועותק שנשלח אליך במייל נשאר בתיבת הדואר שלך.':'.')]);
   }else{
-    R.push(['איפה',LOCAL?'רק בדפדפן הזה, במכשיר הזה. הנתונים לא יופיעו במכשיר אחר.':OWNER?'בבסיס הנתונים של הדף, תחת חשבון Claude שלך.':'באזור פרטי שלך בבסיס הנתונים של הדף, תחת חשבון Claude שלך.']);
+    R.push(['איפה',LOCAL?'רק בדפדפן הזה, במכשיר הזה. הנתונים לא יופיעו במכשיר אחר.':OWNER?'בבסיס הנתונים של הדף, תחת החשבון שלך.':'באזור פרטי שלך בבסיס הנתונים של הדף, תחת החשבון שלך.']);
     R.push(['מי רואה',LOCAL?'רק מי שמשתמש בדפדפן הזה.':OWNER?'רק אתה. מי שמוזמן לדף רואה רק את התיק של עצמו.':'רק אתה. גם בעל הדף לא רואה את התיק שלך.']);
     if(!OWNER&&!LOCAL)R.push(['מה נשלח לבעל הדף','רק רשימת הסימולים שלך: ניירות שאתה מחזיק, שסימנת או שפתחת בחיפוש. בלי כמויות ובלי סכומים. היא משמשת לעדכון המחירים שלהם.']);
-    R.push(['מה נשלח ל-Claude','כשאתה מעלה קובץ או צילום, או מדביק טקסט של דוח: התוכן שלו נשלח ל-Claude דרך החשבון שלך כדי לקרוא ממנו את האחזקות. כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח ל-Claude דרך החשבון שלך, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' בנוסף, המשימות המתוזמנות שהגדרת קוראות את הנתונים שלך כדי להפיק דוחות והתראות.':'')]);
+    R.push(['מה נשלח לשירות הבינה המלאכותית','כשאתה מעלה קובץ או צילום, או מדביק טקסט של דוח: התוכן שלו נשלח לשירות הבינה המלאכותית דרך החשבון שלך כדי לקרוא ממנו את האחזקות. כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית דרך החשבון שלך, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' בנוסף, המשימות המתוזמנות שהגדרת קוראות את הנתונים שלך כדי להפיק דוחות והתראות.':'')]);
     R.push(['הודעות','הדף לא שולח מיילים ולא SMS. תזכורת ההפקדה מופיעה בדף ביום שבחרת'+(OWNER&&!LOCAL?', וגם בהודעת הבוקר של המשימה המתוזמנת שלך':'')+'.']);
     R.push(['לכמה זמן','עד שתמחק. הכפתור "מחק את כל הנתונים שלי" למטה מוחק הכול מיד.']);
   }
@@ -16965,11 +16965,11 @@ const ANA_DEF={
   'חפיפה':{why:'חברה שמוחזקת גם ישירות וגם דרך קרן נספרת בתיק פעמיים, ולכן הריכוז האמיתי בה גבוה ממה שמופיע בטבלה.',check:'מה המשקל של החברות האלה בתוך הקרן, ואם החשיפה הכוללת אליהן מתאימה לכללים שקבעת.'}
 };
 const ANA_SEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין',unset:'לא הוגדר'};
-const ANA_ERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו, לכן מוצג הניתוח המחושב בלבד. המכסה מתחדשת בחצות.',noai:'Claude לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',not_granted:'לא אושר שימוש ב-Claude מהדף, לכן מוצג הניתוח המחושב בלבד.',sampling_disabled:'Claude לא זמין בחשבון הזה, לכן מוצג הניתוח המחושב בלבד.',not_declared:'Claude לא זמין בדף הזה, לכן מוצג הניתוח המחושב בלבד.',capability_disabled:'Claude לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',capability_removed:'Claude לא זמין בגרסת האפליקציה הזו, לכן מוצג הניתוח המחושב בלבד.',rate_limited:'יותר מדי בקשות ל-Claude כרגע. הניתוח המחושב מוצג; אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'הניסוח של Claude לא הגיע בפורמט תקין, לכן מוצג הניתוח המחושב.',refused:'Claude לא ענה על הבקשה הזו, לכן מוצג הניתוח המחושב.',empty_completion:'Claude לא החזיר ניסוח, לכן מוצג הניתוח המחושב.',cancelled:'הניסוח של Claude נעצר. מוצג הניתוח המחושב.',session_expired:'צריך להתחבר מחדש ל-Claude. בינתיים מוצג הניתוח המחושב.',prompt_too_large:'הנתונים גדולים מדי לשליחה, לכן מוצג הניתוח המחושב.',upstream_error:'Claude לא ענה הפעם, לכן מוצג הניתוח המחושב.'};
-const ANA_QERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו. המכסה מתחדשת בחצות.',not_granted:'לא אושר שימוש ב-Claude מהדף, ולכן אין תשובה לשאלה.',sampling_disabled:'Claude לא זמין בחשבון הזה.',rate_limited:'יותר מדי בקשות ל-Claude כרגע. אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'התשובה של Claude לא הגיעה בפורמט תקין.',refused:'Claude לא ענה על השאלה הזו. אפשר לנסח אחרת.',empty_completion:'Claude לא החזיר תשובה. אפשר לנסח אחרת.',cancelled:'השאלה נעצרה.',session_expired:'צריך להתחבר מחדש ל-Claude.',prompt_too_large:'הנתונים גדולים מדי לשליחה.',upstream_error:'Claude לא ענה הפעם.'};
+const ANA_ERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו, לכן מוצג הניתוח המחושב בלבד. המכסה מתחדשת בחצות.',noai:'צ׳יקו לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',not_granted:'לא אושר שימוש בצ׳יקו מהדף, לכן מוצג הניתוח המחושב בלבד.',sampling_disabled:'צ׳יקו לא זמין בחשבון הזה, לכן מוצג הניתוח המחושב בלבד.',not_declared:'צ׳יקו לא זמין בדף הזה, לכן מוצג הניתוח המחושב בלבד.',capability_disabled:'צ׳יקו לא זמין בתצוגה הזו, לכן מוצג הניתוח המחושב בלבד.',capability_removed:'צ׳יקו לא זמין בגרסת האפליקציה הזו, לכן מוצג הניתוח המחושב בלבד.',rate_limited:'יותר מדי בקשות לצ׳יקו כרגע. הניתוח המחושב מוצג; אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'הניסוח של צ׳יקו לא הגיע בפורמט תקין, לכן מוצג הניתוח המחושב.',refused:'צ׳יקו לא ענה על הבקשה הזו, לכן מוצג הניתוח המחושב.',empty_completion:'צ׳יקו לא החזיר ניסוח, לכן מוצג הניתוח המחושב.',cancelled:'הניסוח של צ׳יקו נעצר. מוצג הניתוח המחושב.',session_expired:'צריך להתחבר מחדש לצ׳יקו. בינתיים מוצג הניתוח המחושב.',prompt_too_large:'הנתונים גדולים מדי לשליחה, לכן מוצג הניתוח המחושב.',upstream_error:'צ׳יקו לא ענה הפעם, לכן מוצג הניתוח המחושב.'};
+const ANA_QERR={quota_exceeded:'הגעת למכסה היומית של צ׳יקו. המכסה מתחדשת בחצות.',not_granted:'לא אושר שימוש בצ׳יקו מהדף, ולכן אין תשובה לשאלה.',sampling_disabled:'צ׳יקו לא זמין בחשבון הזה.',rate_limited:'יותר מדי בקשות לצ׳יקו כרגע. אפשר לנסות שוב בעוד כמה דקות.',invalid_json:'התשובה של צ׳יקו לא הגיעה בפורמט תקין.',refused:'צ׳יקו לא ענה על השאלה הזו. אפשר לנסח אחרת.',empty_completion:'צ׳יקו לא החזיר תשובה. אפשר לנסח אחרת.',cancelled:'השאלה נעצרה.',session_expired:'צריך להתחבר מחדש לצ׳יקו.',prompt_too_large:'הנתונים גדולים מדי לשליחה.',upstream_error:'צ׳יקו לא ענה הפעם.'};
 const ANA_OFF=['quota_exceeded','not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'];
 // on the site Claude is reached through the site's own key, so "not available" is the site's, never the viewer's account
-const anaMsg=(D,c)=>window.__tc&&c==='sampling_disabled'?(D===ANA_ERR?'Claude לא זמין באתר כרגע, לכן מוצג הניתוח המחושב בלבד.':'Claude לא זמין באתר כרגע.'):(D[c]||D.upstream_error);
+const anaMsg=(D,c)=>window.__tc&&c==='sampling_disabled'?(D===ANA_ERR?'צ׳יקו לא זמין באתר כרגע, לכן מוצג הניתוח המחושב בלבד.':'צ׳יקו לא זמין באתר כרגע.'):(D[c]||D.upstream_error);
 // ---- ana:start ---- what Claude's sentences may not say (tests/page-math.test.js)
 // advice: buy or sell said to the person, in any form; "לקנות", "למכור", "ממליצים" only when they quote the analysts,
 // the person's own plan or rule, or say that no advice is given
@@ -17464,7 +17464,7 @@ const anaTag=F=>F.live?'<span class="ana-tag ok">מסחר חי</span>':F.ageH!=n
 function anaReportHtml(F,issues,det,st){
   const m=F.m, ai=st.ai||{}, R=F.R, cashW=m.total?m.cash/m.total*100:0;
   const hero=`<div class="ana-hero"><div class="k">שווי התיק</div><div class="v"><span class="n">${ils(m.total)}</span></div><div class="d">${m.cost?`<span class="${m.pnl>=0?'up':'down'}">${tx(`${sgn(m.pnl)} (${spct(m.pnlPct)})`)}</span> מול מחיר הקנייה${m.missingCost?tx(` · מחושב ל-${m.pos.length-m.missingCost} מתוך ${m.pos.length} ניירות`):''}`:'אין מחירי קנייה, ולכן אין חישוב רווח והפסד.'}</div>${F.live?'':`<p class="ana-dn">${tx(F.priceNote)}</p>`}</div>`;
-  const bl=`<section class="ana-bl" aria-label="השורה התחתונה"><h4>השורה התחתונה</h4><p>${tx(ai.bottom||det.bottom)}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${ai.bottom?'ניסוח: Claude, לפי המספרים שהדף חישב'+(ai.lv&&ai.lv!==levelOf()?`, ברמה "${LEVEL[ai.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
+  const bl=`<section class="ana-bl" aria-label="השורה התחתונה"><h4>השורה התחתונה</h4><p>${tx(ai.bottom||det.bottom)}</p>${st.note==='thinking'?anaWait('צ׳יקו מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${ai.bottom?'ניסוח: צ׳יקו, לפי המספרים שהדף חישב'+(ai.lv&&ai.lv!==levelOf()?`, ברמה "${LEVEL[ai.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
   const tiles=[
     anaTile('מספר ניירות',String(m.pos.length),tx([F.stocks.length?`${F.stocks.length} מניות`:'',F.funds.length?(F.funds.length===1?'קרן אחת':`${F.funds.length} קרנות`):''].filter(Boolean).join(' · '))),
     anaTile('מזומן',pct(cashW),ils(m.cash)),
@@ -17483,27 +17483,27 @@ function anaReportHtml(F,issues,det,st){
   const plH=`${ai.plan?`<p class="ana-pp">${tx(ai.plan)}</p>`:''}<div class="ana-pl">${det.plan.map(r=>`<div class="ana-pr"><span class="rs ${r.k==='fact'?'info':r.k}">${r.k==='info'?'מעקב':r.k==='fact'?'נתון':ANA_SEV[r.k]}</span><div><b>${esc(r.t)}</b>${tx(r.x)}</div>${anaNavBtn(r.nav)}</div>`).join('')}</div>${lvP(LVN.anaPlan)}`;
   const acts=det.actions.map((a,k)=>({...a,why:(ai.actWhy&&ai.actWhy['k'+(k+1)])||a.why}));
   const acH=`<ol class="ana-ac">${acts.map(a=>`<li><div><b>${tx(a.title)}</b><p>${tx(a.why)}</p>${anaNavBtn(a.nav)}</div></li>`).join('')}</ol>`;
-  const err=st.note==='first'?`<p class="ana-info">זה הניתוח שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.${SAMPLE&&!SAMPLE_OFF?' אפשר לבקש גם ניסוח והסבר של Claude: <button type="button" class="btn sm" data-ana="analyze">ניסוח של Claude</button>':''}</p>`
+  const err=st.note==='first'?`<p class="ana-info">זה הניתוח שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר לצ׳יקו.${SAMPLE&&!SAMPLE_OFF?' אפשר לבקש גם ניסוח והסבר של צ׳יקו: <button type="button" class="btn sm" data-ana="analyze">ניסוח של צ׳יקו</button>':''}</p>`
     :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note))}${st.retry?' <button type="button" class="btn sm" data-ana="analyze">נסה שוב</button>':''}</p>`:'';
-  const chk=st.ai?`<p>${!st.ai.checked?'Claude לא החזיר ניסוח שאפשר להשתמש בו, ולכן כל הניסוחים כאן מחושבים בדף.':st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של Claude הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של Claude נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
+  const chk=st.ai?`<p>${!st.ai.checked?'צ׳יקו לא החזיר ניסוח שאפשר להשתמש בו, ולכן כל הניסוחים כאן מחושבים בדף.':st.ai.replaced?`בדיקת מספרים: ${st.ai.replaced===1?'ניסוח אחד':st.ai.replaced+' ניסוחים'} של צ׳יקו הוחלפו בניסוח מחושב, כי הופיע בהם מספר שלא נמצא בנתוני התיק או ניסוח של המלצה.`:`בדיקת מספרים: כל ${st.ai.checked} הניסוחים של צ׳יקו נבדקו, וכל המספרים בהם נמצאו בנתוני התיק.`}</p>`:'';
   const ft=`<footer class="ana-ft">${err}${F.miss.length?`<b>מה חסר לניתוח מלא</b><ul>${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}${chk}<p>המספרים חושבו בדף מנתוני התיק שלך. הניתוח הוא כלי עזר לקבלת החלטות ואינו תחליף לייעוץ השקעות המותאם אישית. אין לבצע שינוי בתיק על סמך נתון שלא אומת.</p>${lvCtl()}</footer>`;
   return anaHead('ניתוח התיק שלך',anaWhen(F),anaTag(F))+hero+bl+anaSec(1,'תמונת מצב',`<div class="mine3">${tiles}</div>`)+anaSec(2,'הקצאת התיק',alloc)
     +anaSec(3,`מה דורש את תשומת הלב שלך?${issues.length?` <span class="cnt">${issues.length}</span>`:''}`,rulesNote()+its)+anaSec(4,'נקודות חוזק',stH)+anaSec(5,'האם התיק עומד בתוכנית?',plH)
     +anaSec(6,acts.length===3?'שלוש הפעולות שהייתי בודק':'הפעולות שהייתי בודק',acH)+ft;
 }
 function anaDayHtml(F,det,res,st,crisis){
-  const r=res&&res.lines.length?res:det, src=res&&res.lines.length?'ניסוח: Claude, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף';
-  const body=st.note==='thinking'?`<ul class="ana-day">${det.lines.map(l=>`<li>${tx(l)}</li>`).join('')}</ul>${anaWait(crisis?'Claude מסביר מה קורה…':'Claude מסכם את היום…')}`
+  const r=res&&res.lines.length?res:det, src=res&&res.lines.length?'ניסוח: צ׳יקו, לפי המספרים שהדף חישב':'ניסוח מחושב של הדף';
+  const body=st.note==='thinking'?`<ul class="ana-day">${det.lines.map(l=>`<li>${tx(l)}</li>`).join('')}</ul>${anaWait(crisis?'צ׳יקו מסביר מה קורה…':'צ׳יקו מסכם את היום…')}`
     :`<ul class="ana-day">${r.lines.map(l=>`<li>${tx(l)}</li>`).join('')}</ul>${r.action?`<p class="ana-need ${r.action==='כן'?'warn':'ok'}"><b>פעולה נדרשת: ${r.action}</b>${r.reason?' · '+esc(r.reason):''}</p>`:''}<p class="note">${src}${res&&res.replaced?` · ${res.replaced===1?'שורה אחת הוסרה':res.replaced+' שורות הוסרו'} כי הופיע בה מספר שלא נמצא בנתוני התיק.`:''}</p>`;
   const err=st.note&&!['thinking','ai'].includes(st.note)?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note).replace('הניתוח המחושב','הסיכום המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="'+(crisis?'crisis':'day')+'">נסה שוב</button>':''}</p>`:'';
   return anaHead(crisis?'מה באמת קורה בתיק':'סיכום היום',anaWhen(F),anaTag(F))+body+err;
 }
 function anaQaHtml(F,q,ans,st){
   let body;
-  if(st.note==='thinking')body=anaWait('Claude עונה מתוך נתוני התיק…');
-  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של Claude, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
+  if(st.note==='thinking')body=anaWait('צ׳יקו עונה מתוך נתוני התיק…');
+  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
   else if(ans)body=`<p>לא הצלחתי לענות על זה רק מתוך נתוני התיק. אפשר לנסח אחרת, או לפתוח את הניתוח המלא.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
-  else if(st.note==='noai')body=`<p class="ana-err">שאלות חופשיות זמינות כש-Claude מחובר לדף. הניתוח המחושב זמין תמיד:</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
+  else if(st.note==='noai')body=`<p class="ana-err">שאלות חופשיות זמינות כשצ׳יקו מחובר לדף. הניתוח המחושב זמין תמיד:</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else body=`<p class="ana-err">${esc(anaMsg(ANA_QERR,st.note))}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
   return body;
 }
@@ -17538,7 +17538,7 @@ function anaWhyHtml(F,W){
   return head+anaSec(1,'מה קרה?',s1)+anaSec(2,'מה הנתונים מראים?',s2)+anaSec(3,'מה עשוי להסביר את השינוי?',s3)+anaSec(4,'איך התיק מושפע?',`<ul class="why-l">${s4.join('')}</ul>`)
     +anaSec(5,'מה עדיין לא ידוע?',`<ul class="why-l">${unk.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`)
     +anaSec(6,'מה אפשר לבדוק בהמשך?',`<div class="ana-navs">${nx.map(n=>anaNavBtn(n)).join('')}</div>`)
-    +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של Claude. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p>${lvCtl()}</footer>`;
+    +`<footer class="ana-ft"><p>מקור המחירים והשער: ${esc(Q.source||'לא ידוע')}. החישוב של הדף, לא של צ׳יקו. זה הסבר של מספרים, לא המלצה לקנות או למכור.</p>${lvCtl()}</footer>`;
 }
 // ---- "הסבר את התיק שלי": the words for pfExplain()'s numbers, in six parts (the plan's list), and the level of explanation ----
 const secOfIt=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}};
@@ -17591,7 +17591,7 @@ function anaExplainPfHtml(F,X,st){
   const lv=levelOf(), w=X.what, e=X.expo, c=X.conc, sym=s=>`<b class="sym">${esc(lab(s))}</b>`, head=anaHead('הסבר התיק שלך',anaWhen(F),anaTag(F));
   if(!w.n)return head+`<p>בתיק יש כרגע רק מזומן: ${tx(ils(w.cash))}. אחרי שיתווספו ניירות, כאן יופיעו מה יש בתיק, החשיפות והריכוז.</p>`;
   const lvN=k=>lvP({new:EXB[k],pro:EXM[k]});
-  const sum=st.sum&&st.sum.text, bl=`<section class="ana-bl" aria-label="בקצרה"><h4>בקצרה</h4><p>${tx(sum||exSum(X))}</p>${st.note==='thinking'?anaWait('Claude מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${sum?'ניסוח: Claude, לפי המספרים שהדף חישב'+(st.sum.lv&&st.sum.lv!==lv?`, ברמה "${LEVEL[st.sum.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
+  const sum=st.sum&&st.sum.text, bl=`<section class="ana-bl" aria-label="בקצרה"><h4>בקצרה</h4><p>${tx(sum||exSum(X))}</p>${st.note==='thinking'?anaWait('צ׳יקו מנסח הסבר למספרים שהדף חישב…'):`<span class="src">${sum?'ניסוח: צ׳יקו, לפי המספרים שהדף חישב'+(st.sum.lv&&st.sum.lv!==lv?`, ברמה "${LEVEL[st.sum.lv]}"`:''):'ניסוח מחושב של הדף'}</span>`}</section>`;
   const s1=`<p>${tx(`${w.n===1?'נייר אחד':w.n+' ניירות'}: ${w.stocks===1?'מניה בודדת אחת':w.stocks+' מניות בודדות'}${w.funds?` ו-${w.funds===1?'קרן אחת':w.funds+' קרנות'}`:''}, ב-${w.groups===1?'קבוצה אחת':w.groups+' קבוצות'}. שווי כולל ${ils(w.total)}${w.cash>0.5?`, מתוכו ${ils(w.cash)} במזומן`:''}.`)}</p>`
     +`<ul class="why-l">${w.top.map(p=>`<li>${sym(p.sym)} <span class="nm">${esc(p.name||'')}</span> · ${tx(pct(p.w))} · ${esc(GROUPS[p.group]||p.group)}</li>`).join('')}</ul>`
     +(w.more?`<p class="note">ועוד ${w.more===1?'נייר אחד':w.more+' ניירות'}, כל אחד ${tx(pct(w.nextW))} מהתיק או פחות.</p>`:'')+lvN('what');
@@ -17611,9 +17611,9 @@ function anaExplainPfHtml(F,X,st){
   const miss=exMiss(F,X);
   const s5=(miss.length?`<ul class="why-l">${miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:'<p>אין נתון חסר מהסוגים שהדף בודק: מחירים, מחירי קנייה, ענף והרכב קרנות.</p>')+lvN('miss');
   const s6=X.questions.length?`<dl class="stq">${X.questions.map(x=>{const [q,b,n]=EXQ[x.k](x); return `<div><dt>${tx(q)}</dt><dd>${tx(b)}${n?`<span class="ex-go">${exNav(n)}</span>`:''}</dd></div>`}).join('')}</dl>${lvN('ask')}`:'<p class="note">אין כרגע שאלה שהנתונים מעלים.</p>';
-  const err=st.note==='first'?'<p class="ana-info">זה ההסבר שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר ל-Claude.</p>'
+  const err=st.note==='first'?'<p class="ana-info">זה ההסבר שהדף חישב מהתיק ששמרת עכשיו, בלי לשלוח דבר לצ׳יקו.</p>'
     :st.note&&st.note!=='thinking'&&st.note!=='ai'?`<p class="ana-err">${esc(anaMsg(ANA_ERR,st.note).replace('הניתוח המחושב','ההסבר המחושב'))}${st.retry?' <button type="button" class="btn sm" data-ana="explain">נסה שוב</button>':''}</p>`:'';
-  const chk=st.sum&&st.sum.replaced?`<p>בדיקת מספרים: ${st.sum.replaced===1?'משפט אחד':st.sum.replaced+' משפטים'} של Claude ${st.sum.replaced===1?'הוסר, כי הופיע בו':'הוסרו, כי הופיע בהם'} מספר שלא נמצא בנתוני התיק, הערכה של התיק או ניסוח של המלצה.</p>`:'';
+  const chk=st.sum&&st.sum.replaced?`<p>בדיקת מספרים: ${st.sum.replaced===1?'משפט אחד':st.sum.replaced+' משפטים'} של צ׳יקו ${st.sum.replaced===1?'הוסר, כי הופיע בו':'הוסרו, כי הופיע בהם'} מספר שלא נמצא בנתוני התיק, הערכה של התיק או ניסוח של המלצה.</p>`:'';
   const ft=`<footer class="ana-ft">${err}${chk}<p>מבוסס רק על התיק שלך כפי שהוא בדף: האחזקות, המחירים והשער, והכללים וההגדרות שקבעת. זה הסבר של מה שיש בתיק, לא בדיקה אם הוא מתאים לך ולא המלצה.</p>${lvCtl()}<div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">לבדיקה מול הכללים שלך</button></div></footer>`;
   return head+bl+anaSec(1,'מה יש בתיק',s1)+anaSec(2,'מה בולט',s2)+anaSec(3,'החשיפות המרכזיות '+termBtn('expo'),s3)
     +anaSec(4,'נקודות ריכוז '+termBtn('conc'),s4)+anaSec(5,'מה חסר',s5)+anaSec(6,'שאלות שיכולות לעזור',s6)+ft;
@@ -17664,7 +17664,7 @@ function anaScroll(id){try{const log=$('anaOut'), a=log.querySelector('[data-car
 function anaFocus(id){anaScroll(id); try{const a=$('anaOut').querySelector('[data-card="'+id+'"]'); if(a)a.focus({preventScroll:true})}catch(e){}}
 function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySelector('#anaHelloSt'); if(st){st.textContent=botStatus();return}} const nm=String((S&&S.name)||'').trim();
   const a=document.createElement('article'); a.className='msg bot hello'; a.innerHTML=`<div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card hello-c"><p class="hl">${greetW()}${nm?', '+esc(nm):''}. אני צ׳יקו, עוזר התיק שלך.</p><p id="anaHelloSt">${esc(botStatus())}</p><ul class="hello-l"><li><b>על מה אני עונה:</b> מה הזיז את התיק, איפה הוא מרוכז, אם הוא עומד בכללים ובתוכנית שלך, ומה כדאי לבדוק.</li><li><b>מאיפה:</b> רק מהנתונים שבדף: האחזקות, המחירים (עם שעת העדכון), הכללים והתוכנית שלך. כל תשובה אומרת לאיזה מועד היא נכונה ומה חסר.</li><li><b>מה לא:</b> לא המלצות לקנות או למכור, לא תחזיות מחיר, ולא חדשות שאין בדף.</li></ul>${lvCtl()}<p id="anaHelloAi"></p></div>`; box.prepend(a); anaHelloAi()}
-function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כש-Claude מחובר לדף.'}
+function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -17684,7 +17684,7 @@ function anaClose(quiet){const d=$('anaBox'); if(!d||d.hidden)return; d.hidden=t
   setTimeout(()=>{try{profMaybe()}catch(e){}},1200)}   // the profile waits while צ׳יקו is open (after the first save he explains the portfolio first)
 function anaBusyUi(on){for(const b of document.querySelectorAll('#anaEntry .ana-chips button, #anaSugg button, #anaForm button'))b.disabled=on}
 function anaAvail(){const on=!!SAMPLE&&!SAMPLE_OFF; for(const el of document.querySelectorAll('#anaBox [data-needs-ai], #anaEntry [data-needs-ai]'))el.hidden=!on;
-  const n=$('anaNote'); if(n)n.textContent=on||!ANA_READY?'':'הניתוח המחושב זמין תמיד. סיכום היום ושאלות חופשיות זמינים כש-Claude מחובר לדף.';
+  const n=$('anaNote'); if(n)n.textContent=on||!ANA_READY?'':'הניתוח המחושב זמין תמיד. סיכום היום ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.';
   anaHelloAi(); anaSugg(); try{i18nPump()}catch(e){}}
 async function anaCall(prompt,opt,st,draw){
   ANA_BUSY=true; anaBusyUi(true); const ctl=new AbortController(); ANA_CTL=ctl;
@@ -17713,7 +17713,7 @@ const PURPOSE={home:'דירה',pension:'פנסיה וטווח ארוך',save:'ח
 const levelOf=()=>{const l=(S&&S.profile&&S.profile.level)||(S&&S.level);return LEVEL[l]?l:'mid'};
 const purposeOf=()=>{const p=S&&S.profile&&S.profile.purpose;return PURPOSE[p]?p:''};
 // what צ׳יקו is told about the person. The level sets the depth; the goal lets him connect the state of the portfolio to it
-// planned money in and out goes to Claude only when the user ticked "לכלול בשאלות לצ׳יקו", and without the note they wrote
+// planned money in and out goes to צ׳יקו only when the user ticked "לכלול בשאלות לצ׳יקו", and without the note they wrote
 function anaFlowsAI(m){if(!S.flowsAI)return {}; const v=flowsView(S.flows,m,+S.years||0).rows.filter(r=>!r.past); if(!v.length)return {};
   return {planned_cash_flows:v.map(r=>({when:r.ym.slice(5)+'.'+r.ym.slice(0,4),in_months:r.months,kind:r.kind==='out'?'משיכה':'הפקדה חד-פעמית',amount:ils(r.amount),share_of_portfolio_today:r.share!=null?pct(r.share):null}))}}
 const femOn=()=>!!(S&&S.profile&&S.profile.gender==='f');
@@ -17771,13 +17771,13 @@ function anaCleanExplain(raw,set){
 }
 function anaExplainHtml(F,k,ans,st){
   const s=F.security, nm=esc(s.hebrew_name||s.name||k), head=anaHead(`צ׳יקו על ${nm}`,`${esc(s.type)}${s.sector?' · '+esc(s.sector):''}`);
-  if(st.note==='thinking')return head+anaWait('Claude מסביר את הנייר…');
-  if(st.note==='noai')return head+'<p class="ana-err">ההסבר זמין כש-Claude מחובר לדף. הנתונים עצמם מופיעים בדף הנייר.</p>';
+  if(st.note==='thinking')return head+anaWait('צ׳יקו מסביר את הנייר…');
+  if(st.note==='noai')return head+'<p class="ana-err">ההסבר זמין כשצ׳יקו מחובר לדף. הנתונים עצמם מופיעים בדף הנייר.</p>';
   if(!ans)return head+`<p class="ana-err">${esc(anaMsg(ANA_QERR,st.note))}</p>${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="sec" data-sym="${esc(k)}">נסה שוב</button></div>`:''}`;
   const sec=(t,tag,x,cls)=>x?`<section class="ana-sec${cls?' '+cls:''}"><h4>${t}${tag?' '+tag:''}</h4><p>${tx(x)}</p></section>`:'';
   const f=ans.f, any=Object.values(f).some(Boolean);
   return head+(any?sec('מה זה','<span class="tag gen">ידע כללי</span>',f.what)+sec('מה המספרים אומרים','<span class="tag an">ניתוח</span>',f.numbers)+sec('בתיק שלי','<span class="tag an">ניתוח</span>',f.mine)+sec('למה לשים לב','<span class="tag an">ניתוח</span>',f.watch)+sec('מה לא יודעים','',f.unknown,'muted'):'<p>לא הצלחתי להסביר את הנייר הזה מתוך הנתונים.</p>')
-    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של Claude, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: '+esc((F.analysts&&F.analysts.source)||(F.financials&&F.financials.source)||'מקור לא ידוע'):''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
+    +`<div class="ana-navs">${anaNavBtn({t:'sec:'+k,l:'לדף הנייר'})}</div><p class="note">"מה זה": ידע כללי של צ׳יקו, לא מידע עדכני. המספרים: מנתוני הדף${s.price&&s.price.label?' ('+esc(s.price.label)+')':''}${F.analysts||F.financials?'; אנליסטים ודוחות: '+esc((F.analysts&&F.analysts.source)||(F.financials&&F.financials.source)||'מקור לא ידוע'):''}. רמת ההסבר: "${esc(LEVEL[levelOf()])}"${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא בנתונים או ניסוח של המלצה`:''}. לא ייעוץ השקעות.</p>`;
 }
 // "צ׳יקו, הסבר לי את הנייר הזה": what it is (general knowledge, marked as such), what its figures say at the person's level, its place in the portfolio
 async function anaExplain(k,o){
@@ -17921,7 +17921,7 @@ async function anaRun(kind,q,o){
   const F=anaFacts(), id=o.redraw||'c'+(++ANA_SEQ), shown=()=>{if(o.fromInput||o.redraw)anaScroll(id); else anaFocus(id)};
   anaLive('צ׳יקו עונה…');
   if(F.empty){anaCard(id,anaHead(F.empty==='nopf'?'אין עדיין תיק לנתח':'הנתונים עוד נטענים')+`<p>${F.empty==='nopf'?'כדי לנתח את התיק צריך קודם להוסיף אותו: צילום מסך, קובץ, או הקלדה של כמה שורות.':'המחירים ונתוני התיק עוד נטענים. נסה שוב בעוד רגע.'}</p>${F.empty==='nopf'?`<div class="ana-navs">${anaNavBtn({t:'mine',l:'להוספת תיק'})}</div>`:''}`); shown(); anaLive('התשובה מוכנה'); return}
-  if(kind==='why'){const W=whyMove(F.m,Q,P,F.R), draw=()=>anaCard(id,anaWhyHtml(F,W)); ANA_REDRAW[id]=draw; draw(); shown(); anaLive('ההסבר מוכן'); return}   // computed here; Claude is not asked
+  if(kind==='why'){const W=whyMove(F.m,Q,P,F.R), draw=()=>anaCard(id,anaWhyHtml(F,W)); ANA_REDRAW[id]=draw; draw(); shown(); anaLive('ההסבר מוכן'); return}   // computed here; צ׳יקו is not asked
   const issues=anaIssues(F), first=!!o.first, ai=!!SAMPLE&&!SAMPLE_OFF&&!first;
   if(kind==='explain'){
     const ctx={R:F.R,years:+S.years||0,goal:+S.goal||0,tsum:F.tsum,co:F.co,coTo:CM&&CM.to||null,flows:flowsView(S.flows,F.m,+S.years||0)}, st={sum:null,note:ai?'thinking':first?'first':'noai'};
@@ -17936,7 +17936,7 @@ async function anaRun(kind,q,o){
     if(!ai){anaLive('ההסבר מוכן');return}
     const txt=JSON.stringify(pfExplainAI(F,X)), set=anaNumSet(txt);
     const prompt=`אתה "צ׳יקו", עוזר התיק בדף "תיק צ׳יק". המשתמש ביקש: "הסבר את התיק שלי".\nFACTS הוא JSON שהדף חישב מתוך התיק האמיתי של המשתמש, וזה המקור היחיד שלך.\n\n${ANA_RULES}\n9. כתוב 2 עד 4 משפטים: מה יש בתיק, מה בולט בו ואיפה הוא מרוכז, ברמה של knowledge_level. רק תיאור: בלי לשפוט אם התיק טוב, מאוזן, מסוכן או מתאים, ובלי לומר מה לעשות.\n\nהחזר JSON בלבד, במבנה הזה: {"summary":"2 עד 4 משפטים"}\n\nFACTS:\n${txt}`;
-    const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('ההסבר מוכן, בלי ניסוח של Claude');return}
+    const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('ההסבר מוכן, בלי ניסוח של צ׳יקו');return}
     st.sum=anaCleanSum(raw,set); st.sum.lv=levelOf(); st.note='ai'; draw(); anaLive('ההסבר מוכן'); return}
   if(kind==='analyze'){
     const det={bottom:anaBottom(F,issues),strengths:anaStrengths(F),plan:anaPlan(F),actions:anaActions(F,issues)}, st={ai:null,note:ai?'thinking':first?'first':'noai'};
@@ -17945,7 +17945,7 @@ async function anaRun(kind,q,o){
     if(!ai){anaLive('הניתוח מוכן');return}
     const txt=JSON.stringify(anaFactsAI(F,issues,anaActions(F,issues))), set=anaNumSet(txt);
     const prompt=`אתה "צ׳יקו", עוזר התיק בדף "תיק צ׳יק". המשתמש ביקש: "נתח לי את התיק".\nFACTS הוא JSON שהדף חישב מתוך התיק האמיתי של המשתמש, וזה המקור היחיד שלך.\n\n${ANA_RULES}\n\nהחזר JSON בלבד, במבנה הזה:\n{"bottom":"2 עד 3 משפטים: השורה התחתונה של התיק","items":[{"id":"מזהה מתוך FACTS.issues","why":"משפט אחד: למה זה חשוב","check":"משפט אחד: מה אפשר לבדוק"}],"strengths":["עד 3 משפטים קצרים על מה שעובד טוב בתיק"],"plan":"1 עד 2 משפטים: האם התיק עומד בתוכנית, לפי plan, goal, targets_set, rules ו-user_policy","actions":[{"id":"מזהה מתוך FACTS.checks","why":"משפט אחד: למה כדאי לבדוק את זה עכשיו"}]}\nitems: רק עבור id שקיימים ב-FACTS.issues, לפי סדר החשיבות, עד 6. actions: משפט אחד לכל בדיקה ב-FACTS.checks, באותו סדר. הכותרת והמסך של כל בדיקה כבר נקבעו בדף; אל תוסיף בדיקות.\nהמבנה: מה המצב, מה המשמעות, ומה כדאי לבדוק.\n\nFACTS:\n${txt}`;
-    const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('הניתוח מוכן, בלי ניסוח של Claude');return}
+    const raw=await anaCall(prompt,{modelTier:'default'},st,draw); if(raw===undefined){anaLive('הניתוח מוכן, בלי ניסוח של צ׳יקו');return}
     st.ai=anaClean(raw,set,issues); st.ai.lv=levelOf(); st.note='ai'; draw(); anaLive('הניתוח מוכן'); return}
   if(kind==='day'||kind==='crisis'){
     const crisis=kind==='crisis', cr=crisis?crisisInfo(F.m):null, det0=anaDayDet(F,issues);
@@ -19096,7 +19096,7 @@ function newJob(files,fromText){return {id:++JOBN,files,fromText:!!fromText,name
   pick:($('upAcct')&&$('upAcct').value)||'auto',quick:!!($('upQuick')&&$('upQuick').checked),pass:($('upPass')&&$('upPass').value)||'',text:fromText?(($('upText')&&$('upText').value)||'').trim():''}}
 const active=()=>JOBS.filter(j=>j.state==='run'||j.state==='wait');
 function pump(){
-  if(coolLeft()>0){for(const J of JOBS)if(J.state==='wait'){J.state='fail'; J.failed=true; J.msg='לא נשלח: Claude ביקש להאט. הקובץ נשאר ברשימה; לחץ על "קרא שוב" כשאפשר.'}}
+  if(coolLeft()>0){for(const J of JOBS)if(J.state==='wait'){J.state='fail'; J.failed=true; J.msg='לא נשלח: צ׳יקו ביקש להאט. הקובץ נשאר ברשימה; לחץ על "קרא שוב" כשאפשר.'}}
   else while(JOBS.filter(j=>j.state==='run').length<jobMax()){const J=JOBS.find(j=>j.state==='wait'); if(!J)break; J.state='run'; runJob(J)}
   const going=new Set(active().flatMap(j=>j.files)); upBusy=active().length>0;
   // "קרא שוב" reads what is in the list and not being read (a file that needed a password, or failed), while others still run
@@ -19128,7 +19128,7 @@ function drawTick(){clearInterval(JT); JT=0; if(!JOBS.some(j=>j.state==='run'&&j
   f(); JT=setInterval(f,1000)}
 const coolLeft=()=>Math.max(0,Math.ceil(((window.__cool||0)-Date.now())/1000));
 function coolNote(){const s=coolLeft(), st=$('upState'); if(!st)return;
-  if(s>0){$('btnRead').disabled=true;st.textContent=`Claude ביקש להאט. אפשר להמשיך בעוד ${s} שניות. הקבצים נשארים ברשימה, לא צריך לבחור אותם שוב.`+(coolN>=3?(window.__tc?' אם זה חוזר שוב ושוב, כנראה יש עומס על Claude באתר כרגע. אפשר להקליד את הניירות ב"הקלדה מהירה".':' אם זה חוזר שוב ושוב, ייתכן שהגעת למגבלת השימוש בחשבון Claude שלך. אפשר להקליד את הניירות ב"הקלדה מהירה".'):'')}
+  if(s>0){$('btnRead').disabled=true;st.textContent=`צ׳יקו ביקש להאט. אפשר להמשיך בעוד ${s} שניות. הקבצים נשארים ברשימה, לא צריך לבחור אותם שוב.`+(coolN>=3?(window.__tc?' אם זה חוזר שוב ושוב, כנראה יש עומס על צ׳יקו באתר כרגע. אפשר להקליד את הניירות ב"הקלדה מהירה".':' אם זה חוזר שוב ושוב, ייתכן שהגעת למגבלת השימוש בחשבון צ׳יקו שלך. אפשר להקליד את הניירות ב"הקלדה מהירה".'):'')}
   else{clearInterval(coolT);coolT=0;window.__cool=0;$('btnRead').disabled=!canWrite;st.textContent=STAGED.length?'אפשר להמשיך. לחץ על "קרא שוב".':'אפשר להמשיך.'}}
 function coolStart(){if(coolLeft()>0){coolNote();return} coolN++;window.__cool=Date.now()+Math.min(120,30*Math.pow(2,coolN-1))*1000;clearInterval(coolT);coolT=setInterval(coolNote,1000);coolNote()}
 async function readStatement(fromText){
@@ -19563,26 +19563,26 @@ async function readStatement0(J){
         text+='\n\n'+wb.SheetNames.slice(0,6).map(n=>'### '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}
     }catch(e){const c=e&&e.code; J.failed=true;
       if(c==='password'){J.needPass=true; $('passWrap').hidden=false;$('upPass').focus()}
-      st.textContent=c==='password'?(J.pass?`הסיסמה לא פתחה את ${f.name}. נסה שוב ולחץ על "קרא שוב".`:`הקובץ ${f.name} מוגן בסיסמה. הקלד אותה למטה ולחץ על "קרא שוב" (או Enter).`):c==='noimg'?'בתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. העלה PDF או Excel, או הקלד את הניירות בתיבה "הקלדה מהירה של התיק" שלמעלה.':c==='big'?`הקובץ ${f.name} גדול מדי.`:`לא הצלחתי לפתוח את ${f.name}. נסה קובץ אחר, או הדבק את טקסט הדוח.`;return}
+      st.textContent=c==='password'?(J.pass?`הסיסמה לא פתחה את ${f.name}. נסה שוב ולחץ על "קרא שוב".`:`הקובץ ${f.name} מוגן בסיסמה. הקלד אותה למטה ולחץ על "קרא שוב" (או Enter).`):c==='noimg'?'בתצוגה הזו אי אפשר לשלוח תמונות לצ׳יקו. העלה PDF או Excel, או הקלד את הניירות בתיבה "הקלדה מהירה של התיק" שלמעלה.':c==='big'?`הקובץ ${f.name} גדול מדי.`:`לא הצלחתי לפתוח את ${f.name}. נסה קובץ אחר, או הדבק את טקסט הדוח.`;return}
   }
   if(imgs.length>12){skipped=imgs.length-12;imgs.length=12}
   // personal details out of the text before it leaves the browser; images cannot be cleaned, and the list says so
   const pf=(S&&S.profile)||{}, red=redactPII(text,{first:pf.first,last:pf.last}); text=red.text;
   const RDK={id:'ת״ז',acct:'מספר חשבון',name:'שם',addr:'כתובת',mail:'מייל',phone:'טלפון'};
   const hasText=text.replace(/[\s,|#]/g,'').length>=40, sheetsOnly=!imgs.length&&files.length>0&&files.every(f=>!/\.pdf$/i.test(f.name||'')&&!/^image\//.test(f.type||'')&&f.type!=='application/pdf')&&text.length<60000;
-  if(!hasText&&!imgs.length){J.failed=true; st.textContent=files.some(f=>(f.name||'').toLowerCase().endsWith('.pdf'))?'ה-PDF הזה סרוק ואין בו טקסט, ובתצוגה הזו אי אפשר לשלוח תמונות ל-Claude. הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':'הקובץ נראה ריק.';return}
+  if(!hasText&&!imgs.length){J.failed=true; st.textContent=files.some(f=>(f.name||'').toLowerCase().endsWith('.pdf'))?'ה-PDF הזה סרוק ואין בו טקסט, ובתצוגה הזו אי אפשר לשלוח תמונות לצ׳יקו. הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':'הקובץ נראה ריק.';return}
   const pDone=[(files.length===1?'נפתח קובץ אחד':files.length?`נפתחו ${files.length} קבצים`:'התקבל הטקסט שהודבק')+(imgs.length?`, ${cntH(imgs.length,'תמונה אחת','תמונות')} לקריאה`:'')];
   if(hasText)pDone.push(red.n?'נמחקו מהטקסט לפני השליחה: '+Object.keys(red.kinds).map(k=>RDK[k]).join(', '):'בטקסט לא נמצאו ת״ז, מספר חשבון או כתובת');
   if(imgs.length)pDone.push((imgs.length===1?'התמונה נשלחת':'התמונות נשלחות')+' כמו שהן: מתמונה אי אפשר למחוק פרטים');
   // reading files. On the site: a quick read (Haiku) fills the table in about half a minute, and at the same time the
   // strongest model (Fable 5.1; the server hands over to the next one when it cannot read) reads the same files. When it
   // finishes, it checks the table and corrects what the quick read got wrong, row by row (the owner's choice, 14.10.2026).
-  // "קריאה מהירה בלבד" skips the check. Outside the site (Claude's own artifact view) there is one read, with the
+  // "קריאה מהירה בלבד" skips the check. Outside the site (צ׳יקו's own artifact view) there is one read, with the
   // strongest tier there ("complex").
   const quick=J.quick, FILES_TIER=window.__tc?'files':'complex', DUAL=!!window.__tc&&!quick;
   const sig=J.ctl.signal, t0=Date.now(); if(sig.aborted){J.failed=true; st.textContent='הקריאה נעצרה.'; return}
   $('btnRead').disabled=true; $('btnStop').hidden=false; upStep(2);
-  st.textContent=quick?'Claude קורא את הדוח במהירות, זה יכול לקחת עד דקה…':DUAL?'Claude קורא את הדוח. הטבלה תתמלא תוך חצי דקה עד דקה, לפי אורך הדוח, ובמקביל המודל החזק ביותר של Claude בודק אותה.':'המודל החזק ביותר של Claude קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
+  st.textContent=quick?'צ׳יקו קורא את הדוח במהירות, זה יכול לקחת עד דקה…':DUAL?'צ׳יקו קורא את הדוח. הטבלה תתמלא תוך חצי דקה עד דקה, לפי אורך הדוח, ובמקביל המנוע המעמיק של צ׳יקו בודק אותה.':'המנוע המעמיק של צ׳יקו קורא את הדוח בקפידה. זה יכול לקחת כמה דקות…';
   const step=Math.max(1,perCall), nCh=Math.max(1,Math.ceil(imgs.length/step));
   const found=o=>!!((o&&Array.isArray(o.positions)&&o.positions.length)||(o&&Array.isArray(o.transactions)&&o.transactions.length));
   const ask=(part,from,ci)=>readPrompt()+(part.length?`(${part.length} image${part.length>1?'s are':' is'} attached${nCh>1?`, number ${from} to ${from+part.length-1} of ${imgs.length}`:''}: screenshots of the account, or pages of a statement. Read them; where the text below is missing or its columns are scrambled, rely on the images.)\n`:'')+(hasText&&ci===0?text.slice(0,150000):'(no text layer; read the attached images)');
@@ -19594,7 +19594,7 @@ async function readStatement0(J){
       if(show)show(ci);
       const part=imgs.slice(ci*step,(ci+1)*step), from=ci*step+1, opts={cache:false,signal:sig,modelTier:tier}; if(part.length)opts.images=part; if(window.__tc)opts.meta={};
       let o; try{try{o=await sample.json(ask(part,from,ci),opts)}catch(e1){const k=e1&&e1.code==='invalid_json'?cutJson(e1.text):null; if(k){o=k; who.cut=true} else{if(!(retry&&e1&&e1.code==='invalid_json'))throw e1; o=null}}
-        if(retry&&!found(o)){opts.modelTier=FILES_TIER; if(opts.meta)opts.meta={}; upProg(pDone,'קורא שוב בקפידה, עם המודל החזק ביותר'); o=await sample.json(ask(part,from,ci),opts)}}
+        if(retry&&!found(o)){opts.modelTier=FILES_TIER; if(opts.meta)opts.meta={}; upProg(pDone,'קורא שוב בקפידה, עם המנוע המעמיק'); o=await sample.json(ask(part,from,ci),opts)}}
       catch(e){if(!ci||(e&&e.code==='cancelled'))throw e; cut=e; break}
       const m=opts.meta&&opts.meta.name?opts.meta:(!DUAL&&sample.last)||null;
       if(m&&m.name&&!who.names.includes(m.name))who.names.push(m.name); for(const f of (m&&m.fallbackFrom)||[])if(!who.from.includes(f))who.from.push(f);
@@ -19606,7 +19606,7 @@ async function readStatement0(J){
   function gather({outs,partial,sent,who}){
     const left=partial&&!hasText?new Set(imgs.slice(sent).map(b=>imgFile.get(b)).filter(Boolean)):new Set();
     const by=who.names.length?who.names.join(', ')+(who.from.length?` (${who.from.join(', ')} לא ${who.from.length===1?'היה זמין':'היו זמינים'}, ולכן קרא המודל הבא)`:''):'';
-    const partNote=partial?(hasText?' חלק מצילומי העמודים לא נשלחו, אבל טקסט הדוח נקרא במלואו.':` נקראו ${sent} מתוך ${imgs.length} צילומים. ${left.size} נשארו ברשימה`+(partial.code==='rate_limited'?', כי Claude ביקש להאט.':'. לחץ על "קרא שוב" כדי לקרוא אותם.')):'';
+    const partNote=partial?(hasText?' חלק מצילומי העמודים לא נשלחו, אבל טקסט הדוח נקרא במלואו.':` נקראו ${sent} מתוך ${imgs.length} צילומים. ${left.size} נשארו ברשימה`+(partial.code==='rate_limited'?', כי צ׳יקו ביקש להאט.':'. לחץ על "קרא שוב" כדי לקרוא אותם.')):'';
     const posOf=o=>Array.isArray(o&&o.positions)?o.positions:[];
     const real=outs.filter(o=>!o.derived&&posOf(o).length), use=real.length?real:outs, seen=new Map();
     for(const o of use)for(const q of posOf(o)){const k=canonSym(q&&q.sym,q&&q.name); if(!k)continue; if(q)q.sym=k; const pv=seen.get(k);
@@ -19656,7 +19656,7 @@ async function readStatement0(J){
       // the holdings and the cash come from the newest statement of the account; an older one adds its transactions. So
       // does a file with no holdings list (only transactions, the holdings worked out from them) for an account that has some.
       const why=older?`הדוח הזה מ-${dFull(d)}, ישן יותר מהדוח שכבר בטבלה לחשבון ${ACCTS[ac]} (מ-${dFull(have0)})`:`בקובץ הזה אין רשימת אחזקות, רק פעולות`;
-      if(dual){st.textContent=`${why}. המודל החזק ביותר בודק אותו, ורק הפעולות שבו ייכנסו…`; return {kind:'older'}}
+      if(dual){st.textContent=`${why}. המנוע המעמיק בודק אותו, ורק הפעולות שבו ייכנסו…`; return {kind:'older'}}
       if(!DRAFT)DRAFT=draftFromP(); const added=mergeTx(ac,txs); if(mon.length)monPut(ac,mon);
       if(added.length||mon.length)pfDirty(); renderTx(); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true; upStep(3);
       pDone.push(older?`הדוח מ-${dFull(d)}, ישן יותר מזה שבטבלה (${dFull(have0)})`:'בקובץ אין רשימת אחזקות, רק פעולות'); if(added.length)pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`);
@@ -19664,12 +19664,12 @@ async function readStatement0(J){
       st.textContent=lead+`${why}, ולכן האחזקות והמזומן לא הוחלפו.`+(added.length?` ${added.length===1?'נוספה ממנו פעולה אחת':`נוספו ממנו ${added.length} פעולות`} לרשימת הפעולות, והן יישמרו בהיסטוריה כשתלחץ על "שמור את התיק".`:txs.length?' כל הפעולות שבו כבר היו ברשימה.':' לא נמצאו בו פעולות.')+cutNote+partNote;
       return {kind:'older',done:true};
     }
-    if(rows.length&&pick==='auto'&&!known){st.textContent=lead+(out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".')+(dual?' המודל החזק ביותר עדיין קורא, ואולי יזהה.':''); if(!dual)try{$('upAcct').focus()}catch(e){} return {kind:'acct'}}
+    if(rows.length&&pick==='auto'&&!known){st.textContent=lead+(out.broker==='both'?'הקבצים נראים כשייכים לכמה חשבונות שונים. העלה כל חשבון בנפרד.':'לא הצלחתי לזהות לאיזה חשבון הקבצים שייכים. בחר חשבון מעל אזור ההעלאה ולחץ "קרא שוב".')+(dual?' המנוע המעמיק עדיין קורא, ואולי יזהה.':''); if(!dual)try{$('upAcct').focus()}catch(e){} return {kind:'acct'}}
     const flowsIn=txs.filter(t=>(t.side==='deposit'||t.side==='withdraw'||t.side==='fx')&&t.amount>0);
     if(!rows.length&&(flowsIn.length||mon.length)){
       const flows=flowsIn.filter(t=>t.side!=='fx'), conv=flowsIn.filter(t=>t.side==='fx'), wd=flows.some(t=>t.side==='withdraw');
       const what=andHe([flows.length?(flows.length===1?(wd?'משיכה אחת':'הפקדה אחת'):flows.length+(wd?' הפקדות ומשיכות':' הפקדות')):'',conv.length?(conv.length===1?'המרת מט״ח אחת':conv.length+' המרות מט״ח'):'',mon.length?'טבלת תשואות של '+(mon.length===1?'חודש אחד':mon.length+' חודשים'):''].filter(Boolean));
-      if(dual){st.textContent=`בקריאה המהירה זוהו ${what}. המודל החזק ביותר בודק את המספרים לפני שהם נכנסים…`; return {kind:'flows'}}
+      if(dual){st.textContent=`בקריאה המהירה זוהו ${what}. המנוע המעמיק בודק את המספרים לפני שהם נכנסים…`; return {kind:'flows'}}
       // a screen of deposits, withdrawals or currency conversions, or of the account's monthly results, and no holdings
       // list: it all goes to the account's history. Money that came in after the account's last statement is added to its
       // cash, so the account's value counts it; a conversion moves cash between the currencies only when both amounts show.
@@ -19709,7 +19709,7 @@ async function readStatement0(J){
       return {kind:'flows',done:true};
     }
     if(!rows.length){
-      if(dual){st.textContent='הקריאה המהירה לא מצאה אחזקות. המודל החזק ביותר של Claude עדיין קורא…'; return {kind:'none'}}
+      if(dual){st.textContent='הקריאה המהירה לא מצאה אחזקות. המנוע המעמיק של צ׳יקו עדיין קורא…'; return {kind:'none'}}
       const added=txs.length&&!(pick==='auto'&&!known)?mergeTx(ac,txs):[]; if(added.length){pfDirty(); renderTx(); pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`); upProg(pDone,'נשאר לך: לבדוק את הפעולות ולשמור')}
       st.textContent=lead+'לא מצאתי אחזקות בקבצים האלה'+(readBy?` (${readBy})`:'')+(added.length?`, אבל ${added.length===1?'נוספה מהם פעולה אחת':`נוספו מהם ${added.length} פעולות`} לרשימת הפעולות`:'')+'.'+(over?` אפשר עד 10 קבצים בבת אחת, ${over} לא נקראו.`:'')+(out.screens.length?` נשלחו ${imgs.length} צילומים. מה שראיתי: ${out.screens.slice(0,10).map((x,i)=>`${i+1}. ${x}`).join(' · ')}.`:'')+' צריך צילום של המסך שבו מופיעה רשימת הניירות (בבלינק: "ההשקעות שלי"), כמה צילומים אם היא ארוכה, או הקלדה ב"הקלדה מהירה" שלמעלה.'+(out.notes?' '+String(out.notes).slice(0,200):'');
       return {kind:'none'};
@@ -19728,7 +19728,7 @@ async function readStatement0(J){
     (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();   // the holdings are known up to today (a screenshot shows the account as it is now)
     pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true;
     {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
-      pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'Claude בודק את הקריאה עם המודל החזק ביותר':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
+      pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'צ׳יקו בודק את הקריאה עם המנוע המעמיק':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
     // rows the person had picked by hand for this account: the read replaced them (merge by symbol), so the quantities
     // are the statement's, once. Shown with the difference, so a changed number reads as a correction, not a duplicate
     const pickedNote=(()=>{const L=[]; let gone=0; for(const [k,p0] of before){if(p0.src!=='pick')continue; const r=rows.find(r=>canonSym(r.sym,r.name)===k); if(r){const q0=+p0.qty,q1=+r.qty; L.push(`${lab(r.sym)}: סימנת ${+q0.toFixed(4)}, ${merge?'בצילום':'בדוח'} ${+q1.toFixed(4)}${Math.abs(q0-q1)<1e-6?' (זהה)':''}`)} else if(!merge)gone++}
@@ -19738,7 +19738,7 @@ async function readStatement0(J){
     // deposits and withdrawals among the transactions: the holdings and the cash already hold them (the list is from the
     // same screen or statement), and they go to the money put in
     const nDep=txs.filter(t=>(t.side==='deposit'||t.side==='withdraw')&&t.amount>0).length;
-    st.textContent=lead+(dual?`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]} בקריאה מהירה. המודל החזק ביותר של Claude בודק אותם עכשיו, ויתקן בטבלה מה שצריך. אפשר כבר לעבור על הטבלה.`
+    st.textContent=lead+(dual?`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]} בקריאה מהירה. המנוע המעמיק של צ׳יקו בודק אותם עכשיו, ויתקן בטבלה מה שצריך. אפשר כבר לעבור על הטבלה.`
       :`נקראו ${rows.length} ניירות${txs.length?` ו-${txs.length} פעולות`:''} לחשבון ${ACCTS[ac]}. בדוק את הטבלה${txs.length?' ואת הפעולות':''} ולחץ על "שמור את התיק".`)+(merge?' ניירות שכבר היו בטבלה נשארו, ורק אלה שבצילום עודכנו.':'')+(pick==='auto'?` זיהיתי אוטומטית: ${ACCTS[ac]}.`:'')
       +(nDep?` ${nDep===1?'ההפקדה שברשימה נספרת':'ההפקדות והמשיכות שברשימה נספרות'} בסך ההפקדות, בהיסטוריה ובטבלת התשואה החודשית. יתרת המזומן לא שונתה בגלל${nDep===1?'ה':'ן'}, כי רשימת האחזקות היא מאותו מועד; אם הכסף עדיין במזומן ולא מופיע בטבלה, עדכן שם את יתרת המזומן.`:'')
       +pickedNote+(out.derived?' לא נראתה רשימת אחזקות, ולכן חישבתי את הכמויות מתוך התנועות. ייתכן שחסרים או מיותרים ניירות. השווה ל"ההשקעות שלי" באפליקציה לפני השמירה.':'')+((skipped||over)?` אפשר עד 10 קבצים בבת אחת, ${skipped+over} לא נקראו. אפשר להעלות אותם בנפרד.`:'')+(out.notes?' '+String(out.notes).slice(0,200):'')+cutNote+partNote;
@@ -19763,13 +19763,13 @@ async function readStatement0(J){
       else if(t.side==='fx'&&+t.toAmount>0&&t.toCcy!==t.ccy){put(t.ccy==='USD'?'USD':'ILS',-t.amount); put(t.toCcy==='USD'?'USD':'ILS',+t.toAmount)}}}
   // why a read did not work, in a few words (the server's message is already in Hebrew)
   const reason=e=>{const c=e&&e.code, m=e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message.split('. ')[0].replace(/\.$/,''):'';
-    return c==='invalid_json'?' (התשובה לא הייתה שלמה)':m?` (${m})`:c==='rate_limited'?' (Claude ביקש להאט)':''};
+    return c==='invalid_json'?' (התשובה לא הייתה שלמה)':m?` (${m})`:c==='rate_limited'?' (צ׳יקו ביקש להאט)':''};
   // the strongest model's read against the quick one. Rows the viewer has not touched since the quick read are corrected
   // and marked "תוקן". A security only the quick read saw is marked "לבדיקה" and never removed: the strongest model leaves
   // out what it is unsure of (and says so in its notes), and a saved removal also clears the security's plan and history.
   // What the viewer changed is left as it is and listed. Nothing is saved here: the viewer saves.
   function check(A,M){
-    const who=M.who.names[0]||'המודל החזק ביותר', notes=M.out.notes?` לפי ${who}: ${String(M.out.notes).slice(0,200)}`:'';
+    const who=M.who.names[0]||'המנוע המעמיק', notes=M.out.notes?` לפי ${who}: ${String(M.out.notes).slice(0,200)}`:'';
     // another statement of this account, read at the same time and newer, holds the rows of the table now: only this
     // statement's transactions are checked
     const sup=(HOLD[A.ac]||0)!==A.hold;
@@ -19852,8 +19852,8 @@ async function readStatement0(J){
   const idle=()=>typing()?new Promise(r=>{let ok=false; const go=()=>{if(!ok){ok=true; setTimeout(r,50)}}; document.activeElement.addEventListener('blur',go,{once:true}); setTimeout(go,120000)}):null;
   let main=null, e2=null;
   try{
-    const show=ci=>{if(nCh>1&&!DUAL)st.textContent=`Claude קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת ${quick?'עד דקה':'כמה דקות'}…`;
-      upProg(pDone,(DUAL?'Claude קורא במהירות':'Claude קורא')+(nCh>1?`, חלק ${ci+1} מתוך ${nCh}`:DUAL?'':' את הקבצים')); upTick(true,t0)};
+    const show=ci=>{if(nCh>1&&!DUAL)st.textContent=`צ׳יקו קורא ${imgs.length} צילומים, חלק ${ci+1} מתוך ${nCh}. כל חלק יכול לקחת ${quick?'עד דקה':'כמה דקות'}…`;
+      upProg(pDone,(DUAL?'צ׳יקו קורא במהירות':'צ׳יקו קורא')+(nCh>1?`, חלק ${ci+1} מתוך ${nCh}`:DUAL?'':' את הקבצים')); upTick(true,t0)};
     const QUICK_TIER=window.__tc?'quickfiles':'quick';
     if(!DUAL){main=gather(await pass(quick?QUICK_TIER:FILES_TIER,{retry:quick,show})); apply(main)}
     else{
@@ -19861,21 +19861,21 @@ async function readStatement0(J){
       let R2=null; const slow=pass(FILES_TIER).then(r=>{R2=r},e=>{e2=e});
       let M1=null, e1=null; try{M1=gather(await pass(QUICK_TIER,{show}))}catch(e){if((e&&e.code==='cancelled')||sig.aborted)throw {code:'cancelled'}; e1=e}
       const A=M1?apply(M1,{dual:true}):{kind:'failed'};
-      if(A.kind!=='rows'){upProg(pDone,'Claude קורא עם המודל החזק ביותר'); upTick(true,t0); if(e1)st.textContent='הקריאה המהירה לא הצליחה'+reason(e1)+'. המודל החזק ביותר של Claude עדיין קורא…'}
+      if(A.kind!=='rows'){upProg(pDone,'צ׳יקו קורא עם המנוע המעמיק'); upTick(true,t0); if(e1)st.textContent='הקריאה המהירה לא הצליחה'+reason(e1)+'. המנוע המעמיק של צ׳יקו עדיין קורא…'}
       await slow;
       const quickLine=()=>{if(/^קריאה מהירה עם/.test(pDone[pDone.length-1]||''))pDone.pop()};
       if(e2){
         const stop=sig.aborted||e2.code==='cancelled', why=stop?'':reason(e2);
-        if(A.kind==='rows'){main=M1; pDone.push(stop?'הבדיקה נעצרה':'הבדיקה של המודל החזק ביותר לא הצליחה'); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור');
-          st.textContent=(stop?'עצרת את הבדיקה של המודל החזק ביותר.':'הבדיקה של המודל החזק ביותר לא הצליחה'+why+'.')+' הטבלה היא מהקריאה המהירה, ולכן כדאי להשוות אותה לדוח לפני השמירה.'}
-        else if(M1&&!stop&&A.kind!=='failed'){main=M1; quickLine(); apply(M1,{lead:'הבדיקה של המודל החזק ביותר לא הצליחה'+why+(A.kind==='flows'?', ולכן מה שנקרא כאן הוא מהקריאה המהירה. השווה את הסכומים למסך או לדוח לפני השמירה. ':'. ')})}
+        if(A.kind==='rows'){main=M1; pDone.push(stop?'הבדיקה נעצרה':'הבדיקה של המנוע המעמיק לא הצליחה'); upProg(pDone,'נשאר לך: לבדוק את הטבלה ולשמור');
+          st.textContent=(stop?'עצרת את הבדיקה של המנוע המעמיק.':'הבדיקה של המנוע המעמיק לא הצליחה'+why+'.')+' הטבלה היא מהקריאה המהירה, ולכן כדאי להשוות אותה לדוח לפני השמירה.'}
+        else if(M1&&!stop&&A.kind!=='failed'){main=M1; quickLine(); apply(M1,{lead:'הבדיקה של המנוע המעמיק לא הצליחה'+why+(A.kind==='flows'?', ולכן מה שנקרא כאן הוא מהקריאה המהירה. השווה את הסכומים למסך או לדוח לפני השמירה. ':'. ')})}
         else throw stop?{code:'cancelled'}:e2;
       }
       else{
         const M2=gather(R2); main=M2;
         if(A.kind==='rows'){main=M1;
-          const w=idle(); if(w){upProg(pDone,'Claude בודק את הקריאה עם המודל החזק ביותר: התיקונים ייכנסו לטבלה כשתסיים להקליד'); await w}
-          const who=M2.who.names[0]||'המודל החזק ביותר', mac=pick==='auto'&&!M2.known?A.ac:M2.ac, line='בדיקה עם '+(M2.by||who);
+          const w=idle(); if(w){upProg(pDone,'צ׳יקו בודק את הקריאה עם המנוע המעמיק: התיקונים ייכנסו לטבלה כשתסיים להקליד'); await w}
+          const who=M2.who.names[0]||'המנוע המעמיק', mac=pick==='auto'&&!M2.known?A.ac:M2.ac, line='בדיקה עם '+(M2.by||who);
           let r;
           const d2=isoOf(M2.out.asOf), older=(HOLD[A.ac]||0)===A.hold&&mac===A.ac&&d2&&A.asOf0&&d2<A.asOf0;
           if(older){
@@ -19911,7 +19911,7 @@ async function readStatement0(J){
           if((nfx||nd||r.warn||(r.kept||[]).length)&&document.body.dataset.page!=='mine'){
             const msg=nfx?`${r.who} בדק את הדוח שהעלית ותיקן ${nfx===1?'פרט אחד':nfx+' פרטים'} בטבלה. התיקונים עוד לא נשמרו.`:`${r.who} בדק את הדוח שהעלית, ויש בטבלה מה לבדוק.`;
             const tell=(n=0)=>{if(undoFn&&!$('toast').hidden&&n<30){setTimeout(()=>tell(n+1),1000);return} offerUndo(msg,()=>showTab('mine',true),30000,'הצג',true)}; tell()}}
-        else apply(M2,{lead:(A.kind==='none'||A.kind==='failed')&&M2.rows.length?(e1?'הקריאה המהירה לא הצליחה'+reason(e1)+', והמודל החזק ביותר קרא את הדוח. ':'הקריאה המהירה לא מצאה אחזקות, והמודל החזק ביותר מצא. '):''});
+        else apply(M2,{lead:(A.kind==='none'||A.kind==='failed')&&M2.rows.length?(e1?'הקריאה המהירה לא הצליחה'+reason(e1)+', והמנוע המעמיק קרא את הדוח. ':'הקריאה המהירה לא מצאה אחזקות, והמנוע המעמיק מצא. '):''});
       }
     }
     const cut=(main&&main.partial)||(e2&&e2.code==='rate_limited'?e2:null);
@@ -19920,7 +19920,7 @@ async function readStatement0(J){
   }catch(e){
     J.failed=true;
     const c=e&&e.code;
-    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות ל-Claude אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?(window.__tc&&e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message:'Claude ביקש להאט.'):c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
+    st.textContent=c==='cancelled'?'הקריאה נעצרה.':c==='not_granted'?'בלי אישור לפנות לצ׳יקו אי אפשר לקרוא את הדוח אוטומטית. אפשר להזין ידנית בטבלה.':c==='rate_limited'?(window.__tc&&e&&typeof e.message==='string'&&/[\u0590-\u05FF]/.test(e.message)?e.message:'צ׳יקו ביקש להאט.'):c==='invalid_json'?'לא הצלחתי להבין את הקבצים. נסה צילום ברור יותר של רשימת האחזקות.':c==='image_rejected'||c==='images_unavailable'?'התמונות לא התקבלו. נסה צילום אחר, PDF או Excel, או הקלד את הניירות ב"הקלדה מהירה" שלמעלה.':c==='prompt_too_large'?'הדוח ארוך מדי. העלה רק את עמודי היתרות.':'הקריאה לא הצליחה. '+(e&&typeof e.message==='string'&&/[֐-׿]/.test(e.message)?e.message:'אפשר לנסות שוב או להזין ידנית.');
     if(c==='rate_limited')coolStart();
   }
   upTick(false); J.ctl=null; if(/Claude/.test(J.now))J.now=''; showStaged(); renderJobs();
@@ -20222,8 +20222,8 @@ const I18N_ATTRS=['placeholder','aria-label','title'];
 const I18N_SKIP=new Set(['SCRIPT','STYLE','TEXTAREA','NOSCRIPT']);
 const I18N_NOT='[translate="no"],.notr,.msg.me:not(.pg),#policy,.sym';
 const I18N_BADC=['invalid_json','refused','empty_completion','prompt_too_large','invalid_request','transform_error'];
-const I18N_MSG={quota_exceeded:'המכסה היומית של צ׳יקו נגמרה, הדף מוצג בעברית · Daily limit reached',not_granted:'התרגום לא אושר, הדף מוצג בעברית · Translation was not allowed',noai:'Claude לא זמין כאן, הדף מוצג בעברית · Claude is not available here',
-  rate_limited:'Claude ביקש להאט · Translation paused',upstream_error:'התרגום נקטע · Translation interrupted',session_expired:'צריך להתחבר מחדש ל-Claude · Sign in to Claude again',cap:'התרגום נעצר · Translation stopped'};
+const I18N_MSG={quota_exceeded:'המכסה היומית של צ׳יקו נגמרה, הדף מוצג בעברית · Daily limit reached',not_granted:'התרגום לא אושר, הדף מוצג בעברית · Translation was not allowed',noai:'התרגום לא זמין כאן, הדף מוצג בעברית · Translation is not available here',
+  rate_limited:'התרגום הושהה לרגע · Translation paused',upstream_error:'התרגום נקטע · Translation interrupted',session_expired:'צריך להתחבר מחדש · Sign in again',cap:'התרגום נעצר · Translation stopped'};
 function i18nRe(){
   const names=[S&&S.name,S&&S.profile&&S.profile.first,S&&S.profile&&S.profile.last].map(x=>String(x||'').trim()).filter(x=>x.length>=2&&I18N_HE.test(x)&&x.length<=32);
   const key=names.join('|'); if(I18N.re&&I18N.reKey===key)return I18N.re;
@@ -20528,12 +20528,12 @@ function botTip(){
   try{localStorage.setItem('tr_bot_tip',today)}catch(e){}}
 function botTipClose(){const el=$('botTip'); if(el)el.hidden=true}
 function anaStartHtml(){
-  return anaHead('איך מתחילים')+`<ol class="ana-steps"><li><b>מעלים את התיק.</b> צילום מסך מהאפליקציה של בית ההשקעות, קובץ PDF או אקסל, או הקלדה של כמה שורות. Claude קורא, ואתה בודק ושומר.</li><li><b>קובעים כללים.</b> כמה מותר לנייר אחד ולקבוצה אחת, ומאיזו ירידה כדאי לבדוק.</li><li><b>מקבלים תמונת מצב.</b> הסקירה אומרת מה השתנה, למה, והאם צריך לעשות משהו. אני מסביר כל מספר.</li></ol><div class="ana-navs">${anaNavBtn({t:'mine',l:'להעלאת התיק'})}${canWrite?'<button type="button" class="btn sm" data-prof="edit">לפרופיל שלי</button>':''}</div>`}
+  return anaHead('איך מתחילים')+`<ol class="ana-steps"><li><b>מעלים את התיק.</b> צילום מסך מהאפליקציה של בית ההשקעות, קובץ PDF או אקסל, או הקלדה של כמה שורות. צ׳יקו קורא, ואתה בודק ושומר.</li><li><b>קובעים כללים.</b> כמה מותר לנייר אחד ולקבוצה אחת, ומאיזו ירידה כדאי לבדוק.</li><li><b>מקבלים תמונת מצב.</b> הסקירה אומרת מה השתנה, למה, והאם צריך לעשות משהו. אני מסביר כל מספר.</li></ol><div class="ana-navs">${anaNavBtn({t:'mine',l:'להעלאת התיק'})}${canWrite?'<button type="button" class="btn sm" data-prof="edit">לפרופיל שלי</button>':''}</div>`}
 
 // ---- refresh: reload the page and its data; warns first when something is not saved yet ----
 function refreshPage(force){
   const busy=dDirty||upBusy||dirty||pDirty||saving||pSaving;
-  if(busy&&!force){offerUndo(upBusy?'Claude עדיין קורא את הקבצים. לרענן בכל זאת?':'יש שינויים שעוד לא נשמרו. לרענן בכל זאת?',()=>refreshPage(true),9000,'לרענן');return}
+  if(busy&&!force){offerUndo(upBusy?'צ׳יקו עדיין קורא את הקבצים. לרענן בכל זאת?':'יש שינויים שעוד לא נשמרו. לרענן בכל זאת?',()=>refreshPage(true),9000,'לרענן');return}
   const b=$('btnRefresh'); if(b){b.disabled=true;b.classList.add('spin')}
   try{sessionStorage.setItem('tr_rf',JSON.stringify({y:Math.round(scrollY),t:Date.now()}))}catch(e){}
   const go=()=>{try{location.reload()}catch(e){}}; let done=false; const once=()=>{if(!done){done=true;go()}};
@@ -21205,7 +21205,7 @@ render();
 try{refreshBack()}catch(e){}
 (async()=>{
   db=window.claude&&window.claude.use?await window.claude.use('db'):null;
-  if(!db){$('fresh').textContent='נתוני התיק שמורים בחשבון שלך. פתח את הדף כשאתה מחובר ל-Claude כדי לראות אותם.';return}
+  if(!db){$('fresh').textContent='נתוני התיק שמורים בחשבון שלך. פתח את הדף כשאתה מחובר לצ׳יקו כדי לראות אותם.';return}
   // a failed load says so (it is never shown as an empty portfolio), and the runtime tries again after 5, 20 and 60 seconds;
   // the line under the header stays until every failed document has loaded
   const fail=e=>{$('fresh').textContent=(e&&e.code==='invalid_response'?'התשובה מהשרת לא תקינה.':'לא הצלחתי לטעון את נתוני התיק.')+' מנסה שוב בעוד כמה שניות. אם זה חוזר, רענן את הדף.'};

@@ -277,7 +277,7 @@ test('a partner: a call Anthropic refused at once does not count, and a problem 
     let u=await row(); assert.equal(u.today,0); assert.equal(u.quickToday,0);
     // no credit on the site's key: the owner is told what to do, a partner that it is the site's and not theirs
     r=await chat('o','CREDIT'); assert.equal(r.j.error.code,'sampling_disabled'); assert.match(r.j.error.message,/console\.anthropic\.com/); assert.equal(r.j.error.site,undefined);
-    r=await chat('p','CREDIT'); assert.equal(r.j.error.code,'sampling_disabled'); assert.equal(r.j.error.message,'Claude לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.'); assert.equal(r.j.error.site,undefined);
+    r=await chat('p','CREDIT'); assert.equal(r.j.error.code,'sampling_disabled'); assert.equal(r.j.error.message,'צ׳יקו לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.'); assert.equal(r.j.error.site,undefined);
     r=await read('p','claude-fable-5-1','BADKEY read'); assert.equal(r.j.error.code,'sampling_disabled'); assert.doesNotMatch(r.j.error.message,/Railway|API/);
     r=await read('o','claude-fable-5-1','BADKEY read'); assert.match(r.j.error.message,/Railway/);
     u=await row(); assert.equal(u.today,0,'refused at once: not counted');

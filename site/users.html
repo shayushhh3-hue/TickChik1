@@ -46,12 +46,12 @@ code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace
   <p style="margin:12px 0 0"><button class="btn pri" type="submit">הוספה</button> <button class="btn" type="button" id="gen">סיסמה אקראית</button></p>
   <p class="err" id="addErr" role="alert"></p></form>
   <p class="muted" style="margin:6px 0 0">את הסיסמה הראשונית מעבירים לשותף בעצמך (בהודעה). הדף לא שולח אותה.</p></div>
-<div class="card"><h2>החיבור ל-Claude (צ׳יקו וקריאת דוחות)</h2>
+<div class="card"><h2>החיבור למנוע של צ׳יקו (שיחה וקריאת דוחות)</h2>
   <p style="margin:0"><button class="btn" type="button" id="aiChk">בדיקת החיבור</button> <span id="aiRes" class="muted" role="status"></span></p>
-  <p class="muted" style="margin:8px 0 0">שולח שאלה קטנה אחת ל-Claude עם המפתח שב-Railway, ואומר אם זה עובד ומה צריך לתקן אם לא.</p></div>
-<div class="card"><h2>שימוש ב-Claude</h2>
+  <p class="muted" style="margin:8px 0 0">שולח שאלה קטנה אחת למנוע עם המפתח שב-Railway, ואומר אם זה עובד ומה צריך לתקן אם לא.</p></div>
+<div class="card"><h2>שימוש במנוע</h2>
   <div id="aiUse"><p class="muted">טוען…</p></div>
-  <p class="muted" style="margin:6px 0 0">כל פנייה לצ׳יקו או קריאת דוח היא פנייה אחת. הקריאה המהירה שרצה לצד קריאת הדוח נספרת בנפרד, עם מכסה משלה באותו גודל. לשותפים יש מכסה יומית; לך אין. טוקנים הם יחידת החיוב של Anthropic: מה שנשלח ל-Claude ומה שהוא כתב.</p></div>
+  <p class="muted" style="margin:6px 0 0">כל פנייה לצ׳יקו או קריאת דוח היא פנייה אחת. הקריאה המהירה שרצה לצד קריאת הדוח נספרת בנפרד, עם מכסה משלה באותו גודל. לשותפים יש מכסה יומית; לך אין. טוקנים הם יחידת החיוב של ספק המודל: מה שנשלח למנוע ומה שהוא כתב.</p></div>
 <div class="card"><h2>גיבויים</h2>
   <div id="bk"><p class="muted">טוען…</p></div>
   <p style="margin:10px 0 0"><button class="btn" type="button" id="bkNow">גיבוי עכשיו</button> <span id="bkRes" class="muted" role="status"></span></p></div>
@@ -85,7 +85,7 @@ async function loadUse(){
       +(anyQ?'<p class="muted" style="margin:4px 0 0;font-size:13px"><span dir="ltr">+N</span> מתחת למספר הפניות: קריאות מהירות של דוחות. הן לא נספרות במכסה, ויש להן מכסה משלהן.</p>':'')
       +(bm.length?`<h3 style="margin:14px 0 6px;font-size:15px">לפי מודל, 30 יום</h3><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="text-align:start">מודל</th><th>פניות</th><th>טוקנים שנשלחו</th><th>טוקנים שנכתבו</th><th>עלות משוערת</th></tr>`+
         bm.map(m=>`<tr style="border-top:1px solid #eef1f4"><td style="padding:6px 0;direction:ltr;text-align:right"><code>${esc(m.model)}</code>${PRICE[m.model]?`<div class="muted" style="font-size:12px">${pr(PRICE[m.model][0])} / ${pr(PRICE[m.model][1])}</div>`:''}</td><td style="text-align:center">${n0(m.calls)}</td><td style="text-align:center">${n0(m.input)}</td><td style="text-align:center">${n0(m.output)}</td><td style="text-align:center">${m.cost==null?'—':usd(m.cost)}</td></tr>`).join('')
-        +`</table><p class="muted" style="margin:6px 0 0">סך הכול בערך ${usd(tot)}. מתחת לכל מודל: המחיר בדולרים למיליון טוקנים, נשלחים / נכתבים, לפי המחירון של Anthropic מ-14.10.2026. ב-Haiku 5.5 זה המחיר לבקשה של עד 100 אלף טוקנים. בבקשה גדולה יותר המחיר שלו גבוה פי 5, ואז העלות גבוהה מההערכה. החשבון עצמו ב-console.anthropic.com. נספר מ-14.10.2026; פניות מלפני כן לא מופיעות כאן.</p>`:'')}
+        +`</table><p class="muted" style="margin:6px 0 0">סך הכול בערך ${usd(tot)}. מתחת לכל מודל: המחיר בדולרים למיליון טוקנים, נשלחים / נכתבים, לפי המחירון של ספק המודל מ-14.10.2026. ב-Haiku 5.5 זה המחיר לבקשה של עד 100 אלף טוקנים. בבקשה גדולה יותר המחיר שלו גבוה פי 5, ואז העלות גבוהה מההערכה. החשבון עצמו ב-console.anthropic.com. נספר מ-14.10.2026; פניות מלפני כן לא מופיעות כאן.</p>`:'')}
   catch(x){$('aiUse').innerHTML='<p class="err">'+esc(x.message)+'</p>'}
 }
 async function loadBk(){
@@ -130,7 +130,7 @@ async function load(){
 }
 $('gen').onclick=()=>{$('pw').value=rnd()};
 $('aiChk').onclick=async()=>{const b=$('aiChk'),o=$('aiRes'); b.disabled=true; o.className='muted'; o.textContent='בודק…';
-  try{const r=await call('POST','/ask/check',{}); if(r.ok){o.className='ok';o.textContent='עובד ✓ (Claude ענה תוך '+(r.ms/1000).toFixed(1)+' שניות)'}else{o.className='err';o.textContent=r.message}}
+  try{const r=await call('POST','/ask/check',{}); if(r.ok){o.className='ok';o.textContent='עובד ✓ (המנוע ענה תוך '+(r.ms/1000).toFixed(1)+' שניות)'}else{o.className='err';o.textContent=r.message}}
   catch(x){o.className='err';o.textContent=x.message} b.disabled=false};
 $('add').addEventListener('submit',async e=>{e.preventDefault();$('addErr').textContent='';
   try{await call('POST','/users',{email:$('em').value,name:$('nm').value,password:$('pw').value}); $('addErr').innerHTML=`<span class="ok">נוסף. מסור לו: המייל <code>${esc($('em').value)}</code> והסיסמה <code>${esc($('pw').value)}</code></span>`; $('em').value='';$('nm').value='';$('pw').value=''; load()}

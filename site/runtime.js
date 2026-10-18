@@ -9,7 +9,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const isMap=v=>v&&typeof v==='object'&&!Array.isArray(v);
 const MODELS={quick:'claude-haiku-5-5',default:'claude-sonnet-5-5',complex:'claude-sonnet-5-5',files:'claude-fable-5-1',quickfiles:'claude-haiku-5-5'};
 // reading uploaded files goes to the strongest model; the server falls back to the next one when it cannot read (FILE_MODELS)
-const MODEL_NAMES={'claude-fable-5-1':'Claude Fable 5.1','claude-opus-5-5':'Claude Opus 5.5','claude-sonnet-5-5':'Claude Sonnet 5.5','claude-haiku-5-5':'Claude Haiku 5.5'};
+const MODEL_NAMES={'claude-fable-5-1':'המנוע המעמיק','claude-opus-5-5':'המנוע החזק','claude-sonnet-5-5':'המנוע הרגיל','claude-haiku-5-5':'המנוע המהיר'};
 
 async function call(method,url,body,signal){
   let r;
