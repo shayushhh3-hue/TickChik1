@@ -13,9 +13,23 @@ export const NYSE_CLOSED=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-0
 export const NYSE_EARLY=new Set(['2026-11-27','2026-12-24','2027-11-26']); // close at 13:00 New York time
 export function usOpen(d){const p=nyParts(d),t=p.h*60+p.min;if(p.wd<1||p.wd>5||NYSE_CLOSED.has(p.iso))return false;return t>=570&&t<(NYSE_EARLY.has(p.iso)?780:960)}
 export const anyOpen=d=>ilOpen(d)||usOpen(d);
-// the hourly price run: Monday–Friday, 10:40–23:40 Israel time (the page shows "the next update" from the same table)
-export const PXRUN={days:[1,2,3,4,5],h0:10,h1:23,min:40};
-export function inPxWindow(d){const p=ilParts(d);return PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1}
+// the last session a market should have reported by now: today once it has traded for half an hour, otherwise the last
+// weekday before (New York skips its holidays; a Tel Aviv holiday is not known here, so that day shows as "not received")
+export function lastSession(mkt,d){
+  let t=(d||new Date()).getTime();
+  for(let i=0;i<12;i++,t-=864e5){
+    const p=mkt==='us'?nyParts(new Date(t)):ilParts(new Date(t)), m=p.h*60+p.min;
+    const day=p.wd>=1&&p.wd<=5&&!(mkt==='us'&&NYSE_CLOSED.has(p.iso));
+    if(day&&(i>0||m>=(mkt==='us'?600:630)))return p.iso;
+  }
+  return '';
+}
+// the price runs: Monday–Friday on the hour's :40 from 10:40 to 23:40 Israel time, plus every 5 minutes while a market
+// trades; on Saturday and Sunday four catch-up runs, for closes the source delivered late (the page shows "the next update"
+// from the same table)
+export const PXRUN={days:[1,2,3,4,5],h0:10,h1:23,min:40,wkend:{days:[0,6],hours:[10,14,18,22]}};
+export function inPxWindow(d){const p=ilParts(d);return (PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h))}
+export const pxDue=(p,d)=>(PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.min===PXRUN.min)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h)&&p.min===PXRUN.min)||(p.min%5===0&&anyOpen(d));
 // the Israel-time date of a moment, YYYY-MM-DD
 export const ilDay=d=>ilParts(d).iso;
 // d.m, as the page prints dates in labels

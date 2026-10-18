@@ -1,13 +1,14 @@
 // The schedule, in Israel time, checked every 20 seconds inside the server. One job at a time (the headless page is
 // heavy); a job that is due while another runs waits its turn. A missed run (the server was down) is not made up.
-import {ilParts, ilOpen, usOpen} from '../shared/market.js';
+import {ilParts, pxDue} from '../shared/market.js';
 import {pricesTask, nightlyTask, morningTask, monthlyTask, reportTask} from './tasks.js';
 import {backupTask} from './backup.js';
 import {researchTask} from './research.js';
 
 export const SCHEDULE=[
-  // prices: every 5 minutes while Tel Aviv or New York trades, and on the hour's :40 from 10:40 to 23:40 (closing prices)
-  {name:'prices',  when:(p,d)=>(p.wd>=1&&p.wd<=5&&p.h>=10&&p.h<=23&&p.min===40)||(p.min%5===0&&(ilOpen(d)||usOpen(d))), run:(s,o)=>pricesTask(s,o)},
+  // prices: every 5 minutes while Tel Aviv or New York trades, on the hour's :40 from 10:40 to 23:40 (closing prices), and four
+  // catch-up runs on Saturday and Sunday (a close the source delivered late, PXRUN in shared/market.js)
+  {name:'prices',  when:(p,d)=>pxDue(p,d), run:(s,o)=>pricesTask(s,o)},
   {name:'nightly', when:p=>p.wd>=1&&p.wd<=5&&p.h===23&&p.min===50, run:(s,o)=>nightlyTask(s,o)},
   {name:'morning', when:p=>p.h===7&&p.min===50, run:(s,o)=>morningTask(s,o)},
   {name:'monthly', when:p=>p.d===1&&p.h===8&&p.min===50, run:async(s,o)=>{await monthlyTask(s,o); await reportTask(s,{...o,kind:'month'})}},

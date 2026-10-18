@@ -13,7 +13,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx'],G,['allBuy']);
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -30,6 +30,18 @@ test('model: value, weights, dollars, cash, cost, the day', ()=>{
   near(Object.values(m.groups).reduce((t,g)=>t+g.w,0),100,1e-6);
   assert.equal(m.acct,'all');
   const b=F.model(G.P,G.Q,'blink'); near(b.total,175+35); assert.equal(b.acct,'blink');
+});
+
+test('prices: which of a portfolio\'s securities stop at an older close than the market\'s last session', ()=>{
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:300},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:300},{sym:'5113428',acct:'blink',ccy:'ILS',qty:5,costIls:100}],cash:[]};
+  G.Q={usdIls:3.5,prices:{MSFT:100,'1159250':35,'5113428':20},meta:{MSFT:{date:'2026-10-16'},'1159250':{date:'2026-10-15',ccy:'ILS'},'5113428':{date:'2026-10-16',ccy:'ILS'}},
+    lag:{il:{have:'2026-10-15',want:'2026-10-16',n:1,of:2}}};
+  assert.equal(F.pxLag(),true);
+  const g=F.pxLagInfo(F.model(G.P,G.Q,'all'));
+  assert.deepEqual(g.map(x=>[x.k,x.name,x.syms]),[['il','תל אביב',['1159250']]],'only the Israeli security without Friday');
+  assert.deepEqual(F.pxLagInfo(F.model(G.P,G.Q,'blink')),[],'the other account has Friday for all of its securities');
+  assert.equal(F.dayOfIso('2026-10-16'),'יום ו׳');
+  G.Q={usdIls:3.5,prices:{MSFT:100},meta:{MSFT:{date:'2026-10-16'}},lag:{}}; assert.equal(F.pxLag(),false); assert.deepEqual(F.pxLagInfo(F.model(G.P,G.Q,'all')),[]);
 });
 
 test('model: a security priced in another currency uses that currency\'s rate, or waits for it', ()=>{

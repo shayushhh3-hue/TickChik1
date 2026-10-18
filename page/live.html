@@ -15593,13 +15593,14 @@ const dmyy=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':d.get
 // (the Tel Aviv session, which trades Monday to Friday since January 2026, then New York). The page knows the schedule, so the
 // header says when the next refresh is due, and the prices count as late only when refreshes that were due did not arrive
 // (never over a weekend or a night, when there is nothing to refresh).
-const PXRUN={days:[1,2,3,4,5],h0:10,h1:23,min:40};
+const PXRUN={days:[1,2,3,4,5],h0:10,h1:23,min:40,wkend:{days:[0,6],hours:[10,14,18,22]}};
 const ilParts=(()=>{let f=null; return d=>{try{
   f=f||new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Jerusalem',hourCycle:'h23',weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   const o={}; for(const p of f.formatToParts(d))o[p.type]=p.value; const wd=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(o.weekday);
   return wd<0?null:{wd,h:(+o.hour)%24,mi:+o.minute,day:Math.round(Date.UTC(+o.year,+o.month-1,+o.day)/864e5)}}catch(e){return null}}})();
-// on the site the server also refreshes every 5 minutes while Tel Aviv or New York trades
-const pxSlot=d=>{const p=ilParts(d); return !!p&&((PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.mi===PXRUN.min)||(p.mi%5===0&&mktOpen(d)))};
+// on the site the server also refreshes every 5 minutes while Tel Aviv or New York trades, and four times on Saturday and
+// Sunday, for a close the source delivered late
+const pxSlot=d=>{const p=ilParts(d); return !!p&&((PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.mi===PXRUN.min)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h)&&p.mi===PXRUN.min)||(p.mi%5===0&&mktOpen(d)))};
 // the last run at or before a moment and the first one after it (Israel is a whole number of hours from UTC, so its :40 is UTC's :40)
 function pxRuns(now){
   const H=3e5, t0=(now||new Date()).getTime(); const t=Math.floor(t0/H)*H;
@@ -15667,8 +15668,19 @@ function pxLine(){
   if(noPf()){const t='עוד אין כאן תיק. אחרי שתוסיף אותו, יופיעו כאן השווי שלו והשינוי היומי.'; if(el.textContent!==t)el.textContent=t; el.classList.remove('busy'); if(b)b.hidden=true; return}
   if(PXF){el.textContent=`מעדכן מחירים… התחיל ${hm(PXF.at)}, בדרך כלל כדקה וחצי`; el.classList.add('busy'); if(b)b.hidden=true; return}
   el.classList.remove('busy'); if(Q&&Q.updatedAt){const t=freshTxt(); if(t!==FRESH||el.textContent!==t){FRESH=t; el.textContent=t}}
-  if(b)b.hidden=!(pxCan()&&mktOpen()&&pxAge()>=PXMAN&&PXQ);
+  if(b)b.hidden=!(pxCan()&&(mktOpen()||pxLag())&&pxAge()>=PXMAN&&PXQ);
 }
+// a market whose last session has not arrived (the price document compares each close with the session it expects)
+const pxLag=()=>!!(Q&&Q.lag&&Object.keys(Q.lag).length);
+// the same, for one portfolio: which of its securities stop at the older close, per market
+function pxLagInfo(m){
+  const L=(Q&&Q.lag)||{}, out=[]; if(!m)return out;
+  for(const k of ['il','us']){const g=L[k]; if(!g||!g.want)continue;
+    const syms=m.pos.filter(p=>{const d=((Q.meta||{})[p.sym]||{}).date, c=ccyOfPos(p,Q); return d&&d<g.want&&(k==='il'?c==='ILS':c==='USD')}).map(p=>p.sym);
+    if(syms.length)out.push({k,name:k==='il'?'תל אביב':'ארה״ב',have:g.have,want:g.want,syms})}
+  return out;
+}
+const dayOfIso=iso=>{try{return 'יום '+HDAY[new Date(iso+'T12:00:00').getDay()]}catch(e){return ''}};
 function pxDone(){PXF=null; pxSave(); pxLine(); offerUndo(`המחירים עודכנו · ${hm(Q.updatedAt)}`,null,4000,'סגור'); try{chime('sys')}catch(e){}}
 function pxGaveUp(){PXF=null; PXOFF='late'; pxSave(); pxLine(); offerUndo('עדכון המחירים לא הגיע. מוצגים המחירים מ-'+hm(Q.updatedAt)+'.',null,6000,'סגור')}
 // the quotes document changed: a refresh that was in flight has landed when the prices are newer than its start
@@ -15819,7 +15831,12 @@ function alertsOf(m){
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   if(tsum>0) for(const k in GROUPS){const d=m.groups[k].w-(+S.targets[k]||0); if(Math.abs(d)>=R.drift){A.push(['warn','סטייה',`${GROUPS[k]} ${d>0?'מעל':'מתחת'} ליעד ב-${Math.abs(d).toFixed(1)} נק׳ אחוז (${ils(Math.abs(d)/100*m.total)}).`,[GROUPS[k]]]);A[A.length-1].why=whyDrift(k,d,m)}}
   if(pxLate()) A.push(['warn','נתונים',`המחירים עודכנו ${ago(Q.updatedAt)}, ועדכון מתוכנן לא הגיע מאז. עד העדכון הבא הבקרה מחושבת לפי המחירים האלה.`]);
-  const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
+  const lagged=new Set();
+  for(const g of pxLagInfo(m)){g.syms.forEach(x=>lagged.add(x)); const n=g.syms.length;
+    A.push(['warn','מחיר',`מחירי ${g.name} של ${n===1?g.syms[0]:n+' ניירות'} הם מסגירת ${dmy(g.have)}: יום המסחר של ${dayOfIso(g.want)} ${dmy(g.want)} עוד לא התקבל מהמקור, והשווי של היום לא כולל אותו.`,g.syms]);
+    A[A.length-1].why={src:'px',rows:[['המחיר שיש',`סגירת ${dmy(g.have)}`],['יום המסחר האחרון ב'+g.name,`${dayOfIso(g.want)} ${dmy(g.want)}`],['הניירות',g.syms.join(', ')],['מה הלאה',`עדכון המחירים הבא: ${((pxNextTxt()||'').replace(/^ ·\u00a0העדכון\u00a0הבא\u00a0/,'')||'בקרוב').replace(/\u00a0/g,' ')}. כשהיום הזה יגיע, השווי יתעדכן לבד`]]};
+    A[A.length-1].each=[{key:'lag:'+g.k+':'+g.want,text:A[A.length-1][2]}]}
+  const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!lagged.has(k)); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
   if(m.noRate&&m.noRate.length) A.push(['warn','מחיר',`ל-${m.noRate.join(', ')} יש מחיר במטבע שעדיין אין לדף שער שלו מול השקל, ולכן הם לא נכללים בשווי התיק. השער מגיע בעדכון המחירים הבא.`,m.noRate]);
   const noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))]; if(noPx.length) A.push(['warn','מחיר',`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".`,noPx]);
   if(PL.items.length){const ps=planState(mAllNow()),can=PL.items.filter(i=>i.status==='todo'&&ps.sch.when[i.sym]===0).map(i=>i.sym);
@@ -16568,7 +16585,8 @@ function renderMonths(){
   const R=monthSeries().slice().reverse(), ids=acctIds();
   if(!R.length){const h='<tr><td colspan="4" class="empty">עוד אין נתונים חודשיים. אפשר להעלות בלשונית "התיק שלי" צילום של מסך התשואות מהאפליקציה של בית ההשקעות (חודש, שווי, תשואה והפקדות), או דוחות חודשיים.</td></tr>'; if(body.innerHTML!==h)body.innerHTML=h; note.textContent=''; return}
   // a mark only where the month is not as the others: so far, partial, reconstructed, or from one day of it
-  const tag=r=>r.now?'עד היום':r.asOf?'עד '+dmy(r.asOf):r.miss?'רק '+ids.filter(a=>!r.miss.includes(a)&&+r.by[a]>0).map(acctName).join(', '):r.src==='day'?'לפי '+dmy(r.day):r.src==='est'?'משוחזר':'';
+  const lagAll=(()=>{try{return P&&Q?pxLagInfo(mAllNow()):[]}catch(e){return []}})(), lagTag=lagAll.length?' · מחירי '+lagAll.map(g=>(g.k==='il'?'ת״א':'ארה״ב')+' מ-'+dmy(g.have)).join(', '):'';
+  const tag=r=>r.now?'עד היום'+lagTag:r.asOf?'עד '+dmy(r.asOf):r.miss?'רק '+ids.filter(a=>!r.miss.includes(a)&&+r.by[a]>0).map(acctName).join(', '):r.src==='day'?'לפי '+dmy(r.day):r.src==='est'?'משוחזר':'';
   const mon=ym=>`<span class="ml">${esc(MONTHS[+ym.slice(5)-1])}</span><span class="ms">${esc(MSHORT[+ym.slice(5)-1])}</span> ${ym.slice(0,4)}`;
   const h=R.map(r=>{const t=tag(r); return `<tr${r.miss?' class="part"':''}><td><b>${mon(r.ym)}</b>${t?`<span class="nm">${esc(t)}</span>`:''}</td><td class="num"><span class="n">${ils(r.val)}</span></td><td class="num"><span class="n">${r.flow==null?'—':Math.abs(r.flow)<0.5?ils(0):sgn(r.flow)}</span></td><td class="num"><span class="n ${r.ret>0?'up':r.ret<0?'down':''}">${r.ret==null?'—':spct(r.ret,2)}</span>${r.gain!=null?`<span class="nm"><span class="n">${sgn(r.gain)}</span></span>`:''}</td></tr>`}).join('');
   if(body.innerHTML!==h)body.innerHTML=h;
@@ -16578,6 +16596,7 @@ function renderMonths(){
     (()=>{const own=R.filter(r=>r.own).reverse(); if(!own.length)return ''; const run=own.every((r,i)=>!i||r.ym===ymAdd(own[i-1].ym,1));
       return `${own.length===1?'האחוז של '+ymFull(own[0].ym)+' הוא':'האחוזים של '+(run?monSpan(own):own.length+' חודשים')+' הם'} של בית ההשקעות, כפי שהופיעו בטבלה שהעלית מהאפליקציה.`})(),
     R.some(r=>r.miss)?'"רק": לחשבון אחר אין נתונים לחודש הזה, ולכן השורה חלקית, והיא לא נכנסת לגרף ולדוחות.':'',
+    R.some(r=>r.now)&&lagAll.length?lagAll.map(g=>`השווי של החודש הנוכחי מחושב לפי מחירי ${g.name} מסגירת ${dmy(g.have)}: יום המסחר של ${dmy(g.want)} עוד לא התקבל מהמקור (${g.syms.length===1?g.syms[0]:g.syms.length+' ניירות'}), ולכן השורה עשויה להיות נמוכה או גבוהה מזו של בית ההשקעות עד שהוא יגיע.`).join(' '):'',
     first&&first.src==='up'&&first.flow!=null&&Math.abs(first.val-first.flow)>first.val*0.1?`מה שהופקד לפני ${ymFull(first.ym)} לא ידוע לדף.`:''].filter(Boolean).join(' ');
 }
 function renderTrend(){
@@ -17355,7 +17374,8 @@ function anaFactsAI(F,issues,checks){
   const m=F.m, R=F.R, now=new Date().toISOString(), c=s=>RS&&RS.companies?RS.companies[s]:null;
   return {
     as_of:`${dmy(now)} ${hm(now)}`,
-    prices:{label:Q.priceLabel||'',updated:Q.updatedAt?`${dmy(Q.updatedAt)} ${hm(Q.updatedAt)}`:'',live:F.live,older_prices:F.staleSyms.map(lab),no_price:F.noPx},
+    prices:{label:Q.priceLabel||'',updated:Q.updatedAt?`${dmy(Q.updatedAt)} ${hm(Q.updatedAt)}`:'',live:F.live,older_prices:F.staleSyms.map(lab),no_price:F.noPx,
+      missing_session:pxLagInfo(F.m).map(g=>({market:g.name,prices_from:dmy(g.have),session_missing:dmy(g.want),securities:g.syms.map(lab)}))},
     analysts_data_as_of:RS&&RS.updatedAt?rsWhen(RS.updatedAt):null,
     usd_ils:`${Q.usdIls.toFixed(3)}${Q.fxLabel?' ('+Q.fxLabel+')':''}`,
     total:ils(m.total), cash:`${ils(m.cash)} (${pct(m.total?m.cash/m.total*100:0)})`,
@@ -17576,6 +17596,7 @@ const EXM={what:'משקל = שווי הנייר (כמות × מחיר אחרון
 function exMiss(F,X){const L=[];
   if(!F.live)L.push(F.priceNote);
   if(F.noPx.length)L.push(`אין מחיר ל-${F.noPx.map(lab).join(', ')}, ולכן ${F.noPx.length===1?'הוא לא נכלל':'הם לא נכללים'} בחישובים.`);
+  for(const g of pxLagInfo(F.m))L.push(`מחירי ${g.name} של ${g.syms.map(lab).join(', ')} הם מסגירת ${dmy(g.have)}; יום המסחר של ${dmy(g.want)} עוד לא התקבל, ולכן השווי של היום לא כולל אותו.`);
   if(F.staleSyms.length)L.push(`מחיר שאינו מהמסחר האחרון: ${F.staleSyms.map(k=>lab(k)+' ('+((Q.stale||{})[k]||'מחיר ישן')+')').join(', ')}.`);
   if(F.m.missingCost)L.push(`ל-${F.m.missingCost===1?'נייר אחד':F.m.missingCost+' ניירות'} אין מחיר קנייה, ולכן ${F.m.missingCost===1?'הוא לא נכלל':'הם לא נכללים'} ברווח ובהפסד מול העלות.`);
   if(X.expo.funds.length)L.push(`ההרכב של ${X.expo.funds.map(lab).join(', ')}: לדף אין מקור כזה.`);
@@ -17795,7 +17816,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('#secPage [data
 // where every figure comes from and when it was refreshed: the page says so, next to the principles it works by
 function renderSources(){
   const el=$('srcList'); if(!el)return; const R=[], when=iso=>iso?`עודכן ${dmy(iso)} ${hm(iso)}`:'';
-  R.push(['מחירי השוק',Q&&Q.updatedAt?`${esc(Q.source||'')}${Q.priceLabel?' · '+esc(Q.priceLabel):''} · ${when(Q.updatedAt)}. כל 5 דקות כשהבורסה בתל אביב או בניו יורק פתוחה, וגם כשאתה פותח את הדף.`:'עוד לא נטענו.']);
+  R.push(['מחירי השוק',Q&&Q.updatedAt?`${esc(Q.source||'')}${Q.priceLabel?' · '+esc(Q.priceLabel):''} · ${when(Q.updatedAt)}. כל 5 דקות כשהבורסה בתל אביב או בניו יורק פתוחה, כל שעה עד 23:40 בימי המסחר (שני עד שישי), ארבע פעמים בשבת ובראשון, וגם כשאתה פותח את הדף.`:'עוד לא נטענו.']);
   R.push(['שער הדולר',Q&&Q.usdIls?`${Q.usdIls.toFixed(3)}${Q.fxLabel?' · '+esc(Q.fxLabel):''}.`:'עוד לא נטען.']);
   R.push(['אנליסטים ודוחות כספיים',RS&&RS.updatedAt?(rsStale(RS.updatedAt)?`${esc(RS.source||'')} · נכון ל-${dmy(RS.updatedAt)}. הנתונים האלה הגיעו עם המעבר לאתר, ואין כרגע עדכון שלהם באתר. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`:`${esc(RS.source||'')} · ${when(RS.updatedAt)}. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`):'עוד לא נטענו.']);
   R.push(['גרפים והיסטוריה','Yahoo Finance, מתעדכנים בלילה שאחרי יום המסחר (ב׳–ו׳ ב-23:50); ערכי סוף חודש נכתבים ב-1 בחודש.']);

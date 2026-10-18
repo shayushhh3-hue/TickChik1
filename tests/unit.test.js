@@ -6,7 +6,7 @@ import http from 'node:http';
 import {Store, access, partnerView} from '../server/store.js';
 import fs from 'node:fs';
 import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.js';
-import {ilOpen, usOpen, inPxWindow} from '../shared/market.js';
+import {ilOpen, usOpen, inPxWindow, lastSession, pxDue, ilParts} from '../shared/market.js';
 
 // a stand-in for Claude's API, on a local port
 let claudeSrv, claudeSeen=[], claudeClosed=0;
@@ -377,6 +377,28 @@ test('market hours',()=>{
   assert.equal(usOpen(new Date('2027-03-26T15:00:00Z')),false,'Good Friday 2027');
   // Tel Aviv on Friday: until 14:00
   assert.equal(ilOpen(new Date('2026-10-16T10:50:00Z')),true); assert.equal(ilOpen(new Date('2026-10-16T11:05:00Z')),false);
+  // the last session a market should have reported: Friday's close on a Sunday; Thursday's before Friday has traded half an hour
+  assert.equal(lastSession('il',new Date('2026-10-18T15:00:00Z')),'2026-10-16'); assert.equal(lastSession('il',new Date('2026-10-16T06:00:00Z')),'2026-10-15');
+  assert.equal(lastSession('il',new Date('2026-10-16T08:00:00Z')),'2026-10-16'); assert.equal(lastSession('us',new Date('2026-09-07T20:00:00Z')),'2026-09-04','Labor Day');
+  // the price runs: weekdays on :40, every 5 minutes while a market trades, and the weekend catch-ups
+  const due=iso=>pxDue(ilParts(new Date(iso)),new Date(iso));
+  assert.equal(due('2026-10-18T15:40:00Z'),true,'Sunday 18:40'); assert.equal(due('2026-10-18T16:40:00Z'),false); assert.equal(due('2026-10-17T07:40:00Z'),true,'Saturday 10:40');
+  assert.equal(due('2026-10-12T08:05:00Z'),true,'Monday while Tel Aviv trades'); assert.equal(due('2026-10-12T20:40:00Z'),true); assert.equal(due('2026-10-18T15:35:00Z'),false);
+});
+
+test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{
+  const q=(px,date,ccy)=>({px,prev:px-1,closeDate:date,ccy,src:'yahoo',time:'t'});
+  // Sunday evening: New York closed Friday 16.10, Tel Aviv's Friday did not arrive for one of two securities
+  const sun=new Date('2026-10-18T15:00:00Z');
+  const d=buildQuotesDoc({prev:{},fetched:{quotes:{MSFT:q(510,'2026-10-16','USD'),'ABRA.TA':q(50,'2026-10-15','ILS'),'TEVA.TA':q(60,'2026-10-16','ILS')},index:{},errors:[]},symbols:['MSFT','ABRA.TA','TEVA.TA'],now:sun});
+  assert.equal(d.stale['ABRA.TA'],'סגירה 15.10'); assert.equal(d.stale.MSFT,undefined); assert.equal(d.stale['TEVA.TA'],undefined);
+  assert.deepEqual(d.lag,{il:{have:'2026-10-15',want:'2026-10-16',n:1,of:2}}); assert.equal(d.priceLabel,'סגירה 16.10');
+  // every Tel Aviv price stops at Thursday: the label says so next to New York's Friday
+  const e=buildQuotesDoc({prev:{},fetched:{quotes:{MSFT:q(510,'2026-10-16','USD'),'ABRA.TA':q(50,'2026-10-15','ILS')},index:{},errors:[]},symbols:['MSFT','ABRA.TA'],now:sun});
+  assert.equal(e.priceLabel,'סגירה 16.10 · תל אביב: סגירה 15.10'); assert.equal(e.ilDate,'2026-10-15'); assert.equal(e.lag.il.n,1);
+  // all current: nothing marked, no lag
+  const f=buildQuotesDoc({prev:{},fetched:{quotes:{MSFT:q(510,'2026-10-16','USD'),'ABRA.TA':q(50,'2026-10-16','ILS')},index:{},errors:[]},symbols:['MSFT','ABRA.TA'],now:sun});
+  assert.deepEqual(f.lag,{}); assert.deepEqual(f.stale,{}); assert.equal(f.priceLabel,'סגירה 16.10');
 });
 
 // ---- privacy ----
