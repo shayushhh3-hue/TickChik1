@@ -1091,6 +1091,13 @@ section.fold.open > .fold-h .chev{transform:rotate(135deg) translate(-1px,1px)}
 section.fold:not(.open) > .fold-b{display:none}
 section.fold:not(.open) > .fold-h{margin-bottom:0;padding-bottom:10px;border-bottom:1px solid var(--line)}
 section.fold > .fold-h h2{margin:0}
+/* 18.10: the heading always sits next to its toggle, at the start; whatever else the header holds (a subtitle, a legend,
+   a button) comes after it, and on a phone drops under the heading, aligned with it. Nothing floats to the far end */
+section.fold > .fold-h{justify-content:flex-start;align-items:center}
+section.fold > .fold-h > h2{flex:0 1 auto;min-width:0;text-align:start}
+section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
+@media (max-width:640px){section.fold > .fold-h > :not(.fold-t):not(h2):not(.btn):not(button){flex-basis:100%;margin-inline-start:0;padding-inline-start:36px;text-align:start}
+  section.fold > .fold-h > .sub{font-size:13px} section.fold > .fold-h > .btn{margin-inline-start:36px}}
 /* v134: the lean home */
 .hold .hsub{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .hold.lite th:nth-child(3),.hold.lite td:nth-child(3),.hold.lite th:nth-child(4),.hold.lite td:nth-child(4),.hold.lite th:nth-child(7),.hold.lite td:nth-child(7){display:none}
