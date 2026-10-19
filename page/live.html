@@ -1483,7 +1483,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="panel desk" id="desk" tabindex="-1"></div>
     </section>
     <section aria-labelledby="hHold" id="holdSec" class="hold lite">
-      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
+      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button><button type="button" class="chip" data-hc="both" aria-pressed="false" title="שקלים, ומתחת בדולרים">₪+$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
       <div class="panel scroll">
         <table>
           <thead><tr><th>נייר</th><th class="num">שינוי יומי</th><th class="num">כמות</th><th class="num">מחיר</th><th class="num">שווי ₪</th><th class="num">משקל</th><th class="num">עלות ₪</th><th class="num">רווח / הפסד</th></tr></thead>
@@ -15635,6 +15635,20 @@ function decompOf(P,Q,hs,m,buys,dep){
   const uniq=a=>[...new Set(a)];
   return {price,fx:fxEff,real,div,fees,other,total,dep,est:uniq(est),none:uniq(none),noneVal,allPx:uniq(allPx),avg:B.avg};
 }
+// The dollar side of each holding, per symbol, for the dollar view of the holdings: the dollar cost of the rows that have
+// one (costBasis; a plan purchase at the price it marked, else what it paid at the rate it marked) and the dollar value
+// of that same part, so profit in dollars = val − cost leaves the dollar's own move out. A holding in another currency,
+// or a dollar holding with only a shekel cost, is converted at today's rate (est), and so is an estimated dollar cost.
+// acct limits it to one account, as the screen's own model does; a holding with no cost at all is not in it.
+function dollarCost(P,Q,hs,buys,acct='all'){
+  const fx=Q.usdIls, B=costBasis(P,Q,hs), out={};
+  const add=(sym,cost,val,est)=>{const o=out[sym]||(out[sym]={cost:0,val:0,est:false}); o.cost+=cost; o.val+=val; o.est=o.est||est};
+  for(const r of B.rows){if(r.noCost||(acct!=='all'&&r.acct!==acct))continue;
+    if(r.ccy==='USD'&&r.costNat!=null)add(r.sym,r.costNat,r.qty*r.px,r.src==='est'); else add(r.sym,r.costIls/fx,r.val/fx,true)}
+  if(acct==='all')for(const x of buys||[]){const p=(P.positions||[]).find(y=>y.sym===x.sym), px=(Q.prices||{})[x.sym]; if(!p||px==null)continue; const cc=ccyOfPos(p,Q), rt=rateOf(cc,Q); if(rt==null)continue;
+    const q=+x.qty>0?+x.qty:1, paid=+x.paidIls||0; if(cc==='USD')add(x.sym,+x.px>0?q*+x.px:paid/(+x.fx||fx),q*px,!(+x.px>0)); else add(x.sym,paid/fx,q*px*rt/fx,true)}
+  return out;
+}
 // ---- calc:end ----
 const TM=()=>TRACK==='idx'?(+S.monthlyIdx||0):(+S.monthly||0), MTOT=()=>(+S.monthly||0)+(+S.monthlyIdx||0);
 const idxCash=()=>{const x=PLD.idx;return x?(+x.opening||0)+x.deposits.reduce((t,d)=>t+(+d.amount||0),0)-x.purchases.reduce((t,d)=>t+(+d.paidIls||0),0):0};
@@ -15653,6 +15667,7 @@ const I18N_OK=c=>typeof c==='string'&&/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(c);
 const setH=(el,h)=>{if(!el)return false; if(I18N.on?el.__h===h:el.innerHTML===h)return false; el.__h=h; el.innerHTML=h; return true};
 const LRM='\u200E'; // keeps a leading + or − on the left of its number inside Hebrew text
 const sgn=(x,d=0)=>LRM+(x>=0?'+':'−')+ils(Math.abs(x),d);
+const dlr=(x,d=0)=>'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}), sgnDlr=(x,d=0)=>LRM+(x>=0?'+':'−')+dlr(Math.abs(x),d);
 const pct=(x,d=1)=>Number(x).toFixed(d)+'%';
 const spct=(x,d=1)=>LRM+(x>=0?'+':'−')+Math.abs(x).toFixed(d)+'%';
 const hm=iso=>{const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
@@ -16017,17 +16032,22 @@ function render(){
   if(!P||!Q){return}
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
+  // the holdings in dollars (HC, the chips above the table): the dollar side of each holding, from the dollar costs
+  const fxV=Q.usdIls, DC=HC!=='ils'&&fxV>0?(()=>{try{return dollarCost(P,Q,HS,m.acct==='all'?planOpen().buys:[],m.acct)}catch(e){return {}}})():null;
+  const DU=DC?Object.values(DC).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  $('kTotal').textContent=ils(m.total); $('kTotalD').textContent=`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
+  $('kTotal').textContent=HC==='usd'?dlr(m.total/fxV):ils(m.total); $('kTotalD').textContent=(HC==='usd'?ils(m.total)+' · ':HC==='both'?dlr(m.total/fxV)+' · ':'')+`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
   try{renderHealth(m)}catch(e){}
   try{renderIdx()}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
-  const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+ils(Math.abs(m.dayIls)):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`:''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
-  const pe=$('kPnl'); pe.textContent=m.cost?sgn(m.pnl):'—'; pe.className='v '+(m.cost?(m.pnl>=0?'up':'down'):'');
-  $('kPnlD').textContent=m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:''):'אין נתוני עלות';
+  const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(m.dayIls)/fxV):ils(Math.abs(m.dayIls))):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(m.dayIls):HC==='both'?' · '+sgnDlr(m.dayIls/fxV):''):''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
+  const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
+  pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):m.cost?sgn(m.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(m.cost?(m.pnl>=0?'up':'down'):''));
+  $('kPnlD').textContent=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(m.cost?` · ${sgn(m.pnl)} בשקלים`:''):'אין נתוני עלות')
+    :(m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):'אין נתוני עלות');
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
   {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
@@ -16072,26 +16092,34 @@ function render(){
   const spark=sym=>{const v=dayKeys.map(k=>{const q=DY.points[k]&&DY.points[k].px; return q&&+q[sym]>0?+q[sym]:null}).filter(x=>x!=null); if(v.length<3)return '';
     const lo=Math.min(...v), hi=Math.max(...v), W=64, H=18, y=x=>hi===lo?H/2:H-2-(x-lo)/(hi-lo)*(H-4), pts=v.map((x,i)=>`${(i/(v.length-1)*W).toFixed(1)},${y(x).toFixed(1)}`).join(' ');
     return `<svg class="spark ${v[v.length-1]>=v[0]?'u':'d'}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`};
+  // the dollar side of the holdings (dollarCost) when the view asks for it: value and the day at today's rate, the cost
+  // and the profit from the dollar costs, so a dollar holding's profit leaves the dollar's own move out
+  const two=(a,b)=>`${a}<div class="nm"><span class="n">${b}</span></div>`;   // shekels, and the dollars beneath
+  const vcell=(ils_,usd_)=>HC==='usd'?usd_:HC==='both'?two(ils_,usd_):ils_;
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
+    const dc=DC&&DC[p.sym], uc=dc&&dc.cost>0?dc.cost:null, ud=uc!=null?dc.val-dc.cost:null, udp=uc?ud/uc*100:null, ap=dc&&dc.est?'≈':'';
+    const pnlU=ud==null?'<span class="n">—</span>':`<span class="n ${ud>=0?'up':'down'}">${ap}${sgnDlr(ud)} (${spct(udp)})</span>`;
     const fl=(p.w>R.maxPos?'<span class="flag crit">ריכוז</span>':'')+(dp!=null&&dp<=-R.stopLoss?'<span class="flag">ירידה</span>':'');
     const pxs=fmtPx(p.px,p.ccy), old=(Q.stale||{})[p.sym];
     const lk=SECKEY.test(p.sym);
     return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s')}<span class="sym">${esc(lab(p.sym))}</span>${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
-    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
+    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
-    <td class="num"><span class="n">${ils(p.val)}</span>${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
-    <td class="num"><span class="n">${p.cost?ils(p.cost):'—'}</span></td>
-    <td class="num">${d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`}</td></tr>`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${ils(m.cash)}`+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+    <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
+    <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
+    <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
+  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n)=>`<tr class="sec"><td colspan="8">${t} · ${n}</td></tr>`;
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
-  for(const b of document.querySelectorAll('.hkind .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
+  for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
+  for(const b of document.querySelectorAll('.hccy .chip'))b.setAttribute('aria-pressed',String(b.dataset.hc===HC));
+  {const th=document.querySelectorAll('#holdSec thead th'); if(th[4])th[4].textContent=HC==='usd'?'שווי $':HC==='both'?'שווי ₪ / $':'שווי ₪'; if(th[6])th[6].textContent=HC==='usd'?'עלות $':HC==='both'?'עלות ₪ / $':'עלות ₪'}
   const hvRows=HV==='stock'?sP:HV==='fund'?fP:null;
   if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HV==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
-      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק</td></tr>`}
+      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
-    +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num"><span class="n">${ils(m.cash)}</span></td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
+    +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   renderPlan(mAllNow());
   renderRatings(m);
@@ -16437,7 +16465,10 @@ let CM=null, LT=null;
 const LISTED={KO:1919,CAT:1929,JNJ:1944,UNH:1984,MSFT:1986,O:1994,AMZN:1997,AEHR:1997,NVDA:1999,GOOGL:2004,V:2008,META:2012,PLTR:2020,RKLB:2021,RDW:2021,MBLY:2022};
 // ---- drawing the exposures and the stress test (the numbers come from exposures() and stressRun() above) ----
 let HV='all'; try{const v=localStorage.getItem('tr_holdv'); if(['all','stock','fund'].includes(v))HV=v}catch(e){}
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hkind .chip'); if(!b)return; HV=b.dataset.hv; try{localStorage.setItem('tr_holdv',HV)}catch(x){} try{render()}catch(x){}});
+// the holdings in shekels, in dollars, or both (HC): the view only, nothing saved changes
+let HC='ils'; try{const v=localStorage.getItem('tr_holdccy'); if(['ils','usd','both'].includes(v))HC=v}catch(e){}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hccy .chip'); if(!b)return; HC=b.dataset.hc; try{localStorage.setItem('tr_holdccy',HC)}catch(x){} try{render()}catch(x){}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hkind .chip'); if(!b||!b.dataset.hv)return; HV=b.dataset.hv; try{localStorage.setItem('tr_holdv',HV)}catch(x){} try{render()}catch(x){}});
 let EXPV='sector', EXPM=null, ST={kind:'all',pct:20,group:'',by:{},co:0,usd:10};
 try{const v=localStorage.getItem('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
 try{const s=JSON.parse(localStorage.getItem('tr_stress')||'null'); if(s&&typeof s==='object')ST={...ST,...s,by:{...(s.by||{})}}}catch(e){}

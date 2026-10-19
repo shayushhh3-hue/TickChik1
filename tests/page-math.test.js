@@ -14,7 +14,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
   'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
-  'fxAvg','costBasis','realizedIls','divNetIls','decompOf'],G,['allBuy']);
+  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -207,6 +207,20 @@ test('where the result came from: the same bottom line as the headline, and the 
   assert.deepEqual(D3.allPx,['NVDA']); assert.deepEqual(D3.est,['KO'],'KO\'s dollar cost becomes shekels at today\'s rate, so its shekel cost is an estimate'); near(D3.price+D3.fx+D3.real+D3.div+D3.fees+D3.other,D3.total,1e-9);
   const ko=F.costBasis(G.P,G.Q,G.HS).rows.find(r=>r.sym==='KO'); near(ko.costIls,160*3.5,1e-9); assert.equal(ko.ilsEst,true);
   G.P=null; G.Q=null; G.HS=null; plan();
+});
+
+test('the dollar view: each holding\'s dollar cost and the dollar value of the same part, so the profit leaves the rate out', ()=>{
+  G.P=decP(); G.Q=decQ(); G.HS=decH(); plan();
+  const D=F.dollarCost(G.P,G.Q,G.HS,[]);
+  assert.deepEqual(Object.keys(D).sort(),['KO','MSFT','NVDA','TA125'],'a holding with no cost at all is not in it');
+  near(D.MSFT.cost,150); near(D.MSFT.val,200); assert.equal(D.MSFT.est,false,'the statement\'s dollar cost');
+  near(D.KO.cost,160); near(D.KO.val,200); assert.equal(D.KO.est,false,'the lots from the trades');
+  near(D.NVDA.cost,400,1e-9); near(D.NVDA.val,450); assert.equal(D.NVDA.est,true,'estimated at the average buy rate');
+  near(D.TA125.cost,300/3.5,1e-9); near(D.TA125.val,350/3.5,1e-9); assert.equal(D.TA125.est,true,'a shekel holding: its own profit, at today\'s rate');
+  // a purchase ticked in the plan adds its dollars at the price it marked; one account alone has only its own rows
+  const D2=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}]); near(D2.MSFT.cost,250); near(D2.MSFT.val,300);
+  const D3=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}],'blink'); assert.deepEqual(Object.keys(D3),['KO'],'the plan\'s purchase belongs to the whole portfolio only');
+  G.P=null; G.Q=null; G.HS=null;
 });
 
 test('a period\'s result: the change in value less the change in deposits; the return counts money in from mid-month', ()=>{

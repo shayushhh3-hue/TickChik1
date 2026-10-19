@@ -274,6 +274,38 @@ test('where the result came from: the same bottom line as the headline, six part
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the holdings in shekels, in dollars, or both: the chips, the rows, the hero, kept for next time, nothing saved changes',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  const read=async()=>{const o=await pg.evaluate(()=>{const tr=[...document.querySelectorAll('#rows tr')].find(tr=>/MSFT/.test(tr.textContent)), td=tr.querySelectorAll('td'), th=[...document.querySelectorAll('#holdSec thead th')].map(x=>x.textContent);
+    return {total:document.getElementById('kTotal').textContent,totalD:document.getElementById('kTotalD').textContent,pnl:document.getElementById('kPnl').textContent,pnlD:document.getElementById('kPnlD').textContent,
+      day:document.getElementById('kDay').textContent,val:td[4].textContent,cost:td[6].textContent,row:td[7].textContent,dayRow:td[1].textContent,th:[th[4],th[6]],
+      on:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),sub:document.getElementById('holdSub').textContent,
+      ox:document.documentElement.scrollWidth>innerWidth+1,saved:localStorage.getItem('tr_holdccy')}});
+    for(const k in o)if(typeof o[k]==='string')o[k]=o[k].replace(/\u200E/g,''); return o};   // the marks that keep a sign on the left of its number
+  let s=await read(); assert.deepEqual(s.on,['ils']); assert.ok(/^₪/.test(s.total)&&/^₪/.test(s.val)&&!/\$/.test(s.row),'shekels to begin with: '+JSON.stringify(s));
+  // dollars: the big numbers in dollars, the shekels on the line beneath; MSFT's profit is 2 × (505 − 470), the dollar's move left out
+  await pg.click('.hccy [data-hc="usd"]'); await pg.waitForTimeout(300); s=await read();
+  assert.deepEqual(s.on,['usd']); assert.equal(s.saved,'usd'); assert.ok(/^\$/.test(s.total)&&/^₪/.test(s.totalD),'the total in dollars, the shekels beneath: '+s.total+' / '+s.totalD);
+  assert.ok(/[▲▼] \$/.test(s.day),'the day in dollars: '+s.day); assert.ok(/^\$/.test(s.val)&&/\$940\b/.test(s.cost)&&/\+\$70 \(\+7\.4%\)/.test(s.row),'MSFT: value, cost and profit in dollars: '+JSON.stringify([s.val,s.cost,s.row]));
+  assert.ok(/^≈?[+−]\$/.test(s.pnl)&&/בלי שינוי השער/.test(s.pnlD),'the profit in dollars says what it leaves out (≈ when part of it is estimated): '+s.pnl+' / '+s.pnlD);
+  assert.deepEqual(s.th,['שווי $','עלות $']); assert.match(s.sub,/בדולרים/); assert.ok(!s.ox);
+  // both: shekels first, the dollars on the line beneath, in every money cell
+  await pg.click('.hccy [data-hc="both"]'); await pg.waitForTimeout(300); s=await read();
+  assert.deepEqual(s.on,['both']); assert.ok(/^₪/.test(s.total)&&/^\$/.test(s.totalD),'both: '+s.total+' / '+s.totalD);
+  assert.ok(/₪.*\$/s.test(s.val)&&/₪.*\$940/s.test(s.cost)&&/₪.*\+\$70/s.test(s.row)&&/₪.*\$/s.test(s.dayRow),'each cell shows both: '+JSON.stringify([s.val,s.cost,s.row,s.dayRow]));
+  assert.deepEqual(s.th,['שווי ₪ / $','עלות ₪ / $']); assert.match(s.pnlD,/בדולרים/); assert.ok(!s.ox,'nothing pushes the phone sideways');
+  assert.equal(store.getDoc('portfolio/main').data.positions.length,docs['portfolio/main'].positions.length,'a view, not a change');
+  // the stocks / funds chips still work beside them
+  await pg.click('.hkind:not(.hccy) [data-hv="fund"]'); await pg.waitForTimeout(300);
+  const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec)').length}));
+  assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'both'); assert.equal(hv.rows,2,'the two index funds');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+  // a wide screen: the dollars sit in the table too, and the page opens in the view that was chosen
+  const w=await open(1280); const ws=await w.pg.evaluate(()=>({hc:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),total:document.getElementById('kTotal').textContent}));
+  assert.deepEqual(ws.hc,['ils'],'another browser context starts in shekels'); assert.ok(/^₪/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
+});
+
 test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(400);
