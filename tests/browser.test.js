@@ -240,6 +240,22 @@ test('dividends: the way of a dividend, what came in per security with its tax a
   }finally{store.setDoc('history/main',H0,{silent:true})}
 });
 
+test('the spread of the portfolio: a bar or a pie at a click, the same shares, kept for next time',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.waitForSelector('#mixHome:not([hidden])');
+  const st=()=>pg.evaluate(()=>{const v=e=>!!e.offsetParent||e.getBoundingClientRect().width>0, pie=document.getElementById('mixPie');
+    return {bar:v(document.getElementById('mixBar')),pie:!pie.hasAttribute('hidden')&&pie.getBoundingClientRect().width>0,slices:pie.querySelectorAll('path,circle').length,label:pie.getAttribute('aria-label'),
+      list:document.querySelectorAll('#mixList li').length,on:[...document.querySelectorAll('[data-mixv]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.mixv),
+      ctr:pie.querySelector('.ctr')?.textContent,total:document.getElementById('kTotal').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}});
+  let s=await st(); assert.deepEqual([s.bar,s.pie,s.on],[true,false,['bar']]);
+  await pg.click('[data-mixv="pie"]'); await pg.waitForTimeout(300); s=await st();
+  assert.deepEqual([s.bar,s.pie,s.on],[false,true,['pie']]); assert.equal(s.slices,s.list,'a slice for every group in the list');
+  assert.match(s.label,/טכנולוגיה \d/); assert.equal(s.ctr,s.total,'the total in the middle is the portfolio\'s'); assert.ok(!s.ox);
+  await pg.reload(); await pg.waitForSelector('#mixHome:not([hidden])'); await pg.waitForTimeout(500); s=await st(); assert.deepEqual([s.pie,s.on],[true,['pie']],'kept for next time');
+  await pg.click('[data-mixv="bar"]'); await pg.waitForTimeout(200); s=await st(); assert.deepEqual([s.bar,s.pie],[true,false]);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);

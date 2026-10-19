@@ -133,6 +133,12 @@ section{display:flex;flex-direction:column;gap:10px;min-width:0}
 .mixlist .gv{color:var(--muted);font-size:12px}
 .mixlist .gw{font-weight:700}
 .mixlist .over{color:var(--loss)}
+#mixHome .hsub{display:flex;align-items:center;gap:10px;flex-wrap:wrap} .mixsw .chip{min-height:32px}
+.mixh.pie{display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);align-items:center;gap:16px 24px}
+.mixh.pie .mixlist{grid-template-columns:1fr}
+.mixpie{width:100%;max-width:200px;height:auto;justify-self:center} .mixpie[hidden],.mixbar[hidden]{display:none}
+.mixpie .ctr{font-family:var(--mono);fill:var(--ink)} .mixpie .ctl{fill:var(--muted)}
+@media (max-width:560px){.mixh.pie{grid-template-columns:1fr} .mixpie{max-width:190px}}
 @media (max-width:640px){.panel{padding:14px}.pane{gap:24px}}
 .row{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:baseline;justify-content:space-between}
 .today{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px 16px;align-items:start}
@@ -1495,8 +1501,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       </div>
     </section>
     <section aria-labelledby="hMixH" id="mixHome" hidden>
-      <div class="row"><h2 id="hMixH">פיזור התיק</h2><span class="sub" id="mixHomeSub"></span></div>
-      <div class="panel mixh"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור התיק לפי קבוצות"></div><ul class="mixlist" id="mixList"></ul></div>
+      <div class="row"><h2 id="hMixH">פיזור התיק</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
+      <div class="panel mixh" id="mixPanel"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור התיק לפי קבוצות"></div><svg class="mixpie" id="mixPie" viewBox="0 0 200 200" role="img" aria-label="פיזור התיק לפי קבוצות, כעוגה" hidden></svg><ul class="mixlist" id="mixList"></ul></div>
     </section>
     <section id="healthHome" aria-labelledby="hHealth" hidden>
       <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
@@ -16094,11 +16100,23 @@ function renderHealth(m){
   $('healthSub').textContent=`${H.parts.length} בדיקות · משקלים לפי הכללים שלך`;
   $('hParts').innerHTML=H.parts.map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('');
 }
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mixv]'); if(!b)return; try{localStorage.setItem('tr_mixview',b.dataset.mixv)}catch(x){} try{render()}catch(x){}});
 function renderMixHome(m){
   const sec=$('mixHome'); if(!sec)return; const gs=Object.keys(GROUPS).map(k=>({id:k,...m.groups[k]})).filter(g=>g&&g.val>0).sort((a,b)=>b.val-a.val);
   if(!gs.length||!(m.total>0)){sec.hidden=true;return}
   const cap=+((S&&S.rules)||{}).maxGroup||0, tot=gs.reduce((t,g)=>t+g.val,0);
   sec.hidden=false; $('mixHomeSub').textContent=cap>0?`הסף שהגדרת לקבוצה: ${pct(cap,0)}`:'';
+  let mv='bar'; try{if(localStorage.getItem('tr_mixview')==='pie')mv='pie'}catch(e){}
+  for(const b of document.querySelectorAll('[data-mixv]'))b.setAttribute('aria-pressed',String(b.dataset.mixv===mv));
+  $('mixPanel').classList.toggle('pie',mv==='pie'); $('mixBar').hidden=mv==='pie'; $('mixPie').toggleAttribute('hidden',mv!=='pie');   // an SVG has no .hidden property: the attribute itself
+  // the pie: a ring of slices from 12 o'clock, clockwise, with a thin gap between them and the total in the middle
+  if(mv==='pie'){const C=100, R=92, r=58, gap=gs.length>1?0.012:0; let a0=-Math.PI/2, h='';
+    const pt=(a,rr)=>`${(C+rr*Math.cos(a)).toFixed(2)} ${(C+rr*Math.sin(a)).toFixed(2)}`;
+    for(const g of gs){const f=g.val/tot, a1=a0+f*2*Math.PI, s0=a0+(f>gap*2?gap:0), s1=a1-(f>gap*2?gap:0), big=s1-s0>Math.PI?1:0, col=GCOL[g.id]||'#94A3B8';
+      h+=f>=0.9999?`<circle cx="${C}" cy="${C}" r="${(R+r)/2}" fill="none" stroke="${col}" stroke-width="${R-r}"><title>${esc(GROUPS[g.id])} ${pct(f*100)}</title></circle>`
+        :`<path d="M${pt(s0,R)}A${R} ${R} 0 ${big} 1 ${pt(s1,R)}L${pt(s1,r)}A${r} ${r} 0 ${big} 0 ${pt(s0,r)}Z" fill="${col}"><title>${esc(GROUPS[g.id])} ${pct(f*100)}</title></path>`; a0=a1}
+    h+=`<text class="ctl" x="${C}" y="${C-6}" text-anchor="middle" font-size="12">שווי התיק</text><text class="ctr" x="${C}" y="${C+14}" text-anchor="middle" font-size="17" font-weight="700">${ils(tot)}</text>`;
+    $('mixPie').innerHTML=h; $('mixPie').setAttribute('aria-label','פיזור התיק לפי קבוצות: '+gs.map(g=>`${GROUPS[g.id]} ${pct(g.val/tot*100)}`).join(', '))}
   $('mixBar').innerHTML=gs.map(g=>`<i title="${esc(GROUPS[g.id])} ${pct(g.val/tot*100)}" style="width:${g.val/tot*100}%;background:${GCOL[g.id]||'#94A3B8'}"></i>`).join('');
   $('mixList').innerHTML=gs.map(g=>{const w=g.val/tot*100, over=cap>0&&g.id!=='cash'&&w>cap; return `<li><i style="background:${GCOL[g.id]||'#94A3B8'}"></i><span>${esc(GROUPS[g.id])} <span class="gv n">${ils(g.val)}</span></span><span class="gw n${over?' over':''}">${pct(w)}${over?' ▲':''}</span></li>`}).join('');
 }
