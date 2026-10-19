@@ -220,6 +220,26 @@ test('the funds track: a fixed amount for each fund every month, the sum is the 
   }finally{store.setDoc('plan/main',plan0,{silent:true}); store.setDoc('settings/main',set0,{silent:true})}
 });
 
+test('dividends: the way of a dividend, what came in per security with its tax and where it went, and what the tax costs over the years',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const H0=store.getDoc('history/main').data, H=JSON.parse(JSON.stringify(H0)), b=H.accounts.find(a=>a.acct==='blink');
+  b.trades.push({date:H.accounts[0].deposits[0].date,sym:'KO',qty:0,px:0,ccy:'USD',div:true,total:15,tax:5},{date:H.accounts[0].deposits[1].date,sym:'KO',qty:0.1,px:70,ccy:'USD',div:true,total:7});
+  store.setDoc('history/main',H,{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'forecast'); await pg.waitForFunction(()=>/₪/.test(document.getElementById('dgNet').textContent),null,{timeout:10000});
+    const c=await pg.evaluate(()=>({flow:[...document.querySelectorAll('#dgFlow li b')].map(x=>x.textContent),net:document.getElementById('dgNet').textContent,tax:document.getElementById('dgTax').textContent.replace(/\u200E/g,''),
+      where:document.getElementById('dgWhere').textContent+' '+document.getElementById('dgWhereD').textContent,row:document.querySelector('#dgRows tr').textContent,note:document.getElementById('dgNote').textContent,
+      th:[...document.querySelectorAll('#divRows')[0].closest('table').querySelectorAll('th')].map(x=>x.textContent),divNote:document.getElementById('divNote').textContent,
+      cost:document.getElementById('dcTaxCost').textContent,costD:document.getElementById('dcTaxCostD').textContent,flowC:document.getElementById('dcFlow').textContent}));
+    assert.deepEqual(c.flow,['החברה מחלקת','מס במקור, בכל תשלום','הנטו נכנס לחשבון','ובתוך שווי התיק']);
+    assert.equal(c.net,'₪81','$22 net at 3.7'); assert.match(c.tax,/^−₪/); assert.match(c.where,/הושקעו.*מזומן/,'part reinvested, part in cash: '+c.where);
+    assert.match(c.row,/KO/); assert.match(c.row,/0\.1 יח׳/); assert.match(c.row,/≈/,'the reinvested one had no tax shown: estimated');
+    assert.match(c.note,/בשורה "דיבידנדים, נטו" בפירוק התוצאה/); assert.ok(c.th.includes('מס במקור ₪'),'the forecast shows the tax as its own column');
+    assert.match(c.divNote,/מכל תשלום בנפרד/); assert.match(c.cost.replace(/\u200E/g,''),/^−₪/); assert.match(c.costD,/שהמס הזה היה מרוויח/); assert.match(c.flowC,/^מכל ₪100 דיבידנד: ₪25 מס במקור/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('history/main',H0,{silent:true})}
+});
+
 test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
