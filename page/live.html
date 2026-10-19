@@ -1545,8 +1545,9 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
       </div>
+      <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
       <div class="panel howbuy">
-        <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button></div></div>
+        <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
         <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
         <p class="note" id="kindNote"></p>
       </div>
@@ -16198,6 +16199,11 @@ function render(){
 const ymAdd=(ym,k)=>{const d=new Date(+ym.slice(0,4),+ym.slice(5)-1+k,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 const ymDiff=(a,b)=>(+a.slice(0,4)-+b.slice(0,4))*12+(+a.slice(5)-+b.slice(5));
 const ymShort=ym=>MONTHS[+ym.slice(5)-1]+' '+ym.slice(2,4);
+// the funds track, bought by a fixed amount for each fund every month: on when the track is the funds' and its mode says so
+const fixedMode=()=>TRACK==='idx'&&PL.mode==='fixed';
+const fixedItems=()=>PL.items.filter(i=>i.status!=='skip'&&+i.amt>0);
+// the monthly amount of the funds track: the sum of the funds' own amounts when they have them
+const fixedSum=x=>(x&&x.mode==='fixed')?x.items.filter(i=>i.status!=='skip').reduce((t,i)=>t+(+i.amt||0),0):null;
 function planState(mAll){
   const fee=+S.minFeeIls||0, cost={}, name={}, start=PL.start||ymNow();
   const rot=PL.mode==='rotate', B0=TM();
@@ -16205,8 +16211,14 @@ function planState(mAll){
   const paid={}; for(const x of PL.purchases)paid[x.sym]=+x.paidIls||0;
   const dep=PL.deposits.reduce((s,d)=>s+(+d.amount||0),0), spent=PL.purchases.reduce((s,d)=>s+(+d.paidIls||0),0);
   const ic=idxCash(), bal=TRACK==='idx'?ic:mAll.cash-ic, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>d.month===ymNow());
+  const cur=ymDiff(ymNow(),start), when={}, at={};
+  // a fixed amount for each fund, every month (fixedMode): no queue, every fund with an amount is bought each month
+  if(fixedMode()){const F=fixedItems(); for(const i of F)cost[i.sym]=+i.amt;
+    const lastDep=PL.deposits.reduce((mx,d)=>Math.max(mx,ymDiff(d.month,start)),-1), lastBuy=PL.purchases.reduce((mx,x)=>x.month?Math.max(mx,ymDiff(x.month,start)):mx,-1), n=Math.max(cur+12,lastDep,lastBuy)+1;
+    const rows=Array.from({length:n},()=>F.map(i=>i.sym)); for(const i of F){when[i.sym]=0;at[i.sym]=cur}
+    return {rot:true,fixed:true,cost,name,bal,base,depNow,start,cur,lad:{rows,bals:[],complete:true},at,sch:{when}}}
   const entries=PL.items.filter(i=>(i.status==='todo'&&cost[i.sym]!=null)||(i.status==='done'&&i.pid)).map(i=>({sym:i.sym,c:i.pid?paid[i.sym]:cost[i.sym]}));
-  const lad=ladder(entries,base,TM(),PL.mode), cur=ymDiff(ymNow(),start), when={}, at={};
+  const lad=ladder(entries,base,TM(),PL.mode);
   lad.rows.forEach((r,m)=>r.forEach(sym=>{at[sym]=m;when[sym]=Math.max(0,m-cur)}));
   return {rot,cost,name,bal,base,depNow,start,cur,lad,at,sch:{when}};
 }
@@ -16226,19 +16238,24 @@ function renderPlan(mAll){
   $('pBalD').textContent='מזומן, ועוד הפקדות, פחות קניות'; $('pBase').textContent=ils(st.base,2);
   $('pDone').textContent=`${done} / ${act.length}`; $('pBar').style.width=(act.length?done/act.length*100:0)+'%';
   $('pLeft').textContent=ils(Math.max(0,need-st.bal)); {const nF=todo.filter(i=>isF(i.sym)).length, nS=todo.length-nF; $('pLeftD').textContent=`${nF&&nS?nF+' קרנות ו-'+nS+' מניות':todo.length+(nF?' קרנות':' ניירות')}, ${ils(need)} במחירי היום`}
-  $('pEnd').textContent=!PL.items.length?'—':!todo.length?'הושלם':!st.lad.complete?'—':ymShort(ymAdd(st.start,lastM));
-  $('pEndD').textContent=!todo.length?'':!st.lad.complete?'קבע הפקדה חודשית':`${lastM+1} הפקדות, אם המחירים לא זזים`;
+  if(st.fixed){const n=PL.purchases.filter(x=>x.month).length; $('pDone').textContent=`${n} קניות`; $('pBar').style.width='0%'; $('pLeft').textContent=ils(B); $('pLeftD').textContent=`בכל חודש, ל-${fixedItems().length} קרנות`}
+  $('pEnd').textContent=st.fixed?'מתמשך':!PL.items.length?'—':!todo.length?'הושלם':!st.lad.complete?'—':ymShort(ymAdd(st.start,lastM));
+  $('pEndD').textContent=st.fixed?'הוראת קבע לכל קרן':!todo.length?'':!st.lad.complete?'קבע הפקדה חודשית':`${lastM+1} הפקדות, אם המחירים לא זזים`;
   $('depState').textContent=(st.depNow?`הפקדת ${MONTHS[new Date().getMonth()]} סומנה.`:`הפקדת ${MONTHS[new Date().getMonth()]} עוד לא סומנה.`)+(+S.depDay?` יום ההפקדה שלך: ${depDayTxt()}.`:'');
   for(const b of document.querySelectorAll('[data-track]'))b.setAttribute('aria-pressed',b.dataset.track===TRACK);
   const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} הוגדלו · ${t} בתור`};
-  $('trkS').textContent=`${ils(+S.monthly||0)} בחודש · ${tsum(PLD)}`; $('trkI').textContent=`${ils(+S.monthlyIdx||0)} בחודש · ${tsum(PLD.idx)}`;
+  {const fs=fixedSum(PLD.idx); if(fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}
+   $('trkS').textContent=`${ils(+S.monthly||0)} בחודש · ${tsum(PLD)}`; $('trkI').textContent=`${ils(+S.monthlyIdx||0)} בחודש · `+(fs!=null?`סכום קבוע ל-${PLD.idx.items.filter(i=>i.status!=='skip'&&+i.amt>0).length} קרנות`:tsum(PLD.idx));
+   const a=+S.monthly||0, b=+S.monthlyIdx||0; $('trkTot').textContent=a&&b?`סך ההפקדה החודשית: ${ils(a+b)}, מתוכם ${ils(a)} למניות ו-${ils(b)} למדדים. כל מסלול מנוהל בנפרד, עם היתרה והתור שלו.`:'';
+   const mi=$('inMonthlyIdx'); if(mi){mi.disabled=fs!=null||!canWrite; mi.title=fs!=null?'הסכום של כל הקרנות במסלול המדדים. משנים אותו בטבלה "הניירות בתוכנית".':''}}
   $('kindWhole').textContent=TRACK==='idx'?'יחידות שלמות':'מניות שלמות'; $('kindFrac').textContent=TRACK==='idx'?'שברי יחידה':'שברי מניה';
-  const whole=PL.mode!=='rotate'; if(whole){try{localStorage.setItem('wholeMode',PL.mode)}catch(e){}}
+  const fx0=st.fixed, whole=PL.mode!=='rotate'&&!fx0; if(whole){try{localStorage.setItem('wholeMode',PL.mode)}catch(e){}}
+  $('kindFix').hidden=TRACK!=='idx'; $('kindFix').setAttribute('aria-pressed',fx0);
   let wm='manual'; try{const v=localStorage.getItem('wholeMode');if(v==='cheap'||v==='manual')wm=v}catch(e){}
-  $('kindWhole').dataset.mode=whole?PL.mode:wm; $('kindWhole').setAttribute('aria-pressed',whole); $('kindFrac').setAttribute('aria-pressed',!whole);
+  $('kindWhole').dataset.mode=whole?PL.mode:wm; $('kindWhole').setAttribute('aria-pressed',whole); $('kindFrac').setAttribute('aria-pressed',!whole&&!fx0);
   $('orderWrap').hidden=!whole; for(const c of document.querySelectorAll('[data-order]'))c.setAttribute('aria-pressed',c.dataset.mode===PL.mode);
   for(const c of document.querySelectorAll('.howbuy .chip'))c.disabled=!canWrite;
-  {const u=TRACK==='idx'?'יחידה':'מניה'; $('kindNote').textContent=(whole?`קונים רק ${u} שלמה. בחודש שבו היתרה לא מספיקה ל${u} הבאה, ההפקדה נצברת לחודש שאחריו.`:`כל ההפקדה החודשית נכנסת לנייר הבא בתור, גם אם היא קונה פחות מ${u} אחת. מתאים רק לחשבון שמאפשר שברים (למשל בלינק).`)+(TRACK==='idx'?' מסלול המדדים נפרד לגמרי ממסלול המניות: הפקדה, יתרה ותור משלו.':'')+(B<=0?` עוד לא נקבעה הפקדה חודשית ל${TRACK==='idx'?'מדדים':'מניות'}; קובעים אותה בתחתית העמוד.`:'')}
+  {const u=TRACK==='idx'?'יחידה':'מניה'; $('kindNote').textContent=fx0?`כל קרן מקבלת בכל חודש את הסכום שקבעת לה בטבלה "הניירות בתוכנית", בשברי יחידה. ההפקדה החודשית למדדים היא הסכום של כל הקרנות: ${ils(B)}.`+(fixedItems().length<PL.items.filter(i=>i.status!=='skip').length?' לקרן בלי סכום לא נקנה כלום.':''):(whole?`קונים רק ${u} שלמה. בחודש שבו היתרה לא מספיקה ל${u} הבאה, ההפקדה נצברת לחודש שאחריו.`:`כל ההפקדה החודשית נכנסת לנייר הבא בתור, גם אם היא קונה פחות מ${u} אחת. מתאים רק לחשבון שמאפשר שברים (למשל בלינק).`)+(TRACK==='idx'?' מסלול המדדים נפרד לגמרי ממסלול המניות: הפקדה, יתרה ותור משלו.':'')+(B<=0?` עוד לא נקבעה הפקדה חודשית ל${TRACK==='idx'?'מדדים':'מניות'}; קובעים אותה בתחתית העמוד.`:'')}
   $('chart').closest('.panel').hidden=B<=0&&!PL.deposits.length;
   $('feeNote').textContent=fee>0?`העמלה כלולה בעלות היחידה. על ${todo.length} הקניות שנשארו: ${ils(fee*todo.length)}.`:'';
 
@@ -16247,19 +16264,21 @@ function renderPlan(mAll){
   const lastDep=PL.deposits.reduce((mx,d)=>Math.max(mx,ymDiff(d.month,st.start)),-1), nRows=Math.max(lastM,st.cur,lastDep)+1;
   const isDone=sym=>PL.items.some(i=>i.sym===sym&&i.status==='done');
   const paidBy={}; for(const x of PL.purchases)paidBy[x.sym]=+x.paidIls||0;
+  const paidAt={}; for(const x of PL.purchases)if(x.month)paidAt[x.sym+'|'+x.month]=+x.paidIls||0;
+  const paidOf=(sym,ym)=>st.fixed?paidAt[sym+'|'+ym]:paidBy[sym];
   let h='', run=st.base, lastMark=-1, pd=st.base, pi=0, ad=st.base, ai=0; const CH=[];
-  for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidBy[sym]!=null))lastMark=m}
-  const buyHtml=(sym,m,ym)=>{const got=isDone(sym),c=got?paidBy[sym]:st.cost[sym],short=!got&&c>st.bal+0.005;
+  for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidOf(sym,ym0)!=null))lastMark=m}
+  const buyHtml=(sym,m,ym)=>{const got=st.fixed?paidOf(sym,ym)!=null:isDone(sym),c=got?paidOf(sym,ym):st.cost[sym],short=!got&&c>st.bal+0.005;
       const pu=PL.purchases.find(x=>x.sym===sym), pp=mAll.pos.find(x=>x.sym===sym), usd=pp&&pp.ccy==='USD';
-      const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}"><input type="checkbox" id="buy_${esc(sym)}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(1,Math.round(c-st.bal)))}</span>`:''}</label>`;
-      if(!got||!pu||!canWrite)return lb;
+      const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}${st.fixed?'_'+ym:''}"><input type="checkbox" id="buy_${esc(sym)}${st.fixed?'_'+ym:''}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(1,Math.round(c-st.bal)))}</span>`:''}</label>`;
+      if(!got||!pu||!canWrite||st.fixed)return lb;
       if(editSym!==sym)return lb+`<span class="nm">${pu.px?`<span class="n">${+(+pu.qty||1).toFixed(4)}</span> יח׳ ב-<span class="n">${usd?'$':'₪'}${(+pu.px).toFixed(2)}</span>`:'לפי מחיר השוק ברגע הסימון'}</span><button class="btn sm" type="button" data-pa="editBuy" data-sym="${esc(sym)}">עדכן מחיר ששולם</button>`;
       return lb+`<span class="ebox"><label for="eb_qty">כמות<input type="number" id="eb_qty" min="0" step="0.0001" value="${+pu.qty||1}"></label><label for="eb_px">מחיר ליחידה (${usd?'$':'₪'})<input type="number" id="eb_px" min="0" step="0.01" value="${pu.px?pu.px:(pp?(+pp.px).toFixed(2):'')}"></label><button class="btn sm pri" type="button" data-pa="saveBuy" data-sym="${esc(sym)}">שמור</button><button class="btn sm" type="button" data-pa="cancelBuy">בטל</button></span>`};
   const buyGroups=(buys,m,fn)=>{const ym=ymAdd(st.start,m), f=buys.filter(isF), k=buys.filter(x=>!isF(x)); if(!f.length||!k.length)return buys.map(x=>fn(x,m,ym)).join(''); return `<div class="bg col"><span class="bl">קרנות</span>${f.map(x=>fn(x,m,ym)).join('')}</div><div class="bg col"><span class="bl">מניות</span>${k.map(x=>fn(x,m,ym)).join('')}</div>`};
   for(let m=0;m<nRows;m++){
     const ym=ymAdd(st.start,m), d=depBy[ym], buys=st.lad.rows[m]||[];
-    run+=(d?+d.amount||0:0)-buys.reduce((t,sym)=>t+(paidBy[sym]||0),0);
-    pd+=B; pi+=buys.reduce((t,sym)=>t+(paidBy[sym]!=null?paidBy[sym]:(st.cost[sym]||0)),0); ad+=d?+d.amount||0:0; ai+=buys.reduce((t,sym)=>t+(paidBy[sym]||0),0);
+    run+=(d?+d.amount||0:0)-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
+    pd+=B; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=d?+d.amount||0:0; ai+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     CH.push({ym,pd,pi,ad,ai,act:m<=lastMark,buys:buys.slice(),cur:m===st.cur});
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?'<div class="nm">החודש</div>':m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
@@ -16271,7 +16290,7 @@ function renderPlan(mAll){
   {const A=(()=>{try{return planActual(mAll,st.start<ymNow()?st.start:null)}catch(e){return []}})(), cur=ymNow(), L=A[A.length-1];
    const pts=A.map(r=>({ym:r.ym,pd:r.ad,pi:r.ai,ad:r.ad,ai:r.ai,act:true,cur:r.ym===cur,buys:[]}));
    if(L){let pd=L.ad, pi=L.ai, carry=0;
-     for(const c of CH){const later=c.ym>cur, cost=c.buys.filter(x=>paidBy[x]==null).reduce((t,x)=>t+(st.cost[x]||0),0);
+     for(const c of CH){const later=c.ym>cur, cost=c.buys.filter(x=>paidOf(x,c.ym)==null).reduce((t,x)=>t+(st.cost[x]||0),0);
        if(!later){carry+=cost; continue}
        pd+=B; pi+=cost+carry; carry=0; pts.push({ym:c.ym,pd,pi,ad:pd,ai:pi,act:false,cur:false,buys:c.buys})}}
    drawChart(L?pts:CH)}
@@ -16281,12 +16300,14 @@ function renderPlan(mAll){
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה נרשמת לפי מחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.';
 
-  $('thCost').textContent=st.rot?'סכום קנייה ₪':'עלות יחידה ₪';
+  $('thCost').textContent=st.fixed?'סכום בחודש ₪':st.rot?'סכום קנייה ₪':'עלות יחידה ₪';
   // securities in the plan
   const rank=i=>i.status==='todo'?1:i.status==='done'?2:3;
   const list=PL.items.map((it,ix)=>({it,ix})).sort((a,b)=>rank(a.it)-rank(b.it)||(PL.mode!=='cheap'?a.ix-b.ix:(st.at[a.it.sym]??999)-(st.at[b.it.sym]??999)||(st.cost[a.it.sym]||0)-(st.cost[b.it.sym]||0)));
   const rowP=({it,ix})=>{
     const c=st.cost[it.sym], w=st.sch.when[it.sym]; let tag,acts='';
+    if(st.fixed&&it.status!=='skip'){
+      return `<tr><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td><td class="num"><div class="acts">${canWrite?`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button>`:''}</div></td></tr>`}
     if(it.status==='done'){tag=`<span class="st done">הוגדל</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
     else if(it.status==='skip'){tag='<span class="st skip">מחוץ לתוכנית</span>';acts=`<button class="btn sm" type="button" data-pa="unskip" data-ix="${ix}">החזר</button>`}
     else{
@@ -16302,6 +16323,13 @@ function planAct(a,d){
   if(!P||!Q)return; const st=planState(mAllNow()), now=new Date().toISOString(), id='e'+Date.now().toString(36);
   const ix=+d.ix, it=PL.items[ix];
   if(a==='depToggle'){const had=PL.deposits.some(x=>x.month===d.ym);PL.deposits=PL.deposits.filter(x=>x.month!==d.ym);if(!had)PL.deposits.push({id,month:d.ym,amount:TM(),at:now})}
+  else if(a==='buyToggle'&&st.fixed){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
+    const k=PL.purchases.findIndex(x=>x.sym===t.sym&&x.month===d.ym);
+    if(k>=0)PL.purchases.splice(k,1);
+    else if((st.cost[t.sym]||0)>st.bal+0.005){render();return}
+    else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
+      if(pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
+      PL.purchases.push(rec)}}
   else if(a==='buyToggle'){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
     if(t.status==='done'){PL.purchases=PL.purchases.filter(x=>x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note=''}
     else if((st.cost[t.sym]||0)>st.bal+0.005){render();return}
@@ -16317,7 +16345,10 @@ function planAct(a,d){
   else if(a==='unskip'&&it)it.status='todo';
   else if(a==='undo'&&it){if(it.pid)PL.purchases=PL.purchases.filter(x=>x.id!==it.pid);it.status='todo';delete it.pid;delete it.doneAt;it.note=''}
   else if((a==='up'||a==='down')&&it){let j=ix;do{j+=a==='up'?-1:1}while(PL.items[j]&&PL.items[j].status!=='todo');if(PL.items[j]){PL.items[ix]=PL.items[j];PL.items[j]=it}}
-  else if(a==='mode')PL.mode=d.mode;
+  else if(a==='mode'){PL.mode=d.mode;
+    if(d.mode==='fixed'){const L=PL.items.filter(i=>i.status!=='skip'); if(L.length&&!L.some(i=>+i.amt>0)){const each=Math.floor((+S.monthlyIdx||0)/L.length); for(const i of L)i.amt=each}
+      S.monthlyIdx=fixedSum(PL); dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}}
+  else if(a==='amt'&&it){it.amt=Math.max(0,Math.round((+d.v||0)*100)/100); S.monthlyIdx=fixedSum(PL); dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}
   else if(a==='move'&&it){const other=TRACK==='idx'?PLD:PLD.idx;PL.items.splice(ix,1);if(!other.items.some(i=>i.sym===it.sym))other.items.push(it);const pu=PL.purchases.filter(x=>x.sym===it.sym);PL.purchases=PL.purchases.filter(x=>x.sym!==it.sym);other.purchases.push(...pu);if(!other.start)other.start=PL.start||ymNow()}
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null}
   planChanged();
@@ -18030,6 +18061,7 @@ function renderMail(){
   $('mailState').textContent=!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת.':'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.';
   if(!list.querySelector('[data-mail]'))setH(list,MAILK.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''));
   for(const [k] of MAILK){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
+document.addEventListener('change',ev=>{const el=ev.target; if(el&&el.dataset&&el.dataset.amt!=null&&canWrite)planAct('amt',{ix:el.dataset.amt,v:el.value})});
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.mail||!canWrite)return; S.mail={...(S.mail||{}),[el.dataset.mail]:el.checked}; changed()});
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset)return;
   if(el.dataset.notif){if(!canWrite)return; sndQuiet(); S.notif=Object.assign({},S.notif||{}); if(el.checked)delete S.notif[el.dataset.notif]; else S.notif[el.dataset.notif]=false; changed(); return}

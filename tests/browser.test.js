@@ -191,6 +191,35 @@ test('the look-back: a withdrawal is never "deposited"; more out than in is name
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the funds track: a fixed amount for each fund every month, the sum is the track\'s deposit, a purchase per fund per month',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const plan0=store.getDoc('plan/main').data, set0=store.getDoc('settings/main').data;
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForTimeout(300);
+    // build the funds' plan from the funds held (TA125, TA90), then a fixed amount for each
+    if(await pg.isVisible('#planOb'))await pg.click('#obGo'); await pg.waitForTimeout(300);
+    assert.ok(await pg.isVisible('#kindFix'),'the choice is there in the funds track'); await pg.click('#kindFix'); await pg.waitForTimeout(300);
+    const amts=await pg.$$('[data-amt]'); assert.equal(amts.length,2);
+    await amts[0].fill('200'); await amts[0].dispatchEvent('change'); await pg.waitForTimeout(200);
+    await (await pg.$$('[data-amt]'))[1].fill('150'); await (await pg.$$('[data-amt]'))[1].dispatchEvent('change'); await pg.waitForTimeout(300);
+    let s=await pg.evaluate(()=>({trk:document.getElementById('trkI').textContent,tot:document.getElementById('trkTot').textContent,note:document.getElementById('kindNote').textContent,
+      inp:document.getElementById('inMonthlyIdx').value,off:document.getElementById('inMonthlyIdx').disabled,end:document.getElementById('pEnd').textContent,
+      row:[...document.querySelectorAll('#ladRows tr')][1].textContent,dep:[...document.querySelectorAll('#ladRows tr')][1].querySelector('[data-dep]').nextElementSibling.textContent}));
+    assert.match(s.trk,/₪350 בחודש · סכום קבוע ל-2 קרנות/); assert.match(s.tot,/סך ההפקדה החודשית: ₪950, מתוכם ₪600 למניות ו-₪350 למדדים/);
+    assert.match(s.note,/₪350/); assert.equal(s.inp,'350'); assert.equal(s.off,true,'the funds\' amount is the sum of the funds'); assert.equal(s.end,'מתמשך');
+    assert.match(s.row,/₪200/); assert.match(s.row,/₪150/,'each fund every month, with its own amount'); assert.equal(s.dep,'₪350');
+    // a deposit and one fund bought this month: next month the same fund is still to buy
+    await pg.evaluate(()=>{const r=document.querySelector('#ladRows tr.cur'); r.querySelector('[data-dep]').click()}); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>{const r=document.querySelector('#ladRows tr.cur'); r.querySelector('[data-buy]').click()}); await pg.waitForTimeout(300);
+    s=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#ladRows tr')], i=rows.findIndex(r=>r.classList.contains('cur'));
+      return {cur:[...rows[i].querySelectorAll('[data-buy]')].map(x=>x.checked),next:[...rows[i+1].querySelectorAll('[data-buy]')].map(x=>x.checked),done:document.getElementById('pDone').textContent}});
+    assert.deepEqual(s.cur,[true,false]); assert.deepEqual(s.next,[false,false],'a purchase belongs to its month'); assert.equal(s.done,'1 קניות');
+    await pg.waitForTimeout(900); const saved=store.getDoc('plan/main').data.idx;
+    assert.equal(saved.mode,'fixed'); assert.deepEqual(saved.items.map(i=>i.amt).sort(),[150,200]); assert.equal(saved.purchases.length,1); assert.equal(store.getDoc('settings/main').data.monthlyIdx,350);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('plan/main',plan0,{silent:true}); store.setDoc('settings/main',set0,{silent:true})}
+});
+
 test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
