@@ -14,7 +14,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
   'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
-  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual'],G,['allBuy']);
+  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual','DIV_WH','divHistory'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -242,6 +242,25 @@ test('the plan chart\'s real part: the money in and the holdings at cost, month 
   // no history: one point, today, from the portfolio
   G.HS=null; const C=F.planActual(F.mAllNow()); assert.deepEqual(C.map(r=>[r.ym,r.ad,r.ai]),[[cur,0,8750]]);
   G.P=null; G.Q=null;
+});
+
+test('dividends received: a cash one is kept, its tax too; per security gross, tax, net and where the net went', ()=>{
+  G.Q={usdIls:3.5,prices:{},prev:{}}; G.HS={depIlsNow:0,accounts:[],monthly:[]}; G.DY=null;
+  // KO pays $15 net in cash with $5 withheld; MSFT reinvests $7.5 net in 0.02 units ($375 each), tax not shown; read twice
+  const tx=[{acct:'blink',date:'2026-07-01',side:'div',sym:'KO',qty:null,px:null,amount:15,tax:5,ccy:'USD'},{acct:'blink',date:'2026-08-01',side:'div',sym:'MSFT',qty:0.02,px:375,amount:7.5,ccy:'USD'}];
+  G.DRAFT={tx}; let hx=F.historyWithTx(); G.HS=hx.H; G.DRAFT={tx}; hx=F.historyWithTx(); G.HS=hx.H;
+  const B=G.HS.accounts.find(a=>a.acct==='blink'); assert.equal(B.trades.length,2,'the cash dividend is kept, once');
+  const ko=B.trades.find(t=>t.sym==='KO'); assert.deepEqual([ko.qty,ko.div,ko.total,ko.tax],[0,true,15,5]);
+  const D=F.divHistory(G.HS,3.5), by=Object.fromEntries(D.rows.map(r=>[r.sym,r]));
+  near(by.KO.gross,20*3.5); near(by.KO.tax,5*3.5); near(by.KO.net,15*3.5); near(by.KO.cash,15*3.5); assert.equal(by.KO.est,false);
+  near(by.MSFT.net,7.5*3.5); near(by.MSFT.tax,7.5/0.75*0.25*3.5,1e-9,'not shown: 25% of the gross'); assert.equal(by.MSFT.est,true); near(by.MSFT.re,7.5*3.5); near(by.MSFT.units,0.02,1e-12);
+  near(D.tot.net,22.5*3.5); near(D.tot.gross,D.tot.net+D.tot.tax,1e-9); assert.equal(D.tot.n,2);
+  assert.equal(F.realizedOf(B.trades.filter(t=>!t.div)),0,'a dividend is not a sale'); near(F.feesOf(B,3.5).ils,0);
+  // an account with only its statement's totals is one row of that account
+  const S=F.divHistory({accounts:[{acct:'exc',ccy:'ILS',trades:[],divGrossUsd:10,divTaxUsd:2.5}]},3.5);
+  assert.equal(S.rows[0].stmt,true); near(S.tot.gross,35); near(S.tot.tax,8.75); near(S.tot.net,26.25);
+  assert.deepEqual(F.divHistory(null,3.5).rows,[]);
+  G.HS=null; G.DRAFT=null; G.Q=null;
 });
 
 test('a period\'s result: the change in value less the change in deposits; the return counts money in from mid-month', ()=>{
