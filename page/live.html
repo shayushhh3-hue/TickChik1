@@ -1359,14 +1359,14 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 @media (max-width:759px){
   table.pf,table.pf tbody{display:block;width:100%}
   table.pf thead{display:none}
-  table.pf tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"sym sym acct acct" "name name name del" "qty qty ccy ccy" "cost cost px px" "grp grp grp grp";gap:8px 10px;padding:12px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  table.pf tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"sym sym acct acct" "name name name del" "qty qty ccy ccy" "cost cost costu costu" "px px grp grp";gap:8px 10px;padding:12px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
   table.pf td{display:flex;flex-direction:column;gap:4px;padding:0;white-space:normal;min-width:0}
   table.pf tr.fixed{background:var(--warn-bg);border-color:var(--warn-c)}
   table.pf td .flag{align-self:flex-start;margin:0}
   table.pf td[data-l]::before{content:attr(data-l);font-size:12px;color:var(--muted)}
   table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
   table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
-  table.pf td:nth-child(7){grid-area:px} table.pf td:nth-child(8){grid-area:grp} table.pf td:nth-child(9){grid-area:del}
+  table.pf td:nth-child(7){grid-area:costu} table.pf td:nth-child(8){grid-area:px} table.pf td:nth-child(9){grid-area:grp} table.pf td:nth-child(10){grid-area:del}
   table.pf td.pfx{justify-content:flex-end;align-items:flex-end}
   table.pf td.pfx .btn{min-height:40px}
   table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:40px}
@@ -2102,12 +2102,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       <div class="panel scroll">
         <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></div>
         <table class="pf">
-          <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
-          <tbody id="pfRows"><tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
+          <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>עלות כוללת $</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
+          <tbody id="pfRows"><tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
         </table>
         <p class="sub" id="pfTot" style="margin-top:8px"></p>
         <div class="dup" id="dupBox" hidden></div>
-        <p class="note" style="margin-top:10px">סימול: הטיקר האמריקאי (למשל MSFT). לקרנות המדד הישראליות: TA125 או TA90. עלות שלא ידועה אפשר להשאיר ריקה. "מחיר בדוח" משמש רק עד שמגיע מחיר חי לנייר.</p>
+        <p class="note" style="margin-top:10px">סימול: הטיקר האמריקאי (למשל MSFT). לקרנות המדד הישראליות: TA125 או TA90. עלות שלא ידועה אפשר להשאיר ריקה. "עלות כוללת $": מה הקנייה עלתה בדולרים (בבלינק: השווי פחות "שינוי ממועד הקנייה"), כדי שפירוק התוצאה יפריד בין מחיר המניה לשער הדולר; בלי זה ההפרדה מוערכת. "מחיר בדוח" משמש רק עד שמגיע מחיר חי לנייר.</p>
       </div>
       <div class="panel">
         <h3>מזומן בחשבונות</h3>
@@ -19070,7 +19070,7 @@ document.addEventListener('input',ev=>{
   else if(el.id==='inFrac'){S.fractional=el.checked;changed()}
   else if(WIK[el.id]){WI[WIK[el.id]]=+el.value||0;try{renderGoal(mAllNow())}catch(e){}}
   else if(el.dataset.pf&&DRAFT){const p=DRAFT.positions[+el.dataset.i],f=el.dataset.pf; if(!p)return;
-    if(f==='qty')p.qty=+el.value||0; else if(f==='costIls'||f==='px')p[f]=el.value===''?null:+el.value; else if(f==='sym')p.sym=el.value.trim().toUpperCase(); else p[f]=el.value; pfDirty()}
+    if(f==='qty')p.qty=+el.value||0; else if(f==='costIls'||f==='costUsd'||f==='px')p[f]=el.value===''?null:+el.value; else if(f==='sym')p.sym=el.value.trim().toUpperCase(); else{p[f]=el.value; if(f==='ccy'&&el.value==='ILS')p.costUsd=null} pfDirty(); if(f==='ccy')renderMine(true)}
   else if(el.dataset.cash&&DRAFT){const [a,c]=el.dataset.cash.split(':');(DRAFT.cash[a]=DRAFT.cash[a]||{ILS:0,USD:0})[c]=+el.value||0;pfDirty()}
   else if(el.dataset.dep){planAct('depToggle',{ym:el.dataset.dep})}
   else if(el.dataset.buy){planAct('buyToggle',{sym:el.dataset.buy,ym:el.dataset.ym})}
@@ -19119,7 +19119,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
   if(ev.target.id==='btnPfReset'){dDirty=false;PFS.resets++;FIXED.clear();FIRSTX=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
-  if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,px:null,group:'tech'});pfDirty();renderMine(true);return}
+  if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,costUsd:null,px:null,group:'tech'});pfDirty();renderMine(true);return}
   if(ev.target.dataset&&ev.target.dataset.pfdel!=null&&DRAFT){const ix=+ev.target.dataset.pfdel, gone=DRAFT.positions.splice(ix,1)[0];pfDirty();renderMine(true);
     if(gone)offerUndo(`${gone.sym||'השורה'} הוסר מהטבלה`,()=>{if(!DRAFT)return;DRAFT.positions.splice(Math.min(ix,DRAFT.positions.length),0,gone);pfDirty();renderMine(true)});return}
   const ab=ev.target.closest('[data-arc]'); if(ab){const e=ARC.find(x=>x.id===ab.dataset.arc); if(e&&e.R){if(ab.dataset.fmt==='xlsx')saveExcel(arcR(e),arcFile(e,'xlsx'),ab); else saveReport(arcR(e),arcFile(e,'pdf'),ab)} return}
@@ -19276,9 +19276,10 @@ function renderMine(force){
     <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
     <td data-l="מטבע"><select data-pf="ccy" data-i="${i}" aria-label="מטבע"${dis}>${opt('USD',p.ccy,'דולר')}${opt('ILS',p.ccy,'שקל')}${Object.keys(CCYHE).filter(c=>c!=='USD'&&c!=='ILS').map(c=>opt(c,p.ccy,CCYHE[c])).join('')}</select></td>
     <td data-l="עלות כוללת ₪"><input type="number" data-pf="costIls" data-i="${i}" value="${nv(p.costIls)}" min="0" step="0.01" placeholder="לא ידוע" aria-label="עלות כוללת בשקלים"${dis}></td>
+    <td data-l="עלות כוללת $"><input type="number" data-pf="costUsd" data-i="${i}" value="${p.ccy==='ILS'?'':nv(p.costUsd)}" min="0" step="0.01" placeholder="${p.ccy==='ILS'?'—':'לא ידוע'}" aria-label="עלות כוללת בדולרים" title="מה הקנייה עלתה בדולרים, לפירוק התוצאה בין מחיר המניה לשער הדולר"${p.ccy==='ILS'?' disabled':dis}></td>
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="9" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
@@ -19396,7 +19397,7 @@ function historyWithTx(){
 function alikeFix(acct,nk){
   const g=DRAFT.positions.map((p,i)=>({p,i})).filter(x=>x.p.acct===acct&&nameKey(x.p.name)===nk); if(g.length<2)return;
   g.sort((a,b)=>(/^[A-Z]{1,5}$/.test(canonSym(b.p.sym))-/^[A-Z]{1,5}$/.test(canonSym(a.p.sym)))||String(a.p.sym).length-String(b.p.sym).length);
-  const keep=g[0], drop=new Set(g.slice(1).map(x=>x.i)); if(keep.p.costIls==null){const c=g.find(x=>x.p.costIls!=null); if(c)keep.p.costIls=c.p.costIls}
+  const keep=g[0], drop=new Set(g.slice(1).map(x=>x.i)); if(keep.p.costIls==null){const c=g.find(x=>x.p.costIls!=null); if(c)keep.p.costIls=c.p.costIls} if(keep.p.costUsd==null){const c=g.find(x=>x.p.costUsd!=null); if(c)keep.p.costUsd=c.p.costUsd}
   DRAFT.positions=DRAFT.positions.filter((p,i)=>!drop.has(i)); pfDirty(); renderMine(true);
 }
 function dupFix(acct,sym){
@@ -20066,7 +20067,7 @@ async function saveHistOnly(st){
 async function savePf(){
   if(!DRAFT)return; const st=$('pfSaved');
   const pos=DRAFT.positions.filter(p=>p.sym&&+p.qty>0).map(p=>{const o={...p,sym:String(p.sym).toUpperCase().replace(/[^A-Z0-9.]/g,'').slice(0,16),name:String(p.name||p.sym).slice(0,60),qty:+p.qty,
-      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
+      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; o.costUsd=o.ccy==='ILS'?null:numOr(p.costUsd,null); const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
   if(!pos.length){const had=P&&(P.positions||[]).length;
     // no holdings yet, but deposits, conversions or monthly results to keep: they are saved to the history on their own
     if(!had&&(LOCAL||db)&&((DRAFT.tx||[]).length||Object.values(DRAFT.monthly||{}).some(r=>r&&r.length))){await saveHistOnly(st);return}

@@ -274,6 +274,28 @@ test('where the result came from: the same bottom line as the headline, six part
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(400);
+  const f=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], of=(tr,k)=>tr.querySelector(`[data-pf="${k}"]`);
+    const us=rows.find(tr=>of(tr,'sym').value==='NVDA'), il=rows.find(tr=>of(tr,'ccy').value==='ILS'), r=us.getBoundingClientRect(), c=of(us,'costUsd').getBoundingClientRect();
+    return {sym:of(us,'sym').value,usOff:of(us,'costUsd').disabled,ilOff:of(il,'costUsd').disabled,ilPh:of(il,'costUsd').placeholder,inside:c.left>=r.left-1&&c.right<=r.right+1,
+      head:[...document.querySelectorAll('table.pf thead th')].map(th=>th.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.equal(f.usOff,false); assert.equal(f.ilOff,true,'a shekel holding has no dollar cost'); assert.equal(f.ilPh,'—'); assert.ok(f.inside&&!f.ox,'the new field fits the card');
+  assert.ok(f.head.includes('עלות כוללת ₪')&&f.head.includes('עלות כוללת $'));
+  // typed and saved: the position carries it, and the breakdown's note no longer counts that holding as estimated
+  const before=await pg.evaluate(()=>document.getElementById('decNote').textContent);
+  await pg.evaluate(sym=>{const tr=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('[data-pf="sym"]').value===sym), el=tr.querySelector('[data-pf="costUsd"]');
+    el.value='900'; el.dispatchEvent(new Event('input',{bubbles:true}))},f.sym);
+  await pg.click('#btnPfSave'); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent),null,{timeout:10000}); await pg.waitForTimeout(500);
+  const saved=store.getDoc('portfolio/main').data.positions.find(p=>p.sym===f.sym); assert.equal(saved.costUsd,900);
+  assert.equal(store.getDoc('portfolio/main').data.positions.find(p=>p.ccy==='ILS').costUsd,null,'a shekel holding is saved without one');
+  await tab(pg,'history'); await pg.waitForFunction(()=>/₪/.test(document.querySelector('#decRows .tot .n')?.textContent||''),null,{timeout:10000});
+  const after=await pg.evaluate(()=>document.getElementById('decNote').textContent);
+  assert.match(before,new RegExp('\\b'+f.sym+'\\b'),'estimated before'); assert.doesNotMatch(after,new RegExp('\\b'+f.sym+'\\b'),'not estimated once the statement\'s dollar cost is there');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the chat answers by itself when asked to decide or to know the future, and says when Claude fails',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#chatFab'); await pg.waitForTimeout(300);
