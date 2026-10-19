@@ -1259,7 +1259,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .pick[aria-pressed="true"]{border-color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy);background:var(--sunk)}
 .pick[aria-pressed="true"]::after{content:"✓";position:absolute;top:6px;inset-inline-start:8px;font-size:12px;font-weight:700;color:var(--navy)}
 .pick input{width:72px;min-height:32px;font-size:14px;padding:3px 6px;text-align:center}
-.pick.held{border-style:dashed} .pick.held .nm{color:var(--ok,#2f9e5b)}
+.pick[hidden]{display:none} .pick.held{border-style:dashed} .pick.held .nm{color:var(--ok,#2f9e5b)}
 .flag.pick{background:var(--info-bg,#EEF3F8);color:var(--info-ink,#27496D)}
 .idxrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .idx{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:0;border-radius:999px;background:var(--surface);font-size:13px;box-shadow:var(--shadow)}
@@ -2078,8 +2078,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         </details>
       </div>
       <details class="panel pickp" id="pickBox">
-        <summary><h3 style="display:inline">או סימון מהיר: אילו מהמניות הגדולות יש לך?</h3><span class="sub" id="pickSub"></span></summary>
-        <p class="note" style="margin:10px 0 0">לחץ על לוגו וכתוב כמה יחידות יש לך. זו נקודת פתיחה, לא כפילות: כשתעלה דוח או צילום של אותו חשבון, הכמות מהדוח תחליף את מה שסימנת כאן (לא תתווסף אליה), והדף יראה לך את ההבדל.</p>
+        <summary><h3 style="display:inline">בוא נבנה את התיק שלך</h3><span class="sub" id="pickSub">שלב 1 מתוך 3</span></summary>
+        <h4 class="pickh" style="margin-top:10px">באילו מניות אתה מחזיק?</h4>
+        <p class="note" style="margin:4px 0 0">בחר מניות והזן את הכמות. אפשר גם לדלג ולהעלות קובץ בהמשך.</p>
+        <p class="note" style="margin:4px 0 0">כשתעלה דוח או צילום של אותו חשבון, הכמות מהדוח תחליף את מה שבחרת כאן (לא תתווסף אליה), והדף יראה לך את ההבדל.</p>
+        <div class="srch" style="margin-top:10px"><input id="pickQ" type="search" placeholder="חיפוש לפי שם או סימול, למשל NVDA" autocomplete="off" aria-label="חיפוש מניה לפי שם או סימול"></div>
+        <p class="note" id="pickNone" hidden style="margin:6px 0 0"></p>
         <div class="form" style="margin-top:10px;grid-template-columns:minmax(0,220px)"><label for="pickAcct">החשבון שבו הניירות<select id="pickAcct"></select></label></div>
         <div class="pickgrid" id="pickGrid" role="group" aria-label="מניות גדולות לסימון"></div>
         <h4 class="pickh">קרנות סל נפוצות</h4>
@@ -2087,7 +2091,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <h4 class="pickh">אילו מדדים להציג בדף הבית?</h4>
         <div class="chips" id="pickIdx" role="group" aria-label="מדדים להצגה"></div>
         <p class="note" style="margin:6px 0 0">המדדים מוצגים בדף הבית עם השינוי היומי, ובמדדי ארה״ב גם החוזים העתידיים (מה שהשוק מצפה לפתיחה). זה מידע, לא המלצה.</p>
-        <div class="acts" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" id="btnPickAdd" type="button">הוסף לטבלה</button><button class="btn" id="btnPickSkip" type="button">דלג</button><span class="saved" id="pickState" role="status" style="font-size:13px"></span></div>
+        <div class="acts" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" id="btnPickAdd" type="button">המשך עם הבחירה שלי</button><button class="btn" id="btnPickSkip" type="button">דלג, אעלה קובץ בהמשך</button><span class="saved" id="pickState" role="status" style="font-size:13px"></span></div>
+        <p class="sub" id="pickCnt" style="margin:8px 0 0">המניות שבחרת: 0</p>
       </details>
       <div class="panel" style="display:flex;flex-direction:column;gap:10px">
         <h3>או הקלדה מהירה, בלי קבצים</h3>
@@ -19460,7 +19465,7 @@ function pickInit(){
   $('pickIdx').innerHTML=Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${benchSel().includes(k)}">${BENCHK[k]}</button>`).join('');
   const box=$('pickBox'); box.open=!(P&&(P.positions||[]).length); pickSub();
 }
-function pickSub(){const n=document.querySelectorAll('.pick[aria-pressed="true"]').length; const el=$('pickSub'); if(el)el.textContent=n?`${n} סומנו`:'בלי קבצים, בשתי לחיצות'}
+function pickSub(){const n=document.querySelectorAll('.pick[aria-pressed="true"]').length, c=$('pickCnt'); if(c)c.textContent=`המניות שבחרת: ${n}`}
 document.addEventListener('click',e=>{
   const t=e.target.closest&&e.target.closest('.pick'); if(t&&!e.target.closest('input')){const on=t.getAttribute('aria-pressed')!=='true'; t.setAttribute('aria-pressed',String(on));
     let inp=t.querySelector('input'); if(on&&!inp){inp=document.createElement('input'); inp.type='number'; inp.min='0'; inp.step='0.0001'; inp.placeholder='כמות'; inp.setAttribute('aria-label','כמות של '+t.dataset.pick); inp.inputMode='decimal'; t.appendChild(inp); inp.focus()} else if(!on&&inp)inp.remove();
@@ -19468,9 +19473,13 @@ document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('#pickIdx .chip'); if(b){if(!canWrite)return; const k=b.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; b.setAttribute('aria-pressed',String(nx.includes(k))); changed(); return}
   const ib=e.target.closest&&e.target.closest('#idxRow [data-bench]'); if(ib){if(!canWrite)return; const k=ib.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; changed(); return}
   if(e.target.closest&&e.target.closest('#idxEdit')){IDX_EDIT=!IDX_EDIT; try{renderIdx()}catch(x){} return}
-  if(e.target.closest&&e.target.closest('#btnPickSkip')){const box=$('pickBox'); box.open=false; for(const t of box.querySelectorAll('.pick[aria-pressed="true"]')){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()} pickSub(); try{$('listText').focus()}catch(x){} return}
+  if(e.target.closest&&e.target.closest('#btnPickSkip')){const box=$('pickBox'); box.open=false; for(const t of box.querySelectorAll('.pick[aria-pressed="true"]')){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()} pickSub(); try{$('upPanel').scrollIntoView({block:'start',behavior:'smooth'})}catch(x){} return}
   if(e.target.closest&&e.target.closest('#btnPickAdd'))pickAdd();
 });
+document.addEventListener('input',e=>{if(!e.target||e.target.id!=='pickQ')return; const q=e.target.value.trim().toLowerCase(), N=Object.fromEntries([...PICKS,...PICKF]); let n=0;
+  for(const t of document.querySelectorAll('#pickBox .pick')){const sym=t.dataset.pick, hit=!q||sym.toLowerCase().includes(q)||String(N[sym]||'').toLowerCase().includes(q)||lab(sym).toLowerCase().includes(q); t.hidden=!hit&&t.getAttribute('aria-pressed')!=='true'; if(hit)n++}
+  const no=$('pickNone'); no.hidden=!q||n>0; if(!no.hidden)no.innerHTML=`"${esc(e.target.value.trim())}" לא ברשימה. <button class="btn sm" type="button" id="pickWs">חפש בכל הבורסות</button>`});
+document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('#pickWs'))return; const q=$('pickQ').value.trim(); $('wsQ').value=q; try{$('wsQ').scrollIntoView({block:'center',behavior:'smooth'})}catch(x){} wsSearch()});
 function pickAdd(){
   const st=$('pickState'), ac=acctPick($('pickAcct').value), rows=[], noQty=[];
   for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){const sym=t.dataset.pick, q=+((t.querySelector('input')||{}).value)||0; if(!(q>0)){noQty.push(lab(sym));continue}
@@ -19483,7 +19492,8 @@ function pickAdd(){
   (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();
   for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){if(!noQty.includes(lab(t.dataset.pick))){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()}}
   pickSub(); pfDirty(); renderMine(true);
-  st.textContent=`${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(was.length?` הוחלפה הכמות של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
+  {const ps=$('pickSub'); if(ps)ps.textContent='שלב 2 מתוך 3'}
+  st.textContent=`שלב 2 מתוך 3: בדוק את הטבלה ולחץ על "שמור את התיק". ${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(was.length?` הוחלפה הכמות של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
   try{$('pfRows').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}
 }
 // the indices the person follows, on the home page: today's change, and for a US index also its future

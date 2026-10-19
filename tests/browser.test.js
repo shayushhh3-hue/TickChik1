@@ -163,6 +163,25 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   assert.deepEqual(f,{email:true,phone:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
+  const txt=()=>pg.evaluate(()=>({h:document.querySelector('#pickBox summary h3').textContent,step:document.getElementById('pickSub').textContent,cnt:document.getElementById('pickCnt').textContent,
+    open:document.getElementById('pickBox').open,go:document.getElementById('btnPickAdd').textContent,skip:document.getElementById('btnPickSkip').textContent,ph:document.getElementById('pickQ').placeholder,
+    shown:[...document.querySelectorAll('#pickBox .pick')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.dataset.pick),none:document.getElementById('pickNone').hidden}));
+  let s=await txt();
+  assert.deepEqual([s.h,s.step,s.cnt,s.go,s.skip],['בוא נבנה את התיק שלך','שלב 1 מתוך 3','המניות שבחרת: 0','המשך עם הבחירה שלי','דלג, אעלה קובץ בהמשך']); assert.ok(s.open,'open for someone with no portfolio');
+  assert.match(s.ph,/למשל NVDA/);
+  await pg.fill('#pickQ','nvid'); s=await txt(); assert.deepEqual(s.shown,['NVDA'],'by name, any case');
+  await pg.click('#pickBox .pick[data-pick="NVDA"]'); await pg.fill('#pickBox .pick[data-pick="NVDA"] input','2');
+  await pg.fill('#pickQ','zzzq'); s=await txt(); assert.deepEqual(s.shown,['NVDA'],'a chosen one stays in sight'); assert.equal(s.none,false,'nothing else found: the search of every exchange is offered');
+  assert.equal(s.cnt,'המניות שבחרת: 1');
+  await pg.fill('#pickQ',''); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300); s=await txt();
+  assert.equal(s.step,'שלב 2 מתוך 3'); assert.match(await pg.evaluate(()=>document.getElementById('pickState').textContent),/^שלב 2 מתוך 3: בדוק את הטבלה/);
+  assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#pfRows [data-pf="sym"]')].some(i=>i.value==='NVDA')),'in the table, waiting to be saved');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('unknown stays unknown: a missing P/E, holdings without data, dates from another year',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(1280); await tab(pg,'ratings'); await pg.waitForTimeout(800);
