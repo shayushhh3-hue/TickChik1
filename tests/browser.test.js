@@ -174,6 +174,23 @@ test('the plan chart: the real deposits up to today, the same total as the headl
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the look-back: a withdrawal is never "deposited"; more out than in is named as a likely misread',T,async t=>{
+  if(skip())return t.skip('no browser');
+  let {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(400);
+  const card=()=>pg.evaluate(()=>{const sec=[...document.querySelectorAll('#backWrap section')][0], c=[...sec.querySelectorAll('.cell')];
+    const get=k=>c.find(x=>x.querySelector('.k').textContent===k); return {dep:get('הופקד לחשבון').textContent.replace(/\u200E/g,''),res:get('תוצאה מול ההפקדות').textContent,txt:sec.textContent.replace(/\u200E/g,'')}});
+  // ₪18,000 and ₪1,200 in the fixture; a withdrawal of ₪500 read from a screen, then one of ₪40,000
+  const H0=store.getDoc('history/main').data, put=(...w)=>{const H=JSON.parse(JSON.stringify(H0)); H.accounts[0].deposits.push(...w.map(a=>({date:H.accounts[0].deposits[2].date,amount:-a,inDep:true}))); store.setDoc('history/main',H,{silent:true})};
+  try{
+    put(500); await ctx.close(); ({ctx,pg}=await open(390)); await tab(pg,'history'); await pg.waitForTimeout(400);
+    let c=await card(); assert.match(c.dep,/^הופקד לחשבון₪19,200/,'deposits only: '+c.dep); assert.match(c.dep,/נמשכו ₪500 \(משיכה אחת\), נטו ₪18,700/); assert.match(c.txt,/משיכה מהחשבון/); assert.match(c.res,/על מה שהופקד נטו/);
+    // more taken out than put in: no negative "deposited", no percent, and a note that it is probably misread
+    put(500,40000); await ctx.close(); ({ctx,pg}=await open(390)); await tab(pg,'history'); await pg.waitForTimeout(400);
+    c=await card(); assert.match(c.dep,/^הופקד לחשבון₪19,200/); assert.match(c.dep,/נטו −₪21,300/); assert.match(c.res,/אין אחוז/); assert.match(c.txt,/כנראה הפקדות נקראו כמשיכות/);
+  }finally{store.setDoc('history/main',H0,{silent:true})}
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);

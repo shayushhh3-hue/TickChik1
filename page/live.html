@@ -16812,27 +16812,31 @@ function renderHistory(){
   const open=new Set([...document.querySelectorAll('#backWrap details[open]')].map(d=>d.dataset.k));
   $('backWrap').innerHTML=accts.map(A=>{
     const usd=A.ccy==='USD', f=(x,d=0)=>usd?'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d||2,maximumFractionDigits:d||2}):ils(x,d), sg=x=>LRM+(x>=0?'+':'−')+f(Math.abs(x));
-    const dep=A.deposits.reduce((t,d)=>t+d.amount,0), mx=model(P,Q,A.acct), now=usd?mx.total/fx:mx.total, res=now-dep, name=ACCTS[A.acct]||A.acct;
-    const ev=[...A.deposits.map(d=>({date:d.date,t:'הפקדה לחשבון',amt:d.amount,k:'d'})),...(A.snapshots||[]).map(x=>({date:x.date,t:'שווי החשבון בדוח',amt:x.value,k:'s'})),{date:ilDay(),t:'שווי החשבון היום',amt:now,k:'s'}].sort((a,b)=>a.date<b.date?-1:1);
+    // money in and money out apart: a withdrawal is never "deposited", and each row in the account's own currency
+    const inAc=d=>{const c=d.ccy||A.ccy, a=+d.amount||0; return c===A.ccy?a:(c==='USD'?a*fx:a/fx)};
+    const ins=A.deposits.filter(d=>inAc(d)>0), outs=A.deposits.filter(d=>inAc(d)<0), depIn=ins.reduce((t,d)=>t+inAc(d),0), wdr=-outs.reduce((t,d)=>t+inAc(d),0);
+    const dep=depIn-wdr, mx=model(P,Q,A.acct), now=usd?mx.total/fx:mx.total, res=now-dep, name=ACCTS[A.acct]||A.acct;
+    const ev=[...A.deposits.map(d=>({date:d.date,t:inAc(d)<0?'משיכה מהחשבון':'הפקדה לחשבון',amt:inAc(d),k:'d'})),...(A.snapshots||[]).map(x=>({date:x.date,t:'שווי החשבון בדוח',amt:x.value,k:'s'})),{date:ilDay(),t:'שווי החשבון היום',amt:now,k:'s'}].sort((a,b)=>a.date<b.date?-1:1);
     let cum=0;
     const rows=ev.map(e=>{if(e.k==='d')cum+=e.amt;const d=e.k==='s'&&cum?(e.amt-cum):null;
-      return `<tr><td><span class="n">${dmy(e.date)}.${e.date.slice(2,4)}</span></td><td>${esc(e.t)}</td><td class="num"><span class="n">${e.k==='d'?'+':''}${f(e.amt)}</span></td><td class="num">${d==null?'<span class="nm">סך הכול '+f(cum)+'</span>':`<span class="n ${d>=0?'up':'down'}">${sg(d)} (${spct(d/cum*100)})</span>`}</td></tr>`}).join('');
+      return `<tr><td><span class="n">${dmy(e.date)}.${e.date.slice(2,4)}</span></td><td>${esc(e.t)}</td><td class="num"><span class="n">${e.k==='d'?(e.amt<0?LRM+'−'+f(-e.amt):'+'+f(e.amt)):f(e.amt)}</span></td><td class="num">${d==null?'<span class="nm">נטו עד כאן '+(cum<0?LRM+'−':'')+f(Math.abs(cum))+'</span>':`<span class="n ${d>=0?'up':'down'}">${sg(d)}${cum>0?` (${spct(d/cum*100)})`:''}</span>`}</td></tr>`}).join('');
     const avg=A.fxUsd?A.fxIls/A.fxUsd:null, notes=[];
+    if(wdr>depIn&&wdr>0)notes.push(`נרשמו משיכות של ${f(wdr)}, יותר ממה שהופקד (${f(depIn)}), בזמן שבחשבון יש היום ${f(now)}. כנראה הפקדות נקראו כמשיכות, או שחסרות הפקדות. בדוק את התנועות ב"התיק שלי" או העלה שוב את צילום ההפקדות.`);
     if(avg)notes.push(`הדולרים נקנו בשער ממוצע של ${avg.toFixed(3)} ₪, והשער היום ${fx.toFixed(3)}. ירידת הדולר לבדה גרעה כ-${pct((1-fx/avg)*100)} מהשווי בשקלים.`);
     if(A.divGrossUsd!=null)notes.push(`דיבידנדים בתקופה: $${A.divGrossUsd.toFixed(2)}, מתוכם נוכה מס של $${A.divTaxUsd.toFixed(2)}, נטו $${(A.divGrossUsd-A.divTaxUsd).toFixed(2)}.`);
     if(A.realizedUsd!=null)notes.push(`מכירות שבוצעו: ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש של $${Math.abs(A.realizedUsd).toFixed(2)} לפני עמלות (${A.realizedNote||''}).`);
     if(mx.pos.some(p=>p.noCost===false)&&P.positions.some(p=>p.acct===A.acct&&p.costEst))notes.push('העלות בשקלים של הניירות בחשבון הזה מוערכת לפי שער דולר משוער ביום הקנייה.');
     notes.push(`ההפקדות ידועות עד ${dmy(A.through)}. אם הופקד כסף נוסף אחרי התאריך הזה, התוצאה מול ההפקדות נמוכה יותר ממה שמוצג.`);
-    const fz=feesOf(A,fx), depIls=usd?dep*fx:dep, fee=fz.ils>0?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">${ils(fz.ils)}</span><div class="d">${fz.trades.length} עסקאות${fz.per&&fz.own<fz.trades.length?`, $${fz.per} לעסקה בנייר אמריקאי כשהדוח לא מציין עמלה`:''}${A.feesNote?' '+esc(A.feesNote):''} · ${pct(depIls>0?fz.ils/depIls*100:0)} מההפקדות</div></div>`
+    const fz=feesOf(A,fx), depIls=usd?depIn*fx:depIn, fee=fz.ils>0?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">${ils(fz.ils)}</span><div class="d">${fz.trades.length} עסקאות${fz.per&&fz.own<fz.trades.length?`, $${fz.per} לעסקה בנייר אמריקאי כשהדוח לא מציין עמלה`:''}${A.feesNote?' '+esc(A.feesNote):''} · ${pct(depIls>0?fz.ils/depIls*100:0)} מההפקדות</div></div>`
       :`<div class="cell"><div class="k">${A.realizedUsd!=null?'תוצאת המכירות':'עסקאות'}</div><span class="v ${A.realizedUsd!=null?(A.realizedUsd>=0?'up':'down'):''}">${A.realizedUsd!=null?LRM+(A.realizedUsd>=0?'+':'−')+'$'+Math.abs(A.realizedUsd).toFixed(2):A.tradesCount}</span><div class="d">${A.tradesCount} תנועות בתקופה</div></div>`;
-    HSUM.push(`${name}: הופקדו ${f(dep)}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)} (${spct(dep?res/dep*100:0)}).`+(fz.ils>0?` עמלות ${ils(fz.ils)}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
+    HSUM.push(`${name}: הופקדו ${f(depIn)}${wdr?`, נמשכו ${f(wdr)}`:''}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)}${dep>0?` (${spct(res/dep*100)})`:''}.`+(fz.ils>0?` עמלות ${ils(fz.ils)}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
     const k='tr_'+A.acct;
     return `<section aria-label="מבט לאחור: ${esc(name)}">
       <div class="row"><h2>מבט לאחור: ${esc(name)}</h2><span class="sub">${esc(A.source||'')}</span></div>
       <div class="strip">
-        <div class="cell"><div class="k">הופקד לחשבון</div><span class="v">${f(dep)}</span><div class="d">${A.deposits.length} הפקדות, ${dmy(A.from)} עד ${dmy(A.through)}</div></div>
+        <div class="cell"><div class="k">הופקד לחשבון</div><span class="v">${f(depIn)}</span><div class="d">${ins.length===1?'הפקדה אחת':ins.length+' הפקדות'}${outs.length?` · נמשכו ${f(wdr)} (${outs.length===1?'משיכה אחת':outs.length+' משיכות'}), נטו ${dep<0?LRM+'−':''}${f(Math.abs(dep))}`:''} · ${dmy(A.from)} עד ${dmy(A.through)}</div></div>
         <div class="cell"><div class="k">שווי החשבון היום</div><span class="v">${f(now)}</span><div class="d">לפי המחירים האחרונים, בלי סימוני התוכנית</div></div>
-        <div class="cell"><div class="k">תוצאה מול ההפקדות</div><span class="v ${res>=0?'up':'down'}">${sg(res)}</span><div class="d">${spct(dep?res/dep*100:0)} על מה שהופקד</div></div>
+        <div class="cell"><div class="k">תוצאה מול ההפקדות</div><span class="v ${res>=0?'up':'down'}">${sg(res)}</span><div class="d">${dep>0?spct(res/dep*100)+(wdr?' על מה שהופקד נטו':' על מה שהופקד'):'אין אחוז: נמשך יותר ממה שהופקד'}</div></div>
         ${fee}
       </div>
       <div class="panel scroll"><table>
