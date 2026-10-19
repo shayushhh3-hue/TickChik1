@@ -1572,7 +1572,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <p class="note" id="planNote" style="margin-top:10px"></p>
       </div>
       <div class="panel">
-        <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: סומן · מקווקו: לפי הלוח</span></div></div>
+        <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: בפועל · מקווקו: לפי הלוח</span></div></div>
         <div class="chart" id="chart"><svg id="svg" viewBox="0 0 640 260" role="img" aria-label="סך ההפקדות מול הסכום שהושקע במניות, חודש אחר חודש"></svg><div class="tip" id="tip" hidden></div></div>
         <p class="note" id="projNote"></p>
       </div>
@@ -15526,13 +15526,7 @@ function monthSeries(){
   if(live)rows.push({ym:cur,val:mAllNow().total,by:Object.fromEntries(ids.map(a=>[a,model(P,Q,a).total])),src:'now',now:true,fx:usdRate()||null});
   // a month's money in from the records: per account, its table's month (up to its day for a month "so far"), and the
   // deposits and withdrawals saved one by one that the table does not stand for; and the plan's deposits of the month
-  const plan=planExtraList();
-  const recFlow=ym=>{let t=0;
-    for(const A of hs.accounts||[]){const r0=U[A.acct]&&U[A.acct][ym], r=r0&&r0.flow!=null?r0:null;
-      if(r)t+=r.flow*(r.ccy==='USD'?(fxOfMonth(ym)||usdRate()):1);
-      for(const d of A.deposits||[])if(d&&String(d.date).slice(0,7)===ym&&!upCovers(r,d))t+=(+d.amount||0)*(((d.ccy||A.ccy)==='USD')?usdRate():1)}
-    for(const x of plan)if(String(x.day).slice(0,7)===ym)t+=x.amt;
-    return Math.round(t*100)/100};
+  const plan=planExtraList(), recFlow=ym=>monthFlow(ym,plan);
   const kept=x=>!!x&&(x.src==='saved'||x.src==='est');   // a month-end the history holds, with its own deposits so far
   let prev=null;
   for(const r of rows){
@@ -15653,6 +15647,40 @@ function dollarCost(P,Q,hs,buys,acct='all'){
   if(acct==='all')for(const x of buys||[]){const p=(P.positions||[]).find(y=>y.sym===x.sym), px=(Q.prices||{})[x.sym]; if(!p||px==null)continue; const cc=ccyOfPos(p,Q), rt=rateOf(cc,Q); if(rt==null)continue;
     const q=+x.qty>0?+x.qty:1, paid=+x.paidIls||0; if(cc==='USD')add(x.sym,+x.px>0?q*+x.px:paid/(+x.fx||fx),q*px,!(+x.px>0)); else add(x.sym,paid/fx,q*px*rt/fx,true)}
   return out;
+}
+// a month's money in from the records: per account, its table's month (up to its day for a month "so far"), and the
+// deposits and withdrawals saved one by one that the table does not stand for; and the plan's deposits of the month
+function monthFlow(ym,plan=planExtraList()){
+  const U=upMonths(); let t=0;
+  for(const A of (HS&&HS.accounts)||[]){const r0=U[A.acct]&&U[A.acct][ym], r=r0&&r0.flow!=null?r0:null;
+    if(r)t+=r.flow*(r.ccy==='USD'?(fxOfMonth(ym)||usdRate()):1);
+    for(const d of A.deposits||[])if(d&&String(d.date).slice(0,7)===ym&&!upCovers(r,d))t+=(+d.amount||0)*(((d.ccy||A.ccy)==='USD')?usdRate():1)}
+  for(const x of plan)if(String(x.day).slice(0,7)===ym)t+=x.amt;
+  return Math.round(t*100)/100;
+}
+// The plan chart's real part, month by month up to this one, from the same records as the rest of the page: the money
+// in so far (the month series where it has it: the statements' month-ends, the apps' tables, the deposits read from
+// screenshots; else today's total less what came in after that month), and what sits in securities at cost (today: the
+// holdings' cost, a holding with no cost at its value; before: less what the history's trades bought after that month,
+// plus what they sold). From the first month the records know of (or `from`, when that is earlier), to today.
+function planActual(mAll,from){
+  const cur=ilDay().slice(0,7), depNow=depTotal(), plan=planExtraList(), fx=usdRate()||1;
+  let inv=0; try{for(const r of costBasis(P,Q).rows)inv+=r.noCost?r.val:r.costIls}catch(e){inv=mAll.total-mAll.cash}
+  const known={}; try{for(const r of monthSeries())if(r.dep!=null&&!r.now)known[r.ym]=r.dep}catch(e){}
+  const net={}, months=new Set(Object.keys(known));
+  for(const A of (HS&&HS.accounts)||[]){
+    for(const t of A.trades||[]){if(t.div||!t.date)continue; const ym=String(t.date).slice(0,7), il=(t.ccy||(A.ccy==='USD'?'USD':''))==='ILS';
+      net[ym]=(net[ym]||0)+(+t.qty||0)*(+t.px||0)*(il?1:(fxOfMonth(ym)||fx)); months.add(ym)}
+    for(const d of A.deposits||[])if(d&&d.date)months.add(String(d.date).slice(0,7))}
+  for(const a of Object.values(upMonths()))for(const k in a)months.add(k);
+  let first=[...months].filter(m=>m<=cur).sort()[0]||cur; if(from&&from<first)first=from;
+  const out=[]; let dLater=0, iLater=0;
+  for(let ym=cur;ym>=first;ym=ymAdd(ym,-1)){
+    const ad=ym===cur?depNow:known[ym]!=null?known[ym]:Math.max(0,depNow-dLater), ai=Math.max(0,inv-iLater);
+    out.push({ym,ad:Math.round(ad*100)/100,ai:Math.round(ai*100)/100});
+    dLater+=monthFlow(ym,plan); iLater+=net[ym]||0;
+  }
+  return out.reverse();
 }
 // ---- calc:end ----
 const TM=()=>TRACK==='idx'?(+S.monthlyIdx||0):(+S.monthly||0), MTOT=()=>(+S.monthly||0)+(+S.monthlyIdx||0);
@@ -16238,7 +16266,15 @@ function renderPlan(mAll){
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label></td>
     <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num"><span class="n${run<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(run<0?'−':'')+ils(Math.abs(run))}</span></td></tr>`;
   }
-  drawChart(CH);
+  // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
+  // then the plan's months from today's real numbers on: its monthly deposit, and the purchases of the ladder not done yet
+  {const A=(()=>{try{return planActual(mAll,st.start<ymNow()?st.start:null)}catch(e){return []}})(), cur=ymNow(), L=A[A.length-1];
+   const pts=A.map(r=>({ym:r.ym,pd:r.ad,pi:r.ai,ad:r.ad,ai:r.ai,act:true,cur:r.ym===cur,buys:[]}));
+   if(L){let pd=L.ad, pi=L.ai, carry=0;
+     for(const c of CH){const later=c.ym>cur, cost=c.buys.filter(x=>paidBy[x]==null).reduce((t,x)=>t+(st.cost[x]||0),0);
+       if(!later){carry+=cost; continue}
+       pd+=B; pi+=cost+carry; carry=0; pts.push({ym:c.ym,pd,pi,ad:pd,ai:pi,act:false,cur:false,buys:c.buys})}}
+   drawChart(L?pts:CH)}
   drawFwd(project(mAll.total,MTOT(),Math.max(1,Math.min(40,+S.years||1)),+S.ratePct||0),todo.length&&st.lad.complete?(lastM-st.cur+1)/12:null,mAll.pnl,mAll.missingCost);
   try{renderGoal(mAll)}catch(e){}
   if(!(editSym&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
@@ -19031,7 +19067,7 @@ function drawChart(pts){
   g+=`<line id="cross" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><rect id="hit" x="${L}" y="${T}" width="${W-L-Rm}" height="${H-T-Bm}" fill="transparent"/>`;
   $('svg').setAttribute('viewBox','0 0 '+W+' '+H); $('svg').innerHTML=g; $('svg').dataset.geo=JSON.stringify({L,Rm,W,n});
   const a=act[act.length-1];
-  $('projNote').textContent=(a?`עד ${ymShort(a.ym)}: הופקדו ${ils(a.ad)}, הושקעו ${ils(a.ai)}, בקופה ${ils(a.ad-a.ai)}. `:'')+`בסוף הלוח, ${ymShort(e.ym)}: ${ils(e.pd)} הפקדות, ${ils(e.pi)} במניות.`;
+  $('projNote').textContent=(a?`עד היום: הופקדו ${ils(a.ad)}, ${ils(a.ai)} במניות לפי העלות, ${ils(Math.max(0,a.ad-a.ai))} לא הושקעו. ההפקדות מהדוחות, מצילומי ההפקדות ומטבלאות התשואה, כמו "מול ההפקדות" בסקירה. `:'')+(e&&!e.act?`בסוף הלוח, ${ymShort(e.ym)}: ${ils(e.pd)} הפקדות, ${ils(e.pi)} במניות.`:'');
 }
 function hover(ev){
   const svg=$('svg'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo||!PTS.length)return;
@@ -19039,7 +19075,7 @@ function hover(ev){
   const i=Math.max(0,Math.min(geo.n,Math.round((sx-geo.L)/(geo.W-geo.L-geo.Rm)*geo.n))), px=geo.L+(geo.W-geo.L-geo.Rm)*(geo.n?i/geo.n:0.5), p=PTS[i];
   const c=svg.querySelector('#cross'); c.setAttribute('x1',px);c.setAttribute('x2',px);c.setAttribute('visibility','visible');
   const tip=$('tip'); tip.hidden=false;
-  tip.innerHTML=`<b>${ymShort(p.ym)}</b>${p.buys.length?' · <bdi>'+esc(p.buys.join(', '))+'</bdi>':''}<br>לפי הלוח: הפקדות <span class="n">${ils(p.pd)}</span>, במניות <span class="n">${ils(p.pi)}</span>`+(p.act?`<br>סומן: הפקדות <span class="n">${ils(p.ad)}</span>, במניות <span class="n">${ils(p.ai)}</span>, יתרה <span class="n">${ils(p.ad-p.ai)}</span>`:'');
+  tip.innerHTML=`<b>${ymShort(p.ym)}</b>${p.buys.length?' · <bdi>'+esc(p.buys.join(', '))+'</bdi>':''}<br>`+(p.act?`בפועל: הפקדות <span class="n">${ils(p.ad)}</span>, במניות <span class="n">${ils(p.ai)}</span>, לא הושקע <span class="n">${ils(Math.max(0,p.ad-p.ai))}</span>`:`לפי הלוח: הפקדות <span class="n">${ils(p.pd)}</span>, במניות <span class="n">${ils(p.pi)}</span>`);
   const left=px/geo.W*r.width; tip.style.left=Math.max(0,Math.min(r.width-230,left+(left>r.width/2?-240:12)))+'px';
 }
 let FP=[];

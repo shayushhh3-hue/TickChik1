@@ -163,6 +163,17 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   assert.deepEqual(f,{email:true,phone:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);
+  await tab(pg,'plan'); await pg.waitForFunction(()=>/עד היום/.test(document.getElementById('projNote').textContent),null,{timeout:10000});
+  const c=await pg.evaluate(()=>({note:document.getElementById('projNote').textContent,legend:document.querySelector('#chart').closest('.panel').querySelector('.legend').textContent}));
+  t.diagnostic(c.note);
+  assert.ok(dep&&c.note.includes('הופקדו '+dep),'the chart\'s money in today is the headline\'s: '+dep+' / '+c.note);
+  assert.match(c.note,/במניות לפי העלות/); assert.match(c.legend,/מלא: בפועל/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);

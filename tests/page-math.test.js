@@ -14,7 +14,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
   'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
-  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost'],G,['allBuy']);
+  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -221,6 +221,27 @@ test('the dollar view: each holding\'s dollar cost and the dollar value of the s
   const D2=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}]); near(D2.MSFT.cost,250); near(D2.MSFT.val,300);
   const D3=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}],'blink'); assert.deepEqual(Object.keys(D3),['KO'],'the plan\'s purchase belongs to the whole portfolio only');
   G.P=null; G.Q=null; G.HS=null;
+});
+
+test('the plan chart\'s real part: the money in and the holdings at cost, month by month, ending on today\'s totals', ()=>{
+  const cur=F.ymNow(), m=k=>F.ymAdd(cur,-k); plan(); G.DY=null;
+  // ₪10,000 three months ago, ₪2,000 last month (read from a screenshot); MSFT bought three months ago ($100 × 20 at 3.5),
+  // KO last month ($50 × 10); ₪500 cash today
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:20,costIls:7000},{sym:'KO',acct:'exc',ccy:'USD',qty:10,costIls:1750}],cash:[{acct:'exc',ccy:'ILS',amount:500}]};
+  G.Q={usdIls:3.5,prices:{MSFT:120,KO:50},prev:{}};
+  G.HS={depIlsNow:12000,monthly:[],accounts:[{acct:'exc',ccy:'ILS',deposits:[{date:m(3)+'-02',amount:10000},{date:m(1)+'-05',amount:2000}],
+    trades:[{date:m(3)+'-03',sym:'MSFT',qty:20,px:100,ccy:'USD'},{date:m(1)+'-06',sym:'KO',qty:10,px:50,ccy:'USD'}]}]};
+  near(F.monthFlow(m(1)),2000); near(F.monthFlow(m(2)),0);
+  const A=F.planActual(F.mAllNow());
+  assert.deepEqual(A.map(r=>r.ym),[m(3),m(2),m(1),cur],'from the first month the records know of, to today');
+  assert.deepEqual(A.map(r=>r.ad),[10000,10000,12000,12000],'the money in, as the deposits read');
+  assert.deepEqual(A.map(r=>r.ai),[7000,7000,8750,8750],'in securities at cost: today\'s holdings, less what was bought after each month');
+  near(A[3].ad,F.depTotal(),1e-9,'today is the headline\'s total');
+  // a plan that starts earlier shows the months before as well, with nothing in
+  const B=F.planActual(F.mAllNow(),m(5)); assert.equal(B[0].ym,m(5)); assert.equal(B[0].ad,0); assert.equal(B[0].ai,0);
+  // no history: one point, today, from the portfolio
+  G.HS=null; const C=F.planActual(F.mAllNow()); assert.deepEqual(C.map(r=>[r.ym,r.ad,r.ai]),[[cur,0,8750]]);
+  G.P=null; G.Q=null;
 });
 
 test('a period\'s result: the change in value less the change in deposits; the return counts money in from mid-month', ()=>{
