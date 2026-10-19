@@ -259,6 +259,21 @@ test('why it moved: computed by the page in six parts, the parts add up, nothing
   assert.equal(seen.length,n0,'Claude is not asked'); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('where the result came from: the same bottom line as the headline, six parts that add up to it, the unknowns named',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'history');
+  await pg.waitForFunction(()=>/₪/.test(document.querySelector('#decRows .tot .n')?.textContent||''),null,{timeout:10000});
+  const c=await pg.evaluate(()=>{const num=s=>{const m=String(s).replace(/‎/g,'').match(/^([+−-])₪([\d,]+)/); return m?(m[1]==='+'?1:-1)*+m[2].replace(/,/g,''):null};
+    return {head:num(document.getElementById('kDep').textContent),tot:num(document.querySelector('#decRows .tot .n').textContent),
+      parts:[...document.querySelectorAll('#decRows .drow:not(.tot) .n')].map(e=>num(e.textContent)),note:document.getElementById('decNote').textContent}});
+  t.diagnostic('breakdown: '+JSON.stringify({head:c.head,tot:c.tot,parts:c.parts}));
+  assert.equal(c.parts.length,6); assert.ok(c.parts.every(x=>x!=null),JSON.stringify(c.parts));
+  assert.equal(c.tot,c.head,'the box ends where the headline "מול ההפקדות" is: '+JSON.stringify(c));
+  assert.ok(Math.abs(c.parts.reduce((a,b)=>a+b,0)-c.tot)<=3,'the six parts add up to the bottom line (rounding apart): '+JSON.stringify(c));
+  assert.match(c.note,/אותו בסיס כמו "מול ההפקדות"/); assert.match(c.note,/מוערכת לפי שער הקנייה הממוצע/,'the fixture has shekel costs and a buy rate, no dollar costs: estimated, and it says so');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the chat answers by itself when asked to decide or to know the future, and says when Claude fails',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#chatFab'); await pg.waitForTimeout(300);
