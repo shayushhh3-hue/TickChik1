@@ -13,7 +13,8 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY'],G,['allBuy']);
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
+  'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
 
@@ -134,6 +135,113 @@ test('realized profit: first in, first out', ()=>{
   near(F.realizedOf([{date:'2026-01-01',sym:'A',qty:10,px:10},{date:'2026-02-01',sym:'A',qty:10,px:20},{date:'2026-03-01',sym:'A',qty:-15,px:30}]),10*20+5*10);
   near(F.realizedOf([{date:'2026-03-01',sym:'B',qty:-5,px:30}]),0,'a sale with no known buy adds nothing');
   assert.equal(F.realizedOf([]),0);
+});
+
+test('the average buy rate of the dollars: statement totals and saved conversions, a rate under 1 is dollars per shekel', ()=>{
+  near(F.fxAvg({accounts:[{acct:'exc',fxIls:9000,fxUsd:2400}]}),3.75,1e-9);
+  near(F.fxAvg({accounts:[{acct:'blink',fx:[{date:'2026-07-01',amount:350,ccy:'ILS',toCcy:'USD',toAmount:100},{date:'2026-07-02',amount:700,ccy:'ILS',toCcy:'USD',rate:3.5},
+    {date:'2026-07-03',amount:400,ccy:'ILS',toCcy:'USD',rate:0.25},{date:'2026-07-04',amount:100,ccy:'USD',toCcy:'ILS',toAmount:350},{date:'2026-07-05',amount:50,ccy:'ILS',toCcy:'USD'}]}]}),(350+700+400)/(100+200+100),1e-9,
+    'a conversion with neither the dollars nor a rate, and a sale of dollars, do not count');
+  assert.equal(F.fxAvg({accounts:[]}),null); assert.equal(F.fxAvg(null),null);
+});
+
+// the breakdown of the result: a made-up portfolio whose parts are known by hand
+const decP=()=>({positions:[
+  {sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:600,costUsd:150,group:'tech'},        // the statement gives both costs
+  {sym:'KO',acct:'blink',ccy:'USD',qty:4,costIls:null,group:'cons'},                    // only the trades: 4 bought at $40
+  {sym:'NVDA',acct:'exc',ccy:'USD',qty:3,costIls:1500,group:'tech'},                    // a shekel cost; the trades cover one unit of three
+  {sym:'TA125',acct:'exc',ccy:'ILS',qty:10,costIls:300,group:'il'},
+  {sym:'AAPL',acct:'blink',ccy:'USD',qty:1,group:'tech'}],                              // no cost at all
+  cash:[{acct:'exc',ccy:'ILS',amount:100}],asOf:{}});
+const decQ=()=>({usdIls:3.5,prices:{MSFT:100,KO:50,NVDA:150,TA125:35,AAPL:200},prev:{},meta:{TA125:{ccy:'ILS'}}});
+const decH=()=>({depIlsNow:3000,monthly:[],accounts:[
+  {acct:'exc',ccy:'ILS',fxIls:9000,fxUsd:2400,realizedUsd:999,fees:[{date:'2026-03-01',amount:10,ccy:'ILS'}],deposits:[],trades:[
+    {date:'2026-01-05',sym:'NVDA',qty:1,px:100,ccy:'USD'},{date:'2026-02-01',sym:'TA125',qty:5,px:20,ccy:'ILS'},{date:'2026-03-01',sym:'TA125',qty:-5,px:30,ccy:'ILS'},
+    {date:'2026-04-01',sym:'MSFT',qty:0.01,px:100,ccy:'USD',div:true,total:1}]},
+  {acct:'blink',ccy:'USD',divGrossUsd:2,divTaxUsd:0.5,deposits:[],trades:[{date:'2026-01-10',sym:'KO',qty:4,px:40}]}]});
+
+test('the cost of each holding: the statement\'s, the lots from the trades, or an estimate at the average buy rate', ()=>{
+  const B=F.costBasis(decP(),decQ(),decH()), by=Object.fromEntries(B.rows.map(r=>[r.sym,r]));
+  near(B.avg,3.75,1e-9);
+  assert.equal(by.MSFT.src,'stmt'); near(by.MSFT.costNat,150); near(by.MSFT.costIls,600); assert.equal(by.MSFT.ilsEst,false);
+  assert.equal(by.KO.src,'trades'); near(by.KO.costNat,160); near(by.KO.costIls,600,1e-9,'the dollar cost at the average buy rate'); assert.equal(by.KO.ilsEst,true);
+  assert.equal(by.NVDA.src,'est','one unit of three in the trades is not enough'); near(by.NVDA.costNat,400,1e-9); near(by.NVDA.costIls,1500);
+  assert.equal(by.TA125.src,'stmt'); near(by.TA125.costNat,300);
+  assert.equal(by.AAPL.noCost,true); assert.equal(by.AAPL.costNat,null); near(by.AAPL.val,700);
+  // a sale takes the first lots: 3 bought at 10, 2 at 20, 3 sold: the 2 left cost 20 each
+  const hs={accounts:[{acct:'exc',ccy:'ILS',trades:[{date:'2026-01-01',sym:'A',qty:3,px:10,ccy:'USD'},{date:'2026-01-02',sym:'A',qty:2,px:20,ccy:'USD'},{date:'2026-01-03',sym:'A',qty:-3,px:50,ccy:'USD'}]}]};
+  const a=F.costBasis({positions:[{sym:'A',acct:'exc',ccy:'USD',qty:2}]},{usdIls:3.5,prices:{A:60}},hs).rows[0];
+  assert.equal(a.src,'trades'); near(a.costNat,40); near(a.costIls,40*3.5,1e-9,'no buy rate known: today\'s');
+  // the same security in another account has its own lots
+  assert.equal(F.costBasis({positions:[{sym:'A',acct:'blink',ccy:'USD',qty:2}]},{usdIls:3.5,prices:{A:60}},hs).rows[0].noCost,true);
+  // no history at all: the statement's costs only
+  assert.equal(F.costBasis({positions:[{sym:'A',acct:'exc',ccy:'USD',qty:2,costIls:700}]},{usdIls:3.5,prices:{A:60}},null).rows[0].costNat,null);
+});
+
+test('sales and dividends from the history, in shekels: shekel trades as they are, the rest at today\'s rate', ()=>{
+  const [exc,blink]=decH().accounts;
+  near(F.realizedIls(exc,3.5),50,1e-9,'TA-125 sold in shekels: 5 × (30 − 20); the statement\'s 999 is not used when the trades are there');
+  near(F.realizedIls(blink,3.5),0); near(F.realizedIls({acct:'x',ccy:'USD',realizedUsd:20},3.5),70,1e-9,'no trades: the statement\'s number');
+  near(F.divNetIls(exc,3.5),3.5,1e-9,'the dividend row\'s amount'); near(F.divNetIls(blink,3.5),1.5*3.5,1e-9,'no dividend rows: the statement\'s totals');
+  near(F.divNetIls({acct:'x',ccy:'USD',trades:[{date:'2026-01-01',sym:'KO',qty:0.5,px:2,div:true}]},3.5),3.5,1e-9,'no amount shown: units times price');
+});
+
+test('where the result came from: the same bottom line as the headline, and the parts add up to it', ()=>{
+  G.P=decP(); G.Q=decQ(); G.HS=decH(); G.DY=null; plan();
+  const m=F.mAllNow(), D=F.decompOf(G.P,G.Q,G.HS,m,F.planOpen().buys,F.depTotal());
+  near(m.total,700+700+1575+350+700+100); near(D.total,m.total-3000,1e-9,'the headline\'s result: value today against the money put in');
+  near(D.price,175+140+175+50,1e-9,'each holding\'s move in its own currency, at today\'s rate');
+  near(D.fx,-75-40-100,1e-9,'the dollar: the dollar cost at today\'s rate against the shekel cost');
+  near(D.real,50,1e-9); near(D.div,3.5+5.25,1e-9); near(D.fees,-10,1e-9);
+  near(D.price+D.fx+D.real+D.div+D.fees+D.other,D.total,1e-9,'the parts add up to the whole');
+  assert.deepEqual(D.est,['KO','NVDA'],'estimated at the average buy rate'); assert.deepEqual(D.none,['AAPL']); near(D.noneVal,700); assert.deepEqual(D.allPx,[]);
+  // a deposit and a purchase ticked in the plan: the value and the money in move together, so the result does not
+  plan([{amount:500}],[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}]);
+  const m2=F.mAllNow(), D2=F.decompOf(G.P,G.Q,G.HS,m2,F.planOpen().buys,F.depTotal());
+  near(m2.total,m.total+500-300+350,1e-9,'₪500 more cash; ₪300 of cash became one MSFT worth ₪350 today'); near(F.depTotal(),3500);
+  near(D2.total,D.total+50,1e-9,'the deposit moves nothing; the purchase is up ₪50'); near(D2.price,D.price,1e-9,'bought at $100, worth $100'); near(D2.fx,D.fx+50,1e-9,'bought at a rate of 3, held at 3.5: $100 × 0.5');
+  near(D2.price+D2.fx+D2.real+D2.div+D2.fees+D2.other,D2.total,1e-9);
+  // a dollar holding with a shekel cost and nothing to split it by goes under prices, and says so
+  G.HS.accounts[0].fxIls=0; G.HS.accounts[0].fxUsd=0; plan();
+  const D3=F.decompOf(G.P,G.Q,G.HS,F.mAllNow(),[],F.depTotal());
+  assert.deepEqual(D3.allPx,['NVDA']); assert.deepEqual(D3.est,['KO'],'KO\'s dollar cost becomes shekels at today\'s rate, so its shekel cost is an estimate'); near(D3.price+D3.fx+D3.real+D3.div+D3.fees+D3.other,D3.total,1e-9);
+  const ko=F.costBasis(G.P,G.Q,G.HS).rows.find(r=>r.sym==='KO'); near(ko.costIls,160*3.5,1e-9); assert.equal(ko.ilsEst,true);
+  G.P=null; G.Q=null; G.HS=null; plan();
+});
+
+test('the dollar view: each holding\'s dollar cost and the dollar value of the same part, so the profit leaves the rate out', ()=>{
+  G.P=decP(); G.Q=decQ(); G.HS=decH(); plan();
+  const D=F.dollarCost(G.P,G.Q,G.HS,[]);
+  assert.deepEqual(Object.keys(D).sort(),['KO','MSFT','NVDA','TA125'],'a holding with no cost at all is not in it');
+  near(D.MSFT.cost,150); near(D.MSFT.val,200); assert.equal(D.MSFT.est,false,'the statement\'s dollar cost');
+  near(D.KO.cost,160); near(D.KO.val,200); assert.equal(D.KO.est,false,'the lots from the trades');
+  near(D.NVDA.cost,400,1e-9); near(D.NVDA.val,450); assert.equal(D.NVDA.est,true,'estimated at the average buy rate');
+  near(D.TA125.cost,300/3.5,1e-9); near(D.TA125.val,350/3.5,1e-9); assert.equal(D.TA125.est,true,'a shekel holding: its own profit, at today\'s rate');
+  // a purchase ticked in the plan adds its dollars at the price it marked; one account alone has only its own rows
+  const D2=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}]); near(D2.MSFT.cost,250); near(D2.MSFT.val,300);
+  const D3=F.dollarCost(G.P,G.Q,G.HS,[{sym:'MSFT',paidIls:300,qty:1,px:100,fx:3}],'blink'); assert.deepEqual(Object.keys(D3),['KO'],'the plan\'s purchase belongs to the whole portfolio only');
+  G.P=null; G.Q=null; G.HS=null;
+});
+
+test('the plan chart\'s real part: the money in and the holdings at cost, month by month, ending on today\'s totals', ()=>{
+  const cur=F.ymNow(), m=k=>F.ymAdd(cur,-k); plan(); G.DY=null;
+  // ₪10,000 three months ago, ₪2,000 last month (read from a screenshot); MSFT bought three months ago ($100 × 20 at 3.5),
+  // KO last month ($50 × 10); ₪500 cash today
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:20,costIls:7000},{sym:'KO',acct:'exc',ccy:'USD',qty:10,costIls:1750}],cash:[{acct:'exc',ccy:'ILS',amount:500}]};
+  G.Q={usdIls:3.5,prices:{MSFT:120,KO:50},prev:{}};
+  G.HS={depIlsNow:12000,monthly:[],accounts:[{acct:'exc',ccy:'ILS',deposits:[{date:m(3)+'-02',amount:10000},{date:m(1)+'-05',amount:2000}],
+    trades:[{date:m(3)+'-03',sym:'MSFT',qty:20,px:100,ccy:'USD'},{date:m(1)+'-06',sym:'KO',qty:10,px:50,ccy:'USD'}]}]};
+  near(F.monthFlow(m(1)),2000); near(F.monthFlow(m(2)),0);
+  const A=F.planActual(F.mAllNow());
+  assert.deepEqual(A.map(r=>r.ym),[m(3),m(2),m(1),cur],'from the first month the records know of, to today');
+  assert.deepEqual(A.map(r=>r.ad),[10000,10000,12000,12000],'the money in, as the deposits read');
+  assert.deepEqual(A.map(r=>r.ai),[7000,7000,8750,8750],'in securities at cost: today\'s holdings, less what was bought after each month');
+  near(A[3].ad,F.depTotal(),1e-9,'today is the headline\'s total');
+  // a plan that starts earlier shows the months before as well, with nothing in
+  const B=F.planActual(F.mAllNow(),m(5)); assert.equal(B[0].ym,m(5)); assert.equal(B[0].ad,0); assert.equal(B[0].ai,0);
+  // no history: one point, today, from the portfolio
+  G.HS=null; const C=F.planActual(F.mAllNow()); assert.deepEqual(C.map(r=>[r.ym,r.ad,r.ai]),[[cur,0,8750]]);
+  G.P=null; G.Q=null;
 });
 
 test('a period\'s result: the change in value less the change in deposits; the return counts money in from mid-month', ()=>{

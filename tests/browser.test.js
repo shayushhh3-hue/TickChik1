@@ -163,6 +163,82 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   assert.deepEqual(f,{email:true,phone:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);
+  await tab(pg,'plan'); await pg.waitForFunction(()=>/עד היום/.test(document.getElementById('projNote').textContent),null,{timeout:10000});
+  const c=await pg.evaluate(()=>({note:document.getElementById('projNote').textContent,legend:document.querySelector('#chart').closest('.panel').querySelector('.legend').textContent}));
+  t.diagnostic(c.note);
+  assert.ok(dep&&c.note.includes('הופקדו '+dep),'the chart\'s money in today is the headline\'s: '+dep+' / '+c.note);
+  assert.match(c.note,/במניות לפי העלות/); assert.match(c.legend,/מלא: בפועל/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('the look-back: a withdrawal is never "deposited"; more out than in is named as a likely misread',T,async t=>{
+  if(skip())return t.skip('no browser');
+  let {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(400);
+  const card=()=>pg.evaluate(()=>{const sec=[...document.querySelectorAll('#backWrap section')][0], c=[...sec.querySelectorAll('.cell')];
+    const get=k=>c.find(x=>x.querySelector('.k').textContent===k); return {dep:get('הופקד לחשבון').textContent.replace(/\u200E/g,''),res:get('תוצאה מול ההפקדות').textContent,txt:sec.textContent.replace(/\u200E/g,'')}});
+  // ₪18,000 and ₪1,200 in the fixture; a withdrawal of ₪500 read from a screen, then one of ₪40,000
+  const H0=store.getDoc('history/main').data, put=(...w)=>{const H=JSON.parse(JSON.stringify(H0)); H.accounts[0].deposits.push(...w.map(a=>({date:H.accounts[0].deposits[2].date,amount:-a,inDep:true}))); store.setDoc('history/main',H,{silent:true})};
+  try{
+    put(500); await ctx.close(); ({ctx,pg}=await open(390)); await tab(pg,'history'); await pg.waitForTimeout(400);
+    let c=await card(); assert.match(c.dep,/^הופקד לחשבון₪19,200/,'deposits only: '+c.dep); assert.match(c.dep,/נמשכו ₪500 \(משיכה אחת\), נטו ₪18,700/); assert.match(c.txt,/משיכה מהחשבון/); assert.match(c.res,/על מה שהופקד נטו/);
+    // more taken out than put in: no negative "deposited", no percent, and a note that it is probably misread
+    put(500,40000); await ctx.close(); ({ctx,pg}=await open(390)); await tab(pg,'history'); await pg.waitForTimeout(400);
+    c=await card(); assert.match(c.dep,/^הופקד לחשבון₪19,200/); assert.match(c.dep,/נטו −₪21,300/); assert.match(c.res,/אין אחוז/); assert.match(c.txt,/כנראה הפקדות נקראו כמשיכות/);
+  }finally{store.setDoc('history/main',H0,{silent:true})}
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('the funds track: a fixed amount for each fund every month, the sum is the track\'s deposit, a purchase per fund per month',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const plan0=store.getDoc('plan/main').data, set0=store.getDoc('settings/main').data;
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForTimeout(300);
+    // build the funds' plan from the funds held (TA125, TA90), then a fixed amount for each
+    if(await pg.isVisible('#planOb'))await pg.click('#obGo'); await pg.waitForTimeout(300);
+    assert.ok(await pg.isVisible('#kindFix'),'the choice is there in the funds track'); await pg.click('#kindFix'); await pg.waitForTimeout(300);
+    const amts=await pg.$$('[data-amt]'); assert.equal(amts.length,2);
+    await amts[0].fill('200'); await amts[0].dispatchEvent('change'); await pg.waitForTimeout(200);
+    await (await pg.$$('[data-amt]'))[1].fill('150'); await (await pg.$$('[data-amt]'))[1].dispatchEvent('change'); await pg.waitForTimeout(300);
+    let s=await pg.evaluate(()=>({trk:document.getElementById('trkI').textContent,tot:document.getElementById('trkTot').textContent,note:document.getElementById('kindNote').textContent,
+      inp:document.getElementById('inMonthlyIdx').value,off:document.getElementById('inMonthlyIdx').disabled,end:document.getElementById('pEnd').textContent,
+      row:[...document.querySelectorAll('#ladRows tr')][1].textContent,dep:[...document.querySelectorAll('#ladRows tr')][1].querySelector('[data-dep]').nextElementSibling.textContent}));
+    assert.match(s.trk,/₪350 בחודש · סכום קבוע ל-2 קרנות/); assert.match(s.tot,/סך ההפקדה החודשית: ₪950, מתוכם ₪600 למניות ו-₪350 למדדים/);
+    assert.match(s.note,/₪350/); assert.equal(s.inp,'350'); assert.equal(s.off,true,'the funds\' amount is the sum of the funds'); assert.equal(s.end,'מתמשך');
+    assert.match(s.row,/₪200/); assert.match(s.row,/₪150/,'each fund every month, with its own amount'); assert.equal(s.dep,'₪350');
+    // a deposit and one fund bought this month: next month the same fund is still to buy
+    await pg.evaluate(()=>{const r=document.querySelector('#ladRows tr.cur'); r.querySelector('[data-dep]').click()}); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>{const r=document.querySelector('#ladRows tr.cur'); r.querySelector('[data-buy]').click()}); await pg.waitForTimeout(300);
+    s=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#ladRows tr')], i=rows.findIndex(r=>r.classList.contains('cur'));
+      return {cur:[...rows[i].querySelectorAll('[data-buy]')].map(x=>x.checked),next:[...rows[i+1].querySelectorAll('[data-buy]')].map(x=>x.checked),done:document.getElementById('pDone').textContent}});
+    assert.deepEqual(s.cur,[true,false]); assert.deepEqual(s.next,[false,false],'a purchase belongs to its month'); assert.equal(s.done,'1 קניות');
+    await pg.waitForTimeout(900); const saved=store.getDoc('plan/main').data.idx;
+    assert.equal(saved.mode,'fixed'); assert.deepEqual(saved.items.map(i=>i.amt).sort(),[150,200]); assert.equal(saved.purchases.length,1); assert.equal(store.getDoc('settings/main').data.monthlyIdx,350);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('plan/main',plan0,{silent:true}); store.setDoc('settings/main',set0,{silent:true})}
+});
+
+test('building a portfolio: the steps in words, a search over the logos, the count of what was chosen, skip goes to the upload',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'n2'}); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
+  const txt=()=>pg.evaluate(()=>({h:document.querySelector('#pickBox summary h3').textContent,step:document.getElementById('pickSub').textContent,cnt:document.getElementById('pickCnt').textContent,
+    open:document.getElementById('pickBox').open,go:document.getElementById('btnPickAdd').textContent,skip:document.getElementById('btnPickSkip').textContent,ph:document.getElementById('pickQ').placeholder,
+    shown:[...document.querySelectorAll('#pickBox .pick')].filter(t=>!t.hidden&&t.offsetParent).map(t=>t.dataset.pick),none:document.getElementById('pickNone').hidden}));
+  let s=await txt();
+  assert.deepEqual([s.h,s.step,s.cnt,s.go,s.skip],['בוא נבנה את התיק שלך','שלב 1 מתוך 3','המניות שבחרת: 0','המשך עם הבחירה שלי','דלג, אעלה קובץ בהמשך']); assert.ok(s.open,'open for someone with no portfolio');
+  assert.match(s.ph,/למשל NVDA/);
+  await pg.fill('#pickQ','nvid'); s=await txt(); assert.deepEqual(s.shown,['NVDA'],'by name, any case');
+  await pg.click('#pickBox .pick[data-pick="NVDA"]'); await pg.fill('#pickBox .pick[data-pick="NVDA"] input','2');
+  await pg.fill('#pickQ','zzzq'); s=await txt(); assert.deepEqual(s.shown,['NVDA'],'a chosen one stays in sight'); assert.equal(s.none,false,'nothing else found: the search of every exchange is offered');
+  assert.equal(s.cnt,'המניות שבחרת: 1');
+  await pg.fill('#pickQ',''); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300); s=await txt();
+  assert.equal(s.step,'שלב 2 מתוך 3'); assert.match(await pg.evaluate(()=>document.getElementById('pickState').textContent),/^שלב 2 מתוך 3: בדוק את הטבלה/);
+  assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#pfRows [data-pf="sym"]')].some(i=>i.value==='NVDA')),'in the table, waiting to be saved');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('unknown stays unknown: a missing P/E, holdings without data, dates from another year',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(1280); await tab(pg,'ratings'); await pg.waitForTimeout(800);
@@ -257,6 +333,75 @@ test('why it moved: computed by the page in six parts, the parts add up, nothing
   assert.match(c.txt,/נכללו עם מחיר שאינו מהיום: TA125/,'old prices are named'); assert.match(c.txt,/לא המלצה/);
   assert.ok(c.sums&&Math.abs(c.sums.parts-c.sums.total)<0.01,'the holdings\' parts add up to the day\'s change: '+JSON.stringify(c.sums));
   assert.equal(seen.length,n0,'Claude is not asked'); assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('where the result came from: the same bottom line as the headline, six parts that add up to it, the unknowns named',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'history');
+  await pg.waitForFunction(()=>/₪/.test(document.querySelector('#decRows .tot .n')?.textContent||''),null,{timeout:10000});
+  const c=await pg.evaluate(()=>{const num=s=>{const m=String(s).replace(/‎/g,'').match(/^([+−-])₪([\d,]+)/); return m?(m[1]==='+'?1:-1)*+m[2].replace(/,/g,''):null};
+    return {head:num(document.getElementById('kDep').textContent),tot:num(document.querySelector('#decRows .tot .n').textContent),
+      parts:[...document.querySelectorAll('#decRows .drow:not(.tot) .n')].map(e=>num(e.textContent)),note:document.getElementById('decNote').textContent}});
+  t.diagnostic('breakdown: '+JSON.stringify({head:c.head,tot:c.tot,parts:c.parts}));
+  assert.equal(c.parts.length,6); assert.ok(c.parts.every(x=>x!=null),JSON.stringify(c.parts));
+  assert.equal(c.tot,c.head,'the box ends where the headline "מול ההפקדות" is: '+JSON.stringify(c));
+  assert.ok(Math.abs(c.parts.reduce((a,b)=>a+b,0)-c.tot)<=3,'the six parts add up to the bottom line (rounding apart): '+JSON.stringify(c));
+  assert.match(c.note,/אותו בסיס כמו "מול ההפקדות"/); assert.match(c.note,/מוערכת לפי שער הקנייה הממוצע/,'the fixture has shekel costs and a buy rate, no dollar costs: estimated, and it says so');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('the holdings in shekels, in dollars, or both: the chips, the rows, the hero, kept for next time, nothing saved changes',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  const read=async()=>{const o=await pg.evaluate(()=>{const tr=[...document.querySelectorAll('#rows tr')].find(tr=>/MSFT/.test(tr.textContent)), td=tr.querySelectorAll('td'), th=[...document.querySelectorAll('#holdSec thead th')].map(x=>x.textContent);
+    return {total:document.getElementById('kTotal').textContent,totalD:document.getElementById('kTotalD').textContent,pnl:document.getElementById('kPnl').textContent,pnlD:document.getElementById('kPnlD').textContent,
+      day:document.getElementById('kDay').textContent,val:td[4].textContent,cost:td[6].textContent,row:td[7].textContent,dayRow:td[1].textContent,th:[th[4],th[6]],
+      on:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),sub:document.getElementById('holdSub').textContent,
+      ox:document.documentElement.scrollWidth>innerWidth+1,saved:localStorage.getItem('tr_holdccy')}});
+    for(const k in o)if(typeof o[k]==='string')o[k]=o[k].replace(/\u200E/g,''); return o};   // the marks that keep a sign on the left of its number
+  let s=await read(); assert.deepEqual(s.on,['ils']); assert.ok(/^₪/.test(s.total)&&/^₪/.test(s.val)&&!/\$/.test(s.row),'shekels to begin with: '+JSON.stringify(s));
+  // dollars: the big numbers in dollars, the shekels on the line beneath; MSFT's profit is 2 × (505 − 470), the dollar's move left out
+  await pg.click('.hccy [data-hc="usd"]'); await pg.waitForTimeout(300); s=await read();
+  assert.deepEqual(s.on,['usd']); assert.equal(s.saved,'usd'); assert.ok(/^\$/.test(s.total)&&/^₪/.test(s.totalD),'the total in dollars, the shekels beneath: '+s.total+' / '+s.totalD);
+  assert.ok(/[▲▼] \$/.test(s.day),'the day in dollars: '+s.day); assert.ok(/^\$/.test(s.val)&&/\$940\b/.test(s.cost)&&/\+\$70 \(\+7\.4%\)/.test(s.row),'MSFT: value, cost and profit in dollars: '+JSON.stringify([s.val,s.cost,s.row]));
+  assert.ok(/^≈?[+−]\$/.test(s.pnl)&&/בלי שינוי השער/.test(s.pnlD),'the profit in dollars says what it leaves out (≈ when part of it is estimated): '+s.pnl+' / '+s.pnlD);
+  assert.deepEqual(s.th,['שווי $','עלות $']); assert.match(s.sub,/בדולרים/); assert.ok(!s.ox);
+  // both: shekels first, the dollars on the line beneath, in every money cell
+  await pg.click('.hccy [data-hc="both"]'); await pg.waitForTimeout(300); s=await read();
+  assert.deepEqual(s.on,['both']); assert.ok(/^₪/.test(s.total)&&/^\$/.test(s.totalD),'both: '+s.total+' / '+s.totalD);
+  assert.ok(/₪.*\$/s.test(s.val)&&/₪.*\$940/s.test(s.cost)&&/₪.*\+\$70/s.test(s.row)&&/₪.*\$/s.test(s.dayRow),'each cell shows both: '+JSON.stringify([s.val,s.cost,s.row,s.dayRow]));
+  assert.deepEqual(s.th,['שווי ₪ / $','עלות ₪ / $']); assert.match(s.pnlD,/בדולרים/); assert.ok(!s.ox,'nothing pushes the phone sideways');
+  assert.equal(store.getDoc('portfolio/main').data.positions.length,docs['portfolio/main'].positions.length,'a view, not a change');
+  // the stocks / funds chips still work beside them
+  await pg.click('.hkind:not(.hccy) [data-hv="fund"]'); await pg.waitForTimeout(300);
+  const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec)').length}));
+  assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'both'); assert.equal(hv.rows,2,'the two index funds');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+  // a wide screen: the dollars sit in the table too, and the page opens in the view that was chosen
+  const w=await open(1280); const ws=await w.pg.evaluate(()=>({hc:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),total:document.getElementById('kTotal').textContent}));
+  assert.deepEqual(ws.hc,['ils'],'another browser context starts in shekels'); assert.ok(/^₪/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
+});
+
+test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(400);
+  const f=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], of=(tr,k)=>tr.querySelector(`[data-pf="${k}"]`);
+    const us=rows.find(tr=>of(tr,'sym').value==='NVDA'), il=rows.find(tr=>of(tr,'ccy').value==='ILS'), r=us.getBoundingClientRect(), c=of(us,'costUsd').getBoundingClientRect();
+    return {sym:of(us,'sym').value,usOff:of(us,'costUsd').disabled,ilOff:of(il,'costUsd').disabled,ilPh:of(il,'costUsd').placeholder,inside:c.left>=r.left-1&&c.right<=r.right+1,
+      head:[...document.querySelectorAll('table.pf thead th')].map(th=>th.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.equal(f.usOff,false); assert.equal(f.ilOff,true,'a shekel holding has no dollar cost'); assert.equal(f.ilPh,'—'); assert.ok(f.inside&&!f.ox,'the new field fits the card');
+  assert.ok(f.head.includes('עלות כוללת ₪')&&f.head.includes('עלות כוללת $'));
+  // typed and saved: the position carries it, and the breakdown's note no longer counts that holding as estimated
+  const before=await pg.evaluate(()=>document.getElementById('decNote').textContent);
+  await pg.evaluate(sym=>{const tr=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('[data-pf="sym"]').value===sym), el=tr.querySelector('[data-pf="costUsd"]');
+    el.value='900'; el.dispatchEvent(new Event('input',{bubbles:true}))},f.sym);
+  await pg.click('#btnPfSave'); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent),null,{timeout:10000}); await pg.waitForTimeout(500);
+  const saved=store.getDoc('portfolio/main').data.positions.find(p=>p.sym===f.sym); assert.equal(saved.costUsd,900);
+  assert.equal(store.getDoc('portfolio/main').data.positions.find(p=>p.ccy==='ILS').costUsd,null,'a shekel holding is saved without one');
+  await tab(pg,'history'); await pg.waitForFunction(()=>/₪/.test(document.querySelector('#decRows .tot .n')?.textContent||''),null,{timeout:10000});
+  const after=await pg.evaluate(()=>document.getElementById('decNote').textContent);
+  assert.match(before,new RegExp('\\b'+f.sym+'\\b'),'estimated before'); assert.doesNotMatch(after,new RegExp('\\b'+f.sym+'\\b'),'not estimated once the statement\'s dollar cost is there');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
 test('the chat answers by itself when asked to decide or to know the future, and says when Claude fails',T,async t=>{
