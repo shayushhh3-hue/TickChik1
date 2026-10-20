@@ -6,7 +6,8 @@ import {backupTask} from './backup.js';
 import {researchTask} from './research.js';
 
 export const SCHEDULE=[
-  // prices: every 5 minutes while Tel Aviv or New York trades, on the hour's :40 from 10:40 to 23:40 (closing prices), and four
+  // prices: every 5 minutes while Tel Aviv or New York trades, every 15 minutes at all other hours (fund prices come out at
+  // night), on the hour's :40 from 10:40 to 23:40 (closing prices), and four
   // catch-up runs on Saturday and Sunday (a close the source delivered late, PXRUN in shared/market.js)
   {name:'prices',  when:(p,d)=>pxDue(p,d), run:(s,o)=>pricesTask(s,o)},
   {name:'nightly', when:p=>p.wd>=1&&p.wd<=5&&p.h===23&&p.min===50, run:(s,o)=>nightlyTask(s,o)},

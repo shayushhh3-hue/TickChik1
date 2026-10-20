@@ -385,6 +385,8 @@ test('market hours',()=>{
   const due=iso=>pxDue(ilParts(new Date(iso)),new Date(iso));
   assert.equal(due('2026-10-18T15:40:00Z'),true,'Sunday 18:40'); assert.equal(due('2026-10-18T16:40:00Z'),false); assert.equal(due('2026-10-17T07:40:00Z'),true,'Saturday 10:40');
   assert.equal(due('2026-10-12T08:05:00Z'),true,'Monday while Tel Aviv trades'); assert.equal(due('2026-10-12T20:40:00Z'),true); assert.equal(due('2026-10-18T15:35:00Z'),false);
+  // every 15 minutes at any hour, nights and weekends included, for the funds' official prices
+  assert.equal(due('2026-10-20T22:15:00Z'),true,'Wednesday 01:15'); assert.equal(due('2026-10-17T19:45:00Z'),true,'Saturday 22:45'); assert.equal(due('2026-10-20T22:20:00Z'),false,'01:20, markets closed');
 });
 
 test('prices: an Israeli mutual fund comes from Maya, read defensively, in the scale of the price we hold',async()=>{

@@ -29,7 +29,9 @@ export function lastSession(mkt,d){
 // from the same table)
 export const PXRUN={days:[1,2,3,4,5],h0:10,h1:23,min:40,wkend:{days:[0,6],hours:[10,14,18,22]}};
 export function inPxWindow(d){const p=ilParts(d);return (PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h))}
-export const pxDue=(p,d)=>(PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.min===PXRUN.min)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h)&&p.min===PXRUN.min)||(p.min%5===0&&anyOpen(d));
+// and, day and night every day, every 15 minutes: a fund's official price comes out in the evening or at night (its
+// manager publishes it, sometimes days late) and is caught within a quarter of an hour, not the next morning
+export const pxDue=(p,d)=>p.min%15===0||(PXRUN.days.includes(p.wd)&&p.h>=PXRUN.h0&&p.h<=PXRUN.h1&&p.min===PXRUN.min)||(PXRUN.wkend.days.includes(p.wd)&&PXRUN.wkend.hours.includes(p.h)&&p.min===PXRUN.min)||(p.min%5===0&&anyOpen(d));
 // the Israel-time date of a moment, YYYY-MM-DD
 export const ilDay=d=>ilParts(d).iso;
 // d.m, as the page prints dates in labels
