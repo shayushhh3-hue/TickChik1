@@ -7,7 +7,7 @@ import {Store, access, partnerView} from '../server/store.js';
 import fs from 'node:fs';
 import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.js';
 import {ilOpen, usOpen, inPxWindow, lastSession, pxDue, ilParts} from '../shared/market.js';
-import {mayaFund, isIlFund, fundFromJson} from '../shared/quotes.js';
+import {mayaFund, isIlFund, fundFromJson, trackOf} from '../shared/quotes.js';
 
 // a stand-in for Claude's API, on a local port
 let claudeSrv, claudeSeen=[], claudeClosed=0;
@@ -413,6 +413,21 @@ test('prices: an Israeli mutual fund comes from Maya, read defensively, in the s
   // a stored price already in agorot keeps Maya's scale
   const e=buildQuotesDoc({prev:{prices:{'5129283':1200}},fetched:all,symbols:['5129283'],positions:[],now:new Date('2026-10-18T15:00:00Z')});
   assert.equal(e.prices['5129283'],1234.56);
+});
+
+test('prices: a fund that follows a US index moves with its future between official prices',()=>{
+  const nav=(px,date)=>({px,prev:null,name:'הראל מחקה NASDAQ 100',ccy:'ILS',closeDate:date,time:0,src:'maya'});
+  const now=new Date('2026-10-20T08:00:00Z');
+  // first sight of the 19.10 price: the future's level is kept, the price is the official one
+  let d=buildQuotesDoc({prev:{prices:{'5129283':12}},fetched:{quotes:{'5129283':nav(12.3,'2026-10-19')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20100}}},errors:[]},symbols:['5129283'],now});
+  assert.equal(d.prices['5129283'],12.3); assert.deepEqual(d.meta['5129283'].ref,{k:'NDX',lvl:20100,date:'2026-10-19',nav:12.3}); assert.equal(d.lag.il,undefined,'yesterday\'s price is a fund\'s latest during the day');
+  // the future rose 1%: the value follows, marked as an estimate, and is not a missing session
+  d=buildQuotesDoc({prev:d,fetched:{quotes:{'5129283':nav(12.3,'2026-10-19')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20301}}},errors:[]},symbols:['5129283'],now:new Date('2026-10-21T09:00:00Z')});
+  assert.equal(d.prices['5129283'],12.423); assert.equal(d.prev['5129283'],12.3); assert.match(d.stale['5129283'],/^הערכה לפי נאסד״ק 100 · מחיר רשמי 19.10$/); assert.equal(d.lag.il,undefined);
+  // a new official price replaces the estimate and takes a new level
+  d=buildQuotesDoc({prev:d,fetched:{quotes:{'5129283':nav(12.41,'2026-10-20')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20290}}},errors:[]},symbols:['5129283'],now:new Date('2026-10-21T09:00:00Z')});
+  assert.equal(d.prices['5129283'],12.41); assert.equal(d.meta['5129283'].ref.lvl,20290); assert.equal(d.meta['5129283'].est,undefined);
+  assert.equal(trackOf('מור מחקה NASDAQ 100'),'NDX'); assert.equal(trackOf('הראל כספית מגמת ריבית'),'');
 });
 
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{

@@ -16043,7 +16043,7 @@ function alertsOf(m){
       A.push(['warn','מחיר',`ל-${syms.length===1?syms[0]:syms.length+' '+(fund?'קרנות':'ניירות')} (${pct(w,0)} מהתיק) אין עדיין מקור מחיר: השווי שלהם הוא לפי המחיר האחרון שהיה, מהדוח או מעדכון קודם, ולא לפי המחיר של היום.`,syms]);
       A[A.length-1].why={src:'px',rows:[['הניירות',syms.join(', ')],['חלקם בתיק',pct(w,1)],['מה זה אומר',`השווי הכולל ו"החודש עד היום" לא כוללים את התנועה שלהם מאז המחיר האחרון`],['מה הלאה',fund?'קרנות נאמנות ישראליות נקראות ממאיה (אתר הבורסה) בעדכון המחירים הבא; אם המחיר לא יגיע גם אז, ספר לבעל האתר':'אפשר להזין "מחיר בדוח" בלשונית "התיק שלי", או לחכות לעדכון הבא']]};
       A[A.length-1].each=[{key:'nosrc:'+syms.join(','),text:A[A.length-1][2]}]; syms.forEach(x=>lagged.add(x))}}
-  const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!lagged.has(k)); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
+  const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!lagged.has(k)&&!/^הערכה/.test(Q.stale[k])); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
   if(m.noRate&&m.noRate.length) A.push(['warn','מחיר',`ל-${m.noRate.join(', ')} יש מחיר במטבע שעדיין אין לדף שער שלו מול השקל, ולכן הם לא נכללים בשווי התיק. השער מגיע בעדכון המחירים הבא.`,m.noRate]);
   const noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))]; if(noPx.length) A.push(['warn','מחיר',`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".`,noPx]);
   if(PL.items.length){const ps=planState(mAllNow()),can=PL.items.filter(i=>i.status==='todo'&&ps.sch.when[i.sym]===0).map(i=>i.sym);
@@ -17561,7 +17561,7 @@ function anaFacts(){
   if(!((P.positions||[]).length||(P.cash||[]).length))return {empty:'nopf'};
   const m=mAllNow(), R=S.rules||{}, tg=S.targets||{}, tsum=Object.values(tg).reduce((s,x)=>s+(+x||0),0), A=alertsOf(m);
   const ageH=Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/36e5:null, live=/מסחר חי/.test(Q.priceLabel||'')&&ageH!=null&&ageH<2;
-  const staleSyms=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)), noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))];
+  const staleSyms=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!/^הערכה/.test(Q.stale[k])), noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))];
   const funds=m.pos.filter(p=>isF(p.sym)), stocks=m.pos.filter(p=>!isF(p.sym)), top3=m.pos.slice(0,3), top3w=top3.reduce((t,p)=>t+p.w,0);
   const groups=Object.keys(GROUPS).map(k=>{const g=m.groups[k],t=+tg[k]||0,d=g.w-t;
     return {id:k,name:GROUPS[k],w:g.w,val:g.val,n:g.members.length,t,dev:tsum>0?d:null,off:tsum>0&&Math.abs(d)>=(+R.drift||0),over:k!=='cash'&&g.w>R.maxGroup}}).filter(g=>g.val>0.5||g.t>0).sort((a,b)=>b.w-a.w);

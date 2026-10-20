@@ -56,6 +56,8 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
 // Israeli mutual funds (a seven-digit number starting with 5) are not on Yahoo. Their daily price comes from Maya, the
 // exchange's own disclosure site (an interface its pages use, not a documented one): the fund's details, read defensively
 // for the redemption price, its date and the day's change, so a renamed field is logged rather than mistaken for a price.
+// the US index a fund follows, from its name (Hebrew or English): its value moves with that index between official prices
+export const trackOf=name=>{const n=String(name||''); return /nasdaq|נאסד/i.test(n)&&/100/.test(n)?'NDX':/s&p|אס.?אנד.?פי/i.test(n)&&/500/.test(n)?'SPX':/dow|דאו/i.test(n)?'DJI':/russell|ראסל/i.test(n)?'RUT':''};
 export const isIlFund=sym=>/^5\d{6}$/.test(String(sym||''));
 const MAYA_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
 const flat=(o,pre='',d=0,out={})=>{if(o&&typeof o==='object'&&d<4){for(const [k,v] of Object.entries(o)){if(v&&typeof v==='object'&&!Array.isArray(v))flat(v,pre+k+'.',d+1,out); else if(Array.isArray(v))v.slice(0,3).forEach((x,i)=>flat(x,pre+k+'['+i+'].',d+1,out)); else out[pre+k]=v}} return out};
@@ -80,7 +82,8 @@ export function fundFromJson(j,now=new Date()){
   const date=Object.values(dates).sort().at(-1)||'';
   const chg=pick(/(day|daily)[_ ]?(yield|change|return|pct|percent)|(yield|change|return)[_ ]?(day|daily)|dayrate|dailyrate|changepercent|percentchange/i,v=>{const n=numOf(v); return n==null||Math.abs(n)>60?null:n});
   const prev=chg!=null?px/(1+chg/100):null;
-  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg,dates:Object.fromEntries(Object.entries(dates).slice(0,6))};
+  const name=pick(/name/i,v=>typeof v==='string'&&v.length>2&&v.length<120?v:null,/manager|company|trustee|english|class|category|type/i)||'';
+  return {px,prev,name,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg,dates:Object.fromEntries(Object.entries(dates).slice(0,6))};
 }
 export async function mayaFund(id,{fetch:f=timedFetch}={}){
   let last=null;
@@ -154,8 +157,21 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
     if(q&&q.src==='maya'){ // Maya quotes funds in agorot or in shekels; the price we hold says which (a fund never moves a hundredfold)
       const base=prices[sym]>0?prices[sym]:posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:0, k=base>0?q.px/base:1;
       if(k>40&&k<250){q.px/=100; if(q.prev)q.prev/=100} else if(k>0.004&&k<0.025){q.px*=100; if(q.prev)q.prev*=100}
-      if(!(q.px>0))continue; prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4); got++;
-      meta[sym]={src:'maya',ccy:'ILS',...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{})}; if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate; continue}
+      if(!(q.px>0))continue; got++;
+      const om=old.meta&&old.meta[sym]||{}, nm=q.name||(posOf[sym]&&posOf[sym].name)||om.name||'';
+      meta[sym]={src:'maya',ccy:'ILS',...(nm?{name:nm}:{}),...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{})};
+      if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate;
+      // a fund has one official price a day. A fund that follows a US index moves between them with that index: its value is
+      // carried by the index's future from the moment the official price was first seen (the level then is kept), marked
+      // as an estimate beside the official price and its date
+      const tk=trackOf(nm), b=tk&&fetched.bench&&fetched.bench[tk], lvl=b?(b.fut&&b.fut.px>0?b.fut.px:b.px):0;
+      const ref=om.ref&&om.ref.k===tk&&om.ref.date===q.closeDate&&om.ref.nav===round(q.px,4)?om.ref:(lvl>0?{k:tk,lvl,date:q.closeDate,nav:round(q.px,4)}:null);
+      if(ref)meta[sym].ref=ref;
+      if(ref&&lvl>0&&ref.lvl>0&&Math.abs(lvl/ref.lvl-1)>0.0002&&Math.abs(lvl/ref.lvl-1)<0.15){
+        const est=q.px*lvl/ref.lvl; prices[sym]=round(est,4); prevC[sym]=round(q.px,4); meta[sym].est={nav:round(q.px,4),pct:round((lvl/ref.lvl-1)*100,3)};
+        stale[sym]=`הערכה לפי ${BENCH[tk].name} · מחיר רשמי ${q.closeDate?dm(q.closeDate):''}`.trim()}
+      else{prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4)}
+      continue}
     if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
@@ -182,8 +198,10 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   // source did not deliver that session (or Tel Aviv had a holiday). lag = per market, the day we have and the day we expect
   const want={il:lastSession('il',now),us:lastSession('us',now)}, lag={};
   const mktOf=sym=>{const m=meta[sym]||{}; return m.ccy==='ILS'||m.src==='index'||/\.TA$/.test(sym)?'il':!m.ccy&&(m.src==='yahoo'||m.src==='stooq')?'us':''};
-  for(const sym of symbols){const m=meta[sym]||{}, k=mktOf(sym); if(!k||!m.date||!want[k]||prices[sym]==null)continue;
-    if(m.date<want[k]){if(!stale[sym])stale[sym]='סגירה '+dm(m.date); const L=lag[k]=lag[k]||{have:m.date,want:want[k],n:0,of:0}; L.n++; if(m.date>L.have)L.have=m.date}}
+  // a mutual fund's price for a day is published that evening: during the day, the day before is its latest
+  const wantFund=want.il?lastSession('il',new Date(Date.parse(want.il+'T12:00:00Z')-864e5)):'';
+  for(const sym of symbols){const m=meta[sym]||{}, k=mktOf(sym); if(!k||!m.date||!want[k]||prices[sym]==null||m.est)continue;
+    if(m.date<(m.src==='maya'?wantFund:want[k])){if(!stale[sym])stale[sym]='סגירה '+dm(m.date); const L=lag[k]=lag[k]||{have:m.date,want:want[k],n:0,of:0}; L.n++; if(m.date>L.have)L.have=m.date}}
   for(const k of Object.keys(lag))lag[k].of=symbols.filter(s=>mktOf(s)===k&&prices[s]!=null&&(meta[s]||{}).date).length;
   // "live" only when the data says so: the market is open by the clock AND today's trades arrived (on a holiday, or when
   // every fetch failed, the last close is shown as a close)
