@@ -57,7 +57,7 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
 // exchange's own disclosure site (an interface its pages use, not a documented one): the fund's details, read defensively
 // for the redemption price, its date and the day's change, so a renamed field is logged rather than mistaken for a price.
 // the US index a fund follows, from its name (Hebrew or English): its value moves with that index between official prices
-export const trackOf=name=>{const n=String(name||''); return /nasdaq|נאסד/i.test(n)&&/100/.test(n)?'NDX':/s&p|אס.?אנד.?פי/i.test(n)&&/500/.test(n)?'SPX':/dow|דאו/i.test(n)?'DJI':/russell|ראסל/i.test(n)?'RUT':''};
+export const trackOf=name=>{const n=String(name||''); return /nasdaq|נאסד|ndx/i.test(n)&&/100/.test(n)?'NDX':/s&p|אס.?אנד.?פי/i.test(n)&&/500/.test(n)?'SPX':/dow|דאו/i.test(n)?'DJI':/russell|ראסל/i.test(n)?'RUT':''};
 export const isIlFund=sym=>/^5\d{6}$/.test(String(sym||''));
 const MAYA_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
 const flat=(o,pre='',d=0,out={})=>{if(o&&typeof o==='object'&&d<4){for(const [k,v] of Object.entries(o)){if(v&&typeof v==='object'&&!Array.isArray(v))flat(v,pre+k+'.',d+1,out); else if(Array.isArray(v))v.slice(0,3).forEach((x,i)=>flat(x,pre+k+'['+i+'].',d+1,out)); else out[pre+k]=v}} return out};
@@ -87,13 +87,25 @@ export function fundFromJson(j,now=new Date()){
 }
 export async function mayaFund(id,{fetch:f=timedFetch}={}){
   let last=null;
-  for(const u of [`https://mayaapi.tase.co.il/api/fund/details?fundId=${encodeURIComponent(id)}`,`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}`]){
+  for(const u of [`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}`,`https://mayaapi.tase.co.il/api/fund/details?fundId=${encodeURIComponent(id)}`]){
     try{const r=await f(u,{headers:MAYA_H}); if(!r.ok){last=new Error('HTTP '+r.status);continue}
-      const j=await r.json(); const q=fundFromJson(j); if(q)return q;
+      const j=await r.json();
+      // the fund page's own answer (seen 20.10.2026): redemptionPrice, ratesAsOf, yields.dayYield, name and longName
+      if(j&&+j.redemptionPrice>0){const px=+j.redemptionPrice, chg=j.yields&&j.yields.dayYield!=null?+j.yields.dayYield:null, d=dateOf(j.ratesAsOf||(j.yields||{}).dueDate);
+        return {px,prev:chg!=null?px/(1+chg/100):null,name:[j.name,j.longName].filter(Boolean).join(' · '),ccy:'ILS',time:d?new Date(d+'T13:00:00Z').getTime():Date.now(),closeDate:d,prevDate:null,exch:'TASE',src:'maya',chg}}
+      const q=fundFromJson(j); if(q)return q;
       last=new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(','))}
     catch(e){last=e}
   }
   throw last||new Error('maya failed');
+}
+
+// a ticker's daily closes for the last month, [{d:'YYYY-MM-DD',c}], from Yahoo's chart
+export async function yahooBars(ticker,{fetch:f=timedFetch,range='1mo'}={}){
+  for(const host of YH){try{const r=await f(`${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=1d`,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok)continue;
+    const j=await r.json(), res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)continue; const off=+(res.meta||{}).gmtoffset||0, ts=res.timestamp||[], cl=((res.indicators||{}).quote||[{}])[0].close||[];
+    return ts.map((t,i)=>({d:dayOf(t,off),c:cl[i]})).filter(b=>b.c>0)}catch(e){}}
+  return [];
 }
 
 // Stooq daily history (US tickers as msft.us); last two closes
@@ -138,6 +150,13 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
     }
   });
   let i=0; await Promise.all(Array.from({length:Math.min(concurrency,tasks.length)},async()=>{while(i<tasks.length){const k=i++;await tasks[k]()}}));
+  // a fund that follows a US index: the index's close before the fund's price day (an Israeli fund prices on a day from the
+  // US close before it) and the dollar on that day, so the value can be carried to now
+  const fb=Object.entries(out).filter(([s,q])=>q&&q.src==='maya'&&q.closeDate&&trackOf(q.name));
+  if(fb.length){const bars={}, get=async t=>bars[t]=bars[t]||await yahooBars(t,{fetch:f}).catch(()=>[]);
+    for(const [s,q] of fb){const k=trackOf(q.name), ib=await get(BENCH[k].t), xb=await get('USDILS=X');
+      const i=ib.filter(b=>b.d<q.closeDate).at(-1), x=xb.filter(b=>b.d<=q.closeDate).at(-1);
+      if(i&&x)q.base={k,idx:i.c,idxDate:i.d,fx:x.c}}}
   const [boi,live]=await Promise.all([boiUsd({fetch:f}).catch(()=>null),yahooChart('USDILS=X',{fetch:f}).catch(()=>null)]);
   // other currencies seen in this run's quotes, against the shekel
   const needCcy=[...new Set(Object.values(out).map(q=>q&&q.ccy).filter(c=>c&&CCYS.includes(c)))], rates={};
@@ -161,15 +180,14 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       const om=old.meta&&old.meta[sym]||{}, nm=q.name||(posOf[sym]&&posOf[sym].name)||om.name||'';
       meta[sym]={src:'maya',ccy:'ILS',...(nm?{name:nm}:{}),...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{})};
       if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate;
-      // a fund has one official price a day. A fund that follows a US index moves between them with that index: its value is
-      // carried by the index's future from the moment the official price was first seen (the level then is kept), marked
-      // as an estimate beside the official price and its date
-      const tk=trackOf(nm), b=tk&&fetched.bench&&fetched.bench[tk], lvl=b?(b.fut&&b.fut.px>0?b.fut.px:b.px):0;
-      const ref=om.ref&&om.ref.k===tk&&om.ref.date===q.closeDate&&om.ref.nav===round(q.px,4)?om.ref:(lvl>0?{k:tk,lvl,date:q.closeDate,nav:round(q.px,4)}:null);
-      if(ref)meta[sym].ref=ref;
-      if(ref&&lvl>0&&ref.lvl>0&&Math.abs(lvl/ref.lvl-1)>0.0002&&Math.abs(lvl/ref.lvl-1)<0.15){
-        const est=q.px*lvl/ref.lvl; prices[sym]=round(est,4); prevC[sym]=round(q.px,4); meta[sym].est={nav:round(q.px,4),pct:round((lvl/ref.lvl-1)*100,3)};
-        stale[sym]=`הערכה לפי ${BENCH[tk].name} · מחיר רשמי ${q.closeDate?dm(q.closeDate):''}`.trim()}
+      // a fund has one official price a day, and its manager may publish it days late. A fund that follows a US index is
+      // carried from its official price to now by that index (from the US close before the price day; overnight by its
+      // future) and by the dollar, marked as an estimate beside the official price and its date
+      const B=q.base, b=B&&fetched.bench&&fetched.bench[B.k], fxN=fetched.fx&&fetched.fx.live&&fetched.fx.live.px>0?fetched.fx.live.px:(fetched.fx&&fetched.fx.boi?fetched.fx.boi.rate:0);
+      const lvl=b&&b.px>0?b.px*(b.fut&&b.fut.px>0&&b.fut.prev>0&&b.fut.date>b.date?b.fut.px/b.fut.prev:1):0, r=B&&lvl>0&&fxN>0?(lvl/B.idx)*(fxN/B.fx):0;
+      if(r>0&&Math.abs(r-1)<0.25&&Math.abs(r-1)>0.0002){prices[sym]=round(q.px*r,4); prevC[sym]=round(q.px,4);
+        meta[sym].est={nav:round(q.px,4),pct:round((r-1)*100,3),idx:B.idx,idxDate:B.idxDate,fx:B.fx,lvl:round(lvl,2),fxNow:round(fxN,4)};
+        stale[sym]=`הערכה לפי ${BENCH[B.k].name} ושער הדולר · מחיר רשמי ${q.closeDate?dm(q.closeDate):''}`.trim()}
       else{prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4)}
       continue}
     if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};

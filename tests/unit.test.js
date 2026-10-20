@@ -415,19 +415,25 @@ test('prices: an Israeli mutual fund comes from Maya, read defensively, in the s
   assert.equal(e.prices['5129283'],1234.56);
 });
 
-test('prices: a fund that follows a US index moves with its future between official prices',()=>{
-  const nav=(px,date)=>({px,prev:null,name:'הראל מחקה NASDAQ 100',ccy:'ILS',closeDate:date,time:0,src:'maya'});
-  const now=new Date('2026-10-20T08:00:00Z');
-  // first sight of the 19.10 price: the future's level is kept, the price is the official one
-  let d=buildQuotesDoc({prev:{prices:{'5129283':12}},fetched:{quotes:{'5129283':nav(12.3,'2026-10-19')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20100}}},errors:[]},symbols:['5129283'],now});
-  assert.equal(d.prices['5129283'],12.3); assert.deepEqual(d.meta['5129283'].ref,{k:'NDX',lvl:20100,date:'2026-10-19',nav:12.3}); assert.equal(d.lag.il,undefined,'yesterday\'s price is a fund\'s latest during the day');
-  // the future rose 1%: the value follows, marked as an estimate, and is not a missing session
-  d=buildQuotesDoc({prev:d,fetched:{quotes:{'5129283':nav(12.3,'2026-10-19')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20301}}},errors:[]},symbols:['5129283'],now:new Date('2026-10-21T09:00:00Z')});
-  assert.equal(d.prices['5129283'],12.423); assert.equal(d.prev['5129283'],12.3); assert.match(d.stale['5129283'],/^הערכה לפי נאסד״ק 100 · מחיר רשמי 19.10$/); assert.equal(d.lag.il,undefined);
-  // a new official price replaces the estimate and takes a new level
-  d=buildQuotesDoc({prev:d,fetched:{quotes:{'5129283':nav(12.41,'2026-10-20')},index:{},bench:{NDX:{px:20000,prev:19900,fut:{px:20290}}},errors:[]},symbols:['5129283'],now:new Date('2026-10-21T09:00:00Z')});
-  assert.equal(d.prices['5129283'],12.41); assert.equal(d.meta['5129283'].ref.lvl,20290); assert.equal(d.meta['5129283'].est,undefined);
-  assert.equal(trackOf('מור מחקה NASDAQ 100'),'NDX'); assert.equal(trackOf('הראל כספית מגמת ריבית'),'');
+test('prices: a fund that follows a US index is carried from its official price by the index and the dollar',async()=>{
+  // Maya's own answer for the fund (its shape on 20.10.2026), Yahoo's bars for the index and the dollar
+  const maya={fundId:5129283,name:'הראל מחקהNDX 100',longName:'הראל מחקה (4D)יNASDAQ 100',redemptionPrice:373.6,ratesAsOf:'2026-10-15',yields:{dueDate:'2026-10-15',dayYield:0.27}};
+  const bars=(closes)=>({chart:{result:[{meta:{gmtoffset:0},timestamp:closes.map(([d])=>Date.parse(d+'T20:00:00Z')/1000),indicators:{quote:[{close:closes.map(([,c])=>c)}]}}]}});
+  const res=b=>({ok:true,status:200,json:async()=>b});
+  const f=async u=>u.includes('maya.tase.co.il/api/v1/funds/mutual/5129283')?res(maya):u.includes('%5ENDX')&&u.includes('range=1mo')?res(bars([['2026-10-13',19800],['2026-10-14',20000],['2026-10-15',20100]]))
+    :u.includes('USDILS')&&u.includes('range=1mo')?res(bars([['2026-10-14',3.70],['2026-10-15',3.72]])):{ok:false,status:404,json:async()=>({})};
+  const q=await mayaFund('5129283',{fetch:f}); assert.equal(q.px,373.6); assert.equal(q.closeDate,'2026-10-15'); assert.match(q.name,/NDX 100/); assert.equal(trackOf(q.name),'NDX');
+  const all=await fetchAll(['5129283'],{fetch:f}); assert.deepEqual(all.quotes['5129283'].base,{k:'NDX',idx:20000,idxDate:'2026-10-14',fx:3.72});
+  // now: the index 2% above the 14.10 close, the dollar 1% below the 15.10 rate
+  all.bench={NDX:{px:20400,prev:20300,date:'2026-10-19'}}; all.fx={live:{px:3.6828}};
+  const d=buildQuotesDoc({prev:{prices:{'5129283':373}},fetched:all,symbols:['5129283'],now:new Date('2026-10-20T10:00:00Z')});
+  assert.ok(Math.abs(d.prices['5129283']-373.6*1.02*0.99)<1e-3); assert.equal(d.prev['5129283'],373.6);
+  assert.match(d.stale['5129283'],/^הערכה לפי נאסד״ק 100 ושער הדולר · מחיר רשמי 15.10$/); assert.equal(d.lag.il,undefined,'an estimate is not a missing session');
+  // overnight: the future's move since its last settlement is added to the index's close
+  all.bench={NDX:{px:20400,prev:20300,date:'2026-10-19',fut:{px:20604,prev:20400,date:'2026-10-20'}}};
+  const e=buildQuotesDoc({prev:{},fetched:all,symbols:['5129283'],now:new Date('2026-10-20T07:00:00Z')});
+  assert.ok(Math.abs(e.prices['5129283']-373.6*(20604/20000)*0.99)<1e-3);
+  assert.equal(trackOf('מור מחקה NASDAQ100'),'NDX'); assert.equal(trackOf('הראל כספית מגמת ריבית'),'');
 });
 
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{
