@@ -95,6 +95,18 @@ function mayaParse(j){
     return {px,prev:chg!=null?px/(1+chg/100):null,name:[j.name,j.longName].filter(Boolean).join(' · '),ccy:'ILS',time:d?new Date(d+'T13:00:00Z').getTime():Date.now(),closeDate:d,prevDate:null,exch:'TASE',src:'maya',chg}}
   return fundFromJson(j);
 }
+// the fund's daily history (the interface the fund page's price table uses, after pymaya): POST {pageSize, pageNumber,
+// period: 0 = a month}. Each row is read like a details answer, and the newest row is the price; the row before it gives
+// the previous price, so the day's change does not depend on a yield field
+export const MAYA_HIST=id=>`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}/history`;
+export function mayaHistParse(j,now=new Date()){
+  const rowsOf=x=>Array.isArray(x)?x:x&&typeof x==='object'?Object.values(x).map(rowsOf).find(a=>a&&a.length&&typeof a[0]==='object')||null:null;
+  const rows=(rowsOf(j)||[]).map(r=>fundFromJson(r,now)).filter(q=>q&&q.closeDate).sort((a,b)=>a.closeDate<b.closeDate?1:-1);
+  if(!rows.length)return null;
+  const q=rows[0], p=rows.find(r=>r.closeDate<q.closeDate);
+  if(p&&p.px>0){q.prev=p.px; q.prevDate=p.closeDate; q.chg=(q.px/p.px-1)*100}
+  delete q.dates; return q;
+}
 export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
   const H={...MAYA_H,'cache-control':'no-cache',pragma:'no-cache'}, errs=[];
   const got=(await Promise.all(MAYA_URLS(id).map(async u=>{
@@ -102,10 +114,17 @@ export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
       const j=await r.json(), q=mayaParse(j); if(q)return {q,host:new URL(u).host};
       errs.push(new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(',')))}
     catch(e){errs.push(e)}
-    return null}))).filter(Boolean);
+    return null}).concat([(async()=>{
+      // the history comes last: a details answer of the same day is kept for its name and yields
+      try{const r=await f(MAYA_HIST(id)+'?_='+now(),{method:'POST',headers:{...H,'content-type':'application/json'},body:JSON.stringify({pageSize:10,pageNumber:1,period:0}),cache:'no-store'});
+        if(!r.ok){errs.push(new Error('history HTTP '+r.status));return null}
+        const q=mayaHistParse(await r.json()); if(q)return {q,host:'maya.tase.co.il/history'}; errs.push(new Error('history: no rows'))}
+      catch(e){errs.push(e)}
+      return null})()]))).filter(Boolean);
   if(!got.length)throw errs.find(e=>/no price field/.test(e.message))||errs.at(-1)||new Error('maya failed');
   // the newest date wins; on the same date the first interface (the fund page's own) is kept
   const best=got.reduce((a,b)=>(b.q.closeDate||'')>(a.q.closeDate||'')?b:a);
+  if(!best.q.name){const n=got.map(g=>g.q.name).find(Boolean); if(n)best.q.name=n}
   if(got.length>1)best.q.srcDates=Object.fromEntries(got.map(g=>[g.host,g.q.closeDate||null]));
   return best.q;
 }

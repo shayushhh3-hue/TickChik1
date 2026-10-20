@@ -446,11 +446,22 @@ test('prices: Maya is asked past its cache on every interface, and the newest pr
   const f=async(u,o)=>{seen.push([u,o]); return u.includes('mayaapi.tase.co.il')?res(cur):res(old)};
   const q=await mayaFund('5129283',{fetch:f,now:()=>42});
   assert.equal(q.px,367.77); assert.equal(q.closeDate,'2026-10-19');
-  assert.deepEqual(q.srcDates,{'maya.tase.co.il':'2026-10-15','mayaapi.tase.co.il':'2026-10-19'});
-  assert.equal(seen.length,2,'both interfaces asked'); assert.ok(seen.every(([u,o])=>/[?&]_=42$/.test(u)&&o.headers['cache-control']==='no-cache'),'past any cache');
+  assert.deepEqual(q.srcDates,{'maya.tase.co.il':'2026-10-15','mayaapi.tase.co.il':'2026-10-19'},'the history answered nothing here');
+  assert.equal(seen.length,3,'both details interfaces and the history asked'); assert.ok(seen.every(([u,o])=>/[?&]_=42$/.test(u)&&o.headers['cache-control']==='no-cache'),'past any cache');
   // the same day on both: the fund page's own interface is kept; one interface down: the other one answers
   const g=async u=>u.includes('mayaapi')?{ok:false,status:500,json:async()=>({})}:res(cur);
   const r=await mayaFund('5129283',{fetch:g}); assert.equal(r.closeDate,'2026-10-19'); assert.equal(r.srcDates,undefined);
+});
+
+test('prices: Maya\'s fund history gives the newest price and the one before it, when the details lag',async()=>{
+  const old={fundId:5129283,name:'הראל מחקהNDX 100',redemptionPrice:373.6,ratesAsOf:'2026-10-15',yields:{dayYield:0.27}};
+  const hist={totalRecords:3,items:[{tradeDate:'2026-10-19T00:00:00',purchasePrice:367.77,redemptionPrice:367.77},{tradeDate:'2026-10-16T00:00:00',purchasePrice:369.1,redemptionPrice:369.1},{tradeDate:'2026-10-15T00:00:00',redemptionPrice:373.6}]};
+  const res=b=>({ok:true,status:200,json:async()=>b}); let post=null;
+  const f=async(u,o)=>{if(/\/history\?/.test(u)){post=o; return res(hist)} return u.includes('mayaapi')?{ok:false,status:404,json:async()=>({})}:res(old)};
+  const q=await mayaFund('5129283',{fetch:f,now:()=>Date.parse('2026-10-20T17:00:00Z')});
+  assert.equal(q.px,367.77); assert.equal(q.closeDate,'2026-10-19'); assert.equal(q.prev,369.1); assert.equal(q.prevDate,'2026-10-16');
+  assert.match(q.name,/NDX 100/,'the name comes from the details answer, so the index estimate still knows the fund'); assert.equal(post.method,'POST'); assert.deepEqual(JSON.parse(post.body),{pageSize:10,pageNumber:1,period:0});
+  assert.deepEqual(q.srcDates,{'maya.tase.co.il':'2026-10-15','maya.tase.co.il/history':'2026-10-19'});
 });
 
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{
