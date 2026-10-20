@@ -73,10 +73,14 @@ export function fundFromJson(j,now=new Date()){
   if(!(px>0))return null;
   // the price's date: a field that names the price or an update, never the fund's start date; and only a recent one
   const recent=v=>{const d=dateOf(v); if(!d)return ''; const t=new Date(d+'T12:00:00Z').getTime(), n=now.getTime(); return t<=n+864e5&&n-t<90*864e5?d:''};
-  const date=pick(/((price|rate|nav|value|update|trade|last|data)[_ ]?date)|(date[_ ]?(price|rate|nav|update|trade|last))|^date$|^asof|lastupdate|updatedat|^time$/i,recent,/start|inception|establish|found|end|expir|issue|report|publish/i)||'';
+  // every recent date in the answer, by field; the price's date is the latest of them (a fund of foreign shares can carry
+  // an older date beside the price's own, e.g. its index's), and the fields are kept so the owner can see what came
+  const NOT=/start|inception|establish|found|end|expir|issue|report|publish|birth|open/i, dates={};
+  for(const k of keys){const last=k.split('.').pop(); if(/date|time|asof|updated/i.test(last)&&!NOT.test(last)){const d=recent(F[k]); if(d)dates[k]=d}}
+  const date=Object.values(dates).sort().at(-1)||'';
   const chg=pick(/(day|daily)[_ ]?(yield|change|return|pct|percent)|(yield|change|return)[_ ]?(day|daily)|dayrate|dailyrate|changepercent|percentchange/i,v=>{const n=numOf(v); return n==null||Math.abs(n)>60?null:n});
   const prev=chg!=null?px/(1+chg/100):null;
-  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg};
+  return {px,prev,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg,dates:Object.fromEntries(Object.entries(dates).slice(0,6))};
 }
 export async function mayaFund(id,{fetch:f=timedFetch}={}){
   let last=null;
@@ -151,7 +155,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       const base=prices[sym]>0?prices[sym]:posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:0, k=base>0?q.px/base:1;
       if(k>40&&k<250){q.px/=100; if(q.prev)q.prev/=100} else if(k>0.004&&k<0.025){q.px*=100; if(q.prev)q.prev*=100}
       if(!(q.px>0))continue; prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4); got++;
-      meta[sym]={src:'maya',ccy:'ILS',...(q.closeDate?{date:q.closeDate,at:q.time}:{})}; if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate; continue}
+      meta[sym]={src:'maya',ccy:'ILS',...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{})}; if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate; continue}
     if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;

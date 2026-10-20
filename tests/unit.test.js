@@ -401,6 +401,9 @@ test('prices: an Israeli mutual fund comes from Maya, read defensively, in the s
   const tricky=fundFromJson({ManagementFeeRate:0.75,FundStartDate:'01/03/2011',TrusteeFeeRate:0.03,Prices:{PurchasePrice:1240,RedemptionPrice:1234},YearYield:12.5,DayYield:0.4},new Date('2026-10-18T15:00:00Z'));
   assert.equal(tricky.px,1234,'the redemption price, not a fee or the purchase price'); assert.equal(tricky.closeDate,'','the start date is not the price date'); assert.ok(Math.abs(tricky.prev-1234/1.004)<1e-6);
   assert.equal(fundFromJson({ManagementFeeRate:0.75,FundStartDate:'01/03/2011'}),null,'no price at all');
+  // two dates beside the price: the latest one is the price's
+  const two=fundFromJson({RedemptionPrice:100,IndexDate:'15/10/2026',PriceDate:'19/10/2026'},new Date('2026-10-20T07:00:00Z'));
+  assert.equal(two.closeDate,'2026-10-19'); assert.deepEqual(Object.keys(two.dates),['IndexDate','PriceDate']);
   assert.equal(isIlFund('5129283'),true); assert.equal(isIlFund('1159250'),false); assert.equal(isIlFund('MSFT'),false);
   // through fetchAll: the fund never goes to Yahoo; the stored price (in shekels) sets the scale of Maya's agorot
   hit=[]; const all=await fetchAll(['5129283'],{positions:[{sym:'5129283',ccy:'ILS',px:11.9}],fetch:f});
