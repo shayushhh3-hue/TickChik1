@@ -85,19 +85,29 @@ export function fundFromJson(j,now=new Date()){
   const name=pick(/name/i,v=>typeof v==='string'&&v.length>2&&v.length<120?v:null,/manager|company|trustee|english|class|category|type/i)||'';
   return {px,prev,name,ccy:'ILS',time:date?new Date(date+'T15:00:00Z').getTime():now.getTime(),closeDate:date,prevDate:null,exch:'TASE',src:'maya',chg,dates:Object.fromEntries(Object.entries(dates).slice(0,6))};
 }
-export async function mayaFund(id,{fetch:f=timedFetch}={}){
-  let last=null;
-  for(const u of [`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}`,`https://mayaapi.tase.co.il/api/fund/details?fundId=${encodeURIComponent(id)}`]){
-    try{const r=await f(u,{headers:MAYA_H}); if(!r.ok){last=new Error('HTTP '+r.status);continue}
-      const j=await r.json();
-      // the fund page's own answer (seen 20.10.2026): redemptionPrice, ratesAsOf, yields.dayYield, name and longName
-      if(j&&+j.redemptionPrice>0){const px=+j.redemptionPrice, chg=j.yields&&j.yields.dayYield!=null?+j.yields.dayYield:null, d=dateOf(j.ratesAsOf||(j.yields||{}).dueDate);
-        return {px,prev:chg!=null?px/(1+chg/100):null,name:[j.name,j.longName].filter(Boolean).join(' · '),ccy:'ILS',time:d?new Date(d+'T13:00:00Z').getTime():Date.now(),closeDate:d,prevDate:null,exch:'TASE',src:'maya',chg}}
-      const q=fundFromJson(j); if(q)return q;
-      last=new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(','))}
-    catch(e){last=e}
-  }
-  throw last||new Error('maya failed');
+// Maya answers from more than one interface, and one of them can hold an old answer for days (20.10.2026: the API gave
+// 15.10 while the fund's page showed 19.10). So every interface is asked, past any cache, and the newest price wins; the
+// dates each one gave are kept beside the price so the owner can see when a source lags.
+export const MAYA_URLS=id=>[`https://maya.tase.co.il/api/v1/funds/mutual/${encodeURIComponent(id)}`,`https://mayaapi.tase.co.il/api/fund/details?fundId=${encodeURIComponent(id)}`];
+function mayaParse(j){
+  // the fund page's own answer (seen 20.10.2026): redemptionPrice, ratesAsOf, yields.dayYield, name and longName
+  if(j&&+j.redemptionPrice>0){const px=+j.redemptionPrice, chg=j.yields&&j.yields.dayYield!=null?+j.yields.dayYield:null, d=dateOf(j.ratesAsOf||(j.yields||{}).dueDate);
+    return {px,prev:chg!=null?px/(1+chg/100):null,name:[j.name,j.longName].filter(Boolean).join(' · '),ccy:'ILS',time:d?new Date(d+'T13:00:00Z').getTime():Date.now(),closeDate:d,prevDate:null,exch:'TASE',src:'maya',chg}}
+  return fundFromJson(j);
+}
+export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
+  const H={...MAYA_H,'cache-control':'no-cache',pragma:'no-cache'}, errs=[];
+  const got=(await Promise.all(MAYA_URLS(id).map(async u=>{
+    try{const r=await f(u+(u.includes('?')?'&':'?')+'_='+now(),{headers:H,cache:'no-store'}); if(!r.ok){errs.push(new Error('HTTP '+r.status));return null}
+      const j=await r.json(), q=mayaParse(j); if(q)return {q,host:new URL(u).host};
+      errs.push(new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(',')))}
+    catch(e){errs.push(e)}
+    return null}))).filter(Boolean);
+  if(!got.length)throw errs.find(e=>/no price field/.test(e.message))||errs.at(-1)||new Error('maya failed');
+  // the newest date wins; on the same date the first interface (the fund page's own) is kept
+  const best=got.reduce((a,b)=>(b.q.closeDate||'')>(a.q.closeDate||'')?b:a);
+  if(got.length>1)best.q.srcDates=Object.fromEntries(got.map(g=>[g.host,g.q.closeDate||null]));
+  return best.q;
 }
 
 // a ticker's daily closes for the last month, [{d:'YYYY-MM-DD',c}], from Yahoo's chart
@@ -178,7 +188,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       if(k>40&&k<250){q.px/=100; if(q.prev)q.prev/=100} else if(k>0.004&&k<0.025){q.px*=100; if(q.prev)q.prev*=100}
       if(!(q.px>0))continue; got++;
       const om=old.meta&&old.meta[sym]||{}, nm=q.name||(posOf[sym]&&posOf[sym].name)||om.name||'';
-      meta[sym]={src:'maya',ccy:'ILS',...(nm?{name:nm}:{}),...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{})};
+      meta[sym]={src:'maya',ccy:'ILS',...(nm?{name:nm}:{}),...(q.closeDate?{date:q.closeDate,at:q.time}:{}),...(q.dates?{dates:q.dates}:{}),...(q.srcDates?{srcDates:q.srcDates}:{})};
       if(q.closeDate&&q.closeDate>ilDate)ilDate=q.closeDate;
       // a fund has one official price a day, and its manager may publish it days late. A fund that follows a US index is
       // carried from its official price to now by that index (from the US close before the price day; overnight by its

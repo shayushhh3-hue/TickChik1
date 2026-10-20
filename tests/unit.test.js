@@ -436,6 +436,21 @@ test('prices: a fund that follows a US index is carried from its official price 
   assert.equal(trackOf('מור מחקה NASDAQ100'),'NDX'); assert.equal(trackOf('הראל כספית מגמת ריבית'),'');
 });
 
+test('prices: Maya is asked past its cache on every interface, and the newest price wins',async()=>{
+  // 20.10.2026: one interface still answered 15.10 while the fund's page showed 367.77 for 19.10
+  const old={fundId:5129283,name:'הראל מחקהNDX 100',redemptionPrice:373.6,ratesAsOf:'2026-10-15',yields:{dayYield:0.27}};
+  const cur={fundId:5129283,name:'הראל מחקהNDX 100',redemptionPrice:367.77,ratesAsOf:'2026-10-19',yields:{dayYield:-0.4}};
+  const res=b=>({ok:true,status:200,json:async()=>b}); let seen=[];
+  const f=async(u,o)=>{seen.push([u,o]); return u.includes('mayaapi.tase.co.il')?res(cur):res(old)};
+  const q=await mayaFund('5129283',{fetch:f,now:()=>42});
+  assert.equal(q.px,367.77); assert.equal(q.closeDate,'2026-10-19');
+  assert.deepEqual(q.srcDates,{'maya.tase.co.il':'2026-10-15','mayaapi.tase.co.il':'2026-10-19'});
+  assert.equal(seen.length,2,'both interfaces asked'); assert.ok(seen.every(([u,o])=>/[?&]_=42$/.test(u)&&o.headers['cache-control']==='no-cache'),'past any cache');
+  // the same day on both: the fund page's own interface is kept; one interface down: the other one answers
+  const g=async u=>u.includes('mayaapi')?{ok:false,status:500,json:async()=>({})}:res(cur);
+  const r=await mayaFund('5129283',{fetch:g}); assert.equal(r.closeDate,'2026-10-19'); assert.equal(r.srcDates,undefined);
+});
+
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{
   const q=(px,date,ccy)=>({px,prev:px-1,closeDate:date,ccy,src:'yahoo',time:'t'});
   // Sunday evening: New York closed Friday 16.10, Tel Aviv's Friday did not arrive for one of two securities
