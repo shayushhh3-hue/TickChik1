@@ -702,6 +702,12 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 #welcome{display:none} .nopf #welcome{display:flex}
 .obnext{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border-inline-start:4px solid var(--accent);background:var(--accent-soft)} .obnext>div:first-child{flex:1;min-width:220px;font-size:13.5px;line-height:1.55}
 .nopf [data-pane="overview"]>:not(#welcome),.nopf .hero .main,.nopf .hero .tapewrap,.nopf #acctChips{display:none}
+/* one account chosen that has nothing in it yet: only its empty state, never another account's numbers */
+#acctEmpty{display:none} .noacct #acctEmpty{display:block}
+.noacct .hero .main,.noacct .hero .tapewrap,.noacct [data-pane="overview"],.noacct [data-pane="risk"]>*,.noacct [data-pane="history"]>*,.noacct [data-pane="reports"]>*,.noacct [data-pane="state"]>*{display:none!important}
+#acctEmpty{margin:14px auto 4px;max-width:720px;text-align:center;padding:26px 20px}
+#acctEmpty h2{margin:6px 0 8px} #acctEmpty p{color:var(--ink2);margin:0 auto 16px;max-width:460px;line-height:1.6}
+#acctEmpty .row2{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 /* 13.10 (stage 3.2): the full header only on the overview; on every other tab one short line (the value, the day, the
    alerts chip), so the tab's own content starts on the first screen */
 body:not([data-page="overview"]) .hero .side,body:not([data-page="overview"]) .hero .taperow,body:not([data-page="overview"]) .hero .worth>.d{display:none}
@@ -1467,6 +1473,8 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 
   
 
+  <section class="panel" id="acctEmpty" aria-labelledby="hAcctEmpty"><h2 id="hAcctEmpty">עוד אין תיק</h2><p id="acctEmptyP"></p>
+    <div class="row2"><button class="btn pri" type="button" id="acctEmptyUp">להעלות את התיק</button><button class="btn" type="button" data-acctall>חזרה לכל התיקים</button></div></section>
   <div class="pane" data-pane="overview">
     <section class="panel welcome" id="welcome" aria-labelledby="hWelcome">
       <h2 id="hWelcome">התיק שלך. עכשיו גם ברור לך מה קורה בו.</h2>
@@ -15584,6 +15592,20 @@ function monthSeries(){
   for(const r of rows)if(r.src==='up')r.opens=r.flow!=null&&r.flow>0&&Math.abs(r.val-r.flow)<=r.flow*0.15;
   return rows;
 }
+// The same months for one account: its own value each month (the saved month-ends and the apps' tables keep it per
+// account), its own money in (its table's and its deposits, not the plan's), and the result between them. An app's own
+// percent is used for a shekel account, as in the combined series.
+function monthSeriesOf(a){
+  const U=(upMonths()[a])||{}, shek=acctCcy(a)!=='USD';
+  const rows=monthSeries().filter(r=>r.by&&r.by[a]!=null&&!(r.miss&&r.miss.includes(a))).map(r=>({ym:r.ym,val:+r.by[a]||0,by:{[a]:+r.by[a]||0},src:r.src,day:r.day,...(r.now?{now:true}:{}),...(r.asOf?{asOf:r.asOf}:{})}));
+  while(rows.length&&!(rows[0].val>0))rows.shift();
+  let prev=null;
+  for(const r of rows){const pv=prev&&prev.ym===ymAdd(r.ym,-1)?prev:null; r.flow=monthFlow(r.ym,[],a);
+    r.gain=pv?r.val-pv.val-r.flow:null; const u=U[r.ym];
+    if(shek&&u&&u.ret!=null){r.ret=+u.ret;r.own=true} else r.ret=r.gain!=null&&pv.val+r.flow/2>0?r.gain/(pv.val+r.flow/2)*100:null;
+    prev=r}
+  return rows;
+}
 // fees of one account in shekels, at today's dollar rate: each trade's own fee when the statement gave one, otherwise the
 // account's fixed fee per US trade (feeUsdPerTrade); plus the fee rows saved apart (A.fees). The account's feesNote only
 // describes them: the ₪3 it names is the TA-125 trade's own feeIls.
@@ -15684,9 +15706,9 @@ function dollarCost(P,Q,hs,buys,acct='all'){
 }
 // a month's money in from the records: per account, its table's month (up to its day for a month "so far"), and the
 // deposits and withdrawals saved one by one that the table does not stand for; and the plan's deposits of the month
-function monthFlow(ym,plan=planExtraList()){
+function monthFlow(ym,plan=planExtraList(),only){
   const U=upMonths(); let t=0;
-  for(const A of (HS&&HS.accounts)||[]){const r0=U[A.acct]&&U[A.acct][ym], r=r0&&r0.flow!=null?r0:null;
+  for(const A of (HS&&HS.accounts)||[]){if(only&&A.acct!==only)continue; const r0=U[A.acct]&&U[A.acct][ym], r=r0&&r0.flow!=null?r0:null;
     if(r)t+=r.flow*(r.ccy==='USD'?(fxOfMonth(ym)||usdRate()):1);
     for(const d of A.deposits||[])if(d&&String(d.date).slice(0,7)===ym&&!upCovers(r,d))t+=(+d.amount||0)*(((d.ccy||A.ccy)==='USD')?usdRate():1)}
   for(const x of plan)if(String(x.day).slice(0,7)===ym)t+=x.amt;
@@ -16128,6 +16150,9 @@ function render(){
   try{renderMe()}catch(e){}
   try{renderDepBan()}catch(e){}
   acctsSync(); if(!ACCTS[acct])acct='all';
+  {const has=a=>((P&&P.positions)||[]).some(x=>x&&x.acct===a)||((P&&P.cash)||[]).some(x=>x&&x.acct===a&&Math.abs(+x.amount||0)>=1)||!!(DRAFT&&(DRAFT.positions||[]).some(x=>x.acct===a));
+    const empty=acct!=='all'&&!!P&&!has(acct), w=document.querySelector('.wrap'); if(w)w.classList.toggle('noacct',empty);
+    if(empty){const n=acctName(acct); $('hAcctEmpty').textContent=`עוד אין תיק ב${n}`; $('acctEmptyP').textContent=`בתצוגה של ${n} מופיעים רק הנתונים של ${n}. כשתעלה צילום מסך או דוח של ${n}, יופיעו כאן השווי, האחזקות והתשואה שלו.`; $('acctEmptyUp').textContent=`להעלות את התיק של ${n}`}}
   $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${k===acct}">${ACCTS[k]}</button>`).join('');
   fillInputs(); renderMine(); try{renderMonths()}catch(e){}
   if(!P||!Q){return}
@@ -16152,12 +16177,15 @@ function render(){
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
   {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
-    try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r}}catch(e){}
-    try{const dt=HS?depTotal():0; if(dt>0)dp={dep:dt,diff:m.total-dt,pct:(m.total-dt)/dt*100}}catch(e){}
+    const one=acct!=='all';
+    if(one){try{if(HS){const yr=ilDay().slice(0,4), rs=monthSeriesOf(acct).filter(r=>r.ym.startsWith(yr)&&r.ret!=null&&r.gain!=null);
+        if(rs.length){const f=rs.reduce((t,r)=>t*(1+r.ret/100),1); y={pct:(f-1)*100,gain:rs.reduce((t,r)=>t+r.gain,0),first:rs[0].ym,cut:rs[0].ym!==yr+'-01'}}}}catch(e){}}
+    else try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r}}catch(e){}
+    if(!one)try{const dt=HS?depTotal():0; if(dt>0)dp={dep:dt,diff:m.total-dt,pct:(m.total-dt)/dt*100}}catch(e){}
     if(y){yk.textContent=y.cut||y.fromZero?'מ'+ymFull(y.first):'מתחילת השנה'; ye.textContent=spct(y.pct,1); ye.className='v '+(y.pct>=0?'up':'down'); yd.textContent=sgn(y.gain)}
     else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
     if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
-    else{de.textContent='—'; de.className='v'; dd.textContent='אין רישום הפקדות'}}
+    else{de.textContent='—'; de.className='v'; dd.textContent=one?'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"':'אין רישום הפקדות'}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
 
   // alerts: the same engine the assistant uses (alertsOf)
@@ -16860,10 +16888,11 @@ const MSHORT=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','י�
 // month, the return the page computed (monthSeries).
 function renderMonths(){
   const body=$('monRows'), note=$('monNote'); if(!body)return;
-  const R=monthSeries().slice().reverse(), ids=acctIds();
+  const one=acct!=='all'&&ACCTS[acct], R=(one?monthSeriesOf(acct):monthSeries()).slice().reverse(), ids=acctIds();
+  {const h=$('hMon'); if(h)h.textContent=one?`תשואה חודשית · ${acctName(acct)}`:'תשואה חודשית'}
   if(!R.length){const h='<tr><td colspan="4" class="empty">עוד אין נתונים חודשיים. אפשר להעלות בלשונית "התיק שלי" צילום של מסך התשואות מהאפליקציה של בית ההשקעות (חודש, שווי, תשואה והפקדות), או דוחות חודשיים.</td></tr>'; if(body.innerHTML!==h)body.innerHTML=h; note.textContent=''; return}
   // a mark only where the month is not as the others: so far, partial, reconstructed, or from one day of it
-  const lagAll=(()=>{try{return P&&Q?pxLagInfo(mAllNow()):[]}catch(e){return []}})(), lagTag=lagAll.length?' · מחירי '+lagAll.map(g=>(g.k==='il'?'ת״א':'ארה״ב')+' מ-'+dmy(g.have)).join(', '):'';
+  const lagAll=(()=>{try{return P&&Q?pxLagInfo(one?model(P,Q,acct):mAllNow()):[]}catch(e){return []}})(), lagTag=lagAll.length?' · מחירי '+lagAll.map(g=>(g.k==='il'?'ת״א':'ארה״ב')+' מ-'+dmy(g.have)).join(', '):'';
   const tag=r=>r.now?'עד היום'+lagTag:r.asOf?'עד '+dmy(r.asOf):r.miss?'רק '+ids.filter(a=>!r.miss.includes(a)&&+r.by[a]>0).map(acctName).join(', '):r.src==='day'?'לפי '+dmy(r.day):r.src==='est'?'משוחזר':'';
   const mon=ym=>`<span class="ml">${esc(MONTHS[+ym.slice(5)-1])}</span><span class="ms">${esc(MSHORT[+ym.slice(5)-1])}</span> ${ym.slice(0,4)}`;
   const h=R.map(r=>{const t=tag(r); return `<tr${r.miss?' class="part"':''}><td><b>${mon(r.ym)}</b>${t?`<span class="nm">${esc(t)}</span>`:''}</td><td class="num"><span class="n">${ils(r.val)}</span></td><td class="num"><span class="n">${r.flow==null?'—':Math.abs(r.flow)<0.5?ils(0):sgn(r.flow)}</span></td><td class="num"><span class="n ${r.ret>0?'up':r.ret<0?'down':''}">${r.ret==null?'—':spct(r.ret,2)}</span>${r.gain!=null?`<span class="nm"><span class="n">${sgn(r.gain)}</span></span>`:''}</td></tr>`}).join('');
@@ -19298,6 +19327,8 @@ document.addEventListener('click',ev=>{
   const tk=ev.target.closest('[data-track]'); if(tk){TRACK=tk.dataset.track==='idx'?'idx':'stocks';try{localStorage.setItem('track',TRACK)}catch(e){};editSym=null;setTrack();render();return}
   const md=ev.target.closest('[data-mode]'); if(md){planAct('mode',md.dataset);return}
   const c=ev.target.closest('.chip[data-a]'); if(c){acct=c.dataset.a;try{localStorage.setItem('acct',acct)}catch(e){};render();return}
+  if(ev.target.closest('[data-acctall]')){acct='all';try{localStorage.setItem('acct',acct)}catch(e){};render();return}
+  if(ev.target.closest('#acctEmptyUp')){const a=acct, sel=$('upAcct'); if(sel&&[...sel.options].some(o=>o.value===a))sel.value=a; goUpload();return}
   const td=ev.target.closest('[data-txdel]'); if(td&&DRAFT){(DRAFT.tx||[]).splice(+td.dataset.txdel,1);renderTx();return}
   const mdl=ev.target.closest('[data-mondel]'); if(mdl&&DRAFT){delete (DRAFT.monthly||{})[mdl.dataset.mondel];renderTx();return}
   const al=ev.target.closest('[data-alike]'); if(al&&DRAFT){const [a,nk]=al.dataset.alike.split('|');alikeFix(a,nk);return}
