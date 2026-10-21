@@ -272,6 +272,27 @@ test('a lighter page: the PDF and Excel libraries are not loaded at the start, a
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('what is used: screens and the parts seen on the screen, per day, in the viewer\'s own account only; shown in the settings',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const pid=store.userByEmail('p2@example.com').id;
+  try{
+    const {ctx,pg}=await open(390);
+    await tab(pg,'plan'); await pg.waitForTimeout(400); await tab(pg,'risk'); await pg.waitForTimeout(400); await tab(pg,'overview'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.getElementById('deskSec').scrollIntoView({block:'start'})); await pg.waitForTimeout(2200);
+    await pg.evaluate(()=>window.__ux.useSave()); await pg.waitForTimeout(500);
+    const d=store.getDoc('usage/main').data, day=Object.keys(d.days).sort().pop(), D=d.days[day];
+    assert.ok(D['tab:plan']>=1&&D['tab:risk']>=1&&D['tab:overview']>=1,JSON.stringify(D)); assert.ok(D['s:hDesk']>=1,'a part seen on the screen counts: '+JSON.stringify(D));
+    await tab(pg,'settings'); await pg.waitForTimeout(600);
+    const u=await pg.evaluate(()=>({txt:document.getElementById('useBox').textContent,rows:document.querySelectorAll('#useBox table.use tbody tr').length}));
+    assert.ok(u.rows>=3); assert.match(u.txt,/מה לעשות בהפקדה הבאה/); assert.match(u.txt,/אחרי שבוע של שימוש/); assert.match(u.txt,/נשמר רק בחשבון שלך/);
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close();
+    // a partner's count is in the partner's own data, and the owner cannot read it
+    const p=await open(390,{who:'p2'}); await tab(p.pg,'plan'); await p.pg.waitForTimeout(400); await p.pg.evaluate(()=>window.__ux.useSave()); await p.pg.waitForTimeout(500); await p.ctx.close();
+    assert.ok(store.getDoc(`data/users/${pid}/usage`).exists,'kept in the partner\'s own data');
+    const {access}=await import('../server/store.js'); assert.equal(access({id:'owner',role:'owner'},`data/users/${pid}/usage`),'','the owner does not see it');
+  }finally{store.deleteDoc('usage/main'); store.deleteDoc(`data/users/${pid}/usage`)}
+});
+
 test('two-step sign-in: switched on in its own page, the login asks for the code, a backup code works once',T,async t=>{
   if(skip())return t.skip('no browser');
   const {b32decode,hotp,step}=await import('../server/totp.js'); const code=sec=>hotp(b32decode(sec),step());

@@ -1580,6 +1580,7 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .tx-l{margin:0;font-size:14px;line-height:1.65;color:var(--ink);max-width:72ch} .tx-l b{margin-inline-end:4px}
 .viewwrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:4px}
 .viewwrap .sub{font-size:13px}
+table.use td:first-child{max-width:60vw;white-space:normal}
 .calm .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
 .calm .sidemore{display:none!important}
 @media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
@@ -2258,6 +2259,10 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
       <p class="note" id="depNote"></p>
     </details>
 
+    <section aria-labelledby="hUse" id="useSec">
+      <div class="row"><h2 id="hUse">במה אני משתמש באתר</h2><span class="sub" id="useSub"></span></div>
+      <div class="panel" id="useBox" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0">טוען…</p></div>
+    </section>
     <section aria-labelledby="hData" id="dataSec">
       <div class="row"><h2 id="hData">פרטיות ונתונים</h2></div>
       <div class="panel" id="privPanel" style="display:flex;flex-direction:column;gap:12px">
@@ -18322,7 +18327,7 @@ function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAM
     +(L.length>FIRST?`<button type="button" class="sg sgmore" aria-expanded="false">עוד ${L.length-FIRST} שאלות ▾</button>`:''); setH(el,h); el.classList.remove('all')}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#anaSugg .sgmore'); if(!b)return; const el=$('anaSugg'), all=!el.classList.contains('all'); el.classList.toggle('all',all); b.setAttribute('aria-expanded',String(all)); b.textContent=all?'פחות ▴':`עוד ${el.querySelectorAll('.sg.xtra').length} שאלות ▾`});
 function fabSync(){const f=$('chatFab'), d=$('anaBox'); if(!f||!d)return; f.hidden=!PFK||!d.hidden; if(!d.hidden){try{botTipClose()}catch(e){}}}
-function anaOpen(src,toInput){const d=$('anaBox'); if(!d)return; const was=!d.hidden;
+function anaOpen(src,toInput){const d=$('anaBox'); if(!d)return; const was=!d.hidden; if(!was)try{useAdd('chiko')}catch(e){}
   if(!was){ANA_RET=src||document.activeElement; d.hidden=false; document.body.classList.add('chat-open'); $('chatFab').setAttribute('aria-expanded','true'); $('chatFab').classList.remove('new')}
   d.setAttribute('aria-modal',anaPhone()?'true':'false'); fabSync(); anaHello(); anaSugg();
   if(toInput)setTimeout(()=>{try{const i=$('anaQ'); (i&&!$('anaForm').hidden?i:$('anaSugg').querySelector('button')||d.querySelector('.chat-x')).focus()}catch(e){}},40)}
@@ -19454,7 +19459,7 @@ async function pdfBlob(R){
 async function saveReport(R0,name,btn0){
   const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null; if(!dl)return;
   const b=btn0||$('btnReport'), l0=b.dataset.l0||(b.dataset.l0=b.textContent), reset=()=>setTimeout(()=>{b.disabled=false;b.textContent=l0},2500);
-  await libNeed('jspdf'); if(!window.jspdf){b.textContent='יצירת PDF לא זמינה כאן';reset();return}
+  try{useAdd('export:pdf')}catch(e){} await libNeed('jspdf'); if(!window.jspdf){b.textContent='יצירת PDF לא זמינה כאן';reset();return}
   const R=R0||buildReport(); if(!R){b.textContent='אין עדיין נתוני תיק';reset();return}
   b.disabled=true;b.textContent='מכין PDF…';
   try{
@@ -19480,7 +19485,7 @@ function domTable(tbodyId){
 async function saveExcel(R0,name,btn0){
   const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null; if(!dl)return;
   const b=btn0||$('btnExcel'), l0=b.dataset.l0||(b.dataset.l0=b.textContent), reset=()=>setTimeout(()=>{b.disabled=false;b.textContent=l0},2500);
-  await libNeed('xlsx'); if(!window.XLSX){b.textContent='יצירת אקסל לא זמינה כאן';reset();return}
+  try{useAdd('export:xlsx')}catch(e){} await libNeed('xlsx'); if(!window.XLSX){b.textContent='יצירת אקסל לא זמינה כאן';reset();return}
   const R=R0||buildReport(); if(!R){b.textContent='אין עדיין נתוני תיק';reset();return}
   b.disabled=true;b.textContent='מכין אקסל…';
   try{
@@ -19674,7 +19679,7 @@ document.addEventListener('click',ev=>{
   const pfb=ev.target.closest('[data-prof]'); if(pfb){if(pfb.dataset.prof==='edit'){if(pfb.closest('#anaBox')&&!anaDock())anaClose(true); profOpen(pfb)} else profClose(true); return}
   if(ev.target.closest('[data-depban]')){try{localStorage.setItem('tr_depban',ymNow())}catch(e){} renderDepBan(); return}
   const i18b=ev.target.closest('[data-i18n]'); if(i18b){if(i18b.dataset.i18n==='go'){I18N.stop='';i18nPump();i18nPill()} else {if(S.profile&&S.profile.lang&&S.profile.lang!=='he'&&canWrite){S.profile={...S.profile,lang:'he'};changed()} i18nSet('he')} return}
-  const vw=ev.target.closest('[data-view]'); if(vw){setView(vw.dataset.view);return}
+  const vw=ev.target.closest('[data-view]'); if(vw){try{useAdd('view:'+vw.dataset.view)}catch(e){} setView(vw.dataset.view);return}
   const tb=ev.target.closest('[data-tab]'); if(tb){if(tb.dataset.pot){POT=tb.dataset.pot; try{localStorage.setItem('tr_pot',POT)}catch(x){}} showTab(tb.dataset.tab,true);setNav(false);return}
   if(ev.target.closest&&ev.target.closest('#kStatus')){showTab('overview');$('desk').scrollIntoView({behavior:'smooth',block:'center'});return}
   if(ev.target.id==='calmMore'){setMore(!MORE);return}
@@ -19730,7 +19735,7 @@ function mergeSettings(d){const o=JSON.parse(JSON.stringify(DEF));Object.assign(
 // The owner keeps the original shared paths (locked to the owner by the access rules). Every other viewer gets a
 // private subtree under data/users/<id>/, or this browser's storage when the viewer may not write to the database.
 let ME=null, OWNER=true, LOCAL=false, RAWQ=null;
-let PATHS={portfolio:'portfolio/main',plan:'plan/main',settings:'settings/main',history:'history/main',daily:'history/daily',arc:'reports/archive/items',ack:'alerts/ack'};
+let PATHS={portfolio:'portfolio/main',plan:'plan/main',settings:'settings/main',history:'history/main',daily:'history/daily',arc:'reports/archive/items',ack:'alerts/ack',usage:'usage/main'};
 const lsGet=n=>{try{const v=localStorage.getItem('tr_'+n);return v?JSON.parse(v):null}catch(e){return null}};
 const lsSet=(n,d)=>{try{localStorage.setItem('tr_'+n,JSON.stringify(d))}catch(e){}};
 const merge=(a,b)=>{for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')merge(a[k],b[k]);else a[k]=b[k]}return a};
@@ -20744,7 +20749,7 @@ async function wipeAll(){
   const pdel=async n=>{if(LOCAL){try{localStorage.removeItem('tr_'+n)}catch(e){}return} await db.doc(PATHS[n]).delete()};
   clearTimeout(pTimer); clearTimeout(timer); stopJobs(); JOBS.length=0; for(const k in HOLD)delete HOLD[k];
   if(db||LOCAL){
-    for(const n of ['portfolio','plan','history','daily'])await run(()=>pdel(n));
+    for(const n of ['portfolio','plan','history','daily','usage'])await run(()=>pdel(n));
     await run(async()=>{if(LOCAL){try{localStorage.removeItem('tr_ack')}catch(e){}return} const r=db.doc(PATHS.ack), sn=await r.get(); if(sn&&sn.exists)await r.delete()});
     try{if(db&&!LOCAL){const coll=OWNER?'settings':(ME?'data/users/'+ME:null); if(coll){const sn=await db.collection(coll).get(); for(const d of sn.docs)if(/^i18n_/.test(d.id))await db.doc(coll+'/'+d.id).delete()}}}catch(e){}
     if(withSet)await run(()=>pdel('settings'));
@@ -21592,7 +21597,7 @@ function srchRender(){
 const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k)}
-function openSec(k){if(SV==='fit')setSV('search');SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
+function openSec(k){try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
   if(RSX[k]===undefined)loadResearch(k).then(()=>{if(SEC===k)renderSec()});try{window.scrollTo({top:0})}catch(e){}}
 function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||[];if(seen.includes(k)||(WATCH.marks||[]).includes(k)||(WATCH.held||[]).includes(k)||((P&&P.positions)||[]).some(p=>p.sym===k))return;
   if(!/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(k))return;watchSave({seen:seen.concat([k]).slice(-60)}).catch(()=>{})}
@@ -21904,6 +21909,7 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   setH(row,want)}
 function showTab(t,user){
   if(!TABS.includes(t))t='overview';
+  try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t)}}catch(e){}
   document.body.dataset.page=t;   // not data-tab: a click anywhere would then count as a click on a tab button
   // aria-selected belongs to tabs only; the buttons in the text that lead to a tab are plain buttons
   for(const b of document.querySelectorAll('[role="tab"][data-tab]'))b.setAttribute('aria-selected',b.dataset.tab===t);
@@ -21915,6 +21921,7 @@ function showTab(t,user){
   if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){}}
   if(t==='state'){try{renderState()}catch(e){}}
   if(t==='calendar'){try{renderCal()}catch(e){}}
+  if(t==='settings'){try{renderUse()}catch(e){}}
   if(t==='pots'){try{renderPots()}catch(e){}}
   if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
@@ -22187,6 +22194,46 @@ function renderTax(){
 function taxFacts(){let T=null; try{T=taxNow(mAllNow())}catch(e){} if(!T||T.none)return null;
   return {note:'הערכה: אם הכול נמכר היום; שיעור מההגדרות; הפסדים מקזזים רווחים; לא המלצה למכור',rate:pct(T.rate*100,0),gains:ils(T.gains),losses:ils(T.losses),net:sgn(T.net),tax_estimate:ils(T.tax),
     dollar_part:T.fxN?sgn(T.fxTot):null,losing:T.dn.map(r=>lab(r.sym)),dividends_tax_withheld:T.div?ils(T.div.tax):null}}
+// ---- 21.10 (3) what is used: each screen and part, per day, in the viewer's own account (the owner's usage/main, a
+// partner's data/users/<id>/usage). Nobody else sees it, not even the site's owner. A part counts when at least 40% of it
+// (or of the screen, for a part taller than it) stays on the screen for a second and a half; the same thing within 4 seconds counts once. Saved at most every two
+// minutes, and when the page goes to the background. It answers "what do I never open?" with numbers, not a guess
+let USE=null, USE_READY=false, USE_DIRTY=false, USE_T=null, USE_LAST={}, USE_SEEN=new Set();
+function useAdd(k){if(!k)return; const now=Date.now(); if(USE_LAST[k]&&now-USE_LAST[k]<4000)return; USE_LAST[k]=now;
+  USE=USE||{days:{}}; const d=ilDay(), D=USE.days[d]||(USE.days[d]={}); D[k]=(D[k]||0)+1; if(!USE.since)USE.since=d; USE_DIRTY=true; if(!USE_T)USE_T=setTimeout(useSave,120000)}
+async function useSave(){clearTimeout(USE_T); USE_T=null; if(!USE_DIRTY||!USE_READY||!canWrite||!(db||LOCAL))return; USE_DIRTY=false;
+  const keep=Object.keys(USE.days).sort().slice(-90); try{await pset('usage',{since:USE.since,days:Object.fromEntries(keep.map(k=>[k,USE.days[k]])),updatedAt:new Date().toISOString()})}catch(e){USE_DIRTY=true}}
+function useBoot(){let first=true, off=null; try{off=pd('usage').onSnapshot(s=>{if(!first)return; first=false; const v=s&&s.exists?s.data():null, loc=USE;
+    USE=v&&v.days?{since:v.since||Object.keys(v.days).sort()[0],days:v.days}:{days:{}};
+    if(loc)for(const [d,D] of Object.entries(loc.days))for(const [k,n] of Object.entries(D)){const T=USE.days[d]||(USE.days[d]={}); T[k]=(T[k]||0)+n}
+    if(!USE.since)USE.since=ilDay(); USE_READY=true; try{if(off)setTimeout(off,0)}catch(e){} try{renderUse()}catch(e){}},()=>{USE_READY=true})}catch(e){USE_READY=true}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')useSave()});
+let USE_IO=null;
+function useWatch(){if(USE_IO||!('IntersectionObserver' in window))return; const tm=new Map();
+  USE_IO=new IntersectionObserver(es=>{for(const e of es){const id=e.target.getAttribute('aria-labelledby')||e.target.id; if(!id)continue;
+    // seen: 40% of the part, or a part taller than the screen filling 40% of it
+    const v=e.isIntersecting&&e.intersectionRect.height>=Math.min(e.boundingClientRect.height,innerHeight)*0.4;
+    if(v){if(!tm.has(id))tm.set(id,setTimeout(()=>{tm.delete(id); if(USE_SEEN.has(id))return; USE_SEEN.add(id); useAdd('s:'+id)},1500))}
+    else{clearTimeout(tm.get(id)); tm.delete(id)}}},{threshold:[0,0.1,0.2,0.3,0.4,0.5,0.7,1]});
+  for(const el of document.querySelectorAll('[data-pane] section[aria-labelledby]'))USE_IO.observe(el)}
+const useName=k=>{const [t,id]=[k.slice(0,k.indexOf(':')),k.slice(k.indexOf(':')+1)];
+  if(t==='tab')return (SUBL[id]||HEADL[id]||(($('tab_'+id)||{}).textContent||'').trim()||id);
+  if(t==='s'){const h=$(id); return h?h.textContent.replace(/\s+/g,' ').trim().slice(0,60):id}
+  if(t==='go'){const g=GO.find(x=>x.id===id); return 'חיפוש "לאן להגיע?": '+(g?g.l:id)}
+  return {chiko:'צ׳יקו',sec:'דף של נייר',news:'מה חדש',tour:'סיור באתר','export:pdf':'הורדת דוח PDF','export:xlsx':'הורדת אקסל','view:calm':'מעבר לתצוגה פשוטה','view:full':'מעבר לתצוגה מלאה'}[k]||k};
+function useSum(days=30){const from=isoAdd(ilDay(),-(days-1)), T={}, L={}; for(const [d,D] of Object.entries((USE&&USE.days)||{})){if(d<from)continue; for(const [k,n] of Object.entries(D)){T[k]=(T[k]||0)+n; if(!L[k]||d>L[k])L[k]=d}} return {T,L,from}}
+function renderUse(){
+  const box=$('useBox'); if(!box)return; if(!USE_READY){setH(box,'<p class="note" style="margin:0">טוען…</p>');return}
+  const {T,L}=useSum(30), dd=USE&&USE.since?Math.round((Date.parse(ilDay())-Date.parse(USE.since))/864e5)+1:0;
+  const rows=k=>Object.keys(T).filter(x=>x.startsWith(k)).sort((a,b)=>T[b]-T[a]);
+  const tbl=(ks,title)=>ks.length?`<h3 style="margin:0">${title}</h3><div class="scroll"><table class="use"><thead><tr><th>מה</th><th class="num">פעמים</th><th class="num">לאחרונה</th></tr></thead><tbody>${ks.map(k=>`<tr><td>${esc(useName(k))}</td><td class="num"><span class="n">${T[k]}</span></td><td class="num"><span class="n">${dmy(L[k])}</span></td></tr>`).join('')}</tbody></table></div>`:'';
+  const all=[...document.querySelectorAll('[data-pane] section[aria-labelledby]')].map(x=>x.getAttribute('aria-labelledby')).filter(id=>$(id)&&!T['s:'+id]);
+  const never=dd>=7?(all.length?`<h3 style="margin:0">לא נראו ב-30 הימים האחרונים</h3><p class="tx-l">${all.map(id=>esc(useName('s:'+id))).join(' · ')}</p><p class="note" style="margin:0">אלה המועמדים להסתרה או לאיחוד עם מסך אחר.</p>`:'<p class="tx-l">כל החלקים נראו לפחות פעם אחת.</p>'):`<p class="note" style="margin:0">אחרי שבוע של שימוש (עוד ${7-dd} ימים) יופיע כאן גם מה שלא נפתח בכלל.</p>`;
+  $('useSub').textContent=dd?`מ-${dmy(USE.since)} · ${Object.values(T).reduce((a,b)=>a+b,0)} פתיחות ב-30 ימים`:'';
+  setH(box,`${tbl(rows('tab:'),'מסכים')}${tbl(rows('s:').slice(0,15),'חלקים שנראו על המסך')}${tbl(Object.keys(T).filter(k=>!/^(tab|s):/.test(k)).sort((a,b)=>T[b]-T[a]),'פעולות')}${never}
+    <p class="note" style="margin:0">נשמר רק בחשבון שלך: אף אחד אחר, גם לא בעל האתר, לא רואה אותו. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
+}
+document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('[data-usereset]')))return; USE={days:{},since:ilDay()}; USE_SEEN.clear(); USE_DIRTY=true; useSave(); renderUse()});
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----
 // Everything here reads what the page already computed (the model, the alert engine, the price document); it adds no
 // numbers of its own. The to-do list is the one place for what needs doing: the rules' alerts, a new company report, the
@@ -22338,6 +22385,7 @@ const GO=[
   {id:'accts',l:'חשבונות המסחר שלי',k:'חשבון אקסלנס בלינק ברוקר',tab:'settings',el:'hAccts'},
   {id:'me',l:'הפרופיל שלי',k:'פרופיל שם שפה',tab:'settings',el:'hMe'},
   {id:'data',l:'פרטיות, נתונים וגיבוי',k:'פרטיות גיבוי ייצוא נתונים',tab:'settings',el:'hData'},
+  {id:'use',l:'במה אני משתמש באתר',k:'שימוש מונה סטטיסטיקה פתחתי',tab:'settings',el:'hUse'},
   {id:'src',l:'מקורות המחירים',k:'מקור מקורות מאיה yahoo נתונים מאיפה',tab:'settings',el:'srcPanel'},
   {id:'2fa',l:'אימות דו-שלבי',k:'אבטחה קוד כניסה סיסמה טלפון אימות',fn:()=>{if(window.__tc)location.href='security.html'; else offerUndo('אימות דו-שלבי זמין באתר, בכפתור החשבון.',null,5000,'סגור')}},
   {id:'view',l:'תצוגה פשוטה או מלאה',k:'תצוגה פשוטה מלאה רגועה פירוט',tab:'settings',el:'hMe'},
@@ -22350,7 +22398,7 @@ function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)re
   const sc=d=>{const L=goNorm(d.l), K=goNorm(d.k); let s=0; for(const x of w){const y=x.slice(1), v=one(x,L,K)||(/^[להבומשכ]/.test(x)&&y.length>=3&&(L+' '+K).split(' ').some(k=>k.startsWith(y))?2:0); if(!v)return 0; s+=v} return s};
   return GO.map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
 function goTo(d){
-  if(!d)return; try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
+  if(!d)return; try{useAdd('go:'+d.id)}catch(e){} try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
   if(d.fn){d.fn();return}
   showTab(d.tab,true);
   if(!d.el)return;
@@ -22369,6 +22417,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-21.3',at:'2026-10-21',t:'במה אני משתמש באתר',d:'בהגדרות: אילו מסכים וחלקים פתחת ב-30 הימים האחרונים, ומה לא נפתח בכלל. נשמר רק בחשבון שלך.',go:'use'},
   {v:'2026-10-21.2',at:'2026-10-21',t:'אימות דו-שלבי',d:'בכל כניסה גם קוד מאפליקציה בטלפון. מפעילים בכפתור החשבון (העיגול בפינה) ← "אימות דו-שלבי".',go:'2fa'},
   {v:'2026-10-21.2',at:'2026-10-21',t:'מייל כשמשהו לא מתעדכן',d:'מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים: מייל אליך, פעם אחת לכל בעיה. מפעילים בהגדרות ← מיילים.',go:'mail'},
   {v:'2026-10-21.2',at:'2026-10-21',t:'האתר נטען מהר יותר',d:'ספריות ה-PDF והאקסל נטענות רק כשמעלים דוח או מייצאים, ולכן הטעינה בטלפון קלה בערך פי שניים.'},
@@ -22389,6 +22438,7 @@ const newsUnseen=()=>{const s=UXK('tr_news')||''; return NEWS.filter(n=>n.v>s)};
 function newsSeen(){UXS('tr_news',NEWSV); newsDot()}
 function newsDot(){const d=$('sbNewsDot'); if(d)d.hidden=!newsUnseen().length}
 function newsOpen(){
+  try{useAdd('news')}catch(e){}
   const dl=$('newsDlg'); if(!dl)return; try{setNav(false)}catch(e){} const fresh=new Set(newsUnseen().map(n=>n.t));
   setH($('newsList'),NEWS.map(n=>`<li${fresh.has(n.t)?' class="nw"':''}><div><b>${esc(n.t)}</b>${fresh.has(n.t)?'<span class="pill nwp">חדש</span>':''}<span class="sub">${esc(dmy(n.at))}</span></div><p>${esc(n.d)}</p>${n.go?`<button type="button" class="btn sm" data-newsgo="${n.go}">קח אותי לשם ›</button>`:''}</li>`).join(''));
   dl.hidden=false; $('newsScrim').hidden=false; document.body.classList.add('prof-open'); newsSeen(); try{render()}catch(e){}
@@ -22412,7 +22462,7 @@ const TOUR=[
   {sel:['#chatFab'],t:'צ׳יקו',d:'שואלים במילים שלך, למשל "למה התיק ירד היום?". צ׳יקו מסביר את המספרים שבדף ולא נותן המלצות.'}];
 let TOUR_I=null, TOUR_L=[];
 const tourEl=s=>{for(const x of s.sel){const e=document.querySelector(x); if(e&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!e.closest('[hidden]'))return e} return null};   // offsetParent is null for a fixed element (צ׳יקו's button)
-function tourStart(){try{setNav(false)}catch(e){} newsClose(); showTab('overview'); window.scrollTo(0,0); setTimeout(()=>{TOUR_L=TOUR.filter(s=>tourEl(s)); if(!TOUR_L.length)return; TOUR_I=0; tourShow()},120)}
+function tourStart(){try{useAdd('tour')}catch(e){} try{setNav(false)}catch(e){} newsClose(); showTab('overview'); window.scrollTo(0,0); setTimeout(()=>{TOUR_L=TOUR.filter(s=>tourEl(s)); if(!TOUR_L.length)return; TOUR_I=0; tourShow()},120)}
 function tourShow(){
   for(const e of document.querySelectorAll('.tourhl'))e.classList.remove('tourhl');
   const s=TOUR_L[TOUR_I], c=$('tourCard'); if(!s||!c){tourEnd();return} const el=tourEl(s);
@@ -22428,7 +22478,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 function sideMore(){const s=document.querySelector('.hero .side'), b=$('sideMore'); if(!s||!b)return; const open=UXK('tr_side')==='open';
   s.classList.toggle('lessm',!open); b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#sideMore')){UXS('tr_side',UXK('tr_side')==='open'?'less':'open'); sideMore()}});
-window.__ux={facts:()=>{try{const F=anaFactsAI(anaFacts(),[],[]); return {benchmark:F.benchmark,tax:F.tax_if_sold_today}}catch(e){return {err:String(e&&e.message||e)}}},bench:()=>benchCompare(mAllNow()),tax:()=>taxNow(mAllNow()),trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
+window.__ux={use:()=>({days:USE&&USE.days,ready:USE_READY}),useSave:()=>{USE_DIRTY=true;return useSave()},facts:()=>{try{const F=anaFactsAI(anaFacts(),[],[]); return {benchmark:F.benchmark,tax:F.tax_if_sold_today}}catch(e){return {err:String(e&&e.message||e)}}},bench:()=>benchCompare(mAllNow()),tax:()=>taxNow(mAllNow()),trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
 // ---- ux:end ----
 try{navBoot()}catch(e){}
 try{srchBoot()}catch(e){}
@@ -22447,7 +22497,7 @@ try{refreshBack()}catch(e){}
   const fail=e=>{$('fresh').textContent=(e&&e.code==='invalid_response'?'התשובה מהשרת לא תקינה.':'לא הצלחתי לטעון את נתוני התיק.')+' מנסה שוב בעוד כמה שניות. אם זה חוזר, רענן את הדף.'};
   try{const U=await window.claude.use('user');
     if(U&&(await U.isOwner())===false){OWNER=false;ME=await U.id();const w=await U.can('data.write');
-      if(ME&&w!==false){const b='data/users/'+ME+'/';PATHS={portfolio:b+'portfolio',plan:b+'plan',settings:b+'settings',history:b+'history',daily:b+'daily',arc:b+'rep/items',ack:b+'ack'}}else LOCAL=true}
+      if(ME&&w!==false){const b='data/users/'+ME+'/';PATHS={portfolio:b+'portfolio',plan:b+'plan',settings:b+'settings',history:b+'history',daily:b+'daily',arc:b+'rep/items',ack:b+'ack',usage:b+'usage'}}else LOCAL=true}
   }catch(e){}
   try{const U=await window.claude.use('user');MYID=U?await U.id():null}catch(e){}
   setView(VIEW||(OWNER?'full':'calm'),true);
@@ -22458,6 +22508,7 @@ try{refreshBack()}catch(e){}
   const os=$('obSkip'); if(os)os.addEventListener('click',()=>{try{localStorage.setItem('tr_ob_skip','1')}catch(e){}$('obNext').hidden=true});
   ARCON=!LOCAL; arcUi();
   if(ARCON){try{db.collection(PATHS.arc).orderBy('createdAt','desc').limit(80).onSnapshot(s=>{ARC=s.docs.map(d=>({id:d.id,...d.data()}));renderArc()},()=>{})}catch(e){ARCON=false;arcUi()}}
+  try{useBoot(); setTimeout(useWatch,1500)}catch(e){}
   pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();render()}else{$('fresh').textContent='עדיין אין נתוני תיק.';render()}},fail);
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();render();try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
   pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}render()},fail);
