@@ -118,6 +118,21 @@ test('navigation: a bottom bar on a phone, the menu at the side on a wide screen
     assert.ok(ox,'the content sits beside the menu, no sideways scroll'); await ctx.close()}
 });
 
+test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
+  const r=await pg.evaluate(()=>({days:document.querySelectorAll('#calBox [data-calday]').length,flags:document.querySelectorAll('#calBox .calgrid .flg').length,now:document.querySelectorAll('#calBox .calnow .mk').length,ox:document.documentElement.scrollWidth<=innerWidth+1}));
+  assert.ok(r.days>=28&&r.flags===r.days*2,'every day has a flag per market'); assert.equal(r.now,2); assert.ok(r.ox,'no sideways scroll on a phone');
+  // to September 2026: Yom Kippur closes Tel Aviv, Labor Day New York; Chol HaMoed is a short day
+  await pg.evaluate(()=>{for(let i=0;i<24;i++){const d=document.querySelector('#calBox h3').textContent; if(/ספטמבר 2026/.test(d))break; const back=/2027|נובמבר 2026|דצמבר 2026|אוקטובר 2026/.test(d); document.querySelector(`#calBox [data-calmv="${back?-1:1}"]`).click()}});
+  const L=await pg.evaluate(()=>document.querySelector('#calBox .callist').textContent);
+  assert.match(L,/21\.9 · תל אביב: אין מסחר · יום כיפור/); assert.match(L,/(^|\D)7\.9 · ארה״ב: אין מסחר · יום העבודה/); assert.match(L,/28\.9 · תל אביב: מסחר 10:00–14:30 · חול המועד סוכות/);
+  await pg.click('#calBox [data-calday="2026-09-21"]'); const d=await pg.evaluate(()=>document.querySelector('#calBox .calday').textContent);
+  assert.match(d,/תל אביב: אין מסחר/); assert.match(d,/ארה״ב: 16:30–23:00/);
+  await pg.screenshot({path:'/tmp/claude-0/-home-claude/b22281cb-4d7c-579a-92b3-f89ef1145114/scratchpad/cal.png',fullPage:false});
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('a click on text inside a tab does not move the page',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(500);

@@ -121,6 +121,37 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .hero .top{padding-inline-start:54px}
 @media (prefers-reduced-motion:reduce){.tabsbar,.navtab{transition:none}}
 .pane{display:flex;flex-direction:column;gap:30px;padding-top:6px}
+/* the trading calendar: a month, each day with a round flag for Tel Aviv and one for New York; open = the flag, short = a
+   dashed ring around it, closed = a faded flag with a slash */
+.cal{display:flex;flex-direction:column;gap:12px}
+.calnow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.calnow .mk{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.calnow .mk b{display:block;font-size:13.5px} .calnow .mk span{display:block;font-size:12px;color:var(--muted)}
+@media (max-width:520px){.calnow{grid-template-columns:minmax(0,1fr)}}
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.calhead h3{font-size:15px}
+.calhead button{font:inherit;border:1px solid var(--line);background:var(--surface);border-radius:10px;width:36px;height:36px;cursor:pointer;color:var(--ink)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calgrid .wd{font-size:11.5px;color:var(--muted);text-align:center;padding-bottom:2px}
+.calgrid .dc{font:inherit;min-height:58px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--ink)}
+.calgrid .dc.out{visibility:hidden}
+.calgrid .dc.we{background:var(--sunk)}
+.calgrid .dc.today{border:2px solid var(--accent)}
+.calgrid .dc[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--navy)}
+.calgrid .dc .dn{font-size:12.5px;font-weight:600;line-height:1.1}
+.calgrid .fl{display:flex;gap:2px;justify-content:center}
+.flg{width:18px;height:18px;border-radius:50%;overflow:hidden;display:inline-block;position:relative;flex:none;box-shadow:0 0 0 1px var(--line)}
+.flg svg{width:100%;height:100%;display:block}
+.flg.short{box-shadow:0 0 0 1.5px var(--warn-c);outline:1.5px dashed var(--warn-c);outline-offset:1.5px}
+.flg.closed{opacity:.28;filter:grayscale(1)}
+.flg.closed::after{content:"";position:absolute;inset:45% -10%;height:2px;background:var(--loss);transform:rotate(-45deg)}
+.calgrid .dc .fl .flg{width:16px;height:16px}
+.calleg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);align-items:center}
+.calleg span{display:inline-flex;gap:6px;align-items:center}
+.calday{border-inline-start:4px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.55}
+.calday b{font-weight:700}
+.callist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.callist li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
 
 section{display:flex;flex-direction:column;gap:10px;min-width:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;min-width:0}
@@ -1438,6 +1469,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
     <div class="tsub" id="riskSub" role="group" aria-label="החלקים של בקרה וסיכון"></div>
+    <button type="button" role="tab" id="tab_calendar" data-tab="calendar" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="15" r="1.3"/><circle cx="15.5" cy="15" r="1.3"/></svg><span>לוח מסחר</span></button>
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
   </nav></div>
@@ -1983,6 +2015,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     </section>
   </div>
 
+  <div class="pane" data-pane="calendar" hidden>
+    <section aria-labelledby="hCal">
+      <div class="row"><h2 id="hCal">לוח מסחר</h2><span class="sub" id="calSub"></span></div>
+      <div class="panel cal" id="calBox"></div>
+    </section>
+  </div>
   <div class="pane" data-pane="settings" hidden>
     <section aria-labelledby="hMe" id="meSec">
       <div class="row"><h2 id="hMe">הפרופיל שלי</h2><button class="btn sm" type="button" data-prof="edit" id="meEdit">לעריכה</button></div>
@@ -15873,6 +15911,48 @@ const usOpen=now=>{const p=tzParts('America/New_York',now||new Date()), day=tzDa
 // Tel Aviv 10:00-17:30 Monday to Thursday, until 14:00 on Friday
 const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); return !!p&&p.wd>=1&&p.wd<=5&&p.t>=600&&p.t<(p.wd===5?840:1050)};
 const mktOpen=now=>usOpen(now)||ilOpen(now);
+// ---- the trading calendar: for every day, is Tel Aviv open, short or closed, and New York, with the hours in Israel time.
+// New York: the NYSE's own list of closures and 13:00 closes. Tel Aviv: the Jewish holidays from the Hebrew calendar the
+// browser has (Intl), under the exchange's rules (no trading on a holiday and its eve, on Purim, on Memorial and Independence
+// Day, on Tisha B'Av; Chol HaMoed until 14:30; no Friday session when Sunday is a holiday or an eve). Checked against the
+// exchange's 2026 list; the official calendar is the exchange's, so the screen says the Israeli days are computed.
+const HEBF=(()=>{try{return new Intl.DateTimeFormat('en-u-ca-hebrew',{day:'numeric',month:'long',timeZone:'UTC'})}catch(e){return null}})();
+const hebOf=iso=>{if(!HEBF)return null; const o={}; for(const x of HEBF.formatToParts(new Date(iso+'T12:00:00Z')))o[x.type]=x.value; return {d:+o.day,m:String(o.month||'').replace(/^Adar II$/,'Adar').replace(/^Adar I$/,'AdarI')}};
+const isoAdd=(iso,k)=>new Date(Date.parse(iso+'T12:00:00Z')+k*864e5).toISOString().slice(0,10);
+const wdOf=iso=>new Date(iso+'T12:00:00Z').getUTCDay();
+// the Israeli holiday of a day, if any: [kind, name], kind 'closed' or 'short'
+function ilHoliday(iso){
+  const h=hebOf(iso); if(!h)return null; const {d,m}=h, wd=wdOf(iso);
+  if(m==='Elul'&&d===29)return ['closed','ערב ראש השנה'];
+  if(m==='Tishri'){if(d===1||d===2)return ['closed','ראש השנה']; if(d===9)return ['closed','ערב יום כיפור']; if(d===10)return ['closed','יום כיפור'];
+    if(d===14)return ['closed','ערב סוכות']; if(d===15)return ['closed','סוכות']; if(d>=16&&d<=20)return ['short','חול המועד סוכות']; if(d===21)return ['closed','ערב שמחת תורה']; if(d===22)return ['closed','שמחת תורה']}
+  if(m==='Adar'&&d===14)return ['closed','פורים'];
+  if(m==='Nisan'){if(d===14)return ['closed','ערב פסח']; if(d===15)return ['closed','פסח']; if(d>=16&&d<=19)return ['short','חול המועד פסח']; if(d===20)return ['closed','ערב שביעי של פסח']; if(d===21)return ['closed','שביעי של פסח']}
+  if(m==='Iyar'){ // Independence Day moves off Friday and Saturday (to Thursday) and off Monday (to Tuesday); Memorial Day is the day before
+    const ind=(dd,w)=>{const base=5, wb=(w-(dd-base)+70)%7; return wb===5?4:wb===6?3:wb===1?6:5}; const day=ind(d,wd);
+    if(d===day)return ['closed','יום העצמאות']; if(d===day-1)return ['closed','יום הזיכרון']}
+  if(m==='Sivan'){if(d===5)return ['closed','ערב שבועות']; if(d===6)return ['closed','שבועות']}
+  if(m==='Av'){if(d===9&&wd!==6)return ['closed','תשעה באב']; if(d===10&&wd===0)return ['closed','תשעה באב (נדחה)']}
+  return null;
+}
+function usHolName(iso){const md=iso.slice(5); if(/^(01-01|12-31)$/.test(md))return 'ראש השנה האזרחית'; if(/^(12-24|12-25|12-26)$/.test(md))return 'חג המולד'; if(/^(07-03|07-04|07-05)$/.test(md))return 'יום העצמאות האמריקאי'; if(/^06-(18|19|20)$/.test(md))return 'ג׳ונטינת׳';
+  const mo=+iso.slice(5,7), wd=wdOf(iso); if(wd===5&&(mo===3||mo===4))return 'יום שישי הטוב'; return {1:'יום מרטין לותר קינג',2:'יום הנשיאים',5:'יום הזיכרון האמריקאי',9:'יום העבודה',11:'חג ההודיה'}[mo]||'חג'}
+// one day of both markets: {il:{st,h,why}, us:{st,h,why}}; st is 'open', 'short' or 'closed'; h the hours in Israel time
+function mktDay(iso){
+  const wd=wdOf(iso), noon=new Date(iso+'T16:00:00Z');
+  let il; {const hol=ilHoliday(iso), nextSun=wd===5?ilHoliday(isoAdd(iso,2)):null;
+    if(wd===0||wd===6)il={st:'closed',why:wd===6?'שבת':'יום ראשון'};
+    else if(hol&&hol[0]==='closed')il={st:'closed',why:hol[1]};
+    else if(nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]))il={st:'closed',why:`${nextSun[1]} ביום ראשון, ולפי כללי הבורסה אין מסחר ביום שישי שלפניו`,rule:true};
+    else if(hol&&hol[0]==='short')il={st:'short',h:'10:00–14:30',why:hol[1]};
+    else il={st:'open',h:wd===5?'10:00–14:00':'10:00–17:30',why:''}}
+  let us; {const o=ilMinOf(570,noon), early=NYSE_EARLY.has(iso), c=ilMinOf(early?780:960,noon), h=o!=null?`${hmMin(o)}–${hmMin(c)}`:'';
+    if(wd===0||wd===6)us={st:'closed',why:wd===6?'שבת':'יום ראשון'};
+    else if(NYSE_CLOSED.has(iso))us={st:'closed',why:usHolName(iso)};
+    else if(early)us={st:'short',h,why:'יום מקוצר'};
+    else us={st:'open',h,why:''}}
+  return {iso,il,us};
+}
 // "today" only when the last trades are from today; on a weekend or a holiday the move is the last trading day's
 const dayWord=()=>{const lt=Q&&Q.lastTradeDay; return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
@@ -21541,14 +21621,14 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','search','plan','forecast','history','reports','ratings','watch','risk','state','settings','mine'];
-const NAVG={overview:['overview'],mine:['mine'],plan:['plan','forecast'],risk:['risk','state'],search:['search','ratings','watch'],history:['history','reports'],settings:['settings']};
+const TABS=['overview','search','plan','forecast','history','reports','ratings','watch','risk','state','settings','mine','calendar'];
+const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast'],risk:['risk','state'],search:['search','ratings','watch'],history:['history','reports'],settings:['settings']};
 const SUBL={plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
 const HEADL={search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
-  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','history','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
+  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
 function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.querySelector('[data-pane="'+t+'"]');if(!pane)return;
   let row=pane.querySelector(':scope>.subtabs');
   if(list.length<2){if(row)row.remove();return}
@@ -21567,10 +21647,54 @@ function showTab(t,user){
   try{localStorage.setItem('tab',t)}catch(e){}
   if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){}}
   if(t==='state'){try{renderState()}catch(e){}}
+  if(t==='calendar'){try{renderCal()}catch(e){}}
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
   if(t==='search'){try{loadSymDb().then(()=>{if(SV==='fit')setSV('fit');else srchRender()});loadAllQ().then(()=>srchQ());loadFit().then(()=>{if(SV==='fit')renderFit()})}catch(e){}}
   try{if(user){const pn=document.querySelector('[data-pane="'+t+'"]'),bh=0,top=pn.getBoundingClientRect().top+window.scrollY-bh-10;if(window.scrollY>top)window.scrollTo(0,Math.max(0,top))}}catch(e){}
 }
+// ---- the trading calendar tab (mktDay above): this week at a glance, a month grid with both markets, the day picked, and
+// the month's special days in words. Hours in Israel time; the Israeli holidays are computed, and the screen says so
+const FLAG={il:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#fff"/><rect y="4" width="24" height="2.6" fill="#1F4FB4"/><rect y="17.4" width="24" height="2.6" fill="#1F4FB4"/><path d="M12 7.6l3.6 6.2H8.4zM12 16.4l-3.6-6.2h7.2z" fill="none" stroke="#1F4FB4" stroke-width="1.1"/></svg>',
+  us:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" fill="#fff"/><g fill="#B22234"><rect y="0" width="24" height="2"/><rect y="4" width="24" height="2"/><rect y="8" width="24" height="2"/><rect y="12" width="24" height="2"/><rect y="16" width="24" height="2"/><rect y="20" width="24" height="2"/></g><rect width="11" height="10" fill="#3C3B6E"/><g fill="#fff"><circle cx="2.5" cy="2.5" r=".7"/><circle cx="5.5" cy="2.5" r=".7"/><circle cx="8.5" cy="2.5" r=".7"/><circle cx="4" cy="5" r=".7"/><circle cx="7" cy="5" r=".7"/><circle cx="2.5" cy="7.5" r=".7"/><circle cx="5.5" cy="7.5" r=".7"/><circle cx="8.5" cy="7.5" r=".7"/></g></svg>'};
+const MKN={il:'תל אביב',us:'ארה״ב'}, STN={open:'פתוחה',short:'יום מקוצר',closed:'סגורה'};
+const flagH=(k,st)=>`<span class="flg ${st}" role="img" aria-label="${MKN[k]}: ${STN[st]}">${FLAG[k]}</span>`;
+const HMON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+let CALM=null, CALSEL=null;
+const mkLine=(k,x)=>x.st==='closed'?`<b>${MKN[k]}: אין מסחר</b>${x.why?' · '+esc(x.why):''}`:`<b>${MKN[k]}: ${x.h}</b>${x.st==='short'?' · יום מקוצר':''}${x.why?' · '+esc(x.why):''}`;
+function renderCal(){
+  const box=$('calBox'); if(!box)return; const today=tzDay('Asia/Jerusalem');
+  if(!CALM)CALM=today.slice(0,7); if(!CALSEL)CALSEL=today;
+  const [Y,M]=CALM.split('-').map(Number), first=`${CALM}-01`, n=new Date(Date.UTC(Y,M,0)).getUTCDate(), lead=wdOf(first);
+  // now: each market's state at this minute, in words
+  const now=new Date(), T=mktDay(today), nowTxt=k=>{const open=k==='il'?ilOpen(now):usOpen(now), x=T[k];
+    if(open)return {st:'open',t:'פתוחה עכשיו',s:`עד ${x.h.split('–')[1]} (שעון ישראל)`};
+    if(k==='us'){const u=usStatusTxt(now).replace(/^ארה״ב /,''); return {st:'closed',t:'סגורה עכשיו',s:u}}
+    for(let i=0;i<10;i++){const d=isoAdd(today,i), y=mktDay(d).il; if(y.st==='closed')continue; const st=y.h.split('–')[0];
+      const pIl=tzParts('Asia/Jerusalem',now), [hh,mm]=st.split(':').map(Number); if(i===0&&pIl.t>=hh*60+mm)continue;
+      return {st:'closed',t:'סגורה עכשיו',s:`נפתחת ${i===0?'היום':i===1?'מחר':'ביום '+HDAY[wdOf(d)]+' '+dmy(d)} ב-${st}`}}
+    return {st:'closed',t:'סגורה עכשיו',s:''}};
+  const card=k=>{const x=nowTxt(k); return `<div class="mk">${flagH(k,x.st==='open'?'open':'closed')}<div><b>${MKN[k]}: ${x.t}</b><span>${esc(x.s)}</span></div></div>`};
+  let cells=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'].map(d=>`<div class="wd">${d}</div>`).join('');
+  for(let i=0;i<lead;i++)cells+='<div class="dc out" aria-hidden="true"></div>';
+  const special=[];
+  for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6;
+    if(!we)for(const k of ['il','us'])if(D[k].st!=='open')special.push({iso,k,x:D[k]});
+    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span></button>`}
+  const S0=mktDay(CALSEL), selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}</div>`;
+  const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
+  $('calSub').textContent='השעות לפי שעון ישראל';
+  box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
+    <div class="calhead"><button type="button" data-calmv="1" aria-label="החודש הבא">‹</button><h3>${HMON[M-1]} ${Y}</h3><button type="button" data-calmv="-1" aria-label="החודש הקודם">›</button></div>
+    <div class="calgrid">${cells}</div>
+    <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span></div>
+    ${selTxt}
+    <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
+    <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
+}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-calday],[data-calmv]'); if(!t||!t.closest('#calBox'))return;
+  if(t.dataset.calday){CALSEL=t.dataset.calday}
+  else{const [y,m]=CALM.split('-').map(Number), d=new Date(Date.UTC(y,m-1+(+t.dataset.calmv),1)); CALM=d.toISOString().slice(0,7)}
+  try{renderCal()}catch(x){}});
 // the drawer: opens from the edge tab, closes on a pick, the scrim, the X or Escape; the edge tab tucks away while scrolling down
 function setNav(o){const bar=$('tabsbar'),more=document.querySelector('#botbar [data-bb="more"]');bar.classList.toggle('open',o);$('scrim').hidden=!o;$('navtab').setAttribute('aria-expanded',String(o));if(more)more.setAttribute('aria-expanded',String(o));
   if(o){$('navtab').classList.remove('away');const sel=bar.querySelector('[aria-selected="true"]')||bar.querySelector('[data-tab]');try{sel.focus({preventScroll:true})}catch(e){}}
