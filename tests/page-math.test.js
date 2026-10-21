@@ -535,6 +535,12 @@ test('exposures: shares add up to the whole, nothing counted twice, unknowns say
   const E=SR.exposures(m,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},k=>({MSFT:'Technology',KO:'Consumer Staples'}[k]||''));
   for(const k of ['group','sector','ccy','market','kind']){const t=E[k].reduce((s,r)=>s+r.val,0); near(t,11500,1e-6,k+' adds up to the whole'); near(E[k].reduce((s,r)=>s+r.w,0),100,1e-9,k)}
   assert.equal(E.sector.find(r=>r.k==='fund').val,2000,'a fund is a fund, its sectors are not known');
+  // a fund outside the Israel group: its own row naming the group, and the Israel row equals the Israel group to the shekel
+  {FUNDS.QQQ=true; const m2=mOf([pos('MSFT',5000,{ccy:'USD'}),pos('QQQ',1856,{ccy:'USD',group:'tech'}),pos('TA125',2000,{group:'il'}),pos('5129283',3000,{group:'il'})],0);
+    const E2=SR.exposures(m2,{cash:[]},{usdIls:3.7},k=>({MSFT:'Technology'}[k]||''));
+    assert.equal(E2.sector.find(r=>r.k==='fund').val,E2.group.find(r=>r.k==='il').val,'the Israeli funds row is the Israel group');
+    const o=E2.sector.find(r=>r.k==='fund:tech'); assert.equal(o.val,1856); assert.deepEqual(o.syms,['QQQ']); assert.match(o.label,/קרנות בקבוצת/);
+    assert.equal(E2.kind.find(r=>r.k==='fund').val,1856+2000+3000,'the kind view still counts every fund'); delete FUNDS.QQQ}
   assert.deepEqual(E.unknownSector,['ZZZ']); assert.equal(E.overlap.status,'unknown','held funds without their holdings: unknown, not "none"');
   near(E.conc.top1.w,5000/11500*100,1e-9); near(E.conc.nEff,1/((5/11)**2+(3/11)**2+(2/11)**2+(1/11)**2),1e-9);
   assert.equal(E.ccy.find(r=>r.k==='ILS').val,2000+500,'shekel holdings and shekel cash');
