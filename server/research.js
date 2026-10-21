@@ -2,6 +2,7 @@
 // It is not an official API: Yahoo can change or refuse it at any time. When an update fails the last values stay,
 // with their date, and the page says how old they are. Numbers in, numbers out: nothing here is advice.
 import {tickerFor} from '../shared/quotes.js';
+import {findingsOf, factsOf, explainReport, reportsMail} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MODS='financialData,defaultKeyStatistics,summaryDetail,calendarEvents,recommendationTrend,price,earnings,earningsHistory,earningsTrend';
@@ -54,7 +55,7 @@ export function figures(res,now=new Date()){
     pe:r2(val(sd.trailingPE)),fpe:r2(val(sd.forwardPE)??val(ks.forwardPE)),dy:pc(sd.dividendYield)??pc(sd.trailingAnnualDividendYield),
     rating:n?(RATING(val(fd.recommendationMean))||BY_KEY[fd.recommendationKey]||null):null,target:n&&tgt?r2(tgt*k):null,analysts:n,
     next:dates.find(d=>d>=today)||null,revg:pc(fd.revenueGrowth),epsg:pc(fd.earningsGrowth),beta:r2(val(sd.beta)??val(ks.beta)),
-    price:px!=null?r2(px*k):null,chg52:pc(ks['52WeekChange'])};
+    price:px!=null?r2(px*k):null,chg52:pc(ks['52WeekChange']),name:pr.longName||pr.shortName||null};
   if(tr)out.votes={buy:(val(tr.strongBuy)||0)+(val(tr.buy)||0),hold:val(tr.hold)||0,sell:(val(tr.sell)||0)+(val(tr.strongSell)||0)};
   const rp=reportOf(res); if(rp)out.rep=rp;
   return out;
@@ -96,7 +97,7 @@ export const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^T
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null}={}){
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail}={}){
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
@@ -118,15 +119,29 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   }
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
-  const fresh=[];
+  const fresh=[], words=[], posName={}; for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
   for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{};
-    if(v.rep&&v.rep.q){const was=old.rep&&old.rep.q; if(was===v.rep.q)v.rep.at=old.rep.at||null; else{v.rep.at=old.next&&old.next<=iso.slice(0,10)?old.next:iso.slice(0,10); if(was||old.next)fresh.push([k,v.rep])}}
+    if(v.rep&&v.rep.q){const was=old.rep&&old.rep.q; if(was===v.rep.q){v.rep.at=old.rep.at||null; if(old.rep.ai)v.rep.ai=old.rep.ai} else{v.rep.at=old.next&&old.next<=iso.slice(0,10)?old.next:iso.slice(0,10); if(was||old.next)fresh.push([k,v.rep])}
+      v.rep.find=findingsOf(v.rep);
+      // the explanation: for a new report, and for a recent one (three weeks) that has none yet; a few per run
+      const recent=v.rep.at&&(now-new Date(v.rep.at+'T12:00:00Z'))<21*864e5;
+      if(!v.rep.ai&&recent&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v])}
     store.setDoc(p,{...merge(old,v),sym:k,source:SOURCE,updatedAt:iso},{silent:true})}
+  for(const [k,v] of words){let H=[]; try{H=await newsFor(tick(k,map),{fetch:f})}catch(e){}
+    const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai=ai;
+    const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:v.rep},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
-  if(heldGot.length||fresh.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
+  if(heldGot.length||fresh.length||words.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
     for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:SOURCE,updatedAt:iso};
-    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).concat(fresh.map(([k,r])=>({sym:k,date:r.at,q:r.q,text:repLine(r),source:SOURCE}))).sort((a,b)=>a.date<b.date?1:-1).slice(0,40);
+    const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain}:null,source:SOURCE});
+    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>{const w=words.find(([k])=>k===e.sym); return w&&e.q===w[1].rep.q&&w[1].rep.ai?{...e,ai:{findings:w[1].rep.ai.findings,explain:w[1].rep.ai.explain}}:e})
+      .concat(fresh.map(evOf)).sort((a,b)=>a.date<b.date?1:-1).slice(0,40);
     store.setDoc('research/latest',{...L,companies:comp,events:ev,source:SOURCE,updatedAt:iso})}
+  // the owner's e-mail (with consent for "earnings"): the new reports of what the owner holds or follows
+  if(fresh.length){const ou=(store.users?store.users():[]).find(u=>u.role==='owner'), mine=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(x=>x.sym));
+    if(ou){const w=store.getDoc('watch/'+ou.id).data||{}; for(const kk of ['held','marks','syms'])for(const x of (w[kk]||[]))mine.add(x)}
+    const items=fresh.filter(([k])=>mine.has(k)).map(([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,rep:r}));
+    if(items.length)try{await mail(store,items,log)}catch(e){log('report mail failed: '+(e&&e.message||e))}}
   const uniGot=uni.filter(k=>got[k]);
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
     for(const k of uniGot){const v=got[k], o=rows[k]||[], nw=[v.pm,v.roe,v.de,null,v.pe,v.fpe,v.dy,v.revg,v.rating,v.target,v.analysts,v.next,v.beta]; rows[k]=nw.map((x,i)=>x!=null?x:(o[i]??null))}

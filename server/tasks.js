@@ -1,7 +1,7 @@
 // The scheduled work, as functions over the store. The page itself (run headless) computes the daily point, the
 // alerts and the reports, so their numbers are the same as in the browser.
 import {withPage, applyWrites} from './headless.js';
-import {sendAllowed, wrapHtml, esc} from './mail.js';
+import {sendAllowed, mailAllowed, wrapHtml, esc} from './mail.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {tickerFor} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
@@ -100,7 +100,8 @@ export async function morningTask(store,{log}={}){
   if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
   if(!A||!A.ready){log('the alert engine was not ready');return}
   const state=docs['alerts/state']||{keys:[]}, seen=new Set(state.keys||[]);
-  const items=(A.items||[]).filter(i=>i&&i.key), fresh=items.filter(i=>!seen.has(i.key)&&!i.acked);
+  // a company's new report already went out in its own e-mail ("earnings") when that one is on, so it is not repeated here
+  const repMail=mailAllowed(store,'earnings'), items=(A.items||[]).filter(i=>i&&i.key), fresh=items.filter(i=>!seen.has(i.key)&&!i.acked&&!(repMail&&String(i.key).startsWith('rep:')));
   log(`alerts: ${items.length} now, ${fresh.length} new`);
   const SEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין'}, ORDER={crit:0,warn:1,info:2,ok:3}, color={crit:'#b42318',warn:'#b7791f',info:'#2464a8',ok:'#2f9e5b'};
   if(fresh.length){

@@ -642,13 +642,21 @@ test('reports: the latest quarter from Yahoo, a new one becomes an event, and th
   assert.deepEqual(dueReports(s,new Date('2026-10-19T04:20:00Z')),[],'not before the date');
   const f=async(u,o={})=>{u=String(u); if(u.startsWith('https://fc.yahoo.com'))return new Response('',{status:404,headers:{'set-cookie':'A3=x; Path=/'}});
     if(u.includes('getcrumb'))return new Response('Ab3cD.eF'); if(u.includes('quoteSummary/NFLX')&&u.includes('earningsHistory'))return new Response(JSON.stringify({quoteSummary:{result:[nflx]}})); return new Response('',{status:500})};
-  const st=await researchTask(s,{fetch:f,now:new Date('2026-10-21T04:20:00Z'),pause:0,only:['NFLX']});
+  const asked=[], mailed=[], explain=async(F)=>{asked.push(F); return {findings:['הרווח למניה 0.87, מעל לצפי האנליסטים (0.82).','ההכנסות $12.87B.'],explain:'הרבעון היה מעל הצפי ברווח.',model:'x',at:'t',headlines:0}};
+  const mail=async(st0,items)=>{mailed.push(...items); return true};
+  const st=await researchTask(s,{fetch:f,now:new Date('2026-10-21T04:20:00Z'),pause:0,only:['NFLX'],explain,mail});
   assert.equal(st.ok,1); assert.equal(st.reports,1);
-  const d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.q,'2026-09-30'); assert.equal(d.rep.at,'2026-10-20','the day it was reported'); assert.equal(d.next,'2027-01-20');
-  const L=s.getDoc('research/latest').data; assert.equal(L.events.length,1); assert.equal(L.events[0].sym,'NFLX'); assert.equal(L.events[0].date,'2026-10-20'); assert.match(L.events[0].text,/^דוח Q3 2026/);
+  assert.equal(asked.length,1,'one explanation for the new report'); assert.equal(asked[0].eps.actual,'0.87'); assert.equal(asked[0].revenue,'$12.87B'); assert.ok(asked[0].findings.length>=3,'the findings from the numbers go with it');
+  assert.equal(mailed.length,1); assert.equal(mailed[0].sym,'NFLX'); assert.equal(mailed[0].rep.ai.explain,'הרבעון היה מעל הצפי ברווח.');
+  const d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.q,'2026-09-30'); assert.match(d.rep.find[0],/^הרווח למניה 0\.87, מעל לצפי האנליסטים \(0\.82\), הפתעה של \+6\.1%\.$/); assert.equal(d.rep.ai.findings.length,2); assert.equal(d.rep.at,'2026-10-20','the day it was reported'); assert.equal(d.next,'2027-01-20');
+  const L=s.getDoc('research/latest').data; assert.equal(L.events.length,1); assert.equal(L.events[0].sym,'NFLX'); assert.equal(L.events[0].date,'2026-10-20'); assert.match(L.events[0].text,/^דוח Q3 2026/); assert.equal(L.events[0].ai.explain,'הרבעון היה מעל הצפי ברווח.'); assert.equal(L.events[0].label,'Q3 2026');
   assert.equal(L.companies.NFLX.rep.label,'Q3 2026','a holding carries it into the shared document');
   assert.deepEqual(dueReports(s,new Date('2026-10-21T12:20:00Z')),[],'in: not asked again');
-  const st2=await researchTask(s,{fetch:f,now:new Date('2026-10-22T04:20:00Z'),pause:0,only:['NFLX']}); assert.equal(st2.reports,0,'the same quarter again is not a new event');
+  const st2=await researchTask(s,{fetch:f,now:new Date('2026-10-22T04:20:00Z'),pause:0,only:['NFLX'],explain,mail}); assert.equal(st2.reports,0,'the same quarter again is not a new event');
+  assert.equal(asked.length,1,'not explained twice'); assert.equal(mailed.length,1,'not mailed twice'); assert.equal(s.getDoc('research/s_NFLX').data.rep.ai.explain,'הרבעון היה מעל הצפי ברווח.','the explanation stays');
+  // Claude's text: a sentence with a number it was not given, or with advice, is dropped
+  const {cleanText}=await import('../server/explain.js'); const c=cleanText({findings:['הרווח למניה 0.87.','הרווח צפוי לגדול ב-40%.','כדאי לקנות לפני הדוח הבא.'],explain:'ההכנסות $12.87B. המניה תעלה.'},asked[0]);
+  assert.deepEqual(c.findings,['הרווח למניה 0.87.']); assert.equal(c.explain,'ההכנסות $12.87B.'); assert.equal(c.dropped,3);
   assert.equal(s.getDoc('research/latest').data.events.length,1); assert.equal(s.getDoc('research/s_NFLX').data.rep.at,'2026-10-20');
 });
 test('analysts: when Yahoo will not open a session, nothing is overwritten and the status says so',async()=>{

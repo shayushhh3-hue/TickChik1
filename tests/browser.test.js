@@ -149,25 +149,48 @@ test('the plan: a fund bought in the stocks track opens for its quantity and pri
   await ctx.close(); store.setDoc('plan/main',plan0);
 });
 
-test('a company\'s report on its page: EPS against the estimate, revenue, the last quarters, the articles, and Chiko\'s reading',T,async t=>{
+test('a company\'s report: the system message on the home page, the alert, and on its page the day, the findings and the explanation',T,async t=>{
   if(skip())return t.skip('no browser');
-  const L0=store.getDoc('research/latest').data, rep={q:'2026-09-30',label:'Q3 2026',at:'2026-10-20',ccy:'USD',eps:{a:3.62,e:3.41,s:6.2},rev:77.7e9,ni:27.1e9,revQoQ:1.6,
-    hist:[{q:'2025-12-31',a:3.2,e:3.1,s:3.2},{q:'2026-03-31',a:3.3,e:3.35,s:-1.5},{q:'2026-06-30',a:3.5,e:3.4,s:2.9},{q:'2026-09-30',a:3.62,e:3.41,s:6.2}],fin:[],now:{end:'2026-12-31',eps:3.8,epsN:40,rev:80e9,revG:12},next:null,year:null};
-  store.setDoc('research/latest',{...L0,companies:{...L0.companies,MSFT:{...(L0.companies.MSFT||{}),rep,next:'2027-01-27'}}});
+  const L0=store.getDoc('research/latest').data, day=new Date(Date.now()-864e5).toISOString().slice(0,10), dmY=d=>{const [y,m,dd]=d.split('-').map(Number); return `${dd}.${m}.${y}`};
+  const ai={findings:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41).','ההכנסות ברבעון $77.70B.'],explain:'הרבעון היה מעל הצפי ברווח ובהכנסות.',headlines:1};
+  const rep={q:'2026-09-30',label:'Q3 2026',at:day,ccy:'USD',eps:{a:3.62,e:3.41,s:6.2},rev:77.7e9,ni:27.1e9,find:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41), הפתעה של +6.2%.'],ai};
+  store.setDoc('research/latest',{...L0,companies:{...L0.companies,MSFT:{...(L0.companies.MSFT||{}),rep,next:'2027-01-27'}},
+    events:[{sym:'MSFT',name:'Microsoft',date:day,q:'2026-09-30',label:'Q3 2026',text:'דוח Q3 2026',find:rep.find,ai:{findings:ai.findings,explain:ai.explain}}]});
   try{
     const {ctx,pg}=await open(390,{route:(r,u)=>{if(u.includes('/api/news')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[{title:'Microsoft beats estimates as cloud grows',pub:'Reuters',link:'https://example.com/a',at:'2026-10-21T01:00:00Z'}]})});return true}return false}});
-    await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('MSFT')); await pg.waitForTimeout(1200);
-    await pg.evaluate(()=>{for(const d of document.querySelectorAll('#secPage details'))d.open=true});
-    const r=await pg.evaluate(()=>{const P=document.getElementById('secPage'); return {h:[...P.querySelectorAll('h3')].map(x=>x.textContent).find(x=>/הדוח הרבעוני האחרון/.test(x))||'',txt:P.textContent,rows:P.querySelectorAll('.tbl tbody tr').length}});
-    assert.equal(r.h,'הדוח הרבעוני האחרון: Q3 2026'); assert.match(r.txt,/פורסם 20\.10\.2026/); assert.match(r.txt,/רווח למניה.*3\.62.*צפי.*3\.41/s); assert.match(r.txt,/\$77\.70B/); assert.match(r.txt,/\+6\.2% מעל לצפי/);
-    assert.ok(r.rows>=4,'the last four quarters');
+    // the system message on the home page
+    const ban=await pg.evaluate(()=>{const b=document.getElementById('repBan'); return {on:!b.hidden,txt:b.textContent}});
+    assert.ok(ban.on,'shown'); assert.match(ban.txt,new RegExp('דוח חדש: Microsoft פרסמה ב-'+dmY(day).split('.').slice(0,2).join('\\.')+' את הדוח לרבעון Q3 2026\\. הרווח למניה 3\\.62'));
+    // the alert in בקרה, category דוחות
+    assert.ok(await pg.evaluate(()=>window.__model&&window.__model.alerts?window.__model.alerts().items.some(i=>i.key==='rep:MSFT:2026-09-30'&&/Microsoft פרסמה/.test(i.text)):true),'an alert with its own key, for the morning message');
+    // to its page from the message
+    await pg.evaluate(()=>document.querySelector('#repBan [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
+    const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),txt:b.textContent,tbl:!!document.querySelector('#secPage .repbox table')}:null});
+    assert.ok(r,'the report box is in view on the page'); assert.equal(r.h,`פורסם דוח ב-${dmY(day)} · Q3 2026`);
+    assert.deepEqual(r.f,ai.findings,'Chiko\'s findings'); assert.match(r.txt,/הסבר על הדוח\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.ok(!r.tbl,'no table of the report\'s figures');
     await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
-    await pg.evaluate(()=>document.querySelector('#secPage [data-ana="rep"]').click()); await pg.waitForTimeout(2500);
-    const c=await pg.evaluate(()=>[...document.querySelectorAll('.ana-ch h3')].map(x=>x.textContent).join('|'));
-    assert.match(c,/צ׳יקו על הדוח של/); assert.ok(seen.some(x=>x.includes('נתח את הדוח הרבעוני האחרון')&&x.includes('cloud grows')),'Chiko got the report and the headlines');
+    // "הבנתי" hides that report's message for good
+    await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#repBan [data-repban]').click()); await pg.waitForTimeout(200);
+    assert.ok(await pg.evaluate(()=>document.getElementById('repBan').hidden)); await pg.reload(); await pg.waitForTimeout(1500);
+    assert.ok(await pg.evaluate(()=>document.getElementById('repBan').hidden),'not shown again');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('research/latest',L0)}
+});
+
+test('fees: the table\'s running total ends at the headline, the fees saved apart in their own month',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const H0=store.getDoc('history/main').data, H=JSON.parse(JSON.stringify(H0)), A=H.accounts.find(a=>a.acct==='exc');
+  A.feeUsdPerTrade=1; A.trades=[{date:'2026-08-03',sym:'MSFT',qty:1,px:500,ccy:'USD'},{date:'2026-09-10',sym:'NVDA',qty:2,px:180,ccy:'USD',fee:2.5},{date:'2026-09-21',sym:'TA125',qty:10,px:62,ccy:'ILS',feeIls:3}];
+  A.fees=[{date:'2026-09-30',amount:12,ccy:'ILS'},{date:'2026-08-31',amount:1,ccy:'USD'}];
+  store.setDoc('history/main',H);
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#feeRows tr')]; return {tot:document.getElementById('feTot').textContent,last:rows.at(-1).lastElementChild.textContent.trim(),n:rows.length,sep:document.getElementById('feeRows').textContent}});
+    assert.equal(r.n,2,'two months'); assert.equal(r.last.replace(/[−\s]/g,''),r.tot.replace(/[−\s]/g,''),'the running total ends at the headline: '+JSON.stringify(r));
+    assert.match(r.sep,/מתוכן ₪12 שנרשמו בנפרד/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('history/main',H0)}
 });
 
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
@@ -662,7 +685,7 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     // the e-mail switches: the owner's, all off until chosen, saved per kind
     await tab(pg,'settings'); await pg.waitForTimeout(600);
     const m0=await pg.evaluate(()=>({hidden:document.getElementById('mailBox').hidden,on:[...document.querySelectorAll('[data-mail]')].map(i=>i.checked)}));
-    assert.deepEqual(m0,{hidden:false,on:[false,false,false]});
+    assert.deepEqual(m0,{hidden:false,on:[false,false,false,false]});
     await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
     assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
     ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();
