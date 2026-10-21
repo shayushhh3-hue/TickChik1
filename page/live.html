@@ -15443,7 +15443,7 @@ const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIl
   rules:{maxPos:10,maxGroup:40,stopLoss:15,maxUsd:90,usdCap:0,drift:5,minHoldMonths:12}};
 let P=null,Q=null,S=JSON.parse(JSON.stringify(DEF)),acct='all',db=null,canWrite=true,dirty=false,timer=null,saving=false;
 const PDEF={start:'',opening:0,mode:'cheap',items:[],deposits:[],purchases:[]};
-let PL=JSON.parse(JSON.stringify(PDEF)),pDirty=false,pTimer=null,pSaving=false,editSym=null,OB_SEL=null;
+let PL=JSON.parse(JSON.stringify(PDEF)),pDirty=false,pTimer=null,pSaving=false,EDITS=new Set(),OB_SEL=null;
 // Two separate tracks in one plan document: stocks at the top level (as before) and index funds under `idx`,
 // each with its own queue, deposits, purchases and monthly amount. PL always points at the track on screen.
 let PLD=PL, TRACK='stocks'; PLD.idx=Object.assign(JSON.parse(JSON.stringify(PDEF)),{mode:'manual'}); try{if(localStorage.getItem('track')==='idx')TRACK='idx'}catch(e){}
@@ -16473,8 +16473,9 @@ function renderPlan(mAll){
       const pu=PL.purchases.find(x=>x.sym===sym), pp=mAll.pos.find(x=>x.sym===sym), usd=pp&&pp.ccy==='USD';
       const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}${st.fixed?'_'+ym:''}"><input type="checkbox" id="buy_${esc(sym)}${st.fixed?'_'+ym:''}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(1,Math.round(c-st.bal)))}</span>`:''}</label>`;
       if(!got||!pu||!canWrite||st.fixed)return lb;
-      if(editSym!==sym)return lb+`<span class="nm">${pu.px?`<span class="n">${+(+pu.qty||1).toFixed(4)}</span> יח׳ ב-<span class="n">${usd?'$':'₪'}${(+pu.px).toFixed(2)}</span>`:'לפי מחיר השוק ברגע הסימון'}</span><button class="btn sm" type="button" data-pa="editBuy" data-sym="${esc(sym)}">עדכן מחיר ששולם</button>`;
-      return lb+`<span class="ebox"><label for="eb_qty">כמות<input type="number" id="eb_qty" min="0" step="0.0001" value="${+pu.qty||1}"></label><label for="eb_px">מחיר ליחידה (${usd?'$':'₪'})<input type="number" id="eb_px" min="0" step="0.01" value="${pu.px?pu.px:(pp?(+pp.px).toFixed(2):'')}"></label><button class="btn sm pri" type="button" data-pa="saveBuy" data-sym="${esc(sym)}">שמור</button><button class="btn sm" type="button" data-pa="cancelBuy">בטל</button></span>`};
+      if(!EDITS.has(sym))return lb+`<span class="nm">${pu.px?`<span class="n">${+(+pu.qty||1).toFixed(4)}</span> יח׳ ב-<span class="n">${usd?'$':'₪'}${(+pu.px).toFixed(2)}</span>`:'לפי מחיר השוק ברגע הסימון'}</span><button class="btn sm" type="button" data-pa="editBuy" data-sym="${esc(sym)}">עדכן מחיר ששולם</button>`;
+      const ei=esc(sym).replace(/[^A-Za-z0-9_-]/g,'_');
+      return lb+`<span class="ebox"><label for="eb_qty_${ei}">כמות<input type="number" id="eb_qty_${ei}" data-ebq="${esc(sym)}" min="0" step="0.0001" value="${+pu.qty||1}"></label><label for="eb_px_${ei}">מחיר ליחידה (${usd?'$':'₪'})<input type="number" id="eb_px_${ei}" data-ebp="${esc(sym)}" min="0" step="0.01" value="${pu.px?pu.px:(pp?(+pp.px).toFixed(2):'')}"></label><button class="btn sm pri" type="button" data-pa="saveBuy" data-sym="${esc(sym)}">שמור</button><button class="btn sm" type="button" data-pa="cancelBuy" data-sym="${esc(sym)}">בטל</button></span>`};
   const buyGroups=(buys,m,fn)=>{const ym=ymAdd(st.start,m), f=buys.filter(isF), k=buys.filter(x=>!isF(x)); if(!f.length||!k.length)return buys.map(x=>fn(x,m,ym)).join(''); return `<div class="bg col"><span class="bl">קרנות</span>${f.map(x=>fn(x,m,ym)).join('')}</div><div class="bg col"><span class="bl">מניות</span>${k.map(x=>fn(x,m,ym)).join('')}</div>`};
   for(let m=0;m<nRows;m++){
     const ym=ymAdd(st.start,m), d=depBy[ym], buys=st.lad.rows[m]||[];
@@ -16497,7 +16498,7 @@ function renderPlan(mAll){
    drawChart(L?pts:CH)}
   drawFwd(project(mAll.total,MTOT(),Math.max(1,Math.min(40,+S.years||1)),+S.ratePct||0),todo.length&&st.lad.complete?(lastM-st.cur+1)/12:null,mAll.pnl,mAll.missingCost);
   try{renderGoal(mAll)}catch(e){}
-  if(!(editSym&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
+  if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה נרשמת לפי מחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.';
 
@@ -16537,11 +16538,11 @@ function planAct(a,d){
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
       if(st.rot&&pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
       PL.purchases.push(rec);t.status='done';t.doneAt=now;t.note='';t.pid=id}}
-  else if(a==='editBuy'){editSym=d.sym;render();return}
-  else if(a==='cancelBuy'){editSym=null;render();return}
-  else if(a==='saveBuy'){const pu=PL.purchases.find(x=>x.sym===d.sym), pp=mAllNow().pos.find(x=>x.sym===d.sym), q=+$('eb_qty').value, px=+$('eb_px').value;
+  else if(a==='editBuy'){EDITS.add(d.sym);render();return}
+  else if(a==='cancelBuy'){EDITS.delete(d.sym);render();return}
+  else if(a==='saveBuy'){const pu=PL.purchases.find(x=>x.sym===d.sym), pp=mAllNow().pos.find(x=>x.sym===d.sym), qi=[...document.querySelectorAll('[data-ebq]')].find(x=>x.dataset.ebq===d.sym), pi=[...document.querySelectorAll('[data-ebp]')].find(x=>x.dataset.ebp===d.sym), q=qi?+qi.value:0, px=pi?+pi.value:0;
     if(!pu||!(q>0)||!(px>0)){return}
-    pu.qty=q; pu.px=px; pu.ccy=pp&&pp.ccy==='USD'?'USD':'ILS'; pu.fx=Q.usdIls; pu.paidIls=Math.round((q*px*(pu.ccy==='USD'?Q.usdIls:1)+(+S.minFeeIls||0))*100)/100; editSym=null}
+    pu.qty=q; pu.px=px; pu.ccy=pp&&pp.ccy==='USD'?'USD':'ILS'; pu.fx=Q.usdIls; pu.paidIls=Math.round((q*px*(pu.ccy==='USD'?Q.usdIls:1)+(+S.minFeeIls||0))*100)/100; EDITS.delete(d.sym)}
   else if(a==='skip'&&it)it.status='skip';
   else if(a==='unskip'&&it)it.status='todo';
   else if(a==='undo'&&it){if(it.pid)PL.purchases=PL.purchases.filter(x=>x.id!==it.pid);it.status='todo';delete it.pid;delete it.doneAt;it.note=''}
@@ -19452,7 +19453,7 @@ document.addEventListener('click',ev=>{
   const cb=ev.target.closest('[data-core]'); if(cb){if(canWrite){S.coreOv=Object.assign({},S.coreOv);S.coreOv[cb.dataset.core]=cb.getAttribute('aria-pressed')!=='true';changed()}return}
   const ob=ev.target.closest('[data-ob]'); if(ob){if(canWrite&&P&&Q){const cur=OB_SEL||new Set(mAllNow().pos.map(p=>p.sym)); if(cur.has(ob.dataset.ob))cur.delete(ob.dataset.ob); else cur.add(ob.dataset.ob); OB_SEL=cur; render()}return}
   const pa=ev.target.closest('[data-pa]'); if(pa){planAct(pa.dataset.pa,pa.dataset);return}
-  const tk=ev.target.closest('[data-track]'); if(tk){TRACK=tk.dataset.track==='idx'?'idx':'stocks';try{localStorage.setItem('track',TRACK)}catch(e){};editSym=null;setTrack();render();return}
+  const tk=ev.target.closest('[data-track]'); if(tk){TRACK=tk.dataset.track==='idx'?'idx':'stocks';try{localStorage.setItem('track',TRACK)}catch(e){};EDITS.clear();setTrack();render();return}
   const md=ev.target.closest('[data-mode]'); if(md){planAct('mode',md.dataset);return}
   const c=ev.target.closest('.chip[data-a]'); if(c){acct=c.dataset.a;try{localStorage.setItem('acct',acct)}catch(e){};render();return}
   if(ev.target.closest('[data-acctall]')){acct='all';try{localStorage.setItem('acct',acct)}catch(e){};render();return}

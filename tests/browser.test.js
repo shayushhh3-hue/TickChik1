@@ -128,6 +128,27 @@ test('the plan: one cash balance for the whole portfolio, the same in the stocks
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the plan: a fund bought in the stocks track opens for its quantity and price like a share, and both can be open',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const plan0=store.getDoc('plan/main').data;
+  store.setDoc('plan/main',{...plan0,idx:plan0.idx||{start:'',opening:0,mode:'manual',items:[],deposits:[],purchases:[]},mode:'rotate',items:[{sym:'TA125',status:'todo',note:''},...plan0.items],deposits:[...(plan0.deposits||[]),{id:'dx',month:new Date().toISOString().slice(0,7),amount:5000,at:new Date().toISOString()}]});
+  const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.waitForTimeout(400);
+  await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(300);
+  const r=await pg.evaluate(async()=>{const wait=()=>new Promise(r=>setTimeout(r,350)), q=s=>document.querySelector(s);
+    for(const sym of ['TA125','MSFT']){const b=q(`input[data-buy="${sym}"]`); if(b&&!b.disabled&&!b.checked){b.click(); await wait()}}
+    for(const sym of ['TA125','MSFT']){const b=q(`[data-pa="editBuy"][data-sym="${sym}"]`); if(b){b.click(); await wait()}}
+    const open=[...document.querySelectorAll('[data-ebq]')].map(x=>x.dataset.ebq).sort(), lab=(q('[data-ebp="TA125"]')||{}).closest?q('[data-ebp="TA125"]').closest('label').textContent:'';
+    const qi=q('[data-ebq="TA125"]'), pi=q('[data-ebp="TA125"]'); qi.value='2'; pi.value='63.4'; q('[data-pa="saveBuy"][data-sym="TA125"]').click(); await wait();
+    const still=[...document.querySelectorAll('[data-ebq]')].map(x=>x.dataset.ebq), line=q('input[data-buy="TA125"]').closest('td').textContent;
+    return {open,lab,still,line}});
+  assert.deepEqual(r.open,['MSFT','TA125'],'a fund and a share open at the same time');
+  assert.match(r.lab,/מחיר ליחידה \(₪\)/,'a shekel fund is priced in shekels');
+  assert.deepEqual(r.still,['MSFT'],'saving one closes only that one'); assert.match(r.line,/2\s*יח׳ ב-\s*₪63\.40/);
+  await pg.screenshot({path:'/tmp/claude-0/-home-claude/b22281cb-4d7c-579a-92b3-f89ef1145114/scratchpad/plan_ta.png',fullPage:false});
+  assert.deepEqual(pg.errs,[]);
+  await ctx.close(); store.setDoc('plan/main',plan0);
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
