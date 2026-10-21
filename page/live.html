@@ -16393,7 +16393,10 @@ function render(){
   {const th=document.querySelectorAll('#holdSec thead th'); if(th[4])th[4].textContent=HC==='usd'?'שווי $':HC==='both'?'שווי ₪ / $':'שווי ₪'; if(th[6])th[6].textContent=HC==='usd'?'עלות $':HC==='both'?'עלות ₪ / $':'עלות ₪'}
   const hvRows=HV==='stock'?sP:HV==='fund'?fP:null;
   if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HV==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
-      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק</td></tr>`}
+      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק${(()=>{
+        // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
+        if(HV!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
+        return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור התיק נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 

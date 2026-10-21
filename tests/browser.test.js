@@ -225,6 +225,20 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
   }finally{store.setDoc('settings/main',S0)}
 });
 
+test('funds in the holdings and in the mix: a fund in another group is named, so the two numbers add up',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, Q0=store.getDoc('quotes/latest').data;
+  store.setDoc('portfolio/main',{...P0,positions:P0.positions.concat([{acct:'exc',sym:'DRAM',name:'Roundhill Memory ETF',qty:12,ccy:'USD',costIls:1700,group:'tech'}])});
+  store.setDoc('quotes/latest',{...Q0,prices:{...Q0.prices,DRAM:46.45},prev:{...Q0.prev,DRAM:46}});
+  try{
+    const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
+    await pg.evaluate(()=>document.querySelector('.hkind:not(.hccy) [data-hv="fund"]').click()); await pg.waitForTimeout(400);
+    const line=await pg.evaluate(()=>[...document.querySelectorAll('#rows tr.sec')].map(t=>t.textContent).join('|'));
+    assert.match(line,/קרנות: \d+ ניירות/); assert.match(line,/מתוכן ₪[\d,]+ בקרן אחת שבפיזור התיק נספרות בקבוצה אחרת: DRAM \(טכנולוגיה\)/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
