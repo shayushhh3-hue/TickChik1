@@ -90,7 +90,7 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000});
+  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000});   // the first page in a fresh runner builds the font cache
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -292,6 +292,28 @@ test('what is used: screens and the parts seen on the screen, per day, in the vi
     assert.ok(store.getDoc(`data/users/${pid}/usage`).exists,'kept in the partner\'s own data');
     const {access}=await import('../server/store.js'); assert.equal(access({id:'owner',role:'owner'},`data/users/${pid}/usage`),'','the owner does not see it');
   }finally{store.deleteDoc('usage/main'); store.deleteDoc(`data/users/${pid}/usage`)}
+});
+
+test('what the user saves stays saved: a second change made while the first is still saving, on a slow phone connection; and the choices of how the page looks, on another device',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{
+    const slow=(r,u)=>{if(r.request().method()==='PUT'&&u.includes('settings')){setTimeout(()=>{try{r.continue()}catch(e){}},900);return true}return false};
+    let {ctx,pg}=await open(390,{route:slow}); await tab(pg,'settings'); await pg.waitForTimeout(500);
+    await pg.click('#rMaxPos',{clickCount:3}); await pg.keyboard.type('17'); await pg.waitForTimeout(1000);   // the save of 17 is on its way
+    await pg.click('#rMaxGroup',{clickCount:3}); await pg.keyboard.type('33'); await pg.waitForTimeout(4000);
+    const R1=store.getDoc('settings/main').data.rules; assert.deepEqual([R1.maxPos,R1.maxGroup],[17,33],'both kept');
+    // choices of how the page looks: the holdings in dollars, a bigger text
+    await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('.hccy .chip[data-hc="usd"]').click());
+    await tab(pg,'settings'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-a11y="size:l"]').click());
+    await pg.waitForTimeout(5000); await ctx.close();
+    const ui=store.getDoc('settings/main').data.ui||{}; assert.equal(ui.tr_holdccy,'usd'); assert.match(ui.tr_a11y||'',/"size":"l"/);
+    // another device: a browser with nothing in its storage
+    ({ctx,pg}=await open(390)); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>({hc:document.querySelector('.hccy .chip[aria-pressed="true"]')?.dataset.hc,size:document.documentElement.dataset.tsize,max:document.getElementById('rMaxPos').value}));
+    assert.deepEqual(r,{hc:'usd',size:'l',max:'17'});
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll with the bigger text'); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
 });
 
 test('two-step sign-in: switched on in its own page, the login asks for the code, a backup code works once',T,async t=>{

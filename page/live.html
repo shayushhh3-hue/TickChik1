@@ -1584,6 +1584,15 @@ table.use td:first-child{max-width:60vw;white-space:normal}
 .calm .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
 .calm .sidemore{display:none!important}
 @media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
+/* 21.10 (4) accessibility: the text size, a stronger contrast, less motion */
+html[data-tsize="l"] .wrap{zoom:1.1} html[data-tsize="xl"] .wrap{zoom:1.2}
+html.a11y-hc{--muted:#4A3B4E;--ink2:#2A1D2E;--line:#B5A28F;--focus:#7A2E00}
+html.a11y-hc .note,html.a11y-hc .sub,html.a11y-hc .k{color:#33263A}
+html.a11y-hc .chip,html.a11y-hc .btn,html.a11y-hc .dk-ack{border-color:#7A6A7E}
+html.a11y-hc .dk-go,html.a11y-hc a{text-decoration:underline}
+html.a11y-hc :focus-visible{outline:3px solid #7A2E00!important;outline-offset:2px}
+html.a11y-rm *,html.a11y-rm *::before,html.a11y-rm *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media (prefers-reduced-motion:reduce){.tape{animation:none!important} .uxlit{animation:none!important}}
 </style>
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
@@ -2191,6 +2200,10 @@ table.use td:first-child{max-width:60vw;white-space:normal}
         <p class="note" id="meNote" style="max-width:none"></p>
         <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
         <p class="note" style="margin:0;max-width:none">פשוטה: בסקירה רק שווי התיק, מה לעשות, האחזקות והפיזור, ובשאר המסכים בלי החלקים המתקדמים. מלאה: הכול.</p>
+        <div class="viewwrap" role="group" aria-label="גודל הטקסט"><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
+        <div class="viewwrap" role="group" aria-label="ניגודיות"><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
+        <div class="viewwrap" role="group" aria-label="תנועה"><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
+        <p class="note" style="margin:0;max-width:none">כל הבחירות האלה, וגם איך בחרת לראות את הדף (שקלים או דולרים, החלקים הפתוחים, פס המניות ועוד), נשמרות בחשבון שלך, ויופיעו כך בכל מכשיר ודפדפן שתיכנס ממנו.</p>
       </div>
     </section>
 
@@ -15617,7 +15630,7 @@ const DEF={goal:0,monthly:500,monthlyIdx:0,years:10,ratePct:6,taxPct:25,minFeeIl
   rules:{maxPos:10,maxGroup:40,stopLoss:15,maxUsd:90,usdCap:0,drift:5,minHoldMonths:12}};
 let P=null,Q=null,S=JSON.parse(JSON.stringify(DEF)),acct='all',db=null,canWrite=true,dirty=false,timer=null,saving=false;
 const PDEF={start:'',opening:0,mode:'cheap',items:[],deposits:[],purchases:[]};
-let PL=JSON.parse(JSON.stringify(PDEF)),pDirty=false,pTimer=null,pSaving=false,EDITS=new Set(),OB_SEL=null;
+let P_SEQ=0, PL=JSON.parse(JSON.stringify(PDEF)),pDirty=false,pTimer=null,pSaving=false,EDITS=new Set(),OB_SEL=null;
 // Two separate tracks in one plan document: stocks at the top level (as before) and index funds under `idx`,
 // each with its own queue, deposits, purchases and monthly amount. PL always points at the track on screen.
 let PLD=PL, TRACK='stocks'; PLD.idx=Object.assign(JSON.parse(JSON.stringify(PDEF)),{mode:'manual'}); try{if(localStorage.getItem('track')==='idx')TRACK='idx'}catch(e){}
@@ -16629,7 +16642,7 @@ function renderPlan(mAll){
   $('depState').textContent=(st.depNow?`הפקדת ${MONTHS[new Date().getMonth()]} סומנה.`:`הפקדת ${MONTHS[new Date().getMonth()]} עוד לא סומנה.`)+(+S.depDay?` יום ההפקדה שלך: ${depDayTxt()}.`:'');
   for(const b of document.querySelectorAll('[data-track]'))b.setAttribute('aria-pressed',b.dataset.track===TRACK);
   const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} הוגדלו · ${t} בתור`};
-  {const fs=fixedSum(PLD.idx); if(fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}
+  {const fs=fixedSum(PLD.idx); if(fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
    $('trkS').textContent=`${ils(+S.monthly||0)} בחודש · ${tsum(PLD)}`; $('trkI').textContent=`${ils(+S.monthlyIdx||0)} בחודש · `+(fs!=null?`סכום קבוע ל-${PLD.idx.items.filter(i=>i.status!=='skip'&&+i.amt>0).length} קרנות`:tsum(PLD.idx));
    const a=+S.monthly||0, b=+S.monthlyIdx||0; $('trkTot').textContent=a&&b?`סך ההפקדה החודשית: ${ils(a+b)}, מתוכם ${ils(a)} למניות ו-${ils(b)} למדדים. לכל מסלול תור משלו; יתרת המזומן אחת, משותפת לשניהם.`:'';
    const mi=$('inMonthlyIdx'); if(mi){mi.disabled=fs!=null||!canWrite; mi.title=fs!=null?'הסכום של כל הקרנות במסלול המדדים. משנים אותו בטבלה "הניירות בתוכנית".':''}}
@@ -16734,18 +16747,18 @@ function planAct(a,d){
   else if((a==='up'||a==='down')&&it){let j=ix;do{j+=a==='up'?-1:1}while(PL.items[j]&&PL.items[j].status!=='todo');if(PL.items[j]){PL.items[ix]=PL.items[j];PL.items[j]=it}}
   else if(a==='mode'){PL.mode=d.mode;
     if(d.mode==='fixed'){const L=PL.items.filter(i=>i.status!=='skip'); if(L.length&&!L.some(i=>+i.amt>0)){const each=Math.floor((+S.monthlyIdx||0)/L.length); for(const i of L)i.amt=each}
-      S.monthlyIdx=fixedSum(PL); dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}}
-  else if(a==='amt'&&it){it.amt=Math.max(0,Math.round((+d.v||0)*100)/100); S.monthlyIdx=fixedSum(PL); dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}
+      S.monthlyIdx=fixedSum(PL); dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}}
+  else if(a==='amt'&&it){it.amt=Math.max(0,Math.round((+d.v||0)*100)/100); S.monthlyIdx=fixedSum(PL); dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
   else if(a==='move'&&it){const other=TRACK==='idx'?PLD:PLD.idx;PL.items.splice(ix,1);if(!other.items.some(i=>i.sym===it.sym))other.items.push(it);const pu=PL.purchases.filter(x=>x.sym===it.sym);PL.purchases=PL.purchases.filter(x=>x.sym!==it.sym);other.purchases.push(...pu);if(!other.start)other.start=PL.start||ymNow()}
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null}
   planChanged();
 }
-function planChanged(){pDirty=true;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500)}
+function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500)}
 async function savePlan(){
   if(!db||!canWrite)return;
   if(pSaving){pTimer=setTimeout(savePlan,400);return}
-  pSaving=true;$('planSaved').textContent='שומר…';
-  try{await pset('plan',JSON.parse(JSON.stringify(PLD)));pDirty=false;$('planSaved').textContent='נשמר'}
+  pSaving=true;$('planSaved').textContent='שומר…'; const seq=P_SEQ;
+  try{await pset('plan',JSON.parse(JSON.stringify(PLD))); if(seq===P_SEQ)pDirty=false; else{clearTimeout(pTimer);pTimer=setTimeout(savePlan,300)} $('planSaved').textContent='נשמר'}
   catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;render();$('planSaved').textContent='אין הרשאת עריכה'}else $('planSaved').textContent='השמירה נכשלה, נסה שוב'}
   pSaving=false;
 }
@@ -19647,12 +19660,13 @@ function fillInputs(){
   {const d=$('inDepDay'); if(d)d.disabled=!canWrite}
   for(const el of document.querySelectorAll('input,textarea,#btnSnap'))el.disabled=!canWrite&&!WIK[el.id];
 }
-function changed(){dirty=true;render();clearTimeout(timer);timer=setTimeout(save,700)}
+let S_SEQ=0;   // every change of the settings counts; a save clears "dirty" only if nothing changed while it was on its way
+function changed(){dirty=true;S_SEQ++;render();clearTimeout(timer);timer=setTimeout(save,700)}
 async function save(){
   if(!db||!canWrite){$('saved').textContent=db?'':'השינויים לא נשמרים בתצוגה הזו';return}
   if(saving){timer=setTimeout(save,400);return}
-  saving=true;$('saved').textContent='שומר…';
-  try{await pset('settings',JSON.parse(JSON.stringify(S)));dirty=false;$('saved').textContent='נשמר'}
+  saving=true;$('saved').textContent='שומר…'; const seq=S_SEQ;
+  try{await pset('settings',JSON.parse(JSON.stringify(S))); if(seq===S_SEQ)dirty=false; else{clearTimeout(timer);timer=setTimeout(save,300)} $('saved').textContent='נשמר'}
   catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;fillInputs();$('saved').textContent='אין הרשאת עריכה'}else $('saved').textContent='השמירה נכשלה, נסה שוב'}
   saving=false;
 }
@@ -19666,8 +19680,8 @@ document.addEventListener('input',ev=>{
   else if(el.dataset.cash&&DRAFT){const [a,c]=el.dataset.cash.split(':');(DRAFT.cash[a]=DRAFT.cash[a]||{ILS:0,USD:0})[c]=+el.value||0;pfDirty()}
   else if(el.dataset.dep){planAct('depToggle',{ym:el.dataset.dep})}
   else if(el.dataset.buy){planAct('buyToggle',{sym:el.dataset.buy,ym:el.dataset.ym})}
-  else if(el.id==='policy'){S.policy=el.value;dirty=true;clearTimeout(timer);timer=setTimeout(save,900)}
-  else if(el.id==='inName'){S.name=el.value.slice(0,24);dirty=true;clearTimeout(timer);timer=setTimeout(save,900);try{render()}catch(e){}}
+  else if(el.id==='policy'){S.policy=el.value;dirty=true;S_SEQ++;clearTimeout(timer);timer=setTimeout(save,900)}
+  else if(el.id==='inName'){S.name=el.value.slice(0,24);dirty=true;S_SEQ++;clearTimeout(timer);timer=setTimeout(save,900);try{render()}catch(e){}}
   else if(el.dataset.t){const sb=JSON.stringify(S);S.targets[el.dataset.t]=el.value===''?0:+el.value;changed();settingTouched(sb)}
 });
 $('alerts').addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('ag'))AG_OPEN[d.dataset.sv]=d.open},true);
@@ -21993,7 +22007,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
     setTrack(); planChanged(); return}
   const del=t.closest('[data-oncedel]'); if(del){if(!canWrite)return; const X=del.dataset.trk==='idx'?PLD.idx:PLD, gone=(X.deposits||[]).find(d=>d.id===del.dataset.oncedel); if(!gone)return;
     X.deposits=X.deposits.filter(d=>d!==gone); setTrack(); planChanged();
-    offerUndo(`ההפקדה של ${ils(+gone.amount||0)} הוסרה`,()=>{X.deposits.push(gone); setTrack(); pDirty=true; clearTimeout(pTimer); pTimer=setTimeout(savePlan,600); render()})}});
+    offerUndo(`ההפקדה של ${ils(+gone.amount||0)} הוסרה`,()=>{X.deposits.push(gone); setTrack(); pDirty=true;P_SEQ++; clearTimeout(pTimer); pTimer=setTimeout(savePlan,600); render()})}});
 // ---- savings goals ("חסכונות לפי מטרה"): a pot per goal (a child's savings, a mortgage, a home), each with its target and
 // date, its own holdings and its own cash. A holding can be copied from the portfolio or typed in; either way the pot is
 // a separate account of its own: nothing in it is counted in the portfolio's value, its mix, the alerts or the reports.
@@ -22234,6 +22248,48 @@ function renderUse(){
     <p class="note" style="margin:0">נשמר רק בחשבון שלך: אף אחד אחר, גם לא בעל האתר, לא רואה אותו. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
 }
 document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('[data-usereset]')))return; USE={days:{},since:ilDay()}; USE_SEEN.clear(); USE_DIRTY=true; useSave(); renderUse()});
+// ---- 21.10 (4) how the page looks travels with the account, not only with this browser: a phone's browser, the icon on
+// the home screen and a link opened inside another app each keep their own storage, so a choice made in one was lost in
+// the others. The choices (the view, the holdings' currency and filter, the folds, the ticker, the text size and the rest)
+// are kept in the settings (S.ui) too: the account's copy is put in place when the settings arrive, and a choice made
+// here goes back to the account within a few seconds
+const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','acct'];
+const uiLocal=()=>{const o={}; for(const k of UI_KEYS){const v=UXK(k); if(v!=null)o[k]=String(v).slice(0,6000)} return o};
+let UI_APPLIED=false;
+function uiApply(){
+  if(UI_APPLIED||!S)return; UI_APPLIED=true; if(!S.ui||typeof S.ui!=='object')return;
+  const L=uiLocal(); let diff=false;
+  for(const [k,v] of Object.entries(S.ui)){if(!UI_KEYS.includes(k)||typeof v!=='string')continue; if(L[k]!==v){UXS(k,v); diff=true}}
+  if(!diff)return;
+  try{const v=UXK('tr_view'); if(v==='calm'||v==='full')setView(v,true)}catch(e){}
+  try{const v=UXK('tr_holdccy'); if(['ils','usd','both'].includes(v))HC=v}catch(e){}
+  try{const v=UXK('tr_holdv'); if(['all','stock','fund'].includes(v))HV=v}catch(e){}
+  try{const v=UXK('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
+  try{HOLD_LITE=UXK('tr_holdlite')!=='0'}catch(e){} try{MORE=UXK('tr_more')==='1'}catch(e){}
+  try{FOLD=JSON.parse(UXK('tr_fold')||'{}')||{}}catch(e){}
+  try{const v=UXK('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
+  try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){}
+  try{TAPE_ON=UXK('tr_tape')!=='0'; tapeApply()}catch(e){}
+  try{a11yApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
+  try{render()}catch(e){}
+}
+function uiPush(){
+  if(!SETK||!canWrite||!S)return; if(!UI_APPLIED){if(S.ui)return; UI_APPLIED=true}
+  const cur=S.ui&&typeof S.ui==='object'?S.ui:{}, nx={...cur,...uiLocal()};
+  if(JSON.stringify(nx)===JSON.stringify(cur))return;
+  S.ui=nx; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700);
+}
+setInterval(()=>{try{uiPush()}catch(e){}},3000);
+// nothing waits when the page goes to the background (a phone closes it soon after)
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='hidden')return; try{uiPush()}catch(e){} try{if(dirty){clearTimeout(timer);save()}}catch(e){} try{if(pDirty){clearTimeout(pTimer);savePlan()}}catch(e){}});
+// accessibility: the size of the text, a stronger contrast, less motion. Kept like the other choices (tr_a11y, S.ui)
+const A11Y_DEF={size:'m',contrast:false,motion:false};
+const a11yGet=()=>{try{return {...A11Y_DEF,...(JSON.parse(UXK('tr_a11y')||'{}')||{})}}catch(e){return {...A11Y_DEF}}};
+function a11yApply(){const a=a11yGet(), r=document.documentElement; r.classList.toggle('a11y-hc',!!a.contrast); r.classList.toggle('a11y-rm',!!a.motion); r.dataset.tsize=['m','l','xl'].includes(a.size)?a.size:'m';
+  for(const b of document.querySelectorAll('[data-a11y]')){const [k,v]=b.dataset.a11y.split(':'); b.setAttribute('aria-pressed',String(k==='size'?r.dataset.tsize===v:String(!!a[k])===v))}}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-a11y]'); if(!b)return; const [k,v]=b.dataset.a11y.split(':'), a=a11yGet(); a[k]=k==='size'?v:v==='true';
+  UXS('tr_a11y',JSON.stringify(a)); a11yApply(); try{useAdd('a11y:'+k)}catch(e){} try{uiPush()}catch(e){}});
+try{a11yApply()}catch(e){}
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----
 // Everything here reads what the page already computed (the model, the alert engine, the price document); it adds no
 // numbers of its own. The to-do list is the one place for what needs doing: the rules' alerts, a new company report, the
@@ -22388,6 +22444,7 @@ const GO=[
   {id:'use',l:'במה אני משתמש באתר',k:'שימוש מונה סטטיסטיקה פתחתי',tab:'settings',el:'hUse'},
   {id:'src',l:'מקורות המחירים',k:'מקור מקורות מאיה yahoo נתונים מאיפה',tab:'settings',el:'srcPanel'},
   {id:'2fa',l:'אימות דו-שלבי',k:'אבטחה קוד כניסה סיסמה טלפון אימות',fn:()=>{if(window.__tc)location.href='security.html'; else offerUndo('אימות דו-שלבי זמין באתר, בכפתור החשבון.',null,5000,'סגור')}},
+  {id:'a11y',l:'נגישות: גודל טקסט, ניגודיות ותנועה',k:'נגישות גודל טקסט גופן גדול ניגודיות אנימציה',tab:'settings',el:'hMe'},
   {id:'view',l:'תצוגה פשוטה או מלאה',k:'תצוגה פשוטה מלאה רגועה פירוט',tab:'settings',el:'hMe'},
   {id:'news',l:'מה חדש באתר',k:'חדש עדכון גרסה',fn:()=>newsOpen()},
   {id:'tour',l:'סיור באתר',k:'סיור הדרכה עזרה מתחילים',fn:()=>tourStart()}];
@@ -22417,6 +22474,8 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-21.4',at:'2026-10-21',t:'ההעדפות נשמרות בחשבון',d:'הכללים, היעדים ואיך בחרת לראות את הדף נשמרים בחשבון ומופיעים כך בכל מכשיר. תוקנה גם תקלה שבה שינוי שנעשה בזמן שמירה קודמת הלך לאיבוד.'},
+  {v:'2026-10-21.4',at:'2026-10-21',t:'נגישות',d:'בהגדרות ← הפרופיל שלי: טקסט גדול או גדול מאוד, ניגודיות גבוהה ופחות תנועה.',go:'a11y'},
   {v:'2026-10-21.3',at:'2026-10-21',t:'במה אני משתמש באתר',d:'בהגדרות: אילו מסכים וחלקים פתחת ב-30 הימים האחרונים, ומה לא נפתח בכלל. נשמר רק בחשבון שלך.',go:'use'},
   {v:'2026-10-21.2',at:'2026-10-21',t:'אימות דו-שלבי',d:'בכל כניסה גם קוד מאפליקציה בטלפון. מפעילים בכפתור החשבון (העיגול בפינה) ← "אימות דו-שלבי".',go:'2fa'},
   {v:'2026-10-21.2',at:'2026-10-21',t:'מייל כשמשהו לא מתעדכן',d:'מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים: מייל אליך, פעם אחת לכל בעיה. מפעילים בהגדרות ← מיילים.',go:'mail'},
@@ -22511,7 +22570,7 @@ try{refreshBack()}catch(e){}
   try{useBoot(); setTimeout(useWatch,1500)}catch(e){}
   pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();render()}else{$('fresh').textContent='עדיין אין נתוני תיק.';render()}},fail);
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();render();try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
-  pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}render()},fail);
+  pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!pSaving&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}render()},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();render()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};render()},fail);
   pd('history').onSnapshot(s=>{if(s.exists){HS=s.data();render()}},fail);
@@ -22523,7 +22582,7 @@ try{refreshBack()}catch(e){}
   $('repPer').addEventListener('change',e=>{RP=e.target.value});
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});
   window.claude.use('downloads').then(d=>{$('btnReport').hidden=!d;$('btnExcel').hidden=!d;$('repWrap').hidden=!d;DLON=!!d;arcUi();fillPeriods();renderCatalog()});
-  pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());render()}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
+  pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());render()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
   pd('ack').onSnapshot(s=>{const d=s.exists?s.data():null; ACK=d&&Array.isArray(d.list)?d.list:[]; render()},()=>{});
   try{const u=await window.claude.use('user');const w=u?await u.can('data.write'):null;if(w===false&&OWNER){canWrite=false;fillInputs()}}catch(e){}
 })();
