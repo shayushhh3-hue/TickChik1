@@ -278,7 +278,8 @@ test('what is used: screens and the parts seen on the screen, per day, in the vi
   try{
     const {ctx,pg}=await open(390);
     await tab(pg,'plan'); await pg.waitForTimeout(400); await tab(pg,'risk'); await pg.waitForTimeout(400); await tab(pg,'overview'); await pg.waitForTimeout(300);
-    await pg.evaluate(()=>document.getElementById('deskSec').scrollIntoView({block:'start'})); await pg.waitForTimeout(2200);
+    await pg.evaluate(()=>document.getElementById('deskSec').scrollIntoView({block:'start'}));
+    await pg.waitForFunction(()=>{const u=window.__ux.use(), d=u.days&&u.days[Object.keys(u.days).sort().pop()]; return !!(d&&d['s:hDesk'])},null,{timeout:10000}).catch(()=>{});   // a part counts after a second and a half in view
     await pg.evaluate(()=>window.__ux.useSave()); await pg.waitForTimeout(500);
     const d=store.getDoc('usage/main').data, day=Object.keys(d.days).sort().pop(), D=d.days[day];
     assert.ok(D['tab:plan']>=1&&D['tab:risk']>=1&&D['tab:overview']>=1,JSON.stringify(D)); assert.ok(D['s:hDesk']>=1,'a part seen on the screen counts: '+JSON.stringify(D));
