@@ -321,6 +321,26 @@ test('building a portfolio: the steps in words, a search over the logos, the cou
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('a stock typed by hand beside the statement: its own row, and removing it leaves the statement\'s quantity',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
+  await pg.evaluate(()=>{const b=document.getElementById('pickBox'); b.open=true; const a=document.getElementById('pickAcct'); a.value='exc'; a.dispatchEvent(new Event('change',{bubbles:true}))});
+  // MSFT: 2 in Excellence from the statement; 3 more typed by hand
+  await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','3'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
+  const rows=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].filter(tr=>tr.querySelector('[data-pf="sym"]')?.value==='MSFT').map(tr=>({acct:tr.querySelector('[data-pf="acct"]').value,qty:+tr.querySelector('[data-pf="qty"]').value,flag:(tr.querySelector('.flag.pick')||{}).textContent||'',del:+tr.querySelector('[data-pfdel]').dataset.pfdel})));
+  let r=await rows();
+  assert.deepEqual(r.map(x=>[x.acct,x.qty,x.flag]),[['exc',2,''],['exc',3,'נוסף ידנית, בנוסף לדוח']],'the statement\'s row untouched, the typed one beside it');
+  assert.match(await pg.evaluate(()=>document.getElementById('pickState').textContent),/בלי לגעת בכמות מהדוח: MSFT \(2 מהדוח \+ 3 ידנית\)/);
+  assert.ok(!(await pg.evaluate(()=>document.getElementById('dupBox')?.textContent||'')).includes('MSFT'),'not reported as the same security twice');
+  // typed again: the hand row is replaced, never doubled
+  await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
+  r=await rows(); assert.deepEqual(r.map(x=>x.qty),[2,4]);
+  // removing the hand row: the statement's 2 stay
+  await pg.click(`#pfRows [data-pfdel="${r[1].del}"]`); await pg.waitForTimeout(300);
+  r=await rows(); assert.deepEqual(r.map(x=>[x.qty,x.flag]),[[2,'']]);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('unknown stays unknown: a missing P/E, holdings without data, dates from another year',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(1280); await tab(pg,'ratings'); await pg.waitForTimeout(800);

@@ -2164,7 +2164,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <summary><h3 style="display:inline">בוא נבנה את התיק שלך</h3><span class="sub" id="pickSub">שלב 1 מתוך 3</span></summary>
         <h4 class="pickh" style="margin-top:10px">באילו מניות אתה מחזיק?</h4>
         <p class="note" style="margin:4px 0 0">בחר מניות והזן את הכמות. אפשר גם לדלג ולהעלות קובץ בהמשך.</p>
-        <p class="note" style="margin:4px 0 0">כשתעלה דוח או צילום של אותו חשבון, הכמות מהדוח תחליף את מה שבחרת כאן (לא תתווסף אליה), והדף יראה לך את ההבדל.</p>
+        <p class="note" style="margin:4px 0 0">מניה שכבר בתיק מדוח: הכמות שתזין כאן נכנסת בשורה נפרדת, "נוסף ידנית", בלי לגעת בכמות מהדוח, והסרה שלה מסירה רק אותה. כשתעלה דוח או צילום חדש של אותו חשבון, הכמות מהדוח תחליף את שתיהן (לא תתווסף), והדף יראה לך את ההבדל.</p>
         <div class="srch" style="margin-top:10px"><input id="pickQ" type="search" placeholder="חיפוש לפי שם או סימול, למשל NVDA" autocomplete="off" aria-label="חיפוש מניה לפי שם או סימול"></div>
         <p class="note" id="pickNone" hidden style="margin:6px 0 0"></p>
         <div class="form" style="margin-top:10px;grid-template-columns:minmax(0,220px)"><label for="pickAcct">החשבון שבו הניירות<select id="pickAcct"></select></label></div>
@@ -19628,7 +19628,7 @@ function renderMine(force){
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
-    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
+    <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
     <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
@@ -19653,7 +19653,7 @@ const near=(a,b)=>Math.abs(a-b)<=Math.max(0.0005,Math.abs(b)*0.005);
 function dupCheck(){
   const ps=(DRAFT&&DRAFT.positions||[]).map((p,i)=>({...p,i,sym:String(p.sym||'').toUpperCase().trim()})).filter(p=>p.sym&&+p.qty>0);
   const within=[], across=[]; const by={};
-  for(const p of ps){p.ck=canonSym(p.sym,p.name)||p.sym;(by[p.acct+'|'+p.ck]=by[p.acct+'|'+p.ck]||[]).push(p)}
+  for(const p of ps){p.ck=canonSym(p.sym,p.name)||p.sym; if(p.extra&&isManualRow(p))continue; (by[p.acct+'|'+p.ck]=by[p.acct+'|'+p.ck]||[]).push(p)}
   const byName={}; for(const p of ps){const nk=nameKey(p.name); if(nk.length>=4)(byName[p.acct+'|'+nk]=byName[p.acct+'|'+nk]||[]).push(p)}
   const alike=[]; for(const k in byName){const g=byName[k]; const syms=[...new Set(g.map(p=>p.ck))]; if(syms.length>1)alike.push({acct:g[0].acct,name:g[0].name,syms})}
   for(const k in by)if(by[k].length>1)within.push({acct:by[k][0].acct,sym:by[k][0].ck,rows:by[k],same:by[k].every(r=>near(+r.qty,+by[k][0].qty))});
@@ -19780,7 +19780,7 @@ const PICKS=[['AAPL','Apple'],['MSFT','Microsoft'],['NVDA','NVIDIA'],['AMZN','Am
 const PICKF=[['SPY','S&P 500 ETF'],['VOO','Vanguard S&P 500'],['QQQ','Nasdaq 100 ETF'],['VTI','כל השוק האמריקאי'],['VT','כל העולם'],['TA125','ת״א 125']];
 const BENCHK={SPX:'S&P 500',NDX:'נאסד״ק 100',DJI:'דאו ג׳ונס',RUT:'ראסל 2000',TA125:'ת״א 125',TA35:'ת״א 35'};
 const benchSel=()=>{const b=Array.isArray(S&&S.bench)?S.bench.filter(k=>BENCHK[k]):[]; return b.length?b:['SPX','TA125']};
-function pickTile([sym,name]){const held=(P&&P.positions||[]).find(p=>p.sym===sym);
+function pickTile([sym,name]){const hs=(P&&P.positions||[]).filter(p=>p.sym===sym), held=hs.length?{qty:Math.round(hs.reduce((t,p)=>t+(+p.qty||0),0)*1e4)/1e4}:null;
   return `<button type="button" class="pick${held?' held':''}" data-pick="${esc(sym)}" aria-pressed="false" title="${esc(name)}${held?' · כבר בתיק: '+(+held.qty)+' יחידות':''}">${logoHtml(sym,'s')}<span class="sym">${esc(lab(sym))}</span><span class="nm">${held?'בתיק: '+(+held.qty):esc(name)}</span></button>`}
 function pickInit(){
   const g=$('pickGrid'), gf=$('pickGridF'); if(!g||g.dataset.ok)return; g.dataset.ok='1';
@@ -19805,6 +19805,16 @@ document.addEventListener('input',e=>{if(!e.target||e.target.id!=='pickQ')return
   for(const t of document.querySelectorAll('#pickBox .pick')){const sym=t.dataset.pick, hit=!q||sym.toLowerCase().includes(q)||String(N[sym]||'').toLowerCase().includes(q)||lab(sym).toLowerCase().includes(q); t.hidden=!hit&&t.getAttribute('aria-pressed')!=='true'; if(hit)n++}
   const no=$('pickNone'); no.hidden=!q||n>0; if(!no.hidden)no.innerHTML=`"${esc(e.target.value.trim())}" לא ברשימה. <button class="btn sm" type="button" id="pickWs">חפש בכל הבורסות</button>`});
 document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('#pickWs'))return; const q=$('pickQ').value.trim(); $('wsQ').value=q; try{$('wsQ').scrollIntoView({block:'center',behavior:'smooth'})}catch(x){} wsSearch()});
+// a holding typed by hand (the logo pick, the world search) never touches a row that came from a statement or a screenshot:
+// beside such a row it is a row of its own ("נוסף ידנית", extra), so removing it removes only what was typed; a hand row
+// for the same security is replaced (not counted twice). A new statement of the account replaces both, as it always did
+const isManualRow=p=>p.src==='pick'||p.src==='world';
+function addManualRow(row){
+  const ck=canonSym(row.sym,row.name), same=p=>p.acct===row.acct&&canonSym(p.sym,p.name)===ck;
+  const base=DRAFT.positions.filter(p=>same(p)&&!isManualRow(p)), old=DRAFT.positions.find(p=>same(p)&&isManualRow(p));
+  DRAFT.positions=DRAFT.positions.filter(p=>!(same(p)&&isManualRow(p))).concat([base.length?{...row,extra:true}:row]);
+  return {base:base.reduce((t,p)=>t+(+p.qty||0),0),old:old?+old.qty:null};
+}
 function pickAdd(){
   const st=$('pickState'), ac=acctPick($('pickAcct').value), rows=[], noQty=[];
   for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){const sym=t.dataset.pick, q=+((t.querySelector('input')||{}).value)||0; if(!(q>0)){noQty.push(lab(sym));continue}
@@ -19812,13 +19822,12 @@ function pickAdd(){
     rows.push({acct:ac,sym,name:NAMEOF[sym]||nm,qty:q,ccy:/^TA\d+$/.test(sym)||NUMSYM.test(sym)?'ILS':'USD',costIls:null,px:null,group:groupOf(sym),src:'pick'})}
   if(!rows.length){st.textContent=noQty.length?`כתוב כמות ל: ${noQty.join(', ')}.`:'לא סומן נייר. לחץ על לוגו, ואז כתוב כמות.';return}
   if(!DRAFT)DRAFT=draftFromP();
-  const have=new Set(rows.map(r=>r.sym)), was=DRAFT.positions.filter(p=>p.acct===ac&&have.has(p.sym)).map(p=>`${lab(p.sym)} (${+p.qty} → ${+rows.find(r=>r.sym===p.sym).qty})`);
-  DRAFT.positions=DRAFT.positions.filter(p=>!(p.acct===ac&&have.has(p.sym))).concat(rows);
+  const was=[], onTop=[]; for(const r of rows){const x=addManualRow(r); if(x.old!=null)was.push(`${lab(r.sym)} (${x.old} → ${r.qty})`); if(x.base>0)onTop.push(`${lab(r.sym)} (${x.base} מהדוח + ${r.qty} ידנית)`)}
   (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();
   for(const t of document.querySelectorAll('.pick[aria-pressed="true"]')){if(!noQty.includes(lab(t.dataset.pick))){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()}}
   pickSub(); pfDirty(); renderMine(true);
   {const ps=$('pickSub'); if(ps)ps.textContent='שלב 2 מתוך 3'}
-  st.textContent=`שלב 2 מתוך 3: בדוק את הטבלה ולחץ על "שמור את התיק". ${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(was.length?` הוחלפה הכמות של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
+  st.textContent=`שלב 2 מתוך 3: בדוק את הטבלה ולחץ על "שמור את התיק". ${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(onTop.length?` בשורה נפרדת, בלי לגעת בכמות מהדוח: ${onTop.join(', ')}. "הסר" בשורה הידנית מסיר רק אותה.`:'')+(was.length?` הוחלפה הכמות הידנית של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
   try{$('pfRows').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}
 }
 // the indices the person follows, on the home page: today's change, and for a US index also its future
@@ -19847,7 +19856,7 @@ document.addEventListener('click',e=>{
   const sym=b.dataset.wsadd, q=+(document.querySelector(`[data-wsq="${CSS.escape(sym)}"]`)||{}).value||0; if(!(q>0)){b.previousElementSibling.focus(); return}
   const ac=acctPick($('upAcct').value); if(!DRAFT)DRAFT=draftFromP();
   const il=/\.TA$/.test(sym)||NUMSYM.test(sym), row={acct:ac,sym:sym.replace(/\.TA$/,''),name:b.dataset.name||sym,qty:q,ccy:il?'ILS':'USD',costIls:null,px:null,group:il?'il':groupOf(sym),src:'world'};
-  DRAFT.positions=DRAFT.positions.filter(p=>!(p.acct===ac&&p.sym===row.sym)).concat([row]); (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay(); pfDirty(); renderMine(true);
+  addManualRow(row); (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay(); pfDirty(); renderMine(true);
   b.textContent='נוסף'; b.disabled=true; $('listState').textContent=`${lab(row.sym)} נוסף לטבלה של ${acctName(ac)}. המטבע יתעדכן לפי הבורסה אחרי עדכון המחירים. בדוק את הטבלה ולחץ על "שמור את התיק".`;
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='wsQ'){e.preventDefault();wsSearch()}});
@@ -20191,7 +20200,7 @@ async function readStatement0(J){
     if(!DRAFT)DRAFT=draftFromP();
     // a statement describes the whole account, so it replaces it; screenshots show parts of it, so they are merged by symbol
     const merge=!hasText&&imgs.length>0, have=new Set(rows.map(r=>r.sym));
-    const before=new Map(DRAFT.positions.filter(p=>p.acct===ac).map(p=>[canonSym(p.sym,p.name),{...p}])), cash0={ILS:0,USD:0,...(DRAFT.cash[ac]||{})};
+    const before=new Map(DRAFT.positions.filter(p=>p.acct===ac).sort((a,b)=>(b.extra?1:0)-(a.extra?1:0)).map(p=>[canonSym(p.sym,p.name),{...p}])), cash0={ILS:0,USD:0,...(DRAFT.cash[ac]||{})};
     const asOf0=(DRAFT.asOf||{})[ac]||null, seen0=(DRAFT.seen||{})[ac]||null, tx0=(DRAFT.tx||[]).filter(t=>t.acct===ac).map(t=>({...t}));
     for(const k of [...FIXED.keys()])if(k.startsWith(ac+'|')&&(!merge||have.has(k.slice(ac.length+1))))FIXED.delete(k);
     DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(canonSym(p.sym,p.name))):p.acct!==ac).concat(rows);
