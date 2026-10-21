@@ -15803,7 +15803,6 @@ function divHistory(hs=HS,fx=usdRate()){
 }
 // ---- calc:end ----
 const TM=()=>TRACK==='idx'?(+S.monthlyIdx||0):(+S.monthly||0), MTOT=()=>(+S.monthly||0)+(+S.monthlyIdx||0);
-const idxCash=()=>{const x=PLD.idx;return x?(+x.opening||0)+x.deposits.reduce((t,d)=>t+(+d.amount||0),0)-x.purchases.reduce((t,d)=>t+(+d.paidIls||0),0):0};
 const MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const ymNow=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 const ymLabel=(off)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+off);return MONTHS[d.getMonth()]+' '+d.getFullYear()};
@@ -16408,7 +16407,11 @@ function planState(mAll){
   for(const p of mAll.pos){cost[p.sym]=rot?B0:p.pxIls+fee;name[p.sym]=p.name}
   const paid={}; for(const x of PL.purchases)paid[x.sym]=+x.paidIls||0;
   const dep=PL.deposits.reduce((s,d)=>s+(+d.amount||0),0), spent=PL.purchases.reduce((s,d)=>s+(+d.paidIls||0),0);
-  const ic=idxCash(), bal=TRACK==='idx'?ic:mAll.cash-ic, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>d.month===ymNow());
+  // one cash balance for the whole portfolio, the same in both tracks: the accounts' cash, plus the deposits ticked in either
+  // track, less the purchases ticked in either (mAll.cash). Each track keeps its own queue and monthly amount; the forecast
+  // of the queue starts the stocks track from the statements' cash and the funds track from its own opening, so no shekel
+  // is counted twice there
+  const bal=mAll.cash, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>d.month===ymNow());
   const cur=ymDiff(ymNow(),start), when={}, at={};
   // a fixed amount for each fund, every month (fixedMode): no queue, every fund with an amount is bought each month
   if(fixedMode()){const F=fixedItems(); for(const i of F)cost[i.sym]=+i.amt;
@@ -16433,7 +16436,7 @@ function renderPlan(mAll){
     const h=of.length&&os.length?`<div class="bg"><span class="bl">קרנות</span>${of.map(ch).join('')}</div><div class="bg"><span class="bl">מניות</span>${os.map(ch).join('')}</div>`:pos.map(ch).join(''); setH($('obChips'),h);
     $('obGo').disabled=!canWrite||!sel.size}}
   $('pBal').textContent=(st.bal<0?LRM+'−':'')+ils(Math.abs(st.bal)); $('pBal').className='v'+(st.bal<0?' down':'');
-  $('pBalD').textContent='מזומן, ועוד הפקדות, פחות קניות'; $('pBase').textContent=ils(st.base,2);
+  $('pBalD').textContent='המזומן בכל התיק, משותף לשני המסלולים: יתרת החשבונות, ועוד הפקדות שסימנת, פחות קניות שסימנת'; $('pBase').textContent=ils(st.base,2);
   $('pDone').textContent=`${done} / ${act.length}`; $('pBar').style.width=(act.length?done/act.length*100:0)+'%';
   $('pLeft').textContent=ils(Math.max(0,need-st.bal)); {const nF=todo.filter(i=>isF(i.sym)).length, nS=todo.length-nF; $('pLeftD').textContent=`${nF&&nS?nF+' קרנות ו-'+nS+' מניות':todo.length+(nF?' קרנות':' ניירות')}, ${ils(need)} במחירי היום`}
   if(st.fixed){const n=PL.purchases.filter(x=>x.month).length; $('pDone').textContent=`${n} קניות`; $('pBar').style.width='0%'; $('pLeft').textContent=ils(B); $('pLeftD').textContent=`בכל חודש, ל-${fixedItems().length} קרנות`}
@@ -16444,7 +16447,7 @@ function renderPlan(mAll){
   const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} הוגדלו · ${t} בתור`};
   {const fs=fixedSum(PLD.idx); if(fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; clearTimeout(timer); timer=setTimeout(save,700)}
    $('trkS').textContent=`${ils(+S.monthly||0)} בחודש · ${tsum(PLD)}`; $('trkI').textContent=`${ils(+S.monthlyIdx||0)} בחודש · `+(fs!=null?`סכום קבוע ל-${PLD.idx.items.filter(i=>i.status!=='skip'&&+i.amt>0).length} קרנות`:tsum(PLD.idx));
-   const a=+S.monthly||0, b=+S.monthlyIdx||0; $('trkTot').textContent=a&&b?`סך ההפקדה החודשית: ${ils(a+b)}, מתוכם ${ils(a)} למניות ו-${ils(b)} למדדים. כל מסלול מנוהל בנפרד, עם היתרה והתור שלו.`:'';
+   const a=+S.monthly||0, b=+S.monthlyIdx||0; $('trkTot').textContent=a&&b?`סך ההפקדה החודשית: ${ils(a+b)}, מתוכם ${ils(a)} למניות ו-${ils(b)} למדדים. לכל מסלול תור משלו; יתרת המזומן אחת, משותפת לשניהם.`:'';
    const mi=$('inMonthlyIdx'); if(mi){mi.disabled=fs!=null||!canWrite; mi.title=fs!=null?'הסכום של כל הקרנות במסלול המדדים. משנים אותו בטבלה "הניירות בתוכנית".':''}}
   $('kindWhole').textContent=TRACK==='idx'?'יחידות שלמות':'מניות שלמות'; $('kindFrac').textContent=TRACK==='idx'?'שברי יחידה':'שברי מניה';
   const fx0=st.fixed, whole=PL.mode!=='rotate'&&!fx0; if(whole){try{localStorage.setItem('wholeMode',PL.mode)}catch(e){}}

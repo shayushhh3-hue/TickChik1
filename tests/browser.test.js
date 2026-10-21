@@ -118,6 +118,16 @@ test('navigation: a bottom bar on a phone, the menu at the side on a wide screen
     assert.ok(ox,'the content sits beside the menu, no sideways scroll'); await ctx.close()}
 });
 
+test('the plan: one cash balance for the whole portfolio, the same in the stocks and the funds tracks',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.waitForTimeout(400);
+  const bal=async k=>{await pg.evaluate(k=>document.querySelector(`[data-track="${k}"]`).click(),k); await pg.waitForTimeout(400); return pg.evaluate(()=>document.getElementById('pBal').textContent)};
+  const a=await bal('stocks'), b=await bal('idx'), c=await bal('stocks');
+  assert.match(a,/₪/); assert.equal(a,b,'the same balance in both tracks'); assert.equal(a,c);
+  assert.match(await pg.evaluate(()=>document.getElementById('pBalD').textContent),/משותף לשני המסלולים/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
