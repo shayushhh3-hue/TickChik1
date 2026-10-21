@@ -137,6 +137,28 @@ export async function yahooBars(ticker,{fetch:f=timedFetch,range='1mo'}={}){
   return [];
 }
 
+// Nasdaq's own quote service, the second source for a US ticker when Yahoo does not answer (Stooq, the third, can lag by
+// days). Its last sale, the day's change and the time of the last trade; an ETF is asked as an ETF when the stock call has
+// nothing. A plain US ticker only (no exchange suffix)
+const NQ_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*',origin:'https://www.nasdaq.com',referer:'https://www.nasdaq.com/','accept-language':'en-US,en;q=0.9'};
+const MON={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+export function nasdaqParse(j,now=new Date()){
+  const d=j&&j.data, pd=d&&d.primaryData; if(!pd)return null;
+  const num=v=>{const n=parseFloat(String(v==null?'':v).replace(/[$,%+\s]/g,'')); return isFinite(n)?n:null};
+  const px=num(pd.lastSalePrice); if(!(px>0))return null; const ch=num(pd.netChange);
+  const m=String(pd.lastTradeTimestamp||'').match(/([A-Z][a-z]{2})\w*\.?\s+(\d{1,2}),\s+(\d{4})/);
+  const day=m&&MON[m[1]]?`${m[3]}-${String(MON[m[1]]).padStart(2,'0')}-${m[2].padStart(2,'0')}`:nyParts(now).iso;
+  return {px,prev:ch!=null&&px-ch>0?Math.round((px-ch)*10000)/10000:null,ccy:'USD',time:now.getTime(),closeDate:day,prevDate:null,exch:d.exchange||'',src:'nasdaq'};
+}
+export async function nasdaqQuote(ticker,{fetch:f=timedFetch,now=new Date()}={}){
+  if(!/^[A-Z][A-Z\-]{0,6}$/.test(ticker))throw new Error('not a plain US ticker');
+  let last=null;
+  for(const cls of ['stocks','etf']){
+    try{const r=await f(`https://api.nasdaq.com/api/quote/${encodeURIComponent(ticker.replace(/-/g,'.'))}/info?assetclass=${cls}`,{headers:NQ_H}); if(!r.ok){last=new Error('HTTP '+r.status);continue}
+      const q=nasdaqParse(await r.json(),now); if(q)return q; last=new Error('no price')}catch(e){last=e}}
+  throw last||new Error('nasdaq failed');
+}
+
 // Stooq daily history (US tickers as msft.us); last two closes
 export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
   const s=ticker.toLowerCase().replace(/-/g,'-')+'.us';
@@ -174,7 +196,7 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
     if(isIlFund(sym)&&!(map&&map[sym])){try{out[sym]=await mayaFund(sym,{fetch:f});return}catch(e){mayaErr=e; log('fund price failed '+sym+' (maya): '+(e&&e.message||e))}}
     try{const q=await yahooChart(t,{fetch:f}); if(pr)idx[sym]=q; else out[sym]=q}
     catch(e){
-      if(!pr&&!/\.TA$/.test(t)){try{out[sym]=await stooqDaily(t,{fetch:f});return}catch(e2){}}
+      if(!pr&&!/\.TA$/.test(t)){try{out[sym]=await nasdaqQuote(t,{fetch:f});return}catch(e2){} try{out[sym]=await stooqDaily(t,{fetch:f});return}catch(e3){}}
       errors.push(sym+': '+(mayaErr?'מאיה: '+String(mayaErr&&mayaErr.message||mayaErr).slice(0,160)+' · Yahoo: ':'')+(e&&e.message||e)); log('quote failed '+sym+' ('+t+'): '+(e&&e.message||e));
     }
   });
@@ -244,7 +266,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   // a close older than the market's last session is marked with its date, so the page can say which day is missing: the
   // source did not deliver that session (or Tel Aviv had a holiday). lag = per market, the day we have and the day we expect
   const want={il:lastSession('il',now),us:lastSession('us',now)}, lag={};
-  const mktOf=sym=>{const m=meta[sym]||{}; return m.ccy==='ILS'||m.src==='index'||/\.TA$/.test(sym)?'il':!m.ccy&&(m.src==='yahoo'||m.src==='stooq')?'us':''};
+  const mktOf=sym=>{const m=meta[sym]||{}; return m.ccy==='ILS'||m.src==='index'||/\.TA$/.test(sym)?'il':!m.ccy&&(m.src==='yahoo'||m.src==='stooq'||m.src==='nasdaq')?'us':''};
   // a mutual fund's price for a day is published that evening: during the day, the day before is its latest
   const wantFund=want.il?lastSession('il',new Date(Date.parse(want.il+'T12:00:00Z')-864e5)):'';
   for(const sym of symbols){const m=meta[sym]||{}, k=mktOf(sym); if(!k||!m.date||!want[k]||prices[sym]==null||m.est)continue;
@@ -262,7 +284,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
   const rates={...(old.rates||{})}; for(const [c,v] of Object.entries(fetched.rates||{}))if(v&&v.rate>0)rates[c]={rate:round(v.rate,4),prev:v.prev?round(v.prev,4):null,date:v.date||null};
   return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
-    source:'Yahoo Finance, מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
+    source:'Yahoo Finance'+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='nasdaq')?', Nasdaq':'')+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='stooq')?', Stooq':'')+', מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
     usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag,

@@ -464,6 +464,25 @@ test('prices: Maya\'s fund history gives the newest price and the one before it,
   assert.deepEqual(q.srcDates,{'maya.tase.co.il':'2026-10-15','maya.tase.co.il/history':'2026-10-19'});
 });
 
+test('prices: when Yahoo does not answer, a US ticker comes from Nasdaq before Stooq, and is still a US close',async()=>{
+  const {nasdaqParse}=await import('../shared/quotes.js');
+  const nq={data:{symbol:'MSFT',exchange:'NASDAQ-GS',primaryData:{lastSalePrice:'$530.97',netChange:'-2.55',percentageChange:'-0.48%',lastTradeTimestamp:'Oct 20, 2026 4:00 PM ET'}},status:{rCode:200}};
+  assert.deepEqual(nasdaqParse(nq,new Date('2026-10-21T09:00:00Z')),{px:530.97,prev:533.52,ccy:'USD',time:Date.parse('2026-10-21T09:00:00Z'),closeDate:'2026-10-20',prevDate:null,exch:'NASDAQ-GS',src:'nasdaq'});
+  assert.equal(nasdaqParse({data:{primaryData:{lastSalePrice:'N/A'}}}),null);
+  const hit=[], f=async u=>{u=String(u); hit.push(u); if(u.includes('yahoo'))return {ok:false,status:429,json:async()=>({})};
+    if(u.includes('api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks'))return {ok:true,status:200,json:async()=>nq};
+    if(u.includes('api.nasdaq.com/api/quote/VOO/info?assetclass=stocks'))return {ok:true,status:200,json:async()=>({data:null})};
+    if(u.includes('api.nasdaq.com/api/quote/VOO/info?assetclass=etf'))return {ok:true,status:200,json:async()=>({data:{primaryData:{lastSalePrice:'$620.10',netChange:'+1.10',lastTradeTimestamp:'Closed at Oct 20, 2026'}}})};
+    if(u.includes('stooq'))return {ok:true,status:200,text:async()=>'Date,Open,High,Low,Close\n2026-10-15,1,1,1,500\n2026-10-16,1,1,1,505'};
+    return {ok:false,status:404,json:async()=>({})}};
+  const all=await fetchAll(['MSFT','VOO','KO'],{fetch:f});
+  assert.equal(all.quotes.MSFT.src,'nasdaq'); assert.equal(all.quotes.MSFT.closeDate,'2026-10-20'); assert.equal(all.quotes.VOO.px,620.1,'an ETF asked as an ETF'); assert.equal(all.quotes.KO.src,'stooq','Stooq is the last one');
+  const d=buildQuotesDoc({prev:{},fetched:all,symbols:['MSFT','VOO','KO'],now:new Date('2026-10-21T09:00:00Z')});
+  assert.equal(d.prices.MSFT,530.97); assert.equal(d.prev.MSFT,533.52); assert.equal(d.usDate,'2026-10-20','a Nasdaq close is the US date');
+  assert.equal(d.stale.MSFT,undefined); assert.equal(d.stale.KO,'סגירה 16.10','Stooq\'s older close is marked'); assert.match(d.source,/Nasdaq/);
+  assert.equal(d.lag.us.n,1,'only KO is behind');
+});
+
 test('prices: a close older than the last session is marked, counted per market, and named in the label',()=>{
   const q=(px,date,ccy)=>({px,prev:px-1,closeDate:date,ccy,src:'yahoo',time:'t'});
   // Sunday evening: New York closed Friday 16.10, Tel Aviv's Friday did not arrive for one of two securities
