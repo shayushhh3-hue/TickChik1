@@ -4,7 +4,7 @@
 import {tickerFor} from '../shared/quotes.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-const MODS='financialData,defaultKeyStatistics,summaryDetail,calendarEvents,recommendationTrend,price';
+const MODS='financialData,defaultKeyStatistics,summaryDetail,calendarEvents,recommendationTrend,price,earnings,earningsHistory,earningsTrend';
 const timed=(f,ms)=>(u,o={})=>f(u,{...o,signal:o.signal||AbortSignal.timeout(ms)});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 export const SOURCE='Yahoo Finance';
@@ -56,25 +56,54 @@ export function figures(res,now=new Date()){
     next:dates.find(d=>d>=today)||null,revg:pc(fd.revenueGrowth),epsg:pc(fd.earningsGrowth),beta:r2(val(sd.beta)??val(ks.beta)),
     price:px!=null?r2(px*k):null,chg52:pc(ks['52WeekChange'])};
   if(tr)out.votes={buy:(val(tr.strongBuy)||0)+(val(tr.buy)||0),hold:val(tr.hold)||0,sell:(val(tr.sell)||0)+(val(tr.strongSell)||0)};
+  const rp=reportOf(res); if(rp)out.rep=rp;
   return out;
+}
+// the latest quarterly report, as numbers: earnings per share against the analysts' estimate for the last four quarters,
+// revenue and net income for the last four, and the analysts' estimates for the quarter now running and the year. Yahoo
+// gives no company guidance and no text: what the company said is in the articles (newsFor), never invented here
+const isoQ=x=>{const n=val(x); return n>0?new Date(n*1000).toISOString().slice(0,10):null};
+const lblQ=d=>{const m=+d.slice(5,7); return `Q${Math.ceil(m/3)} ${d.slice(0,4)}`};
+export function reportOf(res){
+  const E=res.earnings||{}, ccy=E.financialCurrency||((res.financialData||{}).financialCurrency)||null;
+  const eps=(((res.earningsHistory||{}).history)||[]).map(h=>({q:isoQ(h.quarter),a:r2(val(h.epsActual)),e:r2(val(h.epsEstimate)),s:pc(h.surprisePercent)})).filter(x=>x.q&&x.a!=null).sort((a,b)=>a.q<b.q?-1:1);
+  const fin=((((E.financialsChart||{}).quarterly)||[]).map(x=>({d:String(x.date||''),rev:val(x.revenue),ni:val(x.earnings)})).filter(x=>x.d&&x.rev!=null));
+  if(!eps.length&&!fin.length)return null;
+  const T=(((res.earningsTrend||{}).trend)||[]), tp=k=>{const t=T.find(x=>x.period===k); if(!t)return null; const ee=t.earningsEstimate||{}, re=t.revenueEstimate||{};
+    const o={end:t.endDate||null,eps:r2(val(ee.avg)),epsN:val(ee.numberOfAnalysts)||null,rev:val(re.avg),revG:pc(re.growth),g:pc(t.growth)}; return o.eps!=null||o.rev!=null?o:null};
+  const last=eps.at(-1)||null, lf=fin.at(-1)||null, pf=fin.at(-2)||null;
+  return {q:last?last.q:null,label:last?lblQ(last.q):(lf?lf.d:null),ccy,
+    eps:last?{a:last.a,e:last.e,s:last.s}:null,
+    rev:lf?lf.rev:null,ni:lf?lf.ni:null,revQoQ:lf&&pf&&pf.rev>0?r2((lf.rev/pf.rev-1)*100):null,finLabel:lf?lf.d:null,
+    hist:eps.slice(-4),fin:fin.slice(-4),
+    now:tp('0q'),next:tp('+1q'),year:tp('0y')};
+}
+// the articles about a security, newest first (Yahoo's search: title, publisher, link, time); data to show and to read,
+// not instructions
+export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8}={}){
+  const r=await timed(f,12000)(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&quotesCount=0&newsCount=${n}&listsCount=0`,{headers:{'user-agent':UA,accept:'application/json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  return ((j&&j.news)||[]).filter(x=>x&&x.title&&/^https:\/\//.test(x.link||'')).map(x=>({title:String(x.title).slice(0,200),pub:String(x.publisher||'').slice(0,60),link:String(x.link).slice(0,500),at:x.providerPublishTime?new Date(x.providerPublishTime*1000).toISOString():null,
+    tickers:Array.isArray(x.relatedTickers)?x.relatedTickers.slice(0,6).map(String):[]}));
 }
 // new values over the old ones; a figure Yahoo does not give keeps its last value (F-score, Z-score, ROIC come only
 // from the old source). The second source of the old data (Investing.com) is not updated any more, so it goes.
 function merge(old,neu){const o={...(old||{})}; for(const [k,v] of Object.entries(neu))if(v!=null)o[k]=v; delete o.inv; return o}
 const docKey=k=>'research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_');
-const tick=(k,map)=>k.startsWith('TLV:')?(map[k]||k.slice(4)+'.TA'):tickerFor(k,null,map);
-const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^TLV:[A-Z0-9.]{1,10}$/.test(k))&&!/^TA\d+$/.test(k);
+export const tick=(k,map)=>k.startsWith('TLV:')?(map[k]||k.slice(4)+'.TA'):tickerFor(k,null,map);
+export const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^TLV:[A-Z0-9.]{1,10}$/.test(k))&&!/^TA\d+$/.test(k);
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600}={}){
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null}={}){
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
   for(const w of W)for(const k of ['marks','seen','syms'])for(const s of ((w.data||{})[k]||[]))watched.add(s);
   const C=store.getDoc('research/candidates'); for(const it of ((C.data||{}).items||[]))if(it&&it.sym)watched.add(it.sym);
   const uni=((store.getDoc('research/universe').data||{}).keys)||[];
-  const order=[...new Set([...held].filter(usable).concat([...watched].filter(usable),uni.filter(usable)))];
+  const order=only?[...new Set(only.filter(usable))]:[...new Set([...held].filter(usable).concat([...watched].filter(usable),uni.filter(usable)))];
   const got={}; let sess=null, ok=0, none=0, fail=0, first=null, stopped=null;
   for(const k of order){
     if(Date.now()-t0>budgetMs){stopped='time';break}
@@ -88,11 +117,16 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
     if(pause)await sleep(pause);
   }
   // write what arrived; whatever did not keeps its last values and date
-  for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data; store.setDoc(p,{...merge(old,v),sym:k,source:SOURCE,updatedAt:iso},{silent:true})}
+  // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
+  const fresh=[];
+  for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{};
+    if(v.rep&&v.rep.q){const was=old.rep&&old.rep.q; if(was===v.rep.q)v.rep.at=old.rep.at||null; else{v.rep.at=old.next&&old.next<=iso.slice(0,10)?old.next:iso.slice(0,10); if(was||old.next)fresh.push([k,v.rep])}}
+    store.setDoc(p,{...merge(old,v),sym:k,source:SOURCE,updatedAt:iso},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
-  if(heldGot.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
+  if(heldGot.length||fresh.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
     for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:SOURCE,updatedAt:iso};
-    store.setDoc('research/latest',{...L,companies:comp,source:SOURCE,updatedAt:iso})}
+    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).concat(fresh.map(([k,r])=>({sym:k,date:r.at,q:r.q,text:repLine(r),source:SOURCE}))).sort((a,b)=>a.date<b.date?1:-1).slice(0,40);
+    store.setDoc('research/latest',{...L,companies:comp,events:ev,source:SOURCE,updatedAt:iso})}
   const uniGot=uni.filter(k=>got[k]);
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
     for(const k of uniGot){const v=got[k], o=rows[k]||[], nw=[v.pm,v.roe,v.de,null,v.pe,v.fpe,v.dy,v.revg,v.rating,v.target,v.analysts,v.next,v.beta]; rows[k]=nw.map((x,i)=>x!=null?x:(o[i]??null))}
@@ -101,8 +135,26 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   const cand=(C.data||{}).items||[];
   if(cand.some(it=>it&&got[it.sym])){const items=cand.map(it=>{const v=it&&got[it.sym]; if(!v)return it; const o={...it}; for(const k of ['beta','de','dy','fpe','pe','pm','roe','price','chg52'])if(v[k]!=null)o[k]=v[k]; return o});
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
-  const st={at:iso,ok,none,fail,of:order.length,held:heldGot.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000)};
+  const st={at:iso,ok,none,fail,of:order.length,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;
 }
+
+// one line in Hebrew for a new report: the quarter, earnings per share against the estimate, revenue
+const bigN=(x,c)=>{if(x==null)return null; const a=Math.abs(x), sy=c==='USD'||!c?'$':c==='ILS'?'₪':c+' '; return sy+(a>=1e9?(x/1e9).toFixed(2)+'B':a>=1e6?(x/1e6).toFixed(1)+'M':Math.round(x).toLocaleString('en-US'))};
+export function repLine(r){
+  const e=r.eps, parts=[`דוח ${r.label||''}`.trim()];
+  if(e&&e.a!=null)parts.push(`רווח למניה ${e.a}${e.e!=null?` מול צפי ${e.e}`:''}${e.s!=null?` (${e.s>0?'+':''}${e.s}%, ${e.s>=0?'מעל':'מתחת'} לצפי)`:''}`);
+  if(r.rev!=null)parts.push(`הכנסות ${bigN(r.rev,r.ccy)}${r.revQoQ!=null?` (${r.revQoQ>0?'+':''}${r.revQoQ}% מהרבעון הקודם)`:''}`);
+  return parts.join(' · ');
+}
+// the days after a report: only the securities whose report date has come (held, followed, on the list), so a report is in
+// the page within hours, not at the night's full run
+export function dueReports(store,now=new Date()){
+  const today=now.toISOString().slice(0,10), from=new Date(now.getTime()-5*864e5).toISOString().slice(0,10), out=[];
+  for(const d of store.listDocs('research')){const x=d.data||{}; if(!d.id.startsWith('s_')||!x.sym||!x.next)continue;
+    if(x.next>today||x.next<from)continue; if(x.rep&&x.rep.at&&x.rep.at>=x.next)continue; out.push(x.sym)}
+  return out;
+}
+export async function earningsTask(store,o={}){const only=dueReports(store,o.now||new Date()); if(!only.length){(o.log||(()=>{}))('earnings: no report due');return {due:0}} return researchTask(store,{...o,only,budgetMs:6*60e3,pause:400})}

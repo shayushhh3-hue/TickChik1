@@ -149,6 +149,27 @@ test('the plan: a fund bought in the stocks track opens for its quantity and pri
   await ctx.close(); store.setDoc('plan/main',plan0);
 });
 
+test('a company\'s report on its page: EPS against the estimate, revenue, the last quarters, the articles, and Chiko\'s reading',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const L0=store.getDoc('research/latest').data, rep={q:'2026-09-30',label:'Q3 2026',at:'2026-10-20',ccy:'USD',eps:{a:3.62,e:3.41,s:6.2},rev:77.7e9,ni:27.1e9,revQoQ:1.6,
+    hist:[{q:'2025-12-31',a:3.2,e:3.1,s:3.2},{q:'2026-03-31',a:3.3,e:3.35,s:-1.5},{q:'2026-06-30',a:3.5,e:3.4,s:2.9},{q:'2026-09-30',a:3.62,e:3.41,s:6.2}],fin:[],now:{end:'2026-12-31',eps:3.8,epsN:40,rev:80e9,revG:12},next:null,year:null};
+  store.setDoc('research/latest',{...L0,companies:{...L0.companies,MSFT:{...(L0.companies.MSFT||{}),rep,next:'2027-01-27'}}});
+  try{
+    const {ctx,pg}=await open(390,{route:(r,u)=>{if(u.includes('/api/news')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[{title:'Microsoft beats estimates as cloud grows',pub:'Reuters',link:'https://example.com/a',at:'2026-10-21T01:00:00Z'}]})});return true}return false}});
+    await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('MSFT')); await pg.waitForTimeout(1200);
+    await pg.evaluate(()=>{for(const d of document.querySelectorAll('#secPage details'))d.open=true});
+    const r=await pg.evaluate(()=>{const P=document.getElementById('secPage'); return {h:[...P.querySelectorAll('h3')].map(x=>x.textContent).find(x=>/הדוח הרבעוני האחרון/.test(x))||'',txt:P.textContent,rows:P.querySelectorAll('.tbl tbody tr').length}});
+    assert.equal(r.h,'הדוח הרבעוני האחרון: Q3 2026'); assert.match(r.txt,/פורסם 20\.10\.2026/); assert.match(r.txt,/רווח למניה.*3\.62.*צפי.*3\.41/s); assert.match(r.txt,/\$77\.70B/); assert.match(r.txt,/\+6\.2% מעל לצפי/);
+    assert.ok(r.rows>=4,'the last four quarters');
+    await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
+    await pg.evaluate(()=>document.querySelector('#secPage [data-ana="rep"]').click()); await pg.waitForTimeout(2500);
+    const c=await pg.evaluate(()=>[...document.querySelectorAll('.ana-ch h3')].map(x=>x.textContent).join('|'));
+    assert.match(c,/צ׳יקו על הדוח של/); assert.ok(seen.some(x=>x.includes('נתח את הדוח הרבעוני האחרון')&&x.includes('cloud grows')),'Chiko got the report and the headlines');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('research/latest',L0)}
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);

@@ -620,6 +620,37 @@ test('analysts: Yahoo Finance into the same documents the page reads, the old fi
   assert.equal(JSON.parse(s.getMeta('researchStatus')).ok,3);
   assert.equal(figures({},now).rating,null);
 });
+test('reports: the latest quarter from Yahoo, a new one becomes an event, and the days after a report date are checked again',async()=>{
+  const {researchTask,reportOf,repLine,dueReports}=await import('../server/research.js'); const s=new Store(':memory:');
+  const R=x=>({raw:x}), Q=d=>R(Date.parse(d+'T00:00:00Z')/1000);
+  // Netflix, Q3 2026 (reported 20.10.2026): EPS 0.87 against 0.82, revenue $12.87B
+  const nflx={price:{currency:'USD',regularMarketPrice:R(68.69)},financialData:{financialCurrency:'USD',currentPrice:R(68.69),totalRevenue:R(48e9),revenueGrowth:R(0.118)},summaryDetail:{},defaultKeyStatistics:{},
+    calendarEvents:{earnings:{earningsDate:[Q('2027-01-20')]}},
+    earnings:{financialCurrency:'USD',financialsChart:{quarterly:[{date:'4Q2025',revenue:R(12.05e9),earnings:R(2.4e9)},{date:'1Q2026',revenue:R(12.2e9),earnings:R(2.9e9)},{date:'2Q2026',revenue:R(12.5e9),earnings:R(3.1e9)},{date:'3Q2026',revenue:R(12.874e9),earnings:R(3.66e9)}]}},
+    earningsHistory:{history:[{quarter:Q('2025-12-31'),epsActual:R(0.56),epsEstimate:R(0.55),surprisePercent:R(0.018)},{quarter:Q('2026-03-31'),epsActual:R(0.66),epsEstimate:R(0.68),surprisePercent:R(-0.029)},{quarter:Q('2026-06-30'),epsActual:R(0.72),epsEstimate:R(0.7),surprisePercent:R(0.029)},{quarter:Q('2026-09-30'),epsActual:R(0.87),epsEstimate:R(0.82),surprisePercent:R(0.061)}]},
+    earningsTrend:{trend:[{period:'0q',endDate:'2026-12-31',growth:R(0.12),earningsEstimate:{avg:R(0.66),numberOfAnalysts:R(30)},revenueEstimate:{avg:R(13.44e9),growth:R(0.115)}},{period:'0y',endDate:'2026-12-31',earningsEstimate:{avg:R(2.91)},revenueEstimate:{avg:R(51.1e9)}}]}};
+  const r=reportOf(nflx);
+  assert.equal(r.q,'2026-09-30'); assert.equal(r.label,'Q3 2026'); assert.deepEqual(r.eps,{a:0.87,e:0.82,s:6.1}); assert.equal(r.rev,12.874e9); assert.equal(r.ni,3.66e9); assert.equal(r.revQoQ,2.99);
+  assert.equal(r.hist.length,4); assert.equal(r.now.eps,0.66); assert.equal(r.now.revG,11.5); assert.equal(r.year.rev,51.1e9);
+  assert.equal(repLine(r),'דוח Q3 2026 · רווח למניה 0.87 מול צפי 0.82 (+6.1%, מעל לצפי) · הכנסות $12.87B (+2.99% מהרבעון הקודם)');
+  assert.equal(reportOf({}),null,'no report data: nothing, not zeros');
+  // stored: the Q2 report and the report date 20.10; the night after it, Q3 arrives
+  s.setDoc('portfolio/main',{positions:[{sym:'NFLX'}]});
+  s.setDoc('research/s_NFLX',{sym:'NFLX',next:'2026-10-20',rep:{q:'2026-06-30',label:'Q2 2026',at:'2026-07-16'}});
+  s.setDoc('research/latest',{companies:{},events:[]});
+  assert.deepEqual(dueReports(s,new Date('2026-10-21T04:20:00Z')),['NFLX'],'the report date has come and its report is not in');
+  assert.deepEqual(dueReports(s,new Date('2026-10-19T04:20:00Z')),[],'not before the date');
+  const f=async(u,o={})=>{u=String(u); if(u.startsWith('https://fc.yahoo.com'))return new Response('',{status:404,headers:{'set-cookie':'A3=x; Path=/'}});
+    if(u.includes('getcrumb'))return new Response('Ab3cD.eF'); if(u.includes('quoteSummary/NFLX')&&u.includes('earningsHistory'))return new Response(JSON.stringify({quoteSummary:{result:[nflx]}})); return new Response('',{status:500})};
+  const st=await researchTask(s,{fetch:f,now:new Date('2026-10-21T04:20:00Z'),pause:0,only:['NFLX']});
+  assert.equal(st.ok,1); assert.equal(st.reports,1);
+  const d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.q,'2026-09-30'); assert.equal(d.rep.at,'2026-10-20','the day it was reported'); assert.equal(d.next,'2027-01-20');
+  const L=s.getDoc('research/latest').data; assert.equal(L.events.length,1); assert.equal(L.events[0].sym,'NFLX'); assert.equal(L.events[0].date,'2026-10-20'); assert.match(L.events[0].text,/^דוח Q3 2026/);
+  assert.equal(L.companies.NFLX.rep.label,'Q3 2026','a holding carries it into the shared document');
+  assert.deepEqual(dueReports(s,new Date('2026-10-21T12:20:00Z')),[],'in: not asked again');
+  const st2=await researchTask(s,{fetch:f,now:new Date('2026-10-22T04:20:00Z'),pause:0,only:['NFLX']}); assert.equal(st2.reports,0,'the same quarter again is not a new event');
+  assert.equal(s.getDoc('research/latest').data.events.length,1); assert.equal(s.getDoc('research/s_NFLX').data.rep.at,'2026-10-20');
+});
 test('analysts: when Yahoo will not open a session, nothing is overwritten and the status says so',async()=>{
   const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');
   s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]}); s.setDoc('research/latest',{companies:{NVDA:{rating:'Hold'}},updatedAt:'2026-10-09T13:14:53Z'});

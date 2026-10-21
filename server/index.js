@@ -13,6 +13,7 @@ import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch} from '../shared/quotes.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
+import {researchTask, newsFor, tick as rsTick, usable as rsUsable} from './research.js';
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
 import {backupStatus, backupNow} from './backup.js';
@@ -311,6 +312,19 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const c=SYMQ.get(q.toLowerCase()); if(c&&Date.now()-c.at<36e5)return res.json({items:c.items,cached:true});
     try{const items=await yahooSearch(q); SYMQ.set(q.toLowerCase(),{at:Date.now(),items}); if(SYMQ.size>500)SYMQ.delete(SYMQ.keys().next().value); res.json({items})}
     catch(e){res.status(502).json({error:'החיפוש לא זמין כרגע: '+(e&&e.message||e)})}});
+  // a company's latest report and the articles about it, for the security page. The figures are fetched again at most every
+  // 20 minutes per security (one at a time); the articles are cached 30 minutes. Data to show, never instructions
+  const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;
+  app.post('/api/research/one',needUser,async(req,res)=>{const k=String((req.body||{}).sym||'').trim().toUpperCase().slice(0,16);
+    if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
+    const last=RSONE.get(k); if(last&&Date.now()-last<20*60e3)return res.json({ok:true,cached:true});
+    if(rsOneBusy)return res.status(429).json({error:'עדכון אחר רץ כרגע, נסה שוב בעוד רגע'});
+    try{RSONE.set(k,Date.now()); rsOneBusy=researchTask(store,{only:[k],pause:0,budgetMs:60e3,log}); const st=await rsOneBusy; res.json({ok:st.ok>0,reports:st.reports||0,first:st.first||null})}
+    catch(e){res.status(502).json({error:String(e&&e.message||e)})}finally{rsOneBusy=null}});
+  app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
+    const c=NEWS.get(k); if(c&&Date.now()-c.at<30*60e3)return res.json({items:c.items,cached:true});
+    try{const map=((store.getDoc('settings/main').data)||{}).symMap||{}; const items=await newsFor(rsTick(k,map)); NEWS.set(k,{at:Date.now(),items}); if(NEWS.size>300)NEWS.delete(NEWS.keys().next().value); res.json({items})}
+    catch(e){res.status(502).json({error:'הכתבות לא זמינות כרגע: '+(e&&e.message||e)})}});
   app.post('/api/prices',needUser,async(req,res)=>{
     try{
       if(Date.now()-pxLast.at<3*60*1000&&pxLast.res){const {errors,...rest}=pxLast.res; return res.json({...(req.user.role==='owner'?pxLast.res:{...rest,errors:(errors||[]).length}),cached:true})}
