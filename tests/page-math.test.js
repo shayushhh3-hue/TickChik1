@@ -670,3 +670,10 @@ test('"מה חדש" and "לאן להגיע?": every item is dated and versioned,
   for(const n of W.NEWS){assert.match(n.at,/^\d{4}-\d\d-\d\d$/,n.t); assert.ok(n.t&&n.d,n.t); if(n.go)assert.ok(ids.has(n.go)||n.go==='goq','"קח אותי לשם" leads somewhere: '+n.t)}
   assert.ok(W.NEWS[0].v&&W.NEWS.every((n,i)=>i===0||(n.v||n.at+'.1')<=(W.NEWS[i-1].v||W.NEWS[i-1].at+'.1')),'the newest first, so the release adds at the top');
 });
+
+test('the match to the portfolio: what the viewer cares about weighs about twice as much, the weights still add to 100',()=>{
+  const W=load(['FITW','FITALL','fitW'],{...G,riskOf:()=>'mid',S:{wpref:{focus:[]}}});
+  assert.deepEqual(W.fitW(),{div:40,q:30,val:20,st:10},'nothing chosen: the kind of investor\'s weights');
+  const G2={...G,riskOf:()=>'mid',S:{wpref:{focus:['st','dv']}}}; const W2=load(['FITW','FITALL','fitW'],G2).fitW();
+  assert.ok(W2.st>10&&W2.dv>0,'chosen ones weigh more, and dividends come in'); const sum=Object.values(W2).reduce((a,b)=>a+b,0); assert.ok(Math.abs(sum-100)<=2,'about 100: '+sum);
+});

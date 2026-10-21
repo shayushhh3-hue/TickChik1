@@ -90,7 +90,12 @@ async function open(W=390,{who='owner',route=null,prompts=false}={}){
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000});   // the first page in a fresh runner builds the font cache
+  try{await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000})}   // the first page in a fresh runner builds the font cache
+  catch(e){   // what the page showed instead, so a failure in CI says why without the full log
+    const d=await pg.evaluate(()=>({url:location.href,gate:!!document.getElementById('tcGate'),gateTxt:(document.getElementById('tcGate')?.textContent||'').replace(/\s+/g,' ').slice(0,160),
+      kTotal:document.getElementById('kTotal')?.textContent,loadErr:document.getElementById('loadErr')&&!document.getElementById('loadErr').hidden?document.getElementById('loadErr').textContent.slice(0,160):'',
+      nopf:!!document.querySelector('.wrap.nopf'),dlg:[...document.querySelectorAll('dialog[open],.dlg:not([hidden])')].map(x=>x.id).join(',')})).catch(x=>({evalErr:String(x)}));
+    throw new Error('open('+who+') did not finish: '+JSON.stringify(d)+' errs='+JSON.stringify(pg.errs.slice(0,3)))}
   await pg.waitForTimeout(600); if(!prompts)await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true});
   return {ctx,pg};
 }
@@ -314,6 +319,53 @@ test('what the user saves stays saved: a second change made while the first is s
     assert.deepEqual(r,{hc:'usd',size:'l',max:'17'});
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll with the bigger text'); assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('Israeli securities in the search: Tel Aviv shares in Hebrew, the indices, a fund by its number from Maya with its links, the exchange\'s list; and the watchlist by what matters to the viewer',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data, FUND={id:'5129283',name:'הראל מחקה נאסד"ק 100',px:367.77,prev:365.1,chg:0.73,date:'2026-10-19',src:'מאיה',series:{d:['2026-10-14','2026-10-15','2026-10-16','2026-10-19'],c:[360,362.5,365.1,367.77]}};
+  const route=(r,u)=>{if(u.includes('/api/ilfund?id=5129283')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(FUND)});return true}
+    if(u.includes('/api/ilfund?id=9999999')){setTimeout(()=>r.fulfill({status:404,contentType:'application/json',body:JSON.stringify({error:{message:'מאיה לא מכירה נייר במספר הזה.'}})}),700);return true}return false};
+  try{
+    let {ctx,pg}=await open(390,{route}); await tab(pg,'search'); await pg.waitForTimeout(600);
+    const q=async v=>{await pg.fill('#sq',v); await pg.waitForTimeout(400); return pg.evaluate(()=>[...document.querySelectorAll('#sqRes [data-open]')].slice(0,5).map(x=>x.dataset.open+' '+x.textContent.replace(/\s+/g,' ').trim().slice(0,60)))};
+    let r=await q('לאומי'); assert.match(r[0]||'',/^TLV:LUMI .*בנק לאומי/,JSON.stringify(r));
+    r=await q('אלביט'); assert.match(r[0]||'',/^TLV:ESLT/);
+    r=await q('ת״א 35'); assert.match(r[0]||'',/^IDX:TA35 .*ת״א 35/,JSON.stringify(r));
+    r=await q('S&P 500'); assert.ok(r.some(x=>/^IDX:SPX/.test(x)),JSON.stringify(r));
+    // a fund by its number: looked up at Maya, its page with the official price, a month's chart, and its pages elsewhere
+    r=await q('5129283'); assert.match(r[0]||'',/^5129283 .*לחפש במאיה את נייר מספר 5129283/);
+    const t0=Date.now(); await pg.evaluate(()=>document.querySelector('#sqRes [data-open="5129283"]').click());
+    assert.ok(Date.now()-t0<3000,'the page stays responsive while Maya answers: '+(Date.now()-t0)+'ms'); await pg.waitForTimeout(1200);
+    const f=await pg.evaluate(()=>({h:document.querySelector('#secPage h2')?.textContent,px:document.querySelector('#secPage .pxrow .v')?.textContent,links:[...document.querySelectorAll('#secPage .ilx a')].map(a=>a.href),
+      rep:!!document.querySelector('#secPage .repbox'),txt:document.getElementById('secPage').textContent}));
+    assert.equal(f.h,'הראל מחקה נאסד"ק 100'); assert.equal(f.px,'₪367.77'); assert.ok(!f.rep,'no company report box for a fund');
+    assert.deepEqual(f.links,['https://maya.tase.co.il/he/funds/mutual-funds/5129283','https://www.funder.co.il/fund/5129283','https://www.bizportal.co.il/mutualfunds/quote/profile/5129283']);
+    assert.match(f.txt,/מחיר רשמי 19\.10/); assert.match(f.txt,/נקבע פעם ביום/);
+    // a number Maya does not know: "looking", then its answer, and the page never stuck
+    {const t1=Date.now(); await pg.evaluate(()=>window.__srch.open('9999999')); assert.ok(Date.now()-t1<3000,'responsive: '+(Date.now()-t1)+'ms');
+      assert.match(await pg.evaluate(()=>document.getElementById('secPage').textContent),/מחפש במאיה את נייר מספר 9999999/);
+      await pg.waitForFunction(()=>/מאיה לא מכירה נייר במספר הזה/.test(document.getElementById('secPage').textContent),null,{timeout:5000})}
+    // an index's page: points, not a currency; no analysts
+    await pg.evaluate(()=>window.__srch.open('IDX:SPX')); await pg.waitForTimeout(800);
+    const ix=await pg.evaluate(()=>({px:document.querySelector('#secPage .pxrow .v')?.textContent,txt:document.getElementById('secPage').textContent}));
+    assert.equal(ix.px,'5,790.00'); assert.match(ix.txt,/נקודות מדד/); assert.match(ix.txt,/מדד הוא לא נייר שקונים ישירות/);
+    // the watchlist by what matters: dividends weigh more; no suggestions from a group left out
+    await tab(pg,'watch'); await pg.waitForTimeout(1200);
+    const n0=await pg.evaluate(()=>document.querySelectorAll('#candList article, #candList .wc').length);
+    await pg.evaluate(()=>document.querySelector('#candPrefs [data-wpf="dv"]').click()); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.querySelector('#candPrefs [data-wpx="ind"]').click()); await pg.waitForTimeout(1800);
+    const w=store.getDoc('settings/main').data.wpref; assert.deepEqual(w,{focus:['dv'],excl:['ind']});
+    const after=await pg.evaluate(()=>({n:document.querySelectorAll('#candList article, #candList .wc').length,txt:document.getElementById('candList').textContent,note:document.getElementById('candPrefs').textContent}));
+    assert.ok(!/Exxon|XOM/.test(after.txt),'a group left out is not suggested'); assert.ok(after.n<=n0); assert.match(after.note,/דיבידנד שוקלים בערך כפול/); assert.match(after.note,/לא המלצה לקנות/);
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close();
+    // the exchange's own list (with its key on the server): every fund by its Hebrew name
+    store.setDoc('research/ilsyms',{stocks:[['LUMI','לאומי','בנק לאומי','בנקים',604611]],funds:[['5130638','הראל מחקה ת"א 90','מניות','ישראל','0B']],indices:[],updatedAt:new Date().toISOString()},{silent:true});
+    ({ctx,pg}=await open(390,{route})); await tab(pg,'search'); await pg.waitForTimeout(1500);
+    await pg.fill('#sq','הראל מחקה'); await pg.waitForTimeout(500);
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#sqRes [data-open]')].some(x=>x.dataset.open==='5130638'&&/קרן נאמנות או קרן סל/.test(x.textContent))));
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true}); store.deleteDoc('research/ilsyms')}
 });
 
 test('two-step sign-in: switched on in its own page, the login asks for the code, a backup code works once',T,async t=>{

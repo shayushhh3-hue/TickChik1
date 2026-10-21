@@ -3,7 +3,7 @@
 import {withPage, applyWrites} from './headless.js';
 import {sendAllowed, mailAllowed, wrapHtml, esc} from './mail.js';
 import {refreshQuotes} from '../shared/pxjob.js';
-import {tickerFor} from '../shared/quotes.js';
+import {tickerFor, BENCH} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 
 const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
@@ -44,7 +44,9 @@ export async function nightlyTask(store,{log,maxSeries=90}={}){
 }
 // the chart series of one security (daily for a year, weekly for five, monthly since listing), for the page's charts
 export async function closesFor(key,map={}){
-  const t=key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
+  // an index: IDX:SPX, IDX:TA125 (the indices the page knows, BENCH)
+  if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');
+  const t=key.startsWith('IDX:')?BENCH[key.slice(4)].t:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
   const d=await series(t,'1y','1d'); const doc={key,d:d.d,c:d.c,updatedAt:new Date().toISOString(),source:'Yahoo Finance'};
   try{const w=await series(t,'5y','1wk'); if(w.d.length>=3)doc.w=w}catch(e){}
   try{const m=await series(t,'max','1mo'); if(m.d.length>=3)doc.m=m}catch(e){}

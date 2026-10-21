@@ -1593,6 +1593,11 @@ html.a11y-hc .dk-go,html.a11y-hc a{text-decoration:underline}
 html.a11y-hc :focus-visible{outline:3px solid #7A2E00!important;outline-offset:2px}
 html.a11y-rm *,html.a11y-rm *::before,html.a11y-rm *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 @media (prefers-reduced-motion:reduce){.tape{animation:none!important} .uxlit{animation:none!important}}
+.ilx{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.wprefs{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--surface)}
+.wprefs .chips{border:0;border-radius:0;overflow:visible;background:transparent;gap:6px;margin-top:4px} .wprefs .chip{border:1px solid var(--line);border-radius:999px;padding:3px 12px;min-height:34px} .wprefs .chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.wp-r{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.wp-r>b{font-size:13.5px;min-width:7em}
+.wp-r .chips{flex-wrap:wrap}
 </style>
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
@@ -2049,7 +2054,7 @@ html.a11y-rm *,html.a11y-rm *::before,html.a11y-rm *::after{animation:none!impor
       <h2 id="hSearch" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">חיפוש ניירות</h2>
       <div class="chips" id="srchView" role="group" aria-label="תצוגה"><button type="button" class="chip" data-sv="search" aria-pressed="true">חיפוש נייר</button><button type="button" class="chip" data-sv="fit" aria-pressed="false">מה מתאים לתיק שלי</button></div>
       <div class="fitbox" id="fitBox" hidden></div>
-      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" placeholder="שם או סימול: טבע, אנבידיה, NVDA" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35, 5129283" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
       <div class="sres" id="sqRes"></div>
       <div class="secp panel" id="secPage" hidden></div>
       <p class="note" id="sqNote">מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה בימי מסחר, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.</p>
@@ -2060,6 +2065,7 @@ html.a11y-rm *,html.a11y-rm *::before,html.a11y-rm *::after{animation:none!impor
     <section aria-labelledby="hWatch">
       <div class="row"><h2 id="hWatch">מניות במעקב</h2><span class="sub" id="candFresh"></span></div>
       <div class="rhero" id="candHero"></div>
+      <div class="wprefs" id="candPrefs"></div>
       <div class="wleg" aria-hidden="true"><span><i class="d hi"></i>התאמה גבוהה, 80 ומעלה</span><span><i class="d mid"></i>בינונית, 65 עד 79</span><span><i class="d lo"></i>נמוכה, מתחת ל-65</span></div>
       <div class="chips" id="candChips" role="group" aria-label="סינון לפי קבוצה" style="align-self:flex-start"></div>
       <div class="wgrid" id="candList"><div class="empty">המניות במעקב יופיעו כאן.</div></div>
@@ -17349,12 +17355,13 @@ function renderCharts(m){
 let CD=null, candFilter='';
 // Fit of watched stocks to the portfolio: diversification 40, financial quality 30, valuation 20, volatility 10. A ranking against the user's own rules, not a buy call.
 function renderCands(m){
-  const box=$('candList'); if(!box)return;
+  const box=$('candList'); if(!box)return; try{renderWPrefs()}catch(e){}
   {const pool=candPool(m); if(pool&&pool.pick.length){renderCandsP(m,pool);return}}
   if(!CD||!Array.isArray(CD.items)||!CD.items.length){return}
   const R=S.rules, held=new Set(m.pos.map(p=>p.sym)), mon=+S.monthly||0, T=m.total, mg=+R.maxGroup||40;
   $('candFresh').textContent='נתונים מ-'+dmy(CD.updatedAt)+(rsStale(CD.updatedAt)?' · לא מתעדכן':'');
-  const all=CD.items.filter(c=>c&&c.sym&&!held.has(c.sym)).map(c=>{
+  const exclC=new Set(((S&&S.wpref)||{}).excl||[]);
+  const all=CD.items.filter(c=>c&&c.sym&&!held.has(c.sym)&&!exclC.has(c.group)).map(c=>{
     const g=m.groups[c.group]&&c.group!=='cash'?m.groups[c.group]:null, w=g?g.w:0, v=g?g.val:0;
     const lab=GROUPS[c.group]&&c.group!=='other'?GROUPS[c.group]:(c.sector||'אחר');
     const fs=finScore({pm:c.pm,roe:c.roe,de:c.de}), x=fitMix(c,w,R.maxGroup,fs);
@@ -20866,9 +20873,21 @@ const RISK_X={safe:'פחות תנודות, גם במחיר של צמיחה אי�
 // "באמצע" (and no profile) keeps the weights the page always used: spread 40, quality 30, valuation 20, stability 10
 // growth: revenue growth when known, otherwise the earnings growth that the forward P/E implies (as in the profile radar)
 const FITW={safe:{div:30,q:30,val:10,st:20,dv:10},mid:{div:40,q:30,val:20,st:10},risk:{div:30,q:25,val:10,gr:35}};
+// 21.10 (6): what matters to the viewer in the match (S.wpref.focus): each chosen part weighs about twice as much, and one
+// the kind of investor leaves out comes in; the weights still add up to 100. The groups the viewer leaves out
+// (S.wpref.excl) are not suggested. Kept with the settings, so on every device
+const FITALL=['div','q','val','st','gr','dv'];
+function fitW(){const base=FITW[riskOf()], fo=((S&&S.wpref&&S.wpref.focus)||[]).filter(k=>FITALL.includes(k)); if(!fo.length)return base;
+  const o={...base}; for(const k of fo)o[k]=(o[k]||0)>0?o[k]*1.8:18; let t=0; for(const k in o)t+=o[k]; for(const k in o)o[k]=Math.round(o[k]/t*100); return o}
+function renderWPrefs(){const el=$('candPrefs'); if(!el)return; const wp=(S&&S.wpref)||{}, fo=wp.focus||[], ex=wp.excl||[];
+  setH(el,`<div class="wp-r"><b>מה חשוב לי בהתאמה</b><div class="chips" role="group" aria-label="מה חשוב לי">${FITALL.map(k=>`<button type="button" class="chip" data-wpf="${k}" aria-pressed="${fo.includes(k)}">${esc(FITL[k])}</button>`).join('')}</div></div>
+    <div class="wp-r"><b>בלי</b><div class="chips" role="group" aria-label="קבוצות שלא להציע">${Object.keys(GROUPS).filter(g=>g!=='cash').map(g=>`<button type="button" class="chip" data-wpx="${g}" aria-pressed="${ex.includes(g)}">${esc(GROUPS[g])}</button>`).join('')}</div></div>
+    <p class="note" style="margin:0">${fo.length?`לפי מה שבחרת, ${andJ(fo.map(k=>FITL[k]))} שוקלים בערך כפול. `:''}${ex.length?`לא מוצעות מניות מ${andJ(ex.map(g=>GROUPS[g]))}. `:''}נשמר בחשבון שלך. זו התאמה לכללים ולהעדפות שלך, לא המלצה לקנות.</p>`)}
+document.addEventListener('click',ev=>{const a=ev.target.closest&&ev.target.closest('[data-wpf],[data-wpx]'); if(!a||!canWrite)return; const wp={focus:[],excl:[],...((S&&S.wpref)||{})};
+  const [f,k]=a.dataset.wpf?['focus',a.dataset.wpf]:['excl',a.dataset.wpx]; wp[f]=wp[f].includes(k)?wp[f].filter(x=>x!==k):wp[f].concat([k]); S.wpref=wp; changed(); try{useAdd('wpref:'+f)}catch(e){}});
 const riskOf=()=>{const r=S&&S.profile&&S.profile.risk;return FITW[r]?r:'mid'};
 function fitMix(c,w,mg,fs){
-  const W=FITW[riskOf()], pe=c.fpe!=null?c.fpe:c.pe;
+  const W=fitW(), pe=c.fpe!=null?c.fpe:c.pe;
   const fr={div:cl01(1-w/mg),val:pe==null?0.4:pe<0?0.1:pe<=18?1:pe<=25?0.75:pe<=32?0.45:pe<=40?0.2:0,
     st:c.beta==null?0.5:c.beta<=0.7?1:c.beta<=1?0.6:0.2,gr:c.revg!=null?cl01(c.revg/30):c.pe>0&&c.fpe>0?cl01((c.pe/c.fpe-1)/0.25):0.3,dv:c.dy==null?0.3:cl01(c.dy/4)};
   const o={pe,W}; let s=0;
@@ -20876,7 +20895,7 @@ function fitMix(c,w,mg,fs){
   o.score=s; return o}
 const FITL={div:'פיזור בין קבוצות',q:'איכות הדוחות',val:'תמחור',st:'יציבות',gr:'צמיחה',dv:'דיבידנד'};
 const FITLW={div:'פיזור בין קבוצות',q:'איכות פיננסית',val:'מכפיל',st:'תנודתיות',gr:'צמיחה',dv:'דיבידנד'};
-const fitParts=(L,first)=>{const W=FITW[riskOf()];return Object.keys(W).map((k,i)=>`${L[k]} (${i?'':first||''}${W[k]})`)};
+const fitParts=(L,first)=>{const W=fitW();return Object.keys(W).map((k,i)=>`${L[k]} (${i?'':first||''}${W[k]})`)};
 const andJ=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' ו'+a[a.length-1];
 const hasRisk=()=>!!(S&&S.profile&&RISK[S.profile.risk]);
 function fitHeroTxt(){return `הדירוג לפי הכללים שלך${hasRisk()?` ולפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:''}: ${fitParts(FITL,'עד ').join(', ')}.`}
@@ -21366,8 +21385,9 @@ const WATCHN=12; let FITTRIED=false;
 function candPool(m){
   if(!SYMDB||(!FIT&&!FITTRIED))return null;
   const held=new Set(m.pos.map(p=>p.sym)), figs=fitFigs(), tsum=Object.values(S.targets||{}).reduce((t,x)=>t+(+x||0),0), out=[];
+  const excl=new Set(((S&&S.wpref)||{}).excl||[]);
   for(const k in figs){const it=itemOf(k); if(!it||it.t==='E'||it.t==='H')continue; if(held.has(k)||held.has(it.sym))continue;
-    const f=fitScore(k,figs[k],m), tg=tsum>0?(+S.targets[f.g]||0):null; out.push({k,it,c:figs[k],f,under:tg!=null&&tg-f.w>=2?tg-f.w:0})}
+    const f=fitScore(k,figs[k],m); if(excl.has(f.g))continue; const tg=tsum>0?(+S.targets[f.g]||0):null; out.push({k,it,c:figs[k],f,under:tg!=null&&tg-f.w>=2?tg-f.w:0})}
   out.sort((a,b)=>b.f.score-a.f.score||(b.it.cap||0)-(a.it.cap||0));
   // variety: at most three from one group; a group under its target gets its best candidate in even when the scores are close
   const pick=[], per={};
@@ -21388,7 +21408,9 @@ function renderCandsP(m,pool){
     const c=r.c, f=r.f, tier=f.score>=80?'hi':f.score>=65?'mid':'lo', gr=f.fs?f.fs.grade:null, p=priceOf(r.k), it=r.it;
     const fc=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
     const was=pv&&pv.px[r.k]>0&&p&&p.px>0?(p.px/pv.px[r.k]-1)*100:null, dn=c.next?daysTo(c.next):null;
-    const tags=(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
+    // what it is strong in, of the parts that weigh in the match (the viewer's choices among them)
+    const strong=Object.keys(f.W||{}).filter(x=>f.W[x]>0&&f[x]!=null).map(x=>[x,f[x]/f.W[x]]).filter(x=>x[1]>=0.7).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>FITL[x[0]]);
+    const tags=(strong.length?`<span class="tag" style="background:var(--ok-bg);color:var(--ok-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
       +(r.under>0?`<span class="tag new">הקבוצה ${nn(r.under.toFixed(0))} נק׳ אחוז מתחת ליעד שלך</span>`:!m.groups[f.g]||!(m.groups[f.g].w>0)?`<span class="tag new">אין בתיק בכלל</span>`:'')
       +(f.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(dn!=null&&dn>=0&&dn<=21?`<span class="tag" style="background:var(--sunk);color:var(--ink2)">דוח בעוד ${dn===0?'היום':dn===1?'יום':dn+' ימים'}</span>`:'')
       +(wmarks().includes(r.k)?'<span class="tag an">סימנת</span>':'');
@@ -21415,7 +21437,7 @@ let lastTape='';
 // The list of names lives in the page (gzip, base64) and is unpacked on first use; prices come from quotes/latest,
 // daily closes from quotes/c_<key>, written by the scheduled tasks. Nothing here reaches the network.
 let SYMDB=null, SYMLOAD=null, SYMWHY='', SYMTRIES=0, MYID=null, WATCH=null, WVER=null, SQ='', SEC=null, SECRNG='3m', CLOSES={}, SQT=null;
-const TYPEL={S:'ניירות ערך זרים',E:'תעודת סל',T:'מניות ישראליות',H:'בתיק שלי'};
+const TYPEL={S:'ניירות ערך זרים',E:'תעודת סל',T:'מניה ישראלית',H:'בתיק שלי',F:'קרן נאמנות או קרן סל',I:'מדד'};
 const EXL={Q:'Nasdaq',N:'NYSE',A:'NYSE American',P:'NYSE Arca',Z:'Cboe',TLV:'הבורסה בתל אביב'};
 const skey=it=>it.t==='T'?'TLV:'+it.sym:it.sym;
 // A small inflate (RFC 1951) with a gzip wrapper, used only where the browser has no DecompressionStream.
@@ -21510,6 +21532,7 @@ function loadSymDb(){
       try{const parts=[];for(let i=1;i<=6;i++){const s=await db.doc('quotes/syms_'+i).get();if(!s.exists)break;parts.push((s.data()||{}).t||'')}txt=parts.join('\n');if(txt.trim())why=''}catch(e){why=why||'הרשימה לא נטענה מהשרת'}}
     SYMDB=txt.trim()?txt.split('\n').filter(l=>l.indexOf('\t')>0).map(l=>{const p=l.split('\t');const it={sym:p[0],name:p[1]||'',t:p[2]||'S',ex:p[3]||'',sec:p[4]||'',cap:+p[5]||0,ls:(p[0]||'').toLowerCase(),ln:(p[1]||'').toLowerCase()};it.he=HEBN[skey(it)]||'';return it}):[];
     SYMWHY=SYMDB.length?'':(why||'הרשימה ריקה');
+    try{ilAugment(); ilLoad()}catch(e){}
     if(!SYMDB.length){SYMTRIES++;if(SYMTRIES<4){SYMLOAD=null;SYMDB=null;setTimeout(()=>{loadSymDb().then(srchRender)},1500);return []}}
     try{const n=$('sqNote');if(n&&(SYMDB.length||SYMTRIES>=3)){n.textContent=SYMDB.length?`${SYMDB.length.toLocaleString('en-US')} ניירות ברשימה: מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.`:`רשימת הניירות לא נטענה (${SYMWHY}). סגור את הדף ופתח אותו מחדש; בינתיים אפשר לחפש רק ניירות שבתיק.`;lgNote()}}catch(e){}
     return SYMDB;
@@ -21533,17 +21556,19 @@ function findSyms(q){
     else if(it.ls===q)s=100;else if(it.ls.startsWith(q))s=80;else if(it.ln.startsWith(q))s=60;else if(it.ln.split(/[\s,.()-]+/).some(w=>w.startsWith(q)))s=50;else if(it.ln.includes(q))s=30;else if(it.ls.includes(q))s=20;
     if(!s)return 0; if(marks.has(skey(it)))s+=8; if(held.has(it.sym)&&it.t!=='T')s+=6; if(it.t==='E'&&s<100)s-=4; if(it.t==='E'&&/\b(2x|3x|daily|option income|autocallable|leveraged|inverse|short)\b/i.test(it.name))s-=12;
     return s+Math.min(5,Math.log10(1+it.cap))};
-  const all=SYMDB.concat(heldItems());
-  return all.map(it=>[sc(it),it]).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]).slice(0,30).map(x=>x[1]);
+  const all=SYMDB.concat(heldItems()), r=all.map(it=>[sc(it),it]).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]);
+  // a Hebrew word that is a security's Hebrew name ("לאומי", "ת״א 35"): those first, and only a few of the sound-alike English names after them
+  if(heb&&r.length&&r[0][0]>=70){const hm=r.filter(x=>x[0]>=70); return hm.concat(r.filter(x=>x[0]<70).slice(0,4)).slice(0,30).map(x=>x[1])}
+  return r.slice(0,30).map(x=>x[1]);
 }
 const recent=()=>{try{return JSON.parse(localStorage.getItem('tr_recent')||'[]')}catch(e){return[]}};
 const pushRecent=k=>{try{const r=[k].concat(recent().filter(x=>x!==k)).slice(0,12);localStorage.setItem('tr_recent',JSON.stringify(r))}catch(e){}};
-const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||null};
+const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||(ilIsNum(k)&&ILF[k]&&ILF[k].v?ilItem(k,ILF[k].v.name||('נייר '+k),'F',{he:ILF[k].v.name||''}):null)||null};
 function wmarks(){if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_marks')||'[]')}catch(e){return[]}}return (WATCH&&WATCH.marks)||[]}
 // one document per user: the securities to price (syms) = the held US symbols plus the bookmarks; the task reads only `syms`
 async function watchSave(patch){
   const marks=patch.marks||wmarks(), held=patch.held||(WATCH&&WATCH.held)||[], seen=patch.seen||(WATCH&&WATCH.seen)||[], potS=patch.pots||(WATCH&&WATCH.pots)||[];
-  const syms=[...new Set(held.concat(marks).filter(k=>/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(k)))].slice(0,40);
+  const syms=[...new Set(held.concat(marks).filter(k=>/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$/.test(k)))].slice(0,40);
   if(LOCAL||!db||!MYID){try{localStorage.setItem('tr_marks',JSON.stringify(marks))}catch(e){};WATCH={marks,held,syms,seen,pots:potS};return true}
   const doc={syms,marks,held,seen,pots:potS,updatedAt:new Date().toISOString()};
   try{await db.doc('watch/'+MYID).set(doc);WATCH=doc;return true}catch(e){return false}
@@ -21553,7 +21578,11 @@ async function toggleMark(k){const m=wmarks();const on=m.includes(k);const next=
   srchRender()}
 // prices for one key: US keys as stored, Tel Aviv keys as TLV:SYM, held securities by their symbol
 function priceOf(k){
-  const it=itemOf(k);const ccy=k.startsWith('TLV:')||(it&&it.t==='H'&&it.ex==='TLV')?'ILS':'USD';
+  const it=itemOf(k), ix=ilIdx(k);
+  if(ix){const b=Q&&Q.bench&&Q.bench[ix]; if(b&&b.px>0)return {px:b.px,prev:b.prev,ccy:'PTS',chg:b.prev>0?b.px/b.prev-1:null,label:b.date?'סגירה '+dmy(b.date):'',live:true};
+    const c=CLOSES[k]; if(c&&c.c&&c.c.length){const n=c.c.length; return {px:c.c[n-1],prev:n>1?c.c[n-2]:null,ccy:'PTS',chg:n>1&&c.c[n-2]>0?c.c[n-1]/c.c[n-2]-1:null,label:'סגירה '+dmy(c.d[n-1]),daily:true}} return null}
+  const ccy=k.startsWith('TLV:')||ilIsNum(k)||(it&&(it.t==='H'||it.t==='F')&&it.ex==='TLV')?'ILS':'USD';
+  if(ilIsNum(k)&&!(Q&&Q.prices&&Q.prices[k]!=null)){const v=ILF[k]&&ILF[k].v; if(v&&v.px>0)return {px:v.px,prev:v.prev,ccy:'ILS',chg:v.chg!=null?v.chg/100:v.prev>0?v.px/v.prev-1:null,label:v.date?'מחיר רשמי '+dmy(v.date):'',daily:true}}
   if(Q){const p=Q.prices||{},v=Q.prev||{};const px=p[k];
     if(px!=null){const pv=v[k];return {px,prev:pv,ccy,chg:pv>0?px/pv-1:null,label:(Q.stale||{})[k]||Q.priceLabel||'',live:true}}}
   if(ALLQ){const r=k.startsWith('TLV:')?(ALLQ.tlv||{})[k.slice(4)]:(ALLQ.us||{})[k];
@@ -21570,7 +21599,7 @@ async function loadResearch(k,force){if(!force&&RSX[k]!==undefined)return RSX[k]
 const ccyName=c=>c==='ILS'?'נסחרת בשקל':'נסחרת בדולר';
 const CCYSYM={ILS:'₪',USD:'$',EUR:'€',GBP:'£',JPY:'¥',CHF:'CHF ',CAD:'C$',AUD:'A$',HKD:'HK$',SEK:'kr ',NOK:'kr ',DKK:'kr ',SGD:'S$',INR:'₹',CNY:'¥',BRL:'R$',MXN:'MX$',KRW:'₩',TWD:'NT$'};
 const CCYHE={ILS:'שקל',USD:'דולר',EUR:'אירו',GBP:'לירה שטרלינג',JPY:'ין יפני',CHF:'פרנק שווייצרי',CAD:'דולר קנדי',AUD:'דולר אוסטרלי',HKD:'דולר הונג קונג',SEK:'כתר שוודי',NOK:'כתר נורווגי',DKK:'כתר דני',SGD:'דולר סינגפורי',INR:'רופי הודי',CNY:'יואן',BRL:'ריאל ברזילאי',MXN:'פסו מקסיקני',KRW:'וון קוריאני',TWD:'דולר טאיוואני'};
-const fmtPx=(x,ccy)=>(CCYSYM[ccy]||(ccy&&ccy!=='USD'?ccy+' ':'$'))+Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPx=(x,ccy)=>ccy==='PTS'?Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):(CCYSYM[ccy]||(ccy&&ccy!=='USD'?ccy+' ':'$'))+Number(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 // company logos next to securities: sprite sheets published next to the page (logos/<sheet>.webp, 20 tiles per row), from the open nvstly/icons set; initials show when there is none
 const LGS={"A":"A* AA* AAA AAC AACG* AACI* AAL* AAME* AAOI* AAON* AAP* AAPL AAT* ABAT* ABBV#071D49 ABCB* ABCL* ABEO ABEV* ABG ABLV ABM ABNB* ABOS* ABR ABSI* ABT* ABTS ABUS* ABVC ACA* ACAD* ACB* ACCO* ACEL* ACET* ACGL ACH* ACHC* ACHR* ACHV ACI* ACIU* ACIW ACLS ACM ACMR* ACN* ACNB* ACON* ACRE ACRS ACRV* ACTG ACTU ACV* ACVA* ACXP ADBE* ADC ADCT* ADGM* ADI#0067B9 ADIL* ADM* ADMA* ADNT ADP* ADPT ADSK#0696D7 ADT* ADTN ADUR ADUS* ADV* ADX* ADXN* AEE* AEG* AEHL AEHR* AEI* AEIS* AEM* AEMD* AEO AEON* AEP* AER* AERT AES* AEVA* AEYE* AFB* AFCG* AFG* AFL* AFRM#4A4AF4 AG AGCO* AGEN* AGI* AGIO* AGL* AGM* AGMH* AGNC* AGO* AGRO AGYS* AHCO* AHG AHT AI AIFF AIG#0066B3 AIM AIMD* AIP AIR AIRE* AIRG AIRI* AIRS AIRT AISP* AIV AIZ* AJG* AKAM* AKAN AKBA* AKR* AKTS* AKTX ALAB* ALB ALC#0066B3 ALDX* ALEC* ALF ALGM* ALGN* ALGS ALGT* ALHC ALIT* ALK* ALKS ALKT* ALL#0033A0 ALLE* ALLO* ALLR* ALLT ALLY* ALMS* ALNY ALPS ALRM ALRS ALSN* ALT* ALTO ALV ALXO* ALZN* AM AMAL* AMAT* AMBA* AMBO* AMBP* AMC* AMCR* AMCX AMD* AME AMG* AMGN* AMH* AMIX* AMKR* AMLP AMLX AMN* AMOD* AMP#1D4F91 AMPG* AMPH* AMPL AMPX AMPY* AMR* AMRC* AMRN AMRX* AMS* AMSC* AMSF* AMST* AMT* AMTB* AMTD AMTX AMWL* AMZN#232F3E AN ANAB* ANDE* ANET#2A6EBB ANF ANGH* ANGI* ANGO* ANIK* ANIP ANIX* ANNX* ANTX ANVS AOMR AON* AORT AOS* AOSL* AP* APA* APAM APD* APEI APG APH#0E4C92 API* APLD* APLE* APLM* APO* APOG APP APPF APPN#2322F0 APPS* APRE* APT APTV* APVO* APWC* APYX* AQB* AQMS* AQN* AQST* AR* ARAY ARBB* ARBE ARBK* ARCB ARCC#1C3F94 ARCO* ARCT ARDX* ARE AREC ARES* ARGX* ARHS ARI* ARKR ARL ARLO* ARM* ARMK* AROC ARQQ ARQT* ARR* ARRY* ARTL ARTW* ARVN* ARW#00A3E0 ARWR* ASAN* ASB* ASC* ASH* ASLE* ASM* ASMB* ASML#0F238C ASND* ASO ASPI ASPN* ASPS ASR* ASRV ASST* ASTC ASTE* ASTI ASTL* ASTS* ASX* ASYS* ATCH* ATCX* ATEC ATEN* ATER* ATEX ATGL* ATH-A ATH-E* ATHE* ATHM* ATI* ATKR* ATLX ATNM ATO ATOM* ATPC* ATR ATRA* ATRC ATTO* ATXG* AUDC AUID* AUPH* AUR* AUST* AUTL* AUUD AVA AVAV AVGO* AVNT* AVNW* AVO* AVT AVTR* AVTX AVXL* AVY* AWF* AWI AWK AWR* AWRE AXGN* AXON AXP* AXR* AXS AXSM* AXTA* AXTI* AYI AYTU* AZI* AZN* AZO* AZTA* AZTR* AZUL* AZZ","B":"B* BA#1D439C BABA* BAC* BAER* BAH* BAK* BALY* BAM BANC* BAND* BANR* BAOS* BAP BARK* BATRA* BATRK* BAX#004F9F BB BBAI BBAR* BBCP* BBD* BBIO* BBLG* BBN* BBSI* BBVA* BBW BBWI* BBY* BC* BCC* BCDA* BCE#00539B BCG* BCH* BCO BCPC BCRX* BCS* BCTX* BCX* BCYC BDJ* BDMD BDN BDRX BDSX* BDTX* BDX* BE* BEAM BEAT* BEEM BEKE* BELFB BEN* BENF* BEPC* BFAM* BFH* BFLY* BFRG* BFRI BG* BGLC* BGR* BGS* BGSF BGT* BGY* BHB* BHC* BHE BHF BHK* BHP* BHR* BHV* BHVN BIAF BIDU* BIIB* BILI#00A1D6 BILL* BIO* BIOX BIPC* BIRD BIRK BIT* BITO* BITQ BIVI BJ* BJDX BJRI* BKD* BKE* BKKT BKNG* BKR* BKSY BKT* BKTI* BKU* BKYI* BL BLBD* BLDP* BLDR BLIN BLK BLKB* BLMN BLNK BLRX BLW* BLX BMBL* BME* BMEA* BMI BMO* BMR* BMRA BMRN* BMY* BNAI* BNED BNGO* BNL* BNS* BNTC* BNTX* BNY* BOE* BOF* BOH* BOKF* BOLT* BON* BOOT BORR* BOSC BOX* BOXL* BP* BPOP* BPRN BQ* BR* BRAG* BRBR* BRC BRCC* BREZ* BRFH BRID BRK.A#4A2C6B BRK.B#4A2C6B BRKR BRLT BRN* BRO* BROS* BRSP* BRTX BRX* BRZE BSAC* BSBK* BST* BSVN BSX#0057B8 BSY* BTBD* BTBT* BTCS* BTCT* BTDR* BTE* BTF BTG* BTI* BTMD* BTSG* BTT* BTU BTZ* BUD* BUI* BUR BURL* BURU BUSE* BV* BVN* BVS BW BWA#006FBA BWAY BWB* BWEN BWIN* BWMN BWXT* BX* BXC BXMT* BXP* BY* BYD BYND* BYRN* BYSI* BZAI* BZFD* BZH*","C":"C* CAAS* CABA* CABO* CAC* CACC* CACI* CADL* CAE* CAG* CAH* CAKE CAL CALM CALX* CAMP CAMT* CAN CANF CANG* CAPR CAPS* CAR* CARE* CARG* CARR* CARS* CART* CASH CASS* CAT CATX CAVA CB#0055A5 CBAN* CBAT CBIO* CBNK* CBRE* CBRL* CBSH CBT CBZ* CC* CCBG CCCC* CCEP* CCI* CCJ* CCK* CCL* CCLD* CCM* CCO CCS* CCTG* CCU* CCXI CD* CDE CDIO* CDLX* CDNA CDNS#CC0000 CDT CDTG* CDW#CC0000 CDXS CDZI* CDZIP* CE* CEE CEG CELC CELH* CELU* CELZ CENN CENT CENTA CEPU* CERS* CERT* CETX CETY* CEVA* CF* CFBK* CFFN* CFG* CFR CG#1A4480 CGAU CGC* CGEM* CGEN CGNT* CGTL* CGTX* CHCI CHCO CHD* CHDN* CHEF CHGG* CHH CHKP* CHMG* CHNR* CHPT* CHRS* CHSN* CHT* CHTR* CHWY#1C49C2 CI* CIA* CIEN* CIFR* CIGI* CII* CIM CINF* CING CINT CION* CISO* CISS CKX* CL* CLBK* CLBT CLDI CLDT* CLDX* CLF* CLFD CLGN CLH* CLIR CLLS CLMT* CLNE* CLOV* CLPS CLPT* CLRB CLRO CLS* CLSK CLSM CLVT* CLW CLWT* CLX* CM* CMC CMCO CMCSA* CMCT* CME* CMG* CMI* CMMB* CMND CMP* CMPR CMPS* CMRE* CMS* CMTL* CNA* CNC* CNET CNEY* CNI* CNK* CNM* CNMD* CNO* CNOB CNR CNSP CNTB* CNTX* CNTY* CNX* CNXC COCO* COCP* CODX COE* COF* COFS* COHR COHU* COIN* COKE#F40009 COLB* COLD COMP* COOK COOT* COP* COR* CORN CORT CORZ COSM COST* COTY COUR* COYA CP* CPA CPB* CPF* CPHC* CPHI* CPIX* CPNG* CPOP CPRT* CPS* CPSH* CPSS CPT* CR* CRAI CRBP* CRBU CRCT* CRDF* CRDO* CRESY CREX* CRH* CRI CRIS CRM* CRMD* CRMT CRNC* CRNT* CRON* CROX* CRS* CRSP CRSR CRT* CRTO* CRUS* CRVL CRVO* CRVS* CRWD* CRWS* CSAI* CSBR* CSCO* CSGP CSIQ* CSL* CSPI CSR* CSTE CSTL CSTM* CSX#1F3C73 CTAS CTGO* CTM* CTMX* CTNT* CTO CTOR CTOS CTRE* CTRM* CTRN* CTSH* CTSO* CTVA* CTXR CUBE* CUBI CUE* CULP CURI* CURR* CURV CUZ CVBF* CVCO* CVE#0057B8 CVEO CVGI CVI* CVLG CVLT* CVM* CVNA* CVRX CVS* CVU CVV CVX* CWEN* CWH* CWK* CWST CX* CXAI* CXDO CXM CXW* CYCU* CYH* CYN* CYRX CZR* CZWI*","D":"D* DAC* DAIO DAKT* DAL* DAN DAO* DAR* DARE* DASH* DAVA* DAVE DAX* DB#0018A8 DBD* DBGI DBI* DBVT* DBX#0061FF DCBO* DCGO* DCOM DCTH DD#DD1E25 DDC* DDD* DDL* DDOG#632CA6 DE* DECK DEI* DELL* DEO* DERM* DFH* DG* DGICA* DGICB* DGII DGNX DGX#FB4F14 DHC* DHI#0054A4 DHR* DHT* DHX DIBS DIN DINO* DIOD DIS#1E3E8C DJT DK* DKNG* DKS* DLB* DLHC DLO DLPN* DLR* DLTH* DLTR* DLX* DMRC* DNA* DNN* DNOW DNP DNUT* DOC* DOCN* DOCS DOCU#1D3A8A DOGZ* DOLE DOMH* DORM DOUG* DOV* DOW* DOYU* DPG DPRO DPZ* DRD* DRI#B22222 DRMA* DRUG DRVN* DSAC* DSGX* DSL* DSM* DSP DSS* DSU* DSX DSY DT* DTE* DTF DTIL DTSS* DTST DUK* DUO* DUOL* DUOT DV* DVA* DVN* DWTX* DXC* DXCM* DXF* DXLG DXYZ DY* DYAI* DYN","E":"E* EAF* EAT* EBAY* EBC EBF* EBMT EBON* EBS* EC#00843D ECBK* ECHO ECL* ECOR ECPG ECX ED* EDBL* EDF* EDIT EDN* EDRY* EDSA EDU* EDUC EEA EEFT EEIQ* EFOI* EFSC EFX* EGAN* EGBN* EGHT* EGO* EGP EGY EH EHC* EHTH* EIG EIX* EJH* EL ELA* ELAB* ELAN* ELBM ELDN* ELF ELMD* ELOX* ELPC* ELS* ELTK* ELV#1A3673 EME* EMN* EMR* ENB* ENIC ENJ* ENLV* ENPH* ENR ENS ENSC ENSG ENTA ENTG* ENVA ENVB* ENVX* EOG* EOLS EONR* EOSE* EP EPAC* EPAM* EPD* EPM EPOW* EPR* EPRT EPRX* EQ* EQBK* EQH* EQIX* EQNR* EQT ERIC#0082F0 ERIE* ERII ERNA* ERO* ES* ESAB ESE ESLT#00529B ESOA* ESQ* ESS* ESTC* ETB* ETG* ETJ* ETN* ETON* ETR* ETSY* EU* EUDA* EVAX EVER EVGN EVGO EVH* EVLV EVTC EVTL EW* EWBC* EWTX EXC* EXE* EXEL* EXK* EXLS* EXP* EXPD EXPE#191E3B EXR* EXTR* EYE EYEG EYPT* EZGO* EZPW","F":"F* FA* FACT FAF* FAMI* FANG FAST FB* FBGL* FBIN FBIO FBIZ FBK* FBNC* FC* FCAP* FCEL* FCF* FCN* FCNCA* FCNCP* FCUV* FCX* FDBC* FDS* FDX* FE* FEAM* FEIM* FELE* FEMY FENG FERG* FET* FF FFA FFBC* FFIV* FGBI* FGI FGL* FHB FHI FHN* FHTX* FICO* FINS* FINV* FIS* FISV* FITB* FITB-I* FIVE* FIVN FIX* FIZZ* FKWL FLAG* FLC* FLD FLEX* FLGT* FLL* FLNC FLNG FLNT* FLO* FLOC FLR FLUX FLWS FLXN FLXS* FLYE* FLYW* FLYX FMAC* FMAO* FMBH FMC* FMN FMS FMX#C8102E FNB* FND* FNF* FNGR FNKO FNV* FNWB FOA FORM FORR* FOSL FOUR* FOX* FOXX* FPH* FPI FR FRA* FRBA FRGT FRHC* FRO* FROG FRPH* FRPT FRSH* FRST* FRSX* FRT* FSBC FSBW* FSI FSK FSLR* FSLY* FSS* FSTR FTAI FTCI* FTFT* FTHM* FTI* FTK FTNT* FTRE* FTS* FTV* FUBO* FUFU* FULC* FULT FUNC FUND* FUTU FVCB* FWONA* FWONK* FWRG*","G":"G* GAB* GABC* GAIA GALT* GAME* GANX* GAP* GASS* GATX* GBLI* GBR* GBX* GCL* GCO GCT GCTK* GCV* GD* GDC* GDDY* GDEV GDHG* GDL* GDOT* GDRX* GDS* GDTC* GDV* GE* GEG GEHC* GELS* GEN* GENC* GENI* GEO* GERN* GEV* GEVO* GF GFAI* GFL GGAL* GGG* GGT* GGZ* GH* GHC GHM GHRS* GHY GIB* GIC GIII GIL GILD* GILT* GIS* GITS* GKOS GL* GLBE* GLBS GLE GLNG GLOB* GLPI GLRE GLSI* GLUE* GLW#002C5F GLXG* GM* GME GMED* GMM GNE* GNL GNLN* GNLX GNPX* GNRC#F26522 GNS* GNSS* GNT* GNTA* GNTX GNW* GO* GOGO GOLD GOOG* GOOGL* GOOS GOSS GOTU* GOVX GP* GPC* GPCR* GPI GPK* GPMT* GPN* GPRE* GPRK* GPRO GRAB* GRFS* GRI GRMN GRNQ GROV GROW* GRPN* GRRR GRWG GRX* GS* GSAT* GSBC* GSBD* GSHD GSIT* GSIW* GSK* GSM* GSUN* GT* GTBP GTE* GTEC* GTES* GTIM GTLB* GTX GTY* GURE* GUT* GWAV* GWRE* GXAI* GXO*","H":"H* HAIN HAL* HALO* HAO* HAS* HASI* HAYW HBCP* HBIO* HBM HBNC HCA* HCAT* HCC* HCI* HCKT HCM* HCSG* HCTI* HCWB* HD* HDB* HDSN HE HEI#003A70 HELE HEPS* HGLB* HIFS* HIG* HIHO* HII* HIMS HITI HIVE HIW* HKD HKIT* HKPD* HL* HLF* HLIO* HLIT HLN#4E2A84 HLNE* HLT* HMC* HMR HNI* HNNA* HNRG* HNST HOG* HOLD* HOLO* HOMB* HON* HOOD* HOUR* HOVR HOWL* HP HPE* HPK* HPP HPQ#0096D6 HQH* HQI HQL* HQY* HR HRB* HRI* HRL#1B5E20 HRMY HROW* HRTG HRTX* HSAI* HSBC* HSCS* HSDT* HST* HSTM* HSY#7B3F00 HTCR* HTGC HTHT* HTLD* HTLM* HTOO* HTZ HUBB HUBC HUBS* HUDI* HUHU* HUIZ* HUM* HUMA* HUN* HURA* HURC* HURN HUT HUYA* HVT HWC HWM HXL HY* HYFM* HYLN* HYMC* HYPR* HYT* HZO","I":"IAG IART* IBCP* IBEX* IBIO* IBKR* IBM#1F70C1 IBN* IBO* IBOC* IBRX IBTA* ICCC ICCM ICE* ICG* ICHR ICL* ICLR ICMB* ICU* ICUI IDAI* IDCC* IDN* IDT IDYA IE* IEP IESC* IEX* IFBD IFF* IFRX* IGC IGR* IHG* IHRT* IHS III IIIV* IIM IIPR ILAG* ILMN* IMAX IMCC IMCR* IMKTA IMMP* IMMR* IMMX IMNM* IMNN* IMPP* IMRN* IMRX* IMTE* IMTX IMUX* IMVT IMXI* INAB* INBK* INBS INBX* INCR* INCY INDB* INDI INDO* INDP* INFU* INFY* ING* INGN INHD* INKT* INLF* INM* INMB INMD INN* INNV* INO* INOD INSE* INSG* INSM* INSP* INTA* INTC#0071C5 INTT* INTU* INTZ INVE* INVH* INVZ IONQ* IONS* IOSP* IOT IOVA* IP* IPAR IPDN* IPGP IPHA IPI IPSC* IPW IPWR IPX IQ* IQI IQV* IREN IRM* IRT* IRTC* IRWD ISD ISPC ISPR ISRG#0069AA ISTR* ITGR ITIC* ITP* ITRN* ITT ITW* IVA* IVDA* IVR IVVD* IVZ#1F3E7C IX* IXHL IZEA* IZM*","J":"J* JAGX* JAKK JAN* JANX* JBDI* JBGS JBHT* JBI* JBL JBLU JBSS* JCI* JCSE* JD#C82027 JDZG* JETS* JFIN* JFR JFU JG* JHX* JILL* JJSF JKS* JLL* JMIA* JNJ* JOB* JOBY JOF* JPM* JSPR* JTAI JUNS* JVA* JWEL* JYD* JYNT* JZ* JZXN","K":"KAI* KALA* KAPA* KB* KBH* KBR KBSX KC* KD* KDP* KE KELYA* KELYB* KEQU* KEX* KEY* KEYS* KFFB KFRC* KFY* KGC* KHC#E30613 KIM* KITT* KKR KLAC* KLC* KLXE* KMB* KMI* KMPR KMX KNSA* KNX#002F6C KO* KOD KODK KOPN KOS* KOSS KPLT* KPRX KPTI* KR#004990 KRC* KRG KRKR* KRNT KRNY KRRO KRT KRUS* KRYS* KSCP* KSS KT* KTCC KTF KTOS* KTTA* KULR KURA* KVHI* KVUE#0C8F6E KXIN KYMR KYN* KZIA*","L":"L* LAB* LAC LAD* LADR* LAES LAKE LAMR* LARK LASE LASR* LBGJ* LBRT* LBTYA* LBTYB* LBTYK* LCFY* LCID#282C33 LCII* LCNB* LCUT LDI* LDOS* LE* LEA* LECO* LEDS* LEE LEGN LEN#0A2D5C LEO LEU* LEVI* LEXX LFMD* LFST* LFUS LFVN LFWD* LGCL* LGHL* LGIH* LGND LGO* LGVN* LH* LHX* LI LICN* LIDR LIFE* LII* LILA* LILAK LIN* LINC* LIND LINK* LION LIQT* LITB LITE LKQ* LLY* LMAT LMB* LMND LMNR LMT#0B2D5B LNC* LNG LNKS LNSR LNT* LNTH* LOCL LOCO LODE LOGI* LOMA* LOOP LOPE LOW#004990 LPA* LPCN LPG* LPL LPTH* LPX LQDA* LQDT LRCX#005B9A LRHC LRMR LRN LSCC* LSE* LSF LSPD* LSTR* LTBR* LTC* LTH* LTRN* LTRX* LU LUCD LUCY LULU* LUMN* LUNG* LUNR LUV* LVLU* LVO* LVS* LW* LWAC* LWLG* LX* LXEH* LXFR LXRX* LXU* LYB* LYEL* LYFT* LYG* LYTS* LYV* LZ LZB* LZMH","M":"M* MA* MAIA* MAIN MAMA* MAN MANH MANU* MAR* MARA MASS MAT* MATW MATX* MAX MBC* MBIN* MBIO* MBLY* MBOT* MBRX* MBUU MBWM MC* MCB MCD* MCFT* MCHP* MCHX* MCK* MCO#0A3F7D MCRB* MD MDAI* MDB* MDBH MDIA MDLZ* MDT* MDWD* MDXG MDXH* MEC* MED MEDP MEDS* MEGL MEI MELI* MEOH* MERC MESO* MET#0090DA META* METC MF* MFC* MFG* MFI* MFIN* MFM MG MGA* MGEE* MGF MGIH* MGM* MGNI MGNX MGRC* MGRX* MGTX MGX MGY MGYR MHD* MHK* MHO* MI* MIN MIND* MIRA MIRM MIST MITK MITQ* MIY* MKC* MKSI MKTW MKTX MLAB* MLCO MLEC MLGO* MLI* MLM MLR* MMA MMD* MMI* MMLP* MMM* MMS* MMSI* MMT MNDO MNDR* MNDY* MNKD* MNPR* MNRO MNSO* MNST* MNTS MNY* MO* MOB* MOBX MOD* MODD* MOGU* MOH* MOLN MOMO* MORN* MOS* MOVE* MP* MPA* MPB* MPC#E4002B MPTI MQ MQY* MRAM MRBK MREO* MRK* MRKR* MRLN MRM* MRNA* MRNO* MRT* MRVL#FF0000 MS#002B5C MS-A* MSA* MSAI* MSB* MSBI* MSC* MSCI* MSFT* MSGM* MSGS* MSI* MSM* MSN MSS* MSTR* MT* MTA* MTB* MTC* MTCH* MTD* MTDR MTEX* MTH* MTLS* MTN* MTNB MTRN MTRX* MTSI* MTW* MTX MTZ MU* MUA* MUC* MUFG* MUJ* MUX MVBF MVIS* MVST MWG* MX* MXC MXCT MYE MYFW* MYGN MYI* MYN* MYRG MYSZ*","N":"NA* NAAS* NABL* NAK NAMI* NAT NATH* NAUT NB* NBIS NBN NBR* NBTX* NCI NCLH* NCMI* NCNA NCPL NCRA NCTY* NCV NDAQ* NDLS* NDRA* NDSN NE* NEE* NEGG* NEM* NEO* NEOG* NEON NEPH* NERV* NET* NEU NEUP* NEWT NEXT NFE* NFLX* NGG* NGVC NGVT* NI* NICE#1F4E9A NIE NINE* NIO NIU NIVF NIXX NKE#111111 NKTX NL* NLY NMG* NMIH NMR* NMRA* NMRK* NMTC NN* NNBR* NNDM* NNE* NNI NNN* NNOX NNVC* NOC#0054A4 NOK#005AFF NOV* NOVT NOW* NPCE NPV NRC* NRDS* NRDY* NRG* NRGV* NRIX* NRSN* NRXP NSC* NSIT* NSP* NSPR NSSC* NSYS NTAP#0067C5 NTB* NTCT NTES* NTLA* NTNX* NTR* NTRA* NTRB NTRS NTWK NU* NUE* NUTX NUWE* NVAX NVCR NVCT* NVDA* NVEC* NVGS* NVNI NVNO* NVO#001965 NVS* NVST* NVT* NVX* NWBI NWE NWFL* NWG#5A287F NWL NWN NWPX* NWS* NWSA* NX NXGL* NXL* NXPI* NXPL* NXST NXTC* NXTT NYC NYXH*","O":"O* OBIO* OC* OCC* OCCI* OCFC OCG OCGN* OCIO* OCSL OCUL ODC ODFL* OESX* OFIX* OGC* OGE* OGEN* OGI* OGN* OGS OHI* OI OIA OII* OIS* OKE OKLO* OKTA#007DC1 OKYO* OLB* OLD OLED OLLI* OLN* OLP* OM* OMAB* OMC* OMCL OMER OMEX OMH* ON* ONB ONCO* ONCY ONDS* ONEW* ONFO* ONMD* ONON OOMA OPAD* OPAL* OPCH* OPEN* OPER* OPFI* OPHC* OPI* OPK* OPRA* OPRT OPRX* OPTT* OPTX ORA* ORCL* ORGO ORI* ORIC* ORKT* ORLY* ORMP* ORN OSBC* OSCR OSK* OSPN* OSTX* OSUR OSW* OTIS* OTLK* OTLY OUT OVBC* OVID OVV* OWL* OWLT OXM* OXY* OZK","P":"PAAS PAC* PACB* PACK* PAG* PAGS* PAHC PAL* PALI* PAM* PANL PANW* PARA#0064FF PARR PASG* PATH* PATK* PAVM* PAVS* PAY* PAYO* PAYS PAYX* PBA* PBF PBHC* PBI* PBM PBR* PCAR* PCF PCG* PCLA PCM PCN PCOR PCRX* PCSA* PCT PCVX* PD* PDD* PDFS PDI PDLB* PDM* PDS PDSB* PDYN* PEB* PEBK PEBO PED* PEG* PEGA PEN* PENG PENN* PEO* PEP* PEPG* PERI PETS* PETZ* PFE* PFG* PFIS PFL PFN PFS PG* PGEN* PGNY PGR* PGY* PH* PHAT PHG* PHI PHIO* PHK PHM PHR* PHUN* PHVS* PI* PIFI* PII PIII* PIM PINE PINS* PJT* PKG* PKX* PL* PLAB* PLAG* PLAY* PLBY PLCE* PLD* PLG PLMR PLNT* PLRX PLRZ* PLSE* PLTK* PLTR PLUG* PM#0033A0 PMAX* PMCB PMEC PML PMM PMO PMTS* PMVP* PNBK* PNC* PNTG* PNW* PODD* POET* POLA* PONO* PONY* POR POST* POWI POWL* POWW PPBT* PPG* PPL* PPSI* PPT PPTA* PR* PRAA* PRAX PRCH* PRCT* PRE* PRFX* PRG* PRGO PRGS PRI PRIM PRLD PRME PROF* PROK* PRPL PRPO* PRQR* PRSO* PRTA* PRTH PRTS* PRU* PRVA* PRZO PSEC* PSHG* PSIG PSMT* PSN* PSNL* PSNY PSNYW PSO PSQH* PSTL PSX* PTCT PTEN* PTGX PTLE PTN* PTON* PTY PUBM PUK#E4002B PULM* PUMP* PVH* PW* PWP* PXLW* PXS* PYPD* PYPL* PYXS PZG PZZA*","Q":"QBTS QCOM* QDEL QFIN QGEN QH* QLYS#ED2E26 QMCO* QNCX* QNRX* QNST* QNTM* QRHC* QS QSI* QSR* QTRX QTWO QUBT* QUIK* QURE*","R":"RA* RACE#D40000 RAIL* RAIN RAM* RAMP* RANI RARE RBA* RBC* RBCAA RBLX#E2231A RC* RCAT* RCEL RCI* RCKT* RCKY* RCL RCMT RCON RCS RCUS RDCM RDDT* RDHL* RDN RDVT RDW* RDWR RDY#5F259F RDZN* REAL REBN* REED* REFR* REG* REGN REKR RELX* RENT* REPL* RERE* RETO* REVB* REXR* REZI RF* RFIL* RFL RGA* RGC* RGCO RGEN RGLD* RGNX RGP RGS* RGTI RH RICK RIG* RIGL* RILY RIME RIO* RIOT* RITM RIVN* RJF#1B3F8B RKDA RKLB#D33847 RKT* RL#002868 RLAY RLJ RLMD* RLYB* RMBS* RMCF RMD* RMNI* RMR* RMSG* RMTI* RNA* RNAZ* RNG* RNR* RNW* RNXT ROAD ROAM ROCK ROIV* ROK* ROKU#662D91 ROL* ROLR ROMA* ROOT ROP ROST* RPAY* RPD* RPID RPM* RPT* RR RRBI* RRC* RRGB* RS RSG* RSI* RSVR RTX* RUM* RUN RUSHA RUSHB RVI* RVLV RVMD RVSB* RVSN* RWT RXRX* RXST* RXT RY* RYAAY* RYAM RYAN RYDE* RYN RZLT RZLV*","S":"S* SA SABS* SAFE* SAFT* SAH* SAIC* SAIH* SAIL SAM SAMG SAN* SANA* SAP* SATL* SB* SBAC* SBET SBFM* SBGI SBLK* SBS* SBSI* SBSW SBUX* SCCO* SCHL* SCHW* SCI* SCKT* SCLX* SCNI* SCNX* SCOR* SCSC* SCYX SDGR SDST SE* SEAT* SEDG* SEED* SEER* SELF SENEA* SENS* SER* SERA* SERV* SES SEV SEZL* SF#1F6E43 SFBC SFHG* SFIX SFL SFM* SFST SFWL* SG SGA SGC* SGHC* SGHT SGLY SGML* SGMT* SGRY SHAK* SHBI* SHC* SHEL* SHEN SHFS* SHIM* SHIP SHLS* SHO SHOO SHOP* SHOT SHPH* SHW* SIBN SIDU* SIEB* SIFY* SIG SIGA* SIGI* SII* SILC SILO SIMO* SINT* SIRI* SITC* SITM* SJ* SJM* SKIL SKIN SKK SKM SKWD* SKYH* SKYW* SKYX SLAB SLB#0014DC SLDB* SLDP* SLF* SLG SLGL* SLGN* SLN* SLNG SLNH* SLQT* SLS SLXN SM* SMBC* SMCI#2B5597 SMFG* SMG* SMHI* SMID* SMMT* SMPL SMR* SMRT SMSI* SMTC* SMTI SMTK SMWB#092540 SMX* SNA* SNAL* SNAP SND SNDA SNDL SNDR SNDX SNES SNEX SNFCA SNGX* SNN* SNOA* SNOW* SNPS* SNTG* SNTI* SNY#7A00E6 SO* SOAR SOC SOFI* SOHU* SOLV* SON SONM* SONO SONY* SOPH SOS SOUN* SOWG* SPAI* SPB* SPCB* SPCE* SPG* SPGI* SPH SPHL* SPIR* SPNT* SPOK* SPOT* SPPL* SPRB SPRC SPRO SPRY* SPSC SPT SPWH SPWR* SQFT SQM* SQNS* SRAD* SRCE* SRE#003B5C SRFM SRG* SRI SRPT* SRRK* SRTS* SRZN* SSB* SSNC* SSP SSRM* SST* SSTI SSYS* ST* STAA* STAG STC STE* STEM* STEP STI STIM* STK STKS STLA#243882 STLD* STM#03234B STN STNE STNG STOK STRA* STRN* STRO STRR* STRT* STT#1C6EB8 STTK* STVN STX* STZ* SU* SUGP* SUNE* SURG* SVIX SVM* SVRA* SVRE* SWBI* SWIM* SWK* SWKS#1E88E5 SWVL* SWZ* SXT SXTC* SXTP* SYF* SYK* SYM SYNA* SYPR SYY#008CBA","T":"T* TAK* TAL TANH* TAOP* TAP* TARA* TARS* TC* TCBX* TCOM* TCRT* TCRX* TD* TDC* TDG* TDOC* TDTH* TDUP TDY* TEAM* TECH* TECK#0A3D91 TECX* TEL* TELO* TEM TEN* TENB TENX TEO TER* TEVA* TFC#472F92 TGL TGT* TGTX* TH THC* THM* THO* THRY* TIGR* TIL* TISI TITN TJX* TKC* TKLF* TLF TLN TLPH* TLRY* TLS* TLSA* TM* TMC TMCI* TMDX* TME* TMO* TMP* TMQ* TMUS* TNDM* TNGX TNON TNXP* TNYA TOL#007A68 TOMZ TOP* TOPS* TOST* TOUR* TOVX TOYO* TPC* TPET* TPG TPL TPST* TRAW TRC* TRIB* TRIP* TRNR TROO* TROW* TRP* TRSG* TRT* TRTX* TRUG* TRUP TRV* TRVI* TS* TSCO* TSHA TSLA* TSM* TSN* TT* TTC* TTD* TTE* TTEC TTI* TTWO* TU* TURB* TUSK* TV TVGN* TWG* TWLO* TWLV* TX* TXG* TXMD TXN* TXNM TXRH* TXT*","TLV":"ALLT ARBE AUDC BLRX BWAY CAMT CANF CGEN ESLT EVGN FOX FRSX GILT ICL INCR LPSN NICE NNDM OPK ORA ORMP PERI PHGE PPBT PRGO PSTI PTNR PWFL SVRE TEVA VALU XTLB ZOOZ","U":"U* UA#1D1D1D UAA#1D1D1D UAL* UAVS* UBCP* UBER UBS#E60100 UCAR UCL UEC* UG* UGI* UHS* UK* UL* ULCC* ULH ULTA UMAC UMBF* UMC* UNCY* UNFI* UNG* UNH#002677 UNIT* UNP* UONE* UP* UPC* UPS* UPST* UPWK* UPXI* URG* UROY USB* USEA USFD* USIO USO* USPH UTI* UTL* UTMD* UTSI UTZ* UUU* UVIX UVSP UWMC UXIN*","V":"V#1A1F71 VABK VAL VALE* VALN VALU* VANI* VATE* VBF VC* VCEL VCIG* VCTR* VCV VCYT* VECO VEEA* VEEE VEEV VEON* VERA VERI VERU* VERX* VFC VFF* VFS VG* VGAS* VGM VICI* VICR* VIPS* VIR* VIRC VIRT VITL* VIV* VIVK* VIVO VJET VKQ VKTX* VLN VLO* VLRS* VLT VLY VMAR VMD* VMI* VMO VNCE VNDA* VNET VNOM* VNRX* VOD* VOR* VPV VRA VRAX* VRCA* VRDN* VREX VRM* VRNS* VRRM VRSK VRT VRTS* VRTX#007DBA VS* VSAT* VSEC* VSH VSME VST VSTM* VTEX* VTGN* VTN VTRS* VTSI VTVT* VUZI VVOS* VVR VVV* VYGR* VZ*","W":"W* WAB#0A2A6A WAFD* WAFU* WAL WASH* WATT* WAVE* WBUY* WCC* WCN WCT WDAY* WDC* WEAT WEC* WELL* WEN* WERN* WETH* WEX WF WFC* WFCF* WFG* WFRD* WGO* WGS WHLR WHR WIMI* WING* WIT#341C53 WIX#0C6EFC WKHS* WKSP WLDN* WLDS* WLFC WM* WMB WMK* WMT* WNC WNW* WOK* WOLF* WOOF* WORX* WPM* WPRT WRAP WRB* WRBY WRD* WSBF WSC WSFS WSM WST* WTBA* WTFC WTI* WTRG* WTS* WTTR* WU* WULF WVE WVVI* WW WWD WWR* WWW* WYNN WYY","X":"XAIR* XBIO* XBIT* XBP XCH* XCUR* XERS* XFOR* XGN* XHG* XHLD XHR XLO XNET* XOM* XOS XP XPEL XPER* XPEV XPO* XPON* XRTX* XRX* XTIA* XTLB XXII XYL* XYZ*","Y":"YALA* YCBD* YELP#FF1A1A YETI* YEXT YHC* YHGJ YIBO* YJ* YOU YPF* YQ* YSG YTRA* YUMC* YYAI*","Z":"Z ZBAO* ZBH* ZCMD ZDGE ZENA ZEO ZETA* ZG* ZH* ZIM ZION ZIP* ZJK* ZJYL* ZKIN* ZLAB ZM* ZNTL ZONE* ZOOZ* ZS* ZTO* ZTS* ZUMZ ZVIA* ZYME*"};
 const LGCOLS=20; let LGPOS=null; const LGOK=new Map(),LGTRY=new Set(),LGERR=new Set();
@@ -21584,7 +21613,7 @@ const LGDBG={};
 function lgNote(){const n=$('sqNote');if(n&&LGERR.size&&!/הלוגואים/.test(n.textContent)){n.textContent+=' חלק מהלוגואים לא נטענו, ובמקומם מוצגות אותיות.';try{console.warn('logos failed',[...LGERR].map(x=>x+': '+(LGDBG[x]||'-')).join(' · '))}catch(e){}}}
 function lgPosCss(c,r,rows){return `${(c/(LGCOLS-1)*100).toFixed(3)}% ${(r/(rows-1)*100).toFixed(3)}%`}
 function lgFillAll(sh){const u=LGOK.get(sh);if(!u)return;document.querySelectorAll('.lg[data-sh="'+sh+'"]:not(.on)').forEach(el=>{el.classList.add('on');const b=document.createElement('b');b.className='sp';b.style.backgroundImage=`url("${u}")`;b.style.backgroundPosition=lgPosCss(+el.dataset.c,+el.dataset.r,+el.dataset.rows);el.appendChild(b)})}
-function logoHtml(k,cls){k=String(k||'');const sym=k.replace(/^TLV:/,''),ini=esc(/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:''),ps=lgPos(k);
+function logoHtml(k,cls){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:''),ps=lgPos(k);
   if(!ps)return `<span class="${cl}" aria-hidden="true"><i>${ini}</i></span>`;
   const [sh,c,r,rows,lt,bc]=ps,u=LGOK.get(sh),cl2=cl+(lt?' lt':bc?' br':''),st=bc?` style="background:${bc}"`:'';
   if(u)return `<span class="${cl2} on"${st} aria-hidden="true"><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
@@ -21594,11 +21623,12 @@ function srchRender(){
   if(SEC){box.hidden=true;pg.hidden=false;renderSec();return}
   pg.hidden=true;box.hidden=false;
   const row=(it,extra)=>{const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
-    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc(it.name||it.sym)}</bdi></b><span><i dir="ltr">${esc(it.sym)}</i>${it.he?' · '+esc(it.he):''} · ${esc(TYPEL[it.t]||'')}${extra||''}</span></div>`+
+    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${esc(TYPEL[it.t]||'')}${extra||''}</span></div>`+
       (pr?`<div class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</div>`:'')+
       `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`};
   if(!SYMDB){box.innerHTML='<div class="empty">טוען את רשימת הניירות…</div>';loadSymDb().then(()=>{if(SYMDB)srchRender()});return}
-  if(SQ.trim()){const r=findSyms(SQ);box.innerHTML=r.length?r.map(it=>row(it)).join(''):(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>');return}
+  if(SQ.trim()){const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
+    box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'));return}
   const marks=wmarks().map(itemOf).filter(Boolean), rec=recent().map(itemOf).filter(Boolean);
   let h='';
   if(marks.length)h+=`<div class="hd"><span>במעקב שלי</span><span>${marks.length}</span></div>`+marks.map(it=>row(it)).join('');
@@ -21608,7 +21638,7 @@ function srchRender(){
   if(!h)h='<div class="empty">חפש נייר לפי שם או סימול. סמן נייר בסימנייה כדי לעקוב אחרי המחיר שלו כאן.</div>';
   box.innerHTML=h;
 }
-const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/;
+const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k)}
 function openSec(k){try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
@@ -21618,7 +21648,7 @@ function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||
 function mergeSeries(a,b){const m=new Map();for(const s of [b,a])if(s&&s.d&&s.c)for(let i=0;i<s.d.length;i++)if(s.c[i]!=null)m.set(s.d[i],+s.c[i]);
   const d=[...m.keys()].sort();return {d,c:d.map(x=>m.get(x))}}
 // three sources, most precise first: c_<key> (per-security, from the nightly task), h_<bucket> (daily snapshot accumulation), g_<bucket> (five-year backfill: daily + weekly)
-async function loadCloses(k){if(CLOSES[k]||!db)return;let a=null,b=null,g=null,gw=null;
+async function loadCloses(k){if(CLOSES[k])return; if(ilIsNum(k)){await ilFundLoad(k); if(SEC===k)renderSec(); return} if(!db)return;let a=null,b=null,g=null,gw=null;
   const getDoc=async n=>{try{const s=await db.doc('quotes/'+n).get();return s.exists?(s.data()||null):null}catch(e){return null}};
   const [ca,hb,gb]=await Promise.all([getDoc('c_'+k.replace(':','_')),getDoc(hName(k)),k.startsWith('TLV:')?Promise.resolve(null):getDoc('g_'+hName(k).slice(2))]);
   a=ca; if(hb){const arr=(hb.c||{})[k];if(arr)b={d:hb.d||[],c:arr}}
@@ -21655,18 +21685,25 @@ function secPriceBlock(it,pr,on,fx){
   const pf=(k,v,sub)=>`<div class="pf"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
   const exch=it.ex?esc(EXL[it.ex]||it.ex):'';
   if(!pr)return `<div class="big"><div class="pxrow"><span class="v none">אין עדיין מחיר</span></div><div class="pxfacts">${pf('מטבע ובורסה',it.t==='T'?'שקל':'דולר',exch)}${pf('עדכון המחיר',on?'בשעה הקרובה':'בעדכון הבא',on?'הנייר במעקב, המחיר יגיע בעדכון השעתי.':'הנייר נרשם; הוסף למעקב כדי לקבל מחיר כבר בשעה הקרובה.')}</div></div>`;
-  const up=pr.chg!=null&&pr.chg>=0, when=esc(pr.label||''), conv=pr.ccy==='USD'&&fx?pf('בשקלים',ils(pr.px*fx,2),'לפי שער '+fx):pr.ccy==='ILS'&&fx?pf('בדולרים','$'+(pr.px/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'לפי שער '+fx):'';
+  const up=pr.chg!=null&&pr.chg>=0, when=esc(pr.label||''), conv=pr.ccy==='PTS'?'':pr.ccy==='USD'&&fx?pf('בשקלים',ils(pr.px*fx,2),'לפי שער '+fx):pr.ccy==='ILS'&&fx?pf('בדולרים','$'+(pr.px/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'לפי שער '+fx):'';
   const upd=pf('עדכון המחיר <span class="tag mkt">נתון שוק</span>',when||'—',pr.daily?(on?'מחיר יומי · המחיר השעתי יגיע בעדכון הבא':'מחיר יומי · הוסף למעקב ויתעדכן כל שעה'):'מתעדכן כל שעה בימי מסחר');
   return `<div class="big"><div class="pxrow"><span class="v">${fmtPx(pr.px,pr.ccy)}</span>${pr.chg!=null?`<span class="chg ${up?'up':'down'}"><b>${spct(pr.chg*100)}</b><small>${pr.daily?'ביום המסחר האחרון':'היום'}</small></span>`:''}</div>
-    <div class="pxfacts">${conv}${pf('מטבע ובורסה',pr.ccy==='ILS'?'שקל':'דולר',exch)}${upd}</div></div>`}
+    <div class="pxfacts">${conv}${pf(pr.ccy==='PTS'?'יחידה':'מטבע ובורסה',pr.ccy==='PTS'?'נקודות מדד':pr.ccy==='ILS'?'שקל':'דולר',pr.ccy==='PTS'?'':exch)}${upd}</div></div>`}
 function renderSec(){SECHOV=-1;
-  const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){pg.innerHTML='<div class="empty">הנייר לא נמצא.</div><button type="button" class="btn" id="secBack">חזרה</button>';return}
+  const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
   const pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
   const fsc=rs?finScore(rs):null, fx=(Q&&Q.usdIls)||(ALLQ&&ALLQ.fx)||0;
   const qty=pos.reduce((t,p)=>t+(+p.qty||0),0);
   const capTxt=it.cap?(it.t==='T'?'₪':'$')+(it.cap>=1e6?(it.cap/1e6).toFixed(2)+'T':it.cap>=1000?(it.cap/1000).toFixed(it.cap>=1e4?0:1)+'B':it.cap+'M'):'';
   const f=(kk,v,t)=>v?`<div class="fact"><div class="k">${kk}</div><div class="v${t?' t':''}">${v}</div></div>`:'';
   const RNG=[['1w','שבוע'],['1m','חודש'],['3m','3 חודשים'],['6m','חצי שנה'],['1y','שנה'],['5y','5 שנים'],['max','מההנפקה']];
+  const ilm=it.t==='F'||it.t==='I'||ilIsNum(k)||!!ilIdx(k), moreH=ilm?ilSecMore(k,it):`<details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
+    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
+    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
+    ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
+    <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
+      :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
+    </details>`;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(TYPEL[it.t]||'')}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     ${secPriceBlock(it,pr,on,fx)}
@@ -21674,16 +21711,10 @@ function renderSec(){SECHOV=-1;
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}">${r[1]}</button>`).join('')}</div>
     <div class="chread" id="secRead" aria-live="polite"></div>
     <canvas id="secChart" aria-label="גרף מחיר"></canvas><p class="note" id="secChartNote"></p>
-    ${secMine(it,on)}
+    ${it.t==='I'?'':secMine(it,on)}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
-    ${it.t!=='E'?repBlock(k,rs):''}
-    <details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
-    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
-    <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
-    ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
-    <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
-      :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
-    </details>
+    ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
+    ${moreH}
     <p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
   drawSec();
 }
@@ -22290,6 +22321,58 @@ function a11yApply(){const a=a11yGet(), r=document.documentElement; r.classList.
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-a11y]'); if(!b)return; const [k,v]=b.dataset.a11y.split(':'), a=a11yGet(); a[k]=k==='size'?v:v==='true';
   UXS('tr_a11y',JSON.stringify(a)); a11yApply(); try{useAdd('a11y:'+k)}catch(e){} try{uiPush()}catch(e){}});
 try{a11yApply()}catch(e){}
+// ---- 21.10 (5) Israeli securities in the search: the Tel Aviv shares by their Hebrew names, the indices (Israeli and
+// American), and the mutual and exchange-traded funds by name and number. Three layers: the names the page knows for
+// the large Tel Aviv companies; the exchange's own list when the site has its key (research/ilsyms: every share, fund
+// and index, with the Hebrew names); and a fund or security looked up by its number at Maya (/api/ilfund), with its
+// official price and a month of prices for the chart. A fund's page links to its pages at Maya, Funder and Bizportal
+const IDXS=[['SPX','S&P 500','מדד S&P 500 · 500 החברות הגדולות בארה״ב'],['NDX','נאסד״ק 100','Nasdaq 100'],['DJI','דאו ג׳ונס','Dow Jones'],['RUT','ראסל 2000','Russell 2000 · חברות קטנות בארה״ב'],
+  ['TA35','ת״א 35','מדד ת״א 35 · 35 החברות הגדולות בבורסה בתל אביב'],['TA125','ת״א 125','מדד ת״א 125'],['TA90','ת״א 90','מדד ת״א 90']];
+const IDXIL=new Set(['TA35','TA125','TA90']);
+// the large Tel Aviv companies, by their symbol on the exchange (a name is used only when that symbol is in the list)
+const HEB_TLV={LUMI:'בנק לאומי',POLI:'בנק הפועלים',DSCT:'בנק דיסקונט',MZTF:'מזרחי טפחות',FIBI:'הבינלאומי',TEVA:'טבע',ESLT:'אלביט מערכות',NICE:'נייס',ICL:'כיל',BEZQ:'בזק',AZRG:'עזריאלי',ORL:'בזן',DLEKG:'קבוצת דלק',NVMI:'נובה',TSEM:'טאואר',
+  HARL:'הראל השקעות',PHOE:'הפניקס',CLIS:'כלל ביטוח',MGDL:'מגדל ביטוח',MMHD:'מנורה מבטחים',AMOT:'אמות',BIG:'ביג',MLSR:'מליסרון',SPEN:'שפיר הנדסה',ENLT:'אנלייט',ORA:'אורמת',STRS:'שטראוס',SAE:'שופרסל',ELAL:'אל על',CEL:'סלקום',PTNR:'פרטנר',
+  OPCE:'OPC אנרגיה',NWMD:'ניו-מד',MTRX:'מטריקס',ONE:'וואן טכנולוגיות',SKBN:'שיכון ובינוי',ALHE:'אלוני חץ',GVYM:'גב-ים',ELCO:'אלקו',FTAL:'פתאל',ARPT:'אירפורט סיטי',CAMT:'קמטק',NXSN:'נקסט ויז׳ן',ASHG:'אשטרום',ELTR:'אלקטרה',
+  ISRA:'ישראמקו',RATI:'רציו',ENOG:'אנרג׳יאן',DIMRI:'דמרי',PZOL:'פז',DELT:'דלתא גליל',FORTY:'פורמולה מערכות',SPNS:'סאפיינס',MGIC:'מג׳יק',HLAN:'חילן',YHNF:'יוחננוף',RMLI:'רמי לוי',SLARL:'סלע נדל״ן',REIT1:'ריט 1',KEN:'קנון'};
+const TYPEL2={F:'קרן נאמנות או קרן סל',I:'מדד'};
+let ILS_D=null, ILS_ASK=0, ILAUG=0; const ILF={};
+function ilLoad(){if(!db||ILS_ASK&&Date.now()-ILS_ASK<6*36e5)return; ILS_ASK=Date.now();
+  try{db.doc('research/ilsyms').get().then(s=>{ILS_D=s&&s.exists?s.data():null; ILAUG=0; ilAugment(); try{if(document.querySelector('[data-pane="search"]:not([hidden])'))srchRender()}catch(e){}}).catch(()=>{})}catch(e){}}
+const ilItem=(sym,name,t,o={})=>({sym,name,t,ex:'TLV',sec:o.sec||'',cap:o.cap||0,ls:String(sym).toLowerCase(),ln:String(name||'').toLowerCase(),he:o.he||'',kind:o.kind||'',il:true});
+// the page's list, grown: Hebrew names for the Tel Aviv shares, the indices, and (with the exchange's list) every fund
+function ilAugment(){
+  if(!SYMDB)return; const lvl=ILS_D?2:1; if(ILAUG>=lvl)return; ILAUG=lvl;
+  const T=new Map(SYMDB.filter(x=>x.t==='T').map(x=>[x.sym,x]));
+  for(const [s,h] of Object.entries(HEB_TLV)){const x=T.get(s); if(x&&!x.he)x.he=h}
+  if(!SYMDB.some(x=>x.t==='I'))for(const [k,n,d] of IDXS)SYMDB.push(ilItem('IDX:'+k,n,'I',{he:n,sec:d}));
+  if(ILS_D){
+    for(const [sym,name,co,sec] of ILS_D.stocks||[]){const x=T.get(sym); if(x){if(!x.he)x.he=name||co} else {const it=ilItem(sym,name||co,'T',{he:name||co,sec}); SYMDB.push(it); T.set(sym,it)}}
+    const have=new Set(SYMDB.filter(x=>x.t==='F').map(x=>x.sym));
+    for(const [id,name,major,main,exp] of ILS_D.funds||[])if(!have.has(id))SYMDB.push(ilItem(id,name,'F',{he:name,sec:[major,main].filter(Boolean).join(' · '),kind:exp}));
+  }
+}
+// a fund or security by its number, from Maya
+// one lookup at a time per number: while it is on its way every caller waits for the same answer (a page that asked
+// again at once would draw itself again and again until the answer came)
+function ilFundLoad(id){const e=ILF[id]; if(e&&e.v)return Promise.resolve(e.v); if(e&&e.p)return e.p; if(e&&e.err&&Date.now()-e.at<60e3)return Promise.resolve(null);
+  const p=(async()=>{try{const r=await fetch('/api/ilfund?id='+encodeURIComponent(id),{credentials:'same-origin'}); const j=await r.json(); if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+    ILF[id]={at:Date.now(),v:j}; if(j.series&&j.series.d)CLOSES[id]={d:j.series.d,c:j.series.c}; return j}catch(err){ILF[id]={at:Date.now(),v:null,err:String(err&&err.message||err)}; return null}})();
+  ILF[id]={at:Date.now(),v:null,p}; return p}
+const ilIsNum=k=>/^\d{6,9}$/.test(String(k||''));
+const ilIdx=k=>String(k||'').startsWith('IDX:')?k.slice(4):'';
+// the links for an Israeli fund's own pages
+function ilLinks(id){const n=encodeURIComponent(id), traded=/^11\d{5}$/.test(id);
+  return `<div class="ilx"><a class="btn sm" href="https://maya.tase.co.il/he/funds/mutual-funds/${n}" target="_blank" rel="noopener">מאיה ↗</a><a class="btn sm" href="https://www.funder.co.il/fund/${n}" target="_blank" rel="noopener">פאנדר ↗</a><a class="btn sm" href="https://www.bizportal.co.il/${traded?'tradedfund':'mutualfunds'}/quote/profile/${n}" target="_blank" rel="noopener">ביזפורטל ↗</a></div>`}
+// what the page of a fund or an index says in place of a company's analysts and reports
+function ilSecMore(k,it){
+  const ix=ilIdx(k);
+  if(ix)return `<div class="facts" style="margin-top:6px"><div class="fact"><div class="k">מה זה</div><div class="v t">${esc(it.sec||it.name)}</div></div><div class="fact"><div class="k">מקור</div><div class="v t">Yahoo Finance, נקודות המדד</div></div></div>
+    <p class="note">מדד הוא לא נייר שקונים ישירות: חשיפה אליו היא דרך קרן מחקה או קרן סל שעוקבת אחריו. חפש "${esc(it.name)}" כדי למצוא קרנות כאלה.</p>`;
+  const f=ILF[k]&&ILF[k].v, cls=it.sec||'';
+  return `<div class="facts" style="margin-top:6px">${cls?`<div class="fact"><div class="k">סיווג</div><div class="v t">${esc(cls)}</div></div>`:''}${it.kind?`<div class="fact"><div class="k">פרופיל חשיפה</div><div class="v t">${esc(it.kind)}</div></div>`:''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
+    <p class="note" style="margin:8px 0 4px">דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן: בדפים של הקרן.</p>${ilLinks(k)}
+    <p class="note">המחיר הרשמי של קרן נאמנות נקבע פעם ביום, אחרי סגירת הבורסה, ומתפרסם במאיה. פאנדר וביזפורטל הם אתרים חיצוניים, והקישורים פותחים אותם בחלון חדש.</p>`;
+}
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----
 // Everything here reads what the page already computed (the model, the alert engine, the price document); it adds no
 // numbers of its own. The to-do list is the one place for what needs doing: the rules' alerts, a new company report, the
@@ -22424,7 +22507,7 @@ const GO=[
   {id:'bench',l:'האם אני עושה טוב? התיק מול המדדים',k:'מדד מדדים השוואה s&p תשואה שנתית ביצועים טוב',tab:'history',el:'hBench'},
   {id:'tax',l:'מס: אם הייתי מוכר היום',k:'מס רווחי הון קיזוז הפסדים מכירה',tab:'history',el:'hTax'},
   {id:'reps',l:'הדוחות שלי (שבועי, חודשי)',k:'דוח שבועי חודשי רבעוני pdf',tab:'reports'},
-  {id:'srch',l:'חיפוש נייר',k:'חיפוש מניה נייר סימול',tab:'search'},
+  {id:'srch',l:'חיפוש נייר: מניות, קרנות ומדדים',k:'חיפוש מניה נייר סימול קרן קרנות מדד מדדים ישראלי תל אביב',tab:'search'},
   {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
   {id:'watch',l:'מניות במעקב',k:'מעקב רשימה',tab:'watch'},
   {id:'risk',l:'בקרה: הכללים מול התיק',k:'בקרה סיכון התראות כללים',tab:'risk',el:'hCtl'},
@@ -22474,6 +22557,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-21.5',at:'2026-10-21',t:'ניירות ישראליים בחיפוש',d:'מניות מתל אביב בשמות בעברית, מדדים (ת״א 35, ת״א 125, S&P 500 ועוד) וקרנות נאמנות וקרנות סל לפי שם או מספר, עם מחיר רשמי ממאיה וקישורים למאיה, לפאנדר ולביזפורטל.',go:'srch'},
   {v:'2026-10-21.4',at:'2026-10-21',t:'ההעדפות נשמרות בחשבון',d:'הכללים, היעדים ואיך בחרת לראות את הדף נשמרים בחשבון ומופיעים כך בכל מכשיר. תוקנה גם תקלה שבה שינוי שנעשה בזמן שמירה קודמת הלך לאיבוד.'},
   {v:'2026-10-21.4',at:'2026-10-21',t:'נגישות',d:'בהגדרות ← הפרופיל שלי: טקסט גדול או גדול מאוד, ניגודיות גבוהה ופחות תנועה.',go:'a11y'},
   {v:'2026-10-21.3',at:'2026-10-21',t:'במה אני משתמש באתר',d:'בהגדרות: אילו מסכים וחלקים פתחת ב-30 הימים האחרונים, ומה לא נפתח בכלל. נשמר רק בחשבון שלך.',go:'use'},

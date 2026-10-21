@@ -5,6 +5,7 @@ import {pricesTask, nightlyTask, morningTask, monthlyTask, reportTask} from './t
 import {backupTask} from './backup.js';
 import {researchTask, earningsTask} from './research.js';
 import {benchTask} from './bench.js';
+import {ilSymsTask} from './ilsyms.js';
 import {pxWatchTask} from './pxwatch.js';
 
 export const SCHEDULE=[
@@ -24,13 +25,15 @@ export const SCHEDULE=[
   {name:'earnings',when:p=>[0,7,15,19].includes(p.h)&&p.min===20, run:(s,o)=>earningsTask(s,o)},
   // the indices for "האם אני עושה טוב?", after New York's close
   {name:'bench',   when:p=>p.h===0&&p.min===35, run:(s,o)=>benchTask(s,o)},
+  // the Israeli securities for the search (with a TASE key), before the morning
+  {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   {name:'pxwatch', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})}
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3};
+export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), queue=[]; let busy=false;
   const pump=async()=>{

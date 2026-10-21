@@ -860,3 +860,36 @@ test('the site: the PDF and Excel libraries in files of their own, loaded when n
   assert.ok(h.length<page.length*0.5,'the page the phone loads is less than half: '+h.length+' / '+page.length);
   assert.ok(/SheetJS/.test(page),'the page in Claude keeps them inside');
 });
+
+test('Israeli securities for the search: the exchange\'s own lists (shares, funds, indices) with a key; a fund by its number from Maya',async()=>{
+  const {ilBuild,ilSymsTask,DW}=await import('../server/ilsyms.js');
+  const B=ilBuild({types:[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'},{securityFullTypeCode:'0501',securityTypeDesc:'אג"ח קונצרני'},{securityFullTypeCode:'0601',securityTypeDesc:'כתבי אופציה'}],
+    sec:[{securityId:604611,symbol:'LUMI',securityName:'לאומי',companyName:'בנק לאומי',companySector:'בנקים',securityFullTypeCode:'0101'},{securityId:1,symbol:'LUMI.B1',securityName:'לאומי אג"ח',securityFullTypeCode:'0501'},{securityId:2,symbol:'X.W1',securityName:'אופ',securityFullTypeCode:'0601'}],
+    funds:[{fundId:5129283,fundName:'הראל מחקה נאסד"ק 100',classificationMajor:{code:1,value:'מניות'},classificationMain:{code:2,value:'חו"ל'},exposureProfile:'6A'}],indices:[{indexId:142,indexName:'ת"א-35'}]});
+  assert.deepEqual(B.stocks,[['LUMI','לאומי','בנק לאומי','בנקים',604611]],'shares only');
+  assert.deepEqual(B.funds,[['5129283','הראל מחקה נאסד"ק 100','מניות','חו"ל','6A']]); assert.deepEqual(B.indices,[['142','ת"א-35']]);
+  const store=new Store(':memory:'), asked=[];
+  const f=async(u,o)=>{asked.push({u:String(u),h:o.headers}); const p=String(u).slice(DW.length);
+    const J=p.startsWith('/basic-securities/trade-securities-list/')?{tradeSecuritiesList:{result:p.endsWith('/21')?[]:[{securityId:604611,symbol:'LUMI',securityName:'לאומי',companyName:'בנק לאומי',companySector:'בנקים',securityFullTypeCode:'0101'}],total:1}}
+      :p.startsWith('/basic-securities/securities-types')?{securitiesTypes:{result:[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'}],total:1}}
+      :p.startsWith('/fund/fund-list')?{funds:{result:[{fundId:5129283,fundName:'הראל מחקה נאסד"ק 100',classificationMajor:{code:1,value:'מניות'}}],total:1}}
+      :p.startsWith('/basic-indices/indices-list')?{indicesList:{result:[{indexId:142,indexName:'ת"א-35'}],total:1}}:{};
+    return new Response(JSON.stringify(J),{status:200})};
+  assert.equal(await ilSymsTask(store,{fetch:f,key:'',log:()=>{}}),false,'no key: nothing asked'); assert.equal(asked.length,0);
+  assert.equal(await ilSymsTask(store,{fetch:f,key:'k-1',now:new Date('2026-10-21T08:00:00Z')}),true);
+  const d=store.getDoc('research/ilsyms').data; assert.equal(d.day,'2026-10-20','the day before, when today has no list yet'); assert.equal(d.stocks[0][0],'LUMI'); assert.equal(d.funds[0][0],'5129283');
+  assert.equal(asked[0].h.apikey,'k-1'); assert.equal(asked[0].h['accept-language'],'he-IL');
+  assert.equal(access({id:'u_x',role:'friend'},'research/ilsyms'),'r');
+  // a fund by its number, through the server, from Maya
+  const {srv,req}=await startApp(); const real=globalThis.fetch;
+  globalThis.fetch=async(u,o)=>{const s=String(u); if(s.startsWith('http://127.0.0.1'))return real(u,o);
+    if(s.includes('maya.tase.co.il/api/v1/funds/mutual/5129283/history'))return new Response(JSON.stringify({items:[{tradeDate:'2026-10-19',redemptionPrice:367.77},{tradeDate:'2026-10-16',redemptionPrice:365.1}]}),{status:200});
+    if(s.includes('maya.tase.co.il/api/v1/funds/mutual/5129283'))return new Response(JSON.stringify({redemptionPrice:367.77,ratesAsOf:'2026-10-19',name:'הראל מחקה נאסד"ק 100',yields:{dayYield:0.73}}),{status:200});
+    return new Response('{}',{status:404})};
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    const r=(await req('o','GET','/api/ilfund?id=5129283')).j;
+    assert.equal(r.name,'הראל מחקה נאסד"ק 100'); assert.equal(r.px,367.77); assert.equal(r.date,'2026-10-19'); assert.deepEqual(r.series,{d:['2026-10-16','2026-10-19'],c:[365.1,367.77]});
+    assert.equal((await req('o','GET','/api/ilfund?id=12')).status,400); assert.equal((await req('o','GET','/api/ilfund?id=5999999')).status,404);
+  }finally{globalThis.fetch=real; srv.close()}
+});

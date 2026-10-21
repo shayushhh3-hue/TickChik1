@@ -13,7 +13,7 @@ export const PROXY={TA125:{index:'^TA125.TA',label:'לפי מדד ת״א 125'},T
 // the indices a person can follow on the home page (and the two the crisis center compares with), from the same Yahoo
 // source. A US index also carries its front-month future (`fut`), which trades almost around the clock
 export const BENCH={SPX:{t:'^GSPC',name:'S&P 500',fut:'ES=F'},NDX:{t:'^NDX',name:'נאסד״ק 100',fut:'NQ=F'},DJI:{t:'^DJI',name:'דאו ג׳ונס',fut:'YM=F'},RUT:{t:'^RUT',name:'ראסל 2000',fut:'RTY=F'},
-  TA125:{t:'^TA125.TA',name:'ת״א 125'},TA35:{t:'^TA35.TA',name:'ת״א 35'}};
+  TA125:{t:'^TA125.TA',name:'ת״א 125'},TA35:{t:'^TA35.TA',name:'ת״א 35'},TA90:{t:'^TA90.TA',name:'ת״א 90'}};
 
 export function tickerFor(sym,pos,map){
   if(map&&map[sym])return map[sym];
@@ -106,6 +106,14 @@ export function mayaHistParse(j,now=new Date()){
   const q=rows[0], p=rows.find(r=>r.closeDate<q.closeDate);
   if(p&&p.px>0){q.prev=p.px; q.prevDate=p.closeDate; q.chg=(q.px/p.px-1)*100}
   delete q.dates; return q;
+}
+// a fund's prices for its page's chart: the history interface, a month of days, oldest first ({d, c}); and its name
+export async function mayaFundSeries(id,{fetch:f=timedFetch,now=new Date()}={}){
+  const r=await f(MAYA_HIST(id)+'?_='+now.getTime(),{method:'POST',headers:{...MAYA_H,'content-type':'application/json','cache-control':'no-cache'},body:JSON.stringify({pageSize:60,pageNumber:1,period:0}),cache:'no-store'});
+  if(!r.ok)throw new Error('history HTTP '+r.status);
+  const j=await r.json(), rowsOf=x=>Array.isArray(x)?x:x&&typeof x==='object'?Object.values(x).map(rowsOf).find(a=>a&&a.length&&typeof a[0]==='object')||null:null;
+  const by=new Map(); for(const row of rowsOf(j)||[]){const q=fundFromJson(row,now); if(q&&q.closeDate&&q.px>0)by.set(q.closeDate,q.px)}
+  const d=[...by.keys()].sort(); return {d,c:d.map(x=>by.get(x))};
 }
 export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
   const H={...MAYA_H,'cache-control':'no-cache',pragma:'no-cache'}, errs=[];

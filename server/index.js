@@ -10,7 +10,8 @@ import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc} from './mail.js';
 import {Store, canRead, canWrite, partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
-import {yahooSearch} from '../shared/quotes.js';
+import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
+import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable} from './research.js';
@@ -142,11 +143,12 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.get('/api/db/doc',needUser,async(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canRead(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
     if(p==='research/bench'){try{await Promise.race([benchFresh(store),new Promise(r=>setTimeout(r,15000))])}catch(e){}}
+    if(p==='research/ilsyms'){try{await Promise.race([ilSymsFresh(store),new Promise(r=>setTimeout(r,20000))])}catch(e){}}
     const d=store.getDoc(p);
     // a chart nobody has asked for yet: fetched now, kept for next time (the nightly run keeps the followed ones fresh)
-    const m=p.match(/^quotes\/c_((?:TLV_)?[A-Z0-9.\-]{1,10})$/);
+    const m=p.match(/^quotes\/c_((?:TLV_|IDX_)?[A-Z0-9.\-]{1,10})$/);
     if(m&&(!d.exists||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>7*864e5))){
-      const key=m[1].replace(/^TLV_/,'TLV:'); try{const doc=await chartOnce(key); return res.json({exists:true,data:doc,id:'c_'+m[1]})}catch(e){}}
+      const key=m[1].replace(/^TLV_/,'TLV:').replace(/^IDX_/,'IDX:'); try{const doc=await chartOnce(key); return res.json({exists:true,data:doc,id:'c_'+m[1]})}catch(e){}}
     res.json(d.exists?{...d,data:partnerView(store,req.user,p,d.data)}:d)});
   const CHARTS=new Map();
   const chartOnce=key=>{if(CHARTS.has(key))return CHARTS.get(key); const pr=(async()=>{
@@ -339,6 +341,15 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const c=SYMQ.get(q.toLowerCase()); if(c&&Date.now()-c.at<36e5)return res.json({items:c.items,cached:true});
     try{const items=await yahooSearch(q); SYMQ.set(q.toLowerCase(),{at:Date.now(),items}); if(SYMQ.size>500)SYMQ.delete(SYMQ.keys().next().value); res.json({items})}
     catch(e){res.status(502).json({error:'החיפוש לא זמין כרגע: '+(e&&e.message||e)})}});
+  // an Israeli fund (or security) by its number, from Maya: its name, its price and date, and a month of prices for the
+  // page's chart. Cached 30 minutes per number; every signed-in user may ask (it is public market data)
+  const ILF=new Map();
+  app.get('/api/ilfund',needUser,async(req,res)=>{const id=String(req.query.id||'').trim(); if(!/^\d{6,9}$/.test(id))return res.status(400).json({error:{code:'invalid_argument',message:'מספר נייר של 6 עד 9 ספרות.'}});
+    const c=ILF.get(id); if(c&&Date.now()-c.at<30*60e3)return res.json({...c.v,cached:true});
+    const [q,s]=await Promise.all([mayaFund(id).catch(e=>({err:String(e&&e.message||e)})),mayaFundSeries(id).catch(()=>null)]);
+    if(!q||q.err)return res.status(404).json({error:{code:'not_found',message:'לא מצאתי במאיה קרן או נייר במספר הזה.'}});
+    const v={id,name:q.name||'',px:q.px,prev:q.prev||null,chg:q.chg!=null?q.chg:null,date:q.closeDate||'',src:'מאיה (הבורסה לניירות ערך)',series:s&&s.d.length>=2?s:null};
+    ILF.set(id,{at:Date.now(),v}); if(ILF.size>400)ILF.delete(ILF.keys().next().value); res.json(v)});
   // a company's latest report and the articles about it, for the security page. The figures are fetched again at most every
   // 20 minutes per security (one at a time); the articles are cached 30 minutes. Data to show, never instructions
   const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;

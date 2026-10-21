@@ -29,7 +29,7 @@ jobs:
         run: |
           set +e +o pipefail
           for f in unit.log browser.log; do [ -f "$f" ] || continue
-            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message|failureType):|\s+[+-] )' | cut -c1-300 | head -60 | while IFS= read -r l; do echo "::error title=$f::${l//%/%25}"; done
+            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message|failureType|location):|\s+[+-] |\s+at .*browser\.test\.js)' | cut -c1-700 | head -60 | while IFS= read -r l; do echo "::error title=$f::${l//%/%25}"; done
           done
           exit 0
       - run: docker build -t tikchik .
