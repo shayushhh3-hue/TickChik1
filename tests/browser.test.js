@@ -193,9 +193,44 @@ test('fees: the table\'s running total ends at the headline, the fees saved apar
   }finally{store.setDoc('history/main',H0)}
 });
 
+test('savings goals: a sub-tab per goal in the plan, holdings copied from the portfolio, nothing counted in the portfolio\'s value',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{
+    const {ctx,pg}=await open(390); const total0=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
+    await tab(pg,'plan'); await pg.waitForTimeout(400);
+    await pg.evaluate(()=>document.querySelector('.subtabs [data-pot="new"]').click()); await pg.waitForTimeout(400);
+    assert.match(await pg.evaluate(()=>document.querySelector('#potBox h3').textContent),/בוא נפתח חיסכון לפי מטרה/);
+    await pg.fill('#pf_name','חיסכון לנועה'); await pg.fill('#pf_target','100000'); await pg.fill('#pf_date','2036-09'); await pg.fill('#pf_monthly','500');
+    await pg.evaluate(()=>document.querySelector('#potBox [data-potkind="child"]').click()); await pg.waitForTimeout(200);
+    assert.equal(await pg.inputValue('#pf_name'),'חיסכון לנועה','what was typed stays after choosing the kind');
+    await pg.click('#potCreate'); await pg.waitForTimeout(500);
+    let r=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="pots"] .subtabs .chip')].map(c=>c.textContent),on:(document.querySelector('[data-pane="pots"] .subtabs .chip[aria-pressed="true"]')||{}).textContent,h:document.querySelector('#potBox .pothead h3').textContent}));
+    assert.ok(r.chips.includes('חיסכון לנועה')&&r.chips.includes('+ חיסכון חדש'),'the goal is a sub-tab of its own: '+r.chips); assert.equal(r.on,'חיסכון לנועה'); assert.match(r.h,/חיסכון לנועה/);
+    // copy 1 MSFT from the portfolio, and add VOO by its symbol
+    await pg.selectOption('#potCopy','MSFT'); await pg.fill('#potCopyQ','1'); await pg.click('#potCopyGo'); await pg.waitForTimeout(400);
+    await pg.fill('#potSym','VOO'); await pg.fill('#potSymQ','2'); await pg.click('#potAddGo'); await pg.waitForTimeout(1500);
+    r=await pg.evaluate(()=>({rows:[...document.querySelectorAll('#potBox .potit')].map(x=>x.querySelector('.sym').textContent),txt:document.getElementById('potBox').textContent,ox:document.documentElement.scrollWidth<=innerWidth+1}));
+    await pg.evaluate(()=>window.scrollTo(0,0)); await pg.screenshot({path:'/tmp/claude-0/-home-claude/b22281cb-4d7c-579a-92b3-f89ef1145114/scratchpad/pots.png',fullPage:true});
+    assert.deepEqual(r.rows,['MSFT','VOO']); assert.ok(r.ox,'no sideways scroll on a phone'); assert.match(r.txt,/שווי החיסכון/); assert.match(r.txt,/הועתק מהתיק/); assert.match(r.txt,/לא נספרים בשווי התיק/);
+    const sv=store.getDoc('settings/main').data.pots; assert.equal(sv.length,1); assert.equal(sv[0].name,'חיסכון לנועה'); assert.equal(sv[0].target,100000); assert.equal(sv[0].items[0].qty,1); assert.ok(sv[0].items[0].costIls>0,'a share of the cost goes with the copy');
+    const me=(store.users().find(u=>u.role==='owner')||{}).id, w=store.getDoc('watch/'+me).data; assert.ok(w&&w.pots.includes('VOO'),'the server will price it');
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'the portfolio\'s value is untouched');
+    // deleting asks twice
+    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]:not([data-pot="new"])').click()); await pg.waitForTimeout(300);
+    await pg.click('#potDel'); await pg.waitForTimeout(200); assert.match(await pg.textContent('#potDel'),/בטוח/); await pg.click('#potDel'); await pg.waitForTimeout(1500);
+    assert.equal((store.getDoc('settings/main').data.pots||[]).length,0);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0)}
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
+  const {ctx,pg}=await open(390);
+  // from the button at the top of every page, and from the menu
+  await pg.click('#btnCal'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar');
+  await tab(pg,'overview'); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
   const r=await pg.evaluate(()=>({days:document.querySelectorAll('#calBox [data-calday]').length,flags:document.querySelectorAll('#calBox .calgrid .flg').length,now:document.querySelectorAll('#calBox .calnow .mk').length,ox:document.documentElement.scrollWidth<=innerWidth+1}));
   assert.ok(r.days>=28&&r.flags===r.days*2,'every day has a flag per market'); assert.equal(r.now,2); assert.ok(r.ox,'no sideways scroll on a phone');
   // to September 2026: Yom Kippur closes Tel Aviv, Labor Day New York; Chol HaMoed is a short day

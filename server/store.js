@@ -107,7 +107,7 @@ export function symsOfUser(store,uid){
   const out=new Set(), walk=v=>{if(Array.isArray(v)){for(const x of v)walk(x)}else if(isMap(v)){for(const [k,x] of Object.entries(v)){if(k==='sym'&&typeof x==='string')out.add(x); else walk(x)}}};
   for(const d of ['portfolio','history','settings']){const r=store.getDoc(`data/users/${uid}/${d}`); if(r.exists)walk(r.data)}
   const st=store.getDoc(`data/users/${uid}/settings`); if(st.exists&&isMap(st.data.pxAlerts))for(const k of Object.keys(st.data.pxAlerts))out.add(k.replace(/^TLV:/,''));
-  const w=store.getDoc('watch/'+uid); if(w.exists)for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(typeof s==='string')out.add(s.replace(/^TLV:/,''));
+  const w=store.getDoc('watch/'+uid); if(w.exists)for(const k of ['syms','marks','held','seen','pots'])for(const s of ((w.data||{})[k]||[]))if(typeof s==='string')out.add(s.replace(/^TLV:/,''));
   return out;
 }
 export function partnerView(store,user,p,data){

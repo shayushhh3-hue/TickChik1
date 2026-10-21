@@ -6,8 +6,9 @@ export async function refreshQuotes(fs,{fetch:f=timedFetch,now=new Date(),log=()
   const [P,S,Q,W]=await Promise.all([fs.getDoc('portfolio/main'),fs.getDoc('settings/main'),fs.getDoc('quotes/latest'),Promise.resolve().then(()=>fs.listDocs('watch')).catch(()=>[])]);
   const positions=(P.exists&&P.data.positions)||[];
   const syms=new Set(positions.map(p=>p.sym).filter(Boolean));
-  // under the cap, holdings come first (the owner's, then the partners'), then bookmarks, then the rest of the watch lists
-  for(const k of ['held','marks','syms'])for(const w of W)for(const s of ((w.data||{})[k]||[]))if(typeof s==='string'&&/^[A-Z0-9.\-^]{1,12}$/.test(s))syms.add(s);
+  // under the cap, holdings come first (the owner's, then the partners'), then bookmarks, the rest of the watch lists, and
+  // the securities of the savings goals (kept apart from the portfolio, priced all the same)
+  for(const k of ['held','marks','syms','pots'])for(const w of W)for(const s of ((w.data||{})[k]||[]))if(typeof s==='string'&&/^[A-Z0-9.\-^]{1,12}$/.test(s))syms.add(s);
   const map=(S.exists&&S.data.symMap)||{};
   const symbols=[...syms].slice(0,120);
   log(`fetching ${symbols.length} symbols${reason?' ('+reason+')':''}`);
