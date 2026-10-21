@@ -1,12 +1,16 @@
 # The tests on every push and pull request, outside Railway: a red mark in GitHub before a broken version reaches the site.
+# The browser tests run with the Hebrew fonts the server's image has (as in the Dockerfile), at Israel time; a failing
+# test is written as an annotation, so its message shows on the run's page (and through the API) without the full log.
 name: tests
 on:
   push:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      TZ: Asia/Jerusalem
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -14,7 +18,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: npm test 2>&1 | tee unit.log; exit ${PIPESTATUS[0]}
+        shell: bash
+      - run: npx playwright install --with-deps chromium && sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-dejavu-core fonts-freefont-ttf
+      - run: npm run test:browser 2>&1 | tee browser.log; exit ${PIPESTATUS[0]}
+        shell: bash
+      - name: failing tests, as annotations
+        if: failure()
+        shell: bash
+        run: |
+          for f in unit.log browser.log; do [ -f "$f" ] || continue
+            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message):|\s+[+-] )' | cut -c1-300 | head -60 | while IFS= read -r l; do echo "::error title=$f::${l//%/%25}"; done
+          done
       - run: docker build -t tikchik .
