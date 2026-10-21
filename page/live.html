@@ -126,6 +126,12 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .cal{display:flex;flex-direction:column;gap:12px}
 /* savings goals: a pot of its own per goal, tracked apart from the portfolio */
 .potbox{display:flex;flex-direction:column;gap:14px}
+.oncebox{display:flex;flex-direction:column;gap:10px}
+.onceform{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.onceform input,.onceform select{min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:var(--surface);color:var(--ink);width:100%}
+.oncelist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.oncelist li{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+.ladder .once1{color:var(--gain);font-weight:600}
 .potbox .panel{display:flex;flex-direction:column;gap:12px}
 .potnew{border-style:dashed}
 .pothead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
@@ -1658,6 +1664,18 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <tbody id="ladRows"><tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr></tbody>
         </table>
         <p class="note" id="planNote" style="margin-top:10px"></p>
+      </div>
+      <div class="panel oncebox" aria-labelledby="hOnce">
+        <div class="row"><h3 id="hOnce">הפקדה חד פעמית</h3><span class="sub" id="onceSub"></span></div>
+        <p class="note" style="margin:0">כסף שהפקדת מעבר להפקדה החודשית: הוא נכנס ליתרה להשקעה בתוכנית ולמזומן בשווי התיק, ונספר בסך ההפקדות.</p>
+        <div class="form onceform">
+          <label for="onceAmt">סכום (₪)<input type="number" id="onceAmt" min="0" step="50" inputmode="decimal" placeholder="למשל 2000"></label>
+          <label for="onceDay">תאריך<input type="date" id="onceDay"></label>
+          <label for="onceTrk">למסלול<select id="onceTrk"><option value="stocks">מניות</option><option value="idx">מדדים</option></select></label>
+          <label for="onceNote">הערה<input id="onceNote" maxlength="40" placeholder="לא חובה, למשל בונוס"></label>
+        </div>
+        <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="onceAdd">הוסף הפקדה</button><span class="saved" id="onceState" role="status"></span></div>
+        <ul class="oncelist" id="onceList"></ul>
       </div>
       <div class="panel">
         <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: בפועל · מקווקו: לפי הלוח</span></div></div>
@@ -16127,10 +16145,10 @@ function schedule(items,cost,balance,monthly,mode,addNow){
   return {when,months:todo.length?null:m,left:b};
 }
 // The plan as a month ladder from the start month: every month gets the deposit, then buys what the mode allows.
-function ladder(entries,opening,monthly,mode){
+function ladder(entries,opening,monthly,mode,extra){
   const q=entries.map(e=>({sym:e.sym,c:e.c})); const rows=[],bals=[]; let b=opening,m=0;
   while(q.length&&m<=240){
-    b+=monthly; const row=[];
+    b+=monthly+((extra&&extra[m])||0); const row=[];
     for(;;){
       let idx=-1;
       if(mode!=='cheap'){ if(q[0].c<=b+1e-9) idx=0 }
@@ -16138,7 +16156,7 @@ function ladder(entries,opening,monthly,mode){
       if(idx<0)break;
       b-=q[idx].c; row.push(q[idx].sym); q.splice(idx,1); if(!q.length||mode==='rotate')break;
     }
-    rows.push(row); bals.push(b); if(monthly<=0)break; m++;
+    rows.push(row); bals.push(b); if(monthly<=0&&!(extra&&Object.keys(extra).some(k=>+k>m)))break; m++;
   }
   return {rows,bals,complete:!q.length};
 }
@@ -16459,7 +16477,7 @@ function planState(mAll){
   // track, less the purchases ticked in either (mAll.cash). Each track keeps its own queue and monthly amount; the forecast
   // of the queue starts the stocks track from the statements' cash and the funds track from its own opening, so no shekel
   // is counted twice there
-  const bal=mAll.cash, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>d.month===ymNow());
+  const bal=mAll.cash, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>!d.once&&d.month===ymNow());
   const cur=ymDiff(ymNow(),start), when={}, at={};
   // a fixed amount for each fund, every month (fixedMode): no queue, every fund with an amount is bought each month
   if(fixedMode()){const F=fixedItems(); for(const i of F)cost[i.sym]=+i.amt;
@@ -16467,7 +16485,8 @@ function planState(mAll){
     const rows=Array.from({length:n},()=>F.map(i=>i.sym)); for(const i of F){when[i.sym]=0;at[i.sym]=cur}
     return {rot:true,fixed:true,cost,name,bal,base,depNow,start,cur,lad:{rows,bals:[],complete:true},at,sch:{when}}}
   const entries=PL.items.filter(i=>(i.status==='todo'&&cost[i.sym]!=null)||(i.status==='done'&&i.pid)).map(i=>({sym:i.sym,c:i.pid?paid[i.sym]:cost[i.sym]}));
-  const lad=ladder(entries,base,TM(),PL.mode);
+  const extra={}; for(const d of PL.deposits)if(d.once){const k=ymDiff(d.month,start); if(k>=0)extra[k]=(extra[k]||0)+(+d.amount||0)}
+  const lad=ladder(entries,base,TM(),PL.mode,extra);
   lad.rows.forEach((r,m)=>r.forEach(sym=>{at[sym]=m;when[sym]=Math.max(0,m-cur)}));
   return {rot,cost,name,bal,base,depNow,start,cur,lad,at,sch:{when}};
 }
@@ -16509,14 +16528,14 @@ function renderPlan(mAll){
   $('feeNote').textContent=fee>0?`העמלה כלולה בעלות היחידה. על ${todo.length} הקניות שנשארו: ${ils(fee*todo.length)}.`:'';
 
   // month ladder
-  const depBy={}; for(const d of PL.deposits)depBy[d.month]=d;
+  const depBy={}, onceBy={}; for(const d of PL.deposits){if(d.once)(onceBy[d.month]=onceBy[d.month]||[]).push(d); else depBy[d.month]=d}
   const lastDep=PL.deposits.reduce((mx,d)=>Math.max(mx,ymDiff(d.month,st.start)),-1), nRows=Math.max(lastM,st.cur,lastDep)+1;
   const isDone=sym=>PL.items.some(i=>i.sym===sym&&i.status==='done');
   const paidBy={}; for(const x of PL.purchases)paidBy[x.sym]=+x.paidIls||0;
   const paidAt={}; for(const x of PL.purchases)if(x.month)paidAt[x.sym+'|'+x.month]=+x.paidIls||0;
   const paidOf=(sym,ym)=>st.fixed?paidAt[sym+'|'+ym]:paidBy[sym];
   let h='', run=st.base, lastMark=-1, pd=st.base, pi=0, ad=st.base, ai=0; const CH=[];
-  for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidOf(sym,ym0)!=null))lastMark=m}
+  for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||onceBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidOf(sym,ym0)!=null))lastMark=m}
   const buyHtml=(sym,m,ym)=>{const got=st.fixed?paidOf(sym,ym)!=null:isDone(sym),c=got?paidOf(sym,ym):st.cost[sym],short=!got&&c>st.bal+0.005;
       const pu=PL.purchases.find(x=>x.sym===sym), pp=mAll.pos.find(x=>x.sym===sym), usd=pp&&pp.ccy==='USD';
       const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}${st.fixed?'_'+ym:''}"><input type="checkbox" id="buy_${esc(sym)}${st.fixed?'_'+ym:''}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(1,Math.round(c-st.bal)))}</span>`:''}</label>`;
@@ -16526,13 +16545,13 @@ function renderPlan(mAll){
       return lb+`<span class="ebox"><label for="eb_qty_${ei}">כמות<input type="number" id="eb_qty_${ei}" data-ebq="${esc(sym)}" min="0" step="0.0001" value="${+pu.qty||1}"></label><label for="eb_px_${ei}">מחיר ליחידה (${usd?'$':'₪'})<input type="number" id="eb_px_${ei}" data-ebp="${esc(sym)}" min="0" step="0.01" value="${pu.px?pu.px:(pp?(+pp.px).toFixed(2):'')}"></label><button class="btn sm pri" type="button" data-pa="saveBuy" data-sym="${esc(sym)}">שמור</button><button class="btn sm" type="button" data-pa="cancelBuy" data-sym="${esc(sym)}">בטל</button></span>`};
   const buyGroups=(buys,m,fn)=>{const ym=ymAdd(st.start,m), f=buys.filter(isF), k=buys.filter(x=>!isF(x)); if(!f.length||!k.length)return buys.map(x=>fn(x,m,ym)).join(''); return `<div class="bg col"><span class="bl">קרנות</span>${f.map(x=>fn(x,m,ym)).join('')}</div><div class="bg col"><span class="bl">מניות</span>${k.map(x=>fn(x,m,ym)).join('')}</div>`};
   for(let m=0;m<nRows;m++){
-    const ym=ymAdd(st.start,m), d=depBy[ym], buys=st.lad.rows[m]||[];
-    run+=(d?+d.amount||0:0)-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
-    pd+=B; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=d?+d.amount||0:0; ai+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
+    const ym=ymAdd(st.start,m), d=depBy[ym], buys=st.lad.rows[m]||[], on=onceBy[ym]||[], onAmt=on.reduce((t,x)=>t+(+x.amount||0),0);
+    run+=(d?+d.amount||0:0)+onAmt-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
+    pd+=B+onAmt; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=(d?+d.amount||0:0)+onAmt; ai+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     CH.push({ym,pd,pi,ad,ai,act:m<=lastMark,buys:buys.slice(),cur:m===st.cur});
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?'<div class="nm">החודש</div>':m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
-    <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label></td>
+    <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
     <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num"><span class="n${run<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(run<0?'−':'')+ils(Math.abs(run))}</span></td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
@@ -16547,6 +16566,7 @@ function renderPlan(mAll){
   drawFwd(project(mAll.total,MTOT(),Math.max(1,Math.min(40,+S.years||1)),+S.ratePct||0),todo.length&&st.lad.complete?(lastM-st.cur+1)/12:null,mAll.pnl,mAll.missingCost);
   try{renderGoal(mAll)}catch(e){}
   if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
+  try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה נרשמת לפי מחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.';
 
@@ -16572,7 +16592,7 @@ function renderPlan(mAll){
 function planAct(a,d){
   if(!P||!Q)return; const st=planState(mAllNow()), now=new Date().toISOString(), id='e'+Date.now().toString(36);
   const ix=+d.ix, it=PL.items[ix];
-  if(a==='depToggle'){const had=PL.deposits.some(x=>x.month===d.ym);PL.deposits=PL.deposits.filter(x=>x.month!==d.ym);if(!had)PL.deposits.push({id,month:d.ym,amount:TM(),at:now})}
+  if(a==='depToggle'){const had=PL.deposits.some(x=>!x.once&&x.month===d.ym);PL.deposits=PL.deposits.filter(x=>x.once||x.month!==d.ym);if(!had)PL.deposits.push({id,month:d.ym,amount:TM(),at:now})}
   else if(a==='buyToggle'&&st.fixed){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
     const k=PL.purchases.findIndex(x=>x.sym===t.sym&&x.month===d.ym);
     if(k>=0)PL.purchases.splice(k,1);
@@ -17735,7 +17755,7 @@ function anaFacts(){
   const good=rated.filter(x=>x.f.grade==='A'||x.f.grade==='B'), weak=rated.filter(x=>x.f.grade==='D'||x.f.grade==='E');
   const soon=RS&&RS.companies?m.pos.map(p=>({s:p.sym,c:RS.companies[p.sym]})).filter(x=>x.c&&x.c.next&&daysTo(x.c.next)>=0&&daysTo(x.c.next)<=14).sort((a,b)=>a.c.next<b.c.next?-1:1):[];
   const ym=ymNow(), monthName=MONTHS[new Date().getMonth()];
-  const depS=+S.monthly>0?(PLD.deposits||[]).some(d=>d.month===ym):null, depI=+S.monthlyIdx>0?((PLD.idx&&PLD.idx.deposits)||[]).some(d=>d.month===ym):null;
+  const depS=+S.monthly>0?(PLD.deposits||[]).some(d=>!d.once&&d.month===ym):null, depI=+S.monthlyIdx>0?((PLD.idx&&PLD.idx.deposits)||[]).some(d=>!d.once&&d.month===ym):null;
   let queue=null;
   if((PLD.items||[]).length){const sv=[TRACK,PL]; try{TRACK='stocks';PL=PLD; const ps=planState(m), todo=PLD.items.filter(i=>i.status==='todo'&&ps.cost[i.sym]!=null);
       queue={n:todo.length,bal:ps.bal,afford:todo.filter(i=>ps.cost[i.sym]<=ps.bal).map(i=>i.sym),first:todo[0]?todo[0].sym:null}}catch(e){}finally{TRACK=sv[0];PL=sv[1]}}
@@ -20670,7 +20690,7 @@ function depInfo(now){
   now=now||new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()), ym=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
   const due=depDateOf(today.getFullYear(),today.getMonth());
   const tr=[{k:'stocks',amt:+S.monthly||0,pl:PLD},{k:'idx',amt:+S.monthlyIdx||0,pl:PLD&&PLD.idx}].filter(t=>t.amt>0&&t.pl);
-  const planned=tr.filter(t=>(t.pl.items||[]).length), missing=planned.filter(t=>!(t.pl.deposits||[]).some(x=>x.month===ym));
+  const planned=tr.filter(t=>(t.pl.items||[]).length), missing=planned.filter(t=>!(t.pl.deposits||[]).some(x=>!x.once&&x.month===ym));
   const isToday=today.getTime()===due.getTime(), passed=today>due, next=today<=due?due:depDateOf(today.getFullYear(),today.getMonth()+1);
   return {day:d,amt,due,isToday,passed,hasPlan:planned.length>0,missing,marked:planned.length>0&&!missing.length,next,days:Math.round((next-today)/864e5),ym};
 }
@@ -21822,6 +21842,29 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
   if(t.dataset.calday){CALSEL=t.dataset.calday}
   else{const [y,m]=CALM.split('-').map(Number), d=new Date(Date.UTC(y,m-1+(+t.dataset.calmv),1)); CALM=d.toISOString().slice(0,7)}
   try{renderCal()}catch(x){}});
+// ---- a one-time deposit: money in beyond the monthly amount, on its day, to a track. It is a plan deposit like the monthly
+// ones (allDep), so it is in the cash of the portfolio's value, in the deposits total and in the plan's balance, until a
+// statement of the account holds it; marked once:true so a month's regular deposit is never taken for it ----
+function renderOnce(){
+  const L=$('onceList'); if(!L)return; const dis=!canWrite, today=ilDay();
+  if(!$('onceDay').value)$('onceDay').value=today; if(document.activeElement!==$('onceTrk'))$('onceTrk').value=TRACK==='idx'?'idx':'stocks';
+  for(const id of ['onceAmt','onceDay','onceTrk','onceNote','onceAdd'])$(id).disabled=dis;
+  const all=[...(PLD.deposits||[]).filter(d=>d.once).map(d=>({d,trk:'stocks'})),...(((PLD.idx&&PLD.idx.deposits)||[]).filter(d=>d.once).map(d=>({d,trk:'idx'})))].sort((a,b)=>(b.d.day||b.d.month)<(a.d.day||a.d.month)?-1:1);
+  const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
+  $('onceSub').textContent=all.length?`${all.length===1?'הפקדה אחת':all.length+' הפקדות'} · ${ils(all.reduce((t,x)=>t+(+x.d.amount||0),0))}`:'';
+  setH(L,all.map(({d,trk})=>{const inStmt=coveredBy(markDay(d),depA); return `<li><span><b class="n">${ils(+d.amount||0)}</b> · ${dmy(d.day||d.month+'-01')} · ${trk==='idx'?'מדדים':'מניות'}${d.note?' · '+esc(d.note):''}${inStmt?' · <span class="nm">כבר בדוח של החשבון</span>':''}</span><button type="button" class="btn sm" data-oncedel="${esc(d.id)}" data-trk="${trk}"${dis?' disabled':''}>הסר</button></li>`}).join(''));
+}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  if(t.closest('#onceAdd')){if(!canWrite)return; const amt=Math.round((+$('onceAmt').value||0)*100)/100, day=$('onceDay').value||ilDay(), trk=$('onceTrk').value==='idx'?'idx':'stocks', st=$('onceState');
+    if(!(amt>0)){st.textContent='כתוב סכום.';$('onceAmt').focus();return} if(day>ilDay()){st.textContent='התאריך עוד לא הגיע. הפקדה מסמנים אחרי שהיא נעשתה.';return}
+    const X=trk==='idx'?PLD.idx:PLD; X.deposits=X.deposits||[]; const now=new Date().toISOString();
+    // the day it was made is its day for everything that dates a deposit (a statement dated on or after it already holds it)
+    X.deposits.push({id:'o'+Date.now().toString(36),month:day.slice(0,7),amount:amt,day,at:day===ilDay()?now:day+'T12:00:00.000Z',once:true,note:$('onceNote').value.trim().slice(0,40)||undefined});
+    $('onceAmt').value=''; $('onceNote').value=''; st.textContent=`נוספה הפקדה של ${ils(amt)}. היא נכנסה ליתרה להשקעה ולשווי התיק.`;
+    setTrack(); planChanged(); return}
+  const del=t.closest('[data-oncedel]'); if(del){if(!canWrite)return; const X=del.dataset.trk==='idx'?PLD.idx:PLD, gone=(X.deposits||[]).find(d=>d.id===del.dataset.oncedel); if(!gone)return;
+    X.deposits=X.deposits.filter(d=>d!==gone); setTrack(); planChanged();
+    offerUndo(`ההפקדה של ${ils(+gone.amount||0)} הוסרה`,()=>{X.deposits.push(gone); setTrack(); pDirty=true; clearTimeout(pTimer); pTimer=setTimeout(savePlan,600); render()})}});
 // ---- savings goals ("חסכונות לפי מטרה"): a pot per goal (a child's savings, a mortgage, a home), each with its target and
 // date, its own holdings and its own cash. A holding can be copied from the portfolio or typed in; either way the pot is
 // a separate account of its own: nothing in it is counted in the portfolio's value, its mix, the alerts or the reports.

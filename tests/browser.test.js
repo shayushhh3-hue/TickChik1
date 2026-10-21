@@ -239,6 +239,30 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
 
+test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and in the month, apart from the monthly deposit',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const PL0=store.getDoc('plan/main').data;
+  try{
+    const {ctx,pg}=await open(390); const num=x=>+String(x).replace(/[^\d.−-]/g,'').replace('−','-');
+    const tot0=num(await pg.evaluate(()=>document.getElementById('kTotal').textContent));
+    await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(300);
+    const bal0=num(await pg.textContent('#pBal'));
+    await pg.fill('#onceAmt','2000'); await pg.fill('#onceNote','בונוס'); await pg.click('#onceAdd'); await pg.waitForTimeout(1500);
+    const r=await pg.evaluate(()=>({bal:document.getElementById('pBal').textContent,list:document.getElementById('onceList').textContent,cur:document.querySelector('#ladRows tr.cur').textContent,st:document.getElementById('onceState').textContent}));
+    assert.equal(num(r.bal),bal0+2000,'the plan\'s balance'); assert.match(r.list,/₪2,000.*מניות.*בונוס/); assert.match(r.cur,/\+ ₪2,000 חד פעמית · בונוס/); assert.match(r.st,/נכנסה ליתרה להשקעה ולשווי התיק/);
+    const d=(store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once); assert.equal(d.length,1); assert.equal(d[0].amount,2000);
+    // the month's regular deposit is its own: ticking and unticking it leaves the one-time deposit
+    const ym=await pg.evaluate(()=>document.querySelector('#ladRows tr.cur [data-dep]').dataset.dep);
+    await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(600); await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(1200);
+    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once).length,1,'still there');
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.equal(num(await pg.evaluate(()=>document.getElementById('kTotal').textContent)),tot0+2000,'the portfolio\'s value, as cash');
+    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.click('#onceList [data-oncedel]'); await pg.waitForTimeout(1500);
+    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once).length,0); assert.equal(num(await pg.textContent('#pBal')),bal0);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('plan/main',PL0)}
+});
+
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
