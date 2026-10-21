@@ -767,3 +767,96 @@ test('reading files: the strongest model, the next one when it cannot read, a lo
     assert.equal(by['claude-opus-5-5'].calls,3); assert.equal(by['claude-fable-5-1'].output,107);
   }finally{if(k0==null)delete process.env.AI_KEEPALIVE_MS; else process.env.AI_KEEPALIVE_MS=k0; delete process.env.AI_FILE_BUDGET_MS; srv.close()}
 });
+
+// ---- 21.10 (2): two-step sign-in, the indices, the price watch, Finnhub ----
+test('two-step sign-in: the standard codes, set up, on with a first code, a code is good once, backup codes, off with password and code, the owner\'s way back',async()=>{
+  const {b32encode,b32decode,hotp,totpMatch,step}=await import('../server/totp.js');
+  // RFC 6238's own test key ("12345678901234567890"): 59 s → 287082 (the last 6 of 94287082), 1111111109 s → 081804
+  const key=Buffer.from('12345678901234567890'), sec=b32encode(key);
+  assert.equal(sec,'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'); assert.deepEqual(b32decode(sec),key);
+  assert.equal(hotp(key,Math.floor(59/30)),'287082'); assert.equal(hotp(key,Math.floor(1111111109/30)),'081804');
+  assert.equal(totpMatch(sec,'287082',{now:59000}),1); assert.equal(totpMatch(sec,'287082',{now:59000+30000}),1,'the code before still counts (a clock a little off)');
+  assert.equal(totpMatch(sec,'287082',{now:59000,after:1}),-1,'a code already used is not good again'); assert.equal(totpMatch(sec,'12345',{now:59000}),-1);
+  const {store,srv,req,jar}=await startApp(); const k0=process.env.TWOFA_OFF;
+  try{
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    assert.deepEqual((await req('o','GET','/api/2fa')).j,{on:false,backupLeft:0,override:false});
+    const s1=(await req('o','POST','/api/2fa/setup',{})).j; assert.match(s1.secret,/^[A-Z2-7]{32}$/); assert.match(s1.uri,/^otpauth:\/\/totp\/.+secret=[A-Z2-7]{32}&issuer=/);
+    // still off until a first code is given: the login asks nothing yet
+    await req('p','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); assert.ok(jar.p,'a second device');
+    const now=()=>hotp(b32decode(s1.secret),step());
+    assert.equal((await req('o','POST','/api/2fa/enable',{code:'000000'===now()?'111111':'000000'})).status,400);
+    const on=(await req('o','POST','/api/2fa/enable',{code:now()})).j; assert.equal(on.codes.length,8); assert.match(on.codes[0],/^[a-z2-9]{5}-[a-z2-9]{5}$/);
+    assert.equal((await req('p','GET','/api/db/doc?path=portfolio/main')).status,401,'the other devices are signed out');
+    assert.equal((await req('o','GET','/api/db/doc?path=portfolio/main')).status,200,'this one stays');
+    assert.equal(store.userByEmail('owner@example.com').totp_backup.includes(on.codes[0]),false,'only hashes are kept');
+    // the login now wants the code
+    let r=await req('x','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); assert.equal(r.status,401); assert.equal(r.j.error.code,'need_code'); assert.ok(!jar.x,'no session without the code');
+    r=await req('x','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123',code:'12'}); assert.equal(r.j.error.code,'bad_code');
+    r=await req('x','POST','/api/login',{email:'owner@example.com',password:'wrong',code:now()}); assert.equal(r.j.error.code,'bad_login','the password first');
+    // the same code was used to switch it on: it is not good again; a backup code is, once
+    r=await req('x','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123',code:on.codes[0].toUpperCase()}); assert.equal(r.status,200);
+    r=await req('y','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123',code:on.codes[0]}); assert.equal(r.status,401,'a backup code works once');
+    assert.equal((await req('o','GET','/api/2fa')).j.backupLeft,7);
+    // the owner lost the phone and the codes: TWOFA_OFF=1 in the environment lets the password in
+    process.env.TWOFA_OFF='1'; r=await req('z','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); assert.equal(r.status,200); delete process.env.TWOFA_OFF;
+    // off: the password and a code (a backup code too)
+    assert.equal((await req('o','POST','/api/2fa/disable',{password:'nope',code:on.codes[1]})).status,400);
+    assert.equal((await req('o','POST','/api/2fa/disable',{password:'owner-pass-123',code:on.codes[1]})).status,200);
+    assert.equal((await req('o','GET','/api/2fa')).j.on,false); assert.equal((await req('q','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'})).status,200);
+  }finally{if(k0==null)delete process.env.TWOFA_OFF; else process.env.TWOFA_OFF=k0; srv.close()}
+});
+
+test('the indices for "האם אני עושה טוב?": Yahoo\'s series read, weekly before the daily, kept in research/bench for every user',async()=>{
+  const {chartParse,joinSeries,benchTask}=await import('../server/bench.js');
+  const ch=(ts,c)=>({chart:{result:[{meta:{gmtoffset:0},timestamp:ts,indicators:{quote:[{close:c}]}}]}});
+  const day=d=>Date.parse(d+'T20:00:00Z')/1000;
+  assert.deepEqual(chartParse(ch([day('2026-10-19'),day('2026-10-20'),day('2026-10-20')+60],[100,null,102])),{d:['2026-10-19','2026-10-20'],c:[100,102]},'a missing close is left out; a second bar of a day replaces the first');
+  assert.deepEqual(joinSeries({d:['2020-01-03','2021-06-04','2021-06-11'],c:[1,2,3]},{d:['2021-06-07','2021-06-08'],c:[4,5]}),{d:['2020-01-03','2021-06-04','2021-06-07','2021-06-08'],c:[1,2,4,5]});
+  const store=new Store(':memory:'), asked=[];
+  const f=async u=>{asked.push(u); const t=decodeURIComponent(u.split('/chart/')[1].split('?')[0]); const w=/interval=1wk/.test(u);
+    return new Response(JSON.stringify(ch(w?[day('2018-01-05')]:[day('2026-10-19'),day('2026-10-20')],w?[10]:t==='^GSPC'?[6000,6050]:t==='USDILS=X'?[3.7,3.71]:[2500,2510])),{status:200})};
+  assert.equal(await benchTask(store,{fetch:f}),true);
+  const d=store.getDoc('research/bench').data; assert.deepEqual(d.spx,{d:['2018-01-05','2026-10-19','2026-10-20'],c:[10,6000,6050]}); assert.deepEqual(d.fx.c,[10,3.7,3.71]); assert.equal(d.names.ta125,'ת״א 125');
+  assert.ok(asked.some(u=>u.includes(encodeURIComponent('^TA125.TA'))));
+  assert.equal(access({id:'u_x',role:'friend'},'research/bench'),'r','market data: every user reads it');
+});
+
+test('the price watch: prices stopped while a market trades, a session missing for 3 hours, a gap the page found; one e-mail per problem, with consent',async()=>{
+  const {pxProblems,pxAlertsDue,pxWatchTask,selfCheckNote}=await import('../server/pxwatch.js');
+  const open=new Date('2026-10-21T15:00:00Z'), closed=new Date('2026-10-24T09:00:00Z');   // a Wednesday afternoon in New York; a Saturday
+  const q={updatedAt:'2026-10-21T11:30:00Z',lag:{us:{have:'2026-10-19',want:'2026-10-20',n:3}},prices:{A:1}};
+  const P=pxProblems(q,open); assert.deepEqual(P.map(p=>p.key),['late','lag:us:2026-10-20']); assert.match(P[0].text,/לא התעדכנו מאז 21\.10 14:30/); assert.match(P[1].text,/חסר המחיר של 20\.10 ל-3 ניירות/);
+  assert.deepEqual(pxProblems({...q,lag:{}},closed),[],'old prices on a weekend are not a problem');
+  let a=pxAlertsDue(P,null,open); assert.deepEqual(a.send.map(p=>p.key),['late'],'a lag waits 3 hours');
+  a=pxAlertsDue(P,a.state,new Date(open.getTime()+3.1*36e5)); assert.deepEqual(a.send.map(p=>p.key),['lag:us:2026-10-20']);
+  a=pxAlertsDue(P,a.state,new Date(open.getTime()+5*36e5)); assert.deepEqual(a.send,[],'not again within 12 hours');
+  a=pxAlertsDue([],a.state,new Date(open.getTime()+6*36e5)); assert.deepEqual(a.state.seen,{},'gone: the next time is a new problem');
+  const store=new Store(':memory:'); store.setDoc('quotes/latest',q); selfCheckNote(store,{bad:[{name:'חשיפה לפי ענף',t:'חשיפה לפי ענף: ₪10 במקום ₪12.'}]},open);
+  const r=await pxWatchTask(store,{now:open}); assert.equal(r.open,3); assert.equal(r.sent,0,'no consent, nothing sent');
+  assert.equal(store.getDoc('system/mail').data.last.pxalert.result,'off'); assert.ok(store.getDoc('system/pxwatch').data.sent.late,'counted as told, so the next half hour does not ask again');
+  assert.ok(store.getDoc('system/pxwatch').data.open.some(k=>k.startsWith('sum:')));
+});
+
+test('Finnhub: the first source for a US ticker when its key is set, and the free ones stay behind it',async()=>{
+  const {finnhubParse,fetchAll}=await import('../shared/quotes.js');
+  assert.equal(finnhubParse({c:0,pc:0,t:0}),null,'an unknown ticker answers with zeros');
+  const q=finnhubParse({c:512.3,pc:505,t:1792612800}); assert.equal(q.px,512.3); assert.equal(q.prev,505); assert.equal(q.src,'finnhub'); assert.equal(q.closeDate,'2026-10-21');
+  const k0=process.env.FINNHUB_API_KEY; const seen=[];
+  const f=async u=>{seen.push(String(u)); if(String(u).includes('finnhub.io'))return new Response(JSON.stringify(String(u).includes('symbol=MSFT')?{c:512.3,pc:505,t:1792612800}:{c:0,pc:0,t:0}),{status:200}); return new Response('{}',{status:404})};
+  try{process.env.FINNHUB_API_KEY='k1';
+    const r=await fetchAll(['MSFT','ZZZZ'],{fetch:f}); assert.equal(r.quotes.MSFT.src,'finnhub'); assert.ok(seen.some(u=>u.includes('token=k1')));
+    assert.ok(seen.some(u=>u.includes('yahoo')&&u.includes('ZZZZ')),'a ticker Finnhub does not know goes on to Yahoo');
+    delete process.env.FINNHUB_API_KEY; seen.length=0; await fetchAll(['MSFT'],{fetch:f}); assert.ok(!seen.some(u=>u.includes('finnhub')),'no key, no call');
+  }finally{if(k0==null)delete process.env.FINNHUB_API_KEY; else process.env.FINNHUB_API_KEY=k0}
+});
+
+test('the site: the PDF and Excel libraries in files of their own, loaded when needed, with a version in the address',async()=>{
+  const {buildSite}=await import('../tools/build.js'); const root=new URL('..',import.meta.url).pathname; buildSite(root);
+  const h=fs.readFileSync(root+'site/index.html','utf8'), page=fs.readFileSync(root+'page/live.html','utf8');
+  assert.ok(!/SheetJS|jsPDF - PDF Document|define\("pdfjs-dist\/build\/pdf"/.test(h),'not inside the page');
+  for(const n of ['jspdf','xlsx','pdf','pdfworker'])assert.ok(fs.statSync(root+'site/lib/'+n+'.js').size>100000,n);
+  assert.match(h,/window\.__tcLib=/); assert.match(h,/"pdf":"lib\/pdf\.js\?v=[0-9a-f]{10}"/);
+  assert.ok(h.length<page.length*0.5,'the page the phone loads is less than half: '+h.length+' / '+page.length);
+  assert.ok(/SheetJS/.test(page),'the page in Claude keeps them inside');
+});

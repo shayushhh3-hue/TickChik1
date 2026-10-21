@@ -23,6 +23,10 @@ export class Store{
       create table if not exists ai_models(day text not null, model text not null, calls integer not null default 0, input integer not null default 0, output integer not null default 0, primary key(day,model));`);
     // the quick reads of statements, counted apart from the daily quota (14.10.2026): a database from before gets the column
     if(!this.db.prepare("select 1 from pragma_table_info('ai_usage') where name='quick'").get())this.db.exec('alter table ai_usage add column quick integer not null default 0');
+    // two-step sign-in (21.10.2026): the authenticator's secret, whether it is on, the last code's counter (a code is good
+    // once), and the hashes of the backup codes
+    for(const [c,t] of [['totp_secret','text'],['totp_on','integer not null default 0'],['totp_last','integer not null default -1'],['totp_backup','text']])
+      if(!this.db.prepare("select 1 from pragma_table_info('users') where name=?").get(c))this.db.exec(`alter table users add column ${c} ${t}`);
     this.listeners=new Set();
   }
   // ---- documents ----
@@ -74,6 +78,14 @@ export class Store{
   }
   setPassword(id,password,{mustChange=false}={}){if(String(password||'').length<8)throw new Error('short_password'); const salt=randomBytes(16).toString('hex'); this.db.prepare('update users set hash=?, salt=?, must_change=? where id=?').run(Store.hash(password,salt),salt,mustChange?1:0,id)}
   checkPassword(user,password){if(!user)return false; const h=Buffer.from(Store.hash(password,user.salt),'hex'), g=Buffer.from(user.hash,'hex'); return h.length===g.length&&timingSafeEqual(h,g)}
+  // ---- two-step sign-in ----
+  totpOf(id){const u=this.userById(id); if(!u)return null; let b=[]; try{b=JSON.parse(u.totp_backup||'[]')}catch(e){} return {secret:u.totp_secret||null,on:!!u.totp_on,last:u.totp_last==null?-1:+u.totp_last,backup:Array.isArray(b)?b:[]}}
+  totpPending(id,secret){this.db.prepare('update users set totp_secret=?, totp_on=0, totp_last=-1, totp_backup=null where id=?').run(secret,id)}
+  totpEnable(id,hashes,counter){this.db.prepare('update users set totp_on=1, totp_last=?, totp_backup=? where id=?').run(counter,JSON.stringify(hashes),id)}
+  totpOff(id){this.db.prepare('update users set totp_secret=null, totp_on=0, totp_last=-1, totp_backup=null where id=?').run(id)}
+  totpUsed(id,counter){this.db.prepare('update users set totp_last=? where id=?').run(counter,id)}
+  totpBackupUse(id,hash){const t=this.totpOf(id); if(!t||!t.backup.includes(hash))return false; this.db.prepare('update users set totp_backup=? where id=?').run(JSON.stringify(t.backup.filter(h=>h!==hash)),id); return true}
+  endSessionsBut(uid,sid){this.db.prepare('delete from sessions where uid=? and sid<>?').run(uid,sid||'')}
   removeUser(id){this.db.prepare('delete from sessions where uid=?').run(id); this.db.prepare('delete from users where id=?').run(id)}
   // ---- sessions ----
   newSession(uid,ua=''){const sid=randomBytes(32).toString('base64url'); const now=Date.now(); this.db.prepare('insert into sessions(sid,uid,created_at,expires_at,ua) values(?,?,?,?,?)').run(sid,uid,new Date(now).toISOString(),new Date(now+30*864e5).toISOString(),String(ua||'').slice(0,200)); return sid}

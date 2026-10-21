@@ -1563,6 +1563,26 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .tourhl{outline:3px solid #fff!important;outline-offset:2px;box-shadow:0 0 0 7px var(--navy)!important;border-radius:12px;position:relative;z-index:2}
 #botbar .tourhl{z-index:3}
 @media (max-width:759px){.tourcard{bottom:calc(92px + env(safe-area-inset-bottom,0px))}}
+/* 21.10 (2): the portfolio against the indices, the tax if sold today, one view switch */
+.bench{display:flex;flex-direction:column;gap:12px}
+.bn-lead{margin:0;font-size:15px;line-height:1.65;color:var(--ink);max-width:70ch}
+.bn-rows{display:flex;flex-direction:column;gap:10px}
+.bn-r{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.bn-r.me{border-color:var(--navy3);background:#FBF7F2}
+.bn-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px} .bn-h b{font-size:15px}
+.bn-bar{height:10px;border-radius:999px;background:var(--sunk);overflow:hidden} .bn-bar i{display:block;height:100%;border-radius:999px;background:var(--s1)} .bn-r.me .bn-bar i{background:var(--gold)}
+.bn-v{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bn-v>span{display:flex;flex-direction:column;gap:1px;min-width:0} .bn-v .k{font-size:12px;color:var(--muted)} .bn-v b{font-size:15px}
+@media (max-width:420px){.bn-v b{font-size:14px}}
+.dk-bench .dk-go{margin-inline-start:0}
+.taxnow{display:flex;flex-direction:column;gap:10px}
+.taxnow .strip{margin:0}
+.tx-l{margin:0;font-size:14px;line-height:1.65;color:var(--ink);max-width:72ch} .tx-l b{margin-inline-end:4px}
+.viewwrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:4px}
+.viewwrap .sub{font-size:13px}
+.calm .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
+.calm .sidemore{display:none!important}
+@media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
 </style>
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
@@ -1637,8 +1657,7 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
       <div class="row2" style="justify-content:flex-start"><button class="btn pri" type="button" data-tab="mine">הוסף תיק עכשיו</button><button class="btn" type="button" data-uxgo="tour">סיור של דקה באתר</button></div>
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
-    <div class="viewsw" role="group" aria-label="רמת הפירוט בסקירה"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה רגועה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div>
-    <div class="idxrow" id="idxRow" hidden aria-label="המדדים שבחרת"></div>
+        <div class="idxrow" id="idxRow" hidden aria-label="המדדים שבחרת" data-adv></div>
     <div class="depban" id="depBan" hidden></div>
     <div class="depban repban" id="repBan" role="status" hidden></div>
     <div id="taxBanner" hidden></div>
@@ -1690,6 +1709,7 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
       <h2 id="hGoalOv">היעד שלי</h2>
       <div class="panel goal" id="goalOv"></div>
     </section>
+    <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
     
     
 
@@ -1952,6 +1972,10 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
         </table></div>
       </details>
     </section>
+    <section aria-labelledby="hBench" id="benchSec">
+      <div class="row"><h2 id="hBench">האם אני עושה טוב? התיק מול המדדים</h2><span class="sub" id="benchSub"></span></div>
+      <div class="panel bench" id="benchBox"><div class="empty">ההשוואה תופיע כאן אחרי שההפקדות ונתוני המדדים ייטענו.</div></div>
+    </section>
     <section aria-labelledby="hMon" id="monSec">
       <div class="row"><h2 id="hMon">תשואה חודשית</h2><span class="sub">כמה הופקד בכל חודש, וכמה התיק עלה או ירד</span></div>
       <div class="panel scroll"><table class="mon">
@@ -1984,6 +2008,10 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
         </table>
         <p class="note" id="feeNote2" style="margin-top:10px"></p>
       </div>
+    </section>
+    <section aria-labelledby="hTax" id="taxSec">
+      <div class="row"><h2 id="hTax">מס: כמה הייתי משלם אם הייתי מוכר היום</h2><span class="sub" id="taxSub"></span></div>
+      <div class="panel taxnow" id="taxBox"><div class="empty">החישוב יופיע כאן אחרי שהתיק והמחירים ייטענו.</div></div>
     </section>
     <div id="backWrap" style="display:flex;flex-direction:column;gap:22px"></div>
   </div>
@@ -2160,6 +2188,8 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
       <div class="panel" style="display:flex;flex-direction:column;gap:12px">
         <dl class="medl" id="meList" hidden></dl>
         <p class="note" id="meNote" style="max-width:none"></p>
+        <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
+        <p class="note" style="margin:0;max-width:none">פשוטה: בסקירה רק שווי התיק, מה לעשות, האחזקות והפיזור, ובשאר המסכים בלי החלקים המתקדמים. מלאה: הכול.</p>
       </div>
     </section>
 
@@ -15954,6 +15984,8 @@ const I18N={lang:'he',on:false,ready:false,stop:'',re:null,reKey:'',heScript:fal
 const I18N_OK=c=>typeof c==='string'&&/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(c);
 // replace an element's HTML only when the page's own source for it changed; while the page is translated the text on screen
 // differs from the source, so the source written last is compared instead
+// the PDF and Excel libraries: inside the page in Claude; on the site, files of their own, loaded on the first need
+const libNeed=n=>{try{return window.__tcLib?window.__tcLib(n).catch(()=>{}):Promise.resolve()}catch(e){return Promise.resolve()}};
 const setH=(el,h)=>{if(!el)return false; if(I18N.on?el.__h===h:el.innerHTML===h)return false; el.__h=h; el.innerHTML=h; return true};
 const LRM='\u200E'; // keeps a leading + or − on the left of its number inside Hebrew text
 const sgn=(x,d=0)=>LRM+(x>=0?'+':'−')+ils(Math.abs(x),d);
@@ -16505,7 +16537,7 @@ function render(){
   renderHistory(); try{renderTimeline()}catch(e){}
   renderTrend();
   renderDecomp();
-  renderFees();
+  renderFees(); try{renderBench()}catch(e){} try{renderTax()}catch(e){}
   renderProfile(m);
   try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
   renderRisk(m);
@@ -17521,7 +17553,7 @@ function renderDesk(m,A){
   let L=[]; try{L=todoOf(m,A,T)}catch(e){}
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${trustH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${benchLineH()}${trustH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 const DESK_REP=new Set();
@@ -17998,8 +18030,9 @@ function anaFactsAI(F,issues,checks){
         parts:H.parts.map(x=>({name:x.t,points:x.pts+' מתוך 100',weight:Math.round(x.w/W*100)+'%',lost_from_index:Math.round(x.w*(1-x.s)/W*100)+' נקודות',status:x.lvl==='ok'?'תקין':x.lvl==='warn'?'לבדיקה':'חורג',detail:x.d})).sort((a,b)=>parseInt(b.lost_from_index)-parseInt(a.lost_from_index)),
         what_moves_each:{'ריכוז בנייר בודד':'הנייר הגדול ביחס לכלל "עד X% לנייר"; יורד כשמשקלו קטן (הפקדות לניירות אחרים) או כשהכלל משתנה','ריכוז בקבוצה':'הקבוצה הגדולה ביחס לכלל "עד X% לקבוצה"','פיזור':'כמה ניירות שווים התיק דומה להם; 10 ומעלה = מלא','סטייה מהיעדים':'הסטייה הגדולה בין קבוצה ליעד שלה','ניירות מתחת לסף הירידה':'חלק השווי בניירות שירדו מהעלות יותר מסף הבדיקה','חשיפה לדולר':'אחוז התיק בדולרים מול התקרה שנקבעה','איכות הנתונים':'מחירים ישנים או חסרים, ניירות בלי עלות'},
         screen:'סקירה → "מדד בריאות התיק"; הכללים עצמם ב"כללים ויעדים"'}}catch(e){return null}})(),
+    benchmark:benchFacts(), tax_if_sold_today:taxFacts(),
     // what each screen of the page is for, so questions about the system itself get an answer
-    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'היסטוריה: פעולות, הפקדות ודיבידנדים',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל; גם בכפתור לוח השנה בראש הדף'},
+    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'מבט לאחור: פעולות, הפקדות ודיבידנדים, שווי מול הפקדות, "האם אני עושה טוב?" (התיק מול S&P 500 ות״א 125), עמלות, ומס אם מוכרים היום',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל; גם בכפתור לוח השנה בראש הדף'},
       find_a_screen:'בתפריט ("עוד" בטלפון) יש חיפוש "לאן להגיע?": כותבים מילה כמו "עמלות" ומגיעים למקום. שם גם "מה חדש באתר" ו"סיור באתר"',
       prices:'מניות: מחיר חי בשעות המסחר, כל 5 דקות; קרנות נאמנות: המחיר הרשמי ממאיה (מתפרסם בערב), ובקרן שעוקבת אחרי מדד אמריקאי הערכה לפי המדד והדולר עד המחיר הרשמי הבא',
       groups_vs_sectors:'"פיזור לפי הקבוצות שלך" (בסקירה) סופר לפי הקבוצה שהמשתמש נתן לכל נייר; "ענף" בבקרה סופר קרן כקרן (ההרכב שלה לא ידוע), וקרן שהמשתמש שם בקבוצה אחרת מופיעה שם בשורה משלה'},
@@ -18497,7 +18530,7 @@ function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){co
 // ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
 // switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
 let MAILST=null;
-const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: מתי, הממצאים וההסבר, כמה שעות אחרי הדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף']];
+const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: מתי, הממצאים וההסבר, כמה שעות אחרי הדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
 const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
 function renderMail(){
   const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
@@ -19411,6 +19444,7 @@ function renderPdf(R){
 }
 const repFile=ext=>`doch-${RKF[RK]}${RP?'-'+RP:''}-${isoDay(Date.now())}.${ext}`;
 async function pdfBlob(R){
+  await libNeed('jspdf');
   try{ if(document.fonts&&document.fonts.ready)await document.fonts.ready }catch(e){}
   const pages=renderPdf(R), pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true});
   pages.forEach((c,i)=>{if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,595.28,841.89)});
@@ -19420,7 +19454,7 @@ async function pdfBlob(R){
 async function saveReport(R0,name,btn0){
   const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null; if(!dl)return;
   const b=btn0||$('btnReport'), l0=b.dataset.l0||(b.dataset.l0=b.textContent), reset=()=>setTimeout(()=>{b.disabled=false;b.textContent=l0},2500);
-  if(!window.jspdf){b.textContent='יצירת PDF לא זמינה כאן';reset();return}
+  await libNeed('jspdf'); if(!window.jspdf){b.textContent='יצירת PDF לא זמינה כאן';reset();return}
   const R=R0||buildReport(); if(!R){b.textContent='אין עדיין נתוני תיק';reset();return}
   b.disabled=true;b.textContent='מכין PDF…';
   try{
@@ -19446,7 +19480,7 @@ function domTable(tbodyId){
 async function saveExcel(R0,name,btn0){
   const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null; if(!dl)return;
   const b=btn0||$('btnExcel'), l0=b.dataset.l0||(b.dataset.l0=b.textContent), reset=()=>setTimeout(()=>{b.disabled=false;b.textContent=l0},2500);
-  if(!window.XLSX){b.textContent='יצירת אקסל לא זמינה כאן';reset();return}
+  await libNeed('xlsx'); if(!window.XLSX){b.textContent='יצירת אקסל לא זמינה כאן';reset();return}
   const R=R0||buildReport(); if(!R){b.textContent='אין עדיין נתוני תיק';reset();return}
   b.disabled=true;b.textContent='מכין אקסל…';
   try{
@@ -20207,7 +20241,7 @@ function redactPII(src,people){
 // ---- redact:end ----
 // A PDF statement: the text layer line by line, plus page images (when this view can send images) for tables the text scrambles.
 async function pdfRead(f,pass,maxImg){
-  const lib=window.pdfjsLib||window['pdfjs-dist/build/pdf']; if(!lib)throw {code:'nopdf'};
+  await libNeed('pdf'); const lib=window.pdfjsLib||window['pdfjs-dist/build/pdf']; if(!lib)throw {code:'nopdf'};
   let doc; try{doc=await lib.getDocument({data:new Uint8Array(await f.arrayBuffer()),password:pass||undefined,isEvalSupported:false}).promise}
   catch(e){throw {code:e&&e.name==='PasswordException'?'password':'badpdf'}}
   const n=Math.min(doc.numPages,15), imgs=[]; let text='';
@@ -20239,7 +20273,7 @@ async function readStatement0(J){
       if(f.size>2e7)throw {code:'big'};
       if(f.type==='application/pdf'||nm.endsWith('.pdf')){const r=await pdfRead(f,J.pass,maxImg);text+='\n\n### '+f.name+'\n'+r.text;imgs.push(...r.imgs)}
       else if(/^image\//.test(f.type)){if(!maxImg)throw {code:'noimg'};const sb=await shrinkImg(f);imgs.push(sb);imgFile.set(sb,f)}
-      else{if(!window.XLSX)throw {code:'file'};const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
+      else{await libNeed('xlsx'); if(!window.XLSX)throw {code:'file'};const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
         text+='\n\n'+wb.SheetNames.slice(0,6).map(n=>'### '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}
     }catch(e){const c=e&&e.code; J.failed=true;
       if(c==='password'){J.needPass=true; $('passWrap').hidden=false;$('upPass').focus()}
@@ -21281,6 +21315,8 @@ const TERMS={
   divsand:['מחשבון הדיבידנדים','זה ארגז חול לחישוב: הדיבידנד מחושב על השווי בכל חודש לפי התשואה שהזנת, והמס לפי האחוז שהזנת (ברירת המחדל 25%, כמו הניכוי במקור בדוחות; המס בפועל תלוי במצבך ובאמנת המס). שינוי במחיר או בדיבידנד הוא הנחה שלך, לא תחזית.'],
   comove:['ניירות שזזים יחד','כל פס מראה בכמה מימי המסחר בחודש הניירות בקבוצה זזו לאותו כיוון. הקו שבאמצע הפס הוא מה שיוצא במקרה, בלי שום קשר ביניהם. ככל שהפס עובר אותו, הקשר ברור יותר.'],
   scorecalc:['איך מחושב הציון','ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.'],
+  benchhow:['איך מחושבת ההשוואה','כל הפקדה (ומשיכה) נכנסת למדד ביום שבו היא נעשתה, במחיר הסגירה של אותו יום; S&P 500 בשקלים, לפי שער הדולר באותו יום. השווי היום הוא מספר היחידות כפול הסגירה האחרונה. התשואה השנתית היא השיעור שבו ההפקדות, כל אחת מהיום שלה, גדלות לשווי של היום (כך הפקדה של החודש שעבר נספרת רק חודש). המדדים הם מדדי מחיר בלי הדיבידנדים שהם מחלקים (כ-1% עד 2% בשנה), ובלי עמלות ומס.'],
+  taxhow:['איך מחושב המס','לכל נייר: השווי היום פחות מה ששילמת, בשקלים. בנייר בדולרים זה כולל את שינוי שער הדולר מאז הקנייה. הרווחים פחות ההפסדים הם הרווח אחרי קיזוז, ועליו השיעור שבהגדרות (בדרך כלל 25%). בפועל בית ההשקעות מחשב לפי כל קנייה בנפרד, יכול להפחית את חלק האינפלציה, ומקזז גם מול מכירות קודמות באותה שנה; לכן הדוח השנתי שלו הוא הקובע.'],
   fit:['דירוג התאמה','כמה נייר מתאים לתיק שלך לפי הכללים, היעדים וסוג המשקיע שבחרת: פיזור, איכות, תמחור ועוד. זה דירוג התאמה, לא המלצה לקנות.']};
 const TERM_AT=[['#hCore','core'],['label[for=inRate]','rate'],['label[for=inTax]','tax'],['label[for=rDrift]','drift'],['label[for=rUsd]','usd'],['label[for=rStop]','stop'],['label[for=rHold]','hold'],['#hAlloc','alloc'],['#hWatch','fit']];
 function termBtn(k){const t=TERMS[k]; return `<button type="button" class="term" data-term="${k}" aria-label="מה זה ${esc(t[0])}?" aria-expanded="false">?</button>`}
@@ -21880,6 +21916,7 @@ function showTab(t,user){
   if(t==='state'){try{renderState()}catch(e){}}
   if(t==='calendar'){try{renderCal()}catch(e){}}
   if(t==='pots'){try{renderPots()}catch(e){}}
+  if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
   if(t==='search'){try{loadSymDb().then(()=>{if(SV==='fit')setSV('fit');else srchRender()});loadAllQ().then(()=>srchQ());loadFit().then(()=>{if(SV==='fit')renderFit()})}catch(e){}}
   try{if(user){const pn=document.querySelector('[data-pane="'+t+'"]'),bh=0,top=pn.getBoundingClientRect().top+window.scrollY-bh-10;if(window.scrollY>top)window.scrollTo(0,Math.max(0,top))}}catch(e){}
@@ -22041,6 +22078,115 @@ $('navtab').addEventListener('click',()=>setNav(true));$('scrim').addEventListen
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('tabsbar').classList.contains('open'))setNav(false)});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#mix circle.seg')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 {let lastY=0;addEventListener('scroll',()=>{const y=window.scrollY,d=y-lastY;if(Math.abs(d)<8)return;lastY=y;$('navtab').classList.toggle('away',d>0&&y>140&&!$('tabsbar').classList.contains('open'))},{passive:true})}
+// ---- 21.10 (2) "האם אני עושה טוב?": the same deposits, on the same days, in S&P 500 (in shekels, at each day's dollar) and
+// in Tel Aviv 125, and the yearly return of each with the timing of the money (the rate that makes the deposits grow to
+// today's value). From the page's own records of the money in (the deposits, the apps' monthly tables, the plan's ticked
+// deposits: the same money as "מול ההפקדות") and the index closes in research/bench. Facts, not advice: the indices are
+// price indices (no dividends), without fees and tax.
+let BENCH_D=null, BENCH_ASK=0;
+function benchLoad(){if(!db||BENCH_ASK&&Date.now()-BENCH_ASK<6*36e5)return; BENCH_ASK=Date.now();
+  try{db.doc('research/bench').get().then(s=>{BENCH_D=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
+// the close on a day or the last one before it
+function serAt(s,day){if(!s||!s.d||!s.d.length||day<s.d[0])return null; let lo=0,hi=s.d.length-1; while(lo<hi){const mid=(lo+hi+1)>>1; if(s.d[mid]<=day)lo=mid; else hi=mid-1} return {d:s.d[lo],c:+s.c[lo]}}
+// the money in and out with its day, in shekels on that day: the deposits saved one by one (a dollar deposit at that day's
+// rate), the months of the apps' tables (their own money in, the deposits they stand for left out), the plan's deposits
+function depFlows(ambIls){
+  const out=[]; if(!HS)return out; const fxS=BENCH_D&&BENCH_D.fx, fxAt=day=>{const x=serAt(fxS,day); return x?x.c:usdRate()};
+  for(const A of HS.accounts||[]){
+    for(const d of A.deposits||[]){const amt=+d.amount||0, day=String(d.date||'').slice(0,10); if(!amt||!/^\d{4}-\d\d-\d\d$/.test(day))continue;
+      if((A.monthly||[]).some(r=>r&&r.flow!=null&&!savedBefore(r.ym,r.at)&&upCovers(r,d)))continue;
+      // a deposit with no currency of its own, in a dollar account: dollars, or shekels when that is how the total counted it
+      const usd=d.ccy?d.ccy==='USD':(A.ccy==='USD'&&!ambIls); out.push({day,ils:usd?amt*fxAt(day):amt})}
+    for(const r of A.monthly||[]){if(!r||r.flow==null||savedBefore(r.ym,r.at))continue; const v=(+r.flow)*(r.ccy==='USD'?(fxOfMonth(r.ym)||usdRate()):1); if(!v)continue;
+      out.push({day:r.asOf&&String(r.asOf).slice(0,7)===r.ym?String(r.asOf).slice(0,10):r.ym+'-15',ils:v,table:true})}}
+  for(const x of planExtraList())if(x.day&&x.amt)out.push({day:x.day,ils:x.amt,plan:true});
+  return out.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:0);
+}
+// the yearly rate r at which the flows (money in negative, today's value positive) sum to zero; t in days from the first
+function xirr(cf){
+  const f=r=>cf.reduce((s,x)=>s+x.v/Math.pow(1+r,x.t/365),0); let lo=-0.99, hi=20, flo=f(lo), fhi=f(hi);
+  if(!isFinite(flo)||!isFinite(fhi)||flo*fhi>0)return null;
+  for(let i=0;i<200;i++){const mid=(lo+hi)/2, fm=f(mid); if(Math.abs(fm)<1e-6||hi-lo<1e-9)return mid; if(flo*fm<0){hi=mid;fhi=fm}else{lo=mid;flo=fm}}
+  return (lo+hi)/2;
+}
+function benchCompare(m){
+  if(!m||!HS||!Q||!Q.usdIls)return null;
+  const tot=depTotal(), F1=depFlows(false), F2=depFlows(true), s1=F1.reduce((t,x)=>t+x.ils,0), s2=F2.reduce((t,x)=>t+x.ils,0);
+  const F=Math.abs(tot-s2)<Math.abs(tot-s1)?F2:F1; if(!F.length)return {none:true};
+  const sum=F===F2?s2:s1, gap=Math.round((tot-sum)*100)/100, today=ilDay();
+  // the same total as "מול ההפקדות": a small gap (a dollar deposit counted at another day's rate) spreads over the flows;
+  // a large one is money in without a day, put on the first day and said
+  let undated=0; if(Math.abs(gap)>0.5&&sum>0){if(Math.abs(gap)<=Math.abs(tot)*0.05){const k=tot/sum; for(const x of F)x.ils*=k} else {undated=gap; F.unshift({day:F[0].day,ils:gap,undated:true})}}
+  const dep=F.reduce((t,x)=>t+x.ils,0); if(!(dep>0))return {none:true};
+  const t0=Date.parse(F[0].day), days=Math.max(1,(Date.parse(today)-t0)/864e5);
+  const ret=val=>{const cf=F.map(x=>({t:(Date.parse(x.day)-t0)/864e5,v:-x.ils})).concat([{t:days,v:val}]); const r=xirr(cf); if(r==null)return null; return days>=365?{yr:r*100}:{per:(Math.pow(1+r,days/365)-1)*100}};
+  const me={k:'me',name:'התיק שלך',val:m.total,gain:m.total-dep,ret:ret(m.total)};
+  const run=k=>{const s=BENCH_D&&BENCH_D[k]; if(!s||!s.d||!s.d.length)return null; const fx=BENCH_D.fx;
+    const pIls=day=>{const x=serAt(s,day); if(!x)return null; if(k!=='spx')return x.c; const f=serAt(fx,day); return f?x.c*f.c:null};
+    let units=0, miss=0; for(const x of F){const p=pIls(x.day); if(!p){miss+=x.ils;continue} units+=x.ils/p}
+    const last=s.d[s.d.length-1], pNow=pIls(last); if(!pNow||miss>dep*0.05)return null;
+    const val=units*pNow+miss; return {k,name:((BENCH_D.names||{})[k])||k,val,gain:val-dep,ret:ret(val),last,miss}};
+  const B=[run('spx'),run('ta125')].filter(Boolean);
+  return {rows:[me,...B],dep,first:F[0].day,days,undated,n:F.length,at:BENCH_D&&BENCH_D.updatedAt,ready:B.length>0};
+}
+const retTxt=r=>!r?'—':r.yr!=null?spct(r.yr)+' בשנה':spct(r.per)+' בתקופה';
+function benchLineH(){
+  let B=null; try{B=benchCompare(mAllNow())}catch(e){} if(!B||!B.ready)return '';
+  const s=B.rows.find(r=>r.k==='spx'), me=B.rows[0]; if(!s)return '';
+  const d=me.val-s.val;
+  return `<p class="dk-dep dk-bench">מול המדד: אותן הפקדות ב-S&P 500 היו שוות היום ${nn(ils(s.val))}, ${nn(ils(Math.abs(d)))} ${d>=0?'פחות':'יותר'} מהתיק שלך. <button type="button" class="dk-go" data-goto="bench">להשוואה ›</button></p>`}
+function renderBench(){
+  const box=$('benchBox'); if(!box)return; benchLoad();
+  let B=null; try{B=benchCompare(mAllNow())}catch(e){}
+  if(!B){setH(box,'<div class="empty">ההשוואה תופיע כאן אחרי שהתיק וההפקדות ייטענו.</div>');return}
+  if(B.none){setH(box,'<div class="empty">עוד אין רישום של הפקדות עם תאריכים. אחרי שתעלה דוח או צילום של התנועות בחשבון, ההשוואה תופיע כאן.</div>');return}
+  if(!B.ready){setH(box,`<div class="empty">${BENCH_D?'אין עדיין נתוני מדדים לימים של ההפקדות.':'נתוני המדדים נטענים. ההשוואה תופיע כאן בעוד רגע.'}</div>`);return}
+  const mx=Math.max(...B.rows.map(r=>r.val)), me=B.rows[0];
+  const card=r=>`<div class="bn-r${r.k==='me'?' me':''}"><div class="bn-h"><b>${esc(r.name)}</b>${r.k!=='me'?`<span class="sub">אותן הפקדות, באותם ימים</span>`:''}</div>
+    <div class="bn-bar" role="img" aria-label="${esc(r.name)}: ${ils(r.val)}"><i style="width:${(r.val/mx*100).toFixed(1)}%"></i></div>
+    <div class="bn-v"><span><span class="k">שווה היום</span><b class="n">${ils(r.val)}</b></span><span><span class="k">רווח מול ההפקדות</span><b class="n ${r.gain>=0?'up':'down'}">${sgn(r.gain)}</b></span><span><span class="k">${r.ret&&r.ret.yr!=null?'תשואה שנתית':'תשואה בתקופה'}</span><b class="n ${r.ret&&((r.ret.yr??r.ret.per)>=0)?'up':'down'}">${r.ret?spct(r.ret.yr??r.ret.per):'—'}</b></span></div></div>`;
+  const s=B.rows.find(r=>r.k==='spx'), t=B.rows.find(r=>r.k==='ta125');
+  const lead=[s?`אילו אותן הפקדות היו נכנסות ל-S&P 500 באותם ימים, הן היו שוות היום ${nn(ils(s.val))}: ${nn(ils(Math.abs(me.val-s.val)))} ${me.val>=s.val?'פחות':'יותר'} מהתיק שלך.`:'',t?`בת״א 125: ${nn(ils(t.val))}.`:''].filter(Boolean).join(' ');
+  const mo=Math.round(B.days/30.4);
+  $('benchSub').textContent=`${B.n} הפקדות ומשיכות · ${ils(B.dep)} · מ-${dmy(B.first)}${mo>=1?` (${mo} חודשים)`:''}`;
+  setH(box,`<p class="bn-lead">${lead}</p><div class="bn-rows">${B.rows.map(card).join('')}</div>
+    <p class="note">${B.days<365?'פחות משנה, ולכן התשואה היא לכל התקופה ולא לשנה. ':''}המדדים בלי הדיבידנדים שלהם, בלי עמלות ובלי מס; S&P 500 בשקלים, לפי שער הדולר בכל יום. ${B.undated?`${ils(Math.abs(B.undated))} מההפקדות בלי תאריך נספרו כאילו הופקדו ב-${dmy(B.first)}. `:''}השוואה עובדתית, לא המלצה. ${whyBtn('benchhow','איך זה מחושב?')}</p>`);
+}
+function benchFacts(){let B=null; try{B=benchCompare(mAllNow())}catch(e){} if(!B||!B.ready)return null;
+  return {note:'אותן הפקדות באותם ימים; מדדי מחיר בלי דיבידנדים, בלי עמלות ומס; S&P 500 בשקלים לפי שער כל יום; עובדה, לא המלצה',deposits:ils(B.dep),from:dmy(B.first),
+    rows:B.rows.map(r=>({name:r.name,value_today:ils(r.val),gain_vs_deposits:sgn(r.gain),return:retTxt(r.ret)}))}}
+
+// ---- 21.10 (7) the tax if everything were sold today: 25% (or the rate in the settings) of the gain in shekels, the
+// dollar's part of it named, the losses that offset the gains, and the dividends' tax withheld. An estimate: the house's
+// annual tax report is what counts (it can adjust for inflation and has the real dates of each lot)
+function taxNow(m){
+  if(!m||!Q||!Q.usdIls)return null; const rate=(+S.taxPct>0?+S.taxPct:25)/100, fx=Q.usdIls;
+  let dcs={}; try{dcs=dollarCost(P,Q,HS,planOpen().buys,'all')}catch(e){}
+  const rows=m.pos.filter(p=>p.cost>0).map(p=>{const g=p.costVal-p.cost, dc=dcs[p.sym]; let fxPart=null;
+    if(p.ccy!=='ILS'&&dc&&dc.cost>0&&!dc.est&&Math.abs(dc.val*fx-p.costVal)<=Math.max(2,p.costVal*0.01))fxPart=dc.cost*fx-p.cost;
+    return {sym:p.sym,g,fxPart,val:p.costVal}});
+  if(!rows.length)return {none:true};
+  const up=rows.filter(r=>r.g>0), dn=rows.filter(r=>r.g<0), gains=up.reduce((t,r)=>t+r.g,0), losses=-dn.reduce((t,r)=>t+r.g,0), net=gains-losses;
+  const fxKnown=rows.filter(r=>r.fxPart!=null), fxTot=fxKnown.reduce((t,r)=>t+r.fxPart,0);
+  let div=null; try{const D=divHistory(); if(D.rows.length)div=D.tot}catch(e){}
+  return {rate,gains,losses,net,tax:Math.max(0,net)*rate,taxNoOffset:gains*rate,saved:Math.min(gains,losses)*rate,dn:dn.sort((a,b)=>a.g-b.g),up,fxTot,fxN:fxKnown.length,usdN:rows.filter(r=>m.pos.find(p=>p.sym===r.sym&&p.ccy!=='ILS')).length,noCost:m.pos.filter(p=>!(p.cost>0)).map(p=>p.sym),div};
+}
+function renderTax(){
+  const box=$('taxBox'); if(!box)return; let T=null; try{T=taxNow(mAllNow())}catch(e){}
+  if(!T){setH(box,'<div class="empty">החישוב יופיע כאן אחרי שהתיק והמחירים ייטענו.</div>');return}
+  if(T.none){setH(box,'<div class="empty">אין מחירי קנייה, ולכן אי אפשר לחשב רווח ומס. אפשר להשלים אותם בלשונית "התיק שלי".</div>');return}
+  $('taxSub').textContent=`שיעור ${pct(T.rate*100,0)} · הערכה`;
+  const cell=(k,v,d,cls)=>`<div class="cell"><div class="k">${k}</div><span class="v${cls?' '+cls:''}">${v}</span><div class="d">${d||'&nbsp;'}</div></div>`;
+  const loss=T.dn.length?`<p class="tx-l"><b>הפסדים שמקזזים את הרווחים:</b> ${T.dn.slice(0,8).map(r=>`${symH(r.sym)} ${nn(sgn(r.g),'down')}`).join(' · ')}${T.dn.length>8?` ועוד ${T.dn.length-8}`:''}. כשמוכרים נייר בהפסד באותה שנה שבה מוכרים נייר ברווח, ההפסד מקטין את הרווח שעליו משלמים מס${T.saved>0.5?`; כאן זה ${nn(ils(T.saved))} פחות מס`:''}.</p>`:'<p class="tx-l">אין עכשיו ניירות בהפסד שיכולים לקזז את הרווחים.</p>';
+  const fxl=T.fxN?`<p class="tx-l"><b>השפעת הדולר:</b> ${nn(sgn(T.fxTot),T.fxTot>=0?'up':'down')} מהרווח בשקלים של ${T.fxN===1?'נייר אחד':T.fxN+' ניירות'} בדולרים הם שינוי השער מאז הקנייה, ולא שינוי המחיר. המס הוא על הרווח בשקלים, כך שגם החלק הזה נכלל.</p>`:'';
+  const dv=T.div&&T.div.gross>0?`<p class="tx-l"><b>דיבידנדים:</b> התקבלו ${nn(ils(T.div.gross))} לפני מס, ונוכו ${nn(ils(T.div.tax))} מס במקור${T.div.est?' (בחלק מהתשלומים מוערך)':''}. המס הזה כבר שולם, ולא נכלל למעלה.</p>`:'';
+  setH(box,`<div class="strip">${cell('הרווחים',nn(sgn(T.gains),'up'),`${T.up.length} ניירות ברווח`)}${cell('ההפסדים',nn(sgn(-T.losses),'down'),`${T.dn.length} ניירות בהפסד`)}${cell('הרווח אחרי קיזוז',nn(sgn(T.net),T.net>=0?'up':'down'),'רווח פחות הפסד')}${cell('מס משוער',nn(ils(T.tax)),T.net>0?`${pct(T.rate*100,0)} מהרווח אחרי קיזוז`:'אין רווח, אין מס')}</div>
+    ${loss}${fxl}${dv}
+    <p class="note">${T.noCost.length?`בלי ${T.noCost.map(lab).join(', ')}, שאין להם מחיר קנייה. `:''}הערכה בלבד: בית ההשקעות מחשב את המס לפי כל קנייה בנפרד ויכול להפחית את חלק האינפלציה, ולכן הדוח השנתי שלו הוא הקובע. זה חישוב, לא המלצה למכור. ${whyBtn('taxhow','איך זה מחושב?')}</p>`);
+}
+function taxFacts(){let T=null; try{T=taxNow(mAllNow())}catch(e){} if(!T||T.none)return null;
+  return {note:'הערכה: אם הכול נמכר היום; שיעור מההגדרות; הפסדים מקזזים רווחים; לא המלצה למכור',rate:pct(T.rate*100,0),gains:ils(T.gains),losses:ils(T.losses),net:sgn(T.net),tax_estimate:ils(T.tax),
+    dollar_part:T.fxN?sgn(T.fxTot):null,losing:T.dn.map(r=>lab(r.sym)),dividends_tax_withheld:T.div?ils(T.div.tax):null}}
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----
 // Everything here reads what the page already computed (the model, the alert engine, the price document); it adds no
 // numbers of its own. The to-do list is the one place for what needs doing: the rules' alerts, a new company report, the
@@ -22068,12 +22214,15 @@ function pxTrust(m){
   if(m.noRate&&m.noRate.length)iss.push({k:'norate',syms:m.noRate,t:`חסר שער מטבע ל-${symsTxt(m.noRate,'','ניירות')}`,d:'השער מגיע בעדכון המחירים הבא, ועד אז הם לא נכללים בשווי.'});
   // the funds: one official price a day, published after the close
   const fp=m.pos.filter(p=>isF(p.sym)&&(meta[p.sym]||{}).date), fd=fp.map(p=>meta[p.sym].date).sort(), est=m.pos.some(p=>isF(p.sym)&&/^הערכה/.test(st[p.sym]||''));
-  const chk=selfCheck(m); if(chk.bad.length)iss.push({k:'sum',t:'נמצא פער בין שני מסכים',d:chk.bad.map(x=>x.t).join(' ')+' זו טעות של הדף, לא של התיק. כדאי לצלם את המסך ולשלוח לבעל האתר.'});
+  const chk=selfCheck(m); if(chk.bad.length)selfReport(chk); if(chk.bad.length)iss.push({k:'sum',t:'נמצא פער בין שני מסכים',d:chk.bad.map(x=>x.t).join(' ')+' זו טעות של הדף, לא של התיק. כדאי לצלם את המסך ולשלוח לבעל האתר.'});
   return {ok:!iss.length,iss,fund:fd.length?fd[fd.length-1]:'',fundOld:fd.length?fd[0]:'',est,chk,at:Q.updatedAt};
 }
 // ---- the same total, counted in each view: the holdings and the cash, the groups (פיזור לפי הקבוצות), the exposures
 // (ענף, מטבע, בורסה, סוג) and the fees table. A gap of more than a shekel (or 0.05%) is a fault of the page
-var FEECK=null;
+var FEECK=null, SCSENT='';
+// the owner's page tells the server about a gap (once per kind of gap in a visit); the price watch e-mails the owner
+function selfReport(chk){if(!OWNER||LOCAL||!window.__tc)return; const sig=chk.bad.map(x=>x.name).sort().join('|'); if(!sig||sig===SCSENT)return; SCSENT=sig;
+  try{fetch('/api/selfcheck',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1','content-type':'application/json'},body:JSON.stringify({bad:chk.bad.map(x=>({name:x.name,t:x.t}))})}).catch(()=>{})}catch(e){}}
 function selfCheck(m){
   const out={ok:[],bad:[]}; if(!m||!(m.total>0))return out; const T=m.total, tol=Math.max(1,T*0.0005), cmp=(name,v)=>{if(v==null||!isFinite(v))return; (Math.abs(v-T)<=tol?out.ok:out.bad).push({name,v,t:`${name}: ${ils(v)} במקום ${ils(T)}.`})};
   cmp('האחזקות והמזומן',m.pos.reduce((t,p)=>t+p.val,0)+m.cash);
@@ -22101,7 +22250,7 @@ function whyBtn(k,l){const t=TERMS[k]; if(!t)return ''; return `<button type="bu
 const TODO_SEV={crit:0,rep:1,px:2,warn:3,setup:4,info:5,tip:6};
 function mailSugg(){
   if(!OWNER||LOCAL||!db||!canWrite||!MAILST||!MAILST.ready)return null; if(UXK('tr_tipmail'))return null;
-  const M=(S&&S.mail)||{}, want=[['earnings','דוח חדש של מניה שלך'],['backup','גיבוי יומי של הנתונים']].filter(([k])=>M[k]!==true); return want.length?want:null}
+  const M=(S&&S.mail)||{}, want=[['earnings','דוח חדש של מניה שלך'],['backup','גיבוי יומי של הנתונים'],['pxalert','התראה כשמשהו לא מתעדכן']].filter(([k])=>M[k]!==true); return want.length?want:null}
 function mailBoot(){if(MAILST||mailBoot.asked||!OWNER||LOCAL||!db)return; mailBoot.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
 function todoOf(m,A,T){
   const L=[], cut=x=>{x=String(x||'');if(x.length<=130)return x;const i=x.lastIndexOf(' ',128);return x.slice(0,i>60?i:128)+'…'};
@@ -22117,7 +22266,9 @@ function todoOf(m,A,T){
   const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
   const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});
   if(!UXK('tr_tour'))L.push({sev:'tip',ic:'info',cat:'סיור',h:'סיור של דקה: איפה רואים כמה יש לך, מה לעשות, ואיך מעלים דוח.',b:'<button type="button" class="dk-go" data-uxgo="tour">להתחיל סיור ›</button><button type="button" class="dk-ack" data-uxx="tr_tour">לא צריך</button>'});
-  return L.sort((a,b)=>TODO_SEV[a.sev]-TODO_SEV[b.sev]);
+  L.sort((a,b)=>TODO_SEV[a.sev]-TODO_SEV[b.sev]);
+  // one suggestion at a time (the next one shows when this one is done or dismissed): a list that is always long stops being read
+  const tip=L.findIndex(x=>x.sev==='tip'); return tip<0?L:L.filter((x,i)=>x.sev!=='tip'||i===tip);
 }
 function todoH(L,nAck){
   const li=x=>`<li class="${x.sev}">${niH(x.ic)}<span><span class="dk-cat">${esc(x.cat)}</span> ${x.h}<span class="dk-btns">${x.b}</span></span></li>`;
@@ -22139,7 +22290,7 @@ document.addEventListener('click',ev=>{
     return}
   const x=ev.target.closest&&ev.target.closest('[data-uxx]'); if(x){UXS(x.dataset.uxx,new Date().toISOString()); try{render()}catch(e){} return}
   const ml=ev.target.closest&&ev.target.closest('[data-uxmail]'); if(ml){if(!canWrite||!OWNER)return; const k=ml.dataset.uxmail; S.mail={...(S.mail||{}),[k]:true}; changed(); try{renderMail()}catch(e){}
-    offerUndo(k==='earnings'?'יישלח מייל כשמניה שבתיק או במעקב מפרסמת דוח.':'יישלח מייל עם גיבוי של הנתונים שלך כל לילה.',()=>{S.mail={...(S.mail||{}),[k]:false}; changed(); try{renderMail()}catch(e){}},6000); return}
+    offerUndo(k==='earnings'?'יישלח מייל כשמניה שבתיק או במעקב מפרסמת דוח.':k==='pxalert'?'יישלח מייל כשהמחירים נתקעים או כשהדף מוצא פער בין מסכים.':'יישלח מייל עם גיבוי של הנתונים שלך כל לילה.',()=>{S.mail={...(S.mail||{}),[k]:false}; changed(); try{renderMail()}catch(e){}},6000); return}
   if(ev.target.closest&&ev.target.closest('#kTrust')){ev.preventDefault(); showTab('overview',true); setTimeout(()=>{const t=$('dkTrust'); if(t){const d=t.querySelector('details'); if(d)d.open=true; t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60)}
 });
 const uxLit=el=>{if(!el)return; el.classList.remove('uxlit'); void el.offsetWidth; el.classList.add('uxlit'); setTimeout(()=>el.classList.remove('uxlit'),2400)};
@@ -22167,6 +22318,8 @@ const GO=[
   {id:'mon',l:'תשואה חודשית',k:'תשואה חודש חודשי',tab:'history',el:'hMon'},
   {id:'fees',l:'עמלות',k:'עמלה עמלות דמי טיפול',tab:'history',el:'hFees'},
   {id:'dec',l:'מאיפה באה התוצאה',k:'פירוק תוצאה דולר מחיר',tab:'history',el:'hDec'},
+  {id:'bench',l:'האם אני עושה טוב? התיק מול המדדים',k:'מדד מדדים השוואה s&p תשואה שנתית ביצועים טוב',tab:'history',el:'hBench'},
+  {id:'tax',l:'מס: אם הייתי מוכר היום',k:'מס רווחי הון קיזוז הפסדים מכירה',tab:'history',el:'hTax'},
   {id:'reps',l:'הדוחות שלי (שבועי, חודשי)',k:'דוח שבועי חודשי רבעוני pdf',tab:'reports'},
   {id:'srch',l:'חיפוש נייר',k:'חיפוש מניה נייר סימול',tab:'search'},
   {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
@@ -22186,6 +22339,8 @@ const GO=[
   {id:'me',l:'הפרופיל שלי',k:'פרופיל שם שפה',tab:'settings',el:'hMe'},
   {id:'data',l:'פרטיות, נתונים וגיבוי',k:'פרטיות גיבוי ייצוא נתונים',tab:'settings',el:'hData'},
   {id:'src',l:'מקורות המחירים',k:'מקור מקורות מאיה yahoo נתונים מאיפה',tab:'settings',el:'srcPanel'},
+  {id:'2fa',l:'אימות דו-שלבי',k:'אבטחה קוד כניסה סיסמה טלפון אימות',fn:()=>{if(window.__tc)location.href='security.html'; else offerUndo('אימות דו-שלבי זמין באתר, בכפתור החשבון.',null,5000,'סגור')}},
+  {id:'view',l:'תצוגה פשוטה או מלאה',k:'תצוגה פשוטה מלאה רגועה פירוט',tab:'settings',el:'hMe'},
   {id:'news',l:'מה חדש באתר',k:'חדש עדכון גרסה',fn:()=>newsOpen()},
   {id:'tour',l:'סיור באתר',k:'סיור הדרכה עזרה מתחילים',fn:()=>tourStart()}];
 const goNorm=s=>String(s||'').toLowerCase().replace(/[׳'"״`]/g,'').replace(/ך/g,'כ').replace(/ם/g,'מ').replace(/ן/g,'נ').replace(/ף/g,'פ').replace(/ץ/g,'צ').replace(/\s+/g,' ').trim();
@@ -22214,6 +22369,12 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-21.2',at:'2026-10-21',t:'אימות דו-שלבי',d:'בכל כניסה גם קוד מאפליקציה בטלפון. מפעילים בכפתור החשבון (העיגול בפינה) ← "אימות דו-שלבי".',go:'2fa'},
+  {v:'2026-10-21.2',at:'2026-10-21',t:'מייל כשמשהו לא מתעדכן',d:'מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים: מייל אליך, פעם אחת לכל בעיה. מפעילים בהגדרות ← מיילים.',go:'mail'},
+  {v:'2026-10-21.2',at:'2026-10-21',t:'האתר נטען מהר יותר',d:'ספריות ה-PDF והאקסל נטענות רק כשמעלים דוח או מייצאים, ולכן הטעינה בטלפון קלה בערך פי שניים.'},
+  {v:'2026-10-21.2',at:'2026-10-21',t:'תצוגה פשוטה או מלאה',d:'מתג אחד במקום שניים: בסוף הסקירה ובהגדרות ← הפרופיל שלי.',go:'view'},
+  {v:'2026-10-21.2',at:'2026-10-21',t:'האם אני עושה טוב?',d:'במבט לאחור: כמה היו שוות אותן הפקדות, באותם ימים, ב-S&P 500 ובת״א 125, ותשואה שנתית לפי מועדי ההפקדות.',go:'bench'},
+  {v:'2026-10-21.2',at:'2026-10-21',t:'מס אם מוכרים היום',d:'הרווח בשקלים כולל השפעת הדולר, ההפסדים שמקזזים אותו, והמס שנוכה על דיבידנדים. הערכה, לא המלצה.',go:'tax'},
   {at:'2026-10-21',t:'מה לעשות עכשיו',d:'בסקירה, רשימה אחת של מה שצריך לעשות: הפקדה, דוח חדש של חברה, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.',go:'todo'},
   {at:'2026-10-21',t:'סימן אמינות למחירים',d:'ליד שווי התיק: "המחירים עדכניים" או מה בדיוק לא התעדכן. הדף גם בודק שהשווי זהה בכל התצוגות.',go:'trust'},
   {at:'2026-10-21',t:'לאן להגיע?',d:'חיפוש בתפריט: כותבים "עמלות" או "לוח מסחר" ומגיעים ישר למקום.',go:'goq'},
@@ -22222,8 +22383,9 @@ const NEWS=[
   {at:'2026-10-21',t:'הפקדה חד פעמית',d:'בונוס או סכום נוסף: נכנס ליתרה להשקעה, לשווי התיק ולשורת החודש.',go:'once'},
   {at:'2026-10-21',t:'דוחות של חברות',d:'כשמניה שבתיק או במעקב מפרסמת דוח: מתי, הממצאים והסבר, בדף המניה. אפשר לקבל גם מייל.',go:'rate'},
   {at:'2026-10-20',t:'מחירי קרנות ממאיה',d:'המחיר הרשמי של קרנות הנאמנות מאתר הבורסה, נבדק כל 15 דקות.',go:'src'}];
-const NEWSV=NEWS[0].at;
-const newsUnseen=()=>{const s=UXK('tr_news')||''; return NEWS.filter(n=>n.at>s)};
+for(const n of NEWS)if(!n.v)n.v=n.at+'.1';
+const NEWSV=NEWS.map(n=>n.v).sort().pop();
+const newsUnseen=()=>{const s=UXK('tr_news')||''; return NEWS.filter(n=>n.v>s)};
 function newsSeen(){UXS('tr_news',NEWSV); newsDot()}
 function newsDot(){const d=$('sbNewsDot'); if(d)d.hidden=!newsUnseen().length}
 function newsOpen(){
@@ -22243,7 +22405,7 @@ const TOUR=[
   {sel:['#hero .worth'],t:'כמה יש לך',d:'שווי התיק עכשיו, והשינוי מאז יום המסחר הקודם. "למה?" מסביר מה הזיז אותו.'},
   {sel:['#kTrust'],t:'האם המחירים עדכניים',d:'✓ אומר שהמחירים מהמסחר האחרון. אם משהו לא התעדכן, כתוב כאן מה ולמה, ואין צורך לבדוק מול בית ההשקעות.'},
   {sel:['#desk'],t:'מה לעשות עכשיו',d:'כל מה שדורש את תשומת לבך במקום אחד: הפקדה, דוח חדש, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.'},
-  {sel:['#botbar [data-bb="mine"]','#tab_mine'],t:'התיק שלי: מעלים דוח',d:'כאן מעדכנים את התיק. הכי פשוט: צילום מסך של רשימת האחזקות באפליקציה (בבלינק: "ההשקעות שלי"; באקסלנס: מסך התיק), או קובץ PDF או אקסל מבית ההשקעות. צ׳יקו קורא, ואתה בודק ושומר.'},
+  {sel:['#botbar [data-bb="mine"]','#tab_mine'],t:'התיק שלי: מעלים דוח',d:'כאן מעדכנים את התיק. הכי פשוט: צילום מסך של רשימת האחזקות באפליקציה (בבלינק: "ההשקעות שלי"; באקסלנס: המסך עם רשימת הניירות), או קובץ PDF או אקסל מבית ההשקעות. צ׳יקו קורא, ואתה בודק ושומר.'},
   {sel:['#botbar [data-bb="plan"]','#tab_plan'],t:'תוכנית',d:'ההפקדה החודשית, מה הבא בתור לפי התוכנית שקבעת, הפקדה חד פעמית וחסכונות לפי מטרה.'},
   {sel:['#botbar [data-bb="risk"]','#tab_risk'],t:'בקרה',d:'האם התיק עומד בכללים שקבעת: ריכוז, פיזור, ירידות וחשיפה לדולר.'},
   {sel:['#botbar [data-bb="more"]','#goQ'],t:'לא מוצא משהו?',d:'ב"עוד" יש חיפוש "לאן להגיע?": כותבים "עמלות" או "לוח מסחר" ומגיעים ישר למקום.'},
@@ -22266,7 +22428,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 function sideMore(){const s=document.querySelector('.hero .side'), b=$('sideMore'); if(!s||!b)return; const open=UXK('tr_side')==='open';
   s.classList.toggle('lessm',!open); b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#sideMore')){UXS('tr_side',UXK('tr_side')==='open'?'less':'open'); sideMore()}});
-window.__ux={trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
+window.__ux={facts:()=>{try{const F=anaFactsAI(anaFacts(),[],[]); return {benchmark:F.benchmark,tax:F.tax_if_sold_today}}catch(e){return {err:String(e&&e.message||e)}}},bench:()=>benchCompare(mAllNow()),tax:()=>taxNow(mAllNow()),trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
 // ---- ux:end ----
 try{navBoot()}catch(e){}
 try{srchBoot()}catch(e){}

@@ -620,3 +620,53 @@ test('planned money in and out: months left, a share of today\'s value, past dat
   const far=EX.pfExplain(mm,E,{R:{},years:0,flows:EX.flowsView([{ym:'2031-04',kind:'out',amount:5750}],mm,0,now)});
   assert.ok(!far.questions.some(q=>q.k==='flow'),'a withdrawal more than 3 years away is not asked about');
 });
+
+// ---- 21.10 (2): "האם אני עושה טוב?" and the tax if sold today ----
+test('the same deposits in the index: each on its own day, S&P 500 at that day\'s dollar, the yearly return with the timing of the money',()=>{
+  const G2={...G,HS:null,PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}},BENCH_D:null,S:{taxPct:25},DY:null};
+  const B=load(['serAt','xirr','depFlows','benchCompare','allDep','usdRate','depNet','markDay','planExtraList','planCovered','upMonths','fxOfMonth','savedBefore','upCovers','depUp','depTotal','planDepExtra','ilDay','acctIds','stmtDay','coveredBy','planOpen'],G2);
+  // the close on a day, or the last one before it
+  const s={d:['2026-01-02','2026-01-05','2026-01-09'],c:[10,11,12]};
+  assert.equal(B.serAt(s,'2026-01-01'),null); assert.deepEqual(B.serAt(s,'2026-01-07'),{d:'2026-01-05',c:11}); assert.deepEqual(B.serAt(s,'2026-02-01'),{d:'2026-01-09',c:12});
+  // a yearly rate: 1000 in, 1100 a year later → 10%; two deposits of 1000, a year apart, worth 2100 at the end → 6.6%
+  near(B.xirr([{t:0,v:-1000},{t:365,v:1100}]),0.10,1e-6);
+  const r2=B.xirr([{t:0,v:-1000},{t:365,v:-1000},{t:730,v:2310}]); near(r2,0.10,1e-6,'10% a year on each');
+  // two deposits; the index doubles between them (in shekels); the portfolio is worth 3000
+  G2.Q={usdIls:3.5}; G2.HS={depIlsNow:2000,accounts:[{acct:'exc',ccy:'ILS',deposits:[{date:'2025-01-10',amount:1000,ccy:'ILS'},{date:'2026-01-12',amount:1000,ccy:'ILS'}]}]};
+  G2.BENCH_D={spx:{d:['2025-01-10','2026-01-12','2026-10-20'],c:[100,200,200]},fx:{d:['2025-01-10','2026-10-20'],c:[3.5,3.5]},ta125:{d:['2025-01-09','2026-01-12','2026-10-20'],c:[1000,1000,1000]},names:{spx:'S&P 500',ta125:'ת״א 125'}};
+  const C=B.benchCompare({total:3000});
+  assert.equal(C.dep,2000); assert.equal(C.first,'2025-01-10'); assert.equal(C.undated,0);
+  const by=Object.fromEntries(C.rows.map(r=>[r.k,r]));
+  near(by.spx.val,3000,1e-6,'1000 doubled, then 1000 at the top'); near(by.ta125.val,2000,1e-6,'a flat index keeps the money');
+  near(by.me.gain,1000); assert.ok(by.me.ret.yr>0&&by.ta125.ret.yr!=null&&Math.abs(by.ta125.ret.yr)<1e-6,'over a year: a yearly rate; the flat index 0%');
+  // the dollar: S&P 500 in shekels moves with the rate even when the index stands still
+  G2.BENCH_D={...G2.BENCH_D,spx:{d:['2025-01-10','2026-10-20'],c:[100,100]},fx:{d:['2025-01-10','2026-01-12','2026-10-20'],c:[3.0,3.5,3.6]}};
+  near(B.benchCompare({total:3000}).rows.find(r=>r.k==='spx').val,1000*3.6/3.0+1000*3.6/3.5,1e-6);
+  // money in with no day (the statements' total is larger than the dated deposits): put on the first day, and said
+  G2.HS={...G2.HS,depIlsNow:3000}; const U=B.benchCompare({total:3000}); assert.equal(U.undated,1000); assert.equal(U.dep,3000);
+  // a gap of a few percent (a dollar deposit counted at another day's rate) is spread, so the total stays the hero's
+  G2.HS={...G2.HS,depIlsNow:2050}; const V=B.benchCompare({total:3000}); assert.equal(V.undated,0); near(V.dep,2050,1e-6);
+  // nothing dated yet
+  G2.HS={depIlsNow:0,accounts:[]}; assert.deepEqual(B.benchCompare({total:3000}),{none:true});
+});
+
+test('the tax if everything were sold today: the gain in shekels, the losses that offset it, the dollar\'s part',()=>{
+  const G3={...G,S:{taxPct:25},HS:null,PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}}};
+  G3.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:2800,costUsd:800,group:'tech'},{sym:'KO',acct:'blink',ccy:'USD',qty:10,costIls:2500,group:'cons'},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:500}],cash:[]};
+  G3.Q={usdIls:3.5,prices:{MSFT:500,KO:60,'1159250':40},prev:{}};
+  const T=load(['taxNow','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','divHistory','fxOfMonth','DIV_WH','ilDay'],G3,['allBuy']);
+  const x=T.taxNow(T.model(G3.P,G3.Q,'all'));
+  // MSFT 3500 − 2800 = +700; KO 2100 − 2500 = −400; the fund 400 − 500 = −100
+  near(x.gains,700); near(x.losses,500); near(x.net,200); near(x.tax,50); near(x.saved,125,'the losses save 25% of 500');
+  assert.deepEqual(x.dn.map(r=>r.sym),['KO','1159250'],'the largest loss first');
+  assert.equal(T.taxNow(T.model({positions:[],cash:[]},G3.Q,'all')).none,true);
+});
+
+test('"מה חדש" and "לאן להגיע?": every item is dated and versioned, and every way to a screen leads somewhere',()=>{
+  const W=load(['GO','NEWS','TABS'],{...G,$:()=>null,newsOpen:()=>{},tourStart:()=>{},offerUndo:()=>{},location:{}});
+  const ids=new Set(W.GO.map(g=>g.id));
+  assert.equal(ids.size,W.GO.length,'no two with one id');
+  for(const g of W.GO)assert.ok(g.fn||W.TABS.includes(g.tab),'a screen that exists: '+g.id);
+  for(const n of W.NEWS){assert.match(n.at,/^\d{4}-\d\d-\d\d$/,n.t); assert.ok(n.t&&n.d,n.t); if(n.go)assert.ok(ids.has(n.go)||n.go==='goq','"קח אותי לשם" leads somewhere: '+n.t)}
+  assert.ok(W.NEWS[0].v&&W.NEWS.every((n,i)=>i===0||(n.v||n.at+'.1')<=(W.NEWS[i-1].v||W.NEWS[i-1].at+'.1')),'the newest first, so the release adds at the top');
+});

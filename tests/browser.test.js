@@ -190,14 +190,21 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.ok(r.chipOn); assert.match(r.chip,/חלק מהמחירים לא עדכניים/); assert.match(r.row,/warn/); assert.match(r.txt,/TA125, TA90: לא הגיע מחיר מהבורסה/);
       assert.ok(!r.cats.includes('מחיר'),'the prices are said once, above the list');
       assert.deepEqual(r.chk.bad,[],'no gap between the views'); assert.ok(r.chk.ok.length>=6,'holdings, groups and the exposures add up to the total: '+r.chk.ok.length);
-      assert.ok(r.todo.some(x=>x.cat==='מיילים')&&r.todo.some(x=>x.cat==='מה חדש')&&r.todo.some(x=>x.cat==='סיור'),JSON.stringify(r.todo));
-      assert.ok(r.todo.findIndex(x=>x.sev==='crit')<r.todo.findIndex(x=>x.cat==='מה חדש'),'what needs doing comes before the suggestions');
+      assert.deepEqual(r.todo.filter(x=>x.sev==='tip').map(x=>x.cat),['מיילים'],'one suggestion at a time: '+JSON.stringify(r.todo));
+      assert.ok(r.todo.findIndex(x=>x.sev==='crit')<r.todo.findIndex(x=>x.cat==='מיילים'),'what needs doing comes before the suggestion');
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
       assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
       assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail="earnings"]')&&!!document.querySelector('[data-uxmail="backup"]')),'only the one still off is offered');
       await pg.evaluate(()=>document.querySelector('[data-uxx="tr_tipmail"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail]')),'"לא עכשיו" hides it');
+      assert.deepEqual(await pg.evaluate(()=>window.__ux.todo().filter(x=>x.sev==='tip').map(x=>x.cat)),['מה חדש'],'then the next suggestion');
+      // one switch for the level of detail: at the end of the home page and in the settings, not above everything
+      const vs=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="overview"]'), v=p.querySelector('.viewsw'); return {n:document.querySelectorAll('.viewsw').length,last:!!v&&[...p.children].indexOf(v.closest('.viewwrap'))>[...p.children].indexOf(document.getElementById('holdSec'))}});
+      assert.deepEqual(vs,{n:2,last:true});
+      await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
+      assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'&&getComputedStyle(document.getElementById('sideMore')).display==='none'),'simple: no ticker, two figures');
+      await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="full"]').click()); await pg.waitForTimeout(300);
       // the hero on a phone: two figures, the rest one tap away
       const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').length);
       assert.equal(await hv(),2); await pg.click('#sideMore'); assert.equal(await hv(),6); await pg.click('#sideMore'); assert.equal(await hv(),2);
@@ -221,6 +228,74 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.deepEqual(pg.errs,[]); await ctx.close();
     }
   }finally{store.setDoc('quotes/latest',Q0,{silent:true}); if(M0.exists)store.setDoc('system/mail',M0.data,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('"האם אני עושה טוב?": the same deposits in S&P 500 and Tel Aviv 125, the yearly return; and the tax if sold today',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const day=k=>new Date(Date.now()-k*864e5).toISOString().slice(0,10), D=[], C=[], T2=[], X=[];
+  for(let k=420;k>=1;k-=3){D.push(day(k)); C.push(+(5000+(420-k)*2).toFixed(2)); T2.push(+(2500+(420-k)*0.5).toFixed(2)); X.push(3.7)}
+  store.setDoc('research/bench',{spx:{d:D,c:C},ta125:{d:D,c:T2},fx:{d:D,c:X},names:{spx:'S&P 500',ta125:'ת״א 125'},updatedAt:new Date().toISOString(),source:'בדיקה'},{silent:true});
+  try{
+    const {ctx,pg}=await open(390);
+    // on the home page, one line; the way to the comparison
+    const line=await pg.evaluate(()=>document.querySelector('#desk .dk-bench')?.textContent||'');
+    assert.match(line,/מול המדד: אותן הפקדות ב-S&P 500 היו שוות היום ₪[\d,]+, ₪[\d,]+ (פחות|יותר) מהתיק שלך/);
+    await pg.evaluate(()=>document.querySelector('#desk .dk-bench [data-goto="bench"]').click()); await pg.waitForTimeout(900);
+    const r=await pg.evaluate(()=>({page:document.body.dataset.page,top:document.getElementById('hBench').getBoundingClientRect().top,rows:[...document.querySelectorAll('#benchBox .bn-r b')].filter(b=>!b.classList.contains('n')).map(b=>b.textContent),
+      lead:document.querySelector('#benchBox .bn-lead').textContent,sub:document.getElementById('benchSub').textContent,note:document.querySelector('#benchBox .note').textContent,vals:[...document.querySelectorAll('#benchBox .bn-v b')].map(b=>b.textContent)}));
+    assert.equal(r.page,'history'); assert.ok(r.top>=0&&r.top<500,'in view');
+    assert.deepEqual(r.rows,['התיק שלך','S&P 500','ת״א 125']);
+    assert.match(r.lead,/אילו אותן הפקדות היו נכנסות ל-S&P 500 באותם ימים, הן היו שוות היום ₪[\d,]+/); assert.match(r.sub,/הפקדות ומשיכות · ₪21,000 · מ-/);
+    assert.match(r.note,/פחות משנה, ולכן התשואה היא לכל התקופה/); assert.match(r.note,/בלי הדיבידנדים שלהם, בלי עמלות ובלי מס/); assert.match(r.note,/השוואה עובדתית, לא המלצה/);
+    assert.equal(r.vals.length,9); assert.equal(await pg.evaluate(()=>[...document.querySelectorAll('#benchBox .bn-v .k')].filter(k=>k.textContent==='תשואה בתקופה').length),3,'under a year: the return for the period, for all three');
+    // the same total of deposits as the hero ("מול ההפקדות")
+    assert.match(await pg.evaluate(()=>document.getElementById('kDepD').textContent),/הופקדו ₪21,000/);
+    // the tax if sold today
+    const x=await pg.evaluate(()=>({txt:document.getElementById('taxBox').textContent,cells:[...document.querySelectorAll('#taxBox .cell .k')].map(k=>k.textContent),sub:document.getElementById('taxSub').textContent}));
+    assert.deepEqual(x.cells,['הרווחים','ההפסדים','הרווח אחרי קיזוז','מס משוער']); assert.match(x.sub,/שיעור 25% · הערכה/);
+    assert.match(x.txt,/הפסדים שמקזזים את הרווחים: .*RKLB/); assert.match(x.txt,/זה חישוב, לא המלצה למכור/);
+    // צ׳יקו has both
+    const f=await pg.evaluate(()=>{const F=window.__ux.facts(); return F.err?F:{b:!!F.benchmark,t:!!F.tax}});
+    assert.deepEqual(f,{b:true,t:true});
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.deleteDoc('research/bench')}
+});
+
+test('a lighter page: the PDF and Excel libraries are not loaded at the start, and come when a statement or an export needs them',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); const libs=[]; pg.on('request',r=>{if(/\/lib\//.test(r.url()))libs.push(r.url().split('/lib/')[1])});
+  assert.deepEqual(await pg.evaluate(()=>({pdf:!!window.pdfjsLib,x:!!window.XLSX,j:!!window.jspdf})),{pdf:false,x:false,j:false});
+  await tab(pg,'mine'); await pg.waitForTimeout(2600);
+  assert.deepEqual(await pg.evaluate(()=>({pdf:!!window.pdfjsLib,worker:!!window.pdfjsWorker,x:!!window.XLSX})),{pdf:true,worker:true,x:true},'ready before a statement is picked');
+  assert.ok(libs.every(u=>/\.js\?v=[0-9a-f]{10}$/.test(u)),libs.join());
+  await pg.evaluate(()=>window.__tcLib('jspdf')); assert.ok(await pg.evaluate(()=>!!(window.jspdf&&window.jspdf.jsPDF)));
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('two-step sign-in: switched on in its own page, the login asks for the code, a backup code works once',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {b32decode,hotp,step}=await import('../server/totp.js'); const code=sec=>hotp(b32decode(sec),step());
+  const u=store.userByEmail('r3@example.com');
+  try{
+    // the page itself: set up, the key, a first code, the backup codes
+    const {ctx,pg}=await open(390,{who:'r3'});
+    await pg.goto(U+'security.html'); await pg.waitForSelector('#st'); await pg.click('#st'); await pg.waitForSelector('#key');
+    const key=(await pg.textContent('#key')).replace(/\s/g,''); assert.match(key,/^[A-Z2-7]{32}$/);
+    assert.match(await pg.getAttribute('a[href^="otpauth:"]','href'),/^otpauth:\/\/totp\/.+secret=[A-Z2-7]{32}/);
+    await pg.fill('#cd','000000'); await pg.click('#en'); await pg.waitForTimeout(300); assert.match(await pg.textContent('#er'),/הקוד לא נכון/);
+    await pg.fill('#cd',code(key)); await pg.click('#en'); await pg.waitForSelector('.codes li');
+    const codes=await pg.$$eval('.codes li',L=>L.map(x=>x.textContent)); assert.equal(codes.length,8);
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); await ctx.close();
+    // a new sign-in: the password, then the code
+    const c2=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL'}); const p2=await c2.newPage();
+    await c2.route('**/*',r=>{const x=r.request().url(); if(x.startsWith(U)||x.startsWith('data:'))r.continue(); else r.fulfill({status:404,body:''})});
+    await p2.goto(U); await p2.waitForSelector('#tcLogin'); await p2.fill('#tcEmail','r3@example.com'); await p2.fill('#tcPass','friend-pass-4'); await p2.click('#tcLogin button');
+    await p2.waitForSelector('#tcCodeBox:not([hidden])'); assert.match(await p2.textContent('#tcErr'),/הקלד את הקוד מאפליקציית האימות/);
+    assert.equal(await p2.getAttribute('#tcOtp','autocomplete'),'one-time-code');
+    await p2.fill('#tcOtp',codes[0]); await p2.click('#tcLogin button');
+    await p2.waitForFunction(()=>!!document.querySelector('.wrap.nopf')||!document.getElementById('tcGate'),null,{timeout:20000});
+    await c2.close();
+  }finally{store.totpOff(u.id)}
 });
 
 test('finding the way: "לאן להגיע?" by the words people type, "מה חדש", and a short tour that points at one thing at a time',T,async t=>{
@@ -848,7 +923,7 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     // the e-mail switches: the owner's, all off until chosen, saved per kind
     await tab(pg,'settings'); await pg.waitForTimeout(600);
     const m0=await pg.evaluate(()=>({hidden:document.getElementById('mailBox').hidden,on:[...document.querySelectorAll('[data-mail]')].map(i=>i.checked)}));
-    assert.deepEqual(m0,{hidden:false,on:[false,false,false,false]});
+    assert.deepEqual(m0,{hidden:false,on:[false,false,false,false,false]});
     await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
     assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
     ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();

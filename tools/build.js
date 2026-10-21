@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 
 export function buildSite(root){
   const src=path.join(root,'page','live.html');
@@ -15,8 +16,12 @@ export function buildSite(root){
   let body=m?h.slice(m.index+m[0].length):h;
   const end=body.lastIndexOf('</body></html>'); if(end>=0)body=body.slice(0,end);
   const t=body.match(/<title>([\s\S]*?)<\/title>\s*/); const title=t?t[1]:'תיק צ׳יק';
+  // the big libraries (PDF and Excel: about 2.7 MB of the page) go to files of their own in site/lib, loaded when the page
+  // needs them: reading a PDF or Excel statement, exporting a report. The page asks through window.__tcLib(name); in
+  // Claude, where the page is one file, the libraries stay inside it and that call is not there
+  const libs=extractLibs(body,path.join(root,'site','lib')); body=libs.body;
   if(t)body=body.slice(0,t.index)+body.slice(t.index+t[0].length);
-  const boot=`<script>
+  const boot=libs.loader+`<script>
 // The page asks for window.claude.use(name); on this site it is served by runtime.js from the site's own server.
 (function(){
   if(window.claude&&window.claude.use)return; // a headless run or a test put its own runtime in place
@@ -26,7 +31,7 @@ export function buildSite(root){
 </script>
 `;
   const acct=`<div id="tcAcct" hidden><button type="button" id="tcAcctBtn" aria-haspopup="true" aria-expanded="false" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-<div id="tcAcctMenu" hidden><div class="who"></div><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="/api/db/export">גיבוי הנתונים שלי (קובץ)</a><a href="import.html">שחזור מגיבוי</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
+<div id="tcAcctMenu" hidden><div class="who"></div><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="security.html">אימות דו-שלבי</a><a href="/api/db/export">גיבוי הנתונים שלי (קובץ)</a><a href="import.html">שחזור מגיבוי</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
 <style>
 #tcAcct{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;z-index:55;font-family:Heebo,Arial,sans-serif}
 #tcAcctBtn{width:40px;height:40px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#2e4a66;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgb(30 52 78 / .14)}
@@ -67,6 +72,27 @@ ${acct}</body>
 `;
   fs.writeFileSync(path.join(root,'site','index.html'),out);
   return out.length;
+}
+
+const LIBS=[['jspdf',/jsPDF - PDF Document creation/],['xlsx',/xlsx\.js \(C\) 2013-present SheetJS/],['pdfworker',/define\("pdfjs-dist\/build\/pdf\.worker"/],['pdf',/define\("pdfjs-dist\/build\/pdf"/]];
+export function extractLibs(body,dir){
+  fs.mkdirSync(dir,{recursive:true}); const files={};
+  for(const [name,re] of LIBS){
+    const m=re.exec(body); if(!m)continue;
+    const a=body.lastIndexOf('<script>',m.index), b=body.indexOf('</script>',m.index); if(a<0||b<0)continue;
+    const code=body.slice(a+8,b); if(/<script>/.test(code))continue;   // the marker sat in another block: leave it
+    fs.writeFileSync(path.join(dir,name+'.js'),code);
+    files[name]='lib/'+name+'.js?v='+createHash('sha1').update(code).digest('hex').slice(0,10);
+    body=body.slice(0,a)+body.slice(b+9);
+  }
+  const loader=Object.keys(files).length?`<script>
+// the PDF and Excel libraries, when the page needs them (each once; the PDF reader with its worker)
+window.__tcLib=(function(){var F=${JSON.stringify(files)},DEP={pdf:['pdfworker']},P={};
+  function one(n){if(!F[n])return Promise.resolve(); return P[n]||(P[n]=new Promise(function(ok,no){var s=document.createElement('script');s.src=F[n];s.onload=function(){ok()};s.onerror=function(){P[n]=null;no(new Error('lib '+n))};document.head.appendChild(s)}))}
+  return function(n){return Promise.all((DEP[n]||[]).map(one)).then(function(){return one(n)})}})();
+</script>
+`:'';
+  return {body,loader,files};
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1])){

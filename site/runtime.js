@@ -62,14 +62,17 @@ function showGate(kind,x={}){
   if(kind==='login'){
     el.innerHTML=`<div class="card">${head}<form id="tcLogin" novalidate><label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
       <label for="tcPass">סיסמה</label><input id="tcPass" type="password" autocomplete="current-password" required>
+      <div id="tcCodeBox" hidden><label for="tcOtp">הקוד מאפליקציית האימות</label><input id="tcOtp" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="11" placeholder="6 ספרות"><p class="hint">אין את הטלפון? אפשר להקליד אחד מקודי הגיבוי.</p></div>
       <button class="btn" type="submit">כניסה</button><p class="err" id="tcErr" role="alert">${esc(x.err||'')}</p></form>
       ${SIGNUP?'<p class="alt">משתמש חדש? <button type="button" class="lnk" id="tcToReg">הרשמה עם קוד הזמנה</button></p>':''}
       <p class="note">הנתונים שלך נשמרים בחשבון שלך ואינם גלויים למשתמשים אחרים.${SIGNUP?'':' את החשבון פותח בעל הדף.'}</p></div>`;
     const f=document.getElementById('tcLogin'), toReg=document.getElementById('tcToReg');
     if(toReg)toReg.addEventListener('click',()=>showGate('register',{email:document.getElementById('tcEmail').value})); setTimeout(()=>{try{document.getElementById(x.email?'tcPass':'tcEmail').focus()}catch(e){}},30);
     f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button'); b.disabled=true; document.getElementById('tcErr').textContent='';
-      try{const r=await call('POST','/login',{email:document.getElementById('tcEmail').value,password:document.getElementById('tcPass').value}); location.reload()}
-      catch(e){b.disabled=false; document.getElementById('tcErr').textContent=e.message||'הכניסה לא הצליחה.'}});
+      const cb=document.getElementById('tcCodeBox'), otp=document.getElementById('tcOtp');
+      try{const r=await call('POST','/login',{email:document.getElementById('tcEmail').value,password:document.getElementById('tcPass').value,...(cb.hidden?{}:{code:otp.value})}); location.reload()}
+      catch(e){b.disabled=false; if(e.code==='need_code'||e.code==='bad_code'){cb.hidden=false; otp.value=''; setTimeout(()=>{try{otp.focus()}catch(x){}},20)}
+        document.getElementById('tcErr').textContent=e.message||'הכניסה לא הצליחה.'}});
     return;
   }
   if(kind==='register'){

@@ -17,6 +17,9 @@ import {researchTask, newsFor, tick as rsTick, usable as rsUsable} from './resea
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
 import {backupStatus, backupNow} from './backup.js';
+import {benchFresh} from './bench.js';
+import {selfCheckNote} from './pxwatch.js';
+import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -72,6 +75,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
     const {email,password}=req.body||{}; const u=store.userByEmail(email);
     if(!u||!store.checkPassword(u,password)){b.miss();return res.status(401).json({error:{code:'bad_login',message:'המייל או הסיסמה לא נכונים.'}})}
+    const tf=store.totpOf(u.id);
+    if(tf&&tf.on&&tf.secret&&env.TWOFA_OFF!=='1'){const code=String((req.body||{}).code||'').trim();
+      if(!code)return res.status(401).json({error:{code:'need_code',message:'הקלד את הקוד מאפליקציית האימות.'}});
+      const k=/^\d{6}$/.test(code.replace(/\s/g,''))?totpMatch(tf.secret,code,{after:tf.last}):-1;
+      if(k>=0)store.totpUsed(u.id,k); else if(!store.totpBackupUse(u.id,codeHash(code))){b.miss();return res.status(401).json({error:{code:'bad_code',message:'הקוד לא נכון, או שכבר השתמשו בו. נסה את הקוד הבא באפליקציה.'}})}}
     b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
     res.json({ok:true,me:me(u)});
   });
@@ -104,6 +112,24 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/password',needUser,(req,res)=>{const {old,password}=req.body||{}; if(!store.checkPassword(req.user,old))return res.status(400).json({error:{code:'bad_login',message:'הסיסמה הנוכחית לא נכונה.'}});
     try{store.setPassword(req.user.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})} res.json({ok:true})});
 
+  // ---- two-step sign-in, for each user on their own: set up (a new secret, not on yet), switch on with a first code
+  // (the backup codes come back once), switch off with the password and a code ----
+  app.get('/api/2fa',needUser,(req,res)=>{const t=store.totpOf(req.user.id)||{}; res.json({on:!!t.on,backupLeft:(t.backup||[]).length,override:env.TWOFA_OFF==='1'})});
+  app.post('/api/2fa/setup',needUser,(req,res)=>{const t=store.totpOf(req.user.id); if(t&&t.on)return res.status(400).json({error:{code:'already_on',message:'האימות הדו-שלבי כבר פועל.'}});
+    const secret=newSecret(); store.totpPending(req.user.id,secret); res.json({secret,uri:otpUri(secret,req.user.email)})});
+  app.post('/api/2fa/enable',needUser,(req,res)=>{const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY); const t=store.totpOf(req.user.id);
+    if(!t||!t.secret)return res.status(400).json({error:{code:'no_setup',message:'צריך להתחיל מההתחלה: "להפעיל".'}});
+    const k=totpMatch(t.secret,(req.body||{}).code); if(k<0){b.miss();return res.status(400).json({error:{code:'bad_code',message:'הקוד לא נכון. בדוק שהשעה בטלפון נכונה, והקלד את הקוד שמופיע עכשיו.'}})}
+    const codes=newBackupCodes(); store.totpEnable(req.user.id,codes.map(codeHash),k); store.endSessionsBut(req.user.id,req.sid); b.clear(); log('two-step sign-in on:',req.user.id); res.json({ok:true,codes})});
+  app.post('/api/2fa/disable',needUser,(req,res)=>{const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY); const {password,code}=req.body||{}, t=store.totpOf(req.user.id);
+    if(!t||!t.on){store.totpOff(req.user.id);return res.json({ok:true})}
+    if(!store.checkPassword(req.user,password)){b.miss();return res.status(400).json({error:{code:'bad_login',message:'הסיסמה לא נכונה.'}})}
+    const k=totpMatch(t.secret,code,{after:t.last}); if(k<0&&!store.totpBackupUse(req.user.id,codeHash(code))){b.miss();return res.status(400).json({error:{code:'bad_code',message:'הקוד לא נכון.'}})}
+    store.totpOff(req.user.id); b.clear(); log('two-step sign-in off:',req.user.id); res.json({ok:true})});
+  app.post('/api/2fa/backup',needUser,(req,res)=>{const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY); const t=store.totpOf(req.user.id); if(!t||!t.on)return res.status(400).json({error:{code:'off',message:'האימות הדו-שלבי לא פועל.'}});
+    const k=totpMatch(t.secret,(req.body||{}).code,{after:t.last}); if(k<0){b.miss();return res.status(400).json({error:{code:'bad_code',message:'הקוד לא נכון.'}})}
+    const codes=newBackupCodes(); store.totpEnable(req.user.id,codes.map(codeHash),k); res.json({ok:true,codes})});
+
   // ---- users (the owner opens the door) ----
   app.get('/api/users',needOwner,(req,res)=>res.json({users:store.users()}));
   app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true});res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
@@ -115,6 +141,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const badPath=p=>!p||p.length>400||!/^[A-Za-z0-9_.\-@:]+(\/[A-Za-z0-9_.\-@:]+)*$/.test(p);
   app.get('/api/db/doc',needUser,async(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canRead(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
+    if(p==='research/bench'){try{await Promise.race([benchFresh(store),new Promise(r=>setTimeout(r,15000))])}catch(e){}}
     const d=store.getDoc(p);
     // a chart nobody has asked for yet: fetched now, kept for next time (the nightly run keeps the followed ones fresh)
     const m=p.match(/^quotes\/c_((?:TLV_)?[A-Z0-9.\-]{1,10})$/);
@@ -315,6 +342,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // a company's latest report and the articles about it, for the security page. The figures are fetched again at most every
   // 20 minutes per security (one at a time); the articles are cached 30 minutes. Data to show, never instructions
   const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;
+  // the owner's page found a gap between two of its views: kept, and the price watch tells the owner (with consent)
+  app.post('/api/selfcheck',needOwner,(req,res)=>res.json(selfCheckNote(store,req.body||{})));
   app.post('/api/research/one',needUser,async(req,res)=>{const k=String((req.body||{}).sym||'').trim().toUpperCase().slice(0,16);
     if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
     const last=RSONE.get(k); if(last&&Date.now()-last<20*60e3)return res.json({ok:true,cached:true});
@@ -355,7 +384,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     let st; try{st=fs.statSync(file)}catch(e){return next()} if(!st.isFile()||st.size<4096)return next();
     let z; try{z=await squeeze(file,st,enc)}catch(e){return next()}
     res.setHeader('vary','accept-encoding'); res.setHeader('etag',z.etag); res.setHeader('content-type',TYPES[ext]);
-    res.setHeader('cache-control',ext==='html'||/config\.js$/.test(rel)?'no-cache':'public, max-age=0');
+    res.setHeader('cache-control',ext==='html'||/config\.js$/.test(rel)?'no-cache':/^\/lib\//.test(rel)&&req.query.v?'public, max-age=31536000, immutable':'public, max-age=0');   // a library's address carries its version
     res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin');
     if(req.headers['if-none-match']===z.etag)return res.status(304).end();
     res.setHeader('content-encoding',enc); res.setHeader('content-length',z.body.length);

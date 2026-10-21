@@ -159,6 +159,20 @@ export async function nasdaqQuote(ticker,{fetch:f=timedFetch,now=new Date()}={})
   throw last||new Error('nasdaq failed');
 }
 
+// Finnhub, when the owner sets FINNHUB_API_KEY (a paid or free key from finnhub.io): the first source for a plain US
+// ticker, ahead of the free ones. Its quote: c the last price, pc the previous close, t the time (seconds); an unknown
+// ticker answers with zeros
+export function finnhubParse(j,now=new Date()){
+  const px=+(j&&j.c), pc=+(j&&j.pc), t=+(j&&j.t); if(!(px>0))return null;
+  const at=t>0?new Date(t*1000):now;
+  return {px,prev:pc>0?pc:null,ccy:'USD',time:at.getTime(),closeDate:nyParts(at).iso,prevDate:null,exch:'',src:'finnhub'};
+}
+export async function finnhubQuote(ticker,{fetch:f=timedFetch,key=process.env.FINNHUB_API_KEY,now=new Date()}={}){
+  if(!key)throw new Error('no key'); if(!/^[A-Z][A-Z.\-]{0,6}$/.test(ticker))throw new Error('not a plain US ticker');
+  const r=await f(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker.replace(/-/g,'.'))}&token=${encodeURIComponent(key)}`,{headers:{accept:'application/json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status); const q=finnhubParse(await r.json(),now); if(!q)throw new Error('no price'); return q;
+}
+
 // Stooq daily history (US tickers as msft.us); last two closes
 export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
   const s=ticker.toLowerCase().replace(/-/g,'-')+'.us';
@@ -194,6 +208,7 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
     const t=pr?PROXY[sym].index:tickerFor(sym,posOf[sym],map);
     let mayaErr=null;
     if(isIlFund(sym)&&!(map&&map[sym])){try{out[sym]=await mayaFund(sym,{fetch:f});return}catch(e){mayaErr=e; log('fund price failed '+sym+' (maya): '+(e&&e.message||e))}}
+    if(!pr&&process.env.FINNHUB_API_KEY&&/^[A-Z][A-Z.\-]{0,6}$/.test(t)){try{out[sym]=await finnhubQuote(t,{fetch:f});return}catch(e){log('finnhub failed '+sym+': '+(e&&e.message||e))}}
     try{const q=await yahooChart(t,{fetch:f}); if(pr)idx[sym]=q; else out[sym]=q}
     catch(e){
       if(!pr&&!/\.TA$/.test(t)){try{out[sym]=await nasdaqQuote(t,{fetch:f});return}catch(e2){} try{out[sym]=await stooqDaily(t,{fetch:f});return}catch(e3){}}
@@ -266,7 +281,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   // a close older than the market's last session is marked with its date, so the page can say which day is missing: the
   // source did not deliver that session (or Tel Aviv had a holiday). lag = per market, the day we have and the day we expect
   const want={il:lastSession('il',now),us:lastSession('us',now)}, lag={};
-  const mktOf=sym=>{const m=meta[sym]||{}; return m.ccy==='ILS'||m.src==='index'||/\.TA$/.test(sym)?'il':!m.ccy&&(m.src==='yahoo'||m.src==='stooq'||m.src==='nasdaq')?'us':''};
+  const mktOf=sym=>{const m=meta[sym]||{}; return m.ccy==='ILS'||m.src==='index'||/\.TA$/.test(sym)?'il':!m.ccy&&(m.src==='yahoo'||m.src==='stooq'||m.src==='nasdaq'||m.src==='finnhub')?'us':''};
   // a mutual fund's price for a day is published that evening: during the day, the day before is its latest
   const wantFund=want.il?lastSession('il',new Date(Date.parse(want.il+'T12:00:00Z')-864e5)):'';
   for(const sym of symbols){const m=meta[sym]||{}, k=mktOf(sym); if(!k||!m.date||!want[k]||prices[sym]==null||m.est)continue;
@@ -284,7 +299,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
   const rates={...(old.rates||{})}; for(const [c,v] of Object.entries(fetched.rates||{}))if(v&&v.rate>0)rates[c]={rate:round(v.rate,4),prev:v.prev?round(v.prev,4):null,date:v.date||null};
   return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
-    source:'Yahoo Finance'+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='nasdaq')?', Nasdaq':'')+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='stooq')?', Stooq':'')+', מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
+    source:(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='finnhub')?'Finnhub, ':'')+'Yahoo Finance'+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='nasdaq')?', Nasdaq':'')+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='stooq')?', Stooq':'')+', מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
     usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag,
