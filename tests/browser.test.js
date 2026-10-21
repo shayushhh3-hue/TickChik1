@@ -149,7 +149,7 @@ test('the plan: a fund bought in the stocks track opens for its quantity and pri
   await ctx.close(); store.setDoc('plan/main',plan0);
 });
 
-test('a company\'s report: the system message on the home page, the alert, and on its page the day, the findings and the explanation',T,async t=>{
+test('a company\'s report: the system message in the home page\'s to-do list, the alert, and on its page the day, the findings and the explanation',T,async t=>{
   if(skip())return t.skip('no browser');
   const L0=store.getDoc('research/latest').data, day=new Date(Date.now()-864e5).toISOString().slice(0,10), dmY=d=>{const [y,m,dd]=d.split('-').map(Number); return `${dd}.${m}.${y}`};
   const ai={findings:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41).','ההכנסות ברבעון $77.70B.'],explain:'הרבעון היה מעל הצפי ברווח ובהכנסות.',headlines:1};
@@ -158,24 +158,114 @@ test('a company\'s report: the system message on the home page, the alert, and o
     events:[{sym:'MSFT',name:'Microsoft',date:day,q:'2026-09-30',label:'Q3 2026',text:'דוח Q3 2026',find:rep.find,ai:{findings:ai.findings,explain:ai.explain}}]});
   try{
     const {ctx,pg}=await open(390,{route:(r,u)=>{if(u.includes('/api/news')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[{title:'Microsoft beats estimates as cloud grows',pub:'Reuters',link:'https://example.com/a',at:'2026-10-21T01:00:00Z'}]})});return true}return false}});
-    // the system message on the home page
-    const ban=await pg.evaluate(()=>{const b=document.getElementById('repBan'); return {on:!b.hidden,txt:b.textContent}});
-    assert.ok(ban.on,'shown'); assert.match(ban.txt,new RegExp('דוח חדש: Microsoft פרסמה ב-'+dmY(day).split('.').slice(0,2).join('\\.')+' את הדוח לרבעון Q3 2026\\. הרווח למניה 3\\.62'));
+    // the system message on the home page: one item of the to-do list (the separate banner stays hidden: one place, said once)
+    const ban=await pg.evaluate(()=>{const b=document.querySelector('#desk li.rep'); return {on:!!b,txt:b?b.textContent:'',old:!document.getElementById('repBan').hidden}});
+    assert.ok(ban.on,'shown'); assert.ok(!ban.old,'not twice'); assert.match(ban.txt,new RegExp('דוח חדש\\s*Microsoft פרסמה ב-'+dmY(day).split('.').slice(0,2).join('\\.')+' את הדוח לרבעון Q3 2026\\. הרווח למניה 3\\.62'));
     // the alert in בקרה, category דוחות
     assert.ok(await pg.evaluate(()=>window.__model&&window.__model.alerts?window.__model.alerts().items.some(i=>i.key==='rep:MSFT:2026-09-30'&&/Microsoft פרסמה/.test(i.text)):true),'an alert with its own key, for the morning message');
     // to its page from the message
-    await pg.evaluate(()=>document.querySelector('#repBan [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
+    await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),txt:b.textContent,tbl:!!document.querySelector('#secPage .repbox table')}:null});
     assert.ok(r,'the report box is in view on the page'); assert.equal(r.h,`פורסם דוח ב-${dmY(day)} · Q3 2026`);
     assert.deepEqual(r.f,ai.findings,'Chiko\'s findings'); assert.match(r.txt,/הסבר על הדוח\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.ok(!r.tbl,'no table of the report\'s figures');
     await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
     // "הבנתי" hides that report's message for good
-    await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#repBan [data-repban]').click()); await pg.waitForTimeout(200);
-    assert.ok(await pg.evaluate(()=>document.getElementById('repBan').hidden)); await pg.reload(); await pg.waitForTimeout(1500);
-    assert.ok(await pg.evaluate(()=>document.getElementById('repBan').hidden),'not shown again');
+    await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#desk li.rep [data-repban]').click()); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(()=>!document.querySelector('#desk li.rep'))); await pg.reload(); await pg.waitForTimeout(2500);
+    assert.ok(await pg.evaluate(()=>!!document.getElementById('desk').textContent&&!document.querySelector('#desk li.rep')),'not shown again');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('research/latest',L0)}
+});
+
+test('the simple home: one to-do list, the prices\' trust mark, the same total in every view, and the hero on a phone',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const Q0=store.getDoc('quotes/latest').data, M0=store.getDoc('system/mail'), S0=store.getDoc('settings/main').data;
+  try{
+    store.setDoc('system/mail',{ready:true,last:{}},{silent:true});
+    { // the fixture's two Israeli funds have no source: said once, in the trust row and the hero's chip, and not again in the list
+      const {ctx,pg}=await open(390);
+      const r=await pg.evaluate(()=>({chip:document.getElementById('kTrust').textContent,chipOn:!document.getElementById('kTrust').hidden,row:document.getElementById('dkTrust').className,txt:document.getElementById('dkTrust').textContent,
+        cats:[...document.querySelectorAll('#dkTodo .dk-cat')].map(x=>x.textContent),chk:window.__ux.check(),todo:window.__ux.todo()}));
+      assert.ok(r.chipOn); assert.match(r.chip,/חלק מהמחירים לא עדכניים/); assert.match(r.row,/warn/); assert.match(r.txt,/TA125, TA90: לא הגיע מחיר מהבורסה/);
+      assert.ok(!r.cats.includes('מחיר'),'the prices are said once, above the list');
+      assert.deepEqual(r.chk.bad,[],'no gap between the views'); assert.ok(r.chk.ok.length>=6,'holdings, groups and the exposures add up to the total: '+r.chk.ok.length);
+      assert.ok(r.todo.some(x=>x.cat==='מיילים')&&r.todo.some(x=>x.cat==='מה חדש')&&r.todo.some(x=>x.cat==='סיור'),JSON.stringify(r.todo));
+      assert.ok(r.todo.findIndex(x=>x.sev==='crit')<r.todo.findIndex(x=>x.cat==='מה חדש'),'what needs doing comes before the suggestions');
+      // a mail kind switched on from the list: the owner's consent, by a click
+      await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
+      assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
+      assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail="earnings"]')&&!!document.querySelector('[data-uxmail="backup"]')),'only the one still off is offered');
+      await pg.evaluate(()=>document.querySelector('[data-uxx="tr_tipmail"]').click()); await pg.waitForTimeout(300);
+      assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail]')),'"לא עכשיו" hides it');
+      // the hero on a phone: two figures, the rest one tap away
+      const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').length);
+      assert.equal(await hv(),2); await pg.click('#sideMore'); assert.equal(await hv(),6); await pg.click('#sideMore'); assert.equal(await hv(),2);
+      // the funds' date, in plain words behind "למה?"
+      await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);
+      assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/מחיר אחד ביום, אחרי סגירת הבורסה/);
+      await pg.evaluate(()=>document.querySelector('[data-termx]').click());
+      assert.equal(await pg.evaluate(()=>document.getElementById('hMixH').textContent),'פיזור לפי הקבוצות שלך');
+      await pg.evaluate(()=>document.querySelector('.mixnote [data-term="grpsec"]').click()); await pg.waitForTimeout(200);
+      assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/קבוצה או ענף\?.*השווי הכולל זהה/);
+      assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close();
+    }
+    { // every price current: "המחירים עדכניים", and the funds' official date with its reason
+      const now=new Date().toISOString(), st={...(Q0.stale||{})}; delete st.TA125; delete st.TA90;
+      store.setDoc('quotes/latest',{...Q0,stale:st,lag:{},updatedAt:now,attemptAt:now,meta:{...(Q0.meta||{}),TA125:{src:'maya',ccy:'ILS',date:new Date(Date.now()-864e5).toISOString().slice(0,10)}}},{silent:true});
+      const {ctx,pg}=await open(1280);
+      const r=await pg.evaluate(()=>({chip:document.getElementById('kTrust').textContent,row:document.getElementById('dkTrust').className,txt:document.getElementById('dkTrust').textContent,side:!!document.getElementById('sideMore').offsetParent}));
+      assert.match(r.chip,/המחירים עדכניים/); assert.match(r.row,/ok/); assert.match(r.txt,/קרנות: מחיר רשמי מ-/); assert.ok(!r.side,'all six figures on a wide screen');
+      await pg.click('#kTrust'); await pg.waitForTimeout(500);
+      assert.ok(await pg.evaluate(()=>document.querySelector('#dkTrust details').open),'the chip opens the details');
+      assert.deepEqual(pg.errs,[]); await ctx.close();
+    }
+  }finally{store.setDoc('quotes/latest',Q0,{silent:true}); if(M0.exists)store.setDoc('system/mail',M0.data,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('finding the way: "לאן להגיע?" by the words people type, "מה חדש", and a short tour that points at one thing at a time',T,async t=>{
+  if(skip())return t.skip('no browser');
+  {const {ctx,pg}=await open(390);
+    const f=await pg.evaluate(()=>['עמלות','לוח','מייל','חיסכון לילד','הפקדה חד','מאיה','דולר'].map(q=>(window.__ux.find(q)[0]||{}).id));
+    assert.deepEqual(f,['fees','cal','mail','pots','once','src','fx']);
+    assert.deepEqual(await pg.evaluate(()=>window.__ux.find('לוח').map(d=>d.id)),['cal'],'a prefix letter is dropped only for a whole word, not to match inside other words');
+    // from the drawer: type, Enter, and the page is there
+    await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.fill('#goQ','עמלות'); await pg.waitForTimeout(100);
+    assert.match(await pg.evaluate(()=>document.getElementById('goRes').textContent),/^עמלות/);
+    await pg.press('#goQ','Enter'); await pg.waitForTimeout(900);
+    const r=await pg.evaluate(()=>({page:document.body.dataset.page,menu:document.getElementById('tabsbar').classList.contains('open'),top:document.getElementById('hFees').getBoundingClientRect().top}));
+    assert.equal(r.page,'history'); assert.ok(!r.menu,'the drawer closes'); assert.ok(r.top>=0&&r.top<500,'the fees in view: '+r.top);
+    // a part of the risk screen opens its fold
+    await pg.evaluate(()=>window.__ux.go('exp')); await pg.waitForTimeout(900);
+    assert.ok(await pg.evaluate(()=>{const h=document.getElementById('hExp'), b=h.getBoundingClientRect(); return document.body.dataset.page==='risk'&&b.top>=0&&b.top<500&&!!document.getElementById('expBox').offsetParent}));
+    // "מה חדש": from the list on the home page, then the dot in the drawer goes out
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(()=>!document.getElementById('sbNewsDot').hidden));
+    await pg.evaluate(()=>document.querySelector('#desk [data-uxgo="news"]').click()); await pg.waitForTimeout(300);
+    const n=await pg.evaluate(()=>({on:!document.getElementById('newsDlg').hidden,items:document.querySelectorAll('#newsList li').length,fresh:document.querySelectorAll('#newsList li.nw').length}));
+    assert.ok(n.on&&n.items>=6&&n.fresh>=6,JSON.stringify(n));
+    await pg.evaluate(()=>document.querySelector('#newsList [data-newsgo="cal"]').click()); await pg.waitForTimeout(600);
+    assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar'); assert.ok(await pg.evaluate(()=>document.getElementById('newsDlg').hidden));
+    assert.ok(await pg.evaluate(()=>document.getElementById('sbNewsDot').hidden&&!window.__ux.todo().some(x=>x.cat==='מה חדש')),'seen');
+    // the tour: one thing at a time, back and forth, and "דלג" ends it for good
+    await tab(pg,'overview'); await pg.evaluate(()=>document.querySelector('#desk [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
+    const st=()=>pg.evaluate(()=>({card:!document.getElementById('tourCard').hidden,step:document.querySelector('#tourCard .sub')?.textContent||'',lit:[...document.querySelectorAll('.tourhl')].map(e=>e.id||e.className).join()}));
+    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 8$/); assert.match(s.lit,/worth/);
+    await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^2 מתוך/); assert.equal(s.lit,'kTrust');
+    await pg.click('#tourCard [data-tour="back"]'); s=await st(); assert.match(s.step,/^1 מתוך/);
+    for(let i=0;i<3;i++)await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^4 מתוך/); assert.match(await pg.evaluate(()=>document.getElementById('tourCard').textContent),/בבלינק: "ההשקעות שלי"/);
+    const ov=await pg.evaluate(()=>{const c=document.getElementById('tourCard').getBoundingClientRect(), b=document.getElementById('botbar').getBoundingClientRect(); return c.bottom<=b.top+1});
+    assert.ok(ov,'the card sits above the bottom bar');
+    await pg.click('#tourCard [data-tour="end"]'); s=await st(); assert.ok(!s.card); assert.equal(s.lit,'');
+    assert.ok(await pg.evaluate(()=>!window.__ux.todo().some(x=>x.cat==='סיור')),'not offered again');
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close()}
+  {const {ctx,pg}=await open(1280); // on a wide screen the search is in the menu at the side, and the header's button goes to it
+    await pg.click('#btnGo'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.activeElement&&document.activeElement.id),'goQ');
+    await pg.fill('#goQ','לוח מסחר'); await pg.click('#goRes [data-goto="cal"]'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+  {const {ctx,pg}=await open(390,{who:'new'}); // before there is a portfolio: the tour skips what is not there yet
+    await pg.evaluate(()=>document.querySelector('#welcome [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
+    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 5$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
 test('fees: the table\'s running total ends at the headline, the fees saved apart in their own month',T,async t=>{
@@ -234,7 +324,7 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
     const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
     await pg.evaluate(()=>document.querySelector('.hkind:not(.hccy) [data-hv="fund"]').click()); await pg.waitForTimeout(400);
     const line=await pg.evaluate(()=>[...document.querySelectorAll('#rows tr.sec')].map(t=>t.textContent).join('|'));
-    assert.match(line,/קרנות: \d+ ניירות/); assert.match(line,/מתוכן ₪[\d,]+ בקרן אחת שבפיזור התיק נספרות בקבוצה אחרת: DRAM \(טכנולוגיה\)/);
+    assert.match(line,/קרנות: \d+ ניירות/); assert.match(line,/מתוכן ₪[\d,]+ בקרן אחת שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: DRAM \(טכנולוגיה\)/);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });

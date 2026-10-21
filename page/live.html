@@ -1491,6 +1491,78 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   .hero .top{padding-inline-start:18px}
   .i18np{inset-inline-start:248px}
 }
+
+/* 21.10: the simple home (one to-do list), the prices' trust mark, "לאן להגיע?", "מה חדש" and the tour */
+.kchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.kchips .status{margin-top:0;align-self:auto}
+body:not([data-page="overview"]) .hero .kchips{margin-top:0}
+.status.trust{background:var(--ok-bg);color:var(--ok-ink)} .status.trust.warn{background:var(--warn-bg);color:var(--warn)}
+.sidemore{display:none}
+@media (max-width:760px){
+  .side.lessm>.stat:not(:first-child):not(#kDepBox){display:none}
+  .sidemore{display:block;grid-column:1/-1;font:inherit;font-size:13px;font-weight:600;min-height:38px;border:1px dashed #D9C9B8;border-radius:12px;background:transparent;color:#5A4A5E;cursor:pointer}
+  .sidemore::after{content:" ▾"} .sidemore[aria-expanded="true"]::after{content:" ▴"}
+}
+.dk-trust{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--ok-bg);color:var(--ok-ink)}
+.dk-trust.warn{background:var(--warn-bg);color:var(--warn)}
+.dk-trust .dt-ic{width:20px;height:20px;flex:none;margin-top:2px}
+.dt-b{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.dt-b>b{font-size:14.5px;line-height:1.45}
+.dt-s{font-size:13px;color:var(--ink2);line-height:1.55}
+.dt-d summary{font-size:12.5px;font-weight:600;cursor:pointer;color:inherit;margin-top:4px;min-height:24px}
+.dt-d ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink);line-height:1.5}
+.dt-d li{display:flex;gap:6px;align-items:flex-start} .dt-d li .ni{width:15px;height:15px;flex:none;margin-top:3px}
+.dt-a{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dk-top>b{font-size:14px;color:var(--ink);font-weight:700}
+.dk-btns{display:inline-flex;flex-wrap:wrap;gap:4px 2px;align-items:center;margin-inline-start:2px}
+.dk-top li.rep .dk-cat{background:var(--info-bg);color:var(--info-ink)}
+.dk-top li.tip{color:var(--ink2)} .dk-top li.tip .dk-cat{background:var(--gold-soft);color:var(--accent-ink)}
+.dk-rest>summary{font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;min-height:28px;padding-top:2px}
+.dk-rest ol{margin-top:6px}
+.term.lw{width:auto;height:auto;min-height:24px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap}
+.mixnote{margin:8px 2px 0}
+@media (max-width:440px){.hero .acts{gap:6px}.hero #acctChips .chip{padding:4px 10px}}
+.uxlit{animation:uxlit 2.4s ease-out}
+@keyframes uxlit{0%,30%{box-shadow:0 0 0 3px var(--gold),0 10px 30px rgb(39 21 43 / .12)}100%{box-shadow:0 0 0 0 transparent}}
+/* the drawer: the search, and the two links under the menu */
+.gobox{display:flex;flex-direction:column;gap:6px;position:relative}
+.gobox label{font-size:12.5px;font-weight:600;color:#C9B6C7;padding-inline-start:4px}
+.goin{display:flex;align-items:center;gap:8px;background:rgb(255 255 255 / .1);border:1px solid rgb(255 255 255 / .18);border-radius:10px;padding:0 10px}
+.goin svg{width:18px;height:18px;flex:none;color:#D5DEE9}
+.goin input{font:inherit;font-size:16px;flex:1;min-width:0;min-height:42px;background:transparent;border:0;color:#fff;outline:0}
+.goin input::placeholder{color:#B9A9BC}
+.goin:focus-within{border-color:var(--gold);box-shadow:0 0 0 2px rgb(255 155 84 / .35)}
+.gores{list-style:none;margin:0;padding:4px;display:flex;flex-direction:column;gap:2px;background:#fff;border-radius:10px;box-shadow:0 10px 24px rgb(0 0 0 / .25)}
+.gores button{font:inherit;font-size:15px;width:100%;text-align:start;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--ink);cursor:pointer}
+.gores button:hover,.gores button:focus-visible,.gores button.first{background:var(--gold-soft)}
+.gores .none{font-size:13.5px;color:var(--muted);padding:8px 10px}
+.sbx{display:flex;flex-direction:column;gap:2px;border-top:1px solid rgb(255 255 255 / .14);padding-top:10px;margin-top:auto}
+.sbx button{font:inherit;font-size:14px;text-align:start;min-height:40px;padding:8px 12px;border:0;border-radius:10px;background:none;color:#D5DEE9;cursor:pointer;display:flex;align-items:center;gap:8px}
+.sbx button:hover{background:rgb(255 255 255 / .07);color:#fff}
+.sbdot{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block}
+@media (min-width:1200px){.sbx{padding-bottom:58px}}   /* the account button sits at the corner */
+/* "מה חדש" */
+.newsdlg .prof-h{align-items:center}
+.nwx{font:inherit;font-size:22px;line-height:1;width:40px;height:40px;border-radius:10px;border:0;background:rgb(255 255 255 / .12);color:#fff;cursor:pointer;flex:none}
+.newsl{list-style:none;margin:0;gap:10px!important;padding-bottom:16px!important}
+.newsl li{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.newsl li.nw{border-color:var(--gold);background:#FFFAF5}
+.newsl li>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.newsl li b{font-size:15px} .newsl li .sub{margin-inline-start:auto;font-size:12px}
+.newsl li p{margin:0;font-size:14px;color:var(--ink2);line-height:1.55}
+.newsl li .btn{align-self:flex-start;margin-top:4px}
+.nwp{background:var(--gold);color:var(--gold-ink);font-size:11px;font-weight:700;padding:0 8px;border-radius:999px}
+/* the tour */
+.tourcard{position:fixed;z-index:59;inset-inline:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:460px;margin-inline:auto;background:var(--navy);color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 18px 40px rgb(39 21 43 / .35);display:flex;flex-direction:column;gap:8px}
+.tourcard.top{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
+.tourcard .tc-h{display:flex;align-items:center;gap:8px} .tourcard .tc-h b{font-size:16px} .tourcard .tc-h .sub{color:#C9B6C7;font-size:12.5px}
+.tc-x{margin-inline-start:auto;font:inherit;font-size:20px;width:36px;height:36px;border:0;border-radius:10px;background:rgb(255 255 255 / .12);color:#fff;cursor:pointer}
+.tourcard p{margin:0;font-size:14.5px;line-height:1.6;color:#F3E9F1}
+.tc-a{display:flex;flex-wrap:wrap;gap:6px}
+.tourcard .btn{background:rgb(255 255 255 / .12);color:#fff;border-color:rgb(255 255 255 / .25)} .tourcard .btn.pri{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.tourhl{outline:3px solid #fff!important;outline-offset:2px;box-shadow:0 0 0 7px var(--navy)!important;border-radius:12px;position:relative;z-index:2}
+#botbar .tourhl{z-index:3}
+@media (max-width:759px){.tourcard{bottom:calc(92px + env(safe-area-inset-bottom,0px))}}
 </style>
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
@@ -1498,7 +1570,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 <div class="wrap" dir="rtl" lang="he">
   <button class="navtab" id="navtab" type="button" aria-label="פתח את התפריט" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <div class="scrim" id="scrim" hidden></div>
-  <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname">תיק צ׳יק</span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
+  <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname">תיק צ׳יק</span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="gobox" role="search"><label for="goQ">לאן להגיע?</label><div class="goin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="goQ" placeholder="למשל: עמלות, לוח מסחר" autocomplete="off" enterkeyhint="go"></div><ul class="gores" id="goRes" hidden></ul></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
     <button type="button" role="tab" id="tab_plan" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span>תוכנית</span></button>
@@ -1512,7 +1584,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <button type="button" role="tab" id="tab_calendar" data-tab="calendar" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="15" r="1.3"/><circle cx="15.5" cy="15" r="1.3"/></svg><span>לוח מסחר</span></button>
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
-  </nav></div>
+  </nav><div class="sbx"><button type="button" data-uxgo="news">מה חדש באתר<span class="sbdot" id="sbNewsDot" hidden></span></button><button type="button" data-uxgo="tour">סיור באתר</button></div></div>
   <nav class="botbar" id="botbar" aria-label="ניווט מהיר">
     <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span class="bbl">סקירה</span></button>
     <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span class="bbl">התיק שלי</span></button>
@@ -1523,7 +1595,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   <header class="hero" id="hero">
     <div class="top">
       <div class="brand"><h1>תיק צ׳יק</h1><span class="brand-sub">חדר המסחר שלי</span><span class="live" id="fresh">טוען נתוני תיק…</span><button type="button" class="pxnow" id="pxNow" hidden>לעדכן מחירים עכשיו</button></div>
-      <div class="acts"><button class="hbtn" type="button" id="btnCal" data-tab="calendar" aria-label="לוח מסחר: מתי הבורסות בתל אביב ובניו יורק פתוחות" title="לוח מסחר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">לוח מסחר</span></button><button class="hbtn" type="button" id="btnUpd" aria-label="עדכון התיק מצילום מסך או מקובץ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg><span class="lbl">עדכון התיק</span></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
+      <div class="acts"><button class="hbtn" type="button" id="btnGo" data-uxgo="goq" aria-label="לאן להגיע? חיפוש של מסכים וחלקים באתר" title="לאן להגיע?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="lbl">לאן להגיע?</span></button><button class="hbtn" type="button" id="btnCal" data-tab="calendar" aria-label="לוח מסחר: מתי הבורסות בתל אביב ובניו יורק פתוחות" title="לוח מסחר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">לוח מסחר</span></button><button class="hbtn" type="button" id="btnUpd" aria-label="עדכון התיק מצילום מסך או מקובץ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg><span class="lbl">עדכון התיק</span></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
     </div>
     <div class="dup" id="loadErr" role="status" hidden style="margin:10px 0 0"></div>
     <div class="main">
@@ -1532,7 +1604,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <span class="big" id="kTotal">—</span>
         <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
-        <button class="status" id="kStatus" type="button" hidden></button>
+        <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
       </div>
       <div class="side">
         <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
@@ -1541,6 +1613,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="stat"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
         <div class="stat"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
         <div class="stat"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
+        <button type="button" class="sidemore" id="sideMore" aria-expanded="false" aria-controls="kYtdBox">עוד נתונים</button>
       </div>
     </div>
     <div class="taperow" id="tapeRow" data-adv><button type="button" class="tapetg" id="tapeTg" aria-expanded="true" aria-label="להסתיר את פס המניות" title="להסתיר את פס המניות">−</button><div class="tapewrap" dir="ltr" aria-hidden="true"><div class="tape" id="tape"></div></div></div>
@@ -1561,7 +1634,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <li><b>קבע כללים</b>כמה מותר לנייר אחד ולקבוצה אחת, ומאיזו ירידה כדאי לבדוק.</li>
         <li><b>קבל תמונת מצב</b>הסקירה אומרת מה השתנה, למה, והאם צריך לעשות משהו.</li>
       </ol>
-      <button class="btn pri" type="button" data-tab="mine">הוסף תיק עכשיו</button>
+      <div class="row2" style="justify-content:flex-start"><button class="btn pri" type="button" data-tab="mine">הוסף תיק עכשיו</button><button class="btn" type="button" data-uxgo="tour">סיור של דקה באתר</button></div>
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
     <div class="viewsw" role="group" aria-label="רמת הפירוט בסקירה"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה רגועה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div>
@@ -1585,13 +1658,14 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
       </div>
     </section>
     <section aria-labelledby="hMixH" id="mixHome" hidden>
-      <div class="row"><h2 id="hMixH">פיזור התיק</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
-      <div class="panel mixh" id="mixPanel"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור התיק לפי קבוצות"></div><svg class="mixpie" id="mixPie" viewBox="0 0 200 200" role="img" aria-label="פיזור התיק לפי קבוצות, כעוגה" hidden></svg><ul class="mixlist" id="mixList"></ul></div>
+      <div class="row"><h2 id="hMixH">פיזור לפי הקבוצות שלך</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
+      <div class="panel mixh" id="mixPanel"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור לפי הקבוצות שלך"></div><svg class="mixpie" id="mixPie" viewBox="0 0 200 200" role="img" aria-label="פיזור התיק לפי קבוצות, כעוגה" hidden></svg><ul class="mixlist" id="mixList"></ul></div>
+      <p class="note mixnote">הקבוצות שקבעת לכל נייר. החלוקה לפי ענף, מטבע ובורסה נמצאת בבקרה. <button type="button" class="term lw" data-term="grpsec" aria-label="מה ההבדל בין קבוצה לענף?" aria-expanded="false">מה ההבדל?</button></p>
     </section>
     <section id="healthHome" aria-labelledby="hHealth" hidden>
       <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
       <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul>
-        <p class="note">המדד מחושב רק מהכללים שקבעת (ריכוז, קבוצות, סטייה מיעד, ירידות, דולר) ומאיכות הנתונים. 100 = התיק עומד בכל הכללים בשוליים נוחים. הוא לא מודד תשואה ולא צופה אותה, ולא ממליץ לקנות או למכור.</p></div>
+        <p class="note">המדד בודק אם התיק עומד בכללים שקבעת. 100 = הכול בסדר. הוא לא מודד תשואה ולא ממליץ. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
     </section>
     <section aria-labelledby="hAnaE" id="anaSec" hidden>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
@@ -1829,7 +1903,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
           <div class="scroll"><table><thead><tr><th class="num">שנה</th><th class="num">שווי ₪</th><th class="num">דיבידנד ברוטו ₪</th><th class="num">מס ₪</th><th class="num">נטו ₪</th><th class="num">נטו מצטבר ₪</th></tr></thead><tbody id="dcRows"></tbody></table></div>
         </details>
         <p class="note" id="dcGot" style="margin-top:10px"></p>
-        <p class="note">זה ארגז חול לחישוב: הדיבידנד מחושב על השווי בכל חודש לפי התשואה שהזנת, והמס לפי האחוז שהזנת (ברירת המחדל 25%, כמו הניכוי במקור בדוחות; המס בפועל תלוי במצבך ובאמנת המס). שינוי במחיר או בדיבידנד הוא הנחה שלך, לא תחזית. מה שמקלידים כאן לא נשמר בשרת ולא משנה את התוכנית.</p>
+        <p class="note">חישוב לפי מה שהזנת, לא תחזית. מה שמקלידים כאן לא נשמר ולא משנה את התוכנית. <button type="button" class="term lw" data-term="divsand" aria-label="איך מחושב מחשבון הדיבידנדים?" aria-expanded="false">איך זה מחושב?</button></p>
       </div>
     </section>
     <section aria-labelledby="hFxCalc" id="fxCalc">
@@ -1988,7 +2062,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <div class="panel mix" id="mix"><div class="empty">החלוקה לקבוצות תופיע כאן.</div></div>
       </section>
     <section aria-labelledby="hExp">
-      <div class="row"><h2 id="hExp">למה התיק חשוף?</h2><span class="sub" id="expSub"></span></div>
+      <div class="row"><h2 id="hExp">חשיפה: ענף, מטבע ובורסה</h2><span class="sub" id="expSub"></span></div>
       <div class="panel exp" id="expBox"><div class="empty">החשיפות יופיעו כאן אחרי שהתיק והמחירים ייטענו.</div></div>
     </section>
     <section aria-labelledby="hStress">
@@ -2010,7 +2084,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <section aria-labelledby="hCo" data-adv>
       <div class="row"><h2 id="hCo">האם הפיזור אמיתי? ניירות שזזים יחד</h2><span class="sub" id="coFresh"></span></div>
       <div class="rhero" id="coLead"></div>
-      <p class="note">כל פס מראה בכמה מימי המסחר בחודש הניירות בקבוצה זזו לאותו כיוון. הקו שבאמצע הפס הוא מה שיוצא במקרה, בלי שום קשר ביניהם. ככל שהפס עובר אותו, הקשר ברור יותר.</p>
+      <p class="note">פס ארוך = הניירות בקבוצה עולים ויורדים יחד, ולכן הם פחות מפזרים. <button type="button" class="term lw" data-term="comove" aria-label="איך לקרוא את הפסים?" aria-expanded="false">איך לקרוא?</button></p>
       <div class="gg" id="coRows"><div class="empty">הקבוצות יופיעו כאן אחרי שנתוני המחירים היומיים ייטענו.</div></div>
     </section>
     <section aria-labelledby="hRk" data-adv>
@@ -2068,7 +2142,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
         <ul class="log" id="evList" style="margin-top:6px"><li><span class="sub">עוד לא נרשם דוח חדש מאז שהמעקב התחיל.</span></li></ul>
       </div>
       <details class="panel"><summary>איך מחושב הציון הפיננסי</summary>
-        <p class="note">ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.</p>
+        <p class="note">ציון 0 עד 100 מהדוחות של השנה האחרונה. הוא מודד כמה העסק חזק, לא אם המניה זולה. <button type="button" class="term lw" data-term="scorecalc" aria-label="איך מחושב הציון?" aria-expanded="false">איך זה מחושב?</button></p>
         <p class="note" id="rSrcNote">הציון מודד חוזק עסקי ולא אם המניה יקרה או זולה. הקונצנזוס ומחיר היעד הם של האנליסטים שמסקרים את החברה, לפי המקור שכתוב ליד הנתונים.</p>
       </details>
     </section>
@@ -2321,6 +2395,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
     <div class="rv-body"><article class="rv-page" id="repView"></article></div>
   </section>
   <div class="bottip" id="botTip" hidden><div class="bt-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו<button type="button" class="bt-x" data-bottip="x" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><p id="botTipT" role="status"></p><div class="acts"><button type="button" class="btn sm pri" id="botTipGo" data-bottip="go">נתח לי את התיק</button><button type="button" class="btn sm" data-bottip="x">לא עכשיו</button></div></div>
+  <div class="pscrim" id="newsScrim" data-newsx hidden></div>
+  <section class="profdlg newsdlg" id="newsDlg" role="dialog" aria-modal="true" aria-labelledby="hNews" hidden>
+    <header class="prof-h"><div class="t"><h2 id="hNews">מה חדש בתיק צ׳יק</h2><p>מה נוסף לאחרונה, ואיך מגיעים לכל דבר.</p></div><button type="button" class="nwx" data-newsx aria-label="סגירה">×</button></header>
+    <ul class="prof-b newsl" id="newsList"></ul>
+  </section>
+  <div class="tourcard" id="tourCard" role="dialog" aria-modal="false" aria-label="סיור באתר" hidden></div>
   <div class="termpop" id="termPop" role="dialog" aria-modal="false" aria-label="הסבר" hidden><b></b><p></p><button type="button" class="btn sm" data-termx>הבנתי</button></div>
 </div>
 
@@ -16301,7 +16381,7 @@ function renderMixHome(m){
       h+=f>=0.9999?`<circle cx="${C}" cy="${C}" r="${(R+r)/2}" fill="none" stroke="${col}" stroke-width="${R-r}"><title>${esc(GROUPS[g.id])} ${pct(f*100)}</title></circle>`
         :`<path d="M${pt(s0,R)}A${R} ${R} 0 ${big} 1 ${pt(s1,R)}L${pt(s1,r)}A${r} ${r} 0 ${big} 0 ${pt(s0,r)}Z" fill="${col}"><title>${esc(GROUPS[g.id])} ${pct(f*100)}</title></path>`; a0=a1}
     h+=`<text class="ctl" x="${C}" y="${C-6}" text-anchor="middle" font-size="12">שווי התיק</text><text class="ctr" x="${C}" y="${C+14}" text-anchor="middle" font-size="17" font-weight="700">${ils(tot)}</text>`;
-    $('mixPie').innerHTML=h; $('mixPie').setAttribute('aria-label','פיזור התיק לפי קבוצות: '+gs.map(g=>`${GROUPS[g.id]} ${pct(g.val/tot*100)}`).join(', '))}
+    $('mixPie').innerHTML=h; $('mixPie').setAttribute('aria-label','פיזור לפי הקבוצות שלך: '+gs.map(g=>`${GROUPS[g.id]} ${pct(g.val/tot*100)}`).join(', '))}
   $('mixBar').innerHTML=gs.map(g=>`<i title="${esc(GROUPS[g.id])} ${pct(g.val/tot*100)}" style="width:${g.val/tot*100}%;background:${GCOL[g.id]||'#94A3B8'}"></i>`).join('');
   $('mixList').innerHTML=gs.map(g=>{const w=g.val/tot*100, over=cap>0&&g.id!=='cash'&&w>cap; return `<li><i style="background:${GCOL[g.id]||'#94A3B8'}"></i><span>${esc(GROUPS[g.id])} <span class="gv n">${ils(g.val)}</span></span><span class="gw n${over?' over':''}">${pct(w)}${over?' ▲':''}</span></li>`}).join('');
 }
@@ -16404,7 +16484,7 @@ function render(){
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
   {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
-  const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n)=>`<tr class="sec"><td colspan="8">${t} · ${n}</td></tr>`;
+  const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x)=>`<tr class="sec"><td colspan="8">${t} · ${n}${x||''}</td></tr>`;
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
   for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
   for(const b of document.querySelectorAll('.hccy .chip'))b.setAttribute('aria-pressed',String(b.dataset.hc===HC));
@@ -16414,8 +16494,8 @@ function render(){
       +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק${(()=>{
         // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
         if(HV!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
-        return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור התיק נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
-  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
+        return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
+  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,' '+whyBtn('fundpx','למה התאריך של אתמול?'))+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   renderPlan(mAllNow());
@@ -16806,6 +16886,7 @@ function renderFees(){
   let cum=0;
   $('feeRows').innerHTML=yms.map(k=>{const r=by[k]; cum+=r.fee; return `<tr><td>${MONTHS[+k.slice(5)-1]} ${k.slice(2,4)}</td><td class="num"><span class="n">${r.n}</span></td><td class="num"><span class="n">${ils(r.vol)}</span></td><td class="num"><span class="n down">−${ils(r.fee)}</span>${r.sep>0.005?`<div class="nm">מתוכן ${ils(r.sep)} שנרשמו בנפרד</div>`:''}</td><td class="num"><span class="n">${pct(r.vol?(r.fee-r.sep)/r.vol*100:0,2)}</span></td><td class="num"><span class="n down">−${ils(cum)}</span></td></tr>`}).join('')
     +(undated>0.005?(cum+=undated,`<tr><td>בלי תאריך</td><td class="num">—</td><td class="num">—</td><td class="num"><span class="n down">−${ils(undated)}</span><div class="nm">עמלות שנרשמו בנפרד</div></td><td class="num">—</td><td class="num"><span class="n down">−${ils(cum)}</span></td></tr>`):'');
+  FEECK={tot,cum};
   const per=withFees.filter(A=>+A.feeUsdPerTrade>0).map(A=>`ב${ACCTS[A.acct]||A.acct} $${+A.feeUsdPerTrade} לכל קנייה או מכירה של נייר אמריקאי, כשהדוח לא מציין עמלה אחרת`);
   $('feeNote2').textContent=(per.length?`העמלה ${per.join('; ')}. `:'')+'עמלה בדולרים מומרת לשקלים לפי שער הדולר של היום. '+(extra?`הסכום הכולל כולל ${ils(extra)} של עמלות שנרשמו בנפרד מהעסקאות, והן בטבלה בחודש שלהן. `:'')+(freeN?`ב${free.join(', ')} בוצעו ${freeN} עסקאות בלי עמלת קנייה או מכירה נראית בתנועות. `:'')+(withFees.some(A=>A.acct==='exc')?'מרווח המרת המטבע, 2 אגורות לדולר באקסלנס, לא נכלל כאן':'מרווח המרת המטבע לא נכלל כאן')+', והוא חלק מ״הפרשי המרה ואחר״ בפירוק התוצאה.';
   HSUM.push(`עמלות מצטברות: ${ils(tot)} על ${n} עסקאות, ${pct(dep>0?tot/dep*100:0)} מההפקדות ל${names.join(' ול')}.`);
@@ -16844,8 +16925,8 @@ let EXPV='sector', EXPM=null, ST={kind:'all',pct:20,group:'',by:{},co:0,usd:10};
 try{const v=localStorage.getItem('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
 try{const s=JSON.parse(localStorage.getItem('tr_stress')||'null'); if(s&&typeof s==='object')ST={...ST,...s,by:{...(s.by||{})}}}catch(e){}
 const EXPL={sector:'ענף',ccy:'מטבע',market:'בורסה',kind:'סוג',group:'הקבוצות שלי'};
-const EXPN={sector:'לפי הענף ברשימת הניירות של הדף. קרן מוצגת כקרן, כי לא ידוע אילו חברות יש בה.',ccy:'ניירות שנסחרים בדולר ומזומן בדולרים. קרן שנסחרת בשקל יכולה להחזיק נכסים בחו״ל, וזה לא נספר כאן.',
-  market:'לפי הבורסה שבה הנייר נסחר, לא לפי המדינה שבה החברה פועלת.',kind:'מניות בודדות, קרנות ומזומן.',group:'הקבוצות שקבעת לכל נייר (אותן קבוצות של היעדים).'};
+const EXPN={sector:'ענף = תחום הפעילות של החברה. זה לא הקבוצות שקבעת, ולכן האחוזים שונים מ"פיזור לפי הקבוצות שלך"; השווי הכולל זהה. קרן מוצגת כקרן, כי לא ידוע אילו חברות יש בה.',ccy:'ניירות שנסחרים בדולר ומזומן בדולרים. קרן שנסחרת בשקל יכולה להחזיק נכסים בחו״ל, וזה לא נספר כאן.',
+  market:'לפי הבורסה שבה הנייר נסחר, לא לפי המדינה שבה החברה פועלת.',kind:'מניות בודדות, קרנות ומזומן.',group:'הקבוצות שקבעת לכל נייר: אותה חלוקה כמו "פיזור לפי הקבוצות שלך" בסקירה.'};
 const expBars=rows=>{const mx=Math.max(1,...rows.map(r=>r.w)); return `<div class="ana-al">${rows.map(r=>`<div class="ana-ar"><span class="nm1">${esc(r.label)}${r.syms&&r.syms.length&&r.syms.length<=6&&!(r.syms.length===1&&lab(r.syms[0])===r.label)?`<small style="display:block;color:var(--muted);font-weight:400;font-size:11.5px;line-height:1.35">${esc(r.syms.map(lab).join(' · '))}</small>`:''}</span><div class="tr" role="img" aria-label="${esc(r.label)}: ${pct(r.w)}"><i style="width:${(r.w/mx*100).toFixed(1)}%"></i></div><span class="vals"><b>${pct(r.w)}</b> <small>${ils(r.val)}</small></span></div>`).join('')}</div>`};
 function renderExposure(m){
   const box=$('expBox'); if(!box||!m)return; EXPM=m;
@@ -16862,7 +16943,7 @@ function renderExposure(m){
     :E.overlap.status==='unknown'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה,</b> כי אין לדף את ההרכב של ${esc(E.funds.map(lab).join(', '))}. זה לא אומר שאין חפיפה.</p>`:'';
   const co=CM&&CM.to?`<p class="note">גורמים משותפים: ניירות שזזים יחד מופיעים בחלק "נעים יחד", לפי ${CM.days||'?'} ימי מסחר עד ${dmy(CM.to)}${(Date.now()-new Date(CM.to))/864e5>14?' (הנתון הזה לא מתעדכן כרגע)':''}.</p>`:'';
   box.innerHTML=tiles+`<div class="chips" role="group" aria-label="חלוקה לפי" style="margin:14px 0 10px">${Object.keys(EXPL).map(k=>`<button type="button" class="chip" data-expv="${k}" aria-pressed="${k===EXPV}">${EXPL[k]}</button>`).join('')}</div>`
-    +expBars(rows)+`<p class="note">${EXPN[EXPV]} ${termBtn('expo')}</p>`+unk+ov+co;
+    +expBars(rows)+`<p class="note">${EXPN[EXPV]} ${EXPV==='sector'||EXPV==='group'?whyBtn('grpsec','מה ההבדל?'):termBtn('expo')}</p>`+unk+ov+co;
 }
 function stScen(m){
   const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
@@ -17435,18 +17516,15 @@ function renderDesk(m,A){
   else s=`התיק שווה ${nn(ils(m.total))}.`;
   if(!nC&&!nW)s+=' הוא עומד בכל הכללים שקבעת.';
   const head=nC?`${cntH(nC,'חריגה אחת','חריגות')} מהכללים שלך${nW?', ו'+(nW===1?'נושא אחד':'-'+nW+' נושאים')+' לבדיקה':''}`:nW?`אין חריגות, ${cntH(nW,'נושא אחד','נושאים')} לבדיקה`:'התיק במצב תקין';
-  const ord={crit:0,warn:1,info:2}, open=A.filter(a=>a[0]!=='ok'&&!ackd(a)), nAck=A.filter(a=>a[0]!=='ok'&&ackd(a)).length, top3=open.sort((a,b)=>ord[a[0]]-ord[b[0]]).slice(0,3);
-  const cut=x=>{x=String(x||'');if(x.length<=120)return x;const i=x.lastIndexOf(' ',118);return x.slice(0,i>60?i:118)+'…'};
-  const goB=n=>n?` <button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'';
-  const ackB=a=>canWrite?` <button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'';
-  const ackLine=nAck?`<p class="dk-ackd">${nAck===1?'סימנת שבדקת נושא אחד. הוא יחזור לרשימה אם משהו בו ישתנה, או בעוד שבוע.':`סימנת שבדקת ${nAck} נושאים. הם יחזרו לרשימה אם משהו בהם ישתנה, או בעוד שבוע.`}${canWrite?' <button type="button" class="dk-go" data-ackclear>להחזיר עכשיו</button>':''}</p>`:'';
-  const topH=top3.length?`<div class="dk-top"><b>${top3.length===1?'דבר אחד שדורש':top3.length+' דברים שדורשים'} את תשומת לבך</b><ol>${top3.map(a=>`<li class="${a[0]}">${niH(SEVI[a[0]])}<span><span class="dk-cat">${esc(a[1])}</span> ${esc(cut(a[2]))}${goB(alertNav(a))}${ackB(a)}</span></li>`).join('')}</ol>${ackLine}</div>`:`<div class="dk-top ok"><b>${niH('ok')}${nAck?'אין דבר חדש שדורש את תשומת לבך.':'אין דבר שדורש את תשומת לבך.'}</b>${ackLine}</div>`;
-  const nc=nextChecks(A,m)[0], urgent=nc&&(nc.sev==='crit'||nc.sev==='warn');
-  const act=!nc?'אין פעולה נדרשת כרגע.':urgent?`${esc(nc.title)}.${nc.sev==='crit'?' ההחלטה אצלך: להתאים את התיק לכלל, או לעדכן את הכלל.':''}`:`אין פעולה דחופה. בהזדמנות: ${esc(nc.title)}.`;
+  const nAck=A.filter(a=>a[0]!=='ok'&&ackd(a)).length;
+  let T=null; try{T=pxTrust(m)}catch(e){} try{renderTrustChip(T)}catch(e){} try{mailBoot()}catch(e){}
+  let L=[]; try{L=todoOf(m,A,T)}catch(e){}
+  {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${(nC||nW)&&rulesDefault()?rulesNote():''}${topH}<p class="dk-act"><b>הפעולה הבאה שלי:</b>${act}${goB(nc&&nc.nav)}</p><p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${trustH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
+const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
 // Claude, when the viewer allows it, only words those figures: every number in its wording is checked against the
@@ -17771,7 +17849,7 @@ function anaFacts(){
   if(!live)miss.push(priceNote);
   if(noPx.length)miss.push(`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק.`);
   if(funds.length)miss.push(`אין נתונים על החברות שבתוך הקרנות (${funds.map(p=>lab(p.sym)).join(', ')}), ולכן לא נבדקו חשיפה עקיפה וחפיפה דרכן.`);
-  miss.push(vd?'התשואה מוצגת מול העלות ומול סך ההפקדות. זו לא תשואה משוקללת זמן ולא השוואה למדד ייחוס.':'אין רישום של ההפקדות והמשיכות, ולכן לא מוצגת תשואה אישית מול ההפקדות.');
+  miss.push(vd?'התשואה כאן היא מול מה ששילמת ומול מה שהפקדת. היא לא משווה לשוק, ולכן לא אומרת אם עשית יותר או פחות מהשוק.':'אין רישום של ההפקדות והמשיכות, ולכן לא מוצגת תשואה אישית מול ההפקדות.');
   return {m,A,R,tsum,ageH,live,priceNote,staleSyms,noPx,funds,stocks,top3,top3w,groups,big,coreW,co,rated,good,weak,soon,depS,depI,monthName,queue,gl,vd,miss,at:new Date().toISOString()};
 }
 // what needs attention: the page's own alerts (same engine as "בקרה"), plus holdings that moved together
@@ -17838,7 +17916,7 @@ function anaStrengths(F){
 }
 function anaPlan(F){
   const rows=[], R=F.R, M=MTOT(), m=F.m;
-  rows.push({k:'fact',t:'תשואה',x:m.cost?`התיק ${sgn(m.pnl)} (${spct(m.pnlPct)}) מול מחיר הקנייה${F.vd?`, ומול סך ההפקדות ${sgn(F.vd.diff)} (${spct(F.vd.pct)})`:''}. זו לא תשואה משוקללת זמן ולא השוואה למדד ייחוס, ולכן אי אפשר לקבוע מכאן אם התיק עשה יותר או פחות מהשוק.`:'אין מחירי קנייה, ולכן אין חישוב תשואה.',nav:F.vd?{t:'history',l:ANAV.history}:null});
+  rows.push({k:'fact',t:'תשואה',x:m.cost?`התיק ${sgn(m.pnl)} (${spct(m.pnlPct)}) מול מחיר הקנייה${F.vd?`, ומול סך ההפקדות ${sgn(F.vd.diff)} (${spct(F.vd.pct)})`:''}. זו תשואה מול מה ששילמת ומה שהפקדת, לא מול השוק, ולכן היא לא אומרת אם התיק עשה יותר או פחות מהשוק.`:'אין מחירי קנייה, ולכן אין חישוב תשואה.',nav:F.vd?{t:'history',l:ANAV.history}:null});
   if(M>0){const parts=[]; if(F.depS!=null)parts.push(`הפקדת ${F.monthName} למניות (${ils(+S.monthly)}) ${F.depS?'סומנה':'עוד לא סומנה'}`); if(F.depI!=null)parts.push(`הפקדת ${F.monthName} למדדים (${ils(+S.monthlyIdx)}) ${F.depI?'סומנה':'עוד לא סומנה'}`);
     if(F.queue&&F.queue.n)parts.push(`${F.queue.n} ניירות בתור להגדלה${F.queue.afford.length?`, ביתרה של ${ils(F.queue.bal)} אפשר לקנות עכשיו את ${F.queue.afford.slice(0,3).join(', ')}`:''}`);
     rows.push({k:(F.depS===false||F.depI===false)?'warn':'ok',t:'הפקדה חודשית',x:parts.join('. ')+'.',nav:{t:'plan',l:ANAV.plan}})}
@@ -17921,9 +17999,10 @@ function anaFactsAI(F,issues,checks){
         what_moves_each:{'ריכוז בנייר בודד':'הנייר הגדול ביחס לכלל "עד X% לנייר"; יורד כשמשקלו קטן (הפקדות לניירות אחרים) או כשהכלל משתנה','ריכוז בקבוצה':'הקבוצה הגדולה ביחס לכלל "עד X% לקבוצה"','פיזור':'כמה ניירות שווים התיק דומה להם; 10 ומעלה = מלא','סטייה מהיעדים':'הסטייה הגדולה בין קבוצה ליעד שלה','ניירות מתחת לסף הירידה':'חלק השווי בניירות שירדו מהעלות יותר מסף הבדיקה','חשיפה לדולר':'אחוז התיק בדולרים מול התקרה שנקבעה','איכות הנתונים':'מחירים ישנים או חסרים, ניירות בלי עלות'},
         screen:'סקירה → "מדד בריאות התיק"; הכללים עצמם ב"כללים ויעדים"'}}catch(e){return null}})(),
     // what each screen of the page is for, so questions about the system itself get an answer
-    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, מדד בריאות התיק, פיזור התיק לפי הקבוצות שהמשתמש קבע, התראות',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'היסטוריה: פעולות, הפקדות ודיבידנדים',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות'},
+    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'היסטוריה: פעולות, הפקדות ודיבידנדים',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל; גם בכפתור לוח השנה בראש הדף'},
+      find_a_screen:'בתפריט ("עוד" בטלפון) יש חיפוש "לאן להגיע?": כותבים מילה כמו "עמלות" ומגיעים למקום. שם גם "מה חדש באתר" ו"סיור באתר"',
       prices:'מניות: מחיר חי בשעות המסחר, כל 5 דקות; קרנות נאמנות: המחיר הרשמי ממאיה (מתפרסם בערב), ובקרן שעוקבת אחרי מדד אמריקאי הערכה לפי המדד והדולר עד המחיר הרשמי הבא',
-      groups_vs_sectors:'"פיזור התיק" סופר לפי הקבוצה שהמשתמש נתן לכל נייר; "ענף" בבקרה סופר קרן כקרן (ההרכב שלה לא ידוע), וקרן שהמשתמש שם בקבוצה אחרת מופיעה שם בשורה משלה'},
+      groups_vs_sectors:'"פיזור לפי הקבוצות שלך" (בסקירה) סופר לפי הקבוצה שהמשתמש נתן לכל נייר; "ענף" בבקרה סופר קרן כקרן (ההרכב שלה לא ידוע), וקרן שהמשתמש שם בקבוצה אחרת מופיעה שם בשורה משלה'},
     ...anaPerson(),
     ...anaFlowsAI(m),
     user_policy:String(S.policy||'').slice(0,600),
@@ -20715,15 +20794,15 @@ const repSeenGet=()=>{try{return new Set(JSON.parse(localStorage.getItem('tr_rep
 function newReports(days){const held=new Set(((P&&P.positions)||[]).map(p=>p.sym)); let mk=[]; try{mk=wmarks()}catch(e){}
   const from=new Date(Date.now()-(days||10)*864e5).toISOString().slice(0,10);
   return ((RS&&RS.events)||[]).filter(e=>e&&e.q&&e.date>=from&&(held.has(e.sym)||mk.includes(e.sym))).map(e=>({...e,key:'rep:'+e.sym+':'+e.q,first:(e.ai&&e.ai.findings&&e.ai.findings[0])||(e.find||[])[0]||e.text}))}
-function renderRepBan(){const el=$('repBan'); if(!el)return; if(!notifOn('דוחות')){el.hidden=true;return}
+function renderRepBan(){const el=$('repBan'); if(!el)return; if(!notifOn('דוחות')||$('deskSec')){el.hidden=true;return}
   const seen=repSeenGet(), L=newReports(10).filter(e=>!seen.has(e.key)).slice(0,3); if(!L.length){el.hidden=true;return}
   const was=el.hidden;
   setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${tx(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לממצאים ולהסבר</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
   el.hidden=false; if(was)try{chime('sys')}catch(e){}}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-repban]'); if(!b)return; const S0=repSeenGet(); for(const k of b.dataset.repban.split(','))S0.add(k);
-  try{localStorage.setItem('tr_repban',JSON.stringify([...S0].slice(-200)))}catch(e){} renderRepBan()});
+  try{localStorage.setItem('tr_repban',JSON.stringify([...S0].slice(-200)))}catch(e){} renderRepBan(); try{render()}catch(e){}});
 function renderDepBan(){const el=$('depBan'); if(!el)return; const di=depInfo(); let off=''; try{off=localStorage.getItem('tr_depban')||''}catch(e){}
-  if(!depDue(di)||off===di.ym||!notifOn('הפקדה')){el.hidden=true;return}
+  if(!depDue(di)||off===di.ym||!notifOn('הפקדה')||$('deskSec')){el.hidden=true;return}
   const was=el.hidden;
   const h=`${niH('warn','db-ic')}<p>${di.isToday?`<b>היום יום ההפקדה שלך:</b> ${depAmtTxt(di,true)}.${di.hasPlan?' אחרי שהפקדת, סמן אותה במעקב החודשי.':''}`:`<b>הפקדת ${MONTHS[di.due.getMonth()]} עוד לא סומנה.</b> יום ההפקדה שלך היה ${nn(dmy(di.due))}, והסכום ${depAmtTxt(di,true)}.`}</p><div class="acts">${di.hasPlan&&canWrite?'<button class="btn sm pri" type="button" data-tab="plan">לסמן במעקב</button>':''}<button class="btn sm" type="button" data-depban="ok">הבנתי</button></div>`;
   el.hidden=false; setH(el,h); if(was)try{chime('sys')}catch(e){}}
@@ -21196,6 +21275,12 @@ const TERMS={
   expo:['חשיפה','כמה מהתיק תלוי בנכס, בתחום או בגורם מסוים. חשיפה של 40% לטכנולוגיה אומרת שכשהתחום זז, 40% מהתיק זזים איתו.'],
   conc:['ריכוזיות','חלק גדול מהתיק נמצא בכמה ניירות או בתחום אחד. תיק מרוכז זז חזק יותר כשהם זזים, לטוב ולרע.'],
   bench:['מדד השוואה','מדד שמשווים אליו את התיק, למשל ת״א 125 או S&P 500. ההשוואה הוגנת רק כשהמדד דומה לתיק: אותו שוק, אותו מטבע ואותה תקופה.'],
+  fundpx:['מחיר של קרן נאמנות','קרן נאמנות מקבלת מחיר אחד ביום, אחרי סגירת הבורסה, והוא מתפרסם במאיה (אתר הבורסה) בערב או למחרת בבוקר. לכן בשעות המסחר המחיר הרשמי הוא של יום המסחר הקודם, וזה תקין. לקרן שעוקבת אחרי מדד בחו״ל הדף מציג לצדו הערכה לפי המדד ושער הדולר, עד שיגיע המחיר הרשמי.'],
+  grpsec:['קבוצה או ענף?','קבוצה היא מה שאתה קבעת לכל נייר, ולפיה נבדקים היעדים והכללים שלך ("פיזור לפי הקבוצות שלך"). ענף הוא תחום הפעילות של החברה לפי רשימת הניירות. לכן נייר יכול להיות בקבוצה "חלל" ובענף "תעשייה", והאחוזים בשתי התצוגות שונים. השווי הכולל זהה בשתיהן, והדף בודק את זה.'],
+  health:['מדד בריאות התיק','המדד מחושב רק מהכללים שקבעת (ריכוז, קבוצות, סטייה מיעד, ירידות, דולר) ומאיכות הנתונים. 100 = התיק עומד בכל הכללים בשוליים נוחים. הוא לא מודד תשואה ולא צופה אותה, ולא ממליץ לקנות או למכור.'],
+  divsand:['מחשבון הדיבידנדים','זה ארגז חול לחישוב: הדיבידנד מחושב על השווי בכל חודש לפי התשואה שהזנת, והמס לפי האחוז שהזנת (ברירת המחדל 25%, כמו הניכוי במקור בדוחות; המס בפועל תלוי במצבך ובאמנת המס). שינוי במחיר או בדיבידנד הוא הנחה שלך, לא תחזית.'],
+  comove:['ניירות שזזים יחד','כל פס מראה בכמה מימי המסחר בחודש הניירות בקבוצה זזו לאותו כיוון. הקו שבאמצע הפס הוא מה שיוצא במקרה, בלי שום קשר ביניהם. ככל שהפס עובר אותו, הקשר ברור יותר.'],
+  scorecalc:['איך מחושב הציון','ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.'],
   fit:['דירוג התאמה','כמה נייר מתאים לתיק שלך לפי הכללים, היעדים וסוג המשקיע שבחרת: פיזור, איכות, תמחור ועוד. זה דירוג התאמה, לא המלצה לקנות.']};
 const TERM_AT=[['#hCore','core'],['label[for=inRate]','rate'],['label[for=inTax]','tax'],['label[for=rDrift]','drift'],['label[for=rUsd]','usd'],['label[for=rStop]','stop'],['label[for=rHold]','hold'],['#hAlloc','alloc'],['#hWatch','fit']];
 function termBtn(k){const t=TERMS[k]; return `<button type="button" class="term" data-term="${k}" aria-label="מה זה ${esc(t[0])}?" aria-expanded="false">?</button>`}
@@ -21956,8 +22041,236 @@ $('navtab').addEventListener('click',()=>setNav(true));$('scrim').addEventListen
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('tabsbar').classList.contains('open'))setNav(false)});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#mix circle.seg')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 {let lastY=0;addEventListener('scroll',()=>{const y=window.scrollY,d=y-lastY;if(Math.abs(d)<8)return;lastY=y;$('navtab').classList.toggle('away',d>0&&y>140&&!$('tabsbar').classList.contains('open'))},{passive:true})}
+// ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----
+// Everything here reads what the page already computed (the model, the alert engine, the price document); it adds no
+// numbers of its own. The to-do list is the one place for what needs doing: the rules' alerts, a new company report, the
+// deposit, prices that did not arrive, and a few suggestions the viewer can dismiss (a mail kind that is off, what is new,
+// the tour). A suggestion dismissed is kept in this browser only (a convenience; nothing depends on it).
+const UXK=k=>{try{return localStorage.getItem(k)}catch(e){return null}}, UXS=(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}};
+const whenTxt=iso=>new Date(iso).toDateString()===new Date().toDateString()?hm(iso):dmy(iso)+' '+hm(iso);
+const symsTxt=(L,one,many)=>L.length===1?lab(L[0]):L.length<=3?L.map(lab).join(', '):L.length+' '+many;
+// ---- are the prices current? The same signals the alert engine uses (pxLate, the per-market lag of the price document,
+// securities with no source), said once, in plain words, with the details behind "למה?"
+function pxTrust(m){
+  if(!m||!Q||!Q.updatedAt)return null;
+  const st=Q.stale||{}, meta=Q.meta||{}, iss=[];
+  let late=false; try{late=!!pxLate()}catch(e){}
+  if(late)iss.push({k:'late',t:`המחירים לא התעדכנו מאז ${whenTxt(Q.updatedAt)}`,d:'העדכון האוטומטי רץ כל 5 דקות בשעות המסחר וכל 15 דקות בשאר הזמן, ושני עדכונים ברצף לא הגיעו. המספרים בדף הם מהעדכון האחרון שהגיע.'});
+  let lag=[]; try{lag=pxLagInfo(m)}catch(e){}
+  const done=new Set();
+  for(const g of lag){g.syms.forEach(s=>done.add(s));
+    iss.push({k:'lag:'+g.k,syms:g.syms,t:`${symsTxt(g.syms,'','ניירות')} (${g.name}): עוד אין את המחיר של ${dmy(g.want)}`,
+      d:`מוצג המחיר של ${dmy(g.have)}. ${g.k==='il'?'זה קורה כשמאיה עוד לא פרסמה את המחיר הרשמי, או כשהבורסה הייתה סגורה.':'מקורות המחירים עוד לא החזירו את הסגירה של היום הזה.'} כשהמחיר יגיע, השווי יתעדכן לבד.`})}
+  const noSrc=m.pos.filter(p=>/^(מחיר קודם|מחיר מהדוח)$/.test(st[p.sym]||'')&&!done.has(p.sym)).map(p=>p.sym); noSrc.forEach(s=>done.add(s));
+  if(noSrc.length)iss.push({k:'nosrc',syms:noSrc,t:`${symsTxt(noSrc,'','ניירות')}: לא הגיע מחיר מהבורסה`,d:`השווי שלהם לפי המחיר האחרון שהיה, מהדוח שהעלית או מעדכון קודם: ${noSrc.map(lab).join(', ')}.`});
+  const noPx=[...new Set(((P&&P.positions)||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))];
+  if(noPx.length)iss.push({k:'nopx',syms:noPx,t:`אין מחיר ל-${symsTxt(noPx,'','ניירות')}`,d:'הם לא נכללים בשווי התיק עד שיגיע מחיר. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".'});
+  if(m.noRate&&m.noRate.length)iss.push({k:'norate',syms:m.noRate,t:`חסר שער מטבע ל-${symsTxt(m.noRate,'','ניירות')}`,d:'השער מגיע בעדכון המחירים הבא, ועד אז הם לא נכללים בשווי.'});
+  // the funds: one official price a day, published after the close
+  const fp=m.pos.filter(p=>isF(p.sym)&&(meta[p.sym]||{}).date), fd=fp.map(p=>meta[p.sym].date).sort(), est=m.pos.some(p=>isF(p.sym)&&/^הערכה/.test(st[p.sym]||''));
+  const chk=selfCheck(m); if(chk.bad.length)iss.push({k:'sum',t:'נמצא פער בין שני מסכים',d:chk.bad.map(x=>x.t).join(' ')+' זו טעות של הדף, לא של התיק. כדאי לצלם את המסך ולשלוח לבעל האתר.'});
+  return {ok:!iss.length,iss,fund:fd.length?fd[fd.length-1]:'',fundOld:fd.length?fd[0]:'',est,chk,at:Q.updatedAt};
+}
+// ---- the same total, counted in each view: the holdings and the cash, the groups (פיזור לפי הקבוצות), the exposures
+// (ענף, מטבע, בורסה, סוג) and the fees table. A gap of more than a shekel (or 0.05%) is a fault of the page
+var FEECK=null;
+function selfCheck(m){
+  const out={ok:[],bad:[]}; if(!m||!(m.total>0))return out; const T=m.total, tol=Math.max(1,T*0.0005), cmp=(name,v)=>{if(v==null||!isFinite(v))return; (Math.abs(v-T)<=tol?out.ok:out.bad).push({name,v,t:`${name}: ${ils(v)} במקום ${ils(T)}.`})};
+  cmp('האחזקות והמזומן',m.pos.reduce((t,p)=>t+p.val,0)+m.cash);
+  cmp('פיזור לפי הקבוצות שלך',Object.values(m.groups||{}).reduce((t,g)=>t+(+g.val||0),0));
+  try{const secOf=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}}, E=exposures(m,P,Q,secOf);
+    if(E)for(const [k,l] of [['sector','חשיפה לפי ענף'],['ccy','חשיפה לפי מטבע'],['market','חשיפה לפי בורסה'],['kind','חשיפה לפי סוג'],['group','חשיפה לפי הקבוצות']])if(E[k])cmp(l,E[k].reduce((t,r)=>t+r.val,0))}catch(e){}
+  if(FEECK&&Math.abs(FEECK.tot-FEECK.cum)>0.5)out.bad.push({name:'עמלות',t:`טבלת העמלות מגיעה ל-${ils(FEECK.cum)} וסך העמלות ${ils(FEECK.tot)}.`});
+  return out;
+}
+const trustChip=T=>!T?'':T.ok?`${niH('ok')}<span>המחירים עדכניים</span>`:`${niH('warn')}<span>${T.iss.length===1&&T.iss[0].k==='late'?'המחירים לא התעדכנו':T.iss.some(x=>x.k==='sum')?'נמצא פער בין מסכים':'חלק מהמחירים לא עדכניים'}</span>`;
+function trustH(T){
+  if(!T)return '';
+  const fund=T.fund?` · קרנות: מחיר רשמי מ-${nn(dmy(T.fund))}${T.est?', ולצדו הערכה לפי המדד':''} ${whyBtn('fundpx')}`:'';
+  const ok=T.chk.ok.length?`<li>${niH('ok')}<span>השווי זהה ב-${T.chk.ok.length} תצוגות: ${esc(T.chk.ok.map(x=>x.name).join(', '))}.</span></li>`:'';
+  if(T.ok)return `<div class="dk-trust ok" id="dkTrust">${niH('ok','dt-ic')}<div class="dt-b"><b>המחירים עדכניים</b><span class="dt-s">עודכנו ${esc(ago(T.at))}${fund}</span>
+    <details class="dt-d"><summary>איך זה נבדק?</summary><ul>${ok}<li>${niH('ok')}<span>${esc(pxLabelTxt()||'')}${pxLabelTxt()?'. ':''}כל מחיר מושווה ליום המסחר האחרון בבורסה שלו, לפי לוח המסחר.</span></li></ul></details></div></div>`;
+  const pxBtn=(()=>{const b=$('pxNow'); return b&&!b.hidden?'<button type="button" class="btn sm pri" data-uxgo="pxnow">לעדכן מחירים עכשיו</button>':''})();
+  return `<div class="dk-trust warn" id="dkTrust">${niH('warn','dt-ic')}<div class="dt-b"><b>${T.iss.length===1?esc(T.iss[0].t):'חלק מהמחירים לא עדכניים'}</b><span class="dt-s">${T.iss.length===1?esc(T.iss[0].d):T.iss.map(x=>esc(x.t)).join(' · ')}${fund}</span>
+    ${T.iss.length>1?`<details class="dt-d"><summary>מה בדיוק?</summary><ul>${T.iss.map(x=>`<li>${niH('warn')}<span><b>${esc(x.t)}.</b> ${esc(x.d)}</span></li>`).join('')}${ok}</ul></details>`:ok?`<details class="dt-d"><summary>מה נבדק?</summary><ul>${ok}</ul></details>`:''}
+    <div class="dt-a">${pxBtn}<button type="button" class="btn sm" data-uxgo="src">למקורות המחירים</button></div></div></div>`;
+}
+// "למה?": the short sentence stays on the screen, the rest opens in the same small window as the glossary terms
+function whyBtn(k,l){const t=TERMS[k]; if(!t)return ''; return `<button type="button" class="term lw" data-term="${k}" aria-label="${esc(l||'למה?')} ${esc(t[0])}" aria-expanded="false">${esc(l||'למה?')}</button>`}
+// ---- the to-do list ----
+const TODO_SEV={crit:0,rep:1,px:2,warn:3,setup:4,info:5,tip:6};
+function mailSugg(){
+  if(!OWNER||LOCAL||!db||!canWrite||!MAILST||!MAILST.ready)return null; if(UXK('tr_tipmail'))return null;
+  const M=(S&&S.mail)||{}, want=[['earnings','דוח חדש של מניה שלך'],['backup','גיבוי יומי של הנתונים']].filter(([k])=>M[k]!==true); return want.length?want:null}
+function mailBoot(){if(MAILST||mailBoot.asked||!OWNER||LOCAL||!db)return; mailBoot.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
+function todoOf(m,A,T){
+  const L=[], cut=x=>{x=String(x||'');if(x.length<=130)return x;const i=x.lastIndexOf(' ',128);return x.slice(0,i>60?i:128)+'…'};
+  const pxIss=T&&!T.ok;
+  // the rules' alerts and the deposit (the alert engine), without the price ones (said once, above) and the new reports (below)
+  for(const a of A){if(a[0]==='ok'||ackd(a))continue; if(pxIss&&(a[1]==='מחיר'||a[1]==='נתונים'))continue; if(a[1]==='דוחות'&&(a.each||[]).some(e=>String(e.key).startsWith('rep:')))continue;
+    const n=alertNav(a);
+    L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:`${tx(cut(a[2]))}`,b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
+  // a company of the portfolio (or one followed) published a report
+  if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
+    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${tx(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לממצאים ולהסבר ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
+  if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל: עד ${nn(pct(R.maxPos,0))} לנייר, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
+  const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
+  const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});
+  if(!UXK('tr_tour'))L.push({sev:'tip',ic:'info',cat:'סיור',h:'סיור של דקה: איפה רואים כמה יש לך, מה לעשות, ואיך מעלים דוח.',b:'<button type="button" class="dk-go" data-uxgo="tour">להתחיל סיור ›</button><button type="button" class="dk-ack" data-uxx="tr_tour">לא צריך</button>'});
+  return L.sort((a,b)=>TODO_SEV[a.sev]-TODO_SEV[b.sev]);
+}
+function todoH(L,nAck){
+  const li=x=>`<li class="${x.sev}">${niH(x.ic)}<span><span class="dk-cat">${esc(x.cat)}</span> ${x.h}<span class="dk-btns">${x.b}</span></span></li>`;
+  const ackLine=nAck?`<p class="dk-ackd">${nAck===1?'סימנת שבדקת נושא אחד. הוא יחזור לרשימה אם משהו בו ישתנה, או בעוד שבוע.':`סימנת שבדקת ${nAck} נושאים. הם יחזרו לרשימה אם משהו בהם ישתנה, או בעוד שבוע.`}${canWrite?' <button type="button" class="dk-go" data-ackclear>להחזיר עכשיו</button>':''}</p>`:'';
+  const need=L.filter(x=>x.sev!=='tip'&&x.sev!=='info'), first=L.slice(0,4), rest=L.slice(4);
+  if(!L.length)return `<div class="dk-top ok"><b>${niH('ok')}${nAck?'אין דבר חדש שצריך לעשות.':'אין משהו שצריך לעשות עכשיו.'}</b>${ackLine}</div>`;
+  return `<div class="dk-top" id="dkTodo"><b>${need.length?(need.length===1?'דבר אחד לעשות':need.length+' דברים לעשות'):'מה אפשר לעשות'}</b><ol>${first.map(li).join('')}</ol>${rest.length?`<details class="dk-rest"><summary>עוד ${rest.length}</summary><ol>${rest.map(li).join('')}</ol></details>`:''}${ackLine}</div>`;
+}
+function renderTrustChip(T){const el=$('kTrust'); if(!el)return; if(!T||noPf()){el.hidden=true;return} el.hidden=false; el.className='status trust'+(T.ok?'':' warn'); setH(el,trustChip(T))}
+document.addEventListener('click',ev=>{
+  const g=ev.target.closest&&ev.target.closest('[data-uxgo]'); if(g){const k=g.dataset.uxgo;
+    if(k==='trust'||k==='trustchip'){showTab('overview',true); setTimeout(()=>{const t=$('dkTrust'); if(t){const d=t.querySelector('details'); if(d)d.open=true; t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60); return}
+    if(k==='src'){goTo(GO.find(x=>x.id==='src')); return}
+    if(k==='pxnow'){const b=$('pxNow'); if(b)b.click(); return}
+    if(k==='news'){newsOpen(); return}
+    if(k==='newsx'){newsSeen(); try{render()}catch(e){} return}
+    if(k==='tour'){tourStart(); return}
+    if(k==='goq'){goOpen(); return}
+    return}
+  const x=ev.target.closest&&ev.target.closest('[data-uxx]'); if(x){UXS(x.dataset.uxx,new Date().toISOString()); try{render()}catch(e){} return}
+  const ml=ev.target.closest&&ev.target.closest('[data-uxmail]'); if(ml){if(!canWrite||!OWNER)return; const k=ml.dataset.uxmail; S.mail={...(S.mail||{}),[k]:true}; changed(); try{renderMail()}catch(e){}
+    offerUndo(k==='earnings'?'יישלח מייל כשמניה שבתיק או במעקב מפרסמת דוח.':'יישלח מייל עם גיבוי של הנתונים שלך כל לילה.',()=>{S.mail={...(S.mail||{}),[k]:false}; changed(); try{renderMail()}catch(e){}},6000); return}
+  if(ev.target.closest&&ev.target.closest('#kTrust')){ev.preventDefault(); showTab('overview',true); setTimeout(()=>{const t=$('dkTrust'); if(t){const d=t.querySelector('details'); if(d)d.open=true; t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60)}
+});
+const uxLit=el=>{if(!el)return; el.classList.remove('uxlit'); void el.offsetWidth; el.classList.add('uxlit'); setTimeout(()=>el.classList.remove('uxlit'),2400)};
+
+// ---- "לאן להגיע?": every screen and the parts people look for, by the words they would type ----
+const GO=[
+  {id:'ov',l:'סקירה',k:'בית ראשי שווי היום',tab:'overview'},
+  {id:'todo',l:'מה לעשות עכשיו',k:'משימות התראות חריגות דחוף',tab:'overview',el:'deskSec'},
+  {id:'trust',l:'האם המחירים עדכניים',k:'מחיר ישן תקוע לא מתעדכן עדכני אמינות',tab:'overview',el:'dkTrust'},
+  {id:'hold',l:'האחזקות שלי',k:'מניות קרנות ניירות רשימה',tab:'overview',el:'holdSec'},
+  {id:'mix',l:'פיזור לפי הקבוצות שלך',k:'פיזור קבוצות חלוקה עוגה',tab:'overview',el:'mixHome'},
+  {id:'health',l:'מדד בריאות התיק',k:'בריאות ציון מדד',tab:'overview',el:'healthHome'},
+  {id:'chiko',l:'צ׳יקו: לשאול שאלה',k:'צ׳יקו ציקו עוזר שאלה צ\'אט שיחה',fn:()=>{const b=$('chatFab'); if(b)b.click()}},
+  {id:'mine',l:'התיק שלי: להעלות דוח',k:'העלאה דוח קובץ צילום מסך אקסל pdf עדכון תיק כמות',tab:'mine'},
+  {id:'pick',l:'להוסיף מניה ידנית',k:'הוספה ידנית לוגו בחירה מניה',tab:'mine',el:'pickBox'},
+  {id:'plan',l:'תוכנית ההגדלה: ההפקדה הבאה',k:'תוכנית הפקדה חודשית קנייה הבא בתור מעקב',tab:'plan'},
+  {id:'once',l:'הפקדה חד פעמית',k:'חד פעמית בונוס הפקדה נוספת',tab:'plan',el:'hOnce'},
+  {id:'goal',l:'יעד ותרחישים',k:'יעד תחזית תרחיש עתיד כמה יהיה',tab:'forecast'},
+  {id:'div',l:'דיבידנדים',k:'דיבידנד דיבידנדים הכנסה',tab:'forecast',el:'hDivGot'},
+  {id:'divcalc',l:'מחשבון דיבידנדים',k:'מחשבון דיבידנד',tab:'forecast',el:'hDivCalc'},
+  {id:'fx',l:'מחשבון מט״ח',k:'דולר שער מטח מט"ח מטבע',tab:'forecast',el:'hFxCalc'},
+  {id:'pots',l:'חסכונות לפי מטרה',k:'חיסכון חסכונות מטרה ילד משכנתא',tab:'pots'},
+  {id:'hist',l:'מבט לאחור',k:'היסטוריה עבר',tab:'history'},
+  {id:'trend',l:'שווי מול הפקדות',k:'הפקדות רווח עובד',tab:'history',el:'hTrend'},
+  {id:'mon',l:'תשואה חודשית',k:'תשואה חודש חודשי',tab:'history',el:'hMon'},
+  {id:'fees',l:'עמלות',k:'עמלה עמלות דמי טיפול',tab:'history',el:'hFees'},
+  {id:'dec',l:'מאיפה באה התוצאה',k:'פירוק תוצאה דולר מחיר',tab:'history',el:'hDec'},
+  {id:'reps',l:'הדוחות שלי (שבועי, חודשי)',k:'דוח שבועי חודשי רבעוני pdf',tab:'reports'},
+  {id:'srch',l:'חיפוש נייר',k:'חיפוש מניה נייר סימול',tab:'search'},
+  {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
+  {id:'watch',l:'מניות במעקב',k:'מעקב רשימה',tab:'watch'},
+  {id:'risk',l:'בקרה: הכללים מול התיק',k:'בקרה סיכון התראות כללים',tab:'risk',el:'hCtl'},
+  {id:'exp',l:'חשיפה: ענף, מטבע ובורסה',k:'חשיפה ענף מטבע בורסה דולר סקטור',tab:'risk',el:'hExp'},
+  {id:'stress',l:'מבחן לחץ: מה אם המחירים יורדים',k:'לחץ ירידה תרחיש',tab:'risk',el:'hStress'},
+  {id:'pnl',l:'מי מרוויח ומי מפסיד',k:'רווח הפסד',tab:'risk',el:'hPnl'},
+  {id:'co',l:'ניירות שזזים יחד',k:'מתאם יחד פיזור אמיתי',tab:'risk',el:'hCo'},
+  {id:'state',l:'מה קורה בתיק',k:'מצב תמונה',tab:'state'},
+  {id:'cal',l:'לוח מסחר',k:'לוח שנה חג חגים פתוח סגור שעות מסחר בורסה',tab:'calendar'},
+  {id:'rules',l:'הכללים שלי',k:'כלל כללים סף ריכוז ירידה',tab:'settings',el:'hRules'},
+  {id:'alloc',l:'יעדי הקצאה',k:'הקצאה יעד אחוזים',tab:'settings',el:'hAlloc'},
+  {id:'notif',l:'התראות וצלילים',k:'התראה התראות צליל צלילים',tab:'settings',el:'hNotif'},
+  {id:'mail',l:'מיילים',k:'מייל מיילים אימייל דואר',tab:'settings',el:'mailBox'},
+  {id:'accts',l:'חשבונות המסחר שלי',k:'חשבון אקסלנס בלינק ברוקר',tab:'settings',el:'hAccts'},
+  {id:'me',l:'הפרופיל שלי',k:'פרופיל שם שפה',tab:'settings',el:'hMe'},
+  {id:'data',l:'פרטיות, נתונים וגיבוי',k:'פרטיות גיבוי ייצוא נתונים',tab:'settings',el:'hData'},
+  {id:'src',l:'מקורות המחירים',k:'מקור מקורות מאיה yahoo נתונים מאיפה',tab:'settings',el:'srcPanel'},
+  {id:'news',l:'מה חדש באתר',k:'חדש עדכון גרסה',fn:()=>newsOpen()},
+  {id:'tour',l:'סיור באתר',k:'סיור הדרכה עזרה מתחילים',fn:()=>tourStart()}];
+const goNorm=s=>String(s||'').toLowerCase().replace(/[׳'"״`]/g,'').replace(/ך/g,'כ').replace(/ם/g,'מ').replace(/ן/g,'נ').replace(/ף/g,'פ').replace(/ץ/g,'צ').replace(/\s+/g,' ').trim();
+function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)return [];
+  // a word counts with a Hebrew prefix letter or without it ("לילד" finds "ילד", "בעמלות" finds "עמלות")
+  const one=(x,L,K)=>L.startsWith(x)?4:L.includes(x)?3:K.split(' ').some(k=>k.startsWith(x))?2:K.includes(x)?1:0;
+  const sc=d=>{const L=goNorm(d.l), K=goNorm(d.k); let s=0; for(const x of w){const y=x.slice(1), v=one(x,L,K)||(/^[להבומשכ]/.test(x)&&y.length>=3&&(L+' '+K).split(' ').some(k=>k.startsWith(y))?2:0); if(!v)return 0; s+=v} return s};
+  return GO.map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
+function goTo(d){
+  if(!d)return; try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
+  if(d.fn){d.fn();return}
+  showTab(d.tab,true);
+  if(!d.el)return;
+  setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
+    const fs=el.closest('[data-pane="risk"] > section.fold'); if(fs){try{foldSet(fs.getAttribute('aria-labelledby'),true)}catch(e){}}
+    if(el.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}}
+    for(let p=el.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
+    if(el.tagName==='DETAILS')el.open=true;
+    const tgt=el.offsetParent?el:sec; try{tgt.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){} uxLit(tgt.closest('.panel')||tgt)},90)}
+function goRender(q){const box=$('goRes'); if(!box)return; const L=goFind(q);
+  box.hidden=!q.trim(); setH(box,L.length?L.map((d,i)=>`<li><button type="button" data-goto="${d.id}"${i===0?' class="first"':''}>${esc(d.l)}</button></li>`).join(''):`<li class="none">לא מצאתי. נסה מילה אחרת, או שאל את צ׳יקו.</li>`)}
+function goOpen(){const wide=matchMedia('(min-width:1200px)').matches; if(!wide)setNav(true); setTimeout(()=>{const q=$('goQ'); if(q)try{q.focus()}catch(e){}},wide?0:240)}
+document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='goQ')goRender(ev.target.value)});
+document.addEventListener('keydown',ev=>{if(ev.target&&ev.target.id==='goQ'&&ev.key==='Enter'){ev.preventDefault(); const L=goFind(ev.target.value); if(L[0])goTo(L[0])}});
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-goto]'); if(!b)return; goTo(GO.find(x=>x.id===b.dataset.goto))});
+
+// ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
+const NEWS=[
+  {at:'2026-10-21',t:'מה לעשות עכשיו',d:'בסקירה, רשימה אחת של מה שצריך לעשות: הפקדה, דוח חדש של חברה, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.',go:'todo'},
+  {at:'2026-10-21',t:'סימן אמינות למחירים',d:'ליד שווי התיק: "המחירים עדכניים" או מה בדיוק לא התעדכן. הדף גם בודק שהשווי זהה בכל התצוגות.',go:'trust'},
+  {at:'2026-10-21',t:'לאן להגיע?',d:'חיפוש בתפריט: כותבים "עמלות" או "לוח מסחר" ומגיעים ישר למקום.',go:'goq'},
+  {at:'2026-10-21',t:'לוח מסחר',d:'מתי הבורסות בתל אביב ובניו יורק פתוחות, עם דגל בכל יום. הכפתור עם לוח השנה בראש הדף.',go:'cal'},
+  {at:'2026-10-21',t:'חסכונות לפי מטרה',d:'חיסכון לילד, למשכנתא או לכל מטרה, עם התקדמות ליעד. לא נספר פעמיים בשווי התיק.',go:'pots'},
+  {at:'2026-10-21',t:'הפקדה חד פעמית',d:'בונוס או סכום נוסף: נכנס ליתרה להשקעה, לשווי התיק ולשורת החודש.',go:'once'},
+  {at:'2026-10-21',t:'דוחות של חברות',d:'כשמניה שבתיק או במעקב מפרסמת דוח: מתי, הממצאים והסבר, בדף המניה. אפשר לקבל גם מייל.',go:'rate'},
+  {at:'2026-10-20',t:'מחירי קרנות ממאיה',d:'המחיר הרשמי של קרנות הנאמנות מאתר הבורסה, נבדק כל 15 דקות.',go:'src'}];
+const NEWSV=NEWS[0].at;
+const newsUnseen=()=>{const s=UXK('tr_news')||''; return NEWS.filter(n=>n.at>s)};
+function newsSeen(){UXS('tr_news',NEWSV); newsDot()}
+function newsDot(){const d=$('sbNewsDot'); if(d)d.hidden=!newsUnseen().length}
+function newsOpen(){
+  const dl=$('newsDlg'); if(!dl)return; try{setNav(false)}catch(e){} const fresh=new Set(newsUnseen().map(n=>n.t));
+  setH($('newsList'),NEWS.map(n=>`<li${fresh.has(n.t)?' class="nw"':''}><div><b>${esc(n.t)}</b>${fresh.has(n.t)?'<span class="pill nwp">חדש</span>':''}<span class="sub">${esc(dmy(n.at))}</span></div><p>${esc(n.d)}</p>${n.go?`<button type="button" class="btn sm" data-newsgo="${n.go}">קח אותי לשם ›</button>`:''}</li>`).join(''));
+  dl.hidden=false; $('newsScrim').hidden=false; document.body.classList.add('prof-open'); newsSeen(); try{render()}catch(e){}
+  try{dl.querySelector('[data-newsx]').focus({preventScroll:true})}catch(e){}}
+function newsClose(){const dl=$('newsDlg'); if(!dl||dl.hidden)return; dl.hidden=true; $('newsScrim').hidden=true; document.body.classList.remove('prof-open')}
+document.addEventListener('click',ev=>{
+  if(ev.target.closest&&ev.target.closest('[data-newsx]')){newsClose();return}
+  const g=ev.target.closest&&ev.target.closest('[data-newsgo]'); if(g){newsClose(); const k=g.dataset.newsgo; if(k==='goq'){goOpen();return} goTo(GO.find(x=>x.id===k))}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){if($('newsDlg')&&!$('newsDlg').hidden)newsClose(); else if(TOUR_I!=null)tourEnd()}});
+
+// ---- the tour: a card at the bottom of the screen that points at one thing at a time. It never covers the page with a
+// layer, so the person can tap around; "סיימתי" or "דלג" ends it (and it is not offered again in this browser) ----
+const TOUR=[
+  {sel:['#hero .worth'],t:'כמה יש לך',d:'שווי התיק עכשיו, והשינוי מאז יום המסחר הקודם. "למה?" מסביר מה הזיז אותו.'},
+  {sel:['#kTrust'],t:'האם המחירים עדכניים',d:'✓ אומר שהמחירים מהמסחר האחרון. אם משהו לא התעדכן, כתוב כאן מה ולמה, ואין צורך לבדוק מול בית ההשקעות.'},
+  {sel:['#desk'],t:'מה לעשות עכשיו',d:'כל מה שדורש את תשומת לבך במקום אחד: הפקדה, דוח חדש, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.'},
+  {sel:['#botbar [data-bb="mine"]','#tab_mine'],t:'התיק שלי: מעלים דוח',d:'כאן מעדכנים את התיק. הכי פשוט: צילום מסך של רשימת האחזקות באפליקציה (בבלינק: "ההשקעות שלי"; באקסלנס: מסך התיק), או קובץ PDF או אקסל מבית ההשקעות. צ׳יקו קורא, ואתה בודק ושומר.'},
+  {sel:['#botbar [data-bb="plan"]','#tab_plan'],t:'תוכנית',d:'ההפקדה החודשית, מה הבא בתור לפי התוכנית שקבעת, הפקדה חד פעמית וחסכונות לפי מטרה.'},
+  {sel:['#botbar [data-bb="risk"]','#tab_risk'],t:'בקרה',d:'האם התיק עומד בכללים שקבעת: ריכוז, פיזור, ירידות וחשיפה לדולר.'},
+  {sel:['#botbar [data-bb="more"]','#goQ'],t:'לא מוצא משהו?',d:'ב"עוד" יש חיפוש "לאן להגיע?": כותבים "עמלות" או "לוח מסחר" ומגיעים ישר למקום.'},
+  {sel:['#chatFab'],t:'צ׳יקו',d:'שואלים במילים שלך, למשל "למה התיק ירד היום?". צ׳יקו מסביר את המספרים שבדף ולא נותן המלצות.'}];
+let TOUR_I=null, TOUR_L=[];
+const tourEl=s=>{for(const x of s.sel){const e=document.querySelector(x); if(e&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&!e.closest('[hidden]'))return e} return null};   // offsetParent is null for a fixed element (צ׳יקו's button)
+function tourStart(){try{setNav(false)}catch(e){} newsClose(); showTab('overview'); window.scrollTo(0,0); setTimeout(()=>{TOUR_L=TOUR.filter(s=>tourEl(s)); if(!TOUR_L.length)return; TOUR_I=0; tourShow()},120)}
+function tourShow(){
+  for(const e of document.querySelectorAll('.tourhl'))e.classList.remove('tourhl');
+  const s=TOUR_L[TOUR_I], c=$('tourCard'); if(!s||!c){tourEnd();return} const el=tourEl(s);
+  if(el){el.classList.add('tourhl'); const r=el.getBoundingClientRect(); if(getComputedStyle(el).position!=='fixed'&&!el.closest('#botbar,.tabsbar')&&(r.top<70||r.bottom>innerHeight-260))try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}}
+  const last=TOUR_I===TOUR_L.length-1;
+  setH(c,`<div class="tc-h"><b>${esc(s.t)}</b><span class="sub">${TOUR_I+1} מתוך ${TOUR_L.length}</span><button type="button" class="tc-x" data-tour="end" aria-label="לסיים את הסיור">×</button></div><p>${esc(s.d)}</p><div class="tc-a">${TOUR_I>0?'<button type="button" class="btn sm" data-tour="back">הקודם</button>':''}<button type="button" class="btn sm pri" data-tour="${last?'end':'next'}">${last?'סיימתי':'הבא'}</button>${last?'':'<button type="button" class="btn sm" data-tour="end">דלג</button>'}</div>`);
+  c.hidden=false; c.classList.toggle('top',!!(el&&el.getBoundingClientRect().top>innerHeight*0.55&&!el.closest('#botbar')));
+  try{c.querySelector('[data-tour="next"],[data-tour="end"]').focus({preventScroll:true})}catch(e){}}
+function tourEnd(){TOUR_I=null; for(const e of document.querySelectorAll('.tourhl'))e.classList.remove('tourhl'); const c=$('tourCard'); if(c)c.hidden=true; UXS('tr_tour',new Date().toISOString()); try{render()}catch(e){}}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-tour]'); if(!b)return; const a=b.dataset.tour;
+  if(a==='end'){tourEnd();return} if(a==='next')TOUR_I=Math.min(TOUR_L.length-1,TOUR_I+1); if(a==='back')TOUR_I=Math.max(0,TOUR_I-1); tourShow()});
+// the hero on a phone: the worth and the day first; the other figures one tap away
+function sideMore(){const s=document.querySelector('.hero .side'), b=$('sideMore'); if(!s||!b)return; const open=UXK('tr_side')==='open';
+  s.classList.toggle('lessm',!open); b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
+document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#sideMore')){UXS('tr_side',UXK('tr_side')==='open'?'less':'open'); sideMore()}});
+window.__ux={trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
+// ---- ux:end ----
 try{navBoot()}catch(e){}
 try{srchBoot()}catch(e){}
+try{newsDot();sideMore()}catch(e){}
 {let t=(location.hash||'').slice(1); if(!TABS.includes(t)){try{t=localStorage.getItem('tab')}catch(e){t=''}} showTab(t||'overview')}
 try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('settings');$('wipeState').textContent=wipeMsg(w==='ok');try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}}catch(e){}
 try{i18nBoot()}catch(e){}
