@@ -77,7 +77,11 @@ before(async()=>{
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
-  const app=createApp({store,siteDir:R+'site',jobs:false}); srv=await new Promise(r=>{const s=app.listen(0,'127.0.0.1',()=>r(s))}); U='http://127.0.0.1:'+srv.address().port+'/';
+  // a price refresh never runs in these tests, whatever a page's routes let through: it would fetch nothing (no network
+  // here) and rewrite the shared prices every later test reads
+  const app=createApp({store,siteDir:R+'site',jobs:false});
+  srv=await new Promise(r=>{const s=http.createServer((req,res)=>{if(req.method==='POST'&&req.url.startsWith('/api/prices')){res.writeHead(200,{'content-type':'application/json'}); res.end('{"ok":true,"cached":true}'); return} app(req,res)}); s.listen(0,'127.0.0.1',()=>r(s))});
+  U='http://127.0.0.1:'+srv.address().port+'/';
   try{browser=await (await import('playwright')).chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage']})}catch(e){browser=null}
 });
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
@@ -370,6 +374,7 @@ test('Israeli securities in the search: Tel Aviv shares in Hebrew, the indices, 
 
 test('two-step sign-in: switched on in its own page, the login asks for the code, a backup code works once',T,async t=>{
   if(skip())return t.skip('no browser');
+  const QA0=store.getDoc('quotes/latest').data.attemptAt;
   const {b32decode,hotp,step}=await import('../server/totp.js'); const code=sec=>hotp(b32decode(sec),step());
   const u=store.userByEmail('r3@example.com');
   try{
@@ -384,13 +389,15 @@ test('two-step sign-in: switched on in its own page, the login asks for the code
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); await ctx.close();
     // a new sign-in: the password, then the code
     const c2=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL'}); const p2=await c2.newPage();
-    await c2.route('**/*',r=>{const x=r.request().url(); if(x.startsWith(U)||x.startsWith('data:'))r.continue(); else r.fulfill({status:404,body:''})});
+    await c2.route('**/*',r=>{const x=r.request().url(); if(x.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return}   // as in open(): a real refresh would rewrite the shared prices of the tests after this one
+      if(x.startsWith(U)||x.startsWith('data:'))r.continue(); else r.fulfill({status:404,body:''})});
     await p2.goto(U); await p2.waitForSelector('#tcLogin'); await p2.fill('#tcEmail','r3@example.com'); await p2.fill('#tcPass','friend-pass-4'); await p2.click('#tcLogin button');
     await p2.waitForSelector('#tcCodeBox:not([hidden])'); assert.match(await p2.textContent('#tcErr'),/הקלד את הקוד מאפליקציית האימות/);
     assert.equal(await p2.getAttribute('#tcOtp','autocomplete'),'one-time-code');
     await p2.fill('#tcOtp',codes[0]); await p2.click('#tcLogin button');
     await p2.waitForFunction(()=>!!document.querySelector('.wrap.nopf')||!document.getElementById('tcGate'),null,{timeout:20000});
-    await c2.close();
+    await p2.waitForTimeout(1500); await c2.close();
+    assert.equal(store.getDoc('quotes/latest').data.attemptAt,QA0,'the prices the other tests read are untouched');
   }finally{store.totpOff(u.id)}
 });
 
