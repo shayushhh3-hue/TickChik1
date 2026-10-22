@@ -96,7 +96,13 @@ async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false}={}
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
-  await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
+  await pg.goto(U); await pg.waitForSelector('#tcLogin');
+  // a sign-in that answers "wrong e-mail or password" was typed into a form drawn again under the typing (seen on the CI
+  // runner): typed again, at most twice
+  const login=async()=>{await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button')};
+  await login();
+  for(let i=0;i<2;i++){const r=await pg.waitForFunction(()=>{const f=document.getElementById('tcLogin'); if(!f)return 'ok'; const e=document.getElementById('tcErr'); return e&&/\S/.test(e.textContent)&&!f.querySelector('button').disabled?'err':false},null,{timeout:15000}).then(h=>h.jsonValue()).catch(()=>'gone');
+    if(r!=='err')break; await login()}
   try{await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000})}   // in shekels or, by the account's choice, in dollars   // the first page in a fresh runner builds the font cache
   catch(e){   // what the page showed instead, so a failure in CI says why without the full log
     const d=await pg.evaluate(()=>({url:location.href,gate:!!document.getElementById('tcGate'),gateTxt:(document.getElementById('tcGate')?.textContent||'').replace(/\s+/g,' ').slice(0,160),
