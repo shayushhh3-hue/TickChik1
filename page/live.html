@@ -182,6 +182,10 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .flg.closed::after{content:"";position:absolute;inset:45% -10%;height:2px;background:var(--loss);transform:rotate(-45deg)}
 .calgrid .dc .fl .flg{width:16px;height:16px}
 .calleg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);align-items:center}
+/* 22.10: the count of the rules' alerts on the button of בקרה */
+#botbar [data-bb="risk"],#tab_risk{position:relative}
+.bbadge{position:absolute;top:2px;inset-inline-end:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warn-c);color:#27152B;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--navy)}
+.bbadge.crit{background:#FF6B57;color:#27152B} #tab_risk .bbadge{position:static;margin-inline-start:auto;box-shadow:none}
 /* 22.10: the days of the held securities: a report (purple) and a dividend (green) under the two flags */
 .calgrid .dc .evs{display:flex;gap:3px;justify-content:center;min-height:7px} .calgrid .dc .evs i,.calleg i.ev{width:7px;height:7px;border-radius:50%;display:inline-block}
 .ev.rep,.calgrid .dc .evs i.rep{background:var(--info-c)} .ev.div,.calgrid .dc .evs i.div{background:var(--ok-c)}
@@ -1744,6 +1748,16 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
       <div class="row2" style="justify-content:flex-start"><button class="btn pri" type="button" data-tab="mine">הוסף תיק עכשיו</button><button class="btn" type="button" data-uxgo="tour">סיור של דקה באתר</button></div>
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
+      <section aria-labelledby="hHold" id="holdSec" class="hold lite">
+      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button><button type="button" class="chip" data-hc="both" aria-pressed="false" title="שקלים, ומתחת בדולרים">₪+$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
+      <div class="panel scroll">
+        <table>
+          <thead><tr><th>נייר</th><th class="num">שינוי יומי</th><th class="num">כמות</th><th class="num">מחיר</th><th class="num">שווי ₪</th><th class="num">משקל</th><th class="num">עלות ₪</th><th class="num">רווח / הפסד</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8" class="empty">האחזקות שלך יופיעו כאן אחרי שתעלה את התיק.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
         <div class="idxrow" id="idxRow" hidden aria-label="המדדים שבחרת" data-adv></div>
     <div class="depban" id="depBan" hidden></div>
     <div class="depban repban" id="repBan" role="status" hidden></div>
@@ -1753,15 +1767,6 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
     <!-- 13.10 (stage 3.1): what needs attention comes first, the holdings after it -->
     <section aria-labelledby="hDesk" id="deskSec" hidden>
       <div class="panel desk" id="desk" tabindex="-1"></div>
-    </section>
-    <section aria-labelledby="hHold" id="holdSec" class="hold lite">
-      <div class="row"><h2 id="hHold">האחזקות שלי</h2><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button><button type="button" class="chip" data-hc="both" aria-pressed="false" title="שקלים, ומתחת בדולרים">₪+$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
-      <div class="panel scroll">
-        <table>
-          <thead><tr><th>נייר</th><th class="num">שינוי יומי</th><th class="num">כמות</th><th class="num">מחיר</th><th class="num">שווי ₪</th><th class="num">משקל</th><th class="num">עלות ₪</th><th class="num">רווח / הפסד</th></tr></thead>
-          <tbody id="rows"><tr><td colspan="8" class="empty">האחזקות שלך יופיעו כאן אחרי שתעלה את התיק.</td></tr></tbody>
-        </table>
-      </div>
     </section>
     <section aria-labelledby="hMixH" id="mixHome" hidden>
       <div class="row"><h2 id="hMixH">פיזור לפי הקבוצות שלך</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
@@ -16577,7 +16582,7 @@ function render(){
   renderDesk(m,A); renderRules(m); renderBrief(m,A); renderCore(m); try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
   // hero status, movers, ticker tape and heat board
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
-  ks.hidden=false; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
+  ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
   const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
   const mv=m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0], worst=mv[mv.length-1];
   $('kBest').innerHTML=best?`<span class="sym">${esc(lab(best.sym))}</span>${chg(best)}`:'—'; $('kBestD').textContent=best?best.name:'';
@@ -17641,20 +17646,20 @@ window.__pxal={hits:pxAlertHits,set:pxAlertSet,price:pxKeyPrice};
 function whyH(w){if(!w)return'';return `<details class="why"><summary>למה אני רואה את זה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
 function renderDesk(m,A){
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
-  const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length, st=nC?'crit':nW?'warn':'ok';
+  const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length;
   let s;
   if(m.hasDay&&m.dayPct!=null){
     const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2);
     s=`ביום המסחר האחרון התיק ${up?'עלה':'ירד'} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} <span style="white-space:nowrap">(${nn(ils(Math.abs(m.dayIls)))})</span>${top.length?`, בעיקר בגלל ${top.map(p=>symH(p.sym)).join(' ו-')}`:''}.`}
   else s=`התיק שווה ${nn(ils(m.total))}.`;
   if(!nC&&!nW)s+=' הוא עומד בכל הכללים שקבעת.';
-  const head=nC?`${cntH(nC,'חריגה אחת','חריגות')} מהכללים שלך${nW?', ו'+(nW===1?'נושא אחד':'-'+nW+' נושאים')+' לבדיקה':''}`:nW?`אין חריגות, ${cntH(nW,'נושא אחד','נושאים')} לבדיקה`:'התיק במצב תקין';
   const nAck=A.filter(a=>a[0]!=='ok'&&ackd(a)).length;
   let T=null; try{T=pxTrust(m)}catch(e){} try{renderTrustChip(T)}catch(e){} try{mailBoot()}catch(e){}
-  let L=[]; try{L=todoOf(m,A,T)}catch(e){}
+  let L=[]; try{L=todoOf(m,A,T)}catch(e){} try{ctlBadge(A)}catch(e){}
+  const need=L.filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep'), st=L.some(x=>x.sev==='crit')?'crit':need.length?'warn':'ok';
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<p class="dk-greet">${gw}${nm?', '+esc(nm):''}.</p><div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${head}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${benchLineH()}${trustH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div><p class="dk-line">${s}</p>${depLineH()}${benchLineH()}${trustH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 const DESK_REP=new Set();
@@ -22610,11 +22615,21 @@ function mailSugg(){
   if(!OWNER||LOCAL||!db||!canWrite||!MAILST||!MAILST.ready)return null; if(UXK('tr_tipmail'))return null;
   const M=(S&&S.mail)||{}, want=[['earnings','דוח חדש של מניה שלך'],['backup','גיבוי יומי של הנתונים'],['pxalert','התראה כשמשהו לא מתעדכן']].filter(([k])=>M[k]!==true); return want.length?want:null}
 function mailBoot(){if(MAILST||mailBoot.asked||!OWNER||LOCAL||!db)return; mailBoot.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
+const HOMECAT=new Set(['הפקדה','הגדלה','יתרה','מחיר','נתונים','חסר','דוחות']);
+// the rules' alerts, counted for the button of בקרה (the bottom bar and the menu)
+function ctlBadge(A){const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
+  const cs=c===1?'חריגה אחת':c+' חריגות', ws=w===1?'נושא אחד לבדיקה':w+' נושאים לבדיקה';
+  const lbl=!n.length?'':c&&w?`${cs} ו${w===1?ws:'-'+ws}`:c?cs:ws;
+  for(const b of document.querySelectorAll('#botbar [data-bb="risk"],#tab_risk')){let g=b.querySelector('.bbadge'); if(!n.length){if(g)g.remove(); b.removeAttribute('data-badge'); continue}
+    if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); (b.querySelector('svg')?.parentElement===b?b:b).appendChild(g)}
+    g.textContent=String(n.length); g.classList.toggle('crit',c>0); b.setAttribute('data-badge',lbl); b.setAttribute('aria-description','בבקרה: '+lbl)}}
 function todoOf(m,A,T){
   const L=[], cut=x=>{x=String(x||'');if(x.length<=130)return x;const i=x.lastIndexOf(' ',128);return x.slice(0,i>60?i:128)+'…'};
   const pxIss=T&&!T.ok;
-  // the rules' alerts and the deposit (the alert engine), without the price ones (said once, above) and the new reports (below)
-  for(const a of A){if(a[0]==='ok'||ackd(a))continue; if(pxIss&&(a[1]==='מחיר'||a[1]==='נתונים'))continue; if(a[1]==='דוחות'&&(a.each||[]).some(e=>String(e.key).startsWith('rep:')))continue;
+  // what there is to do (the alert engine): the deposit, the plan, prices, missing data, reports, without the price ones
+  // (said once, above) and the new reports (below). 22.10: the rules' alerts (concentration, drift, a drop, the dollar...)
+  // are not here: they are in בקרה, with a count on its button
+  for(const a of A){if(a[0]==='ok'||ackd(a)||!HOMECAT.has(a[1]))continue; if(pxIss&&(a[1]==='מחיר'||a[1]==='נתונים'))continue; if(a[1]==='דוחות'&&(a.each||[]).some(e=>String(e.key).startsWith('rep:')))continue;
     const n=alertNav(a);
     L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:`${tx(cut(a[2]))}`,b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
@@ -22773,7 +22788,7 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){if($('newsDlg')&&
 const TOUR=[
   {sel:['#hero .worth'],t:'כמה יש לך',d:'שווי התיק עכשיו, והשינוי מאז יום המסחר הקודם. "למה?" מסביר מה הזיז אותו.'},
   {sel:['#kTrust'],t:'האם המחירים עדכניים',d:'✓ אומר שהמחירים מהמסחר האחרון. אם משהו לא התעדכן, כתוב כאן מה ולמה, ואין צורך לבדוק מול בית ההשקעות.'},
-  {sel:['#desk'],t:'מה לעשות עכשיו',d:'כל מה שדורש את תשומת לבך במקום אחד: הפקדה, דוח חדש, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.'},
+  {sel:['#desk'],t:'מה לעשות עכשיו',d:'מה שצריך לעשות במקום אחד: הפקדה, דוח חדש, מחיר חסר. חריגות מהכללים שקבעת נמצאות בבקרה, והמספר על הכפתור שלה אומר כמה יש. "בדקתי" מוריד נושא מהרשימה.'},
   {sel:['#botbar [data-bb="mine"]','#tab_mine'],t:'התיק שלי: מעלים דוח',d:'כאן מעדכנים את התיק. הכי פשוט: צילום מסך של רשימת האחזקות באפליקציה (בבלינק: "ההשקעות שלי"; באקסלנס: המסך עם רשימת הניירות), או קובץ PDF או אקסל מבית ההשקעות. צ׳יקו קורא, ואתה בודק ושומר.'},
   {sel:['#botbar [data-bb="plan"]','#tab_plan'],t:'תוכנית',d:'ההפקדה החודשית, מה הבא בתור לפי התוכנית שקבעת, הפקדה חד פעמית וחסכונות לפי מטרה.'},
   {sel:['#botbar [data-bb="risk"]','#tab_risk'],t:'בקרה',d:'האם התיק עומד בכללים שקבעת: ריכוז, פיזור, ירידות וחשיפה לדולר.'},

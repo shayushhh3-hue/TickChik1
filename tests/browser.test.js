@@ -227,7 +227,13 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.ok(!r.cats.includes('מחיר'),'the prices are said once, above the list');
       assert.deepEqual(r.chk.bad,[],'no gap between the views'); assert.ok(r.chk.ok.length>=6,'holdings, groups and the exposures add up to the total: '+r.chk.ok.length);
       assert.deepEqual(r.todo.filter(x=>x.sev==='tip').map(x=>x.cat),['מיילים'],'one suggestion at a time: '+JSON.stringify(r.todo));
-      assert.ok(r.todo.findIndex(x=>x.sev==='crit')<r.todo.findIndex(x=>x.cat==='מיילים'),'what needs doing comes before the suggestion');
+      assert.ok(r.todo.findIndex(x=>x.cat==='הפקדה')<r.todo.findIndex(x=>x.cat==='מיילים'),'what needs doing comes before the suggestion');
+      // the rules' alerts are not on the home page: they are in בקרה, with their count on its button
+      assert.ok(!r.cats.some(c=>['ריכוז','סטייה','ירידה','מטבע','נעים יחד','חפיפה'].includes(c)),'no rule alerts on the home page: '+JSON.stringify(r.cats));
+      const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
+        order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,3)}});
+      assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
+      assert.equal(ctl.order[0],'holdSec','the holdings first, right under the portfolio\'s value: '+JSON.stringify(ctl.order));
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
       assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
