@@ -189,6 +189,12 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .calev li{display:flex;gap:8px;align-items:flex-start} .calev li>i.ev{width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px}
 .calev button.lnk{font:inherit;background:none;border:0;padding:0;color:var(--navy-t);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .calday .calev{margin-top:6px}
+.calev details.cevd{width:100%} .calev details.cevd>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:34px;padding:2px 0}
+.calev details.cevd>summary::-webkit-details-marker{display:none} .calev details.cevd>summary>i.ev{width:9px;height:9px;border-radius:50%;flex:none}
+.calev .cev-t{flex:1;min-width:0} .calev .cev-m{flex:none;font-size:12px;font-weight:600;color:var(--navy-t);border:1px solid var(--line);border-radius:999px;padding:1px 9px;white-space:nowrap}
+.calev .cev-m .c,.calev details[open] .cev-m .o{display:none} .calev details[open] .cev-m .c{display:inline}
+.calev .cev-b{margin:4px 17px 6px 0;padding:8px 12px;border-radius:10px;background:var(--sunk);font-size:13px;line-height:1.55;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.calday .calev .cev-b{background:var(--surface)} .calev .cev-b p{margin:0}
 .calleg span{display:inline-flex;gap:6px;align-items:center}
 .calday{border-inline-start:4px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.55}
 .calday b{font-weight:700}
@@ -22110,12 +22116,19 @@ function calEvents(){
   for(const A of (HS&&HS.accounts)||[])for(const t of A.trades||[])if(t&&t.div&&t.date&&t.sym)add({d:String(t.date).slice(0,10),k:'got',sym:t.sym,net:+t.total>0?+t.total:null,ccy:t.ccy||(A.ccy==='USD'?'USD':'ILS')});
   return E.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
 const CALEVK={rep:'rep',repd:'rep',ex:'div',pay:'div',got:'div'};
-function calEvTxt(e,today){const n=`<button type="button" class="lnk" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`, ccy=(P&&P.positions||[]).find(p=>p.sym===e.sym)?.ccy==='ILS'?'ILS':'USD';
-  if(e.k==='rep')return `${e.d<today?'היה צפוי ':''}דוח כספי: ${n}${e.est?' · מועד משוער, עד שהחברה תאשר':''}`;
-  if(e.k==='repd')return `פורסם דוח${e.label?' לרבעון '+esc(e.label):''}: ${n}${e.S&&repOne(e.S)?' · '+repH(repOne(e.S)):''}`;
-  if(e.k==='ex')return `יום אקס דיבידנד: ${n}${e.amt!=null?` · ${repH(repEps(e.amt,ccy))} למניה`:e.last!=null?` · הדיבידנד הקודם ${repH(repEps(e.last,ccy))} למניה`:''}${e.d>=today?' · כדי לקבל אותו צריך להחזיק במניה כבר בסוף יום המסחר שלפניו':''}`;
-  if(e.k==='pay')return `תשלום דיבידנד: ${n}${e.amt!=null?` · ${repH(repEps(e.amt,ccy))} למניה`:''}`;
-  return `התקבל דיבידנד: ${n}${e.net?` · ${repH(e.ccy==='ILS'?ils(e.net):'$'+(+e.net).toFixed(2))} נטו, לפי הדוח`:''}`}
+// 22.10: an event is one short line (the day, what, which security); the rest opens under it in a small box, behind
+// "לקריאה נוספת", so a month (or a day) with many events stays a short list
+const CALEVL={rep:'דוח כספי',repd:'פורסם דוח',ex:'יום אקס דיבידנד',pay:'תשלום דיבידנד',got:'התקבל דיבידנד'};
+function calEvMore(e,today){const ccy=(P&&P.positions||[]).find(p=>p.sym===e.sym)?.ccy==='ILS'?'ILS':'USD', L=[];
+  if(e.k==='rep'){L.push(e.d<today?'הדוח היה צפוי ביום הזה ועוד לא נקלט.':'החברה אמורה לפרסם את הדוח הכספי ביום הזה.'); L.push(e.est?'המועד משוער, עד שהחברה תאשר אותו.':'המועד אושר.')}
+  else if(e.k==='repd'){if(e.label)L.push('הדוח לרבעון '+esc(e.label)+'.'); const o=e.S&&repOne(e.S); if(o)L.push(repH(o)+'.')}
+  else if(e.k==='ex'){if(e.amt!=null)L.push(`${repH(repEps(e.amt,ccy))} למניה.`); else if(e.last!=null)L.push(`הדיבידנד הקודם: ${repH(repEps(e.last,ccy))} למניה. הסכום הבא ידוע כשהחברה מכריזה עליו.`);
+    L.push(e.d>=today?'כדי לקבל את הדיבידנד צריך להחזיק במניה כבר בסוף יום המסחר שלפני היום הזה.':'מי שהחזיק במניה בסוף יום המסחר שלפני היום הזה מקבל את הדיבידנד.')}
+  else if(e.k==='pay'){L.push(e.amt!=null?`${repH(repEps(e.amt,ccy))} למניה, למי שהחזיק במניה לפני יום האקס.`:'היום שבו הדיבידנד משולם למי שהחזיק במניה לפני יום האקס.')}
+  else{if(e.net)L.push(`${repH(e.ccy==='ILS'?ils(e.net):'$'+(+e.net).toFixed(2))} נטו, לפי הדוח שהעלית.`); else L.push('לפי הדוח שהעלית.')}
+  return `<p>${L.join(' ')}</p><button type="button" class="lnk" data-gosec="${esc(e.sym)}">${e.k==='repd'?'לניתוח הדוח בדף של '+esc(lab(e.sym)):'לדף של '+esc(lab(e.sym))} ›</button>`}
+function calEvRow(e,today,withDay){
+  return `<li><details class="cevd"><summary><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span class="cev-t">${withDay?`<b>${dmy(e.d)}</b> · `:''}${CALEVL[e.k]}${e.k==='rep'&&e.est?' (משוער)':''} · <b>${esc(lab(e.sym))}</b></span><span class="cev-m" aria-hidden="true"><span class="o">לקריאה נוספת</span><span class="c">סגירה</span></span></summary><div class="cev-b">${calEvMore(e,today)}</div></details></li>`}
 function renderCal(){
   const box=$('calBox'); if(!box)return; const today=tzDay('Asia/Jerusalem');
   if(!CALM)CALM=today.slice(0,7); if(!CALSEL)CALSEL=today;
@@ -22136,10 +22149,10 @@ function renderCal(){
   for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6, ev=evOn(iso), kinds=[...new Set(ev.map(e=>CALEVK[e.k]))];
     if(!we)for(const k of ['il','us'])if(D[k].st!=='open')special.push({iso,k,x:D[k]});
     cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}"></i>`).join('')}</span></button>`}
-  const S0=mktDay(CALSEL), evSel=evOn(CALSEL), evLi=L=>`<ul class="calev">${L.map(e=>`<li><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span>${calEvTxt(e,today)}</span></li>`).join('')}</ul>`;
+  const S0=mktDay(CALSEL), evSel=evOn(CALSEL), evLi=L=>`<ul class="calev">${L.map(e=>calEvRow(e,today,false)).join('')}</ul>`;
   const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
   const held=((P&&P.positions)||[]).length;
-  const mineList=mine.length?`<ul class="calev">${mine.map(e=>`<li><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span><b>${dmy(e.d)}</b> · ${calEvTxt(e,today)}</span></li>`).join('')}</ul>`
+  const mineList=mine.length?`<ul class="calev">${mine.map(e=>calEvRow(e,today,true)).join('')}</ul>`
     :`<p class="note">${held?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>`;
   const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
   $('calSub').textContent='השעות לפי שעון ישראל';

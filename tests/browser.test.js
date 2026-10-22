@@ -590,14 +590,22 @@ test('the trading calendar with the held securities\' days: reports (the next on
     const {ctx,pg}=await open(390); await pg.click('#btnCal'); await pg.waitForTimeout(500);
     const cell=n=>pg.evaluate(x=>[...document.querySelectorAll(`#calBox [data-calday="${x}"] .evs i`)].map(i=>i.className),d(n));
     assert.deepEqual(await cell(28),['rep'],'a report day'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
-    const list=await pg.evaluate(()=>[...document.querySelectorAll('#calBox ul.calev')].pop().textContent);
-    assert.match(list,/3\.\d+ · התקבל דיבידנד: KO · \$1\.90 נטו, לפי הדוח/); assert.match(list,/14\.\d+ · פורסם דוח לרבעון Q3 2026: JPM · רווח למניה 5\.07\$ \(מעל הצפי\) · הכנסות 46\.40 מיליארד דולר \(מעל הצפי\)/);
-    assert.match(list,/20\.\d+ · יום אקס דיבידנד: KO · הדיבידנד הקודם 0\.51\$ למניה/); assert.match(list,/27\.\d+ · תשלום דיבידנד: KO/); assert.match(list,/28\.\d+ · (היה צפוי )?דוח כספי: AAPL · מועד משוער, עד שהחברה תאשר/);
-    // the day picked says it, and the name leads to the stock's page
+    // the month's list: one short line each, the rest behind "לקריאה נוספת"
+    const rows=await pg.evaluate(()=>[...[...document.querySelectorAll('#calBox ul.calev')].pop().querySelectorAll('li')].map(li=>({t:li.querySelector('.cev-t').textContent,more:li.querySelector('.cev-b').textContent,open:li.querySelector('details').open,h:Math.round(li.getBoundingClientRect().height)})));
+    const row=re=>rows.find(r=>re.test(r.t))||{};
+    assert.ok(rows.every(r=>!r.open&&r.h<=44),'closed, one line each: '+JSON.stringify(rows.map(r=>r.h)));
+    assert.match(row(/^3\.\d+ · התקבל דיבידנד · KO$/).more||'',/\$1\.90 נטו, לפי הדוח שהעלית/);
+    assert.match(row(/^14\.\d+ · פורסם דוח · JPM$/).more||'',/הדוח לרבעון Q3 2026\. רווח למניה 5\.07\$ \(מעל הצפי\) · הכנסות 46\.40 מיליארד דולר \(מעל הצפי\)/);
+    assert.match(row(/^20\.\d+ · יום אקס דיבידנד · KO$/).more||'',/הדיבידנד הקודם: 0\.51\$ למניה/);
+    assert.ok(row(/^27\.\d+ · תשלום דיבידנד · KO$/).t,'the payment day'); assert.match(row(/^28\.\d+ · דוח כספי \(משוער\) · AAPL$/).more||'',/המועד משוער, עד שהחברה תאשר אותו/);
+    // "לקריאה נוספת" opens the small box, and "סגירה" says how to close it
+    await pg.evaluate(()=>{const s=[...document.querySelectorAll('#calBox ul.calev')].pop().querySelector('li summary'); s.click()}); await pg.waitForTimeout(150);
+    assert.deepEqual(await pg.evaluate(()=>{const d=[...document.querySelectorAll('#calBox ul.calev')].pop().querySelector('li details'); return [d.open,getComputedStyle(d.querySelector('.cev-m .c')).display!=='none',getComputedStyle(d.querySelector('.cev-b')).display!=='none']}),[true,true,true]);
+    // the day picked lists its events the same way, and the box leads to the stock's page
     await pg.click(`#calBox [data-calday="${d(20)}"]`); await pg.waitForTimeout(200);
-    assert.match(await pg.evaluate(()=>document.querySelector('#calBox .calday').textContent),/יום אקס דיבידנד: KO/);
+    assert.match(await pg.evaluate(()=>document.querySelector('#calBox .calday .cev-t').textContent),/^יום אקס דיבידנד · KO$/);
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'nothing sideways');
-    await pg.evaluate(()=>document.querySelector('#calBox .calday [data-gosec="KO"]').click()); await pg.waitForTimeout(900);
+    await pg.evaluate(()=>{const d=document.querySelector('#calBox .calday details'); d.open=true; d.querySelector('[data-gosec="KO"]').click()}); await pg.waitForTimeout(900);
     assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,sec:!document.getElementById('secPage').hidden})),{page:'search',sec:true});
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('research/latest',L0); store.setDoc('history/main',H0)}
