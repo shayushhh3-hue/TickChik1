@@ -247,13 +247,11 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'&&getComputedStyle(document.getElementById('sideMore')).display!=='none'),'simple: no ticker, two figures, "עוד נתונים" under the value');
       await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="full"]').click()); await pg.waitForTimeout(300);
-      // the hero on a phone: two figures, the rest one tap away under the value ("עוד נתונים")
-      const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').length);
-      const km=()=>pg.evaluate(()=>{const p=document.getElementById('kMore'); return {open:!p.hidden&&getComputedStyle(p).display!=='none',in:!!p.closest('.worth'),k:[...p.querySelectorAll('.wm-k')].map(x=>x.textContent)}});
-      assert.equal(await hv(),2); assert.equal((await km()).open,false);
-      await pg.click('#sideMore'); let K=await km(); assert.equal(await hv(),2); assert.ok(K.open&&K.in,'opens inside the value\'s card');
-      assert.deepEqual(K.k.slice(0,2),['עלתה הכי הרבה היום','ירדה הכי הרבה היום']); assert.equal(K.k.length,4);
-      assert.equal(await pg.getAttribute('#sideMore','aria-expanded'),'true'); await pg.click('#sideMore'); assert.equal((await km()).open,false);
+      // the hero on a phone: two white cards, four more one tap away ("עוד נתונים"): six white cards, the day's movers first
+      const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').map(x=>x.querySelector('.k').textContent));
+      assert.deepEqual(await hv(),['רווח מול עלות','מול ההפקדות']);
+      await pg.click('#sideMore'); const K=await hv(); assert.equal(K.length,6); assert.deepEqual(K.slice(0,4),['רווח מול עלות','מול ההפקדות','עלתה הכי הרבה היום','ירדה הכי הרבה היום']);
+      assert.equal(await pg.getAttribute('#sideMore','aria-expanded'),'true'); await pg.click('#sideMore'); assert.equal((await hv()).length,2);
       // the funds' date, in plain words behind "למה?"
       await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);
       assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/מחיר אחד ביום, אחרי סגירת הבורסה/);
@@ -666,13 +664,14 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
-      const k=[...document.querySelectorAll('#kMore .wm-r')].slice(0,2).map(r=>{const s=r.querySelector('.wm-v .sym'); return s?s.textContent:'—'});
+      const k=['kBest','kWorst'].map(id=>{const s=document.querySelector('#'+id+' .sym'); return s?s.textContent:'—'});
       return {best:d[0]&&d[0].v>0?d[0].s:'—',worst:d.length&&d[d.length-1].v<0?d[d.length-1].s:'—',k}});
     let M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],JSON.stringify(M)); assert.notEqual(M.best,'—');
-    await pg.click('#sideMore'); assert.ok(await pg.evaluate(()=>{const r=document.getElementById('kMore').getBoundingClientRect(), v=document.getElementById('kTotal').getBoundingClientRect(), s=document.querySelector('.hero .side').getBoundingClientRect(); return r.height>40&&r.top>v.bottom&&r.bottom<=s.top+1}),'under the value, above the other figures');
+    await pg.click('#sideMore'); assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=R('kPnl').bottom, b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox'), t=R('sideMore');
+      return b.top>p&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom&&Math.abs(y.top-f.top)<2&&t.top>=y.bottom&&getComputedStyle(document.getElementById('kBestBox')).backgroundColor===getComputedStyle(document.getElementById('kDepBox')).backgroundColor}),'white cards under "רווח מול עלות", two by two, then the button');
     // a mover opens its page
-    const lk=await pg.evaluate(()=>{const r=document.querySelector('#kMore .wm-r.secl'); return r&&r.dataset.sec});
-    if(lk){await pg.click('#kMore .wm-r.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
+    const lk=await pg.evaluate(()=>{const r=document.querySelector('.hero .side .stat.secl'); return r&&r.dataset.sec});
+    if(lk){await pg.click('.hero .side .stat.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
     const all=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
     // "קרנות": the value, the day, the profit and the rows of the funds only
     await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);

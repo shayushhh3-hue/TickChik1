@@ -1525,27 +1525,23 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 .kchips .status{margin-top:0;align-self:auto}
 body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .status.trust{background:var(--ok-bg);color:var(--ok-ink)} .status.trust.warn{background:var(--warn-bg);color:var(--warn)}
-/* 22.10: "עוד נתונים" under the portfolio's value (a phone, or the simple view): what rose and what fell the most today,
-   since the start of the year, the dollar. On a wide screen in the full view these are the cards at the side */
-.wmore{display:none;align-self:flex-start;margin-top:12px;font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:6px 14px;border-radius:999px;border:1px solid rgb(255 255 255 / .3);background:transparent;color:var(--ink);cursor:pointer}
-.wmore::after{content:" ▾"} .wmore[aria-expanded="true"]::after{content:" ▴"}
-.wmore:hover{background:rgb(255 255 255 / .06)}
-.wmp{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:12px;padding-top:12px;border-top:1px solid rgb(255 255 255 / .14)}
-.wmp[hidden]{display:none!important}
-.wm-r{min-width:0;display:flex;flex-direction:column;gap:2px;border-radius:10px}
-.wm-r.secl{cursor:pointer} .wm-r.secl:focus-visible{outline:2px solid #FF9B54;outline-offset:3px}
-.wm-k{font-size:12px;color:var(--muted)}
-.wm-v{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:15px;font-weight:700;color:var(--ink)}
-.wm-v .n{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
-.wm-d{font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 22.10: "עוד נתונים" under the two white cards (a phone, or the simple view): four more white cards, what rose and
+   what fell the most today, since the start of the year, the dollar. A wide screen in the full view shows all six */
+.sidemore{display:none}
+.stat.secl{cursor:pointer} .stat.secl:hover{box-shadow:0 0 0 2px rgb(39 21 43 / .12)} .stat.secl:focus-visible{outline:2px solid #27152B;outline-offset:2px}
+.stat .d bdi{white-space:nowrap}
 @media (max-width:760px){
-  .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
-  .wmore{display:inline-flex;align-items:center;gap:4px}
+  .hero .side.lessm>.stat:not(:first-child):not(#kDepBox){display:none}
+  .sidemore{display:block}
 }
-.calm .wmore{display:inline-flex;align-items:center;gap:4px}
+.calm .hero .side.lessm>.stat:not(:first-child):not(#kDepBox){display:none}
+.calm .sidemore{display:block}
+.sidemore{grid-column:1/-1;font:inherit;font-size:13px;font-weight:600;min-height:40px;border:1px dashed rgb(39 21 43 / .3);border-radius:12px;background:rgb(255 255 255 / .18);color:#3A2440;cursor:pointer}
+.sidemore::after{content:" ▾"} .sidemore[aria-expanded="true"]::after{content:" ▴"}
+.sidemore:hover{background:rgb(255 255 255 / .3)}
+html[data-theme="dark"] .sidemore{border-color:var(--line);background:transparent;color:var(--ink2)}
 .calm .hero .side{align-content:start}
-body:not([data-page="overview"]) .hero .wmore,body:not([data-page="overview"]) .hero .wmp{display:none!important}
-@media (min-width:761px){.wrap:not(.calm) .hero .wmp{display:none!important}}
+body:not([data-page="overview"]) .hero .sidemore{display:none!important}
 .kvf .hold .hkind:not(.hccy){display:none}
 .kvf .hero .side>#kDepBox,.kvf .hero .side>#kYtdBox{display:none} @media (max-width:760px){.kvf .hero .side>.stat:first-child{grid-column:1/-1}}
 .dk-trust{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--ok-bg);color:var(--ok-ink)}
@@ -1628,7 +1624,6 @@ body:not([data-page="overview"]) .hero .wmore,body:not([data-page="overview"]) .
 .viewwrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:4px}
 .viewwrap .sub{font-size:13px}
 table.use td:first-child{max-width:60vw;white-space:normal}
-.calm .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
 @media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
 /* 21.10 (4) accessibility: the text size, a stronger contrast, less motion */
 html[data-tsize="l"] .wrap{zoom:1.1} html[data-tsize="xl"] .wrap{zoom:1.2}
@@ -1734,16 +1729,15 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
         <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
-        <button type="button" class="wmore" id="sideMore" aria-expanded="false" aria-controls="kMore">עוד נתונים</button>
-        <div class="wmp" id="kMore" hidden></div>
       </div>
-      <div class="side">
+      <div class="side lessm">
         <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
-        <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
         <div class="stat" id="kDepBox"><div class="k">מול ההפקדות</div><span class="v" id="kDep">—</span><div class="d" id="kDepD"></div></div>
-        <div class="stat"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
-        <div class="stat"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
-        <div class="stat"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
+        <div class="stat" id="kBestBox"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
+        <div class="stat" id="kWorstBox"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
+        <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
+        <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
+        <button type="button" class="sidemore" id="sideMore" aria-expanded="false" aria-controls="kBestBox kWorstBox kYtdBox kFxBox">עוד נתונים</button>
       </div>
     </div>
     <div class="taperow" id="tapeRow" data-adv><button type="button" class="tapetg" id="tapeTg" aria-expanded="true" aria-label="להסתיר את פס המניות" title="להסתיר את פס המניות">−</button><div class="tapewrap" dir="ltr" aria-hidden="true"><div class="tape" id="tape"></div></div></div>
@@ -16611,15 +16605,12 @@ function render(){
   const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
   const mv=mH.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0]&&mv[0].dayPct>0?mv[0]:null, worst=mv.length&&mv[mv.length-1].dayPct<0?mv[mv.length-1]:null;
   const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
-  $('kBest').innerHTML=best?`<span class="sym">${esc(lab(best.sym))}</span>${chg(best)}`:'—'; $('kBestD').textContent=best?best.name:mvNo(true);
-  $('kWorst').innerHTML=worst?`<span class="sym">${esc(lab(worst.sym))}</span>${chg(worst)}`:'—'; $('kWorstD').textContent=worst?worst.name:mvNo(false);
-  // "עוד נתונים" under the value: the same figures, one tap away on a phone
-  {const km=$('kMore'); if(km){
-    const row=(k,p,up)=>{if(!p)return `<div class="wm-r"><span class="wm-k">${k}</span><span class="wm-v">—</span><span class="wm-d">${mvNo(up)}</span></div>`;
-      const lk=SECKEY.test(p.sym), at=lk?` tabindex="0" role="link" data-sec="${esc(p.sym)}" aria-label="${esc(`${k}: ${p.name||lab(p.sym)}, ${spct(p.dayPct,2)}. לדף של הנייר`)}"`:'';
-      return `<div class="wm-r${lk?' secl':''}"${at}><span class="wm-k">${k}</span><span class="wm-v"><span class="sym">${esc(lab(p.sym))}</span>${chg(p)}</span><span class="wm-d">${esc(p.name||'')}${p.dayIls?` · <bdi>${HC==='usd'?sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</bdi>`:''}</span></div>`};
-    const fig=(k,id)=>{const v=$(id); return `<div class="wm-r"><span class="wm-k">${esc($(id+'K')?$(id+'K').textContent:k)}</span><span class="wm-v"><span class="${esc(v.className.replace(/^v ?/,'n '))}">${esc(v.textContent)}</span></span><span class="wm-d">${esc($(id+'D').textContent)}</span></div>`};
-    setH(km,row('עלתה הכי הרבה היום',best,true)+row('ירדה הכי הרבה היום',worst,false)+(mH.fund?'':fig('מתחילת השנה','kYtd'))+fig('דולר / שקל','kFx'))}}
+  const mvCard=(id,p,up)=>{const box=$(id+'Box'), v=$(id), d=$(id+'D'); v.innerHTML=p?`<span class="sym">${esc(lab(p.sym))}</span>${chg(p)}`:'—';
+    d.innerHTML=p?`${esc(p.name||'')}${p.dayIls?` · <bdi>${HC==='usd'?sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</bdi>`:''}`:esc(mvNo(up));
+    const lk=!!p&&SECKEY.test(p.sym); box.classList.toggle('secl',lk);
+    if(lk){box.dataset.sec=p.sym; box.tabIndex=0; box.setAttribute('role','link'); box.setAttribute('aria-label',`${up?'עלתה הכי הרבה היום':'ירדה הכי הרבה היום'}: ${p.name||lab(p.sym)}, ${spct(p.dayPct,2)}. לדף של הנייר`)}
+    else{delete box.dataset.sec; box.removeAttribute('tabindex'); box.removeAttribute('role'); box.removeAttribute('aria-label')}};
+  mvCard('kBest',best,true); mvCard('kWorst',worst,false);
   const tape=mH.pos.map(p=>`<span class="tk"><b class="sym">${esc(lab(p.sym))}</b><span class="n">${fmtPx(p.px,p.ccy)}</span>${p.dayPct==null?'':chg(p)}</span>`).join('');
   if(tape!==lastTape){lastTape=tape;$('tape').innerHTML=tape+tape}
   const nUp=mv.filter(p=>p.dayPct>0).length, nDn=mv.filter(p=>p.dayPct<0).length;
@@ -22787,7 +22778,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
-  {v:'2026-10-22.4',at:'2026-10-22',t:'עוד נתונים, ותצוגה של הקרנות',d:'מתחת לשווי התיק יש "עוד נתונים": איזו מניה עלתה הכי הרבה היום ואיזו ירדה הכי הרבה, מתחילת השנה והדולר. ליד בלינק ואקסלנס יש "קרנות": השווי, השינוי היומי והרווח של הקרנות בלבד. לוח המסחר והחיפוש עברו לתפריט "עוד".',go:'kmore'},
+  {v:'2026-10-22.4',at:'2026-10-22',t:'עוד נתונים, ותצוגה של הקרנות',d:'מתחת ל"רווח מול עלות" ו"מול ההפקדות" יש "עוד נתונים": עוד ארבעה כרטיסים, איזו מניה עלתה הכי הרבה היום ואיזו ירדה הכי הרבה (לחיצה פותחת את הדף שלה), מתחילת השנה והדולר. ליד בלינק ואקסלנס יש "קרנות": השווי, השינוי היומי והרווח של הקרנות בלבד. לוח המסחר והחיפוש עברו לתפריט "עוד".',go:'kmore'},
   {v:'2026-10-22.3',at:'2026-10-22',t:'מצב לילה',d:'אפשר לעבור למצב לילה: רקע כהה באותם צבעים של האתר. הכפתור עם הירח למעלה עובר בין יום ללילה, ובהגדרות אפשר גם לבחור "לפי הטלפון". הבחירה נשמרת בחשבון.',go:'theme'},
   {v:'2026-10-22.2',at:'2026-10-22',t:'דוחות ודיבידנדים בלוח המסחר',d:'בלוח המסחר מסומנים הימים של המניות שבתיק: מתי יוצא הדוח הכספי (ומתי יצא), יום האקס דיבידנד, יום התשלום, ודיבידנדים שהתקבלו לפי הדוחות שלך. לחיצה על יום מראה מה יש בו, ולחיצה על שם המניה פותחת את הדף שלה.',go:'cal'},
   {v:'2026-10-22.1',at:'2026-10-22',t:'ניתוח של כל דוח כספי',d:'כשחברה מפרסמת דוח: רווח למניה והכנסות מול הצפי של האנליסטים לפני הדוח, הצפי לרבעון הבא לפני ואחרי, ואיך המניה הגיבה. מניה שבתיק או במעקב מקבלת הודעה בדף הבית ומייל, וכל מניה מקבלת את הניתוח בדף שלה, מתחת לגרף.',go:'srch'},
@@ -22852,8 +22843,8 @@ function tourEnd(){TOUR_I=null; for(const e of document.querySelectorAll('.tourh
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-tour]'); if(!b)return; const a=b.dataset.tour;
   if(a==='end'){tourEnd();return} if(a==='next')TOUR_I=Math.min(TOUR_L.length-1,TOUR_I+1); if(a==='back')TOUR_I=Math.max(0,TOUR_I-1); tourShow()});
 // the hero on a phone: the worth and the day first; the other figures one tap away
-function sideMore(){const p=$('kMore'), b=$('sideMore'); if(!p||!b)return; const open=UXK('tr_side')==='open';
-  p.hidden=!open; b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
+function sideMore(){const s=document.querySelector('.hero .side'), b=$('sideMore'); if(!s||!b)return; const open=UXK('tr_side')==='open';
+  s.classList.toggle('lessm',!open); b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#sideMore')){UXS('tr_side',UXK('tr_side')==='open'?'less':'open'); sideMore()}});
 window.__ux={use:()=>({days:USE&&USE.days,ready:USE_READY}),useSave:()=>{USE_DIRTY=true;return useSave()},facts:()=>{try{const F=anaFactsAI(anaFacts(),[],[]); return {benchmark:F.benchmark,tax:F.tax_if_sold_today}}catch(e){return {err:String(e&&e.message||e)}}},bench:()=>benchCompare(mAllNow()),tax:()=>taxNow(mAllNow()),trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
 // ---- ux:end ----
