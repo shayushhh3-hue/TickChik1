@@ -631,6 +631,11 @@ test('the funds track: a fixed amount for each fund every month, the sum is the 
     if(await pg.isVisible('#planOb'))await pg.click('#obGo'); await pg.waitForTimeout(300);
     assert.ok(await pg.isVisible('#kindFix'),'the choice is there in the funds track'); await pg.click('#kindFix'); await pg.waitForTimeout(300);
     const amts=await pg.$$('[data-amt]'); assert.equal(amts.length,2);
+    // on a phone the actions sit in a row right under each fund, on the right, and the table fits the screen
+    const lay=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#planRows tr')], i=rows.findIndex(r=>r.querySelector('[data-amt]')), a=rows[i+1], p=document.getElementById('planRows').closest('.panel');
+      return {head:[...document.querySelectorAll('#planRows')[0].closest('table').querySelectorAll('thead th')].map(h=>h.textContent),under:!!(a&&a.classList.contains('pactr')&&a.querySelector('[data-pa="skip"]')&&a.querySelector('[data-pa="move"]')),
+        right:a?Math.abs(a.querySelector('[data-pa="skip"]').getBoundingClientRect().right-rows[i].querySelector('.sym').getBoundingClientRect().right)<16:false,fits:p.scrollWidth<=p.clientWidth+1}});
+    assert.deepEqual(lay,{head:['נייר','סכום בחודש ₪','מתי'],under:true,right:true,fits:true});
     await amts[0].fill('200'); await amts[0].dispatchEvent('change'); await pg.waitForTimeout(200);
     await (await pg.$$('[data-amt]'))[1].fill('150'); await (await pg.$$('[data-amt]'))[1].dispatchEvent('change'); await pg.waitForTimeout(300);
     let s=await pg.evaluate(()=>({trk:document.getElementById('trkI').textContent,tot:document.getElementById('trkTot').textContent,note:document.getElementById('kindNote').textContent,

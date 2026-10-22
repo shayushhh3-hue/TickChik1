@@ -417,6 +417,7 @@ label.check{flex-direction:row;align-items:center;gap:8px}
 .meter{display:inline-block;width:54px;height:4px;background:var(--sunk);border-radius:2px;vertical-align:middle;overflow:hidden;margin-inline-start:6px}
 .meter>i{display:block;height:100%;background:var(--ink2)}
 .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+#planRows tr.hasacts>td{border-bottom:0;padding-bottom:4px} #planRows tr.pactr>td{padding-top:0} #planRows tr.hasacts:hover+tr.pactr>td,#planRows tr.hasacts:has(+tr.pactr:hover)>td{background:var(--sunk)} #planRows .pacts{justify-content:flex-start;gap:6px} #planRows tr:not(.sec):not(.pactr)>td:first-child{white-space:normal;min-width:96px} #planRows tr:not(.pactr)>td:nth-child(3) .nm{display:block;margin-top:2px} #planRows .pacts .btn{min-height:32px;padding-inline:10px}
 tr.isdone td{color:var(--muted)}
 .prog{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
 .prog>div{height:100%;background:var(--accent)}
@@ -1794,8 +1795,8 @@ html.a11y-rm *,html.a11y-rm *::before,html.a11y-rm *::after{animation:none!impor
       <div class="panel scroll">
         <div class="row" style="margin-bottom:8px"><h3>הניירות בתוכנית</h3></div>
         <table>
-          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th><th class="num">פעולה</th></tr></thead>
-          <tbody id="planRows"><tr><td colspan="4" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
+          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
+          <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
         </table>
       </div>
       <div class="panel">
@@ -16713,16 +16714,18 @@ function renderPlan(mAll){
   const rowP=({it,ix})=>{
     const c=st.cost[it.sym], w=st.sch.when[it.sym]; let tag,acts='';
     if(st.fixed&&it.status!=='skip'){
-      return `<tr><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td><td class="num"><div class="acts">${canWrite?`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button>`:''}</div></td></tr>`}
+      return `<tr${canWrite?' class="hasacts"':''}><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td></tr>${canWrite?`<tr class="pactr"><td colspan="3"><div class="acts pacts"><button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button></div></td></tr>`:''}`}
     if(it.status==='done'){tag=`<span class="st done">הוגדל</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
     else if(it.status==='skip'){tag='<span class="st skip">מחוץ לתוכנית</span>';acts=`<button class="btn sm" type="button" data-pa="unskip" data-ix="${ix}">החזר</button>`}
     else{
       tag=w===0?'<span class="st now">אפשר החודש</span>':w!=null?`<span class="st wait">${ymShort(ymAdd(st.start,st.at[it.sym]))}</span> <span class="nm">עוד ${w} ${w===1?'חודש':'חודשים'}</span>`:'<span class="st wait">ממתין</span>';
       acts=(PL.mode!=='cheap'?`<button class="btn sm" type="button" data-pa="up" data-ix="${ix}" aria-label="הקדם את ${esc(it.sym)}">↑</button><button class="btn sm" type="button" data-pa="down" data-ix="${ix}" aria-label="דחה את ${esc(it.sym)}">↓</button>`:'')
         +`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר ל${TRACK==='idx'?'מניות':'מדדים'}</button>`}
-    return `<tr class="${it.status==='todo'?'':'isdone'}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c):'—'}</span></td><td>${tag}</td><td class="num"><div class="acts">${canWrite?acts:''}</div></td></tr>`};
-  const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="4">${t} · ${n}</td></tr>`;
-  $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="4" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
+    const ha=canWrite&&acts, dn=it.status==='todo'?'':'isdone';
+    return `<tr class="${dn}${ha?' hasacts':''}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c):'—'}</span></td><td>${tag}</td></tr>`+
+      (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
+  const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
+  $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
   return st;
 }
 function planAct(a,d){
