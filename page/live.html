@@ -1550,6 +1550,8 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .term.lw{width:auto;height:auto;min-height:24px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap}
 .mixnote{margin:8px 2px 0}
 @media (max-width:440px){.hero .acts{gap:6px}.hero #acctChips .chip{padding:4px 10px}}
+/* 22.10: on a phone the buttons and the accounts sit on the right, above the portfolio's value, under the name */
+@media (max-width:640px){.hero .top>.acts{flex:1 1 100%;justify-content:flex-start}}
 .uxlit{animation:uxlit 2.4s ease-out}
 @keyframes uxlit{0%,30%{box-shadow:0 0 0 3px var(--gold),0 10px 30px rgb(39 21 43 / .12)}100%{box-shadow:0 0 0 0 transparent}}
 /* the drawer: the search, and the two links under the menu */
