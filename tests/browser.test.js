@@ -429,7 +429,11 @@ test('two-step sign-in: switched on in its own page, the login asks for the code
     const c2=await browser.newContext({viewport:{width:390,height:844},locale:'he-IL'}); const p2=await c2.newPage();
     await c2.route('**/*',r=>{const x=r.request().url(); if(x.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return}   // as in open(): a real refresh would rewrite the shared prices of the tests after this one
       if(x.startsWith(U)||x.startsWith('data:'))r.continue(); else r.fulfill({status:404,body:''})});
-    await p2.goto(U); await p2.waitForSelector('#tcLogin'); await p2.fill('#tcEmail','r3@example.com'); await p2.fill('#tcPass','friend-pass-4'); await p2.click('#tcLogin button');
+    await p2.goto(U); await p2.waitForSelector('#tcLogin');
+    // as in open(): a password typed into a form drawn again under the typing (the CI runner) is typed again, at most twice
+    for(let i=0;i<3;i++){await p2.fill('#tcEmail','r3@example.com'); await p2.fill('#tcPass','friend-pass-4'); await p2.click('#tcLogin button');
+      const r=await p2.waitForFunction(()=>{const b=document.getElementById('tcCodeBox'); if(b&&!b.hidden)return 'code'; const e=document.getElementById('tcErr'), f=document.getElementById('tcLogin'); return e&&/\S/.test(e.textContent)&&f&&!f.querySelector('button').disabled?'err':false},null,{timeout:20000}).then(h=>h.jsonValue()).catch(()=>'wait');
+      if(r==='code')break}
     await p2.waitForSelector('#tcCodeBox:not([hidden])'); assert.match(await p2.textContent('#tcErr'),/הקלד את הקוד מאפליקציית האימות/);
     assert.equal(await p2.getAttribute('#tcOtp','autocomplete'),'one-time-code');
     await p2.fill('#tcOtp',codes[0]); await p2.click('#tcLogin button');
