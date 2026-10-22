@@ -245,11 +245,15 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const vs=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="overview"]'), v=p.querySelector('.viewsw'); return {n:document.querySelectorAll('.viewsw').length,last:!!v&&[...p.children].indexOf(v.closest('.viewwrap'))>[...p.children].indexOf(document.getElementById('holdSec'))}});
       assert.deepEqual(vs,{n:2,last:true});
       await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
-      assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'&&getComputedStyle(document.getElementById('sideMore')).display==='none'),'simple: no ticker, two figures');
+      assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'&&getComputedStyle(document.getElementById('sideMore')).display!=='none'),'simple: no ticker, two figures, "עוד נתונים" under the value');
       await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="full"]').click()); await pg.waitForTimeout(300);
-      // the hero on a phone: two figures, the rest one tap away
+      // the hero on a phone: two figures, the rest one tap away under the value ("עוד נתונים")
       const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').length);
-      assert.equal(await hv(),2); await pg.click('#sideMore'); assert.equal(await hv(),6); await pg.click('#sideMore'); assert.equal(await hv(),2);
+      const km=()=>pg.evaluate(()=>{const p=document.getElementById('kMore'); return {open:!p.hidden&&getComputedStyle(p).display!=='none',in:!!p.closest('.worth'),k:[...p.querySelectorAll('.wm-k')].map(x=>x.textContent)}});
+      assert.equal(await hv(),2); assert.equal((await km()).open,false);
+      await pg.click('#sideMore'); let K=await km(); assert.equal(await hv(),2); assert.ok(K.open&&K.in,'opens inside the value\'s card');
+      assert.deepEqual(K.k.slice(0,2),['עלתה הכי הרבה היום','ירדה הכי הרבה היום']); assert.equal(K.k.length,4);
+      assert.equal(await pg.getAttribute('#sideMore','aria-expanded'),'true'); await pg.click('#sideMore'); assert.equal((await km()).open,false);
       // the funds' date, in plain words behind "למה?"
       await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);
       assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/מחיר אחד ביום, אחרי סגירת הבורסה/);
@@ -473,8 +477,8 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     await pg.click('#tourCard [data-tour="end"]'); s=await st(); assert.ok(!s.card); assert.equal(s.lit,'');
     assert.ok(await pg.evaluate(()=>!window.__ux.todo().some(x=>x.cat==='סיור')),'not offered again');
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close()}
-  {const {ctx,pg}=await open(1280); // on a wide screen the search is in the menu at the side, and the header's button goes to it
-    await pg.click('#btnGo'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.activeElement&&document.activeElement.id),'goQ');
+  {const {ctx,pg}=await open(1280); // on a wide screen the search is in the menu at the side (no button for it at the top)
+    assert.ok(await pg.evaluate(()=>!document.getElementById('btnGo')&&document.getElementById('goQ').getClientRects().length>0));
     await pg.fill('#goQ','לוח מסחר'); await pg.click('#goRes [data-goto="cal"]'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(390,{who:'new'}); // before there is a portfolio: the tour skips what is not there yet
@@ -570,9 +574,9 @@ test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and 
 test('the trading calendar: both markets per day, the month\'s special days, the hours in Israel time',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
-  // from the button at the top of every page, and from the menu
-  await pg.click('#btnCal'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar');
-  await tab(pg,'overview'); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
+  // from the menu ("עוד"); no button for it at the top
+  assert.ok(await pg.evaluate(()=>!document.getElementById('btnCal')));
+  await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
   const r=await pg.evaluate(()=>({days:document.querySelectorAll('#calBox [data-calday]').length,flags:document.querySelectorAll('#calBox .calgrid .flg').length,now:document.querySelectorAll('#calBox .calnow .mk').length,ox:document.documentElement.scrollWidth<=innerWidth+1}));
   assert.ok(r.days>=28&&r.flags===r.days*2,'every day has a flag per market'); assert.equal(r.now,2); assert.ok(r.ox,'no sideways scroll on a phone');
   // to September 2026: Yom Kippur closes Tel Aviv, Labor Day New York; Chol HaMoed is a short day
@@ -593,7 +597,7 @@ test('the trading calendar with the held securities\' days: reports (the next on
   const H=JSON.parse(JSON.stringify(H0)); H.accounts.find(a=>a.acct==='blink').trades.push({date:d(3),sym:'KO',qty:0,px:0,ccy:'USD',div:true,total:1.9,tax:0.6});
   store.setDoc('research/latest',{...L0,companies:C}); store.setDoc('history/main',H);
   try{
-    const {ctx,pg}=await open(390); await pg.click('#btnCal'); await pg.waitForTimeout(500);
+    const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(500);
     const cell=n=>pg.evaluate(x=>[...document.querySelectorAll(`#calBox [data-calday="${x}"] .evs i`)].map(i=>i.className),d(n));
     assert.deepEqual(await cell(28),['rep'],'a report day'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
     // the month's list: one short line each, the rest behind "לקריאה נוספת"
@@ -649,6 +653,45 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // another device: the same mode, with the account
     ({ctx,pg}=await open(390,{keepUi:true})); assert.equal(await pg.evaluate(()=>document.documentElement.dataset.theme),'dark','the choice came with the account'); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('the top of the page: three buttons; "קרנות" next to the accounts shows the funds only; "עוד נתונים" under the value',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{
+    let {ctx,pg}=await open(390);
+    const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
+    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק','קרנות']);
+    // today's biggest rise and fall, from the holdings' own day changes
+    const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
+        return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
+      const k=[...document.querySelectorAll('#kMore .wm-r')].slice(0,2).map(r=>{const s=r.querySelector('.wm-v .sym'); return s?s.textContent:'—'});
+      return {best:d[0]&&d[0].v>0?d[0].s:'—',worst:d.length&&d[d.length-1].v<0?d[d.length-1].s:'—',k}});
+    let M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],JSON.stringify(M)); assert.notEqual(M.best,'—');
+    await pg.click('#sideMore'); assert.ok(await pg.evaluate(()=>{const r=document.getElementById('kMore').getBoundingClientRect(), v=document.getElementById('kTotal').getBoundingClientRect(), s=document.querySelector('.hero .side').getBoundingClientRect(); return r.height>40&&r.top>v.bottom&&r.bottom<=s.top+1}),'under the value, above the other figures');
+    // a mover opens its page
+    const lk=await pg.evaluate(()=>{const r=document.querySelector('#kMore .wm-r.secl'); return r&&r.dataset.sec});
+    if(lk){await pg.click('#kMore .wm-r.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
+    const all=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
+    // "קרנות": the value, the day, the profit and the rows of the funds only
+    await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);
+    const f=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
+      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),
+      rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent).sort(),sec:document.querySelector('#rows tr.sec').textContent,
+      kinds:getComputedStyle(document.querySelector('.hold .hkind:not(.hccy)')).display,dep:getComputedStyle(document.getElementById('kDepBox')).display,ox:document.documentElement.scrollWidth<=innerWidth+1}));
+    assert.equal(f.k,'שווי הקרנות'); assert.deepEqual(f.pressed,['קרנות']); assert.deepEqual(f.rows,['TA125','TA90']);
+    assert.match(f.sec,/^קרנות: 2 ניירות · ₪[\d,]+/); assert.equal(f.tot,f.sec.match(/₪[\d,]+/)[0],'the value is the funds\' sum');
+    assert.match(f.d,/^2 קרנות · [\d.]+% מהתיק · בלי מניות ומזומן$/); assert.equal(f.kinds,'none'); assert.equal(f.dep,'none'); assert.ok(f.ox);
+    M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],'the movers are the funds\': '+JSON.stringify(M)); assert.ok(['TA125','TA90'].includes(M.best));
+    for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_kv!=='fund');i++)await pg.waitForTimeout(250);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // another device: the same view, with the account; an account's chip leaves it
+    ({ctx,pg}=await open(390,{keepUi:true})); await pg.waitForTimeout(800);
+    assert.equal(await pg.evaluate(()=>document.getElementById('kTotK').textContent),'שווי הקרנות','the choice came with the account');
+    await pg.click('#acctChips [data-a="all"]'); await pg.waitForTimeout(300);
+    assert.deepEqual(await pg.evaluate(()=>[document.getElementById('kTotK').textContent,document.getElementById('kTotal').textContent,[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent)]),['שווי התיק',all,['הכל']]);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
 });
 

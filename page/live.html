@@ -1525,12 +1525,29 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 .kchips .status{margin-top:0;align-self:auto}
 body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .status.trust{background:var(--ok-bg);color:var(--ok-ink)} .status.trust.warn{background:var(--warn-bg);color:var(--warn)}
-.sidemore{display:none}
+/* 22.10: "עוד נתונים" under the portfolio's value (a phone, or the simple view): what rose and what fell the most today,
+   since the start of the year, the dollar. On a wide screen in the full view these are the cards at the side */
+.wmore{display:none;align-self:flex-start;margin-top:12px;font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:6px 14px;border-radius:999px;border:1px solid rgb(255 255 255 / .3);background:transparent;color:var(--ink);cursor:pointer}
+.wmore::after{content:" ▾"} .wmore[aria-expanded="true"]::after{content:" ▴"}
+.wmore:hover{background:rgb(255 255 255 / .06)}
+.wmp{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:12px;padding-top:12px;border-top:1px solid rgb(255 255 255 / .14)}
+.wmp[hidden]{display:none!important}
+.wm-r{min-width:0;display:flex;flex-direction:column;gap:2px;border-radius:10px}
+.wm-r.secl{cursor:pointer} .wm-r.secl:focus-visible{outline:2px solid #FF9B54;outline-offset:3px}
+.wm-k{font-size:12px;color:var(--muted)}
+.wm-v{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:15px;font-weight:700;color:var(--ink)}
+.wm-v .n{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.wm-d{font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:760px){
-  .side.lessm>.stat:not(:first-child):not(#kDepBox){display:none}
-  .sidemore{display:block;grid-column:1/-1;font:inherit;font-size:13px;font-weight:600;min-height:38px;border:1px dashed #D9C9B8;border-radius:12px;background:transparent;color:#5A4A5E;cursor:pointer}
-  .sidemore::after{content:" ▾"} .sidemore[aria-expanded="true"]::after{content:" ▴"}
+  .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
+  .wmore{display:inline-flex;align-items:center;gap:4px}
 }
+.calm .wmore{display:inline-flex;align-items:center;gap:4px}
+.calm .hero .side{align-content:start}
+body:not([data-page="overview"]) .hero .wmore,body:not([data-page="overview"]) .hero .wmp{display:none!important}
+@media (min-width:761px){.wrap:not(.calm) .hero .wmp{display:none!important}}
+.kvf .hold .hkind:not(.hccy){display:none}
+.kvf .hero .side>#kDepBox,.kvf .hero .side>#kYtdBox{display:none} @media (max-width:760px){.kvf .hero .side>.stat:first-child{grid-column:1/-1}}
 .dk-trust{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--ok-bg);color:var(--ok-ink)}
 .dk-trust.warn{background:var(--warn-bg);color:var(--warn)}
 .dk-trust .dt-ic{width:20px;height:20px;flex:none;margin-top:2px}
@@ -1612,7 +1629,6 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 .viewwrap .sub{font-size:13px}
 table.use td:first-child{max-width:60vw;white-space:normal}
 .calm .hero .side>.stat:not(:first-child):not(#kDepBox){display:none}
-.calm .sidemore{display:none!important}
 @media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
 /* 21.10 (4) accessibility: the text size, a stronger contrast, less motion */
 html[data-tsize="l"] .wrap{zoom:1.1} html[data-tsize="xl"] .wrap{zoom:1.2}
@@ -1650,7 +1666,7 @@ html[data-theme="dark"] .worth{background:#1A101E;box-shadow:inset 0 0 0 1px rgb
 html[data-theme="dark"] .hero .chips{background:rgb(255 255 255 / .06);border-color:rgb(255 255 255 / .14)} html[data-theme="dark"] .hero .chips .chip{color:var(--ink);border-color:rgb(255 255 255 / .1)}
 html[data-theme="dark"] .hero .chip[aria-pressed="true"]{background:var(--gold);color:#27152B} html[data-theme="dark"] .hero .chip:not([aria-pressed="true"]){color:#E7DCE6}
 html[data-theme="dark"] .stat{background:#241729;color:var(--ink);--ink:#F4ECF2;--ink2:#D9C8D6;--muted:#B9A6B7;--gain:#4FD39A;--loss:#FF7A66}
-html[data-theme="dark"] .brand-sub{border-color:rgb(255 255 255 / .2)} html[data-theme="dark"] .sidemore{border-color:var(--line);color:var(--ink2)}
+html[data-theme="dark"] .brand-sub{border-color:rgb(255 255 255 / .2)}
 html[data-theme="dark"] .hero .tapewrap{background:#1A101E}
 /* boxes that had a fixed light border or background */
 html[data-theme="dark"] .repbox,html[data-theme="dark"] .brief,html[data-theme="dark"] .ob,html[data-theme="dark"] .depban{border-color:var(--line);border-inline-start-color:var(--accent)}
@@ -1708,16 +1724,18 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
   <header class="hero" id="hero">
     <div class="top">
       <div class="brand"><h1>תיק צ׳יק</h1><span class="brand-sub">חדר המסחר שלי</span><span class="live" id="fresh">טוען נתוני תיק…</span><button type="button" class="pxnow" id="pxNow" hidden>לעדכן מחירים עכשיו</button></div>
-      <div class="acts"><button class="hbtn" type="button" id="btnTheme" aria-label="מצב לילה" title="מצב לילה"><svg class="th-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="th-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><button class="hbtn" type="button" id="btnGo" data-uxgo="goq" aria-label="לאן להגיע? חיפוש של מסכים וחלקים באתר" title="לאן להגיע?"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="lbl">לאן להגיע?</span></button><button class="hbtn" type="button" id="btnCal" data-tab="calendar" aria-label="לוח מסחר: מתי הבורסות בתל אביב ובניו יורק פתוחות" title="לוח מסחר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">לוח מסחר</span></button><button class="hbtn" type="button" id="btnUpd" aria-label="עדכון התיק מצילום מסך או מקובץ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg><span class="lbl">עדכון התיק</span></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
+      <div class="acts"><button class="hbtn" type="button" id="btnTheme" aria-label="מצב לילה" title="מצב לילה"><svg class="th-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="th-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><button class="hbtn" type="button" id="btnUpd" aria-label="עדכון התיק מצילום מסך או מקובץ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg><span class="lbl">עדכון התיק</span></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
     </div>
     <div class="dup" id="loadErr" role="status" hidden style="margin:10px 0 0"></div>
     <div class="main">
       <div class="worth">
-        <div class="k">שווי התיק</div>
+        <div class="k" id="kTotK">שווי התיק</div>
         <span class="big" id="kTotal">—</span>
         <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
+        <button type="button" class="wmore" id="sideMore" aria-expanded="false" aria-controls="kMore">עוד נתונים</button>
+        <div class="wmp" id="kMore" hidden></div>
       </div>
       <div class="side">
         <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
@@ -1726,7 +1744,6 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
         <div class="stat"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
         <div class="stat"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
         <div class="stat"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
-        <button type="button" class="sidemore" id="sideMore" aria-expanded="false" aria-controls="kYtdBox">עוד נתונים</button>
       </div>
     </div>
     <div class="taperow" id="tapeRow" data-adv><button type="button" class="tapetg" id="tapeTg" aria-expanded="true" aria-label="להסתיר את פס המניות" title="להסתיר את פס המניות">−</button><div class="tapewrap" dir="ltr" aria-hidden="true"><div class="tape" id="tape"></div></div></div>
@@ -16532,42 +16549,48 @@ function render(){
   try{renderRepBan()}catch(e){}
   try{if(document.body.dataset.page==='pots')renderPots()}catch(e){}
   acctsSync(); if(!ACCTS[acct])acct='all';
+  const hasF=!!P&&(P.positions||[]).some(p=>p&&isFundLike(p.sym,p.name,effGroup(p)));   // the "קרנות" view: only with funds in the portfolio
+  if(KV==='fund'&&P&&!hasF)KV='all'; if(KV==='fund')acct='all';
   {const has=a=>((P&&P.positions)||[]).some(x=>x&&x.acct===a)||((P&&P.cash)||[]).some(x=>x&&x.acct===a&&Math.abs(+x.amount||0)>=1)||!!(DRAFT&&(DRAFT.positions||[]).some(x=>x.acct===a));
     const empty=acct!=='all'&&!!P&&!has(acct), w=document.querySelector('.wrap'); if(w)w.classList.toggle('noacct',empty);
     if(empty){const n=acctName(acct); $('hAcctEmpty').textContent=`עוד אין תיק ב${n}`; $('acctEmptyP').textContent=`בתצוגה של ${n} מופיעים רק הנתונים של ${n}. כשתעלה צילום מסך או דוח של ${n}, יופיעו כאן השווי, האחזקות והתשואה שלו.`; $('acctEmptyUp').textContent=`להעלות את התיק של ${n}`}}
-  $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${k===acct}">${ACCTS[k]}</button>`).join('');
+  $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${KV!=='fund'&&k===acct}">${ACCTS[k]}</button>`).join('')
+    +(hasF?`<button class="chip" type="button" data-kv="fund" aria-pressed="${KV==='fund'}" title="רק הקרנות: השווי, השינוי היומי והרווח שלהן, מכל החשבונות">קרנות</button>`:'');
+  try{document.querySelector('.wrap').classList.toggle('kvf',KV==='fund')}catch(e){}
   fillInputs(); renderMine(); try{renderMonths()}catch(e){}
   if(!P||!Q){return}
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
   // the holdings in dollars (HC, the chips above the table): the dollar side of each holding, from the dollar costs
   const fxV=Q.usdIls, DC=HC!=='ils'&&fxV>0?(()=>{try{return dollarCost(P,Q,HS,m.acct==='all'?planOpen().buys:[],m.acct)}catch(e){return {}}})():null;
-  const DU=DC?Object.values(DC).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
+  const DU=DC?Object.entries(DC).filter(([k])=>KV!=='fund'||isF(k)).map(x=>x[1]).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
+  const mH=KV==='fund'?fundView(m):m;   // the top of the page: the whole view, or the funds only ("קרנות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  $('kTotal').textContent=HC==='usd'?dlr(m.total/fxV):ils(m.total); $('kTotalD').textContent=(HC==='usd'?ils(m.total)+' · ':HC==='both'?dlr(m.total/fxV)+' · ':'')+`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`;
+  $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':'שווי התיק';
+  $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
   try{renderHealth(m)}catch(e){}
   try{renderIdx()}catch(e){}
-  {const w=$('kWhy'); if(w)w.hidden=!(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
-  const de=$('kDay'); de.textContent=m.hasDay?(m.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(m.dayIls)/fxV):ils(Math.abs(m.dayIls))):'—'; de.className='v '+(m.hasDay?(m.dayIls>=0?'up':'down'):''); $('kDayD').textContent=m.hasDay?`${spct(m.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(m.dayIls):HC==='both'?' · '+sgnDlr(m.dayIls/fxV):''):''; $('hero').dataset.d=m.hasDay?(m.dayIls>=0?'up':'down'):'';
+  {const w=$('kWhy'); if(w)w.hidden=!(!mH.fund&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
+  const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls)/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
-  pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):m.cost?sgn(m.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(m.cost?(m.pnl>=0?'up':'down'):''));
-  $('kPnlD').textContent=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(m.cost?` · ${sgn(m.pnl)} בשקלים`:''):'אין נתוני עלות')
-    :(m.cost?spct(m.pnlPct)+(m.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(m.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):'אין נתוני עלות');
+  pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
+  $('kPnlD').textContent=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(mH.cost?` · ${sgn(mH.pnl)} בשקלים`:''):'אין נתוני עלות')
+    :(mH.cost?spct(mH.pnlPct)+(mH.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(mH.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):'אין נתוני עלות');
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
   {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
-    const one=acct!=='all';
-    if(one){try{if(HS){const yr=ilDay().slice(0,4), rs=monthSeriesOf(acct).filter(r=>r.ym.startsWith(yr)&&r.ret!=null&&r.gain!=null);
+    const one=acct!=='all', kvf=!!mH.fund;   // the funds only: the year and the deposits are the whole portfolio's
+    if(kvf){}else if(one){try{if(HS){const yr=ilDay().slice(0,4), rs=monthSeriesOf(acct).filter(r=>r.ym.startsWith(yr)&&r.ret!=null&&r.gain!=null);
         if(rs.length){const f=rs.reduce((t,r)=>t*(1+r.ret/100),1); y={pct:(f-1)*100,gain:rs.reduce((t,r)=>t+r.gain,0),first:rs[0].ym,cut:rs[0].ym!==yr+'-01'}}}}catch(e){}}
     else try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r}}catch(e){}
-    if(!one)try{const dt=HS?depTotal():0; if(dt>0)dp={dep:dt,diff:m.total-dt,pct:(m.total-dt)/dt*100}}catch(e){}
+    if(!one&&!kvf)try{const dt=HS?depTotal():0; if(dt>0)dp={dep:dt,diff:m.total-dt,pct:(m.total-dt)/dt*100}}catch(e){}
     if(y){yk.textContent=y.cut||y.fromZero?'מ'+ymFull(y.first):'מתחילת השנה'; ye.textContent=spct(y.pct,1); ye.className='v '+(y.pct>=0?'up':'down'); yd.textContent=sgn(y.gain)}
-    else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
+    else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=kvf?'של כל התיק, בתצוגת "הכל"':HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
     if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
-    else{de.textContent='—'; de.className='v'; dd.textContent=one?'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"':'אין רישום הפקדות'}}
+    else{de.textContent='—'; de.className='v'; dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':one?'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"':'אין רישום הפקדות'}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
 
   // alerts: the same engine the assistant uses (alertsOf)
@@ -16586,10 +16609,18 @@ function render(){
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
   ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
   const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
-  const mv=m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0], worst=mv[mv.length-1];
-  $('kBest').innerHTML=best?`<span class="sym">${esc(lab(best.sym))}</span>${chg(best)}`:'—'; $('kBestD').textContent=best?best.name:'';
-  $('kWorst').innerHTML=worst&&worst!==best?`<span class="sym">${esc(lab(worst.sym))}</span>${chg(worst)}`:'—'; $('kWorstD').textContent=worst&&worst!==best?worst.name:'';
-  const tape=m.pos.map(p=>`<span class="tk"><b class="sym">${esc(lab(p.sym))}</b><span class="n">${fmtPx(p.px,p.ccy)}</span>${p.dayPct==null?'':chg(p)}</span>`).join('');
+  const mv=mH.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0]&&mv[0].dayPct>0?mv[0]:null, worst=mv.length&&mv[mv.length-1].dayPct<0?mv[mv.length-1]:null;
+  const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
+  $('kBest').innerHTML=best?`<span class="sym">${esc(lab(best.sym))}</span>${chg(best)}`:'—'; $('kBestD').textContent=best?best.name:mvNo(true);
+  $('kWorst').innerHTML=worst?`<span class="sym">${esc(lab(worst.sym))}</span>${chg(worst)}`:'—'; $('kWorstD').textContent=worst?worst.name:mvNo(false);
+  // "עוד נתונים" under the value: the same figures, one tap away on a phone
+  {const km=$('kMore'); if(km){
+    const row=(k,p,up)=>{if(!p)return `<div class="wm-r"><span class="wm-k">${k}</span><span class="wm-v">—</span><span class="wm-d">${mvNo(up)}</span></div>`;
+      const lk=SECKEY.test(p.sym), at=lk?` tabindex="0" role="link" data-sec="${esc(p.sym)}" aria-label="${esc(`${k}: ${p.name||lab(p.sym)}, ${spct(p.dayPct,2)}. לדף של הנייר`)}"`:'';
+      return `<div class="wm-r${lk?' secl':''}"${at}><span class="wm-k">${k}</span><span class="wm-v"><span class="sym">${esc(lab(p.sym))}</span>${chg(p)}</span><span class="wm-d">${esc(p.name||'')}${p.dayIls?` · <bdi>${HC==='usd'?sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</bdi>`:''}</span></div>`};
+    const fig=(k,id)=>{const v=$(id); return `<div class="wm-r"><span class="wm-k">${esc($(id+'K')?$(id+'K').textContent:k)}</span><span class="wm-v"><span class="${esc(v.className.replace(/^v ?/,'n '))}">${esc(v.textContent)}</span></span><span class="wm-d">${esc($(id+'D').textContent)}</span></div>`};
+    setH(km,row('עלתה הכי הרבה היום',best,true)+row('ירדה הכי הרבה היום',worst,false)+(mH.fund?'':fig('מתחילת השנה','kYtd'))+fig('דולר / שקל','kFx'))}}
+  const tape=mH.pos.map(p=>`<span class="tk"><b class="sym">${esc(lab(p.sym))}</b><span class="n">${fmtPx(p.px,p.ccy)}</span>${p.dayPct==null?'':chg(p)}</span>`).join('');
   if(tape!==lastTape){lastTape=tape;$('tape').innerHTML=tape+tape}
   const nUp=mv.filter(p=>p.dayPct>0).length, nDn=mv.filter(p=>p.dayPct<0).length;
   $('kBreadth').textContent=(mv.length?`${nUp} עלו · ${nDn} ירדו`:'')+(Q&&Q.priceLabel?(mv.length?' · ':'')+Q.priceLabel:'');
@@ -16620,17 +16651,17 @@ function render(){
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+  {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x)=>`<tr class="sec"><td colspan="8">${t} · ${n}${x||''}</td></tr>`;
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
   for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
   for(const b of document.querySelectorAll('.hccy .chip'))b.setAttribute('aria-pressed',String(b.dataset.hc===HC));
   {const th=document.querySelectorAll('#holdSec thead th'); if(th[4])th[4].textContent=HC==='usd'?'שווי $':HC==='both'?'שווי ₪ / $':'שווי ₪'; if(th[6])th[6].textContent=HC==='usd'?'עלות $':HC==='both'?'עלות ₪ / $':'עלות ₪'}
-  const hvRows=HV==='stock'?sP:HV==='fund'?fP:null;
-  if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HV==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
-      +`<tr class="sec"><td colspan="8">${HV==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק${(()=>{
+  const HVe=KV==='fund'?'fund':HV, hvRows=HVe==='stock'?sP:HVe==='fund'?fP:null;   // "קרנות" at the top: the funds' rows
+  if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HVe==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
+      +`<tr class="sec"><td colspan="8">${HVe==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק${(()=>{
         // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
-        if(HV!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
+        if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,' '+whyBtn('fundpx','למה התאריך של אתמול?'))+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
@@ -17056,6 +17087,12 @@ let CM=null, LT=null;
 const LISTED={KO:1919,CAT:1929,JNJ:1944,UNH:1984,MSFT:1986,O:1994,AMZN:1997,AEHR:1997,NVDA:1999,GOOGL:2004,V:2008,META:2012,PLTR:2020,RKLB:2021,RDW:2021,MBLY:2022};
 // ---- drawing the exposures and the stress test (the numbers come from exposures() and stressRun() above) ----
 let HV='all'; try{const v=localStorage.getItem('tr_holdv'); if(['all','stock','fund'].includes(v))HV=v}catch(e){}
+// 22.10: "קרנות" next to the accounts at the top: the portfolio's value, its day, its profit and the holdings of the
+// funds only (all the accounts together). The rules, the plan and the reports stay on the whole portfolio
+let KV='all'; try{if(localStorage.getItem('tr_kv')==='fund')KV='fund'}catch(e){}
+function fundView(m){const pos=m.pos.filter(p=>isF(p.sym)), total=pos.reduce((s,p)=>s+p.val,0), dayIls=pos.reduce((s,p)=>s+p.dayIls,0), dayBase=total-dayIls,
+    cost=pos.reduce((s,p)=>s+p.cost,0), costVal=pos.reduce((s,p)=>s+p.costVal,0);
+  return {...m,fund:true,all:m,pos,total,cash:0,dayIls,dayPct:dayBase>0?dayIls/dayBase*100:null,hasDay:pos.some(p=>p.dayPct!=null),cost,pnl:costVal-cost,pnlPct:cost?(costVal-cost)/cost*100:0,missingCost:pos.filter(p=>p.noCost).length}}
 // the holdings in shekels, in dollars, or both (HC): the view only, nothing saved changes
 let HC='ils'; try{const v=localStorage.getItem('tr_holdccy'); if(['ils','usd','both'].includes(v))HC=v}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hccy .chip'); if(!b)return; HC=b.dataset.hc; try{localStorage.setItem('tr_holdccy',HC)}catch(x){} try{render()}catch(x){}});
@@ -18140,7 +18177,7 @@ function anaFactsAI(F,issues,checks){
         screen:'סקירה → "מדד בריאות התיק"; הכללים עצמם ב"כללים ויעדים"'}}catch(e){return null}})(),
     benchmark:benchFacts(), tax_if_sold_today:taxFacts(),
     // what each screen of the page is for, so questions about the system itself get an answer
-    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'מבט לאחור: פעולות, הפקדות ודיבידנדים, שווי מול הפקדות, "האם אני עושה טוב?" (התיק מול S&P 500 ות״א 125), עמלות, ומס אם מוכרים היום',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל; גם בכפתור לוח השנה בראש הדף'},
+    app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'מבט לאחור: פעולות, הפקדות ודיבידנדים, שווי מול הפקדות, "האם אני עושה טוב?" (התיק מול S&P 500 ות״א 125), עמלות, ומס אם מוכרים היום',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל, וימי הדוחות והדיבידנדים של המניות בתיק; בתפריט "עוד"'},
       find_a_screen:'בתפריט ("עוד" בטלפון) יש חיפוש "לאן להגיע?": כותבים מילה כמו "עמלות" ומגיעים למקום. שם גם "מה חדש באתר" ו"סיור באתר"',
       prices:'מניות: מחיר חי בשעות המסחר, כל 5 דקות; קרנות נאמנות: המחיר הרשמי ממאיה (מתפרסם בערב), ובקרן שעוקבת אחרי מדד אמריקאי הערכה לפי המדד והדולר עד המחיר הרשמי הבא',
       groups_vs_sectors:'"פיזור לפי הקבוצות שלך" (בסקירה) סופר לפי הקבוצה שהמשתמש נתן לכל נייר; "ענף" בבקרה סופר קרן כקרן (ההרכב שלה לא ידוע), וקרן שהמשתמש שם בקבוצה אחרת מופיעה שם בשורה משלה'},
@@ -19839,8 +19876,9 @@ document.addEventListener('click',ev=>{
   const pa=ev.target.closest('[data-pa]'); if(pa){planAct(pa.dataset.pa,pa.dataset);return}
   const tk=ev.target.closest('[data-track]'); if(tk){TRACK=tk.dataset.track==='idx'?'idx':'stocks';try{localStorage.setItem('track',TRACK)}catch(e){};EDITS.clear();setTrack();render();return}
   const md=ev.target.closest('[data-mode]'); if(md){planAct('mode',md.dataset);return}
-  const c=ev.target.closest('.chip[data-a]'); if(c){acct=c.dataset.a;try{localStorage.setItem('acct',acct)}catch(e){};render();return}
-  if(ev.target.closest('[data-acctall]')){acct='all';try{localStorage.setItem('acct',acct)}catch(e){};render();return}
+  const c=ev.target.closest('.chip[data-a]'); if(c){acct=c.dataset.a; KV='all'; try{localStorage.setItem('acct',acct); localStorage.setItem('tr_kv','all')}catch(e){};render();return}
+  const kc=ev.target.closest('#acctChips .chip[data-kv]'); if(kc){KV=KV==='fund'?'all':'fund'; if(KV==='fund')acct='all'; try{localStorage.setItem('tr_kv',KV); localStorage.setItem('acct',acct)}catch(e){}; render(); return}
+  if(ev.target.closest('[data-acctall]')){acct='all'; KV='all';try{localStorage.setItem('acct',acct); localStorage.setItem('tr_kv','all')}catch(e){};render();return}
   if(ev.target.closest('#acctEmptyUp')){const a=acct, sel=$('upAcct'); if(sel&&[...sel.options].some(o=>o.value===a))sel.value=a; goUpload();return}
   const td=ev.target.closest('[data-txdel]'); if(td&&DRAFT){(DRAFT.tx||[]).splice(+td.dataset.txdel,1);renderTx();return}
   const mdl=ev.target.closest('[data-mondel]'); if(mdl&&DRAFT){delete (DRAFT.monthly||{})[mdl.dataset.mondel];renderTx();return}
@@ -22445,7 +22483,7 @@ document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest
 // the others. The choices (the view, the holdings' currency and filter, the folds, the ticker, the text size and the rest)
 // are kept in the settings (S.ui) too: the account's copy is put in place when the settings arrive, and a choice made
 // here goes back to the account within a few seconds
-const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','tr_theme','acct'];
+const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','tr_theme','acct','tr_kv'];
 const uiLocal=()=>{const o={}; for(const k of UI_KEYS){const v=UXK(k); if(v!=null)o[k]=String(v).slice(0,6000)} return o};
 let UI_APPLIED=false;
 function uiApply(){
@@ -22460,7 +22498,7 @@ function uiApply(){
   try{HOLD_LITE=UXK('tr_holdlite')!=='0'}catch(e){} try{MORE=UXK('tr_more')==='1'}catch(e){}
   try{FOLD=JSON.parse(UXK('tr_fold')||'{}')||{}}catch(e){}
   try{const v=UXK('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
-  try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){}
+  try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){} try{KV=UXK('tr_kv')==='fund'?'fund':'all'}catch(e){}
   try{TAPE_ON=UXK('tr_tape')!=='0'; tapeApply()}catch(e){}
   try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
   try{render()}catch(e){}
@@ -22718,6 +22756,8 @@ const GO=[
   {id:'2fa',l:'אימות דו-שלבי',k:'אבטחה קוד כניסה סיסמה טלפון אימות',fn:()=>{if(window.__tc)location.href='security.html'; else offerUndo('אימות דו-שלבי זמין באתר, בכפתור החשבון.',null,5000,'סגור')}},
   {id:'a11y',l:'נגישות: גודל טקסט, ניגודיות ותנועה',k:'נגישות גודל טקסט גופן גדול ניגודיות אנימציה',tab:'settings',el:'hMe'},
   {id:'theme',l:'מצב יום או לילה',k:'מצב לילה יום חושך כהה בהיר שחור רקע ערכת צבעים',tab:'settings',el:'hMe'},
+  {id:'kmore',l:'עוד נתונים: מה עלה ומה ירד הכי הרבה היום',k:'עלתה ירדה הכי הרבה היום מניה מובילה עליות ירידות נתונים מתחילת השנה דולר שער',fn:()=>{showTab('overview',true); UXS('tr_side','open'); sideMore();
+    setTimeout(()=>{const b=$('sideMore'); if(b&&b.getClientRects().length){b.scrollIntoView({block:'center'}); try{b.focus({preventScroll:true})}catch(e){}}},250)}},
   {id:'view',l:'תצוגה פשוטה או מלאה',k:'תצוגה פשוטה מלאה רגועה פירוט',tab:'settings',el:'hMe'},
   {id:'news',l:'מה חדש באתר',k:'חדש עדכון גרסה',fn:()=>newsOpen()},
   {id:'tour',l:'סיור באתר',k:'סיור הדרכה עזרה מתחילים',fn:()=>tourStart()}];
@@ -22747,6 +22787,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-22.4',at:'2026-10-22',t:'עוד נתונים, ותצוגה של הקרנות',d:'מתחת לשווי התיק יש "עוד נתונים": איזו מניה עלתה הכי הרבה היום ואיזו ירדה הכי הרבה, מתחילת השנה והדולר. ליד בלינק ואקסלנס יש "קרנות": השווי, השינוי היומי והרווח של הקרנות בלבד. לוח המסחר והחיפוש עברו לתפריט "עוד".',go:'kmore'},
   {v:'2026-10-22.3',at:'2026-10-22',t:'מצב לילה',d:'אפשר לעבור למצב לילה: רקע כהה באותם צבעים של האתר. הכפתור עם הירח למעלה עובר בין יום ללילה, ובהגדרות אפשר גם לבחור "לפי הטלפון". הבחירה נשמרת בחשבון.',go:'theme'},
   {v:'2026-10-22.2',at:'2026-10-22',t:'דוחות ודיבידנדים בלוח המסחר',d:'בלוח המסחר מסומנים הימים של המניות שבתיק: מתי יוצא הדוח הכספי (ומתי יצא), יום האקס דיבידנד, יום התשלום, ודיבידנדים שהתקבלו לפי הדוחות שלך. לחיצה על יום מראה מה יש בו, ולחיצה על שם המניה פותחת את הדף שלה.',go:'cal'},
   {v:'2026-10-22.1',at:'2026-10-22',t:'ניתוח של כל דוח כספי',d:'כשחברה מפרסמת דוח: רווח למניה והכנסות מול הצפי של האנליסטים לפני הדוח, הצפי לרבעון הבא לפני ואחרי, ואיך המניה הגיבה. מניה שבתיק או במעקב מקבלת הודעה בדף הבית ומייל, וכל מניה מקבלת את הניתוח בדף שלה, מתחת לגרף.',go:'srch'},
@@ -22763,7 +22804,7 @@ const NEWS=[
   {at:'2026-10-21',t:'מה לעשות עכשיו',d:'בסקירה, רשימה אחת של מה שצריך לעשות: הפקדה, דוח חדש של חברה, חריגה מכלל שקבעת. "בדקתי" מוריד נושא מהרשימה.',go:'todo'},
   {at:'2026-10-21',t:'סימן אמינות למחירים',d:'ליד שווי התיק: "המחירים עדכניים" או מה בדיוק לא התעדכן. הדף גם בודק שהשווי זהה בכל התצוגות.',go:'trust'},
   {at:'2026-10-21',t:'לאן להגיע?',d:'חיפוש בתפריט: כותבים "עמלות" או "לוח מסחר" ומגיעים ישר למקום.',go:'goq'},
-  {at:'2026-10-21',t:'לוח מסחר',d:'מתי הבורסות בתל אביב ובניו יורק פתוחות, עם דגל בכל יום. הכפתור עם לוח השנה בראש הדף.',go:'cal'},
+  {at:'2026-10-21',t:'לוח מסחר',d:'מתי הבורסות בתל אביב ובניו יורק פתוחות, עם דגל בכל יום. בתפריט "עוד".',go:'cal'},
   {at:'2026-10-21',t:'חסכונות לפי מטרה',d:'חיסכון לילד, למשכנתא או לכל מטרה, עם התקדמות ליעד. לא נספר פעמיים בשווי התיק.',go:'pots'},
   {at:'2026-10-21',t:'הפקדה חד פעמית',d:'בונוס או סכום נוסף: נכנס ליתרה להשקעה, לשווי התיק ולשורת החודש.',go:'once'},
   {at:'2026-10-21',t:'דוחות של חברות',d:'כשמניה שבתיק או במעקב מפרסמת דוח: מתי, הממצאים והסבר, בדף המניה. אפשר לקבל גם מייל.',go:'rate'},
@@ -22811,8 +22852,8 @@ function tourEnd(){TOUR_I=null; for(const e of document.querySelectorAll('.tourh
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-tour]'); if(!b)return; const a=b.dataset.tour;
   if(a==='end'){tourEnd();return} if(a==='next')TOUR_I=Math.min(TOUR_L.length-1,TOUR_I+1); if(a==='back')TOUR_I=Math.max(0,TOUR_I-1); tourShow()});
 // the hero on a phone: the worth and the day first; the other figures one tap away
-function sideMore(){const s=document.querySelector('.hero .side'), b=$('sideMore'); if(!s||!b)return; const open=UXK('tr_side')==='open';
-  s.classList.toggle('lessm',!open); b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
+function sideMore(){const p=$('kMore'), b=$('sideMore'); if(!p||!b)return; const open=UXK('tr_side')==='open';
+  p.hidden=!open; b.setAttribute('aria-expanded',String(open)); b.textContent=open?'פחות נתונים':'עוד נתונים'}
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#sideMore')){UXS('tr_side',UXK('tr_side')==='open'?'less':'open'); sideMore()}});
 window.__ux={use:()=>({days:USE&&USE.days,ready:USE_READY}),useSave:()=>{USE_DIRTY=true;return useSave()},facts:()=>{try{const F=anaFactsAI(anaFacts(),[],[]); return {benchmark:F.benchmark,tax:F.tax_if_sold_today}}catch(e){return {err:String(e&&e.message||e)}}},bench:()=>benchCompare(mAllNow()),tax:()=>taxNow(mAllNow()),trust:()=>pxTrust(mAllNow()),check:()=>selfCheck(mAllNow()),find:goFind,go:id=>goTo(GO.find(x=>x.id===id)),news:newsOpen,tour:tourStart,todo:()=>{const m=mAllNow(); return todoOf(m,alertsOf(m),pxTrust(m)).map(x=>({sev:x.sev,cat:x.cat}))}};
 // ---- ux:end ----
