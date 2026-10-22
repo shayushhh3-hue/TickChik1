@@ -603,6 +603,41 @@ test('the trading calendar with the held securities\' days: reports (the next on
   }finally{store.setDoc('research/latest',L0); store.setDoc('history/main',H0)}
 });
 
+test('day and night: the switch at the top, the choice in the settings (day, night, as the phone), kept after a reload and with the account; the text readable at night',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{
+    let {ctx,pg}=await open(390);
+    const st=()=>pg.evaluate(()=>({th:document.documentElement.dataset.theme,bg:getComputedStyle(document.body).backgroundColor,saved:localStorage.getItem('tr_theme'),
+      on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').getAttribute('aria-label'),meta:document.querySelector('meta[name=theme-color]').content}));
+    let s=await st(); assert.equal(s.th,'light'); assert.equal(s.bg,'rgb(250, 245, 239)','the day is the ivory page'); assert.deepEqual(s.on,['light']); assert.equal(s.lbl,'מצב לילה');
+    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
+    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['dark','rgb(18, 11, 20)','dark','dark','מצב יום','#120B14']);
+    // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
+    const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
+      const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
+      const bg=el=>{const k=[]; let e=el; while(e&&e.nodeType===1){const cs=getComputedStyle(e); if(cs.backgroundImage!=='none'&&!/url\(/.test(cs.backgroundImage))return null; const c=P(cs.backgroundColor); if(c&&c.a>0){k.push(c); if(c.a>=1)break} e=e.parentElement}
+        let c=k.length&&k[k.length-1].a>=1?k.pop():P(getComputedStyle(document.body).backgroundColor); while(k.length)c=B(k.pop(),c); return c};
+      const out=[]; for(const el of document.querySelectorAll('[data-pane]:not([hidden]) *, .hero *, #botbar *')){if(!el.offsetParent)continue; const t=[...el.childNodes].some(n=>n.nodeType===3&&n.data.trim()); if(!t||el.closest('.tapetg,.lg,.rv-page'))continue;
+        const cs=getComputedStyle(el); if(+cs.opacity<0.5)continue; const b=bg(el), f0=P(cs.color); if(!b||!f0)continue; const f=f0.a<1?B(f0,b):f0, a=L(f), c=L(b), cr=(Math.max(a,c)+0.05)/(Math.min(a,c)+0.05);
+        if(cr<4.5)out.push(el.className+' '+cr.toFixed(2)+' '+el.textContent.trim().slice(0,20))} return out});
+    for(const tb of ['overview','plan','risk','calendar','settings']){await tab(pg,tb); await pg.waitForTimeout(300); assert.deepEqual(await low(),[],'readable at night: '+tb)}
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]);
+    // after a reload the page opens at night, from the first paint
+    await pg.reload(); await pg.waitForFunction(()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:30000}); await pg.waitForTimeout(500);
+    assert.equal(await pg.evaluate(()=>document.documentElement.dataset.theme),'dark');
+    // "as the phone": follows the device's setting, and changes with it
+    await tab(pg,'settings'); await pg.evaluate(()=>document.querySelector('[data-themeset="auto"]').click()); await pg.emulateMedia({colorScheme:'light'}); await pg.waitForTimeout(200);
+    assert.equal(await pg.evaluate(()=>document.documentElement.dataset.theme),'light');
+    await pg.emulateMedia({colorScheme:'dark'}); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.documentElement.dataset.theme),'dark');
+    await pg.evaluate(()=>document.querySelector('[data-themeset="dark"]').click());
+    for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_theme!=='dark');i++)await pg.waitForTimeout(250);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // another device: the same mode, with the account
+    ({ctx,pg}=await open(390,{keepUi:true})); assert.equal(await pg.evaluate(()=>document.documentElement.dataset.theme),'dark','the choice came with the account'); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
 test('a click on text inside a tab does not move the page',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(500);

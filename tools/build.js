@@ -40,6 +40,9 @@ export function buildSite(root){
 #tcAcctMenu .who{font-size:12.5px;color:#657587;padding:8px 10px;border-bottom:1px solid #eef1f4;margin-bottom:4px;direction:ltr;text-align:right;word-break:break-all}
 #tcAcctMenu a,#tcAcctMenu button{display:block;text-align:start;padding:9px 10px;border-radius:8px;font:inherit;font-size:14px;color:#1b2a3c;text-decoration:none;background:none;border:0;cursor:pointer}
 #tcAcctMenu a:hover,#tcAcctMenu button:hover{background:#f1f5f9}
+html[data-theme="dark"] #tcAcctBtn{background:#1D1321;border-color:#3A2B40;color:#E8CFF0}
+html[data-theme="dark"] #tcAcctMenu{background:#1D1321;border-color:#3A2B40} html[data-theme="dark"] #tcAcctMenu .who{color:#A895A7;border-color:#3A2B40}
+html[data-theme="dark"] #tcAcctMenu a,html[data-theme="dark"] #tcAcctMenu button{color:#F4ECF2} html[data-theme="dark"] #tcAcctMenu a:hover,html[data-theme="dark"] #tcAcctMenu button:hover{background:#281B2D}
 </style>
 <script>
 (function(){
@@ -60,6 +63,7 @@ export function buildSite(root){
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#1e344e">
+<script>try{var tm=localStorage.getItem('tr_theme'),dk=tm==='dark'||(tm==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dk?'dark':'light';if(dk)document.querySelector('meta[name=theme-color]').setAttribute('content','#120B14')}catch(e){}</script>
 <title>${title}</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">

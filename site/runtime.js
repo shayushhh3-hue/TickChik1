@@ -38,6 +38,10 @@ const CSS=`
 #tcGate input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#1e293b}
 #tcGate input:focus{outline:2px solid #2e6da4;outline-offset:1px;border-color:#2e6da4}
 #tcGate input[type=email]{direction:ltr;text-align:left}
+html[data-theme="dark"] #tcGate{background:#120B14;color:#F4ECF2} html[data-theme="dark"] #tcGate .card{background:#1D1321;border-color:#3A2B40;box-shadow:none}
+html[data-theme="dark"] #tcGate h1{color:#F4ECF2} html[data-theme="dark"] #tcGate .sub,html[data-theme="dark"] #tcGate label,html[data-theme="dark"] #tcGate .note,html[data-theme="dark"] #tcGate .hint{color:#A895A7}
+html[data-theme="dark"] #tcGate input{background:#120B14;border-color:#3A2B40;color:#F4ECF2}
+html[data-theme="dark"] #tcGate .btn{background:#FF9B54;color:#27152B} html[data-theme="dark"] #tcGate .err{color:#FFB4A8} html[data-theme="dark"] #tcGate .alt{border-color:#3A2B40;color:#A895A7} html[data-theme="dark"] #tcGate .lnk{color:#E8CFF0}
 #tcGate .btn{display:block;width:100%;margin-top:18px;border:0;background:#1e344e;color:#fff;border-radius:10px;padding:11px 18px;font:inherit;font-size:15.5px;font-weight:600;cursor:pointer}
 #tcGate .btn:disabled{opacity:.6;cursor:default}
 #tcGate .note{font-size:12.5px;color:#64748b;margin:16px 0 0;line-height:1.6;text-align:center}
