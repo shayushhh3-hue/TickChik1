@@ -9,6 +9,48 @@ export const bigN=(x,c)=>{if(x==null||!isFinite(x))return null; const a=Math.abs
   return (x<0?'−':'')+sy+(a>=1e9?(a/1e9).toFixed(2)+'B':a>=1e6?(a/1e6).toFixed(1)+'M':Math.round(a).toLocaleString('en-US'))};
 const sgP=x=>x==null?null:(x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1)+'%';
 const dm=iso=>{const [y,m,d]=String(iso).slice(0,10).split('-').map(Number); return `${d}.${m}.${y}`};
+const r1=x=>x==null||!isFinite(x)?null:Math.round(x*10)/10;
+
+// ---- 22.10: a report as an analysis, the way it is written in the market news ("צפי רווח למניה 0.82$, בפועל 0.87$ (מעל
+// הצפי)"): earnings per share and revenue against what the analysts expected before the report, what they expect now for
+// the next quarter against before the report, and how the share moved after it. Computed from the numbers alone; the
+// company's own outlook only from the headlines, and said so. The page, the system message and the e-mail use the same.
+const CURH={USD:'דולר',ILS:'שקל',EUR:'אירו',GBP:'ליש״ט',CAD:'דולר קנדי',JPY:'ין',CHF:'פרנק'};
+export const epsHe=(x,c)=>{if(x==null||!isFinite(x))return null; const n=(x<0?'−':'')+Math.abs(x).toFixed(2); return !c||c==='USD'?n+'$':c==='ILS'?n+' ₪':n+' '+(CURH[c]||c)};
+export const bigHe=(x,c)=>{if(x==null||!isFinite(x))return null; const a=Math.abs(x), s=x<0?'−':'', w=CURH[c||'USD']||c;
+  return a>=1e9?`${s}${(a/1e9).toFixed(2)} מיליארד ${w}`:a>=1e6?`${s}${(a/1e6).toFixed(a>=1e8?0:1)} מיליון ${w}`:`${s}${Math.round(a).toLocaleString('en-US')} ${w}`};
+export const RESH={up:'מעל הצפי',down:'מתחת לצפי',in:'בהתאם לצפי'};
+export const RXH={post:'במסחר המאוחר (אפטר מרקט)',pre:'במסחר המוקדם (פרה מרקט)',day:'ביום המסחר שאחרי הדוח'};
+const cmpE=(a,b,tol)=>a==null||b==null?null:Math.abs(a-b)<=tol?'in':a>b?'up':'down';
+export function repSum(r){
+  if(!r)return null; const c=r.ccy||'USD', e=r.eps||{};
+  const epsA=e.a??null, epsE=e.e??r.epsE??null, revA=r.revPend?null:(r.rev??null), revE=r.revE??null;
+  const s={ccy:c,label:r.label||null,at:r.at||null,
+    eps:{e:epsE,a:epsA,res:cmpE(epsA,epsE,0.005),s:e.s!=null?e.s:epsA!=null&&epsE?r1((epsA-epsE)/Math.abs(epsE)*100):null},
+    rev:{e:revE,a:revA,pend:!!r.revPend,res:cmpE(revA,revE,revE?Math.abs(revE)*0.001:0),s:revA!=null&&revE?r1((revA/revE-1)*100):null},
+    nx:null,rx:r.rx&&r.rx.pct!=null?r.rx:null,guid:(r.ai&&r.ai.guidance)||''};
+  // the next quarter: the analysts' estimate now against the one they had before the report (the same quarter)
+  const w=r.nxW, n=r.now;
+  if(n&&n.eps!=null&&n.end&&r.q&&String(n.end)>String(r.q)){
+    const same=w&&w.end&&String(w.end).slice(0,7)===String(n.end).slice(0,7)&&w.eps!=null;
+    s.nx={end:n.end,now:n.eps,was:same?w.eps:null,res:same?cmpE(n.eps,w.eps,0.005):null,nowRev:n.rev??null,wasRev:same?(w.rev??null):null}}
+  return s;
+}
+const hmIL=t=>{try{return new Date(t*1000).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false})}catch(e){return ''}};
+// the lines, in the order and the words of the market news
+export function repLines(s,name,sym){
+  if(!s)return []; const c=s.ccy, L=[], who=name&&name!==sym?`${name} (סימול ${sym})`:sym;
+  L.push(`👈 ${who} פרסמה את הדוח${s.label?' לרבעון '+s.label:''}${s.at?' ('+dm(s.at)+')':''}:`);
+  L.push(`צפי רווח למניה: ${s.eps.e!=null?epsHe(s.eps.e,c):'אין במקור'}`);
+  L.push(`רווח למניה בפועל: ${s.eps.a!=null?epsHe(s.eps.a,c):'עוד לא במקור'}${s.eps.res?` (${RESH[s.eps.res]})`:''}`);
+  L.push(`צפי הכנסות: ${s.rev.e!=null?bigHe(s.rev.e,c):'אין במקור'}`);
+  L.push(`הכנסות בפועל: ${s.rev.a!=null?bigHe(s.rev.a,c):s.rev.pend?'עוד לא עודכנו במקור':'אין במקור'}${s.rev.res?` (${RESH[s.rev.res]})`:''}`);
+  if(s.nx)L.push(s.nx.was!=null&&s.nx.res&&s.nx.res!=='in'?`👈 צפי האנליסטים לרבעון הבא ${s.nx.res==='down'?'ירד':'עלה'}: רווח למניה ${epsHe(s.nx.now,c)} במקום ${epsHe(s.nx.was,c)} לפני הדוח.`
+    :`👈 צפי האנליסטים לרבעון הבא: רווח למניה ${epsHe(s.nx.now,c)}${s.nx.was!=null?', כמו לפני הדוח':''}.`);
+  if(s.guid)L.push('👈 '+s.guid);
+  if(s.rx){const p=s.rx.pct, past=!!s.rx.fin; L.push(`👈 המניה ${p<0?(past?'ירדה':'יורדת'):p>0?(past?'עלתה':'עולה'):'ללא שינוי'}${p?` ב-${Math.abs(p).toFixed(1)}%`:''} ${RXH[s.rx.k]||''}${s.rx.t&&!past?`, נכון ל-${hmIL(s.rx.t)}`:''}.`)}
+  return L;
+}
 
 // the findings, from the numbers alone: what the report shows against the estimates, the revenue, the last quarters,
 // and what the analysts expect now
@@ -16,7 +58,7 @@ export function findingsOf(r){
   if(!r)return []; const F=[], e=r.eps||{}, c=r.ccy;
   if(e.a!=null&&e.e!=null)F.push(`הרווח למניה ${e.a}, ${e.a>=e.e?'מעל לצפי':'מתחת לצפי'} האנליסטים (${e.e})${e.s!=null?`, הפתעה של ${sgP(e.s)}`:''}.`);
   else if(e.a!=null)F.push(`הרווח למניה ברבעון: ${e.a}.`);
-  if(r.rev!=null)F.push(`ההכנסות ברבעון ${bigN(r.rev,c)}${r.revQoQ!=null?`, ${sgP(r.revQoQ)} לעומת הרבעון הקודם`:''}${r.ni!=null?`; הרווח הנקי ${bigN(r.ni,c)}`:''}.`);
+  if(r.rev!=null&&!r.revPend)F.push(`ההכנסות ברבעון ${bigN(r.rev,c)}${r.revE!=null?`, ${r.rev>=r.revE?'מעל':'מתחת'} לצפי (${bigN(r.revE,c)})`:''}${r.revQoQ!=null?`, ${sgP(r.revQoQ)} לעומת הרבעון הקודם`:''}${r.ni!=null?`; הרווח הנקי ${bigN(r.ni,c)}`:''}.`);
   const h=(r.hist||[]).filter(x=>x.a!=null&&x.e!=null);
   if(h.length>=3){const up=h.filter(x=>x.a>=x.e).length; F.push(`ב-${up} מתוך ${h.length} הרבעונים האחרונים הרווח למניה היה מעל הצפי.`)}
   const n=r.now||r.next; if(n&&(n.eps!=null||n.rev!=null))F.push(`לרבעון הנוכחי האנליסטים מעריכים ${[n.eps!=null?`רווח למניה של ${n.eps}`:'',n.rev!=null?`הכנסות של ${bigN(n.rev,c)}${n.revG!=null?` (${sgP(n.revG)} מהרבעון המקביל)`:''}`:''].filter(Boolean).join(' ו')}. זו הערכה של אנליסטים, לא תחזית של החברה.`);
@@ -25,10 +67,13 @@ export function findingsOf(r){
 
 // the numbers Claude may use, written the way the page writes them
 export function factsOf(sym,name,r,headlines=[]){
-  const e=r.eps||{}, c=r.ccy, q=x=>x?{eps_estimate:x.eps!=null?String(x.eps):null,revenue_estimate:bigN(x.rev,c),revenue_growth_estimate:sgP(x.revG)}:null;
+  const e=r.eps||{}, c=r.ccy, q=x=>x?{eps_estimate:x.eps!=null?String(x.eps):null,revenue_estimate:bigN(x.rev,c),revenue_growth_estimate:sgP(x.revG)}:null, S=repSum(r);
   return {security:sym,name:name||sym,quarter:r.label||null,reported_on:r.at?dm(r.at):null,
-    eps:{actual:e.a!=null?String(e.a):null,analysts_estimate:e.e!=null?String(e.e):null,surprise:sgP(e.s)},
-    revenue:bigN(r.rev,c),revenue_vs_previous_quarter:sgP(r.revQoQ),net_income:bigN(r.ni,c),
+    eps:{actual:e.a!=null?String(e.a):null,analysts_estimate:S.eps.e!=null?String(S.eps.e):null,surprise:sgP(S.eps.s),against_estimate:S.eps.res?RESH[S.eps.res]:null},
+    revenue:S.rev.pend?null:bigN(r.rev,c),revenue_analysts_estimate:bigN(S.rev.e,c),revenue_against_estimate:S.rev.res?RESH[S.rev.res]+(S.rev.s!=null?` (${sgP(S.rev.s)})`:''):null,
+    revenue_vs_previous_quarter:S.rev.pend?null:sgP(r.revQoQ),net_income:S.rev.pend?null:bigN(r.ni,c),
+    next_quarter_analysts_eps:S.nx?{now:String(S.nx.now),before_report:S.nx.was!=null?String(S.nx.was):null}:null,
+    share_move_after_report:S.rx?{change:sgP(S.rx.pct),when:RXH[S.rx.k]||null}:null,
     last_quarters:(r.hist||[]).map(h=>({quarter_end:dm(h.q),eps_actual:h.a!=null?String(h.a):null,eps_estimate:h.e!=null?String(h.e):null,surprise:sgP(h.s)})),
     analysts_estimates_current_quarter:q(r.now),analysts_estimates_this_year:q(r.year),
     findings:findingsOf(r),
@@ -43,7 +88,10 @@ export function cleanText(raw,facts){
   const keep=s=>{s=String(s||'').replace(/\s+/g,' ').trim(); if(!s)return ''; if(ok(s))return s; dropped.n++; return ''};
   const findings=(Array.isArray(raw&&raw.findings)?raw.findings:[]).map(keep).filter(Boolean).slice(0,5);
   const explain=String((raw&&raw.explain)||'').split(/(?<=[.!?])\s+/).map(keep).filter(Boolean).slice(0,5).join(' ');
-  return {findings,explain,dropped:dropped.n};
+  // the company's outlook: only when there are headlines to take it from, and said to be from them
+  let guidance=facts&&Array.isArray(facts.headlines)&&facts.headlines.length?keep(String((raw&&raw.guidance)||'').split(/(?<=[.!?])\s+/).slice(0,2).join(' ')):'';
+  if(guidance&&!/^לפי הכותרות/.test(guidance))guidance='לפי הכותרות, '+guidance;
+  return {findings,explain,guidance,dropped:dropped.n};
 }
 
 const pickModel=()=>{const L=String(process.env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean); return process.env.REPORT_MODEL||L.find(m=>/sonnet/.test(m))||L[0]};
@@ -59,7 +107,8 @@ FACTS הוא JSON: המספרים מהדוח (רווח למניה מול צפי 
 3. בלי המלצה לקנות, למכור או להחזיק, ובלי תחזית מחיר.
 4. אל תמציא תחזית של החברה (guidance), דברי הנהלה או סיבות. מה שהחברה אמרה מותר לכתוב רק אם הוא בכותרות, ובייחוס ("לפי הכותרות"). הערכות האנליסטים הן של אנליסטים, ותכתוב זאת.
 5. findings: 3 עד 5 ממצאים, משפט אחד כל אחד, החשוב קודם. explain: 2 עד 4 משפטים: מה המשמעות של הדוח, בלי לחזור על כל המספרים.
-החזר JSON בלבד: {"findings":["",""],"explain":""}
+6. guidance: אם כותרת מספרת מה החברה עצמה צופה לרבעון הבא או לשנה (העלתה, הורידה או השאירה את התחזית), משפט אחד שמתחיל ב"לפי הכותרות" ואומר את זה, עם המספרים רק אם הם בכותרת. אם אין כותרת כזו, מחרוזת ריקה.
+החזר JSON בלבד: {"findings":["",""],"explain":"","guidance":""}
 
 FACTS:
 ${JSON.stringify(facts)}`;
@@ -67,19 +116,23 @@ ${JSON.stringify(facts)}`;
     if(!r.ok){log('report explain failed: HTTP '+r.status);return null}
     const j=await r.json(), t=((j.content||[]).find(x=>x.type==='text')||{}).text||'', m=t.match(/\{[\s\S]*\}/); if(!m)return null;
     let raw; try{raw=JSON.parse(m[0])}catch(e){return null}
-    const c=cleanText(raw,facts); if(!c.findings.length&&!c.explain)return null;
+    const c=cleanText(raw,facts); if(!c.findings.length&&!c.explain&&!c.guidance)return null;
     return {...c,model:j.model||model,at:new Date().toISOString(),headlines:facts.headlines.length};
   }catch(e){log('report explain failed: '+(e&&e.message||e));return null}
 }
 
-// the e-mail when a report of a held or followed security arrives (the owner's, with the owner's consent for "earnings")
+// the e-mail when a report of a held or followed security arrives (the owner's, with the owner's consent for "earnings"):
+// the analysis in the lines of the market news, then what it means, in a sentence or two; not the report itself
 export async function reportsMail(store,items,log=()=>{}){
   if(!items.length)return false; const url=process.env.SITE_URL||'';
-  const one=x=>{const F=(x.rep.ai&&x.rep.ai.findings&&x.rep.ai.findings.length)?x.rep.ai.findings:(x.rep.find||[]); return {F,E:(x.rep.ai&&x.rep.ai.explain)||''}};
-  const head=items.length===1?`${items[0].name} פרסמה דוח (${items[0].rep.label||''})`:`${items.length} דוחות חדשים: ${items.map(x=>x.name).join(', ')}`;
-  const text=items.map(x=>{const {F,E}=one(x); return `${x.name} (${x.sym}) פרסמה ב-${x.rep.at?dm(x.rep.at):'?'} את הדוח לרבעון ${x.rep.label||''}.\nהממצאים:\n${F.map(s=>'• '+s).join('\n')}${E?'\nהסבר: '+E:''}`}).join('\n\n')
-    +`\n\n${url?'בדף המניה באתר: '+url+'\n\n':''}המספרים מהדוח וצפי האנליסטים (Yahoo Finance); הממצאים וההסבר נכתבו אוטומטית. לא המלצה לקנות או למכור.`;
-  const html=wrapHtml('דוח חדש',items.map(x=>{const {F,E}=one(x); return `<h3 style="margin:14px 0 4px">${esc(x.name)} <span style="color:#64748b;font-weight:400">(${esc(x.sym)})</span></h3><p style="margin:0;color:#64748b">פרסמה ב-${esc(x.rep.at?dm(x.rep.at):'?')} את הדוח לרבעון ${esc(x.rep.label||'')}</p><ul style="padding-inline-start:18px;margin:8px 0">${F.map(s=>`<li style="margin:4px 0">${esc(s)}</li>`).join('')}</ul>${E?`<p><b>הסבר:</b> ${esc(E)}</p>`:''}`}).join('')
-    +`${url?`<p><a href="${esc(url)}">לדף באתר</a></p>`:''}<p style="color:#64748b;font-size:13px">המספרים מהדוח וצפי האנליסטים (Yahoo Finance); הממצאים וההסבר נכתבו אוטומטית. לא המלצה לקנות או למכור.</p>`);
+  const one=x=>({L:repLines(repSum(x.rep),x.name,x.sym),E:(x.rep.ai&&x.rep.ai.explain)||''});
+  const S0=repSum(items[0].rep), tag=S0&&S0.eps.res?` · רווח למניה ${RESH[S0.eps.res]}`:'';
+  const head=items.length===1?`דוח חדש: ${items[0].name} (${items[0].sym})${tag}`:`${items.length} דוחות חדשים: ${items.map(x=>x.name).join(', ')}`;
+  const foot='המספרים מהדוח וצפי האנליסטים לפני הדוח (Yahoo Finance); "מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים. לא המלצה לקנות או למכור.';
+  const text=items.map(x=>{const {L,E}=one(x); return L.join('\n')+(E?'\nמה זה אומר: '+E:'')}).join('\n\n')+`\n\n${url?'הניתוח המלא בדף המניה באתר: '+url+'\n\n':''}${foot}`;
+  const html=wrapHtml('דוח חדש',items.map(x=>{const {L,E}=one(x); const [h,...rest]=L;
+    return `<h3 style="margin:14px 0 6px">${esc(h.replace(/^👈 /,''))}</h3><div style="line-height:1.7">${rest.map(l=>`<div>${esc(l).replace(/\((מעל הצפי|מתחת לצפי|בהתאם לצפי)\)/,(m,t)=>`<b style="color:${t==='מעל הצפי'?'#15803d':t==='מתחת לצפי'?'#b91c1c':'#475569'}">(${t})</b>`)}</div>`).join('')}</div>${E?`<p style="margin:8px 0 0"><b>מה זה אומר:</b> ${esc(E)}</p>`:''}`}).join('<hr style="border:0;border-top:1px solid #e2e8f0;margin:14px 0">')
+    +`${url?`<p><a href="${esc(url)}">לניתוח המלא בדף המניה</a></p>`:''}<p style="color:#64748b;font-size:13px">${esc(foot)}</p>`);
   return sendAllowed(store,'earnings',{subject:`תיק צ׳יק – ${head}`,text,html},log);
 }
+

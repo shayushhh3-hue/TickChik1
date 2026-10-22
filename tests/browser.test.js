@@ -87,7 +87,10 @@ before(async()=>{
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 
 // a signed-in page; prices are not fetched (the page's "update now" answers at once), the profile and tip prompts wait
-async function open(W=390,{who='owner',route=null,prompts=false}={}){
+async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false}={}){
+  // the choices of how the page looks follow the account (S.ui); each test starts without the ones an earlier test made,
+  // unless it is checking that they come along (another device: keepUi)
+  if(!keepUi)for(const p of ['settings/main',...store.users().filter(u=>u.role!=='owner').map(u=>`data/users/${u.id}/settings`)]){const d=store.getDoc(p); if(d.exists&&d.data&&d.data.ui){const x={...d.data}; delete x.ui; store.setDoc(p,x,{silent:true})}}
   const ctx=await browser.newContext({viewport:{width:W,height:W<600?844:900},locale:'he-IL',timezoneId:'Asia/Jerusalem'});
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
@@ -158,33 +161,51 @@ test('the plan: a fund bought in the stocks track opens for its quantity and pri
   await ctx.close(); store.setDoc('plan/main',plan0);
 });
 
-test('a company\'s report: the system message in the home page\'s to-do list, the alert, and on its page the day, the findings and the explanation',T,async t=>{
+test('a company\'s report as an analysis: in the home page\'s to-do list, the alert, and on its page right under the chart: earnings and revenue against the estimates, the next quarter, the share after the report, what it means',T,async t=>{
   if(skip())return t.skip('no browser');
+  const {repSum}=await import('../server/explain.js');
   const L0=store.getDoc('research/latest').data, day=new Date(Date.now()-864e5).toISOString().slice(0,10), dmY=d=>{const [y,m,dd]=d.split('-').map(Number); return `${dd}.${m}.${y}`};
-  const ai={findings:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41).','ההכנסות ברבעון $77.70B.'],explain:'הרבעון היה מעל הצפי ברווח ובהכנסות.',headlines:1};
-  const rep={q:'2026-09-30',label:'Q3 2026',at:day,ccy:'USD',eps:{a:3.62,e:3.41,s:6.2},rev:77.7e9,ni:27.1e9,find:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41), הפתעה של +6.2%.'],ai};
-  store.setDoc('research/latest',{...L0,companies:{...L0.companies,MSFT:{...(L0.companies.MSFT||{}),rep,next:'2027-01-27'}},
-    events:[{sym:'MSFT',name:'Microsoft',date:day,q:'2026-09-30',label:'Q3 2026',text:'דוח Q3 2026',find:rep.find,ai:{findings:ai.findings,explain:ai.explain}}]});
+  const ai={findings:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41).','ההכנסות ברבעון $77.70B.'],explain:'הרבעון היה מעל הצפי ברווח ובהכנסות.',guidance:'',headlines:1};
+  const rep={q:'2026-09-30',label:'Q3 2026',at:day,seen:day+'T21:00:00Z',ccy:'USD',eps:{a:3.62,e:3.41,s:6.2},rev:77.7e9,revE:75.3e9,ni:27.1e9,find:['הרווח למניה 3.62, מעל לצפי האנליסטים (3.41), הפתעה של +6.2%.'],ai,
+    now:{end:'2026-12-31',eps:3.66,rev:80e9},nxW:{end:'2026-12-31',eps:3.58,rev:79e9},rx:{k:'post',pct:-2.3,t:Math.round(Date.parse(day+'T21:15:00Z')/1000)}};
+  rep.sum=repSum(rep);
+  const reps=[{q:'2026-06-30',label:'Q2 2026',at:'2026-07-29',ccy:'USD',sum:repSum({q:'2026-06-30',ccy:'USD',eps:{a:3.65,e:3.37},rev:76.4e9,revE:73.8e9})}];
+  store.setDoc('research/latest',{...L0,companies:{...L0.companies,MSFT:{...(L0.companies.MSFT||{}),rep,reps,next:'2027-01-27'}},
+    events:[{sym:'MSFT',name:'Microsoft',date:day,q:'2026-09-30',label:'Q3 2026',text:'דוח Q3 2026',find:rep.find,ai:{findings:ai.findings,explain:ai.explain},sum:rep.sum}]});
   try{
     const {ctx,pg}=await open(390,{route:(r,u)=>{if(u.includes('/api/news')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[{title:'Microsoft beats estimates as cloud grows',pub:'Reuters',link:'https://example.com/a',at:'2026-10-21T01:00:00Z'}]})});return true}return false}});
-    // the system message on the home page: one item of the to-do list (the separate banner stays hidden: one place, said once)
+    // the system message on the home page: one item of the to-do list, with the analysis in a line
     const ban=await pg.evaluate(()=>{const b=document.querySelector('#desk li.rep'); return {on:!!b,txt:b?b.textContent:'',old:!document.getElementById('repBan').hidden}});
-    assert.ok(ban.on,'shown'); assert.ok(!ban.old,'not twice'); assert.match(ban.txt,new RegExp('דוח חדש\\s*Microsoft פרסמה ב-'+dmY(day).split('.').slice(0,2).join('\\.')+' את הדוח לרבעון Q3 2026\\. הרווח למניה 3\\.62'));
+    assert.ok(ban.on,'shown'); assert.ok(!ban.old,'not twice');
+    assert.match(ban.txt,new RegExp('דוח חדש\\s*Microsoft פרסמה ב-'+dmY(day).split('.').slice(0,2).join('\\.')+' את הדוח לרבעון Q3 2026\\. רווח למניה 3\\.62\\$ \\(מעל הצפי\\) · הכנסות 77\\.70 מיליארד דולר \\(מעל הצפי\\) · המניה −2\\.3% באפטר מרקט'));
     // the alert in בקרה, category דוחות
     assert.ok(await pg.evaluate(()=>window.__model&&window.__model.alerts?window.__model.alerts().items.some(i=>i.key==='rep:MSFT:2026-09-30'&&/Microsoft פרסמה/.test(i.text)):true),'an alert with its own key, for the morning message');
-    // to its page from the message
+    // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
-    const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),txt:b.textContent,tbl:!!document.querySelector('#secPage .repbox table')}:null});
-    assert.ok(r,'the report box is in view on the page'); assert.equal(r.h,`פורסם דוח ב-${dmY(day)} · Q3 2026`);
-    assert.deepEqual(r.f,ai.findings,'Chiko\'s findings'); assert.match(r.txt,/הסבר על הדוח\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.ok(!r.tbl,'no table of the report\'s figures');
+    const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
+      under:document.getElementById('secChartNote').nextElementSibling===b,cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
+      what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
+    assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
+    assert.deepEqual(r.cards,['רווח למניה צפי 3.41$ בפועל 3.62$ מעל הצפי · +6.2%','הכנסות צפי 75.30 מיליארד דולר בפועל 77.70 מיליארד דולר מעל הצפי · +3.2%']);
+    assert.equal(r.x[0],'👈 צפי האנליסטים לרבעון הבא עלה: רווח למניה 3.66$ במקום 3.58$ לפני הדוח.');
+    assert.match(r.x[1],/^👈 המניה יורדת ב-2\.3% במסחר המאוחר \(אפטר מרקט\), נכון ל-\d\d:\d\d\.$/);
+    assert.match(r.txt,/מה זה אומר\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.deepEqual(r.f,ai.findings,'the findings are there, behind "עוד על הדוח"');
+    assert.deepEqual(r.old,['Q2 2026 · 29.7 · רווח למניה 3.65$ (מעל הצפי) · הכנסות 76.40 מיליארד דולר (מעל הצפי)'],'the report before it');
+    assert.ok(!r.tbl,'no table of the report\'s figures'); assert.match(r.txt,/זה ניתוח, לא המלצה לקנות או למכור/);
     await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'nothing sideways');
     // "הבנתי" hides that report's message for good
     await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#desk li.rep [data-repban]').click()); await pg.waitForTimeout(300);
     assert.ok(await pg.evaluate(()=>!document.querySelector('#desk li.rep'))); await pg.reload(); await pg.waitForTimeout(2500);
     assert.ok(await pg.evaluate(()=>!!document.getElementById('desk').textContent&&!document.querySelector('#desk li.rep')),'not shown again');
     assert.deepEqual(pg.errs,[]); await ctx.close();
-  }finally{store.setDoc('research/latest',L0)}
+    // a security nobody holds: the same analysis on its page, and nothing on the home page
+    store.setDoc('research/s_NFLX',{sym:'NFLX',name:'Netflix',source:'Yahoo Finance',rep:{...rep,label:'Q3 2026'},next:'2027-01-20'},{silent:true});
+    const o=await open(390); await tab(o.pg,'search'); await o.pg.waitForTimeout(500); await o.pg.evaluate(()=>window.__srch.open('NFLX')); await o.pg.waitForTimeout(1200);
+    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return !!b&&document.getElementById('secChartNote').nextElementSibling===b&&b.querySelectorAll('.rpc').length===2}),'on the page of a security not held');
+    assert.deepEqual(o.pg.errs,[]); await o.ctx.close();
+  }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
 });
 
 test('the simple home: one to-do list, the prices\' trust mark, the same total in every view, and the hero on a phone',T,async t=>{
@@ -318,7 +339,7 @@ test('what the user saves stays saved: a second change made while the first is s
     await pg.waitForTimeout(5000); await ctx.close();
     const ui=store.getDoc('settings/main').data.ui||{}; assert.equal(ui.tr_holdccy,'usd'); assert.match(ui.tr_a11y||'',/"size":"l"/);
     // another device: a browser with nothing in its storage
-    ({ctx,pg}=await open(390)); await pg.waitForTimeout(800);
+    ({ctx,pg}=await open(390,{keepUi:true})); await pg.waitForTimeout(800);
     const r=await pg.evaluate(()=>({hc:document.querySelector('.hccy .chip[aria-pressed="true"]')?.dataset.hc,size:document.documentElement.dataset.tsize,max:document.getElementById('rMaxPos').value}));
     assert.deepEqual(r,{hc:'usd',size:'l',max:'17'});
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll with the bigger text'); assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -868,10 +889,11 @@ test('the holdings in shekels, in dollars, or both: the chips, the rows, the her
   await pg.click('.hkind:not(.hccy) [data-hv="fund"]'); await pg.waitForTimeout(300);
   const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec)').length}));
   assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'both'); assert.equal(hv.rows,2,'the two index funds');
+  await pg.waitForFunction(()=>true); for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_holdccy!=='both');i++)await pg.waitForTimeout(250);
   assert.deepEqual(pg.errs,[]); await ctx.close();
-  // a wide screen: the dollars sit in the table too, and the page opens in the view that was chosen
-  const w=await open(1280); const ws=await w.pg.evaluate(()=>({hc:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),total:document.getElementById('kTotal').textContent}));
-  assert.deepEqual(ws.hc,['ils'],'another browser context starts in shekels'); assert.ok(/^₪/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
+  // a wide screen, another browser: the choice came along with the account, and the dollars sit in the table too
+  const w=await open(1280,{keepUi:true}); const ws=await w.pg.evaluate(()=>({hc:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),total:document.getElementById('kTotal').textContent}));
+  assert.deepEqual(ws.hc,['both'],'another browser opens with the choice made'); assert.ok(/^₪/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
 });
 
 test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{

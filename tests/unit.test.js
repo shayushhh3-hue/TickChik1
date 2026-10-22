@@ -670,13 +670,87 @@ test('reports: the latest quarter from Yahoo, a new one becomes an event, and th
   const d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.q,'2026-09-30'); assert.match(d.rep.find[0],/^הרווח למניה 0\.87, מעל לצפי האנליסטים \(0\.82\), הפתעה של \+6\.1%\.$/); assert.equal(d.rep.ai.findings.length,2); assert.equal(d.rep.at,'2026-10-20','the day it was reported'); assert.equal(d.next,'2027-01-20');
   const L=s.getDoc('research/latest').data; assert.equal(L.events.length,1); assert.equal(L.events[0].sym,'NFLX'); assert.equal(L.events[0].date,'2026-10-20'); assert.match(L.events[0].text,/^דוח Q3 2026/); assert.equal(L.events[0].ai.explain,'הרבעון היה מעל הצפי ברווח.'); assert.equal(L.events[0].label,'Q3 2026');
   assert.equal(L.companies.NFLX.rep.label,'Q3 2026','a holding carries it into the shared document');
-  assert.deepEqual(dueReports(s,new Date('2026-10-21T12:20:00Z')),[],'in: not asked again');
+  assert.deepEqual(dueReports(s,new Date('2026-10-21T12:20:00Z')),['NFLX'],'in, and asked again for the share\'s move in the day after it');
+  assert.deepEqual(dueReports(s,new Date('2026-10-23T12:20:00Z')),[],'not after that');
   const st2=await researchTask(s,{fetch:f,now:new Date('2026-10-22T04:20:00Z'),pause:0,only:['NFLX'],explain,mail}); assert.equal(st2.reports,0,'the same quarter again is not a new event');
   assert.equal(asked.length,1,'not explained twice'); assert.equal(mailed.length,1,'not mailed twice'); assert.equal(s.getDoc('research/s_NFLX').data.rep.ai.explain,'הרבעון היה מעל הצפי ברווח.','the explanation stays');
   // Claude's text: a sentence with a number it was not given, or with advice, is dropped
   const {cleanText}=await import('../server/explain.js'); const c=cleanText({findings:['הרווח למניה 0.87.','הרווח צפוי לגדול ב-40%.','כדאי לקנות לפני הדוח הבא.'],explain:'ההכנסות $12.87B. המניה תעלה.'},asked[0]);
   assert.deepEqual(c.findings,['הרווח למניה 0.87.']); assert.equal(c.explain,'ההכנסות $12.87B.'); assert.equal(c.dropped,3);
   assert.equal(s.getDoc('research/latest').data.events.length,1); assert.equal(s.getDoc('research/s_NFLX').data.rep.at,'2026-10-20');
+});
+test('a report as an analysis: earnings and revenue against the estimates from before the report, the next quarter, the share after hours; the mail waits for the revenue; the earlier report is kept',async()=>{
+  const {researchTask,dueReports}=await import('../server/research.js'); const {repSum,repLines,cleanText}=await import('../server/explain.js'); const s=new Store(':memory:');
+  const R=x=>({raw:x}), Q=d=>R(Date.parse(d+'T00:00:00Z')/1000), T=iso=>Math.round(Date.parse(iso)/1000);
+  const hist=(n)=>[{quarter:Q('2025-12-31'),epsActual:R(0.56),epsEstimate:R(0.55)},{quarter:Q('2026-03-31'),epsActual:R(0.66),epsEstimate:R(0.68)},{quarter:Q('2026-06-30'),epsActual:R(0.72),epsEstimate:R(0.7)},{quarter:Q('2026-09-30'),epsActual:R(0.87),epsEstimate:R(0.82),surprisePercent:R(0.061)}].slice(0,n);
+  const FIN=[{date:'4Q2025',revenue:R(12.05e9)},{date:'1Q2026',revenue:R(12.2e9)},{date:'2Q2026',revenue:R(12.5e9)},{date:'3Q2026',revenue:R(13.44e9)}], fin=n=>FIN.slice(0,n);
+  // Yahoo before the report (the evening of 20.10): Q2 is the last report; for the report of 21.10 the analysts expect 0.82
+  // and $12.87B; for the quarter after it 0.73
+  const before={price:{currency:'USD'},financialData:{financialCurrency:'USD'},summaryDetail:{},defaultKeyStatistics:{},
+    calendarEvents:{earnings:{earningsDate:[Q('2026-10-21')],earningsAverage:R(0.82),revenueAverage:R(12.87e9)}},
+    earnings:{financialCurrency:'USD',financialsChart:{quarterly:fin(3)},earningsChart:{quarterly:[{date:'4Q2025'},{date:'1Q2026'},{date:'2Q2026'}]}},earningsHistory:{history:hist(3)},
+    earningsTrend:{trend:[{period:'0q',endDate:'2026-09-30',earningsEstimate:{avg:R(0.82)},revenueEstimate:{avg:R(12.87e9)}},{period:'+1q',endDate:'2026-12-31',earningsEstimate:{avg:R(0.73)},revenueEstimate:{avg:R(13.9e9)}}]}};
+  // after it (21.10, 17:20 in New York): Q3 is in, the revenue chart not yet; the calendar has moved to January; the analysts
+  // now expect 0.67 for the quarter after; the share is down 4% after hours
+  const after=(revIn,price)=>({...before,price:{currency:'USD',...price},calendarEvents:{earnings:{earningsDate:[Q('2027-01-20')],earningsAverage:R(0.67),revenueAverage:R(13.5e9)}},
+    earnings:{financialCurrency:'USD',financialsChart:{quarterly:revIn?fin(4):fin(3)},earningsChart:{quarterly:[{date:'1Q2026'},{date:'2Q2026'},{date:'3Q2026'}]}},earningsHistory:{history:hist(4)},
+    earningsTrend:{trend:[{period:'0q',endDate:'2026-12-31',earningsEstimate:{avg:R(0.67)},revenueEstimate:{avg:R(13.5e9)}},{period:'+1q',endDate:'2027-03-31',earningsEstimate:{avg:R(0.7)}}]}});
+  const ah={marketState:'POST',regularMarketChangePercent:R(0.005),regularMarketTime:T('2026-10-21T20:00:00Z'),postMarketChangePercent:R(-0.04),postMarketTime:T('2026-10-21T21:19:00Z')};
+  let Y=before; const f=async(u)=>{u=String(u); if(u.startsWith('https://fc.yahoo.com'))return new Response('',{status:404,headers:{'set-cookie':'A3=x; Path=/'}});
+    if(u.includes('getcrumb'))return new Response('Ab3cD.eF'); if(u.includes('quoteSummary/NFLX'))return new Response(JSON.stringify({quoteSummary:{result:[Y]}})); return new Response('',{status:500})};
+  const mailed=[], mail=async(st0,items)=>{mailed.push(...items); return true}, explain=async()=>({findings:['x'],explain:'הרבעון היה מעל הצפי, והצפי לרבעון הבא ירד.',guidance:'',model:'x',at:'t',headlines:0});
+  s.setDoc('portfolio/main',{positions:[{sym:'NFLX',name:'נטפליקס'}]}); s.setDoc('research/latest',{companies:{},events:[]});
+  s.setDoc('research/s_NFLX',{sym:'NFLX',next:'2026-10-21',rep:{q:'2026-03-31',label:'Q1 2026',at:'2026-04-16'}});
+  const run=iso=>researchTask(s,{fetch:f,now:new Date(iso),pause:0,only:['NFLX'],explain,mail});
+  await run('2026-10-20T20:00:00Z');   // the night before: Q2 arrives (late), and the estimates for the coming report are kept
+  let d=s.getDoc('research/s_NFLX').data; assert.equal(d.est.date,'2026-10-21'); assert.equal(d.est.rev,12.87e9); assert.equal(d.est.nq.eps,0.73);
+  assert.deepEqual(d.reps.map(x=>x.q),['2026-03-31'],'the report before it is kept in the list of earlier reports');
+  // the report: earnings in, revenue not yet: no mail, no explanation, and it is checked again
+  Y=after(false,ah); mailed.length=0; await run('2026-10-21T21:20:00Z');
+  d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.q,'2026-09-30'); assert.equal(d.rep.revPend,true); assert.equal(mailed.length,0,'the mail waits for the revenue');
+  assert.equal(d.rep.revE,12.87e9,'the revenue estimate from before the report'); assert.deepEqual(d.rep.nxW,{end:'2026-12-31',eps:0.73,rev:13.9e9});
+  assert.deepEqual(d.reps.map(x=>x.q),['2026-06-30','2026-03-31']);
+  assert.deepEqual(dueReports(s,new Date('2026-10-21T21:40:00Z')),['NFLX'],'asked again for its revenue');
+  // twenty minutes later the revenue is in: the analysis and the mail
+  Y=after(true,{...ah,postMarketTime:T('2026-10-21T21:39:00Z')}); await run('2026-10-21T21:40:00Z');
+  d=s.getDoc('research/s_NFLX').data; assert.equal(d.rep.revPend,false); assert.equal(mailed.length,1); assert.ok(d.rep.mailed);
+  const S=repSum(d.rep);
+  assert.deepEqual([S.eps.e,S.eps.a,S.eps.res,S.rev.e,S.rev.a,S.rev.res,S.nx.was,S.nx.now,S.nx.res,S.rx.k,S.rx.pct],[0.82,0.87,'up',12.87e9,13.44e9,'up',0.73,0.67,'down','post',-4]);
+  const L=repLines(S,'נטפליקס','NFLX');
+  assert.deepEqual(L.slice(0,7),['👈 נטפליקס (סימול NFLX) פרסמה את הדוח לרבעון Q3 2026 (21.10.2026):','צפי רווח למניה: 0.82$','רווח למניה בפועל: 0.87$ (מעל הצפי)','צפי הכנסות: 12.87 מיליארד דולר','הכנסות בפועל: 13.44 מיליארד דולר (מעל הצפי)',
+    '👈 צפי האנליסטים לרבעון הבא ירד: רווח למניה 0.67$ במקום 0.73$ לפני הדוח.','👈 המניה יורדת ב-4.0% במסחר המאוחר (אפטר מרקט), נכון ל-00:39.']);
+  assert.equal(mailed[0].rep.ai.explain,'הרבעון היה מעל הצפי, והצפי לרבעון הבא ירד.','the explanation waited for the revenue too');
+  const ev=s.getDoc('research/latest').data.events[0]; assert.equal(ev.sum.rev.res,'up'); assert.equal(ev.sum.rx.k,'post');
+  // the next day's session: the move of the day after the report, then, when it is over, said in the past
+  Y=after(true,{marketState:'REGULAR',regularMarketChangePercent:R(-0.061),regularMarketTime:T('2026-10-22T17:00:00Z')}); await run('2026-10-22T17:00:00Z');
+  d=s.getDoc('research/s_NFLX').data; assert.deepEqual([d.rep.rx.k,d.rep.rx.pct,d.rep.rx.fin],['day',-6.1,false]);
+  Y=after(true,{marketState:'POST',regularMarketChangePercent:R(-0.058),regularMarketTime:T('2026-10-22T20:00:00Z'),postMarketChangePercent:R(0.002),postMarketTime:T('2026-10-22T21:00:00Z')}); await run('2026-10-22T21:00:00Z');
+  d=s.getDoc('research/s_NFLX').data; assert.deepEqual([d.rep.rx.k,d.rep.rx.pct,d.rep.rx.fin],['day',-5.8,true]);
+  assert.equal(repLines(repSum(d.rep),'נטפליקס','NFLX').at(-1),'👈 המניה ירדה ב-5.8% ביום המסחר שאחרי הדוח.');
+  assert.equal(mailed.length,1,'mailed once'); assert.deepEqual(dueReports(s,new Date('2026-10-22T21:20:00Z')),[],'nothing left to wait for');
+  // a report found long after it came out: its move is not known, not taken from today's session
+  s.setDoc('research/s_NFLX',{sym:'NFLX',rep:{q:'2026-06-30',label:'Q2 2026',at:'2026-07-16'}}); Y=after(true,{marketState:'REGULAR',regularMarketChangePercent:R(0.02),regularMarketTime:T('2026-11-20T17:00:00Z')});
+  await run('2026-11-20T17:00:00Z'); assert.equal(s.getDoc('research/s_NFLX').data.rep.rx,null);
+  // the company's outlook: only from the headlines, and said so
+  const facts={headlines:[{title:'Netflix forecasts fourth-quarter profit below estimates'}]};
+  assert.equal(cleanText({guidance:'החברה צופה רווח נמוך מהצפי לרבעון הרביעי.'},facts).guidance,'לפי הכותרות, החברה צופה רווח נמוך מהצפי לרבעון הרביעי.');
+  assert.equal(cleanText({guidance:'החברה צופה רווח נמוך.'},{headlines:[]}).guidance,'','no headlines, no outlook');
+});
+test('the report e-mail: the analysis in the lines of the market news, then what it means; not the report itself',async()=>{
+  const {reportsMail,repSum}=await import('../server/explain.js'); const env0={k:process.env.RESEND_API_KEY,to:process.env.MAIL_TO}, f0=globalThis.fetch, sent=[];
+  globalThis.fetch=async(u,o)=>{if(String(u).includes('api.resend.com')){sent.push(JSON.parse(o.body));return new Response('{"id":"x"}',{status:200})} return f0(u,o)};
+  try{process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='owner@example.com';
+    const s=new Store(':memory:'); s.setDoc('settings/main',{name:'x',mail:{earnings:true}});
+    const rep={q:'2026-09-30',label:'Q3 2026',at:'2026-10-21',ccy:'USD',eps:{a:0.87,e:0.82,s:6.1},rev:13.44e9,revE:12.87e9,now:{end:'2026-12-31',eps:0.67},nxW:{end:'2026-12-31',eps:0.73},rx:{k:'post',pct:-4,t:Math.round(Date.parse('2026-10-21T21:19:00Z')/1000)},ai:{explain:'הרבעון היה מעל הצפי, אבל הצפי לרבעון הבא ירד.'}};
+    assert.equal(await reportsMail(s,[{sym:'NFLX',name:'נטפליקס',rep}]),true);
+    const m=sent[0]; assert.equal(m.subject,'תיק צ׳יק – דוח חדש: נטפליקס (NFLX) · רווח למניה מעל הצפי');
+    assert.ok(m.text.startsWith(['👈 נטפליקס (סימול NFLX) פרסמה את הדוח לרבעון Q3 2026 (21.10.2026):','צפי רווח למניה: 0.82$','רווח למניה בפועל: 0.87$ (מעל הצפי)','צפי הכנסות: 12.87 מיליארד דולר','הכנסות בפועל: 13.44 מיליארד דולר (מעל הצפי)',
+      '👈 צפי האנליסטים לרבעון הבא ירד: רווח למניה 0.67$ במקום 0.73$ לפני הדוח.','👈 המניה יורדת ב-4.0% במסחר המאוחר (אפטר מרקט), נכון ל-00:19.','מה זה אומר: הרבעון היה מעל הצפי, אבל הצפי לרבעון הבא ירד.'].join('\n')),m.text);
+    assert.match(m.text,/לא המלצה לקנות או למכור/); assert.match(m.html,/<b style="color:#15803d">\(מעל הצפי\)<\/b>/);
+    // a report whose revenue is not in yet says so, and a missing estimate is said, not invented
+    const L=(await import('../server/explain.js')).repLines(repSum({...rep,revPend:true,eps:{a:0.87}}),'נטפליקס','NFLX');
+    assert.deepEqual(L.slice(1,5),['צפי רווח למניה: אין במקור','רווח למניה בפועל: 0.87$','צפי הכנסות: 12.87 מיליארד דולר','הכנסות בפועל: עוד לא עודכנו במקור']);
+  }finally{globalThis.fetch=f0; if(env0.k==null)delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY=env0.k; if(env0.to==null)delete process.env.MAIL_TO; else process.env.MAIL_TO=env0.to}
 });
 test('analysts: when Yahoo will not open a session, nothing is overwritten and the status says so',async()=>{
   const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');

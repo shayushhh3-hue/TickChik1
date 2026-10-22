@@ -188,6 +188,15 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .repbox{margin-top:14px;padding:12px 14px;border-radius:var(--r);background:var(--accent-soft);border:1px solid #EBDCC6;border-inline-start:4px solid var(--accent);display:flex;flex-direction:column;gap:6px}
 .repbox h3{font-size:15px}.repbox h4{font-size:13px;margin:6px 0 0;color:var(--ink2)}.repbox p{margin:0;font-size:14px;line-height:1.6}
 .repf{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.55}
+/* 22.10: the report as an analysis: earnings and revenue against the estimates, then the lines of what came after */
+.rpg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:2px}
+.rpc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.rpc .k{font-size:12.5px;font-weight:700;color:var(--ink2)} .rpl{display:flex;justify-content:space-between;gap:8px;font-size:14px} .rpl span{color:var(--muted)} .rpl b{font-weight:700;unicode-bidi:isolate}
+.rpt{align-self:flex-start;margin-top:4px;font-size:12.5px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--sunk);color:var(--ink2)}
+.rpt.up{background:var(--ok-bg);color:var(--ok-ink)} .rpt.down{background:var(--crit-bg);color:var(--crit-ink)} .rpt.wait{font-weight:500}
+.rpx{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.55}
+.repbox details.rpmore>summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--navy);margin-top:4px} .repbox details.rpmore[open]>summary{margin-bottom:6px}
+.rpold{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5} .rpold b{font-weight:700}
 .repban .rb-l{margin:0;flex:1 1 240px;font-size:14px;line-height:1.55}
 .replinks{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.45}
 .replinks a{color:var(--navy);font-weight:600}
@@ -16356,7 +16365,8 @@ function alertsOf(m){
   if(RS&&RS.companies){const soon=m.pos.map(p=>({s:p.sym,c:RS.companies[p.sym]})).filter(x=>x.c&&x.c.next&&daysTo(x.c.next)>=0&&daysTo(x.c.next)<=7).sort((a,b)=>a.c.next<b.c.next?-1:1);
     if(soon.length)A.push(rich('info','דוחות','דוחות כספיים בשבוע הקרוב:',soon.map(x=>x.s+' ('+dmy(x.c.next)+')'),soon.map(x=>x.s)));
     try{for(const e of newReports(10).filter(e=>m.pos.some(p=>p.sym===e.sym))){const t=`${e.name||e.sym} פרסמה ב-${dmy(e.date)} דוח${e.label?' לרבעון '+e.label:''}: ${e.first}`; A.push(['info','דוחות',t,[e.sym]]); const a=A[A.length-1];
-      a.why={src:'analysis',rows:((e.ai&&e.ai.findings&&e.ai.findings.length?e.ai.findings:e.find)||[]).slice(0,4).map((x,i)=>[i?'':'הממצאים',esc(x)]).concat(e.ai&&e.ai.explain?[['הסבר',esc(e.ai.explain)]]:[]),tab:'search',tl:'לחיפוש ולדף הנייר'}; a.each=[{key:e.key,text:t}]}}catch(x){}
+      a.why={src:'analysis',rows:e.sum?[['הדוח',esc(repOne(e.sum))]].concat(repXLines(e.sum).map((x,i)=>[i?'':'אחרי הדוח',esc(x)])).concat(e.ai&&e.ai.explain?[['מה זה אומר',esc(e.ai.explain)]]:[])
+        :((e.ai&&e.ai.findings&&e.ai.findings.length?e.ai.findings:e.find)||[]).slice(0,4).map((x,i)=>[i?'':'הממצאים',esc(x)]).concat(e.ai&&e.ai.explain?[['הסבר',esc(e.ai.explain)]]:[]),tab:'search',tl:'לדף המניה ולניתוח הדוח'}; a.each=[{key:e.key,text:t}]}}catch(x){}
     const weak=m.pos.filter(p=>RS.companies[p.sym]).map(p=>({s:p.sym,f:finScore(RS.companies[p.sym])})).filter(x=>x.f&&x.f.score<35).map(x=>x.s); if(weak.length){A.push(rich('warn','דירוג','ציון פיננסי נמוך (E) לפי הדוחות:',weak,weak));A[A.length-1].why={src:'analysis',rows:[['מה זה','ציון מ-0 עד 100 שהדף מחשב מהדוחות הכספיים של החברה. ציון מתחת ל-35 מסומן E.'],['מה זה לא','לא נתון שוק, ולא המלצה לקנות או למכור.']],tab:'ratings',tl:'לפירוט הציון'}}}
   {const es=earlySales(), recent=es.filter(x=>(Date.now()-new Date(x.date))/864e5<=45); if(recent.length){A.push(rich('warn','מדיניות',`נמכרו לפני שעברו ${S.rules.minHoldMonths} חודשים מהקנייה:`,recent.map(x=>x.sym)));A[A.length-1].why={src:'rule',rows:[['הכלל שלך',`להחזיק כל נייר ${S.rules.minHoldMonths} חודשים לפחות`]].concat(recent.slice(0,6).map(x=>[symH(x.sym),`נמכר ב-${dmy(x.date)}, אחרי ${nn(x.h.toFixed(1))} חודשים`])),tab:'history',tl:'לפירוט הפעולות'}} else if(es.length)A.push(['info','מדיניות',`מאז תחילת השנה בוצעו ${es.length} מכירות לפני שעברו ${S.rules.minHoldMonths} חודשים מהקנייה. הפירוט בלשונית מבט לאחור.`])}
   if(m.missingCost) A.push(['info','חסר',`ל-${m.missingCost} ניירות אין מחיר קנייה, ולכן הרווח וההפסד שלהם לא מחושבים.`]);
@@ -18449,6 +18459,9 @@ function repFacts(r){
     last_quarters:(r.hist||[]).map(h=>({quarter_end:dmy(h.q)+'.'+h.q.slice(0,4),eps_actual:h.a!=null?String(h.a):null,eps_estimate:h.e!=null?String(h.e):null,surprise:sgP(h.s)})),
     revenue_by_quarter:(r.fin||[]).map(f=>({quarter:f.d,revenue:bigN(f.rev,r.ccy),net_income:bigN(f.ni,r.ccy)})),
     analysts_estimates_current_quarter:q(r.now),analysts_estimates_next_quarter:q(r.next),analysts_estimates_this_year:q(r.year),
+    analysis:(()=>{const S=repSumOf(r); return S?{eps_estimate_before_report:S.eps.e!=null?String(S.eps.e):null,eps_against_estimate:S.eps.res?REPRES[S.eps.res]:null,
+      revenue_estimate_before_report:bigN(S.rev.e,r.ccy),revenue_against_estimate:S.rev.res?REPRES[S.rev.res]:null,revenue_not_in_yet:S.rev.pend||null,
+      next_quarter_eps:S.nx?{now:String(S.nx.now),before_report:S.nx.was!=null?String(S.nx.was):null}:null,share_after_report:S.rx?{change:sgP(S.rx.pct),when:REPRX[S.rx.k]||null}:null,company_outlook_from_headlines:S.guid||null}:null})(),
     note:'אלה מספרים מהדוח והערכות אנליסטים ממקור חיצוני. אין כאן תחזית של החברה (guidance) ואין את דברי ההנהלה; מה שהחברה אמרה מופיע רק בכותרות הכתבות, אם יש'};
 }
 function anaCleanExplain(raw,set){
@@ -18471,19 +18484,60 @@ function anaExplainHtml(F,k,ans,st){
 // ---- a company's latest report in the security page: the day it came out, the findings and the explanation the server wrote
 // when it arrived (rep.find from the numbers, rep.ai by Chiko), a check for a newer report, and the articles about it ----
 const NEWSX={}, REPCHK={};
+// ---- 22.10: a report as an analysis, in the lines of the market news ("צפי רווח למניה 0.82$ · בפועל 0.87$ (מעל הצפי)"):
+// earnings per share and revenue against what the analysts expected before the report, the analysts' estimate for the
+// next quarter against before, how the share moved after it, and Chiko's "what it means". The server keeps the same
+// summary (rep.sum) and writes the same lines in the e-mail; a report kept before 22.10 has none, and is summed up here
+const REPRES={up:'מעל הצפי',down:'מתחת לצפי',in:'בהתאם לצפי'}, REPRX={post:'במסחר המאוחר (אפטר מרקט)',pre:'במסחר המוקדם (פרה מרקט)',day:'ביום המסחר שאחרי הדוח'};
+const REPCUR={USD:'דולר',ILS:'שקל',EUR:'אירו',GBP:'ליש״ט',CAD:'דולר קנדי',JPY:'ין',CHF:'פרנק'};
+const repEps=(x,c)=>x==null||!isFinite(x)?null:(x<0?'−':'')+Math.abs(x).toFixed(2)+(!c||c==='USD'?'$':c==='ILS'?' ₪':' '+(REPCUR[c]||c));
+const repBig=(x,c)=>{if(x==null||!isFinite(x))return null; const a=Math.abs(x), g=x<0?'−':'', w=REPCUR[c||'USD']||c;
+  return a>=1e9?`${g}${(a/1e9).toFixed(2)} מיליארד ${w}`:a>=1e6?`${g}${(a/1e6).toFixed(a>=1e8?0:1)} מיליון ${w}`:`${g}${Math.round(a).toLocaleString('en-US')} ${w}`};
+function repSumOf(r){
+  if(!r)return null; if(r.sum)return r.sum; const c=r.ccy||'USD', e=r.eps||{}, cmp=(a,b,t)=>a==null||b==null?null:Math.abs(a-b)<=t?'in':a>b?'up':'down';
+  const revA=r.revPend?null:(r.rev??null), revE=r.revE??null;
+  return {ccy:c,label:r.label||null,at:r.at||null,eps:{e:e.e??null,a:e.a??null,res:cmp(e.a,e.e,0.005),s:e.s??null},
+    rev:{e:revE,a:revA,pend:!!r.revPend,res:cmp(revA,revE,revE?Math.abs(revE)*0.001:0),s:revA!=null&&revE?Math.round((revA/revE-1)*1000)/10:null},nx:null,rx:r.rx&&r.rx.pct!=null?r.rx:null,guid:(r.ai&&r.ai.guidance)||''}}
+const repH=t=>esc(t).replace(/\d{1,2}:\d{2}(?!\d)|[−+]?\d[\d,]*(?:\.\d+)?(?:\$|%| ₪)?/g,m=>`<bdi>${m}</bdi>`);
+const repHm=t=>{try{return new Date(t*1000).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false})}catch(e){return ''}};
+// the lines under the two figures: the next quarter, the company's outlook (from the headlines), the share after the report
+function repXLines(S){const c=S.ccy, L=[];
+  if(S.nx)L.push(S.nx.was!=null&&S.nx.res&&S.nx.res!=='in'?`צפי האנליסטים לרבעון הבא ${S.nx.res==='down'?'ירד':'עלה'}: רווח למניה ${repEps(S.nx.now,c)} במקום ${repEps(S.nx.was,c)} לפני הדוח.`
+    :`צפי האנליסטים לרבעון הבא: רווח למניה ${repEps(S.nx.now,c)}${S.nx.was!=null?', כמו לפני הדוח':''}.`);
+  if(S.guid)L.push(S.guid);
+  if(S.rx){const p=S.rx.pct, past=!!S.rx.fin; L.push(`המניה ${p<0?(past?'ירדה':'יורדת'):p>0?(past?'עלתה':'עולה'):'ללא שינוי'}${p?` ב-${Math.abs(p).toFixed(1)}%`:''} ${REPRX[S.rx.k]||''}${S.rx.t&&!past?`, נכון ל-${repHm(S.rx.t)}`:''}.`)}
+  return L}
+// one line, for the home page and the alerts
+function repOne(S){if(!S)return ''; const c=S.ccy, P=[];
+  if(S.eps.a!=null)P.push(`רווח למניה ${repEps(S.eps.a,c)}${S.eps.res?` (${REPRES[S.eps.res]})`:''}`);
+  if(S.rev.a!=null)P.push(`הכנסות ${repBig(S.rev.a,c)}${S.rev.res?` (${REPRES[S.rev.res]})`:''}`);
+  if(S.rx&&S.rx.pct)P.push(`המניה ${S.rx.pct>0?'+':'−'}${Math.abs(S.rx.pct).toFixed(1)}% ${S.rx.k==='post'?'באפטר מרקט':S.rx.k==='pre'?'בפרה מרקט':'ביום שאחרי'}`);
+  return P.join(' · ')}
+// the two figures: what was expected, what came, and the verdict
+function repCardsH(S){const c=S.ccy;
+  const card=(t,e,a,res,sp,wait)=>`<div class="rpc"><div class="k">${t}</div><div class="rpl"><span>צפי</span><b>${e!=null?esc(e):'—'}</b></div><div class="rpl"><span>בפועל</span><b>${a!=null?esc(a):'—'}</b></div>${res?`<span class="rpt ${res}">${REPRES[res]}${sp!=null&&res!=='in'?` · <bdi>${sp>0?'+':'−'}${Math.abs(sp).toFixed(1)}%</bdi>`:''}</span>`:wait?`<span class="rpt wait">${wait}</span>`:''}</div>`;
+  return `<div class="rpg">${card('רווח למניה',repEps(S.eps.e,c),repEps(S.eps.a,c),S.eps.res,S.eps.s,S.eps.e==null?'אין צפי במקור':'')}${card('הכנסות',repBig(S.rev.e,c),repBig(S.rev.a,c),S.rev.res,S.rev.s,S.rev.pend?'ההכנסות עוד לא עודכנו במקור':S.rev.e==null?'אין צפי שנשמר לפני הדוח':'')}</div>`}
 function repBlock(k,rs){
-  const r=rs&&rs.rep, today=tzDay('Asia/Jerusalem'), due=rs&&rs.next&&rs.next<=today&&!(r&&r.at&&r.at>=rs.next), site=!!window.__tc;
+  const r=rs&&rs.rep, today=tzDay('Asia/Jerusalem'), due=rs&&rs.next&&rs.next<=today&&!(r&&r.at&&r.at>=rs.next), site=!!window.__tc, hid='hRep_'+esc(k).replace(/[^A-Za-z0-9_-]/g,'_');
   const chk=site?`<button type="button" class="btn sm" data-repchk="${esc(k)}"${REPCHK[k]==='busy'?' disabled':''}>${REPCHK[k]==='busy'?'בודק…':'בדוק אם יצא דוח חדש'}</button>`:'';
   const msg=REPCHK[k]&&REPCHK[k]!=='busy'?`<p class="note" role="status">${esc(REPCHK[k])}</p>`:'';
-  if(!r)return `<div class="row" style="margin-top:12px"><h3>הדוח הרבעוני האחרון</h3></div><p class="note">${due?`הדוח שהיה צפוי ב-${dmy(rs.next)} עוד לא נקלט. הדף בודק כמה פעמים ביום אחרי מועד הדוח.`:'עוד אין לנייר הזה דוח רבעוני שנקלט.'}</p><div class="acts" style="justify-content:flex-start">${chk}</div>${msg}`;
-  const ai=r.ai&&((r.ai.findings||[]).length||r.ai.explain)?r.ai:null, F=ai&&ai.findings&&ai.findings.length?ai.findings:(r.find||[]);
-  const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(a.title)}</bdi></a><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):typeof nw==='string'?`<p class="note">${esc(nw)}</p>`:'';
-  return `<section class="repbox" aria-labelledby="hRep_${esc(k).replace(/[^A-Za-z0-9_-]/g,'_')}">
-    <h3 id="hRep_${esc(k).replace(/[^A-Za-z0-9_-]/g,'_')}">${r.at?`פורסם דוח ב-${dmy(r.at)}.${r.at.slice(0,4)}`:'הדוח האחרון'}${r.label?` · ${esc(r.label)}`:''}</h3>
-    ${F.length?`<h4>הממצאים</h4><ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
-    ${ai&&ai.explain?`<h4>הסבר על הדוח</h4><p>${tx(ai.explain)}</p>`:`<p class="note">${site?'ההסבר המילולי נכתב בכמה שעות אחרי הדוח. עד אז מוצגים הממצאים מהמספרים.':''}</p>`}
-    <div class="acts" style="justify-content:flex-start">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
-    <p class="note">${due?`נראה שיש דוח חדש (מועד ${dmy(rs.next)}) שעוד לא נקלט. `:''}${ai?'הממצאים וההסבר נכתבו אוטומטית על ידי צ׳יקו':'הממצאים חושבו בדף'} מתוך המספרים בדוח וצפי האנליסטים (${esc(rs.source||'Yahoo Finance')})${ai&&ai.headlines?' וכותרות של כתבות':''}. בלי התחזית של החברה ודברי ההנהלה, אלא אם הם בכותרות. לא ייעוץ השקעות.</p>
+  const dueTxt=due?`החברה אמורה הייתה לפרסם דוח ב-${dmy(rs.next)}, והוא עוד לא נקלט. בימי הדוחות הדף בודק כל 20 דקות, והניתוח יופיע כאן.`:'';
+  if(!r)return `<section class="repbox" aria-labelledby="${hid}"><h3 id="${hid}">ניתוח הדוח האחרון</h3><p class="note">${dueTxt||(rs&&rs.next?`עוד אין לנייר הזה דוח שנקלט. הדוח הבא צפוי ב-${dmy(rs.next)}.`:'עוד אין לנייר הזה דוח רבעוני שנקלט.')}</p><div class="acts" style="justify-content:flex-start">${chk}</div>${msg}</section>`;
+  const S=repSumOf(r), ai=r.ai&&((r.ai.findings||[]).length||r.ai.explain)?r.ai:null, F=ai&&ai.findings&&ai.findings.length?ai.findings:(r.find||[]), X=repXLines(S);
+  const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(a.title)}</bdi></a><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
+  const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
+  return `<section class="repbox" aria-labelledby="${hid}">
+    <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
+    ${due?`<p class="note">${dueTxt}</p>`:''}
+    ${repCardsH(S)}
+    ${X.length?`<ul class="rpx">${X.map(x=>`<li>👈 ${repH(x)}</li>`).join('')}</ul>`:''}
+    ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
+    <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
+      ${F.length?`<ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
+      <div class="acts" style="justify-content:flex-start;margin-top:8px">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
+      ${old.length?`<h4>הדוחות הקודמים</h4><ul class="rpold">${old.map(x=>{const o=x.sum||repSumOf(x); return `<li><b>${esc(x.label||x.q)}</b>${x.at?` · ${dmy(x.at)}`:''}${o?` · ${repH(repOne(o))||'בלי נתונים'}`:''}</li>`}).join('')}</ul>`:''}
+    </details>
+    <p class="note">המספרים מהדוח, וצפי האנליסטים כפי שהיה לפני הדוח (${esc(rs.source||'Yahoo Finance')}). ${ai?'"מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים'+(ai.headlines?' ומכותרות של כתבות':'')+'. ':''}צפי האנליסטים הוא של אנליסטים, לא תחזית של החברה; תחזית החברה מופיעה רק כשהיא בכותרות, ונאמר כך. זה ניתוח, לא המלצה לקנות או למכור.</p>
   </section>`;
 }
 async function repNews(k){if(!window.__tc)return; NEWSX[k]='busy'; try{renderSec()}catch(e){}
@@ -18558,7 +18612,7 @@ function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){co
 // ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
 // switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
 let MAILST=null;
-const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: מתי, הממצאים וההסבר, כמה שעות אחרי הדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
+const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
 const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
 function renderMail(){
   const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
@@ -20856,11 +20910,11 @@ function depLineH(){const di=depInfo(); if(!di||depDue(di)||di.days<1||di.days>3
 const repSeenGet=()=>{try{return new Set(JSON.parse(localStorage.getItem('tr_repban')||'[]'))}catch(e){return new Set()}};
 function newReports(days){const held=new Set(((P&&P.positions)||[]).map(p=>p.sym)); let mk=[]; try{mk=wmarks()}catch(e){}
   const from=new Date(Date.now()-(days||10)*864e5).toISOString().slice(0,10);
-  return ((RS&&RS.events)||[]).filter(e=>e&&e.q&&e.date>=from&&(held.has(e.sym)||mk.includes(e.sym))).map(e=>({...e,key:'rep:'+e.sym+':'+e.q,first:(e.ai&&e.ai.findings&&e.ai.findings[0])||(e.find||[])[0]||e.text}))}
+  return ((RS&&RS.events)||[]).filter(e=>e&&e.q&&e.date>=from&&(held.has(e.sym)||mk.includes(e.sym))).map(e=>({...e,key:'rep:'+e.sym+':'+e.q,first:(e.sum&&repOne(e.sum))||(e.ai&&e.ai.findings&&e.ai.findings[0])||(e.find||[])[0]||e.text}))}
 function renderRepBan(){const el=$('repBan'); if(!el)return; if(!notifOn('דוחות')||$('deskSec')){el.hidden=true;return}
   const seen=repSeenGet(), L=newReports(10).filter(e=>!seen.has(e.key)).slice(0,3); if(!L.length){el.hidden=true;return}
   const was=el.hidden;
-  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${tx(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לממצאים ולהסבר</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
+  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לניתוח הדוח</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
   el.hidden=false; if(was)try{chime('sys')}catch(e){}}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-repban]'); if(!b)return; const S0=repSeenGet(); for(const k of b.dataset.repban.split(','))S0.add(k);
   try{localStorage.setItem('tr_repban',JSON.stringify([...S0].slice(-200)))}catch(e){} renderRepBan(); try{render()}catch(e){}});
@@ -21714,9 +21768,9 @@ function renderSec(){SECHOV=-1;
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}">${r[1]}</button>`).join('')}</div>
     <div class="chread" id="secRead" aria-live="polite"></div>
     <canvas id="secChart" aria-label="גרף מחיר"></canvas><p class="note" id="secChartNote"></p>
+    ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${it.t==='I'?'':secMine(it,on)}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
-    ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${moreH}
     <p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
   drawSec();
@@ -22450,7 +22504,7 @@ function todoOf(m,A,T){
     L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:`${tx(cut(a[2]))}`,b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
-    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${tx(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לממצאים ולהסבר ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
+    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
   if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל: עד ${nn(pct(R.maxPos,0))} לנייר, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
   const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
   const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});
@@ -22560,6 +22614,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-22.1',at:'2026-10-22',t:'ניתוח של כל דוח כספי',d:'כשחברה מפרסמת דוח: רווח למניה והכנסות מול הצפי של האנליסטים לפני הדוח, הצפי לרבעון הבא לפני ואחרי, ואיך המניה הגיבה. מניה שבתיק או במעקב מקבלת הודעה בדף הבית ומייל, וכל מניה מקבלת את הניתוח בדף שלה, מתחת לגרף.',go:'srch'},
   {v:'2026-10-21.5',at:'2026-10-21',t:'ניירות ישראליים בחיפוש',d:'מניות מתל אביב בשמות בעברית, מדדים (ת״א 35, ת״א 125, S&P 500 ועוד) וקרנות נאמנות וקרנות סל לפי שם או מספר, עם מחיר רשמי ממאיה וקישורים למאיה, לפאנדר ולביזפורטל.',go:'srch'},
   {v:'2026-10-21.4',at:'2026-10-21',t:'ההעדפות נשמרות בחשבון',d:'הכללים, היעדים ואיך בחרת לראות את הדף נשמרים בחשבון ומופיעים כך בכל מכשיר. תוקנה גם תקלה שבה שינוי שנעשה בזמן שמירה קודמת הלך לאיבוד.'},
   {v:'2026-10-21.4',at:'2026-10-21',t:'נגישות',d:'בהגדרות ← הפרופיל שלי: טקסט גדול או גדול מאוד, ניגודיות גבוהה ופחות תנועה.',go:'a11y'},

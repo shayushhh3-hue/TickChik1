@@ -20,9 +20,10 @@ export const SCHEDULE=[
   {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
   // analysts' views and company figures, after the US close: Tuesday to Saturday at 01:15
   {name:'research',when:p=>p.wd>=2&&p.wd<=6&&p.h===1&&p.min===15, run:(s,o)=>researchTask(s,o)},
-  // a company's report within hours: the securities whose report date has come, after the US close (00:20), in the morning,
-  // after the pre-market reports (15:20) and in the evening
-  {name:'earnings',when:p=>[0,7,15,19].includes(p.h)&&p.min===20, run:(s,o)=>earningsTask(s,o)},
+  // a company's report soon after it is out: only the securities whose report date has come (and the reports of the last
+  // days still waiting for their revenue, the e-mail or the share's move). Every 20 minutes when the US reports come out
+  // (before the open: 13:00-16:40, after the close: 22:00-01:40, Israel time), and in the morning and the evening
+  {name:'earnings',when:p=>(p.min%20===0&&((p.h>=13&&p.h<=16)||p.h>=22||p.h<=1))||([7,10,19].includes(p.h)&&p.min===20), run:(s,o)=>earningsTask(s,o)},
   // the indices for "האם אני עושה טוב?", after New York's close
   {name:'bench',   when:p=>p.h===0&&p.min===35, run:(s,o)=>benchTask(s,o)},
   // the Israeli securities for the search (with a TASE key), before the morning

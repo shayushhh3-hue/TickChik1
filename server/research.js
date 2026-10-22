@@ -2,7 +2,7 @@
 // It is not an official API: Yahoo can change or refuse it at any time. When an update fails the last values stay,
 // with their date, and the page says how old they are. Numbers in, numbers out: nothing here is advice.
 import {tickerFor} from '../shared/quotes.js';
-import {findingsOf, factsOf, explainReport, reportsMail} from './explain.js';
+import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MODS='financialData,defaultKeyStatistics,summaryDetail,calendarEvents,recommendationTrend,price,earnings,earningsHistory,earningsTrend';
@@ -57,6 +57,13 @@ export function figures(res,now=new Date()){
     next:dates.find(d=>d>=today)||null,revg:pc(fd.revenueGrowth),epsg:pc(fd.earningsGrowth),beta:r2(val(sd.beta)??val(ks.beta)),
     price:px!=null?r2(px*k):null,chg52:pc(ks['52WeekChange']),name:pr.longName||pr.shortName||null};
   if(tr)out.votes={buy:(val(tr.strongBuy)||0)+(val(tr.buy)||0),hold:val(tr.hold)||0,sell:(val(tr.sell)||0)+(val(tr.strongSell)||0)};
+  // 22.10: what the analysts expect for the coming report (kept, so the report can be set against what was expected before
+  // it), and the share's moves in and around the session (how it moved after a report: after hours, before the open, the day)
+  {const T=(((res.earningsTrend||{}).trend)||[]), tq=p=>{const t=T.find(x=>x.period===p); return t?{end:t.endDate||null,eps:r2(val((t.earningsEstimate||{}).avg)),rev:val((t.revenueEstimate||{}).avg)}:null};
+   const q0=tq('0q'), q1=tq('+1q'), d=dates.find(x=>x>=today)||dates.at(-1)||null, eE=r2(val(ce.earningsAverage)), eR=val(ce.revenueAverage);
+   if(d||q0)out.est={date:d,eps:eE??(q0&&q0.eps)??null,rev:eR??(q0&&q0.rev)??null,q:q0,nq:q1,at:now.toISOString()}}
+  {const t=x=>{const v=val(x); return v>0?v:null};
+   out.mk={st:pr.marketState||null,reg:pc(pr.regularMarketChangePercent),regT:t(pr.regularMarketTime),post:pc(pr.postMarketChangePercent),postT:t(pr.postMarketTime),pre:pc(pr.preMarketChangePercent),preT:t(pr.preMarketTime)}}
   const rp=reportOf(res); if(rp)out.rep=rp;
   return out;
 }
@@ -73,7 +80,8 @@ export function reportOf(res){
   const T=(((res.earningsTrend||{}).trend)||[]), tp=k=>{const t=T.find(x=>x.period===k); if(!t)return null; const ee=t.earningsEstimate||{}, re=t.revenueEstimate||{};
     const o={end:t.endDate||null,eps:r2(val(ee.avg)),epsN:val(ee.numberOfAnalysts)||null,rev:val(re.avg),revG:pc(re.growth),g:pc(t.growth)}; return o.eps!=null||o.rev!=null?o:null};
   const last=eps.at(-1)||null, lf=fin.at(-1)||null, pf=fin.at(-2)||null;
-  return {q:last?last.q:null,label:last?lblQ(last.q):(lf?lf.d:null),ccy,
+  const ec=((((E.earningsChart||{}).quarterly)||[]).map(x=>String(x&&x.date||'')).filter(Boolean)), ecl=ec.at(-1)||null;
+  return {q:last?last.q:null,label:last?lblQ(last.q):(lf?lf.d:null),ccy,finQ:lf&&ecl?lf.d===ecl:null,
     eps:last?{a:last.a,e:last.e,s:last.s}:null,
     rev:lf?lf.rev:null,ni:lf?lf.ni:null,revQoQ:lf&&pf&&pf.rev>0?r2((lf.rev/pf.rev-1)*100):null,finLabel:lf?lf.d:null,
     hist:eps.slice(-4),fin:fin.slice(-4),
@@ -94,6 +102,34 @@ function merge(old,neu){const o={...(old||{})}; for(const [k,v] of Object.entrie
 const docKey=k=>'research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_');
 export const tick=(k,map)=>k.startsWith('TLV:')?(map[k]||k.slice(4)+'.TA'):tickerFor(k,null,map);
 export const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^TLV:[A-Z0-9.]{1,10}$/.test(k))&&!/^TA\d+$/.test(k);
+
+// ---- 22.10: a report set against what was expected before it ----
+// the estimates for this report: the latest snapshot taken for its date (on or after the quarter's end, not after today),
+// or the one Yahoo still shows for this quarter; and the analysts' estimate for the quarter after it, as it was before
+const KEEP=['at','seen','ai','ev','revE','epsE','nxW','rx','mailed','finWas'];
+export function repEst(r,C,today){
+  const qm=String(r.q).slice(0,7), byAt=(a,b)=>String(a.at||'')<String(b.at||'')?1:-1;
+  const E=C.filter(e=>e&&e.date&&e.date>=r.q&&e.date<=today).sort(byAt)[0]||C.filter(e=>e&&e.q&&e.q.end&&String(e.q.end).slice(0,7)===qm).sort(byAt)[0]||null;
+  if(E){if(!(r.eps&&r.eps.e!=null)&&E.eps!=null)r.epsE=E.eps; if(E.rev!=null)r.revE=E.rev; if(E.q&&E.q.end&&String(E.q.end).slice(0,7)===qm&&E.nq)r.nxW=E.nq}
+  if(r.revE==null){const q=C.map(e=>e&&e.q).find(q=>q&&q.end&&String(q.end).slice(0,7)===qm&&q.rev!=null); if(q)r.revE=q.rev}
+  return r;
+}
+// how the share moved after the report: the first regular session after it was seen; until then the move after hours (a
+// report after the close) or before the open (a report before it), whichever is the latest. Unknown when the report was
+// found days after it came out
+export function rxOf(r,mk){
+  const old=r.rx||null; if(!mk||!r.seen||!r.at)return old; if(old&&old.fin)return old;
+  const seen=Date.parse(r.seen)/1000, day=x=>new Date(x*1000).toISOString().slice(0,10);
+  if(!(seen>0)||seen-Date.parse(r.at+'T00:00:00Z')/1000>3*86400)return old;
+  if(old&&old.k==='day'&&mk.regT&&day(mk.regT)>old.d)return {...old,fin:true};
+  if(mk.reg!=null&&mk.regT&&mk.regT>seen)return {k:'day',pct:mk.reg,t:mk.regT,d:day(mk.regT),fin:!!mk.st&&mk.st!=='REGULAR'};
+  const ext=[];
+  if(mk.post!=null&&mk.postT&&mk.regT&&mk.postT>mk.regT&&day(mk.regT)>=r.at)ext.push({k:'post',pct:mk.post,t:mk.postT});
+  if(mk.pre!=null&&mk.preT&&(!mk.regT||mk.preT>mk.regT)&&day(mk.preT)>=r.at)ext.push({k:'pre',pct:mk.pre,t:mk.preT});
+  ext.sort((a,b)=>b.t-a.t); return ext[0]||old;
+}
+// an earlier report, as it is kept in the list of past reports
+const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,ccy:o.ccy||null,sum:o.sum||repSum(o),ai:o.ai&&(o.ai.explain||o.ai.guidance)?{explain:o.ai.explain||'',guidance:o.ai.guidance||''}:null});
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
@@ -120,27 +156,47 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
   const fresh=[], words=[], posName={}; for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
-  for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{};
-    if(v.rep&&v.rep.q){const was=old.rep&&old.rep.q; if(was===v.rep.q){v.rep.at=old.rep.at||null; if(old.rep.ai)v.rep.ai=old.rep.ai} else{v.rep.at=old.next&&old.next<=iso.slice(0,10)?old.next:iso.slice(0,10); if(was||old.next)fresh.push([k,v.rep])}
+  for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{}, today=iso.slice(0,10);
+    // the estimates for the coming report: when its date moves on, the one before is kept (the report it was for may come later)
+    if(v.est){if(old.est&&old.est.date&&v.est.date!==old.est.date)v.estPrev=old.est; else if(old.estPrev)v.estPrev=old.estPrev}
+    if(v.rep&&v.rep.q){const o=old.rep||null, was=o&&o.q;
+      if(was===v.rep.q){for(const f of KEEP)if(o[f]!==undefined)v.rep[f]=o[f]}
+      else{v.rep.at=old.next&&old.next<=today?old.next:today; v.rep.seen=iso; v.rep.finWas=o?o.finLabel||null:null;
+        repEst(v.rep,[old.est,old.estPrev,v.est,v.estPrev],today);
+        if(o&&o.q)v.reps=[repShort(o)].concat((old.reps||[]).filter(x=>x&&x.q!==o.q)).slice(0,8);   // the earlier reports, kept
+        if(was||old.next){v.rep.ev=true; fresh.push([k,v.rep])}}
+      // the revenue Yahoo has is still the quarter before: its quarterly chart has not moved since the report before, and
+      // it is behind the earnings chart
+      v.rep.revPend=v.rep.finQ===false&&(v.rep.finWas==null||v.rep.finLabel===v.rep.finWas);
+      v.rep.rx=rxOf(v.rep,v.mk);
       v.rep.find=findingsOf(v.rep);
-      // the explanation: for a new report, and for a recent one (three weeks) that has none yet; a few per run
-      const recent=v.rep.at&&(now-new Date(v.rep.at+'T12:00:00Z'))<21*864e5;
-      if(!v.rep.ai&&recent&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v])}
+      // the explanation: for a new report, and for a recent one (three weeks) that has none yet; a few per run. A report
+      // whose revenue is not in yet waits for it a few hours
+      const recent=v.rep.at&&(now-new Date(v.rep.at+'T12:00:00Z'))<21*864e5, wait=v.rep.revPend&&v.rep.seen&&(now-Date.parse(v.rep.seen))<8*36e5;
+      if(!v.rep.ai&&recent&&!wait&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v]);
+      v.rep.sum=repSum(v.rep)}
     store.setDoc(p,{...merge(old,v),sym:k,source:SOURCE,updatedAt:iso},{silent:true})}
   for(const [k,v] of words){let H=[]; try{H=await newsFor(tick(k,map),{fetch:f})}catch(e){}
-    const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai=ai;
+    const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai=ai; v.rep.sum=repSum(v.rep);
     const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:v.rep},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
-  if(heldGot.length||fresh.length||words.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
+  const touched=Object.entries(got).filter(([k,v])=>v.rep&&v.rep.ev&&v.rep.seen&&(now-Date.parse(v.rep.seen))<21*864e5);
+  if(heldGot.length||fresh.length||words.length||touched.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
     for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:SOURCE,updatedAt:iso};
-    const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain}:null,source:SOURCE});
-    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>{const w=words.find(([k])=>k===e.sym); return w&&e.q===w[1].rep.q&&w[1].rep.ai?{...e,ai:{findings:w[1].rep.ai.findings,explain:w[1].rep.ai.explain}}:e})
+    const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
+    const upd=new Map(touched.map(([k,v])=>[k+'|'+v.rep.q,evOf([k,v.rep])]));
+    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>upd.get(e.sym+'|'+e.q)||e)
       .concat(fresh.map(evOf)).sort((a,b)=>a.date<b.date?1:-1).slice(0,40);
     store.setDoc('research/latest',{...L,companies:comp,events:ev,source:SOURCE,updatedAt:iso})}
-  // the owner's e-mail (with consent for "earnings"): the new reports of what the owner holds or follows
-  if(fresh.length){const ou=(store.users?store.users():[]).find(u=>u.role==='owner'), mine=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(x=>x.sym));
+  // the owner's e-mail (with consent for "earnings"): the new reports of what the owner holds or follows, once each; a
+  // report whose revenue is not in yet waits for it up to eight hours
+  {const ou=(store.users?store.users():[]).find(u=>u.role==='owner'), mine=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(x=>x.sym));
     if(ou){const w=store.getDoc('watch/'+ou.id).data||{}; for(const kk of ['held','marks','syms'])for(const x of (w[kk]||[]))mine.add(x)}
-    const items=fresh.filter(([k])=>mine.has(k)).map(([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,rep:r}));
+    const items=[];
+    for(const [k,v] of Object.entries(got)){const r=v.rep; if(!r||!r.ev||r.mailed||!r.seen)continue;
+      if(r.revPend&&(now-Date.parse(r.seen))<8*36e5)continue;
+      r.mailed=iso; const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:r},{silent:true});
+      if(mine.has(k))items.push({sym:k,name:posName[k]||v.name||k,rep:r})}
     if(items.length)try{await mail(store,items,log)}catch(e){log('report mail failed: '+(e&&e.message||e))}}
   const uniGot=uni.filter(k=>got[k]);
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
@@ -161,15 +217,17 @@ const bigN=(x,c)=>{if(x==null)return null; const a=Math.abs(x), sy=c==='USD'||!c
 export function repLine(r){
   const e=r.eps, parts=[`דוח ${r.label||''}`.trim()];
   if(e&&e.a!=null)parts.push(`רווח למניה ${e.a}${e.e!=null?` מול צפי ${e.e}`:''}${e.s!=null?` (${e.s>0?'+':''}${e.s}%, ${e.s>=0?'מעל':'מתחת'} לצפי)`:''}`);
-  if(r.rev!=null)parts.push(`הכנסות ${bigN(r.rev,r.ccy)}${r.revQoQ!=null?` (${r.revQoQ>0?'+':''}${r.revQoQ}% מהרבעון הקודם)`:''}`);
+  if(r.rev!=null&&!r.revPend)parts.push(`הכנסות ${bigN(r.rev,r.ccy)}${r.revQoQ!=null?` (${r.revQoQ>0?'+':''}${r.revQoQ}% מהרבעון הקודם)`:''}`);
   return parts.join(' · ');
 }
 // the days after a report: only the securities whose report date has come (held, followed, on the list), so a report is in
 // the page within hours, not at the night's full run
 export function dueReports(store,now=new Date()){
   const today=now.toISOString().slice(0,10), from=new Date(now.getTime()-5*864e5).toISOString().slice(0,10), out=[];
-  for(const d of store.listDocs('research')){const x=d.data||{}; if(!d.id.startsWith('s_')||!x.sym||!x.next)continue;
-    if(x.next>today||x.next<from)continue; if(x.rep&&x.rep.at&&x.rep.at>=x.next)continue; out.push(x.sym)}
+  for(const d of store.listDocs('research')){const x=d.data||{}, r=x.rep; if(!d.id.startsWith('s_')||!x.sym)continue;
+    const age=r&&r.seen?now-Date.parse(r.seen):Infinity;
+    if(r&&r.ev&&age<3*864e5&&(r.revPend||!r.mailed||(!(r.rx&&r.rx.fin)&&age<36*36e5))){out.push(x.sym);continue}
+    if(!x.next)continue; if(x.next>today||x.next<from)continue; if(r&&r.at&&r.at>=x.next)continue; out.push(x.sym)}
   return out;
 }
 export async function earningsTask(store,o={}){const only=dueReports(store,o.now||new Date()); if(!only.length){(o.log||(()=>{}))('earnings: no report due');return {due:0}} return researchTask(store,{...o,only,budgetMs:6*60e3,pause:400})}
