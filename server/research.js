@@ -62,6 +62,12 @@ export function figures(res,now=new Date()){
   {const T=(((res.earningsTrend||{}).trend)||[]), tq=p=>{const t=T.find(x=>x.period===p); return t?{end:t.endDate||null,eps:r2(val((t.earningsEstimate||{}).avg)),rev:val((t.revenueEstimate||{}).avg)}:null};
    const q0=tq('0q'), q1=tq('+1q'), d=dates.find(x=>x>=today)||dates.at(-1)||null, eE=r2(val(ce.earningsAverage)), eR=val(ce.revenueAverage);
    if(d||q0)out.est={date:d,eps:eE??(q0&&q0.eps)??null,rev:eR??(q0&&q0.rev)??null,q:q0,nq:q1,at:now.toISOString()}}
+  // 22.10: the dividend's days (the ex-dividend day, the payment day) and the last dividend per share; whether the report
+  // date is still an estimate (a range of days, or not confirmed by the company)
+  {const ds=x=>{const v=val(x); return v>0?new Date(v*1000).toISOString().slice(0,10):null}, cv=res.calendarEvents||{};
+   const ex=ds(cv.exDividendDate)||ds(sd.exDividendDate), pay=ds(cv.dividendDate), la=val(ks.lastDividendValue), rate=val(sd.dividendRate)??val(sd.trailingAnnualDividendRate);
+   if(ex||pay||la!=null)out.div={ex,pay,rate:rate!=null?r2(rate*k):null,last:la!=null?{amt:Math.round(la*k*1e4)/1e4,date:ds(ks.lastDividendDate)}:null};
+   const ie=ce.isEarningsDateEstimate; if(out.next)out.nextEst=ie===true||(ie&&ie.raw===true)||dates.filter(d=>d>=today).length>1}
   {const t=x=>{const v=val(x); return v>0?v:null};
    out.mk={st:pr.marketState||null,reg:pc(pr.regularMarketChangePercent),regT:t(pr.regularMarketTime),post:pc(pr.postMarketChangePercent),postT:t(pr.postMarketTime),pre:pc(pr.preMarketChangePercent),preT:t(pr.preMarketTime)}}
   const rp=reportOf(res); if(rp)out.rep=rp;
@@ -159,6 +165,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{}, today=iso.slice(0,10);
     // the estimates for the coming report: when its date moves on, the one before is kept (the report it was for may come later)
     if(v.est){if(old.est&&old.est.date&&v.est.date!==old.est.date)v.estPrev=old.est; else if(old.estPrev)v.estPrev=old.estPrev}
+    // the dividends before this one: kept when Yahoo moves on to the next ex-dividend day (for the calendar)
+    if(v.div&&old.div&&old.div.ex&&old.div.ex!==v.div.ex)v.divHist=[old.div].concat((old.divHist||[]).filter(x=>x&&x.ex!==old.div.ex)).slice(0,8);
     if(v.rep&&v.rep.q){const o=old.rep||null, was=o&&o.q;
       if(was===v.rep.q){for(const f of KEEP)if(o[f]!==undefined)v.rep[f]=o[f]}
       else{v.rep.at=old.next&&old.next<=today?old.next:today; v.rep.seen=iso; v.rep.finWas=o?o.finLabel||null:null;

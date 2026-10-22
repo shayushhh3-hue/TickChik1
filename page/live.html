@@ -181,6 +181,13 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .flg.closed::after{content:"";position:absolute;inset:45% -10%;height:2px;background:var(--loss);transform:rotate(-45deg)}
 .calgrid .dc .fl .flg{width:16px;height:16px}
 .calleg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);align-items:center}
+/* 22.10: the days of the held securities: a report (purple) and a dividend (green) under the two flags */
+.calgrid .dc .evs{display:flex;gap:3px;justify-content:center;min-height:7px} .calgrid .dc .evs i,.calleg i.ev{width:7px;height:7px;border-radius:50%;display:inline-block}
+.ev.rep,.calgrid .dc .evs i.rep{background:var(--info-c)} .ev.div,.calgrid .dc .evs i.div{background:var(--ok-c)}
+.calev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5}
+.calev li{display:flex;gap:8px;align-items:flex-start} .calev li>i.ev{width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px}
+.calev button.lnk{font:inherit;background:none;border:0;padding:0;color:var(--navy);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.calday .calev{margin-top:6px}
 .calleg span{display:inline-flex;gap:6px;align-items:center}
 .calday{border-inline-start:4px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.55}
 .calday b{font-weight:700}
@@ -22039,6 +22046,26 @@ const flagH=(k,st)=>`<span class="flg ${st}" role="img" aria-label="${MKN[k]}: $
 const HMON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let CALM=null, CALSEL=null;
 const mkLine=(k,x)=>x.st==='closed'?`<b>${MKN[k]}: אין מסחר</b>${x.why?' · '+esc(x.why):''}`:`<b>${MKN[k]}: ${x.h}</b>${x.st==='short'?' · יום מקוצר':''}${x.why?' · '+esc(x.why):''}`;
+// the days of the securities held: the reports (the next one, from the analysts' calendar, and the ones that came out) and
+// the dividends (the ex-dividend day, the payment day, and the ones that came in, from the statements)
+function calEvents(){
+  const held=[...new Set(((P&&P.positions)||[]).map(p=>p.sym))], C=(RS&&RS.companies)||{}, E=[], seen=new Set();
+  const add=e=>{const k=e.d+'|'+e.k+'|'+e.sym; if(!e.d||seen.has(k))return; seen.add(k); E.push(e)};
+  for(const sym of held){const c=C[sym]; if(!c)continue; const r=c.rep;
+    if(r&&r.at)add({d:r.at,k:'repd',sym,label:r.label||'',S:repSumOf(r)});
+    for(const o of c.reps||[])if(o&&o.at)add({d:o.at,k:'repd',sym,label:o.label||'',S:o.sum||null});
+    if(c.next&&!(r&&r.at&&r.at>=c.next))add({d:c.next,k:'rep',sym,est:!!c.nextEst});
+    for(const x of [c.div].concat(c.divHist||[]))if(x){const amt=x.last&&x.last.date&&x.last.date===x.ex?x.last.amt:null;
+      if(x.ex)add({d:x.ex,k:'ex',sym,amt,last:x.last&&x.last.amt!=null?x.last.amt:null}); if(x.pay)add({d:x.pay,k:'pay',sym,amt})}}
+  for(const A of (HS&&HS.accounts)||[])for(const t of A.trades||[])if(t&&t.div&&t.date&&t.sym)add({d:String(t.date).slice(0,10),k:'got',sym:t.sym,net:+t.total>0?+t.total:null,ccy:t.ccy||(A.ccy==='USD'?'USD':'ILS')});
+  return E.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
+const CALEVK={rep:'rep',repd:'rep',ex:'div',pay:'div',got:'div'};
+function calEvTxt(e,today){const n=`<button type="button" class="lnk" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`, ccy=(P&&P.positions||[]).find(p=>p.sym===e.sym)?.ccy==='ILS'?'ILS':'USD';
+  if(e.k==='rep')return `${e.d<today?'היה צפוי ':''}דוח כספי: ${n}${e.est?' · מועד משוער, עד שהחברה תאשר':''}`;
+  if(e.k==='repd')return `פורסם דוח${e.label?' לרבעון '+esc(e.label):''}: ${n}${e.S&&repOne(e.S)?' · '+repH(repOne(e.S)):''}`;
+  if(e.k==='ex')return `יום אקס דיבידנד: ${n}${e.amt!=null?` · ${repH(repEps(e.amt,ccy))} למניה`:e.last!=null?` · הדיבידנד הקודם ${repH(repEps(e.last,ccy))} למניה`:''}${e.d>=today?' · כדי לקבל אותו צריך להחזיק במניה כבר בסוף יום המסחר שלפניו':''}`;
+  if(e.k==='pay')return `תשלום דיבידנד: ${n}${e.amt!=null?` · ${repH(repEps(e.amt,ccy))} למניה`:''}`;
+  return `התקבל דיבידנד: ${n}${e.net?` · ${repH(e.ccy==='ILS'?ils(e.net):'$'+(+e.net).toFixed(2))} נטו, לפי הדוח`:''}`}
 function renderCal(){
   const box=$('calBox'); if(!box)return; const today=tzDay('Asia/Jerusalem');
   if(!CALM)CALM=today.slice(0,7); if(!CALSEL)CALSEL=today;
@@ -22054,18 +22081,25 @@ function renderCal(){
   const card=k=>{const x=nowTxt(k); return `<div class="mk">${flagH(k,x.st==='open'?'open':'closed')}<div><b>${MKN[k]}: ${x.t}</b><span>${esc(x.s)}</span></div></div>`};
   let cells=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'].map(d=>`<div class="wd">${d}</div>`).join('');
   for(let i=0;i<lead;i++)cells+='<div class="dc out" aria-hidden="true"></div>';
-  const special=[];
-  for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6;
+  const special=[], EV=calEvents(), evOn=iso=>EV.filter(e=>e.d===iso), mine=EV.filter(e=>e.d.slice(0,7)===CALM);
+  const KN={rep:'דוח',repd:'דוח',ex:'יום אקס דיבידנד',pay:'תשלום דיבידנד',got:'דיבידנד שהתקבל'};
+  for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6, ev=evOn(iso), kinds=[...new Set(ev.map(e=>CALEVK[e.k]))];
     if(!we)for(const k of ['il','us'])if(D[k].st!=='open')special.push({iso,k,x:D[k]});
-    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span></button>`}
-  const S0=mktDay(CALSEL), selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}</div>`;
+    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}"></i>`).join('')}</span></button>`}
+  const S0=mktDay(CALSEL), evSel=evOn(CALSEL), evLi=L=>`<ul class="calev">${L.map(e=>`<li><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span>${calEvTxt(e,today)}</span></li>`).join('')}</ul>`;
+  const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
+  const held=((P&&P.positions)||[]).length;
+  const mineList=mine.length?`<ul class="calev">${mine.map(e=>`<li><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span><b>${dmy(e.d)}</b> · ${calEvTxt(e,today)}</span></li>`).join('')}</ul>`
+    :`<p class="note">${held?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>`;
   const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
   $('calSub').textContent='השעות לפי שעון ישראל';
   box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
     <div class="calhead"><button type="button" data-calmv="1" aria-label="החודש הבא">‹</button><h3>${HMON[M-1]} ${Y}</h3><button type="button" data-calmv="-1" aria-label="החודש הקודם">›</button></div>
     <div class="calgrid">${cells}</div>
-    <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span></div>
+    <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span></div>
     ${selTxt}
+    <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}
+    <p class="note">מועדי הדוחות והדיבידנדים מ-Yahoo Finance: מועד דוח הוא לפעמים משוער עד שהחברה מאשרת אותו, וסכום של דיבידנד עתידי ידוע רק כשהחברה מכריזה עליו (עד אז מוצג הדיבידנד הקודם). דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
     <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
     <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
 }
@@ -22573,7 +22607,7 @@ const GO=[
   {id:'pnl',l:'מי מרוויח ומי מפסיד',k:'רווח הפסד',tab:'risk',el:'hPnl'},
   {id:'co',l:'ניירות שזזים יחד',k:'מתאם יחד פיזור אמיתי',tab:'risk',el:'hCo'},
   {id:'state',l:'מה קורה בתיק',k:'מצב תמונה',tab:'state'},
-  {id:'cal',l:'לוח מסחר',k:'לוח שנה חג חגים פתוח סגור שעות מסחר בורסה',tab:'calendar'},
+  {id:'cal',l:'לוח מסחר',k:'לוח שנה חג חגים פתוח סגור שעות מסחר בורסה דיבידנד דיבידנדים אקס מועד דוח דוחות',tab:'calendar'},
   {id:'rules',l:'הכללים שלי',k:'כלל כללים סף ריכוז ירידה',tab:'settings',el:'hRules'},
   {id:'alloc',l:'יעדי הקצאה',k:'הקצאה יעד אחוזים',tab:'settings',el:'hAlloc'},
   {id:'notif',l:'התראות וצלילים',k:'התראה התראות צליל צלילים',tab:'settings',el:'hNotif'},
@@ -22614,6 +22648,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-22.2',at:'2026-10-22',t:'דוחות ודיבידנדים בלוח המסחר',d:'בלוח המסחר מסומנים הימים של המניות שבתיק: מתי יוצא הדוח הכספי (ומתי יצא), יום האקס דיבידנד, יום התשלום, ודיבידנדים שהתקבלו לפי הדוחות שלך. לחיצה על יום מראה מה יש בו, ולחיצה על שם המניה פותחת את הדף שלה.',go:'cal'},
   {v:'2026-10-22.1',at:'2026-10-22',t:'ניתוח של כל דוח כספי',d:'כשחברה מפרסמת דוח: רווח למניה והכנסות מול הצפי של האנליסטים לפני הדוח, הצפי לרבעון הבא לפני ואחרי, ואיך המניה הגיבה. מניה שבתיק או במעקב מקבלת הודעה בדף הבית ומייל, וכל מניה מקבלת את הניתוח בדף שלה, מתחת לגרף.',go:'srch'},
   {v:'2026-10-21.5',at:'2026-10-21',t:'ניירות ישראליים בחיפוש',d:'מניות מתל אביב בשמות בעברית, מדדים (ת״א 35, ת״א 125, S&P 500 ועוד) וקרנות נאמנות וקרנות סל לפי שם או מספר, עם מחיר רשמי ממאיה וקישורים למאיה, לפאנדר ולביזפורטל.',go:'srch'},
   {v:'2026-10-21.4',at:'2026-10-21',t:'ההעדפות נשמרות בחשבון',d:'הכללים, היעדים ואיך בחרת לראות את הדף נשמרים בחשבון ומופיעים כך בכל מכשיר. תוקנה גם תקלה שבה שינוי שנעשה בזמן שמירה קודמת הלך לאיבוד.'},

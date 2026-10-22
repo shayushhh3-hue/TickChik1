@@ -752,6 +752,24 @@ test('the report e-mail: the analysis in the lines of the market news, then what
     assert.deepEqual(L.slice(1,5),['צפי רווח למניה: אין במקור','רווח למניה בפועל: 0.87$','צפי הכנסות: 12.87 מיליארד דולר','הכנסות בפועל: עוד לא עודכנו במקור']);
   }finally{globalThis.fetch=f0; if(env0.k==null)delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY=env0.k; if(env0.to==null)delete process.env.MAIL_TO; else process.env.MAIL_TO=env0.to}
 });
+test('dividends for the calendar: the ex-dividend and payment days and the last dividend; the one before is kept when Yahoo moves on; a report date in a range is an estimate',async()=>{
+  const {researchTask,figures}=await import('../server/research.js'); const s=new Store(':memory:');
+  const R=x=>({raw:x}), Q=d=>R(Date.parse(d+'T00:00:00Z')/1000);
+  const ko=(ex,pay)=>({price:{currency:'USD'},financialData:{},defaultKeyStatistics:{lastDividendValue:R(0.51),lastDividendDate:Q('2026-09-15')},summaryDetail:{dividendRate:R(2.04),exDividendDate:Q(ex)},
+    calendarEvents:{exDividendDate:Q(ex),dividendDate:Q(pay),earnings:{earningsDate:[Q('2026-10-27'),Q('2026-10-29')]}}});
+  const f0=figures(ko('2026-09-15','2026-10-01'),new Date('2026-10-20T00:00:00Z'));
+  assert.deepEqual(f0.div,{ex:'2026-09-15',pay:'2026-10-01',rate:2.04,last:{amt:0.51,date:'2026-09-15'}}); assert.equal(f0.next,'2026-10-27'); assert.equal(f0.nextEst,true,'two days: not confirmed');
+  assert.equal(figures({...ko('2026-09-15','2026-10-01'),calendarEvents:{earnings:{earningsDate:[Q('2026-10-27')],isEarningsDateEstimate:false}}},new Date('2026-10-20T00:00:00Z')).nextEst,false);
+  // Tel Aviv: the dividend in agorot, kept in shekels
+  assert.equal(figures({price:{currency:'ILA'},financialData:{},summaryDetail:{},defaultKeyStatistics:{lastDividendValue:R(120)},calendarEvents:{}},new Date()).div.last.amt,1.2);
+  let Y=ko('2026-09-15','2026-10-01'); const f=async u=>{u=String(u); if(u.startsWith('https://fc.yahoo.com'))return new Response('',{status:404,headers:{'set-cookie':'A3=x; Path=/'}});
+    if(u.includes('getcrumb'))return new Response('Ab3cD.eF'); if(u.includes('quoteSummary/KO'))return new Response(JSON.stringify({quoteSummary:{result:[Y]}})); return new Response('',{status:500})};
+  s.setDoc('portfolio/main',{positions:[{sym:'KO'}]}); s.setDoc('research/latest',{companies:{},events:[]});
+  await researchTask(s,{fetch:f,now:new Date('2026-10-20T01:00:00Z'),pause:0,only:['KO'],explain:async()=>null,mail:async()=>true});
+  Y=ko('2026-11-28','2026-12-15'); await researchTask(s,{fetch:f,now:new Date('2026-11-02T01:00:00Z'),pause:0,only:['KO'],explain:async()=>null,mail:async()=>true});
+  const d=s.getDoc('research/s_KO').data; assert.equal(d.div.ex,'2026-11-28'); assert.deepEqual(d.divHist.map(x=>[x.ex,x.pay]),[['2026-09-15','2026-10-01']]);
+  assert.equal(s.getDoc('research/latest').data.companies.KO.divHist.length,1,'a holding carries them into the shared document');
+});
 test('analysts: when Yahoo will not open a session, nothing is overwritten and the status says so',async()=>{
   const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');
   s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]}); s.setDoc('research/latest',{companies:{NVDA:{rating:'Hold'}},updatedAt:'2026-10-09T13:14:53Z'});

@@ -573,6 +573,30 @@ test('the trading calendar: both markets per day, the month\'s special days, the
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the trading calendar with the held securities\' days: reports (the next one, the ones out) and dividends (ex-dividend, payment, the ones that came in)',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const L0=store.getDoc('research/latest').data, H0=store.getDoc('history/main').data, m=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'}).slice(0,7), d=n=>m+'-'+String(n).padStart(2,'0');
+  const C={...L0.companies, AAPL:{...(L0.companies.AAPL||{}),next:d(28),nextEst:true}, KO:{...(L0.companies.KO||{}),div:{ex:d(20),pay:d(27),last:{amt:0.51,date:d(1)}}},
+    JPM:{...(L0.companies.JPM||{}),rep:{q:'2026-09-30',label:'Q3 2026',at:d(14),ccy:'USD',eps:{a:5.07,e:4.85,s:4.5},rev:46.4e9,revE:45.1e9}}};
+  const H=JSON.parse(JSON.stringify(H0)); H.accounts.find(a=>a.acct==='blink').trades.push({date:d(3),sym:'KO',qty:0,px:0,ccy:'USD',div:true,total:1.9,tax:0.6});
+  store.setDoc('research/latest',{...L0,companies:C}); store.setDoc('history/main',H);
+  try{
+    const {ctx,pg}=await open(390); await pg.click('#btnCal'); await pg.waitForTimeout(500);
+    const cell=n=>pg.evaluate(x=>[...document.querySelectorAll(`#calBox [data-calday="${x}"] .evs i`)].map(i=>i.className),d(n));
+    assert.deepEqual(await cell(28),['rep'],'a report day'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
+    const list=await pg.evaluate(()=>[...document.querySelectorAll('#calBox ul.calev')].pop().textContent);
+    assert.match(list,/3\.\d+ · התקבל דיבידנד: KO · \$1\.90 נטו, לפי הדוח/); assert.match(list,/14\.\d+ · פורסם דוח לרבעון Q3 2026: JPM · רווח למניה 5\.07\$ \(מעל הצפי\) · הכנסות 46\.40 מיליארד דולר \(מעל הצפי\)/);
+    assert.match(list,/20\.\d+ · יום אקס דיבידנד: KO · הדיבידנד הקודם 0\.51\$ למניה/); assert.match(list,/27\.\d+ · תשלום דיבידנד: KO/); assert.match(list,/28\.\d+ · (היה צפוי )?דוח כספי: AAPL · מועד משוער, עד שהחברה תאשר/);
+    // the day picked says it, and the name leads to the stock's page
+    await pg.click(`#calBox [data-calday="${d(20)}"]`); await pg.waitForTimeout(200);
+    assert.match(await pg.evaluate(()=>document.querySelector('#calBox .calday').textContent),/יום אקס דיבידנד: KO/);
+    assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'nothing sideways');
+    await pg.evaluate(()=>document.querySelector('#calBox .calday [data-gosec="KO"]').click()); await pg.waitForTimeout(900);
+    assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,sec:!document.getElementById('secPage').hidden})),{page:'search',sec:true});
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('research/latest',L0); store.setDoc('history/main',H0)}
+});
+
 test('a click on text inside a tab does not move the page',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(500);
