@@ -97,7 +97,7 @@ async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false}={}
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin'); await pg.fill('#tcEmail',email); await pg.fill('#tcPass',pw); await pg.click('#tcLogin button');
-  try{await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/₪/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000})}   // the first page in a fresh runner builds the font cache
+  try{await pg.waitForFunction(who==='new'||who==='n2'||who==='r3'||who==='r4'||who==='r5'?()=>!!document.querySelector('.wrap.nopf'):()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:60000})}   // in shekels or, by the account's choice, in dollars   // the first page in a fresh runner builds the font cache
   catch(e){   // what the page showed instead, so a failure in CI says why without the full log
     const d=await pg.evaluate(()=>({url:location.href,gate:!!document.getElementById('tcGate'),gateTxt:(document.getElementById('tcGate')?.textContent||'').replace(/\s+/g,' ').slice(0,160),
       kTotal:document.getElementById('kTotal')?.textContent,loadErr:document.getElementById('loadErr')&&!document.getElementById('loadErr').hidden?document.getElementById('loadErr').textContent.slice(0,160):'',
@@ -267,7 +267,8 @@ test('"האם אני עושה טוב?": the same deposits in S&P 500 and Tel Avi
   store.setDoc('research/bench',{spx:{d:D,c:C},ta125:{d:D,c:T2},fx:{d:D,c:X},names:{spx:'S&P 500',ta125:'ת״א 125'},updatedAt:new Date().toISOString(),source:'בדיקה'},{silent:true});
   try{
     const {ctx,pg}=await open(390);
-    // on the home page, one line; the way to the comparison
+    // on the home page, one line (once the indices have arrived); the way to the comparison
+    await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-bench'),null,{timeout:15000}).catch(()=>{});
     const line=await pg.evaluate(()=>document.querySelector('#desk .dk-bench')?.textContent||'');
     assert.match(line,/מול המדד: אותן הפקדות ב-S&P 500 היו שוות היום ₪[\d,]+, ₪[\d,]+ (פחות|יותר) מהתיק שלך/);
     await pg.evaluate(()=>document.querySelector('#desk .dk-bench [data-goto="bench"]').click()); await pg.waitForTimeout(900);
@@ -336,8 +337,10 @@ test('what the user saves stays saved: a second change made while the first is s
     // choices of how the page looks: the holdings in dollars, a bigger text
     await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('.hccy .chip[data-hc="usd"]').click());
     await tab(pg,'settings'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-a11y="size:l"]').click());
-    await pg.waitForTimeout(5000); await ctx.close();
-    const ui=store.getDoc('settings/main').data.ui||{}; assert.equal(ui.tr_holdccy,'usd'); assert.match(ui.tr_a11y||'',/"size":"l"/);
+    // the choices go to the account within a few seconds (through the slow connection here)
+    const uiOf=()=>store.getDoc('settings/main').data.ui||{}; for(let i=0;i<60&&!(uiOf().tr_holdccy==='usd'&&/"size":"l"/.test(uiOf().tr_a11y||''));i++)await pg.waitForTimeout(250);
+    await ctx.close();
+    const ui=uiOf(); assert.equal(ui.tr_holdccy,'usd'); assert.match(ui.tr_a11y||'',/"size":"l"/);
     // another device: a browser with nothing in its storage
     ({ctx,pg}=await open(390,{keepUi:true})); await pg.waitForTimeout(800);
     const r=await pg.evaluate(()=>({hc:document.querySelector('.hccy .chip[aria-pressed="true"]')?.dataset.hc,size:document.documentElement.dataset.tsize,max:document.getElementById('rMaxPos').value}));
