@@ -527,10 +527,22 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
     const me=(store.users().find(u=>u.role==='owner')||{}).id, w=store.getDoc('watch/'+me).data; assert.ok(w&&w.pots.includes('VOO'),'the server will price it');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'the portfolio\'s value is untouched');
-    // deleting asks twice
+    // kept apart from the portfolio: the MSFT moved to the goal leaves the portfolio's value, and the move is saved as money out
+    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]:not([data-pot="new"])').click()); await pg.waitForTimeout(300);
+    await pg.click('#potBox [data-potsep="1"]'); await pg.waitForTimeout(1500);
+    let st=store.getDoc('settings/main').data; assert.equal(st.pots[0].sep,true);
+    assert.equal((st.potFlows||[]).length,1,'one move saved'); assert.ok(st.potFlows[0].amt<0&&st.potFlows[0].sym==='MSFT','the move is money out, with its value');
+    r=await pg.evaluate(()=>({txt:document.getElementById('potBox').textContent,on:(document.querySelector('#potBox [data-potsep][aria-pressed="true"]')||{}).textContent}));
+    assert.match(r.on,/חיסכון נפרד/); assert.match(r.txt,/הועבר מהתיק/); assert.match(r.txt,/לא נספרים עכשיו בשווי התיק/);
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.notEqual(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'the moved units are not in the portfolio\'s value');
+    // deleting asks twice; the units go back to the portfolio, and so does the money
     await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]:not([data-pot="new"])').click()); await pg.waitForTimeout(300);
     await pg.click('#potDel'); await pg.waitForTimeout(200); assert.match(await pg.textContent('#potDel'),/בטוח/); await pg.click('#potDel'); await pg.waitForTimeout(1500);
     assert.equal((store.getDoc('settings/main').data.pots||[]).length,0);
+    st=store.getDoc('settings/main').data; assert.equal(st.potFlows.length,2); assert.ok(Math.abs(st.potFlows[0].amt+st.potFlows[1].amt)<0.01,'out and back');
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'back in the portfolio\'s value');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0)}
 });

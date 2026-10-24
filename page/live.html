@@ -141,6 +141,7 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .potprog i{display:block;height:100%;background:var(--accent);border-radius:999px}
 .potnote{border-inline-start:4px solid var(--info-c);background:var(--info-bg);color:var(--info-ink);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55}
 .potkinds{display:flex;flex-wrap:wrap;gap:6px}
+.potsep{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .potkinds .chip{border:1px solid var(--line);border-radius:999px}
 .potkinds .chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .potadd{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:end}
@@ -15823,7 +15824,11 @@ function depUp(){
     t+=(+r.flow)*(r.ccy==='USD'?(fxOfMonth(r.ym)||usdRate()):1)-own}
   return Math.round(t*100)/100;
 }
-const depTotal=()=>Math.round((depNet()+planDepExtra()+depUp())*100)/100;
+const depTotal=()=>Math.round((depNet()+planDepExtra()+depUp()+(typeof potFlowTotal==='function'?potFlowTotal():0))*100)/100;
+// the value of units moved between the portfolio and a savings goal kept apart from it, at the moment they moved (out of
+// the portfolio negative, back into it positive): like a withdrawal and a deposit, so the move is not a loss or a gain
+const potFlowList=()=>{try{return typeof S!=='undefined'&&S&&Array.isArray(S.potFlows)?S.potFlows.filter(x=>x&&x.day&&isFinite(+x.amt)):[]}catch(e){return []}};
+const potFlowTotal=()=>potFlowList().reduce((t,x)=>t+(+x.amt),0);
 // A deposit or a withdrawal read now but dated earlier (a screenshot of the account's transactions) belongs to the money
 // in as of every saved day from its date on: the saved month-ends (history monthly[].dep) and the daily points (dep)
 // were saved without it. Those are moved by its amount; not for one a ticked plan deposit already stood for (it stops
@@ -16040,6 +16045,7 @@ function monthFlow(ym,plan=planExtraList(),only){
     if(r)t+=r.flow*(r.ccy==='USD'?(fxOfMonth(ym)||usdRate()):1);
     for(const d of A.deposits||[])if(d&&String(d.date).slice(0,7)===ym&&!upCovers(r,d))t+=(+d.amount||0)*(((d.ccy||A.ccy)==='USD')?usdRate():1)}
   for(const x of plan)if(String(x.day).slice(0,7)===ym)t+=x.amt;
+  if(!only&&typeof potFlowList==='function')for(const x of potFlowList())if(String(x.day).slice(0,7)===ym)t+=+x.amt;
   return Math.round(t*100)/100;
 }
 // The plan chart's real part, month by month up to this one, from the same records as the rest of the page: the money
@@ -16321,15 +16327,18 @@ function rateOf(c,Q){if(c==='ILS')return 1; if(c==='USD'||!c)return Q.usdIls; co
 function model(P,Q,acct,adj){
   const fx=Q.usdIls, prices=Q.prices||{};
   const by={}; let noRate=[];
+  // units moved to a savings goal kept apart from the portfolio ("חיסכון נפרד") are not in it: not in its value, mix, alerts or reports
+  const OUT=typeof potOutQ==='function'?potOutQ(P):null;
   for(const p of P.positions){
     if(acct!=='all'&&p.acct!==acct)continue;
     const px=prices[p.sym]; if(px==null)continue;
+    const cut=OUT?(OUT.get(p)||0):0, q=p.qty-cut; if(cut&&!(q>1e-9))continue;
     const cc=ccyOfPos(p,Q), rt=rateOf(cc,Q); if(rt==null){if(!noRate.includes(p.sym))noRate.push(p.sym);continue}
-    const pxIls=px*rt, val=p.qty*pxIls, pv=(Q.prev||{})[p.sym];
+    const pxIls=px*rt, val=q*pxIls, pv=(Q.prev||{})[p.sym];
     const g0=effGroup(p); NAMEOF[p.sym]=p.name; FUNDOF[p.sym]=isFundLike(p.sym,p.name,g0);
     const m=by[p.sym]||(by[p.sym]={sym:p.sym,name:p.name,group:g0,ccy:cc,px,pxIls,qty:0,val:0,cost:0,costVal:0,accts:[],noCost:false,dayPct:pv?(px/pv-1)*100:null,dayIls:0});
-    m.qty+=p.qty; m.val+=val; if(pv)m.dayIls+=p.qty*(px-pv)*rt; if(!m.accts.includes(p.acct))m.accts.push(p.acct);
-    if(p.costIls==null)m.noCost=true; else{m.cost+=p.costIls;m.costVal+=val}
+    m.qty+=q; m.val+=val; if(pv)m.dayIls+=q*(px-pv)*rt; if(!m.accts.includes(p.acct))m.accts.push(p.acct); if(cut)m.potQty=Math.round(((m.potQty||0)+cut)*1e4)/1e4;
+    if(p.costIls==null)m.noCost=true; else{const c=cut&&p.qty>0?p.costIls*q/p.qty:p.costIls; m.cost+=c;m.costVal+=val}
   }
   let spent=0;
   if(adj)for(const b of adj.buys){const m=by[b.sym]; if(!m)continue; const q=b.qty||1; m.qty+=q; m.val+=q*m.pxIls; if(m.dayPct!=null)m.dayIls+=q*(m.pxIls-m.pxIls/(1+m.dayPct/100)); m.cost+=b.paid; m.costVal+=q*m.pxIls; m.planQty=Math.round(((m.planQty||0)+q)*1e4)/1e4; spent+=b.paid}
@@ -18147,7 +18156,7 @@ function anaFactsAI(F,issues,checks){
     quality:F.rated.length?`${F.good.length} מתוך ${F.rated.length} החברות שנבדקו בציון A או B; בציון D או E: ${F.weak.map(x=>lab(x.p.sym)).join(', ')||'אין'}`:null,
     earnings_next_14_days:F.soon.map(x=>lab(x.s)+' '+dmy(x.c.next)),
     // reports published in the last three weeks by companies held, as the research task recorded them (numbers only)
-    savings_goals:(()=>{try{return pots().map(pt=>{const V=potValue(pt); return {name:pt.name,kind:POTK[pt.kind]||null,value:ils(V.total),target:V.tgt?ils(V.tgt):null,target_date:pt.date||null,progress:V.pctT!=null?pct(V.pctT,0):null,monthly_needed_without_return:V.need!=null?ils(V.need):null,holdings:V.rows.map(r=>lab(r.sym)),note:'מעקב נפרד: לא נכלל בשווי התיק ובשאר המספרים'}})}catch(e){return []}})(),
+    savings_goals:(()=>{try{return pots().map(pt=>{const V=potValue(pt); return {name:pt.name,kind:POTK[pt.kind]||null,apart_from_portfolio:!!pt.sep,value:ils(V.total),target:V.tgt?ils(V.tgt):null,target_date:pt.date||null,progress:V.pctT!=null?pct(V.pctT,0):null,monthly_needed_without_return:V.need!=null?ils(V.need):null,holdings:V.rows.map(r=>lab(r.sym)),note:'מעקב נפרד: לא נכלל בשווי התיק ובשאר המספרים'}})}catch(e){return []}})(),
     reports_published_recently:(()=>{try{const held=new Set(m.pos.map(p=>p.sym)), from=new Date(Date.now()-21*864e5).toISOString().slice(0,10);
       return ((RS&&RS.events)||[]).filter(e=>e&&held.has(e.sym)&&e.date>=from&&e.q).slice(0,8).map(e=>({security:lab(e.sym),date:dmy(e.date),quarter:e.label||null,summary:e.text,findings:(e.ai&&e.ai.findings)||e.find||[],explanation:(e.ai&&e.ai.explain)||null}))}catch(e){return []}})(),
     plan:{monthly_deposit:ils(MTOT()),deposit_day:+S.depDay?depDayTxt():null,next_deposit:(()=>{const d=depInfo();return d?dmy(d.next):null})(),stocks_deposit_marked_this_month:F.depS,index_deposit_marked_this_month:F.depI,queue:F.queue?{waiting:F.queue.n,cash_for_plan:ils(F.queue.bal),can_buy_now:F.queue.afford}:null},
@@ -22264,6 +22273,23 @@ function potValue(pt){
   const cash=+pt.cash||0, total=val+cash, tgt=+pt.target||0, left=pt.date?ymDiff(pt.date,ymNow()):null;
   return {rows,val,cash,total,cost,costVal,noPx,tgt,left,pctT:tgt>0?Math.min(100,total/tgt*100):null,need:tgt>0&&left>0?Math.max(0,(tgt-total)/left):null,atDate:left>0&&+pt.monthly>0?total+(+pt.monthly)*left:null};
 }
+// a savings goal kept apart from the portfolio (pt.sep): the units of each security copied from the portfolio into it leave
+// the portfolio. {position: units} from the holdings in their order, never more than an account holds; null when none
+function potOutQ(Pp){
+  const want={}; for(const pt of pots())if(pt&&pt.sep)for(const it of pt.items||[])if(it&&it.from==='pf'&&+it.qty>0)want[it.sym]=(want[it.sym]||0)+(+it.qty);
+  if(!Object.keys(want).length)return null; const out=new Map();
+  for(const p of (Pp&&Pp.positions)||[]){const w=want[p.sym]; if(!(w>0))continue; const c=Math.min(w,+p.qty||0); if(c>0){out.set(p,c); want[p.sym]=w-c}}
+  return out;
+}
+// the units out of the portfolio per security now, with the value of one unit in shekels
+function potOutSnap(){const o={}; if(!P||!Q)return o; const M=potOutQ(P); if(!M)return o;
+  for(const [p,c] of M){const px=(Q.prices||{})[p.sym], rt=px!=null?rateOf(ccyOfPos(p,Q),Q):null; const x=o[p.sym]||(o[p.sym]={q:0,unit:px!=null&&rt!=null?px*rt:null}); x.q+=c}
+  return o}
+// a change to the savings goals moves units out of the portfolio or back: each move is saved with its value (potFlowList)
+function potFlowRec(s0,why){if(!s0||!S)return; const s1=potOutSnap(), day=ilDay(), add=[];
+  for(const k of new Set([...Object.keys(s0),...Object.keys(s1)])){const a=s0[k]||{q:0}, b=s1[k]||{q:0}, dq=b.q-a.q, u=(b.unit!=null?b.unit:a.unit);
+    if(Math.abs(dq)>1e-9&&u!=null){const amt=Math.round(-dq*u*100)/100; if(Math.abs(amt)>=0.01)add.push({day,amt,sym:k,why:why||'',at:new Date().toISOString()})}}
+  if(add.length)S.potFlows=potFlowList().concat(add)}
 function potSyncWatch(){try{const syms=[...new Set(pots().flatMap(p=>(p.items||[]).map(i=>i.sym)))].filter(k=>/^[A-Z0-9.\-^]{1,12}$/.test(k)).slice(0,40); const cur=(WATCH&&WATCH.pots)||[];
   if(syms.join()!==cur.join())watchSave({pots:syms}).catch(()=>{})}catch(e){}}
 function potForm(pt){const dis=canWrite?'':' disabled', v=x=>x==null?'':esc(x), isNew=!pt; pt=pt||POTDRAFT;
@@ -22280,51 +22306,55 @@ function renderPots(){
   // a redraw while a field is being typed in would lose what was typed
   if(box.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
   $('potsSub').textContent=L.length?`${L.length===1?'חיסכון אחד':L.length+' חסכונות'} · מחוץ לשווי התיק`:'';
-  const note=`<p class="potnote">כל חיסכון כאן הוא מעקב נפרד: הניירות והמזומן שבו לא נספרים בשווי התיק, בפיזור, בבקרה ובדוחות. העתקה של נייר מהתיק לא מוציאה אותו מהתיק, רק רושמת אותו גם כאן.</p>`;
+  const cur0=L.find(p=>p.id===sel);
+  const note=`<p class="potnote">${cur0&&cur0.sep?'החיסכון הזה נפרד מהתיק: ניירות שהועברו אליו מהתיק יוצאים משווי התיק, מהפיזור, מהבקרה ומהדוחות. היציאה נרשמת כמו משיכה, ולא כהפסד. הסרת נייר מהחיסכון, או מעבר ל"נספר גם בתיק", מחזירה אותו לתיק.':'נייר שהועתק מהתיק לחיסכון הזה נשאר גם בשווי התיק, ורק נרשם גם כאן. נייר או מזומן שהוספת ישירות לחיסכון לא נספרים בשווי התיק. כדי להוציא מהתיק את מה שהועתק, בחר למעלה "חיסכון נפרד".'}</p>`;
   if(sel==='new'){box.innerHTML=`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="potCreate"${dis}>צור חיסכון</button><span class="saved" id="potState" role="status"></span></div></div>${note}`; return}
   const pt=L.find(p=>p.id===sel); if(!pt){POT='new';renderPots();return}
   const V=potValue(pt), m=(()=>{try{return P&&Q?mAllNow():null}catch(e){return null}})();
   const tiles=`<div class="mine3 pott">${anaTile('שווי החיסכון',ils(V.total),`${V.rows.length} ניירות${V.cash?' · מזומן '+ils(V.cash):''}`)}${V.tgt?anaTile('היעד',ils(V.tgt),pt.date?`עד ${MONTHS[+pt.date.slice(5)-1]} ${pt.date.slice(0,4)}${V.left!=null?` · ${V.left>0?'עוד '+V.left+' חודשים':'התאריך עבר'}`:''}`:'בלי תאריך'):''}${V.cost?anaTile('מול העלות',sgn(V.costVal-V.cost),spct((V.costVal-V.cost)/V.cost*100),V.costVal>=V.cost?'up':'down'):''}${V.need!=null?anaTile('כדי להגיע ליעד',ils(V.need)+' בחודש','בלי תשואה, רק הפקדות'):''}</div>`;
   const prog=V.pctT!=null?`<div><div class="potprog" role="img" aria-label="${pct(V.pctT,0)} מהיעד"><i style="width:${V.pctT.toFixed(1)}%"></i></div><p class="note" style="margin:6px 0 0">${pct(V.pctT,0)} מהיעד${V.atDate!=null?` · בקצב של ${ils(+pt.monthly)} בחודש, בתאריך היעד יהיו כ-${ils(V.atDate)} בלי תשואה${V.tgt?(V.atDate>=V.tgt?', מעל היעד':`, ${ils(V.tgt-V.atDate)} מתחת ליעד`):''}`:''}.</p></div>`:'';
-  const rows=V.rows.length?`<div class="potitems">${V.rows.map((r,i)=>`<div class="potit"><div class="pi-h"><span class="sym">${esc(lab(r.sym))}</span><span class="nm">${esc(r.name||'')}${r.from?' · הועתק מהתיק':''}</span></div>
+  const rows=V.rows.length?`<div class="potitems">${V.rows.map((r,i)=>`<div class="potit"><div class="pi-h"><span class="sym">${esc(lab(r.sym))}</span><span class="nm">${esc(r.name||'')}${r.from?(pt.sep?' · הועבר מהתיק':' · הועתק מהתיק'):''}</span></div>
       <div class="pi-v"><span class="k">שווי</span><b class="n">${r.val!=null?ils(r.val):'—'}</b><span class="nm">${r.px!=null?(r.cc==='USD'?'$':'₪')+fmtN(r.px)+' ליחידה':'עוד אין מחיר'}${r.stale?' · '+esc(r.stale):''}</span></div>
       <label class="pi-f">כמות<input type="number" min="0" step="0.0001" inputmode="decimal" data-poti="${i}" data-potk="qty" value="${+r.qty}"${dis}></label>
       <label class="pi-f">עלות כוללת ₪<input type="number" min="0" step="0.01" inputmode="decimal" data-poti="${i}" data-potk="costIls" value="${r.costIls!=null?+r.costIls:''}" placeholder="לא ידוע"${dis}></label>
       <button type="button" class="btn sm" data-potdel="${i}" aria-label="הסר את ${esc(r.sym)} מהחיסכון"${dis}>הסר</button></div>`).join('')}</div>${V.noPx.length?`<p class="note">עוד אין מחיר ל-${esc(V.noPx.map(lab).join(', '))}. הוא יגיע בעדכון המחירים הבא (עד 15 דקות).</p>`:''}`:'<p class="note">עוד אין ניירות בחיסכון הזה. אפשר להעתיק מהתיק או להוסיף נייר.</p>';
   const held=m?m.pos.filter(p=>!(pt.items||[]).some(i=>i.sym===p.sym)):[];
-  const copy=held.length?`<div class="potadd"><label for="potCopy">להעתיק נייר מהתיק<select id="potCopy"${dis}>${held.map(p=>`<option value="${esc(p.sym)}" data-q="${+(+p.qty).toFixed(4)}">${esc(lab(p.sym))} · בתיק ${+(+p.qty).toFixed(4)}</option>`).join('')}</select></label><label for="potCopyQ">כמות<input id="potCopyQ" type="number" min="0" step="0.0001" inputmode="decimal" value="${+(+held[0].qty).toFixed(4)}"${dis}></label><button type="button" class="btn" id="potCopyGo"${dis}>העתק לחיסכון</button></div>`:'';
+  const nOut=(pt.items||[]).filter(i=>i.from==='pf').length, outIls=pt.sep?(pt.items||[]).filter(i=>i.from==='pf').reduce((t,i)=>{const r=V.rows.find(x=>x.sym===i.sym);return t+(r&&r.val||0)},0):0;
+  const sepH=`<div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsep="0" aria-pressed="${!pt.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsep="1" aria-pressed="${!!pt.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div><p class="note" style="margin:6px 0 0">${pt.sep?(nOut?`${ils(outIls)} מהחיסכון הזה לא נספרים עכשיו בשווי התיק.`:'ניירות שתעביר לכאן מהתיק ייצאו משווי התיק.'):'הניירות שהועתקו מהתיק נשארים גם בשווי התיק. אפשר לבחור להוציא אותם.'}</p></div>`;
+  const copy=held.length?`<div class="potadd"><label for="potCopy">${pt.sep?'להעביר נייר מהתיק':'להעתיק נייר מהתיק'}<select id="potCopy"${dis}>${held.map(p=>`<option value="${esc(p.sym)}" data-q="${+(+p.qty).toFixed(4)}">${esc(lab(p.sym))} · בתיק ${+(+p.qty).toFixed(4)}</option>`).join('')}</select></label><label for="potCopyQ">כמות<input id="potCopyQ" type="number" min="0" step="0.0001" inputmode="decimal" value="${+(+held[0].qty).toFixed(4)}"${dis}></label><button type="button" class="btn" id="potCopyGo"${dis}>${pt.sep?'העבר לחיסכון':'העתק לחיסכון'}</button></div>`:'';
   const add=`<div class="potadd"><label for="potSym">או להוסיף נייר לפי סימול<input id="potSym" maxlength="12" placeholder="למשל VOO או 5129283" autocomplete="off" dir="ltr"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div>`;
-  box.innerHTML=`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc(POTK[pt.kind]||'')}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}</div>
+  box.innerHTML=`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc(POTK[pt.kind]||'')}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}${sepH}</div>
     <div class="panel"><h3>הניירות בחיסכון</h3>${rows}${copy}${add}<span class="saved" id="potState" role="status"></span></div>
     <details class="panel"><summary><h3 style="display:inline">פרטי החיסכון</h3></summary>${potForm(pt)}</details>${note}`;
 }
 const potCur=()=>pots().find(p=>p.id===potSel());
-function potChanged(){potSyncWatch(); changed()}
-document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox'))return; if(!canWrite)return;
-  const k=t.closest('[data-potkind]'); if(k){const pt=potSel()==='new'?null:potCur(); if(pt){pt.kind=k.dataset.potkind;potChanged()} else{POTDRAFT.kind=k.dataset.potkind; renderPots()} return}
+function potChanged(s0,why){try{potFlowRec(s0,why)}catch(e){} potSyncWatch(); changed()}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox'))return; if(!canWrite)return; const s0=potOutSnap();
+  const sp=t.closest('[data-potsep]'); if(sp){const pt=potCur(); if(!pt)return; const on=sp.dataset.potsep==='1'; if(!!pt.sep===on)return; pt.sep=on; potChanged(s0,on?'sep':'join'); return}
+  const k=t.closest('[data-potkind]'); if(k){const pt=potSel()==='new'?null:potCur(); if(pt){pt.kind=k.dataset.potkind;potChanged(s0)} else{POTDRAFT.kind=k.dataset.potkind; renderPots()} return}
   if(t.closest('#potCreate')){const nm=$('pf_name').value.trim(); if(!nm){$('potState').textContent='כתוב שם לחיסכון.';$('pf_name').focus();return}
     const kind=POTDRAFT.kind||'other', id='p'+Date.now().toString(36);
     S.pots=pots().concat([{id,name:nm.slice(0,40),kind,target:+$('pf_target').value||null,date:$('pf_date').value||null,monthly:+$('pf_monthly').value||null,cash:0,items:[],createdAt:new Date().toISOString()}]);
-    POT=id; POTDRAFT={kind:'child'}; try{localStorage.setItem('tr_pot',id)}catch(x){} potChanged(); return}
+    POT=id; POTDRAFT={kind:'child'}; try{localStorage.setItem('tr_pot',id)}catch(x){} potChanged(s0); return}
   if(t.closest('#potDel')){const pt=potCur(); if(!pt)return; if(POTDEL!==pt.id){POTDEL=pt.id; renderPots(); setTimeout(()=>{if(POTDEL===pt.id){POTDEL=null;try{renderPots()}catch(x){}}},5000); return}
-    S.pots=pots().filter(p=>p.id!==pt.id); POTDEL=null; POT=null; potChanged(); offerUndo(`החיסכון "${pt.name}" נמחק`,()=>{S.pots=pots().concat([pt]); POT=pt.id; potChanged()}); return}
-  const del=t.closest('[data-potdel]'); if(del){const pt=potCur(); if(!pt)return; const gone=pt.items.splice(+del.dataset.potdel,1)[0]; potChanged(); if(gone)offerUndo(`${gone.sym} הוסר מהחיסכון`,()=>{pt.items.push(gone);potChanged()}); return}
+    S.pots=pots().filter(p=>p.id!==pt.id); POTDEL=null; POT=null; potChanged(s0); offerUndo(`החיסכון "${pt.name}" נמחק`,()=>{const u0=potOutSnap(); S.pots=pots().concat([pt]); POT=pt.id; potChanged(u0)}); return}
+  const del=t.closest('[data-potdel]'); if(del){const pt=potCur(); if(!pt)return; const gone=pt.items.splice(+del.dataset.potdel,1)[0]; potChanged(s0); if(gone)offerUndo(`${gone.sym} הוסר מהחיסכון`,()=>{const u0=potOutSnap(); pt.items.push(gone);potChanged(u0)}); return}
   if(t.closest('#potCopyGo')){const pt=potCur(), sel=$('potCopy'), q=+$('potCopyQ').value||0; if(!pt||!sel)return; const sym=sel.value; let m=null; try{m=mAllNow()}catch(x){} const p=m&&m.pos.find(x=>x.sym===sym); if(!p)return;
     if(!(q>0)){$('potState').textContent='כתוב כמות.';return} const share=Math.min(1,q/(+p.qty||q));
-    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:p.name||sym,qty:q,ccy:p.ccy==='ILS'?'ILS':p.ccy||'USD',costIls:p.cost>0&&!p.noCost?Math.round(p.cost*share*100)/100:null,from:'pf',at:new Date().toISOString()}]); potChanged(); return}
+    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:p.name||sym,qty:q,ccy:p.ccy==='ILS'?'ILS':p.ccy||'USD',costIls:p.cost>0&&!p.noCost?Math.round(p.cost*share*100)/100:null,from:'pf',at:new Date().toISOString()}]); potChanged(s0); return}
   if(t.closest('#potAddGo')){const pt=potCur(), sym=$('potSym').value.trim().toUpperCase().replace(/^TLV:/,''), q=+$('potSymQ').value||0; if(!pt)return;
     if(!/^[A-Z0-9.\-]{1,12}$/.test(sym)){$('potState').textContent='כתוב סימול, למשל VOO, או מספר נייר של קרן.';return} if(!(q>0)){$('potState').textContent='כתוב כמות.';return}
     let it=null; try{it=itemOf(sym)}catch(x){} const il=NUMSYM.test(sym)||/^TA\d+$/.test(sym)||(it&&it.t==='T');
-    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:(it&&(it.he||it.name))||NAMEOF[sym]||sym,qty:q,ccy:il?'ILS':'USD',costIls:null,at:new Date().toISOString()}]); potChanged(); return}
+    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:(it&&(it.he||it.name))||NAMEOF[sym]||sym,qty:q,ccy:il?'ILS':'USD',costIls:null,at:new Date().toISOString()}]); potChanged(s0); return}
 });
 document.addEventListener('input',ev=>{const t=ev.target; if(t&&t.dataset&&t.dataset.potf&&t.closest('#potBox')&&potSel()==='new')POTDRAFT[t.dataset.potf]=t.value});
-document.addEventListener('change',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox')||!canWrite)return;
+document.addEventListener('change',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox')||!canWrite)return; const s0=potOutSnap();
   if(t.id==='potCopy'){const o=t.selectedOptions[0]; if(o)$('potCopyQ').value=o.dataset.q; return}
   if(potSel()==='new'){if(t.dataset.potf)POTDRAFT[t.dataset.potf]=t.value; return}
   const pt=potCur(); if(!pt)return;
-  if(t.dataset.potf){const f=t.dataset.potf; pt[f]=f==='name'?(t.value.trim().slice(0,40)||pt.name):f==='date'?(t.value||null):(t.value===''?null:Math.max(0,+t.value||0)); potChanged(); return}
-  if(t.dataset.poti!=null){const it=(pt.items||[])[+t.dataset.poti]; if(!it)return; const k=t.dataset.potk; it[k]=k==='qty'?Math.max(0,+t.value||0):(t.value===''?null:Math.max(0,+t.value||0)); potChanged()}});
+  if(t.dataset.potf){const f=t.dataset.potf; pt[f]=f==='name'?(t.value.trim().slice(0,40)||pt.name):f==='date'?(t.value||null):(t.value===''?null:Math.max(0,+t.value||0)); potChanged(s0); return}
+  if(t.dataset.poti!=null){const it=(pt.items||[])[+t.dataset.poti]; if(!it)return; const k=t.dataset.potk; it[k]=k==='qty'?Math.max(0,+t.value||0):(t.value===''?null:Math.max(0,+t.value||0)); potChanged(s0)}});
 // the drawer: opens from the edge tab, closes on a pick, the scrim, the X or Escape; the edge tab tucks away while scrolling down
 function setNav(o){const bar=$('tabsbar'),more=document.querySelector('#botbar [data-bb="more"]');bar.classList.toggle('open',o);$('scrim').hidden=!o;$('navtab').setAttribute('aria-expanded',String(o));if(more)more.setAttribute('aria-expanded',String(o));
   if(o){$('navtab').classList.remove('away');const sel=bar.querySelector('[aria-selected="true"]')||bar.querySelector('[data-tab]');try{sel.focus({preventScroll:true})}catch(e){}}

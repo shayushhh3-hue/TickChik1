@@ -9,11 +9,11 @@ const near=(a,b,eps=0.005,msg='')=>{if(typeof eps==='string'){msg=eps;eps=0.005}
 const dayAgo=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
 
 // one set of globals, as the page has them; each test sets what it needs
-const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
+const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,S:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','acctOpens','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','acctOpens','pots','potOutQ','potOutSnap','potFlowRec','potFlowList','potFlowTotal','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
   'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual','DIV_WH','divHistory'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
@@ -691,4 +691,25 @@ test('an account that comes in with its holdings and no deposit recorded is mone
   near(F.acctOpens({val:20000,dep:21000,by:{}},b).extra,0);
   // a small change is not an opening
   near(F.acctOpens({val:20000,dep:21000,by:{exc:20000}},{val:20030,dep:21000,by:{exc:20000,blink:30}}).extra,0);
+});
+
+test('a savings goal kept apart: what was moved out of the portfolio leaves its value, and the move is money out, not a loss', ()=>{
+  G.P={positions:[{sym:'5113428',acct:'exc',ccy:'ILS',qty:1000,costIls:8000},{sym:'5113428',acct:'blink',ccy:'ILS',qty:1274.8,costIls:10000},{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:1500}],cash:[]};
+  G.Q={usdIls:3.5,prices:{'5113428':8.1,MSFT:500},prev:{}};
+  G.HS={accounts:[],depIlsNow:20000}; G.DY={points:{}}; plan();
+  G.S={pots:[{id:'p1',name:'לנועה',items:[{sym:'5113428',qty:1500,from:'pf'}]}]};
+  const all0=F.model(G.P,G.Q,'all'); near(all0.total,2274.8*8.1+1750,0.01,'counted in the portfolio too: nothing leaves');
+  const s0=F.potOutSnap(); G.S.pots[0].sep=true; F.potFlowRec(s0,'sep');
+  const all=F.model(G.P,G.Q,'all'), exc=F.model(G.P,G.Q,'exc'), bl=F.model(G.P,G.Q,'blink');
+  near(all.total,774.8*8.1+1750,0.01,'1,500 units out of 2,274.8'); near(exc.total+bl.total,all.total,0.01,'the accounts add up to the whole');
+  near(exc.total,1750,0.01,'the first account\'s 1,000 units go first'); near(bl.total,774.8*8.1,0.01);
+  near(all.pos.find(p=>p.sym==='5113428').cost,10000*774.8/1274.8,0.01,'the cost leaves with the units');
+  assert.equal(G.S.potFlows.length,1); near(F.potFlowTotal(),-1500*8.1,0.01,'the move is saved with its value, as money out');
+  // more units than the portfolio holds: only what it holds leaves
+  const s1=F.potOutSnap(); G.S.pots[0].items[0].qty=5000; F.potFlowRec(s1);
+  assert.equal(F.model(G.P,G.Q,'all').pos.some(p=>p.sym==='5113428'),false); near(F.potFlowTotal(),-2274.8*8.1,0.01);
+  // back to "counted in the portfolio too": the units return, and so does the money
+  const s2=F.potOutSnap(); G.S.pots[0].sep=false; F.potFlowRec(s2,'join');
+  near(F.model(G.P,G.Q,'all').total,all0.total,0.01); near(F.potFlowTotal(),0,0.01);
+  G.S=null;
 });
