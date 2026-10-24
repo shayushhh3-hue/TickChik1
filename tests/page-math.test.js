@@ -13,7 +13,7 @@ const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
   'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
-  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
+  'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','acctOpens','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
   'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual','DIV_WH','divHistory'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
 plan();
@@ -676,4 +676,19 @@ test('the match to the portfolio: what the viewer cares about weighs about twice
   assert.deepEqual(W.fitW(),{div:40,q:30,val:20,st:10},'nothing chosen: the kind of investor\'s weights');
   const G2={...G,riskOf:()=>'mid',S:{wpref:{focus:['st','dv']}}}; const W2=load(['FITW','FITALL','fitW'],G2).fitW();
   assert.ok(W2.st>10&&W2.dv>0,'chosen ones weigh more, and dividends come in'); const sum=Object.values(W2).reduce((a,b)=>a+b,0); assert.ok(Math.abs(sum-100)<=2,'about 100: '+sum);
+});
+
+test('an account that comes in with its holdings and no deposit recorded is money moved in, not a gain', ()=>{
+  // the Blink account appears on the page with ₪2,600 of holdings; the deposits did not change
+  const a={val:20000,dep:21000,by:{exc:20000}}, b={val:22119,dep:21000,by:{exc:19519,blink:2600}};
+  const o=F.acctOpens(a,b); assert.deepEqual(o.list.map(x=>x.acct),['blink']); near(o.extra,2600);
+  near((b.val-b.dep)-(a.val-a.dep)-o.extra,-481,0.01,'the day is the market move only');
+  // its deposit was recorded: nothing extra
+  near(F.acctOpens(a,{...b,dep:23600}).extra,0);
+  // an account already there that grew a lot is a move of the market or a purchase, not an opening
+  near(F.acctOpens({val:20000,dep:21000,by:{exc:18000,blink:2000}},{val:21500,dep:21000,by:{exc:18000,blink:3500}}).extra,0);
+  // a point saved without the split by account says nothing about which account is new
+  near(F.acctOpens({val:20000,dep:21000,by:{}},b).extra,0);
+  // a small change is not an opening
+  near(F.acctOpens({val:20000,dep:21000,by:{exc:20000}},{val:20030,dep:21000,by:{exc:20000,blink:30}}).extra,0);
 });

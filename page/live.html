@@ -15899,6 +15899,9 @@ function monthSeries(){
   for(const r of rows){
     const pv=prev&&prev.ym===ymAdd(r.ym,-1)?prev:null;
     r.flow=kept(r)&&kept(pv)&&r.dep!=null&&pv.dep!=null?Math.round((r.dep-pv.dep)*100)/100:kept(r)&&!prev?null:recFlow(r.ym);
+    // an account that came in this month with no money in recorded for it (its holdings only): that money is a flow, not a gain
+    if(pv&&!r.miss&&r.flow!=null){const o=acctOpens(pv,r), tot=o.list.reduce((t,x)=>t+x.ils,0), x=Math.max(0,tot-Math.max(0,r.flow));
+      if(x>=0.5){r.flow=Math.round((r.flow+x)*100)/100; r.opened={accts:o.list.map(y=>y.acct),ils:Math.round(x*100)/100}}}
     r.gain=!r.miss&&pv&&r.flow!=null?r.val-pv.val-r.flow:null;
     if(r.ret!=null)r.own=true; else if(r.gain!=null&&pv.val+r.flow/2>0)r.ret=r.gain/(pv.val+r.flow/2)*100;
     if(!r.miss)prev=r;
@@ -16437,8 +16440,8 @@ function alertsOf(m){
   if(PL.items.length){const ps=planState(mAllNow()),can=PL.items.filter(i=>i.status==='todo'&&ps.sch.when[i.sym]===0).map(i=>i.sym);
     if(!ps.depNow&&TM()>0&&!(+S.depDay)) A.push(['warn','הפקדה',`הפקדת ${MONTHS[new Date().getMonth()]} למסלול ה${TRACK==='idx'?'מדדים':'מניות'} עוד לא סומנה במעקב החודשי.`]),A[A.length-1].why={src:'plan',rows:[['התוכנית שלך',`הפקדה של ${nn(ils(TM()))} בכל חודש`],['מה חסר','סימון ההפקדה של החודש במעקב החודשי']],tab:'plan',tl:'לפתוח את התוכנית'};
     const afford=PL.items.filter(i=>i.status==='todo'&&ps.cost[i.sym]!=null&&ps.cost[i.sym]<=ps.bal).map(i=>i.sym);
-    if(ps.rot){const nx=PL.items.find(i=>i.status==='todo'&&ps.cost[i.sym]!=null); if(nx)A.push(['info','הגדלה',ps.bal>=ps.cost[nx.sym]?`הבא בתור: ${nx.sym}. יש ${ils(ps.bal)} מזומן, מספיק לקנייה של ${ils(ps.cost[nx.sym])}.`:`הבא בתור: ${nx.sym}. צריך ${ils(ps.cost[nx.sym])} ויש ${ils(ps.bal)} מזומן, אז קודם מסמנים את הפקדת החודש.`])}
-    else A.push(['info','הגדלה',afford.length?`עם ${ils(ps.bal)} מזומן אפשר לקנות עכשיו יחידה של כל אחד מאלה: ${afford.join(', ')}.`:`עם ${ils(ps.bal)} מזומן אין כרגע נייר בתוכנית שיחידה שלמה שלו נכנסת ביתרה.`]);
+    if(ps.rot){const nx=PL.items.find(i=>i.status==='todo'&&ps.cost[i.sym]!=null); if(nx)A.push(['info','הגדלה',ps.bal>=ps.cost[nx.sym]?`הבא בתור: ${nx.sym}. יש ${ils(ps.bal,2)} מזומן, מספיק לקנייה של ${ils(ps.cost[nx.sym],2)}.`:`הבא בתור: ${nx.sym}. צריך ${ils(ps.cost[nx.sym],2)} ויש ${ils(ps.bal,2)} מזומן, אז קודם מסמנים את הפקדת החודש.`])}
+    else A.push(['info','הגדלה',afford.length?`עם ${ils(ps.bal,2)} מזומן אפשר לקנות עכשיו יחידה של כל אחד מאלה: ${afford.join(', ')}.`:`עם ${ils(ps.bal,2)} מזומן אין כרגע נייר בתוכנית שיחידה שלמה שלו נכנסת ביתרה.`]);
     if(ps.bal<0) A.push(['crit','יתרה',`בעיה ביתרה: סומנו קניות ב-${ils(-ps.bal)} יותר מהמזומן וההפקדות. בדוק את המעקב החודשי.`])}
   for(const x of pxAlertHits()){const t=`${pxLab(x.k)} ${x.dir==='up'?'עלה מעל ':'ירד מתחת ל-'}${fmtPx(x.lvl,x.ccy)} שקבעת: עכשיו ${fmtPx(x.px,x.ccy)}.`; A.push(['warn','יעד',t,[pxLab(x.k)]]); const a=A[A.length-1];
     a.why={src:'rule',rows:[['ההתראה שלך',`${x.dir==='up'?'מעל ':'מתחת ל-'}${nn(fmtPx(x.lvl,x.ccy))}`],['המחיר עכשיו',`${nn(fmtPx(x.px,x.ccy))}${x.label?' · '+esc(x.label):''}`],['מה הלאה','ההתראה נשארת עד שתשנה או תסיר אותה, בדף הנייר או בהגדרות.']],tab:'settings',tl:'להתראות המחיר שלי'}; a.each=[{key:'px:'+x.k+':'+x.dir,text:t}]}
@@ -16691,7 +16694,7 @@ function render(){
   $('depRows').innerHTML=!tsum?`<tr><td colspan="3" class="empty">קבע יעדי הקצאה כדי לראות לאן ההפקדה צריכה ללכת.</td></tr>`:
     (pl.rows.length?pl.rows.map(o=>{
       const cheap=o.members.slice().sort((a,b)=>a.pxIls-b.pxIls)[0];
-      const hint=o.id==='cash'?'נשאר כמזומן':!o.members.length?'אין עדיין נייר בקבוצה':(!S.fractional&&cheap.pxIls>o.alloc?`יחידה שלמה הכי זולה: ${cheap.sym} ב-${ils(cheap.pxIls)}`:o.members.map(x=>x.sym).join(', '));
+      const hint=o.id==='cash'?'נשאר כמזומן':!o.members.length?'אין עדיין נייר בקבוצה':(!S.fractional&&cheap.pxIls>o.alloc?`יחידה שלמה הכי זולה: ${cheap.sym} ב-${ils(cheap.pxIls,2)}`:o.members.map(x=>x.sym).join(', '));
       return `<tr><td>${GROUPS[o.id]}<div class="nm"><bdi>${esc(hint)}</bdi></div></td><td class="num"><span class="n">${ils(o.gap)}</span></td><td class="num"><span class="n">${ils(o.alloc)}</span></td></tr>`}).join('')
       :`<tr><td colspan="3" class="empty">כל הקבוצות ביעד או מעליו.</td></tr>`);
   $('depNote').textContent=tsum&&pl.left>1?`${ils(pl.left)} נשארים כמזומן.`:'';
@@ -16777,7 +16780,7 @@ function renderPlan(mAll){
   for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||onceBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidOf(sym,ym0)!=null))lastMark=m}
   const buyHtml=(sym,m,ym)=>{const got=st.fixed?paidOf(sym,ym)!=null:isDone(sym),c=got?paidOf(sym,ym):st.cost[sym],short=!got&&c>st.bal+0.005;
       const pu=PL.purchases.find(x=>x.sym===sym), pp=mAll.pos.find(x=>x.sym===sym), usd=pp&&pp.ccy==='USD';
-      const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}${st.fixed?'_'+ym:''}"><input type="checkbox" id="buy_${esc(sym)}${st.fixed?'_'+ym:''}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(1,Math.round(c-st.bal)))}</span>`:''}</label>`;
+      const lb=`<label class="ck${short?' short':''}" for="buy_${esc(sym)}${st.fixed?'_'+ym:''}"><input type="checkbox" id="buy_${esc(sym)}${st.fixed?'_'+ym:''}" data-buy="${esc(sym)}" data-ym="${ym}"${got?' checked':''}${short||!canWrite?' disabled':''}><span class="sym">${esc(lab(sym))}</span><span class="n">${ils(c,2)}</span>${st.rot&&!got&&pp?`<span class="nm">כ-<span class="n">${(c/pp.pxIls).toFixed(3)}</span> יח׳</span>`:''}${short&&m<=st.cur?`<span class="flag crit">חסרים ${ils(Math.max(0.01,Math.ceil((c-st.bal)*100)/100),2)}</span>`:''}</label>`;
       if(!got||!pu||!canWrite||st.fixed)return lb;
       if(!EDITS.has(sym))return lb+`<span class="nm">${pu.px?`<span class="n">${+(+pu.qty||1).toFixed(4)}</span> יח׳ ב-<span class="n">${usd?'$':'₪'}${(+pu.px).toFixed(2)}</span>`:'לפי מחיר השוק ברגע הסימון'}</span><button class="btn sm" type="button" data-pa="editBuy" data-sym="${esc(sym)}">עדכן מחיר ששולם</button>`;
       const ei=esc(sym).replace(/[^A-Za-z0-9_-]/g,'_');
@@ -16791,7 +16794,7 @@ function renderPlan(mAll){
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?'<div class="nm">החודש</div>':m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
-    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num"><span class="n${run<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(run<0?'−':'')+ils(Math.abs(run))}</span></td></tr>`;
+    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num"><span class="n${run<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(run<0?'−':'')+ils(Math.abs(run),2)}</span></td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
   // then the plan's months from today's real numbers on: its monthly deposit, and the purchases of the ladder not done yet
@@ -16824,7 +16827,7 @@ function renderPlan(mAll){
       acts=(PL.mode!=='cheap'?`<button class="btn sm" type="button" data-pa="up" data-ix="${ix}" aria-label="הקדם את ${esc(it.sym)}">↑</button><button class="btn sm" type="button" data-pa="down" data-ix="${ix}" aria-label="דחה את ${esc(it.sym)}">↓</button>`:'')
         +`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר ל${TRACK==='idx'?'מניות':'מדדים'}</button>`}
     const ha=canWrite&&acts, dn=it.status==='todo'?'':'isdone';
-    return `<tr class="${dn}${ha?' hasacts':''}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c):'—'}</span></td><td>${tag}</td></tr>`+
+    return `<tr class="${dn}${ha?' hasacts':''}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c,2):'—'}</span></td><td>${tag}</td></tr>`+
       (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
   const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
   $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
@@ -19329,12 +19332,27 @@ function weekBlocks(m,X,ch,dk,dep){
   if(dep>0.5)Qs.push(`הופקדו ${ils(dep)} השבוע. הם כבר מושקעים לפי התוכנית?`);
   B.push({t:'h',title:'שאלות לבדוק'},Qs.length?{t:'list',lines:Qs}:{t:'empty',text:'אין שאלה שהנתונים של השבוע מעלים.'});
   return B}
+// money that came into the portfolio between two points without a deposit recorded for it: an account whose holdings
+// first appear (a new account, or one added to the page), as a jump from (almost) nothing. That money moved in, it is
+// not a gain; extra = the part the recorded deposits between the two points do not already stand for
+function acctOpens(a,b){
+  const A=(a&&a.by)||{}, Bb=(b&&b.by)||{}, list=[], sumA=Object.values(A).reduce((t,v)=>t+(+v||0),0);
+  // only when the point before says what each account held (a point saved without the split would make every account look new)
+  if(!(a&&+a.val>0&&sumA>=a.val*0.5))return {list,extra:0};
+  for(const k in Bb){const now=+Bb[k]||0, was=+A[k]||0; if(now-was>=50&&was<now*0.1)list.push({acct:k,ils:now-was})}
+  const tot=list.reduce((t,x)=>t+x.ils,0), dd=a&&b&&a.dep!=null&&b.dep!=null?Math.max(0,b.dep-a.dep):0;
+  return {list,extra:Math.max(0,tot-dd)};
+}
 function buildWeek(endT){
   const B=[], to=endT||Date.now(), from=to-7*864e5, live=!endT, hd=repHead('דוח שבועי',live,Q.usdIls);
   if(TP.filter(p=>p.t<=to+1).length<2)return {...hd,period:'7 הימים האחרונים',blocks:[{t:'empty',text:'אין עדיין מספיק היסטוריה כדי לסכם שבוע.'}].concat(alertBlocks())};
   const tp=TP.filter(p=>p.t<=to+1); let bi=0; tp.forEach((p,i)=>{if(p.t<=from)bi=i}); const pts=tp.slice(bi), base=pts[0], end=pts[pts.length-1];
-  const gain=(end.val-end.dep)-(base.val-base.dep), dep=end.dep-base.dep, pc=base.val>0?gain/base.val*100:null;
-  const days=pts.slice(1).map((p,i)=>({label:p.now?'היום':dmy(isoDay(p.t)),gain:(p.val-p.dep)-(pts[i].val-pts[i].dep)}));
+  // an account that came into the portfolio this week (its holdings appear without a deposit for them) is money moved
+  // in: not a gain on its day nor in the week's result, and it is said under the day-by-day chart
+  const opens=pts.slice(1).map((p,i)=>({...acctOpens(pts[i],p),label:p.now?'היום':dmy(isoDay(p.t))})), moved=opens.reduce((t,o)=>t+o.extra,0);
+  const gain=(end.val-end.dep)-(base.val-base.dep)-moved, dep=end.dep-base.dep+moved, pc=base.val>0?gain/base.val*100:null;
+  const days=pts.slice(1).map((p,i)=>({label:(p.now?'היום':dmy(isoDay(p.t)))+(opens[i].extra>=0.5?' *':''),gain:(p.val-p.dep)-(pts[i].val-pts[i].dep)-opens[i].extra}));
+  const openNote=opens.filter(o=>o.extra>=0.5).map(o=>`* ${o.label}: נכנסו לתיק ההחזקות של ${o.list.map(x=>acctName(x.acct)).join(' ו-')} (${ils(o.extra)}), עם פתיחת החשבון בדף. זה כסף שהועבר לתיק ולא רווח, ולכן הוא לא נספר בעמודה של אותו יום ולא ברווח של השבוע.`).join(' ');
   // per-holding move: prices saved with the daily points when there are any inside the week, else last month-end
   let ch=[], since='';
   const dk=Object.keys((DY&&DY.points)||{}).filter(k=>DY.points[k].px&&+new Date(k+'T12:00:00')>=base.t-864e5&&k<isoDay(to)).sort()[0];
@@ -19343,10 +19361,11 @@ function buildWeek(endT){
   since=ref?`מאז ${dmy(dk)}`:base.label.startsWith('סוף')?`מאז ${base.label}`:'מאז הסגירה הקודמת בלבד, כי עדיין לא נשמרו מחירים יומיים לשבוע מלא';
   ch.sort((a,b)=>b.pct-a.pct); const up=ch.filter(c=>c.pct>0), dn=ch.filter(c=>c.pct<0);
   const verdict=`${gain>=0?'התיק עלה':'התיק ירד'} ב-${ils(Math.abs(gain))} מאז ${base.label}.`+(up.length?` הובילה ${up[0].sym} (${spct(up[0].pct)}).`:'')+(dn.length?` נגררה ${dn[dn.length-1].sym} (${spct(dn[dn.length-1].pct)}).`:'')+` ${up.length} ניירות עלו ו-${dn.length} ירדו.`;
-  B.push(...sumSec({lbl:'רווח / הפסד ב-7 הימים',r:{gain,pct:pc,start:base.val,end:end.val,dep},live,m,startLbl:'שווי לפני שבוע',startSub:base.label.startsWith('סוף')?base.label:'נכון ל-'+base.label,endLbl:live?'שווי היום':'שווי בסוף השבוע',depLbl:'הופקד השבוע',fx,stat:['ניירות שעלו / ירדו',`${up.length} / ${dn.length}`],verdict}));
+  B.push(...sumSec({lbl:'רווח / הפסד ב-7 הימים',r:{gain,pct:pc,start:base.val,end:end.val,dep},live,m,startLbl:'שווי לפני שבוע',startSub:base.label.startsWith('סוף')?base.label:'נכון ל-'+base.label,endLbl:live?'שווי היום':'שווי בסוף השבוע',depLbl:moved>=0.5?'הופקד או הועבר לתיק השבוע':'הופקד השבוע',fx,stat:['ניירות שעלו / ירדו',`${up.length} / ${dn.length}`],verdict}));
   B.push(...allocSec(m,live?'':ASOF_ALL));
   B.push({t:'h',title:'יום אחר יום',sub:'רווח או הפסד בכל יום, בשקלים'});
   if(days.length>=2)B.push({t:'bars',items:days,xl:{name:'יום אחר יום',heads:['יום','רווח/הפסד ₪']}}); else B.push({t:'empty',text:'הדף שומר נקודה אחת ביום. עדיין אין מספיק ימים שמורים כדי להציג את השבוע יום אחר יום.'});
+  if(openNote&&days.length>=2)B.push({t:'note',text:openNote});
   if(pts.length>1&&(pts[1].t-base.t)>1.6*864e5&&days.length>=2)B.push({t:'note',text:`העמודה הראשונה מכסה את כל התקופה מאז ${base.label}, כי לא נשמרו נקודות יומיות בימים שביניהם.`});
   B.push({t:'h',title:'מי הוביל ומי נגרר',sub:since});
   const pick=ch.slice(0,5).concat(ch.slice(-5).filter(c=>!ch.slice(0,5).includes(c)));
@@ -21740,7 +21759,7 @@ function priceOf(k){
   const ccy=k.startsWith('TLV:')||ilIsNum(k)||(it&&(it.t==='H'||it.t==='F')&&it.ex==='TLV')?'ILS':'USD';
   if(ilIsNum(k)&&!(Q&&Q.prices&&Q.prices[k]!=null)){const v=ILF[k]&&ILF[k].v; if(v&&v.px>0)return {px:v.px,prev:v.prev,ccy:'ILS',chg:v.chg!=null?v.chg/100:v.prev>0?v.px/v.prev-1:null,label:v.date?'מחיר רשמי '+dmy(v.date):'',daily:true}}
   if(Q){const p=Q.prices||{},v=Q.prev||{};const px=p[k];
-    if(px!=null){const pv=v[k];return {px,prev:pv,ccy,chg:pv>0?px/pv-1:null,label:(Q.stale||{})[k]||Q.priceLabel||'',live:true}}}
+    if(px!=null){const pv=v[k], d=((Q.meta||{})[k]||{}).date;return {px,prev:pv,ccy,chg:pv>0?px/pv-1:null,label:(Q.stale||{})[k]||Q.priceLabel||'',live:true,today:!!d&&d===ilDay()}}}
   if(ALLQ){const r=k.startsWith('TLV:')?(ALLQ.tlv||{})[k.slice(4)]:(ALLQ.us||{})[k];
     if(r&&r[0]>0){const d=k.startsWith('TLV:')?ALLQ.tlvDate:ALLQ.date;return {px:r[0],prev:null,ccy,chg:r[1]!=null?r[1]/100:null,label:'סגירה '+dmy(d),daily:true}}}
   return null}
@@ -21843,7 +21862,7 @@ function secPriceBlock(it,pr,on,fx){
   if(!pr)return `<div class="big"><div class="pxrow"><span class="v none">אין עדיין מחיר</span></div><div class="pxfacts">${pf('מטבע ובורסה',it.t==='T'?'שקל':'דולר',exch)}${pf('עדכון המחיר',on?'בשעה הקרובה':'בעדכון הבא',on?'הנייר במעקב, המחיר יגיע בעדכון השעתי.':'הנייר נרשם; הוסף למעקב כדי לקבל מחיר כבר בשעה הקרובה.')}</div></div>`;
   const up=pr.chg!=null&&pr.chg>=0, when=esc(pr.label||''), conv=pr.ccy==='PTS'?'':pr.ccy==='USD'&&fx?pf('בשקלים',ils(pr.px*fx,2),'לפי שער '+fx):pr.ccy==='ILS'&&fx?pf('בדולרים','$'+(pr.px/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'לפי שער '+fx):'';
   const upd=pf('עדכון המחיר <span class="tag mkt">נתון שוק</span>',when||'—',pr.daily?(on?'מחיר יומי · המחיר השעתי יגיע בעדכון הבא':'מחיר יומי · הוסף למעקב ויתעדכן כל שעה'):'מתעדכן כל שעה בימי מסחר');
-  return `<div class="big"><div class="pxrow"><span class="v">${fmtPx(pr.px,pr.ccy)}</span>${pr.chg!=null?`<span class="chg ${up?'up':'down'}"><b>${spct(pr.chg*100)}</b><small>${pr.daily?'ביום המסחר האחרון':'היום'}</small></span>`:''}</div>
+  return `<div class="big"><div class="pxrow"><span class="v">${fmtPx(pr.px,pr.ccy)}</span>${pr.chg!=null?`<span class="chg ${up?'up':'down'}"><b>${spct(pr.chg*100)}</b><small>${pr.today?'היום':'ביום המסחר האחרון'}</small></span>`:''}</div>
     <div class="pxfacts">${conv}${pf(pr.ccy==='PTS'?'יחידה':'מטבע ובורסה',pr.ccy==='PTS'?'נקודות מדד':pr.ccy==='ILS'?'שקל':'דולר',pr.ccy==='PTS'?'':exch)}${upd}</div></div>`}
 function renderSec(){SECHOV=-1;
   const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
