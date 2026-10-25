@@ -1,6 +1,5 @@
 // A second source for the company figures the ranking uses, for when Yahoo's company data (quoteSummary) does not answer
 // or leaves a figure out:
-//  - Finnhub's basic financials, when the owner sets FINNHUB_API_KEY;
 //  - the companies' own reports, as the SEC publishes them (EDGAR "company facts": free, no key, US companies that file
 //    10-K/10-Q): net margin, return on equity, debt to equity, revenue growth, earnings and dividends per share over the
 //    last twelve months, and from them the price-to-earnings ratio and the dividend yield at the last close;
@@ -104,8 +103,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const NEED=['pm','roe','de','revg','pe','dy','beta'];
 // fill what is missing in `got` (the night's Yahoo figures, by key) for the keys given; returns how many were filled
 export async function fillFundamentals(store,keys,got,{fetch:f=globalThis.fetch,tick=k=>k,log=()=>{},budgetMs=10*60e3,pause=150,now=new Date()}={}){
-  const t0=Date.now(), iso=now.toISOString(), key=process.env.FINNHUB_API_KEY;
-  const st={tried:0,filled:0,sec:0,finnhub:0,beta:0,fail:0,first:null,stopped:null};
+  const t0=Date.now(), iso=now.toISOString();
+  const st={tried:0,filled:0,sec:0,beta:0,fail:0,first:null,stopped:null};
   let ciks=null, idx={};
   const index=async t=>idx[t]=idx[t]||await yahooBars(t,{fetch:f,range:'2y'}).catch(()=>[]);
   for(const k of keys){
@@ -117,8 +116,6 @@ export async function fillFundamentals(store,keys,got,{fetch:f=globalThis.fetch,
     try{
       const bars=await yahooBars(t,{fetch:f,range:'2y'}).catch(()=>[]), px=bars.length?bars.at(-1).c:(g.price||null);
       if(miss.includes('beta')&&bars.length){const b=betaOf(bars,await index(tl?'^TA125.TA':'^GSPC')); if(b!=null){o.beta=b; st.beta++; src.push('beta')}}
-      if(!tl&&key){try{const r=await timed(f,12000)(`https://finnhub.io/api/v1/stock/metric?symbol=${encodeURIComponent(t.replace(/-/g,'.'))}&metric=all&token=${encodeURIComponent(key)}`,{headers:{accept:'application/json'}});
-        if(r.ok){const x=finnhubFigures(await r.json()); let any=false; for(const n of NEED)if(g[n]==null&&o[n]==null&&x[n]!=null){o[n]=x[n]; any=true} if(any){st.finnhub++; src.push('Finnhub')}}}catch(e){}}
       if(!tl&&['pm','roe','de','revg','pe','dy'].some(n=>g[n]==null&&o[n]==null)){
         ciks=ciks||await secCiks(store,{fetch:f});
         const cik=ciks[t.toUpperCase()]||ciks[t.toUpperCase().replace(/\./g,'-')]||ciks[k.toUpperCase()];
@@ -129,6 +126,6 @@ export async function fillFundamentals(store,keys,got,{fetch:f=globalThis.fetch,
       if(Object.keys(o).length){if(px>0&&g.price==null)o.price=r2(px); got[k]={...g,...o,src2:src.join(', '),secAt:iso}; st.filled++}
     }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=15&&!st.filled){st.stopped='errors';break}}
   }
-  log(`fundamentals: ${st.filled}/${st.tried} filled (SEC ${st.sec}, Finnhub ${st.finnhub}, beta ${st.beta})${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
+  log(`fundamentals: ${st.filled}/${st.tried} filled (SEC ${st.sec}, beta ${st.beta})${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
   return st;
 }

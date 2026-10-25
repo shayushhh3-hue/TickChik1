@@ -1066,3 +1066,28 @@ test('fundamentals: twelve months from the reports, the ratios at the price, the
   // a figure Yahoo did give is not replaced
   const got2={ACME:{pm:1,roe:2,de:3,revg:4,pe:5,dy:6,beta:7}}; const st2=await fillFundamentals(s,['ACME'],got2,{fetch:f,pause:0}); assert.equal(st2.tried,0); assert.equal(got2.ACME.pe,5);
 });
+
+// 25.10: Finnhub with the owner's key: the figures, the analysts, the coming reports, the earnings, the news
+test('finnhub: parsing, the paced client, and the pass that fills what Yahoo did not give',async()=>{
+  const F=await import('../server/finnhub.js'); const {finnhubPass,newsFor}=await import('../server/research.js');
+  assert.deepEqual(F.fhRating([{period:'2026-09-01',strongBuy:1,buy:1,hold:1,sell:0,strongSell:0},{period:'2026-10-01',strongBuy:10,buy:20,hold:5,sell:1,strongSell:0}]),{rating:'Buy',analysts:36,votes:{buy:30,hold:5,sell:1},recAt:'2026-10-01'});
+  assert.deepEqual(F.fhEps([{period:'2026-06-30',actual:1.2,estimate:1.1,surprisePercent:9.09},{period:'2026-03-31',actual:1,estimate:1,surprisePercent:0}]).map(x=>x.q),['2026-03-31','2026-06-30']);
+  assert.deepEqual(F.fhCalendar({earningsCalendar:[{symbol:'acme',date:'2026-11-05',epsEstimate:1.3,revenueEstimate:5e9,hour:'amc'}]}),{ACME:{date:'2026-11-05',eps:1.3,rev:5e9,hour:'amc'}});
+  const N=F.fhNews([{headline:'A',url:'https://x.com/a',source:'X',datetime:1761300000,related:'ACME'},{headline:'B',url:'javascript:x'}]); assert.equal(N.length,1); assert.equal(N[0].pub,'X');
+  F._resetFh(); process.env.FINNHUB_API_KEY='k';
+  const seen=[]; const f=async u=>{u=String(u); seen.push(u); const p=new URL(u).pathname.replace('/api/v1','');
+    if(p==='/calendar/earnings')return Response.json({earningsCalendar:[{symbol:'ACME',date:'2026-11-05',epsEstimate:1.3,revenueEstimate:5e9}]});
+    if(p==='/stock/metric')return Response.json({metric:{netProfitMarginTTM:20,roeTTM:30,'totalDebt/totalEquityQuarterly':0.5,revenueGrowthQuarterlyYoy:12,peTTM:25,dividendYieldIndicatedAnnual:1,beta:1.1,'52WeekPriceReturnDaily':15}});
+    if(p==='/stock/recommendation')return Response.json([{period:'2026-10-01',strongBuy:5,buy:5,hold:2,sell:0,strongSell:0}]);
+    if(p==='/stock/earnings')return Response.json([{period:'2026-06-30',actual:1.2,estimate:1.1,surprisePercent:9.09}]);
+    if(p==='/stock/price-target')return new Response('',{status:403});
+    if(p==='/company-news')return Response.json([{headline:'Acme wins',url:'https://n.com/1',source:'N',datetime:1761300000}]);
+    return new Response('',{status:404})};
+  const s=new Store(':memory:'), got={};
+  const st=await finnhubPass(s,['ACME','TLV:ABC'],got,{fetch:f,now:new Date('2026-10-25T01:00:00Z'),held:new Set(['ACME']),gap:0});
+  assert.equal(st.filled,1); assert.equal(got.ACME.pe,25); assert.equal(got.ACME.rating,'Buy'); assert.equal(got.ACME.next,'2026-11-05'); assert.equal(got.ACME.rep.eps.a,1.2); assert.ok(got.ACME.rep.init);
+  assert.ok(!seen.some(u=>u.includes('ABC')),'Tel Aviv is not asked');
+  assert.ok(!got.ACME.target,'a call the plan does not include is skipped');
+  const items=await newsFor('ACME',{fetch:f,now:new Date('2026-10-25T01:00:00Z')}); assert.equal(items[0].title,'Acme wins');
+  delete process.env.FINNHUB_API_KEY;
+});

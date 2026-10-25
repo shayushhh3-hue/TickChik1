@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 // the default universe for the ranking (shared/universe.json, written by the build from the page's list of securities)
 let UNI=null; export function defaultUniverse(){if(UNI)return UNI; try{UNI=JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','shared','universe.json'),'utf8')).keys||[]}catch(e){UNI=[]} return UNI}
 import {fillFundamentals} from './fundamentals.js';
+import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhCompanyNews} from './finnhub.js';
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -101,7 +102,9 @@ export function reportOf(res){
 }
 // the articles about a security, newest first (Yahoo's search: title, publisher, link, time); data to show and to read,
 // not instructions
-export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8}={}){
+export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8,now=new Date()}={}){
+  // Finnhub's company news first for a US share (with a key); Yahoo's search otherwise, or when Finnhub has nothing
+  if(fhKey()&&/^[A-Z][A-Z.\-]{0,6}$/.test(ticker)){try{const a=await fhCompanyNews(ticker,{fetch:f,now,n}); if(a.length)return a}catch(e){}}
   const r=await timed(f,12000)(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&quotesCount=0&newsCount=${n}&listsCount=0`,{headers:{'user-agent':UA,accept:'application/json'}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
@@ -148,8 +151,8 @@ const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,ccy:o.ccy||null,sum:
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals}={}){
-  const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.src2?(v.src2.includes('SEC')?'דוחות החברה (SEC)':v.src2):null].filter(Boolean).join(' + ')||SOURCE;
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false}={}){
+  const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.fhAt?'Finnhub':null,v&&v.src2&&v.src2.includes('SEC')?'דוחות החברה (SEC)':null].filter(Boolean).join(' + ')||SOURCE;
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
@@ -169,6 +172,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       if(e.session){stopped='session';break} if(e.slow)await sleep(Math.min(30000,pause*50)); if(fail>=25&&!ok){stopped='errors';break}}
     if(pause)await sleep(pause);
   }
+  // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
+  let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
   // 25.10: what Yahoo did not give (all of it, when its company data refuses the server): the companies' own reports at the
   // SEC, Finnhub with a key, and the beta from the daily closes (server/fundamentals.js)
   const yh=new Set(Object.keys(got)); let fund=null;
@@ -186,7 +191,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       else{v.rep.at=old.next&&old.next<=today?old.next:today; v.rep.seen=iso; v.rep.finWas=o?o.finLabel||null:null;
         repEst(v.rep,[old.est,old.estPrev,v.est,v.estPrev],today);
         if(o&&o.q)v.reps=[repShort(o)].concat((old.reps||[]).filter(x=>x&&x.q!==o.q)).slice(0,8);   // the earlier reports, kept
-        if(was||old.next){v.rep.ev=true; fresh.push([k,v.rep])}}
+        if((was||old.next)&&!v.rep.init){v.rep.ev=true; fresh.push([k,v.rep])} delete v.rep.init}
       // the revenue Yahoo has is still the quarter before: its quarterly chart has not moved since the report before, and
       // it is behind the earnings chart
       v.rep.revPend=v.rep.finQ===false&&(v.rep.finWas==null||v.rep.finLabel===v.rep.finWas);
@@ -224,11 +229,11 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
     for(const k of uniGot){const v=got[k], o=rows[k]||[], nw=[v.pm,v.roe,v.de,null,v.pe,v.fpe,v.dy,v.revg,v.rating,v.target,v.analysts,v.next,v.beta]; rows[k]=nw.map((x,i)=>x!=null?x:(o[i]??null))}
     // the date says when the list was refreshed; when only part of it arrived, the older rows keep the earlier date
-    store.setDoc('research/fit',{...Fd,rows,n:Object.keys(rows).length,source:SOURCE+(fund&&fund.filled?', דוחות החברות ב-SEC':''),refreshed:uniGot.length,updatedAt:uniGot.length>=uni.length*0.6?iso:(Fd.updatedAt||iso)})}
+    store.setDoc('research/fit',{...Fd,rows,n:Object.keys(rows).length,source:SOURCE+(fhs&&fhs.filled?', Finnhub':'')+(fund&&fund.filled?', דוחות החברות ב-SEC':''),refreshed:uniGot.length,updatedAt:uniGot.length>=uni.length*0.6?iso:(Fd.updatedAt||iso)})}
   const cand=(C.data||{}).items||[];
   if(cand.some(it=>it&&got[it.sym])){const items=cand.map(it=>{const v=it&&got[it.sym]; if(!v)return it; const o={...it}; for(const k of ['beta','de','dy','fpe','pe','pm','roe','price','chg52'])if(v[k]!=null)o[k]=v[k]; return o});
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
-  const st={at:iso,ok,none,fail,of:order.length,fund,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;
@@ -253,3 +258,35 @@ export function dueReports(store,now=new Date()){
   return out;
 }
 export async function earningsTask(store,o={}){const only=dueReports(store,o.now||new Date()); if(!only.length){(o.log||(()=>{}))('earnings: no report due');return {due:0}} return researchTask(store,{...o,only,budgetMs:6*60e3,pause:400})}
+
+// ---- 25.10: the Finnhub pass ----
+// the coming reports of all US companies in one call (when Yahoo gave no date); then, per security, its figures and the
+// analysts' counts when Yahoo left them out, and for what is held or followed the last quarters' earnings (a report the
+// page had none of starts from them: not an event) and the price target. Refreshed every three days per security.
+const FHN=['pm','roe','de','revg','pe','dy','beta','chg52'];
+export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=12*60e3,cal=true,gap}={}){
+  const t0=Date.now(), iso=now.toISOString(), today=iso.slice(0,10), o={fetch:f}; if(gap!=null)o.gap=gap;
+  const st={filled:0,figs:0,recs:0,eps:0,cal:0,target:0,fail:0,first:null,stopped:null};
+  const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
+  if(cal){try{const C=await fhEarningsCal({...o,now}); for(const k of order){if(!us(k))continue; const c=C[tk(k).toUpperCase()]||C[tk(k).toUpperCase().replace(/-/g,'.')]; if(!c||c.date<today)continue;
+      const g=got[k]||(got[k]={}); if(g.next==null){g.next=c.date; g.nextEst=false; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; g.fhAt=g.fhAt||iso; st.cal++}}}
+    catch(e){st.first=st.first||'calendar: '+e.message; if(e.auth){log('finnhub: '+e.message); return {...st,stopped:'key'}}}}
+  for(const k of order){
+    if(Date.now()-t0>budgetMs){st.stopped='time';break}
+    if(!us(k))continue; const g=got[k]||{}, mine=held.has(k)||watched.has(k), t=tk(k);
+    const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
+    const needF=FHN.some(x=>g[x]==null), needR=g.rating==null, needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
+    if(!needF&&!needR&&!needE&&!needT)continue;
+    if(!got[k]&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
+    const x={}; let any=false;
+    try{
+      if(needF){const m=await fhMetrics(t,o); for(const n of [...FHN,'gm','om','cr','epsg'])if(g[n]==null&&m[n]!=null){x[n]=m[n]; any=true} if(any)st.figs++}
+      if(needR){const r=await fhRecs(t,o); if(r){x.rating=r.rating; x.analysts=r.analysts; x.votes=r.votes; any=true; st.recs++}}
+      if(needE){const h=await fhEarnings(t,o); const L=h.at(-1); if(L){x.rep={q:L.q,label:`Q${Math.ceil(+L.q.slice(5,7)/3)} ${L.q.slice(0,4)}`,ccy:'USD',eps:{a:L.a,e:L.e,s:L.s},hist:h,fin:[],init:true,src:'Finnhub'}; any=true; st.eps++}}
+      if(needT){try{const tg=await fhTarget(t,o); if(tg){x.target=tg; any=true; st.target++}}catch(e){if(!e.plan)throw e}}
+    }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(e.auth){st.stopped='key';break} if(st.fail>=12&&!st.filled){st.stopped='errors';break}}
+    if(any){got[k]={...g,...x,fhAt:iso}; st.filled++}
+  }
+  log(`finnhub: ${st.filled} filled (figures ${st.figs}, analysts ${st.recs}, reports ${st.eps}, dates ${st.cal}, targets ${st.target})${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
+  return st;
+}
