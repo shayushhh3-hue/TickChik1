@@ -64,7 +64,8 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 .wch-rg{display:flex;gap:2px;background:rgb(0 0 0 / .18);border-radius:999px;padding:3px;align-self:flex-start;order:1}
 .wch-rg button{font:inherit;font-size:12.5px;color:var(--ink2);background:none;border:0;border-radius:999px;padding:4px 10px;cursor:pointer;min-height:28px}
 .wch-rg button[aria-pressed="true"]{background:#FFFFFF;color:var(--blue);font-weight:700}
-@media (max-width:640px){.wch-r{white-space:normal;height:44px;text-overflow:clip}}   /* two lines on a phone, still a fixed height */
+@media (max-width:640px){.wch-r{white-space:normal;height:44px;text-overflow:clip}}
+.wch-n{font-size:12.5px;color:#CFE0FF;margin-top:4px;line-height:1.5}   /* two lines on a phone, still a fixed height */
 .wch svg{display:block;width:100%;height:170px;margin-top:6px;touch-action:pan-y;cursor:crosshair;outline:none}
 .wch svg:focus-visible{box-shadow:0 0 0 2px #FFFFFF;border-radius:8px}
 body:not([data-page="overview"]) .hero .wch{display:none}
@@ -1751,7 +1752,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#9CC2FF!important}
         <div class="d" id="kTotalD"></div>
         <div class="wch" id="wChart" hidden>
           <div class="wch-h"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
-          <svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg>
+          <svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg><div class="wch-n" id="wChN" hidden></div>
         </div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
       </div>
@@ -17364,9 +17365,11 @@ let WSIG='';
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
   for(const b of box.querySelectorAll('[data-wr]'))b.setAttribute('aria-pressed',String(+b.dataset.wr===WR));
-  const P0=wPts(); if(P0.length<2||KV!=='all'){box.hidden=true;WCP=null;WSIG='';return} box.hidden=false;
+  const P0=wPts(); box.hidden=false;
+  {const n=$('wChN'); if(n){n.textContent=KV!=='all'?'הגרף מציג את שווי כל התיק: עוד אין היסטוריה חודשית נפרדת ל'+(KV==='fund'?'קרנות':'מניות')+'.':''; n.hidden=KV==='all'}}
+  if(P0.length<2){WCP=null;WSIG=''; svg.innerHTML=''; svg.setAttribute('viewBox','0 0 320 60'); svg.innerHTML='<text x="160" y="34" font-size="13" fill="#CFE0FF" text-anchor="middle" font-family="var(--sans)">הגרף יתמלא בסוף החודש הראשון של '+(acct==='all'?'התיק':esc(acctName(acct)))+'</text>'; const r=$('wChR'); if(r)r.textContent=''; return}
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
-  const W=Math.max(240,svg.clientWidth||box.clientWidth||320), H=170, L=48, R=14, T=10, B=24;
+  const W=Math.max(240,svg.clientWidth||box.clientWidth||320), H=170, L=58, R=14, T=10, B=24;
   const sig=W+'|'+WR+'|'+acct+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
   const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
