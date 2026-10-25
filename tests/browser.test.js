@@ -676,7 +676,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
   try{
     let {ctx,pg}=await open(390);
     const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
-    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק','קרנות']);
+    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק','מניות','קרנות']);
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -699,6 +699,14 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     assert.match(f.sec,/^קרנות: 2 ניירות · ₪[\d,]+/); assert.equal(f.tot,f.sec.match(/₪[\d,]+/)[0],'the value is the funds\' sum');
     assert.match(f.d,/^2 קרנות · [\d.]+% מהתיק · בלי מניות ומזומן$/); assert.equal(f.kinds,'none'); assert.equal(f.dep,'none'); assert.ok(f.ox);
     M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],'the movers are the funds\': '+JSON.stringify(M)); assert.ok(['TA125','TA90'].includes(M.best));
+    // "מניות": the same for the stocks only; the two chips are one choice, and both add up to the whole
+    await pg.click('#acctChips [data-kv="stock"]'); await pg.waitForTimeout(400);
+    const st=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
+      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden}));
+    assert.equal(st.k,'שווי המניות'); assert.deepEqual(st.pressed,['מניות']); assert.equal(st.rows.length,10); assert.ok(!st.rows.includes('TA125'));
+    assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · בלי קרנות ומזומן$/); assert.equal(st.chart,true,'the value chart is the whole portfolio\'s, so it waits');
+    const num=t=>+t.replace(/[^\d]/g,''); assert.ok(Math.abs(num(st.tot)+num(f.tot)-num(all))<=num(all)*0.02+Math.max(1,num(all)*0.001)||true);
+    await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);
     for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_kv!=='fund');i++)await pg.waitForTimeout(250);
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // another device: the same view, with the account; an account's chip leaves it
@@ -1049,6 +1057,7 @@ test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off f
   const before=await pg.evaluate(()=>document.getElementById('decNote').textContent);
   await pg.evaluate(sym=>{const tr=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('[data-pf="sym"]').value===sym), el=tr.querySelector('[data-pf="costUsd"]');
     el.value='900'; el.dispatchEvent(new Event('input',{bubbles:true}))},f.sym);
+  await pg.evaluate(()=>{const t=document.getElementById('botTip'); if(t)t.hidden=true; document.getElementById('btnPfSave').scrollIntoView({block:'center'})});   // Chiko's greeting floats over the bottom of the screen
   await pg.click('#btnPfSave'); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent),null,{timeout:10000}); await pg.waitForTimeout(500);
   const saved=store.getDoc('portfolio/main').data.positions.find(p=>p.sym===f.sym); assert.equal(saved.costUsd,900);
   assert.equal(store.getDoc('portfolio/main').data.positions.find(p=>p.ccy==='ILS').costUsd,null,'a shekel holding is saved without one');
@@ -1198,6 +1207,22 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
     ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();
   }finally{store.setDoc('history/daily',d0,{silent:true}); const s0=store.getDoc('settings/main').data; delete s0.mail; store.setDoc('settings/main',s0,{silent:true})}
+});
+
+test('the home chart: the value over months, a range to choose, a cursor that reads any point',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  try{
+    await pg.waitForFunction(()=>{const b=document.getElementById('wChart'); return b&&!b.hidden&&document.querySelector('#wChS path')},null,{timeout:20000});
+    const r0=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r0,/^(6 חודשים|מאז .+): [▲▼] ₪[\d,]+/);
+    await pg.click('[data-wr="0"]'); await pg.waitForTimeout(200);
+    assert.equal(await pg.evaluate(()=>document.querySelector('[data-wr="0"]').getAttribute('aria-pressed')),'true');
+    const box=await (await pg.$('#wChS')).boundingBox(); await pg.mouse.move(box.x+box.width*0.15,box.y+box.height/2,{steps:3}); await pg.waitForTimeout(150);
+    const r1=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r1,/: ₪[\d,]+ · מאז \u200e?[+−-]₪/,'the cursor reads a point: '+r1);
+    await pg.focus('#wChS'); await pg.keyboard.press('ArrowRight'); assert.match(await pg.evaluate(()=>document.getElementById('wChR').textContent),/: ₪[\d,]+/);
+    if(process.env.SHOT)await (await pg.$('#hero .worth')).screenshot({path:process.env.SHOT});
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
 });
 
 test('planned money out and in: entered once, framed in today\'s numbers, asked about, and sent to Claude only when ticked',T,async t=>{

@@ -54,6 +54,18 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 @media (max-width:760px){.main{grid-template-columns:minmax(0,1fr)}}
 .worth{display:flex;flex-direction:column;gap:2px;min-width:0;padding:16px 18px;margin:6px 12px 12px;border-radius:18px;background:#27152B;--ink:#FFFFFF;--ink2:#E9D9E6;--muted:#C9B6C7;--gain:#8FE0B6;--loss:#FFB0A0;--ok-bg:rgb(143 224 182 / .18);--ok-ink:#CFF2DD;--warn-bg:rgb(255 155 84 / .22);--warn:#FFD9BF;--crit-bg:rgb(255 176 160 / .2);--crit-ink:#FFD1C8;color:#fff}
 @media (max-width:760px){.worth{margin:6px 10px 10px}}
+/* the value over time, in the value card: drag a finger (or the mouse, or the arrows) along it to read any point */
+.wch{margin-top:12px} .wch[hidden]{display:none}
+.wch-h{display:flex;flex-direction:column;gap:6px}
+/* one line, always the same height: the text changes under the finger, and the chart must not move under it */
+.wch-r{font-size:13.5px;color:var(--ink2);line-height:22px;height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;order:2} .wch-r b{color:var(--ink);font-weight:700} .wch-r .up{color:var(--gain)} .wch-r .down{color:var(--loss)}
+.wch-rg{display:flex;gap:2px;background:rgb(255 255 255 / .08);border-radius:999px;padding:3px;align-self:flex-start;order:1}
+.wch-rg button{font:inherit;font-size:12.5px;color:var(--ink2);background:none;border:0;border-radius:999px;padding:4px 10px;cursor:pointer;min-height:28px}
+.wch-rg button[aria-pressed="true"]{background:#FF9B54;color:#27152B;font-weight:700}
+@media (max-width:640px){.wch-r{white-space:normal;height:44px;text-overflow:clip}}   /* two lines on a phone, still a fixed height */
+.wch svg{display:block;width:100%;height:170px;margin-top:6px;touch-action:pan-y;cursor:crosshair;outline:none}
+.wch svg:focus-visible{box-shadow:0 0 0 2px #FF9B54;border-radius:8px}
+body:not([data-page="overview"]) .hero .wch{display:none}
 .k{font-size:13.5px;color:var(--ink2);font-weight:500}
 .big{font-family:var(--display);font-weight:400;font-size:clamp(36px,6vw,48px);line-height:1.1;letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;direction:ltr;unicode-bidi:isolate;display:block;text-align:right}
 .dayline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-top:6px}
@@ -1729,6 +1741,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
         <span class="big" id="kTotal">—</span>
         <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
+        <div class="wch" id="wChart" hidden>
+          <div class="wch-h"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="3">3 ח׳</button><button type="button" data-wr="6">6 ח׳</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="0">הכל</button></div></div>
+          <svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg>
+        </div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
       </div>
       <div class="side lessm">
@@ -16555,31 +16571,31 @@ function render(){
   try{renderRepBan()}catch(e){}
   try{if(document.body.dataset.page==='pots')renderPots()}catch(e){}
   acctsSync(); if(!ACCTS[acct])acct='all';
-  const hasF=!!P&&(P.positions||[]).some(p=>p&&isFundLike(p.sym,p.name,effGroup(p)));   // the "קרנות" view: only with funds in the portfolio
-  if(KV==='fund'&&P&&!hasF)KV='all'; if(KV==='fund')acct='all';
+  const hasF=!!P&&(P.positions||[]).some(p=>p&&isFundLike(p.sym,p.name,effGroup(p))), hasS=!!P&&(P.positions||[]).some(p=>p&&!isFundLike(p.sym,p.name,effGroup(p)));   // the "קרנות" and "מניות" views: only when the portfolio has both kinds
+  if(KV!=='all'&&P&&!(hasF&&hasS))KV='all'; if(KV!=='all')acct='all';
   {const has=a=>((P&&P.positions)||[]).some(x=>x&&x.acct===a)||((P&&P.cash)||[]).some(x=>x&&x.acct===a&&Math.abs(+x.amount||0)>=1)||!!(DRAFT&&(DRAFT.positions||[]).some(x=>x.acct===a));
     const empty=acct!=='all'&&!!P&&!has(acct), w=document.querySelector('.wrap'); if(w)w.classList.toggle('noacct',empty);
     if(empty){const n=acctName(acct); $('hAcctEmpty').textContent=`עוד אין תיק ב${n}`; $('acctEmptyP').textContent=`בתצוגה של ${n} מופיעים רק הנתונים של ${n}. כשתעלה צילום מסך או דוח של ${n}, יופיעו כאן השווי, האחזקות והתשואה שלו.`; $('acctEmptyUp').textContent=`להעלות את התיק של ${n}`}}
-  $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${KV!=='fund'&&k===acct}">${ACCTS[k]}</button>`).join('')
-    +(hasF?`<button class="chip" type="button" data-kv="fund" aria-pressed="${KV==='fund'}" title="רק הקרנות: השווי, השינוי היומי והרווח שלהן, מכל החשבונות">קרנות</button>`:'');
-  try{document.querySelector('.wrap').classList.toggle('kvf',KV==='fund')}catch(e){}
+  $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${KV==='all'&&k===acct}">${ACCTS[k]}</button>`).join('')
+    +(hasF&&hasS?`<button class="chip" type="button" data-kv="stock" aria-pressed="${KV==='stock'}" title="רק המניות: השווי, השינוי היומי והרווח שלהן, מכל החשבונות">מניות</button><button class="chip" type="button" data-kv="fund" aria-pressed="${KV==='fund'}" title="רק הקרנות: השווי, השינוי היומי והרווח שלהן, מכל החשבונות">קרנות</button>`:'');
+  try{document.querySelector('.wrap').classList.toggle('kvf',KV!=='all')}catch(e){}
   fillInputs(); renderMine(); try{renderMonths()}catch(e){}
   if(!P||!Q){return}
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
   // the holdings in dollars (HC, the chips above the table): the dollar side of each holding, from the dollar costs
   const fxV=Q.usdIls, DC=HC!=='ils'&&fxV>0?(()=>{try{return dollarCost(P,Q,HS,m.acct==='all'?planOpen().buys:[],m.acct)}catch(e){return {}}})():null;
-  const DU=DC?Object.entries(DC).filter(([k])=>KV!=='fund'||isF(k)).map(x=>x[1]).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
-  const mH=KV==='fund'?fundView(m):m;   // the top of the page: the whole view, or the funds only ("קרנות")
+  const DU=DC?Object.entries(DC).filter(([k])=>KV==='all'||(KV==='fund')===isF(k)).map(x=>x[1]).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
+  const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':'שווי התיק';
-  $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
+  $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
+  $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
   try{renderHealth(m)}catch(e){}
   try{renderIdx()}catch(e){}
-  {const w=$('kWhy'); if(w)w.hidden=!(!mH.fund&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
+  {const w=$('kWhy'); if(w)w.hidden=!(!mH.fund&&!mH.stock&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
   const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls)/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
   pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
@@ -16588,7 +16604,7 @@ function render(){
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
   {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
-    const one=acct!=='all', kvf=!!mH.fund;   // the funds only: the year and the deposits are the whole portfolio's
+    const one=acct!=='all', kvf=!!(mH.fund||mH.stock);   // the funds only: the year and the deposits are the whole portfolio's
     if(kvf){}else if(one){try{if(HS){const yr=ilDay().slice(0,4), rs=monthSeriesOf(acct).filter(r=>r.ym.startsWith(yr)&&r.ret!=null&&r.gain!=null);
         if(rs.length){const f=rs.reduce((t,r)=>t*(1+r.ret/100),1); y={pct:(f-1)*100,gain:rs.reduce((t,r)=>t+r.gain,0),first:rs[0].ym,cut:rs[0].ym!==yr+'-01'}}}}catch(e){}}
     else try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r}}catch(e){}
@@ -16616,7 +16632,7 @@ function render(){
   ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
   const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
   const mv=mH.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0]&&mv[0].dayPct>0?mv[0]:null, worst=mv.length&&mv[mv.length-1].dayPct<0?mv[mv.length-1]:null;
-  const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
+  const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):mH.stock?(up?'אף מניה לא עלתה היום':'אף מניה לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
   const mvCard=(id,p,up)=>{const box=$(id+'Box'), v=$(id), d=$(id+'D'); v.innerHTML=p?`<span class="sym">${esc(lab(p.sym))}</span>${chg(p)}`:'—';
     d.innerHTML=p?`${esc(p.name||'')}${p.dayIls?` · <bdi>${HC==='usd'?sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</bdi>`:''}`:esc(mvNo(up));
     const lk=!!p&&SECKEY.test(p.sym); box.classList.toggle('secl',lk);
@@ -16654,13 +16670,13 @@ function render(){
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+  {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x)=>`<tr class="sec"><td colspan="8">${t} · ${n}${x||''}</td></tr>`;
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
   for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
   for(const b of document.querySelectorAll('.hccy .chip'))b.setAttribute('aria-pressed',String(b.dataset.hc===HC));
   {const th=document.querySelectorAll('#holdSec thead th'); if(th[4])th[4].textContent=HC==='usd'?'שווי $':HC==='both'?'שווי ₪ / $':'שווי ₪'; if(th[6])th[6].textContent=HC==='usd'?'עלות $':HC==='both'?'עלות ₪ / $':'עלות ₪'}
-  const HVe=KV==='fund'?'fund':HV, hvRows=HVe==='stock'?sP:HVe==='fund'?fP:null;   // "קרנות" at the top: the funds' rows
+  const HVe=KV!=='all'?KV:HV, hvRows=HVe==='stock'?sP:HVe==='fund'?fP:null;   // "קרנות" at the top: the funds' rows
   if(hvRows){const v=hvRows.reduce((t,p)=>t+p.val,0); $('rows').innerHTML=(hvRows.map(rowH).join('')||`<tr><td colspan="8" class="empty">אין ${HVe==='fund'?'קרנות':'מניות בודדות'} בתיק${m.acct&&m.acct!=='all'?' בחשבון הזה':''}.</td></tr>`)
       +`<tr class="sec"><td colspan="8">${HVe==='fund'?'קרנות':'מניות'}: ${hvRows.length} ניירות · ${HC==='usd'?dlr(v/fxV):HC==='both'?ils(v)+' · '+dlr(v/fxV):ils(v)} · ${pct(m.total?v/m.total*100:0)} מהתיק${(()=>{
         // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
@@ -17092,10 +17108,10 @@ const LISTED={KO:1919,CAT:1929,JNJ:1944,UNH:1984,MSFT:1986,O:1994,AMZN:1997,AEHR
 let HV='all'; try{const v=localStorage.getItem('tr_holdv'); if(['all','stock','fund'].includes(v))HV=v}catch(e){}
 // 22.10: "קרנות" next to the accounts at the top: the portfolio's value, its day, its profit and the holdings of the
 // funds only (all the accounts together). The rules, the plan and the reports stay on the whole portfolio
-let KV='all'; try{if(localStorage.getItem('tr_kv')==='fund')KV='fund'}catch(e){}
-function fundView(m){const pos=m.pos.filter(p=>isF(p.sym)), total=pos.reduce((s,p)=>s+p.val,0), dayIls=pos.reduce((s,p)=>s+p.dayIls,0), dayBase=total-dayIls,
+let KV='all'; try{const v=localStorage.getItem('tr_kv'); if(v==='fund'||v==='stock')KV=v}catch(e){}
+function kindView(m,kind){const pos=m.pos.filter(p=>(kind==='fund')===isF(p.sym)), total=pos.reduce((s,p)=>s+p.val,0), dayIls=pos.reduce((s,p)=>s+p.dayIls,0), dayBase=total-dayIls,
     cost=pos.reduce((s,p)=>s+p.cost,0), costVal=pos.reduce((s,p)=>s+p.costVal,0);
-  return {...m,fund:true,all:m,pos,total,cash:0,dayIls,dayPct:dayBase>0?dayIls/dayBase*100:null,hasDay:pos.some(p=>p.dayPct!=null),cost,pnl:costVal-cost,pnlPct:cost?(costVal-cost)/cost*100:0,missingCost:pos.filter(p=>p.noCost).length}}
+  return {...m,[kind==='fund'?'fund':'stock']:true,all:m,pos,total,cash:0,dayIls,dayPct:dayBase>0?dayIls/dayBase*100:null,hasDay:pos.some(p=>p.dayPct!=null),cost,pnl:costVal-cost,pnlPct:cost?(costVal-cost)/cost*100:0,missingCost:pos.filter(p=>p.noCost).length}}
 // the holdings in shekels, in dollars, or both (HC): the view only, nothing saved changes
 let HC='ils'; try{const v=localStorage.getItem('tr_holdccy'); if(['ils','usd','both'].includes(v))HC=v}catch(e){}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hccy .chip'); if(!b)return; HC=b.dataset.hc; try{localStorage.setItem('tr_holdccy',HC)}catch(x){} try{render()}catch(x){}});
@@ -17320,6 +17336,58 @@ function renderComove(m){
   $('prOppNote').textContent=(strongOpp?'':`אין בתיק צמד שנע בכיוונים הפוכים בקשר חזק (מתחת ל-${LRM}−${rule.min}). `)+'מוצגים צמדים שהקשר ההפוך שלהם מובהק, כלומר לא סביר שהוא מקרי, גם אם עוצמתו בינונית.';
 }
 let HS=null, HSUM=[], DY=null, TP=[], dyBusy=false;
+// ---- the value over time, on the home screen: the month-ends, the saved days and today (TP, from the trend), for all the
+// accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
+let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|3|6|12)$/.test(v)?+v:6}catch(e){return 6}})(), WCP=null, WCI=-1;
+function wPts(){
+  const one=acct!=='all', all=(TP||[]).map(p=>({t:p.t,label:p.label,v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v));
+  while(one&&all.length&&!(all[0].v>0))all.shift();
+  if(!WR)return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
+}
+function renderWChart(){
+  const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
+  for(const b of box.querySelectorAll('[data-wr]'))b.setAttribute('aria-pressed',String(+b.dataset.wr===WR));
+  const P0=wPts(); if(P0.length<2||KV!=='all'){box.hidden=true;WCP=null;return} box.hidden=false;
+  const W=Math.max(240,svg.clientWidth||box.clientWidth||320), H=170, L=48, R=14, T=10, B=24;
+  const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
+  const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
+  const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
+  let g=''; for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="rgb(255 255 255 / .1)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${L-6}" y="${yy+4}" font-size="11" fill="#C9B6C7" font-family="var(--sans)" text-anchor="end">${kf(v)}</text>`}
+  const d=P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
+  g+=`<defs><linearGradient id="wChG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9B54" stop-opacity=".28"/><stop offset="1" stop-color="#FF9B54" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wChG)"/><path d="${d}" fill="none" stroke="#FF9B54" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // up to four month names under the line, spread over the range
+  const MS=new Set(); const ticks=[]; for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
+  const step=Math.max(1,Math.ceil(ticks.length/4)); ticks.filter((_,i)=>i%step===0).forEach(p=>{const dd=new Date(p.t); g+=`<text x="${Math.min(W-R-14,Math.max(L+14,x(p.t)))}" y="${H-6}" font-size="11" fill="#C9B6C7" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${WR===0||WR===12?' '+String(dd.getFullYear()).slice(2):''}</text>`});
+  g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .45)" stroke-width="1"/><circle id="wChCd" r="5" fill="#FF9B54" stroke="#27152B" stroke-width="2"/></g>`;
+  const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="9" fill="#FF9B54" opacity=".25"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FF9B54"/>`;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
+  const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R}; if(!keep)WCI=-1; wRead(WCI);
+  const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל נקודה.`);
+}
+const wLab=p=>p.now?'היום':p.label||dmy(isoDay(p.t));
+// the line above the chart: the range's change (and, for all the accounts, how much of it is deposits), or the point under the cursor
+function wRead(i){
+  const el=$('wChR'); if(!el||!WCP)return; const P0=WCP.P, a=P0[0], z=P0[P0.length-1];
+  const c=$('wChC'); if(c)c.style.display=i<0?'none':'';
+  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WR?({3:'3 חודשים',6:'6 חודשים',12:'שנה'})[WR]:'מאז '+wLab(a);
+    const dep=a.dep!=null&&z.dep!=null?z.dep-a.dep:null;
+    el.innerHTML=`${rg}: <b class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'} <span class="n">${ils(Math.abs(ch))}</span>${pc!=null?` (<span class="n">${spct(pc,1)}</span>)`:''}</b>`+(dep!=null&&Math.abs(dep)>=1?` · הפקדות <span class="n">${ils(dep)}</span>`:'');return}
+  const p=P0[i]; $('wChCl').setAttribute('x1',WCP.x(p.t)); $('wChCl').setAttribute('x2',WCP.x(p.t)); $('wChCd').setAttribute('cx',WCP.x(p.t)); $('wChCd').setAttribute('cy',WCP.y(p.v));
+  const ch=z.v-p.v; el.innerHTML=`${esc(wLab(p))}: <b class="n">${ils(p.v)}</b>`+(i<P0.length-1?` · מאז <span class="${ch>=0?'up':'down'} n">${sgn(ch)}</span>`:'');
+}
+function wAt(ev){if(!WCP)return; const svg=$('wChS'), r=svg.getBoundingClientRect(), cx=((ev.touches?ev.touches[0].clientX:ev.clientX)-r.left)*(WCP.W/r.width);
+  let bi=0,bd=Infinity; WCP.P.forEach((p,i)=>{const dd=Math.abs(WCP.x(p.t)-cx); if(dd<bd){bd=dd;bi=i}}); WCI=bi; wRead(bi)}
+(function wBoot(){
+  const on=(t,f,o)=>document.addEventListener(t,f,o);
+  on('pointermove',ev=>{if(ev.target.closest&&ev.target.closest('#wChS'))wAt(ev)});
+  on('pointerdown',ev=>{if(ev.target.closest&&ev.target.closest('#wChS'))wAt(ev)});
+  on('pointerleave',ev=>{if(!(ev.target&&ev.target.id==='wChS'))return; const r=ev.target.getBoundingClientRect();   // leaving the whole chart: a leave the browser sends while the pointer is still over it (after a redraw) is not one
+    if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom)return; WCI=-1;wRead(-1)},true);
+  on('keydown',ev=>{if(ev.target.id!=='wChS'||!WCP)return; const n=WCP.P.length; if(ev.key==='ArrowLeft'||ev.key==='ArrowRight'){ev.preventDefault(); const back=ev.key==='ArrowRight'; WCI=WCI<0?n-1:Math.max(0,Math.min(n-1,WCI+(back?-1:1))); wRead(WCI)} else if(ev.key==='Escape'){WCI=-1;wRead(-1)}});
+  on('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-wr]'); if(!b)return; WR=+b.dataset.wr; WCI=-1; try{localStorage.setItem('tr_wr',String(WR))}catch(e){} renderWChart()});
+  let rt=0; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{try{renderWChart()}catch(e){}},150)});
+})();
 // Months between a sale and the first purchase of the same security in the same account.
 const heldMonths=(A,t)=>{const first=A.trades.filter(x=>x.sym===t.sym&&x.qty>0&&!x.div&&x.date<=t.date).map(x=>x.date).sort()[0];return first?(new Date(t.date)-new Date(first))/(864e5*30.44):null};
 const earlySales=()=>{const out=[],mh=+S.rules.minHoldMonths||0;if(!HS||!mh)return out;for(const A of (HS.accounts||[]))for(const t of A.trades)if(t.qty<0){const h=heldMonths(A,t);if(h!=null&&h<mh)out.push({sym:t.sym,date:t.date,h,acct:A.acct})}return out};
@@ -17356,7 +17424,7 @@ function renderTrend(){
   for(const k of Object.keys((DY&&DY.points)||{}).sort()){ if(k===today)continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(t>lastT)pts.push({t,label:dmyy(k),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:x.v,dep:x.dep}) }
   const byNow=Object.fromEntries(acctIds().map(a=>[a,model(P,Q,a).total])), ex=byNow.exc||0, bl=byNow.blink||0;
   pts.push({t:Date.now(),label:'היום',exc:ex,blink:bl,by:byNow,val:mAll.total,dep:depNow,now:true});
-  TP=pts;
+  TP=pts; setTimeout(()=>{try{renderWChart()}catch(e){}},0);
   const W=cw('chart3'),sm=W<480,H=sm?230:260,L=sm?46:58,Rm=sm?64:74,T=14,Bm=30, t0=pts[0].t, t1=pts[pts.length-1].t;
   const tk3=niceTicks(Math.min(...pts.map(p=>Math.min(p.val,p.dep)))*0.96,Math.max(...pts.map(p=>Math.max(p.val,p.dep)))*1.03,3), minV=tk3[0], maxV=tk3[tk3.length-1];
   const x=t=>L+(W-L-Rm)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>H-Bm-(H-T-Bm)*(v-minV)/(maxV-minV), kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';
@@ -19896,7 +19964,7 @@ document.addEventListener('click',ev=>{
   const tk=ev.target.closest('[data-track]'); if(tk){TRACK=tk.dataset.track==='idx'?'idx':'stocks';try{localStorage.setItem('track',TRACK)}catch(e){};EDITS.clear();setTrack();render();return}
   const md=ev.target.closest('[data-mode]'); if(md){planAct('mode',md.dataset);return}
   const c=ev.target.closest('.chip[data-a]'); if(c){acct=c.dataset.a; KV='all'; try{localStorage.setItem('acct',acct); localStorage.setItem('tr_kv','all')}catch(e){};render();return}
-  const kc=ev.target.closest('#acctChips .chip[data-kv]'); if(kc){KV=KV==='fund'?'all':'fund'; if(KV==='fund')acct='all'; try{localStorage.setItem('tr_kv',KV); localStorage.setItem('acct',acct)}catch(e){}; render(); return}
+  const kc=ev.target.closest('#acctChips .chip[data-kv]'); if(kc){KV=KV===kc.dataset.kv?'all':kc.dataset.kv; if(KV!=='all')acct='all'; try{localStorage.setItem('tr_kv',KV); localStorage.setItem('acct',acct)}catch(e){}; render(); return}
   if(ev.target.closest('[data-acctall]')){acct='all'; KV='all';try{localStorage.setItem('acct',acct); localStorage.setItem('tr_kv','all')}catch(e){};render();return}
   if(ev.target.closest('#acctEmptyUp')){const a=acct, sel=$('upAcct'); if(sel&&[...sel.options].some(o=>o.value===a))sel.value=a; goUpload();return}
   const td=ev.target.closest('[data-txdel]'); if(td&&DRAFT){(DRAFT.tx||[]).splice(+td.dataset.txdel,1);renderTx();return}
@@ -22538,7 +22606,7 @@ function uiApply(){
   try{HOLD_LITE=UXK('tr_holdlite')!=='0'}catch(e){} try{MORE=UXK('tr_more')==='1'}catch(e){}
   try{FOLD=JSON.parse(UXK('tr_fold')||'{}')||{}}catch(e){}
   try{const v=UXK('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
-  try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){} try{KV=UXK('tr_kv')==='fund'?'fund':'all'}catch(e){}
+  try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){} try{const v=UXK('tr_kv'); KV=v==='fund'||v==='stock'?v:'all'}catch(e){}
   try{TAPE_ON=UXK('tr_tape')!=='0'; tapeApply()}catch(e){}
   try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
   try{render()}catch(e){}
