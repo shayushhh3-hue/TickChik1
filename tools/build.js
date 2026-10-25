@@ -7,9 +7,19 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 
+// the default universe of the "what fits my portfolio" ranking: the largest US companies in the page's own list of
+// securities (shares only, by market value), for the night's research when nothing else names a universe
+export function buildUniverse(root,h,{top=400}={}){
+  const i=h.indexOf('<script type="text/plain" id="symdb">'), j=h.indexOf('</script>',i); if(i<0||j<0)return [];
+  const rows=h.slice(h.indexOf('>',i)+1,j).trim().split('\n').map(l=>l.split('\t')).filter(p=>p.length>=6&&p[2]==='S'&&/^[A-Z][A-Z.\-]{0,6}$/.test(p[0])&&+p[5]>0);
+  const seen=new Set(), keys=[]; for(const p of rows.sort((a,b)=>+b[5]-+a[5])){const k=p[0].replace(/\.[A-Z]$/,m=>m); if(seen.has(p[1]))continue; seen.add(p[1]); keys.push(k); if(keys.length>=top)break}
+  fs.writeFileSync(path.join(root,'shared','universe.json'),JSON.stringify({keys,at:new Date().toISOString().slice(0,10),rule:'the largest US shares by market value in the page\'s list, one per company'},null,0)+'\n');
+  return keys;
+}
 export function buildSite(root){
   const src=path.join(root,'page','live.html');
   let h=fs.readFileSync(src,'utf8');
+  try{buildUniverse(root,h)}catch(e){console.error('universe:',e.message)}
   h=h.replace('נתוני התיק שמורים בחשבון שלך. פתח את הדף כשאתה מחובר ל-Claude כדי לראות אותם.','נתוני התיק שמורים בחשבון שלך. היכנס כדי לראות אותם.');
   const m=h.match(/<head>([\s\S]*?)<\/head>\s*<body>/);
   const reset=m?((m[1].match(/<style>([\s\S]*?)<\/style>/)||[])[1]||''):'';

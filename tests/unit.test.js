@@ -985,3 +985,49 @@ test('Israeli securities for the search: the exchange\'s own lists (shares, fund
     assert.equal((await req('o','GET','/api/ilfund?id=12')).status,400); assert.equal((await req('o','GET','/api/ilfund?id=5999999')).status,404);
   }finally{globalThis.fetch=real; srv.close()}
 });
+
+// ---- co-movement, long-term ties and month-end closes from the close series ----
+import {comoveOf, longtermOf, monthlyCloses, corr} from '../shared/comove.js';
+test('comove: groups of securities that move together, pairs, opposite movers, the independent ones, those without data',()=>{
+  // 120 trading days; A and B follow one factor, C follows the opposite of it, D is noise, E has no series
+  const days=[]; {let t=Date.UTC(2026,3,1); while(days.length<120){const d=new Date(t); if(d.getUTCDay()!==0&&d.getUTCDay()!==6)days.push(d.toISOString().slice(0,10)); t+=864e5}}
+  let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647; return seed/2147483647-0.5};
+  const f=days.map(()=>rnd()*0.04), mk=(g,noise)=>{const c=[100]; for(let i=1;i<days.length;i++)c.push(c[i-1]*(1+g*f[i]+noise*rnd()*0.01)); return {d:days,c}};
+  const S={A:mk(1,0.2),B:mk(1,0.2),C:mk(-1,0.2),D:{d:days,c:days.map((_,i)=>50+Math.sin(i/3)*5+rnd()*2)},E:null};
+  const o=comoveOf(S,{days:60,names:{A:'tech',B:'tech',C:'fin'},groupNames:{tech:'טכנולוגיה'}});
+  assert.equal(o.days,60); assert.equal(o.from,days[60]); assert.equal(o.to,days[119]);
+  assert.deepEqual(o.groups.map(g=>[g.name,g.syms]),[['טכנולוגיה',['A','B']]]); assert.ok(o.groups[0].same>0.8,'they moved the same way most days: '+o.groups[0].same);
+  assert.deepEqual(o.pairs.map(p=>p.a+p.b),['AB']); assert.ok(o.pairs[0].r>0.9);
+  assert.ok(o.opposite.some(p=>(p.a==='A'||p.a==='B')&&p.b==='C'&&p.r<-0.8),'C against the factor: '+JSON.stringify(o.opposite));
+  assert.deepEqual(o.solo,['D']); assert.deepEqual(o.nodata,['E']); assert.equal(o.pairRule.sig,0.26);
+  // too few securities: nothing invented
+  const e=comoveOf({A:S.A},{days:60}); assert.deepEqual(e.groups,[]); assert.deepEqual(e.solo,['A']);
+});
+test('comove: long-term ties from the weekly series, month-end closes beside what the document holds',()=>{
+  const wk=[]; {let t=Date.UTC(2021,0,8); while(wk.length<260){wk.push(new Date(t).toISOString().slice(0,10)); t+=7*864e5}}
+  let seed=3; const rnd=()=>{seed=(seed*16807)%2147483647; return seed/2147483647-0.5};
+  const f=wk.map(()=>rnd()*0.03), mk=g=>{const c=[100]; for(let i=1;i<wk.length;i++)c.push(c[i-1]*(1+g*f[i]+rnd()*0.004)); return {d:wk,c}};
+  const W={A:mk(1),B:mk(1),C:mk(-1)};
+  const lt=longtermOf(W); assert.equal(lt.count,3); assert.equal(lt.pairs[0].a+lt.pairs[0].b,'AB'); assert.ok(lt.pairs[0].r>0.8); assert.ok(lt.pairs[2].r<-0.8); assert.equal(lt.from,'2021-02-01'); assert.ok(lt.pairs[0].n>=55);
+  // month-end closes: the weekly series for the old months, the daily one for the recent ones, a saved value kept for a security without a series
+  const daily={d:['2025-12-30','2025-12-31','2026-01-15','2026-01-30'],c:[10,11,12,13]};
+  const prev={months:['2025-11','2025-12'],px:{X:[5,6],A:[1,2]}};
+  const pxd=monthlyCloses({A:{...W.A,...daily},B:W.B},prev,{until:'2026-02-10'});
+  assert.equal(pxd.months[pxd.months.length-1],'2026-01'); assert.equal(pxd.px.A[pxd.months.length-1],13,'January from the daily series'); assert.equal(pxd.px.A[pxd.months.indexOf('2025-12')],11,'the daily close wins over the saved one');
+  assert.equal(pxd.px.X[pxd.months.indexOf('2025-11')],5,'a saved month of a security without a series stays'); assert.ok(pxd.px.B.filter(x=>x!=null).length>50);
+  assert.equal(corr([1,2,3],[2,4,6]),1);
+});
+test('comoveTask: the three documents from the series the store holds, for everybody\'s securities',async()=>{
+  const {Store}=await import('../server/store.js'); const {comoveTask}=await import('../server/tasks.js');
+  const st=new Store(':memory:');
+  const days=[]; {let t=Date.UTC(2026,0,5); while(days.length<130){const d=new Date(t); if(d.getUTCDay()!==0&&d.getUTCDay()!==6)days.push(d.toISOString().slice(0,10)); t+=864e5}}
+  let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647; return seed/2147483647-0.5}; const f=days.map(()=>rnd()*0.03);
+  const mk=g=>{const c=[100]; for(let i=1;i<days.length;i++)c.push(c[i-1]*(1+g*f[i]+rnd()*0.003)); return {d:days,c}};
+  st.setDoc('portfolio/main',{positions:[{sym:'MSFT',group:'tech',qty:1},{sym:'AAPL',group:'tech',qty:1},{sym:'5129283',group:'il',qty:1}]});
+  const u=st.addUser({email:'p@example.com',password:'friend-pass-9',role:'friend'}); st.setDoc(`data/users/${u.id}/portfolio`,{positions:[{sym:'XOM',group:'ind',qty:1}]});
+  st.setDoc('quotes/c_MSFT',{key:'MSFT',...mk(1)}); st.setDoc('quotes/c_AAPL',{key:'AAPL',...mk(1)}); st.setDoc('quotes/c_XOM',{key:'XOM',...mk(-1)});
+  const logs=[]; const {cm,lt,px}=comoveTask(st,{log:m=>logs.push(m)});
+  assert.deepEqual(cm.groups.map(g=>[g.name,g.syms]),[['טכנולוגיה',['AAPL','MSFT']]]); assert.deepEqual(cm.nodata,['5129283']); assert.ok(cm.opposite.length>=1,'XOM against the tech pair');
+  assert.equal(st.getDoc('research/comove').data.source,'Yahoo Finance'); assert.equal(lt.count,0,'no weekly series: no long-term ties'); assert.ok(px.months.length>=4&&px.px.MSFT,'month-ends from the daily series');
+  assert.match(logs.join(' '),/comove: 1 group/);
+});

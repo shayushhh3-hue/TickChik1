@@ -1417,6 +1417,8 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .termpop p{margin:0;color:var(--ink2)}
 .termpop .btn{align-self:flex-start}
 .wtags{display:flex;flex-wrap:wrap;gap:6px}
+.wsec{grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;margin-top:4px} .wsec h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px} .wsec .sub{font-size:12.5px;color:var(--muted)}
+.wc.mine{border-color:var(--accent-soft)} .wc.mine .ws b{color:var(--accent-ink)}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -1742,7 +1744,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
         <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
         <div class="d" id="kTotalD"></div>
         <div class="wch" id="wChart" hidden>
-          <div class="wch-h"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="3">3 ח׳</button><button type="button" data-wr="6">6 ח׳</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="0">הכל</button></div></div>
+          <div class="wch-h"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
           <svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg>
         </div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
@@ -2236,11 +2238,11 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
       <div class="row"><h2 id="hCo">האם הפיזור אמיתי? ניירות שזזים יחד</h2><span class="sub" id="coFresh"></span></div>
       <div class="rhero" id="coLead"></div>
       <p class="note">פס ארוך = הניירות בקבוצה עולים ויורדים יחד, ולכן הם פחות מפזרים. <button type="button" class="term lw" data-term="comove" aria-label="איך לקרוא את הפסים?" aria-expanded="false">איך לקרוא?</button></p>
-      <div class="gg" id="coRows"><div class="empty">הקבוצות יופיעו כאן אחרי שנתוני המחירים היומיים ייטענו.</div></div>
+      <div class="gg" id="coRows"><div class="empty" data-night>הקבוצות יופיעו כאן אחרי הריצה הלילית (23:50, בימי המסחר), שמושכת את מחירי השנה האחרונה של כל נייר ובודקת מי זז עם מי.</div></div>
     </section>
     <section aria-labelledby="hRk" data-adv>
       <h2 id="hRk">אילו ניירות מטלטלים את התיק?</h2>
-      <div class="rkl" id="riskList"><div class="empty">מדדי הסיכון יופיעו כאן אחרי טעינת מחירי העבר.</div></div>
+      <div class="rkl" id="riskList"><div class="empty" data-night>מדדי הסיכון (תנודתיות, ירידה מהשיא) מחושבים ממחירי סוף החודש, שהריצה הלילית בונה ממחירי השנים האחרונות.</div></div>
       <p class="note" id="riskNote"></p>
       <details class="panel">
         <summary>כל המדדים בטבלה אחת</summary>
@@ -2255,12 +2257,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFC28F!important}
     <section aria-labelledby="hPr" data-adv>
       <div class="row"><h2 id="hPr">צמדים שזזים יחד</h2><span class="sub" id="prTogMN"></span></div>
       <p class="note" id="prTogNote"></p>
-      <div class="gg" id="prTogM"><div class="empty">הצמדים יופיעו כאן אחרי שמחירי סוף החודש ייטענו.</div></div>
+      <div class="gg" id="prTogM"><div class="empty" data-night>הצמדים יופיעו כאן אחרי הריצה הלילית, שבונה את מחירי סוף החודש.</div></div>
     </section>
     <section aria-labelledby="hOp" data-adv>
       <h2 id="hOp">צמדים שמאזנים זה את זה</h2>
       <p class="note" id="prOppNote"></p>
-      <div class="gg" id="prOpp"><div class="empty">הצמדים יופיעו כאן אחרי שנתוני המחירים היומיים ייטענו.</div></div>
+      <div class="gg" id="prOpp"><div class="empty" data-night>הצמדים יופיעו כאן אחרי הריצה הלילית.</div></div>
     </section>
     <aside class="callout"><b>חשוב לדעת.</b> <span id="ltLead">הבדיקה ארוכת הטווח תופיע כאן אחרי טעינת הנתונים.</span></aside>
   </div>
@@ -17338,42 +17340,53 @@ function renderComove(m){
 let HS=null, HSUM=[], DY=null, TP=[], dyBusy=false;
 // ---- the value over time, on the home screen: the month-ends, the saved days and today (TP, from the trend), for all the
 // accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
-let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|3|6|12)$/.test(v)?+v:6}catch(e){return 6}})(), WCP=null, WCI=-1;
+let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
+// month by month: the month-ends the page holds (not the single days saved inside a month) and today
 function wPts(){
-  const one=acct!=='all', all=(TP||[]).map(p=>({t:p.t,label:p.label,v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v));
+  const one=acct!=='all', all=(TP||[]).filter(p=>p.now||/^סוף /.test(p.label||'')).map(p=>({t:p.t,label:p.label,ym:p.ym||'',v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v));
   while(one&&all.length&&!(all[0].v>0))all.shift();
   if(!WR)return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
 }
+let WSIG='';
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
   for(const b of box.querySelectorAll('[data-wr]'))b.setAttribute('aria-pressed',String(+b.dataset.wr===WR));
-  const P0=wPts(); if(P0.length<2||KV!=='all'){box.hidden=true;WCP=null;return} box.hidden=false;
+  const P0=wPts(); if(P0.length<2||KV!=='all'){box.hidden=true;WCP=null;WSIG='';return} box.hidden=false;
+  if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   const W=Math.max(240,svg.clientWidth||box.clientWidth||320), H=170, L=48, R=14, T=10, B=24;
+  const sig=W+'|'+WR+'|'+acct+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
   const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
   const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
   let g=''; for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="rgb(255 255 255 / .1)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${L-6}" y="${yy+4}" font-size="11" fill="#C9B6C7" font-family="var(--sans)" text-anchor="end">${kf(v)}</text>`}
   const d=P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
-  g+=`<defs><linearGradient id="wChG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9B54" stop-opacity=".28"/><stop offset="1" stop-color="#FF9B54" stop-opacity="0"/></linearGradient></defs>`;
-  g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wChG)"/><path d="${d}" fill="none" stroke="#FF9B54" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=`<defs><linearGradient id="wChG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9B54" stop-opacity=".32"/><stop offset="1" stop-color="#FF9B54" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wChG)"/>`;
+  // the money put in, dotted, when the whole portfolio is shown and the deposits are known: the gap to the line is the result
+  const dps=P0.filter(p=>p.dep!=null&&p.dep>0&&p.dep>=lo&&p.dep<=hi); if(dps.length>=2&&dps.length===P0.length)g+=`<path d="${dps.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join(' ')}" fill="none" stroke="#F7DDE2" stroke-opacity=".8" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>`;
+  g+=`<path d="${d}" fill="none" stroke="#FF9B54" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
   // up to four month names under the line, spread over the range
   const MS=new Set(); const ticks=[]; for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
-  const step=Math.max(1,Math.ceil(ticks.length/4)); ticks.filter((_,i)=>i%step===0).forEach(p=>{const dd=new Date(p.t); g+=`<text x="${Math.min(W-R-14,Math.max(L+14,x(p.t)))}" y="${H-6}" font-size="11" fill="#C9B6C7" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${WR===0||WR===12?' '+String(dd.getFullYear()).slice(2):''}</text>`});
-  g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .45)" stroke-width="1"/><circle id="wChCd" r="5" fill="#FF9B54" stroke="#27152B" stroke-width="2"/></g>`;
-  const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="9" fill="#FF9B54" opacity=".25"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FF9B54"/>`;
+  const years=new Set(ticks.map(p=>new Date(p.t).getFullYear())), maxT=W<420?5:8, step=Math.max(1,Math.ceil(ticks.length/maxT));
+  ticks.filter((_,i)=>i%step===0||i===ticks.length-1).forEach((p,i,arr)=>{const dd=new Date(p.t), xx=Math.min(W-R-14,Math.max(L+14,x(p.t))); if(i&&xx-x(arr[i-1].t)<34)return;
+    g+=`<text x="${xx}" y="${H-6}" font-size="11" fill="#C9B6C7" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
+  const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="10" fill="#FF9B54" opacity=".22"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FF9B54" stroke="#27152B" stroke-width="1.5"/>`;
+  g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .45)" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#FF9B54" stroke="#FFFFFF" stroke-width="2"/><rect id="wChTb" rx="11" height="22" fill="#FFFFFF"/><text id="wChTt" font-size="12" font-weight="700" fill="#27152B" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
-  const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R}; if(!keep)WCI=-1; wRead(WCI);
-  const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל נקודה.`);
+  const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R,T,lo,hi}; if(!keep)WCI=-1; wRead(WCI);
+  const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}, חודש אחר חודש: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל חודש.`);
 }
 const wLab=p=>p.now?'היום':p.label||dmy(isoDay(p.t));
 // the line above the chart: the range's change (and, for all the accounts, how much of it is deposits), or the point under the cursor
 function wRead(i){
   const el=$('wChR'); if(!el||!WCP)return; const P0=WCP.P, a=P0[0], z=P0[P0.length-1];
   const c=$('wChC'); if(c)c.style.display=i<0?'none':'';
-  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WR?({3:'3 חודשים',6:'6 חודשים',12:'שנה'})[WR]:'מאז '+wLab(a);
+  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WR?({6:'6 חודשים',12:'שנה',24:'שנתיים'})[WR]:'מאז '+wLab(a);
     const dep=a.dep!=null&&z.dep!=null?z.dep-a.dep:null;
     el.innerHTML=`${rg}: <b class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'} <span class="n">${ils(Math.abs(ch))}</span>${pc!=null?` (<span class="n">${spct(pc,1)}</span>)`:''}</b>`+(dep!=null&&Math.abs(dep)>=1?` · הפקדות <span class="n">${ils(dep)}</span>`:'');return}
-  const p=P0[i]; $('wChCl').setAttribute('x1',WCP.x(p.t)); $('wChCl').setAttribute('x2',WCP.x(p.t)); $('wChCd').setAttribute('cx',WCP.x(p.t)); $('wChCd').setAttribute('cy',WCP.y(p.v));
+  const p=P0[i], px=WCP.x(p.t), py=WCP.y(p.v); $('wChCl').setAttribute('x1',px); $('wChCl').setAttribute('x2',px); $('wChCd').setAttribute('cx',px); $('wChCd').setAttribute('cy',py);
+  {const t=$('wChTt'), b=$('wChTb'); if(t&&b){t.textContent=`${wLab(p)}  ·  ${ils(p.v)}`; const w=(t.getComputedTextLength?t.getComputedTextLength():t.textContent.length*6.5)+18, bx=Math.max(WCP.L,Math.min(WCP.W-WCP.R-w,px-w/2)), by=py-34>WCP.T?py-34:py+14;
+    b.setAttribute('x',bx); b.setAttribute('y',by); b.setAttribute('width',w); t.setAttribute('x',bx+w/2); t.setAttribute('y',by+11)}}
   const ch=z.v-p.v; el.innerHTML=`${esc(wLab(p))}: <b class="n">${ils(p.v)}</b>`+(i<P0.length-1?` · מאז <span class="${ch>=0?'up':'down'} n">${sgn(ch)}</span>`:'');
 }
 function wAt(ev){if(!WCP)return; const svg=$('wChS'), r=svg.getBoundingClientRect(), cx=((ev.touches?ev.touches[0].clientX:ev.clientX)-r.left)*(WCP.W/r.width);
@@ -17387,6 +17400,7 @@ function wAt(ev){if(!WCP)return; const svg=$('wChS'), r=svg.getBoundingClientRec
   on('keydown',ev=>{if(ev.target.id!=='wChS'||!WCP)return; const n=WCP.P.length; if(ev.key==='ArrowLeft'||ev.key==='ArrowRight'){ev.preventDefault(); const back=ev.key==='ArrowRight'; WCI=WCI<0?n-1:Math.max(0,Math.min(n-1,WCI+(back?-1:1))); wRead(WCI)} else if(ev.key==='Escape'){WCI=-1;wRead(-1)}});
   on('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-wr]'); if(!b)return; WR=+b.dataset.wr; WCI=-1; try{localStorage.setItem('tr_wr',String(WR))}catch(e){} renderWChart()});
   let rt=0; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{try{renderWChart()}catch(e){}},150)});
+  new MutationObserver(()=>{if(document.body.dataset.page==='overview')setTimeout(()=>{try{renderWChart()}catch(e){}},0)}).observe(document.body,{attributes:true,attributeFilter:['data-page']});
 })();
 // Months between a sale and the first purchase of the same security in the same account.
 const heldMonths=(A,t)=>{const first=A.trades.filter(x=>x.sym===t.sym&&x.qty>0&&!x.div&&x.date<=t.date).map(x=>x.date).sort()[0];return first?(new Date(t.date)-new Date(first))/(864e5*30.44):null};
@@ -17547,8 +17561,13 @@ let CD=null, candFilter='';
 // Fit of watched stocks to the portfolio: diversification 40, financial quality 30, valuation 20, volatility 10. A ranking against the user's own rules, not a buy call.
 function renderCands(m){
   const box=$('candList'); if(!box)return; try{renderWPrefs()}catch(e){}
-  {const pool=candPool(m); if(pool&&pool.pick.length){renderCandsP(m,pool);return}}
-  if(!CD||!Array.isArray(CD.items)||!CD.items.length){return}
+  const mine=myWatchHtml(m);
+  {const pool=candPool(m); if(pool&&pool.pick.length){renderCandsP(m,pool,mine);return}}
+  if(!CD||!Array.isArray(CD.items)||!CD.items.length){
+    // no ranking data yet: the person's own list, and why there is nothing under it
+    $('candHero').innerHTML=mine?`<div class="bn">${wmarks().length}</div><div><b>הניירות שסימנת למעקב.</b><p>הדירוג "מה עוד יכול להתאים לתיק" יופיע כאן כשייקלטו נתוני החברות.</p></div>`:`<div><b>עוד אין כאן ניירות במעקב.</b><p>בחיפוש נייר, או בדף של נייר, לחץ על סימן המעקב, והוא יופיע כאן עם המחיר, השינוי מאז שסימנת וההתאמה לתיק.</p></div>`;
+    $('candChips').innerHTML=''; $('candFresh').textContent=''; $('candNote').textContent='';
+    box.innerHTML=mine+rsEmptyHtml(); rsStatusFill(); return}
   const R=S.rules, held=new Set(m.pos.map(p=>p.sym)), mon=+S.monthly||0, T=m.total, mg=+R.maxGroup||40;
   $('candFresh').textContent='נתונים מ-'+dmy(CD.updatedAt)+(rsStale(CD.updatedAt)?' · לא מתעדכן':'');
   const exclC=new Set(((S&&S.wpref)||{}).excl||[]);
@@ -17565,7 +17584,7 @@ function renderCands(m){
   $('candHero').innerHTML=all.length?`<div class="bn">${all.length}</div><div><b>מניות במעקב, ${hi?hi+' מהן מתאימות מאוד לתיק שלך':'מדורגות לפי כמה הן מתאימות לתיק שלך'}.</b><p>הדירוג לפי הכללים שהגדרת${hasRisk()?` ולפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:''}: ${andJ(fitParts(FITLW))}. זה לא המלצת קנייה, ואין בו בדיקה של איכות עסקית.</p></div>`:'';
   $('candNote').textContent=CD.source?'מקור: '+CD.source+'.':'';
   const rows=all.filter(r=>!candFilter||r.lab===candFilter), wp=watchPrev(CD.items);
-  box.innerHTML=rows.map(r=>{
+  box.innerHTML=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'')+rows.map(r=>{
     const c=r.c, tier=r.score>=80?'hi':r.score>=65?'mid':'lo', gr=r.fs?r.fs.grade:null;
     const f=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
     const warn=c.chg52!=null&&c.chg52>=40?`עלתה ${Math.round(c.chg52)}% בשנה האחרונה`:'';
@@ -19081,7 +19100,7 @@ window.__model.finScore=finScore;
 window.__model.report=(k,p)=>{RK=k;RP=p;return buildReport()};
 const daysTo=d=>Math.round((new Date(d+'T00:00:00')-new Date(new Date().toDateString()))/864e5);
 function renderRatings(m){
-  if(!RS){return}
+  if(!RS){const r=$('rateRows'); if(r&&!r.querySelector('.rsStatus')){r.innerHTML=`<tr><td colspan="9">${rsEmptyHtml()}</td></tr>`; rsStatusFill()} const pr=$('profRows'); if(pr&&!pr.dataset.empty){pr.dataset.empty='1'; pr.innerHTML='<div class="empty">הפרופיל של התיק (ענפים, איכות, תמחור) מחושב מנתוני החברות, שעוד לא נמשכו.</div>'} return}
   $('rFresh').textContent=`נתוני החברות: ${rsWhen(RS.updatedAt)} · מקור: ${RS.source||''}`;
   const rows=m.pos.filter(p=>RS.companies&&RS.companies[p.sym]).map(p=>({p,c:RS.companies[p.sym],fs:finScore(RS.companies[p.sym])})).sort((a,b)=>(b.fs?b.fs.score:-1)-(a.fs?a.fs.score:-1));
   const none=m.pos.filter(p=>!(RS.companies&&RS.companies[p.sym])).map(p=>p.sym), inv=rows.some(r=>r.c.inv);
@@ -21170,7 +21189,7 @@ function profOpen(src){
   const d=$('profDlg'); if(!d||!canWrite)return; if(d.hidden)PROF_RET=src||document.activeElement;
   const p=S.profile||{};
   $('pfFirst').value=p.first||S.name||''; $('pfLast').value=p.last||''; $('pfEmail').value=p.email||''; $('pfPhone').value=p.phone||'';
-  {const has=!!(p.email||p.phone); for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=!has} const cn=$('pfContactNote'); if(cn)cn.hidden=!has}
+  for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=false} {const cn=$('pfContactNote'); if(cn)cn.hidden=false}
   $('pfLang').innerHTML=langOpts(I18N_OK(p.lang)?p.lang:(I18N.lang||'he'));
   for(const r of d.querySelectorAll('[name=pfRisk]'))r.checked=r.value===p.risk;
   for(const r of d.querySelectorAll('[name=pfGender]'))r.checked=r.value===(p.gender||'m');
@@ -21192,16 +21211,15 @@ function profSave(){
   const rk=(d.querySelector('[name=pfRisk]:checked')||{}).value||'', lang=$('pfLang').value, dep=+$('pfDep').value||0, bad=[];
   const lv=(d.querySelector('[name=pfLevel]:checked')||{}).value||'', pu=$('pfPurpose').value||'', yrs=Math.round(+$('pfYears').value)||0, gn=(d.querySelector('[name=pfGender]:checked')||{}).value||'';
   const mark=(id,on)=>{const el=$(id); if(on)el.setAttribute('aria-invalid','true'); else el.removeAttribute('aria-invalid')};
-  mark('pfFirst',!f); if(!f)bad.push('שם פרטי');
+  mark('pfFirst',false);
   const emOk=!em||/^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/.test(em); mark('pfEmail',!emOk); if(!emOk)bad.push('כתובת מייל תקינה, או להשאיר ריק');
   const dg=ph.replace(/\D/g,''), phOk=!ph||(/^\+?[\d\s\-().]+$/.test(ph)&&dg.length>=7&&dg.length<=15); mark('pfPhone',!phOk); if(!phOk)bad.push('מספר טלפון תקין, או להשאיר ריק');
-  if(!RISK[rk])bad.push('איזה משקיע אתה');
-  if(bad.length){$('pfErr').textContent='חסר: '+bad.join('; ')+'.'; const x=d.querySelector('[aria-invalid=true]')||(!RISK[rk]?d.querySelector('[name=pfRisk]'):null); try{x&&x.focus()}catch(e){} return}
+  if(bad.length){$('pfErr').textContent='לא נשמר. צריך לתקן: '+bad.join('; ')+'.'; const x=d.querySelector('[aria-invalid=true]'); try{x&&x.scrollIntoView({block:'center'}); x&&x.focus({preventScroll:true})}catch(e){} return}
   const before=JSON.stringify(S);
-  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',gender:gn==='f'?'f':gn==='m'?'m':'',risk:rk,level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
-  S.name=f; S.depDay=(dep>=1&&dep<=28)||dep===DEP_LAST?dep:0; if(yrs>=1&&yrs<=40)S.years=yrs;
+  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',gender:gn==='f'?'f':gn==='m'?'m':'',risk:RISK[rk]?rk:'',level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  if(f)S.name=f; S.depDay=(dep>=1&&dep<=28)||dep===DEP_LAST?dep:0; if(yrs>=1&&yrs<=40)S.years=yrs;
   changed(); profClose(); i18nSync(); try{fillInputs()}catch(e){}
-  offerUndo('הפרופיל נשמר',()=>{S=mergeSettings(JSON.parse(before));fillInputs();changed();i18nSync()})}
+  offerUndo(RISK[rk]?'הפרופיל נשמר':'הפרופיל נשמר. "איזה משקיע אתה" עוד לא נבחר, אז הדירוג מתייחס אליך כ"באמצע"',()=>{S=mergeSettings(JSON.parse(before));fillInputs();changed();i18nSync()})}
 // shown once by itself to a viewer who has a portfolio but no profile yet, unless they chose "אחר כך" in the last two weeks
 function profMaybe(){
   if(!SETK||!canWrite||S.profile||!MYID)return; const d=$('profDlg'); if(!d||!d.hidden)return;
@@ -21646,15 +21664,15 @@ function candPool(m){
   for(const r of out){if(pick.length>=WATCHN||r.f.score<40)break; if((per[r.f.g]||0)>=3)continue; pick.push(r); per[r.f.g]=(per[r.f.g]||0)+1}
   for(const r of out.filter(x=>x.under>0)){if(pick.some(x=>x.f.g===r.f.g)||r.f.score<50)continue; if(pick.length>=WATCHN)pick.pop(); pick.push(r)}
   pick.sort((a,b)=>b.f.score-a.f.score); return {pick,n:out.length}}
-function renderCandsP(m,pool){
-  const box=$('candList'), mg=+(S.rules||{}).maxGroup||40, marks=wmarks().filter(k=>!m.pos.some(p=>p.sym===k)), its=pool.pick.map(r=>{const p=priceOf(r.k);return {sym:r.k,price:p?p.px:null}}), pv=its.some(x=>x.price>0)?watchPrev(its):null;
+function renderCandsP(m,pool,mine=''){
+  const box=$('candList'), mg=+(S.rules||{}).maxGroup||40, its=pool.pick.map(r=>{const p=priceOf(r.k);return {sym:r.k,price:p?p.px:null}}), pv=its.some(x=>x.price>0)?watchPrev(its):null;
   $('candFresh').textContent=FIT&&FIT.updatedAt?'נתונים מ-'+dmy(FIT.updatedAt)+(rsStale(FIT.updatedAt)?' · לא מתעדכן':''):'';
   const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter='';
   $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
   const hi=pool.pick.filter(r=>r.f.score>=80).length;
   $('candHero').innerHTML=pool.pick.length?`<div class="bn">${pool.pick.length}</div><div><b>מניות שמתאימות לתיק שלך${hi?`, ${hi} מהן מתאימות מאוד`:''}.</b><p>נבחרו מתוך ${pool.n.toLocaleString('en-US')} ניירות שיש להם נתונים, לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
   const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
-  const markH=marks.length?`<div class="wmarks"><b>שסימנת</b>${marks.slice(0,12).map(k=>{const p=priceOf(k), it=itemOf(k);return `<button type="button" class="wmk" data-anav="sec:${esc(k)}"><span class="sym">${esc(it&&it.t==='T'?(it.name||k):k)}</span>${p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:''}</button>`}).join('')}</div>`:'';
+  const markH=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'');
   const rows=pool.pick.filter(r=>!candFilter||GROUPS[r.f.g]===candFilter);
   box.innerHTML=markH+(rows.map(r=>{
     const c=r.c, f=r.f, tier=f.score>=80?'hi':f.score>=65?'mid':'lo', gr=f.fs?f.fs.grade:null, p=priceOf(r.k), it=r.it;
@@ -21817,17 +21835,55 @@ const recent=()=>{try{return JSON.parse(localStorage.getItem('tr_recent')||'[]')
 const pushRecent=k=>{try{const r=[k].concat(recent().filter(x=>x!==k)).slice(0,12);localStorage.setItem('tr_recent',JSON.stringify(r))}catch(e){}};
 const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||(ilIsNum(k)&&ILF[k]&&ILF[k].v?ilItem(k,ILF[k].v.name||('נייר '+k),'F',{he:ILF[k].v.name||''}):null)||null};
 function wmarks(){if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_marks')||'[]')}catch(e){return[]}}return (WATCH&&WATCH.marks)||[]}
+const wmarkAt=()=>{if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_markat')||'{}')}catch(e){return {}}}return (WATCH&&WATCH.markAt)||{}};
 // one document per user: the securities to price (syms) = the held US symbols plus the bookmarks; the task reads only `syms`
 async function watchSave(patch){
   const marks=patch.marks||wmarks(), held=patch.held||(WATCH&&WATCH.held)||[], seen=patch.seen||(WATCH&&WATCH.seen)||[], potS=patch.pots||(WATCH&&WATCH.pots)||[];
   const syms=[...new Set(held.concat(marks).filter(k=>/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$/.test(k)))].slice(0,40);
-  if(LOCAL||!db||!MYID){try{localStorage.setItem('tr_marks',JSON.stringify(marks))}catch(e){};WATCH={marks,held,syms,seen,pots:potS};return true}
-  const doc={syms,marks,held,seen,pots:potS,updatedAt:new Date().toISOString()};
+  const markAt=patch.markAt||(WATCH&&WATCH.markAt)||{};
+  if(LOCAL||!db||!MYID){try{localStorage.setItem('tr_marks',JSON.stringify(marks)); localStorage.setItem('tr_markat',JSON.stringify(markAt))}catch(e){};WATCH={marks,held,syms,seen,pots:potS,markAt};return true}
+  const doc={syms,marks,held,seen,pots:potS,markAt,updatedAt:new Date().toISOString()};
   try{await db.doc('watch/'+MYID).set(doc);WATCH=doc;return true}catch(e){return false}
 }
 async function toggleMark(k){const m=wmarks();const on=m.includes(k);const next=on?m.filter(x=>x!==k):m.concat([k]).slice(-40);
-  const ok=await watchSave({marks:next}); if(!ok){$('sqNote').textContent='לא הצלחתי לשמור את המעקב. נסה שוב.';return}
-  srchRender()}
+  const at={...wmarkAt()}; if(on)delete at[k]; else{const p=priceOf(k); at[k]={d:ilDay(),px:p&&p.px>0?p.px:null}}
+  const ok=await watchSave({marks:next,markAt:at}); if(!ok){$('sqNote').textContent='לא הצלחתי לשמור את המעקב. נסה שוב.';return}
+  srchRender(); try{if(document.body.dataset.page==='watch')renderCands(mAllNow())}catch(e){}}
+// the person's own list, as cards: price and day, what happened since the mark, whether it is held, the next report, and the
+// match to the portfolio when the company's figures are there. Shown first on "מניות במעקב", whatever else the page has
+function myWatchHtml(m){
+  const marks=wmarks(); if(!marks.length)return '';
+  const at=wmarkAt(), figs=(()=>{try{return fitFigs()}catch(e){return {}}})(), held=k=>m.pos.find(p=>p.sym===k||('TLV:'+p.sym)===k||p.sym===k.replace(/^TLV:/,''));
+  const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`, fc=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
+  const cards=marks.slice().reverse().map(k=>{
+    const it=itemOf(k)||{sym:k,name:k,t:'S'}, p=priceOf(k), h=held(k), a=at[k], since=a&&a.px>0&&p&&p.px>0?(p.px/a.px-1)*100:null;
+    const rs=(RS&&RS.companies&&RS.companies[it.sym])||RSX[k]||null, c=figs[k]||null, f=c?(()=>{try{return fitScore(k,c,m)}catch(e){return null}})():null, dn=rs&&rs.next?daysTo(rs.next):null;
+    const tier=f?(f.score>=80?'hi':f.score>=65?'mid':'lo'):'', sk=SECKEY.test(k);
+    return `<article class="wc mine" style="--gc:${f?(GCOL[f.g]||'#64748B'):'var(--accent)'}">
+      <div class="wh"><div class="wt">${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}${a&&a.d?' מ-'+dmy(a.d):''}</b></span></div>
+        ${f?`<div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${f.score} מתוך 100"><b>${f.score}</b></div><span>התאמה</span></div>`:`<div class="rg"><span class="nm">אין עדיין נתוני חברה</span></div>`}</div>
+      <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מאז שסימנת',since!=null?'<span class="n">'+spct(since)+'</span>':'—',since!=null?(since>=0?'up':'down'):'')}${fc('הדוח הבא',rs&&rs.next?'<span class="n">'+dmy(rs.next)+'</span>'+(dn!=null&&dn>=0&&dn<=7?' <small>בקרוב</small>':''):'—')}${fc('דיבידנד',rs&&rs.div&&rs.div.ex?'<span class="n">אקס '+dmy(rs.div.ex)+'</span>':c&&c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}</div>
+      <div class="wfit"><span class="sub">${f?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:'ההתאמה לתיק תחושב כשייקלטו נתוני החברה (בלילה)'}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
+    </article>`}).join('');
+  return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
+}
+// why a ranking is empty: the figures come from a nightly run; the owner sees its last result and can start it now
+let RSST=null;
+async function rsStatusHtml(){
+  if(!OWNER||!window.__tc||LOCAL)return '';
+  if(RSST===null){RSST=false; try{const r=await fetch('/api/research/status',{credentials:'same-origin'}); if(r.ok)RSST=await r.json()}catch(e){} }
+  if(RSST===false)return '';
+  const st=RSST&&(RSST.last||RSST); if(!st||!st.at)return `<p class="note">לבעל האתר: הריצה הלילית של נתוני החברות עוד לא רצה אף פעם. <button type="button" class="btn sm" data-rsrun>להריץ עכשיו</button></p>`;
+  return `<p class="note">לבעל האתר: הריצה האחרונה ${dmy(st.at)} ${hm(st.at)}, עודכנו ${st.ok} מתוך ${st.of}${st.fail?`, נכשלו ${st.fail}`:''}${st.none?`, ${st.none} בלי כיסוי`:''}${st.stopped?` · נעצרה: ${esc(String(st.stopped).slice(0,120))}`:''}${st.first?` · השגיאה הראשונה: ${esc(String(st.first).slice(0,160))}`:''}. <button type="button" class="btn sm" data-rsrun>להריץ שוב עכשיו</button></p>`;
+}
+function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
+function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
+document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-rsrun]'); if(!b)return; b.disabled=true; b.textContent='הופעל…'; const job=b.dataset.rsrun||'research';
+  try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin'}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}});
+// the control tab's sections that wait for the night's series: the owner can start that run now
+function nightFill(){if(!(OWNER&&window.__tc&&!LOCAL))return; for(const e of document.querySelectorAll('.empty[data-night]')){if(e.querySelector('[data-rsrun]'))continue; const b=document.createElement('button'); b.type='button'; b.className='btn sm'; b.dataset.rsrun='nightly'; b.textContent='להריץ את הריצה הלילית עכשיו'; b.style.marginInlineStart='8px'; e.appendChild(b)}}
+setTimeout(()=>{try{nightFill()}catch(e){}},4000);
+function nightEmpty(txt){return `<div class="empty">${txt} ${OWNER&&window.__tc&&!LOCAL?'<button type="button" class="btn sm" data-rsrun="nightly">להריץ את הריצה הלילית עכשיו</button>':''}</div>`}
 // prices for one key: US keys as stored, Tel Aviv keys as TLV:SYM, held securities by their symbol
 function priceOf(k){
   const it=itemOf(k), ix=ilIdx(k);
@@ -21993,37 +22049,44 @@ function drawSec(){
   const t0=pts[0][0],t1=pts[pts.length-1][0],base=pts[0][1];
   let lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1])); if(hi===lo){hi*=1.02;lo*=0.98}
   const span=hi-lo,step=niceStep(span,4); const glo=Math.floor(lo/step)*step,ghi=Math.ceil(hi/step)*step;
-  const L=10,R=64,T=18,B=30,PW=W-L-R,PH=H-T-B;
+  const L=10,R=66,T=22,B=30,PW=W-L-R,PH=H-T-B;
   const x=t=>L+(t-t0)/((t1-t0)||1)*PW, y=v=>T+(ghi-v)/((ghi-glo)||1)*PH;
-  const last=pts[pts.length-1],up=last[1]>=base,DK=themeDark(),GAIN=DK?'#4FD39A':'#2F7A5C',LOSS=DK?'#FF7A66':'#B83A3A',GRID=DK?'#33263A':'#E6EAEF',LAB=DK?'#A895A7':'#657587',col=up?GAIN:LOSS;
-  // grid with price labels on the right (the reading side in a right-to-left page)
-  g.font='12px IBM Plex Mono, monospace';g.textAlign='left';g.textBaseline='middle';
-  for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle=GRID;g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();g.fillStyle=LAB;g.fillText(fmtN(v),L+PW+8,yy)}
-  // baseline: the first price of the range
-  const yb=y(base);g.setLineDash([3,4]);g.strokeStyle=DK?'#6A5872':'#A9B4C0';g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.setLineDash([]);
-  // a stretch with no data (longer than a holiday for this kind of series) is shaded grey and named in the note; the line there only joins the two ends
+  // the site's own colors: the line in ink, the area in the accent, gain and loss only where a number is read
+  const DK=themeDark(), CS=getComputedStyle(document.documentElement), tok=(n,f)=>(CS.getPropertyValue(n)||'').trim()||f;
+  const INK=tok('--ink','#27152B'), ACC=tok('--gold','#FF9B54'), GAIN=tok('--gain','#1E8A5E'), LOSS=tok('--loss','#D1462F'), LAB=tok('--muted','#7A6A7E'), GRID=DK?'rgba(255,255,255,.09)':'rgba(39,21,43,.08)', FONT=tok('--sans','Assistant, sans-serif');
+  const last=pts[pts.length-1],up=last[1]>=base,col=up?GAIN:LOSS;
+  g.font='12px '+FONT;g.textAlign='left';g.textBaseline='middle';
+  const lastY=y(pts[pts.length-1][1]);   // the axis label the last price's tag would cover is left out
+  for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle=GRID;g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();if(Math.abs(yy-lastY)>14){g.fillStyle=LAB;g.fillText(fmtN(v),L+PW+10,yy)}}
+  // the range's first price, dotted in the accent: the line is read against it
+  const yb=y(base);g.setLineDash([2,5]);g.lineWidth=1.2;g.strokeStyle=ACC;g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.setLineDash([]);
+  // a stretch with no data (longer than a holiday for this kind of series) is hatched and named in the note; the line there only joins the two ends
   const gapMs=({'יומי':8,'שבועי':21,'חודשי':75}[freq]||Infinity)*864e5, gaps=[]; for(let i=1;i<pts.length;i++)if(pts[i][0]-pts[i-1][0]>gapMs)gaps.push([pts[i-1][0],pts[i][0]]);
-  for(const [a,b] of gaps){g.fillStyle=DK?'rgba(168,149,167,.12)':'rgba(101,117,135,.13)';g.fillRect(x(a),T,Math.max(2,x(b)-x(a)),PH)}
+  for(const [a,b] of gaps){g.fillStyle=DK?'rgba(255,255,255,.06)':'rgba(39,21,43,.06)';g.fillRect(x(a),T,Math.max(2,x(b)-x(a)),PH)}
   const path=()=>{g.beginPath();pts.forEach((p,i)=>{i?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1]))})};
-  const area=()=>{path();g.lineTo(x(t1),yb);g.lineTo(x(t0),yb);g.closePath()};
-  // above the baseline in green, below in red: the same line drawn twice under two clips
-  for(const [side,c] of [['up',GAIN],['down',LOSS]]){g.save();g.beginPath();if(side==='up')g.rect(0,0,W,yb);else g.rect(0,yb,W,H-yb);g.clip();
-    area();g.fillStyle=c===GAIN?(DK?'rgba(79,211,154,.14)':'rgba(47,122,92,.13)'):(DK?'rgba(255,122,102,.14)':'rgba(184,58,58,.12)');g.fill();path();g.strokeStyle=c;g.lineWidth=1.9;g.lineJoin='round';g.lineCap='round';g.stroke();g.restore()}
+  // the area under the line fades from the accent to nothing; the line itself is the page's ink, rounded
+  const grad=g.createLinearGradient(0,T,0,T+PH); grad.addColorStop(0,DK?'rgba(255,155,84,.30)':'rgba(255,155,84,.34)'); grad.addColorStop(1,'rgba(255,155,84,0)');
+  path();g.lineTo(x(t1),T+PH);g.lineTo(x(t0),T+PH);g.closePath();g.fillStyle=grad;g.fill();
+  path();g.strokeStyle=DK?'#FFFFFF':INK;g.lineWidth=2.4;g.lineJoin='round';g.lineCap='round';g.stroke();
   // x labels: days, weeks, months or years depending on the span
   const spanD=(t1-t0)/864e5,ticks=[];const dt0=new Date(t0),dt1=new Date(t1);
   if(spanD<=12){for(let t=t0;t<=t1;t+=864e5){const dd=new Date(t);ticks.push([t,dd.getDate()+'.'+(dd.getMonth()+1)])}}
   else if(spanD<=45){for(let t=t0;t<=t1;t+=7*864e5){const dd=new Date(t);ticks.push([t,dd.getDate()+'.'+(dd.getMonth()+1)])}}
   else if(spanD<=400){const m=new Date(dt0.getFullYear(),dt0.getMonth()+1,1);while(m.getTime()<=t1){ticks.push([m.getTime(),HEM[m.getMonth()]+(m.getMonth()===0?' '+m.getFullYear():'')]);m.setMonth(m.getMonth()+1)}}
   else{const yv=new Date(dt0.getFullYear()+1,0,1);while(yv.getTime()<=t1){ticks.push([yv.getTime(),String(yv.getFullYear())]);yv.setFullYear(yv.getFullYear()+1)}}
-  g.fillStyle=LAB;g.textAlign='center';g.textBaseline='alphabetic';g.font='12px Heebo, IBM Plex Mono, sans-serif';let lastX=-1e9;
-  for(const [t,lab] of ticks){const xx=x(t);if(xx-lastX<44||xx<L+14||xx>L+PW-14)continue;lastX=xx;g.strokeStyle=GRID;g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+PH);g.stroke();g.fillText(lab,xx,H-9)}
-  // current price tag on the axis
-  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px IBM Plex Mono, monospace';const tw=g.measureText(txt).width+12,yy=Math.max(T+8,Math.min(T+PH-8,y(v)));g.fillStyle=fill;const rx=L+PW+4,ry=yy-9;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,18,5):g.rect(rx,ry,tw,18);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+6,yy)};
-  tag(last[1],DK?'#120B14':'#fff',col);
-  g.fillStyle=col;g.beginPath();g.arc(x(last[0]),y(last[1]),3.2,0,7);g.fill();
-  // the selected point: a dashed guide and a ringed dot; the words go in the panel above the chart
-  if(SECHOV>=0&&SECHOV<pts.length){const hp=pts[SECHOV],hx=x(hp[0]),hy=y(hp[1]);g.strokeStyle=DK?'#E8CFF0':'#2E4A66';g.lineWidth=1;g.setLineDash([2,3]);g.beginPath();g.moveTo(hx,T);g.lineTo(hx,T+PH);g.stroke();g.setLineDash([]);
-    g.fillStyle=DK?'#120B14':'#fff';g.beginPath();g.arc(hx,hy,6,0,7);g.fill();g.fillStyle=hp[1]>=base?GAIN:LOSS;g.beginPath();g.arc(hx,hy,4,0,7);g.fill()}
+  g.fillStyle=LAB;g.textAlign='center';g.textBaseline='alphabetic';g.font='12px '+FONT;let lastX=-1e9;
+  for(const [t,lab] of ticks){const xx=x(t);if(xx-lastX<44||xx<L+14||xx>L+PW-14)continue;lastX=xx;g.fillText(lab,xx,H-9)}
+  // the last price: a halo on the point and a tag on the axis, in the color of the range's result
+  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px '+FONT;const tw=g.measureText(txt).width+14,yy=Math.max(T+9,Math.min(T+PH-9,y(v)));g.fillStyle=fill;const rx=L+PW+5,ry=yy-10;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,20,10):g.rect(rx,ry,tw,20);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+7,yy)};
+  tag(last[1],'#FFFFFF',col);
+  g.fillStyle=DK?'rgba(255,155,84,.28)':'rgba(255,155,84,.35)';g.beginPath();g.arc(x(last[0]),y(last[1]),9,0,7);g.fill();
+  g.fillStyle=ACC;g.beginPath();g.arc(x(last[0]),y(last[1]),4.5,0,7);g.fill();
+  // the point under the finger: a hairline, a ringed dot, and a small pill with the date and the price beside it
+  if(SECHOV>=0&&SECHOV<pts.length){const hp=pts[SECHOV],hx=x(hp[0]),hy=y(hp[1]);g.strokeStyle=DK?'rgba(255,255,255,.5)':'rgba(39,21,43,.45)';g.lineWidth=1;g.beginPath();g.moveTo(hx,T);g.lineTo(hx,T+PH);g.stroke();
+    g.fillStyle=DK?'#120B14':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=ACC;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
+    const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 12px '+FONT; const tw=g.measureText(lab).width+16, th=22;
+    let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
+    g.fillStyle=DK?'#FFFFFF':INK; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,11):g.rect(px,py,tw,th); g.fill(); g.fillStyle=DK?INK:'#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2)}
   secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq);
   SECV={pts,x,L,PW};
   const ch=last[1]/base-1;const late=days!==Infinity&&t0>from+days*864e5*0.25;
@@ -22041,7 +22104,7 @@ function secReadout(pts,base,last,hp,freq){const el=$('secRead');if(!el)return;e
       (isLast?'.':` · מאז ${toLast>=0?'עלה':'ירד'} ב-${pa(toLast)} עד המחיר האחרון, ${P(last[1])}.`);
   }else{
     el.innerHTML=`<b>${RNGL[SECRNG]||''}</b>: מ-${dateLab(first[0],last[0]-first[0])} עד ${dateLab(last[0],last[0]-first[0])} · פתיחה ${P(base)} ← אחרון ${P(last[1])} · <b>${pc(chAll)}</b> ${upAll?'עלייה':'ירידה'}`+
-      `<span class="hint">גע או עבור עם העכבר על הגרף כדי לראות תאריך ומחיר. הקו המקווקו הוא מחיר הפתיחה של הטווח: ירוק מעליו, אדום מתחתיו.</span>`}}
+      `<span class="hint">גע או עבור עם העכבר על הגרף כדי לראות תאריך ומחיר. הקו המקווקו הכתום הוא המחיר בתחילת הטווח.</span>`}}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
 function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.getBoundingClientRect(),px=ev.clientX-r.left;let best=-1,bd=1e9;SECV.pts.forEach((p,i)=>{const d=Math.abs(SECV.x(p[0])-px);if(d<bd){bd=d;best=i}});if(best!==SECHOV){SECHOV=best;drawSec()}}
@@ -22184,7 +22247,7 @@ function srchBoot(){
 }
 // the parts that need the database: the watch list and the daily snapshot
 function srchDb(){
-  if(db&&!LOCAL&&MYID){try{db.doc('watch/'+MYID).onSnapshot(s=>{if(s.exists){const d=s.data();WATCH={syms:d.syms||[],marks:d.marks||[],held:d.held||[],seen:d.seen||[],pots:d.pots||[]}}else WATCH={syms:[],marks:[],held:[],seen:[],pots:[]};srchQ();try{potSyncWatch()}catch(e){}},()=>{})}catch(e){}}
+  if(db&&!LOCAL&&MYID){try{db.doc('watch/'+MYID).onSnapshot(s=>{if(s.exists){const d=s.data();WATCH={syms:d.syms||[],marks:d.marks||[],held:d.held||[],seen:d.seen||[],pots:d.pots||[],markAt:d.markAt&&typeof d.markAt==='object'?d.markAt:{}}}else WATCH={syms:[],marks:[],held:[],seen:[],pots:[],markAt:{}};srchQ();try{potSyncWatch()}catch(e){}},()=>{})}catch(e){}}
   loadAllQ().then(()=>srchQ());
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
@@ -22285,7 +22348,7 @@ function renderCal(){
   const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
   const held=((P&&P.positions)||[]).length;
   const mineList=mine.length?`<ul class="calev">${mine.map(e=>calEvRow(e,today,true)).join('')}</ul>`
-    :`<p class="note">${held?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>`;
+    :`<p class="note">${held?(RS&&RS.companies&&Object.keys(RS.companies).length?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:`מועדי הדוחות והדיבידנדים של המניות שבתיק עוד לא נמשכו: הם מגיעים מהריצה הלילית של נתוני החברות (ג׳ עד ש׳, 01:15), שעדיין לא הביאה נתונים.`):'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>${held&&!(RS&&RS.companies&&Object.keys(RS.companies).length)?'<div class="rsStatus"></div>':''}`;
   const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
   $('calSub').textContent='השעות לפי שעון ישראל';
   box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
@@ -22297,6 +22360,7 @@ function renderCal(){
     <p class="note">מועדי הדוחות והדיבידנדים מ-Yahoo Finance: מועד דוח הוא לפעמים משוער עד שהחברה מאשרת אותו, וסכום של דיבידנד עתידי ידוע רק כשהחברה מכריזה עליו (עד אז מוצג הדיבידנד הקודם). דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
     <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
     <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
+  try{rsStatusFill()}catch(e){}
 }
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-calday],[data-calmv]'); if(!t||!t.closest('#calBox'))return;
   if(t.dataset.calday){CALSEL=t.dataset.calday}

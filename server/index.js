@@ -14,7 +14,7 @@ import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {closesFor} from './tasks.js';
-import {researchTask, newsFor, tick as rsTick, usable as rsUsable} from './research.js';
+import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
 import {backupStatus, backupNow} from './backup.js';
@@ -158,7 +158,18 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     CHARTS.set(key,pr); return pr};
   app.put('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canWrite(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}}); const s=JSON.stringify(req.body); if(s.length>2e6)return res.status(413).json({error:{code:'too_large',message:'document too large'}});
-    store.setDoc(p,req.body); res.json({ok:true})});
+    store.setDoc(p,req.body); res.json({ok:true}); if(/(^|\/)portfolio(\/main)?$/.test(p))researchSoon(p)});
+  // a portfolio saved: the figures for its securities (reports, analysts, the dates of reports and dividends) come within
+  // minutes, not tomorrow night; the first portfolio on the server also starts the ranking's universe
+  let rsTimer=null;
+  function researchSoon(p){const J=app.locals.jobs; if(!J)return; clearTimeout(rsTimer); rsTimer=setTimeout(()=>{try{
+    const fit=store.getDoc('research/fit'), rows=fit.exists?Object.keys((fit.data||{}).rows||{}).length:0, have=new Set(Object.keys((store.getDoc('research/latest').data||{}).companies||{}));
+    const held=new Set(); for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym)held.add(x.sym);
+    for(const q of store.pathsUnder('data/users'))if(/\/portfolio$/.test(q))for(const x of ((store.getDoc(q).data||{}).positions||[]))if(x&&x.sym)held.add(x.sym);
+    const missing=[...held].filter(k=>rsUsable(k)&&!have.has(k));
+    if(rows<50){log(`portfolio saved (${p}); the ranking has ${rows} rows: a full research run is queued`); J.run('research')}
+    else if(missing.length){queueResearch(missing); log(`portfolio saved (${p}); research queued for ${missing.length} new securit${missing.length===1?'y':'ies'}: ${missing.slice(0,8).join(', ')}`); J.run('research-new')}
+  }catch(e){log('research after save failed:',e&&e.message||e)}},20000)}
   app.patch('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canWrite(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}}); store.updateDoc(p,req.body); res.json({ok:true})});
   app.delete('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});

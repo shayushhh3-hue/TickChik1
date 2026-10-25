@@ -3,7 +3,7 @@
 import {ilParts, pxDue} from '../shared/market.js';
 import {pricesTask, nightlyTask, morningTask, monthlyTask, reportTask} from './tasks.js';
 import {backupTask} from './backup.js';
-import {researchTask, earningsTask} from './research.js';
+import {researchTask, earningsTask, takeQueued} from './research.js';
 import {benchTask} from './bench.js';
 import {ilSymsTask} from './ilsyms.js';
 import {pxWatchTask} from './pxwatch.js';
@@ -30,7 +30,9 @@ export const SCHEDULE=[
   {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   {name:'pxwatch', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
-  {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})}
+  {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},
+  // never on the clock: the securities of a portfolio just saved, so their figures do not wait for the night
+  {name:'research-new',when:()=>false, run:(s,o)=>{const only=takeQueued(); return only.length?researchTask(s,{...o,only,budgetMs:6*60e3}):Promise.resolve(null)}}
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)

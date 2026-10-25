@@ -745,7 +745,7 @@ test('my portfolio: cards on a phone, a table on a wide screen; privacy and dele
   await ctx.close();
 });
 
-test('a new user: the portfolio first; the profile comes after it, without e-mail and phone',T,async t=>{
+test('a new user: the portfolio first; the profile comes after it, with e-mail and phone offered (not required)',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{who:'new',prompts:true}); await pg.waitForTimeout(3500);
   let s=await pg.evaluate(()=>({dlg:!document.getElementById('profDlg').hidden,fresh:document.getElementById('fresh').textContent,sugg:[...document.querySelectorAll('#anaSugg .sg')].map(x=>x.textContent)}));
@@ -760,7 +760,13 @@ test('a new user: the portfolio first; the profile comes after it, without e-mai
   await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click());
   await pg.waitForFunction(()=>{const t=document.getElementById('botTip'); if(t&&!t.hidden){const x=t.querySelector('[data-bottip]:not([data-bottip="go"])'); x&&x.click()} return !document.getElementById('profDlg').hidden},null,{timeout:15000});
   const f=await pg.evaluate(()=>({email:document.getElementById('pfEmail').closest('label').hidden,phone:document.getElementById('pfPhone').closest('label').hidden}));
-  assert.deepEqual(f,{email:true,phone:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
+  assert.deepEqual(f,{email:false,phone:false});
+  // saved with a name and an e-mail only: the investor type can wait, and the e-mail is kept
+  await pg.waitForTimeout(300); await pg.fill('#pfFirst','נועה'); await pg.fill('#pfEmail','noa@example.com'); await pg.click('#profDlg .prof-f .btn.pri'); await pg.waitForTimeout(1500);
+  const u=store.userByEmail('new@example.com'), sv=(store.getDoc(`data/users/${u.id}/settings`).data||{}).profile;
+  assert.equal(sv&&sv.first,'נועה'); assert.equal(sv.email,'noa@example.com'); assert.equal(sv.risk,'');
+  assert.equal(await pg.evaluate(()=>document.getElementById('profDlg').hidden),true,'the dialog closed on save');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
@@ -1214,7 +1220,8 @@ test('the home chart: the value over months, a range to choose, a cursor that re
   const {ctx,pg}=await open(390);
   try{
     await pg.waitForFunction(()=>{const b=document.getElementById('wChart'); return b&&!b.hidden&&document.querySelector('#wChS path')},null,{timeout:20000});
-    const r0=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r0,/^(6 חודשים|מאז .+): [▲▼] ₪[\d,]+/);
+    const r0=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r0,/^(שנה|מאז .+): [▲▼] ₪[\d,]+/);
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#wChS text')].every(t=>!/^\d+\.\d+/.test(t.textContent))),'the axis names months, never days');
     await pg.click('[data-wr="0"]'); await pg.waitForTimeout(200);
     assert.equal(await pg.evaluate(()=>document.querySelector('[data-wr="0"]').getAttribute('aria-pressed')),'true');
     const box=await (await pg.$('#wChS')).boundingBox(); await pg.mouse.move(box.x+box.width*0.15,box.y+box.height/2,{steps:3}); await pg.waitForTimeout(150);

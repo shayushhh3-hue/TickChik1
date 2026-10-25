@@ -2,6 +2,11 @@
 // It is not an official API: Yahoo can change or refuse it at any time. When an update fails the last values stay,
 // with their date, and the page says how old they are. Numbers in, numbers out: nothing here is advice.
 import {tickerFor} from '../shared/quotes.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+// the default universe for the ranking (shared/universe.json, written by the build from the page's list of securities)
+let UNI=null; export function defaultUniverse(){if(UNI)return UNI; try{UNI=JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','shared','universe.json'),'utf8')).keys||[]}catch(e){UNI=[]} return UNI}
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -107,6 +112,9 @@ export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8}={}){
 function merge(old,neu){const o={...(old||{})}; for(const [k,v] of Object.entries(neu))if(v!=null)o[k]=v; delete o.inv; return o}
 const docKey=k=>'research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_');
 export const tick=(k,map)=>k.startsWith('TLV:')?(map[k]||k.slice(4)+'.TA'):tickerFor(k,null,map);
+// securities queued for a research run of their own (a portfolio just saved): taken by the 'research-new' job
+let QUEUED=new Set(); export function queueResearch(keys){for(const k of keys||[])if(usable(k))QUEUED.add(k); return QUEUED.size}
+export function takeQueued(){const a=[...QUEUED]; QUEUED=new Set(); return a}
 export const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^TLV:[A-Z0-9.]{1,10}$/.test(k))&&!/^TA\d+$/.test(k);
 
 // ---- 22.10: a report set against what was expected before it ----
@@ -145,7 +153,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
   for(const w of W)for(const k of ['marks','seen','syms'])for(const s of ((w.data||{})[k]||[]))watched.add(s);
   const C=store.getDoc('research/candidates'); for(const it of ((C.data||{}).items||[]))if(it&&it.sym)watched.add(it.sym);
-  const uni=((store.getDoc('research/universe').data||{}).keys)||[];
+  const uni=((store.getDoc('research/universe').data||{}).keys)||defaultUniverse();
   const order=only?[...new Set(only.filter(usable))]:[...new Set([...held].filter(usable).concat([...watched].filter(usable),uni.filter(usable)))];
   const got={}; let sess=null, ok=0, none=0, fail=0, first=null, stopped=null;
   for(const k of order){

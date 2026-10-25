@@ -5,6 +5,7 @@ import {sendAllowed, mailAllowed, wrapHtml, esc} from './mail.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {tickerFor, BENCH} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
+import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
 
 const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
 // every call out has a time limit, so one site that hangs cannot hold up the whole night (and every job queued after it)
@@ -41,6 +42,25 @@ export async function nightlyTask(store,{log,maxSeries=90}={}){
   }
   log(`close series: ${ok}/${Math.min(keys.size,maxSeries)}${fails.length?'; failed: '+fails.slice(0,5).join(' | '):''}`);
   try{await usSnapshot(store,now,log)}catch(e){log('US snapshot failed:',e.message)}
+  try{comoveTask(store,{log})}catch(e){log('comove failed:',e.message)}
+}
+// From the close series the night holds: the groups that move together (research/comove), the long-term ties
+// (research/longterm) and the month-end closes (history/prices), for every security anyone holds. The Hebrew group
+// names mirror the page's GROUPS; a group of mixed kinds is named by its members.
+const GROUP_HE={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה וביטחון',health:'בריאות',cons:'צריכה ונדל״ן',space:'חלל',il:'ישראל (קרנות ומדדים)'};
+export function comoveTask(store,{log=console.log}={}){
+  const now=new Date(), held=new Set(), names={};
+  const P=store.getDoc('portfolio/main'); for(const x of ((P.exists&&P.data.positions)||[]))if(x&&x.sym){held.add(x.sym); if(x.group)names[x.sym]=x.group}
+  for(const p of store.pathsUnder('data/users'))if(/\/portfolio$/.test(p))for(const x of ((store.getDoc(p).data||{}).positions||[]))if(x&&x.sym){held.add(x.sym); if(x.group&&!names[x.sym])names[x.sym]=x.group}
+  const series={}; for(const k of held){const d=store.getDoc('quotes/c_'+k.replace(':','_')); series[k]=d.exists&&d.data&&d.data.d&&d.data.d.length>=10?d.data:null}
+  const withData=Object.keys(series).filter(k=>series[k]);
+  const cm=comoveOf(series,{names,groupNames:GROUP_HE}); store.setDoc('research/comove',{...cm,source:'Yahoo Finance',updatedAt:now.toISOString()});
+  const weekly=Object.fromEntries(withData.filter(k=>series[k].w&&series[k].w.d&&series[k].w.d.length>=100).map(k=>[k,series[k].w]));
+  const lt=longtermOf(weekly); store.setDoc('research/longterm',{...lt,source:'Yahoo Finance',updatedAt:now.toISOString()});
+  const PX=store.getDoc('history/prices'), px=monthlyCloses(Object.fromEntries(withData.map(k=>[k,series[k]])),PX.exists?PX.data:{},{until:now.toISOString()});
+  store.setDoc('history/prices',{...(PX.exists?PX.data:{}),...px,updatedAt:now.toISOString(),source:'Yahoo Finance'});
+  log(`comove: ${cm.groups.length} group(s), ${cm.pairs.length} pair(s) together, ${cm.opposite.length} opposite, ${cm.solo.length} independent, ${cm.nodata.length} without data; long-term ${lt.count} pair(s); ${px.months.length} months of closes for ${Object.keys(px.px).length} securities`);
+  return {cm,lt,px};
 }
 // the chart series of one security (daily for a year, weekly for five, monthly since listing), for the page's charts
 export async function closesFor(key,map={}){
