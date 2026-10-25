@@ -1091,3 +1091,13 @@ test('finnhub: parsing, the paced client, and the pass that fills what Yahoo did
   const items=await newsFor('ACME',{fetch:f,now:new Date('2026-10-25T01:00:00Z')}); assert.equal(items[0].title,'Acme wins');
   delete process.env.FINNHUB_API_KEY;
 });
+
+test('jobs: the prices have a lane of their own: a long research run does not hold them back',async()=>{
+  const {startJobs}=await import('../server/jobs.js'); const ran=[];
+  const J=startJobs(new Store(':memory:'),{log:()=>{},every:1e9,limits:{research:5000},schedule:[
+    {name:'research',when:()=>false,run:()=>new Promise(r=>setTimeout(r,800))},{name:'prices',lane:'px',when:()=>false,run:async()=>{ran.push('prices')}},{name:'other',when:()=>false,run:async()=>{ran.push('other')}}]});
+  try{J.run('research'); J.run('other'); J.run('prices'); await new Promise(r=>setTimeout(r,200));
+    assert.deepEqual(ran,['prices'],'the prices ran while the research still runs; the other job waits its turn');
+    await new Promise(r=>setTimeout(r,900)); assert.deepEqual(ran,['prices','other'])}
+  finally{J.stop()}
+});
