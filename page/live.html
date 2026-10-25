@@ -1418,7 +1418,9 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .termpop .btn{align-self:flex-start}
 .wtags{display:flex;flex-wrap:wrap;gap:6px}
 .wsec{grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;margin-top:4px} .wsec h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px} .wsec .sub{font-size:12.5px;color:var(--muted)}
-.wc.mine{border-color:var(--accent-soft)} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
+.wc.mine{border-color:var(--accent-soft)}
+.fitwhy{grid-column:1 / -1;font-size:12.5px} .fitwhy summary{cursor:pointer;color:var(--accent-ink);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:28px} .fitwhy summary::before{content:"◂";font-size:11px;transition:transform .15s} .fitwhy[open] summary::before{transform:rotate(-90deg)}
+.fitwhy ul{margin:6px 0 0;padding:0 18px 0 0;display:grid;gap:6px;line-height:1.5;color:var(--ink2)} .fitwhy li b{color:var(--ink);font-weight:600} .fitwhy .note{margin:8px 0 0} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -21170,6 +21172,18 @@ const fitParts=(L,first)=>{const W=fitW();return Object.keys(W).map((k,i)=>`${L[
 const andJ=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' ו'+a[a.length-1];
 const hasRisk=()=>!!(S&&S.profile&&RISK[S.profile.risk]);
 function fitHeroTxt(){return `הדירוג לפי הכללים שלך${hasRisk()?` ולפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:''}: ${fitParts(FITL,'עד ').join(', ')}.`}
+function fitWhy(f,c,m){
+  if(!f||!f.W)return ''; const W=f.W, R=S.rules||{}, mg=+R.maxGroup||40, c0=c||{}, g=GROUPS[f.g]||f.g, L=[];
+  const row=(k,txt)=>`<li><b>${FITL[k]}: <span class="n">${f[k]}</span> מתוך <span class="n">${W[k]}</span></b> · ${txt}</li>`;
+  L.push(row('div',f.w>=mg?`"${g}" כבר ${nn(pct(f.w,0))} מהתיק, מעל הסף שקבעת (${nn(pct(mg,0))}), אז הנייר לא מוסיף פיזור`:f.w>0?`"${g}" היא ${nn(pct(f.w,0))} מהתיק מתוך סף של ${nn(pct(mg,0))}; ככל שהקבוצה קטנה יותר, הנייר מפזר יותר`:`"${g}" לא נמצאת בתיק בכלל, אז הנייר מוסיף פיזור מלא`));
+  if(W.q)L.push(row('q',f.fs?`ציון פיננסי ${f.fs.score} (${f.fs.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(', ')}), לפי הדוחות`:'אין עדיין נתוני דוחות, אז החלק הזה באמצע הסולם (40%)'));
+  if(W.val)L.push(row('val',f.pe==null?'אין מכפיל רווח ידוע, אז 40% מהניקוד':f.pe<0?`מכפיל שלילי (הפסד), ${nn(f.pe.toFixed(1))}`:`מכפיל רווח ${nn(f.pe.toFixed(1))}: עד 18 ניקוד מלא, 18–25 שלושה רבעים, 25–32 כמחצית, 32–40 חמישית, מעל 40 כלום`));
+  if(W.st)L.push(row('st',c0.beta==null?'אין נתון תנודתיות, אז אמצע הסולם':`ביטא ${nn(c0.beta.toFixed(2))}: עד 0.7 מלא, עד 1.0 שישים אחוז, מעל זה חמישית`));
+  if(W.gr)L.push(row('gr',c0.revg!=null?`צמיחת הכנסות ${nn(spct(c0.revg,0))} (30% ומעלה = ניקוד מלא)`:c0.pe>0&&c0.fpe>0?`מהפער בין המכפיל הנוכחי (${nn(c0.pe.toFixed(1))}) למכפיל העתידי (${nn(c0.fpe.toFixed(1))})`:'אין נתון צמיחה, אז 30% מהניקוד'));
+  if(W.dv)L.push(row('dv',c0.dy!=null?`תשואת דיבידנד ${nn(pct(c0.dy))} (4% ומעלה = ניקוד מלא)`:'אין נתון דיבידנד, אז 30% מהניקוד'));
+  const who=hasRisk()?`המשקלות לפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:'המשקלות לפי ברירת המחדל ("באמצע"), כי עוד לא בחרת סוג משקיע בפרופיל';
+  return `<details class="fitwhy"><summary>למה ${f.score} מתוך 100?</summary><ul>${L.join('')}</ul><p class="note">${who}${(S&&S.wpref&&(S.wpref.focus||[]).length)?`, ו${andJ(S.wpref.focus.map(k=>FITL[k]))} שוקלים כפול לפי מה שסימנת`:''}. התאמה לכללים שלך, לא המלצה.</p></details>`;
+}
 function fitRowX(f){const r=riskOf(); return r==='safe'?` · יציבות ${f.st} · דיבידנד ${f.dv}`:r==='risk'?` · צמיחה ${f.gr}`:''}
 
 // ---- the profile: name, optional email and phone, the page's language, the kind of investor and the deposit day ----
@@ -21691,6 +21705,7 @@ function renderCandsP(m,pool,mine=''){
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מול לפני שנה',c.chg52!=null?'<span class="n">'+spct(c.chg52,0)+'</span>':'—',c.chg52!=null?(c.chg52>=0?'up':'down'):'')}${fc('דיבידנד',c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}${fc('ביטא',c.beta!=null?'<span class="n">'+(+c.beta).toFixed(2)+'</span>':'—')}${fc(c.fpe!=null?'מכפיל קדימה':'מכפיל',f.pe!=null?'<span class="n">'+(+f.pe).toFixed(1)+'</span>':'—')}${fc('איכות פיננסית',gr?`<span class="gr ${gr}">${gr}</span>`:'—')}</div>
       ${tags?`<div class="wtags">${tags}</div>`:''}
       <div class="wfit"><span class="sub">פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}${fitRowX(f)}</span>${sk?`<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-anav="sec:${esc(r.k)}">לדף הנייר ›</button><button type="button" class="btn sm" data-wmark="${esc(r.k)}" aria-pressed="${wmarks().includes(r.k)}">${wmarks().includes(r.k)?'הסר סימון':'סמן למעקב'}</button></div>`:''}</div>
+      ${fitWhy(f,c,m)}
     </article>`}).join('')||'<div class="empty">אין ניירות בסינון הזה.</div>');
   $('candNote').textContent='הדירוג מחושב בדפדפן שלך מהתיק, הכללים והיעדים שלך. '+(FIT&&FIT.updatedAt?`נתוני החברות ${rsStale(FIT.updatedAt)?'נכונים ל-'+dmy(FIT.updatedAt)+' ולא מתעדכנים כרגע':'עודכנו '+dmy(FIT.updatedAt)}; `:'')+'מחירים: סגירה יומית, ונייר שסימנת מקבל מחיר כל כמה דקות בשעות המסחר.';
 }
@@ -21866,6 +21881,7 @@ function myWatchHtml(m){
         ${f?`<div class="rg"><div class="ring ${tier}${part?' part':''}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${part?'חלקית ':''}${f.score} מתוך 100"><b>${f.score}</b></div><span>${part?'התאמה חלקית':'התאמה'}</span></div>`:''}</div>
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מאז שסימנת',since!=null?'<span class="n">'+spct(since)+'</span>':'—',since!=null?(since>=0?'up':'down'):'')}${fc('הדוח הבא',rs&&rs.next?'<span class="n">'+dmy(rs.next)+'</span>'+(dn!=null&&dn>=0&&dn<=7?' <small>בקרוב</small>':''):'—')}${fc('דיבידנד',rs&&rs.div&&rs.div.ex?'<span class="n">אקס '+dmy(rs.div.ex)+'</span>':c&&c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}</div>
       <div class="wfit"><span class="sub">${f&&!part?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:f?`פיזור ${f.div} מתוך ${f.W.div} לפי הקבוצה "${GROUPS[f.g]||f.g}" (${pct(f.w,0)} מהתיק${f.over?', מעל הסף':''}). איכות, תמחור וצמיחה באמצע הסולם עד שיגיעו נתוני החברה.`:''}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
+      ${f?fitWhy(f,c,m):''}
     </article>`}).join('');
   return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
 }
