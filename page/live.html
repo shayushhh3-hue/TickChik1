@@ -17376,14 +17376,16 @@ function renderComove(m){
   const strongOpp=op.concat(mOp).some(o=>o.r<=-rule.min);
   $('prOppNote').textContent=(strongOpp?'':`אין בתיק צמד שנע בכיוונים הפוכים בקשר חזק (מתחת ל-${LRM}−${rule.min}). `)+'מוצגים צמדים שהקשר ההפוך שלהם מובהק, כלומר לא סביר שהוא מקרי, גם אם עוצמתו בינונית.';
 }
-let HS=null, HSUM=[], DY=null, TP=[], dyBusy=false;
+let HS=null, HSUM=[], DY=null, TP=[], TPW=[], dyBusy=false;
 // ---- the value over time, on the home screen: the month-ends, the saved days and today (TP, from the trend), for all the
 // accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
 let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
 // month by month: the month-ends the page holds (not the single days saved inside a month) and today
 function wPts(){
-  const one=acct!=='all', all=(TP||[]).filter(p=>p.now||/^סוף /.test(p.label||'')).map(p=>({t:p.t,label:p.label,ym:p.ym||'',v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v));
-  while(one&&all.length&&!(all[0].v>0))all.shift();
+  const one=acct!=='all', mk=L=>L.map(p=>({t:p.t,label:p.label,ym:p.ym||'',v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v)&&p.v>0);
+  // month by month; when the page knows fewer than two month-ends (a new portfolio), the days it saved stand in
+  let all=mk(TPW&&TPW.length?TPW:(TP||[]).filter(p=>p.now||/^סוף /.test(p.label||'')));
+  if(all.length<2)all=mk(TP||[]);
   if(!WR)return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
 }
 let WSIG='';
@@ -17478,7 +17480,12 @@ function renderTrend(){
   for(const k of Object.keys((DY&&DY.points)||{}).sort()){ if(k===today)continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(t>lastT)pts.push({t,label:dmyy(k),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:x.v,dep:x.dep}) }
   const byNow=Object.fromEntries(acctIds().map(a=>[a,model(P,Q,a).total])), ex=byNow.exc||0, bl=byNow.blink||0;
   pts.push({t:Date.now(),label:'היום',exc:ex,blink:bl,by:byNow,val:mAll.total,dep:depNow,now:true});
-  TP=pts; setTimeout(()=>{try{renderWChart()}catch(e){}},0);
+  TP=pts;
+  // 25.10: the home chart's months: every whole month the page knows (also those without a known deposit total, and a
+  // month known from one saved day), not only the ones the deposits chart can use; and today
+  TPW=monthSeries().filter(r=>!r.now&&!r.miss&&!r.asOf&&r.val>0).map(r=>{const d=new Date(+r.ym.slice(0,4),+r.ym.slice(5),0);
+    return {t:+d,ym:r.ym,label:`סוף ${MSHORT[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,by:r.by,val:r.val,dep:r.dep}}).concat([pts[pts.length-1]]);
+  setTimeout(()=>{try{renderWChart()}catch(e){}},0);
   const W=cw('chart3'),sm=W<480,H=sm?230:260,L=sm?46:58,Rm=sm?64:74,T=14,Bm=30, t0=pts[0].t, t1=pts[pts.length-1].t;
   const tk3=niceTicks(Math.min(...pts.map(p=>Math.min(p.val,p.dep)))*0.96,Math.max(...pts.map(p=>Math.max(p.val,p.dep)))*1.03,3), minV=tk3[0], maxV=tk3[tk3.length-1];
   const x=t=>L+(W-L-Rm)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>H-Bm-(H-T-Bm)*(v-minV)/(maxV-minV), kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';

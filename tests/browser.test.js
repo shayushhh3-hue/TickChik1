@@ -686,7 +686,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
       return {best:d[0]&&d[0].v>0?d[0].s:'—',worst:d.length&&d[d.length-1].v<0?d[d.length-1].s:'—',k}});
     let M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],JSON.stringify(M)); assert.notEqual(M.best,'—');
     await pg.click('#sideMore'); assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=R('kPnl').bottom, b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox'), t=R('sideMore');
-      return b.top>p&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom&&Math.abs(y.top-f.top)<2&&t.top>=y.bottom&&getComputedStyle(document.getElementById('kBestBox')).backgroundColor===getComputedStyle(document.getElementById('kDepBox')).backgroundColor}),'white cards under "רווח מול עלות", two by two, then the button');
+      return b.top>p&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom&&Math.abs(y.top-f.top)<2&&t.top>=y.bottom&&getComputedStyle(document.getElementById('kBestBox')).backgroundColor===getComputedStyle(document.getElementById('kWorstBox')).backgroundColor}),'cards of one look under "רווח מול עלות", two by two, then the button (the two tiles above them take their own colours)');
     // a mover opens its page
     const lk=await pg.evaluate(()=>{const r=document.querySelector('.hero .side .stat.secl'); return r&&r.dataset.sec});
     if(lk){await pg.click('.hero .side .stat.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
@@ -704,9 +704,9 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     // "מניות": the same for the stocks only; the two chips are one choice, and both add up to the whole
     await pg.click('#acctChips [data-kv="stock"]'); await pg.waitForTimeout(400);
     const st=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
-      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden}));
+      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden,chartNote:document.getElementById('wChN').hidden?'':document.getElementById('wChN').textContent}));
     assert.equal(st.k,'שווי המניות'); assert.deepEqual(st.pressed,['מניות']); assert.equal(st.rows.length,10); assert.ok(!st.rows.includes('TA125'));
-    assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · בלי קרנות ומזומן$/); assert.equal(st.chart,true,'the value chart is the whole portfolio\'s, so it waits');
+    assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · בלי קרנות ומזומן$/); assert.equal(st.chart,false,'the value chart stays (the owner asked for it in every view)'); assert.match(st.chartNote,/כל התיק/,'and says it is the whole portfolio\'s');
     const num=t=>+t.replace(/[^\d]/g,''); assert.ok(Math.abs(num(st.tot)+num(f.tot)-num(all))<=num(all)*0.02+Math.max(1,num(all)*0.001)||true);
     await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);
     for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_kv!=='fund');i++)await pg.waitForTimeout(250);
