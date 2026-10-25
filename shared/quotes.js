@@ -108,8 +108,8 @@ export function mayaHistParse(j,now=new Date()){
   delete q.dates; return q;
 }
 // a fund's prices for its page's chart: the history interface, a month of days, oldest first ({d, c}); and its name
-export async function mayaFundSeries(id,{fetch:f=timedFetch,now=new Date()}={}){
-  const r=await f(MAYA_HIST(id)+'?_='+now.getTime(),{method:'POST',headers:{...MAYA_H,'content-type':'application/json','cache-control':'no-cache'},body:JSON.stringify({pageSize:60,pageNumber:1,period:0}),cache:'no-store'});
+export async function mayaFundSeries(id,{fetch:f=timedFetch,now=new Date(),pageSize=60}={}){
+  const r=await f(MAYA_HIST(id)+'?_='+now.getTime(),{method:'POST',headers:{...MAYA_H,'content-type':'application/json','cache-control':'no-cache'},body:JSON.stringify({pageSize,pageNumber:1,period:0}),cache:'no-store'});
   if(!r.ok)throw new Error('history HTTP '+r.status);
   const j=await r.json(), rowsOf=x=>Array.isArray(x)?x:x&&typeof x==='object'?Object.values(x).map(rowsOf).find(a=>a&&a.length&&typeof a[0]==='object')||null:null;
   const by=new Map(); for(const row of rowsOf(j)||[]){const q=fundFromJson(row,now); if(q&&q.closeDate&&q.px>0)by.set(q.closeDate,q.px)}
@@ -190,6 +190,16 @@ export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
   if(!rows.length)throw new Error('no rows');
   const a=rows[rows.length-1], b=rows[rows.length-2];
   return {px:+a[4],prev:b?+b[4]:null,ccy:'USD',time:new Date(a[0]+'T21:00:00Z').getTime(),closeDate:a[0],prevDate:b?b[0]:null,exch:'',src:'stooq'};
+}
+
+// a US share's daily closes from Stooq (the whole history as CSV), the last `days` of them: a second source for the
+// night's series when Yahoo refuses the server
+export async function stooqSeries(ticker,{fetch:f=timedFetch,days=260}={}){
+  const r=await f(`https://stooq.com/q/d/l/?s=${encodeURIComponent(ticker.toLowerCase()+'.us')}&i=d`,{headers:{'user-agent':UA}});
+  if(!r.ok)throw new Error('Stooq HTTP '+r.status);
+  const rows=(await r.text()).trim().split('\n').slice(1).map(l=>l.split(',')).filter(p=>p.length>=5&&/^\d{4}-\d\d-\d\d$/.test(p[0])&&+p[4]>0).slice(-days);
+  if(rows.length<10)throw new Error('Stooq: no rows');
+  return {d:rows.map(p=>p[0]),c:rows.map(p=>Math.round(+p[4]*1e4)/1e4)};
 }
 
 // the Bank of Israel representative rate for the dollar

@@ -3,7 +3,7 @@
 import {withPage, applyWrites} from './headless.js';
 import {sendAllowed, mailAllowed, wrapHtml, esc} from './mail.js';
 import {refreshQuotes} from '../shared/pxjob.js';
-import {tickerFor, BENCH} from '../shared/quotes.js';
+import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
 
@@ -18,24 +18,31 @@ const ownerUser=store=>{const o=store.users().find(u=>u.role==='owner'); return 
 export async function pricesTask(store,{log,reason='שעתי'}={}){return refreshQuotes(store,{log,reason})}
 
 // 23:50: the day's point (by the page), the close series of held and followed securities, the US snapshot for search
-export async function nightlyTask(store,{log,maxSeries=90}={}){
+export async function nightlyTask(store,{log,maxSeries=160}={}){
   const docs=ownerDocs(store), now=new Date();
   if(docs['portfolio/main']&&docs['quotes/latest']){
     const {writes,errs}=await withPage(docs,ownerUser(store),async pg=>{await pg.evaluate(()=>document.getElementById('tab_history').click());await pg.waitForTimeout(2500);return true});
     if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
     log(`daily point: ${await applyWrites(store,writes,p=>p==='history/daily')} write(s)`);
   }else log('no portfolio or quotes yet; the daily point waits');
+  // 25.10: everybody's holdings (the owner's and the guests'), funds and index trackers too: the control tab's "moves
+  // together" and "shakes the portfolio" need a series for every one of them
   const held=((docs['portfolio/main']||{}).positions||[]).map(x=>x.sym);
-  const keys=new Set(held.filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s)));
+  for(const p of store.pathsUnder('data/users'))if(/\/portfolio$/.test(p))for(const x of ((store.getDoc(p).data||{}).positions||[]))if(x&&x.sym)held.push(x.sym);
+  const keys=new Set(held.filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s)||isIlFund(s)||PROXY[s]||/^TLV:[A-Z0-9]{1,7}$/.test(s)));
   for(const w of store.listDocs('watch'))for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(s))keys.add(s);
   const map=((docs['settings/main']||{}).symMap)||{};
   let ok=0; const fails=[], until=Date.now()+12*60e3;
   for(const key of [...keys].slice(0,maxSeries)){
     if(Date.now()>until){fails.push('stopped after 12 minutes');break}
-    const t=key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
-    try{const d=await series(t,'1y','1d'); let w=null; try{w=await series(t,'5y','1wk')}catch(e){}
+    const t=PROXY[key]?PROXY[key].index:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
+    try{let d, w=null, src='Yahoo Finance';
+      // a mutual fund: its official prices from Maya (a year of days); a share or a tracker: Yahoo, then Stooq for a US share
+      if(isIlFund(key)){d=await mayaFundSeries(key,{pageSize:300}); src='מאיה (הבורסה)'; if(!d.d.length)throw new Error('Maya: no prices')}
+      else{try{d=await series(t,'1y','1d'); try{w=await series(t,'5y','1wk')}catch(e){}}
+        catch(e){if(!/^[A-Z][A-Z.\-]{0,5}$/.test(key))throw e; d=await stooqSeries(t); src='Stooq'}}
       const old=store.getDoc('quotes/c_'+key.replace(':','_'));
-      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,updatedAt:now.toISOString(),source:'Yahoo Finance'}; if(w&&w.d.length>=3)doc.w=w;
+      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3)doc.w=w;
       store.setDoc('quotes/c_'+key.replace(':','_'),doc); ok++}
     catch(e){fails.push(key+': '+e.message)}
     await new Promise(r=>setTimeout(r,250));
