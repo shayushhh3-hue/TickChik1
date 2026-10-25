@@ -21957,8 +21957,14 @@ async function rsStatusHtml(){
   if(RSST===null){RSST=false; try{const r=await fetch('/api/research/status',{credentials:'same-origin'}); if(r.ok)RSST=await r.json()}catch(e){} }
   if(RSST===false)return '';
   const st=RSST&&(RSST.last||RSST); if(!st||!st.at)return `<p class="note">לבעל האתר: הריצה הלילית של נתוני החברות עוד לא רצה אף פעם. <button type="button" class="btn sm" data-rsrun>להריץ עכשיו</button></p>`;
-  return `<p class="note">לבעל האתר: הריצה האחרונה ${dmy(st.at)} ${hm(st.at)}, עודכנו ${st.ok} מתוך ${st.of}${st.fail?`, נכשלו ${st.fail}`:''}${st.none?`, ${st.none} בלי כיסוי`:''}${st.stopped?` · נעצרה: ${esc(String(st.stopped).slice(0,120))}`:''}${st.first?` · השגיאה הראשונה: ${esc(String(st.first).slice(0,160))}`:''}. <button type="button" class="btn sm" data-rsrun>להריץ שוב עכשיו</button></p>`;
+  return `<p class="note">לבעל האתר: הריצה האחרונה ${dmy(st.at)} ${hm(st.at)}, עודכנו ${st.ok} מתוך ${st.of}${st.fail?`, נכשלו ${st.fail}`:''}${st.none?`, ${st.none} בלי כיסוי`:''}${st.stopped?` · נעצרה: ${esc(String(st.stopped).slice(0,120))}`:''}${st.first?` · השגיאה הראשונה: ${esc(String(st.first).slice(0,160))}`:''}.${rsSrcLine(st)} <button type="button" class="btn sm" data-rsrun>להריץ שוב עכשיו</button></p>`;
 }
+// what the second sources added in that run: Finnhub (with the key) and the companies' reports at the SEC
+function rsSrcLine(st){const f=st.fh, d=st.fund, L=[];
+  if(f)L.push(`Finnhub: ${f.filled} ניירות (נתוני חברה ${f.figs}, אנליסטים ${f.recs}, דוחות ${f.eps}, תאריכי דוחות ${f.cal})${f.stopped?' · נעצר: '+esc(String(f.stopped)):''}${f.first?' · '+esc(String(f.first).slice(0,120)):''}`);
+  else L.push('Finnhub: לא פעל בריצה הזאת (אין מפתח, או שהריצה הייתה לפני שהמפתח הוגדר)');
+  if(d)L.push(`SEC וחישוב תנודתיות: ${d.filled} ניירות (SEC ${d.sec}, תנודתיות ${d.beta})${d.first?' · '+esc(String(d.first).slice(0,120)):''}`);
+  return ' '+L.join(' · ')+'.'}
 function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
 function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
 document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-rsrun]'); if(!b)return; b.disabled=true; b.textContent='הופעל…'; const job=b.dataset.rsrun||'research';
