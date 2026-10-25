@@ -21975,7 +21975,7 @@ function rsSrcLine(st){const f=st.fh, d=st.fund, L=[];
 function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
 function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
 document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-rsrun]'); if(!b)return; b.disabled=true; b.textContent='הופעל…'; const job=b.dataset.rsrun||'research';
-  try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin'}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}});
+  try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin',headers:{'x-tc':'1'}}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}});
 // the control tab's sections that wait for the night's series: the owner can start that run now
 function nightFill(){if(!(OWNER&&window.__tc&&!LOCAL))return; for(const e of document.querySelectorAll('.empty[data-night]')){if(e.querySelector('[data-rsrun]'))continue; const b=document.createElement('button'); b.type='button'; b.className='btn sm'; b.dataset.rsrun='nightly'; b.textContent='להריץ את הריצה הלילית עכשיו'; b.style.marginInlineStart='8px'; e.appendChild(b)}}
 setTimeout(()=>{try{nightFill()}catch(e){}},4000);
