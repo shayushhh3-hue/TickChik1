@@ -73,7 +73,7 @@ html[data-theme="dark"] #tcAcctMenu a,html[data-theme="dark"] #tcAcctMenu button
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#1e344e">
-<script>try{var tm=localStorage.getItem('tr_theme'),dk=tm==='dark'||(tm==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dk?'dark':'light';if(dk)document.querySelector('meta[name=theme-color]').setAttribute('content','#120B14')}catch(e){}</script>
+<script>try{var tm=localStorage.getItem('tr_theme'),dk=tm==='dark'||!tm||(tm==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dk?'dark':'light';document.querySelector('meta[name=theme-color]').setAttribute('content',dk?'#0B1220':'#0866FF')}catch(e){}</script>
 <title>${title}</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
