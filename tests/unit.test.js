@@ -1031,3 +1031,38 @@ test('comoveTask: the three documents from the series the store holds, for every
   assert.equal(st.getDoc('research/comove').data.source,'Yahoo Finance'); assert.equal(lt.count,0,'no weekly series: no long-term ties'); assert.ok(px.months.length>=4&&px.px.MSFT,'month-ends from the daily series');
   assert.match(logs.join(' '),/comove: 1 group/);
 });
+
+// 25.10: the second source for the company figures: the SEC's company facts, Finnhub, the beta from the closes
+test('fundamentals: twelve months from the reports, the ratios at the price, the beta, and the fill when Yahoo refuses',async()=>{
+  const {ttmOf,factRows,secFigures,betaOf,finnhubFigures,fillFundamentals}=await import('../server/fundamentals.js');
+  const F=(start,end,val,form='10-Q',filed=end)=>({start,end,val,form,filed});
+  const I=(end,val,form='10-Q')=>({end,val,form,filed:end});
+  const facts={facts:{'us-gaap':{
+    Revenues:{units:{USD:[F('2024-01-01','2024-12-31',800,'10-K'),F('2025-01-01','2025-12-31',1000,'10-K'),F('2025-01-01','2025-06-30',450),F('2026-01-01','2026-06-30',600)]}},
+    NetIncomeLoss:{units:{USD:[F('2025-01-01','2025-12-31',200,'10-K'),F('2025-01-01','2025-06-30',90),F('2026-01-01','2026-06-30',130)]}},
+    EarningsPerShareDiluted:{units:{'USD/shares':[F('2025-01-01','2025-12-31',2,'10-K'),F('2025-01-01','2025-06-30',0.9),F('2026-01-01','2026-06-30',1.3)]}},
+    CommonStockDividendsPerShareDeclared:{units:{'USD/shares':[F('2025-01-01','2025-12-31',0.5,'10-K')]}},
+    StockholdersEquity:{units:{USD:[I('2025-12-31',900,'10-K'),I('2026-06-30',1200)]}},
+    LongTermDebt:{units:{USD:[I('2026-06-30',600)]}},ShortTermBorrowings:{units:{USD:[I('2026-06-30',60)]}}}}};
+  const rev=ttmOf(factRows(facts,['Revenues']));
+  assert.equal(rev.v,1150,'the year plus this half minus the same half last year'); assert.equal(rev.end,'2026-06-30'); assert.ok(Math.abs(rev.g-(600/450-1))<1e-9);
+  const x=secFigures(facts,48);
+  assert.equal(x.pm,Math.round(240/1150*1e4)/100); assert.equal(x.roe,20); assert.equal(x.de,0.55); assert.equal(x.pe,20,'48 / 2.4'); assert.equal(x.dy,1.04); assert.equal(x.revg,33.33);
+  // a beta: a share that moves twice the index each week
+  const idx=[], bars=[]; let a=100,b=50; for(let i=0;i<300;i++){const d=new Date(Date.UTC(2025,0,1)+i*864e5).toISOString().slice(0,10); const r=Math.sin(i/3)*0.004; a*=1+r; b*=1+2*r; idx.push({d,c:a}); bars.push({d,c:b})}
+  const be=betaOf(bars,idx); assert.ok(be>1.8&&be<2.2,'beta '+be);
+  assert.equal(betaOf(bars.slice(0,40),idx),null,'too few weeks: no beta');
+  assert.deepEqual(finnhubFigures({metric:{netProfitMarginTTM:25.1,roeTTM:30,'totalDebt/totalEquityQuarterly':0.4,revenueGrowthQuarterlyYoy:12,peTTM:22,dividendYieldIndicatedAnnual:1.1,beta:1.2}}),{pm:25.1,roe:30,de:0.4,revg:12,pe:22,dy:1.1,beta:1.2});
+  // the fill: Yahoo gave nothing; the SEC and the closes give the rest
+  const s=new Store(':memory:'), got={}, seen=[];
+  const f=async u=>{u=String(u); seen.push(u);
+    if(u.includes('company_tickers'))return new Response(JSON.stringify({0:{cik_str:123,ticker:'ACME',title:'Acme'}}));
+    if(u.includes('companyfacts/CIK0000000123'))return new Response(JSON.stringify(facts));
+    if(u.includes('/v8/finance/chart/')){const t=decodeURIComponent(u.split('/chart/')[1].split('?')[0]), B=t==='^GSPC'?idx:bars; return new Response(JSON.stringify({chart:{result:[{meta:{gmtoffset:0},timestamp:B.map(x=>Date.parse(x.d+'T20:00:00Z')/1000),indicators:{quote:[{close:B.map(x=>x.c)}]}}]}}))}
+    return new Response('',{status:404})};
+  const st=await fillFundamentals(s,['ACME'],got,{fetch:f,pause:0,now:new Date('2026-10-25T01:00:00Z')});
+  assert.equal(st.filled,1); assert.equal(st.sec,1); assert.ok(got.ACME.beta>1.8); assert.ok(got.ACME.pe>0); assert.equal(got.ACME.roe,20); assert.match(got.ACME.src2,/SEC/);
+  assert.ok(seen.some(u=>u.includes('data.sec.gov')),'asked the SEC');
+  // a figure Yahoo did give is not replaced
+  const got2={ACME:{pm:1,roe:2,de:3,revg:4,pe:5,dy:6,beta:7}}; const st2=await fillFundamentals(s,['ACME'],got2,{fetch:f,pause:0}); assert.equal(st2.tried,0); assert.equal(got2.ACME.pe,5);
+});

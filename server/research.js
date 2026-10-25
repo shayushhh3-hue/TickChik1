@@ -7,6 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 // the default universe for the ranking (shared/universe.json, written by the build from the page's list of securities)
 let UNI=null; export function defaultUniverse(){if(UNI)return UNI; try{UNI=JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','shared','universe.json'),'utf8')).keys||[]}catch(e){UNI=[]} return UNI}
+import {fillFundamentals} from './fundamentals.js';
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -147,7 +148,8 @@ const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,ccy:o.ccy||null,sum:
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail}={}){
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals}={}){
+  const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.src2?(v.src2.includes('SEC')?'דוחות החברה (SEC)':v.src2):null].filter(Boolean).join(' + ')||SOURCE;
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
@@ -167,6 +169,10 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       if(e.session){stopped='session';break} if(e.slow)await sleep(Math.min(30000,pause*50)); if(fail>=25&&!ok){stopped='errors';break}}
     if(pause)await sleep(pause);
   }
+  // 25.10: what Yahoo did not give (all of it, when its company data refuses the server): the companies' own reports at the
+  // SEC, Finnhub with a key, and the beta from the daily closes (server/fundamentals.js)
+  const yh=new Set(Object.keys(got)); let fund=null;
+  try{fund=await fill(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,budgetMs:only?3*60e3:Math.max(6*60e3,budgetMs-(Date.now()-t0))})}catch(e){log('fundamentals failed: '+(e&&e.message||e))}
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
   const fresh=[], words=[], posName={}; for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
@@ -191,14 +197,14 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       const recent=v.rep.at&&(now-new Date(v.rep.at+'T12:00:00Z'))<21*864e5, wait=v.rep.revPend&&v.rep.seen&&(now-Date.parse(v.rep.seen))<8*36e5;
       if(!v.rep.ai&&recent&&!wait&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v]);
       v.rep.sum=repSum(v.rep)}
-    store.setDoc(p,{...merge(old,v),sym:k,source:SOURCE,updatedAt:iso},{silent:true})}
+    store.setDoc(p,{...merge(old,v),sym:k,source:srcOf(k,v),updatedAt:iso},{silent:true})}
   for(const [k,v] of words){let H=[]; try{H=await newsFor(tick(k,map),{fetch:f})}catch(e){}
     const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai=ai; v.rep.sum=repSum(v.rep);
     const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:v.rep},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
   const touched=Object.entries(got).filter(([k,v])=>v.rep&&v.rep.ev&&v.rep.seen&&(now-Date.parse(v.rep.seen))<21*864e5);
   if(heldGot.length||fresh.length||words.length||touched.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
-    for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:SOURCE,updatedAt:iso};
+    for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:srcOf(k,got[k]),updatedAt:iso};
     const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
     const upd=new Map(touched.map(([k,v])=>[k+'|'+v.rep.q,evOf([k,v.rep])]));
     const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>upd.get(e.sym+'|'+e.q)||e)
@@ -218,11 +224,11 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
     for(const k of uniGot){const v=got[k], o=rows[k]||[], nw=[v.pm,v.roe,v.de,null,v.pe,v.fpe,v.dy,v.revg,v.rating,v.target,v.analysts,v.next,v.beta]; rows[k]=nw.map((x,i)=>x!=null?x:(o[i]??null))}
     // the date says when the list was refreshed; when only part of it arrived, the older rows keep the earlier date
-    store.setDoc('research/fit',{...Fd,rows,n:Object.keys(rows).length,source:SOURCE,refreshed:uniGot.length,updatedAt:uniGot.length>=uni.length*0.6?iso:(Fd.updatedAt||iso)})}
+    store.setDoc('research/fit',{...Fd,rows,n:Object.keys(rows).length,source:SOURCE+(fund&&fund.filled?', דוחות החברות ב-SEC':''),refreshed:uniGot.length,updatedAt:uniGot.length>=uni.length*0.6?iso:(Fd.updatedAt||iso)})}
   const cand=(C.data||{}).items||[];
   if(cand.some(it=>it&&got[it.sym])){const items=cand.map(it=>{const v=it&&got[it.sym]; if(!v)return it; const o={...it}; for(const k of ['beta','de','dy','fpe','pe','pm','roe','price','chg52'])if(v[k]!=null)o[k]=v[k]; return o});
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
-  const st={at:iso,ok,none,fail,of:order.length,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  const st={at:iso,ok,none,fail,of:order.length,fund,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;

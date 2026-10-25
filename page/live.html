@@ -1422,7 +1422,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .wsec{grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;margin-top:4px} .wsec h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px} .wsec .sub{font-size:12.5px;color:var(--muted)}
 .wc.mine{border-color:var(--accent-soft)}
 .fitwhy{grid-column:1 / -1;font-size:12.5px} .fitwhy summary{cursor:pointer;color:var(--accent-ink);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:28px} .fitwhy summary::before{content:"◂";font-size:11px;transition:transform .15s} .fitwhy[open] summary::before{transform:rotate(-90deg)}
-.fitwhy ul{margin:6px 0 0;padding:0 18px 0 0;display:grid;gap:6px;line-height:1.5;color:var(--ink2)} .fitwhy li b{color:var(--ink);font-weight:600} .fitwhy .note{margin:8px 0 0} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
+.fitwhy ul{margin:8px 0 0;padding:0 18px 0 0;display:grid;gap:8px;line-height:1.55;color:var(--ink2)} .fitwhy li>span{display:block} .fitwhy li.nodata>span{color:var(--muted)} .fitwhy .fw-lead{margin:6px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);font-weight:500} .fitwhy li b{color:var(--ink);font-weight:600} .fitwhy .note{margin:8px 0 0} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -21185,17 +21185,44 @@ const fitParts=(L,first)=>{const W=fitW();return Object.keys(W).map((k,i)=>`${L[
 const andJ=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' ו'+a[a.length-1];
 const hasRisk=()=>!!(S&&S.profile&&RISK[S.profile.risk]);
 function fitHeroTxt(){return `הדירוג לפי הכללים שלך${hasRisk()?` ולפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:''}: ${fitParts(FITL,'עד ').join(', ')}.`}
+// the reasoning behind the fit score, in plain words for an investor: a one-line bottom line, then each part with its
+// points and what the number means (no formulas); a part without data says so and that it got a middle score until the
+// company's figures arrive
+const FITP={div:'פיזור',q:'חוזק החברה',val:'מחיר המניה',st:'יציבות',gr:'צמיחה',dv:'דיבידנד'};
 function fitWhy(f,c,m){
-  if(!f||!f.W)return ''; const W=f.W, R=S.rules||{}, mg=+R.maxGroup||40, c0=c||{}, g=GROUPS[f.g]||f.g, L=[];
-  const row=(k,txt)=>`<li><b>${FITL[k]}: <span class="n">${f[k]}</span> מתוך <span class="n">${W[k]}</span></b> · ${txt}</li>`;
-  L.push(row('div',f.w>=mg?`"${g}" כבר ${nn(pct(f.w,0))} מהתיק, מעל הסף שקבעת (${nn(pct(mg,0))}), אז הנייר לא מוסיף פיזור`:f.w>0?`"${g}" היא ${nn(pct(f.w,0))} מהתיק מתוך סף של ${nn(pct(mg,0))}; ככל שהקבוצה קטנה יותר, הנייר מפזר יותר`:`"${g}" לא נמצאת בתיק בכלל, אז הנייר מוסיף פיזור מלא`));
-  if(W.q)L.push(row('q',f.fs?`ציון פיננסי ${f.fs.score} (${f.fs.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(', ')}), לפי הדוחות`:'אין עדיין נתוני דוחות, אז החלק הזה באמצע הסולם (40%)'));
-  if(W.val)L.push(row('val',f.pe==null?'אין מכפיל רווח ידוע, אז 40% מהניקוד':f.pe<0?`מכפיל שלילי (הפסד), ${nn(f.pe.toFixed(1))}`:`מכפיל רווח ${nn(f.pe.toFixed(1))}: עד 18 ניקוד מלא, 18–25 שלושה רבעים, 25–32 כמחצית, 32–40 חמישית, מעל 40 כלום`));
-  if(W.st)L.push(row('st',c0.beta==null?'אין נתון תנודתיות, אז אמצע הסולם':`ביטא ${nn(c0.beta.toFixed(2))}: עד 0.7 מלא, עד 1.0 שישים אחוז, מעל זה חמישית`));
-  if(W.gr)L.push(row('gr',c0.revg!=null?`צמיחת הכנסות ${nn(spct(c0.revg,0))} (30% ומעלה = ניקוד מלא)`:c0.pe>0&&c0.fpe>0?`מהפער בין המכפיל הנוכחי (${nn(c0.pe.toFixed(1))}) למכפיל העתידי (${nn(c0.fpe.toFixed(1))})`:'אין נתון צמיחה, אז 30% מהניקוד'));
-  if(W.dv)L.push(row('dv',c0.dy!=null?`תשואת דיבידנד ${nn(pct(c0.dy))} (4% ומעלה = ניקוד מלא)`:'אין נתון דיבידנד, אז 30% מהניקוד'));
-  const who=hasRisk()?`המשקלות לפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:'המשקלות לפי ברירת המחדל ("באמצע"), כי עוד לא בחרת סוג משקיע בפרופיל';
-  return `<details class="fitwhy"><summary>למה ${f.score} מתוך 100?</summary><ul>${L.join('')}</ul><p class="note">${who}${(S&&S.wpref&&(S.wpref.focus||[]).length)?`, ו${andJ(S.wpref.focus.map(k=>FITL[k]))} שוקלים כפול לפי מה שסימנת`:''}. התאמה לכללים שלך, לא המלצה.</p></details>`;
+  if(!f||!f.W)return ''; const W=f.W, R=S.rules||{}, mg=+R.maxGroup||40, c0=c||{}, g=GROUPS[f.g]||f.g, L=[], miss=[];
+  const n1=x=>nn(Number(x).toFixed(Math.abs(x)>=10?0:1)), pc0=x=>nn(Math.round(x)+'%');
+  const row=(k,txt,none)=>{if(none)miss.push(k); L.push(`<li class="${none?'nodata':''}"><b>${FITP[k]}: <span class="n">${f[k]}</span> מתוך <span class="n">${W[k]}</span></b><span>${txt}</span></li>`)};
+  const NONE='עוד אין לנו את הנתון הזה לחברה, אז נתתי ציון באמצע. הוא יתעדכן לבד כשהנתונים ייקלטו.';
+  // diversification: how much of this group the portfolio already holds, against the ceiling the investor set
+  row('div',f.w>=mg?`כבר יש לך הרבה ${esc(g)}: ${pc0(f.w)} מהתיק, מעל התקרה של ${pc0(mg)} שקבעת. עוד נייר מאותו תחום לא יפזר לך את הסיכון.`
+    :f.w>0?`יש לך כבר ${pc0(f.w)} מהתיק ב${esc(g)}, והתקרה שקבעת היא ${pc0(mg)}. ${f.w<mg/2?'יש עוד מקום, אז הנייר מוסיף פיזור.':'נשאר מעט מקום, אז הוא מוסיף פיזור רק קצת.'}`
+    :`אין לך עדיין אף נייר ב${esc(g)}, אז הוא מכניס לתיק תחום חדש ומפזר את הסיכון.`);
+  // the company's strength: profit out of sales, profit on the shareholders' money, debt
+  if(W.q){const s=[];
+    if(c0.pm!=null)s.push(c0.pm<0?'החברה מפסידה כרגע כסף':`כ-${pc0(c0.pm)} מהמכירות נשארים לה כרווח נקי`);
+    if(c0.roe!=null&&!(c0.pm!=null&&c0.pm<0))s.push(`היא מרוויחה בשנה כ-${pc0(c0.roe)} על הכסף של בעלי המניות`);
+    if(c0.de!=null)s.push(c0.de<0.5?'החוב שלה נמוך':c0.de<1.5?'החוב שלה סביר':'החוב שלה גבוה ביחס להון');
+    if(c0.revg!=null&&!W.gr)s.push(c0.revg>=0?`המכירות גדלו ב-${pc0(c0.revg)} בשנה`:`המכירות ירדו ב-${pc0(-c0.revg)} בשנה`);
+    const v=f.fs?(f.fs.score>=80?'חברה חזקה. ':f.fs.score>=65?'חברה טובה. ':f.fs.score>=50?'חברה בינונית. ':'חברה חלשה יחסית. '):'';
+    row('q',f.fs?v+s.join(', ')+'.':NONE,!f.fs)}
+  // the price: what investors pay for each shekel of yearly profit
+  if(W.val){const fw=c0.fpe!=null&&f.pe===c0.fpe, p=f.pe;
+    row('val',p==null?NONE:p<0?'החברה מפסידה, אז אי אפשר לבדוק כמה משלמים על הרווח שלה, וזה מוריד ציון.'
+      :`מחיר המניה שווה לכ-${n1(p)} שנים של הרווח שלה${fw?' (לפי הרווח הצפוי בשנה הבאה)':''}, כלומר מכפיל רווח ${n1(p)}. ${p<=18?'זה מחיר זול יחסית לשוק.':p<=25?'זה מחיר סביר.':p<=32?'זה קצת יקר.':p<=40?'זה יקר.':'זה יקר מאוד: השוק מצפה מהחברה לצמיחה גדולה.'}`,p==null)}
+  // stability: how much the share moves with the market
+  if(W.st)row('st',c0.beta==null?NONE:`כשהשוק זז ב-${nn('1%')}, המניה זזה בדרך כלל בכ-${nn(c0.beta.toFixed(1))}%. ${c0.beta<=0.7?'כלומר היא רגועה יותר מהשוק.':c0.beta<=1?'כלומר היא זזה בערך כמו השוק.':c0.beta<=1.5?'כלומר היא תנודתית יותר מהשוק.':'כלומר היא תנודתית מאוד: עולה חזק ויורדת חזק.'}`,c0.beta==null);
+  if(W.gr)row('gr',c0.revg!=null?(c0.revg>=0?`המכירות של החברה גדלו ב-${pc0(c0.revg)} בשנה האחרונה. ${c0.revg>=30?'צמיחה מהירה מאוד.':c0.revg>=10?'צמיחה טובה.':'צמיחה איטית.'}`:`המכירות של החברה ירדו ב-${pc0(-c0.revg)} בשנה האחרונה.`)
+    :c0.pe>0&&c0.fpe>0?(c0.fpe<c0.pe?'האנליסטים צופים שהרווח של החברה יגדל בשנה הבאה.':'האנליסטים לא צופים גידול ברווח בשנה הבאה.'):NONE,c0.revg==null&&!(c0.pe>0&&c0.fpe>0));
+  if(W.dv)row('dv',c0.dy==null?'אין לנו מידע על דיבידנד לחברה הזאת, אז ניתן ציון נמוך-בינוני.':c0.dy<=0?'החברה לא מחלקת דיבידנד.':`החברה מחלקת דיבידנד של כ-${nn(pct(c0.dy,1))} בשנה: על כל 1,000 ₪ מושקעים מקבלים בערך ${nn(Math.round(c0.dy*10))} ₪ בשנה.`,c0.dy==null);
+  // the bottom line: the strongest and the weakest parts that have data
+  const ks=Object.keys(W).filter(k=>W[k]>0&&!miss.includes(k)).map(k=>[k,f[k]/W[k]]).sort((a,b)=>b[1]-a[1]);
+  const best=ks.filter(x=>x[1]>=0.6).slice(0,2).map(x=>FITP[x[0]]), worst=ks.filter(x=>x[1]<0.45).slice(-2).reverse().map(x=>FITP[x[0]]);
+  const lead=(f.score>=80?'מתאים מאוד לתיק שלך':f.score>=65?'מתאים לתיק שלך':f.score>=50?'מתאים חלקית':'פחות מתאים לתיק שלך כרגע')
+    +(best.length?`. נקודות חזקות: ${andJ(best)}`:'')+(worst.length?`. נקודות חלשות: ${andJ(worst)}`:'')+'.'
+    +(miss.length?` ל${miss.length===1?'חלק אחד':miss.length+' חלקים'} (${andJ(miss.map(k=>FITP[k]))}) עוד חסרים נתונים, אז הציון עוד עשוי להשתנות.`:'');
+  const who=hasRisk()?`כמה כל חלק שוקל נקבע לפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:'כמה כל חלק שוקל נקבע לפי משקיע "באמצע", כי עוד לא בחרת סוג משקיע בפרופיל';
+  return `<details class="fitwhy"><summary>למה ${f.score} מתוך 100?</summary><p class="fw-lead">${lead}</p><ul>${L.join('')}</ul><p class="note">${who}${(S&&S.wpref&&(S.wpref.focus||[]).length)?`, ו${andJ(S.wpref.focus.map(k=>FITP[k]||FITL[k]))} שוקלים כפול לפי מה שסימנת`:''}. זה ציון התאמה לתיק שלך, לא המלצה לקנות.</p></details>`;
 }
 function fitRowX(f){const r=riskOf(); return r==='safe'?` · יציבות ${f.st} · דיבידנד ${f.dv}`:r==='risk'?` · צמיחה ${f.gr}`:''}
 
