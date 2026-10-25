@@ -1418,7 +1418,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .termpop .btn{align-self:flex-start}
 .wtags{display:flex;flex-wrap:wrap;gap:6px}
 .wsec{grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;margin-top:4px} .wsec h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px} .wsec .sub{font-size:12.5px;color:var(--muted)}
-.wc.mine{border-color:var(--accent-soft)} .wc.mine .ws b{color:var(--accent-ink)}
+.wc.mine{border-color:var(--accent-soft)} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -21857,13 +21857,15 @@ function myWatchHtml(m){
   const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`, fc=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
   const cards=marks.slice().reverse().map(k=>{
     const it=itemOf(k)||{sym:k,name:k,t:'S'}, p=priceOf(k), h=held(k), a=at[k], since=a&&a.px>0&&p&&p.px>0?(p.px/a.px-1)*100:null;
-    const rs=(RS&&RS.companies&&RS.companies[it.sym])||RSX[k]||null, c=figs[k]||null, f=c?(()=>{try{return fitScore(k,c,m)}catch(e){return null}})():null, dn=rs&&rs.next?daysTo(rs.next):null;
+    // the match: full when the company's figures are here; without them, from what the portfolio alone says (the group's
+    // weight against the rule and the target) with the other parts at their neutral middle, and said to be partial
+    const rs=(RS&&RS.companies&&RS.companies[it.sym])||RSX[k]||null, c=figs[k]||null, f=(()=>{try{return fitScore(k,c||{},m)}catch(e){return null}})(), dn=rs&&rs.next?daysTo(rs.next):null, part=!c;
     const tier=f?(f.score>=80?'hi':f.score>=65?'mid':'lo'):'', sk=SECKEY.test(k);
     return `<article class="wc mine" style="--gc:${f?(GCOL[f.g]||'#64748B'):'var(--accent)'}">
       <div class="wh"><div class="wt">${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}${a&&a.d?' מ-'+dmy(a.d):''}</b></span></div>
-        ${f?`<div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${f.score} מתוך 100"><b>${f.score}</b></div><span>התאמה</span></div>`:`<div class="rg"><span class="nm">אין עדיין נתוני חברה</span></div>`}</div>
+        ${f?`<div class="rg"><div class="ring ${tier}${part?' part':''}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${part?'חלקית ':''}${f.score} מתוך 100"><b>${f.score}</b></div><span>${part?'התאמה חלקית':'התאמה'}</span></div>`:''}</div>
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מאז שסימנת',since!=null?'<span class="n">'+spct(since)+'</span>':'—',since!=null?(since>=0?'up':'down'):'')}${fc('הדוח הבא',rs&&rs.next?'<span class="n">'+dmy(rs.next)+'</span>'+(dn!=null&&dn>=0&&dn<=7?' <small>בקרוב</small>':''):'—')}${fc('דיבידנד',rs&&rs.div&&rs.div.ex?'<span class="n">אקס '+dmy(rs.div.ex)+'</span>':c&&c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}</div>
-      <div class="wfit"><span class="sub">${f?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:'ההתאמה לתיק תחושב כשייקלטו נתוני החברה (בלילה)'}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
+      <div class="wfit"><span class="sub">${f&&!part?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:f?`פיזור ${f.div} מתוך ${f.W.div} לפי הקבוצה "${GROUPS[f.g]||f.g}" (${pct(f.w,0)} מהתיק${f.over?', מעל הסף':''}). איכות, תמחור וצמיחה באמצע הסולם עד שיגיעו נתוני החברה.`:''}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
     </article>`}).join('');
   return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
 }
