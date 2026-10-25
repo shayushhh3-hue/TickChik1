@@ -10,18 +10,25 @@
   /* 25.10: the owner's choice: Meta's blue (#0866FF) as the one accent, solid, no gradients; a clean, minimal tech look:
      a cool white ground, near-black navy ink, grey lines. Heebo for headings and figures, Assistant for text. The old
      token names (--gold, --navy, --pink, --tile) stay as aliases so every rule that used them follows the new palette. */
-  --blue:#0866FF; --blue-ink:#0547B8; --blue-soft:#E7F0FF; --blue-deep:#0653CC;
-  --navy:#0B1220; --navy2:#172238; --navy3:#2A3A58; --navy-t:#0B1220;
-  --gold:#0866FF; --gold-ink:#FFFFFF; --gold-soft:#E7F0FF; --pink:#E7F0FF; --tile:#E7F0FF; --tile-ink:#0547B8;
-  --bg:#F5F7FB; --surface:#FFFFFF; --sunk:#EEF2F8; --ink:#0B1220; --ink2:#3D4B60; --muted:#6B7A90;
-  --line:#E1E7F0; --accent:#0866FF; --accent-ink:#0547B8; --accent-soft:#E7F0FF; --on-accent:#FFFFFF; --focus:#0866FF;
-  --gain:#188A55; --loss:#D13B3B;
-  --ok-c:#1E9A62; --ok-bg:#E6F4EC; --ok-ink:#135F3C;
-  --warn-c:#E09A1A; --warn-bg:#FFF4DE; --warn:#7A4F00;
-  --crit-c:#D13B3B; --crit-bg:#FCE9E9; --crit-ink:#8E1F1F;
-  --info-c:#0866FF; --info-bg:#E7F0FF; --info-ink:#0547B8;
-  --bar-up:#1E9A62; --bar-down:#D13B3B;
-  --s1:#0866FF; --s2:#8AB4FF; --grid:#E1E7F0;
+  /* 25.10 (later): "משמש ונייבי", the owner's choice: deep navy #1B2A4A for weight and trust, apricot #FF9B54 for warmth,
+     with terracotta, steel blue and sage beside them; a warm off-white day and a deep navy night. Every part of the page
+     has its own colour (the tabs, the tiles, the headings); the value card is navy. Apricot is light, so what sits on it
+     is written dark. Gains stay green and losses red, always with ▲/▼. */
+  --c1:#FF9B54; --c1t:#A9501A; --c1o:#2A1306;  --c2:#B8574A; --c2t:#A44C40; --c2o:#FFFFFF;  --c3:#3D6E8F; --c3t:#335F7C; --c3o:#FFFFFF;
+  --c4:#1B2A4A; --c4t:#1B2A4A; --c4o:#FFFFFF;  --c5:#5E7D5B; --c5t:#4E6A4B; --c5o:#FFFFFF;
+  --worth:linear-gradient(135deg,#111A33 0%,#1B2A4A 60%,#2E4170 100%); --worth-sh:rgb(17 26 51 / .25); --mark:#1B2A4A;
+  --blue:#1B2A4A; --blue-ink:#1B2A4A; --blue-soft:#E3E8F2; --blue-deep:#1B2A4A;
+  --navy:#151B2E; --navy2:#2A3350; --navy3:#4A5372; --navy-t:#151B2E;
+  --gold:#1B2A4A; --gold-ink:#FFFFFF; --gold-soft:#E3E8F2; --pink:#E3E8F2; --tile:#FFE5D0; --tile-ink:#8A3F12;
+  --bg:#F6F4F0; --surface:#FFFFFF; --sunk:#ECE8E1; --ink:#151B2E; --ink2:#3F465C; --muted:#666C80;
+  --line:#DDD7CC; --accent:#1B2A4A; --accent-ink:#2C4377; --accent-soft:#E3E8F2; --on-accent:#FFFFFF; --focus:#A9501A;
+  --gain:#1F7A4D; --loss:#B3261E;
+  --ok-c:#1F7A4D; --ok-bg:#E5F3EA; --ok-ink:#145C38;
+  --warn-c:#D98A1E; --warn-bg:#FFF1DC; --warn:#7A4A00;
+  --crit-c:#B3261E; --crit-bg:#FBE7E5; --crit-ink:#8A1B14;
+  --info-c:#3D6E8F; --info-bg:#E4EEF5; --info-ink:#2B5370;
+  --bar-up:#2A8A5A; --bar-down:#C2412E;
+  --s1:#1B2A4A; --s2:#FF9B54; --grid:#DDD7CC;
   --r:16px; --shadow:0 1px 2px rgb(11 18 32 / .04),0 8px 24px rgb(11 18 32 / .06);
   --sans:"Assistant","Heebo","Arial Hebrew",system-ui,sans-serif;
   --display:"Heebo","Assistant","Arial Hebrew",system-ui,sans-serif;
@@ -54,7 +61,7 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 .live{font-size:12px;color:var(--muted)}
 .main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:stretch}
 @media (max-width:760px){.main{grid-template-columns:minmax(0,1fr)}}
-.worth{display:flex;flex-direction:column;gap:2px;min-width:0;padding:16px 18px;margin:6px 12px 12px;border-radius:18px;background:var(--blue-deep);--ink:#FFFFFF;--ink2:#DCE8FF;--muted:#C9DBFF;--gain:#7EF0C8;--loss:#FFCCC4;--ok-bg:rgb(0 0 0 / .18);--ok-ink:#E6FFF1;--warn-bg:rgb(0 0 0 / .18);--warn:#FFF1D6;--crit-bg:rgb(0 0 0 / .18);--crit-ink:#FFE0DB;color:#fff}
+.worth{display:flex;flex-direction:column;gap:2px;min-width:0;padding:16px 18px;margin:6px 12px 12px;border-radius:18px;background:var(--worth);box-shadow:0 10px 28px var(--worth-sh);--ink:#FFFFFF;--ink2:#DCE3F2;--muted:#C9D3E8;--gain:#9FF0C4;--loss:#FFC2B8;--ok-bg:rgb(0 0 0 / .18);--ok-ink:#E6FFF1;--warn-bg:rgb(0 0 0 / .18);--warn:#FFF1D6;--crit-bg:rgb(0 0 0 / .18);--crit-ink:#FFE0DB;color:#fff}
 @media (max-width:760px){.worth{margin:6px 10px 10px}}
 /* the value over time, in the value card: drag a finger (or the mouse, or the arrows) along it to read any point */
 .wch{margin-top:12px} .wch[hidden]{display:none}
@@ -1547,7 +1554,7 @@ body:not([data-page="overview"]) .hero .kchips{margin-top:0}
 /* 22.10: "עוד נתונים" under the two white cards (a phone, or the simple view): four more white cards, what rose and
    what fell the most today, since the start of the year, the dollar. A wide screen in the full view shows all six */
 .sidemore{display:none}
-.stat.secl{cursor:pointer} .stat.secl:hover{box-shadow:0 0 0 2px rgb(8 102 255 / .25)} .stat.secl:focus-visible{outline:2px solid #0866FF;outline-offset:2px}
+.stat.secl{cursor:pointer} .stat.secl:hover{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)} .stat.secl:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .stat .d bdi{white-space:nowrap}
 @media (max-width:760px){
   .hero .side.lessm>.stat:not(:first-child):not(#kDepBox){display:none}
@@ -1664,22 +1671,40 @@ html[data-theme="dark"]{color-scheme:dark;
   /* 25.10: "Professional Trading", the owner's choice and the page's default: a deep navy ground (#0B1220), cards a shade
      lighter (#151F32), grey-blue lines, Meta's blue for what is pressed and primary, green #00C087 and red #F23645 for the
      market's own numbers, near-white text with a cool grey for the secondary. Solid colours, no gradients. */
-  --blue:#0866FF; --blue-ink:#5B9BFF; --blue-soft:#132447; --blue-deep:#0653CC;
-  --navy:#080D1A; --navy2:#151F32; --navy3:#2A3A58; --navy-t:#F8FAFC;
-  --gold:#0866FF; --gold-ink:#FFFFFF; --gold-soft:#132447; --pink:#132447; --tile:#132447; --tile-ink:#9CC2FF;
-  --bg:#0B1220; --surface:#151F32; --sunk:#1B2740; --ink:#F8FAFC; --ink2:#CBD5E1; --muted:#94A3B8;
-  --line:#263247; --accent:#0866FF; --accent-ink:#5B9BFF; --accent-soft:#132447; --on-accent:#FFFFFF; --focus:#5B9BFF;
-  --gain:#00C087; --loss:#FF5A6A;   /* the red as text is a step lighter than the marker red (#F23645), to read at 4.5:1 on the cards */
-  --ok-c:#00C087; --ok-bg:#0E2A24; --ok-ink:#7EF0C8;
-  --warn-c:#E5B84B; --warn-bg:#2E2612; --warn:#F5D98A;
-  --crit-c:#F23645; --crit-bg:#351619; --crit-ink:#FFB3B8;
-  --info-c:#0866FF; --info-bg:#132447; --info-ink:#9CC2FF;
-  --bar-up:#00C087; --bar-down:#F23645; --s1:#0866FF; --s2:#5B9BFF; --grid:#263247;
+  --c1:#FF9B54; --c1t:#FFB37F; --c1o:#2A1306;  --c2:#E07A5F; --c2t:#F2A48F; --c2o:#2A0E06;  --c3:#6E9CC4; --c3t:#9CC4E4; --c3o:#0E1424;
+  --c4:#8FA3D9; --c4t:#B8C6EC; --c4o:#0E1424;  --c5:#7FA87B; --c5t:#A9CDA5; --c5o:#0E1424;
+  --worth:linear-gradient(135deg,#16213E 0%,#22325C 60%,#33497F 100%); --worth-sh:rgb(0 0 0 / .35); --mark:#22325C;
+  --blue:#3E63C4; --blue-ink:#9DB4EE; --blue-soft:#1C2847; --blue-deep:#22325C;
+  --navy:#0A0F1C; --navy2:#172036; --navy3:#2B3754; --navy-t:#F6F3EE;
+  --gold:#3E63C4; --gold-ink:#FFFFFF; --gold-soft:#1C2847; --pink:#1C2847; --tile:#33241A; --tile-ink:#FFB37F;
+  --bg:#0E1424; --surface:#172036; --sunk:#1C2740; --ink:#F6F3EE; --ink2:#CDD3E0; --muted:#98A1B8;
+  --line:#2B3754; --accent:#3E63C4; --accent-ink:#9DB4EE; --accent-soft:#1C2847; --on-accent:#FFFFFF; --focus:#FFB37F;
+  --gain:#6FD3A0; --loss:#FF8A80;
+  --ok-c:#4FB985; --ok-bg:#14291F; --ok-ink:#A6EBC6;
+  --warn-c:#F2B441; --warn-bg:#2E2412; --warn:#F8D58C;
+  --crit-c:#F05A4E; --crit-bg:#341719; --crit-ink:#FFB8AE;
+  --info-c:#6E9CC4; --info-bg:#16263A; --info-ink:#A9CDEB;
+  --bar-up:#4FB985; --bar-down:#E5604F; --s1:#FF9B54; --s2:#9DB4EE; --grid:#2B3754;
   --shadow:0 1px 2px rgb(0 0 0 / .35),0 10px 30px rgb(0 0 0 / .3)}
+/* 25.10 (later): many colours, one family (apricot and navy): each tab of the bottom bar, the two tiles under the value, the headings, the
+   primary button and Chiko each take one of the five (--c1..--c5; --cNt for text on the page, --cNo for text on the colour) */
+.botbar button[data-bb="overview"]{--bc:var(--c4);--bt:var(--c4t);--bo:var(--c4o)} .botbar button[data-bb="mine"]{--bc:var(--c1);--bt:var(--c1t);--bo:var(--c1o)}
+.botbar button[data-bb="risk"]{--bc:var(--c2);--bt:var(--c2t);--bo:var(--c2o)} .botbar button[data-bb="plan"]{--bc:var(--c3);--bt:var(--c3t);--bo:var(--c3o)} .botbar button[data-bb="more"]{--bc:var(--c5);--bt:var(--c5t);--bo:var(--c5o)}
+.botbar button[data-bb]{color:var(--bt)} .botbar button[data-bb][aria-current="page"],.botbar button[data-bb].on{background:var(--bc)!important;color:var(--bo)!important}
+.botbar button[data-bb][aria-current="page"] svg,.botbar button[data-bb].on svg{color:var(--bo)!important}
+.hero .chips .chip[aria-pressed="true"],html[data-theme="dark"] .hero .chips .chip[aria-pressed="true"]{background:var(--c1)!important;color:var(--c1o)!important}
+.hkind .chip[aria-pressed="true"]{background:var(--c3)!important;color:var(--c3o)!important;border-color:var(--c3)!important}
+.side .stat:nth-child(1),html[data-theme="dark"] .side .stat:nth-child(1){background:color-mix(in srgb,var(--c3) 16%,var(--surface));border-color:transparent}
+.side .stat:nth-child(2),html[data-theme="dark"] .side .stat:nth-child(2){background:color-mix(in srgb,var(--c1) 20%,var(--surface));border-color:transparent}
+html[data-theme="dark"] .side .stat:nth-child(1){background:color-mix(in srgb,var(--c3) 28%,var(--surface))} html[data-theme="dark"] .side .stat:nth-child(2){background:color-mix(in srgb,var(--c1) 22%,var(--surface))}
+.btn.pri{background:var(--c1);border-color:var(--c1);color:var(--c1o)} .btn.pri:hover:not(:disabled){background:color-mix(in srgb,var(--c1) 88%,#000)}
+.chatfab{background:var(--c1)!important;color:var(--c1o)!important}
+main section>.row h2,section>.row>h2{padding-inline-start:11px;border-inline-start:5px solid var(--c4t);border-radius:2px}
+section:nth-of-type(5n+2)>.row>h2{border-color:var(--c1)} section:nth-of-type(5n+3)>.row>h2{border-color:var(--c3t)} section:nth-of-type(5n+4)>.row>h2{border-color:var(--c2t)} section:nth-of-type(5n)>.row>h2{border-color:var(--c5)}
 html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 /* the top of the page: a deep aubergine instead of the orange, the orange kept for what is pressed */
 html[data-theme="dark"] .hero{background:var(--bg);border-color:var(--line);box-shadow:none}
-html[data-theme="dark"] .worth{background:var(--blue-deep);box-shadow:none}
+html[data-theme="dark"] .worth{background:var(--worth);box-shadow:0 10px 30px var(--worth-sh);border:1px solid #33497F}
 html[data-theme="dark"] .hero .chips{background:var(--sunk);border-color:var(--line)} html[data-theme="dark"] .hero .chips .chip{color:var(--ink);border-color:transparent}
 html[data-theme="dark"] .hero .chips .chip[aria-pressed="true"]{background:var(--blue);color:#fff}
 html[data-theme="dark"] .stat{background:var(--sunk);color:var(--ink);border-color:var(--line)}
@@ -15644,7 +15669,7 @@ const GROUPS={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה �
 // success green, failure red, alert yellow, information dark blue, messages light blue. One set of drawing operations
 // (two optical sizes on a 48 grid: s up to ~32px, l from 40px) feeds the SVG sprite on the page, the small icons that
 // CSS draws (status lines, chips, steps) and the PDF canvas.
-const NIC={ok:'#188A55',err:'#D13B3B',warn:'#E09A1A',info:'#0866FF',msg:'#0B1220'};
+const NIC={ok:'#1F7A4D',err:'#B3261E',warn:'#D98A1E',info:'#3D6E8F',msg:'#1B2A4A'};
 // 18.10: every status icon is a rounded tile with one bold glyph (the owner's example), in the palette: coral for a breach,
 // pink for a check, ivory for information, pale green for all clear, aubergine for the system's own messages
 const NIT={ok:{bg:'#E6F4EC',fg:'#188A55',d:'M13 25l8 8 14-16'},err:{bg:'#D13B3B',fg:'#FFFFFF',d:'M16 16l16 16M32 16L16 32'},warn:{bg:'#FFF4DE',fg:'#7A4F00',d:'M24 12v15M24 35.5v.5'},info:{bg:'#E7F0FF',fg:'#0547B8',d:'M24 21v14M24 12.5v.5'},msg:{bg:'#0B1220',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chiko:{bg:'#0866FF',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chikow:{bg:'#FFFFFF',fg:'#0866FF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'}};
@@ -17385,8 +17410,8 @@ function renderWChart(){
   const years=new Set(ticks.map(p=>new Date(p.t).getFullYear())), maxT=W<420?5:8, step=Math.max(1,Math.ceil(ticks.length/maxT));
   ticks.filter((_,i)=>i%step===0||i===ticks.length-1).forEach((p,i,arr)=>{const dd=new Date(p.t), xx=Math.min(W-R-14,Math.max(L+14,x(p.t))); if(i&&xx-x(arr[i-1].t)<34)return;
     g+=`<text x="${xx}" y="${H-6}" font-size="11" fill="#CFE0FF" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
-  const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="10" fill="#FFFFFF" opacity=".25"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FFFFFF" stroke="#0866FF" stroke-width="1.5"/>`;
-  g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .55)" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#FFFFFF" stroke="#0866FF" stroke-width="2"/><rect id="wChTb" rx="11" height="22" fill="#FFFFFF"/><text id="wChTt" font-size="12" font-weight="700" fill="#0547B8" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
+  const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="10" fill="#FFFFFF" opacity=".25"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FF9B54" stroke="#FFFFFF" stroke-width="1.5"/>`;
+  g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .55)" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#FF9B54" stroke="#FFFFFF" stroke-width="2"/><rect id="wChTb" rx="11" height="22" fill="#FFFFFF"/><text id="wChTt" font-size="12" font-weight="700" fill="#1B2A4A" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
   const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R,T,lo,hi}; if(!keep)WCI=-1; wRead(WCI);
   const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}, חודש אחר חודש: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל חודש.`);
@@ -17543,7 +17568,7 @@ const cw=id=>{const w=$(id).clientWidth;return w>240?Math.min(760,Math.round(w))
 const niceTicks=(lo,hi,n)=>{const raw=Math.max(1e-9,(hi-lo)/n),mag=Math.pow(10,Math.floor(Math.log10(raw))),st=[1,2,2.5,5,10].map(k=>k*mag).find(k=>k>=raw)||mag*10,a=Math.floor(lo/st)*st,b=Math.ceil(hi/st)*st,t=[];for(let v=a;v<=b+st/2;v+=st)t.push(v);return t};
 // ---- overview charts: how the portfolio splits across groups, and the result on each holding -------------------
 let MIXSEL=null;
-const GCOL={tech:'#4F7FB0',fin:'#7A74B8',ind:'#3D4E63',health:'#3FA0A8',cons:'#D9962F',space:'#9A62B8',il:'#9AA6B5',cash:'#CDD5DE'};
+const GCOL={tech:'#3D6E8F',fin:'#FF9B54',ind:'#1B2A4A',health:'#5E7D5B',cons:'#E0B04A',space:'#8FA3D9',il:'#B8574A',cash:'#C8C2B8'};   // 25.10: the apricot-and-navy family
 function renderCharts(m){
   const R=S.rules||{}, tg=S.targets||{}, tot=m.total||0;
   const gs=Object.values(m.groups).filter(g=>g.val>0.5).sort((a,b)=>b.val-a.val);
@@ -22760,7 +22785,7 @@ const themeDark=()=>document.documentElement.dataset.theme==='dark';
 function themeApply(){
   const v=themeGet(), dark=v==='dark'||(v==='auto'&&!!THEME_Q&&THEME_Q.matches), r=document.documentElement, was=r.dataset.theme;
   r.dataset.theme=dark?'dark':'light';
-  try{const m=document.querySelector('meta[name=theme-color]'); if(m)m.setAttribute('content',dark?'#0B1220':'#0866FF')}catch(e){}
+  try{const m=document.querySelector('meta[name=theme-color]'); if(m)m.setAttribute('content',dark?'#0E1424':'#1B2A4A')}catch(e){}
   for(const b of document.querySelectorAll('[data-themeset]'))b.setAttribute('aria-pressed',String(b.dataset.themeset===v));
   const t=$('btnTheme'); if(t){const l=dark?'מצב יום':'מצב לילה'; t.setAttribute('aria-label',l); t.title=l}
   if(was!==r.dataset.theme){try{if(SEC)drawSec()}catch(e){}}

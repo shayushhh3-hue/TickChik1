@@ -643,10 +643,10 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
     const st=()=>pg.evaluate(()=>({th:document.documentElement.dataset.theme,bg:getComputedStyle(document.body).backgroundColor,saved:localStorage.getItem('tr_theme'),
       on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').getAttribute('aria-label'),meta:document.querySelector('meta[name=theme-color]').content}));
     // the page opens at night (the trading look); the day is the blue-on-white one
-    let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(11, 18, 32)','the night is the navy ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
+    let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(14, 20, 36)','the night is the deep navy ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
     await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
-    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(245, 247, 251)','light','light','מצב לילה','#0866FF']);
-    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#0B1220');
+    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 244, 240)','light','light','מצב לילה','#1B2A4A']);
+    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#0E1424');
     // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
     const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
       const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
