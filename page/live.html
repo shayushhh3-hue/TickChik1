@@ -72,7 +72,7 @@ h3{font-size:13.5px;font-weight:700;margin:0}
 .wch-rg button{font:inherit;font-size:12.5px;color:var(--ink2);background:none;border:0;border-radius:999px;padding:4px 10px;cursor:pointer;min-height:28px}
 .wch-rg button[aria-pressed="true"]{background:#FFFFFF;color:var(--blue);font-weight:700}
 @media (max-width:640px){.wch-r{white-space:normal;height:44px;text-overflow:clip}}
-.wch-n{font-size:12.5px;color:#CFE0FF;margin-top:4px;line-height:1.5}   /* two lines on a phone, still a fixed height */
+.wch-n{font-size:12.5px;color:#D5DCEB;margin-top:4px;line-height:1.5}   /* two lines on a phone, still a fixed height */
 .wch svg{display:block;width:100%;height:170px;margin-top:6px;touch-action:pan-y;cursor:crosshair;outline:none}
 .wch svg:focus-visible{box-shadow:0 0 0 2px #FFFFFF;border-radius:8px}
 body:not([data-page="overview"]) .hero .wch{display:none}
@@ -206,7 +206,7 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .calleg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);align-items:center}
 /* 22.10: the count of the rules' alerts on the button of בקרה */
 #botbar [data-bb="risk"],#tab_risk{position:relative}
-.bbadge{position:absolute;top:2px;inset-inline-end:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warn-c);color:#0B1220;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--navy)}
+.bbadge{position:absolute;top:2px;inset-inline-end:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warn-c);color:#151B2E;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--navy)}
 .bbadge.crit{background:#D13B3B;color:#fff} #tab_risk .bbadge{position:static;margin-inline-start:auto;box-shadow:none}
 /* 22.10: the days of the held securities: a report (purple) and a dividend (green) under the two flags */
 .calgrid .dc .evs{display:flex;gap:3px;justify-content:center;min-height:7px} .calgrid .dc .evs i,.calleg i.ev{width:7px;height:7px;border-radius:50%;display:inline-block}
@@ -1351,7 +1351,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .ni-b .ni{width:22px;height:22px}
 .toast .ni-b{width:28px;height:28px}
 .toast .ni-b .ni{width:20px;height:20px}
-.av{background:var(--blue-soft);color:var(--blue-ink);border:1px solid #CFE0FF}
+.av{background:var(--blue-soft);color:var(--blue-ink);border:1px solid var(--line)}
 .av .ni{width:20px;height:20px}
 .av-l .ni{width:32px;height:32px}
 .chat-h .av{background:#fff;border-color:#fff}
@@ -1709,7 +1709,7 @@ html[data-theme="dark"] .hero .chips{background:var(--sunk);border-color:var(--l
 html[data-theme="dark"] .hero .chips .chip[aria-pressed="true"]{background:var(--blue);color:#fff}
 html[data-theme="dark"] .stat{background:var(--sunk);color:var(--ink);border-color:var(--line)}
 html[data-theme="dark"] .brand-sub{border-color:var(--line)}
-html[data-theme="dark"] .hero .tapewrap{background:#080D1A;border-top:1px solid var(--line)}
+html[data-theme="dark"] .hero .tapewrap{background:#0A0F1C;border-top:1px solid var(--line)}
 /* boxes that had a fixed light border or background */
 html[data-theme="dark"] .repbox,html[data-theme="dark"] .brief,html[data-theme="dark"] .ob,html[data-theme="dark"] .depban{border-color:var(--line);border-inline-start-color:var(--accent)}
 html[data-theme="dark"] .rhero,html[data-theme="dark"] .callout{border-color:var(--line)}
@@ -1723,15 +1723,15 @@ html[data-theme="dark"] .crisis{background:var(--info-bg);border-color:var(--lin
 html[data-theme="dark"] .tag.gen{background:var(--sunk);color:var(--ink2)}
 html[data-theme="dark"] .gores{background:var(--surface)} html[data-theme="dark"] .newsl li.nw{background:var(--accent-soft)} html[data-theme="dark"] .bn-r.me{background:var(--sunk)}
 html[data-theme="dark"] .rv-sys{background:var(--info-bg);border-color:var(--line);color:var(--info-ink)}
-html[data-theme="dark"] .av:not(.chiko){background:var(--blue-soft);border-color:#1E3566;color:#9CC2FF}
+html[data-theme="dark"] .av:not(.chiko){background:var(--blue-soft);border-color:var(--line);color:var(--blue-ink)}
 html[data-theme="dark"] .dlm,html[data-theme="dark"] .termpop,html[data-theme="dark"] .tip{box-shadow:0 10px 28px rgb(0 0 0 / .45)}
 html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{color-scheme:dark}
 html[data-theme="dark"] .flg{box-shadow:0 0 0 1px rgb(255 255 255 / .18)}
 /* high contrast at night */
-html[data-theme="dark"].a11y-hc{--muted:#CBD5E1;--ink2:#F1F5F9;--line:#5B6B85;--focus:#9CC2FF}
+html[data-theme="dark"].a11y-hc{--muted:#CBD5E1;--ink2:#F1F5F9;--line:#5B6B85;--focus:#FFB37F}
 html[data-theme="dark"].a11y-hc .note,html[data-theme="dark"].a11y-hc .sub,html[data-theme="dark"].a11y-hc .k{color:#E6EDF6}
 html[data-theme="dark"].a11y-hc .chip,html[data-theme="dark"].a11y-hc .btn,html[data-theme="dark"].a11y-hc .dk-ack{border-color:#8A98AE}
-html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#9CC2FF!important}
+html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#FFB37F!important}
 /* the switch at the top: a moon in the day, a sun at night */
 .hbtn .th-sun,html[data-theme="dark"] .hbtn .th-moon{display:none} html[data-theme="dark"] .hbtn .th-sun{display:block}
 </style>
@@ -15672,7 +15672,7 @@ const GROUPS={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה �
 const NIC={ok:'#1F7A4D',err:'#B3261E',warn:'#D98A1E',info:'#3D6E8F',msg:'#1B2A4A'};
 // 18.10: every status icon is a rounded tile with one bold glyph (the owner's example), in the palette: coral for a breach,
 // pink for a check, ivory for information, pale green for all clear, aubergine for the system's own messages
-const NIT={ok:{bg:'#E6F4EC',fg:'#188A55',d:'M13 25l8 8 14-16'},err:{bg:'#D13B3B',fg:'#FFFFFF',d:'M16 16l16 16M32 16L16 32'},warn:{bg:'#FFF4DE',fg:'#7A4F00',d:'M24 12v15M24 35.5v.5'},info:{bg:'#E7F0FF',fg:'#0547B8',d:'M24 21v14M24 12.5v.5'},msg:{bg:'#0B1220',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chiko:{bg:'#0866FF',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chikow:{bg:'#FFFFFF',fg:'#0866FF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'}};
+const NIT={ok:{bg:'#E6F4EC',fg:'#188A55',d:'M13 25l8 8 14-16'},err:{bg:'#D13B3B',fg:'#FFFFFF',d:'M16 16l16 16M32 16L16 32'},warn:{bg:'#FFF4DE',fg:'#7A4F00',d:'M24 12v15M24 35.5v.5'},info:{bg:'#E4EEF5',fg:'#2B5370',d:'M24 21v14M24 12.5v.5'},msg:{bg:'#0B1220',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chiko:{bg:'#0866FF',fg:'#FFFFFF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'},chikow:{bg:'#FFFFFF',fg:'#0866FF',d:'M13 17C7 17 4 12 5 6c3 4 6 6 9 6.5M35 17c6 0 9-5 8-11-3 4-6 6-9 6.5M14 12.5c6-2 14-2 20 0M13 17c-1 6 0 11 3 15M35 17c1 6 0 11-3 15M16 32c-1 4 2 7 8 7s9-3 8-7M13 22c-3 0-5 1-6 3M35 22c3 0 5 1 6 3M19.5 22v.01M28.5 22v.01M21 34v.01M27 34v.01'}};
 // Chiko's own icon: a bull's head (wide forehead, big horns, ears, muzzle) in the same tile language; the drawn picture
 // stays where he appears large (his card on the home, the chat header), the icon takes the small places
 const niTile=k=>{const t=NIT[k]; return t?`<rect x="1" y="1" width="46" height="46" rx="14" fill="${t.bg}"/><path d="${t.d}" fill="none" stroke="${t.fg}" stroke-width="${/chiko|msg/.test(k)?4:5}" stroke-linecap="round" stroke-linejoin="round"/>`:''};
@@ -17392,14 +17392,14 @@ function renderWChart(){
   for(const b of box.querySelectorAll('[data-wr]'))b.setAttribute('aria-pressed',String(+b.dataset.wr===WR));
   const P0=wPts(); box.hidden=false;
   {const n=$('wChN'); if(n){n.textContent=KV!=='all'?'הגרף מציג את שווי כל התיק: עוד אין היסטוריה חודשית נפרדת ל'+(KV==='fund'?'קרנות':'מניות')+'.':''; n.hidden=KV==='all'}}
-  if(P0.length<2){WCP=null;WSIG=''; svg.innerHTML=''; svg.setAttribute('viewBox','0 0 320 60'); svg.innerHTML='<text x="160" y="34" font-size="13" fill="#CFE0FF" text-anchor="middle" font-family="var(--sans)">הגרף יתמלא בסוף החודש הראשון של '+(acct==='all'?'התיק':esc(acctName(acct)))+'</text>'; const r=$('wChR'); if(r)r.textContent=''; return}
+  if(P0.length<2){WCP=null;WSIG=''; svg.innerHTML=''; svg.setAttribute('viewBox','0 0 320 60'); svg.innerHTML='<text x="160" y="34" font-size="13" fill="#D5DCEB" text-anchor="middle" font-family="var(--sans)">הגרף יתמלא בסוף החודש הראשון של '+(acct==='all'?'התיק':esc(acctName(acct)))+'</text>'; const r=$('wChR'); if(r)r.textContent=''; return}
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   const W=Math.max(240,svg.clientWidth||box.clientWidth||320), H=170, L=58, R=14, T=10, B=24;
   const sig=W+'|'+WR+'|'+acct+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
   const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
   const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
-  let g=''; for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="rgb(255 255 255 / .18)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${L-6}" y="${yy+4}" font-size="11" fill="#CFE0FF" font-family="var(--sans)" text-anchor="end">${kf(v)}</text>`}
+  let g=''; for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="rgb(255 255 255 / .18)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${L-6}" y="${yy+4}" font-size="11" fill="#D5DCEB" font-family="var(--sans)" text-anchor="end">${kf(v)}</text>`}
   const d=P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
   g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="#FFFFFF" fill-opacity=".14"/>`;
   // the money put in, dotted, when the whole portfolio is shown and the deposits are known: the gap to the line is the result
@@ -17409,7 +17409,7 @@ function renderWChart(){
   const MS=new Set(); const ticks=[]; for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
   const years=new Set(ticks.map(p=>new Date(p.t).getFullYear())), maxT=W<420?5:8, step=Math.max(1,Math.ceil(ticks.length/maxT));
   ticks.filter((_,i)=>i%step===0||i===ticks.length-1).forEach((p,i,arr)=>{const dd=new Date(p.t), xx=Math.min(W-R-14,Math.max(L+14,x(p.t))); if(i&&xx-x(arr[i-1].t)<34)return;
-    g+=`<text x="${xx}" y="${H-6}" font-size="11" fill="#CFE0FF" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
+    g+=`<text x="${xx}" y="${H-6}" font-size="11" fill="#D5DCEB" text-anchor="middle" font-family="var(--sans)">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
   const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="10" fill="#FFFFFF" opacity=".25"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#FF9B54" stroke="#FFFFFF" stroke-width="1.5"/>`;
   g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" stroke="rgb(255 255 255 / .55)" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#FF9B54" stroke="#FFFFFF" stroke-width="2"/><rect id="wChTb" rx="11" height="22" fill="#FFFFFF"/><text id="wChTt" font-size="12" font-weight="700" fill="#1B2A4A" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
@@ -22142,7 +22142,7 @@ function drawSec(){
   const x=t=>L+(t-t0)/((t1-t0)||1)*PW, y=v=>T+(ghi-v)/((ghi-glo)||1)*PH;
   // the site's own colors: the line in ink, the area in the accent, gain and loss only where a number is read
   const DK=themeDark(), CS=getComputedStyle(document.documentElement), tok=(n,f)=>(CS.getPropertyValue(n)||'').trim()||f;
-  const INK=tok('--ink','#0B1220'), ACC=DK?tok('--blue-ink','#5B9BFF'):tok('--blue','#0866FF'), GAIN=tok('--gain','#188A55'), LOSS=tok('--loss','#D13B3B'), LAB=tok('--muted','#6B7A90'), GRID=DK?'rgba(255,255,255,.09)':'rgba(11,18,32,.08)', FONT=tok('--sans','Assistant, sans-serif');
+  const INK=tok('--ink','#151B2E'), ACC=DK?tok('--c1','#FF9B54'):tok('--c4','#1B2A4A'), GAIN=tok('--gain','#188A55'), LOSS=tok('--loss','#D13B3B'), LAB=tok('--muted','#6B7A90'), GRID=DK?'rgba(255,255,255,.09)':'rgba(11,18,32,.08)', FONT=tok('--sans','Assistant, sans-serif');
   const last=pts[pts.length-1],up=last[1]>=base,col=up?GAIN:LOSS;
   g.font='12px '+FONT;g.textAlign='left';g.textBaseline='middle';
   const lastY=y(pts[pts.length-1][1]);   // the axis label the last price's tag would cover is left out
@@ -22171,7 +22171,7 @@ function drawSec(){
   g.fillStyle=ACC;g.beginPath();g.arc(x(last[0]),y(last[1]),4.5,0,7);g.fill();
   // the point under the finger: a hairline, a ringed dot, and a small pill with the date and the price beside it
   if(SECHOV>=0&&SECHOV<pts.length){const hp=pts[SECHOV],hx=x(hp[0]),hy=y(hp[1]);g.strokeStyle=DK?'rgba(255,255,255,.5)':'rgba(11,18,32,.4)';g.lineWidth=1;g.beginPath();g.moveTo(hx,T);g.lineTo(hx,T+PH);g.stroke();
-    g.fillStyle=DK?'#0B1220':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=ACC;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
+    g.fillStyle=DK?'#0E1424':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=ACC;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
     const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 12px '+FONT; const tw=g.measureText(lab).width+16, th=22;
     let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
     g.fillStyle=DK?'#FFFFFF':INK; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,11):g.rect(px,py,tw,th); g.fill(); g.fillStyle=DK?INK:'#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2)}
