@@ -470,7 +470,7 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     // the tour: one thing at a time, back and forth, and "דלג" ends it for good
     await tab(pg,'overview'); await pg.evaluate(()=>document.querySelector('#desk [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
     const st=()=>pg.evaluate(()=>({card:!document.getElementById('tourCard').hidden,step:document.querySelector('#tourCard .sub')?.textContent||'',lit:[...document.querySelectorAll('.tourhl')].map(e=>e.id||e.className).join()}));
-    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 8$/); assert.match(s.lit,/worth/);
+    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 9$/); assert.match(s.lit,/worth/);
     await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^2 מתוך/); assert.equal(s.lit,'kTrust');
     await pg.click('#tourCard [data-tour="back"]'); s=await st(); assert.match(s.step,/^1 מתוך/);
     for(let i=0;i<3;i++)await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^4 מתוך/); assert.match(await pg.evaluate(()=>document.getElementById('tourCard').textContent),/בבלינק: "ההשקעות שלי"/);
@@ -485,7 +485,7 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(390,{who:'new'}); // before there is a portfolio: the tour skips what is not there yet
     await pg.evaluate(()=>document.querySelector('#welcome [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
-    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 4$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
+    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 5$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
 test('fees: the table\'s running total ends at the headline, the fees saved apart in their own month',T,async t=>{
