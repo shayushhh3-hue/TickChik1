@@ -2920,7 +2920,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   <div class="bottip" id="botTip" hidden><div class="bt-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו<button type="button" class="bt-x" data-bottip="x" aria-label="סגירת ההודעה"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><p id="botTipT" role="status"></p><div class="acts"><button type="button" class="btn sm pri" id="botTipGo" data-bottip="go">נתח לי את התיק</button><button type="button" class="btn sm" data-bottip="x">לא עכשיו</button></div></div>
   <div class="pscrim" id="newsScrim" data-newsx hidden></div>
   <section class="profdlg newsdlg" id="newsDlg" role="dialog" aria-modal="true" aria-labelledby="hNews" hidden>
-    <header class="prof-h"><div class="t"><h2 id="hNews">מה חדש בתיק צ׳יק</h2><p>מה נוסף לאחרונה, ואיך מגיעים לכל דבר.</p></div><button type="button" class="nwx" data-newsx aria-label="סגירה">×</button></header>
+    <header class="prof-h"><div class="t"><h2 id="hNews">מה חדש בתיק צ׳יק</h2><p>גרסה 2.1 · מה נוסף לאחרונה, ואיך מגיעים לכל דבר.</p></div><button type="button" class="nwx" data-newsx aria-label="סגירה">×</button></header>
     <ul class="prof-b newsl" id="newsList"></ul>
   </section>
   <div class="tourcard" id="tourCard" role="dialog" aria-modal="false" aria-label="סיור באתר" hidden></div>
@@ -23583,6 +23583,12 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-28.6',at:'2026-10-28',t:'לוח המסחר: דוחות ודיבידנדים קדימה',d:'נקודה סגולה ביום שמתפרסם דוח כספי של מניה שלך, ונקודה ירוקה ביום אקס דיבידנד וביום התשלום. עיגול ריק הוא מועד משוער. דוחות עד ארבעה חודשים קדימה, ודיבידנדים לשנה הקרובה: מה שהחברה הכריזה, ואחריו לפי הקצב של הדיבידנדים הקודמים. דוח שכבר פורסם רשום ביום שבו פורסם באמת, לפי הדיווח של החברה לרשות ניירות הערך האמריקאית.',go:'cal'},
+  {v:'2026-10-28.5',at:'2026-10-28',t:'השבועיים הקרובים בתיק שלך',d:'בדף הבית: כרטיס לכל יום שיש בו משהו, דוח כספי, דיבידנד, יום ההפקדה או יום בלי מסחר. ומתחת: כמה התיק מייצר בשנה מדיבידנדים.',go:'ov'},
+  {v:'2026-10-28.4',at:'2026-10-28',t:'התיק מול S&P 500, והרווח מהדולר',d:'בגרף שבדף הבית יש קו כתום: כמה היו שוות אותן הפקדות, באותם ימים, ב-S&P 500. מתחת לשווי: בכמה התיק מעל המדד או מתחתיו, ואיזה חלק מהרווח בא מהמחירים ואיזה משער הדולר.',go:'ov'},
+  {v:'2026-10-28.3',at:'2026-10-28',t:'הבקרה בשלושה חלקים',d:'מסך הבקרה מחולק ל"מצב", "פיזור" ו"סיכון ותרחישים", עם בורר למעלה. כל נתון מופיע פעם אחת, והמסך קצר בהרבה בטלפון.',go:'risk'},
+  {v:'2026-10-28.2',at:'2026-10-28',t:'מניות במעקב בשורות רחבות',d:'כל מניה במעקב בשורה משלה. "למה X מתוך 100?" נפתח כטבלה קצרה: פס ומשפט לכל חלק, והחלקים שחסרים להם נתונים בשורה אחת.',go:'watch'},
+  {v:'2026-10-28.1',at:'2026-10-28',t:'עיצוב חדש',d:'צבעי סגול ומנטה, כרטיס שווי עם גרף מתחת למספר, אריחי מניות, קרנות ומזומן, סרגל תחתון עם המחקר באמצע, ורשימת אחזקות קומפקטית בטלפון. עובד ביום ובלילה.',go:'ov'},
   {v:'2026-10-22.4',at:'2026-10-22',t:'עוד נתונים, ותצוגה של הקרנות',d:'מתחת ל"רווח מול עלות" ו"מול ההפקדות" יש "עוד נתונים": עוד ארבעה כרטיסים, איזו מניה עלתה הכי הרבה היום ואיזו ירדה הכי הרבה (לחיצה פותחת את הדף שלה), מתחילת השנה והדולר. ליד בלינק ואקסלנס יש "קרנות": השווי, השינוי היומי והרווח של הקרנות בלבד. לוח המסחר והחיפוש עברו לתפריט "עוד".',go:'kmore'},
   {v:'2026-10-22.3',at:'2026-10-22',t:'מצב לילה',d:'אפשר לעבור למצב לילה: רקע כהה באותם צבעים של האתר. הכפתור עם הירח למעלה עובר בין יום ללילה, ובהגדרות אפשר גם לבחור "לפי הטלפון". הבחירה נשמרת בחשבון.',go:'theme'},
   {v:'2026-10-22.2',at:'2026-10-22',t:'דוחות ודיבידנדים בלוח המסחר',d:'בלוח המסחר מסומנים הימים של המניות שבתיק: מתי יוצא הדוח הכספי (ומתי יצא), יום האקס דיבידנד, יום התשלום, ודיבידנדים שהתקבלו לפי הדוחות שלך. לחיצה על יום מראה מה יש בו, ולחיצה על שם המניה פותחת את הדף שלה.',go:'cal'},

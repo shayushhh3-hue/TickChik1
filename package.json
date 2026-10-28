@@ -1,6 +1,6 @@
 {
   "name": "tik-chik",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "תיק צ׳יק – חדר המסחר שלי: the portfolio page as a site, on one Node server (Railway)",
