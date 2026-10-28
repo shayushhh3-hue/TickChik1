@@ -1441,6 +1441,38 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .wc.mine{border-color:var(--accent-soft)}
 .fitwhy{grid-column:1 / -1;font-size:12.5px} .fitwhy summary{cursor:pointer;color:var(--accent-ink);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:28px} .fitwhy summary::before{content:"◂";font-size:11px;transition:transform .15s} .fitwhy[open] summary::before{transform:rotate(-90deg)}
 .fitwhy ul{margin:8px 0 0;padding:0 18px 0 0;display:grid;gap:8px;line-height:1.55;color:var(--ink2)} .fitwhy li>span{display:block} .fitwhy li.nodata>span{color:var(--muted)} .fitwhy .fw-lead{margin:6px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);font-weight:500} .fitwhy li b{color:var(--ink);font-weight:600} .fitwhy .note{margin:8px 0 0} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
+/* 28.10: the watch list as wide rows, one security a line: who it is and the match on top, the facts in one row beside
+   them on a computer (under them on a phone), the actions at the end of the row; "why" opens a short table, not a page of text */
+#candList{grid-template-columns:minmax(0,1fr)!important;gap:10px}
+#candList .wc{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t r" "f f" "g g" "a a" "y y";gap:10px 14px;padding:14px 16px;padding-inline-start:20px}
+#candList .wc>.wh{display:contents}
+#candList .wc .wt{grid-area:t;align-self:center} #candList .wc .rg{grid-area:r} #candList .wc .wfacts{grid-area:f}
+#candList .wc .wtags{grid-area:g} #candList .wc .wfit{grid-area:a} #candList .wc .fitwhy{grid-area:y}
+#candList .wc .wt .wn{flex:1 1 140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#candList .wc .wt .ws{flex-basis:auto}
+#candList .wc .wfacts{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+#candList .wc .wfit{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+#candList .wc .wfit .sub{flex:1 1 220px}
+#candList .wc .wfit .acts{flex:none;margin:0}
+#candList .wc .ring{width:52px;height:52px}
+@media (min-width:900px){
+  #candList .wc{grid-template-columns:minmax(170px,240px) minmax(0,1fr) auto;grid-template-areas:"t f r" "g g g" "a a a" "y y y";align-items:center}
+  #candList .wc .wt{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:2px}
+  #candList .wc .wt .wn{flex:none;max-width:100%}
+}
+.fitwhy .fw-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.fitwhy .fw-r{display:grid;grid-template-columns:auto minmax(48px,90px) auto;grid-template-areas:"k b s" "t t t";align-items:center;gap:4px 10px;padding:9px 12px;border-top:1px solid var(--line)}
+.fitwhy .fw-r:first-child{border-top:0}
+.fitwhy .fw-k{grid-area:k;font-weight:700;color:var(--ink);font-size:13px}
+.fitwhy .fw-bar{grid-area:b;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden;justify-self:stretch}
+.fitwhy .fw-bar i{display:block;height:100%;border-radius:inherit;background:#94A3B8}
+.fitwhy .fw-bar.hi i{background:var(--ok-c)} .fitwhy .fw-bar.mid i{background:var(--accent)}
+.fitwhy .fw-s{grid-area:s;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;justify-self:start}
+.fitwhy .fw-t{grid-area:t;font-size:12.5px;line-height:1.5;color:var(--ink2)}
+@media (min-width:900px){.fitwhy .fw-r{grid-template-columns:110px 90px 52px minmax(0,1fr);grid-template-areas:"k b s t"}}
+.fitwhy .fw-miss{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--sunk);font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.fitwhy .fw-miss .ni{width:16px;height:16px;flex:none;margin-top:2px;color:var(--muted)}
+.fitwhy .fw-foot{margin:8px 0 0;font-size:12px;color:var(--muted)}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -1732,7 +1764,7 @@ body.hidenum .big,body.hidenum .stat .v,body.hidenum .kt-v,body.hidenum #rows .n
 .mchip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid rgb(45 212 191 / .45);background:rgb(45 212 191 / .14);color:var(--mint-ink);white-space:nowrap}
 .mchip.down{border-color:rgb(239 68 68 / .35);background:rgb(239 68 68 / .10);color:var(--loss)}
 .mchip svg{width:14px;height:14px}
-.wgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px 14px;align-items:end;margin-top:4px}
+.worth .wgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px 14px;align-items:end;margin-top:4px}
 .wv{min-width:0;display:flex;flex-direction:column;gap:2px}
 .big{font-weight:700;font-size:clamp(34px,8.6vw,46px);letter-spacing:-.02em;text-align:start}
 @media (min-width:761px){.big{font-size:52px}}
@@ -21533,7 +21565,10 @@ const FITP={div:'פיזור',q:'חוזק החברה',val:'מחיר המניה',s
 function fitWhy(f,c,m){
   if(!f||!f.W)return ''; const W=f.W, R=S.rules||{}, mg=+R.maxGroup||40, c0=c||{}, g=GROUPS[f.g]||f.g, L=[], miss=[];
   const n1=x=>nn(Number(x).toFixed(Math.abs(x)>=10?0:1)), pc0=x=>nn(Math.round(x)+'%');
-  const row=(k,txt,none)=>{if(none)miss.push(k); L.push(`<li class="${none?'nodata':''}"><b>${FITP[k]}: <span class="n">${f[k]}</span> מתוך <span class="n">${W[k]}</span></b><span>${txt}</span></li>`)};
+  // 28.10: one short row per part: its name, a small bar of its points out of the most it can get, and one plain sentence;
+  // the parts without data share one line at the end instead of the same sentence again and again
+  const row=(k,txt,none)=>{if(none){miss.push(k);return} const r=W[k]>0?Math.max(0,Math.min(1,f[k]/W[k])):0;
+    L.push(`<li class="fw-r"><span class="fw-k">${FITP[k]}</span><span class="fw-bar ${r>=0.66?'hi':r>=0.45?'mid':'lo'}" aria-hidden="true"><i style="width:${Math.round(r*100)}%"></i></span><span class="fw-s" dir="ltr">${f[k]}/${W[k]}</span><span class="fw-t">${txt}</span></li>`)};
   const NONE='עוד אין לנו את הנתון הזה לחברה, אז נתתי ציון באמצע. הוא יתעדכן לבד כשהנתונים ייקלטו.';
   // diversification: how much of this group the portfolio already holds, against the ceiling the investor set
   row('div',f.w>=mg?`כבר יש לך הרבה ${esc(g)}: ${pc0(f.w)} מהתיק, מעל התקרה של ${pc0(mg)} שקבעת. עוד נייר מאותו תחום לא יפזר לך את הסיכון.`
@@ -21561,9 +21596,10 @@ function fitWhy(f,c,m){
   const best=ks.filter(x=>x[1]>=0.6).slice(0,2).map(x=>FITP[x[0]]), worst=ks.filter(x=>x[1]<0.45).slice(-2).reverse().map(x=>FITP[x[0]]);
   const lead=(f.score>=80?'מתאים מאוד לתיק שלך':f.score>=65?'מתאים לתיק שלך':f.score>=50?'מתאים חלקית':'פחות מתאים לתיק שלך כרגע')
     +(best.length?`. נקודות חזקות: ${andJ(best)}`:'')+(worst.length?`. נקודות חלשות: ${andJ(worst)}`:'')+'.'
-    +(miss.length?` ל${miss.length===1?'חלק אחד':miss.length+' חלקים'} (${andJ(miss.map(k=>FITP[k]))}) עוד חסרים נתונים, אז הציון עוד עשוי להשתנות.`:'');
-  const who=hasRisk()?`כמה כל חלק שוקל נקבע לפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:'כמה כל חלק שוקל נקבע לפי משקיע "באמצע", כי עוד לא בחרת סוג משקיע בפרופיל';
-  return `<details class="fitwhy"><summary>למה ${f.score} מתוך 100?</summary><p class="fw-lead">${lead}</p><ul>${L.join('')}</ul><p class="note">${who}${(S&&S.wpref&&(S.wpref.focus||[]).length)?`, ו${andJ(S.wpref.focus.map(k=>FITP[k]||FITL[k]))} שוקלים כפול לפי מה שסימנת`:''}. זה ציון התאמה לתיק שלך, לא המלצה לקנות.</p></details>`;
+    ;
+  const missH=miss.length?`<p class="fw-miss">${niH('info','fw-mi')}<span><b>עוד אין נתונים:</b> ${andJ(miss.map(k=>FITP[k]))}. ${miss.length===1?'החלק הזה קיבל':'החלקים האלה קיבלו'} ציון באמצע, והוא יתעדכן לבד כשהנתונים ייקלטו.</span></p>`:'';
+  const who=hasRisk()?`המשקל של כל חלק לפי סוג המשקיע שבחרת ("${RISK[riskOf()]}")`:'המשקל של כל חלק לפי משקיע "באמצע"';
+  return `<details class="fitwhy"><summary>למה ${f.score} מתוך 100?</summary><p class="fw-lead">${lead}</p><ul class="fw-list">${L.join('')}</ul>${missH}<p class="fw-foot">${who}${(S&&S.wpref&&(S.wpref.focus||[]).length)?`, ו${andJ(S.wpref.focus.map(k=>FITP[k]||FITL[k]))} כפול`:''}. ציון התאמה, לא המלצה.</p></details>`;
 }
 function fitRowX(f){const r=riskOf(); return r==='safe'?` · יציבות ${f.st} · דיבידנד ${f.dv}`:r==='risk'?` · צמיחה ${f.gr}`:''}
 
