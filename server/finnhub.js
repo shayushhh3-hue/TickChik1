@@ -78,3 +78,13 @@ export async function fhCompanyNews(t,{now=new Date(),days=14,n=8,...o}={}){
   const j=await fh('/company-news',{symbol:fhSym(t),from:day(new Date(now.getTime()-days*864e5)),to:day(now)},o); return fhNews(j,n)}
 export async function fhEarningsCal({now=new Date(),days=75,...o}={}){
   const j=await fh('/calendar/earnings',{from:day(now),to:day(new Date(now.getTime()+days*864e5))},o); return fhCalendar(j)}
+// the reports that came out in the last `days`: {SYM:[{date,eps,est}]}, newest first (the real day a report was published,
+// for a report the page first saw later than that)
+export function fhPastCal(j){
+  const o={}; for(const x of ((j&&j.earningsCalendar)||[])){if(!x||!x.symbol||!x.date||x.epsActual==null)continue; const k=String(x.symbol).toUpperCase();
+    (o[k]=o[k]||[]).push({date:x.date,eps:r2(x.epsActual),est:r2(x.epsEstimate)})}
+  for(const k in o)o[k].sort((a,b)=>a.date<b.date?1:-1);
+  return o;
+}
+export async function fhPastEarnings({now=new Date(),days=120,...o}={}){
+  const j=await fh('/calendar/earnings',{from:day(new Date(now.getTime()-days*864e5)),to:day(now)},o); return fhPastCal(j)}

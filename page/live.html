@@ -225,6 +225,8 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .calday{border-inline-start:4px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.55}
 .calday b{font-weight:700}
 .callist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.rp-simple{margin:4px 0 2px;font-size:15.5px;font-weight:600;line-height:1.5;color:var(--ink)}
+.rp-terms{margin:6px 0 0;display:grid;gap:4px;font-size:13px;line-height:1.5} .rp-terms div{display:flex;gap:6px;flex-wrap:wrap} .rp-terms dt{font-weight:700;color:var(--ink)} .rp-terms dt::after{content:":"} .rp-terms dd{margin:0;color:var(--ink2)}
 .repbox{margin-top:14px;padding:12px 14px;border-radius:var(--r);background:var(--accent-soft);border:1px solid #EBDCC6;border-inline-start:4px solid var(--accent);display:flex;flex-direction:column;gap:6px}
 .repbox h3{font-size:15px}.repbox h4{font-size:13px;margin:6px 0 0;color:var(--ink2)}.repbox p{margin:0;font-size:14px;line-height:1.6}
 .repf{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.55}
@@ -18771,11 +18773,12 @@ function repBlock(k,rs){
   const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(a.title)}</bdi></a><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
   const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
   return `<section class="repbox" aria-labelledby="${hid}">
-    <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
+    <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at?`<span class="sub">${r.atEst?'נקלט ב-':'פורסם ב-'}${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
+    ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
     ${due?`<p class="note">${dueTxt}</p>`:''}
     ${repCardsH(S)}
     ${X.length?`<ul class="rpx">${X.map(x=>`<li>👈 ${repH(x)}</li>`).join('')}</ul>`:''}
-    ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
+    ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>${ai.context?`<h4>המגמה</h4><p>${tx(ai.context)}</p>`:''}${ai.watch?`<h4>על מה לשים לב</h4><p>${tx(ai.watch)}</p>`:''}${ai.terms&&ai.terms.length?`<dl class="rp-terms">${ai.terms.map(t=>{const i=t.indexOf(':'); return `<div><dt>${esc(t.slice(0,i))}</dt><dd>${esc(t.slice(i+1).trim())}</dd></div>`}).join('')}</dl>`:''}`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
     <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
       ${F.length?`<ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
       <div class="acts" style="justify-content:flex-start;margin-top:8px">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
@@ -21756,7 +21759,8 @@ function renderCandsP(m,pool,mine=''){
   const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter='';
   $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
   const hi=pool.pick.filter(r=>r.f.score>=80).length;
-  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${pool.pick.length}</div><div><b>מניות שמתאימות לתיק שלך${hi?`, ${hi} מהן מתאימות מאוד`:''}.</b><p>נבחרו מתוך ${pool.n.toLocaleString('en-US')} ניירות שיש להם נתונים, לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
+  // the big number is what matters to the reader: how many fit very well (80 and up); the rest fit partly
+  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${hi||pool.pick.length}</div><div><b>${hi?`מניות שמתאימות מאוד לתיק שלך${pool.pick.length>hi?`, ועוד ${pool.pick.length-hi} שמתאימות חלקית`:''}`:'מניות שיכולות להתאים לתיק שלך'}.</b><p>הדירוג לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
   const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
   const markH=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'');
   const rows=pool.pick.filter(r=>!candFilter||GROUPS[r.f.g]===candFilter);
@@ -22399,7 +22403,7 @@ function calEvents(){
   const held=[...new Set(((P&&P.positions)||[]).map(p=>p.sym))], C=(RS&&RS.companies)||{}, E=[], seen=new Set();
   const add=e=>{const k=e.d+'|'+e.k+'|'+e.sym; if(!e.d||seen.has(k))return; seen.add(k); E.push(e)};
   for(const sym of held){const c=C[sym]; if(!c)continue; const r=c.rep;
-    if(r&&r.at)add({d:r.at,k:'repd',sym,label:r.label||'',S:repSumOf(r)});
+    if(r&&r.at)add({d:r.at,k:'repd',sym,label:r.label||'',S:repSumOf(r),est:!!r.atEst});
     for(const o of c.reps||[])if(o&&o.at)add({d:o.at,k:'repd',sym,label:o.label||'',S:o.sum||null});
     if(c.next&&!(r&&r.at&&r.at>=c.next))add({d:c.next,k:'rep',sym,est:!!c.nextEst});
     for(const x of [c.div].concat(c.divHist||[]))if(x){const amt=x.last&&x.last.date&&x.last.date===x.ex?x.last.amt:null;
@@ -22412,14 +22416,14 @@ const CALEVK={rep:'rep',repd:'rep',ex:'div',pay:'div',got:'div'};
 const CALEVL={rep:'דוח כספי',repd:'פורסם דוח',ex:'יום אקס דיבידנד',pay:'תשלום דיבידנד',got:'התקבל דיבידנד'};
 function calEvMore(e,today){const ccy=(P&&P.positions||[]).find(p=>p.sym===e.sym)?.ccy==='ILS'?'ILS':'USD', L=[];
   if(e.k==='rep'){L.push(e.d<today?'הדוח היה צפוי ביום הזה ועוד לא נקלט.':'החברה אמורה לפרסם את הדוח הכספי ביום הזה.'); L.push(e.est?'המועד משוער, עד שהחברה תאשר אותו.':'המועד אושר.')}
-  else if(e.k==='repd'){if(e.label)L.push('הדוח לרבעון '+esc(e.label)+'.'); const o=e.S&&repOne(e.S); if(o)L.push(repH(o)+'.')}
+  else if(e.k==='repd'){if(e.label)L.push('הדוח לרבעון '+esc(e.label)+'.'); if(e.est)L.push('זה היום שבו הדף קלט את הדוח; יום הפרסום עצמו יתעדכן כשלוח הדוחות ייקלט.'); const o=e.S&&repOne(e.S); if(o)L.push(repH(o)+'.')}
   else if(e.k==='ex'){if(e.amt!=null)L.push(`${repH(repEps(e.amt,ccy))} למניה.`); else if(e.last!=null)L.push(`הדיבידנד הקודם: ${repH(repEps(e.last,ccy))} למניה. הסכום הבא ידוע כשהחברה מכריזה עליו.`);
     L.push(e.d>=today?'כדי לקבל את הדיבידנד צריך להחזיק במניה כבר בסוף יום המסחר שלפני היום הזה.':'מי שהחזיק במניה בסוף יום המסחר שלפני היום הזה מקבל את הדיבידנד.')}
   else if(e.k==='pay'){L.push(e.amt!=null?`${repH(repEps(e.amt,ccy))} למניה, למי שהחזיק במניה לפני יום האקס.`:'היום שבו הדיבידנד משולם למי שהחזיק במניה לפני יום האקס.')}
   else{if(e.net)L.push(`${repH(e.ccy==='ILS'?ils(e.net):'$'+(+e.net).toFixed(2))} נטו, לפי הדוח שהעלית.`); else L.push('לפי הדוח שהעלית.')}
   return `<p>${L.join(' ')}</p><button type="button" class="lnk" data-gosec="${esc(e.sym)}">${e.k==='repd'?'לניתוח הדוח בדף של '+esc(lab(e.sym)):'לדף של '+esc(lab(e.sym))} ›</button>`}
 function calEvRow(e,today,withDay){
-  return `<li><details class="cevd"><summary><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span class="cev-t">${withDay?`<b>${dmy(e.d)}</b> · `:''}${CALEVL[e.k]}${e.k==='rep'&&e.est?' (משוער)':''} · <b>${esc(lab(e.sym))}</b></span><span class="cev-m" aria-hidden="true"><span class="o">לקריאה נוספת</span><span class="c">סגירה</span></span></summary><div class="cev-b">${calEvMore(e,today)}</div></details></li>`}
+  return `<li><details class="cevd"><summary><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span class="cev-t">${withDay?`<b>${dmy(e.d)}</b> · `:''}${e.k==='repd'&&e.est?'נקלט דוח':CALEVL[e.k]}${e.k==='rep'&&e.est?' (משוער)':''} · <b>${esc(lab(e.sym))}</b></span><span class="cev-m" aria-hidden="true"><span class="o">לקריאה נוספת</span><span class="c">סגירה</span></span></summary><div class="cev-b">${calEvMore(e,today)}</div></details></li>`}
 function renderCal(){
   const box=$('calBox'); if(!box)return; const today=tzDay('Asia/Jerusalem');
   if(!CALM)CALM=today.slice(0,7); if(!CALSEL)CALSEL=today;

@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 // the default universe for the ranking (shared/universe.json, written by the build from the page's list of securities)
 let UNI=null; export function defaultUniverse(){if(UNI)return UNI; try{UNI=JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','shared','universe.json'),'utf8')).keys||[]}catch(e){UNI=[]} return UNI}
 import {fillFundamentals} from './fundamentals.js';
-import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhCompanyNews} from './finnhub.js';
+import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhPastEarnings,fhCompanyNews} from './finnhub.js';
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -124,7 +124,11 @@ export const usable=k=>typeof k==='string'&&(/^[A-Z][A-Z.\-]{0,6}$/.test(k)||/^T
 // ---- 22.10: a report set against what was expected before it ----
 // the estimates for this report: the latest snapshot taken for its date (on or after the quarter's end, not after today),
 // or the one Yahoo still shows for this quarter; and the analysts' estimate for the quarter after it, as it was before
-const KEEP=['at','seen','ai','ev','revE','epsE','nxW','rx','mailed','finWas'];
+const KEEP=['at','atSrc','atEst','seen','ai','ev','revE','epsE','nxW','rx','mailed','finWas'];
+// the day a report for the quarter that ended on `q` came out, from the days the calendar holds: the first one after the
+// quarter's end and within 80 days of it
+export function repDateOf(q,dates){if(!q||!Array.isArray(dates))return null; const lim=new Date(Date.parse(q+'T00:00:00Z')+80*864e5).toISOString().slice(0,10);
+  const c=dates.map(x=>x&&x.date).filter(d=>d&&d>q&&d<=lim).sort(); return c[0]||null}
 export function repEst(r,C,today){
   const qm=String(r.q).slice(0,7), byAt=(a,b)=>String(a.at||'')<String(b.at||'')?1:-1;
   const E=C.filter(e=>e&&e.date&&e.date>=r.q&&e.date<=today).sort(byAt)[0]||C.filter(e=>e&&e.q&&e.q.end&&String(e.q.end).slice(0,7)===qm).sort(byAt)[0]||null;
@@ -180,7 +184,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   try{fund=await fill(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,budgetMs:only?3*60e3:Math.max(6*60e3,budgetMs-(Date.now()-t0))})}catch(e){log('fundamentals failed: '+(e&&e.message||e))}
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
-  const fresh=[], words=[], posName={}; for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
+  const fresh=[], words=[], posName={}, redated=new Map(); for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
   for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{}, today=iso.slice(0,10);
     // the estimates for the coming report: when its date moves on, the one before is kept (the report it was for may come later)
     if(v.est){if(old.est&&old.est.date&&v.est.date!==old.est.date)v.estPrev=old.est; else if(old.estPrev)v.estPrev=old.estPrev}
@@ -188,7 +192,10 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
     if(v.div&&old.div&&old.div.ex&&old.div.ex!==v.div.ex)v.divHist=[old.div].concat((old.divHist||[]).filter(x=>x&&x.ex!==old.div.ex)).slice(0,8);
     if(v.rep&&v.rep.q){const o=old.rep||null, was=o&&o.q;
       if(was===v.rep.q){for(const f of KEEP)if(o[f]!==undefined)v.rep[f]=o[f]}
-      else{v.rep.at=old.next&&old.next<=today?old.next:today; v.rep.seen=iso; v.rep.finWas=o?o.finLabel||null:null;
+      else{const cal=repDateOf(v.rep.q,v.repDates||old.repDates);
+        // the day it came out: the calendar's day; else the day the page expected it; else the day it was seen (said so)
+        if(cal){v.rep.at=cal; v.rep.atSrc='cal'} else if(old.next&&old.next<=today)v.rep.at=old.next; else{v.rep.at=today; v.rep.atEst=true}
+        v.rep.seen=iso; v.rep.finWas=o?o.finLabel||null:null;
         repEst(v.rep,[old.est,old.estPrev,v.est,v.estPrev],today);
         if(o&&o.q)v.reps=[repShort(o)].concat((old.reps||[]).filter(x=>x&&x.q!==o.q)).slice(0,8);   // the earlier reports, kept
         if((was||old.next)&&!v.rep.init){v.rep.ev=true; fresh.push([k,v.rep])} delete v.rep.init}
@@ -200,19 +207,21 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       // the explanation: for a new report, and for a recent one (three weeks) that has none yet; a few per run. A report
       // whose revenue is not in yet waits for it a few hours
       const recent=v.rep.at&&(now-new Date(v.rep.at+'T12:00:00Z'))<21*864e5, wait=v.rep.revPend&&v.rep.seen&&(now-Date.parse(v.rep.seen))<8*36e5;
-      if(!v.rep.ai&&recent&&!wait&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v]);
+      if((!v.rep.ai||(v.rep.ai.v||1)<2)&&recent&&!wait&&(held.has(k)||watched.has(k))&&words.length<6)words.push([k,v]);
       v.rep.sum=repSum(v.rep)}
-    store.setDoc(p,{...merge(old,v),sym:k,source:srcOf(k,v),updatedAt:iso},{silent:true})}
+    const M={...merge(old,v),sym:k,source:srcOf(k,v),updatedAt:iso};
+    if(M.rep&&M.rep.q&&!M.rep.atSrc&&M.repDates){const d=repDateOf(M.rep.q,M.repDates); if(d){M.rep={...M.rep,at:d,atSrc:'cal'}; delete M.rep.atEst; redated.set(k+'|'+M.rep.q,d); if(v.rep)v.rep.at=d}}
+    store.setDoc(p,M,{silent:true})}
   for(const [k,v] of words){let H=[]; try{H=await newsFor(tick(k,map),{fetch:f})}catch(e){}
-    const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai=ai; v.rep.sum=repSum(v.rep);
+    const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai={...ai,v:2}; v.rep.sum=repSum(v.rep);
     const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:v.rep},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
   const touched=Object.entries(got).filter(([k,v])=>v.rep&&v.rep.ev&&v.rep.seen&&(now-Date.parse(v.rep.seen))<21*864e5);
-  if(heldGot.length||fresh.length||words.length||touched.length){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
+  if(heldGot.length||fresh.length||words.length||touched.length||redated.size){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
     for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:srcOf(k,got[k]),updatedAt:iso};
-    const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
+    const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,atEst:!!r.atEst,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
     const upd=new Map(touched.map(([k,v])=>[k+'|'+v.rep.q,evOf([k,v.rep])]));
-    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>upd.get(e.sym+'|'+e.q)||e)
+    const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>upd.get(e.sym+'|'+e.q)||e).map(e=>redated.has(e.sym+'|'+e.q)?{...e,date:redated.get(e.sym+'|'+e.q)}:e)
       .concat(fresh.map(evOf)).sort((a,b)=>a.date<b.date?1:-1).slice(0,40);
     store.setDoc('research/latest',{...L,companies:comp,events:ev,source:SOURCE,updatedAt:iso})}
   // the owner's e-mail (with consent for "earnings"): the new reports of what the owner holds or follows, once each; a
@@ -266,18 +275,24 @@ export async function earningsTask(store,o={}){const only=dueReports(store,o.now
 const FHN=['pm','roe','de','revg','pe','dy','beta','chg52'];
 export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=12*60e3,cal=true,gap}={}){
   const t0=Date.now(), iso=now.toISOString(), today=iso.slice(0,10), o={fetch:f}; if(gap!=null)o.gap=gap;
-  const st={filled:0,figs:0,recs:0,eps:0,cal:0,target:0,fail:0,first:null,stopped:null};
+  const st={filled:0,figs:0,recs:0,eps:0,cal:0,target:0,fail:0,first:null,stopped:null}, had=new Set(Object.keys(got));   // the keys Yahoo answered this run
   const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
   if(cal){try{const C=await fhEarningsCal({...o,now}); for(const k of order){if(!us(k))continue; const c=C[tk(k).toUpperCase()]||C[tk(k).toUpperCase().replace(/-/g,'.')]; if(!c||c.date<today)continue;
       const g=got[k]||(got[k]={}); if(g.next==null){g.next=c.date; g.nextEst=false; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; g.fhAt=g.fhAt||iso; st.cal++}}}
-    catch(e){st.first=st.first||'calendar: '+e.message; if(e.auth){log('finnhub: '+e.message); return {...st,stopped:'key'}}}}
+    catch(e){st.first=st.first||'calendar: '+e.message; if(e.auth){log('finnhub: '+e.message); return {...st,stopped:'key'}}}
+    // the days the last reports came out (120 days back): kept per security, so a report is dated by the day it was
+    // published, not by the day the page first saw it; a stored report dated by a guess gets its real day
+    try{const Pc=await fhPastEarnings({...o,now}); for(const k of order){if(!us(k))continue; const d=Pc[tk(k).toUpperCase()]||Pc[tk(k).toUpperCase().replace(/-/g,'.')]; if(!d||!d.length)continue;
+      const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{}, need=!!(got[k]||(doc.rep&&doc.rep.q&&!doc.rep.atSrc));
+      if(!need)continue; const g=got[k]||(got[k]={}); g.repDates=d.slice(0,6); st.dated=(st.dated||0)+1}}
+    catch(e){st.first=st.first||'past calendar: '+e.message}}
   for(const k of order){
     if(Date.now()-t0>budgetMs){st.stopped='time';break}
     if(!us(k))continue; const g=got[k]||{}, mine=held.has(k)||watched.has(k), t=tk(k);
     const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
-    const needF=FHN.some(x=>g[x]==null), needR=g.rating==null, needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
+    const have=x=>had.has(k)&&g[x]!=null, needF=FHN.some(x=>!have(x)), needR=!have('rating'), needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
     if(!needF&&!needR&&!needE&&!needT)continue;
-    if(!got[k]&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
+    if(!had.has(k)&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
     const x={}; let any=false;
     try{
       if(needF){const m=await fhMetrics(t,o); for(const n of [...FHN,'gm','om','cr','epsg'])if(g[n]==null&&m[n]!=null){x[n]=m[n]; any=true} if(any)st.figs++}
