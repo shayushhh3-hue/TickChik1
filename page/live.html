@@ -1895,6 +1895,13 @@ html[data-theme="dark"] .pane:not([data-pane="overview"]) > section.seccard{box-
 .worth .wch-h{justify-content:flex-start}
 .worth .wch svg{height:150px}
 @media (min-width:761px){.worth .wch svg{height:190px}}
+.wmini{display:none}
+body:not([data-page="overview"]) .hero .worth .wgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:center;gap:8px 16px}
+.wm-v{white-space:nowrap}
+body:not([data-page="overview"]) .hero .wmini:not([hidden]){display:flex;flex-direction:column;gap:6px;padding-inline-start:16px;border-inline-start:1px solid var(--line)}
+.wm-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;line-height:1.3}
+.wm-k{font-size:12.5px;color:var(--muted);flex:1 1 100%} .wm-v{font-size:15px;font-weight:700} .wm-s{font-size:12px;color:var(--ink2)}
+@media (max-width:420px){body:not([data-page="overview"]) .hero .wmini:not([hidden]){padding-inline-start:12px} .wm-v{font-size:14px}}
 html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 /* the top of the page: a deep aubergine instead of the orange, the orange kept for what is pressed */
 html[data-theme="dark"] .hero{background:transparent;box-shadow:none}
@@ -1972,6 +1979,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
             <div class="d" id="kTotalD"></div>
           </div>
+          <div class="wmini" id="kMini" aria-label="בקצרה"></div>
           <div class="wch" id="wChart" hidden><svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg></div>
         </div>
         <div class="wch-h" id="wchH"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
@@ -16842,7 +16850,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){}
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -17621,6 +17629,17 @@ function renderKinds(m,both){
   box.classList.toggle('n4',L.length===4); box.innerHTML=L.join(''); box.hidden=!T;
 }
 // the chip at the top of the card: the last month's change of the view, as the mock-up's "+12.8% בחודש האחרון"
+// 28.10: the compact value card on the other screens: beside the value, three short lines in words, from the figures the
+// page already shows (the result against the cost, against the deposits, since the start of the year), so the card is full
+// and says something at a glance
+function kMiniFill(){
+  const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
+  const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};
+  row('רווח מול מה שעלה לך','kPnl',(t('kPnlD').split(' · ')[0]||'').replace('—',''));
+  row('מול מה שהפקדת','kDep','');
+  row(t('kYtdK')||'מתחילת השנה','kYtd','');
+  box.innerHTML=L.slice(0,3).join(''); box.hidden=!L.length;
+}
 function renderMonChip(m){
   const el=$('kMon'); if(!el)return; let v=null;
   try{const R=monthSeries().filter(r=>r.ret!=null&&!r.miss&&!r.asOf); const r=R[R.length-1]; if(r&&(r.now||r.src))v=r.ret}catch(e){}
