@@ -1896,6 +1896,7 @@ html[data-theme="dark"] .pane:not([data-pane="overview"]) > section.seccard{box-
 .worth .wch svg{height:150px}
 @media (min-width:761px){.worth .wch svg{height:190px}}
 .wmini{display:none}
+body:not([data-page="overview"]) .hero .kchips{display:none}   /* the compact card: no chips (the prices' state is on the home and in the day's card) */
 body:not([data-page="overview"]) .hero .worth .wgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:center;gap:8px 16px}
 .wm-v{white-space:nowrap}
 body:not([data-page="overview"]) .hero .wmini:not([hidden]){display:flex;flex-direction:column;gap:6px;padding-inline-start:16px;border-inline-start:1px solid var(--line)}
