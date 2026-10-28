@@ -616,8 +616,13 @@ test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and 
     const tot0=num(await pg.evaluate(()=>document.getElementById('kTotal').textContent));
     await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(300);
     const bal0=num(await pg.textContent('#pBal'));
+    // 28.10: the plan in two tabs: the monthly one first; the one-time deposit behind its tab, the balance in both
+    assert.deepEqual(await pg.evaluate(()=>[!!document.getElementById('ladRows').offsetParent,!!document.getElementById('onceAmt').offsetParent,!!document.getElementById('pBal').offsetParent]),[true,false,true]);
+    await pg.click('#dvTabs [data-dv="once"]'); await pg.waitForTimeout(150);
+    assert.deepEqual(await pg.evaluate(()=>[!!document.getElementById('ladRows').offsetParent,!!document.getElementById('onceAmt').offsetParent,!!document.getElementById('pBal').offsetParent]),[false,true,true]);
     await pg.fill('#onceAmt','2000'); await pg.fill('#onceNote','בונוס'); await pg.click('#onceAdd'); await pg.waitForTimeout(1500);
-    const r=await pg.evaluate(()=>({bal:document.getElementById('pBal').textContent,list:document.getElementById('onceList').textContent,cur:document.querySelector('#ladRows tr.cur').textContent,st:document.getElementById('onceState').textContent}));
+    const r=await pg.evaluate(()=>({bal:document.getElementById('pBal').textContent,list:document.getElementById('onceList').textContent,cur:document.querySelector('#ladRows tr.cur').textContent,st:document.getElementById('onceState').textContent,n:document.getElementById('dvOnceN').textContent}));
+    assert.equal(r.n,'1','the count on its tab');
     assert.equal(num(r.bal),bal0+2000,'the plan\'s balance'); assert.match(r.list,/₪2,000.*מניות.*בונוס/); assert.match(r.cur,/\+ ₪2,000 חד פעמית · בונוס/); assert.match(r.st,/נכנסה ליתרה להשקעה ולשווי התיק/);
     const d=(store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once); assert.equal(d.length,1); assert.equal(d[0].amount,2000);
     // the month's regular deposit is its own: ticking and unticking it leaves the one-time deposit
