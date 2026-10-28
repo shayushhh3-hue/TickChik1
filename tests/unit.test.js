@@ -1101,3 +1101,25 @@ test('jobs: the prices have a lane of their own: a long research run does not ho
     await new Promise(r=>setTimeout(r,900)); assert.deepEqual(ran,['prices','other'])}
   finally{J.stop()}
 });
+
+// 28.10: the news feed behind "חדשות"
+test('news feed: the articles of everybody\'s securities, merged by link, kept a week, a partner sees only their own',async()=>{
+  const {newsTask,newsSyms}=await import('../server/newsfeed.js'); const {partnerView}=await import('../server/store.js');
+  const s=new Store(':memory:'); s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:1},{sym:'TLV:TEVA',qty:1}]},{silent:true});
+  s.setDoc('data/users/u2/portfolio',{positions:[{sym:'KO',qty:1}]},{silent:true}); s.setDoc('watch/u2',{marks:['MSFT']},{silent:true});
+  assert.deepEqual(newsSyms(s),['KO','MSFT','NVDA'],'US securities of the owner, the guests and the watch lists; Tel Aviv has no article source');
+  process.env.FINNHUB_API_KEY='k'; const {_resetFh}=await import('../server/finnhub.js'); _resetFh();
+  const now=new Date('2026-10-28T10:00:00Z'), f=async u=>{u=String(u); const m=u.match(/symbol=([A-Z]+)/); const k=m?m[1]:'';
+    if(u.includes('/company-news'))return Response.json([{headline:k+' rises',url:'https://n.com/'+k,source:'N',datetime:Date.parse('2026-10-28T08:00:00Z')/1000,summary:'why'},{headline:'Market wrap',url:'https://n.com/wrap',source:'W',datetime:Date.parse('2026-10-20T08:00:00Z')/1000}]);
+    return new Response('',{status:404})};
+  const st=await newsTask(s,{fetch:f,now,budgetMs:60e3}); assert.equal(st.ok,3); assert.equal(st.items,3,'three of the day, the old wrap dropped');
+  const d=s.getDoc('research/news').data; const wrap=d.items.find(x=>x.link==='https://n.com/wrap'); assert.ok(!wrap,'older than a week: gone');
+  assert.deepEqual(d.items.map(x=>x.link).sort(),['https://n.com/KO','https://n.com/MSFT','https://n.com/NVDA']); assert.equal(d.items.find(x=>x.link==='https://n.com/KO').sum,'why');
+  // the same article about two securities: one item, both symbols
+  const f2=async u=>{u=String(u); if(u.includes('/company-news'))return Response.json([{headline:'Big tech',url:'https://n.com/tech',source:'T',datetime:Date.parse('2026-10-28T09:00:00Z')/1000}]); return new Response('',{status:404})};
+  await newsTask(s,{fetch:f2,now,budgetMs:60e3}); const d2=s.getDoc('research/news').data, tech=d2.items.find(x=>x.link==='https://n.com/tech'); assert.deepEqual(tech.syms.sort(),['KO','MSFT','NVDA']); assert.equal(d2.items.length,4,'the earlier ones stay');
+  // a partner (u2: KO and MSFT) does not see NVDA's article
+  s.setDoc('data/users/u2/settings',{},{silent:true});
+  const pv=partnerView(s,{id:'u2',role:'partner'},'research/news',d2); assert.deepEqual(pv.items.map(x=>x.link).sort(),['https://n.com/KO','https://n.com/MSFT','https://n.com/tech']); assert.deepEqual(pv.items.find(x=>x.link==='https://n.com/tech').syms.sort(),['KO','MSFT']);
+  delete process.env.FINNHUB_API_KEY;
+});

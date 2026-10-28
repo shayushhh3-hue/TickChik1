@@ -8,6 +8,7 @@ import {researchTask, earningsTask, takeQueued} from './research.js';
 import {benchTask} from './bench.js';
 import {ilSymsTask} from './ilsyms.js';
 import {pxWatchTask} from './pxwatch.js';
+import {newsTask} from './newsfeed.js';
 
 export const SCHEDULE=[
   // prices: every 5 minutes while Tel Aviv or New York trades, every 15 minutes at all other hours (fund prices come out at
@@ -31,13 +32,15 @@ export const SCHEDULE=[
   {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   {name:'pxwatch', lane:'px', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
+  // the articles about everybody's securities, every half hour by day (research/news, the "חדשות" tab)
+  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:(s,o)=>newsTask(s,o)},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},
   // never on the clock: the securities of a portfolio just saved, so their figures do not wait for the night
   {name:'research-new',when:()=>false, run:(s,o)=>{const only=takeQueued(); return only.length?researchTask(s,{...o,only,budgetMs:6*60e3}):Promise.resolve(null)}}
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3};
+export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:5*60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false});
   const pumpLane=async ln=>{const Q=lane(ln);

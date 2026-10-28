@@ -114,7 +114,7 @@ export const canWrite=(u,p)=>access(u,p)==='rw';
 // ---- the shared documents as a partner sees them: only the securities of their own portfolio, history, settings and
 // watch list. The prices, the monthly closes and the research all cover everybody's securities (the owner's and the
 // other partners'), and a list of what someone holds is private even without the quantities.
-const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm']);
+const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news']);
 export function symsOfUser(store,uid){
   const out=new Set(), walk=v=>{if(Array.isArray(v)){for(const x of v)walk(x)}else if(isMap(v)){for(const [k,x] of Object.entries(v)){if(k==='sym'&&typeof x==='string')out.add(x); else walk(x)}}};
   for(const d of ['portfolio','history','settings']){const r=store.getDoc(`data/users/${uid}/${d}`); if(r.exists)walk(r.data)}
@@ -130,6 +130,7 @@ export function partnerView(store,user,p,data){
   if(p==='history/prices')return {...data,px:pick(data.px)};
   if(p==='research/latest')return {...data,companies:pick(data.companies),events:Array.isArray(data.events)?data.events.filter(e=>!e||!e.sym||has(e.sym)):data.events};
   if(p==='research/longterm')return {...data,pairs:both(data.pairs)};
+  if(p==='research/news')return {...data,items:Array.isArray(data.items)?data.items.filter(it=>it&&Array.isArray(it.syms)&&it.syms.some(has)).map(it=>({...it,syms:it.syms.filter(has)})):data.items};
   // research/comove
   return {...data,groups:Array.isArray(data.groups)?data.groups.map(g=>({...g,syms:only(g&&g.syms)})).filter(g=>g.syms&&g.syms.length>1):data.groups,
     pairs:both(data.pairs),opposite:both(data.opposite),solo:only(data.solo),nodata:only(data.nodata),
