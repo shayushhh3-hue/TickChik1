@@ -7,8 +7,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 // the default universe for the ranking (shared/universe.json, written by the build from the page's list of securities)
 let UNI=null; export function defaultUniverse(){if(UNI)return UNI; try{UNI=JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','shared','universe.json'),'utf8')).keys||[]}catch(e){UNI=[]} return UNI}
-import {fillFundamentals} from './fundamentals.js';
-import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhPastEarnings,fhCompanyNews} from './finnhub.js';
+import {fillFundamentals,secCiks,secSubmissions,secRepDates} from './fundamentals.js';
+import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhEarningsCalSym,fhPastEarnings,fhCompanyNews} from './finnhub.js';
+import {nasdaqDivs,yahooDivs,divPlan} from './divs.js';
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -151,11 +152,11 @@ export function rxOf(r,mk){
   ext.sort((a,b)=>b.t-a.t); return ext[0]||old;
 }
 // an earlier report, as it is kept in the list of past reports
-const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,ccy:o.ccy||null,sum:o.sum||repSum(o),ai:o.ai&&(o.ai.explain||o.ai.guidance)?{explain:o.ai.explain||'',guidance:o.ai.guidance||''}:null});
+const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,atSrc:o.atSrc||null,atEst:!!o.atEst,ccy:o.ccy||null,sum:o.sum||repSum(o),ai:o.ai&&(o.ai.explain||o.ai.guidance)?{explain:o.ai.explain||'',guidance:o.ai.guidance||''}:null});
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false}={}){
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false,secDates=secDatesPass,divs=divsPass}={}){
   const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.fhAt?'Finnhub':null,v&&v.src2&&v.src2.includes('SEC')?'דוחות החברה (SEC)':null].filter(Boolean).join(' + ')||SOURCE;
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
@@ -178,6 +179,10 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   }
   // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
   let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
+  // 28.10: the dividends ahead (declared, and the next ones by the company's rhythm, estimated) for the calendar
+  let dvs=null; if(divs&&!only){try{dvs=await divs(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched})}catch(e){log('dividends ahead failed: '+(e&&e.message||e))}}
+  // 28.10: the real days the reports came out, from the companies' filings at the SEC (no key needed)
+  let sd=null; if(secDates){try{sd=await secDates(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched})}catch(e){log('report dates failed: '+(e&&e.message||e))}}
   // 25.10: what Yahoo did not give (all of it, when its company data refuses the server): the companies' own reports at the
   // SEC, Finnhub with a key, and the beta from the daily closes (server/fundamentals.js)
   const yh=new Set(Object.keys(got)); let fund=null;
@@ -211,6 +216,10 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       v.rep.sum=repSum(v.rep)}
     const M={...merge(old,v),sym:k,source:srcOf(k,v),updatedAt:iso};
     if(M.rep&&M.rep.q&&!M.rep.atSrc&&M.repDates){const d=repDateOf(M.rep.q,M.repDates); if(d){M.rep={...M.rep,at:d,atSrc:'cal'}; delete M.rep.atEst; redated.set(k+'|'+M.rep.q,d); if(v.rep)v.rep.at=d}}
+    // 28.10: the earlier reports too: each by the day it came out, when the filings or the calendar have it
+    if(Array.isArray(M.reps)&&M.repDates)M.reps=M.reps.map(r=>{if(!r||!r.q||r.atSrc)return r; const d=repDateOf(r.q,M.repDates); if(!d)return r; redated.set(k+'|'+r.q,d); return {...r,at:d,atSrc:'cal',atEst:false}});
+    // and the shared copy the page reads (research/latest) gets the corrected days with the rest of this run
+    if(M.rep&&(redated.has(k+'|'+M.rep.q)||(M.reps||[]).some(r=>r&&redated.has(k+'|'+r.q)))){v.rep=v.rep||M.rep; v.reps=M.reps}
     store.setDoc(p,M,{silent:true})}
   for(const [k,v] of words){let H=[]; try{H=await newsFor(tick(k,map),{fetch:f})}catch(e){}
     const ai=await explain(factsOf(k,posName[k]||v.name||k,v.rep,H),{fetch:f,log}); if(!ai)continue; v.rep.ai={...ai,v:2}; v.rep.sum=repSum(v.rep);
@@ -242,7 +251,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   const cand=(C.data||{}).items||[];
   if(cand.some(it=>it&&got[it.sym])){const items=cand.map(it=>{const v=it&&got[it.sym]; if(!v)return it; const o={...it}; for(const k of ['beta','de','dy','fpe','pe','pm','roe','price','chg52'])if(v[k]!=null)o[k]=v[k]; return o});
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
-  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,dates:sd,divs:dvs,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;
@@ -268,6 +277,52 @@ export function dueReports(store,now=new Date()){
 }
 export async function earningsTask(store,o={}){const only=dueReports(store,o.now||new Date()); if(!only.length){(o.log||(()=>{}))('earnings: no report due');return {due:0}} return researchTask(store,{...o,only,budgetMs:6*60e3,pause:400})}
 
+// ---- 28.10: the dividends ahead ----
+// For the US securities held or followed, once in three days each: Nasdaq's dividend list (declared ones with their days),
+// else Yahoo's past dividends; the plan (declared, and the next ones by rhythm, estimated) kept as divPlan
+export async function divsPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=3*60e3,pause=250}={}){
+  const t0=Date.now(), iso=now.toISOString(), st={planned:0,tried:0,nasdaq:0,yahoo:0,fail:0,first:null,stopped:null};
+  const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
+  for(const k of order){
+    if(Date.now()-t0>budgetMs){st.stopped='time';break}
+    if(!us(k)||!(held.has(k)||watched.has(k)))continue;
+    const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
+    if(doc.divPlanAt&&Date.parse(iso)-Date.parse(doc.divPlanAt)<3*864e5)continue;
+    st.tried++; let H=null, src='Nasdaq';
+    try{H=await nasdaqDivs(tk(k),{fetch:f}); if(H.length)st.nasdaq++}catch(e){st.first=st.first||`${k}: ${e.message}`}
+    if(!H||!H.length){src='Yahoo Finance'; let Y=null; try{Y=await yahooDivs(tk(k),{fetch:f})}catch(e){} if(Y&&Y.length){H=Y; st.yahoo++} else if(Y)H=H||Y}
+    if(H==null){st.fail++; if(st.fail>=6&&!st.planned){st.stopped='errors';break} continue}   // neither answered: nothing is written, tried again next run
+    const g=got[k]||(got[k]={}); g.divPlanAt=iso; g.divPlan=H.length?{...divPlan(H,{now}),src,at:iso}:{next:[],none:true,at:iso};
+    if(H.length)st.planned++;
+    if(pause)await sleep(pause)}
+  log(`dividends ahead: ${st.planned}/${st.tried} (Nasdaq ${st.nasdaq}, Yahoo ${st.yahoo})${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
+  return st;
+}
+
+// ---- 28.10: the report days from the SEC ----
+// For the US companies held or followed whose stored report (or an earlier one) has no confirmed day, or that got a new
+// report this run: the days of their earnings releases and quarterly reports, merged into repDates (with the calendar's
+// days, when Finnhub gave them). At most once in three days per company, about eight a second as the SEC allows
+export async function secDatesPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=4*60e3,pause=150}={}){
+  const t0=Date.now(), iso=now.toISOString(), st={dated:0,tried:0,fail:0,first:null,stopped:null};
+  const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k)); let ciks=null;
+  for(const k of order){
+    if(Date.now()-t0>budgetMs){st.stopped='time';break}
+    if(!us(k)||!(held.has(k)||watched.has(k)))continue;
+    const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{}, g=got[k];
+    const open=r=>r&&r.q&&!r.atSrc, need=(g&&g.rep&&g.rep.q)||open(doc.rep)||(doc.reps||[]).some(open);
+    if(!need)continue; if(doc.secDatesAt&&Date.parse(iso)-Date.parse(doc.secDatesAt)<3*864e5&&!(g&&g.rep))continue;
+    st.tried++;
+    try{ciks=ciks||await secCiks(store,{fetch:f}); const t=tk(k).toUpperCase(), cik=ciks[t]||ciks[t.replace(/\./g,'-')]||ciks[k.toUpperCase()]; if(!cik)continue;
+      const sub=await secSubmissions(cik,{fetch:f}); const L=secRepDates(sub); if(!L.length)continue;
+      const x=got[k]||(got[k]={}), prev=x.repDates||doc.repDates||[], by=new Map(); for(const d of prev.concat(L))if(d&&d.date&&!by.has(d.date))by.set(d.date,d);
+      x.repDates=[...by.values()].sort((a,b)=>a.date<b.date?1:-1).slice(0,20); x.secDatesAt=iso; st.dated++}
+    catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=6&&!st.dated){st.stopped='errors';break}}
+    if(pause)await sleep(pause)}
+  log(`report dates: ${st.dated}/${st.tried} from the SEC${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
+  return st;
+}
+
 // ---- 25.10: the Finnhub pass ----
 // the coming reports of all US companies in one call (when Yahoo gave no date); then, per security, its figures and the
 // analysts' counts when Yahoo left them out, and for what is held or followed the last quarters' earnings (a report the
@@ -280,6 +335,11 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
   if(cal){try{const C=await fhEarningsCal({...o,now}); for(const k of order){if(!us(k))continue; const c=C[tk(k).toUpperCase()]||C[tk(k).toUpperCase().replace(/-/g,'.')]; if(!c||c.date<today)continue;
       const g=got[k]||(got[k]={}); if(g.next==null){g.next=c.date; g.nextEst=false; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; g.fhAt=g.fhAt||iso; st.cal++}}}
     catch(e){st.first=st.first||'calendar: '+e.message; if(e.auth){log('finnhub: '+e.message); return {...st,stopped:'key'}}}
+    // 28.10: a security held or followed that the calendar of everyone left out: its own coming report (four months)
+    for(const k of order){if(!us(k)||!(held.has(k)||watched.has(k)))continue; const g0=got[k]||{}, doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
+      if((g0.next&&g0.next>=today)||(doc.next&&doc.next>=today))continue; if(Date.now()-t0>budgetMs/3)break;
+      try{const c=await fhEarningsCalSym(tk(k),{...o,now}); if(c&&c.date>=today){const g=got[k]||(got[k]={}); g.next=c.date; g.nextEst=false; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; st.cal++}}
+      catch(e){st.first=st.first||'calendar '+k+': '+e.message; if(e.plan)break}}
     // the days the last reports came out (120 days back): kept per security, so a report is dated by the day it was
     // published, not by the day the page first saw it; a stored report dated by a guess gets its real day
     try{const Pc=await fhPastEarnings({...o,now}); for(const k of order){if(!us(k))continue; const d=Pc[tk(k).toUpperCase()]||Pc[tk(k).toUpperCase().replace(/-/g,'.')]; if(!d||!d.length)continue;

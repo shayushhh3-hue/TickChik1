@@ -196,7 +196,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     assert.equal(r.x[0],'👈 צפי האנליסטים לרבעון הבא עלה: רווח למניה 3.66$ במקום 3.58$ לפני הדוח.');
     assert.match(r.x[1],/^👈 המניה יורדת ב-2\.3% במסחר המאוחר \(אפטר מרקט\), נכון ל-\d\d:\d\d\.$/);
     assert.match(r.txt,/מה זה אומר\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.deepEqual(r.f,ai.findings,'the findings are there, behind "עוד על הדוח"');
-    assert.deepEqual(r.old,['Q2 2026 · 29.7 · רווח למניה 3.65$ (מעל הצפי) · הכנסות 76.40 מיליארד דולר (מעל הצפי)'],'the report before it');
+    assert.deepEqual(r.old,['Q2 2026 · פורסם 29.7 · רווח למניה 3.65$ (מעל הצפי) · הכנסות 76.40 מיליארד דולר (מעל הצפי)'],'the report before it');
     assert.ok(!r.tbl,'no table of the report\'s figures'); assert.match(r.txt,/זה ניתוח, לא המלצה לקנות או למכור/);
     await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
@@ -212,6 +212,28 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return !!b&&document.getElementById('secChartNote').nextElementSibling===b&&b.querySelectorAll('.rpc').length===2}),'on the page of a security not held');
     assert.deepEqual(o.pg.errs,[]); await o.ctx.close();
   }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
+});
+
+test('the trading calendar: a violet dot on a report day, a green one on a dividend, a ring when estimated; no report on the day it was only read',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const R0=store.getDoc('research/latest'), d=JSON.parse(JSON.stringify(R0.exists?R0.data:{companies:{}})), day=k=>new Date(Date.now()+k*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
+  const [cy,cm]=day(0).slice(0,7).split('-').map(Number), nm=cm===12?`${cy+1}-01`:`${cy}-${String(cm+1).padStart(2,'0')}`, d1=nm+'-10', d2=nm+'-14', d3=nm+'-20';   // next month
+  d.companies=d.companies||{}; d.companies.NVDA={...(d.companies.NVDA||{}),next:d1,nextEst:false,rep:{q:'2026-07-26',label:'Q2',at:day(-3),atEst:true}};
+  d.companies.KO={...(d.companies.KO||{}),divPlan:{freq:'quarterly',next:[{ex:d2,pay:d3,amt:null,est:true}]}};
+  store.setDoc('research/latest',d,{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'calendar'); await pg.waitForTimeout(500);
+    await pg.click('#calBox [data-calmv="1"]'); await pg.waitForTimeout(300);
+    const r=await pg.evaluate(([d1,d2,d3,dread])=>{const dots=iso=>[...document.querySelectorAll(`#calBox [data-calday="${iso}"] .evs i`)].map(i=>({c:i.className,bg:getComputedStyle(i).backgroundColor}));
+      return {rep:dots(d1),ex:dots(d2),pay:dots(d3),list:document.querySelector('#calBox .calev')?.textContent||''}},[d1,d2,d3]);
+    assert.deepEqual(r.rep.map(x=>x.c),['rep']); assert.equal(r.rep[0].bg,'rgb(124, 58, 237)','violet for a report');
+    assert.deepEqual(r.ex.map(x=>x.c),['div est'],'a ring for an estimated dividend'); assert.deepEqual(r.pay.map(x=>x.c),['div est']);
+    assert.match(r.list,/יום אקס דיבידנד \(משוער\) · KO/); assert.match(r.list,/דוח כספי · NVDA/);
+    // the report read three days ago without its real day: on no day of this month or the last
+    await pg.click('#calBox [data-calmv="-1"]'); await pg.waitForTimeout(200); await pg.click('#calBox [data-calmv="-1"]'); await pg.waitForTimeout(200);
+    for(let i=0;i<2;i++){assert.ok(!/פורסם דוח · NVDA/.test(await pg.evaluate(()=>document.getElementById('calBox').textContent)),'no guessed report day'); await pg.click('#calBox [data-calmv="1"]'); await pg.waitForTimeout(200)}
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(R0.exists)store.setDoc('research/latest',R0.data,{silent:true})}
 });
 
 test('the coming two weeks on the home screen: reports and dividends by day, said when estimated, and the year\'s dividends',T,async t=>{
@@ -638,7 +660,7 @@ test('the trading calendar with the held securities\' days: reports (the next on
   try{
     const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(500);
     const cell=n=>pg.evaluate(x=>[...document.querySelectorAll(`#calBox [data-calday="${x}"] .evs i`)].map(i=>i.className),d(n));
-    assert.deepEqual(await cell(28),['rep'],'a report day'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
+    assert.deepEqual(await cell(28),['rep est'],'a report day, estimated: a ring'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
     // the month's list: one short line each, the rest behind "לקריאה נוספת"
     const rows=await pg.evaluate(()=>[...[...document.querySelectorAll('#calBox ul.calev')].pop().querySelectorAll('li')].map(li=>({t:li.querySelector('.cev-t').textContent,more:li.querySelector('.cev-b').textContent,open:li.querySelector('details').open,h:Math.round(li.getBoundingClientRect().height)})));
     const row=re=>rows.find(r=>re.test(r.t))||{};

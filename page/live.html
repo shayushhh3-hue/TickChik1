@@ -1868,6 +1868,11 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
   html[data-theme="dark"] .hold.lite tbody td:nth-child(6){color:var(--muted)}
 }
 .hwb{display:none}
+/* 28.10: the calendar's marks as the owner asked: a violet dot for a company's report, a green one for a dividend; a
+   little larger, and an estimated day a ring instead of a full dot */
+.calgrid .dc .evs i,.calleg i.ev{width:8px;height:8px}
+.ev.rep,.calgrid .dc .evs i.rep{background:#7C3AED!important} .ev.div,.calgrid .dc .evs i.div{background:#10B981!important}
+.calgrid .dc .evs i.est{background:transparent!important;box-shadow:inset 0 0 0 1.6px currentColor} .calgrid .dc .evs i.rep.est{color:#7C3AED} .calgrid .dc .evs i.div.est{color:#10B981}
 #holdSec>.panel{align-self:stretch} @media (min-width:641px){.hold .panel.scroll>table{width:100%}}
 /* the coming two weeks: a row of day cards (scrolling sideways on a phone), each event a small coloured line */
 .soon{margin:14px 0 4px}
@@ -16829,7 +16834,7 @@ function alertsOf(m){
   depAlert(A);
   if(RS&&RS.companies){const soon=m.pos.map(p=>({s:p.sym,c:RS.companies[p.sym]})).filter(x=>x.c&&x.c.next&&daysTo(x.c.next)>=0&&daysTo(x.c.next)<=7).sort((a,b)=>a.c.next<b.c.next?-1:1);
     if(soon.length)A.push(rich('info','דוחות','דוחות כספיים בשבוע הקרוב:',soon.map(x=>x.s+' ('+dmy(x.c.next)+')'),soon.map(x=>x.s)));
-    try{for(const e of newReports(10).filter(e=>m.pos.some(p=>p.sym===e.sym))){const t=`${e.name||e.sym} פרסמה ב-${dmy(e.date)} דוח${e.label?' לרבעון '+e.label:''}: ${e.first}`; A.push(['info','דוחות',t,[e.sym]]); const a=A[A.length-1];
+    try{for(const e of newReports(10).filter(e=>m.pos.some(p=>p.sym===e.sym))){const t=`${e.name||e.sym} פרסמה${e.atEst?'':' ב-'+dmy(e.date)} דוח${e.label?' לרבעון '+e.label:''}: ${e.first}`; A.push(['info','דוחות',t,[e.sym]]); const a=A[A.length-1];
       a.why={src:'analysis',rows:e.sum?[['הדוח',esc(repOne(e.sum))]].concat(repXLines(e.sum).map((x,i)=>[i?'':'אחרי הדוח',esc(x)])).concat(e.ai&&e.ai.explain?[['מה זה אומר',esc(e.ai.explain)]]:[])
         :((e.ai&&e.ai.findings&&e.ai.findings.length?e.ai.findings:e.find)||[]).slice(0,4).map((x,i)=>[i?'':'הממצאים',esc(x)]).concat(e.ai&&e.ai.explain?[['הסבר',esc(e.ai.explain)]]:[]),tab:'search',tl:'לדף המניה ולניתוח הדוח'}; a.each=[{key:e.key,text:t}]}}catch(x){}
     const weak=m.pos.filter(p=>RS.companies[p.sym]).map(p=>({s:p.sym,f:finScore(RS.companies[p.sym])})).filter(x=>x.f&&x.f.score<35).map(x=>x.s); if(weak.length){A.push(rich('warn','דירוג','ציון פיננסי נמוך (E) לפי הדוחות:',weak,weak));A[A.length-1].why={src:'analysis',rows:[['מה זה','ציון מ-0 עד 100 שהדף מחשב מהדוחות הכספיים של החברה. ציון מתחת ל-35 מסומן E.'],['מה זה לא','לא נתון שוק, ולא המלצה לקנות או למכור.']],tab:'ratings',tl:'לפירוט הציון'}}}
@@ -19213,7 +19218,7 @@ function repBlock(k,rs){
   const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(a.title)}</bdi></a><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
   const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
   return `<section class="repbox" aria-labelledby="${hid}">
-    <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at?`<span class="sub">${r.atEst?'נקלט ב-':'פורסם ב-'}${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
+    <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at&&!r.atEst?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
     ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
     ${due?`<p class="note">${dueTxt}</p>`:''}
     ${repCardsH(S)}
@@ -19222,7 +19227,7 @@ function repBlock(k,rs){
     <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
       ${F.length?`<ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
       <div class="acts" style="justify-content:flex-start;margin-top:8px">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
-      ${old.length?`<h4>הדוחות הקודמים</h4><ul class="rpold">${old.map(x=>{const o=x.sum||repSumOf(x); return `<li><b>${esc(x.label||x.q)}</b>${x.at?` · ${dmy(x.at)}`:''}${o?` · ${repH(repOne(o))||'בלי נתונים'}`:''}</li>`}).join('')}</ul>`:''}
+      ${old.length?`<h4>הדוחות הקודמים</h4><ul class="rpold">${old.map(x=>{const o=x.sum||repSumOf(x); return `<li><b>${esc(x.label||x.q)}</b>${x.at&&!x.atEst?` · פורסם ${dmy(x.at)}`:''}${o?` · ${repH(repOne(o))||'בלי נתונים'}`:''}</li>`}).join('')}</ul>`:''}
     </details>
     <p class="note">המספרים מהדוח, וצפי האנליסטים כפי שהיה לפני הדוח (${esc(rs.source||'Yahoo Finance')}). ${ai?'"מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים'+(ai.headlines?' ומכותרות של כתבות':'')+'. ':''}צפי האנליסטים הוא של אנליסטים, לא תחזית של החברה; תחזית החברה מופיעה רק כשהיא בכותרות, ונאמר כך. זה ניתוח, לא המלצה לקנות או למכור.</p>
   </section>`;
@@ -21631,7 +21636,7 @@ function newReports(days){const held=new Set(((P&&P.positions)||[]).map(p=>p.sym
 function renderRepBan(){const el=$('repBan'); if(!el)return; if(!notifOn('דוחות')||$('deskSec')){el.hidden=true;return}
   const seen=repSeenGet(), L=newReports(10).filter(e=>!seen.has(e.key)).slice(0,3); if(!L.length){el.hidden=true;return}
   const was=el.hidden;
-  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לניתוח הדוח</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
+  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לניתוח הדוח</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
   el.hidden=false; if(was)try{chime('sys')}catch(e){}}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-repban]'); if(!b)return; const S0=repSeenGet(); for(const k of b.dataset.repban.split(','))S0.add(k);
   try{localStorage.setItem('tr_repban',JSON.stringify([...S0].slice(-200)))}catch(e){} renderRepBan(); try{render()}catch(e){}});
@@ -22861,11 +22866,16 @@ function calEvents(){
   const held=[...new Set(((P&&P.positions)||[]).map(p=>p.sym))], C=(RS&&RS.companies)||{}, E=[], seen=new Set();
   const add=e=>{const k=e.d+'|'+e.k+'|'+e.sym; if(!e.d||seen.has(k))return; seen.add(k); E.push(e)};
   for(const sym of held){const c=C[sym]; if(!c)continue; const r=c.rep;
-    if(r&&r.at)add({d:r.at,k:'repd',sym,label:r.label||'',S:repSumOf(r),est:!!r.atEst});
-    for(const o of c.reps||[])if(o&&o.at)add({d:o.at,k:'repd',sym,label:o.label||'',S:o.sum||null});
+    // 28.10: a report sits on the day it was published; one whose day is not known (only the day the page read it) is not put on a day at all
+    if(r&&r.at&&!r.atEst)add({d:r.at,k:'repd',sym,label:r.label||'',S:repSumOf(r)});
+    for(const o of c.reps||[])if(o&&o.at&&!o.atEst)add({d:o.at,k:'repd',sym,label:o.label||'',S:o.sum||null});
     if(c.next&&!(r&&r.at&&r.at>=c.next))add({d:c.next,k:'rep',sym,est:!!c.nextEst});
     for(const x of [c.div].concat(c.divHist||[]))if(x){const amt=x.last&&x.last.date&&x.last.date===x.ex?x.last.amt:null;
-      if(x.ex)add({d:x.ex,k:'ex',sym,amt,last:x.last&&x.last.amt!=null?x.last.amt:null}); if(x.pay)add({d:x.pay,k:'pay',sym,amt})}}
+      if(x.ex)add({d:x.ex,k:'ex',sym,amt,last:x.last&&x.last.amt!=null?x.last.amt:null}); if(x.pay)add({d:x.pay,k:'pay',sym,amt})}
+    // 28.10: the dividends ahead: the declared ones, and the next ones by the company's rhythm (said to be estimated)
+    const dp=c.divPlan; if(dp&&Array.isArray(dp.next))for(const x of dp.next){if(!x||!x.ex)continue; const ev={sym,amt:x.est?null:x.amt,last:x.est?x.amt:null,est:!!x.est,freq:dp.freq||null};
+      if(!E.some(e=>e.sym===sym&&e.k==='ex'&&Math.abs(Date.parse(e.d)-Date.parse(x.ex))<10*864e5))add({...ev,d:x.ex,k:'ex'});
+      if(x.pay&&!E.some(e=>e.sym===sym&&e.k==='pay'&&Math.abs(Date.parse(e.d)-Date.parse(x.pay))<10*864e5))add({...ev,d:x.pay,k:'pay'})}}
   for(const A of (HS&&HS.accounts)||[])for(const t of A.trades||[])if(t&&t.div&&t.date&&t.sym)add({d:String(t.date).slice(0,10),k:'got',sym:t.sym,net:+t.total>0?+t.total:null,ccy:t.ccy||(A.ccy==='USD'?'USD':'ILS')});
   return E.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
 const CALEVK={rep:'rep',repd:'rep',ex:'div',pay:'div',got:'div'};
@@ -22875,13 +22885,15 @@ const CALEVL={rep:'דוח כספי',repd:'פורסם דוח',ex:'יום אקס �
 function calEvMore(e,today){const ccy=(P&&P.positions||[]).find(p=>p.sym===e.sym)?.ccy==='ILS'?'ILS':'USD', L=[];
   if(e.k==='rep'){L.push(e.d<today?'הדוח היה צפוי ביום הזה ועוד לא נקלט.':'החברה אמורה לפרסם את הדוח הכספי ביום הזה.'); L.push(e.est?'המועד משוער, עד שהחברה תאשר אותו.':'המועד אושר.')}
   else if(e.k==='repd'){if(e.label)L.push('הדוח לרבעון '+esc(e.label)+'.'); if(e.est)L.push('זה היום שבו הדף קלט את הדוח; יום הפרסום עצמו יתעדכן כשלוח הדוחות ייקלט.'); const o=e.S&&repOne(e.S); if(o)L.push(repH(o)+'.')}
+  else if((e.k==='ex'||e.k==='pay')&&e.est){const F={monthly:'כל חודש',quarterly:'כל שלושה חודשים',semi:'פעמיים בשנה',yearly:'פעם בשנה'}[e.freq]||'';
+    L.push(`מועד משוער: החברה עוד לא הכריזה על הדיבידנד הזה. הוא מחושב מהקצב של הדיבידנדים הקודמים${F?' ('+F+')':''}, ויתעדכן כשהיא תכריז.`); if(e.last!=null)L.push(`הדיבידנד הקודם: ${repH(repEps(e.last,ccy))} למניה.`)}
   else if(e.k==='ex'){if(e.amt!=null)L.push(`${repH(repEps(e.amt,ccy))} למניה.`); else if(e.last!=null)L.push(`הדיבידנד הקודם: ${repH(repEps(e.last,ccy))} למניה. הסכום הבא ידוע כשהחברה מכריזה עליו.`);
     L.push(e.d>=today?'כדי לקבל את הדיבידנד צריך להחזיק במניה כבר בסוף יום המסחר שלפני היום הזה.':'מי שהחזיק במניה בסוף יום המסחר שלפני היום הזה מקבל את הדיבידנד.')}
   else if(e.k==='pay'){L.push(e.amt!=null?`${repH(repEps(e.amt,ccy))} למניה, למי שהחזיק במניה לפני יום האקס.`:'היום שבו הדיבידנד משולם למי שהחזיק במניה לפני יום האקס.')}
   else{if(e.net)L.push(`${repH(e.ccy==='ILS'?ils(e.net):'$'+(+e.net).toFixed(2))} נטו, לפי הדוח שהעלית.`); else L.push('לפי הדוח שהעלית.')}
   return `<p>${L.join(' ')}</p><button type="button" class="lnk" data-gosec="${esc(e.sym)}">${e.k==='repd'?'לניתוח הדוח בדף של '+esc(lab(e.sym)):'לדף של '+esc(lab(e.sym))} ›</button>`}
 function calEvRow(e,today,withDay){
-  return `<li><details class="cevd"><summary><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span class="cev-t">${withDay?`<b>${dmy(e.d)}</b> · `:''}${e.k==='repd'&&e.est?'נקלט דוח':CALEVL[e.k]}${e.k==='rep'&&e.est?' (משוער)':''} · <b>${esc(lab(e.sym))}</b></span><span class="cev-m" aria-hidden="true"><span class="o">לקריאה נוספת</span><span class="c">סגירה</span></span></summary><div class="cev-b">${calEvMore(e,today)}</div></details></li>`}
+  return `<li><details class="cevd"><summary><i class="ev ${CALEVK[e.k]}" aria-hidden="true"></i><span class="cev-t">${withDay?`<b>${dmy(e.d)}</b> · `:''}${CALEVL[e.k]}${(e.k==='rep'||e.k==='ex'||e.k==='pay')&&e.est?' (משוער)':''} · <b>${esc(lab(e.sym))}</b></span><span class="cev-m" aria-hidden="true"><span class="o">לקריאה נוספת</span><span class="c">סגירה</span></span></summary><div class="cev-b">${calEvMore(e,today)}</div></details></li>`}
 // ---- 28.10: "חדשות": the articles about the securities held and followed (research/news, gathered by the server), by day ----
 let NEWSD=null, NEWSF='';
 const newsDayL=d=>{const t=isoDay(Date.now()), y=isoDay(Date.now()-864e5); return d===t?'היום':d===y?'אתמול':dmy(d)};
@@ -22921,7 +22933,7 @@ function renderCal(){
   const KN={rep:'דוח',repd:'דוח',ex:'יום אקס דיבידנד',pay:'תשלום דיבידנד',got:'דיבידנד שהתקבל'};
   for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6, ev=evOn(iso), kinds=[...new Set(ev.map(e=>CALEVK[e.k]))];
     if(!we)for(const k of ['il','us'])if(D[k].st!=='open')special.push({iso,k,x:D[k]});
-    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}"></i>`).join('')}</span></button>`}
+    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}${ev.filter(e=>CALEVK[e.k]===k).every(e=>e.est)?' est':''}"></i>`).join('')}</span></button>`}
   const S0=mktDay(CALSEL), evSel=evOn(CALSEL), evLi=L=>`<ul class="calev">${L.map(e=>calEvRow(e,today,false)).join('')}</ul>`;
   const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
   const held=((P&&P.positions)||[]).length;
@@ -22932,10 +22944,10 @@ function renderCal(){
   box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
     <div class="calhead"><button type="button" data-calmv="1" aria-label="החודש הבא">‹</button><h3>${HMON[M-1]} ${Y}</h3><button type="button" data-calmv="-1" aria-label="החודש הקודם">›</button></div>
     <div class="calgrid">${cells}</div>
-    <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span></div>
+    <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span><span><i class="ev div" style="background:transparent!important;box-shadow:inset 0 0 0 1.6px #10B981"></i> עיגול ריק: מועד משוער</span></div>
     ${selTxt}
     <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}
-    <p class="note">מועדי הדוחות והדיבידנדים מ-Yahoo Finance: מועד דוח הוא לפעמים משוער עד שהחברה מאשרת אותו, וסכום של דיבידנד עתידי ידוע רק כשהחברה מכריזה עליו (עד אז מוצג הדיבידנד הקודם). דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
+    <p class="note">מועדי הדוחות הבאים מלוח הדוחות של Finnhub ו-Yahoo Finance, והימים שבהם דוחות פורסמו מהדיווחים של החברות לרשות ניירות הערך האמריקאית (SEC). דוח שהיום שבו פורסם לא ידוע לא מסומן ביום כלשהו. דיבידנדים: מה שהחברה הכריזה (Nasdaq), ואחריו הדיבידנדים הבאים לפי הקצב של הקודמים, מסומנים כמשוערים עד שהחברה מכריזה. דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
     <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
     <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
   try{rsStatusFill()}catch(e){}
@@ -23438,7 +23450,7 @@ function todoOf(m,A,T){
     L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:`${tx(cut(a[2]))}`,b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
-    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה ב-${nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
+    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
   if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל: עד ${nn(pct(R.maxPos,0))} לנייר, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
   const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
   const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});

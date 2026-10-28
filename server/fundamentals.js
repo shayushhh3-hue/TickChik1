@@ -83,6 +83,7 @@ export function finnhubFigures(j){
 
 // ---- fetching ----
 let CIKS=null, CIKS_AT=0;
+export const _resetCiks=()=>{CIKS=null;CIKS_AT=0};   // for the tests
 export async function secCiks(store,{fetch:f=globalThis.fetch,now=Date.now()}={}){
   if(CIKS&&now-CIKS_AT<7*DAY)return CIKS;
   const d=store&&store.getDoc('research/secmap').data;
@@ -98,6 +99,21 @@ export async function secFacts(cik,{fetch:f=globalThis.fetch}={}){
   const r=await timed(f,20000)(`https://data.sec.gov/api/xbrl/companyfacts/CIK${String(cik).padStart(10,'0')}.json`,{headers:{'user-agent':secUA(),accept:'application/json'}});
   if(r.status===404)return null; if(!r.ok)throw new Error('SEC facts HTTP '+r.status);
   return r.json();
+}
+// 28.10: the days a company's reports really came out, from its filings at the SEC: the earnings release (a form 8-K
+// with item 2.02, "Results of Operations") and the quarterly or annual report itself (10-Q, 10-K). Newest first. The
+// page dates a report by the first of these after the quarter's end, so a report is never dated by the day it was read
+export async function secSubmissions(cik,{fetch:f=globalThis.fetch}={}){
+  const r=await timed(f,20000)(`https://data.sec.gov/submissions/CIK${String(cik).padStart(10,'0')}.json`,{headers:{'user-agent':secUA(),accept:'application/json'}});
+  if(r.status===404)return null; if(!r.ok)throw new Error('SEC submissions HTTP '+r.status);
+  return r.json();
+}
+export function secRepDates(sub,n=16){
+  const R=sub&&sub.filings&&sub.filings.recent; if(!R||!Array.isArray(R.form))return [];
+  const out=[]; for(let i=0;i<R.form.length&&out.length<n;i++){const f=R.form[i], d=String((R.filingDate||[])[i]||'').slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(d))continue;
+    if((f==='8-K'||f==='8-K/A')&&/(^|,)\s*2\.02\s*(,|$)/.test(String((R.items||[])[i]||'')))out.push({date:d,src:'8-K'});
+    else if(f==='10-Q'||f==='10-K')out.push({date:d,src:f,period:String((R.reportDate||[])[i]||'').slice(0,10)||null})}
+  return out.sort((a,b)=>a.date<b.date?1:-1);
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const NEED=['pm','roe','de','revg','pe','dy','beta'];

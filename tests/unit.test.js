@@ -1123,3 +1123,43 @@ test('news feed: the articles of everybody\'s securities, merged by link, kept a
   const pv=partnerView(s,{id:'u2',role:'partner'},'research/news',d2); assert.deepEqual(pv.items.map(x=>x.link).sort(),['https://n.com/KO','https://n.com/MSFT','https://n.com/tech']); assert.deepEqual(pv.items.find(x=>x.link==='https://n.com/tech').syms.sort(),['KO','MSFT']);
   delete process.env.FINNHUB_API_KEY;
 });
+
+test('report days from the SEC: the earnings release (8-K, item 2.02) or the quarterly report, and a stored report redated by them',async()=>{
+  const {secRepDates,_resetCiks}=await import('../server/fundamentals.js'); _resetCiks();
+  const sub={filings:{recent:{form:['8-K','10-Q','8-K','4','8-K','10-K'],filingDate:['2026-08-27','2026-08-29','2026-07-02','2026-06-01','2026-05-28','2026-03-14'],items:['2.02,9.01','','5.07','','2.02','',''],reportDate:['','2026-07-27','','','','2026-01-26']}}};
+  assert.deepEqual(secRepDates(sub).map(x=>[x.date,x.src]),[['2026-08-29','10-Q'],['2026-08-27','8-K'],['2026-05-28','8-K'],['2026-03-14','10-K']],'the 8-K about a vote (5.07) and the form 4 are not reports');
+  assert.deepEqual(secRepDates(null),[]);
+  // the research run: NVDA's stored report was dated by the day it was first read (25.10, estimated); the SEC's release
+  // day after the quarter's end replaces it, in its document and in the copy the page reads, the earlier report too
+  const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]});
+  s.setDoc('research/s_NVDA',{sym:'NVDA',rep:{q:'2026-07-26',label:'Q2 2026',at:'2026-10-25',atEst:true,ccy:'USD'},reps:[{q:'2026-04-26',label:'Q1 2026',at:'2026-10-25',atEst:true}]});
+  s.setDoc('research/latest',{companies:{NVDA:{rep:{q:'2026-07-26',at:'2026-10-25',atEst:true}}},events:[{sym:'NVDA',q:'2026-07-26',date:'2026-10-25',atEst:true}],updatedAt:'2026-10-25T00:00:00Z'});
+  const Y=fakeYahoo({crumbFail:true}), f=async(u,o)=>{u=String(u);
+    if(u.endsWith('/files/company_tickers.json'))return new Response(JSON.stringify({0:{cik_str:1045810,ticker:'NVDA',title:'NVIDIA'}}));
+    if(u.includes('/submissions/CIK0001045810.json'))return new Response(JSON.stringify(sub));
+    return Y.f(u,o)};
+  const st=await researchTask(s,{fetch:f,pause:0,noFh:true,divs:null,fill:async()=>({})});
+  assert.equal(st.dates.dated,1);
+  const d=s.getDoc('research/s_NVDA').data; assert.equal(d.rep.at,'2026-08-27','the release, not the 10-Q two days later'); assert.equal(d.rep.atSrc,'cal'); assert.ok(!d.rep.atEst);
+  assert.equal(d.reps[0].at,'2026-05-28','the earlier report as well');
+  const L=s.getDoc('research/latest').data; assert.equal(L.companies.NVDA.rep.at,'2026-08-27'); assert.equal(L.events[0].date,'2026-08-27');
+});
+
+test('dividends ahead: Nasdaq\'s declared ones, Yahoo\'s past ones, and the next ones by the rhythm (estimated)',async()=>{
+  const {nasdaqDivParse,yahooDivParse,divPlan}=await import('../server/divs.js');
+  const N=nasdaqDivParse({data:{dividends:{rows:[{exOrEffDate:'11/28/2026',type:'Cash',amount:'$0.51',declarationDate:'10/20/2026',recordDate:'11/28/2026',paymentDate:'12/15/2026'},
+    {exOrEffDate:'09/12/2026',type:'Cash',amount:'$0.51',declarationDate:'07/20/2026',recordDate:'09/12/2026',paymentDate:'10/01/2026'},
+    {exOrEffDate:'06/13/2026',type:'Cash',amount:'$0.51',declarationDate:'',recordDate:'',paymentDate:'07/01/2026'},
+    {exOrEffDate:'03/14/2026',type:'Cash',amount:'$0.485',declarationDate:'',recordDate:'',paymentDate:'04/01/2026'},{exOrEffDate:'01/02/2026',type:'Stock',amount:'',paymentDate:'N/A'}]}}});
+  assert.deepEqual(N.map(x=>x.ex),['2026-11-28','2026-09-12','2026-06-13','2026-03-14'],'cash only, newest first'); assert.equal(N[0].pay,'2026-12-15'); assert.equal(N[0].amt,0.51);
+  const P=divPlan(N,{now:new Date('2026-10-28T10:00:00Z')});
+  assert.equal(P.freq,'quarterly'); assert.deepEqual(P.next[0],{ex:'2026-11-28',pay:'2026-12-15',amt:0.51,est:false},'the declared one as it is');
+  assert.ok(P.next.slice(1).every(x=>x.est&&x.ex>'2026-11-28'&&x.ex<='2027-10-28'),'then the estimated ones, within a year'); assert.equal(P.next.length,4);
+  assert.ok(P.next[1].ex>='2027-02-20'&&P.next[1].ex<='2027-03-10','about three months after the last: '+P.next[1].ex); assert.ok(P.next[1].pay>P.next[1].ex,'the usual gap to the payment');
+  // Yahoo's past dividends; a company that stopped paying is not projected
+  const Yd=yahooDivParse({chart:{result:[{events:{dividends:{a:{amount:0.25,date:Date.parse('2026-08-10T13:30:00Z')/1000},b:{amount:0.25,date:Date.parse('2026-05-11T13:30:00Z')/1000}}}}]}});
+  assert.deepEqual(Yd.map(x=>x.ex),['2026-08-10','2026-05-11']);
+  const old=divPlan([{ex:'2024-08-10',amt:0.2},{ex:'2024-05-10',amt:0.2},{ex:'2024-02-10',amt:0.2}],{now:new Date('2026-10-28T10:00:00Z')});
+  assert.deepEqual(old.next,[],'stopped: nothing ahead'); assert.equal(divPlan([],{}),null);
+});
