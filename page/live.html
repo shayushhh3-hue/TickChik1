@@ -1903,6 +1903,10 @@ body:not([data-page="overview"]) .hero .wmini:not([hidden]){display:flex;flex-di
 .wm-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;line-height:1.3}
 .wm-k{font-size:12.5px;color:var(--muted);flex:1 1 100%} .wm-v{font-size:15px;font-weight:700} .wm-s{font-size:12px;color:var(--ink2)}
 @media (max-width:420px){body:not([data-page="overview"]) .hero .wmini:not([hidden]){padding-inline-start:12px} .wm-v{font-size:14px}}
+.worth .wch-h{justify-content:space-between!important;align-items:center;margin-top:10px}
+.worth .wch-h .kchips{margin:0}
+.pnlline{font-size:14px;color:var(--ink2);margin-top:2px} .pnlline b{font-size:15px}
+body:not([data-page="overview"]) .hero .pnlline{display:none}
 html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 /* the top of the page: a deep aubergine instead of the orange, the orange kept for what is pressed */
 html[data-theme="dark"] .hero{background:transparent;box-shadow:none}
@@ -1978,6 +1982,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <div class="wv">
             <span class="big" id="kTotal">—</span>
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
+            <div class="pnlline" id="kPnlL" hidden></div>
             <div class="d" id="kTotalD"></div>
           </div>
           <div class="wmini" id="kMini" aria-label="בקצרה"></div>
@@ -16851,7 +16856,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -17633,6 +17638,8 @@ function renderKinds(m,both){
 // 28.10: the compact value card on the other screens: beside the value, three short lines in words, from the figures the
 // page already shows (the result against the cost, against the deposits, since the start of the year), so the card is full
 // and says something at a glance
+function kPnlLine(){const el=$('kPnlL'), v=$('kPnl'); if(!el||!v)return; const t=v.textContent.trim(); if(!t||t==='—'){el.hidden=true;return}
+  const d=(($('kPnlD')||{}).textContent||'').split(' · ')[0]; el.hidden=false; el.innerHTML=`רווח מול עלות <b class="n ${/\bup\b/.test(v.className)?'up':/\bdown\b/.test(v.className)?'down':''}">${esc(t)}</b>${d&&d!=='אין נתוני עלות'?` <span class="n">(${esc(d)})</span>`:''}`}
 function kMiniFill(){
   const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
   const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};
@@ -17653,6 +17660,7 @@ function renderMonChip(m){
   document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('#kEye')))return; const v=!document.body.classList.contains('hidenum'); try{localStorage.setItem('tr_hidenum',v?'1':'0')}catch(e){} on()});
   if(document.readyState==='loading')addEventListener('DOMContentLoaded',on); else on()})();
 // the account circle moves from the corner into the header, next to the wordmark, when the site's runtime adds it
+(function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h)h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
 (function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('hdrAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
@@ -17663,7 +17671,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:170, L=slim?6:58, R=slim?10:14, T=10, B=slim?18:24;
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:170, L=slim?6:46, R=slim?10:12, T=10, B=slim?18:24;
   const sig=W+'|'+WR+'|'+acct+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
   const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
@@ -17683,7 +17691,7 @@ function renderWChart(){
     g+=`<text x="${xx}" y="${H-5}" font-size="10.5" ${lab} text-anchor="middle">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
   const Lp=P0[P0.length-1]; g+=`<circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="9" fill="#8B5CF6" opacity=".22"/><circle cx="${x(Lp.t)}" cy="${y(Lp.v)}" r="4.5" fill="#8B5CF6" style="stroke:var(--surface)" stroke-width="2"/>`;
   g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" style="stroke:var(--muted)" stroke-opacity=".6" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#8B5CF6" style="stroke:var(--surface)" stroke-width="2"/><rect id="wChTb" rx="11" height="22" style="fill:var(--ink)"/><text id="wChTt" font-size="12" font-weight="700" style="fill:var(--surface)" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.style.height=H+'px'; svg.innerHTML=g;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('direction','ltr'); svg.style.direction='ltr'; svg.style.height=H+'px'; svg.innerHTML=g;
   const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R,T,lo,hi}; if(!keep)WCI=-1; wRead(WCI);
   const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}, חודש אחר חודש: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל חודש.`);
 }
@@ -22250,7 +22258,7 @@ function myWatchHtml(m){
     const rs=(RS&&RS.companies&&RS.companies[it.sym])||RSX[k]||null, c=figs[k]||null, f=(()=>{try{return fitScore(k,c||{},m)}catch(e){return null}})(), dn=rs&&rs.next?daysTo(rs.next):null, part=!c;
     const tier=f?(f.score>=80?'hi':f.score>=65?'mid':'lo'):'', sk=SECKEY.test(k);
     return `<article class="wc mine" style="--gc:${f?(GCOL[f.g]||'#64748B'):'var(--accent)'}">
-      <div class="wh"><div class="wt">${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}${a&&a.d?' מ-'+dmy(a.d):''}</b></span></div>
+      <div class="wh"><div class="wt">${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}</b></span></div>
         ${f?`<div class="rg"><div class="ring ${tier}${part?' part':''}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${part?'חלקית ':''}${f.score} מתוך 100"><b>${f.score}</b></div><span>${part?'התאמה חלקית':'התאמה'}</span></div>`:''}</div>
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מאז שסימנת',since!=null?'<span class="n">'+spct(since)+'</span>':'—',since!=null?(since>=0?'up':'down'):'')}${fc('הדוח הבא',rs&&rs.next?'<span class="n">'+dmy(rs.next)+'</span>'+(dn!=null&&dn>=0&&dn<=7?' <small>בקרוב</small>':''):'—')}${fc('דיבידנד',rs&&rs.div&&rs.div.ex?'<span class="n">אקס '+dmy(rs.div.ex)+'</span>':c&&c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}</div>
       <div class="wfit"><span class="sub">${f&&!part?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:f?`פיזור ${f.div} מתוך ${f.W.div} לפי הקבוצה "${GROUPS[f.g]||f.g}" (${pct(f.w,0)} מהתיק${f.over?', מעל הסף':''}). איכות, תמחור וצמיחה באמצע הסולם עד שיגיעו נתוני החברה.`:''}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
