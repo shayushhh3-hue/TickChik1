@@ -624,7 +624,7 @@ test('planned money in and out: months left, a share of today\'s value, past dat
 // ---- 21.10 (2): "האם אני עושה טוב?" and the tax if sold today ----
 test('the same deposits in the index: each on its own day, S&P 500 at that day\'s dollar, the yearly return with the timing of the money',()=>{
   const G2={...G,HS:null,PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}},BENCH_D:null,S:{taxPct:25},DY:null};
-  const B=load(['serAt','xirr','depFlows','benchCompare','allDep','usdRate','depNet','markDay','planExtraList','planCovered','upMonths','fxOfMonth','savedBefore','upCovers','depUp','depTotal','planDepExtra','ilDay','acctIds','stmtDay','coveredBy','planOpen'],G2);
+  const B=load(['serAt','xirr','depFlows','benchFlows','benchPx','benchCompare','allDep','usdRate','depNet','markDay','planExtraList','planCovered','upMonths','fxOfMonth','savedBefore','upCovers','depUp','depTotal','planDepExtra','ilDay','acctIds','stmtDay','coveredBy','planOpen'],G2);
   // the close on a day, or the last one before it
   const s={d:['2026-01-02','2026-01-05','2026-01-09'],c:[10,11,12]};
   assert.equal(B.serAt(s,'2026-01-01'),null); assert.deepEqual(B.serAt(s,'2026-01-07'),{d:'2026-01-05',c:11}); assert.deepEqual(B.serAt(s,'2026-02-01'),{d:'2026-01-09',c:12});
@@ -660,6 +660,19 @@ test('the tax if everything were sold today: the gain in shekels, the losses tha
   near(x.gains,700); near(x.losses,500); near(x.net,200); near(x.tax,50); near(x.saved,125,'the losses save 25% of 500');
   assert.deepEqual(x.dn.map(r=>r.sym),['KO','1159250'],'the largest loss first');
   assert.equal(T.taxNow(T.model({positions:[],cash:[]},G3.Q,'all')).none,true);
+});
+
+test('the profit against the cost, split: the prices\' part and the dollar\'s part, only when most of the dollars are known',()=>{
+  const G4={...G,S:{},HS:null,KV:'all',acct:'all',PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}}};
+  G4.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:2400,costUsd:800,group:'tech'},{sym:'KO',acct:'blink',ccy:'USD',qty:10,costIls:2500,group:'cons'},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:500}],cash:[]};
+  G4.Q={usdIls:3.5,prices:{MSFT:500,KO:60,'1159250':40},prev:{}};
+  const names=['fxSplit','fxAvg','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','fxOfMonth','ilDay'];
+  let X=load(names,G4,['allBuy']);
+  assert.equal(X.fxSplit(X.model(G4.P,G4.Q,'all')),null,'KO\'s dollar cost unknown: too little is known to split');
+  G4.P.positions[1].costUsd=700; X=load(names,G4,['allBuy']);
+  const r=X.fxSplit(X.model(G4.P,G4.Q,'all'));
+  // MSFT: 800$ × 3.5 − 2400 = +400 from the dollar; KO: 700$ × 3.5 − 2500 = −50; the gain 1100 − 400 − 100 = 600
+  near(r.fx,350); near(r.g,600); near(r.px,250);
 });
 
 test('"מה חדש" and "לאן להגיע?": every item is dated and versioned, and every way to a screen leads somewhere',()=>{

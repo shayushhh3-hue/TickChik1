@@ -1947,6 +1947,11 @@ body:not([data-page="overview"]) .hero .wmini:not([hidden]){display:flex;flex-di
 .worth .wch-h{justify-content:space-between!important;align-items:center;margin-top:10px}
 .worth .wch-h .kchips{margin:0}
 .pnlline{font-size:14px;color:var(--ink2);margin-top:2px} .pnlline b{font-size:15px}
+.pnlline.pnlsub{font-size:13px;margin-top:0} .pnlline.pnlsub b{font-size:13.5px} .pnlline .pn-s{color:var(--muted);font-size:12px} .pnlline .term{font-size:12px;margin-inline-start:4px}
+body:not([data-page="overview"]) .hero .pnlline.pnlsub{display:none}
+.wleg2{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin-top:4px}
+.wleg2 span{display:inline-flex;align-items:center;gap:6px} .wleg2 i{display:inline-block;width:16px;height:3px;border-radius:2px}
+.wleg2 i.me{background:linear-gradient(90deg,#2DD4BF,#8B5CF6)} .wleg2 i.ix{background:#F59E0B} .wleg2 i.dp{background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)}
 body:not([data-page="overview"]) .hero .pnlline{display:none}
 html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 /* the top of the page: a deep aubergine instead of the orange, the orange kept for what is pressed */
@@ -2023,11 +2028,11 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <div class="wv">
             <span class="big" id="kTotal">—</span>
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
-            <div class="pnlline" id="kPnlL" hidden></div>
+            <div class="pnlline" id="kPnlL" hidden></div><div class="pnlline pnlsub" id="kFxL" hidden></div><div class="pnlline pnlsub" id="kBenchL" hidden></div>
             <div class="d" id="kTotalD"></div>
           </div>
           <div class="wmini" id="kMini" aria-label="בקצרה"></div>
-          <div class="wch" id="wChart" hidden><svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg></div>
+          <div class="wch" id="wChart" hidden><svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg><div class="wleg2" id="wLeg" hidden></div></div>
         </div>
         <div class="wch-h" id="wchH"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
         <div class="wch-n" id="wChN" hidden></div>
@@ -16897,7 +16902,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -17681,6 +17686,23 @@ function renderKinds(m,both){
 // and says something at a glance
 function kPnlLine(){const el=$('kPnlL'), v=$('kPnl'); if(!el||!v)return; const t=v.textContent.trim(); if(!t||t==='—'){el.hidden=true;return}
   const d=(($('kPnlD')||{}).textContent||'').split(' · ')[0]; el.hidden=false; el.innerHTML=`רווח מול עלות <b class="n ${/\bup\b/.test(v.className)?'up':/\bdown\b/.test(v.className)?'down':''}">${esc(t)}</b>${d&&d!=='אין נתוני עלות'?` <span class="n">(${esc(d)})</span>`:''}`}
+// 28.10: the profit against the cost, split: how much came from the prices and how much from the dollar's rate since each
+// purchase (the securities in dollars whose dollar cost is known; the rest counts with the prices). Shown when it covers
+// most of the dollar part, on the home screen, for the whole portfolio or one account
+function fxSplit(m){
+  if(!m||!Q||!Q.usdIls||KV!=='all')return null; const fx=Q.usdIls; let dcs={}; try{dcs=dollarCost(P,Q,HS,planOpen().buys,acct)}catch(e){return null}
+  let g=0, fxp=0, usdV=0, knownV=0;
+  for(const p of m.pos){if(!(p.cost>0))continue; g+=p.costVal-p.cost; if(p.ccy==='ILS')continue; usdV+=p.costVal; const dc=dcs[p.sym];
+    if(dc&&dc.cost>0&&!dc.est&&Math.abs(dc.val*fx-p.costVal)<=Math.max(2,p.costVal*0.01)){fxp+=dc.cost*fx-p.cost; knownV+=p.costVal}}
+  if(!(usdV>0)||knownV<usdV*0.8)return null;
+  return {g,fx:fxp,px:g-fxp}}
+function kFxLine(m){const el=$('kFxL'); if(!el)return; const r=fxSplit(m); if(!r||Math.abs(r.fx)<1){el.hidden=true;return}
+  el.hidden=false; el.innerHTML=`מתוך זה: מהמחירים <b class="n ${r.px>=0?'up':'down'}">${sgn(r.px)}</b> · מהדולר <b class="n ${r.fx>=0?'up':'down'}">${sgn(r.fx)}</b> ${whyBtn('fxsplit','מה זה אומר?')}`}
+// 28.10: against the market, in one line: the same deposits in the S&P 500 on the same days
+function kBenchLine(){const el=$('kBenchL'); if(!el)return; if(acct!=='all'||KV!=='all'){el.hidden=true;return}
+  let B=null; try{B=benchCompare(mAllNow())}catch(e){} const s=B&&B.ready&&B.rows.find(r=>r.k==='spx'); if(!s){el.hidden=true;return}
+  const d=B.rows[0].val-s.val; el.hidden=false;
+  el.innerHTML=`מול S&P 500: <b class="n ${d>=0?'up':'down'}">${ils(Math.abs(d))} ${d>=0?'יותר':'פחות'}</b> מאותן הפקדות במדד`; el.title='אילו אותן הפקדות היו נכנסות ל-S&P 500 באותם ימים, בשקלים, בלי דיבידנדים ועמלות'}
 function kMiniFill(){
   const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
   const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};
@@ -17713,8 +17735,13 @@ function renderWChart(){
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
   const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:170, L=slim?6:46, R=slim?10:12, T=10, B=slim?18:24;
-  const sig=W+'|'+WR+'|'+acct+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
-  const vs=P0.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
+  // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
+  // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
+  try{benchLoad()}catch(e){}
+  let IX=null; if(acct==='all'&&KV==='all'&&!slim){try{const FL=benchFlows(); if(FL&&FL.F){const v=P0.map(p=>benchValAt(FL.F,'spx',p.now?ilDay():isoDay(p.t))); if(v.every(x=>x!=null&&x>0))IX=v}}catch(e){}}
+  const sig=W+'|'+WR+'|'+acct+'|'+(IX?'ix':'')+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
+  {const lg=$('wLeg'); if(lg){lg.hidden=!IX; if(IX)lg.innerHTML=`<span><i class="me"></i>התיק</span><span><i class="ix"></i>אותן הפקדות ב-S&P 500</span><span><i class="dp"></i>ההפקדות</span>`}}
+  const vs=P0.map(p=>p.v).concat(IX||[]), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
   const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
   const lab='font-family="var(--sans)" style="fill:var(--muted)"';
@@ -17724,6 +17751,7 @@ function renderWChart(){
   g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wgF)"/>`;
   // the money put in, dotted, when the whole portfolio is shown and the deposits are known: the gap to the line is the result
   const dps=P0.filter(p=>p.dep!=null&&p.dep>0&&p.dep>=lo&&p.dep<=hi); if(dps.length>=2&&dps.length===P0.length)g+=`<path d="${dps.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join(' ')}" fill="none" style="stroke:var(--muted)" stroke-opacity=".8" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>`;
+  if(IX)g+=`<path d="${P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(IX[i]).toFixed(1)).join(' ')}" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>`;
   g+=`<path d="${d}" fill="none" stroke="url(#wgA)" stroke-width="${slim?2.4:2.8}" stroke-linejoin="round" stroke-linecap="round"/>`;
   // up to four month names under the line, spread over the range
   const MS=new Set(); const ticks=[]; for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
@@ -22075,6 +22103,7 @@ const TERMS={
   comove:['ניירות שזזים יחד','כל פס מראה בכמה מימי המסחר בחודש הניירות בקבוצה זזו לאותו כיוון. הקו שבאמצע הפס הוא מה שיוצא במקרה, בלי שום קשר ביניהם. ככל שהפס עובר אותו, הקשר ברור יותר.'],
   scorecalc:['איך מחושב הציון','ציון 0 עד 100 מנתוני הדוחות של 12 החודשים האחרונים, בחמישה מרכיבים שווי משקל: צמיחת הכנסות (20% ומעלה מקבל את מלוא הנקודות), שיעור רווח נקי (25% ומעלה), תשואה על ההון (25% ומעלה), מינוף לפי יחס חוב להון (0.3 ומטה מלא, 2.5 ומעלה אפס), ואיכות הדוחות לפי מדד פיוטרוסקי. בבנקים לא נספר המינוף, ובקרן נדל״ן לא נספרת התשואה על ההון. האותיות: A מ-80, B מ-65, C מ-50, D מ-35, ומתחת לזה E.'],
   benchhow:['איך מחושבת ההשוואה','כל הפקדה (ומשיכה) נכנסת למדד ביום שבו היא נעשתה, במחיר הסגירה של אותו יום; S&P 500 בשקלים, לפי שער הדולר באותו יום. השווי היום הוא מספר היחידות כפול הסגירה האחרונה. התשואה השנתית היא השיעור שבו ההפקדות, כל אחת מהיום שלה, גדלות לשווי של היום (כך הפקדה של החודש שעבר נספרת רק חודש). המדדים הם מדדי מחיר בלי הדיבידנדים שהם מחלקים (כ-1% עד 2% בשנה), ובלי עמלות ומס.'],
+  fxsplit:['רווח מהמחירים ורווח מהדולר','מניה אמריקאית מרוויחה לך בשקלים משני דברים: המחיר שלה בדולרים, ושער הדולר. "מהדולר" הוא מה שהיית מרוויח או מפסיד גם אם המחיר בדולרים לא היה זז: העלות בדולרים כפול השער של היום, פחות מה ששילמת בשקלים. "מהמחירים" הוא כל השאר. כשהדולר יורד, החלק הזה יכול למחוק רווח של מניה טובה.'],
   taxhow:['איך מחושב המס','לכל נייר: השווי היום פחות מה ששילמת, בשקלים. בנייר בדולרים זה כולל את שינוי שער הדולר מאז הקנייה. הרווחים פחות ההפסדים הם הרווח אחרי קיזוז, ועליו השיעור שבהגדרות (בדרך כלל 25%). בפועל בית ההשקעות מחשב לפי כל קנייה בנפרד, יכול להפחית את חלק האינפלציה, ומקזז גם מול מכירות קודמות באותה שנה; לכן הדוח השנתי שלו הוא הקובע.'],
   fit:['דירוג התאמה','כמה נייר מתאים לתיק שלך לפי הכללים, היעדים וסוג המשקיע שבחרת: פיזור, איכות, תמחור ועוד. זה דירוג התאמה, לא המלצה לקנות.']};
 const TERM_AT=[['#hCore','core'],['label[for=inRate]','rate'],['label[for=inTax]','tax'],['label[for=rDrift]','drift'],['label[for=rUsd]','usd'],['label[for=rStop]','stop'],['label[for=rHold]','hold'],['#hAlloc','alloc'],['#hWatch','fit']];
@@ -23016,20 +23045,32 @@ function xirr(cf){
   for(let i=0;i<200;i++){const mid=(lo+hi)/2, fm=f(mid); if(Math.abs(fm)<1e-6||hi-lo<1e-9)return mid; if(flo*fm<0){hi=mid;fhi=fm}else{lo=mid;flo=fm}}
   return (lo+hi)/2;
 }
-function benchCompare(m){
-  if(!m||!HS||!Q||!Q.usdIls)return null;
+// the deposits and withdrawals with their days, adding up to the same total as "מול ההפקדות"
+function benchFlows(){
+  if(!HS||!Q||!Q.usdIls)return null;
   const tot=depTotal(), F1=depFlows(false), F2=depFlows(true), s1=F1.reduce((t,x)=>t+x.ils,0), s2=F2.reduce((t,x)=>t+x.ils,0);
   const F=Math.abs(tot-s2)<Math.abs(tot-s1)?F2:F1; if(!F.length)return {none:true};
-  const sum=F===F2?s2:s1, gap=Math.round((tot-sum)*100)/100, today=ilDay();
-  // the same total as "מול ההפקדות": a small gap (a dollar deposit counted at another day's rate) spreads over the flows;
-  // a large one is money in without a day, put on the first day and said
+  const sum=F===F2?s2:s1, gap=Math.round((tot-sum)*100)/100;
+  // a small gap (a dollar deposit counted at another day's rate) spreads over the flows; a large one is money in without
+  // a day, put on the first day and said
   let undated=0; if(Math.abs(gap)>0.5&&sum>0){if(Math.abs(gap)<=Math.abs(tot)*0.05){const k=tot/sum; for(const x of F)x.ils*=k} else {undated=gap; F.unshift({day:F[0].day,ils:gap,undated:true})}}
   const dep=F.reduce((t,x)=>t+x.ils,0); if(!(dep>0))return {none:true};
+  return {F,dep,undated};
+}
+// an index's price in shekels on a day (the S&P 500 at that day's dollar rate)
+function benchPx(k,day){const s=BENCH_D&&BENCH_D[k]; if(!s||!s.d||!s.d.length)return null; const x=serAt(s,day); if(!x)return null; if(k!=='spx')return x.c; const f=serAt(BENCH_D.fx,day); return f?x.c*f.c:null}
+// 28.10: what the same deposits, put into the index on the same days, were worth on a day (for the line on the home chart)
+function benchValAt(F,k,day){const pd=benchPx(k,day); if(!pd)return null; let units=0, miss=0;
+  for(const x of F){if(x.day>day)continue; const p=benchPx(k,x.day); if(!p){miss+=x.ils;continue} units+=x.ils/p}
+  return units*pd+miss}
+function benchCompare(m){
+  if(!m||!HS||!Q||!Q.usdIls)return null;
+  const FL=benchFlows(); if(!FL||FL.none)return FL&&FL.none?{none:true}:null;
+  const {F,dep,undated}=FL, today=ilDay();
   const t0=Date.parse(F[0].day), days=Math.max(1,(Date.parse(today)-t0)/864e5);
   const ret=val=>{const cf=F.map(x=>({t:(Date.parse(x.day)-t0)/864e5,v:-x.ils})).concat([{t:days,v:val}]); const r=xirr(cf); if(r==null)return null; return days>=365?{yr:r*100}:{per:(Math.pow(1+r,days/365)-1)*100}};
   const me={k:'me',name:'התיק שלך',val:m.total,gain:m.total-dep,ret:ret(m.total)};
-  const run=k=>{const s=BENCH_D&&BENCH_D[k]; if(!s||!s.d||!s.d.length)return null; const fx=BENCH_D.fx;
-    const pIls=day=>{const x=serAt(s,day); if(!x)return null; if(k!=='spx')return x.c; const f=serAt(fx,day); return f?x.c*f.c:null};
+  const run=k=>{const s=BENCH_D&&BENCH_D[k]; if(!s||!s.d||!s.d.length)return null; const pIls=day=>benchPx(k,day);
     let units=0, miss=0; for(const x of F){const p=pIls(x.day); if(!p){miss+=x.ils;continue} units+=x.ils/p}
     const last=s.d[s.d.length-1], pNow=pIls(last); if(!pNow||miss>dep*0.05)return null;
     const val=units*pNow+miss; return {k,name:((BENCH_D.names||{})[k])||k,val,gain:val-dep,ret:ret(val),last,miss}};

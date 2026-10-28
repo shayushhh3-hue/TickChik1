@@ -283,6 +283,10 @@ test('"האם אני עושה טוב?": the same deposits in S&P 500 and Tel Avi
   store.setDoc('research/bench',{spx:{d:D,c:C},ta125:{d:D,c:T2},fx:{d:D,c:X},names:{spx:'S&P 500',ta125:'ת״א 125'},updatedAt:new Date().toISOString(),source:'בדיקה'},{silent:true});
   try{
     const {ctx,pg}=await open(390);
+    // 28.10: the home card: one line against the S&P 500, and the index's line on the chart with its legend
+    await pg.waitForFunction(()=>!document.getElementById('kBenchL').hidden,null,{timeout:15000}).catch(()=>{});
+    const hb=await pg.evaluate(()=>({l:document.getElementById('kBenchL').textContent,ix:!!document.querySelector('#wChS path[stroke="#F59E0B"]'),leg:document.getElementById('wLeg').hidden?'':document.getElementById('wLeg').textContent}));
+    assert.match(hb.l,/^מול S&P 500: ₪[\d,]+ (יותר|פחות) מאותן הפקדות במדד$/); assert.ok(hb.ix,'the index line on the chart'); assert.match(hb.leg,/אותן הפקדות ב-S&P 500/);
     // on the home page, one line (once the indices have arrived); the way to the comparison
     await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-bench'),null,{timeout:15000}).catch(()=>{});
     const line=await pg.evaluate(()=>document.querySelector('#desk .dk-bench')?.textContent||'');
