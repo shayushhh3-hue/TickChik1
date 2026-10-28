@@ -862,7 +862,7 @@ test('dividends: the way of a dividend, what came in per security with its tax a
 
 test('the spread of the portfolio: a bar or a pie at a click, the same shares, kept for next time',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForSelector('#mixHome:not([hidden])');   // 28.10: on the control screen
+  const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.click('#riskNav [data-rg="mix"]'); await pg.waitForSelector('#mixHome:not([hidden])');   // 28.10: on the control screen, in its "פיזור" part
   const st=()=>pg.evaluate(()=>{const v=e=>!!e.offsetParent||e.getBoundingClientRect().width>0, pie=document.getElementById('mixPie');
     return {bar:v(document.getElementById('mixBar')),pie:!pie.hasAttribute('hidden')&&pie.getBoundingClientRect().width>0,slices:pie.querySelectorAll('path,circle').length,label:pie.getAttribute('aria-label'),
       list:document.querySelectorAll('#mixList li').length,on:[...document.querySelectorAll('[data-mixv]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.mixv),
@@ -1112,9 +1112,13 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.setItem('tr_fold',JSON.stringify({hExp:true,hStress:true}))}catch(e){}});
   await tab(pg,'risk'); await pg.waitForTimeout(800);
   // 28.10: no folds any more: every section is open
-  assert.ok(await pg.evaluate(()=>['hExp','hStress'].every(id=>!!document.getElementById(id).offsetParent&&!document.querySelector('.fold-t'))),'the sections are open, with no toggle');
+  // and the screen in three parts: the exposures under "פיזור", the stress test under "סיכון ותרחישים", one part at a time
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].map(b=>b.textContent)),['מצב','פיזור','סיכון ותרחישים']);
+  for(const [k,id,other] of [['mix','hExp','hStress'],['risk','hStress','hExp']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150);
+    assert.ok(await pg.evaluate(([id,other])=>!!document.getElementById(id).offsetParent&&!document.getElementById(other).offsetParent&&!document.querySelector('.fold-t'),[id,other]),'one part at a time: '+k)}
   const e=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
   assert.match(e.txt,/הנייר הגדול/); assert.match(e.txt,/חפיפה בין קרנות למניות: לא ידועה/,'fund holdings are unknown, said so'); assert.equal(e.ox,false,'no sideways scroll');
+  await pg.click('#riskNav [data-rg="risk"]');
   for(const [k,re] of [['all',/ירידה אחידה של 20%/],['usd',/הדולר יורד ב-10%/],['group',/בקבוצת/]]){
     await pg.click(`#stKind [data-stk="${k}"]`); await pg.waitForTimeout(300);
     const r=await pg.evaluate(()=>{const R=window.__model.stress(), v=[...document.querySelectorAll('#stOut .st-bar [data-v]')].map(b=>+b.dataset.v), d=+document.querySelector('#stOut [data-d]').dataset.d;

@@ -144,7 +144,6 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .tabs .tsub button{min-height:34px;padding:7px 10px;font-size:13.5px;font-weight:400;color:#B9C6D6;border-radius:8px}
 .tabs .tsub button:hover{color:#fff}
 .tabs .tsub button.on{color:#fff;font-weight:600;background:rgb(255 255 255 / .09)}
-#riskNav{display:none}
 .tabs button:focus-visible,.sbclose:focus-visible{outline:2px solid #fff;outline-offset:-2px}
 .hero .top{padding-inline-start:54px}
 @media (prefers-reduced-motion:reduce){.tabsbar,.navtab{transition:none}}
@@ -1473,6 +1472,16 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .fitwhy .fw-miss{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--sunk);font-size:12.5px;line-height:1.5;color:var(--ink2)}
 .fitwhy .fw-miss .ni{width:16px;height:16px;flex:none;margin-top:2px;color:var(--muted)}
 .fitwhy .fw-foot{margin:8px 0 0;font-size:12px;color:var(--muted)}
+/* 28.10: the control screen's three parts: a segmented row at the top, and only the chosen part's sections below it */
+#riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
+#riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
+#riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
+@media (max-width:640px){#riskNav{top:0;margin-inline:0} #riskNav .chip{font-size:13.5px;padding-inline:8px}}
+[data-pane="risk"][data-rgv="now"] > [data-rg]:not([data-rg="now"]),[data-pane="risk"][data-rgv="mix"] > [data-rg]:not([data-rg="mix"]),[data-pane="risk"][data-rgv="risk"] > [data-rg]:not([data-rg="risk"]){display:none!important}
+/* the groups once: the group card (bar or pie) when it is there, not the donut of the same groups again */
+#mixHome:not([hidden]) ~ section[aria-labelledby="hMix"]{display:none!important}
+/* the rules once: the health card lists each rule with its limit and the actual figure, so the rules table is not repeated */
+#healthHome:not([hidden]) ~ #rulesSec{display:none!important}
 .wmarks{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
 .wmarks>b{font-size:13px;margin-inline-end:4px}
 .wmk{font:inherit;font-size:12.5px;display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -17990,7 +17999,18 @@ let MORE=false; try{MORE=localStorage.getItem('tr_more')==='1'}catch(e){}
 const FOLD_OPEN=new Set(['hCtl','hKpi','hHealth','hMixH']), FOLD_LBL={hDesk:'מה לעשות היום',hHealth:'מדד בריאות',hMixH:'פיזור לפי קבוצות',hAnaE:'צ׳יקו',hCtl:'בקרה',hKpi:'תמונת מצב',hHeat:'מה זז היום',hRulesOv:'הכללים',hMix:'הקצאה מול יעד',hExp:'חשיפות',hStress:'מבחן לחץ',hPnl:'רווח לפי נייר',hCore:'ליבה ולוויינים',hCo:'נעים יחד',hRk:'מטלטלים את התיק',hPr:'צמדים',hOp:'מאזנים'};
 let FOLD={}; try{FOLD=JSON.parse(localStorage.getItem('tr_fold')||'{}')||{}}catch(e){FOLD={}}
 function foldIs(){return true}
-function foldSet(id){const c=document.querySelector('#riskNav [data-fold="'+id+'"]'); for(const x of document.querySelectorAll('#riskNav [data-fold]'))x.setAttribute('aria-pressed',String(x===c))}
+// 28.10: the control screen in three parts instead of one long page: "מצב" (the score, what needs attention, what moved),
+// "פיזור" (the groups, the exposure, what moves together) and "סיכון ותרחישים" (what if prices fall, what shakes the
+// portfolio). Each section belongs to one part; the row at the top switches between them, and a link to a section opens its part
+const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hKpi','hRk']};
+const RGL={now:'מצב',mix:'פיזור',risk:'סיכון ותרחישים'};
+const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
+let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
+function rgSet(k){if(!RG[k])k='now'; RGV=k; try{localStorage.setItem('tr_rgv',k)}catch(e){}
+  const pane=document.querySelector('[data-pane="risk"]'); if(pane)pane.dataset.rgv=k;
+  for(const x of document.querySelectorAll('#riskNav [data-rg],#riskSub [data-rsub]'))x.setAttribute('aria-pressed',String((x.dataset.rg||x.dataset.rsub)===k));
+  for(const x of document.querySelectorAll('#riskSub [data-rsub]'))x.classList.toggle('on',x.dataset.rsub===k)}
+function foldSet(id){rgSet(rgOf(id))}
 // 28.10: no folds. The owner does not want parts that open and close: every section of every screen is one card of the
 // same make (the icon of its kind, its title, its line, its content), and the jump row at the top of the control screen
 // scrolls to it
@@ -18013,17 +18033,18 @@ function foldBoot(){
       if(head&&!head.querySelector('.sec-ic')){const ic=secIconH(id); if(ic)head.insertAdjacentHTML('afterbegin',ic); head.classList.add('sec-h')}
       s.classList.add('seccard')}}
   const pane=document.querySelector('[data-pane="risk"]'); if(!pane)return;
-  const sub=$('riskSub'); if(sub&&!sub.children.length)sub.innerHTML=[...pane.querySelectorAll(':scope > section')].map(s=>{const id=s.getAttribute('aria-labelledby');return `<button type="button" data-rsub="${id}">${FOLD_LBL[id]||(s.querySelector('h2')||{}).textContent||id}</button>`}).join('');
-  const nav=$('riskNav'); if(nav&&!nav.children.length)nav.innerHTML=[...pane.querySelectorAll(':scope > section')].map(s=>{const id=s.getAttribute('aria-labelledby');return `<button type="button" class="chip" data-fold="${id}" aria-pressed="false">${FOLD_LBL[id]||(s.querySelector('h2')||{}).textContent||id}</button>`}).join('');
+  for(const s of pane.querySelectorAll(':scope > section,:scope > details')){const h=s.querySelector('h2'); s.dataset.rg=rgOf(s.getAttribute('aria-labelledby')||(h&&h.id)||'')}
+  const sub=$('riskSub'); if(sub&&!sub.children.length)sub.innerHTML=Object.keys(RG).map(k=>`<button type="button" data-rsub="${k}">${RGL[k]}</button>`).join('');
+  const nav=$('riskNav'); if(nav&&!nav.children.length){nav.innerHTML=Object.keys(RG).map(k=>`<button type="button" class="chip" data-rg="${k}" role="tab" aria-pressed="false">${RGL[k]}</button>`).join(''); nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של בקרה וסיכון')}
+  rgSet(RGV);
 }
 document.addEventListener('click',ev=>{
-  const r=ev.target.closest('#riskSub [data-rsub]'); if(r){const id=r.dataset.rsub; const t=$('tab_risk'); if(t&&t.getAttribute('aria-selected')!=='true')t.click(); else if(t){const sb=document.querySelector('.sbclose'); if(sb&&getComputedStyle(sb).display!=='none')sb.click()}
-    for(const x of document.querySelectorAll('#riskSub [data-rsub]'))x.classList.toggle('on',x===r);
-    setTimeout(()=>{foldSet(id); const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(s)try{s.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},80); return}
-  const c=ev.target.closest('#riskNav [data-fold]'); if(c){const id=c.dataset.fold; foldSet(id); const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(s)setTimeout(()=>{try{s.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},30); return}
+  const r=ev.target.closest('#riskSub [data-rsub]'); if(r){const k=r.dataset.rsub; const t=$('tab_risk'); if(t&&t.getAttribute('aria-selected')!=='true')t.click(); else if(t){const sb=document.querySelector('.sbclose'); if(sb&&getComputedStyle(sb).display!=='none')sb.click()}
+    rgSet(k); setTimeout(()=>{const n=$('riskNav'); if(n)try{n.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},80); return}
+  const c=ev.target.closest('#riskNav [data-rg]'); if(c){rgSet(c.dataset.rg); try{const n=$('riskNav'),top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(e){} return}
 });
-function riskNavSync(){for(const c of document.querySelectorAll('#riskSub [data-rsub]')){const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+c.dataset.rsub+'"]'); c.hidden=!s||getComputedStyle(s).display==='none'}
-  const nav=$('riskNav'); if(!nav)return; for(const c of nav.querySelectorAll('[data-fold]')){const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+c.dataset.fold+'"]'); c.hidden=!s||getComputedStyle(s).display==='none'}}
+function riskNavSync(){
+}
 try{foldBoot();riskNavSync()}catch(e){}
 window.__fold={is:foldIs,set:foldSet,sync:riskNavSync};
 let HOLD_LITE=true; try{HOLD_LITE=localStorage.getItem('tr_holdlite')!=='0'}catch(e){}
@@ -23427,7 +23448,7 @@ function goTo(d){
   showTab(d.tab,true);
   if(!d.el)return;
   setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
-    const fs=el.closest('[data-pane="risk"] > section.fold'); if(fs){try{foldSet(fs.getAttribute('aria-labelledby'),true)}catch(e){}}
+    const fs=el.closest('[data-pane="risk"] > [data-rg]'); if(fs){try{rgSet(fs.dataset.rg)}catch(e){}}
     if(el.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}}
     for(let p=el.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
     if(el.tagName==='DETAILS')el.open=true;
