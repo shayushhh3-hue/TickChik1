@@ -116,7 +116,7 @@ const tab=(pg,t)=>pg.evaluate(id=>{(document.getElementById('tab_'+id)||document
 const T={timeout:120000};
 const skip=()=>!browser;
 
-test('navigation: a bottom bar on a phone, the menu at the side on a wide screen, the drawer in between',T,async t=>{
+test('navigation: a bottom bar on a phone and a tablet, the menu at the side on a wide screen',T,async t=>{
   if(skip())return t.skip('no browser');
   const st=pg=>pg.evaluate(()=>{const d=e=>getComputedStyle(e).display, sb=document.getElementById('tabsbar').getBoundingClientRect();
     return {page:document.body.dataset.page,bar:d(document.getElementById('botbar')),edge:d(document.getElementById('navtab')),menu:sb.left>=0&&getComputedStyle(document.getElementById('tabsbar')).visibility==='visible',
@@ -130,7 +130,7 @@ test('navigation: a bottom bar on a phone, the menu at the side on a wide screen
     const lay=await pg.evaluate(()=>{const bb=document.getElementById('botbar').getBoundingClientRect().top, f=document.getElementById('chatFab').getBoundingClientRect(); return {bb,fab:f.bottom}});
     assert.ok(lay.fab<=lay.bb,'the chat button sits above the bar');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
-  {const {ctx,pg}=await open(820); const s=await st(pg); assert.equal(s.bar,'none'); assert.notEqual(s.edge,'none'); assert.ok(!s.menu); await ctx.close()}
+  {const {ctx,pg}=await open(820); const s=await st(pg); assert.equal(s.bar,'flex','the bar on a tablet too (28.10)'); assert.equal(s.edge,'none'); assert.ok(!s.menu); await ctx.close()}
   {const {ctx,pg}=await open(1280); let s=await st(pg); assert.ok(s.menu); assert.equal(s.edge,'none'); assert.equal(s.bar,'none');
     const ox=await pg.evaluate(()=>{const sb=document.getElementById('tabsbar').getBoundingClientRect(), h=document.getElementById('hero').getBoundingClientRect(); return h.right<=sb.left&&document.documentElement.scrollWidth<=innerWidth+1});
     assert.ok(ox,'the content sits beside the menu, no sideways scroll'); await ctx.close()}
@@ -233,7 +233,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,3)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.equal(ctl.order[0],'holdSec','the holdings first, right under the portfolio\'s value: '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order,['insightBar','quickActs','holdSec'],'what happened today, the four actions, then the holdings (28.10): '+JSON.stringify(ctl.order));
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
       assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
@@ -485,7 +485,7 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(390,{who:'new'}); // before there is a portfolio: the tour skips what is not there yet
     await pg.evaluate(()=>document.querySelector('#welcome [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
-    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 5$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
+    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 4$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
 test('fees: the table\'s running total ends at the headline, the fees saved apart in their own month',T,async t=>{
@@ -643,10 +643,10 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
     const st=()=>pg.evaluate(()=>({th:document.documentElement.dataset.theme,bg:getComputedStyle(document.body).backgroundColor,saved:localStorage.getItem('tr_theme'),
       on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').getAttribute('aria-label'),meta:document.querySelector('meta[name=theme-color]').content}));
     // the page opens at night (the trading look); the day is the blue-on-white one
-    let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(14, 20, 36)','the night is the deep navy ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
+    let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(7, 7, 26)','the night is the violet-black ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
     await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
-    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 244, 240)','light','light','מצב לילה','#1B2A4A']);
-    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#0E1424');
+    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 245, 252)','light','light','מצב לילה','#F6F5FC']);
+    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
     // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
     const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
       const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
@@ -678,7 +678,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
   try{
     let {ctx,pg}=await open(390);
     const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
-    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק','מניות','קרנות']);
+    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -692,9 +692,9 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     if(lk){await pg.click('.hero .side .stat.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
     const all=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
     // "קרנות": the value, the day, the profit and the rows of the funds only
-    await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);
+    await pg.click('#kindRow [data-kv="fund"]'); await pg.waitForTimeout(400);
     const f=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
-      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),
+      pressed:[...document.querySelectorAll('#acctChips .chip,#kindRow [data-kv]')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.querySelector('.kt-k')?x.querySelector('.kt-k').textContent:x.textContent),
       rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent).sort(),sec:document.querySelector('#rows tr.sec').textContent,
       kinds:getComputedStyle(document.querySelector('.hold .hkind:not(.hccy)')).display,dep:getComputedStyle(document.getElementById('kDepBox')).display,ox:document.documentElement.scrollWidth<=innerWidth+1}));
     assert.equal(f.k,'שווי הקרנות'); assert.deepEqual(f.pressed,['קרנות']); assert.deepEqual(f.rows,['TA125','TA90']);
@@ -702,13 +702,13 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     assert.match(f.d,/^2 קרנות · [\d.]+% מהתיק · בלי מניות ומזומן$/); assert.equal(f.kinds,'none'); assert.equal(f.dep,'none'); assert.ok(f.ox);
     M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],'the movers are the funds\': '+JSON.stringify(M)); assert.ok(['TA125','TA90'].includes(M.best));
     // "מניות": the same for the stocks only; the two chips are one choice, and both add up to the whole
-    await pg.click('#acctChips [data-kv="stock"]'); await pg.waitForTimeout(400);
+    await pg.click('#kindRow [data-kv="stock"]'); await pg.waitForTimeout(400);
     const st=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
-      pressed:[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden,chartNote:document.getElementById('wChN').hidden?'':document.getElementById('wChN').textContent}));
+      pressed:[...document.querySelectorAll('#acctChips .chip,#kindRow [data-kv]')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.querySelector('.kt-k')?x.querySelector('.kt-k').textContent:x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden,chartNote:document.getElementById('wChN').hidden?'':document.getElementById('wChN').textContent}));
     assert.equal(st.k,'שווי המניות'); assert.deepEqual(st.pressed,['מניות']); assert.equal(st.rows.length,10); assert.ok(!st.rows.includes('TA125'));
     assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · בלי קרנות ומזומן$/); assert.equal(st.chart,false,'the value chart stays (the owner asked for it in every view)'); assert.match(st.chartNote,/כל התיק/,'and says it is the whole portfolio\'s');
     const num=t=>+t.replace(/[^\d]/g,''); assert.ok(Math.abs(num(st.tot)+num(f.tot)-num(all))<=num(all)*0.02+Math.max(1,num(all)*0.001)||true);
-    await pg.click('#acctChips [data-kv="fund"]'); await pg.waitForTimeout(400);
+    await pg.click('#kindRow [data-kv="fund"]'); await pg.waitForTimeout(400);
     for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_kv!=='fund');i++)await pg.waitForTimeout(250);
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // another device: the same view, with the account; an account's chip leaves it
