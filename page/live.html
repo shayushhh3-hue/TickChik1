@@ -22457,6 +22457,8 @@ function rsSrcLine(st){const f=st.fh, d=st.fund, L=[];
   if(f)L.push(`Finnhub: ${f.filled} ניירות (נתוני חברה ${f.figs}, אנליסטים ${f.recs}, דוחות ${f.eps}, תאריכי דוחות ${f.cal})${f.stopped?' · נעצר: '+esc(String(f.stopped)):''}${f.first?' · '+esc(String(f.first).slice(0,120)):''}`);
   else L.push('Finnhub: לא פעל בריצה הזאת (אין מפתח, או שהריצה הייתה לפני שהמפתח הוגדר)');
   if(d)L.push(`SEC וחישוב תנודתיות: ${d.filled} ניירות (SEC ${d.sec}, תנודתיות ${d.beta})${d.first?' · '+esc(String(d.first).slice(0,120)):''}`);
+  {const x=st.dates; if(x)L.push(`ימי פרסום הדוחות מה-SEC: ${x.dated} מתוך ${x.tried}${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · '+esc(String(x.first).slice(0,120)):''}`)}
+  {const x=st.divs; if(x)L.push(`דיבידנדים קדימה: ${x.planned} מתוך ${x.tried} (Nasdaq ${x.nasdaq}, Yahoo ${x.yahoo})${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · '+esc(String(x.first).slice(0,120)):''}`)}
   return ' '+L.join(' · ')+'.'}
 function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
 function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
@@ -22958,7 +22960,7 @@ function renderCal(){
   const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
   const held=((P&&P.positions)||[]).length;
   const mineList=mine.length?`<ul class="calev">${mine.map(e=>calEvRow(e,today,true)).join('')}</ul>`
-    :`<p class="note">${held?(RS&&RS.companies&&Object.keys(RS.companies).length?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:`מועדי הדוחות והדיבידנדים של המניות שבתיק עוד לא נמשכו: הם מגיעים מהריצה הלילית של נתוני החברות (ג׳ עד ש׳, 01:15), שעדיין לא הביאה נתונים.`):'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>${held&&!(RS&&RS.companies&&Object.keys(RS.companies).length)?'<div class="rsStatus"></div>':''}`;
+    :`<p class="note">${held?(RS&&RS.companies&&Object.keys(RS.companies).length?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:`מועדי הדוחות והדיבידנדים של המניות שבתיק עוד לא נמשכו: הם מגיעים מהריצה הלילית של נתוני החברות (ג׳ עד ש׳, 01:15), שעדיין לא הביאה נתונים.`):'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>`;
   const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
   $('calSub').textContent='השעות לפי שעון ישראל';
   box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
@@ -22966,7 +22968,7 @@ function renderCal(){
     <div class="calgrid">${cells}</div>
     <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span><span><i class="ev div" style="background:transparent!important;box-shadow:inset 0 0 0 1.6px #10B981"></i> עיגול ריק: מועד משוער</span></div>
     ${selTxt}
-    <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}
+    <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}<div class="rsStatus"></div>
     <p class="note">מועדי הדוחות הבאים מלוח הדוחות של Finnhub ו-Yahoo Finance, והימים שבהם דוחות פורסמו מהדיווחים של החברות לרשות ניירות הערך האמריקאית (SEC). דוח שהיום שבו פורסם לא ידוע לא מסומן ביום כלשהו. דיבידנדים: מה שהחברה הכריזה (Nasdaq), ואחריו הדיבידנדים הבאים לפי הקצב של הקודמים, מסומנים כמשוערים עד שהחברה מכריזה. דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
     <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
     <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
