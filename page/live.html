@@ -1850,6 +1850,47 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
   .hold.lite tbody td:nth-child(1) .pill:not([style]),.hold.lite tbody td:nth-child(1) .golink{display:none}
   .hold.lite tbody td:nth-child(1) .sym{font-size:15px;font-weight:700}
   .hold tbody td:nth-child(1) .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* 28.10: the lean list as one compact row per holding: the logo and the symbol with the company in one short line, the
+     value and the day's move on the other side, and a thin bar of its share of the portfolio (in its group's colour)
+     under it; the account pills, the amounts of the day and the long names stay in the full list */
+  .hold.lite tbody tr:not(.sec){grid-template-columns:minmax(0,1fr) auto 12px;grid-template-areas:"name val go" "name day go" "w w w";row-gap:0;column-gap:10px;padding:9px 0 8px}
+  .hold.lite tbody td:nth-child(1){display:grid!important;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;align-items:center}
+  .hold.lite tbody td:nth-child(1) .lg.s{grid-row:1 / span 2;width:34px;height:34px;margin:0}
+  .hold.lite tbody td:nth-child(1) .sym{grid-column:2;line-height:1.25}
+  .hold.lite tbody td:nth-child(1) .flag{display:none}
+  .hold.lite tbody td:nth-child(1) .nm{grid-column:2;-webkit-line-clamp:1;font-size:12px;line-height:1.35}
+  .hold.lite tbody td:nth-child(2) .nm{display:none}
+  .hold.lite tbody td:nth-child(2){font-size:12.5px}
+  .hold.lite tbody td:nth-child(5){font-size:15px;line-height:1.3}
+  .hold.lite tbody td:nth-child(6){grid-area:w;display:flex!important;align-items:center;gap:8px;background:none;border-radius:0;padding:6px 0 0;min-width:0;text-align:start;color:var(--muted);font-weight:600;font-size:11.5px}
+  .hold.lite tbody td:nth-child(6) .n{order:2;font-weight:600;color:var(--muted);min-width:40px;text-align:end}
+  .hold.lite .hwb{order:1;display:block;flex:1;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--gc) var(--w),var(--sunk) var(--w))}
+  html[data-theme="dark"] .hold.lite tbody td:nth-child(6){color:var(--muted)}
+}
+.hwb{display:none}
+#holdSec>.panel{align-self:stretch} @media (min-width:641px){.hold .panel.scroll>table{width:100%}}
+/* the coming two weeks: a row of day cards (scrolling sideways on a phone), each event a small coloured line */
+.soon{margin:14px 0 4px}
+.soon-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px} .soon-h h2{font-size:17px;margin:0}
+.soon-s{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.soon-d{flex:0 0 auto;min-width:150px;max-width:220px;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
+.soon-d.now{border-color:#C4B5FD;box-shadow:0 0 0 2px rgb(124 58 237 / .14),var(--shadow)}
+.soon-day{display:block;font-size:13px;color:var(--vio-ink);margin-bottom:6px}
+.soon-d ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.soon-e{display:flex;align-items:flex-start;gap:7px;font:inherit;font-size:13px;line-height:1.4;color:var(--ink);background:none;border:0;padding:0;text-align:start;cursor:default}
+button.soon-e{cursor:pointer} button.soon-e:hover .sym{text-decoration:underline}
+.soon-e i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:#94A3B8}
+.sk-rep .soon-e i{background:#7C3AED} .sk-div .soon-e i{background:#10B981} .sk-dep .soon-e i{background:#F59E0B} .sk-mkt .soon-e i{background:#94A3B8}
+.soon-e small{display:block;color:var(--muted);font-size:11.5px}
+.soon-none{margin:0;font-size:13px;color:var(--muted)}
+.soon-dv{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:8px 0 0;padding:10px 12px;border-radius:14px;background:rgb(16 185 129 / .08);border:1px solid rgb(16 185 129 / .25);font-size:13.5px;color:var(--ink)}
+.soon-dv .sd-ic{width:10px;height:10px;border-radius:50%;background:#10B981;margin-inline-end:2px}
+@media (min-width:761px){.soon-s{flex-wrap:wrap;overflow:visible} .soon-d{flex:1 1 170px;max-width:none}}
+/* 28.10: צ׳יקו's button on a phone: a small round face without the word, so it covers less of the page */
+@media (max-width:640px){
+  .chatfab{width:52px;height:52px;min-height:52px;padding:0;justify-content:center;inset-inline-end:12px;bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .chatfab .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .chatfab .fab-av{width:46px;height:46px;margin:0}
 }
 .newsfeed{display:flex;flex-direction:column;gap:6px}
 .news-d{font-size:13px;font-weight:700;color:var(--muted);margin:10px 0 2px}
@@ -2068,6 +2109,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <button type="button" class="qa-b" data-tab="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h10"/><path d="M15 9h2"/></svg><span>חדשות ונתונים</span></button>
         <button type="button" class="qa-b" data-tab="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>הוסף נכסים</span></button>
       </div>
+      <section class="soon" id="soonSec" aria-labelledby="hSoon" hidden><div class="row soon-h"><h2 id="hSoon">השבועיים הקרובים בתיק שלך</h2><button type="button" class="lnk hold-all" data-tab="calendar">ללוח המלא ‹</button></div><div class="soon-s" id="soonList"></div><p class="soon-dv" id="soonDiv" hidden></p></section>
       <section aria-labelledby="hHold" id="holdSec" class="hold lite top">
       <div class="row"><h2 id="hHold">החזקות עיקריות</h2><button type="button" class="lnk hold-all" id="holdAll" aria-expanded="false">הצג הכל ‹</button><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button><button type="button" class="chip" data-hc="both" aria-pressed="false" title="שקלים, ומתחת בדולרים">₪+$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
       <div class="panel scroll">
@@ -16902,7 +16944,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -16971,6 +17013,7 @@ function render(){
   // and the profit from the dollar costs, so a dollar holding's profit leaves the dollar's own move out
   const two=(a,b)=>`${a}<div class="nm"><span class="n">${b}</span></div>`;   // shekels, and the dollars beneath
   const vcell=(ils_,usd_)=>HC==='usd'?usd_:HC==='both'?two(ils_,usd_):ils_;
+  const mxW=Math.max(0,...m.pos.map(x=>x.w||0));
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
     const dc=DC&&DC[p.sym], uc=dc&&dc.cost>0?dc.cost:null, ud=uc!=null?dc.val-dc.cost:null, udp=uc?ud/uc*100:null, ap=dc&&dc.est?'≈':'';
@@ -16981,7 +17024,7 @@ function render(){
     return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s')}<span class="sym">${esc(lab(p.sym))}</span>${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
     <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
-    <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span></td>
+    <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
   {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
@@ -17703,6 +17746,29 @@ function kBenchLine(){const el=$('kBenchL'); if(!el)return; if(acct!=='all'||KV!
   let B=null; try{B=benchCompare(mAllNow())}catch(e){} const s=B&&B.ready&&B.rows.find(r=>r.k==='spx'); if(!s){el.hidden=true;return}
   const d=B.rows[0].val-s.val; el.hidden=false;
   el.innerHTML=`מול S&P 500: <b class="n ${d>=0?'up':'down'}">${ils(Math.abs(d))} ${d>=0?'יותר':'פחות'}</b> מאותן הפקדות במדד`; el.title='אילו אותן הפקדות היו נכנסות ל-S&P 500 באותם ימים, בשקלים, בלי דיבידנדים ועמלות'}
+// 28.10: the coming two weeks on the home screen, one card a day that has something: the reports of the companies held
+// (the announced day, or the estimate, said), the ex-dividend and payment days, the deposit day, and the days a market
+// is closed or short. Under it, the dividends the portfolio pays in a year, from each company's current yield. Facts
+// from the calendars, not a forecast
+function soonEvents(now){
+  const today=ilDay(), end=isoAdd(today,14), D={}, put=(d,e)=>{if(d<today||d>end)return; (D[d]=D[d]||[]).push(e)};
+  for(const e of calEvents())if(e.k==='rep'||e.k==='ex'||e.k==='pay')put(e.d,{k:e.k,sym:e.sym,est:!!e.est,t:e.k==='rep'?'דוח':e.k==='ex'?'אקס דיבידנד':'תשלום דיבידנד'});
+  try{const di=depInfo(now); if(di&&di.next){const d=isoDay(di.next); put(d,{k:'dep',t:'יום ההפקדה',x:depAmtTxt(di)})}}catch(e){}
+  for(let k=0;k<=14;k++){const d=isoAdd(today,k), wd=wdOf(d); if(wd===0||wd===6)continue; const M=mktDay(d);
+    for(const [mk,nm] of [['il','ת״א'],['us','ארה״ב']]){const x=M[mk]; if(x&&x.st==='closed'&&x.why)put(d,{k:'mkt',t:`${nm}: אין מסחר`,x:x.why}); else if(x&&x.st==='short')put(d,{k:'mkt',t:`${nm}: יום מקוצר`,x:x.why||''})}}
+  return Object.keys(D).sort().map(d=>({d,E:D[d]}))}
+function renderSoon(m){
+  const sec=$('soonSec'), box=$('soonList'); if(!sec||!box)return; let L=[]; try{L=soonEvents(new Date())}catch(e){}
+  let dv=null; try{if(RS&&RS.companies&&m&&m.pos){const g=m.pos.reduce((t,p)=>{const y=(RS.companies[p.sym]||{}).dy; return t+(y>0?p.val*y/100:0)},0); if(g>0)dv=g}}catch(e){}
+  if(!L.length&&!dv){sec.hidden=true;return} sec.hidden=false;
+  const today=ilDay(), IC={rep:'rep',ex:'div',pay:'div',dep:'dep',mkt:'mkt'};
+  const day=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
+  setH(box,L.length?L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${esc(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${esc(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join('')
+    :'<p class="soon-none">אין דוחות, דיבידנדים או חגים בשבועיים הקרובים בניירות שלך.</p>');
+  const el=$('soonDiv'); if(el){el.hidden=!dv; if(dv)el.innerHTML=`<span class="sd-ic" aria-hidden="true"></span>התיק מייצר כ-<b class="n">${ils(dv)}</b> בשנה מדיבידנדים, לפני מס (כ-<span class="n">${ils(dv/12)}</span> בחודש) <button type="button" class="hold-all" data-godiv="1">לפירוט ›</button>`}
+}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-godiv]'); if(!b)return; showTab('forecast',true);
+  setTimeout(()=>{const s=document.querySelector('section[aria-labelledby="hDiv"]'); if(s){if(s.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}} try{s.scrollIntoView({block:'start'})}catch(e){}}},80)});
 function kMiniFill(){
   const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
   const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};

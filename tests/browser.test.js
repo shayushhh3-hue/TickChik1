@@ -214,6 +214,24 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
   }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
 });
 
+test('the coming two weeks on the home screen: reports and dividends by day, said when estimated, and the year\'s dividends',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const R0=store.getDoc('research/latest'), d=JSON.parse(JSON.stringify(R0.exists?R0.data:{companies:{}})), day=k=>new Date(Date.now()+k*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
+  d.companies=d.companies||{}; d.companies.NVDA={...(d.companies.NVDA||{}),next:day(2),nextEst:false}; d.companies.MSFT={...(d.companies.MSFT||{}),next:day(8),nextEst:true};
+  d.companies.KO={...(d.companies.KO||{}),dy:3,div:{ex:day(5),pay:day(30),last:{amt:0.51,date:day(-80)}}};
+  store.setDoc('research/latest',d,{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('soonSec').hidden,null,{timeout:15000});
+    const r=await pg.evaluate(()=>({days:[...document.querySelectorAll('#soonList .soon-d')].map(x=>x.textContent),dv:document.getElementById('soonDiv').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.ok(r.days.some(x=>/דוח NVDA/.test(x)),'the report: '+JSON.stringify(r.days)); assert.ok(r.days.some(x=>/דוח MSFT \(משוער\)/.test(x)),'an estimated day says so');
+    assert.ok(r.days.some(x=>/אקס דיבידנד KO/.test(x)),'the ex-dividend day'); assert.ok(!r.days.some(x=>/תשלום דיבידנד KO/.test(x)),'not past two weeks');
+    assert.match(r.dv,/התיק מייצר כ-₪[\d,]+ בשנה מדיבידנדים, לפני מס/); assert.equal(r.ox,false,'no sideways scroll of the page');
+    await pg.click('#soonDiv [data-godiv]'); await pg.waitForTimeout(600);
+    assert.equal(await pg.evaluate(()=>document.body.dataset.page),'forecast','the dividends\' details');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(R0.exists)store.setDoc('research/latest',R0.data,{silent:true})}
+});
+
 test('the simple home: one to-do list, the prices\' trust mark, the same total in every view, and the hero on a phone',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, M0=store.getDoc('system/mail'), S0=store.getDoc('settings/main').data;
@@ -231,9 +249,9 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // the rules' alerts are not on the home page: they are in בקרה, with their count on its button
       assert.ok(!r.cats.some(c=>['ריכוז','סטייה','ירידה','מטבע','נעים יחד','חפיפה'].includes(c)),'no rule alerts on the home page: '+JSON.stringify(r.cats));
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
-        order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,3)}});
+        order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order,['insightBar','quickActs','holdSec'],'what happened today, the four actions, then the holdings (28.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order,['insightBar','quickActs','soonSec','holdSec'],'what happened today, the four actions, the coming two weeks, then the holdings (28.10): '+JSON.stringify(ctl.order));
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
       assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
