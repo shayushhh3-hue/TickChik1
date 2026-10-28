@@ -1111,7 +1111,8 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.setItem('tr_fold',JSON.stringify({hExp:true,hStress:true}))}catch(e){}});
   await tab(pg,'risk'); await pg.waitForTimeout(800);
-  await pg.evaluate(()=>{for(const id of ['hExp','hStress']){const s=document.querySelector(`section[aria-labelledby="${id}"]`); if(!s.classList.contains('open'))s.querySelector('.fold-t').click()}}); await pg.waitForTimeout(400);
+  // 28.10: no folds any more: every section is open
+  assert.ok(await pg.evaluate(()=>['hExp','hStress'].every(id=>!!document.getElementById(id).offsetParent&&!document.querySelector('.fold-t'))),'the sections are open, with no toggle');
   const e=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
   assert.match(e.txt,/הנייר הגדול/); assert.match(e.txt,/חפיפה בין קרנות למניות: לא ידועה/,'fund holdings are unknown, said so'); assert.equal(e.ox,false,'no sideways scroll');
   for(const [k,re] of [['all',/ירידה אחידה של 20%/],['usd',/הדולר יורד ב-10%/],['group',/בקבוצת/]]){
