@@ -242,20 +242,22 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail]')),'"לא עכשיו" hides it');
       assert.deepEqual(await pg.evaluate(()=>window.__ux.todo().filter(x=>x.sev==='tip').map(x=>x.cat)),['מה חדש'],'then the next suggestion');
       // one switch for the level of detail: at the end of the home page and in the settings, not above everything
-      const vs=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="overview"]'), v=p.querySelector('.viewsw'); return {n:document.querySelectorAll('.viewsw').length,last:!!v&&[...p.children].indexOf(v.closest('.viewwrap'))>[...p.children].indexOf(document.getElementById('holdSec'))}});
-      assert.deepEqual(vs,{n:2,last:true});
-      await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
-      assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'&&getComputedStyle(document.getElementById('sideMore')).display!=='none'),'simple: no ticker, two figures, "עוד נתונים" under the value');
-      await pg.evaluate(()=>document.querySelector('[data-pane="overview"] [data-view="full"]').click()); await pg.waitForTimeout(300);
-      // the hero on a phone: two white cards, four more one tap away ("עוד נתונים"): six white cards, the day's movers first
-      const hv=()=>pg.evaluate(()=>[...document.querySelectorAll('.hero .side>.stat')].filter(x=>getComputedStyle(x).display!=='none').map(x=>x.querySelector('.k').textContent));
-      assert.deepEqual(await hv(),['רווח מול עלות','מול ההפקדות']);
-      await pg.click('#sideMore'); const K=await hv(); assert.equal(K.length,6); assert.deepEqual(K.slice(0,4),['רווח מול עלות','מול ההפקדות','עלתה הכי הרבה היום','ירדה הכי הרבה היום']);
-      assert.equal(await pg.getAttribute('#sideMore','aria-expanded'),'true'); await pg.click('#sideMore'); assert.equal((await hv()).length,2);
+      // 28.10: the lean home ends with the holdings; the detail switch lives in the settings only
+      const vs=await pg.evaluate(()=>({n:document.querySelectorAll('.viewsw').length,home:!!document.querySelector('[data-pane="overview"] .viewsw'),last:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).pop()}));
+      assert.deepEqual(vs,{n:1,home:false,last:'idxRow'},'the holdings, then only the indices row');
+      await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
+      assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'),'simple: no ticker');
+      await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="full"]').click()); await pg.waitForTimeout(300);
+      // 28.10: the lean home: the six figures of the day are on "מבט לאחור", the day's movers after the two results
+      await tab(pg,'history'); await pg.waitForTimeout(300);
+      const K=await pg.evaluate(()=>[...document.querySelectorAll('#quickSec .side>.stat')].filter(x=>x.offsetParent).map(x=>x.querySelector('.k').textContent));
+      assert.equal(K.length,6); assert.deepEqual(K.slice(0,4),['רווח מול עלות','מול ההפקדות','עלתה הכי הרבה היום','ירדה הכי הרבה היום']);
+      await tab(pg,'overview'); await pg.waitForTimeout(300);
       // the funds' date, in plain words behind "למה?"
       await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);
       assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/מחיר אחד ביום, אחרי סגירת הבורסה/);
       await pg.evaluate(()=>document.querySelector('[data-termx]').click());
+      await tab(pg,'risk'); await pg.waitForTimeout(300);   // the groups' mix lives on the control screen now
       assert.equal(await pg.evaluate(()=>document.getElementById('hMixH').textContent),'פיזור לפי הקבוצות שלך');
       await pg.evaluate(()=>document.querySelector('.mixnote [data-term="grpsec"]').click()); await pg.waitForTimeout(200);
       assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/קבוצה או ענף\?.*השווי הכולל זהה/);
@@ -265,8 +267,8 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const now=new Date().toISOString(), st={...(Q0.stale||{})}; delete st.TA125; delete st.TA90;
       store.setDoc('quotes/latest',{...Q0,stale:st,lag:{},updatedAt:now,attemptAt:now,meta:{...(Q0.meta||{}),TA125:{src:'maya',ccy:'ILS',date:new Date(Date.now()-864e5).toISOString().slice(0,10)}}},{silent:true});
       const {ctx,pg}=await open(1280);
-      const r=await pg.evaluate(()=>({chip:document.getElementById('kTrust').textContent,row:document.getElementById('dkTrust').className,txt:document.getElementById('dkTrust').textContent,side:!!document.getElementById('sideMore').offsetParent}));
-      assert.match(r.chip,/המחירים עדכניים/); assert.match(r.row,/ok/); assert.match(r.txt,/קרנות: מחיר רשמי מ-/); assert.ok(!r.side,'all six figures on a wide screen');
+      const r=await pg.evaluate(()=>({chip:document.getElementById('kTrust').textContent,row:document.getElementById('dkTrust').className,txt:document.getElementById('dkTrust').textContent,side:!document.getElementById('sideMore')}));
+      assert.match(r.chip,/המחירים עדכניים/); assert.match(r.row,/ok/); assert.match(r.txt,/קרנות: מחיר רשמי מ-/); assert.ok(r.side,'no "עוד נתונים" button any more (28.10)');
       await pg.click('#kTrust'); await pg.waitForTimeout(500);
       assert.ok(await pg.evaluate(()=>document.querySelector('#dkTrust details').open),'the chip opens the details');
       assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -323,6 +325,7 @@ test('what is used: screens and the parts seen on the screen, per day, in the vi
   try{
     const {ctx,pg}=await open(390);
     await tab(pg,'plan'); await pg.waitForTimeout(400); await tab(pg,'risk'); await pg.waitForTimeout(400); await tab(pg,'overview'); await pg.waitForTimeout(300);
+    await tab(pg,'risk'); await pg.waitForTimeout(300);   // 28.10: the day's card lives on the control screen
     await pg.evaluate(()=>document.getElementById('deskSec').scrollIntoView({block:'start'}));
     await pg.waitForFunction(()=>{const u=window.__ux.use(), d=u.days&&u.days[Object.keys(u.days).sort().pop()]; return !!(d&&d['s:hDesk'])},null,{timeout:10000}).catch(()=>{});   // a part counts after a second and a half in view
     await pg.evaluate(()=>window.__ux.useSave()); await pg.waitForTimeout(500);
@@ -470,10 +473,10 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     // the tour: one thing at a time, back and forth, and "דלג" ends it for good
     await tab(pg,'overview'); await pg.evaluate(()=>document.querySelector('#desk [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
     const st=()=>pg.evaluate(()=>({card:!document.getElementById('tourCard').hidden,step:document.querySelector('#tourCard .sub')?.textContent||'',lit:[...document.querySelectorAll('.tourhl')].map(e=>e.id||e.className).join()}));
-    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 9$/); assert.match(s.lit,/worth/);
+    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 8$/); assert.match(s.lit,/worth/);
     await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^2 מתוך/); assert.equal(s.lit,'kTrust');
     await pg.click('#tourCard [data-tour="back"]'); s=await st(); assert.match(s.step,/^1 מתוך/);
-    for(let i=0;i<3;i++)await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^4 מתוך/); assert.match(await pg.evaluate(()=>document.getElementById('tourCard').textContent),/בבלינק: "ההשקעות שלי"/);
+    for(let i=0;i<2;i++)await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^3 מתוך/); assert.match(await pg.evaluate(()=>document.getElementById('tourCard').textContent),/בבלינק: "ההשקעות שלי"/);
     const ov=await pg.evaluate(()=>{const c=document.getElementById('tourCard').getBoundingClientRect(), b=document.getElementById('botbar').getBoundingClientRect(); return c.bottom<=b.top+1});
     assert.ok(ov,'the card sits above the bottom bar');
     await pg.click('#tourCard [data-tour="end"]'); s=await st(); assert.ok(!s.card); assert.equal(s.lit,'');
@@ -685,8 +688,12 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
       const k=['kBest','kWorst'].map(id=>{const s=document.querySelector('#'+id+' .sym'); return s?s.textContent:'—'});
       return {best:d[0]&&d[0].v>0?d[0].s:'—',worst:d.length&&d[d.length-1].v<0?d[d.length-1].s:'—',k}});
     let M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],JSON.stringify(M)); assert.notEqual(M.best,'—');
-    await pg.click('#sideMore'); assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=R('kPnl').bottom, b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox'), t=R('sideMore');
-      return b.top>p&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom&&Math.abs(y.top-f.top)<2&&t.top>=y.bottom&&getComputedStyle(document.getElementById('kBestBox')).backgroundColor===getComputedStyle(document.getElementById('kWorstBox')).backgroundColor}),'cards of one look under "רווח מול עלות", two by two, then the button (the two tiles above them take their own colours)');
+    // 28.10: the six figures of the day live on "מבט לאחור" (the lean home has none of them), two by two on a phone
+    assert.ok(await pg.evaluate(()=>!document.getElementById('kPnl').offsetParent),'not on the home');
+    await tab(pg,'history'); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=R('kPnl'), b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox');
+      return p.height>0&&b.top>p.bottom-1&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom-1&&Math.abs(y.top-f.top)<2}),'the six cards two by two on "מבט לאחור"');
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
     // a mover opens its page
     const lk=await pg.evaluate(()=>{const r=document.querySelector('.hero .side .stat.secl'); return r&&r.dataset.sec});
     if(lk){await pg.click('.hero .side .stat.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
@@ -855,7 +862,7 @@ test('dividends: the way of a dividend, what came in per security with its tax a
 
 test('the spread of the portfolio: a bar or a pie at a click, the same shares, kept for next time',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await pg.waitForSelector('#mixHome:not([hidden])');
+  const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForSelector('#mixHome:not([hidden])');   // 28.10: on the control screen
   const st=()=>pg.evaluate(()=>{const v=e=>!!e.offsetParent||e.getBoundingClientRect().width>0, pie=document.getElementById('mixPie');
     return {bar:v(document.getElementById('mixBar')),pie:!pie.hasAttribute('hidden')&&pie.getBoundingClientRect().width>0,slices:pie.querySelectorAll('path,circle').length,label:pie.getAttribute('aria-label'),
       list:document.querySelectorAll('#mixList li').length,on:[...document.querySelectorAll('[data-mixv]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.mixv),
@@ -1250,7 +1257,7 @@ test('planned money out and in: entered once, framed in today\'s numbers, asked 
     const ask=async()=>{const n0=seen.length; await pg.fill('#anaQ','מה הסיכון הכי גדול בתיק שלי?'); await pg.click('#anaForm .chat-send'); await pg.waitForTimeout(2500); const all=seen.slice(n0).join(' '); assert.ok(all.includes('ענה על שאלה'),'the question was sent'); return all.split('FACTS:').pop()};
     let sent=await ask(); assert.ok(!sent.includes('planned_cash_flows'),'without the tick nothing about it goes');
     await pg.evaluate(()=>document.querySelector('#anaBox .chat-x').click()); await tab(pg,'forecast'); await pg.waitForTimeout(300);
-    await pg.evaluate(()=>document.getElementById('flAI').scrollIntoView({block:'center'})); await pg.click('#flAI'); await pg.waitForTimeout(1200);
+    await pg.evaluate(()=>{const e=document.getElementById('flAI'); e.scrollIntoView({block:'center'}); e.click()}); await pg.waitForTimeout(1500);
     assert.equal(store.getDoc('settings/main').data.flowsAI,true);
     await pg.click('#chatFab'); await pg.waitForTimeout(300); sent=await ask();
     assert.ok(sent.includes('planned_cash_flows')&&sent.includes('₪5,000'),'with the tick: date and amount'); assert.ok(!sent.includes('מקדמה'),'never the note');

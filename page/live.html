@@ -1307,11 +1307,11 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .acctpick input[type=text],.acctpick select{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 /* v131 */
 .taperow{position:relative}
-.tapetg{position:absolute;z-index:3;inset-inline-end:12px;top:-12px;width:24px;height:24px;padding:0;border-radius:999px;border:1px solid rgb(255 255 255 / .55);background:#2f7fd6;color:#fff;font:700 17px/1 var(--sans);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 6px rgb(0 0 0 / .28)}
+.tapetg{position:absolute;z-index:3;inset-inline-end:12px;top:-12px;width:24px;height:24px;padding:0;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--vio-ink);font:700 17px/1 var(--sans);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 6px rgb(0 0 0 / .28)}
 .tapetg:hover{background:#3b8de6}
 .taperow.off .tapewrap{display:none}
-.taperow.off{height:12px;background:linear-gradient(90deg,rgb(47 127 214 / .45),rgb(47 127 214 / .12));border-top:1px solid rgb(255 255 255 / .12)}
-.taperow.off .tapetg{top:-7px}
+.taperow.off{height:14px;background:transparent;border:0}
+.taperow.off .tapetg{top:-6px;inset-inline-end:auto;inset-inline-start:50%;transform:translateX(50%);width:28px;height:18px;border-radius:9px;font-size:13px;opacity:.8}
 .ntgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:6px 16px}
 .check.nt{align-items:flex-start;font-size:13px;line-height:1.45}
 .check.nt input{margin-top:3px}
@@ -1578,7 +1578,7 @@ html[data-theme="dark"] .sidemore{border-color:var(--line);background:transparen
 .calm .hero .side{align-content:start}
 body:not([data-page="overview"]) .hero .sidemore{display:none!important}
 .kvf .hold .hkind:not(.hccy){display:none}
-.kvf .hero .side>#kDepBox,.kvf .hero .side>#kYtdBox{display:none} @media (max-width:760px){.kvf .hero .side>.stat:first-child{grid-column:1/-1}}
+.kvf .side>#kDepBox,.kvf .side>#kYtdBox{display:none}
 .dk-trust{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--ok-bg);color:var(--ok-ink)}
 .dk-trust.warn{background:var(--warn-bg);color:var(--warn)}
 .dk-trust .dt-ic{width:20px;height:20px;flex:none;margin-top:2px}
@@ -1592,7 +1592,7 @@ body:not([data-page="overview"]) .hero .sidemore{display:none!important}
 .dk-top>b{font-size:14px;color:var(--ink);font-weight:700}
 .dk-btns{display:inline-flex;flex-wrap:wrap;gap:4px 2px;align-items:center;margin-inline-start:2px}
 .dk-top li.rep .dk-cat{background:var(--info-bg);color:var(--info-ink)}
-.dk-top li.tip{color:var(--ink2)} .dk-top li.tip .dk-cat{background:var(--gold-soft);color:var(--accent-ink)}
+.dk-top li.sev-tip{color:var(--ink2)} .dk-top li.sev-tip .dk-cat{background:var(--gold-soft);color:var(--accent-ink)}
 .dk-rest>summary{font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;min-height:28px;padding-top:2px}
 .dk-rest ol{margin-top:6px}
 .term.lw{width:auto;height:auto;min-height:24px;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap}
@@ -1939,15 +1939,6 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button></div>
       </div>
       <div class="ktiles" id="kindRow" role="group" aria-label="מניות, קרנות ומזומן"></div>
-      <div class="side lessm">
-        <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
-        <div class="stat" id="kDepBox"><div class="k">מול ההפקדות</div><span class="v" id="kDep">—</span><div class="d" id="kDepD"></div></div>
-        <div class="stat" id="kBestBox"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
-        <div class="stat" id="kWorstBox"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
-        <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
-        <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
-        <button type="button" class="sidemore" id="sideMore" aria-expanded="false" aria-controls="kBestBox kWorstBox kYtdBox kFxBox">עוד נתונים</button>
-      </div>
     </div>
     <div class="taperow" id="tapeRow" data-adv><button type="button" class="tapetg" id="tapeTg" aria-expanded="true" aria-label="להסתיר את פס המניות" title="להסתיר את פס המניות">−</button><div class="tapewrap" dir="ltr" aria-hidden="true"><div class="tape" id="tape"></div></div></div>
   </header>
@@ -1993,44 +1984,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <div id="taxBanner" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
     <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
-    <!-- 13.10 (stage 3.1): what needs attention comes first, the holdings after it -->
-    <section aria-labelledby="hDesk" id="deskSec" hidden>
-      <div class="panel desk" id="desk" tabindex="-1"></div>
-    </section>
-    <section aria-labelledby="hMixH" id="mixHome" hidden>
-      <div class="row"><h2 id="hMixH">פיזור לפי הקבוצות שלך</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
-      <div class="panel mixh" id="mixPanel"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור לפי הקבוצות שלך"></div><svg class="mixpie" id="mixPie" viewBox="0 0 200 200" role="img" aria-label="פיזור התיק לפי קבוצות, כעוגה" hidden></svg><ul class="mixlist" id="mixList"></ul></div>
-      <p class="note mixnote">הקבוצות שקבעת לכל נייר. החלוקה לפי ענף, מטבע ובורסה נמצאת בבקרה. <button type="button" class="term lw" data-term="grpsec" aria-label="מה ההבדל בין קבוצה לענף?" aria-expanded="false">מה ההבדל?</button></p>
-    </section>
-    <section id="healthHome" aria-labelledby="hHealth" hidden>
-      <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
-      <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul>
-        <p class="note">המדד בודק אם התיק עומד בכללים שקבעת. 100 = הכול בסדר. הוא לא מודד תשואה ולא ממליץ. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
-    </section>
-    <section aria-labelledby="hAnaE" id="anaSec" hidden>
-      <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
-        <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
-        <p class="ae-now" id="aeNow" role="status" hidden></p>
-        <div class="ana-chips" role="group" aria-label="להתחיל שיחה עם צ׳יקו">
-          <button type="button" class="btn pri" data-ana="explain">הסבר את התיק שלי</button>
-          <button type="button" class="btn" data-ana="analyze">נתח לי את התיק</button>
-          <button type="button" class="btn" data-ana="day" data-needs-ai hidden>סכם לי את היום</button>
-          <button type="button" class="btn" data-ana="q" data-q="מה הסיכון הכי גדול בתיק שלי?" data-needs-ai hidden>מה הסיכון הכי גדול?</button>
-          <button type="button" class="btn" data-ana="open" data-needs-ai hidden>לשאול שאלה</button>
-        </div>
-        <p class="note" id="anaNote"></p>
-      </div>
-    </section>
     
-    <details class="briefd" id="briefSec" data-adv hidden>
-      <summary><h2 id="hBrief">במילים פשוטות</h2><span class="sub">מה קרה היום, הסיכון הגדול, והאם התיק עומד בתוכנית</span></summary>
-      <div class="panel brief" id="brief"></div>
-    </details>
-    <section aria-labelledby="hGoalOv" id="goalOvSec" hidden>
-      <h2 id="hGoalOv">היעד שלי</h2>
-      <div class="panel goal" id="goalOv"></div>
-    </section>
-    <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
     
     
 
@@ -2047,6 +2001,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   </div>
 
   <div class="pane" data-pane="plan" hidden>
+    <section aria-labelledby="hGoalOv" id="goalOvSec" hidden>
+      <h2 id="hGoalOv">היעד שלי</h2>
+      <div class="panel goal" id="goalOv"></div>
+    </section>
     <section aria-labelledby="hPlan">
       <div class="row"><h2 id="hPlan">תוכנית ההגדלה</h2><span class="saved" id="planSaved"></span></div>
       <div class="tracks" role="group" aria-label="מסלול">
@@ -2275,6 +2233,17 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     </section>
   </div>
   <div class="pane" data-pane="history" hidden>
+    <section aria-labelledby="hQuick" id="quickSec">
+      <div class="row"><h2 id="hQuick">המספרים של היום</h2></div>
+      <div class="side">
+        <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
+        <div class="stat" id="kDepBox"><div class="k">מול ההפקדות</div><span class="v" id="kDep">—</span><div class="d" id="kDepD"></div></div>
+        <div class="stat" id="kBestBox"><div class="k">עלתה הכי הרבה היום</div><span class="v" id="kBest">—</span><div class="d" id="kBestD"></div></div>
+        <div class="stat" id="kWorstBox"><div class="k">ירדה הכי הרבה היום</div><span class="v" id="kWorst">—</span><div class="d" id="kWorstD"></div></div>
+        <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
+        <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
+      </div>
+    </section>
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
       <div class="panel since" id="since"></div>
@@ -2396,6 +2365,19 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
 
   <div class="pane" data-pane="risk" hidden>
     <div class="subnav" id="riskNav" role="navigation" aria-label="קפיצה לחלק בבקרה"></div>
+    <section aria-labelledby="hDesk" id="deskSec" hidden>
+      <div class="panel desk" id="desk" tabindex="-1"></div>
+    </section>
+    <section id="healthHome" aria-labelledby="hHealth" hidden>
+      <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
+      <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul>
+        <p class="note">המדד בודק אם התיק עומד בכללים שקבעת. 100 = הכול בסדר. הוא לא מודד תשואה ולא ממליץ. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
+    </section>
+    <section aria-labelledby="hMixH" id="mixHome" hidden>
+      <div class="row"><h2 id="hMixH">פיזור לפי הקבוצות שלך</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
+      <div class="panel mixh" id="mixPanel"><div class="mixbar" id="mixBar" role="img" aria-label="פיזור לפי הקבוצות שלך"></div><svg class="mixpie" id="mixPie" viewBox="0 0 200 200" role="img" aria-label="פיזור התיק לפי קבוצות, כעוגה" hidden></svg><ul class="mixlist" id="mixList"></ul></div>
+      <p class="note mixnote">הקבוצות שקבעת לכל נייר. החלוקה לפי ענף, מטבע ובורסה נמצאת בבקרה. <button type="button" class="term lw" data-term="grpsec" aria-label="מה ההבדל בין קבוצה לענף?" aria-expanded="false">מה ההבדל?</button></p>
+    </section>
     <section aria-labelledby="hCtl">
         <div class="row"><h2 id="hCtl">בקרה</h2><span class="legend" aria-label="משמעות הצבעים"><i class="ok"></i>תקין <i class="warn"></i>לבדיקה <i class="crit"></i>חריגה <i class="info"></i>מידע</span></div>
         <ul class="alerts" id="alerts"><li class="alert info"><span class="tag">ממתין</span><span>ההתראות יופיעו כאן אחרי שנתוני התיק ייטענו.</span></li></ul>
@@ -2477,6 +2459,24 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="gg" id="prOpp"><div class="empty" data-night>הצמדים יופיעו כאן אחרי הריצה הלילית.</div></div>
     </section>
     <aside class="callout"><b>חשוב לדעת.</b> <span id="ltLead">הבדיקה ארוכת הטווח תופיע כאן אחרי טעינת הנתונים.</span></aside>
+    <section aria-labelledby="hAnaE" id="anaSec" hidden>
+      <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
+        <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
+        <p class="ae-now" id="aeNow" role="status" hidden></p>
+        <div class="ana-chips" role="group" aria-label="להתחיל שיחה עם צ׳יקו">
+          <button type="button" class="btn pri" data-ana="explain">הסבר את התיק שלי</button>
+          <button type="button" class="btn" data-ana="analyze">נתח לי את התיק</button>
+          <button type="button" class="btn" data-ana="day" data-needs-ai hidden>סכם לי את היום</button>
+          <button type="button" class="btn" data-ana="q" data-q="מה הסיכון הכי גדול בתיק שלי?" data-needs-ai hidden>מה הסיכון הכי גדול?</button>
+          <button type="button" class="btn" data-ana="open" data-needs-ai hidden>לשאול שאלה</button>
+        </div>
+        <p class="note" id="anaNote"></p>
+      </div>
+    </section>
+    <details class="briefd" id="briefSec" data-adv hidden>
+      <summary><h2 id="hBrief">במילים פשוטות</h2><span class="sub">מה קרה היום, הסיכון הגדול, והאם התיק עומד בתוכנית</span></summary>
+      <div class="panel brief" id="brief"></div>
+    </details>
   </div>
 
   <div class="pane" data-pane="state" hidden>
@@ -17887,7 +17887,7 @@ function setView(v,keep){VIEW=v==='calm'?'calm':'full'; if(!keep){try{localStora
 try{if(VIEW==='calm')document.querySelector('.wrap').classList.add('calm')}catch(e){}
 let MORE=false; try{MORE=localStorage.getItem('tr_more')==='1'}catch(e){}
 // ---- v135: the control tab folds. Each section's heading toggles it; a chip row at the top jumps to it ----
-const FOLD_OPEN=new Set(['hCtl','hKpi']), FOLD_LBL={hCtl:'בקרה',hKpi:'תמונת מצב',hHeat:'מה זז היום',hRulesOv:'הכללים',hMix:'הקצאה מול יעד',hExp:'חשיפות',hStress:'מבחן לחץ',hPnl:'רווח לפי נייר',hCore:'ליבה ולוויינים',hCo:'נעים יחד',hRk:'מטלטלים את התיק',hPr:'צמדים',hOp:'מאזנים'};
+const FOLD_OPEN=new Set(['hCtl','hKpi','hHealth','hMixH']), FOLD_LBL={hHealth:'מדד בריאות',hMixH:'פיזור לפי קבוצות',hCtl:'בקרה',hKpi:'תמונת מצב',hHeat:'מה זז היום',hRulesOv:'הכללים',hMix:'הקצאה מול יעד',hExp:'חשיפות',hStress:'מבחן לחץ',hPnl:'רווח לפי נייר',hCore:'ליבה ולוויינים',hCo:'נעים יחד',hRk:'מטלטלים את התיק',hPr:'צמדים',hOp:'מאזנים'};
 let FOLD={}; try{FOLD=JSON.parse(localStorage.getItem('tr_fold')||'{}')||{}}catch(e){FOLD={}}
 function foldIs(id){return FOLD[id]!=null?!!FOLD[id]:FOLD_OPEN.has(id)}
 function foldSet(id,on){FOLD[id]=!!on; try{localStorage.setItem('tr_fold',JSON.stringify(FOLD))}catch(e){} const s=document.querySelector('[data-pane="risk"] section[aria-labelledby="'+id+'"]'); if(!s)return; s.classList.toggle('open',!!on); const b=s.querySelector('.fold-t'); if(b)b.setAttribute('aria-expanded',String(!!on)); const c=document.querySelector('#riskNav [data-fold="'+id+'"]'); if(c)c.setAttribute('aria-pressed',String(!!on))}
@@ -19039,7 +19039,7 @@ function renderSources(){
 // ---- v131: from the partner's list. The ticker tape folds behind a small blue tab; two short chimes (צ׳יקו's answers, the
 // system) that the settings can silence; and each person chooses which alert categories reach them at all. ----
 // the tape: shown or hidden per device
-let TAPE_ON=true; try{TAPE_ON=localStorage.getItem('tr_tape')!=='0'}catch(e){}
+let TAPE_ON=true; try{const v=localStorage.getItem('tr_tape'); TAPE_ON=v==null?innerWidth>=760:v!=='0'}catch(e){}   // 28.10: off on a phone until the viewer turns it on
 function tapeApply(){const r=$('tapeRow'),b=$('tapeTg'); if(!r||!b)return; r.classList.toggle('off',!TAPE_ON); b.setAttribute('aria-expanded',String(TAPE_ON)); const t=TAPE_ON?'להסתיר את פס המניות':'להציג את פס המניות'; b.setAttribute('aria-label',t); b.title=t; b.textContent=TAPE_ON?'−':'+'}
 document.addEventListener('click',ev=>{if(!ev.target.closest('#tapeTg'))return; TAPE_ON=!TAPE_ON; try{localStorage.setItem('tr_tape',TAPE_ON?'1':'0')}catch(e){} tapeApply()});
 tapeApply();
@@ -22840,7 +22840,7 @@ function setNav(o){const bar=$('tabsbar'),more=document.querySelector('#botbar [
 const BB_ON=['overview','mine','search','risk'];
 function bbSync(t){const g=navGroup(t),on=BB_ON.includes(g)?g:'more';
   for(const b of document.querySelectorAll('#botbar [data-bb]')){const x=b.dataset.bb;if(x===on&&x!=='more')b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');b.classList.toggle('on',x==='more'&&on==='more')}}
-document.addEventListener('click',e=>{if(!(e.target.closest&&e.target.closest('#insightBar')))return; const d=$('deskSec'); if(d&&!d.hidden){d.scrollIntoView({behavior:'smooth',block:'start'})} else showTab('risk',true)});
+document.addEventListener('click',e=>{if(!(e.target.closest&&e.target.closest('#insightBar')))return; showTab('risk',true); setTimeout(()=>{const d=$('desk'); if(d&&d.offsetParent){d.scrollIntoView({behavior:'smooth',block:'start'}); try{d.focus({preventScroll:true})}catch(x){}}},80)});
 $('botbar').addEventListener('click',e=>{const b=e.target.closest('[data-bb]');if(!b)return;if(b.dataset.bb==='more'){setNav(true);return}showTab(b.dataset.bb,true)});
 {let rzT=null,lastW=innerWidth;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(Math.abs(innerWidth-lastW)>40){lastW=innerWidth;try{render()}catch(e){}}},250)})}
 $('navtab').addEventListener('click',()=>setNav(true));$('scrim').addEventListener('click',()=>setNav(false));$('navclose').addEventListener('click',()=>setNav(false));
@@ -23019,7 +23019,7 @@ function uiApply(){
   try{FOLD=JSON.parse(UXK('tr_fold')||'{}')||{}}catch(e){}
   try{const v=UXK('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
   try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){} try{const v=UXK('tr_kv'); KV=v==='fund'||v==='stock'?v:'all'}catch(e){}
-  try{TAPE_ON=UXK('tr_tape')!=='0'; tapeApply()}catch(e){}
+  try{const v=UXK('tr_tape'); TAPE_ON=v==null?innerWidth>=760:v!=='0'; tapeApply()}catch(e){}
   try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
   try{render()}catch(e){}
 }
@@ -23203,7 +23203,7 @@ function todoOf(m,A,T){
   const tip=L.findIndex(x=>x.sev==='tip'); return tip<0?L:L.filter((x,i)=>x.sev!=='tip'||i===tip);
 }
 function todoH(L,nAck){
-  const li=x=>`<li class="${x.sev}">${niH(x.ic)}<span><span class="dk-cat">${esc(x.cat)}</span> ${x.h}<span class="dk-btns">${x.b}</span></span></li>`;
+  const li=x=>`<li class="${x.sev==='tip'?'sev-tip':x.sev}">${niH(x.ic)}<span><span class="dk-cat">${esc(x.cat)}</span> ${x.h}<span class="dk-btns">${x.b}</span></span></li>`;
   const ackLine=nAck?`<p class="dk-ackd">${nAck===1?'סימנת שבדקת נושא אחד. הוא יחזור לרשימה אם משהו בו ישתנה, או בעוד שבוע.':`סימנת שבדקת ${nAck} נושאים. הם יחזרו לרשימה אם משהו בהם ישתנה, או בעוד שבוע.`}${canWrite?' <button type="button" class="dk-go" data-ackclear>להחזיר עכשיו</button>':''}</p>`:'';
   const need=L.filter(x=>x.sev!=='tip'&&x.sev!=='info'), first=L.slice(0,4), rest=L.slice(4);
   if(!L.length)return `<div class="dk-top ok"><b>${niH('ok')}${nAck?'אין דבר חדש שצריך לעשות.':'אין משהו שצריך לעשות עכשיו.'}</b>${ackLine}</div>`;
