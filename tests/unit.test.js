@@ -1163,3 +1163,18 @@ test('dividends ahead: Nasdaq\'s declared ones, Yahoo\'s past ones, and the next
   const old=divPlan([{ex:'2024-08-10',amt:0.2},{ex:'2024-05-10',amt:0.2},{ex:'2024-02-10',amt:0.2}],{now:new Date('2026-10-28T10:00:00Z')});
   assert.deepEqual(old.next,[],'stopped: nothing ahead'); assert.equal(divPlan([],{}),null);
 });
+
+test('dividends ahead in the research run: Nasdaq for a US share, Yahoo for a Tel Aviv one (the days, not the agorot)',async()=>{
+  const {divsPass}=await import('../server/research.js'); const s=new Store(':memory:'), now=new Date('2026-10-28T10:00:00Z'), seen=[];
+  const ts=d=>Date.parse(d+'T07:00:00Z')/1000;
+  const f=async u=>{u=String(u); seen.push(u);
+    if(u.includes('api.nasdaq.com/api/quote/KO/dividends'))return new Response(JSON.stringify({data:{dividends:{rows:[{exOrEffDate:'11/28/2026',type:'Cash',amount:'$0.51',declarationDate:'10/20/2026',paymentDate:'12/15/2026'},{exOrEffDate:'09/12/2026',type:'Cash',amount:'$0.51',paymentDate:'10/01/2026'},{exOrEffDate:'06/13/2026',type:'Cash',amount:'$0.51',paymentDate:'07/01/2026'}]}}}));
+    if(u.includes('/v8/finance/chart/TEVA.TA'))return new Response(JSON.stringify({chart:{result:[{events:{dividends:{a:{amount:25,date:ts('2026-09-01')},b:{amount:25,date:ts('2026-03-02')},c:{amount:20,date:ts('2025-09-01')}}}}]}}));
+    return new Response('',{status:500})};
+  const got={}; const st=await divsPass(s,['KO','TLV:TEVA','MSFT'],got,{fetch:f,tick:k=>k.startsWith('TLV:')?k.slice(4)+'.TA':k,now,held:new Set(['KO','TLV:TEVA']),pause:0});
+  assert.equal(st.planned,2); assert.ok(!seen.some(u=>u.includes('MSFT')),'not held or followed: not asked'); assert.ok(!seen.some(u=>u.includes('nasdaq.com/api/quote/TEVA')),'Nasdaq is not asked about Tel Aviv');
+  assert.equal(got.KO.divPlan.src,'Nasdaq'); assert.deepEqual(got.KO.divPlan.next[0],{ex:'2026-11-28',pay:'2026-12-15',amt:0.51,est:false});
+  assert.equal(got['TLV:TEVA'].divPlan.freq,'semi'); assert.ok(got['TLV:TEVA'].divPlan.next[0].est&&got['TLV:TEVA'].divPlan.next[0].amt===null&&got['TLV:TEVA'].divPlan.next[0].ex.startsWith('2027-0'),JSON.stringify(got['TLV:TEVA'].divPlan.next));
+  // asked again within three days: not again
+  s.setDoc('research/s_KO',{sym:'KO',divPlanAt:now.toISOString()}); const g2={}; await divsPass(s,['KO'],g2,{fetch:f,now,held:new Set(['KO']),pause:0}); assert.equal(g2.KO,undefined);
+});

@@ -30,6 +30,11 @@ export function buildSite(root){
   // needs them: reading a PDF or Excel statement, exporting a report. The page asks through window.__tcLib(name); in
   // Claude, where the page is one file, the libraries stay inside it and that call is not there
   const libs=extractLibs(body,path.join(root,'site','lib')); body=libs.body;
+  // 28.10: the list of every searchable security (about 700 KB of text) goes to a file of its own too, with its version
+  // in its address: a browser keeps it across the page's new versions, and the page reads it when a search needs it
+  {const sm=body.match(/<script type="text\/plain" id="symdb">\n?([\s\S]*?)<\/script>\s*/); if(sm){const txt=sm[1], dir=path.join(root,'site','lib'); fs.mkdirSync(dir,{recursive:true});
+    fs.writeFileSync(path.join(dir,'symdb.txt'),txt); const u='lib/symdb.txt?v='+createHash('sha1').update(txt).digest('hex').slice(0,10);
+    body=body.slice(0,sm.index)+body.slice(sm.index+sm[0].length); libs.loader+=`<script>window.__tcSymdb=${JSON.stringify(u)};</script>\n`}}
   if(t)body=body.slice(0,t.index)+body.slice(t.index+t[0].length);
   const boot=libs.loader+`<script>
 // The page asks for window.claude.use(name); on this site it is served by runtime.js from the site's own server.

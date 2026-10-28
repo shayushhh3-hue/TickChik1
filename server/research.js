@@ -285,13 +285,16 @@ export async function divsPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk
   const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
   for(const k of order){
     if(Date.now()-t0>budgetMs){st.stopped='time';break}
-    if(!us(k)||!(held.has(k)||watched.has(k)))continue;
+    const tlv=k.startsWith('TLV:'); if(!(us(k)||tlv)||!(held.has(k)||watched.has(k)))continue;
     const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
     if(doc.divPlanAt&&Date.parse(iso)-Date.parse(doc.divPlanAt)<3*864e5)continue;
     st.tried++; let H=null, src='Nasdaq';
-    try{H=await nasdaqDivs(tk(k),{fetch:f}); if(H.length)st.nasdaq++}catch(e){st.first=st.first||`${k}: ${e.message}`}
+    // a Tel Aviv share: Yahoo's past dividends only (Nasdaq lists US securities), the days without the amounts (Yahoo
+    // gives them in agorot)
+    if(!tlv){try{H=await nasdaqDivs(tk(k),{fetch:f}); if(H.length)st.nasdaq++}catch(e){st.first=st.first||`${k}: ${e.message}`}}
     if(!H||!H.length){src='Yahoo Finance'; let Y=null; try{Y=await yahooDivs(tk(k),{fetch:f})}catch(e){} if(Y&&Y.length){H=Y; st.yahoo++} else if(Y)H=H||Y}
     if(H==null){st.fail++; if(st.fail>=6&&!st.planned){st.stopped='errors';break} continue}   // neither answered: nothing is written, tried again next run
+    if(tlv&&H)H=H.map(x=>({...x,amt:null}));
     const g=got[k]||(got[k]={}); g.divPlanAt=iso; g.divPlan=H.length?{...divPlan(H,{now}),src,at:iso}:{next:[],none:true,at:iso};
     if(H.length)st.planned++;
     if(pause)await sleep(pause)}

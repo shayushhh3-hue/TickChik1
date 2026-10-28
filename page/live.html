@@ -22347,6 +22347,8 @@ function loadSymDb(){
     if(!db&&!LOCAL&&window.claude&&window.claude.use){await new Promise(r=>setTimeout(r,1200))}
     const el=$('symdb'); let txt='',why='';
     try{txt=el?(el.textContent||''):'';if(!el)why='הרשימה חסרה בדף'}catch(e){why='שגיאת קריאה'}
+    // 28.10: on the site the list is a file of its own (kept by the browser across the page's versions)
+    if(!el&&window.__tcSymdb){for(let i=0;i<2&&!txt;i++){try{const r=await fetch(window.__tcSymdb); if(r.ok){txt=await r.text(); why=''} else why='הרשימה לא נטענה ('+r.status+')'}catch(e){why='הרשימה לא נטענה'; await new Promise(r=>setTimeout(r,800))}}}
     if(txt&&txt.indexOf('\t')<0){ // an old copy of the page holds the list compressed
       let b=null; try{b=Uint8Array.from(atob(txt.trim()),c=>c.charCodeAt(0))}catch(e){b=null} txt='';
       if(b){try{if(typeof DecompressionStream!=='function')throw 0;const st=new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip')); txt=await new Response(st).text()}catch(e){txt=''}
