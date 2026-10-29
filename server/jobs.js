@@ -36,8 +36,9 @@ export const SCHEDULE=[
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   {name:'pxwatch', lane:'px', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
   // the articles about everybody's securities, every half hour by day (research/news, the "חדשות" tab)
-  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:(s,o)=>newsTask(s,o)},
-  // 29.10: the articles read (what happened, whom it may touch, how sure), a quarter of an hour after they are gathered
+  // 29.10: ...and read right after they are gathered (what happened, whom it may touch, how sure); 'newsx' alone is the
+  // owner's "read now" and a catch-up a quarter of an hour later
+  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o)}},
   {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%30===25, run:(s,o)=>newsxTask(s,o)},
   // 29.10: what investors post on X about the securities (with a token that may read), twice a day, before the readings
   {name:'x',       when:p=>(p.h===9||p.h===17)&&p.min===15, run:(s,o)=>xTask(s,{...o,newsSyms})},
@@ -47,7 +48,7 @@ export const SCHEDULE=[
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:5*60e3,newsx:6*60e3,x:3*60e3};
+export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false});
   const pumpLane=async ln=>{const Q=lane(ln);

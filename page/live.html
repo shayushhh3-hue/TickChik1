@@ -23146,8 +23146,16 @@ function renderNewsX(){
   if(ch){ch.hidden=NXV!=='sym'; ch.innerHTML=syms.length?`<button type="button" class="chip" data-nf="" aria-pressed="${!NEWSF}">הכל</button>`+syms.map(k=>`<button type="button" class="chip" data-nf="${esc(k)}" aria-pressed="${NEWSF===k}"><bdi>${esc(lab(k))}</bdi> <small>${by[k]}</small></button>`).join(''):''}
   let L=all.filter(z=>{const lv=nxLvOf(z.it); if(!NXLV.has(lv))return false; if(NXT&&!(z.it.x&&z.it.x.type===NXT))return false; if(NXUN&&(st.read||{})[z.it.id])return false;
     if(NXV==='saved')return !!(st.saved||{})[z.it.id]; if(NXV==='macro')return !!(z.it.x&&z.it.x.macro)||z.it.src==='gen'; if(NXV==='sym'&&NEWSF)return z.rel.hits.some(h=>h.sym===NEWSF); if(NXV==='sec')return z.rel.secs.length>0||z.rel.hits.some(h=>h.held&&nxSecOf(h.sym)); return true});
-  if(!L.length){const own=OWNER&&window.__tc&&!LOCAL;
-    box.innerHTML=`<div class="empty">${!P||!(P.positions||[]).length?'כשיהיה תיק, יופיעו כאן הידיעות על המניות שבו ומה הן אומרות לתיק שלך.':NXV==='saved'?'עוד לא שמרת ידיעות. הכוכב על כרטיס שומר אותו כאן.':NEWSD&&NEWSD.updatedAt?'אין ידיעות שמתאימות לסינון הזה מהשבוע האחרון.':'הכתבות נאספות מהמקור כל חצי שעה ביום; עוד לא נאספו.'}${own&&!(NEWSD&&NEWSD.updatedAt)?' <button type="button" class="btn sm" data-rsrun="news">לאסוף עכשיו</button>':''}${own&&NEWSD&&NEWSD.updatedAt&&!(NXD&&NXD.updatedAt)?' <button type="button" class="btn sm" data-rsrun="newsx">לנתח עכשיו</button>':''}</div>`; return}
+  if(!L.length){const own=OWNER&&window.__tc&&!LOCAL, nAll=all.length, nRead=all.filter(z=>z.it.x).length, hidden=all.filter(z=>!NXLV.has(nxLvOf(z.it))).length;
+    // 29.10: the state said plainly: nothing gathered yet, gathered but not read yet (the reading runs every half hour),
+    // or read but behind the filter (the critical and the important only, by default)
+    let t; if(!P||!(P.positions||[]).length)t='כשיהיה תיק, יופיעו כאן הידיעות על המניות שבו ומה הן אומרות לתיק שלך.';
+    else if(NXV==='saved')t='עוד לא שמרת ידיעות. הכוכב על כרטיס שומר אותו כאן.';
+    else if(!(NEWSD&&NEWSD.updatedAt)&&!nAll)t='הכתבות על המניות שלך נאספות מהמקור כל חצי שעה ביום (07:10 עד 23:40). עוד לא נאספו.';
+    else if(nAll&&!nRead)t=`נאספו ${nAll===1?'כתבה אחת':nAll+' כתבות'} על המניות שלך, ועוד לא נקראו${NXD&&NXD.ai===false?': הקריאה לא פעילה (אין מפתח Anthropic בשרת)':'. הקריאה רצה כל חצי שעה, מיד אחרי האיסוף; עד אז הן מוסתרות, כי בלי קריאה אין רמה ואין קשר לתיק'}.`;
+    else if(hidden&&nRead)t=`${hidden===1?'ידיעה אחת':hidden+' ידיעות'} ברמות שלא מוצגות עכשיו (למעקב / מידע). אין כרגע ידיעות קריטיות או חשובות על המניות שלך מהשבוע האחרון.`;
+    else t='אין ידיעות שמתאימות לסינון הזה מהשבוע האחרון.';
+    box.innerHTML=`<div class="empty">${t}${hidden&&nRead&&NXV!=='saved'?' <button type="button" class="btn sm" data-nxall="1">להציג את כל הרמות</button>':''}${own&&!(NEWSD&&NEWSD.updatedAt)?' <button type="button" class="btn sm" data-rsrun="news">לאסוף ולקרוא עכשיו</button>':''}${own&&nAll&&!nRead&&!(NXD&&NXD.ai===false)?' <button type="button" class="btn sm" data-rsrun="newsx">לקרוא עכשיו</button>':''}</div>`; return}
   const E=nxEvents(all.map(z=>z.it)), card=z=>nxCard(z.it,z.rel,E.get(z.it.x&&z.it.x.ev?z.it.x.ev:'id:'+z.it.id));
   // one card per event: the article that matters most stands for it, the others are its "more sources"
   L.sort((a,b)=>b.rel.score-a.rel.score||(String(b.it.at||b.it.seen)<String(a.it.at||a.it.seen)?-1:1));
@@ -23164,6 +23172,7 @@ function renderNewsX(){
 function renderNews(){try{renderNewsX()}catch(e){console.error(e)}}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const v=t.closest('#nxViews [data-nxv]'); if(v){NXV=v.dataset.nxv; renderNewsX(); return}
+  if(t.closest('[data-nxall]')){NXLV=new Set(['crit','imp','watch','info']); try{localStorage.setItem('tr_nxlv',JSON.stringify([...NXLV]))}catch(e){} renderNewsX(); return}
   const l=t.closest('#nxLv [data-nxl]'); if(l){const k=l.dataset.nxl; if(NXLV.has(k)&&NXLV.size>1)NXLV.delete(k); else NXLV.add(k); try{localStorage.setItem('tr_nxlv',JSON.stringify([...NXLV]))}catch(e){} renderNewsX(); return}
   const sv=t.closest('[data-nxsave]'); if(sv){const id=sv.dataset.nxsave; nxMark(id,'saved',sv.getAttribute('aria-pressed')!=='true'); renderNewsX(); return}
   const rd=t.closest('[data-nxread]'); if(rd){const id=rd.dataset.nxread; nxMark(id,'read',rd.getAttribute('aria-pressed')!=='true'); renderNewsX(); try{render()}catch(e){} return}

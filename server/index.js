@@ -444,4 +444,9 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it
   {const q=store.getDoc('quotes/latest'); const age=q.exists&&q.data.updatedAt?Date.now()-new Date(q.data.updatedAt).getTime():Infinity;
     if(!q.exists||age>15*60e3)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('price update at start failed:',e.message)),5000);}
+  // 29.10: the news and their readings older than an hour (a deploy in the middle of the day): gathered and read now,
+  // so the screen does not wait for the next half hour
+  {const j=app.locals.jobs, x=store.getDoc('research/newsx'); const age=x.exists&&x.data&&x.data.updatedAt?Date.now()-new Date(x.data.updatedAt).getTime():Infinity;
+    const p=new Date().toLocaleString('en-US',{timeZone:'Asia/Jerusalem',hour:'numeric',hour12:false}); const h=+p;
+    if(j&&age>60*60e3&&h>=7&&h<=23)setTimeout(()=>{j.run('news')},20000)}
 }
