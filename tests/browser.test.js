@@ -1347,7 +1347,7 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     // the e-mail switches: the owner's, all off until chosen, saved per kind
     await tab(pg,'settings'); await pg.waitForTimeout(600);
     const m0=await pg.evaluate(()=>({hidden:document.getElementById('mailBox').hidden,on:[...document.querySelectorAll('[data-mail]')].map(i=>i.checked)}));
-    assert.deepEqual(m0,{hidden:false,on:[false,false,false,false,false]});
+    assert.deepEqual(m0,{hidden:false,on:[false,false,false,false,false,false]});
     await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
     assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
     ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();

@@ -11,6 +11,7 @@ import {pxWatchTask} from './pxwatch.js';
 import {newsTask} from './newsfeed.js';
 import {newsxTask} from './newsx.js';
 import {xTask} from './xfeed.js';
+import {liveTask} from './livealert.js';
 import {newsSyms} from './newsfeed.js';
 
 export const SCHEDULE=[
@@ -34,6 +35,8 @@ export const SCHEDULE=[
   // the Israeli securities for the search (with a TASE key), before the morning
   {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
+  // 30.10: the owner's live alerts (prices set, a big day, the dollar, a critical reading), every 10 minutes by day
+  {name:'live',    lane:'px', when:p=>p.h>=9&&p.h<=23&&p.min%10===3, run:(s,o)=>liveTask(s,o)},
   {name:'pxwatch', lane:'px', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
   // the articles about everybody's securities, every half hour by day (research/news, the "חדשות" tab)
   // 29.10: ...and read right after they are gathered (what happened, whom it may touch, how sure); 'newsx' alone is the
@@ -48,7 +51,7 @@ export const SCHEDULE=[
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3};
+export const LIMIT={ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false});
   const pumpLane=async ln=>{const Q=lane(ln);

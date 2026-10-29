@@ -125,7 +125,8 @@ export async function usSnapshot(store,now,log){
 export async function morningTask(store,{log}={}){
   const docs=ownerDocs(store), now=new Date(), p=ilParts(now);
   if(!docs['portfolio/main']||!docs['quotes/latest']){log('no portfolio or quotes yet');return}
-  const {out:A,errs}=await withPage(docs,ownerUser(store),pg=>pg.evaluate(()=>window.__model.alerts()));
+  const {out:AD,errs}=await withPage(docs,ownerUser(store),pg=>pg.evaluate(()=>({a:window.__model.alerts(),d:window.__model.digest?window.__model.digest():null})));
+  const A=AD&&AD.a, G=AD&&AD.d;
   if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
   if(!A||!A.ready){log('the alert engine was not ready');return}
   const state=docs['alerts/state']||{keys:[]}, seen=new Set(state.keys||[]);
@@ -133,14 +134,15 @@ export async function morningTask(store,{log}={}){
   const repMail=mailAllowed(store,'earnings'), items=(A.items||[]).filter(i=>i&&i.key), fresh=items.filter(i=>!seen.has(i.key)&&!i.acked&&!(repMail&&String(i.key).startsWith('rep:')));
   log(`alerts: ${items.length} now, ${fresh.length} new`);
   const SEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין'}, ORDER={crit:0,warn:1,info:2,ok:3}, color={crit:'#b42318',warn:'#b7791f',info:'#2464a8',ok:'#2f9e5b'};
-  if(fresh.length){
+  // 30.10: the morning summary goes out every morning (with the consent for "morning"), new alerts or not
+  if(fresh.length||(G&&G.ready)){
     fresh.sort((a,b)=>(ORDER[a.sev]??9)-(ORDER[b.sev]??9));
-    const crit=fresh.filter(i=>i.sev==='crit').length, warn=fresh.filter(i=>i.sev==='warn').length;
-    const head=crit?`${crit===1?'חריגה אחת חדשה':crit+' חריגות חדשות'}${warn?' ו-'+(warn===1?'נושא אחד לבדיקה':warn+' נושאים לבדיקה'):''}`:warn?(warn===1?'נושא אחד חדש לבדיקה':warn+' נושאים חדשים לבדיקה'):'עדכון חדש';
+    const S2=morningSections(G,fresh,{SEV,color});
     const url=process.env.SITE_URL||''; const when=`מחירים נכון ל-${A.pricesAt?new Date(A.pricesAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):'?'}`;
-    const text=`בוקר טוב. ${head}.\n\n${fresh.map(i=>`[${SEV[i.sev]||i.sev}] ${i.cat?i.cat+': ':''}${i.text}`).join('\n')}\n\n${when}${url?'\nלפתיחת הדף: '+url:''}\n\nעובדות מהתיק שלך בלבד; לא המלצה לקנות או למכור.`;
-    const html=wrapHtml('הודעת הבוקר',`<p>בוקר טוב. <b>${esc(head)}.</b></p><ul style="padding-inline-start:18px;margin:8px 0">${fresh.map(i=>`<li style="margin:6px 0"><span style="display:inline-block;min-width:56px;color:${color[i.sev]||'#1e293b'};font-weight:700">${esc(SEV[i.sev]||i.sev)}</span> ${i.cat?'<b>'+esc(i.cat)+':</b> ':''}${esc(i.text)}</li>`).join('')}</ul><p style="color:#64748b;font-size:13px">${esc(when)}</p>${url?`<p><a href="${esc(url)}" style="color:#1e344e;font-weight:700">לפתיחת הדף ›</a></p>`:''}`);
-    await sendAllowed(store,'morning',{subject:`תיק צ׳יק – הודעת הבוקר: ${head}`,text,html},log);
+    const text=`בוקר טוב.\n\n${S2.map(x=>x.t+'\n'+x.text).join('\n\n')}\n\n${when}${url?'\nלפתיחת הדף: '+url:''}\n\nעובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.`;
+    const html=wrapHtml('סיכום הבוקר',`<p>בוקר טוב.</p>${S2.map(x=>`<h3 style="margin:16px 0 6px;font-size:15px">${esc(x.t)}</h3>${x.html}`).join('')}<p style="color:#64748b;font-size:13px">${esc(when)}</p>${url?`<p><a href="${esc(url)}" style="color:#1e344e;font-weight:700">לפתיחת הדף ›</a></p>`:''}<p style="color:#64748b;font-size:12px">עובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.</p>`);
+    const head=fresh.some(i=>i.sev==='crit')?'יש חריגה חדשה':G&&G.news&&G.news.some(n=>n.level==='crit')?'ידיעה קריטית על מניה שלך':G&&G.day?`התיק ${G.day.ils>=0?'עלה':'ירד'} ${Math.abs(G.day.pct).toFixed(2)}%`:'סיכום';
+    await sendAllowed(store,'morning',{subject:`תיק צ׳יק – סיכום הבוקר: ${head}`,text,html},log);
   }
   store.setDoc('alerts/state',{date:p.iso,keys:items.map(i=>i.key),moveDate:fresh.length?p.iso:(state.moveDate||null),sent:fresh.length,updatedAt:now.toISOString()});
 }
@@ -205,4 +207,21 @@ export async function reportTask(store,{log,kind='week'}={}){
     log(`${r.spec} → ${r.doc.id} saved, ${Math.round(r.pdf.length*3/4/1024)} KB PDF`);
   }
   return out.filter(r=>!r.error).map(r=>r.doc.id);
+}
+
+// 30.10: the sections of the morning summary: the last trading day, the news that matter to the holdings, the new alerts,
+// the coming week. Each as text and as HTML; a section with nothing in it is left out
+export function morningSections(G,fresh,{SEV={},color={}}={}){
+  const out=[], ils=v=>(v<0?'−':'+')+'₪'+Math.abs(Math.round(v)).toLocaleString('en-US'), pc=v=>(v<0?'−':'+')+Math.abs(v).toFixed(2)+'%';
+  if(G&&G.day){const t=`התיק ${G.day.ils>=0?'עלה':'ירד'} ${pc(G.day.pct)} (${ils(G.day.ils)})`+(G.day.top.length?`, בעיקר ${G.day.top.map(x=>`${x.sym} ${pc(x.pct)}`).join(', ')}`:'')+'.';
+    out.push({t:'ביום המסחר האחרון',text:t,html:`<p style="margin:0">${esc(t)}</p>`})}
+  if(G&&G.news&&G.news.length){const L=G.news.map(n=>`${n.level==='crit'?'[קריטי] ':''}${n.who?n.who+': ':''}${n.he}${n.what?'. '+n.what:''}`);
+    out.push({t:'ידיעות חשובות על המניות שלך',text:L.map((l,i)=>`• ${l}${G.news[i].link?'\n  '+G.news[i].link:''}`).join('\n'),
+      html:`<ul style="padding-inline-start:18px;margin:0">${G.news.map((n,i)=>`<li style="margin:6px 0">${n.level==='crit'?'<b style="color:#b42318">קריטי</b> ':''}${esc(L[i].replace(/^\[קריטי\] /,''))}${n.link?` <a href="${esc(n.link)}">${esc(n.pub||'למקור')}</a>`:''}</li>`).join('')}</ul>`})}
+  if(fresh&&fresh.length)out.push({t:'התראות חדשות',text:fresh.map(i=>`[${SEV[i.sev]||i.sev}] ${i.cat?i.cat+': ':''}${i.text}`).join('\n'),
+    html:`<ul style="padding-inline-start:18px;margin:0">${fresh.map(i=>`<li style="margin:6px 0"><span style="color:${color[i.sev]||'#1e293b'};font-weight:700">${esc(SEV[i.sev]||i.sev)}</span> ${i.cat?'<b>'+esc(i.cat)+':</b> ':''}${esc(i.text)}</li>`).join('')}</ul>`});
+  if(G&&G.soon&&G.soon.length){const L=G.soon.map(x=>`${x.d.slice(8,10)}.${x.d.slice(5,7)}: ${x.items.join(' · ')}`);
+    out.push({t:'השבוע בתיק',text:L.join('\n'),html:`<ul style="padding-inline-start:18px;margin:0">${L.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`})}
+  if(G&&G.divYear)out.push({t:'דיבידנדים',text:`התיק מייצר כ-₪${G.divYear.toLocaleString('en-US')} בשנה מדיבידנדים, לפני מס.`,html:`<p style="margin:0">התיק מייצר כ-₪${G.divYear.toLocaleString('en-US')} בשנה מדיבידנדים, לפני מס.</p>`});
+  return out;
 }

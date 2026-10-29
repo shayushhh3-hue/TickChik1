@@ -1910,6 +1910,7 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-secl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 @media (max-width:640px){.nx{padding:12px 13px} .nx h3{font-size:15px}}
 .hwb{display:none}
+.liveal{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px} .liveal label:not(.check){display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px} .liveal input[type=number]{width:110px}
 /* 28.10: the plan's two tracks: the chosen one is unmistakable in day and night (a violet frame, a violet tint and a
    check), the other one plain. Before, at night the chosen one's frame was the page's own near-black, so the other
    looked chosen */
@@ -2794,6 +2795,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <p class="note" style="margin:0;max-width:none">שום מייל אוטומטי לא נשלח בלי שתבחר: כל סוג כבוי עד שתפעיל אותו כאן. המייל כולל מספרים מהתיק שלך. הדוחות נשמרים בארכיון בדף גם בלי מייל.</p>
           <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
           <div id="mailList"></div>
+          <div class="liveal" id="liveAl"><b>התראות בזמן אמת: מתי לשלוח</b>
+            <label for="laMove">מניה בתיק זזה ביום יותר מ-(%)<input type="number" id="laMove" min="1" max="50" step="0.5" placeholder="5"></label>
+            <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
+            <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
+            <label class="check"><input type="checkbox" id="laNews" checked><span>ידיעה קריטית על מניה בתיק</span></label>
+            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת לה בדף שלה. נבדק כל 10 דקות בין 09:00 ל-23:50, כל דבר פעם אחת ביום, ולכל היותר מייל אחד ב-20 דקות.</p></div>
         </div>
       </div>
     </section>
@@ -18501,6 +18508,17 @@ function alertDigest(){
   return {ready:true,at:new Date().toISOString(),pricesAt:Q.updatedAt||null,items};
 }
 window.__model.alerts=alertDigest;
+// 30.10: the morning summary, in one piece, for the e-mail: the last trading day (the change and who carried it), the
+// readings that matter to the holdings, the coming week (reports, dividends, the deposit, closed markets), the dividends
+// of a year. Facts the page already shows; the server only words them into the e-mail
+window.__model.digest=function(){try{const m=mAllNow(); const out={ready:!!(P&&Q&&Q.prices),total:Math.round(m.total)};
+  if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).slice(0,3);
+    out.day={pct:+m.dayPct.toFixed(2),ils:Math.round(m.dayIls),top:top.map(p=>({sym:lab(p.sym),pct:+p.dayPct.toFixed(2),ils:Math.round(p.dayIls)}))}}
+  try{const seen=new Set(); out.news=nxForHoldings(m,{days:1,levels:['crit','imp']}).filter(z=>{const k=z.it.x.ev||z.it.id; if(seen.has(k))return false; seen.add(k); return true}).slice(0,4)
+    .map(z=>({level:z.it.x.level,he:z.it.x.he,what:z.it.x.rules?'':z.it.x.what,who:z.direct.map(h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`).join(', '),dir:z.it.x.dir,link:z.it.link,pub:z.it.pub||''}))}catch(e){out.news=[]}
+  try{const today=ilDay(), end=isoAdd(today,7); out.soon=soonEvents(new Date()).filter(x=>x.d<=end).map(x=>({d:x.d,items:x.E.map(e=>`${e.t}${e.sym?' '+lab(e.sym):''}${e.est?' (משוער)':''}`)}))}catch(e){out.soon=[]}
+  try{const g=m.pos.reduce((t,p)=>{const y=(RS&&RS.companies&&RS.companies[p.sym]||{}).dy; return t+(y>0?p.val*y/100:0)},0); if(g>0)out.divYear=Math.round(g)}catch(e){}
+  return out}catch(e){return {ready:false,err:String(e&&e.message||e)}}};
 
 // ---- the facts: computed here, the same way the rest of the page computes them ----
 // ---- risk:start ----
@@ -19404,9 +19422,12 @@ function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){co
 // ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
 // switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
 let MAILST=null;
-const MAILK=[['morning','הודעת הבוקר (07:50): רק התראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
+const MAILK=[['morning','סיכום הבוקר (07:50): מה קרה ביום המסחר האחרון, הידיעות החשובות על המניות שלך, מה מתוכנן השבוע, והתראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['live','התראות בזמן אמת: מחיר שקבעת נחצה, מניה בתיק זזה חזק, הדולר חצה שער, או ידיעה קריטית (ההגדרות למטה)'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
 const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
-function renderMail(){
+function liveAlFill(){const A=(S&&S.liveAl)||{}; for(const [id,k] of [['laMove','move'],['laUsdUp','usdAbove'],['laUsdDn','usdBelow']]){const i=$(id); if(i){if(document.activeElement!==i)i.value=A[k]!=null?A[k]:''; i.disabled=!canWrite}} const n=$('laNews'); if(n){n.checked=A.news!==false; n.disabled=!canWrite}}
+document.addEventListener('change',ev=>{const el=ev.target; if(!el||!['laMove','laUsdUp','laUsdDn','laNews'].includes(el.id)||!canWrite)return; const A={...(S.liveAl||{})};
+  if(el.id==='laNews')A.news=el.checked; else{const k={laMove:'move',laUsdUp:'usdAbove',laUsdDn:'usdBelow'}[el.id], v=+el.value; if(v>0)A[k]=v; else delete A[k]} S.liveAl=A; changed()});
+function renderMail(){try{liveAlFill()}catch(e){}
   const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
   if(!renderMail.asked){renderMail.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}}
   const M=(S&&S.mail)||{}, L=(MAILST&&MAILST.last)||{}, list=$('mailList');

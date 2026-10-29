@@ -23,7 +23,7 @@ export async function sendMail({subject,text,html,attachments=[]}){
 export const mailReady=()=>!!(opt('RESEND_API_KEY')||(opt('MAIL_USER')&&opt('MAIL_PASS')));
 // Automatic e-mails need the owner's consent, per kind, in the page's settings (S.mail: morning, reports, backup). Each
 // kind is off until switched on there (stage 7: no automatic summaries without consent and settings).
-export const MAIL_KINDS=['morning','earnings','reports','backup','pxalert'];
+export const MAIL_KINDS=['morning','earnings','reports','backup','pxalert','live'];
 export function mailAllowed(store,kind){try{const s=store.getDoc('settings/main'); return !!(s.exists&&s.data&&s.data.mail&&s.data.mail[kind]===true)}catch(e){return false}}
 // system/mail (the owner only): whether sending is set up, and per kind the last attempt: sent, off, not_ready or failed.
 // No content, no address: the page shows the owner what happened.

@@ -1280,3 +1280,31 @@ test('the plain reading by rules: when Claude cannot read, every article still g
   const st2=await newsxTask(s,{now,general:null,ask}); assert.equal(st2.read,1); const y=s.getDoc('research/newsx').data.by[newsId('https://x/m')]; assert.ok(!y.rules); assert.equal(y.cert,'fact');
   const arc=s.listDocs('research/newsarc').flatMap(r=>r.data.items); assert.equal(arc.length,1); assert.equal(arc[0].rules,false,'the archive keeps Claude\'s reading');
 });
+
+test('live alerts: a price set, a big day, the dollar, a critical reading; once a day each, one e-mail in 20 minutes, quiet at night',async()=>{
+  const {liveTask,liveHits}=await import('../server/livealert.js'); const s=new Store(':memory:');
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'},{sym:'KO'}]}); s.setDoc('quotes/latest',{prices:{NVDA:190,KO:60,MSFT:500},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}});
+  s.setDoc('settings/main',{pxAlerts:{MSFT:{above:480}},liveAl:{move:4,usdAbove:3.8}});
+  const {createHash}=await import('node:crypto'); const id=createHash('sha1').update('https://x/n').digest('hex').slice(0,12), now=new Date('2026-10-30T13:00:00Z');
+  s.setDoc('research/news',{items:[{title:'t',link:'https://x/n',at:new Date(now-36e5).toISOString(),syms:['NVDA']}]});
+  s.setDoc('research/newsx',{by:{[id]:{he:'אנבידיה הורידה את התחזית',what:'w',level:'crit',dir:'neg',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nvda-cut'}}});
+  const H=liveHits(s,{now}); assert.deepEqual(H.map(h=>h.key).sort(),['move:NVDA:down','news:nvda-cut','px:MSFT:up:480','usd:up:3.8']);
+  assert.ok(!H.some(h=>/KO/.test(h.key)),'KO moved 0.3%: nothing');
+  const sent=[]; const send=async(st,kind,msg)=>{sent.push([kind,msg]); return true};
+  let r=await liveTask(s,{now,send}); assert.equal(r.fresh,4); assert.equal(sent.length,1); assert.equal(sent[0][0],'live'); assert.match(sent[0][1].text,/NVDA ירדה היום −5\.0%/); assert.match(sent[0][1].text,/הדולר עבר את 3\.8/);
+  r=await liveTask(s,{now:new Date(now.getTime()+30*60e3),send}); assert.equal(r.fresh,0,'once a day each');
+  s.setDoc('quotes/latest',{prices:{NVDA:190,KO:55,MSFT:500},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}});
+  r=await liveTask(s,{now:new Date(now.getTime()+35*60e3),send}); assert.equal(r.fresh,1); assert.equal(sent.length,2,'a new one, after 20 minutes');
+  s.setDoc('quotes/latest',{prices:{NVDA:190,KO:55,MSFT:500,AAA:1},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}}); s.setDoc('settings/main',{pxAlerts:{MSFT:{above:480},NVDA:{below:195}},liveAl:{move:4,usdAbove:3.8}});
+  r=await liveTask(s,{now:new Date(now.getTime()+40*60e3),send}); assert.equal(r.waiting,true,'one e-mail in 20 minutes');
+  r=await liveTask(s,{now:new Date('2026-10-30T01:00:00Z'),send}); assert.equal(r.quiet,true,'quiet at night');
+});
+
+test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{
+  const {morningSections}=await import('../server/tasks.js');
+  const G={ready:true,day:{pct:-0.97,ils:-237,top:[{sym:'NVDA',pct:-2.41,ils:-100}]},news:[{level:'crit',he:'אנבידיה הורידה את התחזית',what:'החברה הורידה את התחזית.',who:'NVDA (16% מהתיק)',link:'https://x/n',pub:'Reuters'}],soon:[{d:'2026-11-02',items:['אקס דיבידנד KO']}],divYear:420};
+  const S=morningSections(G,[{sev:'crit',cat:'ריכוז',text:'NVDA מעל 10%'}],{SEV:{crit:'חריגה'}});
+  assert.deepEqual(S.map(x=>x.t),['ביום המסחר האחרון','ידיעות חשובות על המניות שלך','התראות חדשות','השבוע בתיק','דיבידנדים']);
+  assert.equal(S[0].text,'התיק ירד −0.97% (−₪237), בעיקר NVDA −2.41%.'); assert.match(S[1].text,/\[קריטי\] NVDA \(16% מהתיק\): אנבידיה הורידה את התחזית\. החברה הורידה את התחזית\.\n  https:\/\/x\/n/); assert.match(S[3].text,/^02\.11: אקס דיבידנד KO$/);
+  assert.deepEqual(morningSections({ready:true,news:[],soon:[]},[]).map(x=>x.t),[],'nothing: nothing');
+});
