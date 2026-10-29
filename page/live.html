@@ -50,7 +50,9 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16p
 .n{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
 h1{font-size:15px;font-weight:700;line-height:1.2;margin:0}
 h2{font-family:var(--display);font-size:19px;font-weight:600;margin:0;text-wrap:balance;letter-spacing:0;line-height:1.3}
-h3{font-size:13.5px;font-weight:700;margin:0}
+/* 30.10: one scale for the whole site: a card's title 19px, a secondary title 16px, a title inside a card 15px, and a
+   key number 18px bold. Green and red are for gains and losses (and the warnings' own colors); actions are violet. */
+h3{font-size:15px;font-weight:700;margin:0}
 .sub{color:var(--muted);font-size:13.5px;margin:0}
 .up{color:var(--gain)} .down{color:var(--loss)}
 .chips{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
@@ -101,7 +103,7 @@ body:not([data-page="overview"]) .hero .wch{display:none}
 @media (min-width:761px){.side{padding:6px 12px 12px 0}}
 @media (max-width:760px){.side{border-inline-start:0;border-top:0}}
 .stat{padding:12px 14px;min-width:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.stat .v{font-weight:700;font-size:17px;direction:ltr;unicode-bidi:isolate;display:block;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .v{font-weight:700;font-size:18px;direction:ltr;unicode-bidi:isolate;display:block;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat .v .n{font-family:inherit;font-size:.82em;font-weight:600;margin-inline-start:8px}
 .stat .v .sym{font-family:inherit}
 .stat .d{font-size:13px;color:var(--muted);min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -191,7 +193,7 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .calnow .mk b{display:block;font-size:13.5px} .calnow .mk span{display:block;font-size:12px;color:var(--muted)}
 @media (max-width:520px){.calnow{grid-template-columns:minmax(0,1fr)}}
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.calhead h3{font-size:15px}
+.calhead h3{}
 .calhead button{font:inherit;border:1px solid var(--line);background:var(--surface);border-radius:10px;width:36px;height:36px;cursor:pointer;color:var(--ink)}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .calgrid .wd{font-size:11.5px;color:var(--muted);text-align:center;padding-bottom:2px}
@@ -348,7 +350,7 @@ tr.sec td{background:var(--sunk);color:var(--ink2);font-size:12px;font-weight:70
 .cc{--c:var(--s1);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);min-width:0}
 .cc.sat{--c:var(--accent)}
 .cch{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.cch h3{font-size:14px}
+.cch h3{font-size:15px}
 .cch .w{font-size:22px;font-weight:700;color:var(--ct,var(--c));direction:ltr;unicode-bidi:isolate}
 .cc{--ct:var(--vio-ink)} .cc.sat{--ct:var(--vio-ink)}
 .ccd{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
@@ -714,7 +716,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp .fact{background:var(--sunk);border-radius:8px;padding:8px 10px} .secp .fact .k{font-size:12px;color:var(--muted)} .secp .fact .v{font-size:14px;font-weight:600;margin-top:2px;font-family:var(--mono)} .secp .fact .v.t{font-family:var(--sans)}
 .up{color:var(--gain)} .down{color:var(--loss)}
 @media (max-width:640px){.secp .pxrow .v{font-size:30px}}
-[data-adv] h2{font-size:14px;color:var(--ink2);font-weight:600} [data-adv]>.panel,[data-adv] .panel{box-shadow:none}
+[data-adv] h2{font-size:16px;color:var(--ink2);font-weight:600} [data-adv]>.panel,[data-adv] .panel{box-shadow:none}
 .desk{padding:24px 26px;box-shadow:0 2px 4px rgb(11 18 32 / .06),0 10px 28px rgb(11 18 32 / .08)} .desk .dk-h h2{font-size:22px}
 @media (max-width:640px){.desk{padding:18px 16px}.desk .dk-h h2{font-size:19px}}
 .legend{font-size:12px;color:var(--muted);display:inline-flex;gap:4px 10px;flex-wrap:wrap;align-items:center}
@@ -806,7 +808,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .toast .btn:hover{background:rgb(255 255 255 / .12)}
 /* timeline of what was actually done */
 .tl{display:flex;flex-direction:column;gap:16px}
-.tlm h3{margin:0 0 6px;font-size:13.5px}
+.tlm h3{margin:0 0 6px;font-size:15px}
 .tlm ul{list-style:none;margin:0;padding:0 14px 0 0;border-inline-start:2px solid var(--line);display:flex;flex-direction:column;gap:5px}
 .tlm li{position:relative;font-size:13px;line-height:1.5;padding-inline-start:14px}
 .tlm li::before{content:"";position:absolute;inset-inline-start:-5px;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--navy3)}
@@ -1252,7 +1254,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .briefd{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0}
 .briefd summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 16px}
 .briefd summary::-webkit-details-marker{display:none}
-.briefd summary h2{margin:0;font-size:15px}
+.briefd summary h2{margin:0;font-size:16px}
 .briefd summary::before{content:"›";display:inline-block;transform:rotate(90deg);color:var(--muted);font-weight:700;transition:transform .2s}
 .briefd[open] summary::before{transform:rotate(-90deg)}
 .briefd .panel{border:0;border-top:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:none}
@@ -1929,6 +1931,11 @@ html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .1
 .dvtabs .dv-n:not(:empty){display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-inline-start:6px;border-radius:999px;background:rgb(124 58 237 / .14);font-size:12px}
 .dvtabs .chip[aria-pressed="true"] .dv-n{background:rgb(255 255 255 / .25)}
 section[data-dvv="month"] [data-dvp="once"],section[data-dvv="once"] [data-dvp="month"]{display:none!important}
+/* 30.10: "התיק שלי" in three tabs: the holdings, an update from a statement, and adding by hand */
+section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]){display:none!important}
+.mvtabs{margin-top:4px}
+.mvmsg{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .25);font-size:14px;color:var(--ink)}
+@media (max-width:420px){.mvtabs .chip{font-size:13px;padding-inline:6px}}
 /* 28.10: the calendar's marks as the owner asked: a violet dot for a company's report, a green one for a dividend; a
    little larger, and an estimated day a ring instead of a full dot */
 .calgrid .dc .evs i,.calleg i.ev{width:8px;height:8px}
@@ -1937,7 +1944,7 @@ section[data-dvv="month"] [data-dvp="once"],section[data-dvv="once"] [data-dvp="
 #holdSec>.panel{align-self:stretch} @media (min-width:641px){.hold .panel.scroll>table{width:100%}}
 /* the coming two weeks: a row of day cards (scrolling sideways on a phone), each event a small coloured line */
 .soon{margin:14px 0 4px}
-.soon-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px} .soon-h h2{font-size:17px;margin:0}
+.soon-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px} .soon-h h2{margin:0}
 .soon-s{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
 .soon-d{flex:0 0 auto;min-width:150px;max-width:220px;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
 .soon-d.now{border-color:#C4B5FD;box-shadow:0 0 0 2px rgb(124 58 237 / .14),var(--shadow)}
@@ -2345,7 +2352,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="row"><h2 id="hScen">שלושה תרחישים</h2><span class="sub" id="scenSub"></span></div>
       <div class="strip" id="scen"></div>
       <div class="panel">
-        <h3 style="margin:0 0 8px;font-size:13.5px">מה מזיז את התוצאה הכי הרבה</h3>
+        <h3 style="margin:0 0 8px">מה מזיז את התוצאה הכי הרבה</h3>
         <ul class="sens" id="sens"></ul>
         <p class="note" style="margin-top:10px">שלושת התרחישים נבדלים רק בתשואה השנתית: ההנחה שלך, ושלוש נקודות אחוז מתחתיה ומעליה. אלה חישובים ולא תחזית של השוק.</p>
       </div>
@@ -2880,10 +2887,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   </div>
 
   <div class="pane" data-pane="mine" hidden>
-    <section aria-labelledby="hMine">
+    <section aria-labelledby="hMine" data-mvv="hold">
       <div class="row"><h2 id="hMine">התיק שלי</h2><span class="saved" id="pfSaved"></span></div>
       <p class="note" id="pfWho"></p>
-      <div class="panel up" id="upPanel">
+      <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">עדכון מדוח</button><button type="button" class="chip" role="tab" data-mv="type" aria-pressed="false" aria-selected="false">הוספה ידנית</button></div>
+      <p class="mvmsg" id="mvMsg" role="status" hidden></p>
+      <div class="panel up" id="upPanel" data-mvp="up">
         <h3>העלאה: דוח או צילומי מסך</h3>
         <p class="note" id="upPriv" style="margin:0">הקבצים נשלחים לקריאה לשירות הבינה המלאכותית שמפעיל את צ׳יקו. לפני השליחה נמחקים מהטקסט ת״ז, מספרי חשבון, כתובת, מייל וטלפון. מצילום מסך או מעמוד סרוק אי אפשר למחוק, אז כדאי לחתוך ממנו קודם את השם ומספר החשבון. שום דבר לא נשמר עד "שמור את התיק".</p>
         <div class="upbtns">
@@ -2895,7 +2904,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <ol class="upsteps" id="upSteps" aria-label="שלבי ההעלאה"><li data-s="1"><i>1</i>בוחרים קבצים</li><li data-s="2"><i>2</i>צ׳יקו קורא</li><li data-s="3"><i>3</i>בודקים ושומרים</li></ol>
         <div class="staged" id="staged" hidden></div>
         <ul class="upprog" id="upProg" hidden></ul>
-        <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnRead" type="button" hidden>קרא שוב</button><button class="btn" id="btnStop" type="button" hidden>עצור</button><span class="saved" id="upState" role="status" style="font-size:13.5px;color:var(--ink)"></span></div>
+        <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnRead" type="button" hidden>קרא שוב</button><button class="btn" id="btnStop" type="button" hidden>עצור</button><button class="btn pri" id="btnToHold" type="button" hidden>לבדיקה ושמירה בטבלה</button><span class="saved" id="upState" role="status" style="font-size:13.5px;color:var(--ink)"></span></div>
         <div id="passWrap" hidden><label for="upPass">סיסמת ה-PDF, כפי שקיבלת מבית ההשקעות<input type="password" id="upPass" autocomplete="off" style="font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;direction:ltr;max-width:260px"></label></div>
         <div class="dup tx" id="txBox" hidden></div>
         <div class="dup tx" id="monBox" hidden></div>
@@ -2911,7 +2920,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           </ul>
         </details>
       </div>
-      <details class="panel pickp" id="pickBox">
+      <details class="panel pickp" id="pickBox" data-mvp="type">
         <summary><h3 style="display:inline">בוא נבנה את התיק שלך</h3><span class="sub" id="pickSub">שלב 1 מתוך 3</span></summary>
         <h4 class="pickh" style="margin-top:10px">באילו מניות אתה מחזיק?</h4>
         <p class="note" style="margin:4px 0 0">בחר מניות והזן את הכמות. אפשר גם לדלג ולהעלות קובץ בהמשך.</p>
@@ -2928,8 +2937,8 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="acts" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" id="btnPickAdd" type="button">המשך עם הבחירה שלי</button><button class="btn" id="btnPickSkip" type="button">דלג, אעלה קובץ בהמשך</button><span class="saved" id="pickState" role="status" style="font-size:13px"></span></div>
         <p class="sub" id="pickCnt" style="margin:8px 0 0">המניות שבחרת: 0</p>
       </details>
-      <div class="panel" style="display:flex;flex-direction:column;gap:10px">
-        <h3>או הקלדה מהירה, בלי קבצים</h3>
+      <div class="panel" data-mvp="type" style="display:flex;flex-direction:column;gap:10px">
+        <h3>הקלדה מהירה, בלי קבצים</h3>
         <p class="note" style="margin:0">כתוב שורה לכל נייר: סימול, כמות, ועלות כוללת בשקלים אם אתה יודע. אפשר גם להעתיק מהאפליקציה של הבנק. שורה עם המילה "מזומן" נקלטת כיתרת מזומן.</p>
         <textarea id="listText" dir="ltr" placeholder="MSFT 3 4200&#10;NVDA 1.5 900&#10;TA125 10 6245 ILS&#10;מזומן 500 ILS" style="min-height:96px;font-size:16px"></textarea>
         <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnList" type="button">הוסף לטבלה</button><span class="saved" id="listState" role="status" style="font-size:13px"></span></div>
@@ -2938,7 +2947,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="srch" id="wsBox" style="margin-top:4px"><input id="wsQ" type="text" placeholder="למשל: SAP, Toyota, Shell, ASML" autocomplete="off" aria-label="חיפוש נייר בכל העולם"><button type="button" class="btn sm" id="wsGo">חפש</button></div>
         <div class="wsres" id="wsRes" hidden></div>
       </div>
-      <div class="panel scroll">
+      <div class="panel scroll" data-mvp="hold">
         <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></div>
         <table class="pf">
           <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>עלות כוללת $</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
@@ -2948,7 +2957,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="dup" id="dupBox" hidden></div>
         <p class="note" style="margin-top:10px">סימול: הטיקר האמריקאי (למשל MSFT). לקרנות המדד הישראליות: TA125 או TA90. עלות שלא ידועה אפשר להשאיר ריקה. "עלות כוללת $": מה הקנייה עלתה בדולרים (בבלינק: השווי פחות "שינוי ממועד הקנייה"), כדי שפירוק התוצאה יפריד בין מחיר המניה לשער הדולר; בלי זה ההפרדה מוערכת. "מחיר בדוח" משמש רק עד שמגיע מחיר חי לנייר.</p>
       </div>
-      <div class="panel">
+      <div class="panel" data-mvp="hold">
         <h3>מזומן בחשבונות</h3>
         <div class="form" id="cashForm" style="margin-top:8px"></div>
       </div>
@@ -20698,9 +20707,17 @@ let DRAFT=null, dDirty=false, upCtl=null, STAGED=[], OVER=0;
 const FIXED=new Map(), PFS={saves:0,resets:0,gen:0};
 // the first portfolio's explanation, put off because the check corrected the table after the first save: it comes with the next save
 let FIRSTX=false;
-function upStep(n){const ol=$('upSteps');if(!ol)return;[...ol.children].forEach((li,i)=>{li.classList.toggle('on',i+1===n);li.classList.toggle('done',i+1<n)})}
+// the tabs of "התיק שלי": chosen by the viewer, or opened by what was just done (an add shows the table, a file the upload)
+let MVV=null, MV_SET=false;
+function mvSet(v,msg,auto){if(!auto)MV_SET=true; MVV=['hold','up','type'].includes(v)?v:'hold'; const sec=document.querySelector('[data-pane="mine"] section'); if(sec)sec.dataset.mvv=MVV;
+  for(const b of document.querySelectorAll('#mvTabs [data-mv]')){const on=b.dataset.mv===MVV; b.setAttribute('aria-pressed',on); b.setAttribute('aria-selected',on)}
+  const m=$('mvMsg'); if(m){m.textContent=msg||''; m.hidden=!msg}}
+function mvGo(v,msg,el){mvSet(v,msg); try{(el||document.querySelector('[data-pane="mine"] section')).scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#mvTabs [data-mv]'); if(b){mvSet(b.dataset.mv);return}
+  if(ev.target.closest&&ev.target.closest('#btnToHold'))mvGo('hold','מה שנקרא מהדוח בטבלה. בדוק ולחץ על "שמור את התיק".')});
+function upStep(n){{const b=$('btnToHold'); if(b)b.hidden=n!==3}const ol=$('upSteps');if(!ol)return;[...ol.children].forEach((li,i)=>{li.classList.toggle('on',i+1===n);li.classList.toggle('done',i+1<n)})}
 function showStaged(){const el=$('staged');el.hidden=!STAGED.length;el.innerHTML=STAGED.map((f,i)=>`<span>${esc(f.name||'צילום מסך')}<button type="button" data-unstage="${i}" aria-label="הסר את ${esc(f.name||'צילום מסך')}">×</button></span>`).join('')+(STAGED.length<10&&canWrite?'<label class="more" for="upFile">+ עוד קובץ</label>':'');$('btnRead').hidden=!STAGED.length}
-function stageFiles(list,from){const all=[...(list||[])].filter(Boolean), ok=all.filter(f=>f.size>0||(from==='pick'&&f.name));
+function stageFiles(list,from){mvSet('up');const all=[...(list||[])].filter(Boolean), ok=all.filter(f=>f.size>0||(from==='pick'&&f.name));
   if(!ok.length){if(all.length)$('upState').textContent='הקבצים שבחרת הגיעו מהדפדפן ריקים, ולכן אי אפשר לקרוא אותם. נסה לבחור אותם שוב, אחד אחרי השני, או לפתוח את האתר ב-Chrome.'; return}
   upStep(1);let over=0;for(const f of ok)if(!STAGED.some(x=>x.name===f.name&&x.size===f.size)){if(STAGED.length<10)STAGED.push(f);else over++}OVER+=over;showTab('mine');showStaged();
   if(coolLeft()>0){coolNote();return}
@@ -20785,6 +20802,7 @@ function renderMine(force){
   const opt=(v,cur,l)=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`, dis=canWrite?'':' disabled', nv=v=>v==null||v===''?'':esc(v);
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
+  {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
     <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
@@ -20946,7 +20964,7 @@ function pickInit(){
   for(const sh of new Set([...PICKS,...PICKF].map(x=>(lgPos(x[0])||[])[0]).filter(Boolean)))lgLoad(sh);
   const a=$('pickAcct'); a.innerHTML=acctOpts(); 
   $('pickIdx').innerHTML=Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${benchSel().includes(k)}">${BENCHK[k]}</button>`).join('');
-  const box=$('pickBox'); box.open=!(P&&(P.positions||[]).length); pickSub();
+  const box=$('pickBox'), has=!!(P&&(P.positions||[]).length); box.open=!has; pickSub();
 }
 function pickSub(){const n=document.querySelectorAll('.pick[aria-pressed="true"]').length, c=$('pickCnt'); if(c)c.textContent=`המניות שבחרת: ${n}`}
 document.addEventListener('click',e=>{
@@ -20956,7 +20974,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('#pickIdx .chip'); if(b){if(!canWrite)return; const k=b.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; b.setAttribute('aria-pressed',String(nx.includes(k))); changed(); return}
   const ib=e.target.closest&&e.target.closest('#idxRow [data-bench]'); if(ib){if(!canWrite)return; const k=ib.dataset.bench, cur=benchSel(), nx=cur.includes(k)?cur.filter(x=>x!==k):cur.concat(k); if(!nx.length)return; S.bench=nx; changed(); return}
   if(e.target.closest&&e.target.closest('#idxEdit')){IDX_EDIT=!IDX_EDIT; try{renderIdx()}catch(x){} return}
-  if(e.target.closest&&e.target.closest('#btnPickSkip')){const box=$('pickBox'); box.open=false; for(const t of box.querySelectorAll('.pick[aria-pressed="true"]')){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()} pickSub(); try{$('upPanel').scrollIntoView({block:'start',behavior:'smooth'})}catch(x){} return}
+  if(e.target.closest&&e.target.closest('#btnPickSkip')){const box=$('pickBox'); box.open=false; for(const t of box.querySelectorAll('.pick[aria-pressed="true"]')){t.setAttribute('aria-pressed','false'); const i=t.querySelector('input'); if(i)i.remove()} pickSub(); mvGo('up'); return}
   if(e.target.closest&&e.target.closest('#btnPickAdd'))pickAdd();
 });
 document.addEventListener('input',e=>{if(!e.target||e.target.id!=='pickQ')return; const q=e.target.value.trim().toLowerCase(), N=Object.fromEntries([...PICKS,...PICKF]); let n=0;
@@ -20986,7 +21004,7 @@ function pickAdd(){
   pickSub(); pfDirty(); renderMine(true);
   {const ps=$('pickSub'); if(ps)ps.textContent='שלב 2 מתוך 3'}
   st.textContent=`שלב 2 מתוך 3: בדוק את הטבלה ולחץ על "שמור את התיק". ${rows.length===1?'נוסף נייר אחד':'נוספו '+rows.length+' ניירות'} לטבלה של ${acctName(ac)}, מסומנים "סומן ידנית".`+(onTop.length?` בשורה נפרדת, בלי לגעת בכמות מהדוח: ${onTop.join(', ')}. "הסר" בשורה הידנית מסיר רק אותה.`:'')+(was.length?` הוחלפה הכמות הידנית של ${was.join(', ')} (לא נוספה פעמיים).`:'')+(noQty.length?` בלי כמות, ולכן לא נוספו: ${noQty.join(', ')}.`:'')+' בדוק את הטבלה ולחץ על "שמור את התיק".';
-  try{$('pfRows').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}
+  mvGo('hold',st.textContent);
 }
 // the indices the person follows, on the home page: today's change, and for a US index also its future
 let IDX_EDIT=false;
@@ -21038,7 +21056,8 @@ function addList(){
   if(cash.ILS||cash.USD)DRAFT.cash[ac]={ILS:cash.ILS||DRAFT.cash[ac].ILS,USD:cash.USD||DRAFT.cash[ac].USD};
   if(rows.length)(DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();
   pfDirty(); renderMine(true); $('listText').value='';
-  st.textContent=`נוספו ${rows.length} ניירות${(cash.ILS||cash.USD)?' ויתרת מזומן':''}. בדוק את הטבלה למטה ולחץ על "שמור את התיק".`+(bad.length?` לא הובנו ${bad.length} שורות: ${bad.slice(0,3).join(' | ')}`:'');
+  st.textContent=`נוספו ${rows.length} ניירות${(cash.ILS||cash.USD)?' ויתרת מזומן':''}. בדוק את הטבלה ולחץ על "שמור את התיק".`+(bad.length?` לא הובנו ${bad.length} שורות: ${bad.slice(0,3).join(' | ')}`:'');
+  if(rows.length||cash.ILS||cash.USD)mvGo('hold',st.textContent);
 }
 const numOr=(v,d)=>{const n=typeof v==='string'?+v.replace(/,/g,''):+v;return v==null||v===''||!isFinite(n)?d:n};
 // an answer cut off in the middle (a long statement, or the length limit): its complete part, closed. The holdings come
@@ -21551,7 +21570,7 @@ async function readStatement0(J){
           const nfx=(r.fx||[]).length, nd=(r.doubt||[]).length;
           if((nfx||nd||r.warn||(r.kept||[]).length)&&document.body.dataset.page!=='mine'){
             const msg=nfx?`${r.who} בדק את הדוח שהעלית ותיקן ${nfx===1?'פרט אחד':nfx+' פרטים'} בטבלה. התיקונים עוד לא נשמרו.`:`${r.who} בדק את הדוח שהעלית, ויש בטבלה מה לבדוק.`;
-            const tell=(n=0)=>{if(undoFn&&!$('toast').hidden&&n<30){setTimeout(()=>tell(n+1),1000);return} offerUndo(msg,()=>showTab('mine',true),30000,'הצג',true)}; tell()}}
+            const tell=(n=0)=>{if(undoFn&&!$('toast').hidden&&n<30){setTimeout(()=>tell(n+1),1000);return} offerUndo(msg,()=>{showTab('mine',true); mvSet('hold')},30000,'הצג',true)}; tell()}}
         else apply(M2,{lead:(A.kind==='none'||A.kind==='failed')&&M2.rows.length?(e1?'הקריאה המהירה לא הצליחה'+reason(e1)+', והמנוע המעמיק קרא את הדוח. ':'הקריאה המהירה לא מצאה אחזקות, והמנוע המעמיק מצא. '):''});
       }
     }
@@ -21628,7 +21647,7 @@ async function savePf(){
       if((gone.length||dyMoved)&&U0.DY){DY={exists:true,points:U0.DY};await pset('daily',{points:U0.DY})}
       if(U0.HS&&JSON.stringify(U0.HS)!==JSON.stringify(HS)){HS=cl(U0.HS);await pset('history',U0.HS)}
       mergeQ(); render(); $('pfSaved').textContent='השמירה בוטלה. התיק חזר למצב שלפניה.'},15000);
-    upStep(0); st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+(moved?'. שינויים שנכנסו בזמן השמירה עוד לא נשמרו':'')+txNote+(gone.length?(purged?`${/\.$/.test(txNote)?' ':'. '}${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`${/\.$/.test(txNote)?' ':', '}אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
+    upStep(0); {const m=$('mvMsg'); if(m){m.hidden=true; m.textContent=''}} st.textContent=(LOCAL?'נשמר בדפדפן הזה':'נשמר')+(moved?'. שינויים שנכנסו בזמן השמירה עוד לא נשמרו':'')+txNote+(gone.length?(purged?`${/\.$/.test(txNote)?' ':'. '}${gone.join(', ')} נמחקו גם מהתוכנית, מההיסטוריה ומההתראות.`:`${/\.$/.test(txNote)?' ':', '}אבל לא הצלחתי למחוק את ${gone.join(', ')} מהתוכנית או מההיסטוריה. לחץ שוב על "שמור את התיק".`):'')+(arcHit?` ${arcHit} דוחות שמורים עדיין מזכירים אותם. אפשר להסיר אותם מהארכיון בלשונית "דוחות".`:''); render();
     {const added=[...now].filter(x=>!before.has(x)), firstPf=!(U0.P&&(U0.P.positions||[]).length)||FIRSTX;
       // the first explanation waits (at most 12 seconds) for the prices of what was just saved, and for the check of a
       // statement that is still being read (at most 15 minutes). If the check corrected the table, the viewer stays here to
@@ -22254,7 +22273,7 @@ async function pxBeforeReload(){
 // after a refresh, return to the same place once the data is drawn
 function refreshBack(){let s=null; try{s=JSON.parse(sessionStorage.getItem('tr_rf')||'null');sessionStorage.removeItem('tr_rf')}catch(e){}
   if(s&&Date.now()-s.t<60000&&s.y>0)setTimeout(()=>{try{scrollTo(0,s.y)}catch(e){}},1400)}
-function goUpload(){showTab('mine',true);setTimeout(()=>{try{const p=$('upPanel');p.scrollIntoView({behavior:'smooth',block:'start'});const i=$('upImg');(i&&i.closest('label').offsetParent!==null?i:$('upFile')).focus({preventScroll:true})}catch(e){}},60)}
+function goUpload(){showTab('mine',true);mvSet('up');setTimeout(()=>{try{const p=$('upPanel');p.scrollIntoView({behavior:'smooth',block:'start'});const i=$('upImg');(i&&i.closest('label').offsetParent!==null?i:$('upFile')).focus({preventScroll:true})}catch(e){}},60)}
 
 // ---- uploads: smaller screenshots go faster; the elapsed time shows that the reading is alive ----
 async function shrinkImg(f){
@@ -22354,7 +22373,7 @@ function renderCandsP(m,pool,mine=''){
     const was=pv&&pv.px[r.k]>0&&p&&p.px>0?(p.px/pv.px[r.k]-1)*100:null, dn=c.next?daysTo(c.next):null;
     // what it is strong in, of the parts that weigh in the match (the viewer's choices among them)
     const strong=Object.keys(f.W||{}).filter(x=>f.W[x]>0&&f[x]!=null).map(x=>[x,f[x]/f.W[x]]).filter(x=>x[1]>=0.7).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>FITL[x[0]]);
-    const tags=(strong.length?`<span class="tag" style="background:var(--ok-bg);color:var(--ok-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
+    const tags=(strong.length?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
       +(r.under>0?`<span class="tag new">הקבוצה ${nn(r.under.toFixed(0))} נק׳ אחוז מתחת ליעד שלך</span>`:!m.groups[f.g]||!(m.groups[f.g].w>0)?`<span class="tag new">אין בתיק בכלל</span>`:'')
       +(f.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(dn!=null&&dn>=0&&dn<=21?`<span class="tag" style="background:var(--sunk);color:var(--ink2)">דוח בעוד ${dn===0?'היום':dn===1?'יום':dn+' ימים'}</span>`:'')
       +(wmarks().includes(r.k)?'<span class="tag an">סימנת</span>':'');
@@ -23878,7 +23897,8 @@ const GO=[
   {id:'mix',l:'פיזור לפי הקבוצות שלך',k:'פיזור קבוצות חלוקה עוגה',tab:'overview',el:'mixHome'},
   {id:'health',l:'מדד בריאות התיק',k:'בריאות ציון מדד',tab:'overview',el:'healthHome'},
   {id:'chiko',l:'צ׳יקו: לשאול שאלה',k:'צ׳יקו ציקו עוזר שאלה צ\'אט שיחה',fn:()=>{const b=$('chatFab'); if(b)b.click()}},
-  {id:'mine',l:'התיק שלי: להעלות דוח',k:'העלאה דוח קובץ צילום מסך אקסל pdf עדכון תיק כמות',tab:'mine'},
+  {id:'mine',l:'התיק שלי: להעלות דוח',k:'העלאה דוח קובץ צילום מסך אקסל pdf עדכון תיק כמות',tab:'mine',el:'upPanel'},
+  {id:'pfedit',l:'התיק שלי: עריכת האחזקות',k:'אחזקות טבלה כמות עלות מזומן תיקון',tab:'mine',el:'pfRows'},
   {id:'pick',l:'להוסיף מניה ידנית',k:'הוספה ידנית לוגו בחירה מניה',tab:'mine',el:'pickBox'},
   {id:'plan',l:'תוכנית ההגדלה: ההפקדה הבאה',k:'תוכנית הפקדה חודשית קנייה הבא בתור מעקב',tab:'plan'},
   {id:'once',l:'הפקדה חד פעמית',k:'חד פעמית בונוס הפקדה נוספת',tab:'plan',el:'hOnce'},
@@ -23937,6 +23957,7 @@ function goTo(d){
   if(!d.el)return;
   setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
     {const dp=el.closest('[data-dvp]'); if(dp)try{dvSet(dp.dataset.dvp)}catch(e){}}
+    {const mp=el.closest('[data-mvp]'); if(mp)try{mvSet(mp.dataset.mvp)}catch(e){}}
     const fs=el.closest('[data-pane="risk"] > [data-rg]'); if(fs){try{rgSet(fs.dataset.rg)}catch(e){}}
     if(el.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}}
     for(let p=el.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
@@ -23951,6 +23972,10 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.4',at:'2026-10-30',t:'"התיק שלי" בשלוש לשוניות',d:'האחזקות, עדכון מדוח, והוספה ידנית: כל אחת בלשונית משלה, במקום מסך אחד ארוך. אחרי הוספה או קריאת דוח, הטבלה נפתחת לבדיקה ולשמירה.',go:'pfedit'},
+  {v:'2026-10-30.3',at:'2026-10-30',t:'התראות בזמן אמת במייל',d:'כשמחיר שקבעת נחצה, כשמניה שלך זזה ביום יותר מהאחוז שבחרת, כשהדולר חוצה שער שקבעת, או כשמגיעה ידיעה קריטית על מניה שלך. כל דבר פעם אחת ביום, ולא בלילה.',go:'mail'},
+  {v:'2026-10-30.2',at:'2026-10-30',t:'סיכום בוקר',d:'כל בוקר במייל: מה זז בתיק ביום המסחר האחרון, מה מחכה בשבוע הקרוב (דוחות, דיבידנדים, הפקדה), והידיעות החשובות על המניות שלך.',go:'mail'},
+  {v:'2026-10-30.1',at:'2026-10-30',t:'"מה אם" מתוך ידיעה',d:'בכל ידיעה שנוגעת לתיק: כמה התיק היה זז אם המניות שהיא נוגעת בהן היו יורדות או עולות. חישוב על המספרים שלך, לא תחזית.',go:'nx'},
   {v:'2026-10-29.1',at:'2026-10-29',t:'חיבור למציאות: לשונית חדשה',d:'לשונית משלה בתפריט. כל כתבה על מניה שלך, וגם חדשות כלליות (ריבית, מלחמות, סנקציות, אנרגיה, שבבים), נקראת פעם אחת על ידי צ׳יקו: מה קרה בעברית, אילו חברות וענפים זה עשוי לגעת בהם ודרך מה, כיוון אפשרי, מה עובדה ומה הערכה, ומה לא ידוע. הדף מצליב את זה עם התיק שלך: "אתה מחזיק NVDA (16% מהתיק)". תצוגות לפי מניות, ענפים ואירועים רחבים, סינון לפי חשיבות וסוג, שמירה וסימון כנקרא, נקודה ליד אחזקה עם ידיעה חשובה, התראה בבית ובהודעת הבוקר, וצ׳יקו עונה "למה NVIDIA ירדה?" מהמחירים והידיעות יחד. בלי תחזית מחיר ובלי הסתברות.',go:'nx'},
   {v:'2026-10-28.6',at:'2026-10-28',t:'לוח המסחר: דוחות ודיבידנדים קדימה',d:'נקודה סגולה ביום שמתפרסם דוח כספי של מניה שלך, ונקודה ירוקה ביום אקס דיבידנד וביום התשלום. עיגול ריק הוא מועד משוער. דוחות עד ארבעה חודשים קדימה, ודיבידנדים לשנה הקרובה: מה שהחברה הכריזה, ואחריו לפי הקצב של הדיבידנדים הקודמים. דוח שכבר פורסם רשום ביום שבו פורסם באמת, לפי הדיווח של החברה לרשות ניירות הערך האמריקאית.',go:'cal'},
   {v:'2026-10-28.5',at:'2026-10-28',t:'השבועיים הקרובים בתיק שלך',d:'בדף הבית: כרטיס לכל יום שיש בו משהו, דוח כספי, דיבידנד, יום ההפקדה או יום בלי מסחר. ומתחת: כמה התיק מייצר בשנה מדיבידנדים.',go:'ov'},

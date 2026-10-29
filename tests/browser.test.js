@@ -1027,15 +1027,19 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
   await pg.evaluate(()=>{const b=document.getElementById('pickBox'); b.open=true; const a=document.getElementById('pickAcct'); a.value='exc'; a.dispatchEvent(new Event('change',{bubbles:true}))});
-  // MSFT: 2 in Excellence from the statement; 3 more typed by hand
+  // "התיק שלי" opens on the holdings when there are any; adding by hand is its own tab, and an add shows the table
+  assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold');
+  await pg.click('#mvTabs [data-mv="type"]');
   await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','3'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   const rows=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].filter(tr=>tr.querySelector('[data-pf="sym"]')?.value==='MSFT').map(tr=>({acct:tr.querySelector('[data-pf="acct"]').value,qty:+tr.querySelector('[data-pf="qty"]').value,flag:(tr.querySelector('.flag.pick')||{}).textContent||'',del:+tr.querySelector('[data-pfdel]').dataset.pfdel})));
   let r=await rows();
   assert.deepEqual(r.map(x=>[x.acct,x.qty,x.flag]),[['exc',2,''],['exc',3,'נוסף ידנית, בנוסף לדוח']],'the statement\'s row untouched, the typed one beside it');
   assert.match(await pg.evaluate(()=>document.getElementById('pickState').textContent),/בלי לגעת בכמות מהדוח: MSFT \(2 מהדוח \+ 3 ידנית\)/);
   assert.ok(!(await pg.evaluate(()=>document.getElementById('dupBox')?.textContent||'')).includes('MSFT'),'not reported as the same security twice');
+  assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold','the add shows the table');
+  assert.match(await pg.evaluate(()=>document.getElementById('mvMsg').textContent),/בדוק את הטבלה/);
   // typed again: the hand row is replaced, never doubled
-  await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
+  await pg.click('#mvTabs [data-mv="type"]'); await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   r=await rows(); assert.deepEqual(r.map(x=>x.qty),[2,4]);
   // removing the hand row: the statement's 2 stay
   await pg.click(`#pfRows [data-pfdel="${r[1].del}"]`); await pg.waitForTimeout(300);
@@ -1533,9 +1537,10 @@ test('reading a file: what the viewer changed or saved meanwhile stays; "quick o
   assert.match(await pg.evaluate(()=>document.getElementById('toastMsg').textContent),/המנוע המעמיק בדק את הדוח שהעלית ותיקן 2 פרטים בטבלה\. התיקונים עוד לא נשמרו\./);
   await pg.evaluate(()=>document.getElementById('toastUndo').click()); await pg.waitForTimeout(300);
   assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mine'); assert.ok((await R.rows()).some(r=>r.fixed));
+  assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold','"הצג" opens the table');
   assert.equal(await pg.evaluate(()=>document.getElementById('toast').hidden),true);
   // the viewer is in a field of the table when the check ends: the corrections wait until the field is left
-  await R.pick('e.csv',BAD); await R.quick();
+  await R.pick('e.csv',BAD); await R.quick(); await pg.click('#mvTabs [data-mv="hold"]');
   await pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('input[data-pf="sym"]')?.value==='MSFT').querySelector('input[data-pf="name"]').focus());
   await pg.waitForFunction(()=>/כשתסיים להקליד/.test(document.getElementById('upProg').textContent),null,{timeout:15000});
   assert.equal((await R.rows()).find(r=>r.sym==='MSFT').qty,2,'nothing moves under the cursor');
