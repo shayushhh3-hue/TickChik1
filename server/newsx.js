@@ -93,13 +93,17 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   // what waits for a reading: the securities' articles of the week, then the general ones
   const news=((store.getDoc('research/news').data||{}).items||[]).filter(it=>it&&it.link&&(it.at||it.seen)>=from).map(it=>({...it,id:newsId(it.link),src:'co'}))
     .concat(xArticles(store,{from}).map(it=>({...it,id:newsId(it.link)})));   // 29.10: the posts from X, when there are any
-  const todo=news.concat([...gen.values()]).filter(a=>!by[a.id]).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
+  const todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
   if(st.ai){for(let b=0;b<maxBatches&&b*perBatch<todo.length;b++){
       if(Date.now()-t0>budgetMs){st.stopped='time';break}
       const batch=todo.slice(b*perBatch,(b+1)*perBatch), got=await analyzeBatch(batch,{fetch:f,log,ask});
       if(!got){st.fail++; st.first=st.first||'analysis: no usable answer'; if(st.fail>=2)break; continue}
       st.batches++; for(const [i,x] of Object.entries(got)){const a=batch[+i]; if(a){by[a.id]=x; st.read++}}
       await sleep(300)}}
+  // 30.10: what Claude did not read (no key, a refused or broken answer, or more than this run's share) gets a plain
+  // reading by rules from the headline, said to be one, so the screen is never empty because of the reader; Claude's
+  // reading replaces it in a later run
+  st.rules=0; for(const a of todo){if(by[a.id])continue; const x=ruleRead(a); if(x){by[a.id]=x; st.rules++}}
   // 29.10: every reading goes to the archive (the less important ones are not shown, but kept: with what the share did
   // after, they are the record a future model can learn from), then the shares' moves after the older ones
   let arc=null; try{arc=newsArchive(store,news.concat([...gen.values()]).filter(a=>by[a.id]).map(a=>({a,x:by[a.id]})),{now}); arcOutcomes(store,{now}); arc={...arc,...arcStats(store,{now})}; st.arc=arc}catch(e){st.first=st.first||'archive: '+e.message}
@@ -124,9 +128,9 @@ export function newsArchive(store,pairs,{now=new Date(),months=24}={}){
   const byM={}, iso=now.toISOString(); let added=0;
   for(const {a,x} of pairs){if(!a||!a.id||!x)continue; const m=ym(a.at||a.seen||iso); if(!/^\d{4}-\d\d$/.test(m))continue; (byM[m]=byM[m]||[]).push({a,x})}
   for(const [m,L] of Object.entries(byM)){const p=ARC+'/'+m, d=store.getDoc(p), doc=d.exists&&d.data?d.data:{items:[]}, have=new Set((doc.items||[]).map(i=>i.id));
-    for(const {a,x} of L){if(have.has(a.id))continue; have.add(a.id);
+    for(const {a,x} of L){if(have.has(a.id)){const i=doc.items.findIndex(z=>z.id===a.id); if(i<0||!doc.items[i].rules||x.rules)continue; const out=doc.items[i].out; doc.items.splice(i,1); doc.items.push({...arcItem(a,x,iso),out}); added++; continue} have.add(a.id);
       doc.items.push({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],
-        aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),out:{}}); added++}
+        aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),rules:!!x.rules,out:{}}); added++}
     if(added)store.setDoc(p,{...doc,updatedAt:iso},{silent:true})}
   // the old months go
   const keep=new Set(); for(let k=0;k<months;k++){const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-k,1)); keep.add(d.toISOString().slice(0,7))}
@@ -161,3 +165,40 @@ export function arcStats(store,{now=new Date(),minN=5}={}){
     (track[sym]=track[sym]||{})[dir]={n:L.length,avg5:Math.round(avg*100)/100,hit5:Math.round(hit/L.length*100)}}
   return {n,months:months.size,done20,track};
 }
+
+// ---- 30.10: the plain reading by rules: the kind, the level and the direction from words in the English headline and
+// summary, a Hebrew headline built from the security and the kind. Marked rules:true and cert 'est' ("הערכה"), never
+// more than "important", and never a guess at suppliers or competitors ----
+const RX=[
+  ['ma',/\b(acquir|merger|to buy|takeover|buyout|deal to buy|bid for)\w*/i],
+  ['earnings',/\b(earnings|quarterly results|q[1-4] results|revenue|profit|eps|beats?|miss(es|ed)?|tops estimates)\b/i],
+  ['guidance',/\b(guidance|outlook|forecast)\b/i],
+  ['rating',/\b(upgrade|downgrade|price target|overweight|underweight|outperform|underperform|initiat\w+ coverage)\b/i],
+  ['legal',/\b(lawsuit|sues?|sued|settle\w*|court|verdict|class action)\b/i],
+  ['regulation',/\b(antitrust|regulator|sec |ftc|doj|probe|investigation|fine[ds]?|ban|approval|fda)\b/i],
+  ['management',/\b(ceo|cfo|chief executive|steps down|resign\w*|appoint\w*|names .* (ceo|cfo|chair))\b/i],
+  ['contract',/\b(contract|partnership|agreement|order|deal)\b/i],
+  ['product',/\b(launch\w*|unveil\w*|new (model|product|chip)|release[sd]?)\b/i],
+  ['macro_rates',/\b(fed|federal reserve|interest rate|rate (cut|hike)|treasury yields?)\b/i],
+  ['inflation',/\b(inflation|cpi|pce)\b/i],
+  ['sanctions',/\b(tariff|sanction|export (ban|curb|control)|trade war)\b/i],
+  ['geo',/\b(war|missile|attack|conflict|tensions?|military)\b/i],
+  ['energy',/\b(oil|crude|opec|natural gas|brent)\b/i],
+  ['ai_chips',/\b(ai|chip|semiconductor|gpu|nvidia)\b/i]];
+const POS=/\b(beat|beats|tops|raise[sd]?|upgrade[sd]?|surge[sd]?|soar\w*|jump\w*|record|rall(y|ies)|win[s]?|wins|approval|approved|strong|boost\w*|climb\w*|gain\w*)\b/i;
+const NEG=/\b(miss(es|ed)?|cut[s]?|downgrade[sd]?|plunge[sd]?|slump\w*|tumble[sd]?|fall[s]?|fell|drop\w*|lawsuit|sue[sd]?|probe|recall\w*|layoff\w*|weak|warn\w*|loss(es)?|delay\w*|ban|fine[sd]?|bankrupt\w*)\b/i;
+const BIG=/\b(bankrupt\w*|chapter 11|fraud|plunge[sd]?|soar\w*|acquir\w*|merger|takeover|guidance (cut|raise)|(cuts?|raises?|lowers?) (its )?(outlook|forecast|guidance)|ceo (resigns|steps down|out)|recall)\b/i;
+const MACRO=new Set(['macro_rates','inflation','sanctions','geo','energy']);
+const SEC_OF={ai_chips:['Technology','Semiconductors'],energy:['Energy'],macro_rates:['Finance','Real Estate'],inflation:['Consumer Staples','Consumer Discretionary'],sanctions:['Industrials','Technology'],geo:['Defense','Energy']};
+const THEME_OF={ai_chips:['ai','chips'],energy:['oil'],macro_rates:['rates','usd'],inflation:['inflation'],sanctions:['tariffs','sanctions'],geo:['war']};
+const DIR_HE={pos:'נראה חיובי',neg:'נראה שלילי',mixed:'השפעה מעורבת',unclear:''};
+export function ruleRead(a){
+  const t=`${a.title||''} ${a.sum||''}`; if(!t.trim())return null;
+  const type=(RX.find(([,re])=>re.test(t))||['other'])[0], p=POS.test(a.title||''), n=NEG.test(a.title||''), dir=p&&n?'mixed':p?'pos':n?'neg':'unclear';
+  const syms=(a.syms||[]).filter(s=>TICK.test(s)).slice(0,3), macro=MACRO.has(type)&&!syms.length;
+  const level=syms.length?(BIG.test(t)?'imp':['earnings','guidance','ma','rating','legal','regulation','management'].includes(type)?'imp':'watch'):macro?'watch':'info';
+  const who=syms.length?syms.join(', ')+': ':'';
+  return {he:`${who}${TYPE_HE[type]}${DIR_HE[dir]?', '+DIR_HE[dir]:''}`.slice(0,80),what:`לפי הכותרת במקור (${a.pub||'מקור חיצוני'}). הקריאה המלאה של צ׳יקו עוד לא נעשתה; זו קריאה אוטומטית לפי מילים בכותרת.`,
+    type,level,dir,cert:'est',aff:syms.map(sym=>({sym,how:'direct',dir,why:'הכתבה עליה'})),sectors:SEC_OF[type]||[],themes:THEME_OF[type]||[],macro,unknown:'מה בדיוק קרה ומה המשמעות: הכתבה עוד לא נקראה במלואה.',more:'',ev:null,rules:true,at:new Date().toISOString()};
+}
+const arcItem=(a,x,iso)=>({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),rules:!!x.rules});

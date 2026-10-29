@@ -1891,7 +1891,7 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx h3{margin:0;font-size:16px;line-height:1.4;font-weight:700}
 .nx .nx-orig{font-size:12.5px;color:var(--muted);direction:ltr;text-align:start;unicode-bidi:plaintext;line-height:1.4}
 .nx .nx-what{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.nx .nx-imp{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)} .nx .nx-imp b{color:var(--vio-ink)}
+.nx .nx-rules{font-size:12px;color:var(--muted)} .nx .nx-imp{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)} .nx .nx-imp b{color:var(--vio-ink)}
 .nx-tag.sm{padding:2px 7px}
 .nx details.nx-more>div,.nx details.nx-more>p{margin-top:8px}
 .nx-why{padding:9px 12px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .18);font-size:13.5px;line-height:1.55} .nx-why b{color:var(--vio-ink)}
@@ -23124,7 +23124,7 @@ function nxCard(it,rel,ev,opts={}){
   return `<article class="nx lv-${lv}${read?' read':''}" data-nid="${esc(it.id)}" data-ev="${esc(ev?ev.k:'')}">
     <div class="nx-h"><span class="nx-tag lv-${lv}">${NX_LV[lv]}</span>${x?`<span class="nx-tag d-${x.dir} sm">${x.dir==='pos'?'▲':x.dir==='neg'?'▼':x.dir==='mixed'?'◆':'?'}</span>`:'<span class="nx-tag">עוד לא נותח</span>'}<span>${esc(it.pub||'')}${it.src==='x'&&it.likes?` · ${it.likes} לייקים`:''}${when?' · '+when:''}</span>${acts}</div>
     <h3>${x?esc(x.he):`<span class="nx-orig">${esc(it.title)}</span>`}</h3>
-    ${x?`<p class="nx-what">${esc(x.what)}</p>`:''}
+    ${x&&x.rules?`<p class="nx-orig">${esc(it.title)}</p><p class="nx-what nx-rules">קריאה אוטומטית לפי מילים בכותרת; צ׳יקו יקרא אותה במלואה בהמשך.</p>`:x?`<p class="nx-what">${esc(x.what)}</p>`:''}
     ${imp?`<p class="nx-imp"><b>לתיק שלך:</b> ${imp}</p>`:''}
     ${more}
   </article>`;

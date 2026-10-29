@@ -1264,3 +1264,19 @@ test('X for the securities: the liked posts with the cashtag, a few securities a
   }finally{if(t0)process.env.X_BEARER_TOKEN=t0; else delete process.env.X_BEARER_TOKEN}
   assert.equal(xSearchUrl('NVDA'),'https://x.com/search?q=%24NVDA&src=cashtag_click&f=live');
 });
+
+test('the plain reading by rules: when Claude cannot read, every article still gets a kind, a level and a direction, said to be an estimate, and Claude replaces it later',async()=>{
+  const {ruleRead,newsxTask,newsId}=await import('../server/newsx.js');
+  const r=ruleRead({title:'Nvidia beats estimates and raises its outlook',pub:'Reuters',syms:['NVDA']});
+  assert.equal(r.type,'earnings'); assert.equal(r.dir,'pos'); assert.equal(r.level,'imp'); assert.equal(r.cert,'est'); assert.equal(r.rules,true); assert.match(r.he,/^NVDA: תוצאות כספיות, נראה חיובי$/); assert.deepEqual(r.aff.map(a=>a.sym),['NVDA']);
+  const f=ruleRead({title:'Fed holds rates steady',syms:[]}); assert.equal(f.type,'macro_rates'); assert.equal(f.macro,true); assert.equal(f.level,'watch');
+  assert.equal(ruleRead({title:'Coca-Cola faces lawsuit over labels',syms:['KO']}).dir,'neg');
+  // a run without Claude: read by rules; then with Claude: read again
+  const s=new Store(':memory:'), now=new Date('2026-10-29T20:00:00Z'), iso=now.toISOString();
+  s.setDoc('research/news',{items:[{title:'Microsoft faces EU antitrust probe',pub:'FT',link:'https://x/m',at:iso,syms:['MSFT'],seen:iso}]});
+  const k0=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try{const st=await newsxTask(s,{now,general:null}); assert.equal(st.rules,1); const x=s.getDoc('research/newsx').data.by[newsId('https://x/m')]; assert.equal(x.rules,true); assert.equal(x.type,'regulation'); assert.equal(x.dir,'neg')}finally{if(k0)process.env.ANTHROPIC_API_KEY=k0}
+  const ask=async()=>JSON.stringify([{i:0,he:'האיחוד האירופי חוקר את מיקרוסופט',what:'חקירה.',type:'regulation',level:'imp',dir:'neg',cert:'fact',aff:[{sym:'MSFT',how:'direct',dir:'neg',why:'החברה'}],sectors:[],themes:[],macro:false,unknown:'',more:'',ev:'msft-eu'}]);
+  const st2=await newsxTask(s,{now,general:null,ask}); assert.equal(st2.read,1); const y=s.getDoc('research/newsx').data.by[newsId('https://x/m')]; assert.ok(!y.rules); assert.equal(y.cert,'fact');
+  const arc=s.listDocs('research/newsarc').flatMap(r=>r.data.items); assert.equal(arc.length,1); assert.equal(arc[0].rules,false,'the archive keeps Claude\'s reading');
+});
