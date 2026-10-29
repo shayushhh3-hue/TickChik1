@@ -726,3 +726,30 @@ test('a savings goal kept apart: what was moved out of the portfolio leaves its 
   near(F.model(G.P,G.Q,'all').total,all0.total,0.01); near(F.potFlowTotal(),0,0.01);
   G.S=null;
 });
+
+test('the news matched to the portfolio: the companies held and their weight, a supplier, a sector, the dollar; the order; the alerts by the chosen levels',()=>{
+  const pos=[{sym:'NVDA',w:16.4,group:'tech'},{sym:'MSFT',w:15.2,group:'tech'},{sym:'JPM',w:8.7,group:'fin'},{sym:'KO',w:5.3,group:'cons'}], m={pos,usdPct:88,total:24645};
+  const SEC={NVDA:'Technology',MSFT:'Technology',JPM:'Finance',KO:'Consumer Staples'};
+  const G={P:{positions:pos.map(p=>({sym:p.sym}))},WATCH:{marks:['AMD'],held:[]},S:{newsAl:{lv:{crit:true,imp:true,watch:false}}},NEWSD:null,NXD:null,NXID:new Map(),NEWSST:null,SECKEY:/^[A-Z]/,
+    secOfIt:k=>SEC[k]||'',lab:k=>k,pct:(x,d)=>(+x).toFixed(d==null?1:d)+'%',isoDay:t=>new Date(t).toISOString().slice(0,10),DY:null,Q:{prices:{}},esc:x=>String(x),Date};
+  const F=load(['NX_SEC_MAP','NX_SEC_HE','NX_HOW','NX_DIR','NX_CERT','NX_LV','nxSecOf','newsRel','nxState','nxAlertPrefs'],G);
+  const now=new Date().toISOString();
+  const nvda={id:'a',src:'co',syms:['NVDA'],at:now,x:{he:'אנבידיה היכתה את התחזיות',level:'crit',dir:'pos',cert:'fact',type:'earnings',macro:false,sectors:['Technology'],themes:['ai'],aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'החברה עצמה'},{sym:'MSFT',how:'customer',dir:'mixed',why:'לקוחה גדולה'},{sym:'AMD',how:'competitor',dir:'neg',why:'מתחרה'}]}};
+  const r=F.newsRel(nvda,m);
+  assert.deepEqual(r.hits.map(h=>h.sym+':'+h.how+':'+(h.held?'held':'watch')),['NVDA:direct:held','MSFT:customer:held','AMD:competitor:watch']);
+  assert.match(r.text,/^אתה מחזיק NVDA \(16\.4% מהתיק\)\. MSFT שבתיק \(15\.2%\) לקוחה של החברה: לקוחה גדולה\./); assert.ok(!/AMD/.test(r.text),'a followed security is not "held"');
+  assert.ok(r.score>9&&r.score<11,'direct, a customer, a followed competitor and critical: '+r.score);
+  // a rates decision: nobody held directly; the sector (JPM, Finance) and the dollar
+  const fed={id:'b',src:'gen',syms:[],at:now,x:{he:'הפד',level:'imp',dir:'mixed',cert:'fact',type:'macro_rates',macro:true,sectors:['Finance','Real Estate'],themes:['rates','usd'],aff:[]}};
+  const r2=F.newsRel(fed,m); assert.deepEqual(r2.hits,[]); assert.deepEqual(r2.secs,[{g:'Finance',w:8.7}]); assert.ok(r2.macro&&r2.usd);
+  assert.match(r2.text,/^9% מהתיק בפיננסים, הענף שהידיעה נוגעת לו\. אירוע רחב .* 88% מהתיק בדולרים, והידיעה נוגעת לשער הדולר\.$/); assert.ok(r2.score<r.score,'the company\'s own report comes first');
+  // a general article with nothing of the portfolio: not relevant, and said so
+  const sport={id:'c',src:'gen',syms:[],at:now,x:{he:'ספורט',level:'info',dir:'unclear',cert:'fact',type:'other',macro:false,sectors:[],themes:[],aff:[]}};
+  const r3=F.newsRel(sport,m); assert.equal(r3.relevant,false); assert.equal(r3.text,'');
+  // without a reading yet, an article gathered for a held security is still relevant
+  const raw={id:'d',src:'co',syms:['KO'],at:now,x:null}; const r4=F.newsRel(raw,m); assert.equal(r4.relevant,true); assert.match(r4.text,/אתה מחזיק KO/);
+  // older news sinks
+  const old={...nvda,at:new Date(Date.now()-5*864e5).toISOString()}; assert.ok(F.newsRel(old,m).score<r.score-1);
+  // the alert levels: the viewer's choice, "watch" off by default
+  assert.deepEqual(F.nxAlertPrefs().lv,{crit:true,imp:true,watch:false});
+});

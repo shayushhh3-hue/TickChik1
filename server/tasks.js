@@ -11,7 +11,7 @@ const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
 // every call out has a time limit, so one site that hangs cannot hold up the whole night (and every job queued after it)
 const fetchFor=(ms)=>(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||AbortSignal.timeout(ms)});
 // the owner's documents the page needs to run headless (nothing of the partners is read)
-export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/main','history/prices','history/daily','quotes/latest','research/latest','research/candidates','research/longterm','research/comove','alerts/ack','alerts/state'];
+export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/main','history/prices','history/daily','quotes/latest','research/latest','research/candidates','research/longterm','research/comove','research/news','research/newsx','alerts/ack','alerts/state'];
 export function ownerDocs(store){const out={}; for(const p of OWNER_DOCS){const d=store.getDoc(p); if(d.exists)out[p]=d.data} return out}
 const ownerUser=store=>{const o=store.users().find(u=>u.role==='owner'); return {uid:o?o.id:'owner',email:o?o.email:'',owner:true}};
 

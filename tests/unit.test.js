@@ -1178,3 +1178,35 @@ test('dividends ahead in the research run: Nasdaq for a US share, Yahoo for a Te
   // asked again within three days: not again
   s.setDoc('research/s_KO',{sym:'KO',divPlanAt:now.toISOString()}); const g2={}; await divsPass(s,['KO'],g2,{fetch:f,now,held:new Set(['KO']),pause:0}); assert.equal(g2.KO,undefined);
 });
+
+test('the news understood: one reading per article, shared; the general news; a partner sees the readings of their own securities and the general ones',async()=>{
+  const {newsxTask,cleanX,newsId,newsPrompt}=await import('../server/newsx.js'); const {partnerView}=await import('../server/store.js');
+  const s=new Store(':memory:'), now=new Date('2026-10-29T08:25:00Z'), iso=now.toISOString();
+  s.setDoc('research/news',{items:[{title:'Nvidia beats estimates, raises outlook',pub:'Reuters',link:'https://x/nvda1',at:iso,sum:'Nvidia reported revenue above estimates and raised its outlook',syms:['NVDA'],seen:iso},
+    {title:'Coca-Cola names new CFO',pub:'AP',link:'https://x/ko1',at:iso,syms:['KO'],seen:iso},{title:'old one',pub:'x',link:'https://x/old',at:'2026-10-01T00:00:00Z',syms:['KO'],seen:'2026-10-01T00:00:00Z'}],updatedAt:iso});
+  // the reading: a fake Claude that answers the batch, and a general feed of one article
+  const asked=[]; const ask=async prompt=>{asked.push(prompt); const n=(prompt.match(/"i":\d+/g)||[]).length;
+    const A=[{i:0,he:'אנבידיה היכתה את התחזיות והעלתה את התחזית',what:'החברה דיווחה על הכנסות מעל הצפי.',type:'earnings',level:'crit',dir:'pos',cert:'fact',aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'הדוח של החברה עצמה'},{sym:'TSM',how:'supplier',dir:'pos',why:'מייצרת את השבבים'},{sym:'bad sym',how:'x'}],sectors:['Technology','Semiconductors','Nope'],themes:['ai','chips'],macro:false,unknown:'לא ידוע איך השוק יגיב.',more:'רקע.',ev:'NVDA Q3 Report!'},
+      {i:1,he:'קוקה-קולה מינתה סמנכ"ל כספים',what:'מינוי.',type:'management',level:'watch',dir:'unclear',cert:'fact',aff:[{sym:'KO',how:'direct',dir:'unclear',why:'החברה עצמה'}],sectors:['Consumer Staples'],themes:[],macro:false,unknown:'',more:'',ev:'ko-cfo'},
+      {i:2,he:'הפד הותיר את הריבית',what:'הריבית נשארה.',type:'macro_rates',level:'imp',dir:'mixed',cert:'fact',aff:[],sectors:['Finance','Real Estate'],themes:['rates','usd'],macro:true,unknown:'מה יקרה בהחלטה הבאה.',more:'',ev:'fed-rate-hold-oct'}];
+    return JSON.stringify(A.slice(0,n))};
+  const general=async()=>[{title:'Fed holds rates steady',pub:'CNBC',link:'https://x/fed',at:iso,sum:'The Fed left rates unchanged',tickers:[]}];
+  const st=await newsxTask(s,{now,ask,general});
+  assert.equal(st.read,3); assert.equal(st.batches,1); assert.equal(st.gen,1); assert.equal(asked.length,1,'one call for the batch');
+  assert.ok(!/old one/.test(asked[0]),'a week-old article is not read'); assert.ok(/"listed_under":\["NVDA"\]/.test(asked[0]));
+  const d=s.getDoc('research/newsx').data, x=d.by[newsId('https://x/nvda1')];
+  assert.equal(x.level,'crit'); assert.deepEqual(x.aff.map(a=>a.sym+':'+a.how),['NVDA:direct','TSM:supplier'],'a bad symbol is dropped'); assert.deepEqual(x.sectors,['Technology','Semiconductors'],'only known sectors'); assert.equal(x.ev,'nvda-q3-report');
+  assert.equal(d.gen.length,1); assert.equal(d.by[d.gen[0].id].macro,true); assert.equal(d.n,3);
+  // the next run: nothing new to read, nothing asked
+  const st2=await newsxTask(s,{now:new Date(now.getTime()+60e3),ask,general}); assert.equal(st2.read,0); assert.equal(asked.length,1);
+  // a partner holding KO: KO's reading and the general one, not NVDA's
+  s.setDoc('data/users/u_b/portfolio',{positions:[{sym:'KO',qty:1}]});
+  const v=partnerView(s,{id:'u_b',role:'friend'},'research/newsx',s.getDoc('research/newsx').data);
+  assert.deepEqual(Object.keys(v.by).sort(),[newsId('https://x/fed'),newsId('https://x/ko1')].sort()); assert.equal(v.gen.length,1);
+  // without Claude: nothing read, said so
+  const s2=new Store(':memory:'); s2.setDoc('research/news',{items:[{title:'t',link:'https://x/t',at:iso,syms:['KO'],seen:iso}]}); const k0=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try{const st3=await newsxTask(s2,{now,general:null}); assert.equal(st3.ai,false); assert.equal(st3.waiting,1); assert.equal(s2.getDoc('research/newsx').data.ai,false)}finally{if(k0)process.env.ANTHROPIC_API_KEY=k0}
+  // the cleaner alone
+  assert.equal(cleanX({he:'x'}),null,'no what: nothing'); assert.equal(cleanX({he:'a',what:'b',level:'huge',dir:'up'}).level,'info');
+  assert.ok(/אין להציג|בלי הסתברות|בלי תחזית מחיר/.test(newsPrompt([{title:'t'}])),'the prompt forbids a price forecast');
+});
