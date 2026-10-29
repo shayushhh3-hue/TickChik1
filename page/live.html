@@ -2096,6 +2096,19 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
 
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
 <div class="i18np" id="i18nPill" translate="no" dir="rtl" lang="he" hidden><span class="sp" aria-hidden="true"></span><span class="tx"></span><button class="btn sm" type="button" data-i18n="go" hidden>להמשיך · Continue</button><button class="btn sm" type="button" data-i18n="he">עברית</button></div>
+<!-- 29.10: the entry: the TikChik logo animation, once per visit (a new tab or window), skipped with a tap, never with
+     "reduce motion"; silent, as phones play only silent video on their own -->
+<div id="introSplash" aria-hidden="true"><video id="introVid" muted playsinline autoplay preload="auto"><source src="intro.mp4" type="video/mp4"><source src="intro.webm" type="video/webm"></video></div>
+<style>#introSplash{position:fixed;inset:0;z-index:10000;background:#10173A;display:grid;place-items:center;transition:opacity .45s ease;cursor:pointer}
+#introSplash video{width:min(100vw,900px);max-height:100vh;object-fit:contain;-webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 62% 58% at 50% 50%,#000 60%,transparent 100%)}
+#introSplash.out{opacity:0;pointer-events:none}</style>
+<script>(function(){var el=document.getElementById('introSplash'),v=document.getElementById('introVid'),done=false;
+  function end(){if(done)return;done=true;el.classList.add('out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},500)}
+  var seen=false;try{seen=sessionStorage.getItem('tr_intro')==='1';sessionStorage.setItem('tr_intro','1')}catch(e){}
+  var calm=false;try{calm=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+  if(seen||calm||/HeadlessChrome|Playwright/.test(navigator.userAgent)||window.__tcNoIntro){el.parentNode.removeChild(el);return}
+  v.addEventListener('ended',function(){setTimeout(end,250)});v.addEventListener('error',end);var srcs=v.querySelectorAll('source');if(srcs.length)srcs[srcs.length-1].addEventListener('error',end);el.addEventListener('click',end);
+  var p=v.play&&v.play();if(p&&p.catch)p.catch(end);setTimeout(end,3500)})();</script>
 <div class="wrap" dir="rtl" lang="he">
   <button class="navtab" id="navtab" type="button" aria-label="פתח את התפריט" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <div class="scrim" id="scrim" hidden></div>
