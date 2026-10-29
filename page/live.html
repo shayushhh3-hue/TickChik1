@@ -1910,6 +1910,7 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-secl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 @media (max-width:640px){.nx{padding:12px 13px} .nx h3{font-size:15px}}
 .hwb{display:none}
+.nx-wi{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;padding:8px 10px;border-radius:12px;background:var(--sunk);font-size:13px} .nx-wi .chip{min-height:28px;padding:2px 10px;font-size:12.5px} .nx-wir{flex-basis:100%;line-height:1.55} .nx-wir:empty{display:none}
 .liveal{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px} .liveal label:not(.check){display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px} .liveal input[type=number]{width:110px}
 /* 28.10: the plan's two tracks: the chosen one is unmistakable in day and night (a violet frame, a violet tint and a
    check), the other one plain. Before, at night the chosen one's frame was the page's own near-black, so the other
@@ -23136,7 +23137,7 @@ function nxCard(it,rel,ev,opts={}){
   const others=ev&&ev.items.length>1?ev.items.filter(z=>z.id!==it.id).slice(0,4):[];
   const more=`<details class="nx-more"><summary>עוד</summary>
       ${x?`<div class="nx-h"><span class="nx-tag d-${x.dir}">${NX_DIR[x.dir]}</span><span class="nx-tag c-${x.cert}">${NX_CERT[x.cert]}</span><span class="nx-tag">${esc(NX_TYPE[x.type]||x.type)}</span></div>`:''}
-      ${rel.text?`<p class="nx-row"><b>למה זה חשוב לתיק שלך:</b> ${esc(rel.text)}</p>`:''}${aff}${mvH}${trH}
+      ${rel.text?`<p class="nx-row"><b>למה זה חשוב לתיק שלך:</b> ${esc(rel.text)}</p>`:''}${aff}${mvH}${trH}${nxWhatIfH(it,rel)}
       ${x?`<p class="nx-row"><b>רמת הוודאות:</b> ${esc(NX_CERT[x.cert]||'')}. ${x.cert==='fact'?'הכתבה מדווחת על דבר שקרה.':x.cert==='interp'?'זו קריאה של המקור, לא עובדה שנבדקה.':'הערכה שנכתבה מהקשר כללי, בלי נתונים מהכתבה עצמה.'}</p>`:''}
       ${x&&x.unknown?`<p class="nx-row"><b>מה לא ידוע:</b> ${esc(x.unknown)}</p>`:''}${x&&x.more?`<p class="nx-row"><b>מה עוד כדאי לדעת:</b> ${esc(x.more)}</p>`:''}
       <p class="nx-row"><b>במקור:</b> <span class="nx-orig">${esc(it.title)}</span>${it.sum?` <span class="nx-orig">${esc(it.sum)}</span>`:''}</p>
@@ -23151,6 +23152,18 @@ function nxCard(it,rel,ev,opts={}){
   </article>`;
 }
 const m2=()=>{try{return mAllNow()}catch(e){return {usdPct:0}}};
+// 30.10: "מה אם" from a reading: what a move of the holdings it names would do to the portfolio, at today's prices.
+// Arithmetic on the holdings, the same as the stress test's; a scenario chosen by the viewer, never a forecast
+function nxWhatIfH(it,rel){const H0=rel.hits.filter(h=>h.held), Hd=H0.filter(h=>h.how==='direct'), H=Hd.length?Hd:H0.slice(0,1); if(!H.length&&!rel.secs.length)return '';
+  const dir=it.x?it.x.dir:'unclear', steps=dir==='pos'?[-10,5,10,20]:dir==='neg'?[-20,-10,-5,10]:[-10,-5,5,10], tgt=H.length?'h:'+H.map(h=>h.sym).join(','):'g:'+rel.secs.map(z=>z.g).join(',');
+  const lab2=H.length?H.map(h=>lab(h.sym)).join(' ו-'):'הענף ('+rel.secs.map(z=>NX_SEC_HE[z.g]||z.g).join(', ')+')';
+  return `<div class="nx-wi" data-nxwi="${esc(tgt)}"><b>מה אם?</b> ${esc(lab2)} ${steps.map(v=>`<button type="button" class="chip" data-nxwiv="${v}">${v>0?'+':'−'}${Math.abs(v)}%</button>`).join('')}<span class="nx-wir" aria-live="polite"></span></div>`}
+function nxWhatIf(tgt,v){const m=mAllNow(); if(!m||!(m.total>0))return '';
+  const [kind,list]=[tgt.slice(0,1),tgt.slice(2).split(',')], P0=kind==='h'?m.pos.filter(p=>list.includes(p.sym)):m.pos.filter(p=>list.includes(nxSecOf(p.sym)));
+  if(!P0.length)return ''; const val=P0.reduce((t,p)=>t+p.val,0), d=val*v/100, tot=m.total+d, w=(val+d)/tot*100;
+  return ` ${v<0?'ירידה':'עלייה'} של ${Math.abs(v)}% ב-${P0.length===1?lab(P0[0].sym):P0.length+' אחזקות'} (${ils(val)} היום): התיק <b class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(d/m.total*100,1)})</b>, שווה ${ils(tot)}, ו${P0.length===1?'המניה':'הן'} ${pct(w,1)} ממנו. <span class="nm">חשבון על התיק במחירי היום, לא תחזית.</span> <button type="button" class="lnk" data-anav="fold:hStress">למבחן הלחץ המלא ›</button>`}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('.nx-wi [data-nxwiv]'); if(!b)return; const w=b.closest('[data-nxwi]');
+  for(const c of w.querySelectorAll('[data-nxwiv]'))c.setAttribute('aria-pressed',String(c===b)); try{w.querySelector('.nx-wir').innerHTML=nxWhatIf(w.dataset.nxwi,+b.dataset.nxwiv)}catch(e){}});
 const xSearchUrl=sym=>`https://x.com/search?q=${encodeURIComponent('$'+String(sym).replace(/^TLV:/,''))}&src=cashtag_click&f=live`;
 const xShareUrl=(text,url)=>`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url||'')}`;
 function nxFill(){const sel=$('nxType'); if(sel&&sel.options.length<=1)for(const [k,v] of Object.entries(NX_TYPE))sel.insertAdjacentHTML('beforeend',`<option value="${k}">${esc(v)}</option>`);

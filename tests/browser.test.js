@@ -533,6 +533,9 @@ test('the news understood on the page: what matters to this portfolio first, the
     const more=await pg.evaluate(()=>document.querySelector('#newsFeed .nx details.nx-more').textContent.replace(/\s+/g,' '));
     assert.match(more,/מה לא ידוע: איך השוק יגיב\./); assert.match(more,/עוד על אותו אירוע: CNBC/); assert.match(more,/במקור: Nvidia beats estimates/); assert.match(more,/למה זה חשוב לתיק שלך: אתה מחזיק NVDA \(16\.4% מהתיק\)\. MSFT שבתיק \(15\.2%\) לקוחה של החברה: לקוחה גדולה\./);
     assert.ok(await pg.evaluate(()=>document.querySelector('#newsFeed .nx').classList.contains('read')),'opened: read');
+    // 30.10: "מה אם" from the reading: the holdings it names, a move the viewer picks, at today's prices
+    await pg.click('#newsFeed .nx .nx-wi [data-nxwiv="-10"]'); await pg.waitForTimeout(150);
+    assert.match(await pg.evaluate(()=>document.querySelector('#newsFeed .nx .nx-wir').textContent),/^ ירידה של 10% ב-NVDA \(₪[\d,]+ היום\): התיק ‎?−₪[\d,]+ \(‎?−\d+\.\d%\), שווה ₪[\d,]+, והמניה [\d.]+% ממנו\. חשבון על התיק במחירי היום, לא תחזית\./);
     // saved, and the views
     await pg.click('#newsFeed .nx [data-nxsave]'); await pg.waitForTimeout(200); await pg.click('#nxViews [data-nxv="saved"]'); await pg.waitForTimeout(200);
     assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nx h3')].map(h=>h.textContent)),['אנבידיה היכתה את התחזיות והעלתה את התחזית']);
