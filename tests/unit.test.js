@@ -1210,3 +1210,57 @@ test('the news understood: one reading per article, shared; the general news; a 
   assert.equal(cleanX({he:'x'}),null,'no what: nothing'); assert.equal(cleanX({he:'a',what:'b',level:'huge',dir:'up'}).level,'info');
   assert.ok(/אין להציג|בלי הסתברות|בלי תחזית מחיר/.test(newsPrompt([{title:'t'}])),'the prompt forbids a price forecast');
 });
+
+test('the archive of the readings: every reading kept by month (the owner\'s alone), the share\'s move after it from the closes, and the record per company',async()=>{
+  const {newsArchive,arcOutcomes,arcStats,moveAfter,ARC}=await import('../server/newsx.js'); const {access}=await import('../server/store.js');
+  const s=new Store(':memory:'), now=new Date('2026-10-29T08:00:00Z'), day=k=>new Date(now.getTime()-k*864e5).toISOString().slice(0,10);
+  // the closes of NVDA: a trading day per weekday, 100 then +1 a day
+  const d=[], c=[]; for(let k=60;k>=0;k--){const t=new Date(now.getTime()-k*864e5); if([0,6].includes(t.getUTCDay()))continue; d.push(t.toISOString().slice(0,10)); c.push(100+(60-k))}
+  s.setDoc('quotes/c_NVDA',{key:'NVDA',d,c});
+  const x=(dir,level)=>({he:'h',what:'w',type:'earnings',level,dir,cert:'fact',aff:[{sym:'NVDA',how:'direct',dir,why:''}],sectors:[],themes:[],macro:false,ev:null});
+  const pairs=[]; for(let k=1;k<=8;k++)pairs.push({a:{id:'n'+k,at:day(k*5)+'T14:00:00Z',src:'co',pub:'R',syms:['NVDA']},x:x('neg',k%2?'info':'imp')});
+  pairs.push({a:{id:'today',at:now.toISOString(),src:'co',syms:['NVDA']},x:x('pos','crit')});
+  const r=newsArchive(s,pairs,{now}); assert.equal(r.added,9);
+  assert.equal(newsArchive(s,pairs,{now}).added,0,'once each');
+  const docs=s.listDocs(ARC).map(r=>r.id).sort(); assert.ok(docs.length>=2&&docs.includes('2026-10'),'by month: '+docs);
+  assert.equal(s.getDoc(ARC+'/2026-10').data.items.find(i=>i.id==='today').level,'crit'); assert.ok(!('what' in s.getDoc(ARC+'/2026-10').data.items[0]),'compact: no text beyond the headline');
+  // the moves: an article 40 days back has its 1, 5 and 20-day moves; one of five days back only the first; today's none yet
+  const o=arcOutcomes(s,{now}); assert.ok(o.filled>=6,'filled: '+o.filled);
+  const all=s.listDocs(ARC).flatMap(r=>r.data.items), by=id=>all.find(i=>i.id===id);
+  const m40=by('n8').out.NVDA; assert.ok(m40.r1>0&&m40.r5>m40.r1&&m40.r20>m40.r5&&m40.p0>0,JSON.stringify(m40));
+  const m5=by('n1').out.NVDA; assert.ok(m5.r1!=null&&m5.r20==null,'twenty days not yet: '+JSON.stringify(m5));
+  assert.deepEqual(by('today').out,{},'the article of today waits for a close');
+  // moveAfter on its own: the close before the article is the base
+  const mv=moveAfter({d:['2026-10-01','2026-10-02','2026-10-05'],c:[10,11,12]},'2026-10-02'); assert.deepEqual(mv,{d0:'2026-10-01',p0:10,r1:10,r5:null,r20:null});
+  assert.equal(moveAfter({d:['2026-10-01'],c:[10]},'2026-10-01'),null,'nothing before it');
+  // the record: five or more cases with a five-day move
+  const st=arcStats(s,{now}); assert.equal(st.n,9); assert.ok(st.done20>=2);
+  assert.ok(st.track.NVDA&&st.track.NVDA.neg&&st.track.NVDA.neg.n>=5&&st.track.NVDA.neg.hit5===0&&st.track.NVDA.neg.avg5>0,'rising closes: the negative readings were followed by rises: '+JSON.stringify(st.track));
+  assert.equal(st.track.NVDA.pos,undefined,'one positive case: no record');
+  // the archive is the owner's alone
+  assert.equal(access({id:'u',role:'friend'},ARC+'/2026-10'),''); assert.equal(access({id:'o',role:'owner'},ARC+'/2026-10'),'rw');
+});
+
+test('X for the securities: the liked posts with the cashtag, a few securities a run, into the reading as articles; nothing without a token; a partner sees their own',async()=>{
+  const {xTask,xParse,xArticles,xSearchUrl}=await import('../server/xfeed.js'); const {newsSyms}=await import('../server/newsfeed.js'); const {partnerView}=await import('../server/store.js');
+  const s=new Store(':memory:'), now=new Date('2026-10-29T07:15:00Z'), iso=now.toISOString();
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'},{sym:'KO'},{sym:'TLV:TEVA'}]}); s.setDoc('data/users/u_b/portfolio',{positions:[{sym:'KO',qty:1}]});
+  const j=sym=>({data:[{id:'1'+sym.length,text:`$${sym} looks strong into earnings`,author_id:'a1',created_at:iso,public_metrics:{like_count:42,retweet_count:5}},{id:'2'+sym.length,text:'meh',author_id:'a2',created_at:iso,public_metrics:{like_count:1}}],includes:{users:[{id:'a1',username:'trader_jo',name:'Jo'},{id:'a2',username:'x2'}]}});
+  assert.deepEqual(xParse(j('NVDA'),'NVDA').map(p=>[p.user,p.likes,p.link]),[['trader_jo',42,'https://x.com/trader_jo/status/14'],['x2',1,'https://x.com/x2/status/24']]);
+  // no token: nothing fetched, said
+  const t0=process.env.X_BEARER_TOKEN; delete process.env.X_BEARER_TOKEN;
+  try{const st=await xTask(s,{now,newsSyms,fetch:async()=>{throw new Error('must not call')}}); assert.equal(st.stopped,'no token'); assert.equal(s.getDoc('research/x').exists,false)}finally{if(t0)process.env.X_BEARER_TOKEN=t0}
+  // with a token: the US securities only, the liked posts kept
+  process.env.X_BEARER_TOKEN='t-test'; const asked=[];
+  try{const f=async(u,o)=>{u=String(u); asked.push(u); assert.equal(o.headers.authorization,'Bearer t-test'); const m=u.match(/query=%24([A-Z.]+)/); return new Response(JSON.stringify(j(m[1])),{status:200})};
+    const st=await xTask(s,{now,newsSyms,fetch:f,pause:0});
+    assert.equal(st.ok,2,'NVDA and KO, not the Tel Aviv share'); assert.equal(st.kept,2,'the liked ones'); assert.ok(asked.every(u=>/-is%3Aretweet/.test(u)),'no retweets');
+    const d=s.getDoc('research/x').data; assert.deepEqual(d.items.map(p=>p.sym).sort(),['KO','NVDA']); assert.equal(d.askedAt.NVDA,iso);
+    const A=xArticles(s); assert.equal(A.length,2); assert.equal(A[0].src,'x'); assert.match(A[0].pub,/^@trader_jo ב-X$/); assert.deepEqual(A.find(a=>a.syms[0]==='KO').syms,['KO']);
+    // the partner sees KO's post alone
+    const v=partnerView(s,{id:'u_b',role:'friend'},'research/x',d); assert.deepEqual(v.items.map(p=>p.sym),['KO']); assert.equal(v.askedAt,undefined);
+    // a refused token stops the run and says so
+    const st2=await xTask(s,{now:new Date(now.getTime()+3600e3),newsSyms,fetch:async()=>new Response('',{status:403}),pause:0}); assert.equal(st2.stopped,'auth'); assert.match(st2.first,/needs a plan/);
+  }finally{if(t0)process.env.X_BEARER_TOKEN=t0; else delete process.env.X_BEARER_TOKEN}
+  assert.equal(xSearchUrl('NVDA'),'https://x.com/search?q=%24NVDA&src=cashtag_click&f=live');
+});

@@ -104,6 +104,7 @@ export function access(user,p){
   if(seg[0]==='data'&&seg[1]==='users')return seg[2]===user.id?'rw':'';
   // each person's list of symbols is theirs alone; the price job reads them on the server, not through this matrix
   if(seg[0]==='watch')return seg[1]===user.id?'rw':'';
+  if(seg[0]==='research'&&seg[1]==='newsarc')return owner?'rw':'';   // the archive of the readings about everybody's securities: the owner's alone
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(['portfolio','plan','settings','history','reports','alerts'].includes(seg[0]))return owner?'rw':'';
@@ -115,7 +116,7 @@ export const canWrite=(u,p)=>access(u,p)==='rw';
 // ---- the shared documents as a partner sees them: only the securities of their own portfolio, history, settings and
 // watch list. The prices, the monthly closes and the research all cover everybody's securities (the owner's and the
 // other partners'), and a list of what someone holds is private even without the quantities.
-const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx']);
+const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx','research/x']);
 export function symsOfUser(store,uid){
   const out=new Set(), walk=v=>{if(Array.isArray(v)){for(const x of v)walk(x)}else if(isMap(v)){for(const [k,x] of Object.entries(v)){if(k==='sym'&&typeof x==='string')out.add(x); else walk(x)}}};
   for(const d of ['portfolio','history','settings']){const r=store.getDoc(`data/users/${uid}/${d}`); if(r.exists)walk(r.data)}
@@ -134,7 +135,9 @@ export function partnerView(store,user,p,data){
   if(p==='research/news')return {...data,items:Array.isArray(data.items)?data.items.filter(it=>it&&Array.isArray(it.syms)&&it.syms.some(has)).map(it=>({...it,syms:it.syms.filter(has)})):data.items};
   // 29.10: the readings of the articles: a partner gets the readings of the articles they may see (their own securities')
   // and all of the general news, which is nobody's holding
-  if(p==='research/newsx'){const N=store.getDoc('research/news').data, ok2=new Set(); for(const it of ((N&&N.items)||[]))if(it&&it.link&&Array.isArray(it.syms)&&it.syms.some(has))ok2.add(newsIdOf(it.link));
+  if(p==='research/x')return {...data,askedAt:undefined,items:Array.isArray(data.items)?data.items.filter(it=>it&&has(it.sym)):data.items};
+  if(p==='research/newsx'){const N=store.getDoc('research/news').data, Xd=store.getDoc('research/x').data, ok2=new Set(); for(const it of ((N&&N.items)||[]))if(it&&it.link&&Array.isArray(it.syms)&&it.syms.some(has))ok2.add(newsIdOf(it.link));
+    for(const it of ((Xd&&Xd.items)||[]))if(it&&it.link&&has(it.sym))ok2.add(newsIdOf(it.link));
     for(const it of (Array.isArray(data.gen)?data.gen:[]))if(it&&it.id)ok2.add(it.id);
     return {...data,by:isMap(data.by)?Object.fromEntries(Object.entries(data.by).filter(([k])=>ok2.has(k))):data.by}}
   // research/comove

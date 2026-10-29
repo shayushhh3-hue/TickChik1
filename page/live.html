@@ -1878,7 +1878,7 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
 .nx-lv{align-items:center} .nx-lv select{font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .nx-unread{font-size:13px;margin-inline-start:4px}
 .chip.lv-crit[aria-pressed="true"]{background:#B91C1C;border-color:#B91C1C;color:#fff} .chip.lv-imp[aria-pressed="true"]{background:#B45309;border-color:#B45309;color:#fff} .chip.lv-watch[aria-pressed="true"]{background:#1D4ED8;border-color:#1D4ED8;color:#fff} .chip.lv-info[aria-pressed="true"]{background:#475569;border-color:#475569;color:#fff}
-.nx{position:relative;display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);min-width:0}
+.nx{position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);min-width:0}
 .nx.read{opacity:.78} .nx.lv-crit{border-inline-start:4px solid #B91C1C} .nx.lv-imp{border-inline-start:4px solid #B45309} .nx.lv-watch{border-inline-start:4px solid #1D4ED8} .nx.lv-info{border-inline-start:4px solid #94A3B8}
 .nx-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .nx-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--sunk);color:var(--ink2)}
@@ -1890,7 +1890,10 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-ib{font:inherit;font-size:14px;line-height:1;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:8px} .nx-ib:hover{background:var(--sunk);color:var(--ink)} .nx-ib[aria-pressed="true"]{color:#F59E0B}
 .nx h3{margin:0;font-size:16px;line-height:1.4;font-weight:700}
 .nx .nx-orig{font-size:12.5px;color:var(--muted);direction:ltr;text-align:start;unicode-bidi:plaintext;line-height:1.4}
-.nx .nx-what{margin:0;font-size:14px;line-height:1.55;color:var(--ink)}
+.nx .nx-what{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nx .nx-imp{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)} .nx .nx-imp b{color:var(--vio-ink)}
+.nx-tag.sm{padding:2px 7px}
+.nx details.nx-more>div,.nx details.nx-more>p{margin-top:8px}
 .nx-why{padding:9px 12px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .18);font-size:13.5px;line-height:1.55} .nx-why b{color:var(--vio-ink)}
 .nx-why.none{background:var(--sunk);border-color:var(--line);color:var(--ink2)}
 .nx-aff{display:flex;flex-wrap:wrap;gap:6px}
@@ -1986,6 +1989,7 @@ button.soon-e{cursor:pointer} button.soon-e:hover .sym{text-decoration:underline
   .toast,.bottip,.i18np{bottom:calc(146px + env(safe-area-inset-bottom,0px))}
 }
 html[data-theme="dark"] .botbar{background:var(--surface);border-color:rgb(139 92 246 / .35)}
+.botbar [data-bb="more"].dot2::after{content:"";position:absolute;top:9px;inset-inline-end:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:#B91C1C}
 .botbar [data-bb="more"].dot::after{content:"";position:absolute;top:9px;inset-inline-end:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:var(--v1);box-shadow:0 0 0 2px var(--surface)}
 @media (max-width:1199px){.navtab{display:none} .hero .top{padding-inline-start:6px}}
 /* the drawer and the desktop side bar in the page's own surface */
@@ -2098,6 +2102,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Chik</span></span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="gobox" role="search"><label for="goQ">לאן להגיע?</label><div class="goin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="goQ" placeholder="למשל: עמלות, לוח מסחר" autocomplete="off" enterkeyhint="go"></div><ul class="gores" id="goRes" hidden></ul></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
+    <button type="button" role="tab" id="tab_news" data-tab="news" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span>חיבור למציאות</span><span class="sbdot" id="sbNxDot" hidden></span></button>
     <button type="button" role="tab" id="tab_plan" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span>תוכנית</span></button>
     <button type="button" role="tab" id="tab_forecast" data-tab="forecast" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>יעד ותרחישים</span></button>
     <button type="button" role="tab" id="tab_history" data-tab="history" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
@@ -2554,7 +2559,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="nx-top" id="nxTop" hidden></div>
       <div class="nx-bar">
         <div class="chips nx-views" id="nxViews" role="tablist" aria-label="תצוגה"><button type="button" class="chip" role="tab" data-nxv="all" aria-pressed="true">הכל</button><button type="button" class="chip" role="tab" data-nxv="sym" aria-pressed="false">לפי מניות</button><button type="button" class="chip" role="tab" data-nxv="sec" aria-pressed="false">לפי ענפים</button><button type="button" class="chip" role="tab" data-nxv="macro" aria-pressed="false">אירועים רחבים</button><button type="button" class="chip" role="tab" data-nxv="saved" aria-pressed="false">שמורים <span class="dv-n" id="nxSavedN"></span></button></div>
-        <div class="chips nx-lv" id="nxLv" role="group" aria-label="סינון לפי חשיבות"><button type="button" class="chip lv-crit" data-nxl="crit" aria-pressed="true">קריטי</button><button type="button" class="chip lv-imp" data-nxl="imp" aria-pressed="true">חשוב</button><button type="button" class="chip lv-watch" data-nxl="watch" aria-pressed="true">למעקב</button><button type="button" class="chip lv-info" data-nxl="info" aria-pressed="true">מידע</button><select id="nxType" aria-label="סוג הידיעה"><option value="">כל הסוגים</option></select><label class="check nx-unread"><input type="checkbox" id="nxUnread"><span>רק מה שלא קראתי</span></label></div>
+        <div class="chips nx-lv" id="nxLv" role="group" aria-label="סינון לפי חשיבות"><button type="button" class="chip lv-crit" data-nxl="crit" aria-pressed="true">קריטי</button><button type="button" class="chip lv-imp" data-nxl="imp" aria-pressed="true">חשוב</button><button type="button" class="chip lv-watch" data-nxl="watch" aria-pressed="false">למעקב</button><button type="button" class="chip lv-info" data-nxl="info" aria-pressed="false">מידע</button><select id="nxType" aria-label="סוג הידיעה"><option value="">כל הסוגים</option></select><label class="check nx-unread"><input type="checkbox" id="nxUnread"><span>רק מה שלא קראתי</span></label></div>
       </div>
       <div class="chips" id="newsChips" role="group" aria-label="סינון לפי נייר" style="align-self:flex-start"></div>
       <div class="newsfeed" id="newsFeed"><div class="empty">הכתבות על המניות שבתיק ובמעקב יופיעו כאן.</div></div>
@@ -2563,7 +2568,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <div><b>סוגים</b><div class="chips" id="nxTypesAl"></div></div>
           <p class="note">התראה עולה פעם אחת לכל אירוע, רק על חברה שבתיק (או אירוע מאקרו קריטי), ובהודעת הבוקר במייל רק אם היא מופעלת בהגדרות. בלי הצפה: עד שלוש ביום.</p></div>
       </details>
-      <p class="note" id="nxNote">כותרות ממקורות חיצוניים (Finnhub, Yahoo Finance), בשפת המקור, נאספות כל חצי שעה ביום. הניתוח בעברית נכתב אוטומטית על ידי צ׳יקו מהכותרת והקטע בלבד, פעם אחת לכל כתבה, והדף מצליב אותו עם התיק שלך. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר, הסתברות או המלצה.</p>
+      <p class="note" id="nxNote">כותרות ממקורות חיצוניים (Finnhub, Yahoo Finance), ופוסטים של משקיעים מ-X כשהאתר מחובר אליו, בשפת המקור, נאספים כל חצי שעה ביום. הניתוח בעברית נכתב אוטומטית על ידי צ׳יקו מהכותרת והקטע בלבד, פעם אחת לכל כתבה, והדף מצליב אותו עם התיק שלך. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר, הסתברות או המלצה.</p>
     </section>
   </div>
   <div class="pane" data-pane="watch" hidden>
@@ -17089,7 +17094,7 @@ function render(){
   const two=(a,b)=>`${a}<div class="nm"><span class="n">${b}</span></div>`;   // shekels, and the dollars beneath
   const vcell=(ils_,usd_)=>HC==='usd'?usd_:HC==='both'?two(ils_,usd_):ils_;
   const mxW=Math.max(0,...m.pos.map(x=>x.w||0));
-  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]}
+  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]} try{nxNavDot()}catch(e){}
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
     const dc=DC&&DC[p.sym], uc=dc&&dc.cost>0?dc.cost:null, ud=uc!=null?dc.val-dc.cost:null, udp=uc?ud/uc*100:null, ap=dc&&dc.est?'≈':'';
@@ -22522,6 +22527,9 @@ function rsSrcLine(st){const f=st.fh, d=st.fund, L=[];
   if(d)L.push(`SEC וחישוב תנודתיות: ${d.filled} ניירות (SEC ${d.sec}, תנודתיות ${d.beta})${d.first?' · '+esc(String(d.first).slice(0,120)):''}`);
   {const x=st.dates; if(x)L.push(`ימי פרסום הדוחות מה-SEC: ${x.dated} מתוך ${x.tried}${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · '+esc(String(x.first).slice(0,120)):''}`)}
   {const x=st.divs; if(x)L.push(`דיבידנדים קדימה: ${x.planned} מתוך ${x.tried} (Nasdaq ${x.nasdaq}, Yahoo ${x.yahoo})${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · '+esc(String(x.first).slice(0,120)):''}`)}
+  {const x=RSST&&RSST.news; if(x)L.push(`כתבות: ${x.ok} מתוך ${x.of} ניירות, ${x.items} כתבות${x.first?' · '+esc(String(x.first).slice(0,100)):''}`)}
+  {const x=RSST&&RSST.newsx; if(x)L.push(`קריאת הכתבות: ${x.ai?`${x.read} נקראו ב-${x.batches} קריאות, ${x.gen} כלליות חדשות, ${x.waiting} ממתינות`:'לא פעילה (אין מפתח Anthropic בשרת)'}${x.arc?` · בארכיון ${x.arc.n}`:''}${x.first?' · '+esc(String(x.first).slice(0,100)):''}`)}
+  {const x=RSST&&RSST.x; L.push(x&&x.token?`X: ${x.ok} ניירות, ${x.kept} פוסטים נשמרו${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · '+esc(String(x.first).slice(0,100)):''}`:'X: לא מחובר (אין X_BEARER_TOKEN בשרת; קריאה מ-X דורשת תוכנית בתשלום של X)')}
   return ' '+L.join(' · ')+'.'}
 function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
 function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
@@ -22900,13 +22908,13 @@ function srchDb(){
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
 const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar'];
-const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],search:['search','fit','ratings','watch','news'],history:['history','reports'],settings:['settings']};
+const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch'],history:['history','reports'],settings:['settings']};
 const SUBL={news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
-const HEADL={search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
+const HEADL={news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
-  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
+  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','news','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
 function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.querySelector('[data-pane="'+t+'"]');if(!pane)return;
   let row=pane.querySelector(':scope>.subtabs');
   if(list.length<2){if(row)row.remove();return}
@@ -23005,8 +23013,10 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // event; whom it may touch and how; the possible direction; fact or reading; what is not known; an event key). The page
 // matches every reading to this portfolio: the companies held (and their weight), the sectors they are in, the dollar
 // part, the securities followed. No reading is made per user, and nothing here is a forecast or advice ----
-let NXD=null, NEWSST=null, NXV='all', NXLV=new Set(['crit','imp','watch','info']), NXT='', NXUN=false, NXPREV=null, NXT_SAVE=null, NXDIRTY=false;
+let NXD=null, XD=null, NEWSST=null, NXV='all', NXLV=new Set(['crit','imp']), NXT='', NXUN=false, NXPREV=null, NXT_SAVE=null, NXDIRTY=false;
 const NX_LV={crit:'קריטי',imp:'חשוב',watch:'למעקב',info:'מידע'};
+// 29.10: the screen shows the critical and the important by default; the rest is kept (and read) but behind the filter, which this browser remembers
+try{const v=JSON.parse(localStorage.getItem('tr_nxlv')||'null'); if(Array.isArray(v)&&v.length)NXLV=new Set(v.filter(k=>NX_LV[k]))}catch(e){}
 const NX_DIR={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'ההשפעה עוד לא ברורה'};
 const NX_CERT={fact:'עובדה מדווחת',interp:'פרשנות של המקור',est:'הערכה של צ׳יקו'};
 const NX_HOW={direct:'החברה עצמה',supplier:'ספק',customer:'לקוח',competitor:'מתחרה',sector:'אותו ענף',macro:'השפעה רחבה'};
@@ -23024,6 +23034,9 @@ function newsAll(){
   const held=new Set((P&&P.positions||[]).map(p=>p.sym)), W=new Set([...(WATCH&&WATCH.marks||[]),...(WATCH&&WATCH.held||[])]), by=(NXD&&NXD.by)||{}, seen=new Set(), out=[];
   for(const it of ((NEWSD&&NEWSD.items)||[])){if(!it||!it.link||!(it.syms||[]).some(k=>held.has(k)||W.has(k)))continue; const id=NXID.get(it.link); if(!id||seen.has(id))continue; seen.add(id); out.push({...it,id,src:'co',x:by[id]||null})}
   for(const it of ((NXD&&NXD.gen)||[])){if(!it||!it.link||!it.id||seen.has(it.id))continue; seen.add(it.id); out.push({...it,src:'gen',x:by[it.id]||null})}
+  // 29.10: what investors posted on X about the securities (research/x, with a token on the server)
+  for(const p of ((XD&&XD.items)||[])){if(!p||!p.link||!(held.has(p.sym)||W.has(p.sym)))continue; const id=NXID.get(p.link); if(!id||seen.has(id))continue; seen.add(id);
+    out.push({id,title:p.text,pub:`@${p.user||'x'} ב-X`,link:p.link,at:p.at||p.seen,sum:null,syms:[p.sym],seen:p.seen,src:'x',likes:p.likes,x:by[id]||null})}
   return out.sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
 }
 // what this article has to do with this portfolio: the companies held it names (and how), the sectors, the dollar, the
@@ -23067,26 +23080,43 @@ function nxCard(it,rel,ev,opts={}){
   const acts=`<span class="nx-acts"><button type="button" class="nx-ib" data-nxsave="${esc(it.id)}" aria-pressed="${saved}" aria-label="${saved?'להסיר מהשמורים':'לשמור'}" title="${saved?'שמור':'לשמור'}">${saved?'★':'☆'}</button><button type="button" class="nx-ib" data-nxread="${esc(it.id)}" aria-pressed="${read}" aria-label="${read?'לסמן כלא נקרא':'לסמן כנקרא'}" title="${read?'נקרא':'לסמן כנקרא'}">${read?'✓':'○'}</button></span>`;
   const aff=x&&x.aff&&x.aff.length?`<div class="nx-aff">${x.aff.slice(0,8).map(a=>{const h=rel.hits.find(z=>z.sym===a.sym); const ok=SECKEY.test(a.sym);
       return `<${ok?'button type="button"':'span'} class="nx-a${h&&h.held?' held':''}"${ok?` data-gosec="${esc(a.sym)}"`:''} title="${esc(a.why||'')}">${logoHtml(a.sym,'xs')}<b class="nx-s">${esc(a.sym)}</b>${h&&h.held?` <span class="n">${pct(h.w,0)}</span>`:''}<span class="how">${NX_HOW[a.how]||''}</span><span class="arr ${a.dir}">${a.dir==='pos'?'▲':a.dir==='neg'?'▼':a.dir==='mixed'?'◆':'?'}</span></${ok?'button':'span'}>`}).join('')}</div>`:'';
+  // 29.10: the record: what the share did after earlier readings of the same direction (from the archive, five cases or more)
+  let trH=''; try{const T=(NXD&&NXD.track)||{}; const L=[]; for(const a of (x&&x.aff||[])){const h=rel.hits.find(z=>z.sym===a.sym&&z.held); const t=h&&T[a.sym]&&T[a.sym][a.dir]; if(!t)continue;
+      L.push(`ב-${t.n} ידיעות ${a.dir==='neg'?'שליליות':'חיוביות'} קודמות על ${lab(a.sym)}, המניה ${a.dir==='neg'?'ירדה':'עלתה'} אחרי 5 ימי מסחר ב-${t.hit5}% מהמקרים (שינוי ממוצע ${spct(t.avg5,1)})`)}
+    if(L.length)trH=`<div class="nx-mv nx-tr"><b>ניסיון העבר:</b> ${L.slice(0,2).join('; ')}. <span class="nm">מדגם קטן מהארכיון של האתר, לא תחזית.</span></div>`}catch(e){}
   const mv=rel.hits.filter(h=>h.held&&h.how==='direct').map(h=>({h,m:nxMove(h.sym,it.at||it.seen)})).filter(z=>z.m);
   const mvH=mv.length?`<div class="nx-mv">מאז הפרסום: ${mv.map(z=>`${lab(z.h.sym)} <span class="n ${z.m.pct>=0?'up':'down'}">${spct(z.m.pct,1)}</span>`).join(' · ')} <span class="nm">(נתון מהמחירים השמורים, לא בהכרח בגלל הידיעה)</span></div>`:'';
-  const why=rel.text?`<div class="nx-why"><b>למה זה חשוב לתיק שלך?</b> ${esc(rel.text)}</div>`:it.src==='gen'?`<div class="nx-why none">לא נמצא קשר ישיר לאחזקות שלך; מוצג כמידע כללי על השוק.</div>`:'';
+  // 29.10: the card in three short lines, as the owner asked: the headline, what happened, and how it may touch this
+  // portfolio (the direction and the holdings it names, in one sentence). Everything else opens under "עוד"
+  const imp=(()=>{if(!x)return rel.text?esc(rel.text):''; const held=rel.hits.filter(h=>h.held), direct=held.filter(h=>h.how==='direct'), rest=held.filter(h=>h.how!=='direct');
+    const V={pos:'עשוי לתמוך ב',neg:'עשוי להכביד על',mixed:'השפעה מעורבת על',unclear:'השפעה לא ברורה על'}, who=h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`;
+    const P=[]; if(direct.length){const d=direct[0].dir||x.dir; P.push(`${V[d]||V.unclear}${d==='pos'?'-':' '}${direct.map(who).join(' ו-')}${direct[0].why?': '+direct[0].why.replace(/[.]?$/,''):''}`)}
+    for(const h of rest.slice(0,2))P.push(`${h.sym} (${pct(h.w,0)}) ${NX_HOW[h.how]||''}${h.why?': '+h.why.replace(/[.]?$/,''):''}`);
+    if(!P.length&&rel.secs.length)P.push(`נוגע ל${rel.secs.map(z=>NX_SEC_HE[z.g]||z.g).join(', ')}, ${pct(rel.secs.reduce((t,z)=>t+z.w,0),0)} מהתיק`);
+    if(!P.length&&rel.usd)P.push(`נוגע לשער הדולר, ${pct(m2().usdPct,0)} מהתיק בדולרים`);
+    if(!P.length&&x.macro)P.push('אירוע רחב שעשוי לגעת בכמה אחזקות במקביל');
+    if(!P.length){const w=rel.hits.filter(h=>h.watch); if(w.length)P.push(`${w.map(h=>lab(h.sym)).join(', ')} במעקב שלך`)}
+    return P.length?esc(P.join('. ')+'.'):(it.src==='gen'?'בלי קשר ישיר לאחזקות שלך.':'')})();
   const others=ev&&ev.items.length>1?ev.items.filter(z=>z.id!==it.id).slice(0,4):[];
-  const more=x?`<details class="nx-more"><summary>מה רמת הוודאות, מה לא ידוע ומה עוד כדאי לדעת</summary>
-      <p class="nx-row"><b>רמת הוודאות:</b> ${esc(NX_CERT[x.cert]||'')}. ${x.cert==='fact'?'הכתבה מדווחת על דבר שקרה.':x.cert==='interp'?'זו קריאה של המקור, לא עובדה שנבדקה.':'הערכה שנכתבה מהקשר כללי, בלי נתונים מהכתבה עצמה.'}</p>
-      ${x.unknown?`<p class="nx-row"><b>מה לא ידוע:</b> ${esc(x.unknown)}</p>`:''}${x.more?`<p class="nx-row"><b>מה עוד כדאי לדעת:</b> ${esc(x.more)}</p>`:''}
-      <p class="nx-row"><b>הכותרת במקור:</b> <span class="nx-orig">${esc(it.title)}</span></p>${it.sum?`<p class="nx-row nx-orig">${esc(it.sum)}</p>`:''}
-      ${others.length?`<p class="nx-row"><b>עוד כתבות על אותו אירוע:</b> ${others.map(z=>`<a href="${esc(z.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(z.pub||'מקור')}</bdi></a>`).join(' · ')}</p>`:''}
-    </details>`:`<p class="nx-orig">${esc(it.sum||'')}</p>`;
+  const more=`<details class="nx-more"><summary>עוד</summary>
+      ${x?`<div class="nx-h"><span class="nx-tag d-${x.dir}">${NX_DIR[x.dir]}</span><span class="nx-tag c-${x.cert}">${NX_CERT[x.cert]}</span><span class="nx-tag">${esc(NX_TYPE[x.type]||x.type)}</span></div>`:''}
+      ${rel.text?`<p class="nx-row"><b>למה זה חשוב לתיק שלך:</b> ${esc(rel.text)}</p>`:''}${aff}${mvH}${trH}
+      ${x?`<p class="nx-row"><b>רמת הוודאות:</b> ${esc(NX_CERT[x.cert]||'')}. ${x.cert==='fact'?'הכתבה מדווחת על דבר שקרה.':x.cert==='interp'?'זו קריאה של המקור, לא עובדה שנבדקה.':'הערכה שנכתבה מהקשר כללי, בלי נתונים מהכתבה עצמה.'}</p>`:''}
+      ${x&&x.unknown?`<p class="nx-row"><b>מה לא ידוע:</b> ${esc(x.unknown)}</p>`:''}${x&&x.more?`<p class="nx-row"><b>מה עוד כדאי לדעת:</b> ${esc(x.more)}</p>`:''}
+      <p class="nx-row"><b>במקור:</b> <span class="nx-orig">${esc(it.title)}</span>${it.sum?` <span class="nx-orig">${esc(it.sum)}</span>`:''}</p>
+      <p class="nx-row nx-src">${esc(it.pub||'מקור')}${when?' · '+when:''} · <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">לכתבה המקורית ›</a>${others.length?` · עוד על אותו אירוע: ${others.map(z=>`<a href="${esc(z.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(z.pub||'מקור')}</bdi></a>`).join(', ')}`:''}${rel.hits.some(h=>h.held&&SECKEY.test(h.sym))?` · <button type="button" class="lnk" data-gosec="${esc(rel.hits.find(h=>h.held&&SECKEY.test(h.sym)).sym)}">לדף המניה ›</button>`:''}${(()=>{const h=rel.hits.find(z=>/^[A-Z][A-Z.\-]{0,6}$/.test(z.sym)); return h?` · <a href="${xSearchUrl(h.sym)}" target="_blank" rel="noopener noreferrer">לדיון ב-X על ${esc(h.sym)} ›</a>`:''})()} · <a href="${xShareUrl((x?x.he:it.title)+' (דרך תיק צ׳יק)',it.link)}" target="_blank" rel="noopener noreferrer">לשתף ב-X ›</a></p>
+    </details>`;
   return `<article class="nx lv-${lv}${read?' read':''}" data-nid="${esc(it.id)}" data-ev="${esc(ev?ev.k:'')}">
-    <div class="nx-h">${tags}${acts}</div>
+    <div class="nx-h"><span class="nx-tag lv-${lv}">${NX_LV[lv]}</span>${x?`<span class="nx-tag d-${x.dir} sm">${x.dir==='pos'?'▲':x.dir==='neg'?'▼':x.dir==='mixed'?'◆':'?'}</span>`:'<span class="nx-tag">עוד לא נותח</span>'}<span>${esc(it.pub||'')}${it.src==='x'&&it.likes?` · ${it.likes} לייקים`:''}${when?' · '+when:''}</span>${acts}</div>
     <h3>${x?esc(x.he):`<span class="nx-orig">${esc(it.title)}</span>`}</h3>
     ${x?`<p class="nx-what">${esc(x.what)}</p>`:''}
-    ${why}${aff}
-    ${x?`<div class="nx-h"><span class="nx-tag d-${x.dir}">${NX_DIR[x.dir]}</span><span class="nx-tag c-${x.cert}">${NX_CERT[x.cert]}</span></div>`:''}
-    ${mvH}${more}
-    <div class="nx-src">${esc(it.pub||'מקור')}${when?' · '+when:''} · <a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">לכתבה המקורית ›</a>${rel.hits.some(h=>h.held&&SECKEY.test(h.sym))?` · <button type="button" class="lnk" data-gosec="${esc(rel.hits.find(h=>h.held&&SECKEY.test(h.sym)).sym)}">לדף המניה בתיק ›</button>`:''}</div>
+    ${imp?`<p class="nx-imp"><b>לתיק שלך:</b> ${imp}</p>`:''}
+    ${more}
   </article>`;
 }
+const m2=()=>{try{return mAllNow()}catch(e){return {usdPct:0}}};
+const xSearchUrl=sym=>`https://x.com/search?q=${encodeURIComponent('$'+String(sym).replace(/^TLV:/,''))}&src=cashtag_click&f=live`;
+const xShareUrl=(text,url)=>`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url||'')}`;
 function nxFill(){const sel=$('nxType'); if(sel&&sel.options.length<=1)for(const [k,v] of Object.entries(NX_TYPE))sel.insertAdjacentHTML('beforeend',`<option value="${k}">${esc(v)}</option>`);
   const al=nxAlertPrefs(); for(const i of document.querySelectorAll('#nxSet [data-nxal]')){i.checked=!!al.lv[i.dataset.nxal]; i.disabled=!canWrite}
   const tb=$('nxTypesAl'); if(tb&&!tb.children.length)tb.innerHTML=Object.entries(NX_TYPE).filter(([k])=>k!=='other').map(([k,v])=>`<button type="button" class="chip" data-nxat="${k}" aria-pressed="true">${esc(v)}</button>`).join('');
@@ -23099,6 +23129,8 @@ function renderNewsX(){
   const ai=!!(NXD&&NXD.ai), st=nxState();
   if(fr)fr.textContent=(NEWSD&&NEWSD.updatedAt?'כתבות עודכנו '+ago(NEWSD.updatedAt):'')+(NXD&&NXD.updatedAt?` · ניתוח ${ago(NXD.updatedAt)}`:ai?'':' · הניתוח לא פעיל');
   {const n=Object.keys(st.saved||{}).length, e=$('nxSavedN'); if(e)e.textContent=n?String(n):''}
+  {const e=$('nxNote'), A=NXD&&NXD.arc; if(e){let x=e.querySelector('.nx-arc'); if(!x){x=document.createElement('span'); x.className='nx-arc'; e.appendChild(x)}
+      x.textContent=A&&A.n?` כל הידיעות שנקראו, גם מה שלא מוצג כאן, נשמרות בארכיון של האתר עם מה שהמניה עשתה אחריהן (${A.n} ידיעות מ-${A.months===1?'חודש אחד':A.months+' חודשים'}, ל-${A.done20} מהן כבר יש תוצאה של 20 ימי מסחר), כדי שאפשר יהיה ללמוד מזה בהמשך.`:''}}
   // since the last visit to this screen: what came in and was not read
   {const el=$('nxSince'); if(el){const fresh=NXPREV?all.filter(z=>(z.it.at||z.it.seen)>NXPREV&&!(st.read||{})[z.it.id]):[]; const imp=fresh.filter(z=>['crit','imp'].includes(nxLvOf(z.it)));
       el.hidden=!fresh.length; if(fresh.length){const top=imp.sort((a,b)=>b.rel.score-a.rel.score)[0]||fresh[0]; el.innerHTML=`<span>מאז הביקור האחרון (${dmy(NXPREV)}): <b>${fresh.length===1?'ידיעה אחת חדשה':fresh.length+' ידיעות חדשות'}</b>${imp.length?`, ${imp.length===1?'אחת חשובה':imp.length+' חשובות'}`:''}.${top&&top.it.x?` הבולטת: ${esc(top.it.x.he)}`:''}</span>`}}}
@@ -23132,7 +23164,7 @@ function renderNewsX(){
 function renderNews(){try{renderNewsX()}catch(e){console.error(e)}}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const v=t.closest('#nxViews [data-nxv]'); if(v){NXV=v.dataset.nxv; renderNewsX(); return}
-  const l=t.closest('#nxLv [data-nxl]'); if(l){const k=l.dataset.nxl; if(NXLV.has(k)&&NXLV.size>1)NXLV.delete(k); else NXLV.add(k); renderNewsX(); return}
+  const l=t.closest('#nxLv [data-nxl]'); if(l){const k=l.dataset.nxl; if(NXLV.has(k)&&NXLV.size>1)NXLV.delete(k); else NXLV.add(k); try{localStorage.setItem('tr_nxlv',JSON.stringify([...NXLV]))}catch(e){} renderNewsX(); return}
   const sv=t.closest('[data-nxsave]'); if(sv){const id=sv.dataset.nxsave; nxMark(id,'saved',sv.getAttribute('aria-pressed')!=='true'); renderNewsX(); return}
   const rd=t.closest('[data-nxread]'); if(rd){const id=rd.dataset.nxread; nxMark(id,'read',rd.getAttribute('aria-pressed')!=='true'); renderNewsX(); try{render()}catch(e){} return}
   const go=t.closest('[data-nxgo]'); if(go){const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(go.dataset.nxgo)}"]`); if(el){el.scrollIntoView({behavior:'smooth',block:'center'}); el.querySelector('details.nx-more')?.setAttribute('open','')} return}
@@ -23151,6 +23183,7 @@ function nxForHoldings(m,{days=2,levels=['crit','imp']}={}){
   try{for(const it of newsAll()){if(!it.x||!levels.includes(it.x.level)||(it.at||it.seen)<from)continue; const rel=newsRel(it,m); const direct=rel.hits.filter(h=>h.held&&(h.how==='direct')); if(!direct.length&&!(it.x.macro&&it.x.level==='crit'))continue; out.push({it,rel,direct,read:!!(st.read||{})[it.id]})}}catch(e){}
   return out.sort((a,b)=>b.rel.score-a.rel.score);
 }
+function nxNavDot(){try{const n=NX_HOLD.filter(z=>!(nxState().read||{})[z.it.id]).length, d=$('sbNxDot'); if(d)d.hidden=!n; const b=document.querySelector('#botbar [data-bb="more"]'); if(b)b.classList.toggle('dot2',n>0)}catch(e){}}
 function nxDotH(sym){try{const rd=nxState().read||{}, L=NX_HOLD.filter(z=>z.direct.some(h=>h.sym===sym)&&!rd[z.it.id]); if(!L.length)return ''; const lv=L.some(z=>z.it.x.level==='crit')?'crit':'imp';
   return `<button type="button" class="nxdot${lv==='imp'?' imp':''}" data-nxsym="${esc(sym)}" aria-label="ידיעה ${lv==='crit'?'קריטית':'חשובה'}: ${esc(L[0].it.x.he)}" title="${esc(L[0].it.x.he)}"></button>`}catch(e){return ''}}
 let NX_HOLD=[];
@@ -23163,7 +23196,7 @@ function nxAlerts(m){const pr=nxAlertPrefs(), lv=Object.keys(pr.lv).filter(k=>pr
   return out}
 // for the security's page: the readings about it, compact
 function nxSecBlock(k){try{const m=mAllNow(), L=newsAll().filter(it=>it.x&&((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k))).slice(0,4); if(!L.length)return '';
-  const E=nxEvents(L); return `<section class="repbox" aria-label="ידיעות על הנייר"><div class="row"><h3>מה קרה לאחרונה, ומה זה אומר</h3><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button></div><div class="nx-secl">${L.map(it=>nxCard(it,newsRel(it,m),E.get(it.x.ev||'id:'+it.id))).join('')}</div></section>`}catch(e){return ''}}
+  const E=nxEvents(L); return `<section class="repbox" aria-label="ידיעות על הנייר"><div class="row"><h3>מה קרה לאחרונה, ומה זה אומר</h3><span><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button>${/^[A-Z][A-Z.\-]{0,6}$/.test(k)?` · <a class="lnk" href="${xSearchUrl(k)}" target="_blank" rel="noopener noreferrer">לדיון ב-X ›</a>`:''}</span></div><div class="nx-secl">${L.map(it=>nxCard(it,newsRel(it,m),E.get(it.x.ev||'id:'+it.id))).join('')}</div></section>`}catch(e){return ''}}
 // for צ׳יקו: the readings that touch this portfolio, as data (what a source reported, how sure, what is not known)
 function nxFacts(m){try{const L=newsAll().map(it=>({it,rel:newsRel(it,m)})).filter(z=>z.it.x&&z.rel.text).sort((a,b)=>b.rel.score-a.rel.score).slice(0,6);
   if(!L.length)return null; return {note:'ידיעות ממקורות חיצוניים מהימים האחרונים, כפי שצ׳יקו קרא אותן מהכותרת והקטע; "cert" אומר אם זו עובדה מדווחת, פרשנות של המקור או הערכה. ידיעה אינה סיבה לתנועת מחיר אלא אם כתוב שהיא כזו, ואין כאן תחזית',
@@ -23798,7 +23831,7 @@ const GO=[
   {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
   {id:'fit',l:'מה מתאים לתיק',k:'דירוג התאמה הצעות',tab:'fit'},
   {id:'watch',l:'מניות במעקב',k:'מעקב רשימה',tab:'watch'},
-  {id:'nx',l:'מה קורה בתיק שלך? החדשות',k:'חדשות כתבות ידיעות אירועים מה קורה',tab:'news'},
+  {id:'nx',l:'חיבור למציאות: מה קורה בתיק שלך',k:'חדשות כתבות ידיעות אירועים מה קורה מציאות חיבור',tab:'news'},
   {id:'risk',l:'בקרה: הכללים מול התיק',k:'בקרה סיכון התראות כללים',tab:'risk',el:'hCtl'},
   {id:'exp',l:'חשיפה: ענף, מטבע ובורסה',k:'חשיפה ענף מטבע בורסה דולר סקטור',tab:'risk',el:'hExp'},
   {id:'stress',l:'מבחן לחץ: מה אם המחירים יורדים',k:'לחץ ירידה תרחיש',tab:'risk',el:'hStress'},
@@ -23850,7 +23883,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
-  {v:'2026-10-29.1',at:'2026-10-29',t:'מה קורה בתיק שלך? החדשות מובנות',d:'כל כתבה על מניה שלך, וגם חדשות כלליות (ריבית, מלחמות, סנקציות, אנרגיה, שבבים), נקראת פעם אחת על ידי צ׳יקו: מה קרה בעברית, אילו חברות וענפים זה עשוי לגעת בהם ודרך מה, כיוון אפשרי, מה עובדה ומה הערכה, ומה לא ידוע. הדף מצליב את זה עם התיק שלך: "אתה מחזיק NVDA (16% מהתיק)". תצוגות לפי מניות, ענפים ואירועים רחבים, סינון לפי חשיבות וסוג, שמירה וסימון כנקרא, נקודה ליד אחזקה עם ידיעה חשובה, התראה בבית ובהודעת הבוקר, וצ׳יקו עונה "למה NVIDIA ירדה?" מהמחירים והידיעות יחד. בלי תחזית מחיר ובלי הסתברות.',go:'nx'},
+  {v:'2026-10-29.1',at:'2026-10-29',t:'חיבור למציאות: לשונית חדשה',d:'לשונית משלה בתפריט. כל כתבה על מניה שלך, וגם חדשות כלליות (ריבית, מלחמות, סנקציות, אנרגיה, שבבים), נקראת פעם אחת על ידי צ׳יקו: מה קרה בעברית, אילו חברות וענפים זה עשוי לגעת בהם ודרך מה, כיוון אפשרי, מה עובדה ומה הערכה, ומה לא ידוע. הדף מצליב את זה עם התיק שלך: "אתה מחזיק NVDA (16% מהתיק)". תצוגות לפי מניות, ענפים ואירועים רחבים, סינון לפי חשיבות וסוג, שמירה וסימון כנקרא, נקודה ליד אחזקה עם ידיעה חשובה, התראה בבית ובהודעת הבוקר, וצ׳יקו עונה "למה NVIDIA ירדה?" מהמחירים והידיעות יחד. בלי תחזית מחיר ובלי הסתברות.',go:'nx'},
   {v:'2026-10-28.6',at:'2026-10-28',t:'לוח המסחר: דוחות ודיבידנדים קדימה',d:'נקודה סגולה ביום שמתפרסם דוח כספי של מניה שלך, ונקודה ירוקה ביום אקס דיבידנד וביום התשלום. עיגול ריק הוא מועד משוער. דוחות עד ארבעה חודשים קדימה, ודיבידנדים לשנה הקרובה: מה שהחברה הכריזה, ואחריו לפי הקצב של הדיבידנדים הקודמים. דוח שכבר פורסם רשום ביום שבו פורסם באמת, לפי הדיווח של החברה לרשות ניירות הערך האמריקאית.',go:'cal'},
   {v:'2026-10-28.5',at:'2026-10-28',t:'השבועיים הקרובים בתיק שלך',d:'בדף הבית: כרטיס לכל יום שיש בו משהו, דוח כספי, דיבידנד, יום ההפקדה או יום בלי מסחר. ומתחת: כמה התיק מייצר בשנה מדיבידנדים.',go:'ov'},
   {v:'2026-10-28.4',at:'2026-10-28',t:'התיק מול S&P 500, והרווח מהדולר',d:'בגרף שבדף הבית יש קו כתום: כמה היו שוות אותן הפקדות, באותם ימים, ב-S&P 500. מתחת לשווי: בכמה התיק מעל המדד או מתחתיו, ואיזה חלק מהרווח בא מהמחירים ואיזה משער הדולר.',go:'ov'},
@@ -23969,6 +24002,7 @@ try{refreshBack()}catch(e){}
   db.doc('research/longterm').onSnapshot(s=>{if(s.exists){LT=s.data();render()}},fail);
   db.doc('research/comove').onSnapshot(s=>{if(s.exists){CM=s.data();render()}},fail);
   db.doc('research/news').onSnapshot(s=>{NEWSD=s.exists?s.data():null; nxIds((NEWSD&&NEWSD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){} try{newsCount()}catch(e){}})},fail);
+  db.doc('research/x').onSnapshot(s=>{XD=s.exists?s.data():null; nxIds((XD&&XD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){}})},fail);
   db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){} try{newsCount()}catch(e){}},fail);
   $('repKind').value=RK;$('repKind').addEventListener('change',e=>{RK=e.target.value;RP='';try{localStorage.setItem('repKind',RK)}catch(x){};fillPeriods()});
   $('repPer').addEventListener('change',e=>{RP=e.target.value});

@@ -336,8 +336,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // the analysts' data: when it last ran and how it went, and how old each document is
   app.get('/api/research/status',needOwner,(req,res)=>{let last=null; try{last=JSON.parse(store.getMeta('researchStatus')||'null')}catch(e){}
     const at=p=>{const d=store.getDoc(p); return d.exists?{updatedAt:d.data.updatedAt||null,source:d.data.source||null}:null};
-    let news=null, newsx=null; try{news=JSON.parse(store.getMeta('newsStatus')||'null'); newsx=JSON.parse(store.getMeta('newsxStatus')||'null')}catch(e){}
-    res.json({last,latest:at('research/latest'),fit:at('research/fit'),candidates:at('research/candidates'),news,newsx})});
+    let news=null, newsx=null, x=null; try{news=JSON.parse(store.getMeta('newsStatus')||'null'); newsx=JSON.parse(store.getMeta('newsxStatus')||'null'); x=JSON.parse(store.getMeta('xStatus')||'null')}catch(e){}
+    res.json({last,latest:at('research/latest'),fit:at('research/fit'),candidates:at('research/candidates'),news,newsx,x})});
   // the owner checks the connection to Claude with one tiny question
   app.post('/api/ask/check',needOwner,async(req,res)=>{
     const t0=Date.now(); const out=await askClaude({model:ALLOWED_MODELS.find(m=>/haiku/.test(m))||ALLOWED_MODELS[0],max_tokens:16,messages:[{role:'user',content:'Reply with the single word: ok'}]});

@@ -507,20 +507,31 @@ test('the news understood on the page: what matters to this portfolio first, the
   by[id('https://x/sport')]=X('קבוצה זכתה באליפות','ספורט.',{type:'other',ev:'sport'});
   store.setDoc('research/newsx',{by,gen,updatedAt:iso(1),n:6,waiting:0,ai:true,source:'בדיקה'},{silent:true});
   try{
-    const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nx').length>=4,null,{timeout:15000});
+    const {ctx,pg}=await open(390);
+    // 29.10: a tab of its own in the drawer, "חיבור למציאות", not a part of the research screen; a dot on it while an important reading waits
+    const nav=await pg.evaluate(()=>({tabs:[...document.querySelectorAll('#tabsbar [role="tab"]')].filter(b=>!b.hidden).map(b=>b.querySelector('span').textContent),own:!document.getElementById('tab_news').hidden,dot:!document.getElementById('sbNxDot').hidden}));
+    assert.ok(nav.tabs.includes('חיבור למציאות')&&nav.own&&nav.dot,JSON.stringify(nav)); assert.equal(nav.tabs.indexOf('חיבור למציאות'),nav.tabs.indexOf('מחקר')+1,'right after the research');
+    await tab(pg,'news'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nx').length>=3,null,{timeout:15000});
+    assert.ok(await pg.evaluate(()=>!document.querySelector('[data-pane="news"] .subtabs')),'no sub-tabs of the research here');
     const r=await pg.evaluate(()=>({h:document.getElementById('hNewsT').textContent,top:[...document.querySelectorAll('#nxTop .nx-tc b')].map(b=>b.textContent),
-      cards:[...document.querySelectorAll('#newsFeed .nx')].map(c=>({t:c.querySelector('h3').textContent,lv:[...c.classList].find(x=>/^lv-/.test(x)),why:c.querySelector('.nx-why')?.textContent||'',aff:[...c.querySelectorAll('.nx-a')].map(a=>a.textContent.replace(/\s+/g,' ').trim()),held:[...c.querySelectorAll('.nx-a.held .nx-s')].map(b=>b.textContent),
+      cards:[...document.querySelectorAll('#newsFeed .nx')].map(c=>({t:c.querySelector('h3').textContent,lv:[...c.classList].find(x=>/^lv-/.test(x)),why:c.querySelector('.nx-imp')?.textContent||'',what:c.querySelector('.nx-what')?.textContent||'',aff:[...c.querySelectorAll('.nx-a')].map(a=>a.textContent.replace(/\s+/g,' ').trim()),held:[...c.querySelectorAll('.nx-a.held .nx-s')].map(b=>b.textContent),
         tags:[...c.querySelectorAll('.nx-tag')].map(x=>x.textContent),src:c.querySelector('.nx-src a')?.getAttribute('href')})),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(r.h,'מה קורה בתיק שלך?'); assert.deepEqual(r.top,['אנבידיה היכתה את התחזיות והעלתה את התחזית','האיחוד האירופי פתח בחקירה נגד מיקרוסופט','הפד הותיר את הריבית'],'the three that matter most, one per event');
     assert.equal(r.cards[0].t,'אנבידיה היכתה את התחזיות והעלתה את התחזית','the company\'s own report first'); assert.equal(r.cards[0].lv,'lv-crit');
-    assert.match(r.cards[0].why,/^למה זה חשוב לתיק שלך\? אתה מחזיק NVDA \(16\.4% מהתיק\)\. MSFT שבתיק \(15\.2%\) לקוחה של החברה: לקוחה גדולה\./); assert.deepEqual(r.cards[0].held,['NVDA','MSFT']); assert.ok(r.cards[0].aff.some(a=>/AMD.*מתחרה/.test(a)));
-    assert.ok(r.cards[0].tags.includes('השפעה חיובית אפשרית')&&r.cards[0].tags.includes('עובדה מדווחת')); assert.equal(r.cards[0].src,'https://x/nvda1');
+    // 29.10: three short lines: the headline, what happened, how it may touch this portfolio
+    assert.equal(r.cards[0].what,'החברה דיווחה על הכנסות מעל הצפי.'); assert.equal(r.cards[0].why,'לתיק שלך: עשוי לתמוך ב-NVDA (16% מהתיק): הדוח של החברה עצמה. MSFT (15%) לקוח: לקוחה גדולה.'); assert.deepEqual(r.cards[0].held,['NVDA','MSFT']); assert.ok(r.cards[0].aff.some(a=>/AMD.*מתחרה/.test(a)));
+    assert.ok(r.cards[0].tags.includes('השפעה חיובית אפשרית')&&r.cards[0].tags.includes('עובדה מדווחת'),'the direction and the certainty, under "עוד"'); assert.equal(r.cards[0].src,'https://x/nvda1');
     assert.ok(!r.cards.some(c=>c.t==='מניית אנבידיה קפצה אחרי הדוח'),'the second article of the event is behind the first'); assert.ok(!r.cards.some(c=>/אליפות/.test(c.t)),'news that touches nothing of the portfolio is not in the feed');
-    assert.match(r.cards.find(c=>/הפד/.test(c.t)).why,/JPM שבתיק \(8\.7%\) באותו ענף/); assert.equal(r.ox,false);
+    assert.equal(r.cards.find(c=>/הפד/.test(c.t)).why,'לתיק שלך: JPM (9%) אותו ענף: רווחי הבנקים תלויים בריבית.'); assert.equal(r.ox,false);
+    // 29.10: the critical and the important only, by default; the rest behind the filter (kept and read all the same)
+    assert.deepEqual(r.cards.map(c=>c.lv),['lv-crit','lv-imp','lv-imp'],'watch and info are not shown by default: '+JSON.stringify(r.cards.map(c=>c.t)));
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#nxLv [data-nxl]')].map(b=>b.dataset.nxl+':'+b.getAttribute('aria-pressed'))),['crit:true','imp:true','watch:false','info:false']);
+    await pg.click('#nxLv [data-nxl="watch"]'); await pg.click('#nxLv [data-nxl="info"]'); await pg.waitForTimeout(200);
+    assert.equal(await pg.evaluate(()=>document.querySelectorAll('#newsFeed .nx').length),4,'with all the levels: KO\'s appointment too');
     // more sources of the event, the unknown and the background, behind "עוד"
     await pg.click('#newsFeed .nx details.nx-more summary'); await pg.waitForTimeout(200);
     const more=await pg.evaluate(()=>document.querySelector('#newsFeed .nx details.nx-more').textContent.replace(/\s+/g,' '));
-    assert.match(more,/מה לא ידוע: איך השוק יגיב\./); assert.match(more,/עוד כתבות על אותו אירוע: CNBC/); assert.match(more,/הכותרת במקור: Nvidia beats estimates/);
+    assert.match(more,/מה לא ידוע: איך השוק יגיב\./); assert.match(more,/עוד על אותו אירוע: CNBC/); assert.match(more,/במקור: Nvidia beats estimates/); assert.match(more,/למה זה חשוב לתיק שלך: אתה מחזיק NVDA \(16\.4% מהתיק\)\. MSFT שבתיק \(15\.2%\) לקוחה של החברה: לקוחה גדולה\./);
     assert.ok(await pg.evaluate(()=>document.querySelector('#newsFeed .nx').classList.contains('read')),'opened: read');
     // saved, and the views
     await pg.click('#newsFeed .nx [data-nxsave]'); await pg.waitForTimeout(200); await pg.click('#nxViews [data-nxv="saved"]'); await pg.waitForTimeout(200);
@@ -530,9 +541,10 @@ test('the news understood on the page: what matters to this portfolio first, the
     assert.ok(/NVDA 1$/.test(bySym[0])&&/MSFT 2$/.test(bySym[1])&&bySym.some(x=>/KO 1$/.test(x)),'grouped by the holdings, the largest first: '+JSON.stringify(bySym));
     await pg.click('#nxViews [data-nxv="macro"]'); await pg.waitForTimeout(200);
     assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nx h3')].map(h=>h.textContent)),['הפד הותיר את הריבית','קבוצה זכתה באליפות'],'the broad view: the general news, the irrelevant one said so');
-    assert.match(await pg.evaluate(()=>document.querySelectorAll('#newsFeed .nx')[1].querySelector('.nx-why').textContent),/לא נמצא קשר ישיר לאחזקות שלך/);
+    assert.match(await pg.evaluate(()=>document.querySelectorAll('#newsFeed .nx')[1].querySelector('.nx-imp').textContent),/בלי קשר ישיר לאחזקות שלך/);
     await pg.click('#nxViews [data-nxv="all"]'); await pg.click('#nxLv [data-nxl="crit"]'); await pg.waitForTimeout(200);
     assert.ok(!(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nx h3')].map(h=>h.textContent))).some(t=>/אנבידיה היכתה/.test(t)),'the level filter'); await pg.click('#nxLv [data-nxl="crit"]');
+    assert.deepEqual(JSON.parse(await pg.evaluate(()=>localStorage.getItem('tr_nxlv'))).sort(),['crit','imp','info','watch'],'the choice of levels is remembered in this browser');
     // the state kept in the viewer's own document
     await pg.waitForTimeout(1200); const st=store.getDoc('news/state').data; assert.ok(st&&st.saved&&Object.keys(st.saved).length===1&&Object.keys(st.read).length===2,'read (the whole event) and saved kept: '+JSON.stringify(st));
     // the holdings' mark and the home line, the alert for the morning, צ׳יקו's facts
@@ -547,7 +559,7 @@ test('the news understood on the page: what matters to this portfolio first, the
     assert.deepEqual(await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^news:/.test(i.key)).map(i=>i.key)),['news:nvda-q3-report']);
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // a partner who holds KO alone: KO's and the general ones, nothing of NVDA
-    {const {ctx,pg}=await open(390,{who:'p2'}); await tab(pg,'news'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nx').length>=1,null,{timeout:15000}); await pg.click('#nxViews [data-nxv="macro"]'); await pg.waitForTimeout(300); await pg.click('#nxViews [data-nxv="all"]'); await pg.waitForTimeout(300);
+    {const {ctx,pg}=await open(390,{who:'p2'}); await tab(pg,'news'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nx').length>=1,null,{timeout:15000}); await pg.click('#nxLv [data-nxl="watch"]'); await pg.click('#nxLv [data-nxl="info"]'); await pg.click('#nxViews [data-nxv="macro"]'); await pg.waitForTimeout(300); await pg.click('#nxViews [data-nxv="all"]'); await pg.waitForTimeout(300);
       const L=await pg.evaluate(()=>({all:[...document.querySelectorAll('#newsFeed .nx h3')].map(h=>h.textContent),raw:window.__nx.all().map(it=>it.id)}));
       assert.ok(L.all.some(t=>/קוקה-קולה/.test(t))&&!L.all.some(t=>/אנבידיה|מיקרוסופט/.test(t)),JSON.stringify(L.all)); assert.ok(!L.raw.includes(id('https://x/nvda1')),'the reading of another user\'s security never reaches the page');
       assert.deepEqual(pg.errs,[]); await ctx.close()}
