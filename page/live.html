@@ -2563,6 +2563,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       </div>
       <div class="chips" id="newsChips" role="group" aria-label="סינון לפי נייר" style="align-self:flex-start"></div>
       <div class="newsfeed" id="newsFeed"><div class="empty">הכתבות על המניות שבתיק ובמעקב יופיעו כאן.</div></div>
+      <p class="note" id="nxStat" hidden></p>
       <details class="panel nx-set" id="nxSet"><summary>התראות על חדשות: מה יעלה לרשימה בבית ולהודעת הבוקר</summary>
         <div class="nx-setb"><div><b>רמות</b><label class="check"><input type="checkbox" data-nxal="crit"><span>קריטי</span></label><label class="check"><input type="checkbox" data-nxal="imp"><span>חשוב</span></label><label class="check"><input type="checkbox" data-nxal="watch"><span>למעקב</span></label></div>
           <div><b>סוגים</b><div class="chips" id="nxTypesAl"></div></div>
@@ -22534,7 +22535,8 @@ function rsSrcLine(st){const f=st.fh, d=st.fund, L=[];
 function rsEmptyHtml(){return `<div class="empty">נתוני החברות (דוחות, אנליסטים, תאריכי דוחות ודיבידנדים) נמשכים ממקור חיצוני בלילה, בימים ג׳ עד ש׳ ב-01:15, לכל הניירות שבתיק ובמעקב. עדיין אין כאלה כאן, ולכן אין דירוג.</div><div class="rsStatus"></div>`}
 function rsStatusFill(){if(!document.querySelector('.rsStatus'))return; rsStatusHtml().then(h=>{for(const e of document.querySelectorAll('.rsStatus'))e.innerHTML=h}).catch(()=>{})}
 document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-rsrun]'); if(!b)return; b.disabled=true; b.textContent='הופעל…'; const job=b.dataset.rsrun||'research';
-  try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin',headers:{'x-tc':'1'}}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}});
+  try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin',headers:{'x-tc':'1'}}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}
+  if(job==='news'||job==='newsx')for(const t of [30e3,90e3,180e3])setTimeout(()=>{NXST=null; RSST=null; try{nxStatusLine()}catch(e){}},t)});
 // the control tab's sections that wait for the night's series: the owner can start that run now
 function nightFill(){if(!(OWNER&&window.__tc&&!LOCAL))return; for(const e of document.querySelectorAll('.empty[data-night]')){if(e.querySelector('[data-rsrun]'))continue; const b=document.createElement('button'); b.type='button'; b.className='btn sm'; b.dataset.rsrun='nightly'; b.textContent='להריץ את הריצה הלילית עכשיו'; b.style.marginInlineStart='8px'; e.appendChild(b)}}
 setTimeout(()=>{try{nightFill()}catch(e){}},4000);
@@ -23169,7 +23171,17 @@ function renderNewsX(){
   const D={}; for(const z of L){const d=String(z.it.at||z.it.seen).slice(0,10); (D[d]=D[d]||[]).push(z)}
   box.innerHTML=Object.keys(D).sort((a,b)=>a<b?1:-1).map(d=>`<h3 class="news-d">${newsDayL(d)}</h3>`+D[d].map(card).join('')).join('');
 }
-function renderNews(){try{renderNewsX()}catch(e){console.error(e)}}
+// 29.10: for the owner, under the feed: when the articles were last gathered and last read, and the first error of each
+// run, so an empty screen says why without the server's log
+let NXST=null;
+async function nxStatusLine(){const el=$('nxStat'); if(!el)return; if(!(OWNER&&window.__tc&&!LOCAL)){el.hidden=true;return}
+  if(NXST===null||Date.now()-NXST.at>60e3){NXST={at:Date.now(),d:null}; try{const r=await fetch('/api/research/status',{credentials:'same-origin'}); if(r.ok)NXST.d=await r.json()}catch(e){}}
+  const d=NXST.d; if(!d){el.hidden=true;return} const n=d.news, x=d.newsx, xx=d.x, L=[];
+  L.push(n?`איסוף כתבות: ${dmy(n.at)} ${hm(n.at)}, ${n.ok} מתוך ${n.of} ניירות, ${n.items} כתבות${n.stopped?' · נעצר: '+esc(String(n.stopped)):''}${n.first?' · שגיאה: '+esc(String(n.first).slice(0,140)):''}`:'איסוף כתבות: עוד לא רץ אף פעם');
+  L.push(x?`קריאה: ${dmy(x.at)} ${hm(x.at)}, ${x.ai?`${x.read} נקראו ב-${x.batches} קריאות, ${x.waiting} ממתינות`:'לא פעילה (אין מפתח Anthropic בשרת)'}${x.stopped?' · נעצר: '+esc(String(x.stopped)):''}${x.first?' · שגיאה: '+esc(String(x.first).slice(0,140)):''}`:'קריאה: עוד לא רצה אף פעם');
+  L.push(xx&&xx.token?`X: ${dmy(xx.at)} ${hm(xx.at)}, ${xx.kept} פוסטים${xx.first?' · '+esc(String(xx.first).slice(0,100)):''}`:'X: לא מחובר');
+  el.hidden=false; el.innerHTML=`<b>לבעל האתר:</b> ${L.join(' · ')} <button type="button" class="btn sm" data-rsrun="news">לאסוף ולקרוא עכשיו</button>`}
+function renderNews(){try{renderNewsX()}catch(e){console.error(e)} try{nxStatusLine()}catch(e){}}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const v=t.closest('#nxViews [data-nxv]'); if(v){NXV=v.dataset.nxv; renderNewsX(); return}
   if(t.closest('[data-nxall]')){NXLV=new Set(['crit','imp','watch','info']); try{localStorage.setItem('tr_nxlv',JSON.stringify([...NXLV]))}catch(e){} renderNewsX(); return}
