@@ -2030,6 +2030,15 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 .nw-cd[open]>summary::after{transform:rotate(-135deg)}
 .nw-cs{display:flex;flex-direction:column;gap:3px;min-width:0} .nw-cs b{font-size:14.5px;line-height:1.4} .nw-cm{font-size:12px;color:var(--muted)}
 .nw-cb{display:flex;flex-direction:column;gap:8px;padding:0 12px 12px} .nw-cb h3{display:none}
+/* the markets' strip and צ׳יקו's summary */
+.mk-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;-webkit-overflow-scrolling:touch} .mk-row::-webkit-scrollbar{display:none} .mk-row[hidden]{display:none}
+.mk-i{flex:none;display:grid;grid-template-columns:auto auto;grid-template-areas:"n n" "v c" "s s";gap:1px 8px;align-items:baseline;text-align:start;font:inherit;color:var(--ink);padding:7px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer;min-height:44px}
+.mk-i:hover{border-color:#A78BFA} .mk-n{grid-area:n;font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap} .mk-v{grid-area:v;font-size:14px;font-weight:800;direction:ltr} .mk-c{grid-area:c;font-size:12.5px;font-weight:700;direction:ltr;white-space:nowrap}
+.mk-i small{grid-area:s;font-size:10.5px;color:var(--muted)}
+@media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
+.nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
+.nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+.nw-brief ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55} .nw-bm{margin:0;font-size:13.5px;color:var(--ink2)} .nw-brief .lnk{min-height:24px}
 /* the alert center */
 .pl-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;color:var(--ink2)} .pl-head:empty{display:none}
 #plLv{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} #plLv::-webkit-scrollbar{display:none} #plLv .chip{flex:none}
@@ -2812,6 +2821,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   <div class="pane" data-pane="news" hidden>
     <section aria-labelledby="hNewsT" class="nxsec">
       <div class="row"><h2 id="hNewsT">חיבור למציאות</h2><span class="sub" id="newsFresh"></span></div>
+      <div class="mk-row" id="mktRow" role="group" aria-label="השווקים עכשיו" hidden></div>
       <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
         <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="true" aria-controls="rtNews">מערכת חדשות</button>
         <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="false" aria-controls="rtAl" tabindex="-1">התראות אישיות <span class="rt-n" id="rtAlN" hidden></span></button>
@@ -18798,7 +18808,7 @@ function alertNav(a){const cat=a[1], it=(a[3]||[]).filter(Boolean);
   const t=ACAT[cat]; return t?{t,l:ANAV[t]}:null}
 const anaNavBtn=(n,cls)=>n?`<button type="button" class="btn sm${cls?' '+cls:''}" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'';
 function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));return}
-  if(t.startsWith('news:')){const id=t.slice(5); showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(id)}"]`); if(el){el.scrollIntoView({block:'center'}); el.querySelector('details.nw-more')?.setAttribute('open','')}},120); return}
+  if(t.startsWith('news:')){const id=t.slice(5); showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; NWLIM=Math.max(NWLIM,200); try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(id)}"]`); if(el){el.scrollIntoView({block:'center'}); el.querySelector('details.nw-more')?.setAttribute('open','')}},120); return}
   if(t.startsWith('pl:')){try{plOpen(t.slice(3))}catch(e){} return}
   if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el)el.scrollIntoView({block:'start'})},80); return}
   // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
@@ -18851,8 +18861,12 @@ window.__model.alerts=alertDigest;
 window.__model.digest=function(){try{const m=mAllNow(); const out={ready:!!(P&&Q&&Q.prices),total:Math.round(m.total)};
   if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).slice(0,3);
     out.day={pct:+m.dayPct.toFixed(2),ils:Math.round(m.dayIls),top:top.map(p=>({sym:lab(p.sym),pct:+p.dayPct.toFixed(2),ils:Math.round(p.dayIls)}))}}
+  // 30.10: the personal alerts of the last day (the same as the alert center), or the page's own matching before they exist
+  try{const from=new Date(Date.now()-864e5).toISOString(), L=PULSE?plItems().filter(a=>(a.lv==='crit'||a.lv==='imp')&&a.kind!=='mkt'&&(a.up||a.at)>=from).sort(plSort).slice(0,4):null;
+    if(L){out.news=L.map(a=>({level:a.lv==='crit'?'crit':'imp',he:a.title,what:a.rules?'':a.what,who:(a.holds||[]).filter(h=>h.link==='direct').map(h=>`${lab(h.sym)}${h.w!=null?` (${pct(h.w,0)} מהתיק)`:''}`).join(', '),dir:a.dir,link:((a.arts||[])[0]||{}).link||'',pub:((a.arts||[])[0]||{}).pub||'',why:a.relWhy||''}))}
+    else throw 0}catch(e0){
   try{const seen=new Set(); out.news=nxForHoldings(m,{days:1,levels:['crit','imp']}).filter(z=>{const k=z.it.x.ev||z.it.id; if(seen.has(k))return false; seen.add(k); return true}).slice(0,4)
-    .map(z=>({level:z.it.x.level,he:z.it.x.he,what:z.it.x.rules?'':z.it.x.what,who:z.direct.map(h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`).join(', '),dir:z.it.x.dir,link:z.it.link,pub:z.it.pub||''}))}catch(e){out.news=[]}
+    .map(z=>({level:z.it.x.level,he:z.it.x.he,what:z.it.x.rules?'':z.it.x.what,who:z.direct.map(h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`).join(', '),dir:z.it.x.dir,link:z.it.link,pub:z.it.pub||''}))}catch(e){out.news=[]}}
   try{const today=ilDay(), end=isoAdd(today,7); out.soon=soonEvents(new Date()).filter(x=>x.d<=end).map(x=>({d:x.d,items:x.E.map(e=>`${e.t}${e.sym?' '+lab(e.sym):''}${e.est?' (משוער)':''}`)}))}catch(e){out.soon=[]}
   try{const g=m.pos.reduce((t,p)=>{const y=(RS&&RS.companies&&RS.companies[p.sym]||{}).dy; return t+(y>0?p.val*y/100:0)},0); if(g>0)out.divYear=Math.round(g)}catch(e){}
   return out}catch(e){return {ready:false,err:String(e&&e.message||e)}}};
@@ -23938,8 +23952,27 @@ function nwFiltFill(all){
   for(const b of document.querySelectorAll('#nxViews [data-nxv]'))b.setAttribute('aria-pressed',String(b.dataset.nxv===NWV));
   {const c=$('nxCats'); if(c){const h=`<button type="button" class="chip" data-nwset="cat:" aria-pressed="${!NWF.cat}">הכל</button>`+NX_CATS.map(k=>`<button type="button" class="chip" data-nwset="cat:${k.k}" aria-pressed="${NWF.cat===k.k}">${esc(k.l)}</button>`).join(''); setH(c,h)}}
 }
+// 30.10: the markets around the news: the main indices, the dollar, oil, gold, bitcoin, the volatility index and the
+// 10-year yield, with the day's change from the last close (quotes/latest, the same for everyone). A tap shows the news
+// of that field. A price and its change, said with its date when it is not today's; never a forecast
+const RT_MK=[['SPX','bench','S&P 500','market'],['NDX','bench','נאסד״ק 100','tech'],['TA35','bench','ת״א 35','israel'],['TA125','bench','ת״א 125','israel'],['USD','fx','דולר/שקל','fx'],['EUR','mkts','אירו/שקל','fx'],
+  ['BRENT','mkts','נפט ברנט','energy'],['GOLD','mkts','זהב','commod'],['BTC','mkts','ביטקוין','crypto'],['VIX','mkts','VIX','market'],['TNX','mkts','אג״ח ארה״ב 10 ש׳','rates']];
+const rtNum=(v,d)=>v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+function rtMarkets(){const el=$('mktRow'); if(!el)return; const B=(Q&&Q.bench)||{}, M=(Q&&Q.mkts)||{};
+  const L=RT_MK.map(([k,src,nm,cat])=>{let px,pv,date;
+    if(src==='fx'){px=+(Q&&Q.usdIls); pv=Q&&Q.fxPrev?+Q.fxPrev.rate:0} else{const b=(src==='bench'?B:M)[k]; if(!b)return ''; px=+b.px; pv=+b.prev; date=b.date}
+    if(!(px>0)||!(pv>0))return '';
+    const bp=k==='TNX', ch=bp?(px-pv):(px/pv-1)*100, v=k==='USD'||k==='EUR'?rtNum(px,3):bp?rtNum(px,2)+'%':px>=1000?rtNum(px,k==='BTC'?0:1):rtNum(px,2), old=date&&(Date.now()-Date.parse(date))/864e5>1.6;
+    const c=bp?`${ch>=0?'+':'−'}${Math.abs(ch).toFixed(2)} נק׳`:`${Math.abs(ch).toFixed(2)}%`;
+    return `<button type="button" class="mk-i" data-nwset="cat:${cat}" data-nwv2="latest" aria-label="${esc(nm)}: ${v}, ${ch>=0?'עלייה':'ירידה'} של ${c}${old?', סגירה '+dmy(date):''}. לחדשות בתחום"><span class="mk-n">${esc(nm)}</span><span class="mk-v n">${v}</span><span class="mk-c n ${ch>0?'up':ch<0?'down':''}">${bp?'':ch>=0?'▲ ':'▼ '}${c}</span>${old?`<small>סגירה ${+date.slice(8,10)}.${+date.slice(5,7)}</small>`:''}</button>`}).filter(Boolean);
+  el.hidden=!L.length; setH(el,L.join(''))}
+// צ׳יקו's few lines on the day's main events (research/newsx.brief, made on the server from the general news only)
+function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.lines.length||!b.at||Date.now()-Date.parse(b.at)>18*36e5)return '';
+  return `<section class="nw-brief" aria-label="מה קורה בשווקים"><div class="nw-bh"><b>מה קורה בשווקים</b><span class="nm">סיכום של צ׳יקו · ${agoH(b.at)}</span></div>
+    <ul>${b.lines.map(l=>`<li><span>${esc(l.t)}</span>${l.ids&&l.ids[0]?` <button type="button" class="lnk" data-anav="news:${esc(l.ids[0])}">לידיעה ›</button>`:''}</li>`).join('')}</ul>
+    ${b.mkt?`<p class="nw-bm">${esc(b.mkt)}</p>`:''}<p class="note" style="margin:0">סיכום אוטומטי מ-${b.n||b.lines.length} ידיעות כלליות ומהמחירים, בלי שום פרט מהתיק. לא תחזית ולא המלצה.</p></section>`}
 function renderNewsX(){
-  rtTabsSync(); try{plCount()}catch(e){}
+  rtTabsSync(); try{plCount()}catch(e){} try{rtMarkets()}catch(e){}
   if(RTT==='al'){try{plCenter()}catch(e){console.error(e)} return}
   const box=$('newsFeed'), fr=$('newsFresh'); if(!box)return;
   const raw=((NEWSD&&NEWSD.items)||[]).concat((XD&&XD.items)||[]); if(raw.some(it=>it&&it.link&&!NXID.has(it.link))){nxIds(raw).then(ok=>{if(ok)try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}})}
@@ -23984,7 +24017,7 @@ function renderNewsX(){
     const evk=z=>z.it.x&&z.it.x.ev?z.it.x.ev:'id:'+z.it.id, used=new Set(head.map(evk)), mine=oneEv(L.filter(z=>!used.has(evk(z))&&nwMatch(z.it,F).length)).sort(byTime).slice(0,4); for(const z of mine)used.add(evk(z));
     const un=(()=>{try{return plItems().filter(plUnread).length}catch(e){return 0}})();
     const cats=NX_CATS.map(c=>({c,L:oneEv(L.filter(z=>!used.has(evk(z))&&nxCatsOf(z.it).includes(c.k))).sort(byTime).slice(0,3)})).filter(g=>g.L.length);
-    box.innerHTML=`${un?`<button type="button" class="nw-al" data-rt="al"><b>${un===1?'התראה אישית אחת':un+' התראות אישיות'} שלא נקראו</b><span>מה שנוגע לתיק שלך, עם ההסבר והשרשרת ›</span></button>`:''}
+    box.innerHTML=`${nwBriefH()}${un?`<button type="button" class="nw-al" data-rt="al"><b>${un===1?'התראה אישית אחת':un+' התראות אישיות'} שלא נקראו</b><span>מה שנוגע לתיק שלך, עם ההסבר והשרשרת ›</span></button>`:''}
       <div class="nw-top"><section class="nw-heads" aria-label="כותרות מרכזיות"><h3 class="nw-h">כותרות מרכזיות</h3>${head.map((z,i)=>card(z,{hero:i===0,compact:i>0})).join('')||'<p class="note">אין כותרות מהיממה וחצי האחרונות.</p>'}</section>
       ${mine.length?`<section class="nw-mine" aria-label="במעקב שלך"><h3 class="nw-h">במעקב שלך</h3>${mine.map(z=>card(z,{compact:true})).join('')}</section>`:Object.values(F).some(v=>Array.isArray(v)&&v.length)?'':`<section class="nw-mine" aria-label="במעקב שלך"><h3 class="nw-h">במעקב שלך</h3><p class="note">אפשר לעקוב אחרי קטגוריה, חברה, ענף, מקום או נושא ("עוד" על כרטיס, או בהגדרות). מה שבמעקב מופיע כאן ובתצוגה "במעקב", ושאר החדשות נשארות פתוחות לך.</p></section>`}</div>
       <div class="nw-cats">${cats.map(g=>`<section class="nw-cg" aria-label="${esc(g.c.l)}"><div class="nw-cgh"><h3 class="nw-h">${esc(g.c.l)}</h3><button type="button" class="lnk" data-nwset="cat:${g.c.k}" data-nwv2="latest">עוד ›</button></div>${g.L.map(z=>card(z,{compact:true})).join('')}</section>`).join('')}</div>`;
@@ -25242,7 +25275,7 @@ try{refreshBack()}catch(e){}
   // 30.10: the personal alerts, made on the server for this person alone
   try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
   pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();renderLater()}else{$('fresh').textContent='עדיין אין נתוני תיק.';renderLater()}},fail);
-  db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();renderLater();try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
+  db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();renderLater();try{if(document.body.dataset.page==='news')rtMarkets()}catch(e){}try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
   pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!pSaving&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}renderLater()},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();renderLater()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};renderLater()},fail);

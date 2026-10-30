@@ -14,6 +14,9 @@ export const PROXY={TA125:{index:'^TA125.TA',label:'לפי מדד ת״א 125'},T
 // source. A US index also carries its front-month future (`fut`), which trades almost around the clock
 export const BENCH={SPX:{t:'^GSPC',name:'S&P 500',fut:'ES=F'},NDX:{t:'^NDX',name:'נאסד״ק 100',fut:'NQ=F'},DJI:{t:'^DJI',name:'דאו ג׳ונס',fut:'YM=F'},RUT:{t:'^RUT',name:'ראסל 2000',fut:'RTY=F'},
   TA125:{t:'^TA125.TA',name:'ת״א 125'},TA35:{t:'^TA35.TA',name:'ת״א 35'},TA90:{t:'^TA90.TA',name:'ת״א 90'}};
+// 30.10: the markets around the news ("חיבור למציאות"): oil, gold, bitcoin, the volatility index, the 10-year US yield, the
+// euro. Public market data, the same for everyone; a price and the close before it, never a forecast
+export const MKTS={BRENT:{t:'BZ=F',name:'נפט ברנט'},GOLD:{t:'GC=F',name:'זהב'},BTC:{t:'BTC-USD',name:'ביטקוין'},VIX:{t:'^VIX',name:'VIX (תנודתיות)'},TNX:{t:'^TNX',name:'אג״ח ארה״ב 10 שנים'},EUR:{t:'EURILS=X',name:'אירו/שקל'}};
 
 export function tickerFor(sym,pos,map){
   if(map&&map[sym])return map[sym];
@@ -247,7 +250,8 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   await Promise.all(needCcy.map(async c=>{try{const q=await yahooChart(c+'ILS=X',{fetch:f}); if(q&&q.px>0)rates[c]={rate:q.px,prev:q.prev||null,date:q.closeDate}}catch(e){}}));
   const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}
     if(b.fut){try{const q=await yahooChart(b.fut,{fetch:f}); if(q&&q.px>0&&q.prev>0&&bench[k])bench[k].fut={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}}));
-  return {quotes:out,index:idx,fx:{boi,live},bench,rates,errors};
+  const mkts={}; await Promise.all(Object.entries(MKTS).map(async([k,b])=>{try{const q=await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)mkts[k]={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}));
+  return {quotes:out,index:idx,fx:{boi,live},bench,mkts,rates,errors};
 }
 
 // the next quotes/latest document, from the fetched prices and the stored one
@@ -315,8 +319,9 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   const priceLabel=failed?'המחירים האחרונים שהתקבלו':usLive?'מסחר חי, עיכוב של עד 15 דקות':ilLive?`מסחר חי בתל אביב${usDate?' · ארה״ב: סגירה '+dm(usDate):''}`:closes();
   // the indices: this run's values, or the last ones with their dates when this run did not get them
   const bench={...(old.bench||{})}; for(const [k,v] of Object.entries(fetched.bench||{}))bench[k]={...v,name:(BENCH[k]||{}).name||k};
+  const mkts={...(old.mkts||{})}; for(const [k,v] of Object.entries(fetched.mkts||{}))mkts[k]={...v,name:(MKTS[k]||{}).name||k};
   const rates={...(old.rates||{})}; for(const [c,v] of Object.entries(fetched.rates||{}))if(v&&v.rate>0)rates[c]={rate:round(v.rate,4),prev:v.prev?round(v.prev,4):null,date:v.date||null};
-  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
+  return {prices,prev:prevC,stale,meta,usdIls,fxPrev,bench,mkts,rates,fxLabel,priceLabel,prevLabel:prevDate?`סגירה ${dm(prevDate)}`:(old.prevLabel||''),boiUsd:fx.boi?round(fx.boi.rate,4):(old.boiUsd||null),
     source:(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='finnhub')?'Finnhub, ':'')+'Yahoo Finance'+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='nasdaq')?', Nasdaq':'')+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='stooq')?', Stooq':'')+', מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,

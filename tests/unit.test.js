@@ -1333,6 +1333,27 @@ test('the news engine: general categories, the market anchors for everyone (only
   const r=ruleRead({title:'Oil jumps as OPEC cuts output',pub:'Reuters',syms:[]}); assert.equal(r.type,'energy'); assert.ok(r.regions.includes('middle_east')); assert.equal(r.fac[0].k,'oil'); assert.match(r.fac[0].why,/אוטומטית/); assert.equal(r.secx[0].g,'Energy');
 });
 
+// 30.10: "מה קורה בשווקים": צ׳יקו's few lines from the general news only; numbers only from the input; no forecast
+test('the market brief: from the general news, numbers only from the input, a forecast or a cause dropped, made again only when the events change',async()=>{
+  const {newsxTask,newsId,marketText,cleanBrief}=await import('../server/newsx.js');
+  const s=new Store(':memory:'), now=new Date('2026-10-30T09:00:00Z'), iso=new Date(now-36e5).toISOString();
+  s.setDoc('quotes/latest',{bench:{SPX:{px:101,prev:100,name:'S&P 500',date:'2026-10-29'}},mkts:{BRENT:{px:80,prev:82,name:'נפט ברנט',date:'2026-10-30'}},usdIls:3.7,fxPrev:{rate:3.65}});
+  assert.deepEqual(marketText(s.getDoc('quotes/latest').data),['S&P 500: +1.00% (2026-10-29)','נפט ברנט: −2.44% (2026-10-30)','דולר/שקל: 3.700 (+1.37%)']);
+  const gen=['fed','opec','ecb','tsmc'].map(k=>({id:newsId('https://x/'+k),title:k,pub:'Reuters',link:'https://x/'+k,at:iso,syms:[],seen:iso,src:'gen',cat:'general'}));
+  s.setDoc('research/newsx',{by:Object.fromEntries(gen.map((g,i)=>[g.id,{he:'כותרת '+i,what:'מה קרה '+i,type:'market',level:i?'imp':'crit',dir:'unclear',cert:'fact',kind:'news',aff:[],sectors:[],themes:[],ev:'ev-'+i}])),gen});
+  const asked=[]; const ask=async p=>{asked.push(p); return JSON.stringify({lines:[{t:'לפי רויטרס, הפד הותיר את הריבית.',ev:[0]},{t:'אופ״ק קיצצה, והנפט צפוי לעלות.',ev:[1]},{t:'הבנק האירופי הוריד ריבית ב-0.75 נקודות.',ev:[2]},{t:'לפי רויטרס, טייוואן סמי דיווחה על ביקוש.',ev:[3,9]}],mkt:'S&P 500 עלה +1.00%, ונפט ברנט ירד −2.44%.'})};
+  await newsxTask(s,{now,general:null,ask,market:[]});
+  const b=s.getDoc('research/newsx').data.brief; assert.ok(b,'made');
+  assert.deepEqual(b.lines.map(l=>l.t),['לפי רויטרס, הפד הותיר את הריבית.','לפי רויטרס, טייוואן סמי דיווחה על ביקוש.'],'a forecast and an invented number are dropped');
+  assert.deepEqual(b.lines[0].ids,[gen[0].id]); assert.equal(b.lines[1].ids.length,1,'an index out of range is dropped'); assert.match(b.mkt,/\+1\.00%/);
+  assert.ok(asked.length===1&&/EVENTS/.test(asked[0])&&!/listed_under/.test(asked[0]));
+  await newsxTask(s,{now:new Date(now.getTime()+3*36e5),general:null,ask,market:[]}); assert.equal(asked.length,1,'the same events: not made again');
+  assert.equal(cleanBrief({lines:[{t:'א',ev:[0]}]},[{id:'a',k:'x'}],'{}'),null,'one line is not a summary');
+  // at night: nothing
+  const s2=new Store(':memory:'); s2.setDoc('research/newsx',s.getDoc('research/newsx').data); const asked2=[];
+  await newsxTask(s2,{now:new Date('2026-10-30T23:30:00Z'),general:null,ask:async p=>{asked2.push(p); return '[]'},market:[]}); assert.ok(!asked2.some(p=>/EVENTS/.test(p)));
+});
+
 test('live alerts: a price set, a big day, the dollar, a critical reading; once a day each, one e-mail in 20 minutes, quiet at night',async()=>{
   const {liveTask,liveHits}=await import('../server/livealert.js'); const s=new Store(':memory:');
   s.setDoc('portfolio/main',{positions:[{sym:'NVDA'},{sym:'KO'}]}); s.setDoc('quotes/latest',{prices:{NVDA:190,KO:60,MSFT:500},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}});

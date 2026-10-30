@@ -578,6 +578,28 @@ test('חיבור למציאות, the news: its own product with search, categori
   }finally{rtRestore(N0,X0,ST0,PU0,S0)}
 });
 
+test('חיבור למציאות: the markets around the news (indices, the dollar, oil, gold, bitcoin) and צ׳יקו\'s summary of the day; a tap on a market shows its news',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), Q0=store.getDoc('quotes/latest').data;
+  const D=await rtData(); await rtSet(D); const today=new Date().toISOString().slice(0,10);
+  store.setDoc('quotes/latest',{...Q0,bench:{...(Q0.bench||{}),SPX:{px:5812.3,prev:5790,name:'S&P 500',date:today},TA35:{px:2510,prev:2530,name:'ת״א 35',date:'2026-01-02'}},mkts:{BRENT:{px:80.12,prev:82.5,name:'נפט ברנט',date:today},BTC:{px:68000,prev:67000,name:'ביטקוין',date:today},TNX:{px:4.25,prev:4.2,date:today}},usdIls:3.7,fxPrev:{rate:3.68}},{silent:true});
+  const X=store.getDoc('research/newsx').data; store.setDoc('research/newsx',{...X,brief:{at:new Date().toISOString(),n:4,lines:[{t:'לפי CNBC, הפד הותיר את הריבית.',ids:[D.id('https://x/fed')],ev:['fed-hold']},{t:'לפי רויטרס, אופ״ק קיצצה תפוקה.',ids:[D.id('https://x/opec')],ev:['opec-cut']}],mkt:'S&P 500: +0.39%.'}},{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.waitForFunction(()=>!document.getElementById('mktRow').hidden&&document.querySelector('.nw-brief'),null,{timeout:15000});
+    const r=await pg.evaluate(()=>({mk:[...document.querySelectorAll('#mktRow .mk-i')].map(b=>b.innerText.replace(/\s+/g,' ').trim()),brief:[...document.querySelectorAll('.nw-brief li span')].map(x=>x.textContent),bm:document.querySelector('.nw-bm').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.ok(r.mk.some(x=>/^S&P 500 5,812\.3 ▲ 0\.39%$/.test(x)),JSON.stringify(r.mk)); assert.ok(r.mk.some(x=>/^נפט ברנט 80\.12 ▼ 2\.88%$/.test(x))); assert.ok(r.mk.some(x=>/^דולר\/שקל 3\.700 ▲ 0\.54%$/.test(x)));
+    assert.ok(r.mk.some(x=>/^ת״א 35 .*סגירה 2\.1$/.test(x)),'an old close says its date: '+JSON.stringify(r.mk)); assert.ok(r.mk.some(x=>/^אג״ח ארה״ב 10 ש׳ 4\.25% \+0\.05 נק׳$/.test(x)),'the yield in points');
+    assert.deepEqual(r.brief,['לפי CNBC, הפד הותיר את הריבית.','לפי רויטרס, אופ״ק קיצצה תפוקה.']); assert.equal(r.ox,false);
+    // a tap on oil: the energy news
+    await pg.click('#mktRow .mk-i:has-text("נפט ברנט")'); await pg.waitForTimeout(300);
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nwc h3')].map(h=>h.textContent)),['אופ״ק קיצצה תפוקה והנפט עלה']);
+    // a line of the summary: to its article
+    await pg.click('[data-nwclr="cat"]'); await pg.click('#nxViews [data-nxv="top"]'); await pg.waitForTimeout(200); await pg.click('.nw-brief li:first-child [data-anav]'); await pg.waitForTimeout(400);
+    assert.ok(await pg.evaluate(id=>{const a=document.querySelector(`#newsFeed [data-nid="${id}"]`); if(!a)return false; const r=a.getBoundingClientRect(); return r.top<innerHeight&&r.bottom>0},D.id('https://x/fed')),'the article in view');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{rtRestore(N0,X0,ST0,PU0); store.setDoc('quotes/latest',Q0,{silent:true})}
+});
+
 test('חיבור למציאות without a portfolio: the news to read and search; the alerts say how they are made and pretend nothing',T,async t=>{
   if(skip())return t.skip('no browser');
   const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
