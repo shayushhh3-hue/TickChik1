@@ -1333,6 +1333,27 @@ test('the news engine: general categories, the market anchors for everyone (only
   const r=ruleRead({title:'Oil jumps as OPEC cuts output',pub:'Reuters',syms:[]}); assert.equal(r.type,'energy'); assert.ok(r.regions.includes('middle_east')); assert.equal(r.fac[0].k,'oil'); assert.match(r.fac[0].why,/אוטומטית/); assert.equal(r.secx[0].g,'Energy');
 });
 
+// 30.10: one event, one key: the reader sees the known events; a new key for the same company's event of the same kind
+// within a day and a half (or the same market event in other words) is joined to the earlier one
+test('one key per event: the known events reach the reader, and a second key for the same event is joined to the first',async()=>{
+  const {unifyEv,knownEvents,newsxTask,newsId}=await import('../server/newsx.js');
+  const by={a:{he:'אנבידיה היכתה',type:'earnings',ev:'nvda-q3-report',aff:[{sym:'NVDA',how:'direct'}],at:'2026-10-30T08:00:00Z'},f:{he:'הפד',type:'macro_rates',ev:'fed-rate-hold-oct',aff:[],at:'2026-10-30T08:00:00Z'},r:{he:'x',type:'legal',ev:'old',rules:true,at:'2026-10-30T08:00:00Z'}};
+  const at=new Map([['a','2026-10-30T07:00:00Z'],['f','2026-10-30T07:00:00Z'],['b','2026-10-30T12:00:00Z'],['g','2026-10-30T12:00:00Z'],['c','2026-11-02T12:00:00Z']]);
+  assert.deepEqual(knownEvents(by,{now:new Date('2026-10-30T12:00:00Z')}).map(k=>k.ev).sort(),['fed-rate-hold-oct','nvda-q3-report'],'not a reading by rules');
+  const b=unifyEv({type:'earnings',ev:'nvidia-q3-earnings',aff:[{sym:'NVDA',how:'direct'}]},{id:'b'},by,at); assert.equal(b.ev,'nvda-q3-report'); assert.equal(b.evOrig,'nvidia-q3-earnings');
+  assert.equal(unifyEv({type:'earnings',ev:'nvidia-q4',aff:[{sym:'NVDA',how:'direct'}]},{id:'c'},by,at).ev,'nvidia-q4','three days later: another event');
+  assert.equal(unifyEv({type:'contract',ev:'nvda-deal',aff:[{sym:'NVDA',how:'direct'}]},{id:'b'},by,at).ev,'nvda-deal','another kind: another event');
+  assert.equal(unifyEv({type:'macro_rates',ev:'fed-holds-rates',aff:[]},{id:'g'},by,at).ev,'fed-rate-hold-oct','the same market event in other words');
+  assert.equal(unifyEv({type:'macro_rates',ev:'ecb-cut',aff:[]},{id:'g'},by,at).ev,'ecb-cut');
+  // in a run: the known events are in the prompt, and the new key is joined
+  const s=new Store(':memory:'), now=new Date('2026-10-30T12:00:00Z'), iso=now.toISOString(), id0=newsId('https://x/1'), id1=newsId('https://x/2');
+  s.setDoc('research/news',{items:[{title:'Nvidia beats',link:'https://x/1',at:'2026-10-30T07:00:00Z',syms:['NVDA'],seen:'2026-10-30T07:00:00Z'},{title:'Nvidia results lift chips',link:'https://x/2',at:iso,syms:['NVDA'],seen:iso}]});
+  s.setDoc('research/newsx',{by:{[id0]:{he:'אנבידיה היכתה',what:'w',type:'earnings',level:'crit',dir:'pos',cert:'fact',aff:[{sym:'NVDA',how:'direct',dir:'pos'}],ev:'nvda-q3-report',at:'2026-10-30T08:00:00Z'}},gen:[]});
+  const asked=[]; const ask=async p=>{asked.push(p); return JSON.stringify([{i:0,he:'אנבידיה מושכת את השבבים',what:'w',type:'earnings',level:'imp',dir:'pos',cert:'fact',aff:[{sym:'NVDA',how:'direct',dir:'pos'}],ev:'nvidia-results-chips'}])};
+  const st=await newsxTask(s,{now,ask,general:null,market:[]}); assert.ok(/KNOWN_EVENTS/.test(asked[0])&&asked[0].includes('nvda-q3-report')); assert.equal(st.joined,1);
+  assert.equal(s.getDoc('research/newsx').data.by[id1].ev,'nvda-q3-report');
+});
+
 // 30.10: "מה קורה בשווקים": צ׳יקו's few lines from the general news only; numbers only from the input; no forecast
 test('the market brief: from the general news, numbers only from the input, a forecast or a cause dropped, made again only when the events change',async()=>{
   const {newsxTask,newsId,marketText,cleanBrief}=await import('../server/newsx.js');
