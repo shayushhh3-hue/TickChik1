@@ -24253,7 +24253,7 @@ function ixGraph(m){
 // the rings: the distance from the middle; each ring evenly around, turned so each point sits near the points it hangs on
 function ixLayout(G,W,H){const adj=new Map(G.nodes.map(n=>[n.id,[]])); for(const e of G.edges){if(adj.has(e.from)&&adj.has(e.to)){adj.get(e.from).push(e.to); adj.get(e.to).push(e.from)}}
   const d=new Map([[G.center,0]]), Q2=[G.center]; while(Q2.length){const id=Q2.shift(); for(const x of adj.get(id)||[])if(!d.has(x)){d.set(x,d.get(id)+1); Q2.push(x)}}
-  const maxD=Math.min(3,Math.max(1,...G.nodes.map(n=>d.has(n.id)?d.get(n.id):3))), cx=W/2, cy=H/2, Rx=W/2-64, Ry=H/2-56, ang=new Map([[G.center,0]]);   // an ellipse, to use the whole frame
+  const maxD=Math.min(3,Math.max(1,...G.nodes.map(n=>d.has(n.id)?d.get(n.id):3))), cx=W/2, cy=H/2, Rx=W/2-(W<600?64:100), Ry=H/2-56, ang=new Map([[G.center,0]]);   // an ellipse, to use the whole frame
   for(const n of G.nodes){const r=Math.min(3,d.has(n.id)?d.get(n.id):3); n.ring=r}
   const c=G.nodes.find(n=>n.id===G.center); if(c){c.x=cx; c.y=cy}
   for(let r=1;r<=3;r++){const L=G.nodes.filter(n=>n.ring===r); if(!L.length)continue; const f=maxD===1?0.82:maxD===2?(r===1?0.5:0.95):(r===1?0.38:r===2?0.69:0.98);
