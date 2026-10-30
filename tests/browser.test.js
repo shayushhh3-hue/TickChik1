@@ -687,6 +687,22 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
 
+test('the check against the house: the last screenshot of an account against the site now, holding by holding, the gap taken apart',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, Q=store.getDoc('quotes/latest').data;
+  const rows=P0.positions.filter(p=>p.acct==='exc').map((p,i)=>{const qty=p.qty+(i===0?1:0), px=Q.prices[p.sym]*0.99; return {sym:p.sym,name:p.name,qty,ccy:p.ccy,px,value:p.ccy==='USD'?qty*px*3.74:qty*px,valueCcy:'ILS'}});
+  store.setDoc('portfolio/main',{...P0,recon:{exc:{at:new Date(Date.now()-3600e3).toISOString(),shot:true,total:rows.reduce((t,r)=>t+r.value,0)+400,ccy:'ILS',cashIls:400,cashUsd:0,rows}}});
+  try{
+    const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(500);
+    const r=await pg.evaluate(()=>{const b=document.getElementById('reconBox'); return {hidden:b.hidden,vis:!!b.offsetParent,h:b.querySelector(':scope > div h3').textContent,chips:[...b.querySelectorAll('.rc-p span')].map(x=>x.textContent),
+      rows:[...b.querySelectorAll('tbody tr')].map(tr=>({s:tr.querySelector('.sym').textContent,why:tr.querySelector('.rc-why').textContent})),wide:b.querySelector('table').scrollWidth>b.querySelector('table').parentElement.clientWidth+1}});
+    assert.equal(r.hidden,false); assert.ok(r.vis,'on the holdings tab'); assert.match(r.h,/^אקסלנס: הצילום מ-/);
+    assert.ok(r.chips.some(c=>/^שער הדולר: .*\(אצלם 3\.740, כאן 3\.700\)/.test(c)),JSON.stringify(r.chips)); assert.ok(r.chips.some(c=>/^מחירים: /.test(c))); assert.ok(r.chips.some(c=>/^כמויות: /.test(c)));
+    assert.match(r.rows[0].why,/^כמות \d+ אצלם, \d+ כאן$/,'the biggest gap first: a quantity'); assert.equal(r.wide,false,'no sideways scroll on a phone');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0)}
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();

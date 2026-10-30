@@ -33,6 +33,22 @@ test('model: value, weights, dollars, cash, cost, the day', ()=>{
   const b=F.model(G.P,G.Q,'blink'); near(b.total,175+35); assert.equal(b.acct,'blink');
 });
 
+test('the day in shekels has the dollar\'s own move in it, as the houses show it: the dollar holdings at yesterday\'s prices and the dollar cash', ()=>{
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:600,group:'tech'},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:300},{sym:'KO',acct:'blink',ccy:'USD',qty:1,costIls:null,group:'cons'}],
+    cash:[{acct:'exc',ccy:'ILS',amount:100},{acct:'blink',ccy:'USD',amount:10}]};
+  // MSFT 95 → 100 $, the dollar 3.6 → 3.5 (a close from the same source); KO and the fund have no close of yesterday
+  G.Q={usdIls:3.5,prices:{MSFT:100,'1159250':35,KO:50},prev:{MSFT:95},fxPrev:{rate:3.6,now:3.5,date:'2026-10-29'}};
+  const m=F.model(G.P,G.Q,'all'), ms=m.pos.find(p=>p.sym==='MSFT');
+  near(ms.dayFx,2*95*(3.5-3.6)); near(ms.dayIls,2*5*3.5+2*95*(3.5-3.6),1e-9,'the holding\'s day in shekels: its price and its rate');
+  near(ms.dayPct,(100/95-1)*100,1e-9,'the percent stays the price\'s own');
+  near(m.dayFx,2*95*(-0.1)+10*(-0.1)); near(m.dayIls,35-19-1);
+  near(m.dayIls,(2*100*3.5+10*3.5)-(2*95*3.6+10*3.6),1e-9,'today\'s value less yesterday\'s, for what has a close of yesterday');
+  // another source for the rate's close: the prices alone, as before
+  G.Q={...G.Q,fxPrev:{rate:3.6,now:3.55}}; const m2=F.model(G.P,G.Q,'all'); near(m2.dayIls,35); assert.equal(m2.dayFx,0);
+  // one account: only its own dollar cash
+  G.Q={...G.Q,fxPrev:{rate:3.6,now:3.5}}; const e=F.model(G.P,G.Q,'exc'); near(e.dayFx,2*95*(-0.1));
+});
+
 test('prices: which of a portfolio\'s securities stop at an older close than the market\'s last session', ()=>{
   G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:300},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:300},{sym:'5113428',acct:'blink',ccy:'ILS',qty:5,costIls:100}],cash:[]};
   G.Q={usdIls:3.5,prices:{MSFT:100,'1159250':35,'5113428':20},meta:{MSFT:{date:'2026-10-16'},'1159250':{date:'2026-10-15',ccy:'ILS'},'5113428':{date:'2026-10-16',ccy:'ILS'}},
@@ -798,4 +814,19 @@ test('the end of the tax year: this year\'s sales matched to their purchases, th
   let Y=W.yearEndCalc(T,{pos:[{sym:'NVDA',accts:['blink']}]}); assert.equal(Y.days,46); near(Y.save,0.25*675,1e-9); assert.equal(Y.cross,false,'a loss in an account that also has a gain');
   Y=W.yearEndCalc({...T,losses:100,dn:[{sym:'TA90',g:-100}]},{pos:[{sym:'TA90',accts:['meitav']}]}); near(Y.save,25,1e-9,'no more than the loss'); assert.equal(Y.cross,true,'gains in one house, the loss in another');
   assert.equal(W.yearEndCalc({rate:0.25,losses:0,dn:[]},{pos:[]}).save,0);
+});
+
+test('the check against the house: each holding as the house showed it against the site now, the gap in prices, the house\'s dollar rate, quantities and the rest', ()=>{
+  const W=load(['reconOf'],{...G});
+  const R={at:'2026-10-30T11:51:00Z',shot:true,total:1300,ccy:'ILS',cashIls:100,cashUsd:0,
+    rows:[{sym:'MSFT',qty:2,ccy:'USD',px:95,value:703.8,valueCcy:'ILS'},{sym:'TA125',qty:10,ccy:'ILS',px:30,value:300,valueCcy:'ILS'},{sym:'OLD',qty:1,ccy:'USD',px:50,value:180,valueCcy:'ILS'}]};
+  const m={total:700+310+105+100,cash:100,pos:[{sym:'MSFT',name:'Microsoft',qty:2,px:100,pxIls:350,val:700,ccy:'USD'},{sym:'TA125',name:'TA125',qty:10,px:31,pxIls:31,val:310,ccy:'ILS'},{sym:'NEW',name:'New',qty:3,px:10,pxIls:35,val:105,ccy:'USD'}]};
+  const X=W.reconOf('exc',R,m,3.5), ms=X.rows.find(r=>r.sym==='MSFT');
+  near(ms.bRate,703.8/190,1e-9,'the rate the house used, from its shekel value'); near(ms.diff,700-703.8,1e-9);
+  near(ms.parts.price,2*5*3.5,1e-9); near(ms.parts.fx,2*95*(3.5-703.8/190),1e-9); near(ms.parts.price+ms.parts.fx+ms.parts.qty+ms.parts.rest,ms.diff,1e-9,'the parts add up');
+  assert.equal(ms.why,'fx','mostly the dollar\'s rate');
+  near(X.rows.find(r=>r.sym==='TA125').parts.price,10,1e-9); assert.equal(X.rows.find(r=>r.sym==='OLD').why,'only'); assert.equal(X.rows.find(r=>r.sym==='NEW').why,'new');
+  near(X.gap,m.total-1300,1e-9); near(X.cashDiff,0,1e-9); near(X.other,1300-(703.8+300+180+100),1e-9,'what the house\'s total has beyond its list');
+  // the house shows no value: the price it shows, at the site's rate
+  const Y=W.reconOf('exc',{...R,rows:[{sym:'MSFT',qty:2,ccy:'USD',px:95,value:null}]},{...m,pos:m.pos.slice(0,1)},3.5); near(Y.rows[0].there,2*95*3.5,1e-9); assert.equal(Y.rows[0].bRate,null);
 });
