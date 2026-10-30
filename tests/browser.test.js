@@ -687,6 +687,32 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
 
+test('the plan: a purchase stays in its month when the statement takes it out of the cash, and the rest of the plan does not move',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const PL0=store.getDoc('plan/main').data, P0=store.getDoc('portfolio/main').data, ymOf=k=>{const d=new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+k); return d.toISOString().slice(0,7)};
+  try{
+    store.setDoc('plan/main',{...PL0,start:ymOf(-1),opening:0,mode:'manual',items:['NVDA','MSFT','AAPL','RKLB'].map(sym=>({sym,status:'todo',note:''})),
+      deposits:[{id:'d0',month:ymOf(-1),amount:600,at:new Date(Date.now()-30*864e5).toISOString()},{id:'d1',month:ymOf(0),amount:600,at:new Date().toISOString()}],purchases:[]});
+    const sched=pg=>pg.evaluate(()=>{const o={}; for(const tr of document.querySelectorAll('#ladRows tr')){const m=(tr.querySelector('td b')||{}).textContent; for(const i of tr.querySelectorAll('input[data-buy]'))o[i.dataset.buy]={m,got:i.checked}} return o});
+    let {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(400);
+    const S0=await sched(pg), first=Object.keys(S0).find(k=>S0[k].m===Object.values(S0)[0].m&&!S0[k].got);
+    assert.ok(first,'something to buy: '+JSON.stringify(S0));
+    await pg.evaluate(sym=>document.querySelector(`input[data-buy="${sym}"]`).click(),first); await pg.waitForTimeout(800);
+    const S1=await sched(pg); assert.equal(S1[first].got,true); assert.equal(S1[first].m,S0[first].m);
+    await ctx.close();
+    // the statement arrives: its day is after the purchase, and its cash has this month's deposit in and the purchase out
+    // (the deposit of 30 days ago was in the statement before)
+    const buy=store.getDoc('plan/main').data.purchases.find(x=>x.sym===first); assert.ok(buy&&buy.paidIls>0);
+    const acct=P0.positions.find(p=>p.sym===first).acct, usd=acct==='blink', fx=store.getDoc('quotes/latest').data.usdIls;
+    store.setDoc('portfolio/main',{...P0,cash:P0.cash.map(c=>c.acct===acct?{...c,amount:Math.round((c.amount+(usd?0:600)-(usd?buy.paidIls/fx:buy.paidIls))*100)/100}:c),asOf:{...P0.asOf,[acct]:new Date(Date.now()+864e5).toISOString().slice(0,10)}});
+    ({ctx,pg}=await open(390)); await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(400);
+    const S2=await sched(pg);
+    assert.deepEqual(S2[first],S1[first],'the purchase stays in its month, ticked');
+    for(const k of Object.keys(S1))assert.equal(S2[k].m,S1[k].m,`${k} keeps its month`);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('plan/main',PL0); store.setDoc('portfolio/main',P0)}
+});
+
 test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and in the month, apart from the monthly deposit',T,async t=>{
   if(skip())return t.skip('no browser');
   const PL0=store.getDoc('plan/main').data;

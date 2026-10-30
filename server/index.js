@@ -20,6 +20,7 @@ import {ilParts} from '../shared/market.js';
 import {backupStatus, backupNow} from './backup.js';
 import {benchFresh} from './bench.js';
 import {selfCheckNote} from './pxwatch.js';
+import {healthCheck} from './health.js';
 import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
@@ -333,6 +334,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,fileQuick:FILE_QUICK_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
   app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
+  // 30.10: the health of the data: every source, the last time it worked (server/health.js)
+  app.get('/api/health',needOwner,(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
   // the analysts' data: when it last ran and how it went, and how old each document is
   app.get('/api/research/status',needOwner,(req,res)=>{let last=null; try{last=JSON.parse(store.getMeta('researchStatus')||'null')}catch(e){}
     const at=p=>{const d=store.getDoc(p); return d.exists?{updatedAt:d.data.updatedAt||null,source:d.data.source||null}:null};

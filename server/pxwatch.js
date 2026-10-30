@@ -4,6 +4,7 @@
 // problem again within 12 hours is not sent again, and when it is gone the next one is a new problem.
 import {anyOpen, ilParts} from '../shared/market.js';
 import {sendAllowed, wrapHtml, esc} from './mail.js';
+import {healthProblems} from './health.js';
 
 const H=36e5;
 const hmIl=iso=>{const p=ilParts(new Date(iso)); return `${p.d}.${p.m} ${String(p.h).padStart(2,'0')}:${String(p.min).padStart(2,'0')}`};
@@ -32,10 +33,12 @@ export async function pxWatchTask(store,{now=new Date(),log=()=>{}}={}){
   const probs=pxProblems(q.exists?q.data:null,now);
   if(sc.exists&&sc.data&&Array.isArray(sc.data.bad)&&sc.data.bad.length&&(now-new Date(sc.data.at||0))/H<24)
     probs.push({key:'sum:'+sc.data.sig,text:'הדף מצא פער בין שני מסכים: '+sc.data.bad.map(x=>String(x.t||'')).join(' ')});
+  // 30.10: and every other source that has not worked for longer than it may (server/health.js)
+  try{probs.push(...healthProblems(store,{now}))}catch(e){}
   const {send,state}=pxAlertsDue(probs,w.exists?w.data:null,now);
   store.setDoc('system/pxwatch',{...state,checkedAt:now.toISOString(),open:probs.map(p=>p.key)},{silent:true});
   if(!send.length){log(`price watch: ${probs.length?probs.length+' open, already told':'all fine'}`);return {sent:0,open:probs.length}}
-  const url=process.env.SITE_URL||'', text=send.map(p=>'• '+p.text).join('\n')+`\n\n${url?'באתר: '+url+' (סקירה ← "המחירים עדכניים?"; הגדרות ← מקורות המחירים)\n':''}הודעה אוטומטית מתיק צ׳יק. אפשר לכבות אותה בהגדרות ← מיילים.`;
+  const url=process.env.SITE_URL||'', text=send.map(p=>'• '+p.text).join('\n')+`\n\n${url?'באתר: '+url+' (סקירה ← "המחירים עדכניים?"; הגדרות ← בריאות המערכת)\n':''}הודעה אוטומטית מתיק צ׳יק. אפשר לכבות אותה בהגדרות ← מיילים.`;
   const html=wrapHtml('משהו לא מתעדכן',`<ul style="padding-inline-start:18px;margin:6px 0">${send.map(p=>`<li style="margin:6px 0">${esc(p.text)}</li>`).join('')}</ul>${url?`<p><a href="${esc(url)}">לאתר</a> · בסקירה: "המחירים עדכניים?", ובהגדרות: מקורות המחירים.</p>`:''}<p style="color:#64748b;font-size:13px">הודעה אוטומטית. אפשר לכבות אותה בהגדרות ← מיילים.</p>`);
   const ok=await sendAllowed(store,'pxalert',{subject:`תיק צ׳יק – ${send.length===1?'משהו לא מתעדכן':send.length+' דברים לא מתעדכנים'}`,text,html},log);
   log(`price watch: ${send.length} to tell, ${ok?'sent':'not sent'}`); return {sent:ok?send.length:0,open:probs.length};

@@ -55,7 +55,7 @@ h2{font-family:var(--display);font-size:19px;font-weight:600;margin:0;text-wrap:
 h3{font-size:15px;font-weight:700;margin:0}
 .sub{color:var(--muted);font-size:13.5px;margin:0}
 .up{color:var(--gain)} .down{color:var(--loss)}
-.chips{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:19px;overflow:hidden;background:var(--surface)}
 .chip{font:inherit;font-size:13.5px;font-weight:500;min-height:36px;padding:4px 14px;border:0;border-inline-start:1px solid var(--line);background:var(--surface);color:var(--ink2);cursor:pointer}
 .chip:first-child{border-inline-start:0}
 .chip:hover{background:var(--sunk)}
@@ -1877,7 +1877,7 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
 .nx-tc{display:flex;flex-direction:column;gap:5px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);text-align:start;font:inherit;color:var(--ink);cursor:pointer;min-width:0}
 .nx-tc:hover{border-color:#C4B5FD} .nx-tc b{font-size:14.5px;line-height:1.4} .nx-tc .nm{font-size:12.5px;color:var(--ink2);line-height:1.45}
 .nx-bar{display:flex;flex-direction:column;gap:8px}
-.nx-lv{align-items:center} .nx-lv select{font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.nx-lv{align-items:center} .nx-lv2{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px} .nx-lv2 select{font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .nx-unread{font-size:13px;margin-inline-start:4px}
 .chip.lv-crit[aria-pressed="true"]{background:#B91C1C;border-color:#B91C1C;color:#fff} .chip.lv-imp[aria-pressed="true"]{background:#B45309;border-color:#B45309;color:#fff} .chip.lv-watch[aria-pressed="true"]{background:#1D4ED8;border-color:#1D4ED8;color:#fff} .chip.lv-info[aria-pressed="true"]{background:#475569;border-color:#475569;color:#fff}
 .nx{position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);min-width:0}
@@ -1907,7 +1907,17 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-more .nx-row{margin:6px 0 0;line-height:1.55} .nx-more .nx-row b{color:var(--ink)}
 .nx-src{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--muted);align-items:center} .nx-src a{color:var(--accent-ink);font-weight:600}
 .nx-grp{margin:14px 0 4px;font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px} .nx-grp .agn{font-size:12px;color:var(--muted);font-weight:600}
-.nx-set summary{font-size:13.5px;font-weight:600;cursor:pointer} .nx-setb{display:flex;flex-direction:column;gap:10px;margin-top:10px} .nx-setb>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px} .nx-setb .check{font-size:13px}
+.nx-set summary{font-size:13.5px;font-weight:600;cursor:pointer}
+/* 30.10: the kinds of news for alerts: a box that opens to the whole list, every name whole */
+.nx-setb>details.nx-tpk{display:block;width:100%;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0}
+.nx-tpk>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;font-size:14px;list-style:none}
+.nx-tpk>summary::-webkit-details-marker{display:none}
+.nx-tpk>summary::after{content:"";width:8px;height:8px;border-inline-end:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-top:-4px;flex:none}
+.nx-tpk[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.nx-tps{margin-inline-start:auto;color:var(--muted);font-weight:500;font-size:13.5px}
+.nx-tpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:2px 12px;padding:4px 14px 6px;border-top:1px solid var(--line)}
+.nx-tpl .check{font-size:14px;padding:6px 0;min-height:36px;align-items:center}
+.nx-tpk .acts{padding:4px 14px 12px} .nx-setb{display:flex;flex-direction:column;gap:10px;margin-top:10px} .nx-setb>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px} .nx-setb .check{font-size:13px}
 .nxdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#B91C1C;margin-inline-start:6px;vertical-align:middle;box-shadow:0 0 0 2px rgb(185 28 28 / .2)} .nxdot.imp{background:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .2)}
 .nx-secl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 @media (max-width:640px){.nx{padding:12px 13px} .nx h3{font-size:15px}}
@@ -1931,6 +1941,15 @@ html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .1
 .dvtabs .dv-n:not(:empty){display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-inline-start:6px;border-radius:999px;background:rgb(124 58 237 / .14);font-size:12px}
 .dvtabs .chip[aria-pressed="true"] .dv-n{background:rgb(255 255 255 / .25)}
 section[data-dvv="month"] [data-dvp="once"],section[data-dvv="once"] [data-dvp="month"]{display:none!important}
+/* 30.10: the health of the data (the owner's settings) */
+.hl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hl li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:10px 2px;border-top:1px solid var(--line)}
+.hl li:first-child{border-top:0}
+.hl .hd{width:10px;height:10px;border-radius:50%;margin-top:7px;background:var(--muted)}
+.hl .ok .hd{background:var(--ok-c)} .hl .warn .hd{background:var(--warn-c)} .hl .bad .hd{background:var(--crit-c)} .hl .off .hd{background:transparent;border:2px solid var(--line)}
+.hl b{font-weight:700} .hl .hs{font-size:12.5px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap;background:var(--sunk);color:var(--ink2)}
+.hl .bad .hs{background:var(--crit-bg);color:var(--crit-ink)} .hl .warn .hs{background:var(--warn-bg);color:var(--warn)} .hl .ok .hs{background:var(--ok-bg);color:var(--ok-ink)}
+.hl .hn{grid-column:2/4;font-size:13.5px;color:var(--muted)} .hl .hn .btn{margin-inline-start:6px}
 /* 30.10: "התיק שלי" in three tabs: the holdings, an update from a statement, and adding by hand */
 section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]){display:none!important}
 .mvtabs{margin-top:4px}
@@ -2581,14 +2600,17 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="nx-top" id="nxTop" hidden></div>
       <div class="nx-bar">
         <div class="chips nx-views" id="nxViews" role="tablist" aria-label="תצוגה"><button type="button" class="chip" role="tab" data-nxv="all" aria-pressed="true">הכל</button><button type="button" class="chip" role="tab" data-nxv="sym" aria-pressed="false">לפי מניות</button><button type="button" class="chip" role="tab" data-nxv="sec" aria-pressed="false">לפי ענפים</button><button type="button" class="chip" role="tab" data-nxv="macro" aria-pressed="false">אירועים רחבים</button><button type="button" class="chip" role="tab" data-nxv="saved" aria-pressed="false">שמורים <span class="dv-n" id="nxSavedN"></span></button></div>
-        <div class="chips nx-lv" id="nxLv" role="group" aria-label="סינון לפי חשיבות"><button type="button" class="chip lv-crit" data-nxl="crit" aria-pressed="true">קריטי</button><button type="button" class="chip lv-imp" data-nxl="imp" aria-pressed="true">חשוב</button><button type="button" class="chip lv-watch" data-nxl="watch" aria-pressed="false">למעקב</button><button type="button" class="chip lv-info" data-nxl="info" aria-pressed="false">מידע</button><select id="nxType" aria-label="סוג הידיעה"><option value="">כל הסוגים</option></select><label class="check nx-unread"><input type="checkbox" id="nxUnread"><span>רק מה שלא קראתי</span></label></div>
+        <div class="chips nx-lv" id="nxLv" role="group" aria-label="סינון לפי חשיבות"><button type="button" class="chip lv-crit" data-nxl="crit" aria-pressed="true">קריטי</button><button type="button" class="chip lv-imp" data-nxl="imp" aria-pressed="true">חשוב</button><button type="button" class="chip lv-watch" data-nxl="watch" aria-pressed="false">למעקב</button><button type="button" class="chip lv-info" data-nxl="info" aria-pressed="false">מידע</button></div>
+        <div class="nx-lv2"><select id="nxType" aria-label="סוג הידיעה"><option value="">כל הסוגים</option></select><label class="check nx-unread"><input type="checkbox" id="nxUnread"><span>רק מה שלא קראתי</span></label></div>
       </div>
       <div class="chips" id="newsChips" role="group" aria-label="סינון לפי נייר" style="align-self:flex-start"></div>
       <div class="newsfeed" id="newsFeed"><div class="empty">הכתבות על המניות שבתיק ובמעקב יופיעו כאן.</div></div>
       <p class="note" id="nxStat" hidden></p>
       <details class="panel nx-set" id="nxSet"><summary>התראות על חדשות: מה יעלה לרשימה בבית ולהודעת הבוקר</summary>
         <div class="nx-setb"><div><b>רמות</b><label class="check"><input type="checkbox" data-nxal="crit"><span>קריטי</span></label><label class="check"><input type="checkbox" data-nxal="imp"><span>חשוב</span></label><label class="check"><input type="checkbox" data-nxal="watch"><span>למעקב</span></label></div>
-          <div><b>סוגים</b><div class="chips" id="nxTypesAl"></div></div>
+          <details class="nx-tpk" id="nxTypesBox"><summary><b>סוגים</b><span class="nx-tps" id="nxTypesSum">כולם</span></summary>
+            <div class="nx-tpl" id="nxTypesAl" role="group" aria-label="סוגי הידיעות להתראה"></div>
+            <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-nxatall="1">לבחור הכול</button><button type="button" class="btn sm" data-nxatall="0">לנקות הכול</button></div></details>
           <p class="note">התראה עולה פעם אחת לכל אירוע, רק על חברה שבתיק (או אירוע מאקרו קריטי), ובהודעת הבוקר במייל רק אם היא מופעלת בהגדרות. בלי הצפה: עד שלוש ביום.</p></div>
       </details>
       <p class="note" id="nxNote">כותרות ממקורות חיצוניים (Finnhub, Yahoo Finance), ופוסטים של משקיעים מ-X כשהאתר מחובר אליו, בשפת המקור, נאספים כל חצי שעה ביום. הניתוח בעברית נכתב אוטומטית על ידי צ׳יקו מהכותרת והקטע בלבד, פעם אחת לכל כתבה, והדף מצליב אותו עם התיק שלך. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר, הסתברות או המלצה.</p>
@@ -2849,6 +2871,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <p class="note" id="depNote"></p>
     </details>
 
+    <section aria-labelledby="hSys" id="sysSec" hidden>
+      <div class="row"><h2 id="hSys">בריאות המערכת</h2><span class="sub" id="sysSub"></span></div>
+      <div class="panel" id="sysBox" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0">טוען…</p></div>
+    </section>
     <section aria-labelledby="hUse" id="useSec">
       <div class="row"><h2 id="hUse">במה אני משתמש באתר</h2><span class="sub" id="useSub"></span></div>
       <div class="panel" id="useBox" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0">טוען…</p></div>
@@ -17055,7 +17081,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(m)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -17225,10 +17251,25 @@ function planState(mAll){
     const lastDep=PL.deposits.reduce((mx,d)=>Math.max(mx,ymDiff(d.month,start)),-1), lastBuy=PL.purchases.reduce((mx,x)=>x.month?Math.max(mx,ymDiff(x.month,start)):mx,-1), n=Math.max(cur+12,lastDep,lastBuy)+1;
     const rows=Array.from({length:n},()=>F.map(i=>i.sym)); for(const i of F){when[i.sym]=0;at[i.sym]=cur}
     return {rot:true,fixed:true,cost,name,bal,base,depNow,start,cur,lad:{rows,bals:[],complete:true},at,sch:{when}}}
-  const entries=PL.items.filter(i=>(i.status==='todo'&&cost[i.sym]!=null)||(i.status==='done'&&i.pid)).map(i=>({sym:i.sym,c:i.pid?paid[i.sym]:cost[i.sym]}));
-  const extra={}; for(const d of PL.deposits)if(d.once){const k=ymDiff(d.month,start); if(k>=0)extra[k]=(extra[k]||0)+(+d.amount||0)}
-  const lad=ladder(entries,base,TM(),PL.mode,extra);
-  lad.rows.forEach((r,m)=>r.forEach(sym=>{at[sym]=m;when[sym]=Math.max(0,m-cur)}));
+  // 30.10: what was bought stays in the month it was bought, whatever the cash does later; only what is still to buy is
+  // laid out, from this month on, from the money there is now. Before, the whole ladder was played again from the plan's
+  // first month starting with today's cash: once a new statement had taken a purchase out of the cash, the purchase was
+  // paid twice in that replay, slid to the next month (as if to buy again) and pushed the rest of the plan later.
+  // The track's cash now: the stocks track, the statements' cash and its own ticks the statements do not hold yet; the
+  // funds track, its own opening and ticks (the two tracks share one cash, and neither counts the other's money)
+  const O=planOpen(), mine=x=>PL.deposits.includes(x)||PL.purchases.includes(x);
+  const cash=TRACK==='idx'?(+PLD.idx.opening||0)+PL.deposits.reduce((t,d)=>t+(+d.amount||0),0)-PL.purchases.reduce((t,x)=>t+(+x.paidIls||0),0)
+    :mAll.baseCash+O.deps.filter(mine).reduce((t,d)=>t+(+d.amount||0),0)-O.buys.filter(mine).reduce((t,x)=>t+(+x.paidIls||0),0);
+  const rows=[], put=(m,sym)=>{while(rows.length<=m)rows.push([]); rows[m].push(sym)};
+  for(const i of PL.items)if(i.status==='done'&&i.pid){const x=PL.purchases.find(y=>y.id===i.pid)||PL.purchases.find(y=>y.sym===i.sym), mo=x&&x.month?ymDiff(x.month,start):i.doneAt?ymDiff(ilDay(i.doneAt).slice(0,7),start):cur; put(Math.max(0,mo),i.sym); at[i.sym]=Math.max(0,mo)}
+  // rotating: one purchase a month, so a month that already has one lays the rest out from the next
+  const from=rot&&(rows[cur]||[]).length?cur+1:cur, noFirst=from===cur&&depNow;
+  // (a one-time deposit is marked only after it was made, so it is in the cash already: nothing extra ahead)
+  const fwd=ladder(PL.items.filter(i=>i.status==='todo'&&cost[i.sym]!=null).map(i=>({sym:i.sym,c:cost[i.sym]})),noFirst?cash-TM():cash,TM(),PL.mode,{});
+  fwd.rows.forEach((r,k)=>{for(const sym of r){put(from+k,sym); at[sym]=from+k; when[sym]=Math.max(0,from+k-cur)}});
+  while(rows.length<from)rows.push([]);
+  const bals=[]; fwd.bals.forEach((b,k)=>{bals[from+k]=b});
+  const lad={rows,bals,complete:fwd.complete,cash,from};
   return {rot,cost,name,bal,base,depNow,start,cur,lad,at,sch:{when}};
 }
 function renderPlan(mAll){
@@ -17276,6 +17317,11 @@ function renderPlan(mAll){
   const paidAt={}; for(const x of PL.purchases)if(x.month)paidAt[x.sym+'|'+x.month]=+x.paidIls||0;
   const paidOf=(sym,ym)=>st.fixed?paidAt[sym+'|'+ym]:paidBy[sym];
   let h='', run=st.base, lastMark=-1, pd=st.base, pi=0, ad=st.base, ai=0; const CH=[];
+  // 30.10: the balance at each month's end: up to this month from the track's cash now, going back through what was ticked
+  // in each month; from this month on, the plan's own months (st.lad.bals)
+  const endBal={}; if(!st.fixed&&st.lad.cash!=null){let b=st.lad.cash; const inM=ym=>{const d=depBy[ym], on=(onceBy[ym]||[]).reduce((t,x)=>t+(+x.amount||0),0), buy=PL.purchases.filter(x=>x.month===ym).reduce((t,x)=>t+(+x.paidIls||0),0); return (d?+d.amount||0:0)+on-buy};
+    for(let m=st.cur;m>=0;m--){const ym=ymAdd(st.start,m); if(m<st.lad.from||m<st.cur)endBal[m]=b; b-=inM(ym)}
+    st.lad.bals.forEach((v,m)=>{if(v!=null&&m>=st.lad.from)endBal[m]=v})}
   for(let m=0;m<nRows;m++){const ym0=ymAdd(st.start,m); if(depBy[ym0]||onceBy[ym0]||(st.lad.rows[m]||[]).some(sym=>paidOf(sym,ym0)!=null))lastMark=m}
   const buyHtml=(sym,m,ym)=>{const got=st.fixed?paidOf(sym,ym)!=null:isDone(sym),c=got?paidOf(sym,ym):st.cost[sym],short=!got&&c>st.bal+0.005;
       const pu=PL.purchases.find(x=>x.sym===sym), pp=mAll.pos.find(x=>x.sym===sym), usd=pp&&pp.ccy==='USD';
@@ -17293,7 +17339,7 @@ function renderPlan(mAll){
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?'<div class="nm">החודש</div>':m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
-    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num"><span class="n${run<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(run<0?'−':'')+ils(Math.abs(run),2)}</span></td></tr>`;
+    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
   // then the plan's months from today's real numbers on: its monthly deposit, and the purchases of the ladder not done yet
@@ -17889,12 +17935,24 @@ function kMiniFill(){
   row(t('kYtdK')||'מתחילת השנה','kYtd','');
   box.innerHTML=L.slice(0,3).join(''); box.hidden=!L.length;
 }
+// 30.10: the chip is what the holdings of the chosen view (all, or one account) did in the last 30 days: each at its price
+// that day (the daily points keep every security's price) and its currency's rate then, against today. Deposits, cash and
+// the month's calendar do not move it, so it is right for one account as for all (before, it was the whole portfolio's
+// month so far, also under one account). Shown when the points cover most of the value; under 30 days of points: "since".
+function monChipCalc(m){
+  const pts=(DY&&DY.points)||{}, today=ilDay(), keys=Object.keys(pts).filter(k=>k<today&&pts[k]&&pts[k].px).sort(); if(!m||!m.pos||!m.pos.length||!keys.length||!Q||!Q.usdIls)return null;
+  let key=keys.filter(k=>k<=isoAdd(today,-30)).pop(), since=false;
+  if(!key){key=keys[0]; since=true; if((Date.parse(today)-Date.parse(key))/864e5<14)return null}
+  const p=pts[key], fxT=+p.fx>0?+p.fx:Q.usdIls; let now=0, then=0, cov=0, tot=0;
+  for(const x of m.pos){const v=+x.val||0; tot+=v; const t=+(p.px||{})[x.sym]; if(!(t>0)||!(x.px>0)||!(x.qty>0))continue;
+    const rate=x.ccy==='ILS'?1:x.ccy==='USD'?fxT:x.pxIls/x.px; then+=x.qty*t*rate; now+=x.qty*x.pxIls; cov+=v}
+  if(!(then>0)||cov<tot*0.8)return null;
+  return {ret:(now/then-1)*100,key,since,days:Math.round((Date.parse(today)-Date.parse(key))/864e5)}}
 function renderMonChip(m){
-  const el=$('kMon'); if(!el)return; let v=null;
-  try{const R=monthSeries().filter(r=>r.ret!=null&&!r.miss&&!r.asOf); const r=R[R.length-1]; if(r&&(r.now||r.src))v=r.ret}catch(e){}
-  if(v==null||!isFinite(v)){el.hidden=true;return}
-  el.hidden=false; el.className='mchip'+(v<0?' down':''); el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${v>=0?'M4 16l5-5 4 4 7-8M15 7h5v5':'M4 8l5 5 4-4 7 8M15 17h5v-5'}"/></svg><span class="n">${spct(v,1)}</span> בחודש האחרון`;
-  el.title='התשואה של החודש הנוכחי עד היום (בלי מה שהופקד)';
+  const el=$('kMon'); if(!el)return; let r=null; try{r=monChipCalc(m)}catch(e){}
+  if(!r||!isFinite(r.ret)){el.hidden=true;return} const v=r.ret;
+  el.hidden=false; el.className='mchip'+(v<0?' down':''); el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${v>=0?'M4 16l5-5 4 4 7-8M15 7h5v5':'M4 8l5 5 4-4 7 8M15 17h5v-5'}"/></svg><span class="n">${spct(v,1)}</span> ${r.since?'מאז '+dmy(r.key).slice(0,5):'ב-30 יום'}`;
+  el.title=`כמה השתנו הניירות שב${acct==='all'?'תיק':'חשבון '+acctName(acct)} מאז ${dmy(r.key)}, לפי המחיר והשער של אותו יום מול היום. בלי הפקדות ובלי מזומן.`;
 }
 // the eye on the card: the sums blurred, for a screen someone else can see; remembered in this browser
 (function eyeBoot(){const on=()=>{let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}catch(e){} document.body.classList.toggle('hidenum',v); const b=$('kEye'); if(b){b.setAttribute('aria-pressed',String(v)); b.setAttribute('aria-label',v?'להציג את הסכומים':'להסתיר את הסכומים'); b.title=b.getAttribute('aria-label')}};
@@ -19435,7 +19493,7 @@ function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){co
 // ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
 // switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
 let MAILST=null;
-const MAILK=[['morning','סיכום הבוקר (07:50): מה קרה ביום המסחר האחרון, הידיעות החשובות על המניות שלך, מה מתוכנן השבוע, והתראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['live','התראות בזמן אמת: מחיר שקבעת נחצה, מניה בתיק זזה חזק, הדולר חצה שער, או ידיעה קריטית (ההגדרות למטה)'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, או פער שהדף מצא בין שני מסכים']];
+const MAILK=[['morning','סיכום הבוקר (07:50): מה קרה ביום המסחר האחרון, הידיעות החשובות על המניות שלך, מה מתוכנן השבוע, והתראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['live','התראות בזמן אמת: מחיר שקבעת נחצה, מניה בתיק זזה חזק, הדולר חצה שער, או ידיעה קריטית (ההגדרות למטה)'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, מקור נתונים שהפסיק לעבוד (בריאות המערכת), או פער שהדף מצא בין שני מסכים']];
 const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
 function liveAlFill(){const A=(S&&S.liveAl)||{}; for(const [id,k] of [['laMove','move'],['laUsdUp','usdAbove'],['laUsdDn','usdBelow']]){const i=$(id); if(i){if(document.activeElement!==i)i.value=A[k]!=null?A[k]:''; i.disabled=!canWrite}} const n=$('laNews'); if(n){n.checked=A.news!==false; n.disabled=!canWrite}}
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!['laMove','laUsdUp','laUsdDn','laNews'].includes(el.id)||!canWrite)return; const A={...(S.liveAl||{})};
@@ -22569,6 +22627,27 @@ function myWatchHtml(m){
     </article>`}).join('');
   return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
 }
+// ---- 30.10: the health of the data, for the owner: every source the site lives on and the last time it worked
+// (/api/health, server/health.js). A source is "לא עובד" only when it has not worked for longer than it may.
+const SYSH_RUN={prices:'prices',fx:'prices',research:'research',finnhub:'research',sec:'research',divs:'research',news:'news',newsx:'newsx',x:'x',backup:'backup',backupmail:'backup'};
+const SYSH_ST={ok:'תקין',warn:'ממתין',bad:'לא עובד',off:'כבוי'};
+let SYSH=null;
+function agoH(iso){if(!iso)return 'אף פעם'; const m=(Date.now()-Date.parse(iso))/6e4; return m<2?'עכשיו':m<60?`לפני ${Math.round(m)} דקות`:m<48*60?`לפני ${Math.round(m/60)} שעות`:`לפני ${Math.round(m/1440)} ימים`}
+async function sysFill(force){
+  const sec=$('sysSec'); if(!sec)return; const own=OWNER&&window.__tc&&!LOCAL; sec.hidden=!own; if(!own)return;
+  if(force||!SYSH||Date.now()-SYSH.t>60e3){SYSH={t:Date.now(),d:null}; try{const r=await fetch('/api/health',{credentials:'same-origin'}); if(r.ok)SYSH.d=await r.json()}catch(e){}}
+  const D=SYSH.d, box=$('sysBox'); if(!box)return;
+  if(!D){setH(box,'<p class="note" style="margin:0">לא הצלחתי לקרוא את מצב המערכת מהשרת.</p>');$('sysSub').textContent='';return}
+  const ord={bad:0,warn:1,ok:2,off:3}, items=D.items.slice().sort((a,b)=>ord[a.state]-ord[b.state]);
+  $('sysSub').textContent=D.bad?`${D.bad} לא עובדים`:D.warn?`${D.warn} ממתינים`:'הכול תקין';
+  const mailOff=!(S&&S.mail&&S.mail.pxalert===true);
+  setH(box,`<p class="note" style="margin:0">כל מקור שהאתר נשען עליו, ומתי עבד לאחרונה. "לא עובד" רק כשעבר יותר זמן ממה שמותר לו (יום למקורות הליליים, כמה שעות לחדשות), לא בגלל ריצה אחת שנכשלה. ${mailOff?'<b>מייל כשמקור נופל:</b> להפעיל בהגדרות ← מיילים ← "משהו לא מתעדכן".':'כשמקור לא עובד, יישלח אליך מייל (פעם ב-12 שעות לכל מקור).'}</p>
+    <ul class="hl">${items.map(i=>{const job=SYSH_RUN[i.key]||(i.key.startsWith('job:')?i.key.slice(4):null);
+      return `<li class="${i.state}"><span class="hd" aria-hidden="true"></span><span><b>${esc(i.name)}</b></span><span class="hs">${SYSH_ST[i.state]||i.state}</span>
+        <span class="hn">${i.state==='off'?'':`עבד לאחרונה: ${agoH(i.okAt)}${i.ran&&i.ran!==i.okAt?` · ריצה אחרונה: ${agoH(i.ran)}`:''} · `}${esc(i.note||'')}${job&&D.jobs&&i.state!=='ok'&&i.state!=='off'?`<button type="button" class="btn sm" data-rsrun="${esc(job)}">להריץ עכשיו</button>`:''}</span></li>`}).join('')}</ul>
+    <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-hlre>לבדוק שוב</button><span class="sub">נבדק ${agoH(D.at)}</span></div>`);
+}
+document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('[data-hlre]'))sysFill(true); else if(ev.target.closest&&ev.target.closest('#sysBox [data-rsrun]'))setTimeout(()=>sysFill(true),60e3)});
 // why a ranking is empty: the figures come from a nightly run; the owner sees its last result and can start it now
 let RSST=null;
 async function rsStatusHtml(){
@@ -22996,7 +23075,7 @@ function showTab(t,user){
   if(t==='state'){try{renderState()}catch(e){}}
   if(t==='calendar'){try{renderCal()}catch(e){}}
   if(t==='news'){try{const st=nxState(); if(NXPREV===null)NXPREV=st.lastSeen||''; renderNews(); clearTimeout(showTab.nxT); showTab.nxT=setTimeout(()=>{const st2=NEWSST=nxState(); st2.lastSeen=new Date().toISOString(); nxSave()},4000)}catch(e){}}
-  if(t==='settings'){try{renderUse()}catch(e){}}
+  if(t==='settings'){try{renderUse()}catch(e){} try{sysFill()}catch(e){}}
   if(t==='pots'){try{renderPots()}catch(e){}}
   if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
@@ -23072,6 +23151,12 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // event; whom it may touch and how; the possible direction; fact or reading; what is not known; an event key). The page
 // matches every reading to this portfolio: the companies held (and their weight), the sectors they are in, the dollar
 // part, the securities followed. No reading is made per user, and nothing here is a forecast or advice ----
+// 30.10: the reader's Hebrew, "ירדה חדה" → "בירידה חדה" (the same as server/newsx.js heFix, for readings made before)
+const HEB_='(?<![֐-׿])';
+const HEE_='(?![֐-׿])';
+const HEFIX=[[new RegExp(HEB_+'(ירד|ירדה|ירדו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בירידה חדה'],[new RegExp(HEB_+'(עלה|עלתה|עלו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בעלייה חדה'],
+  [new RegExp(HEB_+'(צנח|צנחה|צנחו|זינק|זינקה|זינקו|נפל|נפלה|נפלו|קפץ|קפצה|קפצו|טיפס|טיפסה|טיפסו|התרסק|התרסקה|התרסקו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'$1 בחדות']];
+const heFix=t=>HEFIX.reduce((x,[re,to])=>x.replace(re,to),String(t||''));
 let NXD=null, XD=null, NEWSST=null, NXV='all', NXLV=new Set(['crit','imp']), NXT='', NXUN=false, NXPREV=null, NXT_SAVE=null, NXDIRTY=false;
 const NX_LV={crit:'קריטי',imp:'חשוב',watch:'למעקב',info:'מידע'};
 // 29.10: the screen shows the critical and the important by default; the rest is kept (and read) but behind the filter, which this browser remembers
@@ -23190,8 +23275,10 @@ const xSearchUrl=sym=>`https://x.com/search?q=${encodeURIComponent('$'+String(sy
 const xShareUrl=(text,url)=>`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url||'')}`;
 function nxFill(){const sel=$('nxType'); if(sel&&sel.options.length<=1)for(const [k,v] of Object.entries(NX_TYPE))sel.insertAdjacentHTML('beforeend',`<option value="${k}">${esc(v)}</option>`);
   const al=nxAlertPrefs(); for(const i of document.querySelectorAll('#nxSet [data-nxal]')){i.checked=!!al.lv[i.dataset.nxal]; i.disabled=!canWrite}
-  const tb=$('nxTypesAl'); if(tb&&!tb.children.length)tb.innerHTML=Object.entries(NX_TYPE).filter(([k])=>k!=='other').map(([k,v])=>`<button type="button" class="chip" data-nxat="${k}" aria-pressed="true">${esc(v)}</button>`).join('');
-  if(tb)for(const b of tb.querySelectorAll('[data-nxat]')){b.setAttribute('aria-pressed',String(al.types[b.dataset.nxat]!==false)); b.disabled=!canWrite}}
+  const tb=$('nxTypesAl'); if(tb&&!tb.children.length)tb.innerHTML=Object.entries(NX_TYPE).filter(([k])=>k!=='other').map(([k,v])=>`<label class="check"><input type="checkbox" data-nxat="${k}" checked><span>${esc(v)}</span></label>`).join('');
+  if(tb){const bs=[...tb.querySelectorAll('[data-nxat]')]; for(const b of bs){b.checked=al.types[b.dataset.nxat]!==false; b.disabled=!canWrite}
+    const on=bs.filter(b=>b.checked).length, sm=$('nxTypesSum'); if(sm)sm.textContent=on===bs.length?`כולם (${bs.length})`:on?`${on} מתוך ${bs.length}`:'אף סוג'}
+  for(const b of document.querySelectorAll('[data-nxatall]'))b.disabled=!canWrite}
 function nxAlertPrefs(){const a=(S&&S.newsAl)||{}; return {lv:{crit:true,imp:true,watch:false,...(a.lv||{})},types:a.types||{}}}
 function renderNewsX(){
   const box=$('newsFeed'), ch=$('newsChips'), fr=$('newsFresh'); if(!box)return; nxFill();
@@ -23258,7 +23345,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const sv=t.closest('[data-nxsave]'); if(sv){const id=sv.dataset.nxsave; nxMark(id,'saved',sv.getAttribute('aria-pressed')!=='true'); renderNewsX(); return}
   const rd=t.closest('[data-nxread]'); if(rd){const id=rd.dataset.nxread; nxMark(id,'read',rd.getAttribute('aria-pressed')!=='true'); renderNewsX(); try{render()}catch(e){} return}
   const go=t.closest('[data-nxgo]'); if(go){const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(go.dataset.nxgo)}"]`); if(el){el.scrollIntoView({behavior:'smooth',block:'center'}); el.querySelector('details.nx-more')?.setAttribute('open','')} return}
-  const at=t.closest('#nxTypesAl [data-nxat]'); if(at){if(!canWrite)return; const k=at.dataset.nxat, a=nxAlertPrefs(); const T={...a.types}; if(T[k]===false)delete T[k]; else T[k]=false; S.newsAl={...(S.newsAl||{}),types:T}; changed(); nxFill(); try{render()}catch(e){} return}
+  const aa=t.closest('[data-nxatall]'); if(aa){if(!canWrite)return; const T={}; if(aa.dataset.nxatall==='0')for(const k of Object.keys(NX_TYPE))if(k!=='other')T[k]=false; S.newsAl={...(S.newsAl||{}),types:T}; changed(); nxFill(); try{render()}catch(e){} return}
   const nd=t.closest('[data-nxsym]'); if(nd){showTab('news',true); NXV='sym'; NEWSF=nd.dataset.nxsym; renderNewsX(); return}
   // an article opened (its details) counts as read
   const sm=t.closest('#newsFeed details.nx-more summary'); if(sm){const a=sm.closest('[data-nid]'); if(a&&!sm.parentElement.open){nxMark(a.dataset.nid,'read',true); a.classList.add('read'); const b=a.querySelector('[data-nxread]'); if(b){b.setAttribute('aria-pressed','true'); b.textContent='✓'} setTimeout(()=>{try{render()}catch(e){}},50)}}
@@ -23348,6 +23435,7 @@ function dvSet(v){DVV=v==='once'?'once':'month'; try{localStorage.setItem('tr_dv
     dvSet(DVV)};
   if(document.readyState==='loading')addEventListener('DOMContentLoaded',go); else go()})();
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#dvTabs [data-dv]'); if(b)dvSet(b.dataset.dv)});
+document.addEventListener('change',ev=>{const at=ev.target.closest&&ev.target.closest('#nxTypesAl [data-nxat]'); if(!at||!canWrite)return; const k=at.dataset.nxat, T={...nxAlertPrefs().types}; if(at.checked)delete T[k]; else T[k]=false; S.newsAl={...(S.newsAl||{}),types:T}; changed(); nxFill(); try{render()}catch(e){}});
 function renderOnce(){
   const L=$('onceList'); if(!L)return; const dis=!canWrite, today=ilDay();
   if(!$('onceDay').value)$('onceDay').value=today; if(document.activeElement!==$('onceTrk'))$('onceTrk').value=TRACK==='idx'?'idx':'stocks';
@@ -23936,6 +24024,7 @@ const GO=[
   {id:'mail',l:'מיילים',k:'מייל מיילים אימייל דואר',tab:'settings',el:'mailBox'},
   {id:'accts',l:'חשבונות המסחר שלי',k:'חשבון אקסלנס בלינק ברוקר',tab:'settings',el:'hAccts'},
   {id:'me',l:'הפרופיל שלי',k:'פרופיל שם שפה',tab:'settings',el:'hMe'},
+  {id:'sys',l:'בריאות המערכת (לבעל האתר)',k:'בריאות מערכת מקורות נתונים תקלה עובד',tab:'settings',el:'hSys',own:true},
   {id:'data',l:'פרטיות, נתונים וגיבוי',k:'פרטיות גיבוי ייצוא נתונים',tab:'settings',el:'hData'},
   {id:'use',l:'במה אני משתמש באתר',k:'שימוש מונה סטטיסטיקה פתחתי',tab:'settings',el:'hUse'},
   {id:'src',l:'מקורות המחירים',k:'מקור מקורות מאיה yahoo נתונים מאיפה',tab:'settings',el:'srcPanel'},
@@ -23952,7 +24041,7 @@ function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)re
   // a word counts with a Hebrew prefix letter or without it ("לילד" finds "ילד", "בעמלות" finds "עמלות")
   const one=(x,L,K)=>L.startsWith(x)?4:L.includes(x)?3:K.split(' ').some(k=>k.startsWith(x))?2:K.includes(x)?1:0;
   const sc=d=>{const L=goNorm(d.l), K=goNorm(d.k); let s=0; for(const x of w){const y=x.slice(1), v=one(x,L,K)||(/^[להבומשכ]/.test(x)&&y.length>=3&&(L+' '+K).split(' ').some(k=>k.startsWith(y))?2:0); if(!v)return 0; s+=v} return s};
-  return GO.map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
+  return GO.filter(d=>!d.own||(OWNER&&window.__tc&&!LOCAL)).map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
 function goTo(d){
   if(!d)return; try{useAdd('go:'+d.id)}catch(e){} try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
   if(d.fn){d.fn();return}
@@ -24099,7 +24188,7 @@ try{refreshBack()}catch(e){}
   db.doc('research/comove').onSnapshot(s=>{if(s.exists){CM=s.data();render()}},fail);
   db.doc('research/news').onSnapshot(s=>{NEWSD=s.exists?s.data():null; nxIds((NEWSD&&NEWSD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){} try{newsCount()}catch(e){}})},fail);
   db.doc('research/x').onSnapshot(s=>{XD=s.exists?s.data():null; nxIds((XD&&XD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){}})},fail);
-  db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){} try{newsCount()}catch(e){}},fail);
+  db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{for(const x of Object.values((NXD&&NXD.by)||{}))if(x){x.he=heFix(x.he); x.what=heFix(x.what)}}catch(e){} try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{render()}catch(e){} try{newsCount()}catch(e){}},fail);
   $('repKind').value=RK;$('repKind').addEventListener('change',e=>{RK=e.target.value;RP='';try{localStorage.setItem('repKind',RK)}catch(x){};fillPeriods()});
   $('repPer').addEventListener('change',e=>{RP=e.target.value});
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});

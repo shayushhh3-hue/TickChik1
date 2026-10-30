@@ -820,6 +820,19 @@ test('e-mail: nothing automatic goes out without the owner\'s consent, per kind;
     const {backupTask}=await import('../server/backup.js'); process.env.RESEND_API_KEY='re_test';
     const dir=fs.mkdtempSync('/tmp/tc-bk-'); const r=await backupTask(s,{dataDir:dir}); assert.equal(r.mailed,false); assert.ok(fs.existsSync(r.file)); assert.equal(sent.length,1);
     s.setDoc('settings/main',{name:'x',mail:{backup:true}}); const r2=await backupTask(s,{dataDir:dir}); assert.equal(r2.mailed,true); assert.equal(sent.length,2);
+    assert.deepEqual(sent[1].attachments.map(x=>x.filename.replace(/\d{4}-\d\d-\d\d/,'D')),['tikchik-backup-D.json.gz'],'without a passphrase: the owner\'s data only');
+    // 30.10: with BACKUP_KEY the full copy goes too, encrypted: only the passphrase opens it, and it is the whole database
+    {const {openBackup}=await import('../server/backup.js'); const {execFileSync}=await import('node:child_process');
+      s.setDoc('data/users/u9/portfolio',{positions:[{sym:'KO',qty:2}]}); process.env.BACKUP_KEY='a long passphrase';
+      try{const r3=await backupTask(s,{dataDir:dir}); assert.equal(r3.mailed,true); assert.ok(r3.full.fits); assert.ok(r3.docs&&r3.docs.docs>0,'the copy on the disk was opened and counted');
+        const att=sent[2].attachments.find(x=>/\.enc$/.test(x.filename)), enc=Buffer.from(att.content,'base64');
+        assert.ok(!enc.toString('latin1').includes('portfolio'),'nothing readable without the passphrase');
+        assert.throws(()=>openBackup(enc,'wrong'),/wrong passphrase/);
+        const encF=dir+'/full.enc', out=dir+'/restored.sqlite'; fs.writeFileSync(encF,enc);
+        const said=execFileSync(process.execPath,['tools/restore.js',encF,out],{env:{...process.env,BACKUP_KEY:'a long passphrase'},encoding:'utf8',stderr:'pipe'});
+        assert.match(said,/^ok: .*documents/); const R=new Store(out); assert.equal(R.getDoc('data/users/u9/portfolio').data.positions[0].sym,'KO','the partners\' data is in the full copy'); R.db.close();
+        assert.match(JSON.parse(s.getMeta('lastBackupMailInfo')).what,/עותק מלא מוצפן/)}
+      finally{delete process.env.BACKUP_KEY}}
     fs.rmSync(dir,{recursive:true,force:true});
   }finally{globalThis.fetch=f0; if(env0.k==null)delete process.env.RESEND_API_KEY; else process.env.RESEND_API_KEY=env0.k; if(env0.to==null)delete process.env.MAIL_TO; else process.env.MAIL_TO=env0.to}
 });
@@ -1307,4 +1320,41 @@ test('the morning summary: the last day, the news, the new alerts, the week, the
   assert.deepEqual(S.map(x=>x.t),['ביום המסחר האחרון','ידיעות חשובות על המניות שלך','התראות חדשות','השבוע בתיק','דיבידנדים']);
   assert.equal(S[0].text,'התיק ירד −0.97% (−₪237), בעיקר NVDA −2.41%.'); assert.match(S[1].text,/\[קריטי\] NVDA \(16% מהתיק\): אנבידיה הורידה את התחזית\. החברה הורידה את התחזית\.\n  https:\/\/x\/n/); assert.match(S[3].text,/^02\.11: אקס דיבידנד KO$/);
   assert.deepEqual(morningSections({ready:true,news:[],soon:[]},[]).map(x=>x.t),[],'nothing: nothing');
+});
+
+test('the health of the data: each source with the last time it worked; bad only when it has not worked for longer than it may',async()=>{
+  const {healthCheck,healthProblems,jobNote}=await import('../server/health.js');
+  const s=new Store(':memory:'), env={FINNHUB_API_KEY:'k',ANTHROPIC_API_KEY:'k'}, at=h=>new Date(Date.UTC(2026,9,30,6)+h*36e5);
+  s.setDoc('quotes/latest',{updatedAt:at(0).toISOString(),usdIls:3.7,prices:{MSFT:400}});
+  s.setMeta('researchStatus',JSON.stringify({at:at(0).toISOString(),ok:40,of:42,fail:2,fh:{filled:30,cal:12},dates:{dated:0,tried:20,fail:20,first:'MSFT: HTTP 403'},divs:{tried:10,nasdaq:8,yahoo:1,fail:1}}));
+  s.setMeta('newsStatus',JSON.stringify({at:at(0).toISOString(),ok:0,of:30,items:0,first:'AAPL: HTTP 429'}));
+  s.setMeta('newsxStatus',JSON.stringify({at:at(0).toISOString(),ai:true,read:12,fail:0,rules:0,waiting:0}));
+  let H=healthCheck(s,{env,now:at(0.1)}); const st=k=>H.items.find(i=>i.key===k).state;
+  assert.equal(st('research'),'ok'); assert.equal(st('finnhub'),'ok'); assert.equal(st('newsx'),'ok'); assert.equal(st('prices'),'ok');
+  assert.equal(st('sec'),'warn','failing, but only just: not yet "bad"'); assert.equal(st('news'),'warn');
+  assert.equal(st('x'),'off','no token: nothing expected of it'); assert.equal(st('backupmail'),'off');
+  // eleven hours on, the news still failing: bad (it may go ten hours, the night); the SEC dates may go 80 hours
+  s.setMeta('newsxStatus',JSON.stringify({at:at(10.5).toISOString(),ai:true,read:3,fail:0,rules:0,waiting:0}));
+  H=healthCheck(s,{env,now:at(11)}); assert.equal(st('news'),'bad'); assert.equal(st('sec'),'warn');
+  assert.deepEqual(healthProblems(s,{env,now:at(11)}).map(p=>p.key),['h:news']);
+  // it works again: ok, and the "since" is forgotten
+  s.setMeta('newsStatus',JSON.stringify({at:at(11.5).toISOString(),ok:28,of:30,items:140}));
+  H=healthCheck(s,{env,now:at(11.6)}); assert.equal(st('news'),'ok'); assert.equal(H.items.find(i=>i.key==='news').okAt,at(11.5).toISOString());
+  // research that worked and then stopped running: bad after 80 hours, with the last time it worked
+  H=healthCheck(s,{env,now:at(81)}); assert.equal(st('research'),'bad'); assert.equal(H.items.find(i=>i.key==='research').okAt,at(0).toISOString());
+  // a job that failed the last time: bad at once, with its words; a run that works clears it
+  jobNote(s,'nightly',{ok:false,ms:5,err:new Error('boom').message,now:at(1)}); H=healthCheck(s,{env,now:at(1)});
+  assert.equal(st('job:nightly'),'bad'); assert.match(H.items.find(i=>i.key==='job:nightly').note,/boom/);
+  jobNote(s,'nightly',{ok:true,ms:5,now:at(2)}); H=healthCheck(s,{env,now:at(2)}); assert.ok(!H.items.some(i=>i.key==='job:nightly'));
+  // a backup copy that could not be opened is not a backup
+  s.setMeta('lastBackup',JSON.stringify({at:at(2).toISOString(),file:'x',size:1,docs:null})); H=healthCheck(s,{env,now:at(2)}); assert.equal(st('backup'),'warn');
+  assert.ok(!JSON.stringify(H).includes('MSFT')||JSON.stringify(H).includes('HTTP 403'),'site facts only');
+});
+
+test('the scheduler notes each job\'s run for the health page',async()=>{
+  const {startJobs}=await import('../server/jobs.js'); const s=new Store(':memory:');
+  const J=startJobs(s,{log:()=>{},every:1e9,schedule:[{name:'good',when:()=>false,run:async()=>{}},{name:'bad',when:()=>false,run:async()=>{throw new Error('it broke')}}]});
+  J.run('good'); J.run('bad'); await new Promise(r=>setTimeout(r,200)); J.stop();
+  const M=JSON.parse(s.getMeta('jobs')); assert.equal(M.good.ok,true); assert.equal(M.bad.ok,false); assert.match(M.bad.err,/it broke/);
+  assert.ok(s.getMeta('health'),'the health was read after the runs');
 });

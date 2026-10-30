@@ -13,6 +13,7 @@ import {newsxTask} from './newsx.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
 import {newsSyms} from './newsfeed.js';
+import {jobNote, healthCheck} from './health.js';
 
 export const SCHEDULE=[
   // prices: every 5 minutes while Tel Aviv or New York trades, every 15 minutes at all other hours (fund prices come out at
@@ -58,8 +59,11 @@ export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMI
     if(Q.busy||!Q.queue.length)return; Q.busy=true; const j=Q.queue.shift(); const t0=Date.now(), ms=limits[j.name]||fallback; let to;
     try{log(`job ${j.name} started`);
       const r=await Promise.race([j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}).then(()=>'done'),new Promise(ok=>{to=setTimeout(()=>ok('late'),ms)})]);
-      log(r==='late'?`job ${j.name} still running after ${Math.round(ms/60e3)} minutes; the queue goes on`:`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`)}
-    catch(e){log(`job ${j.name} failed:`,e&&e.stack||e)}
+      log(r==='late'?`job ${j.name} still running after ${Math.round(ms/60e3)} minutes; the queue goes on`:`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`);
+      if(r==='done')jobNote(store,j.name,{ok:true,ms:Date.now()-t0})}
+    catch(e){log(`job ${j.name} failed:`,e&&e.stack||e); jobNote(store,j.name,{ok:false,ms:Date.now()-t0,err:e&&e.message||e})}
+    // 30.10: what each source last did, read right after the job wrote it (the health of the data, server/health.js)
+    try{healthCheck(store)}catch(e){}
     clearTimeout(to); Q.busy=false; setTimeout(()=>pumpLane(ln),0);
   };
   const pump=()=>{for(const ln of Object.keys(L))pumpLane(ln)};

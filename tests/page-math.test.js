@@ -759,3 +759,30 @@ test('the news matched to the portfolio: the companies held and their weight, a 
   // the alert levels: the viewer's choice, "watch" off by default
   assert.deepEqual(F.nxAlertPrefs().lv,{crit:true,imp:true,watch:false});
 });
+
+test('the reader\'s Hebrew: a verb with an adjective is set right, on the page as on the server', async()=>{
+  const W=load(['HEB_','HEE_','HEFIX','heFix'],{...G}), {heFix}=await import('../server/newsx.js');
+  for(const f of [W.heFix,heFix]){
+    assert.equal(f('מניית גוגל ירדה חדה אחרי הדוח הרבעוני'),'מניית גוגל בירידה חדה אחרי הדוח הרבעוני');
+    assert.equal(f('המניות עלו חד'),'המניות בעלייה חדה'); assert.equal(f('אנבידיה צנחה חדה.'),'אנבידיה צנחה בחדות.');
+    assert.equal(f('ירידה חדה במניה'),'ירידה חדה במניה','what is right stays');
+  }
+});
+
+test('the chip on the value card: what the holdings of the view did in 30 days, by the prices and the rate of that day; deposits do not move it', ()=>{
+  const DY={points:{'2026-09-25':{v:1,px:{MSFT:400,TA125:2000},fx:3.8},'2026-09-30':{v:1,px:{MSFT:410,TA125:2100},fx:3.7},'2026-10-20':{v:1,px:{MSFT:450,TA125:2200},fx:3.6}}};
+  const W=load(['isoAdd','monChipCalc'],{...G,DY,Q:{usdIls:3.5},ilDay:()=>'2026-10-30'});
+  const pos=(sym,qty,px,ccy,rate)=>({sym,qty,px,ccy,pxIls:px*rate,val:qty*px*rate});
+  // all: MSFT 2 at 420$ (3.5) and TA125 1 at 2,150 ₪; the point of 30.9 (the last one 30 days back)
+  let r=W.monChipCalc({pos:[pos('MSFT',2,420,'USD',3.5),pos('TA125',1,2150,'ILS',1)]});
+  assert.equal(r.key,'2026-09-30'); assert.equal(r.since,false);
+  near(r.ret,((2*420*3.5+2150)/(2*410*3.7+2100)-1)*100,1e-9,'the dollar\'s move is in it');
+  // one account: only its holdings
+  r=W.monChipCalc({pos:[pos('TA125',1,2150,'ILS',1)]}); near(r.ret,(2150/2100-1)*100,1e-9);
+  // most of the value without a price that day: nothing shown rather than a wrong number
+  assert.equal(W.monChipCalc({pos:[pos('NEWCO',10,500,'USD',3.5),pos('TA125',1,2150,'ILS',1)]}),null);
+  // fewer than 30 days of points: since the first one, from 14 days on
+  const W2=load(['isoAdd','monChipCalc'],{...G,DY:{points:{'2026-10-10':{v:1,px:{TA125:2000},fx:3.6}}},Q:{usdIls:3.5},ilDay:()=>'2026-10-30'});
+  r=W2.monChipCalc({pos:[pos('TA125',1,2150,'ILS',1)]}); assert.equal(r.since,true); assert.equal(r.days,20);
+});
+
