@@ -137,7 +137,11 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   {const MK=new Set(market||[]); for(const it of news){if(it.src!=='co'||gen.has(it.link))continue; const ks=(it.syms||[]).filter(k=>MK.has(k)); if(!ks.length)continue;
     gen.set(it.link,{id:it.id,title:it.title,pub:it.pub,link:it.link,at:it.at||iso,sum:it.sum||null,syms:ks,seen:it.seen||iso,src:'gen',cat:'market',...(it.upd?{upd:it.upd}:{})})}}
   const atOf=new Map(news.concat([...gen.values()]).map(a=>[a.id,a.at||a.seen||iso]));
-  const seenT=new Set(), todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).filter(a=>{if(seenT.has(a.id))return false; seenT.add(a.id); return true}).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
+  // 30.10: the articles about a share someone holds are read first (they are the ones an alert is made of), then the rest;
+  // the newest first in each
+  const HELD=new Set(); {const pf=d=>{for(const x of ((d&&d.positions)||[]))if(x&&typeof x.sym==='string')HELD.add(x.sym)}; pf(store.getDoc('portfolio/main').data); for(const p of store.pathsUnder('data/users'))if(/\/portfolio$/.test(p))pf(store.getDoc(p).data)}
+  const pri=a=>a.src!=='gen'&&(a.syms||[]).some(s=>HELD.has(s))?0:a.src==='gen'?2:1;
+  const seenT=new Set(), todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).filter(a=>{if(seenT.has(a.id))return false; seenT.add(a.id); return true}).sort((a,b)=>(pri(a)-pri(b))||(String(b.at||b.seen)<String(a.at||a.seen)?-1:1));
   if(st.ai){for(let b=0;b<maxBatches&&b*perBatch<todo.length;b++){
       if(Date.now()-t0>budgetMs){st.stopped='time';break}
       const batch=todo.slice(b*perBatch,(b+1)*perBatch), got=await analyzeBatch(batch,{fetch:f,log,ask,known:knownEvents(by)});
@@ -320,7 +324,8 @@ export function ruleRead(a){
   const syms=(a.syms||[]).filter(s=>TICK.test(s)).slice(0,3), macro=MACRO.has(type)&&!syms.length;
   const level=syms.length?(BIG.test(t)?'imp':['earnings','guidance','ma','rating','legal','regulation','management'].includes(type)?'imp':'watch'):macro?'watch':'info';
   const who=syms.length?syms.join(', ')+': ':'';
-  return {he:`${who}${TYPE_HE[type]}${DIR_HE[dir]?', '+DIR_HE[dir]:''}`.slice(0,80),what:`לפי הכותרת במקור (${a.pub||'מקור חיצוני'}). הקריאה המלאה של צ׳יקו עוד לא נעשתה; זו קריאה אוטומטית לפי מילים בכותרת.`,
+  // 30.10: a headline the rules cannot place ("other") stays the article's own, which says more than "JPM: אחר"
+  return {he:type==='other'?String(a.title||'').slice(0,90):`${who}${TYPE_HE[type]}${DIR_HE[dir]?', '+DIR_HE[dir]:''}`.slice(0,80),what:`לפי הכותרת במקור (${a.pub||'מקור חיצוני'}). הקריאה המלאה של צ׳יקו עוד לא נעשתה; זו קריאה אוטומטית לפי מילים בכותרת.`,
     type,level,dir,cert:'est',kind:kindOf(a),aff:syms.map(sym=>({sym,how:'direct',dir,why:'הכתבה עליה'})),sectors:SEC_OF[type]||[],themes:THEME_OF[type]||[],regions:regionsOf(t),occ:null,
     // the middle links by the kind of event only, said to be so: no direction for the factor, a reason that says it is a rule
     fac:(THEME_OF[type]||[]).slice(0,2).map(k=>({k,move:'unclear',why:'לפי סוג האירוע (קריאה אוטומטית), לא מתוך הכתבה'})),

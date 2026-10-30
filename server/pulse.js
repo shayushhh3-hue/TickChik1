@@ -157,7 +157,8 @@ export function pulseCompute(store,u,{now=new Date()}={}){
     // a security the person follows without holding it: a portfolio update at most, and said to be so
     if(!r&&L.followed.length&&['crit','high'].includes(m.imp)&&e.ai){r={lv:'upd',why:'ידיעה על מניה שבחרת לעקוב אחריה (לא מהתיק)'}; followed=true}
     if(!r||!pr.lv[r.lv])continue;
-    out.push({k:e.k,lv:r.lv,lvWhy:r.why,ev:x.ev||null,title:x.he,what:x.what,kind:x.kind||'news',type:x.type,level:x.level,dir:x.dir,cert:x.cert||'interp',rules:!e.ai,
+    // 30.10: an event Claude has not read yet: its title is the article's own headline (the rules' "JPM: אחר" says nothing)
+    out.push({k:e.k,lv:r.lv,lvWhy:r.why,ev:x.ev||null,title:e.ai?x.he:((e.lead&&e.lead.title)||x.he),what:x.what,kind:x.kind||'news',type:x.type,level:x.level,dir:x.dir,cert:x.cert||'interp',rules:!e.ai,
       imp:m.imp,rel:m.rel,relWhy:m.relWhy,conf:m.conf,confWhy:m.confWhy,followed,
       holds:L.direct.map(d=>({...d,link:'direct'})).concat(L.indirect.map(d=>({...d,link:'indirect'}))),secs:L.secs,usd:L.usd,fol:L.followed,
       sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',

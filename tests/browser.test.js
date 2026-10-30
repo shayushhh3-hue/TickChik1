@@ -666,6 +666,11 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     // a point on the map: its short card; the period changes the figures
     await pg.evaluate(()=>window.__ix.sel('h:NVDA')); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('ixTip').textContent),/NVDA · [\d.]+% מהתיק/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#ixTip [data-ixst="NVDA"]')),'the holding\'s card on the map leads to its story');
+    // an event tapped on the map: in words, how it may touch each holding, the first one's way open
+    await pg.evaluate(()=>window.__ix.sel('ev:ev:nvda-q3-report')); await pg.waitForTimeout(200);
+    const tp=await pg.evaluate(()=>{const t=document.getElementById('ixTip'); return {t:t.innerText.replace(/\s+/g,' '),k:[...t.querySelectorAll('.nwi-r[open] .chn-k')].map(x=>x.textContent)}});
+    assert.match(tp.t,/מה קרה: /); assert.match(tp.t,/איך זה עשוי להשפיע על (המניות שלך|NVDA)/); assert.match(tp.t,/NVDA בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/); assert.deepEqual(tp.k,['מה קרה','החברה','ההחזקה שלך']);
+    assert.match(tp.t,/בשורה התחתונה: NVDA/);
     // "מה קורה למניה": the holdings touched, a card (a button) each; the share's own view in plain words
     const sl=await pg.evaluate(()=>[...document.querySelectorAll('#ixStList [data-ixst]')].map(b=>({s:b.dataset.ixst,t:b.innerText.replace(/\s+/g,' ')})));
     assert.ok(sl.some(x=>x.s==='NVDA'),JSON.stringify(sl)); assert.match(sl.find(x=>x.s==='NVDA').t,/NVDA.*מהתיק.*(אירוע אחד|\d+ אירועים).*מה קורה\?/);

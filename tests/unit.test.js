@@ -1314,6 +1314,7 @@ test('the plain reading by rules: when Claude cannot read, every article still g
   assert.equal(r.type,'earnings'); assert.equal(r.dir,'pos'); assert.equal(r.level,'imp'); assert.equal(r.cert,'est'); assert.equal(r.rules,true); assert.match(r.he,/^NVDA: תוצאות כספיות, נראה חיובי$/); assert.deepEqual(r.aff.map(a=>a.sym),['NVDA']);
   const f=ruleRead({title:'Fed holds rates steady',syms:[]}); assert.equal(f.type,'macro_rates'); assert.equal(f.macro,true); assert.equal(f.level,'watch');
   assert.equal(ruleRead({title:'Coca-Cola faces lawsuit over labels',syms:['KO']}).dir,'neg');
+  assert.equal(ruleRead({title:'JPMorgan names new head of payments unit',syms:['JPM']}).he,'JPMorgan names new head of payments unit','a headline the rules cannot place stays the article\'s own, not "JPM: אחר"');
   // a run without Claude: read by rules; then with Claude: read again
   const s=new Store(':memory:'), now=new Date('2026-10-29T20:00:00Z'), iso=now.toISOString();
   s.setDoc('research/news',{items:[{title:'Microsoft faces EU antitrust probe',pub:'FT',link:'https://x/m',at:iso,syms:['MSFT'],seen:iso}]});
