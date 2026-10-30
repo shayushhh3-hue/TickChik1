@@ -23801,7 +23801,7 @@ const NX_CATS=[
   {k:'global',l:'מדדים ושווקים בעולם',m:x=>x.type==='market'&&(x.regions||[]).some(r=>r!=='us'&&r!=='israel')},
   {k:'companies',l:'חברות ומניות',m:x=>['company','product','contract','management','legal','rating','supply'].includes(x.type)},
   {k:'earnings',l:'דוחות כספיים',m:x=>x.type==='earnings'},
-  {k:'guidance',l:'תחזיות הנהלה',m:x=>x.type==='guidance'},
+  {k:'guidance',l:'צפי ההנהלה ועדכוניו',m:x=>x.type==='guidance'},
   {k:'ma',l:'מיזוגים ורכישות',m:(x,it)=>x.type==='ma'||it.cat==='merger'},
   {k:'macro',l:'אינפלציה, תעסוקה וצמיחה',m:x=>x.type==='inflation'||nxHas(x,['inflation','jobs','growth'])},
   {k:'rates',l:'ריבית ובנקים מרכזיים',m:x=>x.type==='macro_rates'||nxHas(x,['rates','fed','ecb','boi'])},
