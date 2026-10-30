@@ -17,7 +17,7 @@ export const newsId=link=>createHash('sha1').update(String(link||'')).digest('he
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const str=(v,n)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,n):'';
 const TYPES=['earnings','guidance','ma','regulation','legal','product','contract','rating','management','macro_rates','inflation','geo','sanctions','supply','energy','ai_chips','sector','market','company','other'];
-export const TYPE_HE={earnings:'תוצאות כספיות',guidance:'תחזית החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',
+export const TYPE_HE={earnings:'תוצאות כספיות',guidance:'צפי החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',
   macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
 const LEVELS=['crit','imp','watch','info'], DIRS=['pos','neg','mixed','unclear'], CERTS=['fact','interp','est'], HOWS=['direct','supplier','customer','competitor','sector','macro'];
 export const SECTORS=['Technology','Finance','Health Care','Consumer Discretionary','Consumer Staples','Industrials','Energy','Utilities','Real Estate','Basic Materials','Telecommunications','Defense','Semiconductors','Retail','Automotive','Transportation'];

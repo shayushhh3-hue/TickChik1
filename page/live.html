@@ -23689,7 +23689,7 @@ try{const v=JSON.parse(localStorage.getItem('tr_nxlv')||'null'); if(Array.isArra
 const NX_DIR={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'ההשפעה עוד לא ברורה'};
 const NX_CERT={fact:'עובדה מדווחת',interp:'פרשנות של המקור',est:'הערכה של צ׳יקו'};
 const NX_HOW={direct:'החברה עצמה',supplier:'ספק',customer:'לקוח',competitor:'מתחרה',sector:'אותו ענף',macro:'השפעה רחבה'};
-const NX_TYPE={earnings:'תוצאות כספיות',guidance:'תחזית החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
+const NX_TYPE={earnings:'תוצאות כספיות',guidance:'צפי החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
 const NX_SEC_HE={Technology:'טכנולוגיה',Finance:'פיננסים','Health Care':'בריאות','Consumer Discretionary':'צריכה','Consumer Staples':'מוצרי יסוד',Industrials:'תעשייה',Energy:'אנרגיה',Utilities:'תשתיות','Real Estate':'נדל״ן','Basic Materials':'חומרי גלם',Telecommunications:'תקשורת',Defense:'ביטחון',Semiconductors:'שבבים',Retail:'קמעונאות',Automotive:'רכב',Transportation:'תחבורה'};
 // the page's sector names (the symbol list) onto the readings' sectors
 const NX_SEC_MAP={'Information Technology':'Technology',Financials:'Finance',Materials:'Basic Materials',REITs:'Real Estate','Consumer Services':'Consumer Discretionary',Healthcare:'Health Care'};
@@ -24124,11 +24124,18 @@ function imLayout(G,vert){
       const L=G.edges.filter(e=>e.to===n.id&&pos.has(e.from)).map(e=>pos.get(e.from)); return L.length?L.reduce((a,b)=>a+b,0)/L.length:2};
     const B=new Map(by[i].map(n=>[n.id,bc(n)])); by[i].sort((a,b)=>B.get(a.id)-B.get(b.id)); by[i].forEach((n,j)=>pos.set(n.id,(j+.5)/by[i].length))}
   const w=vert?128:150, h=vert?50:52, gx=vert?12:48, gy=vert?86:16;
-  if(!vert){const H0=Math.max(...by.map(c=>c.length))*(h+gy)-gy, W0=cols.length*(w+gx)-gx;
+  if(!vert){let H0=Math.max(...by.map(c=>c.length))*(h+gy)-gy; const W0=cols.length*(w+gx)-gx;
     by.forEach((c,i)=>{const ch=c.length*(h+gy)-gy, y0=(H0-ch)/2; c.forEach((n,j)=>{n.w=w;n.h=h;n.x=W0-(i+1)*w-i*gx;n.y=y0+j*(h+gy)})});
+    {const hi=cols.indexOf('hold'); if(hi>=0){const byId=new Map(G.nodes.map(n=>[n.id,n])), L=by[hi], own=L.filter(n=>byId.has('c:'+n.sym)), rest=L.filter(n=>!byId.has('c:'+n.sym));
+      for(const n of own)n.y=byId.get('c:'+n.sym).y; let maxY=Math.max(...G.nodes.filter(n=>n.t!=='hold'||own.includes(n)).map(n=>n.y)); for(const n of rest){maxY+=h+gy; n.y=maxY}
+      H0=Math.max(H0,...G.nodes.map(n=>n.y+n.h))}}
     return {W:W0,H:H0,cols:cols.map((t,i)=>({t,x:W0-(i+1)*w-i*gx+w/2,y:-18}))}}
-  const W0=Math.max(...by.map(c=>c.length))*(w+gx)-gx, H0=cols.length*(h+gy)-gy;
+  let W0=Math.max(...by.map(c=>c.length))*(w+gx)-gx; const H0=cols.length*(h+gy)-gy;
   by.forEach((c,i)=>{const cw=c.length*(w+gx)-gx, x0=(W0-cw)/2; c.forEach((n,j)=>{n.w=w;n.h=h;n.x=x0+cw-(j+1)*w-j*gx;n.y=i*(h+gy)})});
+  // a holding right under its own company; the ones reached only through a sector after them, to the left
+  {const hi=cols.indexOf('hold'); if(hi>=0){const byId=new Map(G.nodes.map(n=>[n.id,n])), L=by[hi], own=L.filter(n=>byId.has('c:'+n.sym)), rest=L.filter(n=>!byId.has('c:'+n.sym));
+    for(const n of own)n.x=byId.get('c:'+n.sym).x; let minX=Math.min(...G.nodes.filter(n=>n.t!=='hold'||own.includes(n)).map(n=>n.x)); for(const n of rest){minX-=w+gx; n.x=minX}
+    const lo=Math.min(...G.nodes.map(n=>n.x)); if(lo<0){for(const n of G.nodes)n.x-=lo; W0-=lo} W0=Math.max(W0,...G.nodes.map(n=>n.x+n.w))}}
   return {W:W0,H:H0,cols:cols.map((t,i)=>({t,x:W0,y:i*(h+gy)-10}))}}
 const imCut=(s,n)=>{s=String(s||''); return s.length>n?s.slice(0,n-1)+'…':s};
 const imColor=d=>d==='pos'?'var(--gain)':d==='neg'?'var(--loss)':d==='mixed'?'#D97706':d==='up'||d==='down'?'#7C3AED':'#94A3B8';
