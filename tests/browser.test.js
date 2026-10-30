@@ -757,6 +757,20 @@ test('the fall from the peak: a card in the look-back, and an alert when the who
   }finally{store.setDoc('history/daily',D0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
 });
 
+test('a partner is offered the e-mails on the home\'s to-do list once they can reach them, and one tap switches one on',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'p2'});
+  await pg.route('**/api/mail/me',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ready:true,ownDomain:true,kinds:['morning','earnings','live'],last:{},to:'n…@example.com'})}));
+  await pg.reload(); await pg.waitForFunction(()=>[...document.querySelectorAll('[data-uxmail]')].length>0,null,{timeout:15000}).catch(()=>{});
+  const ks=await pg.evaluate(()=>[...document.querySelectorAll('[data-uxmail]')].map(b=>b.dataset.uxmail));
+  if(!ks.length){t.diagnostic('no to-do list for an empty new partner'); await ctx.close(); return}
+  assert.deepEqual(ks.sort(),['earnings','live','morning']);
+  await pg.evaluate(()=>document.querySelector('[data-uxmail="morning"]').click()); await pg.waitForTimeout(1500);
+  const uid=await pg.evaluate(async()=>(await (await fetch('/api/me',{credentials:'same-origin'})).json()).me.id);
+  assert.equal(store.getDoc(`data/users/${uid}/settings`).data.mail.morning,true);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();

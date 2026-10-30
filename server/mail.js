@@ -37,6 +37,7 @@ export const PARTNER_KINDS=['morning','earnings','live'];
 export function mailAllowedFor(store,user,kind){
   if(!user||user.role==='owner')return mailAllowed(store,kind); if(!PARTNER_KINDS.includes(kind))return false;
   try{const s=store.getDoc(`data/users/${user.id}/settings`); return !!(s.exists&&s.data&&s.data.mail&&s.data.mail[kind]===true)}catch(e){return false}}
+export const adminsOf=store=>{try{return store.users().filter(u=>u.role==='admin'&&u.email)}catch(e){return []}};
 export function mailNoteFor(store,user,kind,result){if(!user||user.role==='owner')return mailNote(store,kind,result);
   try{const k='mail:'+user.id, cur=JSON.parse(store.getMeta(k)||'{}'); cur.last={...(cur.last||{}),[kind]:{at:new Date().toISOString(),result}}; store.setMeta(k,JSON.stringify(cur))}catch(e){}}
 // the house's test address of Resend sends only to the Resend account's own address: a partner's mail needs a domain of one's own
@@ -51,7 +52,14 @@ export async function sendAllowed(store,kind,msg,log=()=>{},user=null){
   if(!mailAllowed(store,kind)){log(`mail (${kind}): off in the settings, not sent`); mailNote(store,kind,'off'); return false}
   if(!mailReady()){log(`mail (${kind}): sending is not set up`); mailNote(store,kind,'not_ready'); return false}
   let ok=false; try{ok=await sendMail(msg)}catch(e){log(`mail (${kind}) failed:`,e.message)}
-  mailNote(store,kind,ok?'sent':'failed'); return ok;
+  mailNote(store,kind,ok?'sent':'failed');
+  // 30.10: the admins get the owner's e-mails too (not the backup, which carries everybody's data), each a message of
+  // their own, so that one address that fails never stops the owner's; only from a sending domain of one's own (Resend's
+  // test address sends to the owner alone, and would refuse the whole message)
+  if(kind!=='backup'){const A=adminsOf(store); for(const u of A){
+    if(!mailFromOwnDomain()){mailNoteFor(store,u,kind,'domain'); continue}
+    let ok2=false; try{ok2=await sendMail({...msg,to:[u.email]})}catch(e){log(`mail (${kind}, admin) failed:`,e.message)} mailNoteFor(store,u,kind,ok2?'sent':'failed')}}
+  return ok;
 }
 export const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export function wrapHtml(title,bodyHtml){

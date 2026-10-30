@@ -139,7 +139,7 @@ export async function boot(){
   hideGate();
   if(me.owner&&who.persist===false){try{const w=document.createElement('div');w.setAttribute('role','alert');w.style.cssText='position:sticky;top:0;z-index:999;background:#b42318;color:#fff;padding:10px 16px;font:600 14px/1.5 Heebo,Arial,sans-serif;text-align:center;direction:rtl';
     w.textContent='אזהרה: הנתונים לא נשמרים לצמיתות. לשרת ב-Railway לא מחובר דיסק (Volume), ולכן כל עדכון של האתר מוחק את התיקים ואת המשתמשים. אל תעלה נתונים עד שזה יתוקן.';document.body.prepend(w)}catch(e){}}
-  window.__tc={id:me.id,email:me.email,owner:me.owner,signOut:async()=>{try{await call('POST','/logout',{})}catch(e){} location.reload()}};
+  window.__tc={id:me.id,email:me.email,owner:me.owner,admin:!!me.admin,signOut:async()=>{try{await call('POST','/logout',{})}catch(e){} location.reload()}};
   stream();
 
   // ---- db ----

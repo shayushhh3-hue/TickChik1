@@ -19597,9 +19597,11 @@ function renderMail(){try{liveAlFill()}catch(e){} try{pushUI()}catch(e){}
   if(!renderMail.asked){renderMail.asked=true; if(OWNER)try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}
     if(window.__tc)fetch('/api/mail/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(j=>{MAILME=j; renderMail()}).catch(()=>{})}
   const K=OWNER?MAILK:MAILK.filter(([k])=>((MAILME&&MAILME.kinds)||['morning','earnings','live']).includes(k));
-  const M=(S&&S.mail)||{}, L=(OWNER?(MAILST&&MAILST.last):(MAILME&&MAILME.last))||{}, list=$('mailList');
+  const M=(S&&S.mail)||{}, L=(OWNER&&!(window.__tc&&window.__tc.admin)?(MAILST&&MAILST.last):(MAILME&&MAILME.last))||{}, list=$('mailList');
   const dom=MAILME&&MAILME.ownDomain===false;
-  $('mailState').textContent=OWNER?(!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת.'+(dom?' לשותפים מיילים לא יגיעו עד שתחבר דומיין משלך ב-Resend ותגדיר ב-Railway את MAIL_FROM על הדומיין הזה (SETUP.md ← מיילים לשותפים).':''):'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.')
+  const ADM=!!(window.__tc&&window.__tc.admin);
+  $('mailState').textContent=OWNER&&ADM?(!MAILME?'':!MAILME.ready?'שליחת מיילים עוד לא מוגדרת באתר.':dom?'את המיילים של התיק אתה ובעל הדף בוחרים כאן יחד. כרגע הם מגיעים רק לבעל הדף: כדי שיגיעו גם אליך, בעל הדף צריך לחבר דומיין לשליחה.':`מה שמופעל כאן נשלח לבעל הדף וגם אליך (${MAILME.to||''}).`)
+    :OWNER?(!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת, וגם למנהלים.'+(dom?' לשותפים מיילים לא יגיעו עד שתחבר דומיין משלך ב-Resend ותגדיר ב-Railway את MAIL_FROM על הדומיין הזה (SETUP.md ← מיילים לשותפים).':''):'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.')
     :!MAILME?'':!MAILME.ready?'שליחת מיילים עוד לא מוגדרת באתר. אפשר כבר לבחור, וזה יתחיל להגיע כשבעל האתר יגדיר אותה.':dom?'כרגע האתר יכול לשלוח מיילים רק לבעל האתר. אפשר כבר לבחור: זה יתחיל להגיע אליך אחרי שבעל האתר יחבר דומיין לשליחה. בינתיים, התראות לטלפון (למעלה) עובדות.':`מה שתפעיל כאן יישלח לכתובת שלך (${MAILME.to||''}), על התיק שלך בלבד.`;
   if(list.dataset.k!==K.map(x=>x[0]).join()){list.dataset.k=K.map(x=>x[0]).join(); setH(list,K.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''))}
   for(const [k] of K){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
@@ -24258,9 +24260,11 @@ function whyBtn(k,l){const t=TERMS[k]; if(!t)return ''; return `<button type="bu
 // ---- the to-do list ----
 const TODO_SEV={crit:0,rep:1,px:2,warn:3,setup:4,info:5,tip:6};
 function mailSugg(){
+  if(!OWNER&&!LOCAL&&db&&canWrite&&window.__tc&&MAILME&&MAILME.ready&&MAILME.ownDomain&&!UXK('tr_tipmail')){const M=(S&&S.mail)||{}, want=[['morning','סיכום הבוקר'],['live','התראות בזמן אמת'],['earnings','דוח חדש של מניה שלך']].filter(([k])=>M[k]!==true); return want.length?want:null}
   if(!OWNER||LOCAL||!db||!canWrite||!MAILST||!MAILST.ready)return null; if(UXK('tr_tipmail'))return null;
   const M=(S&&S.mail)||{}, want=[['earnings','דוח חדש של מניה שלך'],['backup','גיבוי יומי של הנתונים'],['pxalert','התראה כשמשהו לא מתעדכן']].filter(([k])=>M[k]!==true); return want.length?want:null}
-function mailBoot(){if(MAILST||mailBoot.asked||!OWNER||LOCAL||!db)return; mailBoot.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
+function mailBoot(){if(!OWNER&&!LOCAL&&db&&window.__tc&&!MAILME&&!mailBoot.askedMe){mailBoot.askedMe=true; fetch('/api/mail/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(j=>{MAILME=j; try{render()}catch(e){}}).catch(()=>{})}
+  if(MAILST||mailBoot.asked||!OWNER||LOCAL||!db)return; mailBoot.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; try{render()}catch(e){}}).catch(()=>{})}catch(e){}}
 const HOMECAT=new Set(['הפקדה','הגדלה','יתרה','מחיר','נתונים','חסר','דוחות','חדשות']);
 // the rules' alerts, counted for the button of בקרה (the bottom bar and the menu)
 function ctlBadge(A){const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
@@ -24325,8 +24329,8 @@ document.addEventListener('click',ev=>{
     if(k==='goq'){goOpen(); return}
     return}
   const x=ev.target.closest&&ev.target.closest('[data-uxx]'); if(x){UXS(x.dataset.uxx,new Date().toISOString()); try{render()}catch(e){} return}
-  const ml=ev.target.closest&&ev.target.closest('[data-uxmail]'); if(ml){if(!canWrite||!OWNER)return; const k=ml.dataset.uxmail; S.mail={...(S.mail||{}),[k]:true}; changed(); try{renderMail()}catch(e){}
-    offerUndo(k==='earnings'?'יישלח מייל כשמניה שבתיק או במעקב מפרסמת דוח.':k==='pxalert'?'יישלח מייל כשהמחירים נתקעים או כשהדף מוצא פער בין מסכים.':'יישלח מייל עם גיבוי של הנתונים שלך כל לילה.',()=>{S.mail={...(S.mail||{}),[k]:false}; changed(); try{renderMail()}catch(e){}},6000); return}
+  const ml=ev.target.closest&&ev.target.closest('[data-uxmail]'); if(ml){if(!canWrite||(!OWNER&&!['morning','live','earnings'].includes(ml.dataset.uxmail)))return; const k=ml.dataset.uxmail; S.mail={...(S.mail||{}),[k]:true}; changed(); try{renderMail()}catch(e){}
+    offerUndo(k==='morning'?'כל בוקר יישלח אליך סיכום של התיק.':k==='live'?'יישלח מייל כשמשהו חשוב קורה בתיק, לפי ההתראות בזמן אמת.':k==='earnings'?'יישלח מייל כשמניה שבתיק או במעקב מפרסמת דוח.':k==='pxalert'?'יישלח מייל כשהמחירים נתקעים או כשהדף מוצא פער בין מסכים.':'יישלח מייל עם גיבוי של הנתונים שלך כל לילה.',()=>{S.mail={...(S.mail||{}),[k]:false}; changed(); try{renderMail()}catch(e){}},6000); return}
   if(ev.target.closest&&ev.target.closest('#kTrust')){ev.preventDefault(); showTab('overview',true); setTimeout(()=>{const t=$('dkTrust'); if(t){const d=t.querySelector('details'); if(d)d.open=true; t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60)}
 });
 const uxLit=el=>{if(!el)return; el.classList.remove('uxlit'); void el.offsetWidth; el.classList.add('uxlit'); setTimeout(()=>el.classList.remove('uxlit'),2400)};
@@ -24416,6 +24420,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.9g',at:'2026-10-30',t:'מיילים לכל המשתמשים',d:'מנהלים מקבלים את המיילים של התיק כמו בעל הדף, ושותפים מקבלים הצעה ברשימה בבית להפעיל סיכום בוקר, התראות ודוחות על התיק שלהם. המיילים יוצאים לכולם אחרי שבעל האתר מחבר דומיין לשליחה.',go:'mail'},
   {v:'2026-10-30.9f',at:'2026-10-30',t:'ירידה מהשיא',d:'במבט לאחור: כמה כל התיק מתחת לשיא שלו ומאיזה יום, והירידה הגדולה בתקופה (והאם חזר). בלי ההפקדות, רק מה שהשוק עשה. בהכללים שלי אפשר לקבוע סף, ומעבר לו תעלה התראה.',go:'hist'},
   {v:'2026-10-30.9e',at:'2026-10-30',t:'האתר נטען מהר פי כמה',d:'בטלפון, התיק מופיע אחרי כשלוש שניות במקום כתשע: המספרים מעוצבים פעם אחת ונשמרים, והנתונים שמגיעים יחד בטעינה מציירים את הדף פעם אחת במקום פעם לכל אחד.',go:'ov'},
   {v:'2026-10-30.9d',at:'2026-10-30',t:'מיילים גם לשותפים',d:'כל שותף בוחר בהגדרות שלו: סיכום הבוקר, דוח כספי של מניה שלו, והתראות בזמן אמת, על התיק שלו ולכתובת שלו. כדי שהמיילים יגיעו לשותפים, בעל האתר צריך לחבר דומיין לשליחה; עד אז ההתראות לטלפון עובדות.',go:'mail'},

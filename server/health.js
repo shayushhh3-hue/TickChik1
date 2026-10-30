@@ -44,9 +44,9 @@ export function sources(store,{env=process.env,now=new Date()}={}){
     out.push({key:'mail',name:'שליחת מיילים',max:48,off:!wanted,ran:Object.values(L).map(v=>v&&v.at).filter(Boolean).sort().pop()||null,ok:good,okAt:good?now.toISOString():null,
       note:!mailReady()?(wanted?'לא מוגדר: אין RESEND_API_KEY':'לא מוגדר'):failed.length?`נכשל: ${failed.join(', ')}`:sent?'נשלח':'עוד לא נשלח מייל'})}
   // 30.10: partners who chose e-mails, while the sender is Resend's test address (it sends to the account's owner only)
-  {const P=(()=>{try{return store.users().filter(u=>u.role==='friend'&&PARTNER_KINDS.some(k=>mailAllowedFor(store,u,k)))}catch(e){return []}})();
-    if(P.length)out.push({key:'mailp',name:'מיילים לשותפים',max:24,ran:null,ok:mailReady()&&mailFromOwnDomain(),okAt:mailReady()&&mailFromOwnDomain()?now.toISOString():null,
-      note:!mailReady()?'המיילים לא מוגדרים':!mailFromOwnDomain()?`${P.length===1?'שותף אחד בחר':P.length+' שותפים בחרו'} מיילים, אבל הם לא יגיעו: Resend שולח מ-onboarding@resend.dev רק לך. צריך דומיין משלך ו-MAIL_FROM (SETUP.md)`:`${P.length} שותפים מקבלים מיילים`})}
+  {const P=(()=>{try{return store.users().filter(u=>(u.role==='friend'&&PARTNER_KINDS.some(k=>mailAllowedFor(store,u,k)))||(u.role==='admin'&&MAIL_KINDS.some(k=>k!=='backup'&&mailAllowed(store,k))))}catch(e){return []}})();
+    if(P.length)out.push({key:'mailp',name:'מיילים למנהלים ולשותפים',max:24,ran:null,ok:mailReady()&&mailFromOwnDomain(),okAt:mailReady()&&mailFromOwnDomain()?now.toISOString():null,
+      note:!mailReady()?'המיילים לא מוגדרים':!mailFromOwnDomain()?`${P.length===1?'משתמש אחד אמור לקבל':P.length+' משתמשים אמורים לקבל'} מיילים, אבל הם לא יגיעו: Resend שולח מ-onboarding@resend.dev רק לך. צריך דומיין משלך ו-MAIL_FROM (SETUP.md)`:`${P.length} משתמשים מקבלים מיילים`})}
   // a job that failed the last time it ran (its own words, the first line)
   for(const [name,j] of Object.entries(J)){if(!j||j.ok!==false)continue;
     out.push({key:'job:'+name,name:`משימה מתוזמנת: ${name}`,max:0,ran:j.at,ok:false,note:String(j.err||'נכשלה').split('\n')[0].slice(0,160),job:true})}

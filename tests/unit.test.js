@@ -1399,6 +1399,22 @@ test('an admin: set by the owner alone, the owner\'s access (portfolio, users, h
   }finally{srv.close()}
 });
 
+test('the owner\'s e-mails reach the admins too, each a message of its own, once there is a sending domain; never the backup',async()=>{
+  const {sendAllowed}=await import('../server/mail.js');
+  const s=new Store(':memory:'); s.addUser({email:'shai@example.com',password:'owner-pass-123',role:'owner'}); const a=s.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}); s.setRole(a.id,'admin');
+  s.setDoc('settings/main',{mail:{morning:true,backup:true}});
+  const env0={k:process.env.RESEND_API_KEY,to:process.env.MAIL_TO,from:process.env.MAIL_FROM}, f0=globalThis.fetch, sent=[];
+  globalThis.fetch=async(url,o)=>{if(String(url).includes('api.resend.com')){const b=JSON.parse(o.body); sent.push(b); const ok=!/resend\.dev/.test(b.from)||b.to.includes('shai@example.com'); return new Response(ok?'{"id":"x"}':'{"message":"testing only"}',{status:ok?200:403})} return f0(url,o)};
+  try{
+    process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='shai@example.com'; delete process.env.MAIL_FROM; const msg={subject:'s',text:'t',html:'h'}, last=()=>JSON.parse(s.getMeta('mail:'+a.id)||'{}').last||{};
+    assert.equal(await sendAllowed(s,'morning',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'Resend\'s test sender: the owner only, the owner\'s mail not refused');
+    assert.equal(last().morning.result,'domain');
+    process.env.MAIL_FROM='תיק צ׳יק <alerts@mydomain.co.il>'; sent.length=0;
+    assert.equal(await sendAllowed(s,'morning',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com'],['ori@example.com']],'the admin: a message of his own'); assert.equal(last().morning.result,'sent');
+    sent.length=0; await sendAllowed(s,'backup',{...msg,attachments:[]}); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'the backup: the owner alone');
+  }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
+});
+
 test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{
   const {morningSections}=await import('../server/tasks.js');
   const G={ready:true,day:{pct:-0.97,ils:-237,top:[{sym:'NVDA',pct:-2.41,ils:-100}]},news:[{level:'crit',he:'אנבידיה הורידה את התחזית',what:'החברה הורידה את התחזית.',who:'NVDA (16% מהתיק)',link:'https://x/n',pub:'Reuters'}],soon:[{d:'2026-11-02',items:['אקס דיבידנד KO']}],divYear:420};
