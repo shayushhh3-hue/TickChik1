@@ -1427,6 +1427,33 @@ test('live alerts: a price set, a big day, the dollar, a critical reading; once 
 
 // 30.10: TikChik Pulse: personal alerts only from a link to the portfolio that can be explained, three levels by
 // written rules, the three measures apart, one alert per event, again only on a material development
+// 30.10: what is on someone's screen and not read yet is read now: Hebrew and the way to the holdings in seconds; only
+// what the asker may see; one at a time; the alert made from the headline alone gives way to the read one
+test('reading now: the articles on the screen, read at once; only the asker\'s own; the headline-only alert replaced',async()=>{
+  const {newsxReadNow,newsId,ruleRead}=await import('../server/newsx.js'); const {pulseUpdate}=await import('../server/pulse.js');
+  const s=new Store(':memory:'), now=new Date(), iso=new Date(now.getTime()-3600e3).toISOString();
+  s.setDoc('portfolio/main',{positions:[{sym:'JPM',qty:10,cost:100}]},{silent:true}); s.setDoc('quotes/latest',{prices:{JPM:200},usdIls:3.7,updatedAt:now.toISOString()},{silent:true});
+  const A={title:'JPMorgan names new head of payments unit',pub:'Reuters',link:'https://x/jpm1',at:iso,syms:['JPM'],seen:iso}, B={title:'Coca-Cola raises dividend',pub:'AP',link:'https://x/ko1',at:iso,syms:['KO'],seen:iso};
+  const ia=newsId(A.link), ib=newsId(B.link);
+  s.setDoc('research/news',{items:[A,B],updatedAt:iso},{silent:true}); s.setDoc('research/newsx',{by:{[ia]:{...ruleRead(A),at:iso},[ib]:{...ruleRead(B),at:iso}},gen:[],updatedAt:iso},{silent:true});
+  // before: an alert from the headline alone, with the article's own headline as its title
+  let P=pulseUpdate(s,null,{now}).doc.items; const r0=P.find(a=>(a.arts||[]).some(z=>z.id===ia));
+  assert.ok(r0&&r0.rules&&r0.title==='JPMorgan names new head of payments unit',JSON.stringify(P.map(a=>[a.k,a.title,a.rules])));
+  const asked=[]; const ask=async prompt=>{asked.push(prompt); return JSON.stringify([{i:0,he:'ג׳יי.פי מורגן מינתה ראש חדש לתחום התשלומים',what:'הבנק מינה מנהל חדש ליחידת התשלומים.',type:'management',level:'imp',dir:'unclear',cert:'fact',kind:'news',
+    aff:[{sym:'JPM',how:'direct',dir:'unclear',why:'המינוי בבנק עצמו'}],sectors:['Finance'],themes:[],regions:['us'],occ:null,fac:[],secx:[],macro:false,unknown:'מה ישתנה ביחידה.',more:'',ev:'jpm-payments-head'}])};
+  // a partner who holds KO only may not have JPM's article read; bad ids are dropped
+  const vis=a=>(a.syms||[]).includes('KO'); const p0=await newsxReadNow(s,[ia,'../x','zz'],{visible:vis,ask,now}); assert.equal(p0.read,0); assert.equal(asked.length,0);
+  const r=await newsxReadNow(s,[ia,ia],{ask,now}); assert.equal(r.read,1); assert.equal(asked.length,1); assert.match(asked[0],/JPMorgan names new head/);
+  const x=s.getDoc('research/newsx').data.by[ia]; assert.equal(x.he,'ג׳יי.פי מורגן מינתה ראש חדש לתחום התשלומים'); assert.ok(!x.rules); assert.equal(x.ev,'jpm-payments-head');
+  assert.equal((await newsxReadNow(s,[ia],{ask,now})).read,0,'read already: nothing again'); assert.equal(asked.length,1);
+  // after: one alert, the read one, in Hebrew; the headline-only one gone
+  P=pulseUpdate(s,null,{now}).doc.items; const on=P.filter(a=>(a.arts||[]).some(z=>z.id===ia)||a.k===r0.k);
+  assert.equal(on.length,1,JSON.stringify(on.map(a=>[a.k,a.title]))); assert.equal(on[0].title,'ג׳יי.פי מורגן מינתה ראש חדש לתחום התשלומים'); assert.ok(!on[0].rules);
+  // the daily cap
+  s.setDoc('research/newsx',{...s.getDoc('research/newsx').data,by:{...s.getDoc('research/newsx').data.by,[ib]:{...ruleRead(B),at:iso}}},{silent:true});
+  assert.ok((await newsxReadNow(s,[ib],{ask,now,dayCap:1})).cap,'the day\'s cap');
+});
+
 test('pulse: levels by rules from importance, relevance and confidence; one alert per event; material developments; the person\'s preferences; partners apart',async()=>{
   const {pulseUpdate,pulseCompute,material,inQuiet,pulsePrefs,levelOf,_setSectors,holdingsOf}=await import('../server/pulse.js'); const {newsId}=await import('../server/newsx.js');
   _setSectors({NVDA:'Technology',XOM:'Energy',CVX:'Energy',KO:'Consumer Staples',JPM:'Finance'});

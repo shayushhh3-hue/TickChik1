@@ -155,6 +155,8 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   // 29.10: every reading goes to the archive (the less important ones are not shown, but kept: with what the share did
   // after, they are the record a future model can learn from), then the shares' moves after the older ones
   let arc=null; try{arc=newsArchive(store,news.concat([...gen.values()]).filter(a=>by[a.id]).map(a=>({a,x:by[a.id]})),{now}); arcOutcomes(store,{now}); arc={...arc,...arcStats(store,{now})}; st.arc=arc}catch(e){st.first=st.first||'archive: '+e.message}
+  // 30.10: a reading made meanwhile on someone's request (newsxReadNow) is kept, not written over by this run's older copy
+  {const cur=store.getDoc(NEWSX_DOC).data||{}; for(const [k,v] of Object.entries(cur.by||{}))if(v&&!v.rules&&(!by[k]||by[k].rules))by[k]=v}
   // keep a week on the page: an analysis whose article is gone goes too
   const live=new Set(news.map(a=>a.id).concat([...gen.values()].map(a=>a.id)));
   for(const id of Object.keys(by))if(!live.has(id))delete by[id];
@@ -165,6 +167,30 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   store.setMeta('newsxStatus',JSON.stringify(S));
   log(`newsx: ${st.read} articles read in ${st.batches} batches, ${st.gen} general new, ${S.waiting} waiting${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
   return S;
+}
+
+// ---- 30.10: reading now, for the articles on someone's screen that צ׳יקו has not read yet: the Hebrew and the way to
+// the holdings within seconds, not at the next run. One at a time for the whole server, twelve articles a call at most,
+// a daily cap, and only articles the asker may see ----
+let NOW_BUSY=false;
+export async function newsxReadNow(store,ids,{visible=null,ask=null,fetch:f=globalThis.fetch,log=()=>{},now=new Date(),dayCap=+process.env.NEWS_NOW_CAP||500}={}){
+  if(!process.env.ANTHROPIC_API_KEY&&!ask)return {read:0,off:true};
+  const want=[...new Set((Array.isArray(ids)?ids:[]).map(String).filter(x=>/^[a-f0-9]{12}$/.test(x)))].slice(0,12); if(!want.length)return {read:0};
+  if(NOW_BUSY)return {read:0,busy:true};
+  const day=now.toISOString().slice(0,10), used=+(store.getMeta('newsxNow:'+day)||0); if(used>=dayCap)return {read:0,cap:true};
+  const D=store.getDoc(NEWSX_DOC).data||{}, by=D.by||{}, arts=new Map();
+  for(const it of ((store.getDoc('research/news').data||{}).items||[]))if(it&&it.link){const id=newsId(it.link); arts.set(id,{...it,id,src:'co'})}
+  for(const it of (D.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
+  const todo=want.map(id=>arts.get(id)).filter(a=>a&&(!by[a.id]||by[a.id].rules)&&(!visible||visible(a))).slice(0,dayCap-used);
+  if(!todo.length)return {read:0,none:true};
+  NOW_BUSY=true;
+  try{const got=await analyzeBatch(todo,{fetch:f,log,ask,known:knownEvents(by,{now})}); if(!got)return {read:0,fail:true};
+    // written on the document as it is now (a run may have written it meanwhile)
+    const cur=store.getDoc(NEWSX_DOC).data||{}, B={...(cur.by||{})}, atOf=new Map([...arts.values()].map(a=>[a.id,a.at||a.seen||now.toISOString()])); let n=0;
+    for(const [i,x] of Object.entries(got)){const a=todo[+i]; if(a){B[a.id]=unifyEv(x,a,B,atOf); n++}}
+    if(n){store.setDoc(NEWSX_DOC,{...cur,by:B,updatedAt:now.toISOString()}); store.setMeta('newsxNow:'+day,String(used+n))}
+    log(`newsx now: ${n} of ${todo.length} read`); return {read:n,ids:todo.map(a=>a.id)}}
+  finally{NOW_BUSY=false}
 }
 
 // ---- 30.10: "מה קורה בשווקים": a few lines by צ׳יקו on the day's main events, from the general news only (so nothing of

@@ -46,7 +46,7 @@ export const SCHEDULE=[
   // owner's "read now" and a catch-up a quarter of an hour later
   // 30.10: and after each reading, everyone's personal alerts (server/pulse.js), so the alert center is current
   {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o); pulseTask(s,o)}},
-  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%30===25, run:async(s,o)=>{await newsxTask(s,o); pulseTask(s,o)}},
+  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%10===5, run:async(s,o)=>{await newsxTask(s,o); pulseTask(s,o)}},
   // 29.10: what investors post on X about the securities (with a token that may read), twice a day, before the readings
   {name:'x',       when:p=>(p.h===9||p.h===17)&&p.min===15, run:(s,o)=>xTask(s,{...o,newsSyms})},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},

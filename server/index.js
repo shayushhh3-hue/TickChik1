@@ -8,7 +8,9 @@ import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
-import {Store, canRead, canWrite, partnerView, ownerLike} from './store.js';
+import {Store, canRead, canWrite, partnerView, ownerLike, symsOfUser} from './store.js';
+import {newsxReadNow} from './newsx.js';
+import {pulseTask} from './pulse.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
@@ -391,6 +393,13 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(rsOneBusy)return res.status(429).json({error:'עדכון אחר רץ כרגע, נסה שוב בעוד רגע'});
     try{RSONE.set(k,Date.now()); rsOneBusy=researchTask(store,{only:[k],pause:0,budgetMs:60e3,log}); const st=await rsOneBusy; res.json({ok:st.ok>0,reports:st.reports||0,first:st.first||null})}
     catch(e){res.status(502).json({error:String(e&&e.message||e)})}finally{rsOneBusy=null}});
+  // 30.10: the articles on the asker's screen that צ׳יקו has not read yet, read now: the Hebrew, and how they may reach
+  // the holdings. Once in ten seconds a person; a partner only the articles of their own securities and the general ones
+  const NXNOW=new Map();
+  app.post('/api/newsx/read',needUser,async(req,res)=>{const u=req.user, last=NXNOW.get(u.id)||0; if(Date.now()-last<10e3)return res.status(429).json({error:{code:'rate_limited',message:'הקריאה הקודמת עוד רצה'}});
+    NXNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
+    try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read)try{pulseTask(store,{log})}catch(e){} res.json(r)}
+    catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
   app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
     const c=NEWS.get(k); if(c&&Date.now()-c.at<30*60e3)return res.json({items:c.items,cached:true});
     try{const map=((store.getDoc('settings/main').data)||{}).symMap||{}; const items=await newsFor(rsTick(k,map)); NEWS.set(k,{at:Date.now(),items}); if(NEWS.size>300)NEWS.delete(NEWS.keys().next().value); res.json({items})}

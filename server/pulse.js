@@ -205,6 +205,10 @@ const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוו�
 export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   const pa=pathsOf(u), iso=now.toISOString(), old=store.getDoc(pa.pulse), D=old.exists&&old.data?old.data:{items:[]};
   const C=pulseCompute(store,u,{now}), byK=new Map((D.items||[]).map(a=>[a.k,a])), fresh=[];
+  // 30.10: an alert made from the rules' reading whose article צ׳יקו has read since, under the event's own key: the read
+  // one takes its place (not two alerts on the same article)
+  {const artK=new Map(); for(const c of C.alerts)if(!c.rules)for(const z of (c.arts||[]))artK.set(z.id,c.k);
+    for(const o of (D.items||[]))if(o&&o.rules&&(o.arts||[]).some(z=>artK.has(z.id)&&artK.get(z.id)!==o.k))byK.delete(o.k)}
   for(const c of C.alerts){const o=byK.get(c.k);
     if(!o){const a={...c,at:iso,up:iso,ver:1,hist:[{at:iso,lv:c.lv,dir:c.dir,why:'new',t:WHY_HE.new}]}; byK.set(c.k,a); fresh.push(a); continue}
     const why=material(o,c), a={...o,...c,lv:LV3[c.lv]>=LV3[o.lv]?c.lv:o.lv,lvWhy:LV3[c.lv]>=LV3[o.lv]?c.lvWhy:o.lvWhy,at:o.at,up:o.up,ver:o.ver||1,hist:o.hist||[]};

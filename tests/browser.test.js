@@ -60,7 +60,9 @@ before(async()=>{
     if(J.stream){await new Promise(r=>setTimeout(r,p.includes('SLOWCHECK')?4000:1500));
       if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
       stream(readOut(false),'end_turn'); return}
-    const text=p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
+    const text=p.includes('ARTICLES')&&p.includes('JPMorgan names new head')?JSON.stringify([{i:0,he:'ג׳יי.פי מורגן מינתה ראש חדש ליחידת התשלומים',what:'הבנק מינה מנהל חדש ליחידת התשלומים שלו.',type:'management',level:'imp',dir:'pos',cert:'fact',kind:'news',
+        aff:[{sym:'JPM',how:'direct',dir:'pos',why:'מינוי בהנהלה של הבנק עצמו'}],sectors:['Finance'],themes:[],regions:['us'],occ:null,fac:[],secx:[{g:'Finance',via:null,dir:'unclear',why:'מינוי פנימי בבנק אחד'}],macro:false,unknown:'מה ישתנה ביחידה בפועל.',more:'',ev:'jpm-payments-head'}])
+      :p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
       :p.includes('הסבר את התיק שלי')?JSON.stringify({summary:'בתיק 12 ניירות, ורובו בטכנולוגיה. התיק מאוזן היטב. שלושת הגדולים הם 39.5% ממנו.'}):'{"answer":""}';
     res.writeHead(200,{'content-type':'application/json'}); res.end(JSON.stringify({id:'m',type:'message',content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1}}))});
   await new Promise(r=>claude.listen(0,'127.0.0.1',r));
@@ -717,6 +719,28 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     {const {ctx,pg}=await open(390,{who:'p2'}); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400); await pg.click('[data-ixall]'); await pg.waitForTimeout(200);
       const L=await pg.evaluate(()=>({t:[...document.querySelectorAll('#plList .pl h3')].map(h=>h.textContent),raw:JSON.stringify(window.__nx.pulse()||{})}));
       assert.ok(L.t.some(x=>/קוקה-קולה/.test(x)),JSON.stringify(L.t)); assert.ok(!/NVDA|MSFT/.test(L.raw),'nothing of the owner\'s holdings'); assert.deepEqual(pg.errs,[]); await ctx.close()}
+  }finally{rtRestore(N0,X0,ST0,PU0)}
+});
+
+test('the news in Hebrew at once: an article on the screen that צ׳יקו has not read is read now, and its card and its alert say in Hebrew how it may touch the holding',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
+  const D=await rtData(), {ruleRead,newsId}=await import('../server/newsx.js'), J={title:'JPMorgan names new head of payments unit',pub:'Reuters',link:'https://x/jpmnow',at:D.iso(1),syms:['JPM'],seen:D.iso(1)}, jid=newsId(J.link);
+  D.items.push(J); D.by[jid]={...ruleRead(J),at:D.iso(1)}; await rtSet(D);
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForTimeout(300); await pg.click('#nxViews [data-nxv="latest"]');
+    const sel=`#newsFeed .nwc[data-nid="${jid}"]`;
+    // no English headline on the card, ever: a Hebrew line while it is read, then the reading
+    const t0=await pg.evaluate(s=>{const c=document.querySelector(s); return c?(c.querySelector('h3')||c.querySelector('.nw-cs b')).textContent:''},sel);
+    assert.ok(!/JPMorgan names/.test(t0),'not the English headline: '+t0);
+    await pg.waitForFunction(s=>{const c=document.querySelector(s); return c&&/ג׳יי\.פי מורגן מינתה/.test(c.textContent)},sel,{timeout:25000});
+    const c=await pg.evaluate(s=>{const c=document.querySelector(s), d=c.querySelector('details.nw-cd'); if(d)d.open=true; return c.innerText.replace(/\s+/g,' ')},sel);
+    assert.match(c,/על מי זה משפיע, ולמה/); assert.match(c,/JPM בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/); assert.ok(seen.some(p=>p.includes('ARTICLES')&&p.includes('JPMorgan names new head')),'read on the server');
+    // the alert: the read one, in Hebrew, in place of the one from the headline alone
+    await pg.waitForFunction(id=>((window.__nx.pulse()||{}).items||[]).some(a=>(a.arts||[]).some(z=>z.id===id)&&!a.rules),jid,{timeout:15000});
+    const al=await pg.evaluate(id=>((window.__nx.pulse()||{}).items||[]).filter(a=>(a.arts||[]).some(z=>z.id===id)).map(a=>({t:a.title,r:!!a.rules})),jid);
+    assert.deepEqual(al,[{t:'ג׳יי.פי מורגן מינתה ראש חדש ליחידת התשלומים',r:false}]);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{rtRestore(N0,X0,ST0,PU0)}
 });
 
