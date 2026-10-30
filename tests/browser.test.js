@@ -551,6 +551,13 @@ test('חיבור למציאות, the news: its own product with search, categori
     // "עוד": read, the history, the reasons; follow a topic; save
     await pg.click('#nxViews [data-nxv="latest"]'); await pg.waitForTimeout(200);
     const nv=`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"]`;
+    // who this may touch and why: on the card itself, the holdings first, each a chain in words
+    const imp=await pg.evaluate(s=>{const b=document.querySelector(s+' .nwi'); return b?{hd:b.querySelector('.nwi-hd').textContent.replace(/\s+/g,' '),rows:[...b.querySelectorAll('.nwi-r>summary')].map(x=>x.innerText.replace(/\s+/g,' ').trim())}:null},nv);
+    assert.ok(imp,'the block is there'); assert.match(imp.hd,/על מי זה משפיע, ולמה.*נוגע ב-NVDA/); assert.match(imp.rows[0],/NVDA בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/,JSON.stringify(imp.rows));
+    assert.ok(imp.rows.some(r=>/MSFT .*לקוחה .*השפעה מעורבת/.test(r)),JSON.stringify(imp.rows));
+    await pg.click(nv+' .nwi-r>summary'); await pg.waitForTimeout(150);
+    assert.deepEqual(await pg.evaluate(s=>[...document.querySelectorAll(s+' .nwi-r[open] .chn-k')].map(x=>x.textContent),nv),['מה קרה','החברה','ההחזקה שלך']);
+    assert.match(await pg.evaluate(s=>document.querySelector(s+' .nwi-r[open] .chn-bl').innerText.replace(/\s+/g,' '),nv),/בשורה התחתונה: NVDA ▲ עשויה ליהנות מזה.*הידיעה עצמה דווחה כעובדה/);
     await pg.click(nv+' details.nw-more>summary'); await pg.waitForTimeout(200);
     const more=await pg.evaluate(s=>document.querySelector(s+' details.nw-more').textContent.replace(/\s+/g,' '),nv);
     assert.match(more,/מה לא ידוע: איך השוק יגיב\./); assert.match(more,/גורמים כלכליים: שבבים ↑ \(ביקוש גבוה לשבבי AI\)/); assert.match(more,/עוד על אותו אירוע: CNBC/); assert.match(more,/לתיק שלך:/);
@@ -731,6 +738,15 @@ test('the impact map: opened from an article and from an alert; the chain with a
     assert.match(p,/קשר ישיר/); assert.match(p,/ידוע: הקשר עצמו דווח/); assert.match(p,/ביטחון גבוה/);
     await pg.evaluate(()=>window.__im.sel('c:NVDA>h:NVDA')); await pg.waitForTimeout(150); p=await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' '));
     assert.match(p,/עובדה מהתיק שלך/); assert.match(p,/אתה מחזיק NVDA: [\d.]+% מהתיק/);
+    assert.match(p,/זו ההחזקה שלך ב-NVDA/,'the link in one plain sentence');
+    // the chain in words: a holding chosen lights its own ways and says them step by step; the links carry their signs
+    await pg.evaluate(()=>window.__im.sel('h:MSFT')); await pg.waitForTimeout(250);
+    const sw=await pg.evaluate(()=>({p:document.getElementById('imP').textContent.replace(/\s+/g,' '),k:[...document.querySelectorAll('#imP .chn-k')].map(x=>x.textContent),dim:document.querySelectorAll('#imG .imn.dim').length,b:[...document.querySelectorAll('#imG .imb text')].map(x=>x.textContent)}));
+    assert.match(sw.p,/איך זה מגיע ל-MSFT, צעד אחר צעד/); assert.deepEqual(sw.k.slice(0,5),['מה קרה','מה זה עשוי להזיז','הענף','החברה','ההחזקה שלך'],JSON.stringify(sw.k)); assert.match(sw.p,/בשורה התחתונה: MSFT/);
+    assert.ok(sw.dim>0,'the other points dimmed'); assert.ok(sw.b.includes('▲')&&sw.b.includes('↑'),'the signs on the links: '+JSON.stringify(sw.b));
+    await pg.evaluate(()=>window.__im.sel('ev:nvda-q3-report')); await pg.waitForTimeout(200);
+    assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' ')),/מה זה אומר למניות שלך.*NVDA.*עשויה ליהנות מזה/);
+    await pg.click('#imP .imp-hr'); await pg.waitForTimeout(200); assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' ')),/צעד אחר צעד/);
     // a tap on a point; focus; the filters
     const box=await pg.evaluate(()=>{const r=document.querySelector('#imG [data-imn="s:Technology"] rect').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}});
     await pg.mouse.click(box.x,box.y); await pg.waitForTimeout(250); assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent),/ענף.*בתיק שלך: [\d.]+% בענף/s);
