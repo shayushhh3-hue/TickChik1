@@ -2039,6 +2039,79 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
 .nw-brief ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.55} .nw-bm{margin:0;font-size:13.5px;color:var(--ink2)} .nw-brief .lnk{min-height:24px}
+/* 30.10: TikChik Impact: the head with the period, four figures, three columns on a wide screen (the alerts, the round
+   map with the line of time under it, צ׳יקו), one under the other on a phone */
+.ix{gap:14px;container-type:inline-size;container-name:ix}
+.ix-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.ix-title{display:flex;align-items:center;gap:12px} .ix-title b{display:block;font-size:24px;font-weight:800;letter-spacing:-.01em;line-height:1.1} .ix-title span{display:block;font-size:13.5px;color:var(--ink2)}
+.ix-logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--grad,var(--accent));box-shadow:0 6px 18px rgb(124 58 237 / .35);flex:none}
+.ix-logo svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ix-range{display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);overflow-x:auto;scrollbar-width:none;max-width:100%} .ix-range::-webkit-scrollbar{display:none}
+.ix-range button{flex:none;font:inherit;font-size:13px;font-weight:700;color:var(--ink2);background:transparent;border:0;border-radius:999px;padding:0 12px;min-height:34px;cursor:pointer;white-space:nowrap}
+.ix-range button[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
+.ix-note{padding:12px 14px;border-radius:14px;border:1px solid rgb(124 58 237 / .3);background:rgb(124 58 237 / .07);font-size:14px;line-height:1.6} .ix-note[hidden]{display:none}
+.ix-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .ix-kpis[hidden]{display:none}
+@container ix (min-width:700px){.ix-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@container ix (max-width:699px){.ix-k{flex-direction:column;align-items:flex-start;gap:6px} .ix-ki{width:34px;height:34px;border-radius:10px} .ix-ki svg{width:20px;height:20px}}
+.ix-k{display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0;position:relative;overflow:hidden}
+.ix-k>div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.ix-ki{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none} .ix-ki svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.k-rel .ix-ki{background:rgb(20 184 166 / .14);color:#0D9488} .k-hold .ix-ki{background:rgb(34 197 94 / .14);color:#16A34A} .k-al .ix-ki{background:rgb(239 68 68 / .13);color:#DC2626} .k-ev .ix-ki{background:rgb(99 102 241 / .15);color:#4F46E5}
+.k-al{border-color:rgb(239 68 68 / .3)} .k-hold{border-color:rgb(34 197 94 / .25)} .k-ev{border-color:rgb(99 102 241 / .3)}
+html[data-theme="dark"] .k-rel .ix-ki{color:#5EEAD4} html[data-theme="dark"] .k-hold .ix-ki{color:#86EFAC} html[data-theme="dark"] .k-al .ix-ki{color:#FCA5A5} html[data-theme="dark"] .k-ev .ix-ki{color:#A5B4FC}
+.ix-kv{font-size:26px;font-weight:800;line-height:1.1} .ix-kl{font-size:13px;color:var(--ink2);font-weight:600} .ix-ks{font-size:11.5px;color:var(--muted);line-height:1.35}
+.ix-kv.rel-high{color:#16A34A} .ix-kv.rel-mid{color:#D97706} .ix-kv.rel-low{color:#2563EB} .ix-kv.rel-none{color:var(--muted)} .k-rel .ix-kv{font-size:20px}
+html[data-theme="dark"] .ix-kv.rel-high{color:#4ADE80} html[data-theme="dark"] .ix-kv.rel-mid{color:#FBBF24} html[data-theme="dark"] .ix-kv.rel-low{color:#93C5FD}
+.ix-bar{display:block;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin:4px 0 2px} .ix-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#14B8A6,#22C55E)}
+.ix-sp{width:100%;height:24px;margin-top:4px} .ix-sp path{fill:none;stroke:#6366F1;stroke-width:2;vector-effect:non-scaling-stroke}
+.ix-grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
+@container ix (min-width:760px){.ix-grid{grid-template-columns:minmax(270px,320px) minmax(0,1fr)} .ix-ch2{grid-column:1/-1}}
+@container ix (min-width:1240px){.ix-grid{grid-template-columns:minmax(290px,330px) minmax(0,1fr) minmax(240px,280px)} .ix-ch2{grid-column:auto}}
+.ix-col{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0}
+.ix-ch{display:flex;align-items:center;justify-content:space-between;gap:8px} .ix-ch h3{margin:0;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+.ix-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#DC2626;color:#fff;font-size:12px;font-weight:800} .ix-n[hidden]{display:none}
+.ix-ch .lnk{min-height:24px;display:inline-flex;align-items:center}
+.ix-alist{display:flex;flex-direction:column;gap:10px}
+.ix-a{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:16px;border:1px solid var(--line);background:var(--bg,var(--sunk));cursor:pointer;border-inline-start:4px solid #6366F1}
+.ix-a.lv-crit{border-inline-start-color:#DC2626;background:linear-gradient(90deg,transparent,rgb(239 68 68 / .06))} .ix-a.lv-imp{border-inline-start-color:#D97706;background:linear-gradient(90deg,transparent,rgb(245 158 11 / .06))} .ix-a:not(.un){opacity:.8}
+.ix-a:hover{border-color:#A78BFA} .ix-a h4{margin:0;font-size:15px;line-height:1.4}
+.ix-at{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)} .ix-t{margin-inline-start:auto}
+.ix-x{width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer} .ix-x:hover{background:var(--sunk);color:var(--ink)}
+.ix-af{margin:0;font-size:13px;color:var(--ink2)} .ix-rel{margin:0;font-size:13px;display:flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#94A3B8} .dot.rel-high{background:#22C55E} .dot.rel-mid{background:#F59E0B} .dot.rel-low{background:#60A5FA}
+.ix-ab{display:flex;flex-wrap:wrap;gap:6px} .ix-ab .btn{min-height:36px} .ix-more{align-self:center}
+.ix-views{display:flex;gap:6px;flex-wrap:wrap} .ix-views [role="tab"]{font:inherit;font-size:13px;font-weight:700;padding:0 14px;min-height:34px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
+.ix-views [aria-selected="true"]{background:rgb(124 58 237 / .14);border-color:#8B5CF6;color:var(--vio-ink)}
+.ix-exp{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;display:grid;place-items:center} .ix-exp svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.ix-cv{position:relative;border-radius:16px;overflow:hidden;touch-action:pan-y;background:radial-gradient(circle at 50% 50%,rgb(124 58 237 / .14),transparent 62%),radial-gradient(circle at 1px 1px,var(--line) 1px,transparent 0) 0 0/20px 20px;aspect-ratio:760/540;max-height:560px;cursor:grab} .ix-cv.narrow{aspect-ratio:420/520;max-height:none}
+html[data-theme="dark"] .ix-cv{background:radial-gradient(circle at 50% 50%,rgb(124 58 237 / .28),transparent 60%),radial-gradient(circle at 1px 1px,rgb(148 163 184 / .14) 1px,transparent 0) 0 0/20px 20px,#0B1024}
+.ix-cv svg{width:100%;height:100%;display:block}
+#ixG .ixn{cursor:pointer} #ixG .ixn:focus{outline:none} #ixG .ixn:focus-visible .ixc,#ixG .ixn.sel .ixc{stroke:#fff;stroke-width:3} #ixG .ixi{fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#ixG .ixls{pointer-events:none} #ixG .ixl{font-size:12.5px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg,#fff);stroke-width:3px} #ixG .ixl.b{font-size:15px;font-weight:800}
+html[data-theme="dark"] #ixG .ixl{stroke:#0B1024} #ixG .ix-e{opacity:.75}
+.ix-leg{position:absolute;inset-inline-start:10px;bottom:10px;display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink2);background:rgb(255 255 255 / .6);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px)}
+html[data-theme="dark"] .ix-leg{background:rgb(11 16 36 / .6)} .ix-leg span{display:flex;align-items:center;gap:6px} .ix-leg i{width:9px;height:9px;border-radius:50%}
+.ix-z{position:absolute;inset-inline-end:10px;bottom:10px;display:flex;flex-direction:column;gap:6px} .ix-cv.narrow .ix-z{top:8px;bottom:auto} .ix-cv.narrow .ix-z button{width:32px;height:32px;font-size:16px}
+.ix-cv.narrow .ix-leg{flex-direction:row;flex-wrap:wrap;inset-inline:8px;bottom:8px;justify-content:center;gap:4px 10px} .ix-z button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.ix-empty{position:absolute;inset:auto 12px 50% 12px;transform:translateY(50%);text-align:center;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:14px} .ix-empty[hidden]{display:none}
+.ix-tip{position:relative;padding:12px 14px;border-radius:14px;background:var(--bg,var(--sunk));border:1px solid var(--line);font-size:13.5px;display:flex;flex-direction:column;gap:6px} .ix-tip[hidden]{display:none} .ix-tip p{margin:0;color:var(--ink2);line-height:1.5}
+.ix-tip b{padding-inline-end:30px} .ix-tx{position:absolute;top:6px;inset-inline-end:6px;width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}
+.ix-tlw{display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px solid var(--line)}
+.ix-tl{list-style:none;margin:0;padding:6px 0 0;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;position:relative} .ix-tl::-webkit-scrollbar{display:none}
+.ix-tl::before{content:"";position:absolute;inset-inline:12px;top:15px;height:2px;background:linear-gradient(90deg,rgb(124 58 237 / .2),#8B5CF6,rgb(124 58 237 / .2))}
+.ix-tl li{flex:1 0 110px;min-width:110px;position:relative} .ix-tl button{width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;font:inherit;color:var(--ink);background:transparent;border:0;cursor:pointer;padding:0 4px}
+.ix-tl i{width:14px;height:14px;border-radius:50%;background:#6366F1;box-shadow:0 0 0 4px var(--surface),0 0 0 6px rgb(99 102 241 / .3);margin:3px 0 4px} .ix-tl .lv-crit i{background:#DC2626;box-shadow:0 0 0 4px var(--surface),0 0 0 6px rgb(220 38 38 / .3)} .ix-tl .lv-imp i{background:#F59E0B;box-shadow:0 0 0 4px var(--surface),0 0 0 6px rgb(245 158 11 / .3)}
+.ix-tl b{font-size:12.5px} .ix-tl span{font-size:12px;color:var(--ink2);line-height:1.35} .ix-tl small{font-size:11px;color:var(--vio-ink);font-weight:700}
+.ix-ch2{gap:12px;background:linear-gradient(180deg,rgb(124 58 237 / .1),transparent 45%),var(--surface)}
+.ix-me{display:flex;flex-direction:column;align-items:center;gap:10px} .ix-av{width:96px!important;height:96px!important;box-shadow:0 0 0 4px rgb(124 58 237 / .25),0 10px 30px rgb(124 58 237 / .3)}
+.ix-bub{position:relative;padding:12px 14px;border-radius:16px;background:var(--bg,var(--sunk));border:1px solid var(--line);font-size:15px;font-weight:700;text-align:center;width:100%} .ix-bub small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+.ix-qs{display:flex;flex-direction:column;gap:8px} .ix-on{margin:0;font-size:12.5px;color:var(--ink2)} .ix-on .lnk{min-height:24px}
+.ix-q{font:inherit;font-size:13.5px;font-weight:600;text-align:start;padding:10px 12px;border-radius:14px;border:1px solid rgb(124 58 237 / .3);background:rgb(124 58 237 / .08);color:var(--ink);cursor:pointer;min-height:44px} .ix-q:hover{border-color:#8B5CF6}
+.ix-in{display:flex;gap:6px;align-items:center;padding:4px;border-radius:999px;border:1px solid var(--line);background:var(--bg,var(--sunk))} .ix-in input{flex:1;min-width:0;font:inherit;font-size:14px;border:0;background:transparent;color:var(--ink);padding:8px 10px}
+.ix-in input:focus{outline:none} .ix-in:focus-within{outline:2px solid var(--focus)} .ix-in button{width:38px;height:38px;border-radius:50%;border:0;background:var(--grad,var(--accent));cursor:pointer;display:grid;place-items:center} .ix-in button svg{width:18px;height:18px;fill:#fff;transform:scaleX(-1)}
+@container ix (max-width:1239px){.ix-me{flex-direction:row} .ix-av{width:56px!important;height:56px!important} .ix-bub{text-align:start} .ix-qs{flex-direction:row;flex-wrap:wrap} .ix-q{flex:1 1 200px}}
+@media (max-width:520px){.ix-title b{font-size:21px} .ix-k{padding:12px;gap:10px} .ix-ki{width:36px;height:36px} .ix-kv{font-size:22px} .ix-col{padding:12px;border-radius:18px} .ix-leg{font-size:10.5px}}
+.ix-hide{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* the alert center */
 .pl-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;color:var(--ink2)} .pl-head:empty{display:none}
 #plLv{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} #plLv::-webkit-scrollbar{display:none} #plLv .chip{flex:none}
@@ -2821,12 +2894,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   <div class="pane" data-pane="news" hidden>
     <section aria-labelledby="hNewsT" class="nxsec">
       <div class="row"><h2 id="hNewsT">חיבור למציאות</h2><span class="sub" id="newsFresh"></span></div>
-      <div class="mk-row" id="mktRow" role="group" aria-label="השווקים עכשיו" hidden></div>
       <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
-        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="true" aria-controls="rtNews">מערכת חדשות</button>
-        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="false" aria-controls="rtAl" tabindex="-1">התראות אישיות <span class="rt-n" id="rtAlN" hidden></span></button>
+        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">TikChik Impact <span class="rt-n" id="rtAlN" hidden></span></button>
+        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">שוק וחדשות</button>
       </div>
-      <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews">
+      <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews" hidden>
+        <div class="mk-row" id="mktRow" role="group" aria-label="השווקים עכשיו" hidden></div>
         <div class="nw-search"><label class="vh" for="nxQ">חיפוש בחדשות</label><input type="search" id="nxQ" placeholder="חיפוש: חברה, סימול, ענף, מדינה, נושא או אירוע" autocomplete="off" enterkeyhint="search"><button type="button" class="btn sm" id="nxFiltBtn" aria-expanded="false" aria-controls="nxFilt">סינון <span id="nxFiltN"></span></button></div>
         <div class="nw-filt panel" id="nxFilt" hidden>
           <div class="nw-fg"><label for="nwRange">זמן</label><select id="nwRange"></select></div>
@@ -2848,8 +2921,37 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <p class="note" id="nxStat" hidden></p>
         <p class="note" id="nxNote">חדשות ממקורות חיצוניים (Finnhub, Yahoo Finance; פוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת), נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
       </div>
-      <div id="rtAl" class="rt-p" role="tabpanel" aria-labelledby="rtTabAl" hidden>
-        <div class="pl-head" id="plHead"></div>
+      <div id="rtAl" class="rt-p ix" role="tabpanel" aria-labelledby="rtTabAl" hidden>
+        <div class="ix-head">
+          <div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><b>TikChik Impact</b><span>הדופק של תיק ההשקעות שלך</span></div></div>
+          <div class="ix-range" id="ixRange" role="group" aria-label="תקופה"><button type="button" data-ixr="1" aria-pressed="false">24 שעות</button><button type="button" data-ixr="7" aria-pressed="true">7 ימים</button><button type="button" data-ixr="30" aria-pressed="false">30 ימים</button><button type="button" data-ixr="90" aria-pressed="false">90 ימים</button><button type="button" data-ixr="all" aria-pressed="false">כל התקופה</button></div>
+        </div>
+        <div class="ix-note" id="ixNote" hidden></div>
+        <div id="ixBody">
+          <div class="ix-kpis" id="ixKpis" hidden></div>
+          <div class="ix-grid">
+            <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">ההתראות האישיות שלך <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
+            <section class="ix-col ix-map" id="ixMap" aria-labelledby="ixMapH">
+              <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><button type="button" class="ix-exp" id="ixExp" aria-label="למפה המלאה, עם ההסבר לכל קשר"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+              <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button><button type="button" role="tab" data-ixv="world" aria-selected="false">עולם</button></div>
+              <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
+                <div class="ix-leg" aria-hidden="true"><span><i style="background:#EF4444"></i>אירוע</span><span><i style="background:#22C55E"></i>גורם כלכלי</span><span><i style="background:#3B82F6"></i>ענף</span><span><i style="background:#F59E0B"></i>חברה</span><span><i style="background:#8B5CF6"></i>החזקה בתיק</span></div>
+                <div class="ix-z" role="group" aria-label="הגדלה והקטנה"><button type="button" id="ixZin" aria-label="הגדלה">+</button><button type="button" id="ixZout" aria-label="הקטנה">−</button><button type="button" id="ixFit" aria-label="חזרה לגודל המקורי">⤢</button></div>
+                <div class="ix-empty" id="ixEmpty" hidden></div></div>
+              <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
+              <div class="ix-tlw"><div class="ix-ch"><h3>ציר זמן של אירועים ועדכונים</h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div id="ixTl"></div></div>
+            </section>
+            <section class="ix-col ix-ch2" aria-labelledby="ixChH"><h3 class="vh" id="ixChH">צ׳יקו</h3>
+              <div class="ix-me"><span class="chiko ix-av" aria-hidden="true"></span><div class="ix-bub">היי! איך אוכל לעזור?<small>שאל על ההתראות, על מפת ההשפעה או על התיק</small></div></div>
+              <div class="ix-qs" id="ixQs"></div>
+              <form class="ix-in" id="ixForm"><label class="vh" for="ixQ">שאלה לצ׳יקו</label><input id="ixQ" maxlength="300" placeholder="שאל את צ׳יקו..." autocomplete="off"><button type="submit" aria-label="שליחה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12L4 4l3 8-3 8z"/></svg></button></form>
+              <p class="note" style="margin:0">צ׳יקו מסביר מהנתונים שבדף. לא ייעוץ השקעות.</p>
+            </section>
+          </div>
+        </div>
+        <div id="ixFull" hidden>
+          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה ל-Impact</button></div>
+          <div class="pl-head" id="plHead"></div>
         <div class="chips" id="plLv" role="group" aria-label="סינון ההתראות"><button type="button" class="chip" data-plf="all" aria-pressed="true">הכל</button><button type="button" class="chip lv-crit" data-plf="crit" aria-pressed="false">קריטיות</button><button type="button" class="chip lv-imp" data-plf="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-plf="upd" aria-pressed="false">עדכוני תיק</button><button type="button" class="chip" data-plf="unread" aria-pressed="false">לא נקראו</button><button type="button" class="chip" data-plf="saved" aria-pressed="false">שמורות</button></div>
         <div class="pl-list" id="plList"><div class="empty">ההתראות נטענות…</div></div>
         <details class="panel pl-rules"><summary>איך נקבעת התראה, ואיך נקבעת הרמה שלה?</summary>
@@ -2857,6 +2959,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <ul><li><b>קריטית:</b> אירוע קריטי בפני עצמו, שנוגע ישירות לאחזקה משמעותית, והקשר מבוסס. ידיעה או הודעה רשמית בלבד, לא דעה ולא ניתוח.</li><li><b>חשובה:</b> אירוע חשוב עם קשר מוסבר לאחזקות, בביטחון בינוני ומעלה, לא טור דעה.</li><li><b>עדכון תיק:</b> נוגע לתיק, אבל פחות דחוף או פחות ודאי. מופיע כאן בלבד, בלי חלונית ובלי הודעה לטלפון.</li></ul>
           <p>אין התראה רק כי כתבה מעניינת או כי מילה בכותרת מתאימה. כתבות על אותו אירוע מקובצות להתראה אחת, והיא חוזרת רק בהתפתחות מהותית: רמה גבוהה יותר, כיוון שהתהפך, אחזקה נוספת, או מה שהיה הערכה דווח כעובדה. ההתראות נשמרות 30 יום. הרגישות, הרמות, השעות השקטות והתדירות נקבעות בהגדרות ← חדשות והתראות.</p>
         </details>
+        </div>
       </div>
     </section>
   </div>
@@ -19516,7 +19619,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -23098,12 +23201,12 @@ function plClose(){const sh=$('plSheet'); if(sh.hidden)return; for(const k of PL
 // a tap on a notification opens the alerts that wait
 let ST_GO=false; try{ST_GO=new URLSearchParams(location.search).has('st')}catch(e){}
 function stGoOnce(){if(!ST_GO||!PULSE)return; ST_GO=false; try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
-  setTimeout(()=>{try{const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); if(L.length)plOpen(L[0],L); else{showTab('news',true); rtGo('al')}}catch(e){}},400)}
+  setTimeout(()=>{try{const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); if(L.length)plOpen(L[0],L); else{showTab('news',true); IXFULL=true; rtGo('al')}}catch(e){}},400)}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const ic=t.closest('#stBub [data-plk]'); if(ic){const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); plOpen(ic.dataset.plk,L); return}
-  if(t.closest('#stBub [data-plall]')){showTab('news',true); PLF='unread'; rtGo('al'); return}
+  if(t.closest('#stBub [data-plall]')){showTab('news',true); PLF='unread'; IXFULL=true; rtGo('al'); return}
   if(t.closest('#plShX')){plClose();return} if(t.closest('#plShNext')){PLV.i=Math.min(PLV.L.length-1,PLV.i+1); plShow(); return}
-  if(t.closest('#plShAll')){plClose(); showTab('news',true); rtGo('al'); return}
+  if(t.closest('#plShAll')){plClose(); showTab('news',true); IXFULL=true; rtGo('al'); return}
   if(t.id==='plSheet'){plClose();return}
   if(t.closest('#plSheet [data-gosec], #plSheet [data-imopen], #plSheet [data-chiko]')){const sh=$('plSheet'); sh.hidden=true; document.body.classList.remove('st-open')}
   if(t.closest('#plBanGo')){const k=$('plBan').dataset.plk; plSet(k,'b',1); plOpen(k); return} if(t.closest('#plBanX')){const k=$('plBan').dataset.plk, a=plByK(k); plSet(k,'b',1); if(a)plSet(k,'d',a.ver||1); plBanner(); try{plRender()}catch(e){} return}
@@ -23851,7 +23954,7 @@ function nwMatch(it,F){const x=it.x||{}, out=[];
 function nwScore(z,E,F){const it=z.it, x=it.x; let s=x?NX_LVR[x.level]*10:2; const ev=E&&E.get(x&&x.ev?x.ev:'id:'+it.id); if(ev)s+=Math.min(4,ev.items.length-1)*1.5;
   if(F&&nwMatch(it,F).length)s+=5; if(z.rel&&z.rel.hits.some(h=>h.held))s+=3; if(x&&x.rules)s-=2; const age=(Date.now()-Date.parse(it.at||it.seen||0))/36e5; return s-Math.min(14,Math.max(0,age)/6)}
 // the screen's state: the view, the filters (remembered in this browser), how many cards are shown
-let NWV='top', NWLIM=30, RTT='news';
+let NWV='top', NWLIM=30, RTT=null;
 const NWF0={q:'',cat:'',range:'all',from:'',to:'',lv:[],src:'',sym:'',sec:'',topic:'',kind:'',sort:'',unread:false};
 let NWF={...NWF0};
 try{const v=JSON.parse(localStorage.getItem('tr_nwf')||'null'); if(v&&typeof v==='object')NWF={...NWF0,...v,q:''}; const t=localStorage.getItem('tr_rtt'); if(t==='al')RTT='al'}catch(e){}
@@ -23924,8 +24027,9 @@ function nwSnapCard(id,s,read){return `<article class="nx nwc lv-${s.lv||'info'}
   <h3>${esc(s.t||s.o)}</h3>${s.w?`<p class="nw-sum">${esc(s.w)}</p>`:''}<p class="note" style="margin:0">הכתבה כבר לא ברשימה של השבוע האחרון; נשמר כאן העותק הקצר.</p>
   <div class="nw-acts">${s.l?`<a class="nw-b" href="${esc(s.l)}" target="_blank" rel="noopener noreferrer">למקור ↗</a>`:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(id)}" aria-pressed="${!!(nxState().saved||{})[id]}">${(nxState().saved||{})[id]?'★ שמור':'☆ לשמור'}</button></div></article>`}
 // the tabs of "חיבור למציאות": the news and the personal alerts (with the count of the unread)
-function rtTabsSync(){for(const b of document.querySelectorAll('[data-rt]')){const on=b.dataset.rt===RTT; b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1}
-  const n=$('rtNews'), a=$('rtAl'); if(n)n.hidden=RTT!=='news'; if(a)a.hidden=RTT!=='al'; const h=$('hNewsT'); if(h)h.textContent='חיבור למציאות'}
+function rtTabsSync(){if(RTT==null)RTT=hasPf()?'al':'news';
+  for(const b of document.querySelectorAll('[data-rt]')){const on=b.dataset.rt===RTT; b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1}
+  const n=$('rtNews'), a=$('rtAl'); if(n)n.hidden=RTT!=='news'; if(a)a.hidden=RTT!=='al'; const h=$('hNewsT'); if(h){h.textContent='חיבור למציאות'; h.closest('.row').classList.toggle('ix-hide',RTT==='al')}}
 function rtGo(t){RTT=t==='al'?'al':'news'; try{localStorage.setItem('tr_rtt',RTT)}catch(e){} renderNewsX()}
 function nwFiltFill(all){
   const sel=(id,opts,cur)=>{const el=$(id); if(!el)return; const h=opts.map(([v,l])=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(l)}</option>`).join(''); if(el.__h!==h){el.innerHTML=h; el.__h=h} el.value=cur};
@@ -23973,7 +24077,7 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
     ${b.mkt?`<p class="nw-bm">${esc(b.mkt)}</p>`:''}<p class="note" style="margin:0">סיכום אוטומטי מ-${b.n||b.lines.length} ידיעות כלליות ומהמחירים, בלי שום פרט מהתיק. לא תחזית ולא המלצה.</p></section>`}
 function renderNewsX(){
   rtTabsSync(); try{plCount()}catch(e){} try{rtMarkets()}catch(e){}
-  if(RTT==='al'){try{plCenter()}catch(e){console.error(e)} return}
+  if(RTT==='al'){try{renderImpact()}catch(e){console.error(e)} return}
   const box=$('newsFeed'), fr=$('newsFresh'); if(!box)return;
   const raw=((NEWSD&&NEWSD.items)||[]).concat((XD&&XD.items)||[]); if(raw.some(it=>it&&it.link&&!NXID.has(it.link))){nxIds(raw).then(ok=>{if(ok)try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}})}
   const m=(()=>{try{return mAllNow()}catch(e){return null}})(), F=nwPrefs(), st=nxState();
@@ -24088,6 +24192,163 @@ function nxFacts(m){try{const L=newsAll().map(it=>({it,rel:newsRel(it,m)})).filt
   if(!L.length)return null; return {note:'ידיעות ממקורות חיצוניים מהימים האחרונים, כפי שצ׳יקו קרא אותן מהכותרת והקטע; "cert" אומר אם זו עובדה מדווחת, פרשנות של המקור או הערכה. ידיעה אינה סיבה לתנועת מחיר אלא אם כתוב שהיא כזו, ואין כאן תחזית',
     items:L.map(z=>({headline:z.it.x.he,what:z.it.x.what,kind:NX_TYPE[z.it.x.type]||z.it.x.type,level:NX_LV[z.it.x.level],possible_direction:NX_DIR[z.it.x.dir],cert:NX_CERT[z.it.x.cert],touches_my_portfolio:z.rel.text,affected_in_portfolio:z.rel.hits.filter(h=>h.held).map(h=>`${lab(h.sym)} (${NX_HOW[h.how]||h.how}, ${pct(h.w,1)} מהתיק)`),unknown:z.it.x.unknown||null,source:`${z.it.pub||''} ${z.it.at?dmy(z.it.at)+' '+hm(z.it.at):''}`.trim()}))}}catch(e){return null}}
 window.__nx={all:newsAll,rel:newsRel,holdings:nxForHoldings,alerts:nxAlerts,facts:nxFacts,state:nxState,cats:nxCatsOf,pulse:()=>PULSE,plItems:()=>plItems(),focus:s=>focusOf(s)};
+// ==== 30.10: TikChik Impact, the face of "חיבור למציאות": the pulse of the portfolio for a chosen period. Four figures
+// (how much of the portfolio the period's events touch, the holdings touched, the alerts not read, the events with a
+// line of them by day), the personal alerts short, a round map with the portfolio in its middle, a line of time, and צ׳יקו
+// beside them. Everything from the personal alerts (server/pulse.js) and the portfolio; the full alert center and the
+// full map are a tap away. Phone: the same parts one under the other ====
+let IXR='7', IXFULL=false, IXV='pf', IXFOC=null, IXSEL=null, IXZ={k:1,x:0,y:0}, IXG=null, IXWH=[760,540];
+try{const v=localStorage.getItem('tr_ixr'); if(['1','7','30','90','all'].includes(v))IXR=v}catch(e){}
+const IX_RL={'1':'24 שעות','7':'7 ימים','30':'30 ימים','90':'90 ימים',all:'כל התקופה'};
+function ixItems(){const L=plItems(); if(IXR==='all')return L; const from=new Date(Date.now()-(+IXR)*864e5).toISOString(); return L.filter(a=>(a.up||a.at)>=from)}
+const IX_REL_HE={high:'גבוהה',mid:'בינונית',low:'נמוכה',none:'—'};
+// the figures; "relevance" is measured: the share of the portfolio (by value now) in the holdings the period's alerts touch
+function ixFigures(m){const L=ixItems(), ev=L.filter(a=>a.kind!=='mkt'), un=L.filter(plUnread), syms=new Set(), dir=new Set();
+  for(const a of L){for(const h of (a.holds||[])){syms.add(h.sym); if(h.link==='direct')dir.add(h.sym)} for(const s of (a.secs||[]))for(const k of (s.syms||[]))syms.add(k)}
+  const pos=(m&&m.pos)||[], w=pos.filter(p=>syms.has(p.sym)).reduce((t,p)=>t+p.w,0), strong=L.some(a=>a.rel==='high'&&(a.lv==='crit'||a.lv==='imp'));
+  const lvl=!syms.size?'none':w>=40&&strong?'high':w>=15||strong?'mid':'low';
+  const n=IXR==='1'?6:IXR==='all'?12:Math.min(+IXR,15), span=(IXR==='1'?36e5*4:IXR==='all'?30*864e5/12:Math.max(1,(+IXR)/n)*864e5), now=Date.now(), bars=Array(n).fill(0);
+  for(const a of ev){const i=n-1-Math.floor((now-Date.parse(a.at))/span); if(i>=0&&i<n)bars[i]++}
+  return {L,ev,un,syms,dir,w,lvl,bars}}
+function ixKpis(F){const sp=F.bars, mx=Math.max(1,...sp), path=sp.map((v,i)=>`${i?'L':'M'}${(i/(Math.max(1,sp.length-1))*100).toFixed(1)},${(28-v/mx*24).toFixed(1)}`).join(' ');
+  return `<div class="ix-k k-rel"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></span><div><span class="ix-kl">רמת רלוונטיות כללית</span><b class="ix-kv rel-${F.lvl}">${IX_REL_HE[F.lvl]}</b>
+      <span class="ix-bar" role="img" aria-label="${pct(F.w,0)} מהתיק"><i style="width:${Math.min(100,F.w).toFixed(0)}%"></i></span><span class="ix-ks">${F.syms.size?`${pct(F.w,0)} מהתיק נוגע לאירועים`:'אין אירועים שנוגעים לתיק'}</span></div></div>
+    <div class="ix-k k-hold"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v9h9a9 9 0 1 1-9-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></span><div><b class="ix-kv">${F.syms.size}</b><span class="ix-kl">החזקות מושפעות</span><span class="ix-ks">${F.dir.size?`${F.dir.size} ישירות`:F.syms.size?'דרך ענף או קשר עקיף':''}</span></div></div>
+    <div class="ix-k k-al"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><div><b class="ix-kv">${F.un.length}</b><span class="ix-kl">התראות חדשות</span><span class="ix-ks">${F.un.filter(a=>a.lv==='crit').length?`${F.un.filter(a=>a.lv==='crit').length} קריטיות`:''}</span></div></div>
+    <div class="ix-k k-ev"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span><div><b class="ix-kv">${F.ev.length}</b><span class="ix-kl">אירועים רלוונטיים</span><svg class="ix-sp" viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="אירועים לאורך התקופה: ${sp.join(', ')}"><path d="${path}"/></svg></div></div>`}
+// an alert, short: its level, when, the headline, whom it touches, how relevant, and the two ways on
+function ixAff(a){const h=(a.holds||[]).map(x=>x.sym), s=(a.secs||[]).map(x=>NX_SEC_HE[x.g]||x.g); return [...h.slice(0,3),...s.slice(0,2).map(x=>'ענף '+x)].concat(a.usd!=null&&!h.length?['החלק הדולרי']:[]).join(', ')}
+function ixCard(a){const un=plUnread(a);
+  return `<article class="ix-a lv-${a.lv}${un?' un':''}" data-ixopen="${esc(a.k)}"><div class="ix-at"><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span class="ix-t">${agoH(a.up||a.at)}</span>${un?`<button type="button" class="ix-x" data-ixdis="${esc(a.k)}" aria-label="לסמן כנקראה (נשארת בהיסטוריה)">×</button>`:''}</div>
+    <h4>${esc(a.title)}</h4>${ixAff(a)?`<p class="ix-af">משפיע על: ${esc(ixAff(a))}</p>`:''}<p class="ix-rel"><i class="dot rel-${a.rel}" aria-hidden="true"></i>רלוונטיות לתיק: <b>${IX_REL_HE[a.rel]||'—'}</b></p>
+    <div class="ix-ab">${a.kind!=='mkt'?`<button type="button" class="btn sm pri" data-ixmap="${esc(a.k)}">פתח מפת השפעה</button>`:''}<button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button></div></article>`}
+// the line of time: the period's events, the oldest on the right, each a point with its day
+function ixTimeline(L){const E=L.filter(a=>a.kind!=='mkt').sort((a,b)=>String(a.first||a.at)<String(b.first||b.at)?-1:1).slice(-7);
+  if(!E.length)return '<p class="note" style="margin:0">אין אירועים בתקופה הזאת.</p>';
+  const day=iso=>{const d=ilDay(iso), t=ilDay(); return d===t?'היום':d===isoAdd(t,-1)?'אתמול':`לפני ${Math.round((Date.parse(t)-Date.parse(d))/864e5)} ימים`};
+  return `<ol class="ix-tl">${E.map(a=>`<li class="lv-${a.lv}"><button type="button" data-ixopen="${esc(a.k)}"><i aria-hidden="true"></i><b>${day(a.first||a.at)}</b><span>${esc(imCut(a.title,40))}</span>${(a.ver||1)>1?'<small>עודכן</small>':''}</button></li>`).join('')}</ol>`}
+// the round map: the portfolio in the middle; the holdings around it, then the sectors and the economic factors, then
+// the events. From the alerts of the period (so it reaches back as far as they do); "חברה" and "עולם" from the readings
+const IX_IC={pf:'M4 8h16v11H4zM9 8V5h6v3M4 13h16',ev:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',fac:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z',
+  sec:'M4 21V5h10v16M14 9h6v12M7 8h2M7 12h2M7 16h2M17 13h1M17 17h1',co:'M7 7h10v10H7zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4',hold:'M4 8h16v11H4zM9 8V5h6v3M4 13h16',reg:'M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11zM12 8.2a1.8 1.8 0 1 0 0 3.6a1.8 1.8 0 1 0 0-3.6z',world:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'};
+function ixGraphAlerts(L,center){const N=new Map(), E=new Map(), node=(id,o)=>{if(!N.has(id))N.set(id,{id,...o}); return N.get(id)}, edge=(a,b,o)=>{const id=a+'>'+b; if(!E.has(id))E.set(id,{id,from:a,to:b,...o})};
+  for(const a of L){const eid='ev:'+a.k; node(eid,{t:'ev',label:a.title,lv:a.lv,a});
+    for(const f of (a.fac||[]).slice(0,2))node('f:'+f.k,{t:'fac',label:(NX_THEME[f.k]||f.k)+(f.move==='up'?' ↑':f.move==='down'?' ↓':'')}),edge(eid,'f:'+f.k,{dir:f.move==='up'||f.move==='down'?f.move:'unclear'});
+    const secx=(a.secx&&a.secx.length?a.secx:(a.sectors||[]).map(g=>({g}))).filter(s=>(a.holds||[]).some(h=>h.via===s.g)||(a.secs||[]).some(x=>x.g===s.g));
+    for(const s of secx){node('s:'+s.g,{t:'sec',label:NX_SEC_HE[s.g]||s.g}); edge(s.via&&N.has('f:'+s.via)?'f:'+s.via:eid,'s:'+s.g,{dir:s.dir||'unclear'})}
+    for(const h of (a.holds||[])){node('h:'+h.sym,{t:'hold',label:h.sym,w:h.w,sym:h.sym}); edge(h.link==='direct'?eid:(h.via&&N.has('s:'+h.via)?'s:'+h.via:eid),'h:'+h.sym,{dir:h.dir||'unclear',direct:h.link==='direct'})}
+    if(!(a.holds||[]).length)for(const s of (a.secs||[]).slice(0,2))for(const k of (s.syms||[]).slice(0,3)){node('h:'+k,{t:'hold',label:k,sym:k}); if(!N.has('s:'+s.g))node('s:'+s.g,{t:'sec',label:NX_SEC_HE[s.g]||s.g}),edge(eid,'s:'+s.g,{dir:'unclear'}); edge('s:'+s.g,'h:'+k,{dir:'unclear',weak:true})}}
+  if(center==='pf'){node('pf',{t:'pf',label:'התיק שלי'}); for(const n of [...N.values()].filter(n=>n.t==='hold'))edge(n.id,'pf',{dir:'none'})}
+  return {nodes:[...N.values()],edges:[...E.values()]}}
+function ixGraph(m){
+  if(IXV==='pf'){const L=ixItems().filter(a=>a.kind!=='mkt').sort(plSort).slice(0,5); return {...ixGraphAlerts(L,'pf'),center:'pf'}}
+  if(IXV==='ev'){const a=plByK(IXFOC)||ixItems().filter(x=>x.kind!=='mkt').sort(plSort)[0]; if(!a)return {nodes:[],edges:[],center:null}; IXFOC=a.k; return {...ixGraphAlerts([a],null),center:'ev:'+a.k}}
+  // a company, the world: from the readings (the same as the full map), a company held drawn once
+  const G0=imBuild(IXV==='co'?'co':'world',{sym:IXFOC&&!String(IXFOC).includes(':')?IXFOC:null},m), N=new Map(G0.nodes.map(n=>[n.id,{...n}]));
+  let edges=G0.edges.map(e=>({...e}));
+  for(const n of [...N.values()])if(n.t==='hold'&&N.has('c:'+n.sym)){const c=N.get('c:'+n.sym); c.held=true; c.w=((m&&m.pos.find(p=>p.sym===n.sym))||{}).w; N.delete(n.id); edges=edges.filter(e=>e.to!==n.id).map(e=>e.from===n.id?{...e,from:c.id}:e)}
+  let center=IXV==='co'?'c:'+(IMFOC.sym||''):'world';
+  if(IXV==='world'){N.set('world',{id:'world',t:'world',label:'השווקים'}); for(const n of N.values()){if(n.t==='reg')edges.push({id:'world>'+n.id,from:'world',to:n.id,dir:'none'}); if(n.t==='ev'&&!edges.some(e=>e.to===n.id&&e.from.startsWith('r:')))edges.push({id:'world>'+n.id,from:'world',to:n.id,dir:'none'})}}
+  return {nodes:[...N.values()],edges,center:N.has(center)?center:(N.size?[...N.keys()][0]:null)}}
+// the rings: the distance from the middle; each ring evenly around, turned so each point sits near the points it hangs on
+function ixLayout(G,W,H){const adj=new Map(G.nodes.map(n=>[n.id,[]])); for(const e of G.edges){if(adj.has(e.from)&&adj.has(e.to)){adj.get(e.from).push(e.to); adj.get(e.to).push(e.from)}}
+  const d=new Map([[G.center,0]]), Q2=[G.center]; while(Q2.length){const id=Q2.shift(); for(const x of adj.get(id)||[])if(!d.has(x)){d.set(x,d.get(id)+1); Q2.push(x)}}
+  const maxD=Math.min(3,Math.max(1,...G.nodes.map(n=>d.has(n.id)?d.get(n.id):3))), cx=W/2, cy=H/2, Rx=W/2-64, Ry=H/2-56, ang=new Map([[G.center,0]]);   // an ellipse, to use the whole frame
+  for(const n of G.nodes){const r=Math.min(3,d.has(n.id)?d.get(n.id):3); n.ring=r}
+  const c=G.nodes.find(n=>n.id===G.center); if(c){c.x=cx; c.y=cy}
+  for(let r=1;r<=3;r++){const L=G.nodes.filter(n=>n.ring===r); if(!L.length)continue; const f=maxD===1?0.82:maxD===2?(r===1?0.5:0.95):(r===1?0.38:r===2?0.69:0.98);
+    const want=L.map(n=>{const P=(adj.get(n.id)||[]).filter(x=>ang.has(x)&&x!==G.center); if(!P.length)return null; let sx=0, sy=0; for(const x of P){sx+=Math.cos(ang.get(x)); sy+=Math.sin(ang.get(x))} return Math.atan2(sy,sx)});
+    const order=L.map((n,i)=>({n,a:want[i]==null?i/L.length*2*Math.PI:want[i]})).sort((p,q)=>p.a-q.a), step=2*Math.PI/L.length;
+    let base=0; {let sx=0, sy=0; order.forEach((o,i)=>{const t=o.a-i*step; sx+=Math.cos(t); sy+=Math.sin(t)}); base=Math.atan2(sy,sx)+(r===1&&L.length===1?-Math.PI/2:0)}
+    order.forEach((o,i)=>{const a=base+i*step; ang.set(o.n.id,a); o.n.x=cx+Rx*f*Math.cos(a); o.n.y=cy+Ry*f*Math.sin(a)})}}
+const IX_COL={ev:'#EF4444',fac:'#22C55E',sec:'#3B82F6',co:'#F59E0B',hold:'#8B5CF6',reg:'#14B8A6',pf:'#7C3AED',world:'#7C3AED'};
+function ixDraw(){const svg=$('ixSvg'), g=$('ixG'); if(!svg||!g)return; let m=null; try{m=mAllNow()}catch(e){}
+  // a phone: a standing frame, so the points and their names stay readable
+  const cv=$('ixCv'), narrow=!!cv&&cv.clientWidth>0&&cv.clientWidth<560, W=narrow?420:760, H=narrow?520:540, G=ixGraph(m); IXG=G; IXWH=[W,H]; svg.setAttribute('viewBox',`0 0 ${W} ${H}`); if(cv)cv.classList.toggle('narrow',narrow);
+  for(const b of document.querySelectorAll('#ixViews [data-ixv]'))b.setAttribute('aria-selected',String(b.dataset.ixv===IXV));
+  const em=$('ixEmpty'); if(em){const none=!G.center||G.nodes.length<2; em.hidden=!none; if(none)em.textContent=IXV==='pf'?(hasPf()?'אין בתקופה הזאת אירוע עם קשר מבוסס לאחזקות שלך.':'המפה של התיק נבנית מהאחזקות שלך. אפשר לראות בינתיים את "עולם".'):IXV==='ev'?'אין התראה לבחור.':'אין נתונים לתצוגה הזאת.'}
+  if(!G.center||G.nodes.length<2){g.innerHTML=''; return}
+  ixLayout(G,W,H); const byId=new Map(G.nodes.map(n=>[n.id,n]));
+  const eH=G.edges.map(e=>{const a=byId.get(e.from), b=byId.get(e.to); if(!a||!b)return ''; const col=e.dir==='pos'?'var(--gain)':e.dir==='neg'?'var(--loss)':e.dir==='mixed'?'#D97706':e.dir==='up'||e.dir==='down'?'#8B5CF6':'#64748B';
+    const direct=e.direct||e.kind==='direct'||e.kind==='fact'||e.dir==='none', weak=e.weak||e.kind==='exposure'||e.conf==='low';
+    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${direct?2.2:1.5}"${weak?' stroke-dasharray="2 5"':direct?'':' stroke-dasharray="6 5"'} class="ix-e"/>`}).join('');
+  const lines=t=>{const w=String(t||'').split(/\s+/), L=['']; for(const x of w){if((L[L.length-1]+' '+x).trim().length>15&&L[L.length-1])L.push(x); else L[L.length-1]=(L[L.length-1]+' '+x).trim(); if(L.length>2)break} if(L.length>2){L.length=2; L[1]=imCut(L[1],14)} return L};
+  // the points first, then all the names over them, so no point hides a name
+  const lab=[], nH=G.nodes.map(n=>{const big=n.id===G.center, r=big?(narrow?28:34):(narrow?18:22), col=n.held?IX_COL.hold:IX_COL[n.t]||'#94A3B8', lb=n.t==='hold'||n.held?`${n.label}${n.w!=null?' · '+pct(n.w,0):''}`:n.label, L=lines(lb), sel=IXSEL===n.id, crit=n.t==='ev'&&(n.lv==='crit'||(n.e&&n.e.x&&n.e.x.level==='crit')), sc=narrow?0.82:1;
+    if(big)lab.push(L.map((t,i)=>`<text x="${n.x.toFixed(1)}" y="${(n.y+r+18+i*16).toFixed(1)}" text-anchor="middle" direction="rtl" class="ixl b">${esc(t)}</text>`).join(''));
+    else{const a=Math.atan2(n.y-H/2,n.x-W/2), dx=Math.cos(a), dy=Math.sin(a), side=!narrow&&Math.abs(dx)>0.5, x=side?n.x+(dx>0?1:-1)*(r+8):n.x, an=side?(dx>0?'end':'start'):'middle';
+      const y0=side?n.y+4-(L.length-1)*7.5:dy>0?n.y+r+16:n.y-r-8-(L.length-1)*15;
+      lab.push(L.map((t,i)=>`<text x="${x.toFixed(1)}" y="${(y0+i*15).toFixed(1)}" text-anchor="${an}" direction="rtl" class="ixl">${esc(t)}</text>`).join(''))}
+    return `<g class="ixn t-${n.t}${sel?' sel':''}${crit?' crit':''}" data-ixn="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(IM_COL_HE[n.t]||'התיק')}${crit?' קריטי':''}: ${esc(lb)}"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r+(crit?9:6)}" fill="${col}" opacity="${crit?'.3':'.16'}"/><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r}" fill="${col}" class="ixc"/>
+      <path d="${IX_IC[n.held?'hold':n.t]||IX_IC.co}" transform="translate(${(n.x-(big?15:11)*sc).toFixed(1)},${(n.y-(big?15:11)*sc).toFixed(1)}) scale(${((big?1.25:0.92)*sc).toFixed(2)})" class="ixi"/></g>`}).join('');
+  g.innerHTML=eH+nH+`<g class="ixls" aria-hidden="true">${lab.join('')}</g>`; ixApply(); ixTip()}
+function ixApply(){const g=$('ixG'); if(g)g.setAttribute('transform',`translate(${IXZ.x},${IXZ.y}) scale(${IXZ.k})`)}
+function ixZoom(f){const k=Math.max(0.5,Math.min(2.6,IXZ.k*f)), s=k/IXZ.k, cx=IXWH[0]/2, cy=IXWH[1]/2; IXZ={k,x:cx-(cx-IXZ.x)*s,y:cy-(cy-IXZ.y)*s}; ixApply()}
+// a point chosen: a short card under the map, and from it the full map or צ׳יקו
+function ixTip(){const el=$('ixTip'); if(!el)return; const n=IXSEL&&IXG&&IXG.nodes.find(x=>x.id===IXSEL); if(!n){el.hidden=true; return} el.hidden=false; let m=null; try{m=mAllNow()}catch(e){}
+  const ins=IXG.edges.filter(e=>e.to===n.id||e.from===n.id).length; let h='';
+  if(n.t==='ev'&&n.a){const a=n.a; h=`<span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span> <b>${esc(a.title)}</b><p>${esc(a.relWhy||'')}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="pl:${esc(a.k)}">מפה מלאה והסברים</button><button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button><button type="button" class="btn sm" data-ixopen="${esc(a.k)}">להתראה</button></div>`}
+  else if(n.t==='ev'&&n.e){h=`<b>${esc(n.label)}</b><p>${esc(n.e.x.what||'')}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="ev:${esc(n.e.k)}">מפה מלאה והסברים</button><button type="button" class="btn sm" data-chiko="ev:${esc(n.e.k)}">שאל את צ׳יקו</button></div>`}
+  else if(n.t==='hold'||n.held){const p=m&&m.pos?m.pos.find(x=>x.sym===n.sym):null, al=ixItems().filter(a=>(a.holds||[]).some(h=>h.sym===n.sym)||(a.secs||[]).some(s=>(s.syms||[]).includes(n.sym)));
+    h=`<b>${esc(n.sym||n.label)}${p?` · ${pct(p.w,1)} מהתיק`:''}</b><p>${al.length?`${al.length===1?'אירוע אחד':al.length+' אירועים'} בתקופה נוגעים לה: ${al.slice(0,3).map(a=>esc(a.title)).join('; ')}`:'אירועים מהתצוגה הזאת נוגעים לה.'}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="co:${esc(n.sym||n.label)}">מפת החברה</button>${SECKEY.test(n.sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(n.sym)}">לדף המניה</button>`:''}</div>`}
+  else if(n.t==='sec'){const L=((m&&m.pos)||[]).filter(p=>nxSecOf(p.sym)===((n.id||'').slice(2))); h=`<b>ענף: ${esc(n.label)}</b><p>${L.length?`${pct(L.reduce((t,p)=>t+p.w,0),0)} מהתיק בענף: ${L.map(p=>esc(p.sym)).join(', ')}`:'אין לך אחזקות בענף הזה.'} ${ins} קשרים במפה.</p>`}
+  else if(n.t==='fac')h=`<b>גורם כלכלי: ${esc(n.label)}</b><p>מחיר, שער או מדד שהאירוע עשוי להזיז, ודרכו לגעת בענפים. השערה מהקריאה, לא מדידה.</p>`;
+  else h=`<b>${esc(n.label)}</b><p>${ins} קשרים במפה.</p>`;
+  setH(el,h+'<button type="button" class="ix-tx" data-ixsel="" aria-label="סגירה">×</button>')}
+// צ׳יקו beside the map: about the alert chosen, or about the period as a whole
+function ixFocus(){const L=ixItems().filter(a=>a.kind!=='mkt').sort(plSort), m=(()=>{try{return mAllNow()}catch(e){return null}})(), F=ixFigures(m);
+  return {kind:'impact',title:`ההשפעה על התיק: ${IX_RL[IXR]}`,data:{period:IX_RL[IXR],
+    portfolio_share_touched:F.syms.size?pct(F.w,1):null,relevance_level:IX_REL_HE[F.lvl],holdings_touched:[...F.syms],alerts_not_read:F.un.length,
+    alerts:L.slice(0,10).map(a=>({level:PL_LVS[a.lv],headline:a.title,what:a.what,relevance:IX_REL_HE[a.rel],relevance_why:a.relWhy,confidence:PL_CONF[a.conf],touches:ixAff(a),possible_direction:NX_DIR[a.dir],created_at:a.at,updated_at:a.up,content_kind:NX_KIND[a.kind]||'ידיעה'})),
+    rules:'התראה נוצרת רק כשיש קשר מוסבר לתיק; אחת לכל אירוע; כיוון ההשפעה הוא אפשרות, לא מדידה'}}}
+const IX_Q_GEN=['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה'], IX_Q_AL=['למה קיבלתי את ההתראה הזאת?','איך האירוע הזה קשור למניות שלי?','האם כבר יש השפעה על התיק?'];
+function ixChiko(){const el=$('ixQs'); if(!el)return; const a=IXFOC&&String(IXFOC).includes(':')?plByK(IXFOC):null;
+  setH(el,(a?`<p class="ix-on">על: <b>${esc(imCut(a.title,46))}</b> <button type="button" class="lnk" data-ixfoc="">כל התקופה</button></p>`:'')+(a?IX_Q_AL:IX_Q_GEN).map(q=>`<button type="button" class="ix-q" data-ixq="${esc(q)}">${esc(q)}</button>`).join(''))}
+function ixAskQ(q){const a=IXFOC&&String(IXFOC).includes(':')?plByK(IXFOC):null; if(a)ANA_FOCUS=focusOf('pl:'+a.k); else ANA_FOCUS=ixFocus(); if(!ANA_FOCUS)return;
+  try{anaOpen(null,false); anaSugg()}catch(e){} setTimeout(()=>{try{anaRun('q',q,{fromInput:true})}catch(e){}},30)}
+function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(), m=(()=>{try{return mAllNow()}catch(e){return null}})(), hp=hasPf();
+  for(const b of document.querySelectorAll('#ixRange [data-ixr]'))b.setAttribute('aria-pressed',String(b.dataset.ixr===IXR));
+  const full=$('ixFull'); if(full)full.hidden=!IXFULL; box.hidden=IXFULL; if(IXFULL){plCenter(); return}
+  const F=ixFigures(m), note=$('ixNote');
+  if(note){let t=''; if(!pr.on)t=`ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>`;
+    else if(!hp)t=`<b>TikChik Impact נבנה מהתיק שלך.</b> כשתוסיף את האחזקות, המערכת תחבר כל אירוע בחדשות למניות שבידיך, תסביר את הקשר, ותתריע רק כשיש קשר מבוסס. בלי תיק אין כאן התראות "אישיות", כדי לא להציג משהו שלא נבנה עבורך. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button><button type="button" class="btn sm" data-rt="news">בינתיים: שוק וחדשות</button></span>`;
+    else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
+    note.hidden=!t; setH(note,t)}
+  {const k=$('ixKpis'); if(k){k.hidden=!hp||!pr.on; if(hp&&pr.on)setH(k,ixKpis(F))}}
+  {const n=$('ixAlN'); if(n){n.textContent=F.un.length?String(F.un.length):''; n.hidden=!F.un.length}
+    const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?4:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
+  if(!hp&&IXV==='pf')IXV='world';
+  try{ixDraw()}catch(e){console.error(e)}
+  {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
+  ixChiko()}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  const r=t.closest('#ixRange [data-ixr]'); if(r){IXR=r.dataset.ixr; try{localStorage.setItem('tr_ixr',IXR)}catch(e){} IXZ={k:1,x:0,y:0}; renderImpact(); return}
+  if(t.closest('[data-ixall]')){IXFULL=true; PLF='all'; renderImpact(); try{$('rtAl').scrollIntoView({block:'start'})}catch(e){} return}
+  if(t.closest('[data-ixback]')){IXFULL=false; renderImpact(); return}
+  const d=t.closest('[data-ixdis]'); if(d){const a=plByK(d.dataset.ixdis); if(a){plSet(a.k,'r',a.ver||1); plSet(a.k,'d',a.ver||1)} renderImpact(); try{plRender()}catch(e){} try{plCount()}catch(e){} return}
+  const mp=t.closest('[data-ixmap]'); if(mp){IXV='ev'; IXFOC=mp.dataset.ixmap; IXSEL='ev:'+IXFOC; IXZ={k:1,x:0,y:0}; renderImpact(); try{$('ixMap').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){} return}
+  const ak=t.closest('[data-ixask]'); if(ak){IXFOC=ak.dataset.ixask; ixChiko(); chikoAsk('pl:'+IXFOC); return}
+  const q=t.closest('[data-ixq]'); if(q){ixAskQ(q.dataset.ixq); return}
+  const fo=t.closest('[data-ixfoc]'); if(fo){IXFOC=null; if(IXV==='ev')IXV='pf'; renderImpact(); return}
+  const vb=t.closest('#ixViews [data-ixv]'); if(vb){IXV=vb.dataset.ixv; IXSEL=null; IXZ={k:1,x:0,y:0}; if(IXV==='co'&&!(IXFOC&&!String(IXFOC).includes(':'))){const m=mAllNow(); IXFOC=((m&&m.pos&&m.pos[0])||{}).sym||null; IMFOC.sym=IXFOC} ixDraw(); return}
+  if(t.closest('#ixZin')){ixZoom(1.25);return} if(t.closest('#ixZout')){ixZoom(0.8);return} if(t.closest('#ixFit')){IXZ={k:1,x:0,y:0}; ixApply(); return}
+  if(t.closest('#ixExp')){imOpenFrom(IXV==='ev'&&IXFOC?'pl:'+IXFOC:IXV==='co'?'co:'+(IXFOC||''):IXV==='world'?'world':'pf:'); return}
+  const sl=t.closest('[data-ixsel]'); if(sl){IXSEL=sl.dataset.ixsel||null; ixDraw(); return}
+  const op=t.closest('[data-ixopen]'); if(op&&!t.closest('button:not([data-ixopen]), a')){plOpen(op.dataset.ixopen); return}
+});
+document.addEventListener('submit',ev=>{if(!ev.target||ev.target.id!=='ixForm')return; ev.preventDefault(); const i=$('ixQ'), v=String(i.value||'').trim(); if(!v)return; i.value=''; ixAskQ(v)});
+document.addEventListener('keydown',ev=>{const n=ev.target&&ev.target.closest&&ev.target.closest('#ixG [data-ixn]'); if(n&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault(); IXSEL=n.dataset.ixn; ixDraw()}});
+// a finger or the mouse moves the round map, two fingers zoom it; a tap (not a drag) chooses a point
+{const P2=new Map(); let st=null, moved=false, pinch=null; const toBox=(cv,x,y)=>{const r=cv.getBoundingClientRect(); return {x:(x-r.left)*IXWH[0]/r.width,y:(y-r.top)*IXWH[1]/r.height,s:IXWH[0]/r.width}};
+  document.addEventListener('pointerdown',ev=>{const cv=ev.target.closest&&ev.target.closest('#ixCv'); if(!cv||ev.target.closest('button'))return; P2.set(ev.pointerId,{x:ev.clientX,y:ev.clientY}); moved=false;
+    if(P2.size===1)st={x:ev.clientX,y:ev.clientY,ox:IXZ.x,oy:IXZ.y}; if(P2.size===2){const [a,b]=[...P2.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),k:IXZ.k,ox:IXZ.x,oy:IXZ.y,c:toBox(cv,(a.x+b.x)/2,(a.y+b.y)/2)}}});
+  document.addEventListener('pointermove',ev=>{if(!P2.has(ev.pointerId))return; P2.set(ev.pointerId,{x:ev.clientX,y:ev.clientY}); const cv=$('ixCv'); if(!cv)return;
+    if(P2.size===2&&pinch){const [a,b]=[...P2.values()], k=Math.max(0.5,Math.min(2.6,pinch.k*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.d))), s=k/pinch.k; IXZ={k,x:pinch.c.x-(pinch.c.x-pinch.ox)*s,y:pinch.c.y-(pinch.c.y-pinch.oy)*s}; moved=true; ixApply(); return}
+    if(st){const s=toBox(cv,0,0).s, dx=(ev.clientX-st.x)*s, dy=(ev.clientY-st.y)*s; if(Math.abs(dx)+Math.abs(dy)>6)moved=true; if(moved){IXZ.x=st.ox+dx; IXZ.y=st.oy+dy; ixApply()}}});
+  const up=ev=>{if(!P2.has(ev.pointerId))return; P2.delete(ev.pointerId); if(P2.size<2)pinch=null;
+    if(!P2.size){const was=moved; st=null; if(!was&&ev.type==='pointerup'){const t=document.elementFromPoint(ev.clientX,ev.clientY), n=t&&t.closest&&t.closest('#ixG [data-ixn]'); if(n||t&&t.closest&&t.closest('#ixSvg')){IXSEL=n?n.dataset.ixn:null; ixDraw()}}}};
+  document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up)}
+window.__ix={render:renderImpact,graph:()=>IXG,sel:id=>{IXSEL=id; ixDraw()},view:v=>{IXV=v; ixDraw()},figures:()=>ixFigures(mAllNow())};
 // ==== 30.10: the impact map. Not "this article is about your share" but the chain and its reason at every step:
 // the event → the economic factor it may move → the sector → the company → your holding. Every link says what it is,
 // why it is there, direct or indirect, the possible direction, how founded it is, what it rests on, and what is known
@@ -24324,6 +24585,9 @@ function chikoAsk(spec){const f=focusOf(spec); if(!f){rtSay('אין מספיק �
   anaOpen(null,false); try{anaSugg()}catch(e){} try{const box=$('anaOut'); if(box){const d=document.createElement('p'); d.className='msg sys'; d.textContent=`השאלות הבאות יהיו על: ${f.title}`; box.appendChild(d); d.scrollIntoView({block:'nearest'})}}catch(e){}}
 // without Claude: the answer from the same facts, by the kind of question
 function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<li>${x}</li>`).join('')}</ul>`:'', t=String(q||'');
+  if(f.kind==='impact'){const A=d.alerts||[]; if(!A.length)return `<p>אין התראות אישיות ב${esc(d.period||'תקופה')}. התראה מופיעה רק כשיש קשר מבוסס לתיק.</p>`;
+    const L=/חשופ|אחזק/.test(t)?A.filter(a=>a.touches).map(a=>`${esc(a.touches)}: ${esc(a.headline)} (${esc(a.relevance)})`):A.slice(0,5).map(a=>`<b>${esc(a.level)}</b>: ${esc(a.headline)}${a.touches?' · '+esc(a.touches):''} · רלוונטיות ${esc(a.relevance)}`);
+    return `<p>ב${esc(d.period)}: ${d.portfolio_share_touched?`${esc(d.portfolio_share_touched)} מהתיק באחזקות שהאירועים נוגעים להן; `:''}${d.alerts_not_read?`${d.alerts_not_read} התראות שלא נקראו.`:'כל ההתראות נקראו.'}</p>${li(L)}<p class="nm">הקשרים הם מה שהקריאה ציינה; כיוון ההשפעה הוא אפשרות, לא מדידה.</p>`}
   const src=(d.sources||d.other_sources||[]).map(s=>`<bdi>${esc(s.source||'')}</bdi>${s.published_at?' · '+dmy(s.published_at):''}: <bdi>${esc(s.title||'')}</bdi>`);
   const meas=Array.isArray(d.measured)?d.measured.map(x=>`${esc(x.sym)} ${esc(x.change_since_publication)} מאז הפרסום (${esc(x.note)})`):d.measured&&d.measured.change_since_publication?[`${esc(d.measured.change_since_publication)} (${esc(d.measured.note)})`]:[];
   if(/למה קיבלתי|למה ההתראה|למה זה/.test(t)&&f.kind==='alert')return `<p>${esc(d.why_this_level||'')}. ${esc(d.relevance_why||'')}.</p>${li((d.my_holdings_linked||[]).map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))}<p>חשיבות האירוע: ${esc(d.importance_of_event||'')}; ביטחון בהסבר: ${esc(d.confidence||'')} (${esc(d.confidence_why||'')}).</p>`;
@@ -24381,7 +24645,7 @@ document.addEventListener('submit',ev=>{const f=ev.target; if(!f||!f.matches||!f
   if(!/^[A-Z][A-Z.\-]{0,6}$/.test(v)){rtSay('סימול לא תקין');return} if(f.dataset.nwsadd==='news'){nwFollow('syms',v,true)} else{const pr=plPrefs(); if(!pr.syms.includes(v))plSetPr({syms:[...pr.syms,v].slice(0,40)}); rtSay(`במעקב להתראות: ${v}`)} i.value=''; nwSetFill()});
 // 30.10: a question about something open (an article, an event, an alert, a link on the map): answered from that item,
 // with the portfolio when there is one; without Claude, the page answers from the same facts
-const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה'};
+const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה',impact:'ההשפעה על התיק בתקופה'};
 async function anaFocusRun(q,o){const f=ANA_FOCUS, qq=String(q||'').replace(/\s+/g,' ').trim().slice(0,300); if(!qq||!f)return;
   if(Q_ADVICE.test(qq))return anaRun('advice',null,{...o,said:qq,nofocus:true}); if(Q_FUTURE.test(qq))return anaRun('future',null,{...o,said:qq,nofocus:true});
   anaOpen(o.src); anaUser(qq,!o.fromInput); const id='c'+(++ANA_SEQ), ai=!!SAMPLE&&!SAMPLE_OFF, st={note:ai?'thinking':'noai'}; let ans=null;
@@ -25148,6 +25412,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.9i',at:'2026-10-30',t:'TikChik Impact: הדופק של התיק',d:'חיבור למציאות נפתח עכשיו במסך Impact: ארבעה מדדים לתקופה שבוחרים (רלוונטיות כללית, החזקות מושפעות, התראות חדשות, אירועים), ההתראות בקצרה, מפת השפעה עגולה עם התיק במרכז, ציר זמן, וצ׳יקו בצד עם שאלות מוכנות. בחדשות נוסף פס השווקים וסיכום היום של צ׳יקו.',go:'pulse'},
   {v:'2026-10-30.9h',at:'2026-10-30',t:'חיבור למציאות: חדשות, התראות אישיות ומפת השפעה',d:'שתי לשוניות. מערכת חדשות שעובדת גם בלי תיק: כותרות, קטגוריות, חיפוש, סינון, מיון, נושאים במעקב, שמורות והיסטוריה; כל כתבה מסומנת כידיעה, ניתוח, דעה או הודעה רשמית. התראות אישיות בשלוש רמות, רק כשיש קשר מבוסס לתיק, אחת לכל אירוע, עם השרשרת, חשיבות, רלוונטיות וביטחון בנפרד, ומה נמדד מול מה אפשרי. מעל צ׳יקו: אייקונים קטנים שפותחים את ההתראה. מפת השפעה: אירוע ← גורם כלכלי ← ענף ← חברה ← ההחזקה שלך, עם הסבר לכל קשר. והגדרות "חדשות והתראות".',go:'pulse'},
   {v:'2026-10-30.9g',at:'2026-10-30',t:'מיילים לכל המשתמשים',d:'מנהלים מקבלים את המיילים של התיק כמו בעל הדף, ושותפים מקבלים הצעה ברשימה בבית להפעיל סיכום בוקר, התראות ודוחות על התיק שלהם. המיילים יוצאים לכולם אחרי שבעל האתר מחבר דומיין לשליחה.',go:'mail'},
   {v:'2026-10-30.9f',at:'2026-10-30',t:'ירידה מהשיא',d:'במבט לאחור: כמה כל התיק מתחת לשיא שלו ומאיזה יום, והירידה הגדולה בתקופה (והאם חזר). בלי ההפקדות, רק מה שהשוק עשה. בהכללים שלי אפשר לקבוע סף, ומעבר לו תעלה התראה.',go:'hist'},
