@@ -21,15 +21,27 @@ export const TYPE_HE={earnings:'תוצאות כספיות',guidance:'תחזית 
   macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
 const LEVELS=['crit','imp','watch','info'], DIRS=['pos','neg','mixed','unclear'], CERTS=['fact','interp','est'], HOWS=['direct','supplier','customer','competitor','sector','macro'];
 export const SECTORS=['Technology','Finance','Health Care','Consumer Discretionary','Consumer Staples','Industrials','Energy','Utilities','Real Estate','Basic Materials','Telecommunications','Defense','Semiconductors','Retail','Automotive','Transportation'];
-const THEMES=['rates','inflation','usd','oil','gas','chips','ai','war','sanctions','tariffs','china','israel','europe','supply','regulation','banks','consumer','housing','crypto','gold'];
+// 30.10: the economic factors an event may move (the second link of the impact map), the kinds of content (a report of
+// something that happened, an analysis, an opinion, a company's own release), and the places it happens in
+export const THEMES=['rates','inflation','usd','oil','gas','chips','ai','war','sanctions','tariffs','china','israel','europe','supply','regulation','banks','consumer','housing','crypto','gold',
+  'jobs','growth','metals','uranium','power','defense','shipping','fed','ecb','boi'];
+export const KINDS=['news','analysis','opinion','pr'];
+export const REGIONS=['us','israel','europe','uk','china','japan','india','russia','ukraine','middle_east','latam','asia','global'];
+const MOVES=['up','down','unclear'];
 const TICK=/^[A-Z][A-Z.\-]{0,6}$/;
 
-// ---- the general market news (Finnhub /news?category=general): the last day, newest first ----
-export async function generalNews({fetch:f=globalThis.fetch,now=new Date(),n=25}={}){
+// ---- the general market news (Finnhub /news): the last day, newest first. 30.10: four of Finnhub's categories (the
+// market in general, mergers, currencies, crypto), each article once, with the category it came from ----
+export const GEN_CATS=['general','merger','forex','crypto'];
+export async function generalNews({fetch:f=globalThis.fetch,now=new Date(),n=25,cats=GEN_CATS}={}){
   if(!fhKey())return [];
-  const j=await fh('/news',{category:'general'},{fetch:f}); const from=now.getTime()-DAY;
-  return fhNews(j,80).filter(a=>a.at&&Date.parse(a.at)>=from).slice(0,n);
+  const from=now.getTime()-DAY, out=[], seen=new Set();
+  for(const c of cats){let j; try{j=await fh('/news',{category:c},{fetch:f})}catch(e){if(c===cats[0])throw e; continue}
+    for(const a of fhNews(j,80).filter(a=>a.at&&Date.parse(a.at)>=from).slice(0,c==='general'?n:Math.ceil(n/2))){if(seen.has(a.link))continue; seen.add(a.link); out.push({...a,cat:c})}}
+  return out;
 }
+// 30.10: the market's anchors: the largest companies, followed whatever anyone holds, so the news works without a portfolio
+export const MARKET=['AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','AVGO','JPM','LLY','XOM','TSM','TEVA','CHKP'];
 
 // ---- the analysis: a batch of articles in one call, a JSON array back ----
 const pickModel=()=>{const L=String(process.env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean); return process.env.NEWS_MODEL||L.find(m=>/haiku/.test(m))||L[0]};
@@ -46,7 +58,13 @@ export function newsPrompt(arts){
 8. dir: הכיוון האפשרי לחברה המרכזית או לשוק: pos|neg|mixed|unclear. cert: fact = דיווח על דבר שקרה (דוח פורסם, עסקה נחתמה, החלטה התקבלה); interp = פרשנות או ניתוח של המקור; est = הערכה שלך מתוך הקשר כללי.
 9. unknown: משפט אחד, מה עוד לא ידוע ומה יברר את התמונה. more: משפט אחד עד שניים של רקע שעוזר להבין (ידע כללי מותר כאן, בלי מספרים ובלי תחזיות).
 10. ev: מפתח אירוע קצר באנגלית (עד 5 מילים, מקפים), זהה לכתבות שונות על אותו אירוע, למשל "fed-rate-decision-oct" או "nvda-q3-report".
-החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","aff":[],"sectors":[],"themes":[],"macro":false,"unknown":"","more":"","ev":""}
+11. kind: news = ידיעה על דבר שקרה; analysis = ניתוח או סקירה של כותב; opinion = טור דעה, עצה של כותב, "האם כדאי לקנות" וכדומה; pr = הודעה רשמית של החברה עצמה (הודעה לעיתונות, Business Wire, PR Newswire, GlobeNewswire). אל תציג דעה כעובדה.
+12. regions: המדינות או האזורים שהאירוע קורה בהם או נוגע להם, מתוך ${REGIONS.join('|')} (עד 3).
+13. occ: התאריך שבו האירוע עצמו קרה, YYYY-MM-DD, רק אם הוא כתוב בכתבה או ברור ממנה; אחרת null. לא תאריך הפרסום.
+14. fac: עד 3 גורמים כלכליים שהאירוע עשוי להזיז, כל אחד {"k":"נושא מתוך themes","move":"up|down|unclear","why":"משפט אחד: איך האירוע נוגע לגורם"}. למשל פגיעה בהיצע הנפט: {"k":"oil","move":"up","why":"..."}. רק כשהקשר ברור; אחרת מערך ריק.
+15. secx: לכל ענף שב-sectors: {"g":"הענף","via":"נושא מ-fac שדרכו הענף מושפע, או null","dir":"pos|neg|mixed|unclear","why":"משפט אחד: מסלול ההשפעה האפשרי על הענף"}.
+16. ב-aff, לחברה שאינה direct הוסף "via": הענף מתוך sectors שדרכו היא מושפעת, אם יש.
+החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","kind":"news","aff":[],"sectors":[],"themes":[],"regions":[],"occ":null,"fac":[],"secx":[],"macro":false,"unknown":"","more":"","ev":""}
 
 ARTICLES:
 ${JSON.stringify(arts.map((a,i)=>({i,title:a.title,summary:a.sum||'',source:a.pub||'',time:a.at||'',listed_under:(a.syms||[]).slice(0,6)})))}`;
@@ -67,7 +85,16 @@ export function cleanX(raw){
   const sectors=(Array.isArray(raw.sectors)?raw.sectors:[]).map(s=>str(s,40)).filter(s=>SECTORS.includes(s)).slice(0,4);
   const themes=(Array.isArray(raw.themes)?raw.themes:[]).map(s=>str(s,20)).filter(s=>THEMES.includes(s)).slice(0,4);
   const ev=str(raw.ev,60).toLowerCase().replace(/[^a-z0-9\-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50);
-  return {he,what,type,level,dir,cert,aff,sectors,themes,macro:raw.macro===true,unknown:str(raw.unknown,300),more:str(raw.more,400),ev:ev||null};
+  // 30.10: the kind of content, the places, when it happened, and the chain's middle links with their reasons
+  const kind=KINDS.includes(raw.kind)?raw.kind:'news';
+  const regions=(Array.isArray(raw.regions)?raw.regions:[]).map(s=>str(s,20)).filter(s=>REGIONS.includes(s)).filter((x,i,A)=>A.indexOf(x)===i).slice(0,3);
+  const occ=typeof raw.occ==='string'&&/^\d{4}-\d\d-\d\d$/.test(raw.occ)&&!isNaN(Date.parse(raw.occ))&&Date.parse(raw.occ)<Date.now()+2*DAY?raw.occ:null;
+  const fac=(Array.isArray(raw.fac)?raw.fac:[]).map(x=>x&&typeof x==='object'&&THEMES.includes(x.k)?{k:x.k,move:MOVES.includes(x.move)?x.move:'unclear',why:heFix(str(x.why,200))}:null)
+    .filter(Boolean).filter((x,i,A)=>A.findIndex(y=>y.k===x.k)===i).slice(0,3);
+  const secx=(Array.isArray(raw.secx)?raw.secx:[]).map(x=>x&&typeof x==='object'&&sectors.includes(x.g)?{g:x.g,via:fac.some(f=>f.k===x.via)?x.via:null,dir:DIRS.includes(x.dir)?x.dir:'unclear',why:heFix(str(x.why,200))}:null)
+    .filter(Boolean).filter((x,i,A)=>A.findIndex(y=>y.g===x.g)===i).slice(0,4);
+  for(const a of aff){const r=(Array.isArray(raw.aff)?raw.aff:[]).find(z=>z&&String(z.sym||'').toUpperCase()===a.sym); if(a.how!=='direct'&&r&&sectors.includes(r.via))a.via=r.via}
+  return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:str(raw.more,400),ev:ev||null};
 }
 // Claude reads a batch; the answers by article index. Nothing is written for an article that got no usable answer
 export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask=null}={}){
@@ -88,18 +115,25 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
 
 // ---- the run: the articles not yet read (the securities' from research/news, the general ones from Finnhub), newest
 // first, a few batches a run; the analyses kept by article id for a week ----
-export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=10,maxBatches=4,keep=7,ask=null,general=generalNews}={}){
+export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=10,maxBatches=4,keep=7,ask=null,general=generalNews,market=MARKET,genMax=300}={}){
   const t0=Date.now(), iso=now.toISOString(), from=new Date(now.getTime()-keep*DAY).toISOString();
   const old=store.getDoc(NEWSX_DOC), D=old.exists&&old.data?old.data:{}, by={...(D.by||{})}, gen=new Map();
   for(const it of (D.gen||[]))if(it&&it.link&&(it.at||it.seen)>=from)gen.set(it.link,it);
   const st={at:iso,read:0,batches:0,gen:0,fail:0,first:null,stopped:null,ai:!!(process.env.ANTHROPIC_API_KEY||ask)};
   // the general news of the day, with the owner's key
-  if(general){try{const G=await general({fetch:f,now}); for(const a of G){if(!a||!a.link||gen.has(a.link))continue; gen.set(a.link,{id:newsId(a.link),title:a.title,pub:a.pub,link:a.link,at:a.at||iso,sum:a.sum||null,syms:a.tickers||[],seen:iso,src:'gen'}); st.gen++}}
+  if(general){try{const G=await general({fetch:f,now}); for(const a of G){if(!a||!a.link)continue; const cur=gen.get(a.link);
+      // 30.10: an article seen again with a new headline: updated (updated_at), not a new article
+      if(cur){if(a.title&&a.title!==cur.title){cur.prevTitle=cur.title; cur.title=a.title; cur.upd=iso; if(a.sum)cur.sum=a.sum} continue}
+      gen.set(a.link,{id:newsId(a.link),title:a.title,pub:a.pub,link:a.link,at:a.at||iso,sum:a.sum||null,syms:a.tickers||[],seen:iso,src:'gen',cat:a.cat||'general'}); st.gen++}}
     catch(e){st.first=st.first||'general: '+e.message}}
   // what waits for a reading: the securities' articles of the week, then the general ones
   const news=((store.getDoc('research/news').data||{}).items||[]).filter(it=>it&&it.link&&(it.at||it.seen)>=from).map(it=>({...it,id:newsId(it.link),src:'co'}))
     .concat(xArticles(store,{from}).map(it=>({...it,id:newsId(it.link)})));   // 29.10: the posts from X, when there are any
-  const todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
+  // 30.10: the articles about the market's anchors are everybody's news, with only the anchors' symbols (never another
+  // security the same article was gathered for, which could tell whose it is)
+  {const MK=new Set(market||[]); for(const it of news){if(it.src!=='co'||gen.has(it.link))continue; const ks=(it.syms||[]).filter(k=>MK.has(k)); if(!ks.length)continue;
+    gen.set(it.link,{id:it.id,title:it.title,pub:it.pub,link:it.link,at:it.at||iso,sum:it.sum||null,syms:ks,seen:it.seen||iso,src:'gen',cat:'market',...(it.upd?{upd:it.upd}:{})})}}
+  const seenT=new Set(), todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).filter(a=>{if(seenT.has(a.id))return false; seenT.add(a.id); return true}).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1);
   if(st.ai){for(let b=0;b<maxBatches&&b*perBatch<todo.length;b++){
       if(Date.now()-t0>budgetMs){st.stopped='time';break}
       const batch=todo.slice(b*perBatch,(b+1)*perBatch), got=await analyzeBatch(batch,{fetch:f,log,ask});
@@ -116,7 +150,7 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   // keep a week on the page: an analysis whose article is gone goes too
   const live=new Set(news.map(a=>a.id).concat([...gen.values()].map(a=>a.id)));
   for(const id of Object.keys(by))if(!live.has(id))delete by[id];
-  store.setDoc(NEWSX_DOC,{by,gen:[...gen.values()].sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1).slice(0,120),updatedAt:iso,n:Object.keys(by).length,waiting:Math.max(0,todo.length-st.read),ai:st.ai,arc:arc?{n:arc.n,months:arc.months,done20:arc.done20}:null,track:arc&&arc.track||null,source:'Finnhub, Yahoo Finance; הניתוח: Claude'});
+  store.setDoc(NEWSX_DOC,{by,gen:[...gen.values()].sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1).slice(0,genMax),updatedAt:iso,n:Object.keys(by).length,waiting:Math.max(0,todo.length-st.read),ai:st.ai,arc:arc?{n:arc.n,months:arc.months,done20:arc.done20}:null,track:arc&&arc.track||null,source:'Finnhub, Yahoo Finance; הניתוח: Claude'});
   const S={...st,waiting:Math.max(0,todo.length-st.read),seconds:Math.round((Date.now()-t0)/1000)};
   store.setMeta('newsxStatus',JSON.stringify(S));
   log(`newsx: ${st.read} articles read in ${st.batches} batches, ${st.gen} general new, ${S.waiting} waiting${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
@@ -135,7 +169,7 @@ export function newsArchive(store,pairs,{now=new Date(),months=24}={}){
   for(const {a,x} of pairs){if(!a||!a.id||!x)continue; const m=ym(a.at||a.seen||iso); if(!/^\d{4}-\d\d$/.test(m))continue; (byM[m]=byM[m]||[]).push({a,x})}
   for(const [m,L] of Object.entries(byM)){const p=ARC+'/'+m, d=store.getDoc(p), doc=d.exists&&d.data?d.data:{items:[]}, have=new Set((doc.items||[]).map(i=>i.id));
     for(const {a,x} of L){if(have.has(a.id)){const i=doc.items.findIndex(z=>z.id===a.id); if(i<0||!doc.items[i].rules||x.rules)continue; const out=doc.items[i].out; doc.items.splice(i,1); doc.items.push({...arcItem(a,x,iso),out}); added++; continue} have.add(a.id);
-      doc.items.push({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],
+      doc.items.push({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,kind:x.kind||'news',regions:x.regions||[],macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],
         aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),rules:!!x.rules,out:{}}); added++}
     if(added)store.setDoc(p,{...doc,updatedAt:iso},{silent:true})}
   // the old months go
@@ -198,6 +232,15 @@ const MACRO=new Set(['macro_rates','inflation','sanctions','geo','energy']);
 const SEC_OF={ai_chips:['Technology','Semiconductors'],energy:['Energy'],macro_rates:['Finance','Real Estate'],inflation:['Consumer Staples','Consumer Discretionary'],sanctions:['Industrials','Technology'],geo:['Defense','Energy']};
 const THEME_OF={ai_chips:['ai','chips'],energy:['oil'],macro_rates:['rates','usd'],inflation:['inflation'],sanctions:['tariffs','sanctions'],geo:['war']};
 const DIR_HE={pos:'נראה חיובי',neg:'נראה שלילי',mixed:'השפעה מעורבת',unclear:''};
+// 30.10: the kind of content and the places, by words: a company's own release by its wire, an opinion by its words or its
+// site, an analysis by its words; the rest is a report of something that happened
+const PR_PUB=/business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release/i, OPIN=/\b(opinion|column|should you (buy|sell)|is it time to|why i|stocks? to buy|buy now|top \d+ stocks|my take)\b/i, OPIN_PUB=/motley fool|seeking alpha|investorplace|benzinga pro/i;
+const ANAL=/\b(analysis|explainer|explained|what .{3,30} means|preview|deep dive|breakdown|takeaways)\b/i;
+const REG_RX=[['china',/\b(china|chinese|beijing|shanghai|hong kong)\b/i],['israel',/\b(israel\w*|tel aviv|bank of israel)\b/i],['europe',/\b(europe\w*|eurozone|ecb|euro area|germany|france|italy|spain)\b/i],
+  ['uk',/\b(uk|britain|british|bank of england|london)\b/i],['japan',/\b(japan\w*|boj|tokyo)\b/i],['india',/\b(india\w*)\b/i],['russia',/\b(russia\w*|moscow|kremlin)\b/i],['ukraine',/\b(ukrain\w*|kyiv)\b/i],
+  ['middle_east',/\b(middle east|iran\w*|gulf|saudi|opec|israel|gaza|lebanon|yemen)\b/i],['latam',/\b(brazil|mexico|argentin\w*|latin america)\b/i],['us',/\b(u\.s\.|us |united states|fed|federal reserve|wall street|washington|white house)\b/i]];
+export const kindOf=a=>{const t=`${a.title||''}`, p=String(a.pub||''); return PR_PUB.test(p)||/\b(announces|reports .* results|declares (quarterly )?dividend)\b/i.test(t)&&PR_PUB.test(`${p} ${a.sum||''}`)?'pr':OPIN.test(t)||OPIN_PUB.test(p)?'opinion':ANAL.test(t)?'analysis':'news'};
+export const regionsOf=t=>REG_RX.filter(([,re])=>re.test(t)).map(([k])=>k).slice(0,3);
 export function ruleRead(a){
   const t=`${a.title||''} ${a.sum||''}`; if(!t.trim())return null;
   const type=(RX.find(([,re])=>re.test(t))||['other'])[0], p=POS.test(a.title||''), n=NEG.test(a.title||''), dir=p&&n?'mixed':p?'pos':n?'neg':'unclear';
@@ -205,6 +248,10 @@ export function ruleRead(a){
   const level=syms.length?(BIG.test(t)?'imp':['earnings','guidance','ma','rating','legal','regulation','management'].includes(type)?'imp':'watch'):macro?'watch':'info';
   const who=syms.length?syms.join(', ')+': ':'';
   return {he:`${who}${TYPE_HE[type]}${DIR_HE[dir]?', '+DIR_HE[dir]:''}`.slice(0,80),what:`לפי הכותרת במקור (${a.pub||'מקור חיצוני'}). הקריאה המלאה של צ׳יקו עוד לא נעשתה; זו קריאה אוטומטית לפי מילים בכותרת.`,
-    type,level,dir,cert:'est',aff:syms.map(sym=>({sym,how:'direct',dir,why:'הכתבה עליה'})),sectors:SEC_OF[type]||[],themes:THEME_OF[type]||[],macro,unknown:'מה בדיוק קרה ומה המשמעות: הכתבה עוד לא נקראה במלואה.',more:'',ev:null,rules:true,at:new Date().toISOString()};
+    type,level,dir,cert:'est',kind:kindOf(a),aff:syms.map(sym=>({sym,how:'direct',dir,why:'הכתבה עליה'})),sectors:SEC_OF[type]||[],themes:THEME_OF[type]||[],regions:regionsOf(t),occ:null,
+    // the middle links by the kind of event only, said to be so: no direction for the factor, a reason that says it is a rule
+    fac:(THEME_OF[type]||[]).slice(0,2).map(k=>({k,move:'unclear',why:'לפי סוג האירוע (קריאה אוטומטית), לא מתוך הכתבה'})),
+    secx:(SEC_OF[type]||[]).map(g=>({g,via:(THEME_OF[type]||[])[0]||null,dir:'unclear',why:'ענף שאירוע מהסוג הזה נוגע לו בדרך כלל (קריאה אוטומטית)'})),
+    macro,unknown:'מה בדיוק קרה ומה המשמעות: הכתבה עוד לא נקראה במלואה.',more:'',ev:null,rules:true,at:new Date().toISOString()};
 }
-const arcItem=(a,x,iso)=>({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),rules:!!x.rules});
+const arcItem=(a,x,iso)=>({id:a.id,at:a.at||a.seen||iso,src:a.src||'co',pub:a.pub||null,he:x.he,type:x.type,level:x.level,dir:x.dir,cert:x.cert,kind:x.kind||'news',regions:x.regions||[],macro:!!x.macro,ev:x.ev||null,sectors:x.sectors||[],themes:x.themes||[],aff:(x.aff||[]).map(z=>({sym:z.sym,how:z.how,dir:z.dir})),syms:(a.syms||[]).slice(0,6),rules:!!x.rules});

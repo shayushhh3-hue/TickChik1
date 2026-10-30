@@ -1,20 +1,22 @@
-// 30.10: the owner hears at once, by e-mail (with consent for "live"), when something moves while the markets trade:
-//  - a price the owner set on a security (S.pxAlerts: above / below) is crossed;
+// 30.10: each person hears at once, by e-mail (the owner, and a partner with consent for "live") and on the phone, when
+// something happens:
+//  - a price they set on a security (S.pxAlerts: above / below) is crossed;
 //  - a holding moves more than the chosen share in a day (S.liveAl.move, 5% unless set);
-//  - the dollar crosses a rate the owner set (S.liveAl.usdAbove / usdBelow);
-//  - a critical reading of the news about a holding arrives (research/newsx, not one made by the plain rules).
-// Each one at most once a day (alerts/live), at most one e-mail every 20 minutes, and nothing at night. Facts from the
-// prices and the readings; never advice.
+//  - the dollar crosses a rate they set (S.liveAl.usdAbove / usdBelow);
+//  - a personal alert of "חיבור למציאות" (server/pulse.js): a critical one, and an important one when they chose so; a
+//    material development of an alert is sent again, another article about the same event is not.
+// Each one at most once a day (alerts/live, or meta live:<id>), at most one message every 20 minutes (or an hour, as
+// chosen), and nothing in the person's quiet hours (midnight to 09:00 unless set otherwise; a critical one only if they
+// allowed it). Facts from the prices and the readings; never advice.
 import {sendAllowed, esc, wrapHtml, mailAllowedFor} from './mail.js';
 import {pushTo, pushUsers} from './push.js';
-import {createHash} from 'node:crypto';
-const newsId=link=>createHash('sha1').update(String(link||'')).digest('hex').slice(0,12);
+import {pathsOf as pathsOfP, pulseUpdate, pulsePrefs, inQuiet} from './pulse.js';
 const ilDay=d=>d.toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
 const pct=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(1)+'%';
 
 // 30.10: for any person: the owner's documents, or a partner's own (data/users/<id>/...)
-export const pathsOf=u=>!u||u.role==='owner'||u.role==='admin'?{portfolio:'portfolio/main',settings:'settings/main'}:{portfolio:`data/users/${u.id}/portfolio`,settings:`data/users/${u.id}/settings`};
-export function liveHits(store,{now=new Date(),paths=pathsOf(null)}={}){
+export const pathsOf=pathsOfP;
+export function liveHits(store,{now=new Date(),paths=pathsOf(null),user=null}={}){
   const Q=store.getDoc('quotes/latest').data, P=store.getDoc(paths.portfolio).data, S=store.getDoc(paths.settings).data||{};
   if(!Q||!Q.prices)return [];
   const out=[], px=k=>{const v=+(Q.prices||{})[k]; return v>0?v:null}, A=S.liveAl||{}, move=+A.move>0?+A.move:5;
@@ -29,17 +31,18 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null)}={}){
   // the dollar
   const fx=+Q.usdIls; if(fx>0){if(+A.usdAbove>0&&fx>=+A.usdAbove)out.push({key:`usd:up:${A.usdAbove}`,sev:'warn',text:`הדולר עבר את ${A.usdAbove}: ${fx.toFixed(3)} ₪.`});
     if(+A.usdBelow>0&&fx<=+A.usdBelow)out.push({key:`usd:down:${A.usdBelow}`,sev:'warn',text:`הדולר ירד אל ${A.usdBelow}: ${fx.toFixed(3)} ₪.`})}
-  // a critical reading about a holding, of the last six hours
-  if(A.news!==false){const X=store.getDoc('research/newsx').data, N=store.getDoc('research/news').data, from=new Date(now.getTime()-6*36e5).toISOString(), hs=new Set(held);
-    const arts=new Map(); for(const it of ((N&&N.items)||[]))if(it&&it.link)arts.set(newsId(it.link),it);
-    for(const [id,x] of Object.entries((X&&X.by)||{})){if(!x||x.rules||x.level!=='crit')continue; const a=arts.get(id); if(!a||(a.at||a.seen)<from)continue;
-      const who=(x.aff||[]).filter(z=>z.how==='direct'&&hs.has(z.sym)).map(z=>z.sym); if(!who.length)continue;
-      out.push({key:`news:${x.ev||id}`,sev:'crit',text:`${who.join(', ')}: ${x.he}. ${x.what||''}`.trim(),link:a.link})}}
+  // 30.10: the personal alerts (server/pulse.js) of the last six hours that may reach the phone: the critical ones, and
+  // the important ones when the person chose so; a material development of one (a new version) is sent again
+  if(A.news!==false){try{const pr=pulsePrefs(S), from=new Date(now.getTime()-6*36e5).toISOString(), r=pulseUpdate(store,user,{now});
+    for(const a of r.doc.items){if(a.kind==='mkt'||(a.up||a.at)<from)continue; if(!(a.lv==='crit'&&pr.push.crit)&&!(a.lv==='imp'&&pr.push.imp))continue;
+      const who=(a.holds||[]).filter(h=>h.link==='direct').map(h=>h.sym), base=`news:${a.ev||a.k.replace(/^(ev|id):/,'')}`;
+      out.push({key:a.ver>1?`${base}:v${a.ver}`:base,sev:a.lv==='crit'?'crit':'warn',lv:a.lv,text:`${who.length?who.join(', ')+': ':''}${a.title}. ${a.what||''}`.trim()+(a.ver>1?` (עדכון: ${(a.hist[a.hist.length-1]||{}).t||'התפתחות'})`:''),link:(a.arts[0]||{}).link||null})}}catch(e){}}
   return out;
 }
+// 30.10: quiet hours are each person's (settings → "חדשות והתראות"; nothing from midnight to 09:00 unless set otherwise),
+// and so are how often a message may come and whether a critical one may come in the quiet hours
 export async function liveTask(store,{log=()=>{},now=new Date(),send=sendAllowed,push=null}={}){
-  const day=ilDay(now), h=+now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem',hour:'numeric',hour12:false});
-  if(h<9||h>23){return {quiet:true}}
+  const day=ilDay(now);
   const owner=store.users().find(u=>u.role==='owner'), withDev=new Set(pushUsers(store).map(u=>u.id)), who=[...(owner?[owner]:[{id:'owner',role:'owner'}]),...store.users().filter(u=>u.role!=='owner'&&(withDev.has(u.id)||(u.role==='friend'&&mailAllowedFor(store,u,'live'))))];
   let out=null;
   for(const u of who){const r=await liveFor(store,u,{log,now,day,send,push}); if(u.role==='owner')out=r}
@@ -52,9 +55,15 @@ async function liveFor(store,u,{log,now,day,send,push}){
   const st=own?store.getDoc('alerts/live'):{exists:!!store.getMeta(stKey),data:(()=>{try{return JSON.parse(store.getMeta(stKey)||'null')}catch(e){return null}})()};
   const D=st.exists&&st.data&&st.data.date===day?st.data:{date:day,sent:[],lastAt:null};
   const save=x=>own?store.setDoc('alerts/live',x,{silent:true}):store.setMeta(stKey,JSON.stringify(x));
-  const hits=liveHits(store,{now,paths:pathsOf(u)}), fresh=hits.filter(x=>!D.sent.includes(x.key));
-  if(!fresh.length){save({...D,checkedAt:now.toISOString()}); return {hits:hits.length,fresh:0}}
-  if(D.lastAt&&now-new Date(D.lastAt)<20*60e3){log(`live${own?'':' ('+u.id+')'}: ${fresh.length} waiting for the next 20 minutes`); return {hits:hits.length,fresh:fresh.length,waiting:true}}
+  const pr=pulsePrefs(store.getDoc(pathsOf(u).settings).data||{});
+  if(!pr.on)return {off:true,hits:0,fresh:0};
+  let hits=liveHits(store,{now,paths:pathsOf(u),user:own?null:u});
+  // the quiet hours: nothing, or only the critical ones when the person allowed them; once a day only critical ones
+  const quiet=inQuiet(pr,now); if(quiet)hits=hits.filter(x=>x.sev==='crit'&&pr.critQuiet); if(pr.freq==='day')hits=hits.filter(x=>x.sev==='crit');
+  const fresh=hits.filter(x=>!D.sent.includes(x.key));
+  if(!fresh.length){save({...D,checkedAt:now.toISOString()}); return quiet?{quiet:true,hits:hits.length,fresh:0}:{hits:hits.length,fresh:0}}
+  const gap=(pr.freq==='hour'?60:20)*60e3;
+  if(D.lastAt&&now-new Date(D.lastAt)<gap){log(`live${own?'':' ('+u.id+')'}: ${fresh.length} waiting for the next ${gap/60e3} minutes`); return {hits:hits.length,fresh:fresh.length,waiting:true}}
   fresh.sort((a,b)=>(a.sev==='crit'?0:1)-(b.sev==='crit'?0:1));
   const url=process.env.SITE_URL||'', head=fresh.length===1?fresh[0].text.slice(0,70):`${fresh.length} התראות: ${fresh.map(x=>x.text.split(' ')[0]).slice(0,4).join(', ')}`;
   let ok=false;

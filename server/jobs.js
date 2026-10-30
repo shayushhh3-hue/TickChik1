@@ -12,6 +12,7 @@ import {newsTask} from './newsfeed.js';
 import {newsxTask} from './newsx.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
+import {pulseTask} from './pulse.js';
 import {newsSyms} from './newsfeed.js';
 import {jobNote, healthCheck} from './health.js';
 
@@ -37,13 +38,15 @@ export const SCHEDULE=[
   {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   // 30.10: the owner's live alerts (prices set, a big day, the dollar, a critical reading), every 10 minutes by day
-  {name:'live',    lane:'px', when:p=>p.h>=9&&p.h<=23&&p.min%10===3, run:(s,o)=>liveTask(s,o)},
+  // 30.10: all day: each person's quiet hours decide what may go out (server/pulse.js, settings → "חדשות והתראות")
+  {name:'live',    lane:'px', when:p=>p.min%10===3, run:(s,o)=>liveTask(s,o)},
   {name:'pxwatch', lane:'px', when:p=>p.h>=9&&p.h<=23&&(p.min===5||p.min===35), run:(s,o)=>pxWatchTask(s,o)},
   // the articles about everybody's securities, every half hour by day (research/news, the "חדשות" tab)
   // 29.10: ...and read right after they are gathered (what happened, whom it may touch, how sure); 'newsx' alone is the
   // owner's "read now" and a catch-up a quarter of an hour later
-  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o)}},
-  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%30===25, run:(s,o)=>newsxTask(s,o)},
+  // 30.10: and after each reading, everyone's personal alerts (server/pulse.js), so the alert center is current
+  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o); pulseTask(s,o)}},
+  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%30===25, run:async(s,o)=>{await newsxTask(s,o); pulseTask(s,o)}},
   // 29.10: what investors post on X about the securities (with a token that may read), twice a day, before the readings
   {name:'x',       when:p=>(p.h===9||p.h===17)&&p.min===15, run:(s,o)=>xTask(s,{...o,newsSyms})},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},

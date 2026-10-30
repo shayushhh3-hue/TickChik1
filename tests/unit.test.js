@@ -1125,12 +1125,12 @@ test('news feed: the articles of everybody\'s securities, merged by link, kept a
   const now=new Date('2026-10-28T10:00:00Z'), f=async u=>{u=String(u); const m=u.match(/symbol=([A-Z]+)/); const k=m?m[1]:'';
     if(u.includes('/company-news'))return Response.json([{headline:k+' rises',url:'https://n.com/'+k,source:'N',datetime:Date.parse('2026-10-28T08:00:00Z')/1000,summary:'why'},{headline:'Market wrap',url:'https://n.com/wrap',source:'W',datetime:Date.parse('2026-10-20T08:00:00Z')/1000}]);
     return new Response('',{status:404})};
-  const st=await newsTask(s,{fetch:f,now,budgetMs:60e3}); assert.equal(st.ok,3); assert.equal(st.items,3,'three of the day, the old wrap dropped');
+  const st=await newsTask(s,{fetch:f,now,budgetMs:60e3,market:[]}); assert.equal(st.ok,3); assert.equal(st.items,3,'three of the day, the old wrap dropped');
   const d=s.getDoc('research/news').data; const wrap=d.items.find(x=>x.link==='https://n.com/wrap'); assert.ok(!wrap,'older than a week: gone');
   assert.deepEqual(d.items.map(x=>x.link).sort(),['https://n.com/KO','https://n.com/MSFT','https://n.com/NVDA']); assert.equal(d.items.find(x=>x.link==='https://n.com/KO').sum,'why');
   // the same article about two securities: one item, both symbols
   const f2=async u=>{u=String(u); if(u.includes('/company-news'))return Response.json([{headline:'Big tech',url:'https://n.com/tech',source:'T',datetime:Date.parse('2026-10-28T09:00:00Z')/1000}]); return new Response('',{status:404})};
-  await newsTask(s,{fetch:f2,now,budgetMs:60e3}); const d2=s.getDoc('research/news').data, tech=d2.items.find(x=>x.link==='https://n.com/tech'); assert.deepEqual(tech.syms.sort(),['KO','MSFT','NVDA']); assert.equal(d2.items.length,4,'the earlier ones stay');
+  await newsTask(s,{fetch:f2,now,budgetMs:60e3,market:[]}); const d2=s.getDoc('research/news').data, tech=d2.items.find(x=>x.link==='https://n.com/tech'); assert.deepEqual(tech.syms.sort(),['KO','MSFT','NVDA']); assert.equal(d2.items.length,4,'the earlier ones stay');
   // a partner (u2: KO and MSFT) does not see NVDA's article
   s.setDoc('data/users/u2/settings',{},{silent:true});
   const pv=partnerView(s,{id:'u2',role:'partner'},'research/news',d2); assert.deepEqual(pv.items.map(x=>x.link).sort(),['https://n.com/KO','https://n.com/MSFT','https://n.com/tech']); assert.deepEqual(pv.items.find(x=>x.link==='https://n.com/tech').syms.sort(),['KO','MSFT']);
@@ -1204,14 +1204,14 @@ test('the news understood: one reading per article, shared; the general news; a 
       {i:2,he:'הפד הותיר את הריבית',what:'הריבית נשארה.',type:'macro_rates',level:'imp',dir:'mixed',cert:'fact',aff:[],sectors:['Finance','Real Estate'],themes:['rates','usd'],macro:true,unknown:'מה יקרה בהחלטה הבאה.',more:'',ev:'fed-rate-hold-oct'}];
     return JSON.stringify(A.slice(0,n))};
   const general=async()=>[{title:'Fed holds rates steady',pub:'CNBC',link:'https://x/fed',at:iso,sum:'The Fed left rates unchanged',tickers:[]}];
-  const st=await newsxTask(s,{now,ask,general});
+  const st=await newsxTask(s,{now,ask,general,market:[]});
   assert.equal(st.read,3); assert.equal(st.batches,1); assert.equal(st.gen,1); assert.equal(asked.length,1,'one call for the batch');
   assert.ok(!/old one/.test(asked[0]),'a week-old article is not read'); assert.ok(/"listed_under":\["NVDA"\]/.test(asked[0]));
   const d=s.getDoc('research/newsx').data, x=d.by[newsId('https://x/nvda1')];
   assert.equal(x.level,'crit'); assert.deepEqual(x.aff.map(a=>a.sym+':'+a.how),['NVDA:direct','TSM:supplier'],'a bad symbol is dropped'); assert.deepEqual(x.sectors,['Technology','Semiconductors'],'only known sectors'); assert.equal(x.ev,'nvda-q3-report');
   assert.equal(d.gen.length,1); assert.equal(d.by[d.gen[0].id].macro,true); assert.equal(d.n,3);
   // the next run: nothing new to read, nothing asked
-  const st2=await newsxTask(s,{now:new Date(now.getTime()+60e3),ask,general}); assert.equal(st2.read,0); assert.equal(asked.length,1);
+  const st2=await newsxTask(s,{now:new Date(now.getTime()+60e3),ask,general,market:[]}); assert.equal(st2.read,0); assert.equal(asked.length,1);
   // a partner holding KO: KO's reading and the general one, not NVDA's
   s.setDoc('data/users/u_b/portfolio',{positions:[{sym:'KO',qty:1}]});
   const v=partnerView(s,{id:'u_b',role:'friend'},'research/newsx',s.getDoc('research/newsx').data);
@@ -1294,6 +1294,45 @@ test('the plain reading by rules: when Claude cannot read, every article still g
   const arc=s.listDocs('research/newsarc').flatMap(r=>r.data.items); assert.equal(arc.length,1); assert.equal(arc[0].rules,false,'the archive keeps Claude\'s reading');
 });
 
+// 30.10: "חיבור למציאות": the news is a product of its own (four general categories, the market's anchors), and every
+// reading says what kind of content it is, where, when it happened, and the chain's middle links with their reasons
+test('the news engine: general categories, the market anchors for everyone (only their symbols), the reading\'s new fields, an updated headline',async()=>{
+  const {generalNews,newsxTask,cleanX,ruleRead,newsId,MARKET,kindOf,regionsOf}=await import('../server/newsx.js'); const {partnerView}=await import('../server/store.js');
+  process.env.FINNHUB_API_KEY='k'; const {_resetFh}=await import('../server/finnhub.js'); _resetFh();
+  const now=new Date('2026-10-30T10:00:00Z'), t=Date.parse('2026-10-30T08:00:00Z')/1000, cats=[];
+  const f=async u=>{u=String(u); const m=u.match(/category=([a-z]+)/); if(m){cats.push(m[1]); return Response.json([{headline:m[1]+' story',url:'https://g.com/'+m[1],source:'S',datetime:t},{headline:'shared',url:'https://g.com/same',source:'S',datetime:t}])} return new Response('',{status:404})};
+  const G=await generalNews({fetch:f,now}); assert.deepEqual(cats,['general','merger','forex','crypto']); assert.equal(G.filter(a=>a.link==='https://g.com/same').length,1,'once'); assert.equal(G.find(a=>a.link==='https://g.com/merger').cat,'merger');
+  delete process.env.FINNHUB_API_KEY;
+  assert.ok(MARKET.includes('AAPL')&&MARKET.length>=10);
+  // the anchors: an article gathered for AAPL and for a small company is everyone's, with AAPL only
+  const s=new Store(':memory:'), iso=now.toISOString();
+  s.setDoc('research/news',{items:[{title:'Apple and Tiny sign a deal',pub:'Reuters',link:'https://x/a1',at:iso,syms:['AAPL','TINY'],seen:iso},{title:'Tiny alone',pub:'R',link:'https://x/t1',at:iso,syms:['TINY'],seen:iso}]});
+  const general=async()=>[{title:'Oil jumps',pub:'CNBC',link:'https://x/oil',at:iso,tickers:[],cat:'general'}];
+  const k0=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try{await newsxTask(s,{now,general});
+    const d=s.getDoc('research/newsx').data, a1=d.gen.find(g=>g.link==='https://x/a1'); assert.ok(a1,'the anchor article is general news'); assert.deepEqual(a1.syms,['AAPL'],'never the other security it was gathered for'); assert.equal(a1.cat,'market');
+    assert.ok(!d.gen.some(g=>g.link==='https://x/t1')); assert.equal(d.gen.find(g=>g.link==='https://x/oil').cat,'general');
+    s.setDoc('data/users/u9/portfolio',{positions:[]}); const v=partnerView(s,{id:'u9',role:'friend'},'research/newsx',d);
+    assert.ok(v.by[newsId('https://x/a1')]&&v.by[newsId('https://x/oil')],'a partner without a portfolio still has news'); assert.ok(!v.by[newsId('https://x/t1')]);
+    // the same general article with a new headline: updated, not new
+    const general2=async()=>[{title:'Oil jumps 5% on supply fears',pub:'CNBC',link:'https://x/oil',at:iso,tickers:[],cat:'general'}];
+    const st=await newsxTask(s,{now:new Date(now.getTime()+30*60e3),general:general2}); assert.equal(st.gen,0); const o=s.getDoc('research/newsx').data.gen.find(g=>g.link==='https://x/oil');
+    assert.equal(o.title,'Oil jumps 5% on supply fears'); assert.equal(o.prevTitle,'Oil jumps'); assert.ok(o.upd)}finally{if(k0)process.env.ANTHROPIC_API_KEY=k0}
+  // the reading's new fields, cleaned
+  const x=cleanX({he:'נפט',what:'הנפט עלה.',type:'energy',level:'imp',dir:'neg',cert:'fact',kind:'opinion',regions:['middle_east','mars','us'],occ:'2026-10-29',
+    fac:[{k:'oil',move:'up',why:'פגיעה בהיצע'},{k:'nope',move:'up'},{k:'oil',move:'down'}],sectors:['Energy','Transportation'],
+    secx:[{g:'Energy',via:'oil',dir:'pos',why:'מחיר גבוה יותר'},{g:'Transportation',via:'gold',dir:'neg',why:'דלק יקר'},{g:'Utilities',via:null}],aff:[{sym:'DAL',how:'sector',dir:'neg',why:'דלק',via:'Transportation'},{sym:'XOM',how:'direct',dir:'pos',via:'Energy'}]});
+  assert.equal(x.kind,'opinion'); assert.deepEqual(x.regions,['middle_east','us']); assert.equal(x.occ,'2026-10-29');
+  assert.deepEqual(x.fac,[{k:'oil',move:'up',why:'פגיעה בהיצע'}],'a known factor once'); assert.deepEqual(x.secx.map(z=>z.g+':'+z.via),['Energy:oil','Transportation:null'],'a sector of the reading only; an unknown factor is dropped');
+  assert.equal(x.aff.find(a=>a.sym==='DAL').via,'Transportation'); assert.ok(!x.aff.find(a=>a.sym==='XOM').via,'the company itself has no path');
+  assert.equal(cleanX({he:'a',what:'b',kind:'gossip',occ:'2030-01-01'}).kind,'news'); assert.equal(cleanX({he:'a',what:'b',occ:'2099-01-01'}).occ,null,'no event in the future');
+  // by rules: a company's release, an opinion, the places; the factors said to be by rule
+  assert.equal(kindOf({title:'Acme announces Q3 results',pub:'Business Wire'}),'pr'); assert.equal(kindOf({title:'Is it time to buy Nvidia?',pub:'X'}),'opinion'); assert.equal(kindOf({title:'Nvidia rises',pub:'Motley Fool'}),'opinion');
+  assert.equal(kindOf({title:'Fed decision preview: what to expect',pub:'Reuters'}),'analysis'); assert.equal(kindOf({title:'Fed holds rates',pub:'Reuters'}),'news');
+  assert.deepEqual(regionsOf('China tariffs hit European carmakers'),['china','europe']);
+  const r=ruleRead({title:'Oil jumps as OPEC cuts output',pub:'Reuters',syms:[]}); assert.equal(r.type,'energy'); assert.ok(r.regions.includes('middle_east')); assert.equal(r.fac[0].k,'oil'); assert.match(r.fac[0].why,/אוטומטית/); assert.equal(r.secx[0].g,'Energy');
+});
+
 test('live alerts: a price set, a big day, the dollar, a critical reading; once a day each, one e-mail in 20 minutes, quiet at night',async()=>{
   const {liveTask,liveHits}=await import('../server/livealert.js'); const s=new Store(':memory:');
   s.setDoc('portfolio/main',{positions:[{sym:'NVDA'},{sym:'KO'}]}); s.setDoc('quotes/latest',{prices:{NVDA:190,KO:60,MSFT:500},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}});
@@ -1311,6 +1350,102 @@ test('live alerts: a price set, a big day, the dollar, a critical reading; once 
   s.setDoc('quotes/latest',{prices:{NVDA:190,KO:55,MSFT:500,AAA:1},prev:{NVDA:200,KO:59.8},usdIls:3.82,stale:{}}); s.setDoc('settings/main',{pxAlerts:{MSFT:{above:480},NVDA:{below:195}},liveAl:{move:4,usdAbove:3.8}});
   r=await liveTask(s,{now:new Date(now.getTime()+40*60e3),send}); assert.equal(r.waiting,true,'one e-mail in 20 minutes');
   r=await liveTask(s,{now:new Date('2026-10-30T01:00:00Z'),send}); assert.equal(r.quiet,true,'quiet at night');
+});
+
+// 30.10: TikChik Pulse: personal alerts only from a link to the portfolio that can be explained, three levels by
+// written rules, the three measures apart, one alert per event, again only on a material development
+test('pulse: levels by rules from importance, relevance and confidence; one alert per event; material developments; the person\'s preferences; partners apart',async()=>{
+  const {pulseUpdate,pulseCompute,material,inQuiet,pulsePrefs,levelOf,_setSectors,holdingsOf}=await import('../server/pulse.js'); const {newsId}=await import('../server/newsx.js');
+  _setSectors({NVDA:'Technology',XOM:'Energy',CVX:'Energy',KO:'Consumer Staples',JPM:'Finance'});
+  const s=new Store(':memory:'), now=new Date('2026-10-30T12:00:00Z'), iso=now.toISOString(), h1=new Date(now-36e5).toISOString();
+  // the portfolio: NVDA 50%, XOM 20%, CVX 10%, KO 20% (every price known, so weights are used)
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:5,ccy:'USD'},{sym:'XOM',qty:2,ccy:'USD'},{sym:'CVX',qty:1,ccy:'USD'},{sym:'KO',qty:4,ccy:'USD'}]});
+  s.setDoc('quotes/latest',{prices:{NVDA:100,XOM:100,CVX:100,KO:50},prev:{},usdIls:3.7,updatedAt:iso});
+  const HD=holdingsOf(s.getDoc('portfolio/main').data,s.getDoc('quotes/latest').data); assert.equal(HD.wOk,true); assert.equal(HD.pos.find(h=>h.sym==='NVDA').w,50);
+  const art=(link,syms,at=h1)=>({title:link,pub:'Reuters',link:'https://x/'+link,at,syms,seen:at});
+  const items=[art('nv1',['NVDA']),art('nv2',['NVDA']),art('oil',[]),art('ko-op',['KO']),art('tiny',['TINY']),art('jpm',['JPM']),art('rule',['KO'])];
+  s.setDoc('research/news',{items});
+  const R=(o)=>({he:'h',what:'w',type:'company',level:'imp',dir:'unclear',cert:'fact',kind:'news',aff:[],sectors:[],themes:[],macro:false,...o});
+  const by={[newsId('https://x/nv1')]:R({he:'אנבידיה הורידה תחזית',type:'guidance',level:'crit',dir:'neg',aff:[{sym:'NVDA',how:'direct',dir:'neg',why:'החברה'}],ev:'nvda-cut'}),
+    [newsId('https://x/nv2')]:R({he:'עוד על התחזית',type:'guidance',level:'crit',dir:'neg',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nvda-cut'}),
+    [newsId('https://x/oil')]:R({he:'אופ״ק קיצצה תפוקה',type:'energy',level:'imp',dir:'mixed',cert:'fact',sectors:['Energy'],themes:['oil'],macro:true,fac:[{k:'oil',move:'up',why:'פחות היצע'}],secx:[{g:'Energy',via:'oil',dir:'pos',why:'מחיר גבוה'}],ev:'opec-cut'}),
+    [newsId('https://x/ko-op')]:R({he:'האם לקנות קוקה קולה',type:'company',level:'imp',dir:'pos',cert:'interp',kind:'opinion',aff:[{sym:'KO',how:'direct',dir:'pos'}],ev:'ko-op'}),
+    [newsId('https://x/tiny')]:R({he:'חברה קטנה',level:'crit',aff:[{sym:'TINY',how:'direct'}],ev:'tiny'}),
+    [newsId('https://x/jpm')]:R({he:'ג׳יי.פי מורגן',level:'imp',aff:[{sym:'JPM',how:'direct'}],ev:'jpm'}),
+    [newsId('https://x/rule')]:R({he:'KO: תביעה',type:'legal',level:'imp',dir:'neg',cert:'est',rules:true,aff:[{sym:'KO',how:'direct',dir:'neg'}],ev:null})};
+  s.setDoc('research/newsx',{by,gen:[]});
+  let r=pulseUpdate(s,null,{now}); const A=Object.fromEntries(r.doc.items.map(a=>[a.k,a]));
+  // the critical reading about NVDA (50%), a reported fact: critical; the two articles are one alert with both sources
+  assert.equal(A['ev:nvda-cut'].lv,'crit'); assert.equal(A['ev:nvda-cut'].n,2); assert.equal(A['ev:nvda-cut'].imp,'crit'); assert.equal(A['ev:nvda-cut'].rel,'high'); assert.equal(A['ev:nvda-cut'].conf,'high');
+  assert.match(A['ev:nvda-cut'].relWhy,/NVDA, 50%/);
+  // OPEC, through the energy sector (30% of the portfolio: XOM and CVX are not named), important in itself: a portfolio update, with the sector's share and path
+  assert.equal(A['ev:opec-cut'].lv,'upd'); assert.equal(A['ev:opec-cut'].rel,'mid'); assert.equal(A['ev:opec-cut'].conf,'low'); assert.deepEqual(A['ev:opec-cut'].secs.map(x=>x.g+':'+x.w),['Energy:30']); assert.equal(A['ev:opec-cut'].fac[0].k,'oil');
+  // an opinion about a holding is never more than a portfolio update; a reading by rules neither
+  assert.equal(A['ev:ko-op'].lv,'upd'); assert.equal(A['id:'+newsId('https://x/rule')].lv,'upd'); assert.equal(A['id:'+newsId('https://x/rule')].conf,'low');
+  // nothing about securities not held, whatever their level
+  assert.ok(!A['ev:tiny']&&!A['ev:jpm']); assert.equal(r.fresh.length,r.doc.items.length,'all new');
+  assert.ok(A['ev:nvda-cut'].hist[0].why==='new'&&A['ev:nvda-cut'].at===iso);
+  // the next run: another article about the same event at the same level: not a new alert
+  const later=new Date(now.getTime()+30*60e3);
+  items.push(art('nv3',['NVDA'],later.toISOString())); s.setDoc('research/news',{items}); by[newsId('https://x/nv3')]=R({he:'שוב',type:'guidance',level:'crit',dir:'neg',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nvda-cut'}); s.setDoc('research/newsx',{by,gen:[]});
+  r=pulseUpdate(s,null,{now:later}); assert.equal(r.fresh.length,0,'another article is not a development'); assert.equal(r.doc.items.find(a=>a.k==='ev:nvda-cut').n,3); assert.equal(r.doc.items.find(a=>a.k==='ev:nvda-cut').ver,1);
+  // OPEC's direction turns clear and another holding is named: a development, version 2, with the reasons
+  by[newsId('https://x/oil')]=R({he:'אופ״ק',type:'energy',level:'imp',dir:'neg',cert:'fact',sectors:['Energy'],themes:['oil'],macro:true,aff:[{sym:'XOM',how:'sector',dir:'neg',why:'מפיקה נפט'}],ev:'opec-cut'}); s.setDoc('research/newsx',{by,gen:[]});
+  const later2=new Date(later.getTime()+30*60e3); r=pulseUpdate(s,null,{now:later2}); const op=r.doc.items.find(a=>a.k==='ev:opec-cut');
+  assert.equal(r.fresh.length,1); assert.equal(op.ver,2); assert.ok(op.at===iso&&op.up===later2.toISOString(),'made then, developed now'); assert.match(op.hist[1].t,/כיוון|אחזקה/); assert.ok(op.holds.some(h=>h.sym==='XOM'&&h.link==='indirect'));
+  assert.deepEqual(material({lv:'imp',dir:'pos',holds:[{sym:'A'}],cert:'fact'},{lv:'imp',dir:'pos',holds:[{sym:'A'}],cert:'fact'}),[],'nothing new');
+  assert.deepEqual(material({lv:'upd',dir:'pos',holds:[],cert:'interp'},{lv:'crit',dir:'neg',holds:[{sym:'B'}],cert:'fact'}),['level','dir','hold','fact']);
+  assert.equal(levelOf({imp:'crit',rel:'high',conf:'mid'},'analysis').lv,'imp','an analysis is not critical');
+  // the person's preferences change what is made: no portfolio updates, a lower sensitivity, the alerts off
+  by[newsId('https://x/oil')]=R({he:'אופ״ק',type:'energy',level:'imp',dir:'mixed',cert:'fact',sectors:['Energy'],themes:['oil'],macro:true,ev:'opec-cut'}); s.setDoc('research/newsx',{by,gen:[]});   // back to the sector only
+  s.setDoc('settings/main',{pulse:{lv:{upd:false}}}); assert.ok(pulseCompute(s,null,{now}).alerts.every(a=>a.lv!=='upd'));
+  s.setDoc('settings/main',{pulse:{sens:'low'}}); assert.ok(!pulseCompute(s,null,{now}).alerts.some(a=>a.k==='ev:opec-cut'),'30% of the portfolio is below the low sensitivity\'s sector share');
+  s.setDoc('settings/main',{pulse:{themes:['rates']}}); assert.ok(!pulseCompute(s,null,{now}).alerts.some(a=>a.k==='ev:opec-cut'),'a sector-only event outside the chosen topics');
+  s.setDoc('settings/main',{pulse:{on:false}}); assert.equal(pulseCompute(s,null,{now}).alerts.length,0);
+  s.setDoc('settings/main',{newsAl:{types:{guidance:false}}}); assert.ok(!pulseCompute(s,null,{now}).alerts.some(a=>a.k==='ev:nvda-cut'),'a kind switched off');
+  s.setDoc('settings/main',{});
+  // without weights (a price missing): the holding named is still high, said to be without a weight
+  s.setDoc('quotes/latest',{prices:{NVDA:100,XOM:100,CVX:100},prev:{},usdIls:3.7,updatedAt:iso}); const c=pulseCompute(s,null,{now}).alerts.find(a=>a.k==='ev:nvda-cut'); assert.equal(c.lv,'crit'); assert.match(c.relWhy,/המשקל בתיק לא ידוע/);
+  s.setDoc('quotes/latest',{prices:{NVDA:100,XOM:100,CVX:100,KO:50},prev:{NVDA:90},usdIls:3.7,updatedAt:iso});
+  // the measured facts: NVDA's day (+11% over 90), a portfolio fact
+  const mv=pulseCompute(s,null,{now}).alerts.find(a=>a.kind==='mkt'); assert.ok(mv&&/NVDA עלתה/.test(mv.title)); assert.equal(mv.lv,'crit','more than twice the 5% threshold, half the portfolio'); assert.equal(mv.conf,'high');
+  // a partner: their own holdings, only the articles they may read, their own document
+  const f=s.addUser({email:'p@example.com',password:'partner-pass-1',role:'friend'});
+  s.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'JPM',qty:1,ccy:'USD'}]}); s.setDoc('quotes/latest',{prices:{NVDA:100,XOM:100,CVX:100,KO:50,JPM:300},prev:{},usdIls:3.7,updatedAt:iso});
+  const rp=pulseUpdate(s,f,{now}); assert.deepEqual(rp.doc.items.map(a=>a.k),['ev:jpm'],'JPM only'); assert.ok(s.getDoc(`data/users/${f.id}/pulse`).exists); assert.ok(!s.getDoc('alerts/pulse').data.items.some(a=>a.k==='ev:jpm'),'apart');
+  // an article gathered only for someone else's security is not a source for a partner, even if it names their holding
+  items.push(art('tsm',['TSM'])); s.setDoc('research/news',{items}); by[newsId('https://x/tsm')]=R({he:'טייוואן סמי',level:'crit',aff:[{sym:'TSM',how:'direct'},{sym:'JPM',how:'customer',why:'x'}],ev:'tsm'}); s.setDoc('research/newsx',{by,gen:[]});
+  assert.ok(!pulseCompute(s,f,{now}).alerts.some(a=>a.k==='ev:tsm'));
+  // no portfolio: no personal alerts, and nothing pretends to be one
+  const g=s.addUser({email:'g@example.com',password:'partner-pass-2',role:'friend'}); assert.equal(pulseCompute(s,g,{now}).alerts.length,0);
+  // the quiet hours, in Israel time
+  const pr=pulsePrefs({pulse:{quiet:{from:'22:00',to:'07:00'}}}); assert.equal(inQuiet(pr,new Date('2026-10-30T21:30:00Z')),true,'23:30'); assert.equal(inQuiet(pr,new Date('2026-10-30T08:00:00Z')),false,'10:00');
+  assert.equal(inQuiet(pulsePrefs({}),new Date('2026-10-30T04:00:00Z')),true,'06:00, the default quiet until 09:00'); assert.equal(inQuiet(pulsePrefs({pulse:{quiet:{on:false}}}),new Date('2026-10-30T04:00:00Z')),false);
+});
+
+test('pulse on the phone: a critical alert in the quiet hours only when allowed; a development is sent again; the important ones only when chosen',async()=>{
+  const {liveTask}=await import('../server/livealert.js'); const {newsId}=await import('../server/newsx.js'); const {_setSectors}=await import('../server/pulse.js'); _setSectors({});
+  const s=new Store(':memory:'), night=new Date('2026-10-30T23:00:00Z'), at=new Date(night-36e5).toISOString();   // 01:00 in Israel
+  const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:1,ccy:'USD'}]}); s.setDoc('quotes/latest',{prices:{NVDA:100},prev:{},usdIls:3.7,updatedAt:at});
+  s.setDoc('research/news',{items:[{title:'t',link:'https://x/a',at,syms:['NVDA'],seen:at}]});
+  s.setDoc('research/newsx',{by:{[newsId('https://x/a')]:{he:'אנבידיה',what:'w',type:'guidance',level:'crit',dir:'neg',cert:'fact',kind:'news',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nv'}},gen:[]});
+  const got=[]; const push=async(st,uid,msg)=>{got.push(msg); return 1}, send=async()=>true;
+  let r=await liveTask(s,{now:night,send,push}); assert.equal(r.quiet,true); assert.equal(got.length,0,'quiet by default');
+  s.setDoc('settings/main',{pulse:{critQuiet:true}}); r=await liveTask(s,{now:night,send,push}); assert.equal(got.length,1,'a critical one, allowed'); assert.match(got[0].body,/אנבידיה/);
+  r=await liveTask(s,{now:new Date(night.getTime()+30*60e3),send,push}); assert.equal(got.length,1,'once');
+  // a development: another holding named (version 2), sent again after the gap
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:1,ccy:'USD'},{sym:'TSM',qty:1,ccy:'USD'}]}); s.setDoc('quotes/latest',{prices:{NVDA:100,TSM:100},prev:{},usdIls:3.7,updatedAt:at});
+  s.setDoc('research/newsx',{by:{[newsId('https://x/a')]:{he:'אנבידיה',what:'w',type:'guidance',level:'crit',dir:'neg',cert:'fact',kind:'news',aff:[{sym:'NVDA',how:'direct',dir:'neg'},{sym:'TSM',how:'supplier',dir:'neg',why:'מייצרת'}],ev:'nv'}},gen:[]});
+  r=await liveTask(s,{now:new Date(night.getTime()+60*60e3),send,push}); assert.equal(got.length,2); assert.match(got[1].body,/עדכון/);
+  // an important one: not on the phone unless chosen
+  const s2=new Store(':memory:'); s2.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); const day=new Date('2026-10-30T10:00:00Z'), at2=new Date(day-36e5).toISOString();
+  s2.setDoc('portfolio/main',{positions:[{sym:'KO',qty:1,ccy:'USD'}]}); s2.setDoc('quotes/latest',{prices:{KO:60},prev:{},usdIls:3.7,updatedAt:at2});
+  s2.setDoc('research/news',{items:[{title:'t',link:'https://x/k',at:at2,syms:['KO'],seen:at2}]});
+  s2.setDoc('research/newsx',{by:{[newsId('https://x/k')]:{he:'קוקה קולה',what:'w',type:'contract',level:'imp',dir:'pos',cert:'fact',kind:'news',aff:[{sym:'KO',how:'direct',dir:'pos'}],ev:'ko'}},gen:[]});
+  const got2=[]; await liveTask(s2,{now:day,send,push:async(st,uid,msg)=>{got2.push(msg); return 1}}); assert.equal(got2.length,0);
+  assert.equal(s2.getDoc('alerts/pulse').data.items[0].lv,'imp','it is in the alert center');
+  s2.setDoc('settings/main',{pulse:{push:{imp:true}}}); await liveTask(s2,{now:new Date(day.getTime()+60e3),send,push:async(st,uid,msg)=>{got2.push(msg); return 1}}); assert.equal(got2.length,1);
 });
 
 test('the phone: devices kept per person, a gone one dropped; the live alerts reach the owner\'s and a partner\'s phones, each from their own portfolio',async()=>{
