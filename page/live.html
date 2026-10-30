@@ -19570,18 +19570,24 @@ function renderSnd(){for(const [id,k] of [['sndMsg','msg'],['sndSys','sys']]){co
 // ---- stage 7: e-mails need consent, per kind. The site sends only to the owner's address (set on the server), so the
 // switches are the owner's; system/mail says whether sending is set up and what happened last time, per kind. ----
 let MAILST=null;
-const MAILK=[['morning','סיכום הבוקר (07:50): מה קרה ביום המסחר האחרון, הידיעות החשובות על המניות שלך, מה מתוכנן השבוע, והתראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['live','התראות בזמן אמת: מחיר שקבעת נחצה, מניה בתיק זזה חזק, הדולר חצה שער, או ידיעה קריטית (ההגדרות למטה)'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, מקור נתונים שהפסיק לעבוד (בריאות המערכת), או פער שהדף מצא בין שני מסכים']];
-const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה'};
+const MAILK=[['morning','סיכום הבוקר (07:50): מה קרה ביום המסחר האחרון, הידיעות החשובות על המניות שלך, מה מתוכנן השבוע, והתראות חדשות'],['earnings','דוח כספי שפורסם למניה שבתיק או במעקב: רווח למניה והכנסות מול הצפי, הצפי לרבעון הבא ותגובת המניה, בדרך כלל בתוך שעה מהדוח'],['reports','הדוחות: שבועי בשישי, חודשי ורבעוני, עם קובץ PDF'],['backup','גיבוי יומי של הנתונים שלך (02:30), כקובץ מצורף'],['live','התראות בזמן אמת: מחיר שקבעת נחצה, מניה בתיק זזה חזק, הדולר חצה שער, או ידיעה קריטית (ההגדרות למעלה)'],['pxalert','משהו לא מתעדכן: מחירים שנתקעו בזמן מסחר, מקור נתונים שהפסיק לעבוד (בריאות המערכת), או פער שהדף מצא בין שני מסכים']];
+const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready:'לא נשלח, כי שליחת מיילים לא מוגדרת באתר',failed:'השליחה נכשלה',domain:'לא נשלח: צריך דומיין לשליחה'};
+let MAILME=null;
 function liveAlFill(){const A=(S&&S.liveAl)||{}; for(const [id,k] of [['laMove','move'],['laUsdUp','usdAbove'],['laUsdDn','usdBelow']]){const i=$(id); if(i){if(document.activeElement!==i)i.value=A[k]!=null?A[k]:''; i.disabled=!canWrite}} const n=$('laNews'); if(n){n.checked=A.news!==false; n.disabled=!canWrite}}
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!['laMove','laUsdUp','laUsdDn','laNews'].includes(el.id)||!canWrite)return; const A={...(S.liveAl||{})};
   if(el.id==='laNews')A.news=el.checked; else{const k={laMove:'move',laUsdUp:'usdAbove',laUsdDn:'usdBelow'}[el.id], v=+el.value; if(v>0)A[k]=v; else delete A[k]} S.liveAl=A; changed()});
 function renderMail(){try{liveAlFill()}catch(e){} try{pushUI()}catch(e){}
-  const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
-  if(!renderMail.asked){renderMail.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}}
-  const M=(S&&S.mail)||{}, L=(MAILST&&MAILST.last)||{}, list=$('mailList');
-  $('mailState').textContent=!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת.':'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.';
-  if(!list.querySelector('[data-mail]'))setH(list,MAILK.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''));
-  for(const [k] of MAILK){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
+  // 30.10: a partner has e-mails too: their own kinds (the morning, a report, the live alerts), to their own address
+  const box=$('mailBox'); if(!box)return; const on=!LOCAL&&!!db&&!!window.__tc||OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
+  if(!renderMail.asked){renderMail.asked=true; if(OWNER)try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}
+    if(window.__tc)fetch('/api/mail/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(j=>{MAILME=j; renderMail()}).catch(()=>{})}
+  const K=OWNER?MAILK:MAILK.filter(([k])=>((MAILME&&MAILME.kinds)||['morning','earnings','live']).includes(k));
+  const M=(S&&S.mail)||{}, L=(OWNER?(MAILST&&MAILST.last):(MAILME&&MAILME.last))||{}, list=$('mailList');
+  const dom=MAILME&&MAILME.ownDomain===false;
+  $('mailState').textContent=OWNER?(!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת.'+(dom?' לשותפים מיילים לא יגיעו עד שתחבר דומיין משלך ב-Resend ותגדיר ב-Railway את MAIL_FROM על הדומיין הזה (SETUP.md ← מיילים לשותפים).':''):'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.')
+    :!MAILME?'':!MAILME.ready?'שליחת מיילים עוד לא מוגדרת באתר. אפשר כבר לבחור, וזה יתחיל להגיע כשבעל האתר יגדיר אותה.':dom?'כרגע האתר יכול לשלוח מיילים רק לבעל האתר. אפשר כבר לבחור: זה יתחיל להגיע אליך אחרי שבעל האתר יחבר דומיין לשליחה. בינתיים, התראות לטלפון (למעלה) עובדות.':`מה שתפעיל כאן יישלח לכתובת שלך (${MAILME.to||''}), על התיק שלך בלבד.`;
+  if(list.dataset.k!==K.map(x=>x[0]).join()){list.dataset.k=K.map(x=>x[0]).join(); setH(list,K.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''))}
+  for(const [k] of K){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
 document.addEventListener('change',ev=>{const el=ev.target; if(el&&el.dataset&&el.dataset.amt!=null&&canWrite)planAct('amt',{ix:el.dataset.amt,v:el.value})});
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.mail||!canWrite)return; S.mail={...(S.mail||{}),[el.dataset.mail]:el.checked}; changed()});
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.dataset)return;
@@ -24372,6 +24378,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.9d',at:'2026-10-30',t:'מיילים גם לשותפים',d:'כל שותף בוחר בהגדרות שלו: סיכום הבוקר, דוח כספי של מניה שלו, והתראות בזמן אמת, על התיק שלו ולכתובת שלו. כדי שהמיילים יגיעו לשותפים, בעל האתר צריך לחבר דומיין לשליחה; עד אז ההתראות לטלפון עובדות.',go:'mail'},
   {v:'2026-10-30.9c',at:'2026-10-30',t:'לפני דוח כספי',d:'שלושה ימים לפני שחברה מהתיק מפרסמת דוח, מופיע לה עיגול בסטוריז: מה האנליסטים מצפים (רווח למניה והכנסות), איך הדוחות הקודמים יצאו מול הצפי, בכמה המניה זזה בממוצע סביב הדוחות האחרונים, ומה תזוזה כזו אומרת בשקלים בתיק שלך. גם ב"השבועיים הקרובים" בבית. עובדות מהעבר, לא תחזית.',go:'nx'},
   {v:'2026-10-30.9b',at:'2026-10-30',t:'התראות לטלפון',d:'בהגדרות ← ההתראות והצלילים שלי: "להפעיל במכשיר הזה". מאותו רגע מגיעה התראה לטלפון, גם כשהאתר סגור, כשמחיר שקבעת נחצה, כשמניה בתיק זזה חזק, כשהדולר חוצה שער שקבעת, או על ידיעה קריטית. לחיצה פותחת את הסטוריז. גם לשותפים, על התיק שלהם. באייפון: מהאייקון במסך הבית.',go:'notif'},
   {v:'2026-10-30.9',at:'2026-10-30',t:'התאמה מול בית ההשקעות',d:'ב"התיק שלי", מעל האחזקות: מה שהדוח או הצילום האחרון של כל חשבון הראו, מול מה שיש כאן עכשיו, נייר אחרי נייר. ההפרש מפורק למחירים, לשער הדולר שבית ההשקעות השתמש בו, לכמויות ולמזומן.',go:'pfedit'},

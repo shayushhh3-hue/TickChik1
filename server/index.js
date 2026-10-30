@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
-import {sendMail, mailNote, esc as mesc} from './mail.js';
+import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
 import {Store, canRead, canWrite, partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
@@ -116,6 +116,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
   app.get('/api/version',(req,res)=>res.json({v:verOf()}));
   // 30.10: notifications to the phone: the public key, this person's devices (how many), switch a device on or off, a test
+  // 30.10: a partner's own e-mails: whether sending works for them, the kinds they may have, what happened last
+  app.get('/api/mail/me',needUser,(req,res)=>{let last={}; try{last=(JSON.parse(store.getMeta('mail:'+req.user.id)||'{}').last)||{}}catch(e){}
+    res.json({ready:mailReady(),ownDomain:mailFromOwnDomain(),kinds:req.user.role==='owner'?null:PARTNER_KINDS,last,to:req.user.role==='owner'?null:String(req.user.email||'').replace(/^(.).*(@.*)$/,'$1…$2')})});
   app.get('/api/push',needUser,(req,res)=>res.json({key:vapid(store).publicKey,n:devices(store,req.user.id).length}));
   app.post('/api/push/sub',needUser,(req,res)=>addDevice(store,req.user.id,req.body&&req.body.sub,{ua:req.headers['user-agent']})?res.json({ok:true,n:devices(store,req.user.id).length}):res.status(400).json({error:{code:'invalid_argument',message:'bad subscription'}}));
   app.post('/api/push/unsub',needUser,(req,res)=>res.json({ok:true,removed:dropDevice(store,req.user.id,String(req.body&&req.body.endpoint||''))}));

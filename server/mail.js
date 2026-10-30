@@ -4,16 +4,16 @@
 import nodemailer from 'nodemailer';
 const opt=(n,d='')=>process.env[n]||d, log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
-export async function sendMail({subject,text,html,attachments=[]}){
+export async function sendMail({subject,text,html,attachments=[],to:toOver=null}){
   // Railway blocks outgoing SMTP on most plans, so the first choice is Resend's HTTPS API (RESEND_API_KEY, MAIL_TO)
   if(opt('RESEND_API_KEY')){
-    const to=opt('MAIL_TO').split(',').map(s=>s.trim()).filter(Boolean); if(!to.length){log('mail: MAIL_TO is empty');return false}
+    const to=(toOver?[].concat(toOver):opt('MAIL_TO').split(',')).map(s=>String(s).trim()).filter(Boolean); if(!to.length){log('mail: MAIL_TO is empty');return false}
     const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{authorization:'Bearer '+opt('RESEND_API_KEY'),'content-type':'application/json'},
       body:JSON.stringify({from:opt('MAIL_FROM','תיק צ׳יק <onboarding@resend.dev>'),to,subject,text,html,attachments:attachments.map(a=>({filename:a.filename,content:Buffer.from(a.content).toString('base64')}))})});
     if(!r.ok){log('mail failed:',r.status,(await r.text()).slice(0,200));return false}
     log(`mail sent to ${to.length} recipient(s)`); return true;
   }
-  const user=opt('MAIL_USER'), pass=opt('MAIL_PASS'), to=opt('MAIL_TO',user);
+  const user=opt('MAIL_USER'), pass=opt('MAIL_PASS'), to=toOver?[].concat(toOver).join(','):opt('MAIL_TO',user);
   if(!user||!pass){log(`mail not sent (${String(text||'').length} characters): no RESEND_API_KEY or MAIL_USER/MAIL_PASS`);return false}
   const tr=nodemailer.createTransport({host:opt('MAIL_HOST','smtp.gmail.com'),port:+opt('MAIL_PORT','465'),secure:opt('MAIL_PORT','465')==='465',auth:{user,pass}});
   await tr.sendMail({from:`"תיק צ׳יק" <${user}>`,to,subject,text,html,attachments});
@@ -31,8 +31,23 @@ export function mailNote(store,kind,result){
   try{const d=store.getDoc('system/mail'), cur=d.exists?d.data:{}, now=new Date().toISOString();
     store.setDoc('system/mail',{...cur,ready:mailReady(),...(kind?{last:{...(cur.last||{}),[kind]:{at:now,result}}}:{}),updatedAt:now})}catch(e){}
 }
+// 30.10: a partner's own e-mails: what they switched on in their own settings, to their own address, about their own
+// portfolio. The kinds a partner can have; the result noted in meta mail:<id> (read by their page through /api/mail/me)
+export const PARTNER_KINDS=['morning','earnings','live'];
+export function mailAllowedFor(store,user,kind){
+  if(!user||user.role==='owner')return mailAllowed(store,kind); if(!PARTNER_KINDS.includes(kind))return false;
+  try{const s=store.getDoc(`data/users/${user.id}/settings`); return !!(s.exists&&s.data&&s.data.mail&&s.data.mail[kind]===true)}catch(e){return false}}
+export function mailNoteFor(store,user,kind,result){if(!user||user.role==='owner')return mailNote(store,kind,result);
+  try{const k='mail:'+user.id, cur=JSON.parse(store.getMeta(k)||'{}'); cur.last={...(cur.last||{}),[kind]:{at:new Date().toISOString(),result}}; store.setMeta(k,JSON.stringify(cur))}catch(e){}}
+// the house's test address of Resend sends only to the Resend account's own address: a partner's mail needs a domain of one's own
+export const mailFromOwnDomain=()=>!opt('RESEND_API_KEY')||!/resend\.dev/i.test(opt('MAIL_FROM','onboarding@resend.dev'));
 // send only what the owner allowed; the result is noted either way
-export async function sendAllowed(store,kind,msg,log=()=>{}){
+export async function sendAllowed(store,kind,msg,log=()=>{},user=null){
+  if(user&&user.role!=='owner'){
+    if(!mailAllowedFor(store,user,kind)){mailNoteFor(store,user,kind,'off'); return false}
+    if(!mailReady()||!user.email){mailNoteFor(store,user,kind,'not_ready'); return false}
+    let ok=false; try{ok=await sendMail({...msg,to:[user.email]})}catch(e){log(`mail (${kind}, partner) failed:`,e.message)}
+    mailNoteFor(store,user,kind,ok?'sent':mailFromOwnDomain()?'failed':'domain'); return ok}
   if(!mailAllowed(store,kind)){log(`mail (${kind}): off in the settings, not sent`); mailNote(store,kind,'off'); return false}
   if(!mailReady()){log(`mail (${kind}): sending is not set up`); mailNote(store,kind,'not_ready'); return false}
   let ok=false; try{ok=await sendMail(msg)}catch(e){log(`mail (${kind}) failed:`,e.message)}

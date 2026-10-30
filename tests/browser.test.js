@@ -730,6 +730,17 @@ test('before a report: a story card with what the analysts expect, the past surp
   }finally{store.setDoc('research/latest',L)}
 });
 
+test('a partner\'s e-mails: their own three kinds in their settings, said plainly when sending is not ready for them',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{who:'n2'}); await tab(pg,'settings'); await pg.waitForFunction(()=>document.querySelectorAll('#mailList [data-mail]').length>0&&document.getElementById('mailState').textContent,null,{timeout:10000});
+  const r=await pg.evaluate(()=>({vis:!!document.getElementById('mailBox').offsetParent,kinds:[...document.querySelectorAll('#mailList [data-mail]')].map(i=>i.dataset.mail),st:document.getElementById('mailState').textContent}));
+  assert.ok(r.vis,'a partner has the e-mails box'); assert.deepEqual(r.kinds,['morning','earnings','live'],'only their own kinds'); assert.match(r.st,/שליחת מיילים עוד לא מוגדרת באתר/);
+  await pg.click('#mail_morning'); await pg.waitForTimeout(1500);
+  const uid=await pg.evaluate(async()=>(await (await fetch('/api/me',{credentials:'same-origin'})).json()).me.id);
+  assert.equal(store.getDoc(`data/users/${uid}/settings`).data.mail.morning,true,'kept in their own settings');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();
@@ -1470,7 +1481,9 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     assert.deepEqual(m0,{hidden:false,on:[false,false,false,false,false,false]});
     await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
     assert.deepEqual(store.getDoc('settings/main').data.mail,{reports:true}); assert.deepEqual(pg.errs,[]); await ctx.close();
-    ({ctx,pg}=await open(390,{who:'p2'})); assert.equal(await pg.evaluate(()=>document.getElementById('mailBox').hidden),true,'a partner gets no e-mail from the site'); await ctx.close();
+    // 30.10: a partner has e-mails of their own: only their three kinds, never the owner's
+    ({ctx,pg}=await open(390,{who:'p2'})); await tab(pg,'settings'); await pg.waitForFunction(()=>document.querySelectorAll('#mailList [data-mail]').length>0,null,{timeout:10000});
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#mailList [data-mail]')].map(i=>i.dataset.mail)),['morning','earnings','live']); await ctx.close();
   }finally{store.setDoc('history/daily',d0,{silent:true}); const s0=store.getDoc('settings/main').data; delete s0.mail; store.setDoc('settings/main',s0,{silent:true})}
 });
 

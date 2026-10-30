@@ -1353,6 +1353,29 @@ test('the phone through the site: the key and the devices for the signed-in pers
   }finally{srv.close()}
 });
 
+test('a partner\'s own e-mails: only what they switched on, to their own address, noted for their page; Resend\'s test sender is said to be the reason',async()=>{
+  const {sendAllowed,mailAllowedFor,mailFromOwnDomain}=await import('../server/mail.js'); const {partnerDocs}=await import('../server/tasks.js');
+  const s=new Store(':memory:'), f=s.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}), u=s.users().find(x=>x.id===f.id);
+  const env0={k:process.env.RESEND_API_KEY,to:process.env.MAIL_TO,from:process.env.MAIL_FROM}, f0=globalThis.fetch, sent=[]; let code=200;
+  globalThis.fetch=async(url,o)=>{if(String(url).includes('api.resend.com')){sent.push(JSON.parse(o.body)); return new Response(code===200?'{"id":"x"}':'{"message":"testing emails only"}',{status:code})} return f0(url,o)};
+  try{
+    process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='owner@example.com'; delete process.env.MAIL_FROM;
+    const msg={subject:'s',text:'t',html:'<p>h</p>'}, last=()=>JSON.parse(s.getMeta('mail:'+u.id)||'{}').last||{};
+    assert.equal(mailAllowedFor(s,u,'morning'),false); assert.equal(await sendAllowed(s,'morning',msg,()=>{},u),false); assert.equal(sent.length,0); assert.equal(last().morning.result,'off');
+    s.setDoc(`data/users/${u.id}/settings`,{mail:{morning:true,backup:true}});
+    assert.equal(mailAllowedFor(s,u,'backup'),false,'a partner never has the owner\'s kinds');
+    assert.equal(mailFromOwnDomain(),false,'the default sender is Resend\'s test address');
+    code=403; assert.equal(await sendAllowed(s,'morning',msg,()=>{},u),false); assert.deepEqual(sent[0].to,['ori@example.com'],'to the partner, not to MAIL_TO');
+    assert.equal(last().morning.result,'domain','the reason is said: a sending domain is needed');
+    process.env.MAIL_FROM='תיק צ׳יק <alerts@mydomain.co.il>'; code=200; assert.equal(mailFromOwnDomain(),true);
+    assert.equal(await sendAllowed(s,'morning',msg,()=>{},u),true); assert.equal(last().morning.result,'sent');
+    assert.equal(s.getDoc('system/mail').exists,false,'the owner\'s status is not touched');
+    // the page run for a partner: their own documents, and the shared ones only as they see them
+    s.setDoc(`data/users/${u.id}/portfolio`,{positions:[{sym:'KO',qty:1}]}); s.setDoc('quotes/latest',{prices:{KO:60,NVDA:190},prev:{},usdIls:3.7});
+    const d=partnerDocs(s,u); assert.ok(d[`data/users/${u.id}/portfolio`]); assert.ok(!d['portfolio/main']); assert.deepEqual(Object.keys(d['quotes/latest'].prices),['KO'],'not the owner\'s securities');
+  }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
+});
+
 test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{
   const {morningSections}=await import('../server/tasks.js');
   const G={ready:true,day:{pct:-0.97,ils:-237,top:[{sym:'NVDA',pct:-2.41,ils:-100}]},news:[{level:'crit',he:'אנבידיה הורידה את התחזית',what:'החברה הורידה את התחזית.',who:'NVDA (16% מהתיק)',link:'https://x/n',pub:'Reuters'}],soon:[{d:'2026-11-02',items:['אקס דיבידנד KO']}],divYear:420};

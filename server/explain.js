@@ -131,7 +131,7 @@ ${JSON.stringify(facts)}`;
 
 // the e-mail when a report of a held or followed security arrives (the owner's, with the owner's consent for "earnings"):
 // the analysis in the lines of the market news, then what it means, in a sentence or two; not the report itself
-export async function reportsMail(store,items,log=()=>{}){
+export async function reportsMail(store,items,log=()=>{},user=null){
   if(!items.length)return false; const url=process.env.SITE_URL||'';
   const one=x=>({L:repLines(repSum(x.rep),x.name,x.sym),E:(x.rep.ai&&x.rep.ai.explain)||''});
   const S0=repSum(items[0].rep), tag=S0&&S0.eps.res?` · רווח למניה ${RESH[S0.eps.res]}`:'';
@@ -141,6 +141,6 @@ export async function reportsMail(store,items,log=()=>{}){
   const html=wrapHtml('דוח חדש',items.map(x=>{const {L,E}=one(x); const [h,...rest]=L;
     return `<h3 style="margin:14px 0 6px">${esc(h.replace(/^👈 /,''))}</h3><div style="line-height:1.7">${rest.map(l=>`<div>${esc(l).replace(/\((מעל הצפי|מתחת לצפי|בהתאם לצפי)\)/,(m,t)=>`<b style="color:${t==='מעל הצפי'?'#15803d':t==='מתחת לצפי'?'#b91c1c':'#475569'}">(${t})</b>`)}</div>`).join('')}</div>${E?`<p style="margin:8px 0 0"><b>מה זה אומר:</b> ${esc(E)}</p>`:''}`}).join('<hr style="border:0;border-top:1px solid #e2e8f0;margin:14px 0">')
     +`${url?`<p><a href="${esc(url)}">לניתוח המלא בדף המניה</a></p>`:''}<p style="color:#64748b;font-size:13px">${esc(foot)}</p>`);
-  return sendAllowed(store,'earnings',{subject:`תיק צ׳יק – ${head}`,text,html},log);
+  return sendAllowed(store,'earnings',{subject:`תיק צ׳יק – ${head}`,text,html},log,user);
 }
 

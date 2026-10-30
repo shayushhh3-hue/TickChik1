@@ -5,7 +5,7 @@
 //  - a critical reading of the news about a holding arrives (research/newsx, not one made by the plain rules).
 // Each one at most once a day (alerts/live), at most one e-mail every 20 minutes, and nothing at night. Facts from the
 // prices and the readings; never advice.
-import {sendAllowed, esc, wrapHtml} from './mail.js';
+import {sendAllowed, esc, wrapHtml, mailAllowedFor} from './mail.js';
 import {pushTo, pushUsers} from './push.js';
 import {createHash} from 'node:crypto';
 const newsId=link=>createHash('sha1').update(String(link||'')).digest('hex').slice(0,12);
@@ -40,7 +40,7 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null)}={}){
 export async function liveTask(store,{log=()=>{},now=new Date(),send=sendAllowed,push=null}={}){
   const day=ilDay(now), h=+now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem',hour:'numeric',hour12:false});
   if(h<9||h>23){return {quiet:true}}
-  const owner=store.users().find(u=>u.role==='owner'), who=[...(owner?[owner]:[{id:'owner',role:'owner'}]),...pushUsers(store).filter(u=>u.role!=='owner')];
+  const owner=store.users().find(u=>u.role==='owner'), withDev=new Set(pushUsers(store).map(u=>u.id)), who=[...(owner?[owner]:[{id:'owner',role:'owner'}]),...store.users().filter(u=>u.role!=='owner'&&(withDev.has(u.id)||mailAllowedFor(store,u,'live')))];
   let out=null;
   for(const u of who){const r=await liveFor(store,u,{log,now,day,send,push}); if(u.role==='owner')out=r}
   return out||{hits:0,fresh:0};
@@ -58,12 +58,12 @@ async function liveFor(store,u,{log,now,day,send,push}){
   fresh.sort((a,b)=>(a.sev==='crit'?0:1)-(b.sev==='crit'?0:1));
   const url=process.env.SITE_URL||'', head=fresh.length===1?fresh[0].text.slice(0,70):`${fresh.length} התראות: ${fresh.map(x=>x.text.split(' ')[0]).slice(0,4).join(', ')}`;
   let ok=false;
-  if(own){const text=fresh.map(x=>`• ${x.text}${x.link?'\n  '+x.link:''}`).join('\n')+`\n\n${url?'לאתר: '+url+'\n':''}עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.`;
+  {const text=fresh.map(x=>`• ${x.text}${x.link?'\n  '+x.link:''}`).join('\n')+`\n\n${url?'לאתר: '+url+'\n':''}עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.`;
     const html=wrapHtml('התראה',`<ul style="padding-inline-start:18px">${fresh.map(x=>`<li style="margin:6px 0;${x.sev==='crit'?'color:#b42318;font-weight:700':''}">${esc(x.text)}${x.link?` <a href="${esc(x.link)}">לכתבה</a>`:''}</li>`).join('')}</ul>${url?`<p><a href="${esc(url)}">לאתר</a></p>`:''}<p style="color:#64748b;font-size:13px">עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.</p>`);
-    ok=await send(store,'live',{subject:`תיק צ׳יק – ${head}`,text,html},log)}
+    if(own||mailAllowedFor(store,u,'live'))ok=await send(store,'live',{subject:`תיק צ׳יק – ${head}`,text,html},log,own?undefined:u)}
   // the phone: the same items, short (a tap opens the site on the stories)
   let pushed=0; try{pushed=await (push||pushTo)(store,u.id,{title:fresh.length===1?'תיק צ׳יק':`תיק צ׳יק · ${fresh.length} התראות`,body:fresh.map(x=>x.text).join('\n').slice(0,300),url:'./?st=1',tag:'live'},{log})}catch(e){log('push failed: '+(e&&e.message||e))}
   // marked as sent even when nothing went out, so that switching on does not send the whole day at once
   save({date:day,sent:[...D.sent,...fresh.map(x=>x.key)],lastAt:now.toISOString(),checkedAt:now.toISOString(),last:fresh.map(x=>({key:x.key,text:x.text,sev:x.sev})).slice(0,10),mailed:!!ok,pushed});
-  log(`live${own?'':' ('+u.id+')'}: ${fresh.length} new (${own?(ok?'e-mailed':'not e-mailed')+', ':''}${pushed} device(s))`); return {hits:hits.length,fresh:fresh.length,sent:ok,pushed};
+  log(`live${own?'':' ('+u.id+')'}: ${fresh.length} new (${ok?'e-mailed':'not e-mailed'}, ${pushed} device(s))`); return {hits:hits.length,fresh:fresh.length,sent:ok,pushed};
 }

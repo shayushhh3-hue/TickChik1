@@ -1,6 +1,7 @@
 // Analysts' views and company figures from Yahoo Finance (quoteSummary), the same source the prices come from.
 // It is not an official API: Yahoo can change or refuse it at any time. When an update fails the last values stay,
 // with their date, and the page says how old they are. Numbers in, numbers out: nothing here is advice.
+import {mailAllowedFor} from './mail.js';
 import {tickerFor} from '../shared/quotes.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -237,12 +238,17 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   // report whose revenue is not in yet waits for it up to eight hours
   {const ou=(store.users?store.users():[]).find(u=>u.role==='owner'), mine=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(x=>x.sym));
     if(ou){const w=store.getDoc('watch/'+ou.id).data||{}; for(const kk of ['held','marks','syms'])for(const x of (w[kk]||[]))mine.add(x)}
-    const items=[];
+    const items=[], due=[];
     for(const [k,v] of Object.entries(got)){const r=v.rep; if(!r||!r.ev||r.mailed||!r.seen)continue;
       if(r.revPend&&(now-Date.parse(r.seen))<8*36e5)continue;
       r.mailed=iso; const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:r},{silent:true});
-      if(mine.has(k))items.push({sym:k,name:posName[k]||v.name||k,rep:r})}
-    if(items.length)try{await mail(store,items,log)}catch(e){log('report mail failed: '+(e&&e.message||e))}}
+      const it={sym:k,name:posName[k]||v.name||k,rep:r}; due.push(it); if(mine.has(k))items.push(it)}
+    if(items.length)try{await mail(store,items,log)}catch(e){log('report mail failed: '+(e&&e.message||e))}
+    // 30.10: each partner who switched it on: the reports of what they hold or follow, to their own address
+    if(due.length)for(const u of (store.users?store.users():[]).filter(u=>u.role!=='owner')){if(!mailAllowedFor(store,u,'earnings'))continue;
+      const w=store.getDoc('watch/'+u.id).data||{}, theirs=new Set(); for(const kk of ['held','marks','syms'])for(const x of (w[kk]||[]))theirs.add(x);
+      for(const x of ((store.getDoc(`data/users/${u.id}/portfolio`).data||{}).positions||[]))theirs.add(x.sym);
+      const L=due.filter(it=>theirs.has(it.sym)); if(L.length)try{await mail(store,L,log,u)}catch(e){log('report mail (partner) failed: '+(e&&e.message||e))}}}
   const uniGot=uni.filter(k=>got[k]);
   if(uniGot.length){const Fd=store.getDoc('research/fit').data||{rows:{}}, rows={...(Fd.rows||{})};
     for(const k of uniGot){const v=got[k], o=rows[k]||[], nw=[v.pm,v.roe,v.de,null,v.pe,v.fpe,v.dy,v.revg,v.rating,v.target,v.analysts,v.next,v.beta]; rows[k]=nw.map((x,i)=>x!=null?x:(o[i]??null))}

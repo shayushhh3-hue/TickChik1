@@ -5,7 +5,7 @@
 // failed: a single failure is "warn" until the next run. The price watch (server/pxwatch.js) mails the bad ones to the
 // owner, once in 12 hours each. Facts about the site only: nothing about any portfolio.
 import {pxProblems} from './pxwatch.js';
-import {mailReady, mailAllowed, MAIL_KINDS} from './mail.js';
+import {mailReady, mailAllowed, MAIL_KINDS, mailAllowedFor, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
 
 const H=36e5;
 const meta=(store,k)=>{try{return JSON.parse(store.getMeta(k)||'null')}catch(e){return null}};
@@ -43,6 +43,10 @@ export function sources(store,{env=process.env,now=new Date()}={}){
     const sent=Object.values(L).filter(v=>v&&v.result==='sent').map(v=>v.at).sort().pop()||null, wanted=MAIL_KINDS.some(k=>mailAllowed(store,k)), good=mailReady()&&!failed.length;
     out.push({key:'mail',name:'שליחת מיילים',max:48,off:!wanted,ran:Object.values(L).map(v=>v&&v.at).filter(Boolean).sort().pop()||null,ok:good,okAt:good?now.toISOString():null,
       note:!mailReady()?(wanted?'לא מוגדר: אין RESEND_API_KEY':'לא מוגדר'):failed.length?`נכשל: ${failed.join(', ')}`:sent?'נשלח':'עוד לא נשלח מייל'})}
+  // 30.10: partners who chose e-mails, while the sender is Resend's test address (it sends to the account's owner only)
+  {const P=(()=>{try{return store.users().filter(u=>u.role!=='owner'&&PARTNER_KINDS.some(k=>mailAllowedFor(store,u,k)))}catch(e){return []}})();
+    if(P.length)out.push({key:'mailp',name:'מיילים לשותפים',max:24,ran:null,ok:mailReady()&&mailFromOwnDomain(),okAt:mailReady()&&mailFromOwnDomain()?now.toISOString():null,
+      note:!mailReady()?'המיילים לא מוגדרים':!mailFromOwnDomain()?`${P.length===1?'שותף אחד בחר':P.length+' שותפים בחרו'} מיילים, אבל הם לא יגיעו: Resend שולח מ-onboarding@resend.dev רק לך. צריך דומיין משלך ו-MAIL_FROM (SETUP.md)`:`${P.length} שותפים מקבלים מיילים`})}
   // a job that failed the last time it ran (its own words, the first line)
   for(const [name,j] of Object.entries(J)){if(!j||j.ok!==false)continue;
     out.push({key:'job:'+name,name:`משימה מתוזמנת: ${name}`,max:0,ran:j.at,ok:false,note:String(j.err||'נכשלה').split('\n')[0].slice(0,160),job:true})}

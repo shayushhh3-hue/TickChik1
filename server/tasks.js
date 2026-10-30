@@ -1,7 +1,8 @@
 // The scheduled work, as functions over the store. The page itself (run headless) computes the daily point, the
 // alerts and the reports, so their numbers are the same as in the browser.
 import {withPage, applyWrites} from './headless.js';
-import {sendAllowed, mailAllowed, wrapHtml, esc} from './mail.js';
+import {sendAllowed, mailAllowed, mailAllowedFor, wrapHtml, esc} from './mail.js';
+import {partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
@@ -121,30 +122,46 @@ export async function usSnapshot(store,now,log){
   log(`US snapshot ${Object.keys(US).length} symbols (date ${snapDate}), ${changed} bucket documents changed`);
 }
 
-// 07:50: the page's alert engine; only what is new (and not marked "בדקתי") goes out; alerts/state is written
-export async function morningTask(store,{log}={}){
-  const docs=ownerDocs(store), now=new Date(), p=ilParts(now);
-  if(!docs['portfolio/main']||!docs['quotes/latest']){log('no portfolio or quotes yet');return}
-  const {out:AD,errs}=await withPage(docs,ownerUser(store),pg=>pg.evaluate(()=>({a:window.__model.alerts(),d:window.__model.digest?window.__model.digest():null})));
+// 07:50: the page's alert engine; only what is new (and not marked "בדקתי") goes out; alerts/state is written.
+// 30.10: and every partner who switched the morning summary on gets their own, from their own portfolio: the page run on
+// their documents (and the shared ones as they see them), to their own address; their state in meta astate:<id>
+export function partnerDocs(store,u){
+  const out={}; for(const n of ['portfolio','plan','settings','history','daily','ack','newsst']){const p=`data/users/${u.id}/${n}`, d=store.getDoc(p); if(d.exists)out[p]=d.data}
+  for(const p of ['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx']){const d=store.getDoc(p); if(d.exists)out[p]=partnerView(store,u,p,d.data)}
+  return out}
+const MSEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין'}, MORDER={crit:0,warn:1,info:2,ok:3}, MCOLOR={crit:'#b42318',warn:'#b7791f',info:'#2464a8',ok:'#2f9e5b'};
+async function morningOne(store,{log,docs,user,state,repMail,send=sendAllowed}){
+  const {out:AD,errs}=await withPage(docs,user,pg=>pg.evaluate(()=>({a:window.__model.alerts(),d:window.__model.digest?window.__model.digest():null})));
   const A=AD&&AD.a, G=AD&&AD.d;
   if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
-  if(!A||!A.ready){log('the alert engine was not ready');return}
-  const state=docs['alerts/state']||{keys:[]}, seen=new Set(state.keys||[]);
+  if(!A||!A.ready){log('the alert engine was not ready');return null}
+  const seen=new Set((state&&state.keys)||[]);
   // a company's new report already went out in its own e-mail ("earnings") when that one is on, so it is not repeated here
-  const repMail=mailAllowed(store,'earnings'), items=(A.items||[]).filter(i=>i&&i.key), fresh=items.filter(i=>!seen.has(i.key)&&!i.acked&&!(repMail&&String(i.key).startsWith('rep:')));
-  log(`alerts: ${items.length} now, ${fresh.length} new`);
-  const SEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין'}, ORDER={crit:0,warn:1,info:2,ok:3}, color={crit:'#b42318',warn:'#b7791f',info:'#2464a8',ok:'#2f9e5b'};
+  const items=(A.items||[]).filter(i=>i&&i.key), fresh=items.filter(i=>!seen.has(i.key)&&!i.acked&&!(repMail&&String(i.key).startsWith('rep:')));
+  log(`alerts${user.owner?'':' ('+user.uid+')'}: ${items.length} now, ${fresh.length} new`);
   // 30.10: the morning summary goes out every morning (with the consent for "morning"), new alerts or not
   if(fresh.length||(G&&G.ready)){
-    fresh.sort((a,b)=>(ORDER[a.sev]??9)-(ORDER[b.sev]??9));
-    const S2=morningSections(G,fresh,{SEV,color});
+    fresh.sort((a,b)=>(MORDER[a.sev]??9)-(MORDER[b.sev]??9));
+    const S2=morningSections(G,fresh,{SEV:MSEV,color:MCOLOR});
     const url=process.env.SITE_URL||''; const when=`מחירים נכון ל-${A.pricesAt?new Date(A.pricesAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):'?'}`;
     const text=`בוקר טוב.\n\n${S2.map(x=>x.t+'\n'+x.text).join('\n\n')}\n\n${when}${url?'\nלפתיחת הדף: '+url:''}\n\nעובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.`;
     const html=wrapHtml('סיכום הבוקר',`<p>בוקר טוב.</p>${S2.map(x=>`<h3 style="margin:16px 0 6px;font-size:15px">${esc(x.t)}</h3>${x.html}`).join('')}<p style="color:#64748b;font-size:13px">${esc(when)}</p>${url?`<p><a href="${esc(url)}" style="color:#1e344e;font-weight:700">לפתיחת הדף ›</a></p>`:''}<p style="color:#64748b;font-size:12px">עובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.</p>`);
     const head=fresh.some(i=>i.sev==='crit')?'יש חריגה חדשה':G&&G.news&&G.news.some(n=>n.level==='crit')?'ידיעה קריטית על מניה שלך':G&&G.day?`התיק ${G.day.ils>=0?'עלה':'ירד'} ${Math.abs(G.day.pct).toFixed(2)}%`:'סיכום';
-    await sendAllowed(store,'morning',{subject:`תיק צ׳יק – סיכום הבוקר: ${head}`,text,html},log);
+    await send(store,'morning',{subject:`תיק צ׳יק – סיכום הבוקר: ${head}`,text,html},log,user.owner?undefined:user.u);
   }
-  store.setDoc('alerts/state',{date:p.iso,keys:items.map(i=>i.key),moveDate:fresh.length?p.iso:(state.moveDate||null),sent:fresh.length,updatedAt:now.toISOString()});
+  return {keys:items.map(i=>i.key),fresh:fresh.length};
+}
+export async function morningTask(store,{log=()=>{},send=sendAllowed}={}){
+  const docs=ownerDocs(store), now=new Date(), p=ilParts(now);
+  if(!docs['portfolio/main']||!docs['quotes/latest'])log('no portfolio or quotes yet');
+  else{const state=docs['alerts/state']||{keys:[]}, r=await morningOne(store,{log,docs,user:ownerUser(store),state,repMail:mailAllowed(store,'earnings'),send});
+    if(r)store.setDoc('alerts/state',{date:p.iso,keys:r.keys,moveDate:r.fresh?p.iso:(state.moveDate||null),sent:r.fresh,updatedAt:now.toISOString()})}
+  for(const u of store.users().filter(u=>u.role!=='owner'&&mailAllowedFor(store,u,'morning'))){
+    try{const d=partnerDocs(store,u); if(!d[`data/users/${u.id}/portfolio`]||!d['quotes/latest'])continue;
+      const k='astate:'+u.id; let state={keys:[]}; try{state=JSON.parse(store.getMeta(k)||'{"keys":[]}')}catch(e){}
+      const r=await morningOne(store,{log,docs:d,user:{uid:u.id,email:u.email,owner:false,u},state,repMail:mailAllowedFor(store,u,'earnings'),send});
+      if(r)store.setMeta(k,JSON.stringify({date:p.iso,keys:r.keys,sent:r.fresh,updatedAt:now.toISOString()}))}
+    catch(e){log(`morning (${u.id}) failed: ${e&&e.message||e}`)}}
 }
 
 // the money put in, net: as the page's depNet (withdrawals saved before 13.10.2026 were not yet taken off depIlsNow)
