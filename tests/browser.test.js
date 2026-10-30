@@ -687,6 +687,17 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
 
+test('a page left open learns that a new version is out, and offers to reload',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.waitForTimeout(3500);
+  assert.equal(await pg.evaluate(()=>document.getElementById('verBar').hidden),true,'the same version: nothing');
+  await pg.route('**/api/version',r=>r.fulfill({status:200,contentType:'application/json',body:'{"v":"newer"}'}));
+  await pg.evaluate(()=>document.dispatchEvent(new Event('visibilitychange'))); await pg.waitForTimeout(600);
+  assert.equal(await pg.evaluate(()=>document.getElementById('verBar').hidden),false,'a new version: the note');
+  assert.match(await pg.textContent('#verBar'),/גרסה חדשה/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the plan: a purchase stays in its month when the statement takes it out of the cash, and the rest of the plan does not move',T,async t=>{
   if(skip())return t.skip('no browser');
   const PL0=store.getDoc('plan/main').data, P0=store.getDoc('portfolio/main').data, ymOf=k=>{const d=new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+k); return d.toISOString().slice(0,7)};
