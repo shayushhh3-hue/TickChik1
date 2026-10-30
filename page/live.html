@@ -17983,7 +17983,7 @@ function kBenchLine(){const el=$('kBenchL'); if(!el)return; if(acct!=='all'||KV!
 // from the calendars, not a forecast
 function soonEvents(now){
   const today=ilDay(), end=isoAdd(today,14), D={}, put=(d,e)=>{if(d<today||d>end)return; (D[d]=D[d]||[]).push(e)};
-  for(const e of calEvents())if(e.k==='rep'||e.k==='ex'||e.k==='pay')put(e.d,{k:e.k,sym:e.sym,est:!!e.est,t:e.k==='rep'?'דוח':e.k==='ex'?'אקס דיבידנד':'תשלום דיבידנד'});
+  for(const e of calEvents())if(e.k==='rep'||e.k==='ex'||e.k==='pay'){const x=e.k==='rep'&&RS&&RS.companies&&RS.companies[e.sym]&&RS.companies[e.sym].erx; put(e.d,{k:e.k,sym:e.sym,est:!!e.est,t:e.k==='rep'?'דוח':e.k==='ex'?'אקס דיבידנד':'תשלום דיבידנד',...(x?{x:`בממוצע ±${x.avgAbs.toFixed(1)}% סביב הדוח`}:{})})}
   try{const di=depInfo(now); if(di&&di.next){const d=isoDay(di.next); put(d,{k:'dep',t:'יום ההפקדה',x:depAmtTxt(di)})}}catch(e){}
   for(let k=0;k<=14;k++){const d=isoAdd(today,k), wd=wdOf(d); if(wd===0||wd===6)continue; const M=mktDay(d);
     for(const [mk,nm] of [['il','ת״א'],['us','ארה״ב']]){const x=M[mk]; if(x&&x.st==='closed'&&x.why)put(d,{k:'mkt',t:`${nm}: אין מסחר`,x:x.why}); else if(x&&x.st==='short')put(d,{k:'mkt',t:`${nm}: יום מקוצר`,x:x.why||''})}}
@@ -22752,6 +22752,10 @@ function stGroups(m){
     const id=`st:mv:${p.sym}:${today}:${p.dayPct>0?'u':'d'}`; G(p.sym,'sym').items.push({id,kind:'move',lv:Math.abs(p.dayPct)>=mv*2?'crit':'imp',at,p,mv,read:!!rd[id]})}
   for(const [k,t] of Object.entries((S&&S.pxAlerts)||{})){if(!t)continue; let q=null; try{q=pxKeyPrice(k)}catch(e){} if(!q)continue; const sym=k.replace(/^TLV:/,'');
     for(const [dk,lim] of [['up',+t.above],['down',+t.below]]){if(!(lim>0)||(dk==='up'?q.px<lim:q.px>lim))continue; const id=`st:px:${k}:${dk}:${lim}:${today}`; G(sym,'sym').items.push({id,kind:'px',lv:'imp',at,q,lim,dk,sym,read:!!rd[id]})}}
+  // 30.10: a report of a holding in the coming three days: what the analysts expect, how the share moved around its last
+  // reports, and what such a move is in this portfolio
+  {const C=(RS&&RS.companies)||{}, end=isoAdd(today,3); if(m&&m.pos)for(const p of m.pos){const c=C[p.sym]; if(!c||!c.next||c.next<today||c.next>end)continue; if(c.rep&&c.rep.at&&c.rep.at>=c.next)continue;
+    const id=`st:rep:${p.sym}:${c.next}`; G(p.sym,'sym').items.push({id,kind:'rep',lv:'imp',at:null,sym:p.sym,c,p,read:!!rd[id]})}}
   {const fx=+(Q&&Q.usdIls); if(fx>0)for(const [dk,lim] of [['up',+A.usdAbove],['down',+A.usdBelow]]){if(!(lim>0)||(dk==='up'?fx<lim:fx>lim))continue; const id=`st:usd:${dk}:${lim}:${today}`; G('USD','usd').items.push({id,kind:'usd',lv:'imp',at,fx,lim,dk,read:!!rd[id]})}}
   const L=[...out.values()].filter(g=>g.items.length);
   for(const g of L){g.items.sort((a,b)=>(a.read-b.read)||((a.lv==='crit'?0:1)-(b.lv==='crit'?0:1))||(String(b.at||'')>String(a.at||'')?1:-1));
@@ -22800,6 +22804,17 @@ function stBody(i,m){
       <p class="stv-what">עכשיו <span class="n">${fmtPx(i.q.px,i.q.ccy)}</span>; הסף ${i.dk==='up'?'למעלה':'למטה'}: <span class="n">${fmtPx(i.lim,i.q.ccy)}</span>.</p>
       ${p?`<p class="stv-imp"><b>לתיק שלך:</b> ${pct(p.w,1)} מהתיק, <span class="n">${ils(p.val)}</span>.</p>`:''}
       <div class="stv-links">${SECKEY.test(i.sym)?`<button type="button" class="lnk" data-gosec="${esc(i.sym)}">לדף המניה ›</button>`:''}</div>`}
+  if(i.kind==='rep'){const c=i.c, p=i.p, e=c.est||{}, nw=(c.rep&&c.rep.now)||{}, eps=e.eps!=null?e.eps:nw.eps, rev=e.rev!=null?e.rev:nw.rev, x=c.erx, today=ilDay();
+    const when=c.next===today?'היום':c.next===isoAdd(today,1)?'מחר':`ביום ${HDAY[wdOf(c.next)]} ${dmy(c.next).slice(0,5)}`, hr=e.hour==='bmo'?' לפני הפתיחה':e.hour==='amc'?' אחרי הסגירה':'';
+    const big=v=>v>=1e9?`$${(v/1e9).toFixed(1)} מיליארד`:`$${Math.round(v/1e6)} מיליון`, hist=((c.rep&&c.rep.hist)||[]).filter(h=>h&&h.s!=null).slice(-4);
+    return `<div class="stv-tags"><span class="nx-tag lv-imp">${NX_LV.imp}</span><span>דוח כספי${c.nextEst?' · תאריך משוער':''}</span></div>
+      <h2 class="stv-h">${esc(lab(i.sym))} מפרסמת דוח ${when}${hr}</h2>
+      <p class="stv-what">${eps!=null||rev?`הצפי של האנליסטים: ${eps!=null?`רווח למניה <span class="n">$${(+eps).toFixed(2)}</span>`:''}${eps!=null&&rev?', ':''}${rev?`הכנסות <span class="n">${big(+rev)}</span>`:''}.`:'אין בנתונים צפי של אנליסטים לדוח הזה.'}</p>
+      ${hist.length?`<p class="stv-what">בדוחות הקודמים, הרווח מול הצפי: ${hist.map(h=>`<span class="n ${h.s>=0?'up':'down'}">${spct(h.s,0)}</span>`).join(' · ')}.</p>`:''}
+      ${x?`<p class="stv-what">סביב ${x.n} הדוחות האחרונים המניה זזה בממוצע <b class="n">±${x.avgAbs.toFixed(1)}%</b> (מהסגירה שלפני הדוח לסגירה שאחריו): ${x.moves.slice(0,4).map(z=>`<span class="n ${z.pct>=0?'up':'down'}">${spct(z.pct,1)}</span>`).join(' · ')}.</p>`:''}
+      <p class="stv-imp"><b>לתיק שלך:</b> ${pct(p.w,1)} מהתיק, <span class="n">${ils(p.val)}</span>.${x?` תזוזה של ±${x.avgAbs.toFixed(1)}% היא בערך <span class="n">±${ils(p.val*x.avgAbs/100)}</span> בשווי.`:''}</p>
+      <div class="stv-links">${SECKEY.test(i.sym)?`<button type="button" class="lnk" data-gosec="${esc(i.sym)}">לדף המניה ›</button>`:''}</div>
+      <p class="note" style="margin:0">עובדות מהדוחות הקודמים ומהצפי של האנליסטים, לא תחזית לדוח הזה ולא המלצה.</p>`}
   if(i.kind==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0;
     return `<div class="stv-tags"><span class="nx-tag lv-imp">${NX_LV.imp}</span><span>שער שקבעת</span></div>
       <h2 class="stv-h">הדולר ${i.dk==='up'?'עבר את':'ירד אל'} <span class="n">${i.lim}</span></h2><p class="stv-what">השער עכשיו <span class="n">${i.fx.toFixed(3)} ₪</span>.</p>
@@ -22808,7 +22823,7 @@ function stBody(i,m){
 function stShow(){const g=STV.L[STV.gi], i=g.items[STV.ii]; let m=null; try{m=mAllNow()}catch(e){}
   $('stBars').innerHTML=g.items.map((x,k)=>`<i class="${k<STV.ii?'on':k===STV.ii?'now':''}"></i>`).join('');
   const nm=g.kind==='sym'?((m&&m.pos.find(p=>p.sym===g.key))||{}).name||'':'';
-  setH($('stWho'),`${stCirc({...g,unread:0},'')}<span><b>${esc(stName(g))}</b>${nm?` <span class="nm">${esc(nm)}</span>`:''}<div class="nm">${i.at?agoH(i.at):''}${STV.L.length>1?` · ${STV.gi+1} מתוך ${STV.L.length}`:''}</div></span>`);
+  setH($('stWho'),`${stCirc({...g,unread:0},'')}<span><b>${esc(stName(g))}</b>${nm?` <span class="nm">${esc(nm)}</span>`:''}<div class="nm">${[i.at?agoH(i.at):'',STV.L.length>1?`${STV.gi+1} מתוך ${STV.L.length}`:''].filter(Boolean).join(' · ')}</div></span>`);
   setH($('stBody'),stBody(i,m)); $('stBody').scrollTop=0;
   $('stPrev').disabled=STV.gi===0&&STV.ii===0; $('stNext').textContent=STV.gi===STV.L.length-1&&STV.ii===g.items.length-1?'סיום':'הבא';
   if(!i.read){i.read=true; nxMark(i.id,'read',true)}}
@@ -24357,6 +24372,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.9c',at:'2026-10-30',t:'לפני דוח כספי',d:'שלושה ימים לפני שחברה מהתיק מפרסמת דוח, מופיע לה עיגול בסטוריז: מה האנליסטים מצפים (רווח למניה והכנסות), איך הדוחות הקודמים יצאו מול הצפי, בכמה המניה זזה בממוצע סביב הדוחות האחרונים, ומה תזוזה כזו אומרת בשקלים בתיק שלך. גם ב"השבועיים הקרובים" בבית. עובדות מהעבר, לא תחזית.',go:'nx'},
   {v:'2026-10-30.9b',at:'2026-10-30',t:'התראות לטלפון',d:'בהגדרות ← ההתראות והצלילים שלי: "להפעיל במכשיר הזה". מאותו רגע מגיעה התראה לטלפון, גם כשהאתר סגור, כשמחיר שקבעת נחצה, כשמניה בתיק זזה חזק, כשהדולר חוצה שער שקבעת, או על ידיעה קריטית. לחיצה פותחת את הסטוריז. גם לשותפים, על התיק שלהם. באייפון: מהאייקון במסך הבית.',go:'notif'},
   {v:'2026-10-30.9',at:'2026-10-30',t:'התאמה מול בית ההשקעות',d:'ב"התיק שלי", מעל האחזקות: מה שהדוח או הצילום האחרון של כל חשבון הראו, מול מה שיש כאן עכשיו, נייר אחרי נייר. ההפרש מפורק למחירים, לשער הדולר שבית ההשקעות השתמש בו, לכמויות ולמזומן.',go:'pfedit'},
   {v:'2026-10-30.8',at:'2026-10-30',t:'השינוי היומי כולל את הדולר',d:'השינוי של היום בשקלים כולל עכשיו גם את התזוזה של שער הדולר על המניות והמזומן בדולרים, כמו בבית ההשקעות. ב"למה?" רואים כמה מזה מהמחירים וכמה מהדולר.',go:'ov'},

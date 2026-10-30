@@ -712,6 +712,24 @@ test('the phone: notifications switched on per device, for the owner and for a p
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
+test('before a report: a story card with what the analysts expect, the past surprises, the share\'s moves around its last reports, and what that is in this portfolio',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const L0=store.getDoc('research/latest'), L=L0.data||{}, d=new Date(Date.now()+864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
+  store.setDoc('research/latest',{...L,companies:{...(L.companies||{}),NVDA:{...((L.companies||{}).NVDA||{}),next:d,nextEst:false,est:{date:d,eps:1.25,rev:54.1e9,hour:'amc'},
+    rep:{q:'2026Q2',at:'2026-08-27',label:'Q2',hist:[{q:'2026Q1',a:0.9,e:0.85,s:5.9},{q:'2026Q2',a:1.1,e:1.0,s:10}]},erx:{n:4,avgAbs:6.2,maxAbs:9,up:2,moves:[{d:'2026-08-27',pct:-3.1},{d:'2026-05-28',pct:9},{d:'2026-02-25',pct:-6.5},{d:'2025-11-19',pct:6.2}]}}}});
+  try{
+    const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
+    await tab(pg,'news'); await pg.waitForTimeout(400); await pg.click('#stBar [data-stg="NVDA"]'); await pg.waitForTimeout(300);
+    const v=await pg.evaluate(()=>{const b=document.getElementById('stBody'); return {h:b.querySelector('.stv-h').textContent,t:b.innerText}});
+    assert.match(v.h,/^NVDA מפרסמת דוח מחר אחרי הסגירה$/); assert.match(v.t,/רווח למניה \$1\.25, הכנסות \$54\.1 מיליארד/);
+    assert.match(v.t,/הרווח מול הצפי: \u200e?\+6% · \u200e?\+10%/); assert.match(v.t,/סביב 4 הדוחות האחרונים המניה זזה בממוצע ±6\.2%/); assert.match(v.t,/לתיק שלך: .*תזוזה של ±6\.2% היא בערך ±₪/);
+    assert.match(v.t,/לא תחזית לדוח הזה/);
+    await pg.click('#stX'); await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.match(await pg.evaluate(()=>document.getElementById('soonList').textContent),/בממוצע ±6\.2% סביב הדוח/,'on the home\'s two weeks too');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('research/latest',L)}
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();
