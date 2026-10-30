@@ -1699,6 +1699,9 @@ body:not([data-page="overview"]) .hero .sidemore{display:none!important}
 @media (max-width:420px){.bn-v b{font-size:14px}}
 .dk-bench .dk-go{margin-inline-start:0}
 .taxnow{display:flex;flex-direction:column;gap:10px}
+/* 30.10: the end of the tax year: what was realized this year, the open losses, and what an offset could save */
+.yend{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--sunk)}
+.yend h3{margin:0} .yend .strip{margin:0} .yend p{margin:0}
 .taxnow .strip{margin:0}
 .tx-l{margin:0;font-size:14px;line-height:1.65;color:var(--ink);max-width:72ch} .tx-l b{margin-inline-end:4px}
 .viewwrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:4px}
@@ -16974,6 +16977,10 @@ function alertsOf(m){
     A.push(['info','שוק',t,[]]); const a=A[A.length-1]; a.why={src:'analysis',rows:L.map(x=>[x[0],esc(x[1])]),tab:'risk',tl:'לסיכון ולכללים'}; a.each=[{key:'mkt:'+isoDay(Date.now()),text:t}]}}catch(e){}
   try{const tx=taxDue(); if(tx&&tx.show){const t=tx.days>0?`הדוח השנתי לרשות המיסים: המועד שקבעת, ${dmy(tx.iso)}, בעוד ${tx.days===1?'יום אחד':tx.days+' ימים'}.`:tx.days===0?`הדוח השנתי לרשות המיסים: המועד שקבעת הוא היום (${dmy(tx.iso)}).`:`הדוח השנתי לרשות המיסים: המועד שקבעת, ${dmy(tx.iso)}, עבר לפני ${-tx.days===1?'יום':(-tx.days)+' ימים'}.`;
     A.push([tx.days<=7?'warn':'info','מס',t+' אחרי ששלחת, סמן זאת בדף הבית.',[]]); const a=A[A.length-1]; a.why={src:'rule',rows:[['התאריך שקבעת',dmy(tx.iso)],['מה זה','תזכורת בלבד. המועד בפועל תלוי במצבך ובהחלטות רשות המיסים; בדוק באתר הרשות או אצל רואה חשבון.']],tab:'settings',tl:'לשנות את התאריך'}; a.each=[{key:`tax:${tx.year}:${tx.days<=7?'week':'month'}`,text:t}]}}catch(e){}
+  // 30.10: November and December: a gain realized this year and losses open in the portfolio, and what offsetting could save
+  try{if(acct==='all'&&+ilDay().slice(5,7)>=11){const T=taxNow(m), Y=T&&!T.none?yearEndCalc(T,m):null;
+    if(Y&&Y.save>=100&&Y.days>=0){const t=`עד סוף השנה (עוד ${Y.days} ימים): מימשת השנה רווח של ${ils(Y.R.net)}, ובתיק יש ניירות בהפסד של ${ils(Y.L)}. קיזוז יכול להוריד את המס על המימושים בעד ${ils(Y.save)}.`;
+      A.push(['info','מס',t,T.dn.slice(0,4).map(r=>lab(r.sym))]); const a=A[A.length-1]; a.why={src:'analysis',rows:[['מומש השנה',ils(Y.R.net)],['הפסדים פתוחים',ils(Y.L)],['מה זה','חישוב לפי הקניות והמכירות שהועלו, לא המלצה. מכירה משנה את התיק, והדוח השנתי של בית ההשקעות הוא הקובע.']],tab:'history',tl:'למס ולקיזוז'}; a.each=[{key:`taxoff:${Y.y}`,text:t}]}}}catch(e){}
   // 29.10: the news that touches the holdings (the levels and kinds the viewer chose), once per event
   try{for(const a of nxAlerts(m)){a.why={src:'analysis',rows:[['מה קרה',esc(newsAll().find(it=>it.id===a.nx)?.x?.what||'')],['מקור','כתבה חיצונית, כפי שצ׳יקו קרא אותה; לא תחזית ולא המלצה']],tab:'news',tl:'לידיעה ולמה היא נוגעת לתיק'}; A.push(a)}}catch(e){}
   const AF=A.filter(a=>notifOn(a[1]));
@@ -18818,6 +18825,7 @@ function anaTitle(a,kind,n){const it=(a[3]||[]).filter(Boolean).map(String);
     case 'דוחות': return 'דוחות כספיים בשבוע הקרוב';
     case 'דירוג': return 'ציון פיננסי נמוך';
     case 'מדיניות': return 'מכירות לפני תקופת ההחזקה';
+    case 'מס': return /קיזוז/.test(a[2]||'')?'קיזוז מס לפני סוף השנה':'הדוח השנתי לרשות המיסים';
     default: return a[1]}}
 // what the page cannot know about a finding, said once under it
 const anaCav=i=>i.cat==='ריכוז'&&i.kind==='group'?'כל נייר נספר בקבוצה אחת, וחשיפה עקיפה דרך קרנות לא נכללת.'
@@ -23685,9 +23693,48 @@ function renderTax(){
   const fxl=T.fxN?`<p class="tx-l"><b>השפעת הדולר:</b> ${nn(sgn(T.fxTot),T.fxTot>=0?'up':'down')} מהרווח בשקלים של ${T.fxN===1?'נייר אחד':T.fxN+' ניירות'} בדולרים הם שינוי השער מאז הקנייה, ולא שינוי המחיר. המס הוא על הרווח בשקלים, כך שגם החלק הזה נכלל.</p>`:'';
   const dv=T.div&&T.div.gross>0?`<p class="tx-l"><b>דיבידנדים:</b> התקבלו ${nn(ils(T.div.gross))} לפני מס, ונוכו ${nn(ils(T.div.tax))} מס במקור${T.div.est?' (בחלק מהתשלומים מוערך)':''}. המס הזה כבר שולם, ולא נכלל למעלה.</p>`:'';
   setH(box,`<div class="strip">${cell('הרווחים',nn(sgn(T.gains),'up'),`${T.up.length} ניירות ברווח`)}${cell('ההפסדים',nn(sgn(-T.losses),'down'),`${T.dn.length} ניירות בהפסד`)}${cell('הרווח אחרי קיזוז',nn(sgn(T.net),T.net>=0?'up':'down'),'רווח פחות הפסד')}${cell('מס משוער',nn(ils(T.tax)),T.net>0?`${pct(T.rate*100,0)} מהרווח אחרי קיזוז`:'אין רווח, אין מס')}</div>
-    ${loss}${fxl}${dv}
+    ${loss}${fxl}${dv}${(()=>{try{return yearEndH(T,mAllNow())}catch(e){return ''}})()}
     <p class="note">${T.noCost.length?`בלי ${T.noCost.map(lab).join(', ')}, שאין להם מחיר קנייה. `:''}הערכה בלבד: בית ההשקעות מחשב את המס לפי כל קנייה בנפרד ויכול להפחית את חלק האינפלציה, ולכן הדוח השנתי שלו הוא הקובע. זה חישוב, לא המלצה למכור. ${whyBtn('taxhow','איך זה מחושב?')}</p>`);
 }
+// ---- 30.10: the end of the tax year. The gains and losses realized this year, from the sales in the history (each matched
+// to its purchases, first in first out, as the rest of the page does), the losses open in the portfolio now (taxNow), and
+// what offsetting them before the year ends could save at the tax rate. Facts and arithmetic, not advice: a sale changes
+// the portfolio, and the house's annual report is what counts.
+function realizedYear(year){
+  const fx=(Q&&Q.usdIls)||usdRate(), out={year,gain:0,loss:0,sales:[],unmatched:[],byAcct:{},lump:[],any:false};
+  for(const A of (HS&&HS.accounts)||[]){
+    const tr=(A.trades||[]).filter(t=>t&&!t.div&&t.sym&&+t.qty).slice().sort((a,b)=>String(a.date)<String(b.date)?-1:1);
+    if(!tr.length){if(+A.realizedUsd)out.lump.push(A.acct); continue}
+    const lots={};
+    for(const t of tr){const il=(t.ccy||(A.ccy==='USD'?'USD':''))==='ILS', rate=il?1:fx, L=lots[t.sym]=lots[t.sym]||[];
+      if(+t.qty>0){L.push({q:+t.qty,px:+t.px||0}); continue}
+      let q=-t.qty, g=0, got=0; while(q>1e-9&&L.length){const lot=L[0], take=Math.min(q,lot.q); g+=take*((+t.px||0)-lot.px); got+=take; lot.q-=take; q-=take; if(lot.q<=1e-9)L.shift()}
+      if(!String(t.date||'').startsWith(String(year)))continue;
+      out.any=true; if(q>1e-9)out.unmatched.push(t.sym);
+      if(got>0){const gi=g*rate; out.sales.push({acct:A.acct,sym:t.sym,date:t.date,qty:got,g:gi}); if(gi>=0)out.gain+=gi; else out.loss-=gi; out.byAcct[A.acct]=(out.byAcct[A.acct]||0)+gi}}}
+  out.net=out.gain-out.loss; out.unmatched=[...new Set(out.unmatched)]; return out}
+function yearEndCalc(T,m){
+  const today=ilDay(), y=+today.slice(0,4), R=realizedYear(y), days=Math.round((Date.parse(y+'-12-31')-Date.parse(today))/864e5);
+  const L=T&&!T.none?T.losses:0, save=T&&!T.none?T.rate*Math.min(Math.max(0,R.net),L):0;
+  const acctsOf=sym=>{const p=m&&m.pos.find(x=>x.sym===sym); return p&&p.accts?[...new Set(p.accts)]:[]};
+  const gainA=Object.keys(R.byAcct).filter(a=>R.byAcct[a]>0), lossA=[...new Set((T&&T.dn||[]).flatMap(r=>acctsOf(r.sym)))];
+  return {y,days,R,L,save,cross:gainA.length&&lossA.length&&!lossA.some(a=>gainA.includes(a)),gainA,lossA}}
+function yearEndH(T,m){
+  const Y=yearEndCalc(T,m), R=Y.R, rate=pct(T.rate*100,0); if(Y.days<0)return '';
+  const cell=(k,v,d,cls)=>`<div class="cell"><div class="k">${k}</div><span class="v${cls?' '+cls:''}">${v}</span><div class="d">${d||'&nbsp;'}</div></div>`;
+  const losers=T.dn.slice(0,5).map(r=>`${symH(r.sym)} ${nn(sgn(r.g),'down')}`).join(' · ');
+  let lead;
+  if(!R.any)lead=`לא מצאתי מכירות ב-${Y.y} בתנועות שהועלו לאתר. אם מכרת השנה, כדאי להעלות את דוח התנועות של החשבון, כדי שהחישוב יכלול אותן.${Y.L>0?` בתיק יש עכשיו ניירות בהפסד של ${nn(ils(Y.L))}: הפסד שמומש מקזז רווחים שמומשו באותה שנה, ומה שלא קוזז עובר לשנים הבאות כנגד רווחי הון, בתנאי שמגישים דוח שנתי על השנה שבה הוא נוצר.`:''}`;
+  else if(R.net>0&&Y.L>0)lead=`מימשת השנה רווח נטו של ${nn(ils(R.net),'up')}. בתיק יש עכשיו ניירות בהפסד של ${nn(ils(Y.L),'down')}: ${losers}. הפסד שמומש עד סוף השנה מקזז את הרווח שמומש, ובשיעור ${rate} המס על המימושים של השנה יורד בעד ${nn(ils(Y.save))}.`;
+  else if(R.net>0)lead=`מימשת השנה רווח נטו של ${nn(ils(R.net),'up')}, ואין כרגע בתיק ניירות בהפסד שאפשר לקזז מולו.`;
+  else lead=`המימושים של השנה ${R.net<0?`בהפסד נטו של ${nn(ils(-R.net),'down')}`:'מאוזנים'}, ולכן אין רווח ממומש שצריך לקזז.${R.net<0?' הפסד ממומש יכול לקזז גם דיבידנדים של אותה שנה (ואת המס שנוכה מהם אפשר לבקש בחזרה בדוח שנתי), ומה שנשאר עובר לשנים הבאות כנגד רווחי הון, כשמגישים דוח שנתי על השנה הזאת.':''}`;
+  const notes=[Y.cross?`הרווח מומש ב${Y.gainA.map(acctName).join(', ')} וההפסדים ב${Y.lossA.map(acctName).join(', ')}. בית ההשקעות מקזז לבד רק בתוך החשבון שלו; קיזוז בין בתי השקעות שונים נעשה בדוח שנתי לרשות המיסים.`:'',
+    R.unmatched.length?`ל${R.unmatched.map(lab).join(', ')} יש מכירות בלי קנייה מתועדת בתנועות, ולכן הן לא בחישוב.`:'',
+    R.lump.length?`ב${R.lump.map(acctName).join(', ')} יש רווח ממומש מהדוח בלי פירוט לפי שנה, ולכן הוא לא בחישוב.`:''].filter(Boolean);
+  return `<div class="yend"><h3>סוף שנת המס ${Y.y}: עוד ${Y.days} ימים</h3>
+    <div class="strip">${cell('מימשת השנה',R.any?nn(sgn(R.net),R.net>=0?'up':'down'):'—',R.any?`${R.sales.length} מכירות`:'אין מכירות בתנועות')}${cell('הפסדים פתוחים בתיק',Y.L>0?nn(sgn(-Y.L),'down'):'—',`${T.dn.length} ניירות`)}${cell('מס שקיזוז יכול לחסוך',Y.save>=1?nn(ils(Y.save)):'—',`בשיעור ${rate}`)}</div>
+    <p class="tx-l">${lead}</p>${notes.map(n=>`<p class="tx-l">${n}</p>`).join('')}
+    <p class="note">חישוב לפי הקניות והמכירות שהועלו לאתר, והדולר לפי השער של היום. בית ההשקעות מחשב לפי השער של כל עסקה ומתאם לאינפלציה, ולכן הדוח השנתי שלו הוא הקובע. זה חישוב ולא המלצה: מכירה משנה את התיק, ולפני מכירה וקנייה חוזרת לצורך קיזוז כדאי לבדוק עם רואה חשבון. המכירה צריכה להתבצע עד יום המסחר האחרון של השנה.</p></div>`}
 function taxFacts(){let T=null; try{T=taxNow(mAllNow())}catch(e){} if(!T||T.none)return null;
   return {note:'הערכה: אם הכול נמכר היום; שיעור מההגדרות; הפסדים מקזזים רווחים; לא המלצה למכור',rate:pct(T.rate*100,0),gains:ils(T.gains),losses:ils(T.losses),net:sgn(T.net),tax_estimate:ils(T.tax),
     dollar_part:T.fxN?sgn(T.fxTot):null,losing:T.dn.map(r=>lab(r.sym)),dividends_tax_withheld:T.div?ils(T.div.tax):null}}
@@ -24064,6 +24111,8 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.6',at:'2026-10-30',t:'סוף שנת המס: קיזוז הפסדים',d:'במבט לאחור, בחלק של המס: כמה מימשת השנה, אילו ניירות בתיק בהפסד, וכמה מס קיזוז עד סוף השנה יכול לחסוך. בנובמבר ובדצמבר זה עולה גם לרשימה בבית. חישוב, לא המלצה.',go:'tax'},
+  {v:'2026-10-30.5',at:'2026-10-30',t:'תוכנית ההגדלה לא זזה אחרי דוח',d:'קנייה שסימנת נשארת בחודש שבו קנית, גם כשדוח חדש מוריד אותה מהמזומן. רק מה שעוד לא נקנה נפרש קדימה, מהמזומן שיש עכשיו.',go:'plan'},
   {v:'2026-10-30.4',at:'2026-10-30',t:'"התיק שלי" בשלוש לשוניות',d:'האחזקות, עדכון מדוח, והוספה ידנית: כל אחת בלשונית משלה, במקום מסך אחד ארוך. אחרי הוספה או קריאת דוח, הטבלה נפתחת לבדיקה ולשמירה.',go:'pfedit'},
   {v:'2026-10-30.3',at:'2026-10-30',t:'התראות בזמן אמת במייל',d:'כשמחיר שקבעת נחצה, כשמניה שלך זזה ביום יותר מהאחוז שבחרת, כשהדולר חוצה שער שקבעת, או כשמגיעה ידיעה קריטית על מניה שלך. כל דבר פעם אחת ביום, ולא בלילה.',go:'mail'},
   {v:'2026-10-30.2',at:'2026-10-30',t:'סיכום בוקר',d:'כל בוקר במייל: מה זז בתיק ביום המסחר האחרון, מה מחכה בשבוע הקרוב (דוחות, דיבידנדים, הפקדה), והידיעות החשובות על המניות שלך.',go:'mail'},

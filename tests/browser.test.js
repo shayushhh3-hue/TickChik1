@@ -342,8 +342,8 @@ test('"האם אני עושה טוב?": the same deposits in S&P 500 and Tel Avi
     // the same total of deposits as the hero ("מול ההפקדות")
     assert.match(await pg.evaluate(()=>document.getElementById('kDepD').textContent),/הופקדו ₪21,000/);
     // the tax if sold today
-    const x=await pg.evaluate(()=>({txt:document.getElementById('taxBox').textContent,cells:[...document.querySelectorAll('#taxBox .cell .k')].map(k=>k.textContent),sub:document.getElementById('taxSub').textContent}));
-    assert.deepEqual(x.cells,['הרווחים','ההפסדים','הרווח אחרי קיזוז','מס משוער']); assert.match(x.sub,/שיעור 25% · הערכה/);
+    const x=await pg.evaluate(()=>({txt:document.getElementById('taxBox').textContent,cells:[...document.querySelectorAll('#taxBox > .strip .cell .k')].map(k=>k.textContent),ye:[...document.querySelectorAll('#taxBox .yend .cell .k')].map(k=>k.textContent),yeH:(document.querySelector('#taxBox .yend h3')||{}).textContent,sub:document.getElementById('taxSub').textContent}));
+    assert.deepEqual(x.cells,['הרווחים','ההפסדים','הרווח אחרי קיזוז','מס משוער']); assert.deepEqual(x.ye,['מימשת השנה','הפסדים פתוחים בתיק','מס שקיזוז יכול לחסוך'],'the end of the tax year'); assert.match(x.yeH,/^סוף שנת המס \d{4}: עוד \d+ ימים$/); assert.match(x.sub,/שיעור 25% · הערכה/);
     assert.match(x.txt,/הפסדים שמקזזים את הרווחים: .*RKLB/); assert.match(x.txt,/זה חישוב, לא המלצה למכור/);
     // צ׳יקו has both
     const f=await pg.evaluate(()=>{const F=window.__ux.facts(); return F.err?F:{b:!!F.benchmark,t:!!F.tax}});

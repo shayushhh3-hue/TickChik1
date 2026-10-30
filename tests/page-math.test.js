@@ -786,3 +786,16 @@ test('the chip on the value card: what the holdings of the view did in 30 days, 
   r=W2.monChipCalc({pos:[pos('TA125',1,2150,'ILS',1)]}); assert.equal(r.since,true); assert.equal(r.days,20);
 });
 
+test('the end of the tax year: this year\'s sales matched to their purchases, the open losses, what an offset could save', ()=>{
+  const HS={accounts:[
+    {acct:'exc',ccy:'ILS',trades:[{date:'2025-03-01',sym:'TA125',qty:10,px:100,ccy:'ILS'},{date:'2026-05-01',sym:'TA125',qty:-10,px:150,ccy:'ILS'},{date:'2026-06-01',sym:'X',qty:-1,px:10,ccy:'ILS'}]},
+    {acct:'blink',ccy:'USD',trades:[{date:'2025-02-01',sym:'MSFT',qty:2,px:400},{date:'2025-09-01',sym:'MSFT',qty:-1,px:420},{date:'2026-04-01',sym:'MSFT',qty:-1,px:450},{date:'2026-04-02',sym:'MSFT',qty:1,px:460,div:true}]},
+    {acct:'meitav',ccy:'ILS',trades:[],realizedUsd:12}]};
+  const W=load(['realizedYear','yearEndCalc'],{...G,HS,Q:{usdIls:3.5},usdRate:()=>3.5,ilDay:()=>'2026-11-15'});
+  const R=W.realizedYear(2026);
+  near(R.gain,500+50*3.5,1e-9,'only this year\'s sales, each against its own purchase'); assert.equal(R.loss,0); assert.deepEqual(R.unmatched,['X']); assert.deepEqual(R.lump,['meitav']);
+  const T={rate:0.25,losses:1000,dn:[{sym:'NVDA',g:-1000}],none:false};
+  let Y=W.yearEndCalc(T,{pos:[{sym:'NVDA',accts:['blink']}]}); assert.equal(Y.days,46); near(Y.save,0.25*675,1e-9); assert.equal(Y.cross,false,'a loss in an account that also has a gain');
+  Y=W.yearEndCalc({...T,losses:100,dn:[{sym:'TA90',g:-100}]},{pos:[{sym:'TA90',accts:['meitav']}]}); near(Y.save,25,1e-9,'no more than the loss'); assert.equal(Y.cross,true,'gains in one house, the loss in another');
+  assert.equal(W.yearEndCalc({rate:0.25,losses:0,dn:[]},{pos:[]}).save,0);
+});
