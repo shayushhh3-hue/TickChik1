@@ -545,6 +545,12 @@ test('exposures: shares add up to the whole, nothing counted twice, unknowns say
   near(E.conc.top1.w,5000/11500*100,1e-9); near(E.conc.nEff,1/((5/11)**2+(3/11)**2+(2/11)**2+(1/11)**2),1e-9);
   assert.equal(E.ccy.find(r=>r.k==='ILS').val,2000+500,'shekel holdings and shekel cash');
   assert.equal(SR.exposures(mOf([]),{cash:[]},{usdIls:3.7},()=>''),null);
+  // a deposit ticked in the plan and not spent yet: in the model's cash, not in the statement's: the currency view still adds up
+  {const m3=mOf([pos('MSFT',5000,{ccy:'USD'})],500+300), E3=SR.exposures(m3,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},()=>'');
+    near(E3.ccy.reduce((t,r)=>t+r.val,0),5800,1e-9,'the currency view adds up to the whole'); assert.equal(E3.ccy.find(r=>r.k==='ILS').val,800)}
+  // more bought in the plan than was deposited: the cash goes down, and the view still adds up
+  {const m4=mOf([pos('MSFT',5000,{ccy:'USD'})],500-200), E4=SR.exposures(m4,{cash:[{ccy:'ILS',amount:500}]},{usdIls:3.7},()=>'');
+    near(E4.ccy.reduce((t,r)=>t+r.val,0),5300,1e-9)}
 });
 
 test('crisis center: the comparison point, the move since then by holding, and the market blend', ()=>{

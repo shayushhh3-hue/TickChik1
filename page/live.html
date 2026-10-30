@@ -18544,6 +18544,9 @@ function exposures(m,P,Q,secOf){
   const T=m.total; if(!(T>0))return null;
   const pos=m.pos.slice().sort((a,b)=>b.val-a.val), inv=pos.reduce((t,p)=>t+p.val,0), W=v=>v/T*100;
   const cashBy={ILS:0,USD:0}; for(const c of P.cash||[]){if(m.acct&&m.acct!=='all'&&c.acct!==m.acct)continue; const v=c.ccy==='USD'?(+c.amount||0)*Q.usdIls:(+c.amount||0); cashBy[c.ccy==='USD'?'USD':'ILS']+=v}
+  // 30.10: the cash of the model also holds what was deposited in the expansion plan and not yet spent (ticked there, not yet
+  // in a statement): shekels, since the plan's deposits are in shekels. Without it the currency view was short by that amount.
+  {const extra=(+m.cash||0)-cashBy.ILS-cashBy.USD; if(Math.abs(extra)>0.005)cashBy.ILS+=extra}
   const top=n=>pos.slice(0,n).reduce((t,p)=>t+W(p.val),0);
   const conc={n:pos.length,top1:pos[0]?{sym:pos[0].sym,w:W(pos[0].val)}:null,top3:top(3),top5:top(5),
     nEff:inv>0?1/pos.reduce((t,p)=>t+(p.val/inv)**2,0):0};   // "as many equal holdings as": 1/sum of squared weights, holdings only
@@ -18557,7 +18560,7 @@ function exposures(m,P,Q,secOf){
   const out={total:T,conc,
     group:list(by(p=>p.group,k=>GROUPS[k]||k),m.cash),
     sector:list(sec,m.cash),
-    ccy:(()=>{const r=list(by(p=>p.ccy==='ILS'?'ILS':(p.ccy||'USD'),k=>CCYHE[k]||k),0); for(const k of ['USD','ILS'])if(cashBy[k]>0.005){const x=r.find(y=>y.k===k)||(r.push({k,label:k==='USD'?'דולר':'שקל',val:0,syms:[],w:0}),r[r.length-1]); x.val+=cashBy[k]; x.w=W(x.val); x.cash=cashBy[k]} return r.sort((a,b)=>b.val-a.val)})(),
+    ccy:(()=>{const r=list(by(p=>p.ccy==='ILS'?'ILS':(p.ccy||'USD'),k=>CCYHE[k]||k),0); for(const k of ['USD','ILS'])if(Math.abs(cashBy[k])>0.005){const x=r.find(y=>y.k===k)||(r.push({k,label:k==='USD'?'דולר':'שקל',val:0,syms:[],w:0}),r[r.length-1]); x.val+=cashBy[k]; x.w=W(x.val); x.cash=cashBy[k]} return r.sort((a,b)=>b.val-a.val)})(),
     market:list(by(p=>p.ccy==='ILS'?'il':p.ccy==='USD'?'us':'other',k=>k==='us'?'נסחרים בארה״ב':k==='il'?'נסחרים בתל אביב':'נסחרים בבורסות אחרות'),m.cash),
     kind:list(by(p=>isFund(p)||p.group==='il'?'fund':'stock',k=>k==='fund'?'קרנות':'מניות'),m.cash)};
   out.unknownSector=(sec['?']||{syms:[]}).syms;
