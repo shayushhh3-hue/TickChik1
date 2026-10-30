@@ -1376,6 +1376,29 @@ test('a partner\'s own e-mails: only what they switched on, to their own address
   }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
 });
 
+test('an admin: set by the owner alone, the owner\'s access (portfolio, users, health), never the owner\'s place; back to a partner, their own portfolio again',async()=>{
+  const {store,srv,req}=await startApp();
+  try{
+    const f=store.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}), g=store.addUser({email:'g@example.com',password:'friend-pass-2',role:'friend'});
+    store.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'KO',qty:1}]});
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'});
+    assert.equal((await req('f','GET','/api/db/doc?path=portfolio/main')).status,403,'a partner: not the owner\'s portfolio');
+    assert.equal((await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'})).status,403,'a partner changes no roles');
+    assert.equal((await req('o','POST',`/api/users/${f.id}/role`,{role:'owner'})).status,400,'never a second owner');
+    let r=await req('o','POST',`/api/users/${f.id}/role`,{role:'admin'}); assert.equal(r.j.role,'admin');
+    assert.equal((await req('f','GET','/api/me')).j.me,null,'signed out by the change');
+    r=await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'}); assert.equal(r.j.me.owner,true); assert.equal(r.j.me.admin,true);
+    r=await req('f','GET','/api/db/doc?path=portfolio/main'); assert.equal(r.status,200); assert.equal(r.j.data.positions[0].sym,'MSFT','the owner\'s portfolio');
+    assert.equal((await req('f','GET','/api/users')).status,200,'the users page'); assert.equal((await req('f','GET','/api/health')).status,200,'the system\'s health');
+    assert.equal((await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'})).status,403,'an admin changes no roles');
+    await req('o','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal((await req('f','DELETE',`/api/users/${g.id}`)).status,403,'an admin removes no admin');
+    assert.equal(store.users().filter(u=>u.role==='owner').length,1,'one owner');
+    // back to a partner: their own portfolio again, kept all along
+    await req('o','POST',`/api/users/${f.id}/role`,{role:'friend'}); await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'});
+    assert.equal((await req('f','GET','/api/db/doc?path=portfolio/main')).status,403); assert.equal((await req('f','GET',`/api/db/doc?path=data/users/${f.id}/portfolio`)).j.data.positions[0].sym,'KO');
+  }finally{srv.close()}
+});
+
 test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{
   const {morningSections}=await import('../server/tasks.js');
   const G={ready:true,day:{pct:-0.97,ils:-237,top:[{sym:'NVDA',pct:-2.41,ils:-100}]},news:[{level:'crit',he:'אנבידיה הורידה את התחזית',what:'החברה הורידה את התחזית.',who:'NVDA (16% מהתיק)',link:'https://x/n',pub:'Reuters'}],soon:[{d:'2026-11-02',items:['אקס דיבידנד KO']}],divYear:420};

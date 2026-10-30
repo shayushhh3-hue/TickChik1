@@ -68,6 +68,7 @@ export class Store{
   userByEmail(email){return this.db.prepare('select * from users where email=?').get(String(email||'').trim().toLowerCase())||null}
   userById(id){return this.db.prepare('select * from users where id=?').get(id)||null}
   users(){return this.db.prepare('select id, email, name, role, created_at, must_change from users order by created_at').all()}
+  setRole(id,role){if(!['admin','friend'].includes(role))throw new Error('bad_role'); const u=this.userById(id); if(!u)throw new Error('not_found'); if(u.role==='owner')throw new Error('owner'); this.db.prepare('update users set role=? where id=?').run(role,id); return this.userById(id)}
   addUser({email,name='',password,role='friend',mustChange=false}){
     email=String(email||'').trim().toLowerCase(); if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('bad_email');
     if(String(password||'').length<8)throw new Error('short_password');
@@ -95,12 +96,15 @@ export class Store{
   close(){this.db.close()}
 }
 
+// 30.10: an admin (role 'admin', set by the owner) has the owner's access: the owner's portfolio, plan, history and
+// settings, and the site's management. The owner is still the one person the site is about (its e-mails, its jobs).
+export const ownerLike=u=>!!u&&(u.role==='owner'||u.role==='admin');
 // ---- who may read and write a path: the same matrix as the artifact's rules ----
 // user: {id, role:'owner'|'friend'} or null; returns 'rw' | 'r' | ''
 const newsIdOf=link=>createHash('sha1').update(String(link||'')).digest('hex').slice(0,12);
 export function access(user,p){
   if(!user)return '';
-  const seg=p.split('/'), owner=user.role==='owner';
+  const seg=p.split('/'), owner=ownerLike(user);
   if(seg[0]==='data'&&seg[1]==='users')return seg[2]===user.id?'rw':'';
   // each person's list of symbols is theirs alone; the price job reads them on the server, not through this matrix
   if(seg[0]==='watch')return seg[1]===user.id?'rw':'';
@@ -125,7 +129,7 @@ export function symsOfUser(store,uid){
   return out;
 }
 export function partnerView(store,user,p,data){
-  if(!user||user.role==='owner'||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
+  if(!user||ownerLike(user)||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
   const ok=symsOfUser(store,user.id), has=s=>ok.has(s), pick=m=>isMap(m)?Object.fromEntries(Object.entries(m).filter(([k])=>has(k))):m;
   const both=a=>Array.isArray(a)?a.filter(o=>o&&has(o.a)&&has(o.b)):a, only=a=>Array.isArray(a)?a.filter(has):a;
   if(p==='quotes/latest'){const {errors,...rest}=data; return {...rest,prices:pick(data.prices),prev:pick(data.prev),stale:pick(data.stale),meta:pick(data.meta)}}

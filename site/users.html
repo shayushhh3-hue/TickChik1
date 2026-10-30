@@ -125,8 +125,9 @@ async function load(){
   if(!me.owner){document.querySelector('main').innerHTML='<h1>משתמשים</h1><p>רק בעל הדף מנהל משתמשים.</p><a class="btn" href="./">חזרה</a>';return}
   loadInv(); loadUse(); loadBk(); loadRs();
   const {users}=await call('GET','/users');
-  $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
-    ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button><button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button></span>`}</div>`).join('');
+  $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':u.role==='admin'?'מנהל':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
+    ${u.role==='owner'?'':`<span class="acts">${me.admin?'':`<button class="btn" data-role="${u.role==='admin'?'friend':'admin'}" data-uid="${esc(u.id)}" data-em="${esc(u.email)}">${u.role==='admin'?'להחזיר לשותף':'להפוך למנהל'}</button>`}<button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button>${u.role==='admin'&&me.admin?'':`<button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button>`}</span>`}</div>`).join('');
+  {const p=$('list').previousElementSibling; if(p&&!document.getElementById('roleNote')){const n=document.createElement('p'); n.id='roleNote'; n.className='muted'; n.style.margin='0 0 8px'; n.textContent='מנהל רואה ועורך כמוך את התיק, התוכנית, ההיסטוריה וההגדרות שלך, ומנהל את האתר: משתמשים, גיבויים ובריאות המערכת. התיק הנפרד שהיה לו כשותף נשמר, ויחזור אליו אם יוחזר לשותף. מיילים ממשיכים להגיע רק אליך; התראות לטלפון מגיעות גם אליו.'; $('list').before(n)}}
 }
 $('gen').onclick=()=>{$('pw').value=rnd()};
 $('aiChk').onclick=async()=>{const b=$('aiChk'),o=$('aiRes'); b.disabled=true; o.className='muted'; o.textContent='בודק…';
@@ -143,6 +144,9 @@ document.addEventListener('click',async e=>{
     try{await call(iv.dataset.inv==='close'?'DELETE':'POST','/invite',iv.dataset.inv==='close'?undefined:{}); loadInv()}catch(x){$('invErr').textContent=x.message} return}
   const r=e.target.closest('[data-reset]'); if(r){const pw=rnd(); if(!confirm('לקבוע ל-'+r.dataset.em+' סיסמה ראשונית חדשה? הוא ינותק ויתבקש לבחור סיסמה בכניסה הבאה.'))return;
     try{await call('POST','/users/'+r.dataset.reset+'/password',{password:pw}); alert('הסיסמה החדשה של '+r.dataset.em+':\n'+pw); load()}catch(x){alert(x.message)} return}
+  const ro=e.target.closest('[data-role]'); if(ro){const up=ro.dataset.role==='admin';
+    if(!confirm(up?`להפוך את ${ro.dataset.em} למנהל? הוא יראה ויוכל לערוך את התיק, התוכנית, ההיסטוריה וההגדרות שלך, ולנהל את המשתמשים והגיבויים. הוא ינותק ויתבקש להיכנס שוב.`:`להחזיר את ${ro.dataset.em} לשותף? הוא יראה שוב רק את התיק שלו. הוא ינותק ויתבקש להיכנס שוב.`))return;
+    try{await call('POST','/users/'+ro.dataset.uid+'/role',{role:ro.dataset.role}); load()}catch(x){alert(x.message)} return}
   const d=e.target.closest('[data-del]'); if(d){if(!confirm('להסיר את '+d.dataset.em+'? כל הנתונים שלו (התיק, ההגדרות, הדוחות) יימחקו לצמיתות.'))return;
     try{await call('DELETE','/users/'+d.dataset.del); load()}catch(x){alert(x.message)}}
 });

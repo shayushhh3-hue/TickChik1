@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
-import {Store, canRead, canWrite, partnerView} from './store.js';
+import {Store, canRead, canWrite, partnerView, ownerLike} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
@@ -65,7 +65,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const setCookie=(res,sid,maxAge)=>res.setHeader('Set-Cookie',`${COOKIE}=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${env.NODE_ENV==='production'||env.RAILWAY_ENVIRONMENT?'; Secure':''}`);
   app.use((req,res,next)=>{req.sid=parseCookies(req)[COOKIE]||null; req.user=req.sid?store.session(req.sid):null; next()});
   const needUser=(req,res,next)=>req.user?next():res.status(401).json({error:{code:'not_granted',message:'not signed in'}});
-  const needOwner=(req,res,next)=>req.user&&req.user.role==='owner'?next():res.status(403).json({error:{code:'not_granted',message:'owner only'}});
+  const needOwner=(req,res,next)=>ownerLike(req.user)?next():res.status(403).json({error:{code:'not_granted',message:'owner only'}});
   // state-changing calls must come from the page itself (a custom header no cross-site form can send)
   app.use('/api',(req,res,next)=>{if(req.method!=='GET'&&req.headers['x-tc']!=='1')return res.status(403).json({error:{code:'invalid_argument',message:'missing header'}});next()});
   app.use('/api',(req,res,next)=>{res.setHeader('cache-control','no-store');next()});
@@ -110,7 +110,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); res.json(v)});
   app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
-  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:u.role==='owner',mustChange:!!u.must_change});
+  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:ownerLike(u),admin:u.role==='admin',mustChange:!!u.must_change});
   // 30.10: the page's version (the built page's hash), so a page left open (a phone's tab, the icon on the home screen)
   // learns that a new one is out and reloads instead of running the old one for days
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
@@ -123,7 +123,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/push/sub',needUser,(req,res)=>addDevice(store,req.user.id,req.body&&req.body.sub,{ua:req.headers['user-agent']})?res.json({ok:true,n:devices(store,req.user.id).length}):res.status(400).json({error:{code:'invalid_argument',message:'bad subscription'}}));
   app.post('/api/push/unsub',needUser,(req,res)=>res.json({ok:true,removed:dropDevice(store,req.user.id,String(req.body&&req.body.endpoint||''))}));
   app.post('/api/push/test',needUser,async(req,res)=>{const n=await pushTo(store,req.user.id,{title:'תיק צ׳יק',body:'בדיקה: ההתראות לטלפון עובדות. כך תיראה התראה על מחיר שנחצה, יום חריג או ידיעה קריטית.',url:'./',tag:'test'},{log}).catch(()=>0); res.json({sent:n})});
-  app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user),...(req.user.role==='owner'?{persist:PERSIST}:{})}:{me:null,signup:!!invite()}));
+  app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user),...(ownerLike(req.user)?{persist:PERSIST}:{})}:{me:null,signup:!!invite()}));
   app.post('/api/password',needUser,(req,res)=>{const {old,password}=req.body||{}; if(!store.checkPassword(req.user,old))return res.status(400).json({error:{code:'bad_login',message:'הסיסמה הנוכחית לא נכונה.'}});
     try{store.setPassword(req.user.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})} res.json({ok:true})});
 
@@ -149,7 +149,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.get('/api/users',needOwner,(req,res)=>res.json({users:store.users()}));
   app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true});res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
   app.post('/api/users/:id/password',needOwner,(req,res)=>{try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id);res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
-  app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}});
+  app.post('/api/users/:id/role',(req,res)=>{if(!req.user||req.user.role!=='owner')return res.status(403).json({error:{code:'not_granted',message:'only the owner changes roles'}});
+    try{const u=store.setRole(req.params.id,(req.body||{}).role); store.endSessions(u.id); res.json({ok:true,role:u.role})}catch(e){res.status(400).json({error:{code:e.message,message:e.message}})}});
+  app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.role==='admin'&&req.user.role!=='owner')return res.status(403).json({error:{code:'not_granted',message:'רק בעל הדף מסיר מנהל.'}});
     store.removeUser(u.id); for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); res.json({ok:true})});
 
   // ---- documents ----
@@ -193,13 +195,13 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     let where=null; if(req.query.wf){where={f:String(req.query.wf),op:String(req.query.wo||'=='),v:req.query.wv===undefined?null:JSON.parse(String(req.query.wv))}}
     res.json({docs:store.listDocs(p,{orderBy:req.query.orderBy?String(req.query.orderBy):null,dir:req.query.dir==='desc'?'desc':'asc',limit:+req.query.limit||0,where})})});
   // one import or export at a time, the owner only: the whole set of documents as {path: data}
-  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
+  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=ownerLike(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
     store.batch(ws); res.json({ok:true,n:ws.length})});
-  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=req.user.role==='owner', mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
+  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=ownerLike(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
-    const user=req.user; const off=store.onChange(ev=>{if(canRead(user,ev.path)&&(user.role==='owner'||!ev.path.startsWith('quotes/c_')))res.write(`data: ${JSON.stringify(ev)}\n\n`)});
+    const user=req.user; const off=store.onChange(ev=>{if(canRead(user,ev.path)&&(ownerLike(user)||!ev.path.startsWith('quotes/c_')))res.write(`data: ${JSON.stringify(ev)}\n\n`)});
     const ping=setInterval(()=>{try{res.write(':ping\n\n')}catch(e){}},25000);
     req.on('close',()=>{off();clearInterval(ping)});
   });
@@ -210,7 +212,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // a problem in the site's own set-up (no key, no credit, a key or a model that Anthropic refuses): the owner gets the
   // details, a partner a plain line, since nothing in their own account can fix it (marked site:true until it is sent)
   const SITE_ERR='צ׳יקו לא זמין באתר כרגע, בגלל הגדרה בצד של האתר. כדאי לספר לבעל האתר.';
-  const forUser=(u,j)=>{const e=j&&j.error; if(!e||!e.site)return j; const {site,...rest}=e; return {...j,error:u&&u.role==='owner'?rest:{...rest,message:SITE_ERR}}};
+  const forUser=(u,j)=>{const e=j&&j.error; if(!e||!e.site)return j; const {site,...rest}=e; return {...j,error:u&&ownerLike(u)?rest:{...rest,message:SITE_ERR}}};
   const askErr=(status,type,msg)=>{const m=String(msg||'');
     if(/credit balance|billing|purchase credits/i.test(m))return [402,'sampling_disabled','אין יתרה בחשבון ספק המודל. צריך להטעין קרדיט ב-console.anthropic.com (Billing).',true];
     if(status===401||status===403||type==='authentication_error'||type==='permission_error')return [502,'sampling_disabled','מפתח ה-API נדחה. בדוק שהמפתח ב-Railway (ANTHROPIC_API_KEY) הועתק במלואו ושהוא לא בוטל.',true];
@@ -286,7 +288,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
       const txt=JSON.stringify({...out.message,fallbackFrom:tried}); return started?res.end(txt):res.status(200).type('application/json').send(txt)}
     // nothing was read and nothing was billed (every model answered with an error at once): the read does not count
     if(free)store.aiAdd(u.id,day,quick?{quick:-1}:{calls:-1});
-    if(att.length>1&&u.role==='owner')out.json.error.message+=` (נוסו: ${att.join(', ')})`;
+    if(att.length>1&&ownerLike(u))out.json.error.message+=` (נוסו: ${att.join(', ')})`;
     const j=forUser(u,out.json); return started?res.end(JSON.stringify(j)):res.status(out.status).json(j);
   }
   // only the kinds of request the page makes: a model from the list, a capped answer length, plain text and image turns,
@@ -317,7 +319,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const inflight=new Map(); // user id -> requests running now
   app.post('/api/ask',needUser,async(req,res)=>{
     const c=cleanAsk(req.body); if(c.err)return res.status(400).json({error:{code:'invalid_argument',message:c.err}});
-    const u=req.user, owner=u.role==='owner', day=ilParts(new Date()).iso;
+    const u=req.user, owner=ownerLike(u), day=ilParts(new Date()).iso;
     // the quick read of a statement: counted apart, so that a statement is one call of the daily quota
     const quick=c.files&&FILE_QUICK_MODELS.includes(c.body.model)&&!FILE_MODELS.includes(c.body.model);
     if(!owner){
@@ -395,9 +397,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     catch(e){res.status(502).json({error:'הכתבות לא זמינות כרגע: '+(e&&e.message||e)})}});
   app.post('/api/prices',needUser,async(req,res)=>{
     try{
-      if(Date.now()-pxLast.at<3*60*1000&&pxLast.res){const {errors,...rest}=pxLast.res; return res.json({...(req.user.role==='owner'?pxLast.res:{...rest,errors:(errors||[]).length}),cached:true})}
-      if(!pxBusy){let to; pxBusy=Promise.race([refreshQuotes(store,{log,reason:(req.user.role==='owner'?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}),new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error('price update took too long')),120000)})]).finally(()=>{clearTimeout(to);pxBusy=null})}
-      const r=await pxBusy; pxLast={at:Date.now(),res:r}; const {errors,...rest}=r; res.json({ok:true,...(req.user.role==='owner'?r:{...rest,errors:(errors||[]).length})});
+      if(Date.now()-pxLast.at<3*60*1000&&pxLast.res){const {errors,...rest}=pxLast.res; return res.json({...(ownerLike(req.user)?pxLast.res:{...rest,errors:(errors||[]).length}),cached:true})}
+      if(!pxBusy){let to; pxBusy=Promise.race([refreshQuotes(store,{log,reason:(ownerLike(req.user)?'owner':'friend')+': '+String((req.body||{}).reason||'').slice(0,80)}),new Promise((_,rej)=>{to=setTimeout(()=>rej(new Error('price update took too long')),120000)})]).finally(()=>{clearTimeout(to);pxBusy=null})}
+      const r=await pxBusy; pxLast={at:Date.now(),res:r}; const {errors,...rest}=r; res.json({ok:true,...(ownerLike(req.user)?r:{...rest,errors:(errors||[]).length})});
     }catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}
   });
 
