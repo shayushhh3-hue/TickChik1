@@ -2087,7 +2087,7 @@ html[data-theme="dark"] .ix-kv.rel-high{color:#4ADE80} html[data-theme="dark"] .
 html[data-theme="dark"] .ix-cv{background:radial-gradient(circle at 50% 50%,rgb(124 58 237 / .28),transparent 60%),radial-gradient(circle at 1px 1px,rgb(148 163 184 / .14) 1px,transparent 0) 0 0/20px 20px,#0B1024}
 .ix-cv svg{width:100%;height:100%;display:block}
 #ixG .ixn{cursor:pointer} #ixG .ixn:focus{outline:none} #ixG .ixn:focus-visible .ixc,#ixG .ixn.sel .ixc{stroke:#fff;stroke-width:3} #ixG .ixi{fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-#ixG .ixls{pointer-events:none} #ixG .ixl{font-size:12.5px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg,#fff);stroke-width:3px} #ixG .ixl.b{font-size:15px;font-weight:800}
+#ixG .ixls text{cursor:pointer} #ixG .ixl{font-size:12.5px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg,#fff);stroke-width:3px} #ixG .ixl.b{font-size:15px;font-weight:800}
 html[data-theme="dark"] #ixG .ixl{stroke:#0B1024} #ixG .ix-e{opacity:.75}
 .ix-leg{position:absolute;inset-inline-start:10px;bottom:10px;display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink2);background:rgb(255 255 255 / .6);padding:6px 8px;border-radius:10px;backdrop-filter:blur(4px)}
 html[data-theme="dark"] .ix-leg{background:rgb(11 16 36 / .6)} .ix-leg span{display:flex;align-items:center;gap:6px} .ix-leg i{width:9px;height:9px;border-radius:50%}
@@ -2112,6 +2112,54 @@ html[data-theme="dark"] .ix-leg{background:rgb(11 16 36 / .6)} .ix-leg span{disp
 @container ix (max-width:1239px){.ix-me{flex-direction:row} .ix-av{width:56px!important;height:56px!important} .ix-bub{text-align:start} .ix-qs{flex-direction:row;flex-wrap:wrap} .ix-q{flex:1 1 200px}}
 @media (max-width:520px){.ix-title b{font-size:21px} .ix-k{padding:12px;gap:10px} .ix-ki{width:36px;height:36px} .ix-kv{font-size:22px} .ix-col{padding:12px;border-radius:18px} .ix-leg{font-size:10.5px}}
 .ix-hide{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* 30.10: what is happening to a share: the holdings the period touches (each card a button), the share's own view
+   (plain words, the price with the events on it, known / possible / not known, the events one by one), the map in words */
+.ix-stx[hidden]{display:none} .ix-chs{font-size:12.5px;color:var(--muted)}
+.ix-sl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:10px} .ix-sl li{display:flex;min-width:0}
+.ix-s{width:100%;display:flex;flex-direction:column;gap:7px;text-align:start;font:inherit;color:var(--ink);padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--bg,var(--sunk));cursor:pointer;border-inline-start:4px solid #6366F1;min-height:44px}
+.ix-s:hover{border-color:#A78BFA} .ix-s:focus-visible{outline:3px solid var(--focus);outline-offset:2px} .ix-s.lv-crit{border-inline-start-color:#DC2626} .ix-s.lv-imp{border-inline-start-color:#D97706} .ix-s.q{border-inline-start-color:#94A3B8}
+.ix-s1{display:flex;align-items:center;gap:8px;min-width:0} .ix-s1 b{font-size:16.5px} .ix-sn{font-size:12.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1} .ix-sw{font-size:12.5px;font-weight:700;color:var(--vio-ink);white-space:nowrap}
+.ix-s2{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:13.5px} .ix-sd{font-weight:800} .ix-sd.up{color:var(--gain)} .ix-sd.down{color:var(--loss)} .ix-se{color:var(--ink2)}
+.ix-s3{font-size:14px;line-height:1.45;font-weight:600} .ix-s3.nm{font-weight:500} .ix-via{font-weight:700;color:var(--vio-ink)}
+.ix-s4{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:auto} .ix-go{margin-inline-start:auto;font-size:13.5px;font-weight:800;color:var(--vio-ink)}
+.ix-dw{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;line-height:1.5}
+.ix-dw.pos{color:#15803D;border-color:rgb(34 197 94 / .45);background:rgb(34 197 94 / .1)} .ix-dw.neg{color:#B91C1C;border-color:rgb(239 68 68 / .45);background:rgb(239 68 68 / .09)} .ix-dw.mix{color:#B45309;border-color:rgb(245 158 11 / .5);background:rgb(245 158 11 / .1)} .ix-dw.unc{color:var(--ink2)}
+html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw.neg{color:#FCA5A5} html[data-theme="dark"] .ix-dw.mix{color:#FCD34D}
+.ix-chip{font:inherit;font-size:12.5px;font-weight:800;padding:0 10px;min-height:28px;border-radius:999px;border:1px solid rgb(139 92 246 / .45);background:rgb(139 92 246 / .1);color:var(--vio-ink);cursor:pointer;vertical-align:middle} .ix-chip:hover{border-color:#8B5CF6}
+.ix-af{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ix-mh{display:flex;align-items:center;gap:6px} .ix-tb{font:inherit;font-size:13px;font-weight:700;padding:0 12px;min-height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap}
+.ix-tb[aria-pressed="true"]{background:rgb(124 58 237 / .14);border-color:#8B5CF6;color:var(--vio-ink)} .ix-cv[hidden]{display:none}
+.ix-txt{display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6;padding:12px;border-radius:16px;border:1px solid var(--line);background:var(--bg,var(--sunk))} .ix-txt[hidden]{display:none}
+.ix-txl{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:12px} .ix-txl ul{margin:6px 0 0;padding-inline-start:14px;display:flex;flex-direction:column;gap:5px;font-size:13.5px} .ix-txl .ar{color:var(--muted)} .ix-tn{min-height:24px;font-weight:800}
+.ix-key{font-size:13px;color:var(--ink2)} .ix-key summary{cursor:pointer;font-weight:700;min-height:32px;display:flex;align-items:center;gap:6px;color:var(--ink)}
+.ix-keyl{list-style:none;margin:6px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:5px 14px} .ix-keyl li{display:flex;align-items:center;gap:8px;line-height:1.4}
+.ix-keyl .kd{flex:none;width:12px;height:12px;border-radius:50%} .ix-keyl .kl{flex:none;width:26px;height:0;border-top:2.5px solid var(--ink2)} .ix-keyl .kl.ds{border-top-style:dashed} .ix-keyl .kl.dt{border-top-style:dotted}
+#ixG .ixh{cursor:pointer}
+#ixSv[hidden]{display:none} #ixSv{display:flex;flex-direction:column;gap:12px} .ixs{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ixs-h{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.ixs-h h3{margin:0;font-size:22px;font-weight:800;line-height:1.2} .ixs-h h3:focus{outline:none} .ixs-hn{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1} .ixs-hn span{font-size:13.5px;color:var(--ink2)}
+.ixs-px{display:flex;flex-direction:column;align-items:flex-end;gap:2px} .ixs-px b{font-size:21px}
+.ixs-kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px} .ixs-kp div{padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.ixs-kp i{font-style:normal;font-size:12.5px;color:var(--muted)} .ixs-kp b{font-size:18px}
+.ixs-sec{padding:14px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0} .ixs-sec h4{margin:0;font-size:16.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+.ixs-say{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:7px;font-size:15px;line-height:1.65}
+.ixs-ch{margin:0;display:flex;flex-direction:column;gap:6px} .ixs-ch svg{width:100%;height:auto;display:block;overflow:visible} .ixs-ch .ln{fill:none;stroke:#7C3AED;stroke-width:2.4;stroke-linejoin:round} .ixs-ch .ar{fill:rgb(124 58 237 / .1)}
+.ixs-ch .ax{font-size:12.5px;fill:var(--muted);font-weight:600} .ixs-ch figcaption{font-size:12.5px;color:var(--muted);line-height:1.5}
+.ixs-m{color:#6366F1} .ixs-m line{stroke:currentColor;stroke-width:1.2;stroke-dasharray:3 3;opacity:.7} .ixs-m circle{fill:currentColor;stroke:var(--surface);stroke-width:2} .ixs-m text{fill:#fff;font-size:12.5px;font-weight:800}
+.ixs-m.pos{color:#16A34A} .ixs-m.neg{color:#DC2626} .ixs-m.mix{color:#D97706}
+.ixs-kn{display:grid;grid-template-columns:1fr;gap:10px} @container ix (min-width:760px){.ixs-kn{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ixs-kb{padding:12px 14px;border-radius:16px;border:1px solid var(--line)} .ixs-kb h5{margin:0 0 6px;font-size:14.5px;display:flex;align-items:center;gap:6px} .ixs-kb h5 span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:13px;color:#fff}
+.ixs-kb ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.55} .ixs-kb p{margin:0;font-size:13.5px}
+.ixs-kb.k1{background:rgb(34 197 94 / .06);border-color:rgb(34 197 94 / .35)} .ixs-kb.k1 h5 span{background:#16A34A} .ixs-kb.k2{background:rgb(245 158 11 / .06);border-color:rgb(245 158 11 / .4)} .ixs-kb.k2 h5 span{background:#D97706} .ixs-kb.k3{background:rgb(100 116 139 / .07)} .ixs-kb.k3 h5 span{background:#64748B}
+.ixs-el{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ixs-e{padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--bg,var(--sunk));display:flex;flex-direction:column;gap:8px;border-inline-start:4px solid #6366F1;min-width:0} .ixs-e.lv-crit{border-inline-start-color:#DC2626} .ixs-e.lv-imp{border-inline-start-color:#D97706}
+.ixs-e h5{margin:0;font-size:16px;line-height:1.4} .ixs-e p{margin:0;font-size:14px;line-height:1.6} .ixs-e .pl-chain{margin:0}
+.ixs-et{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px;color:var(--muted)} .ixs-k{padding:1px 8px;border-radius:999px;border:1px solid var(--line)}
+.ixs-num{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#6366F1;color:#fff;font-weight:800;font-size:12.5px} .ixs-num.pos{background:#16A34A} .ixs-num.neg{background:#DC2626} .ixs-num.mix{background:#D97706}
+.ixs-tg{display:flex;flex-wrap:wrap;gap:6px} .ixs-tg .tg{font-size:12.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink2);line-height:1.5}
+.ixs-src summary{cursor:pointer;font-size:13.5px;font-weight:700;min-height:32px;display:flex;align-items:center;gap:6px} .ixs-src summary::before,.ix-key summary::before{content:'▸';font-size:12px} .ixs-src[open] summary::before,.ix-key[open] summary::before{content:'▾'} .ixs-src ul{margin:6px 0 0;padding-inline-start:18px;font-size:13px;display:flex;flex-direction:column;gap:8px}
+.ixs-qs{display:flex;flex-wrap:wrap;gap:8px} .ixs-qs .ix-q{flex:1 1 220px} .ixs-ask .ix-av{width:30px!important;height:30px!important;box-shadow:none}
+@media (max-width:520px){.ixs-h h3{font-size:19px} .ixs-sec,.ixs-h{padding:12px} .ixs-say{font-size:14.5px} .ix-sl{grid-template-columns:1fr}}
 /* the alert center */
 .pl-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;color:var(--ink2)} .pl-head:empty{display:none}
 #plLv{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} #plLv::-webkit-scrollbar{display:none} #plLv .chip{flex:none}
@@ -2919,7 +2967,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="nw-active" id="nwActive" hidden></div>
         <div class="newsfeed" id="newsFeed"><div class="empty">החדשות נטענות…</div></div>
         <p class="note" id="nxStat" hidden></p>
-        <p class="note" id="nxNote">חדשות ממקורות חיצוניים (Finnhub, Yahoo Finance; פוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת), נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
+        <p class="note" id="nxNote">חדשות ממקורות חיצוניים (Finnhub, Yahoo Finance; גלובס לכותרות על מניות שנסחרות בתל אביב, לפי שם החברה בכותרת; פוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת), נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
       </div>
       <div id="rtAl" class="rt-p ix" role="tabpanel" aria-labelledby="rtTabAl" hidden>
         <div class="ix-head">
@@ -2929,15 +2977,22 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="ix-note" id="ixNote" hidden></div>
         <div id="ixBody">
           <div class="ix-kpis" id="ixKpis" hidden></div>
+          <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה על מניה: ההסבר המלא, בשפה פשוטה</span></div>
+            <ul class="ix-sl" id="ixStList"></ul><button type="button" class="btn sm ix-more" id="ixStMore" aria-expanded="false" hidden></button></section>
           <div class="ix-grid">
             <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">ההתראות האישיות שלך <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
             <section class="ix-col ix-map" id="ixMap" aria-labelledby="ixMapH">
-              <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><button type="button" class="ix-exp" id="ixExp" aria-label="למפה המלאה, עם ההסבר לכל קשר"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+              <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><span class="ix-mh"><button type="button" class="ix-tb" id="ixTxtB" aria-pressed="false" aria-controls="ixTxt">המפה במילים</button><button type="button" class="ix-exp" id="ixExp" aria-label="למפה המלאה, עם ההסבר לכל קשר"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></span></div>
               <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button><button type="button" role="tab" data-ixv="world" aria-selected="false">עולם</button></div>
               <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
                 <div class="ix-leg" aria-hidden="true"><span><i style="background:#EF4444"></i>אירוע</span><span><i style="background:#22C55E"></i>גורם כלכלי</span><span><i style="background:#3B82F6"></i>ענף</span><span><i style="background:#F59E0B"></i>חברה</span><span><i style="background:#8B5CF6"></i>החזקה בתיק</span></div>
                 <div class="ix-z" role="group" aria-label="הגדלה והקטנה"><button type="button" id="ixZin" aria-label="הגדלה">+</button><button type="button" id="ixZout" aria-label="הקטנה">−</button><button type="button" id="ixFit" aria-label="חזרה לגודל המקורי">⤢</button></div>
                 <div class="ix-empty" id="ixEmpty" hidden></div></div>
+              <div class="ix-txt" id="ixTxt" hidden></div>
+              <details class="ix-key"><summary>איך לקרוא את המפה</summary>
+                <ul class="ix-keyl"><li><i class="kd" style="background:#7C3AED"></i><b>במרכז:</b> התיק שלך (או האירוע, החברה או העולם, לפי התצוגה)</li><li><i class="kd" style="background:#EF4444"></i><b>אירוע:</b> ידיעה שנקראה. הילה גדולה: אירוע קריטי</li><li><i class="kd" style="background:#22C55E"></i><b>גורם כלכלי:</b> מחיר, שער או ריבית שהאירוע עשוי להזיז (↑ עשוי לעלות, ↓ לרדת)</li><li><i class="kd" style="background:#3B82F6"></i><b>ענף:</b> הענף שהאירוע נוגע בו</li><li><i class="kd" style="background:#F59E0B"></i><b>חברה</b></li><li><i class="kd" style="background:#8B5CF6"></i><b>החזקה בתיק:</b> עם האחוז שלה מהתיק</li></ul>
+                <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שעשוי לעלות או לרדת</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
+                <p class="nm" style="margin:0">לגעת בנקודה או בשם שלה מציג פרטים. הכיוון הוא השערה מהקריאה של החדשות, לא מדידה ולא תחזית.</p></details>
               <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
               <div class="ix-tlw"><div class="ix-ch"><h3>ציר זמן של אירועים ועדכונים</h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div id="ixTl"></div></div>
             </section>
@@ -2948,6 +3003,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
               <p class="note" style="margin:0">צ׳יקו מסביר מהנתונים שבדף. לא ייעוץ השקעות.</p>
             </section>
           </div>
+        </div>
+        <div id="ixSv" hidden>
+          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה ל-Impact</button></div>
+          <article class="ixs" id="ixSvB"></article>
         </div>
         <div id="ixFull" hidden>
           <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה ל-Impact</button></div>
@@ -19619,7 +19678,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -24217,10 +24276,12 @@ function ixKpis(F){const sp=F.bars, mx=Math.max(1,...sp), path=sp.map((v,i)=>`${
     <div class="ix-k k-al"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><div><b class="ix-kv">${F.un.length}</b><span class="ix-kl">התראות חדשות</span><span class="ix-ks">${F.un.filter(a=>a.lv==='crit').length?`${F.un.filter(a=>a.lv==='crit').length} קריטיות`:''}</span></div></div>
     <div class="ix-k k-ev"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span><div><b class="ix-kv">${F.ev.length}</b><span class="ix-kl">אירועים רלוונטיים</span><svg class="ix-sp" viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="אירועים לאורך התקופה: ${sp.join(', ')}"><path d="${path}"/></svg></div></div>`}
 // an alert, short: its level, when, the headline, whom it touches, how relevant, and the two ways on
+function ixAffH(a){const h=(a.holds||[]).slice(0,3).map(x=>`<button type="button" class="ix-chip" data-ixst="${esc(x.sym)}" aria-label="מה קורה ל-${esc(x.sym)}"><bdi>${esc(x.sym)}</bdi></button>`), s=(a.secs||[]).slice(0,2).map(x=>`<span>ענף ${esc(NX_SEC_HE[x.g]||x.g)}</span>`), u=a.usd!=null&&!(a.holds||[]).length?['<span>החלק הדולרי</span>']:[], L=[...h,...s,...u];
+  return L.length?`<p class="ix-af">משפיע על: ${L.join(' ')}</p>`:''}
 function ixAff(a){const h=(a.holds||[]).map(x=>x.sym), s=(a.secs||[]).map(x=>NX_SEC_HE[x.g]||x.g); return [...h.slice(0,3),...s.slice(0,2).map(x=>'ענף '+x)].concat(a.usd!=null&&!h.length?['החלק הדולרי']:[]).join(', ')}
 function ixCard(a){const un=plUnread(a);
   return `<article class="ix-a lv-${a.lv}${un?' un':''}" data-ixopen="${esc(a.k)}"><div class="ix-at"><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span class="ix-t">${agoH(a.up||a.at)}</span>${un?`<button type="button" class="ix-x" data-ixdis="${esc(a.k)}" aria-label="לסמן כנקראה (נשארת בהיסטוריה)">×</button>`:''}</div>
-    <h4>${esc(a.title)}</h4>${ixAff(a)?`<p class="ix-af">משפיע על: ${esc(ixAff(a))}</p>`:''}<p class="ix-rel"><i class="dot rel-${a.rel}" aria-hidden="true"></i>רלוונטיות לתיק: <b>${IX_REL_HE[a.rel]||'—'}</b></p>
+    <h4>${esc(a.title)}</h4>${ixAffH(a)}<p class="ix-rel"><i class="dot rel-${a.rel}" aria-hidden="true"></i>רלוונטיות לתיק: <b>${IX_REL_HE[a.rel]||'—'}</b></p>
     <div class="ix-ab">${a.kind!=='mkt'?`<button type="button" class="btn sm pri" data-ixmap="${esc(a.k)}">פתח מפת השפעה</button>`:''}<button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button></div></article>`}
 // the line of time: the period's events, the oldest on the right, each a point with its day
 function ixTimeline(L){const E=L.filter(a=>a.kind!=='mkt').sort((a,b)=>String(a.first||a.at)<String(b.first||b.at)?-1:1).slice(-7);
@@ -24264,8 +24325,10 @@ function ixLayout(G,W,H){const adj=new Map(G.nodes.map(n=>[n.id,[]])); for(const
 const IX_COL={ev:'#EF4444',fac:'#22C55E',sec:'#3B82F6',co:'#F59E0B',hold:'#8B5CF6',reg:'#14B8A6',pf:'#7C3AED',world:'#7C3AED'};
 function ixDraw(){const svg=$('ixSvg'), g=$('ixG'); if(!svg||!g)return; let m=null; try{m=mAllNow()}catch(e){}
   // a phone: a standing frame, so the points and their names stay readable
-  const cv=$('ixCv'), narrow=!!cv&&cv.clientWidth>0&&cv.clientWidth<560, W=narrow?420:760, H=narrow?520:540, G=ixGraph(m); IXG=G; IXWH=[W,H]; svg.setAttribute('viewBox',`0 0 ${W} ${H}`); if(cv)cv.classList.toggle('narrow',narrow);
+  const cv=$('ixCv'); if(cv)cv.hidden=IXTXT; const narrow=!!cv&&cv.clientWidth>0&&cv.clientWidth<560, W=narrow?420:760, H=narrow?520:540, G=ixGraph(m); IXG=G; IXWH=[W,H]; svg.setAttribute('viewBox',`0 0 ${W} ${H}`); if(cv)cv.classList.toggle('narrow',narrow);
   for(const b of document.querySelectorAll('#ixViews [data-ixv]'))b.setAttribute('aria-selected',String(b.dataset.ixv===IXV));
+  // 30.10: the map in words instead of the drawing, for a screen reader or whoever reads better than looks
+  {const tx=$('ixTxt'), tb=$('ixTxtB'); if(tb)tb.setAttribute('aria-pressed',String(IXTXT)); if(tx){tx.hidden=!IXTXT; if(IXTXT)setH(tx,ixGraphText(G))} if(IXTXT){const t2=$('ixTip'); if(t2)t2.hidden=true; return}}
   const em=$('ixEmpty'); if(em){const none=!G.center||G.nodes.length<2; em.hidden=!none; if(none)em.textContent=IXV==='pf'?(hasPf()?'אין בתקופה הזאת אירוע עם קשר מבוסס לאחזקות שלך.':'המפה של התיק נבנית מהאחזקות שלך. אפשר לראות בינתיים את "עולם".'):IXV==='ev'?'אין התראה לבחור.':'אין נתונים לתצוגה הזאת.'}
   if(!G.center||G.nodes.length<2){g.innerHTML=''; return}
   ixLayout(G,W,H); const byId=new Map(G.nodes.map(n=>[n.id,n]));
@@ -24275,11 +24338,11 @@ function ixDraw(){const svg=$('ixSvg'), g=$('ixG'); if(!svg||!g)return; let m=nu
   const lines=t=>{const w=String(t||'').split(/\s+/), L=['']; for(const x of w){if((L[L.length-1]+' '+x).trim().length>15&&L[L.length-1])L.push(x); else L[L.length-1]=(L[L.length-1]+' '+x).trim(); if(L.length>2)break} if(L.length>2){L.length=2; L[1]=imCut(L[1],14)} return L};
   // the points first, then all the names over them, so no point hides a name
   const lab=[], nH=G.nodes.map(n=>{const big=n.id===G.center, r=big?(narrow?28:34):(narrow?18:22), col=n.held?IX_COL.hold:IX_COL[n.t]||'#94A3B8', lb=n.t==='hold'||n.held?`${n.label}${n.w!=null?' · '+pct(n.w,0):''}`:n.label, L=lines(lb), sel=IXSEL===n.id, crit=n.t==='ev'&&(n.lv==='crit'||(n.e&&n.e.x&&n.e.x.level==='crit')), sc=narrow?0.82:1;
-    if(big)lab.push(L.map((t,i)=>`<text x="${n.x.toFixed(1)}" y="${(n.y+r+18+i*16).toFixed(1)}" text-anchor="middle" direction="rtl" class="ixl b">${esc(t)}</text>`).join(''));
+    if(big)lab.push(L.map((t,i)=>`<text x="${n.x.toFixed(1)}" y="${(n.y+r+18+i*16).toFixed(1)}" text-anchor="middle" direction="rtl" class="ixl b" data-ixn="${esc(n.id)}">${esc(t)}</text>`).join(''));
     else{const a=Math.atan2(n.y-H/2,n.x-W/2), dx=Math.cos(a), dy=Math.sin(a), side=!narrow&&Math.abs(dx)>0.5, x=side?n.x+(dx>0?1:-1)*(r+8):n.x, an=side?(dx>0?'end':'start'):'middle';
       const y0=side?n.y+4-(L.length-1)*7.5:dy>0?n.y+r+16:n.y-r-8-(L.length-1)*15;
-      lab.push(L.map((t,i)=>`<text x="${x.toFixed(1)}" y="${(y0+i*15).toFixed(1)}" text-anchor="${an}" direction="rtl" class="ixl">${esc(t)}</text>`).join(''))}
-    return `<g class="ixn t-${n.t}${sel?' sel':''}${crit?' crit':''}" data-ixn="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(IM_COL_HE[n.t]||'התיק')}${crit?' קריטי':''}: ${esc(lb)}"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r+(crit?9:6)}" fill="${col}" opacity="${crit?'.3':'.16'}"/><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r}" fill="${col}" class="ixc"/>
+      lab.push(L.map((t,i)=>`<text x="${x.toFixed(1)}" y="${(y0+i*15).toFixed(1)}" text-anchor="${an}" direction="rtl" class="ixl" data-ixn="${esc(n.id)}">${esc(t)}</text>`).join(''))}
+    return `<g class="ixn t-${n.t}${sel?' sel':''}${crit?' crit':''}" data-ixn="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(IM_COL_HE[n.t]||'התיק')}${crit?' קריטי':''}: ${esc(lb)}"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r+16}" fill="transparent" class="ixh"/><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r+(crit?9:6)}" fill="${col}" opacity="${crit?'.3':'.16'}"/><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r}" fill="${col}" class="ixc"/>
       <path d="${IX_IC[n.held?'hold':n.t]||IX_IC.co}" transform="translate(${(n.x-(big?15:11)*sc).toFixed(1)},${(n.y-(big?15:11)*sc).toFixed(1)}) scale(${((big?1.25:0.92)*sc).toFixed(2)})" class="ixi"/></g>`}).join('');
   g.innerHTML=eH+nH+`<g class="ixls" aria-hidden="true">${lab.join('')}</g>`; ixApply(); ixTip()}
 function ixApply(){const g=$('ixG'); if(g)g.setAttribute('transform',`translate(${IXZ.x},${IXZ.y}) scale(${IXZ.k})`)}
@@ -24290,7 +24353,7 @@ function ixTip(){const el=$('ixTip'); if(!el)return; const n=IXSEL&&IXG&&IXG.nod
   if(n.t==='ev'&&n.a){const a=n.a; h=`<span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span> <b>${esc(a.title)}</b><p>${esc(a.relWhy||'')}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="pl:${esc(a.k)}">מפה מלאה והסברים</button><button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button><button type="button" class="btn sm" data-ixopen="${esc(a.k)}">להתראה</button></div>`}
   else if(n.t==='ev'&&n.e){h=`<b>${esc(n.label)}</b><p>${esc(n.e.x.what||'')}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="ev:${esc(n.e.k)}">מפה מלאה והסברים</button><button type="button" class="btn sm" data-chiko="ev:${esc(n.e.k)}">שאל את צ׳יקו</button></div>`}
   else if(n.t==='hold'||n.held){const p=m&&m.pos?m.pos.find(x=>x.sym===n.sym):null, al=ixItems().filter(a=>(a.holds||[]).some(h=>h.sym===n.sym)||(a.secs||[]).some(s=>(s.syms||[]).includes(n.sym)));
-    h=`<b>${esc(n.sym||n.label)}${p?` · ${pct(p.w,1)} מהתיק`:''}</b><p>${al.length?`${al.length===1?'אירוע אחד':al.length+' אירועים'} בתקופה נוגעים לה: ${al.slice(0,3).map(a=>esc(a.title)).join('; ')}`:'אירועים מהתצוגה הזאת נוגעים לה.'}</p><div class="ix-ab"><button type="button" class="btn sm pri" data-imopen="co:${esc(n.sym||n.label)}">מפת החברה</button>${SECKEY.test(n.sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(n.sym)}">לדף המניה</button>`:''}</div>`}
+    h=`<b>${esc(n.sym||n.label)}${p?` · ${pct(p.w,1)} מהתיק`:''}</b><p>${al.length?`${al.length===1?'אירוע אחד':al.length+' אירועים'} בתקופה נוגעים לה: ${al.slice(0,3).map(a=>esc(a.title)).join('; ')}`:'אירועים מהתצוגה הזאת נוגעים לה.'}</p><div class="ix-ab">${p?`<button type="button" class="btn sm pri" data-ixst="${esc(n.sym||n.label)}">מה קורה למניה?</button>`:''}<button type="button" class="btn sm${p?'':' pri'}" data-imopen="co:${esc(n.sym||n.label)}">מפת החברה</button>${SECKEY.test(n.sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(n.sym)}">לדף המניה</button>`:''}</div>`}
   else if(n.t==='sec'){const L=((m&&m.pos)||[]).filter(p=>nxSecOf(p.sym)===((n.id||'').slice(2))); h=`<b>ענף: ${esc(n.label)}</b><p>${L.length?`${pct(L.reduce((t,p)=>t+p.w,0),0)} מהתיק בענף: ${L.map(p=>esc(p.sym)).join(', ')}`:'אין לך אחזקות בענף הזה.'} ${ins} קשרים במפה.</p>`}
   else if(n.t==='fac')h=`<b>גורם כלכלי: ${esc(n.label)}</b><p>מחיר, שער או מדד שהאירוע עשוי להזיז, ודרכו לגעת בענפים. השערה מהקריאה, לא מדידה.</p>`;
   else h=`<b>${esc(n.label)}</b><p>${ins} קשרים במפה.</p>`;
@@ -24306,9 +24369,152 @@ function ixChiko(){const el=$('ixQs'); if(!el)return; const a=IXFOC&&String(IXFO
   setH(el,(a?`<p class="ix-on">על: <b>${esc(imCut(a.title,46))}</b> <button type="button" class="lnk" data-ixfoc="">כל התקופה</button></p>`:'')+(a?IX_Q_AL:IX_Q_GEN).map(q=>`<button type="button" class="ix-q" data-ixq="${esc(q)}">${esc(q)}</button>`).join(''))}
 function ixAskQ(q){const a=IXFOC&&String(IXFOC).includes(':')?plByK(IXFOC):null; if(a)ANA_FOCUS=focusOf('pl:'+a.k); else ANA_FOCUS=ixFocus(); if(!ANA_FOCUS)return;
   try{anaOpen(null,false); anaSugg()}catch(e){} setTimeout(()=>{try{anaRun('q',q,{fromInput:true})}catch(e){}},30)}
+// ==== 30.10: "מה קורה למניה": one holding, whole and in plain words. Today's move and what it is in shekels; the events
+// of the period that touch it, the most important first, each with the way it reaches the share said in words, the
+// possible direction (a word with its sign, never a color alone), what was reported against what is only possible and
+// what is not known, the price measured since, and the sources; the price of the last weeks with the events on it; and
+// צ׳יקו about it. A big move with no event behind it in the alerts is said as such, never explained. No advice, no
+// forecast. The list of the holdings touched is also the map said in words ====
+let IXST=null, IXSTALL=false, IXTXT=false; const IXCL=new Set();
+const IX_DW={pos:['pos','▲','חיובי אפשרי'],neg:['neg','▼','שלילי אפשרי'],mixed:['mix','◆','מעורב'],unclear:['unc','•','כיוון לא ברור']};
+const IX_PER={'1':'ב-24 השעות האחרונות','7':'ב-7 הימים האחרונים','30':'ב-30 הימים האחרונים','90':'ב-90 הימים האחרונים',all:'בכל ההתראות השמורות'};
+const IX_HOWF={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה'};
+const IX_Q_ST=['מה קורה למניה הזאת?','למה המניה זזה היום?','מה הכי חשוב לדעת עליה עכשיו?','מה ידוע ומה עוד לא ודאי?'];
+// how one alert reaches one holding: the company itself in the news, a company it does business with or competes with,
+// or its sector
+const ixMkDir=a=>{const k=a.mk||{}; return k.pct>0?'pos':k.pct<0?'neg':'unclear'};
+function ixLinkOf(a,sym){const h=(a.holds||[]).find(x=>x.sym===sym);
+  if(h)return {t:h.link==='direct'?'direct':'ind',h,dir:a.kind==='mkt'?ixMkDir(a):IX_DW[h.dir]?h.dir:h.link==='direct'&&IX_DW[a.dir]?a.dir:'unclear'};
+  // through the sector the direction is the sector's own, when the reading gave one; the event's direction is about
+  // the company in the news, not about its whole sector
+  const s=(a.secs||[]).find(x=>(x.syms||[]).includes(sym)); if(s){const sx=(a.secx||[]).find(x=>x.g===s.g)||null; return {t:'sec',s,sx,dir:sx&&IX_DW[sx.dir]?sx.dir:'unclear'}}
+  return null}
+const IX_TR={direct:0,ind:1,sec:2};
+// the holdings the period's alerts touch, the most pressing first; and a holding that moved 3% or more today with nothing
+// in the alerts, so a big move is never left without saying that no event was found
+function ixStocks(m){const L=ixItems(), pos=(m&&m.pos)||[], P=new Map(pos.map(p=>[p.sym,p])), by=new Map(), mk=sym=>({sym,p:P.get(sym)||null,L:[],dirs:{pos:0,neg:0,mixed:0,unclear:0},direct:0,top:null,lv:0});
+  for(const a of L){const syms=new Set([...(a.holds||[]).map(h=>h.sym),...(a.secs||[]).flatMap(s=>s.syms||[])]);
+    for(const sym of syms){const k=ixLinkOf(a,sym); if(!k)continue; const o=by.get(sym)||mk(sym); o.L.push({a,k}); if(a.kind!=='mkt'){o.dirs[k.dir]++; if(k.t==='direct')o.direct++} by.set(sym,o)}}
+  for(const o of by.values()){o.L.sort((x,y)=>(PL_LVR[y.a.lv]-PL_LVR[x.a.lv])||((x.a.kind==='mkt')-(y.a.kind==='mkt'))||(IX_TR[x.k.t]-IX_TR[y.k.t])||(String(y.a.up||y.a.at)>String(x.a.up||x.a.at)?1:-1)); o.top=o.L[0].a; o.lv=PL_LVR[o.top.lv]||0}
+  for(const p of pos)if(!by.has(p.sym)&&p.dayPct!=null&&Math.abs(p.dayPct)>=3)by.set(p.sym,{...mk(p.sym),quiet:true});
+  return [...by.values()].sort((x,y)=>(y.lv-x.lv)||(y.direct-x.direct)||(((y.p||{}).w||0)-((x.p||{}).w||0)))}
+function ixStOf(sym,m){const o=ixStocks(m).find(x=>x.sym===sym); if(o)return o; const p=((m&&m.pos)||[]).find(x=>x.sym===sym)||null; return {sym,p,L:[],dirs:{pos:0,neg:0,mixed:0,unclear:0},direct:0,top:null,lv:0,quiet:true}}
+const ixJoin=L=>L.length>1?L.slice(0,-1).join(', ')+(/^\d/.test(L[L.length-1])?' ו-':' ו')+L[L.length-1]:L[0]||'';
+function ixDirSay(d){return ixJoin([d.pos?(d.pos===1?'אחד חיובי':`${d.pos} חיוביים`):'',d.neg?(d.neg===1?'אחד שלילי':`${d.neg} שליליים`):'',d.mixed?(d.mixed===1?'אחד מעורב':`${d.mixed} מעורבים`):'',d.unclear?(d.unclear===1?'אחד שכיוונו לא ברור':`${d.unclear} שכיוונם לא ברור`):''].filter(Boolean))}
+const IX_DWN={pos:['חיובי','חיוביים'],neg:['שלילי','שליליים'],mixed:['מעורב','מעורבים'],unclear:['לא ברור','לא ברורים']};
+const ixDwH=(dir,n)=>{const w=IX_DW[dir]||IX_DW.unclear; return `<span class="ix-dw ${w[0]}"><span aria-hidden="true">${w[1]}</span> ${n!=null?`${n} ${(IX_DWN[dir]||IX_DWN.unclear)[n>1?1:0]}`:w[2]}</span>`};
+const ixDayH=p=>p&&p.dayPct!=null?`<span class="ix-sd ${p.dayPct>=0?'up':'down'}"><span aria-hidden="true">${p.dayPct>=0?'▲':'▼'}</span> ${p.dayPct>=0?'עלתה':'ירדה'} ${Math.abs(p.dayPct).toFixed(1)}% היום</span>`:'';
+// one holding in the list: a button, the whole card
+function ixStRow(o){const p=o.p, ev=o.L.filter(z=>z.a.kind!=='mkt').length, nm=p&&p.name&&p.name!==o.sym?p.name:'', d=o.dirs;
+  const dirs=['pos','neg','mixed'].filter(k=>d[k]).map(k=>ixDwH(k,d[k])).join('');
+  const what=ev?(ev===1?'אירוע אחד':`${ev} אירועים`):o.quiet?'לא נמצא אירוע בחדשות':'עובדות מהשוק';
+  return `<li><button type="button" class="ix-s lv-${o.top?o.top.lv:'q'}${o.quiet?' q':''}" data-ixst="${esc(o.sym)}">
+    <span class="ix-s1">${logoHtml(o.sym,'xs')}<b><bdi>${esc(o.sym)}</bdi></b><span class="ix-sn">${esc(nm)}</span>${p?`<span class="ix-sw">${pct(p.w,1)} מהתיק</span>`:''}</span>
+    <span class="ix-s2">${ixDayH(p)}<span class="ix-se">${what}</span></span>
+    ${o.top?`<span class="ix-s3">${ixViaH(o.L[0])}${esc(imCut(o.top.title,80))}</span>`:`<span class="ix-s3 nm">המניה זזה היום יותר מהרגיל, ובחדשות שנאספו אין אירוע שנוגע בה.</span>`}
+    <span class="ix-s4">${dirs?`<span class="vh">כיוון אפשרי: </span>${dirs}`:''}<span class="ix-go">מה קורה? ›</span></span></button></li>`}
+// a word before a headline that reaches the share not directly: through whom
+function ixViaH(z){const k=z&&z.k; if(!k||k.t==='direct'||z.a.kind==='mkt')return ''; const t=k.t==='sec'?`דרך ענף ${NX_SEC_HE[k.s.g]||k.s.g}`:IX_HOWF[k.h.how]?`${IX_HOWF[k.h.how]} של החברה שבחדשות`:'דרך הענף';
+  return `<span class="ix-via">${esc(t)}:</span> `}
+// how the event reaches the holding, in a sentence
+function ixHow(z,sym){const a=z.a, k=z.k;
+  if(k.t==='direct')return (k.h.why?k.h.why:`${sym} עצמה בחדשות: ${k.h.listed?'הכתבה נאספה עליה':'החברה מוזכרת באירוע'}.`);
+  if(k.t==='ind'){const how=k.h.how, rel=IX_HOWF[how]; return `${rel?`לפי הקריאה, ${sym} היא ${rel} של החברה שבחדשות`:`לפי הקריאה, ${sym} באותו ענף כמו החברה שבחדשות`}${k.h.via?` (ענף ${NX_SEC_HE[k.h.via]||k.h.via})`:''}${k.h.why?': '+k.h.why:'.'}`}
+  if(k.t==='sec')return `${sym} בענף ${NX_SEC_HE[k.s.g]||k.s.g}, שהאירוע נוגע בו${k.sx&&k.sx.via?` דרך ${NX_THEME[k.sx.via]||k.sx.via}`:''}${k.sx&&k.sx.why?': '+k.sx.why:'. הקשר הוא דרך הענף, לא דרך החברה עצמה.'}`;
+  return ''}
+// the way, step by step: the event → the economic factor → the sector → the share
+function ixStPath(z,sym){const a=z.a, k=z.k, via=k.t==='ind'?k.h.via:k.t==='sec'?k.s.g:null, sx=via?(a.secx||[]).find(x=>x.g===via):null, f=sx&&sx.via?(a.fac||[]).find(x=>x.k===sx.via):null, L=[['ev','האירוע']];
+  if(f)L.push(['fa',(NX_THEME[f.k]||f.k)+(f.move==='up'?' ↑':f.move==='down'?' ↓':'')]); if(via)L.push(['se','ענף '+(NX_SEC_HE[via]||via)]);
+  if(k.t==='ind'&&IX_HOWF[k.h.how])L.push(['co',`${IX_HOWF[k.h.how]} של החברה`]); L.push(['hd',sym]);
+  return `<div class="pl-chain" role="img" aria-label="המסלול: ${esc(L.map(x=>x[1]).join(', אחר כך '))}">${L.map(([c,t])=>`<span class="ch ${c}"><bdi>${esc(t)}</bdi></span>`).join(' <span class="ar" aria-hidden="true">←</span> ')}</div>`}
+// the plain words at the top: today, how many events and how they reach it, the possible direction, the most important,
+// the price measured since, and what 1% of it is for this person
+function ixStSay(o){const p=o.p, S=[], ev=o.L.filter(z=>z.a.kind!=='mkt'), sym=o.sym;
+  if(p&&p.dayPct!=null){const a=Math.abs(p.dayPct); S.push(a<0.3?`היום המניה כמעט לא זזה (${spct(p.dayPct,1)}).`:`היום המניה ${p.dayPct>0?'עלתה':'ירדה'} ב-${a.toFixed(1)}%${p.dayIls?`: שינוי של ${sgn(p.dayIls)} בשווי שלך`:''}.`)}
+  else if(p)S.push('עוד אין מחיר של היום למניה הזאת.');
+  if(ev.length){const c={direct:0,ind:0,sec:0}; for(const z of ev)c[z.k.t]++; const K=Object.keys(c).filter(x=>c[x]);
+    const W1={direct:'ישירות: החברה עצמה בחדשות',ind:'דרך חברה שהיא עושה איתה עסקים או מתחרה בה',sec:'דרך הענף שלה'}, Wn={direct:'ישירות (החברה עצמה בחדשות)',ind:'דרך חברה קשורה (ספקית, לקוחה או מתחרה)',sec:'דרך הענף'};
+    S.push(`${IX_PER[IXR]} ${ev.length===1?'אירוע אחד נגע':ev.length+' אירועים נגעו'} במניה${K.length===1?', '+W1[K[0]]:': '+ixJoin(K.map(x=>`${c[x]===1?'אחד':c[x]} ${Wn[x]}`))}.`);
+    S.push(o.dirs.unclear===ev.length?'הכיוון של האירועים לא ברור מהמידע שיש.':`לפי הקריאה של הכתבות, הכיוון האפשרי: ${ixDirSay(o.dirs)}. זו השערה, לא מדידה.`);
+    S.push(`החשוב ביותר: "${ev[0].a.title}" (${PL_LVS[ev[0].a.lv]}).`);
+    const first=ev.map(z=>z.a.first||z.a.at).filter(Boolean).sort()[0], mv=first?nxMove(sym,first):null;
+    if(mv)S.push(`מאז האירוע הראשון (${dmy(first)}) המניה ${mv.pct>=0?'עלתה':'ירדה'} ב-${Math.abs(mv.pct).toFixed(1)}%. זו מדידה של המחיר, לא הוכחה שהאירועים הם הסיבה.`)}
+  else{const mk=o.L.filter(z=>z.a.kind==='mkt'); S.push(mk.length?`${IX_PER[IXR]} אין אירוע בחדשות שנוגע במניה; יש ${mk.length===1?'עובדה אחת':mk.length+' עובדות'} מהשוק עליה.`:`${IX_PER[IXR]} לא נמצא בחדשות שנאספו אירוע שנוגע במניה. תנועה של מניה יכולה לבוא גם מהשוק כולו, מהענף, או מחדשות שלא הגיעו למקורות שלנו; אין כאן ניחוש של הסיבה.`)}
+  if(p)S.push(`המניה היא ${pct(p.w,1)} מהתיק שלך (${ils(p.val)}), כך שכל 1% במחיר שלה הוא בערך ${ils(p.val/100)} בשווי.`);
+  return S}
+// the price of the last weeks (the closes kept each day, and now), the events on it by their numbers in the list
+function ixStChart(o){const sym=o.sym, pts=(DY&&DY.points)||{}, N=IXR==='90'||IXR==='all'?90:30, today=isoDay(Date.now()), from=isoAdd(today,-N), ccy=(o.p&&o.p.ccy)||'USD';
+  // the share's own daily closes when the page has them (as on its own page), else the closes the portfolio keeps each day
+  let S=[]; const C=typeof CLOSES==='object'&&CLOSES?CLOSES[sym]:null, now=+((Q&&Q.prices)||{})[sym];
+  if(C&&Array.isArray(C.d))for(let i=0;i<C.d.length;i++){const d=String(C.d[i]).slice(0,10); if(d>=from&&d<today&&+C.c[i]>0)S.push([d,+C.c[i]])}
+  if(S.length<3)S=Object.keys(pts).filter(d=>d>=from&&d<today).sort().map(d=>{const v=+(((pts[d]||{}).px)||{})[sym]; return v>0?[d,v]:null}).filter(Boolean);
+  if(!C&&!IXCL.has(sym)&&typeof loadCloses==='function'){IXCL.add(sym); try{Promise.resolve(loadCloses(sym)).then(()=>{if(IXST===sym&&CLOSES[sym])ixStRender()}).catch(()=>{})}catch(e){}}
+  if(now>0)S.push([today,now]); if(S.length<3)return `<p class="nm" style="margin:0">עוד אין מספיק מחירים שמורים כדי לצייר את הקו של המניה (נשמרת סגירה אחת בכל יום).</p>`;
+  const cw=(($('ixSv')||{}).clientWidth||640)-32, W=Math.max(300,Math.min(760,cw)), H=W<480?180:210, Lp=6, Rp=6, T=38, B=24;
+  const lo=Math.min(...S.map(x=>x[1])), hi=Math.max(...S.map(x=>x[1])), sp=hi-lo||hi*0.02||1, X=i=>Lp+i*(W-Lp-Rp)/(S.length-1), Y=v=>T+(1-(v-lo)/sp)*(H-T-B);
+  const line=S.map((x,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join(' '), area=`${line} L${X(S.length-1).toFixed(1)},${H-B} L${X(0).toFixed(1)},${H-B} Z`;
+  const ev=o.L.filter(z=>z.a.kind!=='mkt'), M=[]; ev.forEach((z,j)=>{const d=isoDay(Date.parse(z.a.first||z.a.at)); let i=-1; for(let k=0;k<S.length;k++)if(S[k][0]<=d)i=k; if(i>=0)M.push({i,n:j+1,dir:z.k.dir})});
+  const used={}, mH=M.map(q=>{const c=used[q.i]=(used[q.i]||0)+1, x=X(q.i), y=Math.max(26,Y(S[q.i][1])-14-(c-1)*22); return `<g class="ixs-m ${(IX_DW[q.dir]||IX_DW.unclear)[0]}"><line x1="${x.toFixed(1)}" y1="${(H-B).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"/><text x="${x.toFixed(1)}" y="${(y+4.5).toFixed(1)}" text-anchor="middle">${q.n}</text></g>`}).join('');
+  const chg=(S[S.length-1][1]/S[0][1]-1)*100, lbl=`המחיר של ${sym} מ-${dmy(S[0][0])} עד היום: מ-${fmtPx(S[0][1],ccy)} ל-${fmtPx(S[S.length-1][1],ccy)}, ${chg>=0?'עלייה':'ירידה'} של ${Math.abs(chg).toFixed(1)}%.${M.length?` ${M.length===1?'אירוע אחד מסומן':M.length+' אירועים מסומנים'} על הקו, לפי המספרים ברשימה.`:''}`;
+  return `<figure class="ixs-ch"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lbl)}" direction="ltr"><path class="ar" d="${area}"/><path class="ln" d="${line}"/>
+    <text class="ax" x="${Lp}" y="${H-6}" text-anchor="start">${esc(dmy(S[0][0]))}</text><text class="ax" x="${W-Rp}" y="${H-6}" text-anchor="end">היום</text><text class="ax" x="${Lp}" y="12" text-anchor="start">${esc(fmtPx(hi,ccy))} בשיא</text><text class="ax" x="${W-Rp}" y="12" text-anchor="end">${spct(chg,1)} בתקופה</text>${mH}</svg>
+    <figcaption>המחיר ב-${N} הימים האחרונים (הסגירה שנשמרה בכל יום, ועכשיו), הזמן משמאל לימין. כל עיגול ממוספר הוא אירוע מהרשימה למטה, במועד הפרסום שלו; המיקום על הקו לא מוכיח שהאירוע הזיז את המחיר.</figcaption></figure>`}
+// known, possible, not known: apart
+function ixStKnow(o){const sym=o.sym, ev=o.L.filter(z=>z.a.kind!=='mkt'), mk=o.L.filter(z=>z.a.kind==='mkt'), K=[], P=[], U=[];
+  for(const z of ev)if(z.a.cert==='fact'&&z.a.what&&K.length<3)K.push(`דווח${z.k.t==='direct'?'':' (על חברה אחרת, לא על המניה עצמה)'}: ${esc(z.a.what)}`);
+  for(const z of mk.slice(0,2))K.push(`נמדד: ${esc(z.a.title)}`);
+  for(const z of ev.slice(0,3)){const mv=nxMove(sym,z.a.first||z.a.at); if(mv&&K.length<6)K.push(`מאז "${esc(imCut(z.a.title,48))}" (${dmy(z.a.first||z.a.at)}): המניה <span class="n ${mv.pct>=0?'up':'down'}">${spct(mv.pct,1)}</span>`)}
+  for(const z of ev)if(P.length<4)P.push(`${ixDwH(z.k.dir)} ${esc(ixHow(z,sym))}`);
+  for(const z of ev){const u=z.a.unknown; if(u&&!U.includes(u)&&U.length<3)U.push(u)}
+  const box=(c,h,ic,L,em)=>`<div class="ixs-kb ${c}"><h5><span aria-hidden="true">${ic}</span>${h}</h5>${L.length?`<ul>${L.map(x=>`<li>${x}</li>`).join('')}</ul>`:`<p class="nm">${em}</p>`}</div>`;
+  return `<div class="ixs-kn">${box('k1','ידוע','✓',K,'אין עובדה מדווחת או מדידה על המניה בתקופה.')}${box('k2','אפשרי (השערה מהקריאה)','?',P,'אין השערה על כיוון: אין אירוע שנוגע במניה.')}${box('k3','עוד לא ידוע','…',U.map(esc),'אם ובכמה האירועים ישפיעו על המחיר: את זה אף אחד לא יודע מראש.')}</div>`}
+// one event, as it touches this share
+function ixStEv(z,i,sym){const a=z.a, k=z.k, dw=IX_DW[k.dir]||IX_DW.unclear;
+  if(a.kind==='mkt')return `<li class="ixs-e mk lv-${a.lv}"><div class="ixs-et"><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span>${agoH(a.up||a.at)}</span><span class="ixs-k">עובדה מהשוק</span></div><h5>${esc(a.title)}</h5>${a.what?`<p>${esc(a.what)}</p>`:''}${plMktH(a)}</li>`;
+  const mv=nxMove(sym,a.first||a.at), srcs=(a.arts||[]).slice(0,6).map(s=>`<li><a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(s.id)}"><bdi>${esc(s.pub||'מקור')}</bdi> ↗</a> · ${s.at?`${dmy(s.at)} ${hm(s.at)}`:''}${s.he&&s.he!==a.title?`<div><bdi>${esc(s.he)}</bdi></div>`:''}<div class="nm nx-orig"><bdi>${esc(s.title)}</bdi></div></li>`).join('');
+  return `<li class="ixs-e lv-${a.lv}">
+    <div class="ixs-et"><span class="ixs-num ${dw[0]}" aria-hidden="true">${i}</span><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span>${agoH(a.first||a.at)}</span><span class="ixs-k">${esc(NX_KIND[a.kind]||'ידיעה')}</span>${(a.ver||1)>1?'<span class="ixs-k">עודכן</span>':''}</div>
+    <h5><span class="vh">אירוע ${i}: </span>${ixViaH(z)}${esc(a.title)}</h5>
+    ${a.what?`<p><b>מה קרה:</b> ${esc(a.what)}</p>`:''}
+    <p><b>איך זה נוגע ב-<bdi>${esc(sym)}</bdi>:</b> ${esc(ixHow(z,sym))}</p>${ixStPath(z,sym)}
+    <div class="ixs-tg">${ixDwH(k.dir)}<span class="tg">${esc(NX_CERT[a.cert]||'הערכה')}</span><span class="tg">ביטחון בהסבר: ${PL_CONF[a.conf]||'—'}</span></div>
+    <p>${mv?`<b>מה קרה למחיר מאז הפרסום:</b> <span class="n ${mv.pct>=0?'up':'down'}">${spct(mv.pct,1)}</span>${ixValMove(sym,mv.pct)} <span class="nm">מדידה של המחיר, לא הוכחה שהאירוע הוא הסיבה.</span>`:'<span class="nm">עוד אין מדידה של המחיר מאז הפרסום (צריך סגירה אחת לפחות אחריו).</span>'}</p>
+    ${a.unknown?`<p><b>מה עוד לא ידוע:</b> ${esc(a.unknown)}</p>`:''}
+    ${srcs?`<details class="ixs-src"><summary>מקורות (${(a.arts||[]).length})</summary><ul>${srcs}</ul></details>`:''}
+    <div class="ix-ab"><button type="button" class="btn sm" data-imopen="pl:${esc(a.k)}">מפת ההשפעה</button><button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו על האירוע</button></div></li>`}
+// what a move of the share is in this person's shekels
+function ixValMove(sym,pc){let m=null; try{m=mAllNow()}catch(e){} const p=m&&m.pos?m.pos.find(x=>x.sym===sym):null; return p?` <span class="nm">(בערך ${sgn(p.val*pc/(100+pc))} בשווי שלך)</span>`:''}
+function ixStH(sym){let m=null; try{m=mAllNow()}catch(e){} const o=ixStOf(sym,m), p=o.p, nm=p&&p.name&&p.name!==sym?p.name:'', sg=nxSecOf(sym), ev=o.L.filter(z=>z.a.kind!=='mkt'), mk=o.L.filter(z=>z.a.kind==='mkt');
+  const more=IXR!=='all'?plItems().filter(a=>ixLinkOf(a,sym)).length-o.L.length:0, gain=p&&p.cost>0&&p.costVal>0?(p.costVal/p.cost-1)*100:null;
+  const kp=p?`<div class="ixs-kp"><div><i>משקל בתיק</i><b class="n">${pct(p.w,1)}</b></div><div><i>השווי שלך</i><b class="n">${ils(p.val)}</b></div>${p.dayPct!=null?`<div><i>היום, בשווי שלך</i><b class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</b></div>`:''}${gain!=null?`<div><i>מאז הקנייה</i><b class="n ${gain>=0?'up':'down'}">${spct(gain,1)}</b></div>`:''}</div>`:'<p class="nm">המניה לא בתיק שלך כרגע.</p>';
+  return `<header class="ixs-h">${logoHtml(sym,'')}<div class="ixs-hn"><h3 id="ixSvH" tabindex="-1">מה קורה ל-<bdi>${esc(sym)}</bdi>?</h3>${nm?`<span>${esc(nm)}</span>`:''}${sg?`<span class="nm">ענף: ${esc(NX_SEC_HE[sg]||sg)}</span>`:''}</div>
+      ${p?`<div class="ixs-px"><b class="n">${fmtPx(p.px,p.ccy)}</b>${ixDayH(p)}</div>`:''}</header>
+    ${kp}
+    <section class="ixs-sec" aria-labelledby="ixSvS"><h4 id="ixSvS">בקצרה, בשפה פשוטה</h4><ul class="ixs-say">${ixStSay(o).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
+      ${more>0?`<p class="nm" style="margin:0">ב-30 הימים השמורים יש עוד ${more===1?'אירוע אחד':more+' אירועים'} על המניה. <button type="button" class="lnk" data-ixstr="all">להציג את כל התקופה</button></p>`:''}</section>
+    <section class="ixs-sec" aria-labelledby="ixSvC"><h4 id="ixSvC">המחיר והאירועים</h4>${ixStChart(o)}</section>
+    <section class="ixs-sec" aria-labelledby="ixSvK"><h4 id="ixSvK">מה ידוע, מה אפשרי, ומה לא ידוע</h4>${ixStKnow(o)}</section>
+    ${ev.length||mk.length?`<section class="ixs-sec" aria-labelledby="ixSvE"><h4 id="ixSvE">${ev.length?`האירועים שנוגעים במניה (${ev.length})`:'עובדות מהשוק על המניה'}</h4><ol class="ixs-el">${ev.map((z,i)=>ixStEv(z,i+1,sym)).join('')}${mk.map(z=>ixStEv(z,0,sym)).join('')}</ol></section>`:''}
+    <section class="ixs-sec ixs-ask" aria-labelledby="ixSvQ"><h4 id="ixSvQ"><span class="chiko ix-av sm" aria-hidden="true"></span>לשאול את צ׳יקו על <bdi>${esc(sym)}</bdi></h4><div class="ixs-qs">${IX_Q_ST.map(q=>`<button type="button" class="ix-q" data-ixsq="${esc(q)}">${esc(q)}</button>`).join('')}</div></section>
+    <div class="ix-ab">${SECKEY.test(sym)?`<button type="button" class="btn sm pri" data-gosec="${esc(sym)}">לדף המניה</button>`:''}<button type="button" class="btn sm" data-imopen="co:${esc(sym)}">מפת החברה</button></div>
+    <p class="note" style="margin:0">הכול מהחדשות שנאספו, מהקריאה של צ׳יקו ומהמחירים השמורים. כיוון הוא השערה ושינוי מחיר הוא מדידה; אף אחד מהם אינו תחזית או המלצה.</p>`}
+function ixStRender(){const el=$('ixSvB'); if(!el||!IXST)return; setH(el,ixStH(IXST))}
+// the map in words: from each event, the ways it goes to the holdings, each step with what it is
+const IX_EDIR={pos:'חיובי אפשרי',neg:'שלילי אפשרי',mixed:'מעורב',up:'עשוי לעלות',down:'עשוי לרדת',unclear:'כיוון לא ברור'};
+function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm">אין מה לתאר בתצוגה הזאת.</p>';
+  let m=null; try{m=mAllNow()}catch(e){} const held=new Set(((m&&m.pos)||[]).map(p=>p.sym)), by=new Map(G.nodes.map(n=>[n.id,n])), out=new Map();
+  for(const e of G.edges){if(!out.has(e.from))out.set(e.from,[]); out.get(e.from).push(e)}
+  const nl=n=>{const sym=n.sym||n.label, w=n.w!=null?` · ${pct(n.w,0)} מהתיק`:''; if(n.t==='hold'||n.held)return held.has(sym)?`<button type="button" class="ix-chip ix-tn" data-ixst="${esc(sym)}"><bdi>${esc(n.label)}</bdi></button> (ההחזקה שלך${w})`:`<b><bdi>${esc(n.label)}</bdi></b> (ההחזקה שלך${w})`;
+    return n.t==='fac'?`גורם כלכלי: ${esc(n.label)}`:n.t==='sec'?`ענף: ${esc(n.label)}`:n.t==='co'?`חברה: <bdi>${esc(n.label)}</bdi>`:n.t==='reg'?`מקום: ${esc(n.label)}`:esc(n.label)};
+  const walk=(id,seen,acc,R)=>{const L=(out.get(id)||[]).filter(e=>e.to!=='pf'&&e.to!=='world'&&!seen.has(e.to)&&by.has(e.to)&&by.get(e.to).t!=='ev'); if(!L.length||acc.length>=4){if(acc.length)R.push(acc); return} for(const e of L){if(R.length>=8)return; walk(e.to,new Set([...seen,e.to]),[...acc,{e,n:by.get(e.to)}],R)}};
+  const evs=G.nodes.filter(n=>n.t==='ev');
+  return `<ol class="ix-txl">${evs.map(n=>{const R=[]; walk(n.id,new Set([n.id]),[],R); const a=n.a||null;
+    return `<li>${a?`<span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span> `:''}<b>${esc(a?a.title:n.label)}</b>${R.length?`<ul>${R.map(P=>`<li>${P.map(s=>`<span class="ar" aria-hidden="true">←</span> ${nl(s.n)}${IX_EDIR[s.e.dir]?` <span class="nm">(${IX_EDIR[s.e.dir]}${s.e.weak||s.e.kind==='exposure'?', קשר חלש':s.e.direct===false?', עקיף':''})</span>`:''}`).join(' ')}</li>`).join('')}</ul>`:'<div class="nm">בלי מסלול לאחזקות בתצוגה הזאת.</div>'}</li>`}).join('')}</ol>
+    <p class="nm" style="margin:0">כל שורה היא מסלול מהאירוע אל החברה או ההחזקה: דרך גורם כלכלי, ענף או חברה. הכיוון הוא השערה מהקריאה, לא מדידה.</p>`}
 function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(), m=(()=>{try{return mAllNow()}catch(e){return null}})(), hp=hasPf();
   for(const b of document.querySelectorAll('#ixRange [data-ixr]'))b.setAttribute('aria-pressed',String(b.dataset.ixr===IXR));
-  const full=$('ixFull'); if(full)full.hidden=!IXFULL; box.hidden=IXFULL; if(IXFULL){plCenter(); return}
+  const full=$('ixFull'), sv=$('ixSv'); if(full)full.hidden=!IXFULL||!!IXST; if(sv)sv.hidden=!IXST; box.hidden=IXFULL||!!IXST;
+  if(IXST){ixStRender(); return} if(IXFULL){plCenter(); return}
   const F=ixFigures(m), note=$('ixNote');
   if(note){let t=''; if(!pr.on)t=`ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>`;
     else if(!hp)t=`<b>TikChik Impact נבנה מהתיק שלך.</b> כשתוסיף את האחזקות, המערכת תחבר כל אירוע בחדשות למניות שבידיך, תסביר את הקשר, ותתריע רק כשיש קשר מבוסס. בלי תיק אין כאן התראות "אישיות", כדי לא להציג משהו שלא נבנה עבורך. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button><button type="button" class="btn sm" data-rt="news">בינתיים: שוק וחדשות</button></span>`;
@@ -24317,6 +24523,9 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   {const k=$('ixKpis'); if(k){k.hidden=!hp||!pr.on; if(hp&&pr.on)setH(k,ixKpis(F))}}
   {const n=$('ixAlN'); if(n){n.textContent=F.un.length?String(F.un.length):''; n.hidden=!F.un.length}
     const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?4:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
+  // the holdings the period touches: each a way into "מה קורה למניה"
+  {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
+    if(S.length){setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
   if(!hp&&IXV==='pf')IXV='world';
   try{ixDraw()}catch(e){console.error(e)}
   {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
@@ -24324,7 +24533,12 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const r=t.closest('#ixRange [data-ixr]'); if(r){IXR=r.dataset.ixr; try{localStorage.setItem('tr_ixr',IXR)}catch(e){} IXZ={k:1,x:0,y:0}; renderImpact(); return}
   if(t.closest('[data-ixall]')){IXFULL=true; PLF='all'; renderImpact(); try{$('rtAl').scrollIntoView({block:'start'})}catch(e){} return}
-  if(t.closest('[data-ixback]')){IXFULL=false; renderImpact(); return}
+  if(t.closest('[data-ixback]')){const was=IXST; IXFULL=false; IXST=null; renderImpact(); if(was)try{const b=document.querySelector(`#ixStList [data-ixst="${CSS.escape(was)}"]`); if(b){b.scrollIntoView({block:'center'}); b.focus({preventScroll:true})}}catch(e){} return}
+  const st=t.closest('[data-ixst]'); if(st){IXST=st.dataset.ixst; IXFULL=false; renderImpact(); try{$('rtAl').scrollIntoView({block:'start'}); $('ixSvH').focus({preventScroll:true})}catch(e){} return}
+  const sq=t.closest('[data-ixsq]'); if(sq&&IXST){ANA_FOCUS=focusOf('st:'+IXST); if(!ANA_FOCUS)return; try{anaOpen(null,false); anaSugg()}catch(e){} const q2=sq.dataset.ixsq; setTimeout(()=>{try{anaRun('q',q2,{fromInput:true})}catch(e){}},30); return}
+  const sr=t.closest('[data-ixstr]'); if(sr){IXR=sr.dataset.ixstr; try{localStorage.setItem('tr_ixr',IXR)}catch(e){} renderImpact(); return}
+  if(t.closest('#ixStMore')){IXSTALL=!IXSTALL; renderImpact(); return}
+  if(t.closest('#ixTxtB')){IXTXT=!IXTXT; IXSEL=null; ixDraw(); return}
   const d=t.closest('[data-ixdis]'); if(d){const a=plByK(d.dataset.ixdis); if(a){plSet(a.k,'r',a.ver||1); plSet(a.k,'d',a.ver||1)} renderImpact(); try{plRender()}catch(e){} try{plCount()}catch(e){} return}
   const mp=t.closest('[data-ixmap]'); if(mp){IXV='ev'; IXFOC=mp.dataset.ixmap; IXSEL='ev:'+IXFOC; IXZ={k:1,x:0,y:0}; renderImpact(); try{$('ixMap').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){} return}
   const ak=t.closest('[data-ixask]'); if(ak){IXFOC=ak.dataset.ixask; ixChiko(); chikoAsk('pl:'+IXFOC); return}
@@ -24348,7 +24562,7 @@ document.addEventListener('keydown',ev=>{const n=ev.target&&ev.target.closest&&e
   const up=ev=>{if(!P2.has(ev.pointerId))return; P2.delete(ev.pointerId); if(P2.size<2)pinch=null;
     if(!P2.size){const was=moved; st=null; if(!was&&ev.type==='pointerup'){const t=document.elementFromPoint(ev.clientX,ev.clientY), n=t&&t.closest&&t.closest('#ixG [data-ixn]'); if(n||t&&t.closest&&t.closest('#ixSvg')){IXSEL=n?n.dataset.ixn:null; ixDraw()}}}};
   document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up)}
-window.__ix={render:renderImpact,graph:()=>IXG,sel:id=>{IXSEL=id; ixDraw()},view:v=>{IXV=v; ixDraw()},figures:()=>ixFigures(mAllNow())};
+window.__ix={render:renderImpact,graph:()=>IXG,sel:id=>{IXSEL=id; ixDraw()},view:v=>{IXV=v; ixDraw()},figures:()=>ixFigures(mAllNow()),stocks:()=>ixStocks(mAllNow()).map(o=>({sym:o.sym,n:o.L.length,dirs:o.dirs,quiet:!!o.quiet,top:o.top&&o.top.k})),stock:sym=>{IXST=sym; renderImpact()},say:sym=>ixStSay(ixStOf(sym,mAllNow()))};
 // ==== 30.10: the impact map. Not "this article is about your share" but the chain and its reason at every step:
 // the event → the economic factor it may move → the sector → the company → your holding. Every link says what it is,
 // why it is there, direct or indirect, the possible direction, how founded it is, what it rests on, and what is known
@@ -24576,6 +24790,13 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
       not_known:a.unknown||null,sources:(a.arts||[]).map(s=>({source:s.pub,title:s.title,published_at:s.at,content_kind:NX_KIND[s.kind]||'ידיעה'})),
       measured:a.kind==='mkt'?{what:a.what}:plMeasured(a).map(z=>({sym:z.h.sym,change_since_publication:spct(z.m.pct,1),note:'נמדד מהמחירים השמורים; לא מוכיח שהאירוע הוא הסיבה'})),
       rules:'התראה נוצרת רק כשיש קשר מוסבר לתיק; אחת לכל אירוע; שוב רק בהתפתחות מהותית'}}}
+  if(k==='st'){const o=ixStOf(v,m), p=o.p, sg=nxSecOf(v);
+    return {kind:'stock',title:`מה קורה ל-${v}`,data:{symbol:v,name:p&&p.name||null,sector:sg?NX_SEC_HE[sg]||sg:null,period:IX_RL[IXR],price_now:p?fmtPx(p.px,p.ccy):null,day_change:p&&p.dayPct!=null?spct(p.dayPct,1):null,
+      day_change_in_my_value:p&&p.dayPct!=null?sgn(p.dayIls):null,weight_in_portfolio:p?pct(p.w,1):null,my_value:p?ils(p.val):null,plain_summary:ixStSay(o),
+      events:o.L.filter(z=>z.a.kind!=='mkt').slice(0,8).map(z=>{const a=z.a, mv=nxMove(v,a.first||a.at); return {level:PL_LVS[a.lv],headline:a.title,what:a.what||null,how_it_reaches_the_stock:ixHow(z,v),possible_direction:(IX_DW[z.k.dir]||IX_DW.unclear)[2],
+        certainty:NX_CERT[a.cert]||null,confidence:PL_CONF[a.conf]||null,published_at:a.first||a.at,change_since_publication:mv?spct(mv.pct,1):null,not_known:a.unknown||null,sources:(a.arts||[]).slice(0,3).map(s=>({source:s.pub,title:s.title,published_at:s.at}))}}),
+      market_facts:o.L.filter(z=>z.a.kind==='mkt').map(z=>z.a.title),no_event_found:!o.L.some(z=>z.a.kind!=='mkt'),
+      rules:'הכיוון הוא השערה מהקריאה; שינוי מחיר מאז אירוע הוא מדידה ולא הוכחה לסיבה; כשלא נמצא אירוע, אין לנחש סיבה לתנועה'}}}
   if(k==='map'){const e=IMG&&IMG.edges.find(x=>x.id===v); if(!e)return null; const a=IMG.nodes.find(n=>n.id===e.from), b=IMG.nodes.find(n=>n.id===e.to);
     return {kind:'map',title:`${a?a.label:''} ← ${b?b.label:''}`,data:{map_view:{pf:'התיק שלי',ev:'אירוע',co:'חברה',world:'עולם'}[IMV],link_from:a?`${IM_COL_HE[a.t]}: ${a.label}`:null,link_to:b?`${IM_COL_HE[b.t]}: ${b.label}`:null,
       link_kind:IM_KIND_HE[e.kind],possible_direction:IM_DIR_HE[e.dir],confidence:PL_CONF[e.conf],status:IM_ST[e.status]||e.status,why:e.items.map(i=>i.why),based_on:[...new Set(e.items.map(i=>i.basis).filter(Boolean))],
@@ -24588,6 +24809,10 @@ function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<
   if(f.kind==='impact'){const A=d.alerts||[]; if(!A.length)return `<p>אין התראות אישיות ב${esc(d.period||'תקופה')}. התראה מופיעה רק כשיש קשר מבוסס לתיק.</p>`;
     const L=/חשופ|אחזק/.test(t)?A.filter(a=>a.touches).map(a=>`${esc(a.touches)}: ${esc(a.headline)} (${esc(a.relevance)})`):A.slice(0,5).map(a=>`<b>${esc(a.level)}</b>: ${esc(a.headline)}${a.touches?' · '+esc(a.touches):''} · רלוונטיות ${esc(a.relevance)}`);
     return `<p>ב${esc(d.period)}: ${d.portfolio_share_touched?`${esc(d.portfolio_share_touched)} מהתיק באחזקות שהאירועים נוגעים להן; `:''}${d.alerts_not_read?`${d.alerts_not_read} התראות שלא נקראו.`:'כל ההתראות נקראו.'}</p>${li(L)}<p class="nm">הקשרים הם מה שהקריאה ציינה; כיוון ההשפעה הוא אפשרות, לא מדידה.</p>`}
+  if(f.kind==='stock'){const E=d.events||[], S=d.plain_summary||[];
+    if(/היום|זזה|זז |למה/.test(t))return `<p>${esc(S[0]||'')}</p>${E.length?`<p>האירועים האחרונים שנוגעים בה:</p>${li(E.slice(0,3).map(e=>`${esc(e.headline)} · ${esc(e.possible_direction)}${e.change_since_publication?` · מאז הפרסום ${esc(e.change_since_publication)}`:''}`))}<p class="nm">אין כאן קביעה מה הזיז את המחיר: האירועים הם מה שידוע, לא הסבר מוכח.</p>`:`<p>${d.no_event_found?'בחדשות שנאספו לא נמצא אירוע שנוגע במניה. תנועה יכולה לבוא גם מהשוק כולו או מהענף, ואין כאן ניחוש של הסיבה.':''}</p>`}`;
+    if(/ידוע|ודאי|בטוח/.test(t))return `<p><b>ידוע:</b></p>${li(E.filter(e=>/עובדה/.test(e.certainty||'')).map(e=>esc(e.what||e.headline)).concat((d.market_facts||[]).map(esc)).concat(E.filter(e=>e.change_since_publication).map(e=>`מאז "${esc(e.headline)}": ${esc(e.change_since_publication)} (מדידה, לא סיבה)`)))||'<p>אין עובדה מדווחת על המניה בתקופה.</p>'}<p><b>אפשרי:</b></p>${li(E.map(e=>`${esc(e.possible_direction)}: ${esc(e.how_it_reaches_the_stock)}`))||'<p>אין השערה.</p>'}<p><b>לא ידוע:</b> ${esc(E.map(e=>e.not_known).filter(Boolean).slice(0,2).join(' ')||'אם ובכמה האירועים ישפיעו על המחיר.')}</p>`;
+    return `${li(S.map(esc))}${E.length?`<p>האירועים:</p>${li(E.slice(0,4).map(e=>`<b>${esc(e.level)}</b>: ${esc(e.headline)} · ${esc(e.how_it_reaches_the_stock)}`))}`:''}`}
   const src=(d.sources||d.other_sources||[]).map(s=>`<bdi>${esc(s.source||'')}</bdi>${s.published_at?' · '+dmy(s.published_at):''}: <bdi>${esc(s.title||'')}</bdi>`);
   const meas=Array.isArray(d.measured)?d.measured.map(x=>`${esc(x.sym)} ${esc(x.change_since_publication)} מאז הפרסום (${esc(x.note)})`):d.measured&&d.measured.change_since_publication?[`${esc(d.measured.change_since_publication)} (${esc(d.measured.note)})`]:[];
   if(/למה קיבלתי|למה ההתראה|למה זה/.test(t)&&f.kind==='alert')return `<p>${esc(d.why_this_level||'')}. ${esc(d.relevance_why||'')}.</p>${li((d.my_holdings_linked||[]).map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))}<p>חשיבות האירוע: ${esc(d.importance_of_event||'')}; ביטחון בהסבר: ${esc(d.confidence||'')} (${esc(d.confidence_why||'')}).</p>`;
@@ -24645,7 +24870,7 @@ document.addEventListener('submit',ev=>{const f=ev.target; if(!f||!f.matches||!f
   if(!/^[A-Z][A-Z.\-]{0,6}$/.test(v)){rtSay('סימול לא תקין');return} if(f.dataset.nwsadd==='news'){nwFollow('syms',v,true)} else{const pr=plPrefs(); if(!pr.syms.includes(v))plSetPr({syms:[...pr.syms,v].slice(0,40)}); rtSay(`במעקב להתראות: ${v}`)} i.value=''; nwSetFill()});
 // 30.10: a question about something open (an article, an event, an alert, a link on the map): answered from that item,
 // with the portfolio when there is one; without Claude, the page answers from the same facts
-const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה',impact:'ההשפעה על התיק בתקופה'};
+const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה',impact:'ההשפעה על התיק בתקופה',stock:'מניה מהתיק'};
 async function anaFocusRun(q,o){const f=ANA_FOCUS, qq=String(q||'').replace(/\s+/g,' ').trim().slice(0,300); if(!qq||!f)return;
   if(Q_ADVICE.test(qq))return anaRun('advice',null,{...o,said:qq,nofocus:true}); if(Q_FUTURE.test(qq))return anaRun('future',null,{...o,said:qq,nofocus:true});
   anaOpen(o.src); anaUser(qq,!o.fromInput); const id='c'+(++ANA_SEQ), ai=!!SAMPLE&&!SAMPLE_OFF, st={note:ai?'thinking':'noai'}; let ans=null;

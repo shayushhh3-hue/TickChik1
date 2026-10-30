@@ -1137,6 +1137,36 @@ test('news feed: the articles of everybody\'s securities, merged by link, kept a
   delete process.env.FINNHUB_API_KEY;
 });
 
+// 30.10: Globes for the Tel Aviv shares: the feed read in its own encoding, the Hebrew names (an everyday word only in its
+// full form), a fund left out, the key of the holding itself, headline and link only, a partner's own, and off by IL_NEWS=0
+test('Globes for the Tel Aviv shares: headlines matched by the Hebrew names to the holding itself, never the text',async()=>{
+  const {parseRss,rssText,ilAliases,ilMatcher,ilTargets,ilNews,IL_FEEDS}=await import('../server/ilnews.js'); const {newsTask}=await import('../server/newsfeed.js');
+  const it=(t,id,d,desc='')=>`<item><title><![CDATA[${t}]]></title><link>https://www.globes.co.il/news/article.aspx?did=${id}#utm_source=RSS</link><description><![CDATA[${desc}]]></description><pubDate>${d}</pubDate></item>`;
+  const xml=`<?xml version="1.0" encoding="utf-8"?><rss version="2.0"><channel><title>גלובס</title>${it('הפניקס מדווחת על רווח שיא','1','Thu, 29 Oct 2026 10:00:00 GMT','<p>החברה &quot;עקפה&quot; את התחזיות</p>')}${it('הטבע הישראלי בסכנה: מחקר חדש','2','Thu, 29 Oct 2026 11:00:00 GMT')}${it('בפניקס מסכמים רבעון; ובלאומי מתכוננים','3','Thu, 29 Oct 2026 12:00:00 GMT')}${it('בנק לאומי: הרווח עלה','4','Thu, 29 Oct 2026 13:00:00 GMT')}${it('הראל מחקה ת"א 125 גייסה','5','Thu, 29 Oct 2026 13:00:00 GMT')}${it('אלביט מערכות: חוזה ישן','6','Thu, 01 Oct 2026 13:00:00 GMT')}</channel></rss>`;
+  const L=parseRss(xml); assert.equal(L.length,6); assert.equal(L[0].link,'https://www.globes.co.il/news/article.aspx?did=1','no tracking fragment'); assert.equal(L[0].desc,'החברה "עקפה" את התחזיות'); assert.equal(L[0].at,'2026-10-29T10:00:00.000Z');
+  // a feed in windows-1255 is read as Hebrew
+  {const enc=new Uint8Array([...Buffer.from('<?xml version="1.0" encoding="windows-1255"?><rss><channel><item><title>'),0xE4,0xF4,0xF0,0xE9,0xF7,0xF1,...Buffer.from('</title><link>https://www.globes.co.il/a</link></item></channel></rss>')]);
+    assert.equal(parseRss(await rssText(new Response(enc))).at(0).title,'הפניקס')}
+  assert.deepEqual(ilAliases(['הפניקס אחזקות בע"מ']),['הפניקס אחזקות','הפניקס']); assert.deepEqual(ilAliases(['בנק לאומי לישראל בע"מ','לאומי']),['בנק לאומי לישראל','בנק לאומי'],'"לאומי" alone is an everyday word');
+  assert.deepEqual(ilAliases(['טבע']),[],'nor "טבע"'); assert.deepEqual(ilAliases(['Phoenix Holdings']),[],'Hebrew names only');
+  assert.ok(ilMatcher('הפניקס').test('בפניקס מסכמים') && ilMatcher('הפניקס').test('ובהפניקס') && !ilMatcher('הפניקס').test('הפניקסית'),'the letters before a name, a whole word');
+  // the targets: the holding's own key; a fund (a number not in the exchange's shares) left out
+  const s=new Store(':memory:'); s.setDoc('research/ilsyms',{stocks:[['PHOE','הפניקס','הפניקס אחזקות בע"מ','',767012],['LUMI','לאומי','בנק לאומי לישראל בע"מ','',604611]]},{silent:true});
+  s.setDoc('portfolio/main',{positions:[{sym:'767012',qty:1,ccy:'ILS'},{sym:'5124573',qty:1,ccy:'ILS',name:'הראל מחקה ת"א 125'},{sym:'NVDA',qty:1}]},{silent:true});
+  s.setDoc('data/users/u2/portfolio',{positions:[{sym:'TLV:LUMI',qty:1}]},{silent:true}); s.setDoc('data/users/u2/settings',{},{silent:true});
+  assert.deepEqual(ilTargets(s).map(t=>t.sym),['767012','TLV:LUMI']);
+  const urls=[], f=async u=>{u=String(u); urls.push(u); if(/globes\.co\.il\/webservice\/rss/.test(u))return new Response(xml,{headers:{'content-type':'text/xml; charset=utf-8'}}); if(u.includes('/company-news'))return Response.json([]); return new Response('',{status:404})};
+  const now=new Date('2026-10-30T08:00:00Z'), r=await ilNews(s,{fetch:f,now});
+  assert.equal(r.ok,IL_FEEDS.length); assert.deepEqual(r.items.map(x=>[x.title,x.syms]),[['הפניקס מדווחת על רווח שיא',['767012']],['בפניקס מסכמים רבעון; ובלאומי מתכוננים',['767012']],['בנק לאומי: הרווח עלה',['TLV:LUMI']]],'nature, the fund\'s manager, and the old one: none');
+  assert.ok(r.items.every(x=>x.pub==='גלובס'&&x.sum===null&&!('desc' in x)),'the headline and the link, never the text');
+  // into the news, merged with the rest; a partner sees their own share's headline only
+  await newsTask(s,{fetch:f,now,budgetMs:60e3,market:[]}); const d=s.getDoc('research/news').data;
+  assert.equal(d.items.filter(x=>x.pub==='גלובס').length,3); assert.match(d.source,/גלובס/);
+  assert.deepEqual(partnerView(s,{id:'u2',role:'partner'},'research/news',d).items.map(x=>x.title),['בנק לאומי: הרווח עלה']);
+  // off
+  process.env.IL_NEWS='0'; urls.length=0; const off=await ilNews(s,{fetch:f,now}); delete process.env.IL_NEWS; assert.ok(off.off&&!urls.length);
+});
+
 test('report days from the SEC: the earnings release (8-K, item 2.02) or the quarterly report, and a stored report redated by them',async()=>{
   const {secRepDates,_resetCiks}=await import('../server/fundamentals.js'); _resetCiks();
   const sub={filings:{recent:{form:['8-K','10-Q','8-K','4','8-K','10-K'],filingDate:['2026-08-27','2026-08-29','2026-07-02','2026-06-01','2026-05-28','2026-03-14'],items:['2.02,9.01','','5.07','','2.02','',''],reportDate:['','2026-07-27','','','','2026-01-26']}}};

@@ -658,6 +658,25 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.ok(seen.some(x=>x.includes('alerts_not_read')&&x.includes('אנבידיה')),'the alerts reach צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
     // a point on the map: its short card; the period changes the figures
     await pg.evaluate(()=>window.__ix.sel('h:NVDA')); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('ixTip').textContent),/NVDA · [\d.]+% מהתיק/);
+    assert.ok(await pg.evaluate(()=>!!document.querySelector('#ixTip [data-ixst="NVDA"]')),'the holding\'s card on the map leads to its story');
+    // "מה קורה למניה": the holdings touched, a card (a button) each; the share's own view in plain words
+    const sl=await pg.evaluate(()=>[...document.querySelectorAll('#ixStList [data-ixst]')].map(b=>({s:b.dataset.ixst,t:b.innerText.replace(/\s+/g,' ')})));
+    assert.ok(sl.some(x=>x.s==='NVDA'),JSON.stringify(sl)); assert.match(sl.find(x=>x.s==='NVDA').t,/NVDA.*מהתיק.*(אירוע אחד|\d+ אירועים).*מה קורה\?/);
+    await pg.click('#ixStList [data-ixst="NVDA"]'); await pg.waitForTimeout(300);
+    const sv=await pg.evaluate(()=>{const b=document.getElementById('ixSvB'); return {open:!document.getElementById('ixSv').hidden,body:document.getElementById('ixBody').hidden,h:b.querySelector('h3').textContent,say:[...b.querySelectorAll('.ixs-say li')].map(l=>l.textContent),
+      kb:[...b.querySelectorAll('.ixs-kb h5')].map(h=>h.textContent),ev:[...b.querySelectorAll('.ixs-e h5')].map(h=>h.textContent),how:(b.querySelector('.ixs-e:not(.mk)')||{}).innerText||'',qs:[...b.querySelectorAll('[data-ixsq]')].map(x=>x.textContent),
+      ox:document.documentElement.scrollWidth>innerWidth+1,focus:document.activeElement&&document.activeElement.id}});
+    assert.ok(sv.open&&sv.body); assert.equal(sv.h,'מה קורה ל-NVDA?'); assert.equal(sv.focus,'ixSvH','the heading takes the focus');
+    assert.ok(sv.say.some(x=>/(אירוע אחד נגע|אירועים נגעו) במניה/.test(x)),JSON.stringify(sv.say)); assert.ok(sv.say.some(x=>/מהתיק שלך .*, כך שכל 1% במחיר שלה הוא בערך ₪/.test(x)),JSON.stringify(sv.say));
+    assert.deepEqual(sv.kb.map(x=>x.replace(/^[✓?…]/,'')),['ידוע','אפשרי (השערה מהקריאה)','עוד לא ידוע']);
+    assert.ok(sv.ev.some(x=>/אנבידיה היכתה את התחזיות והעלתה את התחזית$/.test(x)),JSON.stringify(sv.ev)); assert.match(sv.how,/איך זה נוגע ב-NVDA:/); assert.match(sv.how,/חיובי אפשרי/); assert.match(sv.how,/מה קרה למחיר מאז הפרסום|עוד אין מדידה של המחיר/);
+    assert.deepEqual(sv.qs,['מה קורה למניה הזאת?','למה המניה זזה היום?','מה הכי חשוב לדעת עליה עכשיו?','מה ידוע ומה עוד לא ודאי?']); assert.equal(sv.ox,false);
+    seen.length=0; await pg.click('#ixSvB [data-ixsq]'); await pg.waitForFunction(()=>/על מניה מהתיק/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
+    assert.ok(seen.some(x=>x.includes('how_it_reaches_the_stock')&&x.includes('NVDA')),'the share reaches צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
+    await pg.click('#ixSv [data-ixback]'); await pg.waitForTimeout(200); assert.ok(await pg.evaluate(()=>document.getElementById('ixSv').hidden&&!document.getElementById('ixBody').hidden));
+    // the map in words, for whoever reads better than looks
+    await pg.click('#ixTxtB'); await pg.waitForTimeout(150); const tx=await pg.evaluate(()=>({cv:document.getElementById('ixCv').hidden,t:document.getElementById('ixTxt').innerText.replace(/\s+/g,' ')}));
+    assert.ok(tx.cv); assert.match(tx.t,/אנבידיה היכתה/); assert.match(tx.t,/NVDA \(ההחזקה שלך/); await pg.click('#ixTxtB'); await pg.waitForTimeout(150); assert.equal(await pg.evaluate(()=>document.getElementById('ixCv').hidden),false);
     await pg.click('#ixRange [data-ixr="1"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('#ixRange [aria-pressed="true"]').dataset.ixr),'1');
     // "פתח מפת השפעה" on a short card: the round map on that event
     await pg.click('#ixAlList [data-ixmap]'); await pg.waitForTimeout(250); assert.equal(await pg.evaluate(()=>document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv),'ev');
