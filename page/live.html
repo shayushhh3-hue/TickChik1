@@ -24448,7 +24448,8 @@ function ixStChart(o){const sym=o.sym, pts=(DY&&DY.points)||{}, N=IXR==='90'||IX
   let S=[]; const C=typeof CLOSES==='object'&&CLOSES?CLOSES[sym]:null, now=+((Q&&Q.prices)||{})[sym];
   if(C&&Array.isArray(C.d))for(let i=0;i<C.d.length;i++){const d=String(C.d[i]).slice(0,10); if(d>=from&&d<today&&+C.c[i]>0)S.push([d,+C.c[i]])}
   if(S.length<3)S=Object.keys(pts).filter(d=>d>=from&&d<today).sort().map(d=>{const v=+(((pts[d]||{}).px)||{})[sym]; return v>0?[d,v]:null}).filter(Boolean);
-  if(!C&&!IXCL.has(sym)&&typeof loadCloses==='function'){IXCL.add(sym); try{Promise.resolve(loadCloses(sym)).then(()=>{if(IXST===sym&&CLOSES[sym])ixStRender()}).catch(()=>{})}catch(e){}}
+  // the closes come later: only the chart is drawn again, the rest of the screen (and the reader's place) stays
+  if(!C&&!IXCL.has(sym)&&typeof loadCloses==='function'){IXCL.add(sym); try{Promise.resolve(loadCloses(sym)).then(()=>{const el=$('ixSvCh'); if(IXST===sym&&CLOSES[sym]&&el){let m=null; try{m=mAllNow()}catch(e){} setH(el,ixStChart(ixStOf(sym,m)))}}).catch(()=>{})}catch(e){}}
   if(now>0)S.push([today,now]); if(S.length<3)return `<p class="nm" style="margin:0">עוד אין מספיק מחירים שמורים כדי לצייר את הקו של המניה (נשמרת סגירה אחת בכל יום).</p>`;
   const cw=(($('ixSv')||{}).clientWidth||640)-32, W=Math.max(300,Math.min(760,cw)), H=W<480?180:210, Lp=6, Rp=6, T=38, B=24;
   const lo=Math.min(...S.map(x=>x[1])), hi=Math.max(...S.map(x=>x[1])), sp=hi-lo||hi*0.02||1, X=i=>Lp+i*(W-Lp-Rp)/(S.length-1), Y=v=>T+(1-(v-lo)/sp)*(H-T-B);
@@ -24492,13 +24493,14 @@ function ixStH(sym){let m=null; try{m=mAllNow()}catch(e){} const o=ixStOf(sym,m)
     ${kp}
     <section class="ixs-sec" aria-labelledby="ixSvS"><h4 id="ixSvS">בקצרה, בשפה פשוטה</h4><ul class="ixs-say">${ixStSay(o).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
       ${more>0?`<p class="nm" style="margin:0">ב-30 הימים השמורים יש עוד ${more===1?'אירוע אחד':more+' אירועים'} על המניה. <button type="button" class="lnk" data-ixstr="all">להציג את כל התקופה</button></p>`:''}</section>
-    <section class="ixs-sec" aria-labelledby="ixSvC"><h4 id="ixSvC">המחיר והאירועים</h4>${ixStChart(o)}</section>
+    <section class="ixs-sec" aria-labelledby="ixSvC"><h4 id="ixSvC">המחיר והאירועים</h4><div id="ixSvCh">${ixStChart(o)}</div></section>
     <section class="ixs-sec" aria-labelledby="ixSvK"><h4 id="ixSvK">מה ידוע, מה אפשרי, ומה לא ידוע</h4>${ixStKnow(o)}</section>
     ${ev.length||mk.length?`<section class="ixs-sec" aria-labelledby="ixSvE"><h4 id="ixSvE">${ev.length?`האירועים שנוגעים במניה (${ev.length})`:'עובדות מהשוק על המניה'}</h4><ol class="ixs-el">${ev.map((z,i)=>ixStEv(z,i+1,sym)).join('')}${mk.map(z=>ixStEv(z,0,sym)).join('')}</ol></section>`:''}
     <section class="ixs-sec ixs-ask" aria-labelledby="ixSvQ"><h4 id="ixSvQ"><span class="chiko ix-av sm" aria-hidden="true"></span>לשאול את צ׳יקו על <bdi>${esc(sym)}</bdi></h4><div class="ixs-qs">${IX_Q_ST.map(q=>`<button type="button" class="ix-q" data-ixsq="${esc(q)}">${esc(q)}</button>`).join('')}</div></section>
     <div class="ix-ab">${SECKEY.test(sym)?`<button type="button" class="btn sm pri" data-gosec="${esc(sym)}">לדף המניה</button>`:''}<button type="button" class="btn sm" data-imopen="co:${esc(sym)}">מפת החברה</button></div>
     <p class="note" style="margin:0">הכול מהחדשות שנאספו, מהקריאה של צ׳יקו ומהמחירים השמורים. כיוון הוא השערה ושינוי מחיר הוא מדידה; אף אחד מהם אינו תחזית או המלצה.</p>`}
-function ixStRender(){const el=$('ixSvB'); if(!el||!IXST)return; setH(el,ixStH(IXST))}
+// drawn again (new prices, new alerts): the place the reader was on keeps the focus
+function ixStRender(){const el=$('ixSvB'); if(!el||!IXST)return; const f=document.activeElement, fid=f&&f.id&&el.contains(f)?f.id:null; if(setH(el,ixStH(IXST))&&fid){const n=$(fid); if(n)try{n.focus({preventScroll:true})}catch(e){}}}
 // the map in words: from each event, the ways it goes to the holdings, each step with what it is
 const IX_EDIR={pos:'חיובי אפשרי',neg:'שלילי אפשרי',mixed:'מעורב',up:'עשוי לעלות',down:'עשוי לרדת',unclear:'כיוון לא ברור'};
 function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm">אין מה לתאר בתצוגה הזאת.</p>';
