@@ -251,7 +251,9 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   const cand=(C.data||{}).items||[];
   if(cand.some(it=>it&&got[it.sym])){const items=cand.map(it=>{const v=it&&got[it.sym]; if(!v)return it; const o={...it}; for(const k of ['beta','de','dy','fpe','pe','pm','roe','price','chg52'])if(v[k]!=null)o[k]=v[k]; return o});
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
-  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,dates:sd,divs:dvs,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  // 30.10: how far each held or followed share moved around its last earnings releases (for the card before the next one)
+  let erxN=0; try{erxN=erxPass(store,[...new Set([...held,...watched])],{now})}catch(e){log('report moves failed: '+(e&&e.message||e))}
+  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,dates:sd,divs:dvs,erx:erxN,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;
@@ -367,4 +369,30 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
   }
   log(`finnhub: ${st.filled} filled (figures ${st.figs}, analysts ${st.recs}, reports ${st.eps}, dates ${st.cal}, targets ${st.target})${st.stopped?', stopped: '+st.stopped:''}${st.first?' (first: '+st.first+')':''}`);
   return st;
+}
+
+// ---- 30.10: the share's move around each earnings release: from the close before the release's day to the close of the
+// day after it (two sessions, so a release before the open and one after the close are both inside), from the days the
+// SEC has (8-K item 2.02) and the share's daily closes (quotes/c_<key>, a year). The last eight; the average of their size.
+// A fact about the past, said as one, never a forecast of the next one.
+export function erxOf(repDates,ser,{today=new Date().toISOString().slice(0,10),max=8}={}){
+  const D=ser&&Array.isArray(ser.d)?ser.d:[], C=ser&&Array.isArray(ser.c)?ser.c:[]; if(D.length<10)return null;
+  const days=[...new Set((repDates||[]).filter(x=>x&&x.src==='8-K'&&/^\d{4}-\d\d-\d\d$/.test(x.date)&&x.date<today).map(x=>x.date))].sort().reverse();
+  const moves=[];
+  for(const r of days){let i0=-1, i1=-1; for(let i=0;i<D.length;i++){if(D[i]<r)i0=i; else if(D[i]>r){i1=i;break}}
+    if(i0<0||i1<0||!(C[i0]>0)||!(C[i1]>0))continue; if((Date.parse(D[i1])-Date.parse(D[i0]))/864e5>6)continue;
+    moves.push({d:r,pct:Math.round((C[i1]/C[i0]-1)*10000)/100}); if(moves.length>=max)break}
+  if(moves.length<2)return null;
+  const abs=moves.map(m=>Math.abs(m.pct));
+  return {n:moves.length,avgAbs:Math.round(abs.reduce((a,b)=>a+b,0)/abs.length*100)/100,maxAbs:Math.max(...abs),up:moves.filter(m=>m.pct>0).length,moves,at:today};
+}
+export function erxPass(store,keys,{now=new Date()}={}){
+  const today=now.toISOString().slice(0,10), L=store.getDoc('research/latest'), comp=L.exists&&L.data&&L.data.companies?{...L.data.companies}:null; let n=0, touched=false;
+  for(const k of keys){const p=docKey(k), d=store.getDoc(p), doc=d.exists?d.data:null, c=comp&&comp[k];
+    const dates=(c&&c.repDates)||(doc&&doc.repDates)||[]; if(!dates.length)continue;
+    const ser=store.getDoc('quotes/c_'+String(k).replace(':','_')); const e=erxOf(dates,ser.exists?ser.data:null,{today}); if(!e)continue; n++;
+    if(doc)store.setDoc(p,{...doc,erx:e},{silent:true});
+    if(c){comp[k]={...c,erx:e}; touched=true}}
+  if(touched)store.setDoc('research/latest',{...L.data,companies:comp});
+  return n;
 }

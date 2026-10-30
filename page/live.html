@@ -2876,17 +2876,21 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="sndrow"><label class="check" for="sndMsg"><input type="checkbox" id="sndMsg">צליל כשצ׳יקו עונה</label><button type="button" class="btn sm" data-sndtry="msg">לנסות</button></div>
         <div class="sndrow"><label class="check" for="sndSys"><input type="checkbox" id="sndSys">צליל להתראת מערכת: חריגה חדשה, מחירים שהתעדכנו, תזכורת הפקדה</label><button type="button" class="btn sm" data-sndtry="sys">לנסות</button></div>
         <p class="note" style="margin:0;max-width:none">צלילים קצרים ושקטים, רק כשהדף פתוח. הדפדפן משמיע אותם אחרי שנגעת בדף.</p>
+        <h3 style="margin:8px 0 0">התראות לטלפון</h3>
+        <div class="pushbox" id="pushBox"><p class="note" id="pushState" role="status" style="margin:0;max-width:none">בודק…</p>
+          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri sm" id="pushOn" hidden>להפעיל במכשיר הזה</button><button type="button" class="btn sm" id="pushTest" hidden>לשלוח בדיקה</button><button type="button" class="btn sm" id="pushOff" hidden>לכבות במכשיר הזה</button></div></div>
+        <div class="liveal" id="liveAl"><b>התראות בזמן אמת: מתי לשלוח (למייל ולטלפון)</b>
+            <label for="laMove">מניה בתיק זזה ביום יותר מ-(%)<input type="number" id="laMove" min="1" max="50" step="0.5" placeholder="5"></label>
+            <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
+            <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
+            <label class="check"><input type="checkbox" id="laNews" checked><span>ידיעה קריטית על מניה בתיק</span></label>
+            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת לה בדף שלה. נבדק כל 10 דקות בין 09:00 ל-23:50, כל דבר פעם אחת ביום, ולכל היותר הודעה אחת ב-20 דקות, במייל (לבעל האתר, אם הופעל) ובטלפון (אם הופעל כאן).</p></div>
         <div class="mailbox" id="mailBox" hidden>
           <h3 style="margin:8px 0 0">מיילים</h3>
           <p class="note" style="margin:0;max-width:none">שום מייל אוטומטי לא נשלח בלי שתבחר: כל סוג כבוי עד שתפעיל אותו כאן. המייל כולל מספרים מהתיק שלך. הדוחות נשמרים בארכיון בדף גם בלי מייל.</p>
           <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
           <div id="mailList"></div>
-          <div class="liveal" id="liveAl"><b>התראות בזמן אמת: מתי לשלוח</b>
-            <label for="laMove">מניה בתיק זזה ביום יותר מ-(%)<input type="number" id="laMove" min="1" max="50" step="0.5" placeholder="5"></label>
-            <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
-            <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
-            <label class="check"><input type="checkbox" id="laNews" checked><span>ידיעה קריטית על מניה בתיק</span></label>
-            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת לה בדף שלה. נבדק כל 10 דקות בין 09:00 ל-23:50, כל דבר פעם אחת ביום, ולכל היותר מייל אחד ב-20 דקות.</p></div>
+
         </div>
       </div>
     </section>
@@ -17220,7 +17224,7 @@ function render(){
   const two=(a,b)=>`${a}<div class="nm"><span class="n">${b}</span></div>`;   // shekels, and the dollars beneath
   const vcell=(ils_,usd_)=>HC==='usd'?usd_:HC==='both'?two(ils_,usd_):ils_;
   const mxW=Math.max(0,...m.pos.map(x=>x.w||0));
-  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]} try{nxNavDot()}catch(e){} try{stRender(m)}catch(e){}
+  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]} try{nxNavDot()}catch(e){} try{stRender(m)}catch(e){} try{if(ST_GO&&STG.length)stGoOnce()}catch(e){}
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
     const dc=DC&&DC[p.sym], uc=dc&&dc.cost>0?dc.cost:null, ud=uc!=null?dc.val-dc.cost:null, udp=uc?ud/uc*100:null, ap=dc&&dc.est?'≈':'';
@@ -19571,7 +19575,7 @@ const MAILR={sent:'נשלח',off:'לא נשלח, כי כבוי כאן',not_ready
 function liveAlFill(){const A=(S&&S.liveAl)||{}; for(const [id,k] of [['laMove','move'],['laUsdUp','usdAbove'],['laUsdDn','usdBelow']]){const i=$(id); if(i){if(document.activeElement!==i)i.value=A[k]!=null?A[k]:''; i.disabled=!canWrite}} const n=$('laNews'); if(n){n.checked=A.news!==false; n.disabled=!canWrite}}
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!['laMove','laUsdUp','laUsdDn','laNews'].includes(el.id)||!canWrite)return; const A={...(S.liveAl||{})};
   if(el.id==='laNews')A.news=el.checked; else{const k={laMove:'move',laUsdUp:'usdAbove',laUsdDn:'usdBelow'}[el.id], v=+el.value; if(v>0)A[k]=v; else delete A[k]} S.liveAl=A; changed()});
-function renderMail(){try{liveAlFill()}catch(e){}
+function renderMail(){try{liveAlFill()}catch(e){} try{pushUI()}catch(e){}
   const box=$('mailBox'); if(!box)return; const on=OWNER&&!LOCAL&&!!db; box.hidden=!on; if(!on)return;
   if(!renderMail.asked){renderMail.asked=true; try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}}
   const M=(S&&S.mail)||{}, L=(MAILST&&MAILST.last)||{}, list=$('mailList');
@@ -22703,6 +22707,37 @@ function myWatchHtml(m){
     </article>`}).join('');
   return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
 }
+// ---- 30.10: notifications to the phone (Web Push). Switched on per device: the browser asks for permission, the device
+// is kept on the server (/api/push/sub), and the live alerts (a price set, a big day, the dollar's rates, a critical
+// reading) reach it even when the site is closed. On an iPhone it works from the icon on the home screen (iOS 16.4 and on).
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))};
+async function pushReg(){try{return await navigator.serviceWorker.getRegistration('./')||null}catch(e){return null}}
+async function pushUI(msg){
+  const box=$('pushBox'); if(!box)return; const st=$('pushState'), on=$('pushOn'), off=$('pushOff'), tst=$('pushTest');
+  if(!window.__tc||LOCAL){box.hidden=true;return} box.hidden=false; for(const b of [on,off,tst])b.hidden=true;
+  if(!pushOk()){st.textContent=/iPhone|iPad/.test(navigator.userAgent)?'באייפון זה עובד מהאייקון במסך הבית: בספארי, שיתוף ← "הוספה למסך הבית", ואז לפתוח את האתר משם ולהפעיל כאן.':'הדפדפן הזה לא תומך בהתראות לטלפון.';return}
+  if(Notification.permission==='denied'){st.textContent='ההתראות חסומות לאתר הזה בהגדרות הדפדפן. כדי להפעיל, צריך לאשר אותן שם (בהגדרות האתר בדפדפן).';return}
+  const reg=await pushReg(), sub=reg&&reg.pushManager?await reg.pushManager.getSubscription().catch(()=>null):null;
+  let n=null; try{const r=await fetch('/api/push',{credentials:'same-origin'}); if(r.ok)n=(await r.json()).n}catch(e){}
+  if(sub){st.textContent=msg||`מופעל במכשיר הזה${n>1?` (ועוד ${n-1} מכשירים)`:''}. ההתראות מגיעות גם כשהאתר סגור, לפי ההגדרות של "התראות בזמן אמת".`; off.hidden=false; tst.hidden=false}
+  else{st.textContent=msg||`כבוי במכשיר הזה${n?` (מופעל ב-${n===1?'מכשיר אחר':n+' מכשירים אחרים'})`:''}. אחרי ההפעלה תגיע התראה כשמחיר שקבעת נחצה, כשמניה בתיק זזה חזק, כשהדולר חוצה שער שקבעת, או על ידיעה קריטית.`; on.hidden=!canWrite}}
+async function pushOnNow(){const st=$('pushState');
+  try{const reg=await navigator.serviceWorker.register('sw.js',{scope:'./'}); await navigator.serviceWorker.ready;
+    const perm=await Notification.requestPermission(); if(perm!=='granted'){pushUI('לא אישרת התראות, ולכן לא הופעל.');return}
+    const k=await (await fetch('/api/push',{credentials:'same-origin'})).json();
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(k.key)});
+    const r=await fetch('/api/push/sub',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1','content-type':'application/json'},body:JSON.stringify({sub:sub.toJSON()})});
+    pushUI(r.ok?'הופעל במכשיר הזה. אפשר לשלוח בדיקה.':'ההפעלה לא נשמרה בשרת. נסה שוב.')}
+  catch(e){st.textContent='ההפעלה לא הצליחה: '+String(e&&e.message||e).slice(0,120)}}
+async function pushOffNow(){try{const reg=await pushReg(), sub=reg&&await reg.pushManager.getSubscription(); if(sub){await fetch('/api/push/unsub',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1','content-type':'application/json'},body:JSON.stringify({endpoint:sub.endpoint})}); await sub.unsubscribe()}}catch(e){} pushUI('כובה במכשיר הזה.')}
+document.addEventListener('click',async ev=>{const t=ev.target; if(!t.closest)return;
+  if(t.closest('#pushOn')){t.disabled=true; await pushOnNow(); t.disabled=false}
+  else if(t.closest('#pushOff'))pushOffNow();
+  else if(t.closest('#pushTest')){const st=$('pushState'); try{const r=await fetch('/api/push/test',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1'}}); const j=await r.json(); st.textContent=j.sent?'נשלחה בדיקה. היא אמורה להופיע בעוד כמה שניות.':'הבדיקה לא נשלחה: השרת לא הצליח להגיע למכשיר. אפשר לכבות ולהפעיל שוב.'}catch(e){st.textContent='הבדיקה לא נשלחה.'}}});
+// a tap on a notification opens the site on the stories
+let ST_GO=false; try{ST_GO=new URLSearchParams(location.search).has('st')}catch(e){}
+function stGoOnce(){if(!ST_GO)return; ST_GO=false; try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){} setTimeout(()=>{try{if(STG.some(g=>g.unread))stOpen(null,true)}catch(e){}},400)}
 // ---- 30.10: the stories. What is new for the viewer's own holdings, a circle per security: the readings that matter
 // (critical or important, the last two days, NX_HOLD), a day that moved more than the share set in the live alerts (5%
 // unless set), a price the viewer set that was crossed, and the dollar's rates. Unread: a halo; seen: grey. The read state
@@ -24322,6 +24357,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.9b',at:'2026-10-30',t:'התראות לטלפון',d:'בהגדרות ← ההתראות והצלילים שלי: "להפעיל במכשיר הזה". מאותו רגע מגיעה התראה לטלפון, גם כשהאתר סגור, כשמחיר שקבעת נחצה, כשמניה בתיק זזה חזק, כשהדולר חוצה שער שקבעת, או על ידיעה קריטית. לחיצה פותחת את הסטוריז. גם לשותפים, על התיק שלהם. באייפון: מהאייקון במסך הבית.',go:'notif'},
   {v:'2026-10-30.9',at:'2026-10-30',t:'התאמה מול בית ההשקעות',d:'ב"התיק שלי", מעל האחזקות: מה שהדוח או הצילום האחרון של כל חשבון הראו, מול מה שיש כאן עכשיו, נייר אחרי נייר. ההפרש מפורק למחירים, לשער הדולר שבית ההשקעות השתמש בו, לכמויות ולמזומן.',go:'pfedit'},
   {v:'2026-10-30.8',at:'2026-10-30',t:'השינוי היומי כולל את הדולר',d:'השינוי של היום בשקלים כולל עכשיו גם את התזוזה של שער הדולר על המניות והמזומן בדולרים, כמו בבית ההשקעות. ב"למה?" רואים כמה מזה מהמחירים וכמה מהדולר.',go:'ov'},
   {v:'2026-10-30.7',at:'2026-10-30',t:'סטוריז: מה חדש במניות שלך',d:'מעל צ׳יקו מופיעים העיגולים של המניות שיש עליהן משהו חדש: ידיעה חשובה, יום של תנועה חריגה, מחיר שקבעת שנחצה, או שער דולר שקבעת. לחיצה פותחת כרטיס אחרי כרטיס: מה קרה, ומה זה אומר לתיק שלך. ב"חיבור למציאות" יש את כל השורה, ומה שראית מסומן.',go:'nx'},

@@ -703,6 +703,15 @@ test('the check against the house: the last screenshot of an account against the
   }finally{store.setDoc('portfolio/main',P0)}
 });
 
+test('the phone: notifications switched on per device, for the owner and for a partner; the live alerts\' thresholds for both',T,async t=>{
+  if(skip())return t.skip('no browser');
+  for(const who of ['owner','n2']){const {ctx,pg}=await open(390,{who}); await ctx.grantPermissions(['notifications'],{origin:new URL(pg.url()).origin}); const perm=await pg.evaluate(()=>Notification.permission); t.diagnostic('permission '+perm); await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForFunction(()=>/^(כבוי|מופעל)/.test(document.getElementById('pushState').textContent),null,{timeout:10000}).catch(()=>{});
+    const r=await pg.evaluate(()=>({box:!!document.getElementById('pushBox').offsetParent,st:document.getElementById('pushState').textContent,on:!document.getElementById('pushOn').hidden,la:!!document.getElementById('liveAl').offsetParent,sw:!!document.querySelector('script[src*="sw.js"]')}));
+    assert.ok(r.box,who); if(perm==='denied')assert.match(r.st,/חסומות לאתר הזה/,'a browser that blocks them: said, with what to do'); else{assert.match(r.st,/^כבוי במכשיר הזה/,who); assert.ok(r.on,'a button to switch it on: '+who)} assert.ok(r.la,'the thresholds: '+who);
+    assert.equal(await pg.evaluate(async()=>(await fetch('sw.js')).status),200,'the service worker is served');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();

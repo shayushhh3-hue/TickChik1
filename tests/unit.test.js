@@ -1313,6 +1313,46 @@ test('live alerts: a price set, a big day, the dollar, a critical reading; once 
   r=await liveTask(s,{now:new Date('2026-10-30T01:00:00Z'),send}); assert.equal(r.quiet,true,'quiet at night');
 });
 
+test('the phone: devices kept per person, a gone one dropped; the live alerts reach the owner\'s and a partner\'s phones, each from their own portfolio',async()=>{
+  const {cleanSub,addDevice,devices,dropDevice,pushTo,vapid}=await import('../server/push.js'); const {liveTask}=await import('../server/livealert.js');
+  const s=new Store(':memory:'), env={};
+  const k1=vapid(s,{env}), k2=vapid(s,{env}); assert.ok(k1.publicKey&&k1.privateKey); assert.deepEqual(k1,k2,'made once, then kept');
+  assert.equal(cleanSub({endpoint:'http://x/y',keys:{p256dh:'a'.repeat(40),auth:'b'.repeat(16)}}),null,'https only');
+  const sub=n=>({endpoint:'https://push.example.test/'+n+'x'.repeat(10),keys:{p256dh:'B'+'a'.repeat(60),auth:'c'.repeat(22)}});
+  const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}), f=s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  assert.ok(addDevice(s,o.id,sub(1))); assert.ok(addDevice(s,o.id,sub(1)),'the same device again'); assert.equal(devices(s,o.id).length,1,'kept once');
+  addDevice(s,o.id,sub(2)); assert.equal(devices(s,o.id).length,2); assert.equal(devices(s,f.id).length,0,'apart per person');
+  // a device the push service says is gone is dropped
+  const calls=[]; const send=async(d,body,opts)=>{calls.push({d,body:JSON.parse(body),opts}); if(d.endpoint.includes('/2'))throw Object.assign(new Error('gone'),{statusCode:410})};
+  assert.equal(await pushTo(s,o.id,{title:'t',body:'b',url:'./?st=1'},{env,send}),1); assert.equal(devices(s,o.id).length,1); assert.equal(calls[0].opts.vapidDetails.publicKey,k1.publicKey); assert.equal(calls[0].body.url,'./?st=1');
+  assert.equal(dropDevice(s,o.id,sub(1).endpoint),1); assert.equal(devices(s,o.id).length,0);
+  // the live alerts: the owner from portfolio/main, the partner from their own documents; the partner only by phone
+  addDevice(s,o.id,sub(3)); addDevice(s,f.id,sub(4));
+  s.setDoc('quotes/latest',{prices:{NVDA:190,KO:55},prev:{NVDA:200,KO:60},usdIls:3.7,stale:{}});
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]}); s.setDoc('settings/main',{liveAl:{move:4}});
+  s.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'KO'}]}); s.setDoc(`data/users/${f.id}/settings`,{liveAl:{move:4}});
+  const got=[], mails=[]; const push=async(st,uid,msg)=>{got.push({uid,msg}); return 1};
+  const now=new Date('2026-10-30T13:00:00Z'); await liveTask(s,{now,send:async(st,kind,msg)=>{mails.push(msg); return true},push});
+  assert.equal(mails.length,1,'one e-mail, the owner\'s'); assert.match(mails[0].text,/NVDA/); assert.ok(!/KO/.test(mails[0].text),'not the partner\'s holdings');
+  const byU=Object.fromEntries(got.map(g=>[g.uid,g.msg.body])); assert.match(byU[o.id],/NVDA ירדה/); assert.match(byU[f.id],/KO ירדה/); assert.ok(!/NVDA/.test(byU[f.id]),'the partner\'s own portfolio only');
+  assert.equal(got.find(g=>g.uid===o.id).msg.url,'./?st=1','a tap opens the stories');
+  // once a day each, for the partner too
+  got.length=0; await liveTask(s,{now:new Date(now.getTime()+30*60e3),send:async()=>true,push}); assert.equal(got.length,0);
+});
+
+test('the phone through the site: the key and the devices for the signed-in person only; a bad subscription is refused',async()=>{
+  const {srv,req}=await startApp();
+  try{
+    assert.equal((await req('x','GET','/api/push')).status,401,'signed in only');
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    let r=await req('o','GET','/api/push'); assert.equal(r.status,200); assert.ok(r.j.key.length>40); assert.equal(r.j.n,0);
+    assert.equal((await req('o','POST','/api/push/sub',{sub:{endpoint:'javascript:alert(1)',keys:{}}})).status,400);
+    r=await req('o','POST','/api/push/sub',{sub:{endpoint:'https://push.example.test/abcdefghijk',keys:{p256dh:'B'+'a'.repeat(60),auth:'c'.repeat(22)}}}); assert.equal(r.j.n,1);
+    assert.equal((await req('o','GET','/api/push')).j.n,1);
+    r=await req('o','POST','/api/push/unsub',{endpoint:'https://push.example.test/abcdefghijk'}); assert.equal(r.j.removed,1);
+  }finally{srv.close()}
+});
+
 test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{
   const {morningSections}=await import('../server/tasks.js');
   const G={ready:true,day:{pct:-0.97,ils:-237,top:[{sym:'NVDA',pct:-2.41,ils:-100}]},news:[{level:'crit',he:'אנבידיה הורידה את התחזית',what:'החברה הורידה את התחזית.',who:'NVDA (16% מהתיק)',link:'https://x/n',pub:'Reuters'}],soon:[{d:'2026-11-02',items:['אקס דיבידנד KO']}],divYear:420};
@@ -1357,4 +1397,19 @@ test('the scheduler notes each job\'s run for the health page',async()=>{
   J.run('good'); J.run('bad'); await new Promise(r=>setTimeout(r,200)); J.stop();
   const M=JSON.parse(s.getMeta('jobs')); assert.equal(M.good.ok,true); assert.equal(M.bad.ok,false); assert.match(M.bad.err,/it broke/);
   assert.ok(s.getMeta('health'),'the health was read after the runs');
+});
+
+test('a share\'s moves around its earnings releases: from the close before to the close after, the last ones, their average size',async()=>{
+  const {erxOf,erxPass}=await import('../server/research.js');
+  const near=(a,b,eps=1e-9,m)=>assert.ok(Math.abs(a-b)<=eps,(m||'')+` ${a} vs ${b}`);
+  const d=[], c=[]; let px=100; for(let i=0;i<60;i++){const day=new Date(Date.UTC(2026,6,1)+i*864e5).toISOString().slice(0,10); const wd=new Date(day).getUTCDay(); if(wd===0||wd===6)continue; d.push(day); c.push(px); px+=0.1}
+  // two releases: 2026-07-15 (a Wednesday) and 2026-08-12; moves made around them
+  const at=x=>d.indexOf(x); c[at('2026-07-16')]=c[at('2026-07-14')]*1.08; c[at('2026-08-13')]=c[at('2026-08-11')]*0.95;
+  const R=[{date:'2026-08-12',src:'8-K'},{date:'2026-07-15',src:'8-K'},{date:'2026-08-20',src:'10-Q'}];
+  const e=erxOf(R,{d,c},{today:'2026-09-01'});
+  assert.equal(e.n,2); assert.deepEqual(e.moves.map(m=>m.d),['2026-08-12','2026-07-15'],'the newest first, the 10-Q is not a release');
+  near(e.moves[0].pct,-5,0.01); near(e.moves[1].pct,8,0.01); near(e.avgAbs,6.5,0.01); assert.equal(e.up,1);
+  assert.equal(erxOf(R.slice(0,1),{d,c},{today:'2026-09-01'}),null,'one release is not enough');
+  const s=new Store(':memory:'); s.setDoc('research/latest',{companies:{NVDA:{repDates:R}}}); s.setDoc('quotes/c_NVDA',{d,c});
+  assert.equal(erxPass(s,['NVDA','MSFT'],{now:new Date('2026-09-01T00:00:00Z')}),1); assert.equal(s.getDoc('research/latest').data.companies.NVDA.erx.n,2);
 });

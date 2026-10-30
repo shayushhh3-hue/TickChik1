@@ -21,6 +21,7 @@ import {backupStatus, backupNow} from './backup.js';
 import {benchFresh} from './bench.js';
 import {selfCheckNote} from './pxwatch.js';
 import {healthCheck} from './health.js';
+import {vapid, devices, addDevice, dropDevice, pushTo} from './push.js';
 import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
@@ -114,6 +115,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // learns that a new one is out and reloads instead of running the old one for days
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
   app.get('/api/version',(req,res)=>res.json({v:verOf()}));
+  // 30.10: notifications to the phone: the public key, this person's devices (how many), switch a device on or off, a test
+  app.get('/api/push',needUser,(req,res)=>res.json({key:vapid(store).publicKey,n:devices(store,req.user.id).length}));
+  app.post('/api/push/sub',needUser,(req,res)=>addDevice(store,req.user.id,req.body&&req.body.sub,{ua:req.headers['user-agent']})?res.json({ok:true,n:devices(store,req.user.id).length}):res.status(400).json({error:{code:'invalid_argument',message:'bad subscription'}}));
+  app.post('/api/push/unsub',needUser,(req,res)=>res.json({ok:true,removed:dropDevice(store,req.user.id,String(req.body&&req.body.endpoint||''))}));
+  app.post('/api/push/test',needUser,async(req,res)=>{const n=await pushTo(store,req.user.id,{title:'תיק צ׳יק',body:'בדיקה: ההתראות לטלפון עובדות. כך תיראה התראה על מחיר שנחצה, יום חריג או ידיעה קריטית.',url:'./',tag:'test'},{log}).catch(()=>0); res.json({sent:n})});
   app.get('/api/me',(req,res)=>res.json(req.user?{me:me(req.user),...(req.user.role==='owner'?{persist:PERSIST}:{})}:{me:null,signup:!!invite()}));
   app.post('/api/password',needUser,(req,res)=>{const {old,password}=req.body||{}; if(!store.checkPassword(req.user,old))return res.status(400).json({error:{code:'bad_login',message:'הסיסמה הנוכחית לא נכונה.'}});
     try{store.setPassword(req.user.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})} res.json({ok:true})});
