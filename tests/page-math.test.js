@@ -830,3 +830,16 @@ test('the check against the house: each holding as the house showed it against t
   // the house shows no value: the price it shows, at the site's rate
   const Y=W.reconOf('exc',{...R,rows:[{sym:'MSFT',qty:2,ccy:'USD',px:95,value:null}]},{...m,pos:m.pos.slice(0,1)},3.5); near(Y.rows[0].there,2*95*3.5,1e-9); assert.equal(Y.rows[0].bRate,null);
 });
+
+test('the fall from the peak: the market\'s move only (deposits are not a rise), how far under the peak now, the deepest fall and whether it came back', ()=>{
+  const W=load(['ddCalc'],{...G});
+  // 100 → 110 (peak) → 99 (−10%) → a deposit of 50 on a day the market is flat → 170 (+14%, back above) → 156.75
+  const pts={'2026-10-01':{v:100,dep:100},'2026-10-02':{v:110,dep:100},'2026-10-03':{v:99,dep:100},'2026-10-04':{v:149,dep:150},'2026-10-05':{v:170,dep:150},'2026-10-06':{v:156.75,dep:150}};
+  const D=W.ddCalc(pts,null);
+  near(D.max.pct,-10,1e-9,'the deepest fall'); assert.equal(D.max.from,'2026-10-02'); assert.equal(D.max.to,'2026-10-03');
+  assert.equal(D.max.back,'2026-10-05','came back above the peak'); near(D.cur.pct,(156.75/170-1)*100,1e-9); assert.equal(D.cur.peak,'2026-10-05');
+  // a deposit alone is no rise: flat values plus money in leave the index flat
+  const E=W.ddCalc({'2026-10-01':{v:100,dep:100},'2026-10-02':{v:150,dep:150},'2026-10-03':{v:150,dep:150},'2026-10-04':{v:150,dep:150},'2026-10-05':{v:140,dep:150}},null);
+  near(E.cur.pct,(140/150-1)*100,1e-9); assert.equal(E.cur.peak,'2026-10-04');
+  assert.equal(W.ddCalc({'2026-10-01':{v:1}},null),null,'too few days');
+});

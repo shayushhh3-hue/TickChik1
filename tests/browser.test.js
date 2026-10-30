@@ -741,6 +741,22 @@ test('a partner\'s e-mails: their own three kinds in their settings, said plainl
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the fall from the peak: a card in the look-back, and an alert when the whole portfolio is further under its peak than the line set',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const D0=store.getDoc('history/daily').data, S0=store.getDoc('settings/main').data, pts={};
+  [26000,26500,27200,28000,27600,27000,26800,26400,26000,25500].forEach((v,i)=>{pts[new Date(Date.now()-(10-i)*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'})]={v}});
+  store.setDoc('history/daily',{points:pts},{silent:true}); store.setDoc('settings/main',{...S0,rules:{...S0.rules,maxDD:8}},{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await pg.waitForTimeout(800);
+    const al=await pg.evaluate(()=>window.__model.alerts().items.filter(a=>a.cat==='שיא').map(a=>a.text));
+    assert.equal(al.length,1,'one alert'); assert.match(al[0],/^כל התיק \d+(\.\d)?% מתחת לשיא שלו מ-[\d.]+, מעבר ל-8% שקבעת/);
+    await tab(pg,'history'); await pg.waitForTimeout(500);
+    const c=await pg.evaluate(()=>({k:[...document.querySelectorAll('#ddBox .cell .k')].map(x=>x.textContent),t:document.getElementById('ddBox').innerText,rule:document.getElementById('rDD')?document.getElementById('rDD').value:null}));
+    assert.deepEqual(c.k,['עכשיו','הירידה הגדולה בתקופה','הסף שלך']); assert.match(c.t,/מתחת לשיא של/); assert.match(c.t,/עוד לא חזר/); assert.equal(c.rule,'8');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('history/daily',D0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
+});
+
 test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
   if(skip())return t.skip('no browser');
   const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();
