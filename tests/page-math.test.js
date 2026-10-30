@@ -754,7 +754,7 @@ test('the news matched to the portfolio: the companies held and their weight, a 
   const SEC={NVDA:'Technology',MSFT:'Technology',JPM:'Finance',KO:'Consumer Staples'};
   const G={P:{positions:pos.map(p=>({sym:p.sym}))},WATCH:{marks:['AMD'],held:[]},S:{newsAl:{lv:{crit:true,imp:true,watch:false}}},NEWSD:null,NXD:null,NXID:new Map(),NEWSST:null,SECKEY:/^[A-Z]/,
     secOfIt:k=>SEC[k]||'',lab:k=>k,pct:(x,d)=>(+x).toFixed(d==null?1:d)+'%',isoDay:t=>new Date(t).toISOString().slice(0,10),DY:null,Q:{prices:{}},esc:x=>String(x),Date};
-  const F=load(['NX_SEC_MAP','NX_SEC_HE','NX_HOW','NX_DIR','NX_CERT','NX_LV','nxSecOf','newsRel','nxState','nxAlertPrefs'],G);
+  const F=load(['NX_SEC_MAP','NX_SEC_HE','NX_HOW','NX_DIR','NX_CERT','NX_LV','nxSecOf','newsRel','nxState','plPrefs'],G);
   const now=new Date().toISOString();
   const nvda={id:'a',src:'co',syms:['NVDA'],at:now,x:{he:'אנבידיה היכתה את התחזיות',level:'crit',dir:'pos',cert:'fact',type:'earnings',macro:false,sectors:['Technology'],themes:['ai'],aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'החברה עצמה'},{sym:'MSFT',how:'customer',dir:'mixed',why:'לקוחה גדולה'},{sym:'AMD',how:'competitor',dir:'neg',why:'מתחרה'}]}};
   const r=F.newsRel(nvda,m);
@@ -772,8 +772,39 @@ test('the news matched to the portfolio: the companies held and their weight, a 
   const raw={id:'d',src:'co',syms:['KO'],at:now,x:null}; const r4=F.newsRel(raw,m); assert.equal(r4.relevant,true); assert.match(r4.text,/אתה מחזיק KO/);
   // older news sinks
   const old={...nvda,at:new Date(Date.now()-5*864e5).toISOString()}; assert.ok(F.newsRel(old,m).score<r.score-1);
-  // the alert levels: the viewer's choice, "watch" off by default
-  assert.deepEqual(F.nxAlertPrefs().lv,{crit:true,imp:true,watch:false});
+  // the personal alerts' preferences: the three levels on, a normal sensitivity, quiet from midnight to 09:00, the icons on
+  const pr=F.plPrefs(); assert.deepEqual(pr.lv,{crit:true,imp:true,upd:true}); assert.equal(pr.sens,'mid'); assert.deepEqual(pr.quiet,{on:true,from:'00:00',to:'09:00'}); assert.equal(pr.icons,true); assert.deepEqual(pr.push,{crit:true,imp:false});
+});
+
+// 30.10: "חיבור למציאות": the categories of an article by its reading, what is followed, the search's text, the time range
+test('the news product: categories from the reading, the followed topics order and never hide, the search and the time range', ()=>{
+  const G2={...G,S:{news:{cats:['energy'],syms:['XOM'],secs:[],regions:['middle_east'],themes:[]}},NWF:null,NAMEOF:{XOM:'Exxon Mobil'},itemOf:()=>null,lab:k=>k,ilDay:d=>new Date(d==null?Date.now():d).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'}),
+    NX_SEC_HE:{Energy:'אנרגיה',Finance:'פיננסים'},NX_TYPE:{energy:'אנרגיה',earnings:'תוצאות כספיות',macro_rates:'ריבית'},nxLvOf:it=>it.x?it.x.level:'info',nxState:()=>({read:{},saved:{}})};
+  const W=load(['NX_KIND','NX_REG','NX_THEME','nxHas','nxSecIn','NX_CATS','NX_CAT_L','nxKindOf','nxCatsOf','NX_LVR','nwPrefs','NW_FK','nwSymsOf','nwMatch','nwNorm','nwHay','NWF0'],G2);
+  const oil={id:'o',src:'gen',cat:'general',title:'Oil jumps as OPEC cuts output',pub:'Reuters',at:new Date().toISOString(),syms:[],x:{he:'אופ״ק קיצצה תפוקה והנפט עלה',what:'w',type:'energy',level:'imp',kind:'news',themes:['oil'],sectors:['Energy'],regions:['middle_east'],fac:[{k:'oil',move:'up',why:'פחות היצע'}],aff:[{sym:'XOM',how:'sector',dir:'pos'}]}};
+  assert.deepEqual(W.nxCatsOf(oil),['energy']); assert.equal(W.nxKindOf(oil),'news');
+  const fed={id:'f',src:'gen',cat:'forex',title:'Fed preview',at:new Date().toISOString(),syms:[],x:{he:'הפד',type:'macro_rates',level:'imp',kind:'analysis',themes:['rates','usd','fed'],sectors:['Finance'],regions:['us']}};
+  assert.deepEqual(W.nxCatsOf(fed),['rates','ind','fx']); assert.equal(W.nxKindOf(fed),'analysis'); assert.equal(W.nxKindOf({src:'x',x:null}),'social','a post on X is its own kind');
+  assert.equal(W.nxCatsOf({id:'n',x:null}).length,0,'not read yet: no category');
+  // followed: a category, a company, a place
+  assert.deepEqual(W.nwMatch(oil,W.nwPrefs()).map(x=>x.join(':')),['cats:energy','syms:XOM','regions:middle_east']); assert.deepEqual(W.nwMatch(fed,W.nwPrefs()),[],'not followed: still in the news, only not "במעקב"');
+  // the search's text: Hebrew and English, the company's name, the sector in Hebrew, the place
+  const h=W.nwHay(oil); for(const w of ['אופ״ק','opec','xom','exxon','אנרגיה','המזרח התיכון','נפט'])assert.ok(h.includes(W.nwNorm(w)),w);
+  assert.equal(W.nwNorm('ג׳נרל  מוטורס'),"ג'נרל מוטורס");
+});
+
+test('the impact map: a column per kind right to left on a wide screen, a row per kind on a phone; the filters drop the indirect and the uncertain', ()=>{
+  const GG={...G,IMFL:{direct:false,lowconf:false,dir:''}}, W=load(['IM_COLS','imLayout','imFilter'],GG);
+  const mk=()=>({nodes:[{id:'ev:a',t:'ev'},{id:'f:oil',t:'fac'},{id:'s:Energy',t:'sec'},{id:'c:XOM',t:'co'},{id:'c:CVX',t:'co'},{id:'h:XOM',t:'hold'}],
+    edges:[{id:'1',from:'ev:a',to:'f:oil',kind:'possible',conf:'mid'},{id:'2',from:'f:oil',to:'s:Energy',kind:'possible',conf:'low'},{id:'3',from:'s:Energy',to:'c:CVX',kind:'indirect',conf:'mid'},{id:'4',from:'ev:a',to:'c:XOM',kind:'direct',conf:'high'},{id:'5',from:'c:XOM',to:'h:XOM',kind:'fact',conf:'high'}]});
+  const G1=mk(), L=W.imLayout(G1,false), x=id=>G1.nodes.find(n=>n.id===id).x;
+  assert.ok(x('ev:a')>x('f:oil')&&x('f:oil')>x('s:Energy')&&x('s:Energy')>x('c:XOM')&&x('c:XOM')>x('h:XOM'),'right to left: the event first');
+  assert.deepEqual(L.cols.map(c=>c.t),['ev','fac','sec','co','hold']);
+  const G2=mk(), L2=W.imLayout(G2,true), y=id=>G2.nodes.find(n=>n.id===id).y; assert.ok(y('ev:a')<y('f:oil')&&y('c:XOM')<y('h:XOM'),'top to bottom on a phone'); assert.ok(L2.W<L.W);
+  // in a column, the points by where their links come from (an even tie keeps the reading's order)
+  assert.ok(G1.nodes.find(n=>n.id==='c:XOM').y<G1.nodes.find(n=>n.id==='c:CVX').y);
+  GG.IMFL.direct=true; let F2=W.imFilter(mk()); assert.deepEqual(F2.edges.map(e=>e.id),['4','5']); assert.deepEqual(F2.nodes.map(n=>n.id).sort(),['c:XOM','ev:a','h:XOM'],'only what the direct links reach');
+  GG.IMFL.direct=false; GG.IMFL.lowconf=true; F2=W.imFilter(mk()); assert.ok(!F2.edges.some(e=>e.id==='2')&&F2.edges.some(e=>e.id==='5'),'the holding (a fact) stays');
 });
 
 test('the reader\'s Hebrew: a verb with an adjective is set right, on the page as on the server', async()=>{

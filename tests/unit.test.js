@@ -1418,6 +1418,9 @@ test('pulse: levels by rules from importance, relevance and confidence; one aler
   assert.ok(!pulseCompute(s,f,{now}).alerts.some(a=>a.k==='ev:tsm'));
   // no portfolio: no personal alerts, and nothing pretends to be one
   const g=s.addUser({email:'g@example.com',password:'partner-pass-2',role:'friend'}); assert.equal(pulseCompute(s,g,{now}).alerts.length,0);
+  // on the server's matrix: a partner reads their own alerts only; nobody else's, not the owner's
+  {const {access}=await import('../server/store.js'); assert.equal(access({id:f.id,role:'friend'},`data/users/${f.id}/pulse`),'rw'); assert.equal(access({id:f.id,role:'friend'},`data/users/${g.id}/pulse`),''); assert.equal(access({id:f.id,role:'friend'},'alerts/pulse'),'');
+    assert.equal(access({id:'x',role:'admin'},'alerts/pulse'),'rw','an admin shares the owner\'s')}
   // the quiet hours, in Israel time
   const pr=pulsePrefs({pulse:{quiet:{from:'22:00',to:'07:00'}}}); assert.equal(inQuiet(pr,new Date('2026-10-30T21:30:00Z')),true,'23:30'); assert.equal(inQuiet(pr,new Date('2026-10-30T08:00:00Z')),false,'10:00');
   assert.equal(inQuiet(pulsePrefs({}),new Date('2026-10-30T04:00:00Z')),true,'06:00, the default quiet until 09:00'); assert.equal(inQuiet(pulsePrefs({pulse:{quiet:{on:false}}}),new Date('2026-10-30T04:00:00Z')),false);

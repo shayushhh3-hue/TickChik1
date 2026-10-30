@@ -65,7 +65,7 @@ export function holdingsOf(P,Q){
     const v=q*px*rt; h.val+=v; total+=v; if(rt!==1){h.usd=true; usd+=v}}
   for(const c of ((P&&P.cash)||[])){const v=(+c.amount||0)*(c.ccy==='USD'?fx:1); if(v>0){total+=v; if(c.ccy==='USD')usd+=v}}
   const pos=[...by.values()], wOk=pos.length>0&&miss===0&&total>0;
-  for(const h of pos)h.w=wOk?Math.round(h.val/total*1e4)/100:null;
+  for(const h of pos)h.w=wOk?Math.round(h.val/total*1e3)/10:null;
   return {pos,wOk,total:wOk?total:null,usdPct:wOk?Math.round(usd/total*1000)/10:null};
 }
 
