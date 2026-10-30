@@ -687,6 +687,39 @@ test('funds in the holdings and in the mix: a fund in another group is named, so
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
 
+test('the stories: a circle per holding with something new over צ׳יקו, a card at a time, seen here is read in the news too',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {createHash}=await import('node:crypto'); const id=l=>createHash('sha1').update(l).digest('hex').slice(0,12), iso=k=>new Date(Date.now()-k*3600e3).toISOString();
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state');
+  store.setDoc('research/news',{items:[{title:'Nvidia beats estimates',pub:'Reuters',link:'https://x/s-nvda1',at:iso(3),syms:['NVDA'],seen:iso(3)},{title:'Nvidia shares jump',pub:'CNBC',link:'https://x/s-nvda2',at:iso(2),syms:['NVDA'],seen:iso(2)},
+    {title:'Microsoft faces EU probe',pub:'FT',link:'https://x/s-msft1',at:iso(5),syms:['MSFT'],seen:iso(5)}],updatedAt:iso(1)},{silent:true});
+  const X=(he,what,o)=>({he,what,type:'company',level:'imp',dir:'unclear',cert:'fact',aff:[],sectors:[],themes:[],macro:false,unknown:'',more:'',ev:null,...o}), by={};
+  by[id('https://x/s-nvda1')]=X('אנבידיה היכתה את התחזיות','הכנסות מעל הצפי.',{type:'earnings',level:'crit',dir:'pos',aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'הדוח של החברה'}],ev:'s-nvda-q3'});
+  by[id('https://x/s-nvda2')]=X('מניית אנבידיה בעלייה חדה','המניה עלתה.',{type:'market',dir:'pos',aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'תגובת השוק'}],ev:'s-nvda-jump'});
+  by[id('https://x/s-msft1')]=X('חקירה נגד מיקרוסופט באירופה','הרגולטור בודק.',{type:'regulation',dir:'neg',aff:[{sym:'MSFT',how:'direct',dir:'neg',why:'החברה הנחקרת'}],ev:'s-msft-eu'});
+  store.setDoc('research/newsx',{by,gen:[],updatedAt:iso(1),ai:true},{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
+    const bub=await pg.evaluate(()=>({l:document.getElementById('stBub').getAttribute('aria-label'),n:document.querySelectorAll('#stBub .stc').length,crit:document.querySelector('#stBub .stc').classList.contains('crit'),
+      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.bottom<=f.top+1&&a.right>f.left&&a.left<f.right})()}));
+    assert.match(bub.l,/עדכונים חדשים: NVDA.*MSFT/); assert.ok(bub.n>=2&&bub.n<=3,'up to three circles'); assert.ok(bub.crit,'the critical one first, with its halo'); assert.ok(bub.over,'above צ׳יקו');
+    await pg.click('#stBub'); await pg.waitForTimeout(300);
+    let v=await pg.evaluate(()=>({open:!document.getElementById('stView').hidden,who:document.getElementById('stWho').innerText,h:document.querySelector('#stBody .stv-h').textContent,bars:document.querySelectorAll('#stBars i').length,imp:(document.querySelector('#stBody .stv-imp')||{}).textContent||''}));
+    assert.ok(v.open); assert.match(v.who,/NVDA/); assert.equal(v.h,'אנבידיה היכתה את התחזיות','the critical card first'); assert.equal(v.bars,2,'a bar per card of the security'); assert.match(v.imp,/לתיק שלך:.*NVDA/);
+    await pg.click('#stNext'); await pg.waitForTimeout(200); assert.equal(await pg.textContent('#stBody .stv-h'),'מניית אנבידיה בעלייה חדה');
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.getElementById('stView').hidden),true,'Escape closes');
+    const after=await pg.evaluate(()=>document.getElementById('stBub').getAttribute('aria-label')); assert.ok(!/NVDA/.test(after),'NVDA seen: off the bubble: '+after);
+    // the news tab: the row of circles, NVDA seen; and its cards read there too
+    await tab(pg,'news'); await pg.waitForTimeout(500);
+    const bar=await pg.evaluate(()=>[...document.querySelectorAll('#stBar .stg')].map(b=>({k:b.dataset.stg,seen:b.querySelector('.stc').classList.contains('seen')})));
+    assert.deepEqual(bar.find(x=>x.k==='NVDA'),{k:'NVDA',seen:true}); assert.equal(bar.find(x=>x.k==='MSFT').seen,false); assert.ok(bar.findIndex(x=>x.seen)>bar.findIndex(x=>x.k==='MSFT'),'the unread first');
+    assert.ok(await pg.evaluate(id=>{const a=document.querySelector(`#newsFeed .nx[data-nid="${id}"]`); return !!a&&a.classList.contains('read')},id('https://x/s-nvda1')),'read in the news too');
+    // a circle of the row opens that security's cards
+    await pg.click('#stBar [data-stg="MSFT"]'); await pg.waitForTimeout(300); assert.match(await pg.textContent('#stWho'),/MSFT/); await pg.click('#stX');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('research/news',N0.data||{items:[]},{silent:true}); store.setDoc('research/newsx',X0.data||{by:{},gen:[]},{silent:true}); if(ST0.exists)store.setDoc('news/state',ST0.data,{silent:true}); else store.setDoc('news/state',{read:{},saved:{}},{silent:true})}
+});
+
 test('a page left open learns that a new version is out, and offers to reload',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.waitForTimeout(3500);

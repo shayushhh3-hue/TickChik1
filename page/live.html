@@ -1944,6 +1944,42 @@ html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .1
 .dvtabs .dv-n:not(:empty){display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-inline-start:6px;border-radius:999px;background:rgb(124 58 237 / .14);font-size:12px}
 .dvtabs .chip[aria-pressed="true"] .dv-n{background:rgb(255 255 255 / .25)}
 section[data-dvv="month"] [data-dvp="once"],section[data-dvv="once"] [data-dvp="month"]{display:none!important}
+/* 30.10: the stories. A circle per security with something new (a reading that matters, a big day, a price that was set,
+   the dollar): a halo while it is unread, grey once seen. Over צ׳יקו up to three of them and the count; in "חיבור למציאות" the
+   whole row; a tap opens the viewer, one card at a time */
+.stc{position:relative;display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;padding:2.5px;background:conic-gradient(from 210deg,#7C3AED,#2DD4BF,#7C3AED);flex:none}
+.stc.crit{background:conic-gradient(from 210deg,#F43F5E,#F59E0B,#F43F5E)} .stc.seen{background:var(--line)}
+.stc>.in{width:100%;height:100%;border-radius:50%;background:var(--surface);padding:2px;display:grid;place-items:center;overflow:hidden}
+.stc .lg{width:100%;height:100%;border-radius:50%;font-size:10px} .stc .stx{font-weight:800;font-size:15px;color:var(--accent-ink)}
+.stbub{position:fixed;z-index:45;display:flex;align-items:center;gap:0;padding:0;border:0;background:transparent;cursor:pointer}
+.stbub[hidden]{display:none} body.chat-open .stbub{display:none}
+.stbub .stc{width:40px;height:40px;box-shadow:0 4px 12px rgb(20 18 46 / .25)} .stbub .stc+.stc{margin-inline-start:-14px} .stbub .stc:nth-child(1){z-index:3} .stbub .stc:nth-child(2){z-index:2} .stbub .stc:nth-child(3){z-index:1}
+.stbub .stn{position:absolute;top:-6px;inset-inline-end:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--crit-c);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface)}
+.stbub:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:999px}
+.stbar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none} .stbar::-webkit-scrollbar{display:none}
+.stbar[hidden]{display:none}
+.stbar .stg{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:transparent;padding:0;cursor:pointer;color:var(--ink);font:inherit;min-width:60px}
+.stbar .stc{width:58px;height:58px;padding:3px} .stbar .stl{font-size:12.5px;font-weight:700;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stbar .stn2{font-size:11px;color:var(--muted)} .stbar .seen+.stl{color:var(--muted);font-weight:500}
+.stv{position:fixed;inset:0;z-index:80;background:rgb(10 8 30 / .72);display:grid;place-items:center}
+.stv[hidden]{display:none}
+.stv-in{position:relative;width:min(480px,100vw);height:min(760px,100dvh);background:var(--surface);color:var(--ink);border-radius:22px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgb(0 0 0 / .4)}
+@media (max-width:520px){.stv-in{border-radius:0;height:100dvh}}
+.stv-bars{display:flex;gap:4px;padding:12px 14px 0} .stv-bars i{flex:1;height:3px;border-radius:2px;background:var(--line)} .stv-bars i.on{background:var(--accent)} .stv-bars i.now{background:linear-gradient(90deg,var(--accent),var(--s2))}
+.stv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+.stv-who{display:flex;align-items:center;gap:10px;min-width:0} .stv-who .stc{width:40px;height:40px} .stv-who b{font-size:16px} .stv-who .nm{font-size:12.5px;color:var(--muted)}
+.stv-x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+.stv-body{flex:1;overflow-y:auto;padding:6px 18px 12px;display:flex;flex-direction:column;gap:12px}
+.stv-h{font-size:22px;line-height:1.35;margin:0} .stv-what{font-size:16px;margin:0;color:var(--ink2)}
+.stv-imp{margin:0;padding:12px 14px;border-radius:14px;background:var(--accent-soft);font-size:15px} .stv-imp b{color:var(--accent-ink)}
+.stv-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.stv-links{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:14px}
+.stv-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.stv-nav .btn{min-height:44px}
+html[data-theme="dark"] .stv-imp{background:rgb(124 58 237 / .18)}
+.stv .nx-wi .chip{border:1px solid var(--line);border-radius:999px;background:var(--surface)} .stv .nx-wi .chip+.chip{border-inline-start:1px solid var(--line)}
+.stv-links a,.stv-links .lnk{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--accent-ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+html[data-theme="dark"] .stv-links a,html[data-theme="dark"] .stv-links .lnk{color:#C4B5FD}
 /* 30.10: a new version of the site is out (a page left open learns it) */
 .verbar{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);inset-inline:12px;margin:0 auto;max-width:520px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--accent);box-shadow:var(--shadow);font-size:14px;color:var(--ink)}
 .verbar[hidden]{display:none}
@@ -2128,6 +2164,13 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
 .hbtn .th-sun,html[data-theme="dark"] .hbtn .th-moon{display:none} html[data-theme="dark"] .hbtn .th-sun{display:block}
 </style>
 
+<button type="button" class="stbub" id="stBub" hidden></button>
+<div class="stv" id="stView" role="dialog" aria-modal="true" aria-labelledby="stWho" hidden><div class="stv-in" id="stIn">
+  <div class="stv-bars" id="stBars" aria-hidden="true"></div>
+  <div class="stv-top"><div class="stv-who" id="stWho"></div><button type="button" class="stv-x" id="stX" aria-label="סגירה">×</button></div>
+  <div class="stv-body" id="stBody" aria-live="polite"></div>
+  <div class="stv-nav"><button type="button" class="btn" id="stPrev">הקודם</button><button type="button" class="btn ghost" id="stAll">לכל ההודעות</button><button type="button" class="btn pri" id="stNext">הבא</button></div>
+</div></div>
 <div class="verbar" id="verBar" dir="rtl" lang="he" role="status" hidden><span>עלתה גרסה חדשה של האתר.</span><button type="button" class="btn sm pri" id="verGo">לרענן עכשיו</button></div>
 <div class="toast" id="toast" dir="rtl" lang="he" role="status" hidden><span class="ni-b" aria-hidden="true"><svg class="ni ni-msg" focusable="false"><use href="#ni-msg"/></svg></span><span id="toastMsg"></span><button class="btn sm" type="button" id="toastUndo">בטל</button></div>
 <div class="i18np" id="i18nPill" translate="no" dir="rtl" lang="he" hidden><span class="sp" aria-hidden="true"></span><span class="tx"></span><button class="btn sm" type="button" data-i18n="go" hidden>להמשיך · Continue</button><button class="btn sm" type="button" data-i18n="he">עברית</button></div>
@@ -2603,6 +2646,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   <div class="pane" data-pane="news" hidden>
     <section aria-labelledby="hNewsT" class="nxsec">
       <div class="row"><h2 id="hNewsT">מה קורה בתיק שלך?</h2><span class="sub" id="newsFresh"></span></div>
+      <div class="stbar" id="stBar" hidden></div>
       <div class="nx-since" id="nxSince" hidden></div>
       <div class="nx-top" id="nxTop" hidden></div>
       <div class="nx-bar">
@@ -17162,7 +17206,7 @@ function render(){
   const two=(a,b)=>`${a}<div class="nm"><span class="n">${b}</span></div>`;   // shekels, and the dollars beneath
   const vcell=(ils_,usd_)=>HC==='usd'?usd_:HC==='both'?two(ils_,usd_):ils_;
   const mxW=Math.max(0,...m.pos.map(x=>x.w||0));
-  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]} try{nxNavDot()}catch(e){}
+  try{NX_HOLD=nxForHoldings(m)}catch(e){NX_HOLD=[]} try{nxNavDot()}catch(e){} try{stRender(m)}catch(e){}
   const rowH=p=>{
     const d=p.cost?(p.costVal-p.cost):null, dp=p.cost?d/p.cost*100:null;
     const dc=DC&&DC[p.sym], uc=dc&&dc.cost>0?dc.cost:null, ud=uc!=null?dc.val-dc.cost:null, udp=uc?ud/uc*100:null, ap=dc&&dc.est?'≈':'';
@@ -22639,6 +22683,90 @@ function myWatchHtml(m){
     </article>`}).join('');
   return `<div class="wsec"><h3>במעקב שלי <span class="agn">${marks.length}</span></h3><p class="sub">מה שסימנת בחיפוש או בדף הנייר. ההתאמה לתיק מחושבת בדפדפן שלך, מהכללים והיעדים שלך; לא המלצה.</p></div>`+cards;
 }
+// ---- 30.10: the stories. What is new for the viewer's own holdings, a circle per security: the readings that matter
+// (critical or important, the last two days, NX_HOLD), a day that moved more than the share set in the live alerts (5%
+// unless set), a price the viewer set that was crossed, and the dollar's rates. Unread: a halo; seen: grey. The read state
+// is the news' own (newsst), so a card seen here is read in "חיבור למציאות" too, and the other way round. Facts and the
+// page's arithmetic; never advice and never a forecast.
+function stGroups(m){
+  const out=new Map(), rd=nxState().read||{}, today=ilDay(), G=(key,kind)=>{if(!out.has(key))out.set(key,{key,kind,items:[]}); return out.get(key)};
+  for(const z of NX_HOLD||[]){const x=z.it.x, keys=z.direct.length?[...new Set(z.direct.map(h=>h.sym))]:['MACRO'];
+    for(const k of keys){const g=G(k,k==='MACRO'?'macro':'sym'); if(x.ev&&g.items.some(i=>i.ev===x.ev))continue; g.items.push({id:z.it.id,kind:'news',lv:x.level,at:z.it.at||z.it.seen,ev:x.ev||null,it:z.it,rel:z.rel,read:!!rd[z.it.id]})}}
+  const A=(S&&S.liveAl)||{}, mv=+A.move>0?+A.move:5, at=Q&&Q.updatedAt;
+  if(m&&m.pos&&Q&&Q.updatedAt&&ilDay(Q.updatedAt)===today)for(const p of m.pos){if(p.dayPct==null||Math.abs(p.dayPct)<mv||(Q.stale||{})[p.sym])continue;
+    const id=`st:mv:${p.sym}:${today}:${p.dayPct>0?'u':'d'}`; G(p.sym,'sym').items.push({id,kind:'move',lv:Math.abs(p.dayPct)>=mv*2?'crit':'imp',at,p,mv,read:!!rd[id]})}
+  for(const [k,t] of Object.entries((S&&S.pxAlerts)||{})){if(!t)continue; let q=null; try{q=pxKeyPrice(k)}catch(e){} if(!q)continue; const sym=k.replace(/^TLV:/,'');
+    for(const [dk,lim] of [['up',+t.above],['down',+t.below]]){if(!(lim>0)||(dk==='up'?q.px<lim:q.px>lim))continue; const id=`st:px:${k}:${dk}:${lim}:${today}`; G(sym,'sym').items.push({id,kind:'px',lv:'imp',at,q,lim,dk,sym,read:!!rd[id]})}}
+  {const fx=+(Q&&Q.usdIls); if(fx>0)for(const [dk,lim] of [['up',+A.usdAbove],['down',+A.usdBelow]]){if(!(lim>0)||(dk==='up'?fx<lim:fx>lim))continue; const id=`st:usd:${dk}:${lim}:${today}`; G('USD','usd').items.push({id,kind:'usd',lv:'imp',at,fx,lim,dk,read:!!rd[id]})}}
+  const L=[...out.values()].filter(g=>g.items.length);
+  for(const g of L){g.items.sort((a,b)=>(a.read-b.read)||((a.lv==='crit'?0:1)-(b.lv==='crit'?0:1))||(String(b.at||'')>String(a.at||'')?1:-1));
+    g.unread=g.items.filter(i=>!i.read).length; g.crit=g.items.some(i=>!i.read&&i.lv==='crit'); g.at=g.items.map(i=>String(i.at||'')).sort().pop()}
+  return L.sort((a,b)=>((b.unread>0)-(a.unread>0))||((b.crit?1:0)-(a.crit?1:0))||(b.at>a.at?1:-1))}
+const stName=g=>g.kind==='usd'?'הדולר':g.kind==='macro'?'השוק':lab(g.key);
+const stCirc=(g,cls)=>`<span class="stc${g.unread?(g.crit?' crit':''):' seen'}${cls?' '+cls:''}"><span class="in">${g.kind==='usd'?'<span class="stx">$</span>':g.kind==='macro'?'<span class="stx">שוק</span>':logoHtml(g.key)}</span></span>`;
+let STG=[];
+function stRender(m){
+  try{STG=stGroups(m)}catch(e){STG=[]}
+  const un=STG.filter(g=>g.unread), n=un.reduce((t,g)=>t+g.unread,0), b=$('stBub');
+  if(b){b.hidden=!n; if(n){b.innerHTML=un.slice(0,3).map(g=>stCirc(g)).join('')+`<b class="stn">${n>9?'9+':n}</b>`;
+    b.setAttribute('aria-label',`${n===1?'עדכון חדש':n+' עדכונים חדשים'}: ${un.slice(0,4).map(stName).join(', ')}`); stPlace()}}
+  const bar=$('stBar'); if(bar){bar.hidden=!STG.length; if(STG.length)setH(bar,STG.map(g=>`<button type="button" class="stg" data-stg="${esc(g.key)}" aria-label="${esc(stName(g))}: ${g.unread?(g.unread===1?'עדכון חדש':g.unread+' עדכונים חדשים'):'נצפה'}">${stCirc(g)}<span class="stl">${esc(stName(g))}</span><span class="stn2">${g.unread?(g.unread===1?'חדש':g.unread+' חדשים'):'נצפה'}</span></button>`).join(''))}
+}
+function stPlace(){const b=$('stBub'), f=$('chatFab'); if(!b||b.hidden)return; if(!f||f.hidden){b.style.visibility='hidden';return}
+  const r=f.getBoundingClientRect(); if(!r.width){b.style.visibility='hidden';return} b.style.visibility='';
+  const w=b.offsetWidth||60, x=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(8,innerHeight-r.top+10)+'px'}
+addEventListener('resize',()=>{try{stPlace()}catch(e){}});
+setInterval(()=>{const b=$('stBub'); if(b&&!b.hidden)try{stPlace()}catch(e){}},1500);
+// the viewer: a card at a time, the bars on top as the security's cards; next, back, swipe, the arrows; Escape closes
+const STV={L:[],gi:0,ii:0,from:null};
+function stOpen(key,onlyNew){const L=onlyNew?STG.filter(g=>g.unread):STG.slice(); if(!L.length)return;
+  STV.L=L.map(g=>({...g,items:g.items.slice()})); STV.gi=Math.max(0,key?STV.L.findIndex(g=>g.key===key):0); const g=STV.L[STV.gi]; STV.ii=Math.max(0,g.items.findIndex(i=>!i.read));
+  STV.from=document.activeElement; $('stView').hidden=false; document.body.classList.add('st-open'); stShow(); try{$('stX').focus()}catch(e){}}
+function stClose(){$('stView').hidden=true; document.body.classList.remove('st-open'); try{render()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{STV.from&&STV.from.focus&&STV.from.focus()}catch(e){}}
+function stNext(){const g=STV.L[STV.gi]; if(STV.ii<g.items.length-1){STV.ii++; return stShow()} if(STV.gi<STV.L.length-1){STV.gi++; const h=STV.L[STV.gi]; STV.ii=Math.max(0,h.items.findIndex(i=>!i.read)); return stShow()} stClose()}
+function stPrev(){if(STV.ii>0){STV.ii--; return stShow()} if(STV.gi>0){STV.gi--; STV.ii=STV.L[STV.gi].items.length-1; stShow()}}
+function stBody(i,m){
+  if(i.kind==='news'){const it=i.it, x=it.x, imp=nxImp(it,i.rel), sec=(i.rel.hits.find(h=>h.held&&SECKEY.test(h.sym))||{}).sym;
+    return `<div class="stv-tags"><span class="nx-tag lv-${x.level}">${NX_LV[x.level]}</span><span class="nx-tag d-${x.dir}">${NX_DIR[x.dir]}</span><span>${esc(it.pub||'')}${it.at?' · '+dmy(it.at)+' '+hm(it.at):''}</span></div>
+      <h2 class="stv-h">${esc(x.he)}</h2>${x.rules?`<p class="stv-what nx-orig">${esc(it.title)}</p>`:`<p class="stv-what">${esc(x.what)}</p>`}
+      ${imp?`<p class="stv-imp"><b>לתיק שלך:</b> ${imp}</p>`:''}${nxTrackH(it,i.rel)}${nxWhatIfH(it,i.rel)}
+      <div class="stv-links"><a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">לכתבה המקורית ›</a>${sec?`<button type="button" class="lnk" data-gosec="${esc(sec)}">לדף המניה ›</button>`:''}</div>
+      <p class="note" style="margin:0">${esc(NX_CERT[x.cert]||'')}${x.rules?' · קריאה אוטומטית לפי הכותרת':''}. מה קרה ולאן זה עשוי למשוך, לא תחזית ולא המלצה.</p>`}
+  if(i.kind==='move'){const p=i.p, up=p.dayPct>0, was=p.px/(1+p.dayPct/100);
+    return `<div class="stv-tags"><span class="nx-tag lv-${i.lv}">${NX_LV[i.lv]}</span><span>תנועה חריגה היום</span></div>
+      <h2 class="stv-h">${esc(lab(p.sym))} ${up?'עלתה':'ירדה'} היום <span class="n ${up?'up':'down'}">${spct(p.dayPct,1)}</span></h2>
+      <p class="stv-what">מ-<span class="n">${fmtPx(was,p.ccy)}</span> ל-<span class="n">${fmtPx(p.px,p.ccy)}</span>. יותר מ-${i.mv}% שקבעת בהתראות.</p>
+      <p class="stv-imp"><b>לתיק שלך:</b> ${pct(p.w,1)} מהתיק; השינוי היום בשווי שלה: <span class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</span>.</p>
+      <div class="stv-links">${SECKEY.test(p.sym)?`<button type="button" class="lnk" data-gosec="${esc(p.sym)}">לדף המניה ›</button>`:''}</div>
+      <p class="note" style="margin:0">תנועת מחיר מהמחירים העדכניים; היא לא אומרת למה, ולא מה יקרה הלאה.</p>`}
+  if(i.kind==='px'){const p=m&&m.pos.find(x=>x.sym===i.sym);
+    return `<div class="stv-tags"><span class="nx-tag lv-imp">${NX_LV.imp}</span><span>מחיר שקבעת</span></div>
+      <h2 class="stv-h">${esc(lab(i.sym))} ${i.dk==='up'?'עברה את המחיר שקבעת':'ירדה אל המחיר שקבעת'}</h2>
+      <p class="stv-what">עכשיו <span class="n">${fmtPx(i.q.px,i.q.ccy)}</span>; הסף ${i.dk==='up'?'למעלה':'למטה'}: <span class="n">${fmtPx(i.lim,i.q.ccy)}</span>.</p>
+      ${p?`<p class="stv-imp"><b>לתיק שלך:</b> ${pct(p.w,1)} מהתיק, <span class="n">${ils(p.val)}</span>.</p>`:''}
+      <div class="stv-links">${SECKEY.test(i.sym)?`<button type="button" class="lnk" data-gosec="${esc(i.sym)}">לדף המניה ›</button>`:''}</div>`}
+  if(i.kind==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0;
+    return `<div class="stv-tags"><span class="nx-tag lv-imp">${NX_LV.imp}</span><span>שער שקבעת</span></div>
+      <h2 class="stv-h">הדולר ${i.dk==='up'?'עבר את':'ירד אל'} <span class="n">${i.lim}</span></h2><p class="stv-what">השער עכשיו <span class="n">${i.fx.toFixed(3)} ₪</span>.</p>
+      ${uv>0?`<p class="stv-imp"><b>לתיק שלך:</b> ${pct(m.usdPct,0)} מהתיק בדולרים; שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי.</p>`:''}`}
+  return ''}
+function stShow(){const g=STV.L[STV.gi], i=g.items[STV.ii]; let m=null; try{m=mAllNow()}catch(e){}
+  $('stBars').innerHTML=g.items.map((x,k)=>`<i class="${k<STV.ii?'on':k===STV.ii?'now':''}"></i>`).join('');
+  const nm=g.kind==='sym'?((m&&m.pos.find(p=>p.sym===g.key))||{}).name||'':'';
+  setH($('stWho'),`${stCirc({...g,unread:0},'')}<span><b>${esc(stName(g))}</b>${nm?` <span class="nm">${esc(nm)}</span>`:''}<div class="nm">${i.at?agoH(i.at):''}${STV.L.length>1?` · ${STV.gi+1} מתוך ${STV.L.length}`:''}</div></span>`);
+  setH($('stBody'),stBody(i,m)); $('stBody').scrollTop=0;
+  $('stPrev').disabled=STV.gi===0&&STV.ii===0; $('stNext').textContent=STV.gi===STV.L.length-1&&STV.ii===g.items.length-1?'סיום':'הבא';
+  if(!i.read){i.read=true; nxMark(i.id,'read',true)}}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  if(t.closest('#stBub')){stOpen(null,true);return} const sg=t.closest('[data-stg]'); if(sg){stOpen(sg.dataset.stg,false);return}
+  if(t.closest('#stX')){stClose();return} if(t.closest('#stNext')){stNext();return} if(t.closest('#stPrev')){stPrev();return}
+  if(t.closest('#stAll')){stClose(); showTab('news',true); return}
+  if(t.id==='stView'){stClose();return}
+  if(t.closest('#stView [data-gosec]'))stClose()});
+document.addEventListener('keydown',ev=>{if($('stView').hidden)return; if(ev.key==='Escape'){ev.preventDefault();stClose()} else if(ev.key==='ArrowLeft'){ev.preventDefault();stNext()} else if(ev.key==='ArrowRight'){ev.preventDefault();stPrev()}});
+// a swipe, as a right-to-left reader turns a page: to the right for the next card, to the left for the one before
+{let sx=null, sy=null; document.addEventListener('touchstart',ev=>{if($('stView').hidden||!ev.touches[0])return; sx=ev.touches[0].clientX; sy=ev.touches[0].clientY},{passive:true});
+  document.addEventListener('touchend',ev=>{if(sx==null||$('stView').hidden)return; const t=ev.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; sx=null; if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return; if(dx>0)stNext(); else stPrev()},{passive:true})}
 // ---- 30.10: a page left open (a phone's tab, the icon on the home screen) kept running the old version for days: nothing
 // told it a new one was out. The server says the version (/api/version); the page asks when it comes back to the screen and
 // every ten minutes. A new one: a note with "לרענן"; and if the page was away for ten minutes or more and nothing is waiting
@@ -23248,23 +23376,12 @@ function nxCard(it,rel,ev,opts={}){
   const acts=`<span class="nx-acts"><button type="button" class="nx-ib" data-nxsave="${esc(it.id)}" aria-pressed="${saved}" aria-label="${saved?'להסיר מהשמורים':'לשמור'}" title="${saved?'שמור':'לשמור'}">${saved?'★':'☆'}</button><button type="button" class="nx-ib" data-nxread="${esc(it.id)}" aria-pressed="${read}" aria-label="${read?'לסמן כלא נקרא':'לסמן כנקרא'}" title="${read?'נקרא':'לסמן כנקרא'}">${read?'✓':'○'}</button></span>`;
   const aff=x&&x.aff&&x.aff.length?`<div class="nx-aff">${x.aff.slice(0,8).map(a=>{const h=rel.hits.find(z=>z.sym===a.sym); const ok=SECKEY.test(a.sym);
       return `<${ok?'button type="button"':'span'} class="nx-a${h&&h.held?' held':''}"${ok?` data-gosec="${esc(a.sym)}"`:''} title="${esc(a.why||'')}">${logoHtml(a.sym,'xs')}<b class="nx-s">${esc(a.sym)}</b>${h&&h.held?` <span class="n">${pct(h.w,0)}</span>`:''}<span class="how">${NX_HOW[a.how]||''}</span><span class="arr ${a.dir}">${a.dir==='pos'?'▲':a.dir==='neg'?'▼':a.dir==='mixed'?'◆':'?'}</span></${ok?'button':'span'}>`}).join('')}</div>`:'';
-  // 29.10: the record: what the share did after earlier readings of the same direction (from the archive, five cases or more)
-  let trH=''; try{const T=(NXD&&NXD.track)||{}; const L=[]; for(const a of (x&&x.aff||[])){const h=rel.hits.find(z=>z.sym===a.sym&&z.held); const t=h&&T[a.sym]&&T[a.sym][a.dir]; if(!t)continue;
-      L.push(`ב-${t.n} ידיעות ${a.dir==='neg'?'שליליות':'חיוביות'} קודמות על ${lab(a.sym)}, המניה ${a.dir==='neg'?'ירדה':'עלתה'} אחרי 5 ימי מסחר ב-${t.hit5}% מהמקרים (שינוי ממוצע ${spct(t.avg5,1)})`)}
-    if(L.length)trH=`<div class="nx-mv nx-tr"><b>ניסיון העבר:</b> ${L.slice(0,2).join('; ')}. <span class="nm">מדגם קטן מהארכיון של האתר, לא תחזית.</span></div>`}catch(e){}
+  const trH=nxTrackH(it,rel);
   const mv=rel.hits.filter(h=>h.held&&h.how==='direct').map(h=>({h,m:nxMove(h.sym,it.at||it.seen)})).filter(z=>z.m);
   const mvH=mv.length?`<div class="nx-mv">מאז הפרסום: ${mv.map(z=>`${lab(z.h.sym)} <span class="n ${z.m.pct>=0?'up':'down'}">${spct(z.m.pct,1)}</span>`).join(' · ')} <span class="nm">(נתון מהמחירים השמורים, לא בהכרח בגלל הידיעה)</span></div>`:'';
   // 29.10: the card in three short lines, as the owner asked: the headline, what happened, and how it may touch this
   // portfolio (the direction and the holdings it names, in one sentence). Everything else opens under "עוד"
-  const imp=(()=>{if(!x)return rel.text?esc(rel.text):''; const held=rel.hits.filter(h=>h.held), direct=held.filter(h=>h.how==='direct'), rest=held.filter(h=>h.how!=='direct');
-    const V={pos:'עשוי לתמוך ב',neg:'עשוי להכביד על',mixed:'השפעה מעורבת על',unclear:'השפעה לא ברורה על'}, who=h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`;
-    const P=[]; if(direct.length){const d=direct[0].dir||x.dir; P.push(`${V[d]||V.unclear}${d==='pos'?'-':' '}${direct.map(who).join(' ו-')}${direct[0].why?': '+direct[0].why.replace(/[.]?$/,''):''}`)}
-    for(const h of rest.slice(0,2))P.push(`${h.sym} (${pct(h.w,0)}) ${NX_HOW[h.how]||''}${h.why?': '+h.why.replace(/[.]?$/,''):''}`);
-    if(!P.length&&rel.secs.length)P.push(`נוגע ל${rel.secs.map(z=>NX_SEC_HE[z.g]||z.g).join(', ')}, ${pct(rel.secs.reduce((t,z)=>t+z.w,0),0)} מהתיק`);
-    if(!P.length&&rel.usd)P.push(`נוגע לשער הדולר, ${pct(m2().usdPct,0)} מהתיק בדולרים`);
-    if(!P.length&&x.macro)P.push('אירוע רחב שעשוי לגעת בכמה אחזקות במקביל');
-    if(!P.length){const w=rel.hits.filter(h=>h.watch); if(w.length)P.push(`${w.map(h=>lab(h.sym)).join(', ')} במעקב שלך`)}
-    return P.length?esc(P.join('. ')+'.'):(it.src==='gen'?'בלי קשר ישיר לאחזקות שלך.':'')})();
+  const imp=nxImp(it,rel);
   const others=ev&&ev.items.length>1?ev.items.filter(z=>z.id!==it.id).slice(0,4):[];
   const more=`<details class="nx-more"><summary>עוד</summary>
       ${x?`<div class="nx-h"><span class="nx-tag d-${x.dir}">${NX_DIR[x.dir]}</span><span class="nx-tag c-${x.cert}">${NX_CERT[x.cert]}</span><span class="nx-tag">${esc(NX_TYPE[x.type]||x.type)}</span></div>`:''}
@@ -23281,6 +23398,24 @@ function nxCard(it,rel,ev,opts={}){
     ${imp?`<p class="nx-imp"><b>לתיק שלך:</b> ${imp}</p>`:''}
     ${more}
   </article>`;
+}
+// 30.10: two parts of the card, used by the stories too: the record from the archive, and the line "לתיק שלך"
+function nxTrackH(it,rel){const x=it.x;
+  // 29.10: the record: what the share did after earlier readings of the same direction (from the archive, five cases or more)
+  let trH=''; try{const T=(NXD&&NXD.track)||{}; const L=[]; for(const a of (x&&x.aff||[])){const h=rel.hits.find(z=>z.sym===a.sym&&z.held); const t=h&&T[a.sym]&&T[a.sym][a.dir]; if(!t)continue;
+      L.push(`ב-${t.n} ידיעות ${a.dir==='neg'?'שליליות':'חיוביות'} קודמות על ${lab(a.sym)}, המניה ${a.dir==='neg'?'ירדה':'עלתה'} אחרי 5 ימי מסחר ב-${t.hit5}% מהמקרים (שינוי ממוצע ${spct(t.avg5,1)})`)}
+    if(L.length)trH=`<div class="nx-mv nx-tr"><b>ניסיון העבר:</b> ${L.slice(0,2).join('; ')}. <span class="nm">מדגם קטן מהארכיון של האתר, לא תחזית.</span></div>`}catch(e){}
+  return trH}
+function nxImp(it,rel){const x=it.x;
+  return (()=>{if(!x)return rel.text?esc(rel.text):''; const held=rel.hits.filter(h=>h.held), direct=held.filter(h=>h.how==='direct'), rest=held.filter(h=>h.how!=='direct');
+    const V={pos:'עשוי לתמוך ב',neg:'עשוי להכביד על',mixed:'השפעה מעורבת על',unclear:'השפעה לא ברורה על'}, who=h=>`${lab(h.sym)} (${pct(h.w,0)} מהתיק)`;
+    const P=[]; if(direct.length){const d=direct[0].dir||x.dir; P.push(`${V[d]||V.unclear}${d==='pos'?'-':' '}${direct.map(who).join(' ו-')}${direct[0].why?': '+direct[0].why.replace(/[.]?$/,''):''}`)}
+    for(const h of rest.slice(0,2))P.push(`${h.sym} (${pct(h.w,0)}) ${NX_HOW[h.how]||''}${h.why?': '+h.why.replace(/[.]?$/,''):''}`);
+    if(!P.length&&rel.secs.length)P.push(`נוגע ל${rel.secs.map(z=>NX_SEC_HE[z.g]||z.g).join(', ')}, ${pct(rel.secs.reduce((t,z)=>t+z.w,0),0)} מהתיק`);
+    if(!P.length&&rel.usd)P.push(`נוגע לשער הדולר, ${pct(m2().usdPct,0)} מהתיק בדולרים`);
+    if(!P.length&&x.macro)P.push('אירוע רחב שעשוי לגעת בכמה אחזקות במקביל');
+    if(!P.length){const w=rel.hits.filter(h=>h.watch); if(w.length)P.push(`${w.map(h=>lab(h.sym)).join(', ')} במעקב שלך`)}
+    return P.length?esc(P.join('. ')+'.'):(it.src==='gen'?'בלי קשר ישיר לאחזקות שלך.':'')})();
 }
 const m2=()=>{try{return mAllNow()}catch(e){return {usdPct:0}}};
 // 30.10: "מה אם" from a reading: what a move of the holdings it names would do to the portfolio, at today's prices.
@@ -24127,6 +24262,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-30.7',at:'2026-10-30',t:'סטוריז: מה חדש במניות שלך',d:'מעל צ׳יקו מופיעים העיגולים של המניות שיש עליהן משהו חדש: ידיעה חשובה, יום של תנועה חריגה, מחיר שקבעת שנחצה, או שער דולר שקבעת. לחיצה פותחת כרטיס אחרי כרטיס: מה קרה, ומה זה אומר לתיק שלך. ב"חיבור למציאות" יש את כל השורה, ומה שראית מסומן.',go:'nx'},
   {v:'2026-10-30.6',at:'2026-10-30',t:'סוף שנת המס: קיזוז הפסדים',d:'במבט לאחור, בחלק של המס: כמה מימשת השנה, אילו ניירות בתיק בהפסד, וכמה מס קיזוז עד סוף השנה יכול לחסוך. בנובמבר ובדצמבר זה עולה גם לרשימה בבית. חישוב, לא המלצה.',go:'tax'},
   {v:'2026-10-30.5',at:'2026-10-30',t:'תוכנית ההגדלה לא זזה אחרי דוח',d:'קנייה שסימנת נשארת בחודש שבו קנית, גם כשדוח חדש מוריד אותה מהמזומן. רק מה שעוד לא נקנה נפרש קדימה, מהמזומן שיש עכשיו.',go:'plan'},
   {v:'2026-10-30.4',at:'2026-10-30',t:'"התיק שלי" בשלוש לשוניות',d:'האחזקות, עדכון מדוח, והוספה ידנית: כל אחת בלשונית משלה, במקום מסך אחד ארוך. אחרי הוספה או קריאת דוח, הטבלה נפתחת לבדיקה ולשמירה.',go:'pfedit'},
