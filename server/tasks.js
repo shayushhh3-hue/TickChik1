@@ -202,27 +202,39 @@ export async function reportTask(store,{log,kind='week'}={}){
   else if(kind==='week')specs.push('week');
   else if(kind==='month')specs.push('month:'+prevMonth());
   else if(kind==='quarter'){const m=p.m, y=m===1?p.y-1:p.y, q=m===1?4:Math.floor((m-2)/3)+1; specs.push(`quarter:${y}-Q${q}`); if(m===7)specs.push(`half:${p.y}-H1`); if(m===1){specs.push(`half:${y}-H2`);specs.push(`year:${y}`)}}
-  const docs=ownerDocs(store); if(!docs['portfolio/main']||!docs['quotes/latest']){log('no portfolio or quotes yet');return []}
-  for(const a of store.listDocs('reports/archive/items'))docs['reports/archive/items/'+a.id]=a.data;
-  const {out,errs}=await withPage(docs,ownerUser(store),async pg=>{
-    await pg.waitForFunction(()=>window.__rep.ready(),null,{timeout:45000}).catch(()=>{});
-    const res=[];
-    for(const spec of specs){const [k,y]=spec.split(':'); const doc=await pg.evaluate(([k,y])=>window.__rep.build(k,y),[k,y||'']); if(!doc){res.push({spec,error:'no report'});continue}
-      const pdf=await pg.evaluate(R=>window.__rep.pdf(R),doc.R);
-      const B=doc.R.blocks||[], cards=B.find(x=>x.t==='cards'), say=B.find(x=>x.t==='say'), rc=cards&&cards.items&&cards.items.find(c=>c.res);
-      const sg=n=>(n>=0?'+':'-')+'₪'+Math.abs(Math.round(n)).toLocaleString('en-US');
-      res.push({spec,doc,pdf,lines:[doc.R.title+' · '+doc.R.period,rc?`${rc.k}: ${sg(rc.gain)}${rc.pct!=null?' ('+(rc.pct>=0?'+':'')+(+rc.pct).toFixed(1)+'%)':''}`:'',say?say.text:'',cards&&cards.vals?cards.vals.map(i=>i[0]+': '+i[1]).join(' | '):''].filter(Boolean)})}
-    return res;
-  },{fonts:true});
-  if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
-  for(const r of out){
-    if(r.error){log(r.spec,'→',r.error);continue}
-    store.setDoc('reports/archive/items/'+r.doc.id,r.doc);
-    const file=(r.doc.id.startsWith('week')?'doch-shvui':r.doc.id.startsWith('month')?'doch-hodshi':r.doc.id.startsWith('quarter')?'doch-rivoni':r.doc.id.startsWith('half')?'doch-hatzi-shnati':'doch-shnati')+'-'+p.iso+'.pdf';
-    await sendAllowed(store,'reports',{subject:`תיק צ׳יק – ${r.doc.title}${r.doc.period?' · '+r.doc.period:''}`,text:r.lines.join('\n')+'\n\nהדוח המלא מצורף ושמור בארכיון בדף. עובדות ומספרים בלבד; לא המלצה לקנות או למכור.',
-      html:wrapHtml(r.doc.title,`<p>${r.lines.map(esc).join('<br>')}</p><p style="color:#64748b;font-size:13px">הדוח המלא מצורף כ-PDF, וגם שמור בארכיון בדף.</p>`),attachments:[{filename:file,content:Buffer.from(r.pdf,'base64'),contentType:'application/pdf'}]},log);
-    log(`${r.spec} → ${r.doc.id} saved, ${Math.round(r.pdf.length*3/4/1024)} KB PDF`);
-  }
+  // one person's reports: built by the page on their documents, kept in their archive, mailed to them (with consent)
+  const one=async(docs,user,arc)=>{
+    const {out,errs}=await withPage(docs,user,async pg=>{
+      await pg.waitForFunction(()=>window.__rep.ready(),null,{timeout:45000}).catch(()=>{});
+      const res=[];
+      for(const spec of specs){const [k,y]=spec.split(':'); const doc=await pg.evaluate(([k,y])=>window.__rep.build(k,y),[k,y||'']); if(!doc){res.push({spec,error:'no report'});continue}
+        const pdf=await pg.evaluate(R=>window.__rep.pdf(R),doc.R);
+        const B=doc.R.blocks||[], cards=B.find(x=>x.t==='cards'), say=B.find(x=>x.t==='say'), rc=cards&&cards.items&&cards.items.find(c=>c.res);
+        const sg=n=>(n>=0?'+':'-')+'₪'+Math.abs(Math.round(n)).toLocaleString('en-US');
+        res.push({spec,doc,pdf,lines:[doc.R.title+' · '+doc.R.period,rc?`${rc.k}: ${sg(rc.gain)}${rc.pct!=null?' ('+(rc.pct>=0?'+':'')+(+rc.pct).toFixed(1)+'%)':''}`:'',say?say.text:'',cards&&cards.vals?cards.vals.map(i=>i[0]+': '+i[1]).join(' | '):''].filter(Boolean)})}
+      return res;
+    },{fonts:true});
+    if(errs.length)log('page errors:',errs.slice(0,3).join(' | '));
+    for(const r of out){
+      if(r.error){log(r.spec,'→',r.error);continue}
+      store.setDoc(arc+'/'+r.doc.id,r.doc);
+      const file=(r.doc.id.startsWith('week')?'doch-shvui':r.doc.id.startsWith('month')?'doch-hodshi':r.doc.id.startsWith('quarter')?'doch-rivoni':r.doc.id.startsWith('half')?'doch-hatzi-shnati':'doch-shnati')+'-'+p.iso+'.pdf';
+      await sendAllowed(store,'reports',{subject:`תיק צ׳יק – ${r.doc.title}${r.doc.period?' · '+r.doc.period:''}`,text:r.lines.join('\n')+'\n\nהדוח המלא מצורף ושמור בארכיון בדף. עובדות ומספרים בלבד; לא המלצה לקנות או למכור.',
+        html:wrapHtml(r.doc.title,`<p>${r.lines.map(esc).join('<br>')}</p><p style="color:#64748b;font-size:13px">הדוח המלא מצורף כ-PDF, וגם שמור בארכיון בדף.</p>`),attachments:[{filename:file,content:Buffer.from(r.pdf,'base64'),contentType:'application/pdf'}]},log,user.owner?undefined:user.u);
+      log(`${r.spec} → ${r.doc.id} saved${user.owner?'':' ('+user.uid+')'}, ${Math.round(r.pdf.length*3/4/1024)} KB PDF`);
+    }
+    return out};
+  let out=[];
+  const docs=ownerDocs(store);
+  if(!docs['portfolio/main']||!docs['quotes/latest'])log('no portfolio or quotes yet');
+  else{for(const a of store.listDocs('reports/archive/items'))docs['reports/archive/items/'+a.id]=a.data; out=await one(docs,ownerUser(store),'reports/archive/items')}
+  // 31.10: each admin, like the owner: their own reports, from their own portfolio, kept in their own archive and mailed to
+  // them if they switched it on
+  for(const u of store.users().filter(u=>u.role==='admin')){
+    try{const d=partnerDocs(store,u); if(!d[`data/users/${u.id}/portfolio`]||!d['quotes/latest'])continue; const arc=`data/users/${u.id}/rep/items`;
+      for(const a of store.listDocs(arc))d[arc+'/'+a.id]=a.data;
+      await one(d,{uid:u.id,email:u.email,owner:false,u},arc)}
+    catch(e){log(`reports (${u.id}) failed: ${e&&e.message||e}`)}}
   return out.filter(r=>!r.error).map(r=>r.doc.id);
 }
 

@@ -38,7 +38,7 @@ let ME=null; fetch('/api/me',{credentials:'same-origin'}).then(r=>r.json()).then
 $('file').addEventListener('change',async()=>{
   const f=$('file').files[0]; DOCS=null; $('go').disabled=true; $('summary').textContent=''; if(!f)return;
   try{const j=JSON.parse(await f.text()); const docs=j.docs||j; if(!docs||typeof docs!=='object')throw new Error('לא נמצאו מסמכים בקובץ');
-    DOCS=Object.fromEntries(Object.entries(docs).filter(([p,d])=>d&&typeof d==='object'&&p.split('/').length%2===0&&(ME&&ME.owner?!p.startsWith('data/users/'):(p.startsWith('data/users/'+(ME&&ME.id)+'/')||p==='watch/'+(ME&&ME.id)))));
+    DOCS=Object.fromEntries(Object.entries(docs).filter(([p,d])=>d&&typeof d==='object'&&p.split('/').length%2===0&&(ME&&ME.owner?!p.startsWith('data/users/'):ME&&ME.manage?(!p.startsWith('data/users/')||p.startsWith('data/users/'+ME.id+'/')):(p.startsWith('data/users/'+(ME&&ME.id)+'/')||p==='watch/'+(ME&&ME.id)))));
     const by={}; for(const p of Object.keys(DOCS)){const c=p.split('/')[0];by[c]=(by[c]||0)+1}
     $('summary').innerHTML='<table><tr><th>אוסף</th><th>מסמכים</th></tr>'+Object.entries(by).map(([c,n])=>`<tr><td><code>${esc(c)}</code></td><td>${n}</td></tr>`).join('')+'</table>'+(j.exportedAt?'<p class="muted">יוצא ב-'+esc(j.exportedAt)+'</p>':'');
     $('go').disabled=!Object.keys(DOCS).length;

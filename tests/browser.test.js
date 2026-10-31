@@ -1357,6 +1357,9 @@ test('an admin and the owner, two investors: each sees and saves their own portf
     assert.match(own.who,/באזור פרטי שלך/,'his own area'); assert.deepEqual(own.mgr,{tc:false,manage:true}); assert.equal(own.users,true,'the users page, in the account menu');
     // he manages the site: the system's health is in his settings
     await tab(pg,'settings'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.getElementById('sysSec').hidden),false,'the system\'s health');
+    // the same options as the owner: every kind of e-mail (about his own portfolio)
+    await pg.waitForFunction(()=>document.querySelectorAll('#mailList [data-mail]').length>=6,null,{timeout:10000}).catch(()=>{});
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#mailList [data-mail]')].map(x=>x.dataset.mail).sort()),['backup','earnings','live','morning','pxalert','reports'],'the six kinds the owner has');
     // what he saves is his: a rule and his name, in his own settings; the owner's untouched
     await pg.click('#rMaxPos',{clickCount:3}); await pg.keyboard.type('22'); await pg.waitForTimeout(2500);
     assert.equal((store.getDoc(`data/users/${A.id}/settings`).data.rules||{}).maxPos,22,'his rule, in his settings');

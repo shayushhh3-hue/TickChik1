@@ -1648,7 +1648,7 @@ test('a partner\'s own e-mails: only what they switched on, to their own address
   }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
 });
 
-test('an admin: set by the owner alone; manages the site (users, health) but invests apart, in their own portfolio, never the owner\'s; back to a partner, the same portfolio',async()=>{
+test('an admin: runs the site as the owner does (users, roles, health, every security\'s prices) and invests apart, in their own portfolio, never the owner\'s; back to a partner, the same portfolio',async()=>{
   const {store,srv,req}=await startApp();
   try{
     const f=store.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}), g=store.addUser({email:'g@example.com',password:'friend-pass-2',role:'friend'});
@@ -1666,13 +1666,19 @@ test('an admin: set by the owner alone; manages the site (users, health) but inv
     r=await req('f','GET',`/api/db/doc?path=data/users/${f.id}/portfolio`); assert.equal(r.j.data.positions[0].sym,'KO','his own portfolio, the one he had');
     assert.equal((await req('f','PUT',`/api/db/doc?path=data/users/${f.id}/settings`,{profile:{first:'אורי'}})).status,200,'his own settings');
     assert.equal((await req('o','GET',`/api/db/doc?path=data/users/${f.id}/portfolio`)).status,403,'and the owner does not read his');
-    // the prices: his own securities only, like a partner (what the owner holds is the owner's)
-    store.setDoc('quotes/latest',{prices:{MSFT:400,KO:60},prev:{},usdIls:3.7}); r=await req('f','GET','/api/db/doc?path=quotes/latest'); assert.deepEqual(Object.keys(r.j.data.prices),['KO']);
-    // an export: his own documents only
-    r=await req('f','GET','/api/db/export'); assert.ok(Object.keys(r.j.docs).length>0); assert.ok(Object.keys(r.j.docs).every(p=>p.startsWith(`data/users/${f.id}/`)||p===`watch/${f.id}`),'only his: '+Object.keys(r.j.docs).join(', '));
+    // the prices and the research: every security's, as the owner sees them (he runs the site)
+    store.setDoc('quotes/latest',{prices:{MSFT:400,KO:60},prev:{},usdIls:3.7}); r=await req('f','GET','/api/db/doc?path=quotes/latest'); assert.deepEqual(Object.keys(r.j.data.prices).sort(),['KO','MSFT']);
+    // an export: his own documents and the site's; not the owner's, not another user's
+    store.setDoc(`data/users/${g.id}/portfolio`,{positions:[{sym:'JPM',qty:1}]});
+    r=await req('f','GET','/api/db/export'); const ks=Object.keys(r.j.docs); assert.ok(ks.includes(`data/users/${f.id}/portfolio`)&&ks.includes('quotes/latest'),'his and the site\'s: '+ks.join(', '));
+    assert.ok(!ks.some(p=>p==='portfolio/main'||p==='settings/main'||(p.startsWith('data/users/')&&!p.startsWith(`data/users/${f.id}/`))),'not the owner\'s nor another user\'s: '+ks.join(', '));
     assert.equal((await req('f','GET','/api/users')).status,200,'the users page'); assert.equal((await req('f','GET','/api/health')).status,200,'the system\'s health');
-    assert.equal((await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'})).status,403,'an admin changes no roles');
-    await req('o','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal((await req('f','DELETE',`/api/users/${g.id}`)).status,403,'an admin removes no admin');
+    // 31.10: roles too, as the owner: he makes an admin and removes one; never the owner, never himself
+    r=await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal(r.j.role,'admin','an admin makes an admin');
+    assert.equal((await req('f','POST',`/api/users/${(store.users().find(u=>u.role==='owner')).id}/role`,{role:'friend'})).status,400,'the owner stays the owner');
+    assert.equal((await req('f','DELETE',`/api/users/${(store.users().find(u=>u.role==='owner')).id}`)).status,400,'nobody removes the owner');
+    assert.equal((await req('f','DELETE',`/api/users/${f.id}`)).status,400,'nor himself');
+    assert.equal((await req('f','DELETE',`/api/users/${g.id}`)).status,200,'an admin removes an admin'); assert.equal(store.userById(g.id),null);
     assert.equal(store.users().filter(u=>u.role==='owner').length,1,'one owner');
     // back to a partner: their own portfolio again, kept all along
     await req('o','POST',`/api/users/${f.id}/role`,{role:'friend'}); await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'});
@@ -1688,6 +1694,10 @@ test('the admins get the site\'s alert ("משהו לא מתעדכן"), each a me
   globalThis.fetch=async(url,o)=>{if(String(url).includes('api.resend.com')){const b=JSON.parse(o.body); sent.push(b); const ok=!/resend\.dev/.test(b.from)||b.to.includes('shai@example.com'); return new Response(ok?'{"id":"x"}':'{"message":"testing only"}',{status:ok?200:403})} return f0(url,o)};
   try{
     process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='shai@example.com'; delete process.env.MAIL_FROM; const msg={subject:'s',text:'t',html:'h'}, last=()=>JSON.parse(s.getMeta('mail:'+a.id)||'{}').last||{};
+    // 31.10: the admin chooses for himself, from every kind the owner has
+    const {kindsOf,mailAllowedFor}=await import('../server/mail.js'); assert.deepEqual(kindsOf(s.userById(a.id)),['morning','earnings','reports','backup','pxalert','live']);
+    sent.length=0; await sendAllowed(s,'pxalert',msg); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'not switched on by him: not sent to him'); assert.equal(last().pxalert.result,'off'); sent.length=0;
+    s.setDoc(`data/users/${a.id}/settings`,{mail:{pxalert:true,reports:true}}); assert.equal(mailAllowedFor(s,s.userById(a.id),'reports'),true);
     assert.equal(await sendAllowed(s,'pxalert',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'Resend\'s test sender: the owner only, the owner\'s mail not refused');
     assert.equal(last().pxalert.result,'domain');
     process.env.MAIL_FROM='תיק צ׳יק <alerts@mydomain.co.il>'; sent.length=0;
@@ -1698,6 +1708,14 @@ test('the admins get the site\'s alert ("משהו לא מתעדכן"), each a me
     s.setDoc(`data/users/${a.id}/settings`,{mail:{morning:true}}); await sendAllowed(s,'morning',msg,()=>{},s.userById(a.id)); assert.deepEqual(sent.map(x=>x.to),[['ori@example.com']],'his own, to him');
     sent.length=0; await sendAllowed(s,'backup',{...msg,attachments:[]}); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'the backup: the owner alone');
   }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
+});
+
+test('an admin\'s daily backup: his own documents and the site\'s; never the owner\'s portfolio nor another user\'s',async()=>{
+  const {adminExport}=await import('../server/backup.js');
+  const s=new Store(':memory:'); s.addUser({email:'shai@example.com',password:'owner-pass-123',role:'owner'}); const a=s.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}); s.setRole(a.id,'admin'); const f=s.addUser({email:'p@example.com',password:'friend-pass-2',role:'friend'});
+  for(const [p,d] of [['portfolio/main',{positions:[{sym:'MSFT'}]}],['settings/main',{}],['quotes/latest',{prices:{}}],['research/latest',{}],['history/prices',{px:{}}],[`data/users/${a.id}/portfolio`,{positions:[{sym:'KO'}]}],[`watch/${a.id}`,{syms:['KO']}],[`data/users/${f.id}/portfolio`,{positions:[{sym:'JPM'}]}],[`watch/${f.id}`,{syms:['JPM']}]])s.setDoc(p,d);
+  const ks=Object.keys(adminExport(s,s.userById(a.id)).docs).sort();
+  assert.deepEqual(ks,[`data/users/${a.id}/portfolio`,'history/prices','quotes/latest','research/latest',`watch/${a.id}`].sort());
 });
 
 test('the morning summary: the last day, the news, the new alerts, the week, the dividends; empty sections left out',async()=>{

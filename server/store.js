@@ -96,10 +96,11 @@ export class Store{
   close(){this.db.close()}
 }
 
-// 30.10: an admin (role 'admin', set by the owner) manages the site with the owner: the users, the system's health, the
-// research and the jobs. 31.10: but an admin is an investor of their own, with their own portfolio, plan, history and
-// settings under data/users/<id>/, like a partner; the owner's own documents (portfolio/main, settings/main and the
-// rest) are the owner's alone. ownerLike is for managing the site, isOwner for the owner's own documents.
+// 30.10: an admin (role 'admin') runs the site as the owner does, in every respect: the users and their roles, the
+// system's health, the research, the prices and the news of every security, the jobs, the mails. 31.10: and invests
+// apart, with their own portfolio, plan, history and settings under data/users/<id>/; the owner's own documents
+// (portfolio/main, settings/main and the rest) are the owner's, as the admin's are the admin's. ownerLike is for
+// running the site, isOwner for the owner's own documents.
 export const ownerLike=u=>!!u&&(u.role==='owner'||u.role==='admin');
 export const isOwner=u=>!!u&&u.role==='owner';
 // the owner's own documents: the portfolio, the plan, the settings, the history (not history/prices), the reports, the
@@ -135,7 +136,7 @@ export function symsOfUser(store,uid){
   return out;
 }
 export function partnerView(store,user,p,data){
-  if(!user||isOwner(user)||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
+  if(!user||ownerLike(user)||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
   const ok=symsOfUser(store,user.id), has=s=>ok.has(s), pick=m=>isMap(m)?Object.fromEntries(Object.entries(m).filter(([k])=>has(k))):m;
   const both=a=>Array.isArray(a)?a.filter(o=>o&&has(o.a)&&has(o.b)):a, only=a=>Array.isArray(a)?a.filter(has):a;
   if(p==='quotes/latest'){const {errors,...rest}=data; return {...rest,prices:pick(data.prices),prev:pick(data.prev),stale:pick(data.stale),meta:pick(data.meta)}}

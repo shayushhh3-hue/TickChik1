@@ -145,8 +145,9 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   const HD=holdingsOf(P,Q), out=[];
   if(!pr.on)return {pr,HD,alerts:out,off:true};
   const hasPf=HD.pos.length>0;
-  // a partner's (or an admin's) alerts come only from what they may read: the general news and the articles about their own securities
-  const vis=u&&u.role!=='owner'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
+  // a partner's alerts come only from what that partner may read: the general news and the articles about their own
+  // securities (the owner and the admins read everything)
+  const vis=u&&u.role==='friend'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
   for(const e of eventsOf(store,{now,visible:vis})){
     const x=e.x; if(pr.types[x.type]===false)continue;
     const L=hasPf?linksFor(e,HD,{followed:pr.syms}):{direct:[],indirect:[],secs:[],usd:null,macro:!!x.macro,followed:linksFor(e,{pos:[],wOk:false,usdPct:null},{followed:pr.syms}).followed};

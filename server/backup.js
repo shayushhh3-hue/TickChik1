@@ -14,7 +14,8 @@ import {randomBytes, scryptSync, createCipheriv, createDecipheriv} from 'node:cr
 import {DatabaseSync} from 'node:sqlite';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import {sendAllowed, mailReady, mailAllowed} from './mail.js';
+import {sendAllowed, mailReady, mailAllowed, mailAllowedFor} from './mail.js';
+import {canWrite} from './store.js';
 
 const NAME=/^tikchik-(\d{4}-\d\d-\d\d)\.sqlite$/;
 const dirOf=dataDir=>path.join(dataDir,'backups');
@@ -59,8 +60,24 @@ export function ownerExport(store){
   return {exportedAt:new Date().toISOString(),source:'tik-chik site, daily backup',docs};
 }
 
+// 31.10: an admin's own copy: what an admin may write, that is their own documents and the site's (the prices, the
+// research, the system), never the owner's portfolio or another user's
+export function adminExport(store,u){
+  const docs={}; for(const [p,d] of store.allDocs())if(canWrite(u,p))docs[p]=d;
+  return {exportedAt:new Date().toISOString(),source:'tik-chik site, daily backup',docs};
+}
+async function adminBackups(store,{log,now}){
+  for(const u of store.users().filter(u=>u.role==='admin')){
+    try{if(!mailReady()||!mailAllowedFor(store,u,'backup')){await sendAllowed(store,'backup',{},log,u); continue}
+      const day=now.toISOString().slice(0,10), gz=zlib.gzipSync(Buffer.from(JSON.stringify(adminExport(store,u))));
+      await sendAllowed(store,'backup',{subject:`תיק צ׳יק – גיבוי יומי ${day}`,text:'מצורף גיבוי של הנתונים שלך מהאתר, ושל הנתונים המשותפים של האתר (קובץ JSON דחוס). לשחזור: 👤 ← שחזור מגיבוי, אחרי פתיחת הקובץ.',
+        html:'<p dir="rtl">מצורף גיבוי של הנתונים שלך מהאתר, ושל הנתונים המשותפים של האתר (קובץ JSON דחוס).</p><p dir="rtl">לשחזור: 👤 ← שחזור מגיבוי, אחרי פתיחת הקובץ.</p>',
+        attachments:[{filename:`tikchik-backup-${day}.json.gz`,content:gz}]},log,u)}
+    catch(e){log(`backup (${u.id}) failed: ${e&&e.message||e}`)}}
+}
 export async function backupTask(store,{log=()=>{},dataDir,now=new Date()}={}){
   const r=backupNow(store,{dataDir,now}); log(`backup: ${path.basename(r.file)} ${(r.size/1e6).toFixed(1)}MB, ${r.removed} old removed`);
+  await adminBackups(store,{log,now});
   // the copy by e-mail, only when the owner switched it on in the settings (sendAllowed notes "off" or "not set up" otherwise)
   if(!mailReady()||!mailAllowed(store,'backup')){await sendAllowed(store,'backup',{},log); return {...r,mailed:false}}
   const gz=zlib.gzipSync(Buffer.from(JSON.stringify(ownerExport(store))));

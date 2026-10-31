@@ -126,8 +126,8 @@ async function load(){
   loadInv(); loadUse(); loadBk(); loadRs();
   const {users}=await call('GET','/users');
   $('list').innerHTML=users.map(u=>`<div class="u"><span class="em">${esc(u.email)}</span>${u.name?`<span>${esc(u.name)}</span>`:''}<span class="tag">${u.role==='owner'?'בעל הדף':u.role==='admin'?'מנהל':'שותף'}</span>${u.must_change?'<span class="muted">עוד לא נכנס</span>':''}
-    ${u.role==='owner'?'':`<span class="acts">${me.admin?'':`<button class="btn" data-role="${u.role==='admin'?'friend':'admin'}" data-uid="${esc(u.id)}" data-em="${esc(u.email)}">${u.role==='admin'?'להחזיר לשותף':'להפוך למנהל'}</button>`}<button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button>${u.role==='admin'&&me.admin?'':`<button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button>`}</span>`}</div>`).join('');
-  {const p=$('list').previousElementSibling; if(p&&!document.getElementById('roleNote')){const n=document.createElement('p'); n.id='roleNote'; n.className='muted'; n.style.margin='0 0 8px'; n.textContent='מנהל מנהל איתך את האתר: משתמשים, גיבויים ובריאות המערכת. כמשקיע הוא נפרד: יש לו תיק, תוכנית, היסטוריה, הגדרות, התראות ומיילים משלו, כמו שותף, ואת שלך הוא לא רואה. ההודעה "משהו לא מתעדכן" מגיעה גם אליו.'; $('list').before(n)}}
+    ${u.role==='owner'?'':`<span class="acts"><button class="btn" data-role="${u.role==='admin'?'friend':'admin'}" data-uid="${esc(u.id)}" data-em="${esc(u.email)}">${u.role==='admin'?'להחזיר לשותף':'להפוך למנהל'}</button><button class="btn" data-reset="${esc(u.id)}" data-em="${esc(u.email)}">סיסמה חדשה</button>${u.id===me.id?'':`<button class="btn danger" data-del="${esc(u.id)}" data-em="${esc(u.email)}">הסרה</button>`}</span>`}</div>`).join('');
+  {const p=$('list').previousElementSibling; if(p&&!document.getElementById('roleNote')){const n=document.createElement('p'); n.id='roleNote'; n.className='muted'; n.style.margin='0 0 8px'; n.textContent='מנהל מנהל את האתר כמו בעל הדף, לכל דבר: משתמשים ותפקידים, גיבויים, בריאות המערכת, הריצות, והמחירים והחדשות של כל הניירות, ובהגדרות יש לו את כל האפשרויות, גם את כל סוגי המיילים. כמשקיע הוא נפרד: לכל אחד תיק, תוכנית, היסטוריה והגדרות משלו, ואף אחד לא רואה את התיק של השני.'; $('list').before(n)}}
 }
 $('gen').onclick=()=>{$('pw').value=rnd()};
 $('aiChk').onclick=async()=>{const b=$('aiChk'),o=$('aiRes'); b.disabled=true; o.className='muted'; o.textContent='בודק…';
@@ -145,7 +145,7 @@ document.addEventListener('click',async e=>{
   const r=e.target.closest('[data-reset]'); if(r){const pw=rnd(); if(!confirm('לקבוע ל-'+r.dataset.em+' סיסמה ראשונית חדשה? הוא ינותק ויתבקש לבחור סיסמה בכניסה הבאה.'))return;
     try{await call('POST','/users/'+r.dataset.reset+'/password',{password:pw}); alert('הסיסמה החדשה של '+r.dataset.em+':\n'+pw); load()}catch(x){alert(x.message)} return}
   const ro=e.target.closest('[data-role]'); if(ro){const up=ro.dataset.role==='admin';
-    if(!confirm(up?`להפוך את ${ro.dataset.em} למנהל? הוא ינהל איתך את המשתמשים, הגיבויים ובריאות המערכת. התיק שלו נשאר שלו, ואת התיק שלך הוא לא יראה. הוא ינותק ויתבקש להיכנס שוב.`:`להחזיר את ${ro.dataset.em} לשותף? התיק שלו נשאר כמו שהוא, והוא לא ינהל יותר את האתר. הוא ינותק ויתבקש להיכנס שוב.`))return;
+    if(!confirm(up?`להפוך את ${ro.dataset.em} למנהל? הוא ינהל את האתר כמו בעל הדף, לכל דבר. התיק שלו נשאר שלו, ואת התיקים של אחרים הוא לא יראה. הוא ינותק ויתבקש להיכנס שוב.`:`להחזיר את ${ro.dataset.em} לשותף? התיק שלו נשאר כמו שהוא, והוא לא ינהל יותר את האתר. הוא ינותק ויתבקש להיכנס שוב.`))return;
     try{await call('POST','/users/'+ro.dataset.uid+'/role',{role:ro.dataset.role}); load()}catch(x){alert(x.message)} return}
   const d=e.target.closest('[data-del]'); if(d){if(!confirm('להסיר את '+d.dataset.em+'? כל הנתונים שלו (התיק, ההגדרות, הדוחות) יימחקו לצמיתות.'))return;
     try{await call('DELETE','/users/'+d.dataset.del); load()}catch(x){alert(x.message)}}

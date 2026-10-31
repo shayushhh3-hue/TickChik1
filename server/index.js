@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
-import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
+import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, kindsOf} from './mail.js';
 import {Store, canRead, canWrite, partnerView, ownerLike, isOwner, symsOfUser} from './store.js';
 import {newsxReadNow} from './newsx.js';
 import {pulseTask} from './pulse.js';
@@ -122,7 +122,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // 30.10: notifications to the phone: the public key, this person's devices (how many), switch a device on or off, a test
   // 30.10: a partner's own e-mails: whether sending works for them, the kinds they may have, what happened last
   app.get('/api/mail/me',needUser,(req,res)=>{let last={}; try{last=(JSON.parse(store.getMeta('mail:'+req.user.id)||'{}').last)||{}}catch(e){}
-    res.json({ready:mailReady(),ownDomain:mailFromOwnDomain(),kinds:req.user.role==='owner'?null:PARTNER_KINDS,last,to:req.user.role==='owner'?null:String(req.user.email||'').replace(/^(.).*(@.*)$/,'$1…$2')})});
+    res.json({ready:mailReady(),ownDomain:mailFromOwnDomain(),kinds:req.user.role==='owner'?null:kindsOf(req.user),last,to:req.user.role==='owner'?null:String(req.user.email||'').replace(/^(.).*(@.*)$/,'$1…$2')})});
   app.get('/api/push',needUser,(req,res)=>res.json({key:vapid(store).publicKey,n:devices(store,req.user.id).length}));
   app.post('/api/push/sub',needUser,(req,res)=>addDevice(store,req.user.id,req.body&&req.body.sub,{ua:req.headers['user-agent']})?res.json({ok:true,n:devices(store,req.user.id).length}):res.status(400).json({error:{code:'invalid_argument',message:'bad subscription'}}));
   app.post('/api/push/unsub',needUser,(req,res)=>res.json({ok:true,removed:dropDevice(store,req.user.id,String(req.body&&req.body.endpoint||''))}));
@@ -153,9 +153,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.get('/api/users',needOwner,(req,res)=>res.json({users:store.users()}));
   app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true});res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
   app.post('/api/users/:id/password',needOwner,(req,res)=>{try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id);res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
-  app.post('/api/users/:id/role',(req,res)=>{if(!req.user||req.user.role!=='owner')return res.status(403).json({error:{code:'not_granted',message:'only the owner changes roles'}});
+  // 31.10: an admin runs the site as the owner does: roles too. There is still one owner, whose role nobody changes
+  app.post('/api/users/:id/role',needOwner,(req,res)=>{
     try{const u=store.setRole(req.params.id,(req.body||{}).role); store.endSessions(u.id); res.json({ok:true,role:u.role})}catch(e){res.status(400).json({error:{code:e.message,message:e.message}})}});
-  app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.role==='admin'&&req.user.role!=='owner')return res.status(403).json({error:{code:'not_granted',message:'רק בעל הדף מסיר מנהל.'}});
+  app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.id===req.user.id)return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את עצמך.'}});
     store.removeUser(u.id); for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); res.json({ok:true})});
 
   // ---- documents ----
@@ -195,13 +196,14 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.delete('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
     if(!canWrite(req.user,p))return res.status(403).json({error:{code:'permission_denied',message:'no access'}}); store.deleteDoc(p); res.json({ok:true})});
   app.get('/api/db/list',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2===0)return res.status(400).json({error:{code:'invalid_argument',message:'bad collection'}});
-    if(!canRead(req.user,p+'/x')||(req.user.role!=='owner'&&!(p+'/').startsWith('data/users/'+req.user.id+'/')))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
+    if(!canRead(req.user,p+'/x')||(!ownerLike(req.user)&&!(p+'/').startsWith('data/users/'+req.user.id+'/')))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
     let where=null; if(req.query.wf){where={f:String(req.query.wf),op:String(req.query.wo||'=='),v:req.query.wv===undefined?null:JSON.parse(String(req.query.wv))}}
     res.json({docs:store.listDocs(p,{orderBy:req.query.orderBy?String(req.query.orderBy):null,dir:req.query.dir==='desc'?'desc':'asc',limit:+req.query.limit||0,where})})});
-  // one import or export at a time: the owner, the owner's documents and the site's; anyone else (an admin too) their own
-  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=isOwner(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
+  // one import or export at a time: what the viewer may write. The owner: the owner's documents and the site's; an admin:
+  // their own and the site's; a partner: their own. Never another user's
+  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[]; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(!canWrite(req.user,p))continue; ws.push({path:p,data:d})}
     store.batch(ws); res.json({ok:true,n:ws.length})});
-  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=isOwner(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
+  app.get('/api/db/export',needUser,(req,res)=>{const out={}; for(const [p,d] of store.allDocs()){if(!canWrite(req.user,p))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
@@ -399,7 +401,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // the holdings. Once in ten seconds a person; a partner only the articles of their own securities and the general ones
   const NXNOW=new Map();
   app.post('/api/newsx/read',needUser,async(req,res)=>{const u=req.user, last=NXNOW.get(u.id)||0; if(Date.now()-last<10e3)return res.status(429).json({error:{code:'rate_limited',message:'הקריאה הקודמת עוד רצה'}});
-    NXNOW.set(u.id,Date.now()); const own=isOwner(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
+    NXNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
     try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read)try{pulseTask(store,{log})}catch(e){} res.json(r)}
     catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
   app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
