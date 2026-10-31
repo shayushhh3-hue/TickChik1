@@ -13,6 +13,7 @@ import {newsxTask} from './newsx.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
 import {pulseTask} from './pulse.js';
+import {ecocalTask} from './ecocal.js';
 import {newsSyms} from './newsfeed.js';
 import {jobNote, healthCheck} from './health.js';
 
@@ -27,7 +28,9 @@ export const SCHEDULE=[
   {name:'weekly',  when:p=>p.wd===5&&p.h===13&&p.min===50, run:(s,o)=>reportTask(s,{...o,kind:'week'})},
   {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
   // analysts' views and company figures, after the US close: Tuesday to Saturday at 01:15
-  {name:'research',when:p=>p.wd>=2&&p.wd<=6&&p.h===1&&p.min===15, run:(s,o)=>researchTask(s,o)},
+  {name:'research',when:p=>p.wd>=2&&p.wd<=6&&p.h===1&&p.min===15, run:async(s,o)=>{const r=await researchTask(s,o); try{await ecocalTask(s,o)}catch(e){} return r}},
+  // 31.10: the economic calendar (reports, the Fed, the agencies' releases), every morning, from what the research keeps
+  {name:'ecocal',  when:p=>p.h===6&&p.min===40, run:(s,o)=>ecocalTask(s,o)},
   // a company's report soon after it is out: only the securities whose report date has come (and the reports of the last
   // days still waiting for their revenue, the e-mail or the share's move). Every 20 minutes when the US reports come out
   // (before the open: 13:00-16:40, after the close: 22:00-01:40, Israel time), and in the morning and the evening

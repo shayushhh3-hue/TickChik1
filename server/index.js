@@ -10,6 +10,8 @@ import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, kindsOf} from './mail.js';
 import {Store, canRead, canWrite, partnerView, ownerLike, isOwner, symsOfUser} from './store.js';
 import {newsxReadNow} from './newsx.js';
+import {storyOf} from './story.js';
+import {ecocalTask} from './ecocal.js';
 import {pulseTask} from './pulse.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
@@ -404,6 +406,14 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     NXNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
     try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read)try{pulseTask(store,{log})}catch(e){} res.json(r)}
     catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
+  // 31.10: "הסיפור מאחורי הכותרת" of one event: kept per event, made again when new articles joined it. Once in five
+  // seconds a person; a partner's story rests only on the articles they may read
+  const STNOW=new Map();
+  app.post('/api/newsx/story',needUser,async(req,res)=>{const u=req.user, ev=String((req.body||{}).ev||'').slice(0,60); if(!/^[a-z0-9\-]{3,60}$/.test(ev))return res.status(400).json({error:{code:'invalid_argument',message:'bad event'}});
+    const last=STNOW.get(u.id)||0; if(Date.now()-last<5e3)return res.status(429).json({error:{code:'rate_limited',message:'הסיפור הקודם עוד נכתב'}});
+    STNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
+    try{const r=await storyOf(store,ev,{visible,log}); if(!r)return res.status(404).json({error:{code:'not_found',message:'אין כתבות על האירוע הזה'}}); res.json(r)}
+    catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
   app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
     const c=NEWS.get(k); if(c&&Date.now()-c.at<30*60e3)return res.json({items:c.items,cached:true});
     try{const map=((store.getDoc('settings/main').data)||{}).symMap||{}; const items=await newsFor(rsTick(k,map)); NEWS.set(k,{at:Date.now(),items}); if(NEWS.size>300)NEWS.delete(NEWS.keys().next().value); res.json({items})}
@@ -471,6 +481,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
   // a first copy right away when today has none (a new server, or after an update)
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
+  // 31.10: the economic calendar, built at start when it is a day old or missing (a cheap build from what is kept)
+  {const c=store.getDoc('research/ecocal'); const age=c.exists&&c.data.updatedAt?Date.now()-new Date(c.data.updatedAt).getTime():Infinity; if(age>20*36e5)setTimeout(()=>{try{ecocalTask(store,{log})}catch(e){log('ecocal at start failed:',e.message)}},3000)}
   // no prices yet (a new server, or an import without them), or prices older than a quarter hour (a deploy): fetch them now
   // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it
   {const q=store.getDoc('quotes/latest'); const age=q.exists&&q.data.updatedAt?Date.now()-new Date(q.data.updatedAt).getTime():Infinity;

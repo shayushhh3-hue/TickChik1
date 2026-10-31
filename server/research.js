@@ -344,7 +344,7 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
   const st={filled:0,figs:0,recs:0,eps:0,cal:0,target:0,fail:0,first:null,stopped:null}, had=new Set(Object.keys(got));   // the keys Yahoo answered this run
   const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
   if(cal){try{const C=await fhEarningsCal({...o,now}); for(const k of order){if(!us(k))continue; const c=C[tk(k).toUpperCase()]||C[tk(k).toUpperCase().replace(/-/g,'.')]; if(!c||c.date<today)continue;
-      const g=got[k]||(got[k]={}); if(g.next==null){g.next=c.date; g.nextEst=false; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; g.fhAt=g.fhAt||iso; st.cal++}}}
+      const g=got[k]||(got[k]={}); if(g.next==null){g.next=c.date; g.nextEst=false; g.nextHour=c.hour||null; if(!g.est)g.est={date:c.date,eps:c.eps,rev:c.rev,at:iso,hour:c.hour}; g.fhAt=g.fhAt||iso; st.cal++}}}
     catch(e){st.first=st.first||'calendar: '+e.message; if(e.auth){log('finnhub: '+e.message); return {...st,stopped:'key'}}}
     // 28.10: a security held or followed that the calendar of everyone left out: its own coming report (four months)
     for(const k of order){if(!us(k)||!(held.has(k)||watched.has(k)))continue; const g0=got[k]||{}, doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};

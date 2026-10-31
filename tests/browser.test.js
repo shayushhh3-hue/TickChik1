@@ -60,7 +60,8 @@ before(async()=>{
     if(J.stream){await new Promise(r=>setTimeout(r,p.includes('SLOWCHECK')?4000:1500));
       if(J.model==='claude-fable-5-1'&&p.includes('NOFABLE')){res.writeHead(404,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'not_found_error',message:'model: claude-fable-5-1'}})); return}
       stream(readOut(false),'end_turn'); return}
-    const text=p.includes('ARTICLES')&&p.includes('JPMorgan names new head')?JSON.stringify([{i:0,he:'ג׳יי.פי מורגן מינתה ראש חדש ליחידת התשלומים',what:'הבנק מינה מנהל חדש ליחידת התשלומים שלו.',type:'management',level:'imp',dir:'pos',cert:'fact',kind:'news',
+    const text=p.includes('הסיפור מאחורי הכותרת')?JSON.stringify({headline:'הרבעון החזק של אנבידיה',stage:'updated',what:[{t:'החברה דיווחה על הכנסות מעל הצפי והעלתה את התחזית.',c:'fact',s:[0,1]}],bg:[{t:'הביקוש לשבבי AI גדל בשנתיים האחרונות.',c:'est',s:[]}],why:[{t:'לפי רויטרס, מכירות מרכזי הנתונים הובילו את הצמיחה.',c:'interp',s:[0]}],who:[{t:'אנבידיה והנהלתה.',c:'fact',s:[0]}],links:[{t:'מיקרוסופט היא לקוחה גדולה של החברה.',c:'interp',s:[0]}],impl:[{t:'ענף השבבים עשוי ליהנות מהביקוש.',c:'est',s:[]}],unknown:[{t:'מה יהיה הצפי לרבעון הבא.',c:'interp',s:[0]}],follow:[{t:'הדוח הבא של החברה.',c:'est',s:[]}]})
+      :p.includes('ARTICLES')&&p.includes('JPMorgan names new head')?JSON.stringify([{i:0,he:'ג׳יי.פי מורגן מינתה ראש חדש ליחידת התשלומים',what:'הבנק מינה מנהל חדש ליחידת התשלומים שלו.',type:'management',level:'imp',dir:'pos',cert:'fact',kind:'news',
         aff:[{sym:'JPM',how:'direct',dir:'pos',why:'מינוי בהנהלה של הבנק עצמו'}],sectors:['Finance'],themes:[],regions:['us'],occ:null,fac:[],secx:[{g:'Finance',via:null,dir:'unclear',why:'מינוי פנימי בבנק אחד'}],macro:false,unknown:'מה ישתנה ביחידה בפועל.',more:'',ev:'jpm-payments-head'}])
       :p.includes('ענה על שאלה')?JSON.stringify({answer:'ביום המסחר האחרון CAT ו-RKLB הזיזו את התיק יותר מכל השאר. כדאי לבדוק את הריכוז בטכנולוגיה מול הכללים שלך.',nav:['risk']})
       :p.includes('הסבר את התיק שלי')?JSON.stringify({summary:'בתיק 12 ניירות, ורובו בטכנולוגיה. התיק מאוזן היטב. שלושת הגדולים הם 39.5% ממנו.'}):'{"answer":""}';
@@ -530,6 +531,72 @@ async function rtSet(D){const {pulseUpdate}=await import('../server/pulse.js');
 function rtRestore(N0,X0,ST0,PU0,S0){if(N0.exists)store.setDoc('research/news',N0.data,{silent:true}); else store.deleteDoc('research/news'); if(X0.exists)store.setDoc('research/newsx',X0.data,{silent:true}); else store.deleteDoc('research/newsx');
   if(ST0.exists)store.setDoc('news/state',ST0.data,{silent:true}); else store.deleteDoc('news/state'); if(PU0.exists)store.setDoc('alerts/pulse',PU0.data,{silent:true}); else store.deleteDoc('alerts/pulse');
   if(S0)store.setDoc('settings/main',S0,{silent:true})}
+
+test('31.10 the news that explains, follows, teaches and prepares: the daily picture, the story behind the headline, a followed event with its timeline, the economic calendar with a reminder, and the glossary in the text',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), S0=store.getDoc('settings/main').data, E0=store.getDoc('research/ecocal'), SR0=store.getDoc('research/stories');
+  const D=await rtData(); for(const x of Object.values(D.by))if(x.ev==='nvda-q3-report')x.st='updated'; await rtSet(D);
+  const day=k=>new Date(Date.now()+k*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
+  store.setDoc('research/ecocal',{items:[{id:'fomc-x',d:day(1),time:'14:00',tz:'America/New_York',region:'us',cat:'rates',name:'החלטת הריבית של הפד (FOMC)',who:'הפד',imp:3,est:false,desc:'ההחלטה.',src:'הלוח הרשמי של הפד',url:'https://www.federalreserve.gov/'},
+    {id:'rep-NVDA-x',d:day(3),time:'אחרי הסגירה',tz:'America/New_York',region:'us',cat:'earnings',name:'דוח כספי: NVIDIA',sym:'NVDA',who:'NVIDIA',imp:2,est:false,desc:'הדוח.',src:'לוח הדוחות של Finnhub'},
+    {id:'us-cpi-x',d:day(12),time:'08:30',tz:'America/New_York',region:'us',cat:'inflation',name:'מדד המחירים לצרכן בארה״ב',who:'BLS',imp:3,est:true,desc:'האינפלציה.',src:'BLS, לפי הקצב הרגיל'},
+    {id:'il-cpi-x',d:day(40),time:'18:30',tz:'Asia/Jerusalem',region:'israel',cat:'inflation',name:'מדד המחירים לצרכן בישראל',who:'הלמ״ס',imp:2,est:true,desc:'',src:'הלמ״ס'}],updatedAt:new Date().toISOString(),missing:[{k:'boi',name:'החלטות הריבית של בנק ישראל',why:'אין מקור'}]},{silent:true});
+  store.deleteDoc('research/stories'); store.deleteDoc('news/state');
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc, #newsFeed .nw-c').length>=4&&!!document.getElementById('nwDaily'),null,{timeout:15000});
+    // 3. the daily picture: five parts, the top events with why, the markets, a trend, what is ahead from the calendar, the first time
+    const dl=await pg.evaluate(()=>{const d=document.getElementById('nwDaily'); return {open:d.open,h:[...d.querySelectorAll('.nw-ds h4')].map(h=>h.textContent),top:[...d.querySelectorAll('.nw-d5 li')].map(l=>l.innerText),why:d.querySelectorAll('.nw-dy').length,
+      ahead:d.querySelector('.nw-ds:nth-child(4)').innerText,changed:d.querySelector('.nw-ds:nth-child(5)').innerText,trend:d.querySelector('.nw-dt')?.innerText||'',when:d.querySelector('.nw-dh .nm').textContent}});
+    assert.equal(dl.open,true); assert.deepEqual(dl.h,['חמשת האירועים החשובים','מה קורה בשווקים','מגמות מתחזקות','מה צפוי בהמשך','מה השתנה מאז הפעם הקודמת']);
+    assert.ok(dl.top.length>=3&&dl.top.length<=5,'3 to 5 events: '+dl.top.length); assert.equal(dl.why,dl.top.length,'each with why'); assert.match(dl.top[0],/אנבידיה/); assert.match(dl.top.join(' '),/למה זה חשוב/);
+    assert.match(dl.ahead,/החלטת הריבית של הפד/); assert.match(dl.ahead,/דוח כספי NVDA|דוח כספי: NVIDIA/); assert.match(dl.changed,/הפעם הראשונה/); assert.match(dl.when,/עודכן/);
+    // 5. the glossary: a term in a reading's text opens its explanation, for this level, with the sentence; Escape closes it
+    const gl=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#newsFeed .gl')]; return {n:b.length,first:b[0]&&b[0].textContent,k:b[0]&&b[0].dataset.gl}});
+    assert.ok(gl.n>=1,'terms marked in the text'); assert.ok(['rate','inflation','pe','yield','dividend','guidance','eps'].includes(gl.k)||gl.k,'a real term: '+gl.k);
+    await pg.evaluate(()=>document.querySelector('#newsFeed .gl').click()); await pg.waitForTimeout(300);
+    const pop=await pg.evaluate(()=>{const p=document.getElementById('glPop'); return {hidden:p.hidden,secs:[...p.querySelectorAll('.gl-s summary')].map(x=>x.textContent),ctx:document.getElementById('glCtx').textContent,title:p.querySelector('.gl-h b').textContent}});
+    assert.equal(pop.hidden,false); assert.deepEqual(pop.secs,['בפשטות','לעומק','דוגמה','למה זה חשוב למשקיע','בכתבה הזאת']); assert.match(pop.ctx,/המושג מופיע|./);
+    await pg.keyboard.press('Escape'); assert.equal(await pg.evaluate(()=>document.getElementById('glPop').hidden),true);
+    // 1. the story behind the headline: on the event's card, written by צ׳יקו (the stub), eight parts, every line with how sure and its sources
+    await pg.evaluate(()=>{document.querySelector('#newsFeed [data-story="nvda-q3-report"]').click()}); await pg.waitForFunction(()=>!!document.querySelector('#newsFeed .nw-story .nw-stp'),null,{timeout:15000});
+    const st=await pg.evaluate(()=>{const s=document.querySelector('#newsFeed .nw-story'); return {head:s.querySelector('.nw-sth b').textContent,stage:s.querySelector('.nw-sth .nx-tag').textContent,parts:[...s.querySelectorAll('.nw-stp h4')].map(h=>h.textContent),certs:[...s.querySelectorAll('.nw-stp li .nx-tag')].map(x=>x.textContent),refs:s.querySelectorAll('.nw-sref').length,srcs:s.querySelectorAll('.nw-ssrc li').length,fol:!!s.querySelector('[data-evfol]'),chiko:!!s.querySelector('[data-chiko^="story:"]')}});
+    assert.equal(st.head,'הרבעון החזק של אנבידיה'); assert.equal(st.stage,'עודכן'); assert.deepEqual(st.parts,['מה קרה בפועל','מה הרקע','למה זה קרה','מי מעורב','מי קשור: חברות, ענפים ומדינות','השלכות כלכליות אפשריות','מה עדיין לא ידוע','מה כדאי להמשיך לעקוב אחריו','המקורות']);
+    assert.ok(st.certs.includes('עובדה מדווחת')&&st.certs.includes('הערכה של צ׳יקו')&&st.certs.includes('פרשנות של המקור'),'facts, readings and estimates apart'); assert.ok(st.refs>=3,'sources beside the lines'); assert.equal(st.srcs,2); assert.ok(st.fol&&st.chiko);
+    assert.ok(store.getDoc('research/stories').data.by['nvda-q3-report'],'kept on the server');
+    // 2. follow the event from the story: kept with the news state; the view of followed events with its timeline and status
+    await pg.evaluate(()=>document.querySelector('#newsFeed .nw-story [data-evfol]').click()); await pg.waitForTimeout(1200);
+    assert.ok((store.getDoc('news/state').data.follow||{})['nvda-q3-report'],'followed, in the account'); assert.equal(await pg.evaluate(()=>document.querySelector('#newsFeed [data-evfol="nvda-q3-report"]').getAttribute('aria-pressed')),'true');
+    await pg.evaluate(()=>document.querySelector('#nxViews [data-nxv="events"]').click()); await pg.waitForTimeout(400);
+    const ef=await pg.evaluate(()=>{const a=document.querySelector('#newsFeed .ev-f'); return {n:document.querySelectorAll('#newsFeed .ev-f').length,title:a.querySelector('h3').textContent,stage:a.querySelector('.nw-meta .nx-tag').textContent,rows:[...a.querySelectorAll('.ev-tl li')].map(l=>l.className),ents:a.querySelector('.nw-ents')?.textContent||'',acts:[...a.querySelectorAll('.nw-acts button')].map(b=>b.textContent)}});
+    assert.equal(ef.n,1); assert.match(ef.title,/אנבידיה/); assert.equal(ef.stage,'עודכן'); assert.equal(ef.rows.length,2,'the two articles of the event in the timeline'); assert.ok(ef.rows[0].includes('dev'),'the first is a development'); assert.match(ef.ents,/NVDA/);
+    assert.ok(ef.acts.some(x=>/במעקב/.test(x))&&ef.acts.some(x=>/הסיפור/.test(x))&&ef.acts.some(x=>/מפת השפעה/.test(x)));
+    // the server's personal update on a followed event, even without a link to the portfolio: a partner following the Fed's event
+    {const {pulseUpdate}=await import('../server/pulse.js'); const u=store.userByEmail('nw@example.com'); store.setDoc(`data/users/${u.id}/newsst`,{follow:{'fed-hold':{at:new Date(Date.now()-864e5).toISOString()}}},{silent:true});
+      const r=pulseUpdate(store,u,{}); const a=r.doc.items.find(x=>x.ev==='fed-hold'); assert.ok(a&&a.followedEv&&a.lv==='upd','a followed event alerts a person without a portfolio: '+JSON.stringify(r.doc.items.map(x=>x.k))); assert.match(a.lvWhy,/לעקוב/);
+      store.deleteDoc(`data/users/${u.id}/newsst`); store.deleteDoc(`data/users/${u.id}/pulse`)}
+    // stop following: it stays below, and can be followed again
+    await pg.evaluate(()=>document.querySelector('#newsFeed .ev-f [data-evfol]').click()); await pg.waitForTimeout(1300);
+    assert.ok((store.getDoc('news/state').data.follow||{})['nvda-q3-report'].off,'stopped, kept'); assert.match(await pg.evaluate(()=>document.getElementById('newsFeed').innerText),/הפסקת לעקוב/);
+    // 4. the economic calendar: the week ahead with confirmed and estimated days, a filter, a search, a saved event that becomes a reminder
+    await pg.evaluate(()=>document.querySelector('#nxViews [data-nxv="cal"]').click()); await pg.waitForTimeout(400);
+    let cal=await pg.evaluate(()=>({n:document.querySelectorAll('#newsFeed .eco-i').length,names:[...document.querySelectorAll('#newsFeed .eco-i .eco-h > b')].map(b=>b.textContent),tags:[...document.querySelectorAll('#newsFeed .eco-i .eco-m .nx-tag')].map(x=>x.textContent),miss:document.getElementById('newsFeed').textContent.includes('בנק ישראל')}));
+    assert.equal(cal.n,2,'the week: the Fed and the report'); assert.ok(cal.tags.includes('מועד מאושר')); assert.ok(cal.miss,'what is missing is said');
+    await pg.evaluate(()=>document.querySelector('[data-calv="month"]').click()); await pg.waitForTimeout(300);
+    cal=await pg.evaluate(()=>({n:document.querySelectorAll('#newsFeed .eco-i').length,est:[...document.querySelectorAll('#newsFeed .eco-i .eco-m .nx-tag')].filter(x=>x.textContent==='מועד משוער').length}));
+    assert.ok(cal.n>=2&&cal.n<=4,'the month: '+cal.n);
+    await pg.selectOption('#calCat','rates'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#newsFeed .eco-i').length),1,'by kind');
+    await pg.selectOption('#calCat',''); await pg.fill('#calQ','NVDA'); await pg.waitForTimeout(500); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .eco-i .eco-h > b')].map(b=>b.textContent)),['דוח כספי: NVIDIA'],'the search');
+    await pg.fill('#calQ',''); await pg.waitForTimeout(500); await pg.evaluate(()=>document.querySelector('[data-calsave="fomc-x"]').click()); await pg.waitForTimeout(1200);
+    assert.ok((store.getDoc('news/state').data.cal||{})['fomc-x'],'saved, in the account');
+    {const {pulseUpdate}=await import('../server/pulse.js'); const r=pulseUpdate(store,null,{}); const a=r.doc.items.find(x=>x.k==='cal:fomc-x'); assert.ok(a&&a.lv==='upd'&&/מחר/.test(a.title),'the reminder the day before: '+(a&&a.title))}
+    // the alert center draws the reminder with a way to the calendar
+    await pg.waitForTimeout(800); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(500); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
+    assert.match(await pg.evaluate(()=>document.getElementById('ixFull').innerText),/מחר: החלטת הריבית של הפד/);
+    const ov=await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1); assert.ok(ov,'no sideways scroll on a phone');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0,S0); if(E0.exists)store.setDoc('research/ecocal',E0.data,{silent:true}); else store.deleteDoc('research/ecocal'); if(SR0.exists)store.setDoc('research/stories',SR0.data,{silent:true}); else store.deleteDoc('research/stories')}
+});
 
 test('חיבור למציאות, the news: its own product with search, categories, filters, kinds, saved and history; nothing hides the rest; no overflow on a phone',T,async t=>{
   if(skip())return t.skip('no browser');
@@ -1373,6 +1440,24 @@ test('an admin and the owner, two investors: each sees and saves their own portf
   }finally{store.setDoc(`data/users/${A.id}/settings`,a0||{},{silent:true})}
 });
 
+test('31.10 a long line on the home screen ("אין מחיר ל-…") is cut with "להציג הכול", and shows the whole list in place',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
+  // twenty holdings with an older price than the rest: the line "ל-… מוצג מחיר ישן יותר" runs long
+  const extra=['AXP','AMZN','LMT','GOOGL','PLTR','CVNA','SOXX','JNJ'].map(sym=>({sym,name:sym,qty:1,ccy:'USD',acct:'exc',group:'tech',costIls:1000}));
+  store.setDoc('portfolio/main',{...P0,positions:[...(P0.positions||[]),...extra]},{silent:true});
+  const syms=[...(P0.positions||[]).map(p=>p.sym),...extra.map(p=>p.sym)], prices={...q0.prices}, prev={...q0.prev}; for(const e of extra){prices[e.sym]=100; prev[e.sym]=99}
+  const stale={}; for(const k of syms)stale[k]='סגירה קודמת'; store.setDoc('quotes/latest',{...q0,prices,prev,stale},{silent:true});
+  try{const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-cut'),null,{timeout:15000});
+    const before=await pg.evaluate(()=>({cut:document.querySelector('#desk .dk-cut').textContent,full:document.querySelector('#desk .dk-full').hidden}));
+    assert.match(before.cut,/…/); assert.equal(before.full,true);
+    await pg.evaluate(()=>document.querySelector('#desk [data-dkmore="1"]').click()); await pg.waitForTimeout(100);
+    const after=await pg.evaluate(()=>({cutHid:document.querySelector('#desk .dk-cut').hidden,full:document.querySelector('#desk .dk-full').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(after.cutHid,true); for(const k of syms)assert.ok(after.full.includes(k),'the whole list: '+k); assert.equal(after.ox,false);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('quotes/latest',q0,{silent:true}); store.setDoc('portfolio/main',P0,{silent:true})}
+});
+
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);
@@ -1733,13 +1818,14 @@ test('the crisis center: up and down days, old prices, concentration, a missing 
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
   const center=async()=>{const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(300);
     await pg.evaluate(()=>document.querySelector('[data-pane="risk"] .subtabs [data-tab="state"]').click()); await pg.waitForTimeout(700);
-    const r=await pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('stateBody').textContent.replace(/\s+/g,' '),tags:[...document.querySelectorAll('#stateBody .stc h3 .tag')].map(x=>x.textContent),ox:document.documentElement.scrollWidth>innerWidth+1,cur:document.querySelector('#botbar [aria-current="page"]')?.dataset.bb}));
+    const r=await pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('stateBody').textContent.replace(/\s+/g,' '),tags:[...document.querySelectorAll('#stateBody .stsec h3 .tag')].map(x=>x.textContent),cardW:Math.round(document.querySelector('#stateBody .stsec').getBoundingClientRect().width),boxW:Math.round(document.getElementById('stateBody').getBoundingClientRect().width),ox:document.documentElement.scrollWidth>innerWidth+1,cur:document.querySelector('#botbar [aria-current="page"]')?.dataset.bb}));
     return {ctx,pg,r}};
   try{
     // a down day (the fixture): the change, who carried it, concentration above the rule, the market, three scenarios
     let {ctx,pg,r}=await center();
     assert.equal(r.page,'state'); assert.equal(r.cur,'risk','the bar marks "בקרה"'); assert.equal(r.ox,false);
     assert.deepEqual([...new Set(r.tags)].sort(),['הסבר','חישוב','נתון','סימולציה'].sort(),'each part says what it is');
+    assert.ok(r.cardW>=r.boxW-2&&r.cardW>200,'the parts are full-width cards, not circles (the story icons once took their class): '+r.cardW+'/'+r.boxW);
     assert.match(r.txt,/השווי זז ב-\u200e?−₪/); assert.match(r.txt,/מעל הכלל שלך/); assert.match(r.txt,/S&P 500/); assert.match(r.txt,/שקלול לפי התיק שלך/);
     assert.match(r.txt,/ירידה אחידה של 20% בכל הניירות/); assert.match(r.txt,/הסיבה לתנועת המחירים \(אין מקור חדשות\)/);
     for(const v of await pg.evaluate(()=>window.__model.stateSim()))assert.ok(r.txt.includes(v),'the scenario shows the computed value '+v);

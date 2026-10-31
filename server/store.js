@@ -127,7 +127,7 @@ export const canWrite=(u,p)=>access(u,p)==='rw';
 // ---- the shared documents as a partner sees them: only the securities of their own portfolio, history, settings and
 // watch list. The prices, the monthly closes and the research all cover everybody's securities (the owner's and the
 // other partners'), and a list of what someone holds is private even without the quantities.
-const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx','research/x']);
+const SHARED_BY_SYM=new Set(['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx','research/x','research/stories','research/ecocal']);
 export function symsOfUser(store,uid){
   const out=new Set(), walk=v=>{if(Array.isArray(v)){for(const x of v)walk(x)}else if(isMap(v)){for(const [k,x] of Object.entries(v)){if(k==='sym'&&typeof x==='string')out.add(x); else walk(x)}}};
   for(const d of ['portfolio','history','settings']){const r=store.getDoc(`data/users/${uid}/${d}`); if(r.exists)walk(r.data)}
@@ -147,10 +147,15 @@ export function partnerView(store,user,p,data){
   // 29.10: the readings of the articles: a partner gets the readings of the articles they may see (their own securities')
   // and all of the general news, which is nobody's holding
   if(p==='research/x')return {...data,askedAt:undefined,items:Array.isArray(data.items)?data.items.filter(it=>it&&has(it.sym)):data.items};
-  if(p==='research/newsx'){const N=store.getDoc('research/news').data, Xd=store.getDoc('research/x').data, ok2=new Set(); for(const it of ((N&&N.items)||[]))if(it&&it.link&&Array.isArray(it.syms)&&it.syms.some(has))ok2.add(newsIdOf(it.link));
+  const artsOk=X=>{const N=store.getDoc('research/news').data, Xd=store.getDoc('research/x').data, ok2=new Set(); for(const it of ((N&&N.items)||[]))if(it&&it.link&&Array.isArray(it.syms)&&it.syms.some(has))ok2.add(newsIdOf(it.link));
     for(const it of ((Xd&&Xd.items)||[]))if(it&&it.link&&has(it.sym))ok2.add(newsIdOf(it.link));
-    for(const it of (Array.isArray(data.gen)?data.gen:[]))if(it&&it.id)ok2.add(it.id);
+    for(const it of (Array.isArray(X&&X.gen)?X.gen:[]))if(it&&it.id)ok2.add(it.id); return ok2};
+  if(p==='research/newsx'){const ok2=artsOk(data);
     return {...data,by:isMap(data.by)?Object.fromEntries(Object.entries(data.by).filter(([k])=>ok2.has(k))):data.by}}
+  if(p==='research/ecocal')return {...data,items:Array.isArray(data.items)?data.items.filter(it=>it&&(!it.sym||has(it.sym))):data.items};
+  // 31.10: the stories: of the events that have an article the partner may read
+  if(p==='research/stories'){const X=store.getDoc('research/newsx').data||{}, ok2=artsOk(X), evs=new Set(); for(const [id,x] of Object.entries(X.by||{}))if(x&&x.ev&&ok2.has(id))evs.add(x.ev);
+    return {...data,by:isMap(data.by)?Object.fromEntries(Object.entries(data.by).filter(([k])=>evs.has(k))):data.by}}
   // research/comove
   return {...data,groups:Array.isArray(data.groups)?data.groups.map(g=>({...g,syms:only(g&&g.syms)})).filter(g=>g.syms&&g.syms.length>1):data.groups,
     pairs:both(data.pairs),opposite:both(data.opposite),solo:only(data.solo),nodata:only(data.nodata),

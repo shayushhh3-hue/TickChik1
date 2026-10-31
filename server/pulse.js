@@ -81,7 +81,9 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null}={}){
   for(const e of E.values()){
     // the reading that stands for the event: Claude's before the rules', the higher level, then the newest
     e.arts.sort((p,q)=>((p.x.rules?1:0)-(q.x.rules?1:0))||(LV_RANK[q.x.level]-LV_RANK[p.x.level])||(String(q.a.at||q.a.seen)<String(p.a.at||p.a.seen)?-1:1));
-    e.x=e.arts[0].x; e.lead=e.arts[0].a; e.ai=e.arts.some(z=>!z.x.rules)}
+    e.x=e.arts[0].x; e.lead=e.arts[0].a; e.ai=e.arts.some(z=>!z.x.rules);
+    // 31.10: where the event stands: the newest article whose reading says so
+    e.st=(e.arts.slice().sort((p,q)=>String(q.a.at||q.a.seen)<String(p.a.at||p.a.seen)?-1:1).find(z=>z.x.st&&z.x.st!=='unknown')||{x:{}}).x.st||'unknown'}
   return [...E.values()];
 }
 
@@ -145,6 +147,8 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   const HD=holdingsOf(P,Q), out=[];
   if(!pr.on)return {pr,HD,alerts:out,off:true};
   const hasPf=HD.pos.length>0;
+  // 31.10: the events the person follows (news/state or data/users/<id>/newsst: follow = {ev: {at, off?}}), the ones still followed
+  const FOL=(()=>{try{const f=(store.getDoc(pa.newsst).data||{}).follow||{}; const o={}; for(const [k,v] of Object.entries(f))if(v&&v.at&&!v.off)o[k]=v; return o}catch(e){return {}}})();
   // a partner's alerts come only from what that partner may read: the general news and the articles about their own
   // securities (the owner and the admins read everything)
   const vis=u&&u.role==='friend'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
@@ -154,18 +158,32 @@ export function pulseCompute(store,u,{now=new Date()}={}){
     const m=measuresOf(e,L,pr.sens); let r=hasPf?levelOf(m,x.kind||'news'):null;
     // the topics the person chose: an event reached only through a sector or the dollar must be one of them
     if(r&&!L.direct.length&&!L.indirect.length&&pr.themes.length&&!(x.themes||[]).some(t=>pr.themes.includes(t)))r=null;
-    let followed=false;
+    let followed=false, followedEv=false;
     // a security the person follows without holding it: a portfolio update at most, and said to be so
     if(!r&&L.followed.length&&['crit','high'].includes(m.imp)&&e.ai){r={lv:'upd',why:'ידיעה על מניה שבחרת לעקוב אחריה (לא מהתיק)'}; followed=true}
+    // 31.10: an event the person chose to follow ("עקוב אחר האירוע"): an update of its own, whatever the portfolio
+    if(!r&&x.ev&&FOL[x.ev]&&e.ai){r={lv:'upd',why:'אירוע שבחרת לעקוב אחריו'}; followedEv=true}
     if(!r||!pr.lv[r.lv])continue;
     // 30.10: an event Claude has not read yet: its title is the article's own headline (the rules' "JPM: אחר" says nothing)
     out.push({k:e.k,lv:r.lv,lvWhy:r.why,ev:x.ev||null,title:e.ai?x.he:((e.lead&&e.lead.title)||x.he),what:x.what,kind:x.kind||'news',type:x.type,level:x.level,dir:x.dir,cert:x.cert||'interp',rules:!e.ai,
-      imp:m.imp,rel:m.rel,relWhy:m.relWhy,conf:m.conf,confWhy:m.confWhy,followed,
+      imp:m.imp,rel:m.rel,relWhy:m.relWhy,conf:m.conf,confWhy:m.confWhy,followed,followedEv,st:e.st||'unknown',folAt:followedEv?FOL[x.ev].at||null:null,
       holds:L.direct.map(d=>({...d,link:'direct'})).concat(L.indirect.map(d=>({...d,link:'indirect'}))),secs:L.secs,usd:L.usd,fol:L.followed,
       sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',
       arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null})}
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
+  for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
   return {pr,HD,alerts:out};
+}
+// 31.10: a reminder of an event the person saved in the economic calendar (newsst.cal = {id: {at}}): the day before and
+// the day itself, as an update; the date as the calendar has it, said to be estimated when it is
+export function calAlerts(store,pa,now=new Date()){
+  const out=[]; let saved={}; try{saved=(store.getDoc(pa.newsst).data||{}).cal||{}}catch(e){} const ids=Object.keys(saved).filter(k=>saved[k]&&saved[k].at); if(!ids.length)return out;
+  const E=(store.getDoc('research/ecocal').data||{}).items||[], today=ilDay(now), tmr=ilDay(new Date(now.getTime()+DAY));
+  for(const e of E){if(!e||!ids.includes(e.id)||e.d<today||e.d>tmr)continue;
+    out.push({kind:'cal',type:e.cat==='earnings'?'earnings':e.cat==='rates'?'macro_rates':e.cat==='inflation'?'inflation':'other',cert:'fact',rules:false,conf:e.est?'mid':'high',confWhy:e.est?'המועד משוער, לפי הקצב הרגיל של הגוף המפרסם':'המועד מהלוח הרשמי',
+      k:`cal:${e.id}`,lv:'upd',lvWhy:'תזכורת לאירוע ששמרת בלוח האירועים הכלכלי',title:`${e.d===today?'היום':'מחר'}: ${e.name}`,what:`${e.desc||''}${e.time?' ('+e.time+(e.tz==='America/New_York'?' שעון ניו יורק':'')+')':''}${e.est?' המועד משוער.':''}`,dir:'unclear',imp:e.imp>=3?'high':'mid',rel:'mid',relWhy:'אירוע ששמרת בלוח',
+      holds:[],secs:[],usd:null,fol:[],followed:false,sectors:[],themes:[],regions:[e.region].filter(Boolean),fac:[],secx:[],occ:e.d,unknown:'',arts:[],n:0,first:null,cal:{id:e.id,d:e.d,est:!!e.est,src:e.src||'',url:e.url||null,sym:e.sym||null}})}
+  return out;
 }
 // 30.10: the measured facts of the portfolio itself, as the stories had them: a holding's day beyond the share the person
 // set (5% unless set), a price they set crossed, the dollar's rates they set, a holding's report in the coming three days.
@@ -200,9 +218,12 @@ export function material(old,c){
   if(c.dir!==old.dir&&DIRS2.has(c.dir)&&(DIRS2.has(old.dir)||old.dir==='unclear'||old.dir==='mixed'))why.push('dir');
   const had=new Set((old.holds||[]).map(h=>h.sym)); if((c.holds||[]).some(h=>!had.has(h.sym)))why.push('hold');
   if(c.cert==='fact'&&old.cert!=='fact'&&!c.rules)why.push('fact');
+  // 31.10: the event moved on (a decision taken, over), or, on a followed event, a new article since the last development
+  if(c.st&&c.st!=='unknown'&&c.st!==old.st)why.push('stage');
+  if(c.followedEv&&(c.n||0)>(old.n||0)){const last=(old.hist||[]).map(h=>h.at).sort().pop()||old.at; if(!last||Date.now()-Date.parse(last)>=6*36e5)why.push('dev')}
   return why;
 }
-const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוון ההשפעה האפשרי השתנה',hold:'אחזקה נוספת שלך נוגעת לאירוע',fact:'מה שהיה הערכה או פרשנות דווח כעובדה'};
+const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוון ההשפעה האפשרי השתנה',hold:'אחזקה נוספת שלך נוגעת לאירוע',fact:'מה שהיה הערכה או פרשנות דווח כעובדה',stage:'מצב האירוע השתנה',dev:'כתבה חדשה על אירוע שאתה עוקב אחריו'};
 export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   const pa=pathsOf(u), iso=now.toISOString(), old=store.getDoc(pa.pulse), D=old.exists&&old.data?old.data:{items:[]};
   const C=pulseCompute(store,u,{now}), byK=new Map((D.items||[]).map(a=>[a.k,a])), fresh=[];

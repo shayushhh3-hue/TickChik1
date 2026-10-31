@@ -29,6 +29,10 @@ export const THEMES=['rates','inflation','usd','oil','gas','chips','ai','war','s
 export const KINDS=['news','analysis','opinion','pr'];
 export const REGIONS=['us','israel','europe','uk','china','japan','india','russia','ukraine','middle_east','latam','asia','global'];
 const MOVES=['up','down','unclear'];
+// 31.10: where the event stands, as the article tells it: still developing, waiting for a decision, a step taken (updated),
+// over (completed), or the article does not say
+export const STAGES=['developing','pending','updated','done','unknown'];
+export const STAGE_HE={developing:'מתפתח',pending:'ממתין להחלטה',updated:'עודכן',done:'הושלם',unknown:'לא ידוע'};
 const TICK=/^[A-Z][A-Z.\-]{0,6}$/;
 
 // ---- the general market news (Finnhub /news): the last day, newest first. 30.10: four of Finnhub's categories (the
@@ -65,7 +69,8 @@ export function newsPrompt(arts,known=[]){
 14. fac: עד 3 גורמים כלכליים שהאירוע עשוי להזיז, כל אחד {"k":"נושא מתוך themes","move":"up|down|unclear","why":"משפט אחד: איך האירוע נוגע לגורם"}. למשל פגיעה בהיצע הנפט: {"k":"oil","move":"up","why":"..."}. רק כשהקשר ברור; אחרת מערך ריק.
 15. secx: לכל ענף שב-sectors: {"g":"הענף","via":"נושא מ-fac שדרכו הענף מושפע, או null","dir":"pos|neg|mixed|unclear","why":"משפט אחד: מסלול ההשפעה האפשרי על הענף"}.
 16. ב-aff, לחברה שאינה direct הוסף "via": הענף מתוך sectors שדרכו היא מושפעת, אם יש.
-החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","kind":"news","aff":[],"sectors":[],"themes":[],"regions":[],"occ":null,"fac":[],"secx":[],"macro":false,"unknown":"","more":"","ev":""}
+17. st: איפה האירוע עומד לפי הכתבה: developing = עוד מתפתח; pending = ממתין להחלטה, לאישור או למועד ידוע; updated = נעשה צעד (החלטה התקבלה, הסכם נחתם, דוח פורסם) והעניין נמשך; done = האירוע הסתיים ואין המשך צפוי; unknown = הכתבה לא אומרת.
+החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","kind":"news","aff":[],"sectors":[],"themes":[],"regions":[],"occ":null,"fac":[],"secx":[],"macro":false,"unknown":"","more":"","ev":"","st":"unknown"}
 
 ${known.length?`KNOWN_EVENTS: אירועים שכבר נקראו בימים האחרונים. אם כתבה עוסקת באחד מהם, השתמש באותו ev בדיוק, ואל תמציא מפתח חדש לאותו אירוע.
 ${JSON.stringify(known)}
@@ -98,7 +103,8 @@ export function cleanX(raw){
   const secx=(Array.isArray(raw.secx)?raw.secx:[]).map(x=>x&&typeof x==='object'&&sectors.includes(x.g)?{g:x.g,via:fac.some(f=>f.k===x.via)?x.via:null,dir:DIRS.includes(x.dir)?x.dir:'unclear',why:heFix(str(x.why,200))}:null)
     .filter(Boolean).filter((x,i,A)=>A.findIndex(y=>y.g===x.g)===i).slice(0,4);
   for(const a of aff){const r=(Array.isArray(raw.aff)?raw.aff:[]).find(z=>z&&String(z.sym||'').toUpperCase()===a.sym); if(a.how!=='direct'&&r&&sectors.includes(r.via))a.via=r.via}
-  return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:str(raw.more,400),ev:ev||null};
+  const st=STAGES.includes(raw.st)?raw.st:'unknown';
+  return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:str(raw.more,400),ev:ev||null,st};
 }
 // Claude reads a batch; the answers by article index. Nothing is written for an article that got no usable answer
 export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask=null,known=[]}={}){

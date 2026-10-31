@@ -1255,6 +1255,43 @@ test('dividends ahead in the research run: Nasdaq for a US share, Yahoo for a Te
   s.setDoc('research/s_KO',{sym:'KO',divPlanAt:now.toISOString()}); const g2={}; await divsPass(s,['KO'],g2,{fetch:f,now,held:new Set(['KO']),pause:0}); assert.equal(g2.KO,undefined);
 });
 
+test('31.10 the story behind the headline: one per event from its readings, every line with how sure and its sources; by rules without a key; kept until new articles join; a partner only from their own articles',async()=>{
+  const {storyOf,storyPrompt,cleanStory,rulesStory,eventArts}=await import('../server/story.js'); const {newsId}=await import('../server/newsx.js'); const {partnerView}=await import('../server/store.js');
+  const s=new Store(':memory:'), now=new Date('2026-10-31T10:00:00Z'), iso=now.toISOString();
+  const R=(o)=>({he:o.he,what:o.what,type:o.type||'company',level:o.level||'imp',dir:'unclear',cert:'fact',kind:'news',aff:o.aff||[],sectors:o.sectors||[],themes:[],regions:['us'],occ:null,fac:o.fac||[],secx:[],macro:false,unknown:o.unknown||'',more:o.more||'',ev:o.ev,st:o.st||'unknown',at:iso});
+  s.setDoc('research/news',{items:[{title:'Nvidia beats estimates',pub:'Reuters',link:'https://x/n1',at:iso,syms:['NVDA'],seen:iso},{title:'Nvidia raises outlook after beat',pub:'Bloomberg',link:'https://x/n2',at:iso,syms:['NVDA'],seen:iso},{title:'Coca-Cola names CFO',pub:'AP',link:'https://x/k1',at:iso,syms:['KO'],seen:iso}]});
+  const n1=newsId('https://x/n1'), n2=newsId('https://x/n2'), k1=newsId('https://x/k1');
+  s.setDoc('research/newsx',{by:{[n1]:R({he:'אנבידיה היכתה את התחזיות',what:'החברה דיווחה על הכנסות מעל הצפי.',type:'earnings',ev:'nvda-q3-report',aff:[{sym:'NVDA',how:'direct',dir:'pos',why:'הדוח שלה'},{sym:'TSM',how:'supplier',dir:'pos',why:'מייצרת את השבבים'}],sectors:['Semiconductors'],fac:[{k:'chips',move:'up',why:'ביקוש'}],unknown:'מה יהיה ברבעון הבא.',more:'אנבידיה מובילה בשבבי AI.',st:'updated'}),
+    [n2]:R({he:'אנבידיה העלתה את הצפי',what:'החברה העלתה את הצפי לרבעון הבא.',type:'guidance',ev:'nvda-q3-report'}),[k1]:R({he:'קוקה-קולה מינתה סמנכ"ל כספים',what:'מינוי.',type:'management',ev:'ko-cfo'})},gen:[],updatedAt:iso});
+  // the event's articles, newest first, and the prompt with every reading
+  const L=eventArts(s,'nvda-q3-report',{now}); assert.deepEqual(L.map(z=>z.a.id).sort(),[n1,n2].sort());
+  const pr=storyPrompt('nvda-q3-report',L); assert.match(pr,/מה קרה בפועל|what = /); assert.ok(pr.includes('Nvidia beats estimates')&&pr.includes('מייצרת את השבבים'));
+  // the answer cleaned: a fact without a source becomes a reading; an estimate outside bg/why/impl/follow becomes a reading; advice is dropped
+  const C=cleanStory({headline:'מה קרה לאנבידיה ברבעון',stage:'updated',what:[{t:'החברה דיווחה על הכנסות מעל הצפי.',c:'fact',s:[0]},{t:'כדאי לקנות עכשיו.',c:'fact',s:[0]},{t:'לפי הערכתי זה רבעון שיא.',c:'est',s:[]}],bg:[{t:'אנבידיה מובילה בשבבי AI.',c:'est',s:[]}],why:[{t:'הכתבות לא אומרות למה.',c:'fact',s:[]}],who:[{t:'אנבידיה.',c:'fact',s:[]}],links:[{t:'TSM מייצרת את השבבים.',c:'interp',s:[0]}],impl:[],unknown:[{t:'מה יהיה ברבעון הבא.',c:'interp',s:[0]}],follow:[{t:'הדוח הבא.',c:'est',s:[]}]},2);
+  assert.equal(C.what.length,2,'the advice dropped'); assert.equal(C.what[1].c,'interp','an estimate in "what" is a reading'); assert.equal(C.who[0].c,'interp','a fact with no source is a reading'); assert.equal(C.why[0].c,'fact','"the articles do not say" may be a fact'); assert.equal(C.bg[0].c,'est'); assert.equal(C.stage,'updated');
+  // by rules, without a key: the readings' own words, said to be by rules, with the stage from a reading
+  const k0=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try{const r=await storyOf(s,'nvda-q3-report',{now}); assert.equal(r.rules,true); assert.equal(r.model,'rules'); assert.equal(r.stage,'updated'); assert.ok(r.what.some(l=>/מעל הצפי/.test(l.t))); assert.ok(r.links.some(l=>/TSM/.test(l.t))); assert.equal(r.arts.length,2);
+    assert.ok(s.getDoc('research/stories').data.by['nvda-q3-report'],'kept')}finally{if(k0!=null)process.env.ANTHROPIC_API_KEY=k0}
+  // with צ׳יקו: his story replaces the rules' one; kept while the articles are the same; made again when one joins
+  const asked=[]; const ask=async p=>{asked.push(p); return JSON.stringify({headline:'הרבעון של אנבידיה',stage:'updated',what:[{t:'החברה דיווחה על הכנסות מעל הצפי.',c:'fact',s:[0,1]}],bg:[{t:'רקע.',c:'est',s:[]}],why:[{t:'לפי רויטרס, ביקוש לשבבים.',c:'interp',s:[0]}],who:[{t:'אנבידיה.',c:'fact',s:[0]}],links:[{t:'TSM.',c:'interp',s:[0]}],impl:[{t:'הענף עשוי ליהנות.',c:'est',s:[]}],unknown:[{t:'הרבעון הבא.',c:'interp',s:[0]}],follow:[{t:'הדוח הבא.',c:'est',s:[]}]})};
+  let r=await storyOf(s,'nvda-q3-report',{now,ask}); assert.equal(r.rules,undefined); assert.equal(r.headline,'הרבעון של אנבידיה'); assert.equal(r.model,'test'); assert.equal(asked.length,1);
+  r=await storyOf(s,'nvda-q3-report',{now:new Date(now.getTime()+60e3),ask}); assert.equal(asked.length,1,'the same articles: kept');
+  const n3=newsId('https://x/n3'); s.setDoc('research/news',{items:[...s.getDoc('research/news').data.items,{title:'Nvidia shares react',pub:'CNBC',link:'https://x/n3',at:iso,syms:['NVDA'],seen:iso}]});
+  s.setDoc('research/newsx',{...s.getDoc('research/newsx').data,by:{...s.getDoc('research/newsx').data.by,[n3]:R({he:'המניה הגיבה',what:'המניה עלתה.',ev:'nvda-q3-report'})}});
+  r=await storyOf(s,'nvda-q3-report',{now:new Date(now.getTime()+3*36e5),ask}); assert.equal(asked.length,2,'a new article: written again'); assert.equal(r.arts.length,3);
+  // a partner holding KO: the story of KO's event rests on their articles; NVDA's story is not theirs to see
+  const f=s.addUser({email:'p@example.com',password:'partner-pass-1',role:'friend'}); s.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'KO',qty:1,ccy:'USD'}]});
+  const vis=a=>a.src==='gen'||(a.syms||[]).includes('KO'); assert.equal(await storyOf(s,'nvda-q3-report',{now,ask,visible:vis}),null,'nothing of NVDA for them');
+  const pv=partnerView(s,{id:f.id,role:'friend'},'research/stories',s.getDoc('research/stories').data); assert.deepEqual(Object.keys(pv.by),[],'the kept stories: none of theirs yet');
+  await storyOf(s,'ko-cfo',{now,visible:vis}); assert.deepEqual(Object.keys(partnerView(s,{id:f.id,role:'friend'},'research/stories',s.getDoc('research/stories').data).by),['ko-cfo']);
+  // the endpoint: the event's story, a bad key refused
+  const {srv,req,store:st2}=await startApp(); try{st2.setDoc('research/news',s.getDoc('research/news').data); st2.setDoc('research/newsx',s.getDoc('research/newsx').data);
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); const k1b=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+    try{const r2=await req('o','POST','/api/newsx/story',{ev:'ko-cfo'}); assert.equal(r2.status,200); assert.equal(r2.j.ev,'ko-cfo'); assert.ok(r2.j.what.length);
+      assert.equal((await req('o','POST','/api/newsx/story',{ev:'bad key!'})).status,400)}finally{if(k1b!=null)process.env.ANTHROPIC_API_KEY=k1b}}finally{srv.close()}
+});
+
 test('the news understood: one reading per article, shared; the general news; a partner sees the readings of their own securities and the general ones',async()=>{
   const {newsxTask,cleanX,newsId,newsPrompt}=await import('../server/newsx.js'); const {partnerView}=await import('../server/store.js');
   const s=new Store(':memory:'), now=new Date('2026-10-29T08:25:00Z'), iso=now.toISOString();
