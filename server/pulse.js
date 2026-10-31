@@ -16,8 +16,8 @@
 // reported fact. Another article about the same thing updates the alert's sources quietly. Every alert keeps its own
 // history (when it was made, each development and why), and the list is kept for 30 days.
 //
-// Each person's alerts are their own document: the owner's (and the admins', who share the owner's portfolio) in
-// alerts/pulse, a partner's in data/users/<id>/pulse, which only that partner can read. Facts and links, never advice
+// Each person's alerts are their own document: the owner's in alerts/pulse, a partner's or
+// an admin's in data/users/<id>/pulse, which only that person can read. Facts and links, never advice
 // and never a forecast; a possible effect is said to be possible.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,7 +26,7 @@ import {newsId} from './newsx.js';
 import {symsOfUser} from './store.js';
 
 const H=36e5, DAY=864e5;
-export const pathsOf=u=>!u||u.role==='owner'||u.role==='admin'
+export const pathsOf=u=>!u||u.role==='owner'
   ?{portfolio:'portfolio/main',settings:'settings/main',pulse:'alerts/pulse',newsst:'news/state'}
   :{portfolio:`data/users/${u.id}/portfolio`,settings:`data/users/${u.id}/settings`,pulse:`data/users/${u.id}/pulse`,newsst:`data/users/${u.id}/newsst`};
 
@@ -145,8 +145,8 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   const HD=holdingsOf(P,Q), out=[];
   if(!pr.on)return {pr,HD,alerts:out,off:true};
   const hasPf=HD.pos.length>0;
-  // a partner's alerts come only from what that partner may read: the general news and the articles about their own securities
-  const vis=u&&u.role==='friend'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
+  // a partner's (or an admin's) alerts come only from what they may read: the general news and the articles about their own securities
+  const vis=u&&u.role!=='owner'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
   for(const e of eventsOf(store,{now,visible:vis})){
     const x=e.x; if(pr.types[x.type]===false)continue;
     const L=hasPf?linksFor(e,HD,{followed:pr.syms}):{direct:[],indirect:[],secs:[],usd:null,macro:!!x.macro,followed:linksFor(e,{pos:[],wOk:false,usdPct:null},{followed:pr.syms}).followed};
@@ -224,10 +224,10 @@ export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   if(save){const strip=d=>JSON.stringify({...d,updatedAt:null}); if(!old.exists||strip(old.data||{})!==strip(doc))store.setDoc(pa.pulse,doc)}
   return {doc,fresh,pr:C.pr,HD:C.HD};
 }
-// every person: the owner (and the admins with them) once, then each partner, each from their own documents
+// every person: the owner, then each partner and admin, each from their own documents
 export function pulseTask(store,{now=new Date(),log=()=>{}}={}){
   const us=(()=>{try{return store.users()}catch(e){return []}})(), owner=us.find(u=>u.role==='owner')||{id:'owner',role:'owner'};
-  const who=[owner,...us.filter(u=>u.role==='friend')]; let n=0, f=0;
+  const who=[owner,...us.filter(u=>u.role!=='owner')]; let n=0, f=0;
   for(const u of who){try{const r=pulseUpdate(store,u,{now}); n+=r.doc.items.length; f+=r.fresh.length}catch(e){log('pulse: '+(e&&e.message||e))}}
   log(`pulse: ${who.length} people, ${f} new or developed, ${n} kept`);
   return {people:who.length,fresh:f,kept:n};

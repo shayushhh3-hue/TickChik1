@@ -244,8 +244,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       r.mailed=iso; const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:r},{silent:true});
       const it={sym:k,name:posName[k]||v.name||k,rep:r}; due.push(it); if(mine.has(k))items.push(it)}
     if(items.length)try{await mail(store,items,log)}catch(e){log('report mail failed: '+(e&&e.message||e))}
-    // 30.10: each partner who switched it on: the reports of what they hold or follow, to their own address
-    if(due.length)for(const u of (store.users?store.users():[]).filter(u=>u.role==='friend')){if(!mailAllowedFor(store,u,'earnings'))continue;
+    // 30.10: each partner (and admin) who switched it on: the reports of what they hold or follow, to their own address
+    if(due.length)for(const u of (store.users?store.users():[]).filter(u=>u.role!=='owner')){if(!mailAllowedFor(store,u,'earnings'))continue;
       const w=store.getDoc('watch/'+u.id).data||{}, theirs=new Set(); for(const kk of ['held','marks','syms'])for(const x of (w[kk]||[]))theirs.add(x);
       for(const x of ((store.getDoc(`data/users/${u.id}/portfolio`).data||{}).positions||[]))theirs.add(x.sym);
       const L=due.filter(it=>theirs.has(it.sym)); if(L.length)try{await mail(store,L,log,u)}catch(e){log('report mail (partner) failed: '+(e&&e.message||e))}}}

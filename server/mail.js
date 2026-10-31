@@ -31,12 +31,13 @@ export function mailNote(store,kind,result){
   try{const d=store.getDoc('system/mail'), cur=d.exists?d.data:{}, now=new Date().toISOString();
     store.setDoc('system/mail',{...cur,ready:mailReady(),...(kind?{last:{...(cur.last||{}),[kind]:{at:now,result}}}:{}),updatedAt:now})}catch(e){}
 }
-// 30.10: a partner's own e-mails: what they switched on in their own settings, to their own address, about their own
-// portfolio. The kinds a partner can have; the result noted in meta mail:<id> (read by their page through /api/mail/me)
+// 30.10: a partner's own e-mails (and, from 31.10, an admin's): what they switched on in their own settings, to their
+// own address, about their own portfolio. The kinds a partner can have; the result noted in meta mail:<id> (read by their page through /api/mail/me)
 export const PARTNER_KINDS=['morning','earnings','live'];
 export function mailAllowedFor(store,user,kind){
   if(!user||user.role==='owner')return mailAllowed(store,kind); if(!PARTNER_KINDS.includes(kind))return false;
   try{const s=store.getDoc(`data/users/${user.id}/settings`); return !!(s.exists&&s.data&&s.data.mail&&s.data.mail[kind]===true)}catch(e){return false}}
+export const ADMIN_KINDS=['pxalert'];
 export const adminsOf=store=>{try{return store.users().filter(u=>u.role==='admin'&&u.email)}catch(e){return []}};
 export function mailNoteFor(store,user,kind,result){if(!user||user.role==='owner')return mailNote(store,kind,result);
   try{const k='mail:'+user.id, cur=JSON.parse(store.getMeta(k)||'{}'); cur.last={...(cur.last||{}),[kind]:{at:new Date().toISOString(),result}}; store.setMeta(k,JSON.stringify(cur))}catch(e){}}
@@ -53,10 +54,12 @@ export async function sendAllowed(store,kind,msg,log=()=>{},user=null){
   if(!mailReady()){log(`mail (${kind}): sending is not set up`); mailNote(store,kind,'not_ready'); return false}
   let ok=false; try{ok=await sendMail(msg)}catch(e){log(`mail (${kind}) failed:`,e.message)}
   mailNote(store,kind,ok?'sent':'failed');
-  // 30.10: the admins get the owner's e-mails too (not the backup, which carries everybody's data), each a message of
-  // their own, so that one address that fails never stops the owner's; only from a sending domain of one's own (Resend's
-  // test address sends to the owner alone, and would refuse the whole message)
-  if(kind!=='backup'){const A=adminsOf(store); for(const u of A){
+  // the admins manage the site with the owner: they get the mail that says something on the site stopped updating
+  // (pxalert), each a message of their own, so that one address that fails never stops the owner's; only from a sending
+  // domain of one's own (Resend's test address sends to the owner alone). 31.10: not the mails about the owner's own
+  // portfolio (the morning, the reports, the earnings, the live alerts) nor the backup: an admin has their own portfolio
+  // and their own mails about it, like a partner
+  if(ADMIN_KINDS.includes(kind)){const A=adminsOf(store); for(const u of A){
     if(!mailFromOwnDomain()){mailNoteFor(store,u,kind,'domain'); continue}
     let ok2=false; try{ok2=await sendMail({...msg,to:[u.email]})}catch(e){log(`mail (${kind}, admin) failed:`,e.message)} mailNoteFor(store,u,kind,ok2?'sent':'failed')}}
   return ok;

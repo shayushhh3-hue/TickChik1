@@ -20016,7 +20016,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('#secPage [data
 function renderSources(){
   const el=$('srcList'); if(!el)return; const R=[], when=iso=>iso?`עודכן ${dmy(iso)} ${hm(iso)}`:'';
   R.push(['מחירי השוק',Q&&Q.updatedAt?`${esc(Q.source||'')}${Q.priceLabel?' · '+esc(Q.priceLabel):''} · ${when(Q.updatedAt)}. כל 5 דקות כשהבורסה בתל אביב או בניו יורק פתוחה, כל שעה עד 23:40 בימי המסחר (שני עד שישי), ארבע פעמים בשבת ובראשון, וגם כשאתה פותח את הדף.`+(Q.got!=null&&Q.of?` בריצה האחרונה התקבלו ${Q.got} מתוך ${Q.of} ניירות${Q.lastReason?' ('+esc(String(Q.lastReason).slice(0,60))+')':''}.`:'')+(OWNER&&Q.errors&&Q.errors.length?`<br><span class="nm">לא התקבלו (לבעל האתר): ${esc(Q.errors.slice(0,8).join(' | ')).slice(0,900)}</span>`:'')
-    +(OWNER?(()=>{const f=Object.entries(Q.meta||{}).filter(([k,v])=>v&&v.src==='maya'); return f.length?`<br><span class="nm">קרנות ממאיה (לבעל האתר): ${esc(f.map(([k,v])=>`${k}: ${v.date||'בלי תאריך'}`+(v.dates?' ['+Object.entries(v.dates).map(([a,b])=>a.split('.').pop()+'='+b).join(', ')+']':'')).join(' | ')).slice(0,900)}</span>`:''})():''):'עוד לא נטענו.']);
+    +(MGR()?(()=>{const f=Object.entries(Q.meta||{}).filter(([k,v])=>v&&v.src==='maya'); return f.length?`<br><span class="nm">קרנות ממאיה (לבעל האתר): ${esc(f.map(([k,v])=>`${k}: ${v.date||'בלי תאריך'}`+(v.dates?' ['+Object.entries(v.dates).map(([a,b])=>a.split('.').pop()+'='+b).join(', ')+']':'')).join(' | ')).slice(0,900)}</span>`:''})():''):'עוד לא נטענו.']);
   R.push(['שער הדולר',Q&&Q.usdIls?`${Q.usdIls.toFixed(3)}${Q.fxLabel?' · '+esc(Q.fxLabel):''}.`:'עוד לא נטען.']);
   R.push(['אנליסטים ודוחות כספיים',RS&&RS.updatedAt?(rsStale(RS.updatedAt)?`${esc(RS.source||'')} · נכון ל-${dmy(RS.updatedAt)}. הנתונים האלה הגיעו עם המעבר לאתר, ואין כרגע עדכון שלהם באתר. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`:`${esc(RS.source||'')} · ${when(RS.updatedAt)}. דעת אנליסטים היא מקור חיצוני, לא המלצה של הדף.`):'עוד לא נטענו.']);
   R.push(['גרפים והיסטוריה','Yahoo Finance, מתעדכנים בלילה שאחרי יום המסחר (ב׳–ו׳ ב-23:50); ערכי סוף חודש נכתבים ב-1 בחודש.']);
@@ -20072,11 +20072,10 @@ function renderMail(){try{liveAlFill()}catch(e){} try{pushUI()}catch(e){}
   if(!renderMail.asked){renderMail.asked=true; if(OWNER)try{db.doc('system/mail').get().then(s=>{MAILST=s&&s.exists?s.data():null; renderMail()}).catch(()=>{})}catch(e){}
     if(window.__tc)fetch('/api/mail/me',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(j=>{MAILME=j; renderMail()}).catch(()=>{})}
   const K=OWNER?MAILK:MAILK.filter(([k])=>((MAILME&&MAILME.kinds)||['morning','earnings','live']).includes(k));
-  const M=(S&&S.mail)||{}, L=(OWNER&&!(window.__tc&&window.__tc.admin)?(MAILST&&MAILST.last):(MAILME&&MAILME.last))||{}, list=$('mailList');
+  const M=(S&&S.mail)||{}, L=(OWNER?(MAILST&&MAILST.last):(MAILME&&MAILME.last))||{}, list=$('mailList');
   const dom=MAILME&&MAILME.ownDomain===false;
-  const ADM=!!(window.__tc&&window.__tc.admin);
-  $('mailState').textContent=OWNER&&ADM?(!MAILME?'':!MAILME.ready?'שליחת מיילים עוד לא מוגדרת באתר.':dom?'את המיילים של התיק אתה ובעל הדף בוחרים כאן יחד. כרגע הם מגיעים רק לבעל הדף: כדי שיגיעו גם אליך, בעל הדף צריך לחבר דומיין לשליחה.':`מה שמופעל כאן נשלח לבעל הדף וגם אליך (${MAILME.to||''}).`)
-    :OWNER?(!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת, וגם למנהלים.'+(dom?' לשותפים מיילים לא יגיעו עד שתחבר דומיין משלך ב-Resend ותגדיר ב-Railway את MAIL_FROM על הדומיין הזה (SETUP.md ← מיילים לשותפים).':''):'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.')
+  // 31.10: an admin's e-mails are about their own portfolio, like a partner's; only "משהו לא מתעדכן" goes to the admins too
+  $('mailState').textContent=OWNER?(!MAILST?'':MAILST.ready?'שליחת מיילים מוגדרת באתר. מה שתפעיל כאן יישלח לכתובת שהוגדרה בשרת. ההודעה "משהו לא מתעדכן" נשלחת גם למנהלים.'+(dom?' לשותפים מיילים לא יגיעו עד שתחבר דומיין משלך ב-Resend ותגדיר ב-Railway את MAIL_FROM על הדומיין הזה (SETUP.md ← מיילים לשותפים).':''):'שליחת מיילים עוד לא מוגדרת באתר (צריך Resend). גם מה שתפעיל כאן לא יישלח עד שהיא תוגדר.')
     :!MAILME?'':!MAILME.ready?'שליחת מיילים עוד לא מוגדרת באתר. אפשר כבר לבחור, וזה יתחיל להגיע כשבעל האתר יגדיר אותה.':dom?'כרגע האתר יכול לשלוח מיילים רק לבעל האתר. אפשר כבר לבחור: זה יתחיל להגיע אליך אחרי שבעל האתר יחבר דומיין לשליחה. בינתיים, התראות לטלפון (למעלה) עובדות.':`מה שתפעיל כאן יישלח לכתובת שלך (${MAILME.to||''}), על התיק שלך בלבד.`;
   if(list.dataset.k!==K.map(x=>x[0]).join()){list.dataset.k=K.map(x=>x[0]).join(); setH(list,K.map(([k,l])=>`<div class="sndrow"><label class="check" for="mail_${k}"><input type="checkbox" id="mail_${k}" data-mail="${k}">${esc(l)}</label><span class="sub" id="mailLast_${k}"></span></div>`).join(''))}
   for(const [k] of K){const i=$('mail_'+k); if(i){if(document.activeElement!==i)i.checked=M[k]===true; i.disabled=!canWrite} const x=L[k], t=$('mailLast_'+k); if(t)t.textContent=x?`${MAILR[x.result]||x.result} · ${dmy(x.at)} ${hm(x.at)}`:''}}
@@ -21303,6 +21302,10 @@ function mergeSettings(d){const o=JSON.parse(JSON.stringify(DEF));Object.assign(
 // The owner keeps the original shared paths (locked to the owner by the access rules). Every other viewer gets a
 // private subtree under data/users/<id>/, or this browser's storage when the viewer may not write to the database.
 let ME=null, OWNER=true, LOCAL=false, RAWQ=null;
+// 31.10: OWNER is the one person whose documents are the shared paths (portfolio/main and the rest); MGR() is whoever
+// manages the site: the owner, or an admin, who invests in their own area like a partner but sees the system's health,
+// the jobs and the users
+function MGR(){return window.__tc?!!window.__tc.manage:OWNER}
 let PATHS={portfolio:'portfolio/main',plan:'plan/main',settings:'settings/main',history:'history/main',daily:'history/daily',arc:'reports/archive/items',ack:'alerts/ack',usage:'usage/main',newsst:'news/state',pulse:'alerts/pulse'};
 const lsGet=n=>{try{const v=localStorage.getItem('tr_'+n);return v?JSON.parse(v):null}catch(e){return null}};
 const lsSet=(n,d)=>{try{localStorage.setItem('tr_'+n,JSON.stringify(d))}catch(e){}};
@@ -23465,7 +23468,7 @@ const SYSH_ST={ok:'תקין',warn:'ממתין',bad:'לא עובד',off:'כבוי
 let SYSH=null;
 function agoH(iso){if(!iso)return 'אף פעם'; const m=(Date.now()-Date.parse(iso))/6e4; return m<2?'עכשיו':m<60?`לפני ${Math.round(m)} דקות`:m<48*60?`לפני ${Math.round(m/60)} שעות`:`לפני ${Math.round(m/1440)} ימים`}
 async function sysFill(force){
-  const sec=$('sysSec'); if(!sec)return; const own=OWNER&&window.__tc&&!LOCAL; sec.hidden=!own; if(!own)return;
+  const sec=$('sysSec'); if(!sec)return; const own=MGR()&&window.__tc&&!LOCAL; sec.hidden=!own; if(!own)return;
   if(force||!SYSH||Date.now()-SYSH.t>60e3){SYSH={t:Date.now(),d:null}; try{const r=await fetch('/api/health',{credentials:'same-origin'}); if(r.ok)SYSH.d=await r.json()}catch(e){}}
   const D=SYSH.d, box=$('sysBox'); if(!box)return;
   if(!D){setH(box,'<p class="note" style="margin:0">לא הצלחתי לקרוא את מצב המערכת מהשרת.</p>');$('sysSub').textContent='';return}
@@ -23482,7 +23485,7 @@ document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('
 // why a ranking is empty: the figures come from a nightly run; the owner sees its last result and can start it now
 let RSST=null;
 async function rsStatusHtml(){
-  if(!OWNER||!window.__tc||LOCAL)return '';
+  if(!MGR()||!window.__tc||LOCAL)return '';
   if(RSST===null){RSST=false; try{const r=await fetch('/api/research/status',{credentials:'same-origin'}); if(r.ok)RSST=await r.json()}catch(e){} }
   if(RSST===false)return '';
   const st=RSST&&(RSST.last||RSST); if(!st||!st.at)return `<p class="note">לבעל האתר: הריצה הלילית של נתוני החברות עוד לא רצה אף פעם. <button type="button" class="btn sm" data-rsrun>להריץ עכשיו</button></p>`;
@@ -23505,9 +23508,9 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.targe
   try{const r=await fetch('/api/jobs/'+encodeURIComponent(job),{method:'POST',credentials:'same-origin',headers:{'x-tc':'1'}}); b.textContent=r.ok?'רץ ברקע, בדרך כלל כמה דקות. הדף יתעדכן לבד כשיסיים.':'לא הופעל ('+r.status+')'}catch(e){b.textContent='לא הופעל'}
   if(job==='news'||job==='newsx')for(const t of [30e3,90e3,180e3])setTimeout(()=>{NXST=null; RSST=null; try{nxStatusLine()}catch(e){}},t)});
 // the control tab's sections that wait for the night's series: the owner can start that run now
-function nightFill(){if(!(OWNER&&window.__tc&&!LOCAL))return; for(const e of document.querySelectorAll('.empty[data-night]')){if(e.querySelector('[data-rsrun]'))continue; const b=document.createElement('button'); b.type='button'; b.className='btn sm'; b.dataset.rsrun='nightly'; b.textContent='להריץ את הריצה הלילית עכשיו'; b.style.marginInlineStart='8px'; e.appendChild(b)}}
+function nightFill(){if(!(MGR()&&window.__tc&&!LOCAL))return; for(const e of document.querySelectorAll('.empty[data-night]')){if(e.querySelector('[data-rsrun]'))continue; const b=document.createElement('button'); b.type='button'; b.className='btn sm'; b.dataset.rsrun='nightly'; b.textContent='להריץ את הריצה הלילית עכשיו'; b.style.marginInlineStart='8px'; e.appendChild(b)}}
 setTimeout(()=>{try{nightFill()}catch(e){}},4000);
-function nightEmpty(txt){return `<div class="empty">${txt} ${OWNER&&window.__tc&&!LOCAL?'<button type="button" class="btn sm" data-rsrun="nightly">להריץ את הריצה הלילית עכשיו</button>':''}</div>`}
+function nightEmpty(txt){return `<div class="empty">${txt} ${MGR()&&window.__tc&&!LOCAL?'<button type="button" class="btn sm" data-rsrun="nightly">להריץ את הריצה הלילית עכשיו</button>':''}</div>`}
 // prices for one key: US keys as stored, Tel Aviv keys as TLV:SYM, held securities by their symbol
 function priceOf(k){
   const it=itemOf(k), ix=ilIdx(k);
@@ -23972,7 +23975,7 @@ function renderNewsOld(){
   if(fr)fr.textContent=NEWSD&&NEWSD.updatedAt?'עודכן '+ago(NEWSD.updatedAt):'';
   if(ch)ch.innerHTML=syms.length?`<button type="button" class="chip" data-nf="" aria-pressed="${!NEWSF}">הכל</button>`+syms.map(k=>`<button type="button" class="chip" data-nf="${esc(k)}" aria-pressed="${NEWSF===k}"><bdi>${esc(lab(k))}</bdi> <small>${by[k]}</small></button>`).join(''):'';
   const L=NEWSF?all.filter(it=>(it.syms||[]).includes(NEWSF)):all;
-  if(!L.length){const own=OWNER&&window.__tc&&!LOCAL;
+  if(!L.length){const own=MGR()&&window.__tc&&!LOCAL;
     box.innerHTML=`<div class="empty">${!P||!(P.positions||[]).length?'כשיהיה תיק, יופיעו כאן הכתבות על המניות שבו.':NEWSD&&NEWSD.updatedAt?'אין כתבות מהשבוע האחרון על המניות שלך.':'הכתבות נאספות מהמקור כל חצי שעה ביום; עוד לא נאספו.'}${own&&!(NEWSD&&NEWSD.updatedAt)?' <button type="button" class="btn sm" data-rsrun="news">לאסוף עכשיו</button>':''}</div>`; return}
   const days=[]; for(const it of L){const d=String(it.at||it.seen).slice(0,10); let g=days[days.length-1]; if(!g||g.d!==d){g={d,items:[]}; days.push(g)} g.items.push(it)}
   box.innerHTML=days.map(g=>`<h3 class="news-d">${newsDayL(g.d)}</h3><ul class="news-l">${g.items.map(it=>`<li class="news-i"><a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer"><span class="news-syms">${(it.syms||[]).slice(0,3).map(k=>`<span class="pill">${logoHtml(k,'xs')}${esc(lab(k))}</span>`).join('')}</span><b><bdi>${esc(it.title)}</bdi></b>${it.sum?`<span class="news-sum"><bdi>${esc(it.sum)}</bdi></span>`:''}<span class="sub">${esc(it.pub||'')}${it.at?' · '+hm(it.at):''}</span></a></li>`).join('')}</ul>`).join('');
@@ -24218,7 +24221,7 @@ async function nxReadNow(){NXRNT=null; const ids=NXRNQ.splice(0,12); if(!ids.len
 const nxRn=id=>(NXRN.get(id)||{}).st||'queued';
 // the line said while a reading is on its way, or why it is not
 function nxPendH(ids){const S=(ids||[]).map(nxRn), st=S.includes('off')?'off':S.includes('cap')?'cap':S.every(x=>x==='fail')&&S.length?'fail':'wait';
-  return `<p class="nx-pend ${st}" role="status">${st==='off'?(OWNER?'הקריאה של צ׳יקו לא פעילה בשרת: חסר ANTHROPIC_API_KEY ב-Railway. בלי זה אין תרגום ואין הסבר.':'התרגום וההסבר יגיעו בהמשך.')
+  return `<p class="nx-pend ${st}" role="status">${st==='off'?(MGR()?'הקריאה של צ׳יקו לא פעילה בשרת: חסר ANTHROPIC_API_KEY ב-Railway. בלי זה אין תרגום ואין הסבר.':'התרגום וההסבר יגיעו בהמשך.')
     :st==='cap'?'הגענו למכסת התרגומים המיידיים של היום. התרגום וההסבר יגיעו באיסוף הקרוב (כל 10 דקות ביום).'
     :st==='fail'?'התרגום לא הצליח כרגע. ננסה שוב אוטומטית בעוד כמה דקות.':'<span class="nx-spin" aria-hidden="true"></span> מתרגם לעברית ומסביר איך זה משפיע…'}</p>`}
 // a Hebrew line for an article not read yet: who it is about and where it is from (the headline in English stays in "עוד")
@@ -24381,7 +24384,7 @@ function renderNewsX(){
   if(NWV==='anal')L=L.filter(z=>['analysis','opinion'].includes(nxKindOf(z.it)));
   if(NWV==='follow')L=L.filter(z=>nwMatch(z.it,F).length);
   const filtered=nwActive()||NWF.q;
-  if(!L.length){const nAll=all.length, nRead=all.filter(z=>z.it.x).length, own=OWNER&&window.__tc&&!LOCAL;
+  if(!L.length){const nAll=all.length, nRead=all.filter(z=>z.it.x).length, own=MGR()&&window.__tc&&!LOCAL;
     let t;
     if(!nAll)t=NEWSD&&NEWSD.updatedAt||NXD&&NXD.updatedAt?'עוד אין כתבות מהשבוע האחרון.':'החדשות נאספות מהמקורות כל חצי שעה ביום (07:10 עד 23:40). עוד לא נאספו.';
     else if(NWV==='follow'&&!Object.values(F).some(v=>Array.isArray(v)&&v.length))t='עוד לא בחרת נושאים לעקוב אחריהם. אפשר לבחור ב"עוד" שעל כל כתבה, או בהגדרות ← חדשות והתראות.';
@@ -24409,7 +24412,7 @@ function renderNewsX(){
 // 29.10: for the owner, under the feed: when the articles were last gathered and last read, and the first error of each
 // run, so an empty screen says why without the server's log
 let NXST=null;
-async function nxStatusLine(){const el=$('nxStat'); if(!el)return; if(!(OWNER&&window.__tc&&!LOCAL)||RTT!=='news'){el.hidden=true;return}
+async function nxStatusLine(){const el=$('nxStat'); if(!el)return; if(!(MGR()&&window.__tc&&!LOCAL)||RTT!=='news'){el.hidden=true;return}
   if(NXST===null||Date.now()-NXST.at>60e3){NXST={at:Date.now(),d:null}; try{const r=await fetch('/api/research/status',{credentials:'same-origin'}); if(r.ok)NXST.d=await r.json()}catch(e){}}
   const d=NXST.d; if(!d){el.hidden=true;return} const n=d.news, x=d.newsx, xx=d.x, L=[];
   L.push(n?`איסוף כתבות: ${dmy(n.at)} ${hm(n.at)}, ${n.ok} מתוך ${n.of} ניירות, ${n.items} כתבות${n.stopped?' · נעצר: '+esc(String(n.stopped)):''}${n.first?' · שגיאה: '+esc(String(n.first).slice(0,140)):''}`:'איסוף כתבות: עוד לא רץ אף פעם');
@@ -25730,7 +25733,7 @@ function pxTrust(m){
 // (ענף, מטבע, בורסה, סוג) and the fees table. A gap of more than a shekel (or 0.05%) is a fault of the page
 var FEECK=null, SCSENT='';
 // the owner's page tells the server about a gap (once per kind of gap in a visit); the price watch e-mails the owner
-function selfReport(chk){if(!OWNER||LOCAL||!window.__tc)return; const sig=chk.bad.map(x=>x.name).sort().join('|'); if(!sig||sig===SCSENT)return; SCSENT=sig;
+function selfReport(chk){if(!MGR()||LOCAL||!window.__tc)return; const sig=chk.bad.map(x=>x.name).sort().join('|'); if(!sig||sig===SCSENT)return; SCSENT=sig;
   try{fetch('/api/selfcheck',{method:'POST',credentials:'same-origin',headers:{'x-tc':'1','content-type':'application/json'},body:JSON.stringify({bad:chk.bad.map(x=>({name:x.name,t:x.t}))})}).catch(()=>{})}catch(e){}}
 function selfCheck(m){
   const out={ok:[],bad:[]}; if(!m||!(m.total>0))return out; const T=m.total, tol=Math.max(1,T*0.0005), cmp=(name,v)=>{if(v==null||!isFinite(v))return; (Math.abs(v-T)<=tol?out.ok:out.bad).push({name,v,t:`${name}: ${ils(v)} במקום ${ils(T)}.`})};
@@ -25822,9 +25825,9 @@ function nwHealth(){const N=typeof NEWSD!=='undefined'?NEWSD:null, X=typeof NXD!
   const hr=+new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',hour:'2-digit',hour12:false}).format(new Date())%24, day=hr>=8&&hr<=23;
   const at=N&&N.updatedAt, age=at?(Date.now()-Date.parse(at))/36e5:1e9, xat=X&&X.updatedAt, xage=xat?(Date.now()-Date.parse(xat))/36e5:1e9;
   let st='ok', t=`החדשות עדכניות`, d=`נאספו ${at?ago(at):'—'}. צ׳יקו קרא היום ${read===1?'כתבה אחת':read+' כתבות'}${waiting?`, ${waiting} ממתינות לקריאה`:''}.`;
-  if(X&&X.ai===false){st='bad'; t='צ׳יקו לא קורא את החדשות'; d=OWNER?'הקריאה כבויה בשרת: חסר ANTHROPIC_API_KEY ב-Railway. בלי זה אין עברית ואין הסבר איך כתבה משפיעה.':'הקריאה של החדשות כבויה כרגע. הכתבות מוצגות בלי הסבר.'}
-  else if(day&&age>2){st='warn'; t='החדשות לא התעדכנו'; d=`האיסוף האחרון ${at?ago(at):'לא רץ'}. האיסוף רץ כל חצי שעה ביום.${OWNER?' כדאי לבדוק ביומן של השרת את השורה news:.':''}`}
-  else if(day&&xage>1.5){st='warn'; t='הקריאה של צ׳יקו מאחרת'; d=`הקריאה האחרונה ${xat?ago(xat):'לא רצה'}. היא רצה כל 10 דקות ביום.${OWNER?' כדאי לבדוק ביומן את השורה newsx:.':''}`}
+  if(X&&X.ai===false){st='bad'; t='צ׳יקו לא קורא את החדשות'; d=MGR()?'הקריאה כבויה בשרת: חסר ANTHROPIC_API_KEY ב-Railway. בלי זה אין עברית ואין הסבר איך כתבה משפיעה.':'הקריאה של החדשות כבויה כרגע. הכתבות מוצגות בלי הסבר.'}
+  else if(day&&age>2){st='warn'; t='החדשות לא התעדכנו'; d=`האיסוף האחרון ${at?ago(at):'לא רץ'}. האיסוף רץ כל חצי שעה ביום.${MGR()?' כדאי לבדוק ביומן של השרת את השורה news:.':''}`}
+  else if(day&&xage>1.5){st='warn'; t='הקריאה של צ׳יקו מאחרת'; d=`הקריאה האחרונה ${xat?ago(xat):'לא רצה'}. היא רצה כל 10 דקות ביום.${MGR()?' כדאי לבדוק ביומן את השורה newsx:.':''}`}
   else if(waiting>60){st='warn'; t='צ׳יקו מאחר בקריאה'; d+=' כתבה שמופיעה על המסך נקראת מיד.'}
   return {st,t,d,read,waiting,at}}
 const nwChip=H=>`${niH(H.st==='ok'?'ok':'warn')}<span>${esc(H.t)}</span>`;
@@ -25915,7 +25918,7 @@ function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)re
   // a word counts with a Hebrew prefix letter or without it ("לילד" finds "ילד", "בעמלות" finds "עמלות")
   const one=(x,L,K)=>L.startsWith(x)?4:L.includes(x)?3:K.split(' ').some(k=>k.startsWith(x))?2:K.includes(x)?1:0;
   const sc=d=>{const L=goNorm(d.l), K=goNorm(d.k); let s=0; for(const x of w){const y=x.slice(1), v=one(x,L,K)||(/^[להבומשכ]/.test(x)&&y.length>=3&&(L+' '+K).split(' ').some(k=>k.startsWith(y))?2:0); if(!v)return 0; s+=v} return s};
-  return GO.filter(d=>!d.own||(OWNER&&window.__tc&&!LOCAL)).map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
+  return GO.filter(d=>!d.own||(MGR()&&window.__tc&&!LOCAL)).map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
 function goTo(d){
   if(!d)return; try{useAdd('go:'+d.id)}catch(e){} try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
   if(d.fn){d.fn();return}
@@ -25938,6 +25941,8 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-10-31.2',at:'2026-10-31',t:'לכל מנהל תיק משלו',d:'מנהל באתר הוא עכשיו משקיע בפני עצמו: יש לו תיק, תוכנית, היסטוריה, הגדרות, התראות ומיילים משלו, כמו כל שותף, ואף אחד אחר לא רואה אותם. הוא ממשיך לנהל את האתר: משתמשים, גיבויים ובריאות המערכת. התיק של בעל הדף הוא שלו בלבד.',go:'pfedit'},
+  {v:'2026-10-31.1',at:'2026-10-31',t:'הפרופיל שלי',d:'בפרופיל אפשר לשמור עכשיו גם תאריך לידה, מדינה ועיר, מצב משפחתי וילדים ותעסוקה, הכול לא חובה. ביום ההולדת יש ברכה בדף הבית. גם הסתרת הסכומים, הסינון בחדשות והתקופה ב-Impact נשמרים בחשבון ועוברים איתך לכל מכשיר.',go:'theme'},
   {v:'2026-10-30.9i',at:'2026-10-30',t:'TikChik Impact: הדופק של התיק',d:'חיבור למציאות נפתח עכשיו במסך Impact: ארבעה מדדים לתקופה שבוחרים (רלוונטיות כללית, החזקות מושפעות, התראות חדשות, אירועים), ההתראות בקצרה, מפת השפעה עגולה עם התיק במרכז, ציר זמן, וצ׳יקו בצד עם שאלות מוכנות. בחדשות נוסף פס השווקים וסיכום היום של צ׳יקו.',go:'pulse'},
   {v:'2026-10-30.9h',at:'2026-10-30',t:'חיבור למציאות: חדשות, התראות אישיות ומפת השפעה',d:'שתי לשוניות. מערכת חדשות שעובדת גם בלי תיק: כותרות, קטגוריות, חיפוש, סינון, מיון, נושאים במעקב, שמורות והיסטוריה; כל כתבה מסומנת כידיעה, ניתוח, דעה או הודעה רשמית. התראות אישיות בשלוש רמות, רק כשיש קשר מבוסס לתיק, אחת לכל אירוע, עם השרשרת, חשיבות, רלוונטיות וביטחון בנפרד, ומה נמדד מול מה אפשרי. מעל צ׳יקו: אייקונים קטנים שפותחים את ההתראה. מפת השפעה: אירוע ← גורם כלכלי ← ענף ← חברה ← ההחזקה שלך, עם הסבר לכל קשר. והגדרות "חדשות והתראות".',go:'pulse'},
   {v:'2026-10-30.9g',at:'2026-10-30',t:'מיילים לכל המשתמשים',d:'מנהלים מקבלים את המיילים של התיק כמו בעל הדף, ושותפים מקבלים הצעה ברשימה בבית להפעיל סיכום בוקר, התראות ודוחות על התיק שלהם. המיילים יוצאים לכולם אחרי שבעל האתר מחבר דומיין לשליחה.',go:'mail'},
@@ -26053,7 +26058,7 @@ try{refreshBack()}catch(e){}
       if(ME&&w!==false){const b='data/users/'+ME+'/';PATHS={portfolio:b+'portfolio',plan:b+'plan',settings:b+'settings',history:b+'history',daily:b+'daily',arc:b+'rep/items',ack:b+'ack',usage:b+'usage',newsst:b+'newsst',pulse:b+'pulse'}}else LOCAL=true}
   }catch(e){}
   try{const U=await window.claude.use('user');MYID=U?await U.id():null}catch(e){}
-  setView(VIEW||(OWNER?'full':'calm'),true);
+  setView(VIEW||(MGR()?'full':'calm'),true);
   whoNote(); srchDb();
   try{pxBoot()}catch(e){}
   if((OWNER||window.__tc)&&!LOCAL){try{window.claude.use('mcp').then(m=>{MCP=m||null;if(PXQ)pxAuto('open')}).catch(()=>{})}catch(e){}}

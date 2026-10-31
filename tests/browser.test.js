@@ -80,6 +80,9 @@ before(async()=>{
   // a second partner with a portfolio of their own (one holding, KO), to check that nobody's data reaches another
   const p2=store.addUser({email:'p2@example.com',password:'friend-pass-2',role:'friend'});
   store.setDoc(`data/users/${p2.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:3,ccy:'USD',acct:'exc',group:'cons',costIls:700}],cash:[],asOf:{}},{silent:true});
+  // 31.10: an admin, who manages the site with the owner and invests apart (his own portfolio, KO alone)
+  const ad=store.addUser({email:'adm@example.com',password:'admin-pass-1',role:'friend'}); store.setRole(ad.id,'admin');
+  store.setDoc(`data/users/${ad.id}/portfolio`,{positions:[{sym:'KO',name:'Coca-Cola',qty:5,ccy:'USD',acct:'exc',group:'cons',costIls:1100}],cash:[],asOf:{}},{silent:true});
   // a price refresh never runs in these tests, whatever a page's routes let through: it would fetch nothing (no network
   // here) and rewrite the shared prices every later test reads
   const app=createApp({store,siteDir:R+'site',jobs:false});
@@ -98,7 +101,7 @@ async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false}={}
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
-  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='nw'?['nw@example.com','friend-pass-7']:who==='p2'?['p2@example.com','friend-pass-2']:['owner@example.com','owner-pass-123'];
+  const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='nw'?['nw@example.com','friend-pass-7']:who==='p2'?['p2@example.com','friend-pass-2']:who==='adm'?['adm@example.com','admin-pass-1']:['owner@example.com','owner-pass-123'];
   await pg.goto(U); await pg.waitForSelector('#tcLogin');
   // a sign-in that answers "wrong e-mail or password" was typed into a form drawn again under the typing (seen on the CI
   // runner): typed again, at most twice
@@ -1341,6 +1344,30 @@ test('my details and my choices: the profile keeps the personal details, צ׳י�
     assert.deepEqual(await pg.evaluate(()=>({hide:document.body.classList.contains('hidenum'),ixr:localStorage.getItem('tr_ixr'),eye:document.getElementById('kEye').getAttribute('aria-pressed')})),{hide:true,ixr:'30',eye:'true'});
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('an admin and the owner, two investors: each sees and saves their own portfolio and settings; the admin still manages the site',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const A=store.userByEmail('adm@example.com'), pf0=JSON.stringify(store.getDoc('portfolio/main').data), s0=JSON.stringify(store.getDoc('settings/main').data), a0=store.getDoc(`data/users/${A.id}/settings`).data;
+  let {ctx,pg}=await open(1280,{who:'adm'});
+  try{
+    // his own portfolio: KO alone; not one of the owner's holdings
+    const own=await pg.evaluate(()=>({rows:document.getElementById('rows').innerText,who:document.getElementById('pfWho').textContent,mgr:{tc:window.__tc.owner,manage:window.__tc.manage},users:!document.querySelector('#tcAcctMenu a[href="users.html"]').hidden}));
+    assert.match(own.rows,/KO/); for(const k of ['MSFT','NVDA','CAT','RKLB'])assert.doesNotMatch(own.rows,new RegExp('\\b'+k+'\\b'),'not the owner\'s '+k);
+    assert.match(own.who,/באזור פרטי שלך/,'his own area'); assert.deepEqual(own.mgr,{tc:false,manage:true}); assert.equal(own.users,true,'the users page, in the account menu');
+    // he manages the site: the system's health is in his settings
+    await tab(pg,'settings'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.getElementById('sysSec').hidden),false,'the system\'s health');
+    // what he saves is his: a rule and his name, in his own settings; the owner's untouched
+    await pg.click('#rMaxPos',{clickCount:3}); await pg.keyboard.type('22'); await pg.waitForTimeout(2500);
+    assert.equal((store.getDoc(`data/users/${A.id}/settings`).data.rules||{}).maxPos,22,'his rule, in his settings');
+    assert.equal(JSON.stringify(store.getDoc('settings/main').data),s0,'the owner\'s settings untouched'); assert.equal(JSON.stringify(store.getDoc('portfolio/main').data),pf0,'the owner\'s portfolio untouched');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // the owner, on his side: his own portfolio, and the admin's rule is not his
+    ({ctx,pg}=await open(1280));
+    const o=await pg.evaluate(()=>({rows:document.getElementById('rows').innerText,max:document.getElementById('rMaxPos').value}));
+    assert.match(o.rows,/MSFT|NVDA/); assert.notEqual(o.max,'22');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc(`data/users/${A.id}/settings`,a0||{},{silent:true})}
 });
 
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{

@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {randomBytes, createHash, timingSafeEqual} from 'node:crypto';
 import {sendMail, mailNote, esc as mesc, mailReady, mailFromOwnDomain, PARTNER_KINDS} from './mail.js';
-import {Store, canRead, canWrite, partnerView, ownerLike, symsOfUser} from './store.js';
+import {Store, canRead, canWrite, partnerView, ownerLike, isOwner, symsOfUser} from './store.js';
 import {newsxReadNow} from './newsx.js';
 import {pulseTask} from './pulse.js';
 import {refreshQuotes} from '../shared/pxjob.js';
@@ -112,7 +112,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); res.json(v)});
   app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
-  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:ownerLike(u),admin:u.role==='admin',mustChange:!!u.must_change});
+  // 31.10: owner is the one person whose documents are portfolio/main and the rest; an admin manages the site (manage)
+  // but invests apart, in their own area, like a partner
+  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:isOwner(u),admin:u.role==='admin',manage:ownerLike(u),mustChange:!!u.must_change});
   // 30.10: the page's version (the built page's hash), so a page left open (a phone's tab, the icon on the home screen)
   // learns that a new one is out and reloads instead of running the old one for days
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
@@ -196,10 +198,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!canRead(req.user,p+'/x')||(req.user.role!=='owner'&&!(p+'/').startsWith('data/users/'+req.user.id+'/')))return res.status(403).json({error:{code:'permission_denied',message:'no access'}});
     let where=null; if(req.query.wf){where={f:String(req.query.wf),op:String(req.query.wo||'=='),v:req.query.wv===undefined?null:JSON.parse(String(req.query.wv))}}
     res.json({docs:store.listDocs(p,{orderBy:req.query.orderBy?String(req.query.orderBy):null,dir:req.query.dir==='desc'?'desc':'asc',limit:+req.query.limit||0,where})})});
-  // one import or export at a time, the owner only: the whole set of documents as {path: data}
-  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=ownerLike(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
+  // one import or export at a time: the owner, the owner's documents and the site's; anyone else (an admin too) their own
+  app.post('/api/db/import',needUser,(req,res)=>{const docs=(req.body&&req.body.docs)||{}; const ws=[], own=isOwner(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of Object.entries(docs)){if(badPath(p)||p.split('/').length%2||!d||typeof d!=='object')continue; if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; ws.push({path:p,data:d})}
     store.batch(ws); res.json({ok:true,n:ws.length})});
-  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=ownerLike(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
+  app.get('/api/db/export',needUser,(req,res)=>{const out={}, own=isOwner(req.user), mine='data/users/'+req.user.id+'/'; for(const [p,d] of store.allDocs()){if(own?(p.startsWith('data/users/')||(p.startsWith('watch/')&&p!=='watch/'+req.user.id)):!(p.startsWith(mine)||p==='watch/'+req.user.id))continue; out[p]=d} res.setHeader('content-disposition',`attachment; filename="tikchik-backup-${new Date().toISOString().slice(0,10)}.json"`); res.json({exportedAt:new Date().toISOString(),source:'tik-chik site',docs:out})});
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
@@ -397,7 +399,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // the holdings. Once in ten seconds a person; a partner only the articles of their own securities and the general ones
   const NXNOW=new Map();
   app.post('/api/newsx/read',needUser,async(req,res)=>{const u=req.user, last=NXNOW.get(u.id)||0; if(Date.now()-last<10e3)return res.status(429).json({error:{code:'rate_limited',message:'הקריאה הקודמת עוד רצה'}});
-    NXNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
+    NXNOW.set(u.id,Date.now()); const own=isOwner(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
     try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read)try{pulseTask(store,{log})}catch(e){} res.json(r)}
     catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
   app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});

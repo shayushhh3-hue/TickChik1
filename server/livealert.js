@@ -43,7 +43,7 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null),user=null}={}
 // and so are how often a message may come and whether a critical one may come in the quiet hours
 export async function liveTask(store,{log=()=>{},now=new Date(),send=sendAllowed,push=null}={}){
   const day=ilDay(now);
-  const owner=store.users().find(u=>u.role==='owner'), withDev=new Set(pushUsers(store).map(u=>u.id)), who=[...(owner?[owner]:[{id:'owner',role:'owner'}]),...store.users().filter(u=>u.role!=='owner'&&(withDev.has(u.id)||(u.role==='friend'&&mailAllowedFor(store,u,'live'))))];
+  const owner=store.users().find(u=>u.role==='owner'), withDev=new Set(pushUsers(store).map(u=>u.id)), who=[...(owner?[owner]:[{id:'owner',role:'owner'}]),...store.users().filter(u=>u.role!=='owner'&&(withDev.has(u.id)||mailAllowedFor(store,u,'live')))];   // a partner or an admin: their own
   let out=null;
   for(const u of who){const r=await liveFor(store,u,{log,now,day,send,push}); if(u.role==='owner')out=r}
   return out||{hits:0,fresh:0};
@@ -69,7 +69,7 @@ async function liveFor(store,u,{log,now,day,send,push}){
   let ok=false;
   {const text=fresh.map(x=>`• ${x.text}${x.link?'\n  '+x.link:''}`).join('\n')+`\n\n${url?'לאתר: '+url+'\n':''}עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.`;
     const html=wrapHtml('התראה',`<ul style="padding-inline-start:18px">${fresh.map(x=>`<li style="margin:6px 0;${x.sev==='crit'?'color:#b42318;font-weight:700':''}">${esc(x.text)}${x.link?` <a href="${esc(x.link)}">לכתבה</a>`:''}</li>`).join('')}</ul>${url?`<p><a href="${esc(url)}">לאתר</a></p>`:''}<p style="color:#64748b;font-size:13px">עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.</p>`);
-    if(own||(u.role==='friend'&&mailAllowedFor(store,u,'live')))ok=await send(store,'live',{subject:`תיק צ׳יק – ${head}`,text,html},log,own?undefined:u)}
+    if(own||mailAllowedFor(store,u,'live'))ok=await send(store,'live',{subject:`תיק צ׳יק – ${head}`,text,html},log,own?undefined:u)}
   // the phone: the same items, short (a tap opens the site on the stories)
   let pushed=0; try{pushed=await (push||pushTo)(store,u.id,{title:fresh.length===1?'תיק צ׳יק':`תיק צ׳יק · ${fresh.length} התראות`,body:fresh.map(x=>x.text).join('\n').slice(0,300),url:'./?st=1',tag:'live'},{log})}catch(e){log('push failed: '+(e&&e.message||e))}
   // marked as sent even when nothing went out, so that switching on does not send the whole day at once

@@ -62,7 +62,7 @@ html[data-theme="dark"] #tcAcctMenu a,html[data-theme="dark"] #tcAcctMenu button
 <script>
 (function(){
   function show(){var t=window.__tc; if(!t){return setTimeout(show,400)} var a=document.getElementById('tcAcct'); a.hidden=false; a.querySelector('.who').textContent=t.email;
-    a.querySelectorAll('.own').forEach(function(x){x.hidden=!t.owner})}
+    a.querySelectorAll('.own').forEach(function(x){x.hidden=!t.manage})}
   show();
   document.addEventListener('click',function(e){var m=document.getElementById('tcAcctMenu'),b=document.getElementById('tcAcctBtn'); if(!m)return;
     if(e.target.closest('#tcAcctBtn')){m.hidden=!m.hidden;b.setAttribute('aria-expanded',String(!m.hidden));return}

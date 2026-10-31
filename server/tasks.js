@@ -156,7 +156,7 @@ export async function morningTask(store,{log=()=>{},send=sendAllowed}={}){
   if(!docs['portfolio/main']||!docs['quotes/latest'])log('no portfolio or quotes yet');
   else{const state=docs['alerts/state']||{keys:[]}, r=await morningOne(store,{log,docs,user:ownerUser(store),state,repMail:mailAllowed(store,'earnings'),send});
     if(r)store.setDoc('alerts/state',{date:p.iso,keys:r.keys,moveDate:r.fresh?p.iso:(state.moveDate||null),sent:r.fresh,updatedAt:now.toISOString()})}
-  for(const u of store.users().filter(u=>u.role==='friend'&&mailAllowedFor(store,u,'morning'))){
+  for(const u of store.users().filter(u=>u.role!=='owner'&&mailAllowedFor(store,u,'morning'))){   // the partners and the admins, each their own
     try{const d=partnerDocs(store,u); if(!d[`data/users/${u.id}/portfolio`]||!d['quotes/latest'])continue;
       const k='astate:'+u.id; let state={keys:[]}; try{state=JSON.parse(store.getMeta(k)||'{"keys":[]}')}catch(e){}
       const r=await morningOne(store,{log,docs:d,user:{uid:u.id,email:u.email,owner:false,u},state,repMail:mailAllowedFor(store,u,'earnings'),send});

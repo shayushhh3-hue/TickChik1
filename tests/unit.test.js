@@ -1548,7 +1548,8 @@ test('pulse: levels by rules from importance, relevance and confidence; one aler
   const g=s.addUser({email:'g@example.com',password:'partner-pass-2',role:'friend'}); assert.equal(pulseCompute(s,g,{now}).alerts.length,0);
   // on the server's matrix: a partner reads their own alerts only; nobody else's, not the owner's
   {const {access}=await import('../server/store.js'); assert.equal(access({id:f.id,role:'friend'},`data/users/${f.id}/pulse`),'rw'); assert.equal(access({id:f.id,role:'friend'},`data/users/${g.id}/pulse`),''); assert.equal(access({id:f.id,role:'friend'},'alerts/pulse'),'');
-    assert.equal(access({id:'x',role:'admin'},'alerts/pulse'),'rw','an admin shares the owner\'s')}
+    assert.equal(access({id:'x',role:'admin'},'alerts/pulse'),'','an admin has their own, not the owner\'s'); assert.equal(access({id:'x',role:'admin'},'data/users/x/pulse'),'rw');
+    const {pathsOf}=await import('../server/pulse.js'); assert.deepEqual(pathsOf({id:'x',role:'admin'}),{portfolio:'data/users/x/portfolio',settings:'data/users/x/settings',pulse:'data/users/x/pulse',newsst:'data/users/x/newsst'},'an admin\'s alerts: from his own portfolio')}
   // the quiet hours, in Israel time
   const pr=pulsePrefs({pulse:{quiet:{from:'22:00',to:'07:00'}}}); assert.equal(inQuiet(pr,new Date('2026-10-30T21:30:00Z')),true,'23:30'); assert.equal(inQuiet(pr,new Date('2026-10-30T08:00:00Z')),false,'10:00');
   assert.equal(inQuiet(pulsePrefs({}),new Date('2026-10-30T04:00:00Z')),true,'06:00, the default quiet until 09:00'); assert.equal(inQuiet(pulsePrefs({pulse:{quiet:{on:false}}}),new Date('2026-10-30T04:00:00Z')),false);
@@ -1642,7 +1643,7 @@ test('a partner\'s own e-mails: only what they switched on, to their own address
   }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
 });
 
-test('an admin: set by the owner alone, the owner\'s access (portfolio, users, health), never the owner\'s place; back to a partner, their own portfolio again',async()=>{
+test('an admin: set by the owner alone; manages the site (users, health) but invests apart, in their own portfolio, never the owner\'s; back to a partner, the same portfolio',async()=>{
   const {store,srv,req}=await startApp();
   try{
     const f=store.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}), g=store.addUser({email:'g@example.com',password:'friend-pass-2',role:'friend'});
@@ -1653,8 +1654,17 @@ test('an admin: set by the owner alone, the owner\'s access (portfolio, users, h
     assert.equal((await req('o','POST',`/api/users/${f.id}/role`,{role:'owner'})).status,400,'never a second owner');
     let r=await req('o','POST',`/api/users/${f.id}/role`,{role:'admin'}); assert.equal(r.j.role,'admin');
     assert.equal((await req('f','GET','/api/me')).j.me,null,'signed out by the change');
-    r=await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'}); assert.equal(r.j.me.owner,true); assert.equal(r.j.me.admin,true);
-    r=await req('f','GET','/api/db/doc?path=portfolio/main'); assert.equal(r.status,200); assert.equal(r.j.data.positions[0].sym,'MSFT','the owner\'s portfolio');
+    r=await req('f','POST','/api/login',{email:'ori@example.com',password:'friend-pass-1'}); assert.equal(r.j.me.owner,false,'not the owner: his own documents'); assert.equal(r.j.me.admin,true); assert.equal(r.j.me.manage,true);
+    // 31.10: two investors, two portfolios: the owner's is the owner's alone, the admin's is his
+    for(const p of ['portfolio/main','settings/main','plan/main','history/main','alerts/pulse','reports/archive/items/x','usage/main','news/state'])assert.equal((await req('f','GET','/api/db/doc?path='+p)).status,403,'not the owner\'s: '+p);
+    assert.equal((await req('f','PUT','/api/db/doc?path=portfolio/main',{positions:[]})).status,403,'nor writes it');
+    r=await req('f','GET',`/api/db/doc?path=data/users/${f.id}/portfolio`); assert.equal(r.j.data.positions[0].sym,'KO','his own portfolio, the one he had');
+    assert.equal((await req('f','PUT',`/api/db/doc?path=data/users/${f.id}/settings`,{profile:{first:'אורי'}})).status,200,'his own settings');
+    assert.equal((await req('o','GET',`/api/db/doc?path=data/users/${f.id}/portfolio`)).status,403,'and the owner does not read his');
+    // the prices: his own securities only, like a partner (what the owner holds is the owner's)
+    store.setDoc('quotes/latest',{prices:{MSFT:400,KO:60},prev:{},usdIls:3.7}); r=await req('f','GET','/api/db/doc?path=quotes/latest'); assert.deepEqual(Object.keys(r.j.data.prices),['KO']);
+    // an export: his own documents only
+    r=await req('f','GET','/api/db/export'); assert.ok(Object.keys(r.j.docs).length>0); assert.ok(Object.keys(r.j.docs).every(p=>p.startsWith(`data/users/${f.id}/`)||p===`watch/${f.id}`),'only his: '+Object.keys(r.j.docs).join(', '));
     assert.equal((await req('f','GET','/api/users')).status,200,'the users page'); assert.equal((await req('f','GET','/api/health')).status,200,'the system\'s health');
     assert.equal((await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'})).status,403,'an admin changes no roles');
     await req('o','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal((await req('f','DELETE',`/api/users/${g.id}`)).status,403,'an admin removes no admin');
@@ -1665,18 +1675,22 @@ test('an admin: set by the owner alone, the owner\'s access (portfolio, users, h
   }finally{srv.close()}
 });
 
-test('the owner\'s e-mails reach the admins too, each a message of its own, once there is a sending domain; never the backup',async()=>{
+test('the admins get the site\'s alert ("משהו לא מתעדכן"), each a message of its own, once there is a sending domain; not the owner\'s portfolio mails, never the backup',async()=>{
   const {sendAllowed}=await import('../server/mail.js');
   const s=new Store(':memory:'); s.addUser({email:'shai@example.com',password:'owner-pass-123',role:'owner'}); const a=s.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}); s.setRole(a.id,'admin');
-  s.setDoc('settings/main',{mail:{morning:true,backup:true}});
+  s.setDoc('settings/main',{mail:{morning:true,backup:true,pxalert:true}});
   const env0={k:process.env.RESEND_API_KEY,to:process.env.MAIL_TO,from:process.env.MAIL_FROM}, f0=globalThis.fetch, sent=[];
   globalThis.fetch=async(url,o)=>{if(String(url).includes('api.resend.com')){const b=JSON.parse(o.body); sent.push(b); const ok=!/resend\.dev/.test(b.from)||b.to.includes('shai@example.com'); return new Response(ok?'{"id":"x"}':'{"message":"testing only"}',{status:ok?200:403})} return f0(url,o)};
   try{
     process.env.RESEND_API_KEY='re_test'; process.env.MAIL_TO='shai@example.com'; delete process.env.MAIL_FROM; const msg={subject:'s',text:'t',html:'h'}, last=()=>JSON.parse(s.getMeta('mail:'+a.id)||'{}').last||{};
-    assert.equal(await sendAllowed(s,'morning',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'Resend\'s test sender: the owner only, the owner\'s mail not refused');
-    assert.equal(last().morning.result,'domain');
+    assert.equal(await sendAllowed(s,'pxalert',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'Resend\'s test sender: the owner only, the owner\'s mail not refused');
+    assert.equal(last().pxalert.result,'domain');
     process.env.MAIL_FROM='תיק צ׳יק <alerts@mydomain.co.il>'; sent.length=0;
-    assert.equal(await sendAllowed(s,'morning',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com'],['ori@example.com']],'the admin: a message of his own'); assert.equal(last().morning.result,'sent');
+    assert.equal(await sendAllowed(s,'pxalert',msg),true); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com'],['ori@example.com']],'the admin: a message of his own'); assert.equal(last().pxalert.result,'sent');
+    // 31.10: the morning mail is about the owner's portfolio: the owner's alone; the admin has his own, if he switches it on
+    sent.length=0; await sendAllowed(s,'morning',msg); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'the owner\'s morning: the owner alone');
+    sent.length=0; await sendAllowed(s,'morning',msg,()=>{},s.userById(a.id)); assert.deepEqual(sent,[],'his own: off until he switches it on');
+    s.setDoc(`data/users/${a.id}/settings`,{mail:{morning:true}}); await sendAllowed(s,'morning',msg,()=>{},s.userById(a.id)); assert.deepEqual(sent.map(x=>x.to),[['ori@example.com']],'his own, to him');
     sent.length=0; await sendAllowed(s,'backup',{...msg,attachments:[]}); assert.deepEqual(sent.map(x=>x.to),[['shai@example.com']],'the backup: the owner alone');
   }finally{globalThis.fetch=f0; for(const [k,v] of [['RESEND_API_KEY',env0.k],['MAIL_TO',env0.to],['MAIL_FROM',env0.from]])if(v==null)delete process.env[k]; else process.env[k]=v}
 });
