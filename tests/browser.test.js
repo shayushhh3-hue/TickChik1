@@ -664,14 +664,17 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300);
     // TikChik Impact: the four figures, the alerts short, the round map with the portfolio in the middle, the line of time, צ׳יקו
     const ix=await pg.evaluate(()=>({k:[...document.querySelectorAll('#ixKpis .ix-k')].map(x=>x.innerText.replace(/\s+/g,' ').trim()),a:[...document.querySelectorAll('#ixAlList .ix-a h4')].map(h=>h.textContent),aff:(document.querySelector('#ixAlList .ix-a .ix-af')||{}).textContent||'',
-      center:(window.__ix.graph()||{}).center,nodes:[...document.querySelectorAll('#ixG .ixn')].map(n=>n.dataset.ixn),tl:document.querySelectorAll('#ixTl li').length,qs:[...document.querySelectorAll('#ixQs .ix-q')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
+      center:(window.__ix.graph()||{}).center,nodes:[...document.querySelectorAll('#ixG .ixn')].map(n=>n.dataset.ixn),mapOpen:document.getElementById('ixMapD').open,first:[...document.querySelectorAll('#ixBody > *')].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id||x.className).slice(0,3),qs:[...document.querySelectorAll('#ixQs .ix-q')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(ix.k.length,4); assert.match(ix.k[0],/רמת רלוונטיות כללית (גבוהה|בינונית|נמוכה) .*\d+% מהתיק נוגע לאירועים/); assert.match(ix.k[1],/^\d+ החזקות מושפעות/); assert.match(ix.k[2],/^\d+ התראות חדשות/); assert.match(ix.k[3],/^\d+ אירועים רלוונטיים/);
     assert.ok(ix.a.length>=1&&ix.a.length<=3,'three short on a phone'); assert.match(ix.aff,/^משפיע על: /); assert.equal(ix.center,'pf'); assert.ok(ix.nodes.includes('pf')&&ix.nodes.includes('h:NVDA')&&ix.nodes.includes('ev:ev:nvda-q3-report'),JSON.stringify(ix.nodes));
-    assert.ok(ix.tl>=2); assert.deepEqual(ix.qs,['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']); assert.equal(ix.ox,false);
+    // 31.10: the holdings first, the events and צ׳יקו next; the round map behind its button
+    assert.equal(ix.mapOpen,false,'the map is a tap away, not first'); assert.deepEqual(ix.first,['ixKpis','ixStx','ix-grid'],JSON.stringify(ix.first)); assert.deepEqual(ix.qs,['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']); assert.equal(ix.ox,false);
     // צ׳יקו beside the map: the period's alerts as his context
     seen.length=0; await pg.click('#ixQs .ix-q'); await pg.waitForFunction(()=>/על ההשפעה על התיק בתקופה/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
     assert.match(await pg.evaluate(()=>document.getElementById('anaOut').textContent.replace(/\s+/g,' ')),/אנבידיה היכתה/,'the answer from the period\'s alerts');
     assert.ok(seen.some(x=>x.includes('alerts_not_read')&&x.includes('אנבידיה')),'the alerts reach צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
+    // the map, a tap away: it opens, drawn for its room
+    await pg.click('#ixMapD > summary'); await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100),'the map opens');
     // a point on the map: its short card; the period changes the figures
     await pg.evaluate(()=>window.__ix.sel('h:NVDA')); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('ixTip').textContent),/NVDA · [\d.]+% מהתיק/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#ixTip [data-ixst="NVDA"]')),'the holding\'s card on the map leads to its story');
@@ -696,6 +699,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.ok(seen.some(x=>x.includes('how_it_reaches_the_stock')&&x.includes('NVDA')),'the share reaches צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
     await pg.click('#ixSv [data-ixback]'); await pg.waitForTimeout(200); assert.ok(await pg.evaluate(()=>document.getElementById('ixSv').hidden&&!document.getElementById('ixBody').hidden));
     // the map in words, for whoever reads better than looks
+    await pg.evaluate(()=>{document.getElementById('ixMapD').open=true}); await pg.waitForTimeout(150);
     await pg.click('#ixTxtB'); await pg.waitForTimeout(150); const tx=await pg.evaluate(()=>({cv:document.getElementById('ixCv').hidden,t:document.getElementById('ixTxt').innerText.replace(/\s+/g,' ')}));
     assert.ok(tx.cv); assert.match(tx.t,/אנבידיה היכתה/); assert.match(tx.t,/NVDA \(ההחזקה שלך/); await pg.click('#ixTxtB'); await pg.waitForTimeout(150); assert.equal(await pg.evaluate(()=>document.getElementById('ixCv').hidden),false);
     await pg.click('#ixRange [data-ixr="1"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('#ixRange [aria-pressed="true"]').dataset.ixr),'1');

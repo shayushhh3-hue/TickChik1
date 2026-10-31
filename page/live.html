@@ -2052,7 +2052,9 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 .ix-note{padding:12px 14px;border-radius:14px;border:1px solid rgb(124 58 237 / .3);background:rgb(124 58 237 / .07);font-size:14px;line-height:1.6} .ix-note[hidden]{display:none}
 .ix-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .ix-kpis[hidden]{display:none}
 @container ix (min-width:700px){.ix-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@container ix (max-width:699px){.ix-k{flex-direction:column;align-items:flex-start;gap:6px} .ix-ki{width:34px;height:34px;border-radius:10px} .ix-ki svg{width:20px;height:20px}}
+/* 31.10: on a phone the four figures are short (two rows), so the holdings are on the first screen */
+@container ix (max-width:699px){.ix-kpis{gap:8px} .ix-kpis .ix-k{padding:9px 12px;border-radius:14px} .ix-kpis .ix-k .ix-ki{display:none}
+  .ix-kv{font-size:20px!important} .k-rel .ix-kv{font-size:17px!important} .ix-kl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ix-ks{display:none} .ix-kpis .k-rel .ix-ks{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ix-sp{height:14px;margin-top:2px} .ix-bar{margin:3px 0 0}}
 .ix-k{display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0;position:relative;overflow:hidden}
 .ix-k>div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .ix-ki{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none} .ix-ki svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -2065,8 +2067,15 @@ html[data-theme="dark"] .ix-kv.rel-high{color:#4ADE80} html[data-theme="dark"] .
 .ix-bar{display:block;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin:4px 0 2px} .ix-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#14B8A6,#22C55E)}
 .ix-sp{width:100%;height:24px;margin-top:4px} .ix-sp path{fill:none;stroke:#6366F1;stroke-width:2;vector-effect:non-scaling-stroke}
 .ix-grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
-@container ix (min-width:760px){.ix-grid{grid-template-columns:minmax(270px,320px) minmax(0,1fr)} .ix-ch2{grid-column:1/-1}}
-@container ix (min-width:1240px){.ix-grid{grid-template-columns:minmax(290px,330px) minmax(0,1fr) minmax(240px,280px)} .ix-ch2{grid-column:auto}}
+/* 31.10: the events and צ׳יקו side by side; the round map behind its own button, under them */
+@container ix (min-width:760px){.ix-grid{grid-template-columns:minmax(0,1fr) minmax(250px,310px)}}
+.ix-mapd{display:block;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0} .ix-mapd[open]{padding-bottom:14px}
+.ix-ms{list-style:none;display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;min-height:56px;border-radius:20px} .ix-ms::-webkit-details-marker{display:none}
+.ix-ms:hover{background:rgb(124 58 237 / .05)} .ix-ms:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ix-msi{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:rgb(124 58 237 / .14);color:var(--vio-ink)} .ix-msi svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.ix-mst{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0} .ix-mst b{font-size:15.5px} .ix-mst small{font-size:12.5px;color:var(--ink2)}
+.ix-msc::after{content:"להציג ▾";font-size:13px;font-weight:700;color:var(--vio-ink);white-space:nowrap} .ix-mapd[open] .ix-msc::after{content:"להסתיר ▴"}
+.ix-mapd>.ix-map{display:flex;flex-direction:column;gap:10px;padding:0 14px}
 .ix-col{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0}
 .ix-ch{display:flex;align-items:center;justify-content:space-between;gap:8px} .ix-ch h3{margin:0;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:8px}
 .ix-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#DC2626;color:#fff;font-size:12px;font-weight:800} .ix-n[hidden]{display:none}
@@ -2110,7 +2119,7 @@ html[data-theme="dark"] .ix-leg{background:rgb(11 16 36 / .6)} .ix-leg span{disp
 .ix-in{display:flex;gap:6px;align-items:center;padding:4px;border-radius:999px;border:1px solid var(--line);background:var(--bg,var(--sunk))} .ix-in input{flex:1;min-width:0;font:inherit;font-size:14px;border:0;background:transparent;color:var(--ink);padding:8px 10px}
 .ix-in input:focus{outline:none} .ix-in:focus-within{outline:2px solid var(--focus)} .ix-in button{width:38px;height:38px;border-radius:50%;border:0;background:var(--grad,var(--accent));cursor:pointer;display:grid;place-items:center} .ix-in button svg{width:18px;height:18px;fill:#fff;transform:scaleX(-1)}
 @container ix (max-width:1239px){.ix-me{flex-direction:row} .ix-av{width:56px!important;height:56px!important} .ix-bub{text-align:start} .ix-qs{flex-direction:row;flex-wrap:wrap} .ix-q{flex:1 1 200px}}
-@media (max-width:520px){.ix-title b{font-size:21px} .ix-k{padding:12px;gap:10px} .ix-ki{width:36px;height:36px} .ix-kv{font-size:22px} .ix-col{padding:12px;border-radius:18px} .ix-leg{font-size:10.5px}}
+@media (max-width:520px){.ix-title b{font-size:21px} .ix-col{padding:12px;border-radius:18px} .ix-leg{font-size:10.5px}}
 .ix-hide{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* 30.10: what is happening to a share: the holdings the period touches (each card a button), the share's own view
    (plain words, the price with the events on it, known / possible / not known, the events one by one), the map in words */
@@ -2187,6 +2196,7 @@ html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw
 .pl-how{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:14px;border:1px solid rgb(124 58 237 / .28);background:rgb(124 58 237 / .05)} .pl-howh{font-size:14.5px}
 .ix-tip .pl-how{padding:8px} .ix-tip .nwi-r>summary{min-height:40px}
 /* 31.10: the day in three lines, in the hero */
+body:not([data-page="overview"]) .hero .ktoday{display:none}
 .ktoday{display:flex;flex-direction:column;gap:5px;margin:10px 0 2px;padding:10px 12px;border-radius:14px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .22)} .ktoday[hidden]{display:none}
 .ktoday .tdl{margin:0;font-size:14px;line-height:1.55;color:var(--ink);text-align:start} .ktoday .tdl b{color:var(--vio-ink);font-weight:800} .ktoday .tdl-ok b{color:var(--gain)} .ktoday .tdl-todo b{color:#D97706}
 .ktoday .tdl .n{display:inline} .ktoday button.kt-go{display:inline;min-height:24px;background:none;border:0;box-shadow:none;padding:0 2px;color:var(--vio-ink);font:inherit;font-weight:700;white-space:nowrap;text-decoration:underline;text-underline-offset:3px;cursor:pointer} .ktoday .ix-dw{font-size:11.5px;padding:0 7px;vertical-align:middle}
@@ -3025,8 +3035,16 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה על מניה: ההסבר המלא, בשפה פשוטה</span></div>
             <ul class="ix-sl" id="ixStList"></ul><button type="button" class="btn sm ix-more" id="ixStMore" aria-expanded="false" hidden></button></section>
           <div class="ix-grid">
-            <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">ההתראות האישיות שלך <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
-            <section class="ix-col ix-map" id="ixMap" aria-labelledby="ixMapH">
+            <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">האירועים שנוגעים לתיק <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
+            <section class="ix-col ix-ch2" aria-labelledby="ixChH"><h3 class="vh" id="ixChH">צ׳יקו</h3>
+              <div class="ix-me"><span class="chiko ix-av" aria-hidden="true"></span><div class="ix-bub">היי! איך אוכל לעזור?<small>שאל על האירועים, על המניות שלך או על התיק</small></div></div>
+              <div class="ix-qs" id="ixQs"></div>
+              <form class="ix-in" id="ixForm"><label class="vh" for="ixQ">שאלה לצ׳יקו</label><input id="ixQ" maxlength="300" placeholder="שאל את צ׳יקו..." autocomplete="off"><button type="submit" aria-label="שליחה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12L4 4l3 8-3 8z"/></svg></button></form>
+              <p class="note" style="margin:0">צ׳יקו מסביר מהנתונים שבדף. לא ייעוץ השקעות.</p>
+            </section>
+          </div>
+          <details class="ix-mapd" id="ixMapD"><summary class="ix-ms"><span class="ix-msi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></span><span class="ix-mst"><b>מפת השפעה</b><small>איך האירועים מתחברים למניות שלך, בציור</small></span><span class="ix-msc" aria-hidden="true"></span></summary>
+            <section class="ix-map" id="ixMap" aria-labelledby="ixMapH">
               <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><span class="ix-mh"><button type="button" class="ix-tb" id="ixTxtB" aria-pressed="false" aria-controls="ixTxt">המפה במילים</button><button type="button" class="ix-exp" id="ixExp" aria-label="למפה המלאה, עם ההסבר לכל קשר"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></span></div>
               <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button><button type="button" role="tab" data-ixv="world" aria-selected="false">עולם</button></div>
               <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
@@ -3039,14 +3057,8 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
                 <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שעשוי לעלות או לרדת</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
                 <p class="nm" style="margin:0">לגעת בנקודה או בשם שלה מציג פרטים. הכיוון הוא השערה מהקריאה של החדשות, לא מדידה ולא תחזית.</p></details>
               <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
-              <div class="ix-tlw"><div class="ix-ch"><h3>ציר זמן של אירועים ועדכונים</h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div id="ixTl"></div></div>
             </section>
-            <section class="ix-col ix-ch2" aria-labelledby="ixChH"><h3 class="vh" id="ixChH">צ׳יקו</h3>
-              <div class="ix-me"><span class="chiko ix-av" aria-hidden="true"></span><div class="ix-bub">היי! איך אוכל לעזור?<small>שאל על ההתראות, על מפת ההשפעה או על התיק</small></div></div>
-              <div class="ix-qs" id="ixQs"></div>
-              <form class="ix-in" id="ixForm"><label class="vh" for="ixQ">שאלה לצ׳יקו</label><input id="ixQ" maxlength="300" placeholder="שאל את צ׳יקו..." autocomplete="off"><button type="submit" aria-label="שליחה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12L4 4l3 8-3 8z"/></svg></button></form>
-              <p class="note" style="margin:0">צ׳יקו מסביר מהנתונים שבדף. לא ייעוץ השקעות.</p>
-            </section>
+          </details>
           </div>
         </div>
         <div id="ixSv" hidden>
@@ -24530,7 +24542,7 @@ function ixAskQ(q){const a=IXFOC&&String(IXFOC).includes(':')?plByK(IXFOC):null;
 // what is not known, the price measured since, and the sources; the price of the last weeks with the events on it; and
 // צ׳יקו about it. A big move with no event behind it in the alerts is said as such, never explained. No advice, no
 // forecast. The list of the holdings touched is also the map said in words ====
-let IXST=null, IXSTALL=false, IXTXT=false; const IXCL=new Set();
+let IXST=null, IXSTALL=false, IXTXT=false, IXMAPINIT=false; const IXCL=new Set();
 const IX_DW={pos:['pos','▲','חיובי אפשרי'],neg:['neg','▼','שלילי אפשרי'],mixed:['mix','◆','מעורב'],unclear:['unc','•','כיוון לא ברור']};
 const IX_PER={'1':'ב-24 השעות האחרונות','7':'ב-7 הימים האחרונים','30':'ב-30 הימים האחרונים','90':'ב-90 הימים האחרונים',all:'בכל ההתראות השמורות'};
 const IX_HOWF={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה'};
@@ -24679,11 +24691,12 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
     note.hidden=!t; setH(note,t)}
   {const k=$('ixKpis'); if(k){k.hidden=!hp||!pr.on; if(hp&&pr.on)setH(k,ixKpis(F))}}
   {const n=$('ixAlN'); if(n){n.textContent=F.un.length?String(F.un.length):''; n.hidden=!F.un.length}
-    const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?4:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
+    const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
   // the holdings the period touches: each a way into "מה קורה למניה"
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
     if(S.length){setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
   if(!hp&&IXV==='pf')IXV='world';
+  {const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v==='1'||(v==null&&!hp)}}
   try{ixDraw()}catch(e){console.error(e)}
   {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
   ixChiko()}
@@ -24697,7 +24710,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   if(t.closest('#ixStMore')){IXSTALL=!IXSTALL; renderImpact(); return}
   if(t.closest('#ixTxtB')){IXTXT=!IXTXT; IXSEL=null; ixDraw(); return}
   const d=t.closest('[data-ixdis]'); if(d){const a=plByK(d.dataset.ixdis); if(a){plSet(a.k,'r',a.ver||1); plSet(a.k,'d',a.ver||1)} renderImpact(); try{plRender()}catch(e){} try{plCount()}catch(e){} return}
-  const mp=t.closest('[data-ixmap]'); if(mp){IXV='ev'; IXFOC=mp.dataset.ixmap; IXSEL='ev:'+IXFOC; IXZ={k:1,x:0,y:0}; renderImpact(); try{$('ixMap').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){} return}
+  const mp=t.closest('[data-ixmap]'); if(mp){IXV='ev'; IXFOC=mp.dataset.ixmap; IXSEL='ev:'+IXFOC; IXZ={k:1,x:0,y:0}; {const d=$('ixMapD'); if(d)d.open=true} renderImpact(); try{$('ixMap').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){} return}
   const ak=t.closest('[data-ixask]'); if(ak){IXFOC=ak.dataset.ixask; ixChiko(); chikoAsk('pl:'+IXFOC); return}
   const q=t.closest('[data-ixq]'); if(q){ixAskQ(q.dataset.ixq); return}
   const fo=t.closest('[data-ixfoc]'); if(fo){IXFOC=null; if(IXV==='ev')IXV='pf'; renderImpact(); return}
@@ -24707,6 +24720,8 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const sl=t.closest('[data-ixsel]'); if(sl){IXSEL=sl.dataset.ixsel||null; ixDraw(); return}
   const op=t.closest('[data-ixopen]'); if(op&&!t.closest('button:not([data-ixopen]), a')){plOpen(op.dataset.ixopen); return}
 });
+// the map opened: drawn for the room it has now; the choice kept for next time
+document.addEventListener('toggle',ev=>{const d=ev.target; if(!d||d.id!=='ixMapD')return; try{localStorage.setItem('tr_ixmap',d.open?'1':'0')}catch(e){} if(d.open){IXZ={k:1,x:0,y:0}; try{ixDraw()}catch(e){}}},true);
 document.addEventListener('submit',ev=>{if(!ev.target||ev.target.id!=='ixForm')return; ev.preventDefault(); const i=$('ixQ'), v=String(i.value||'').trim(); if(!v)return; i.value=''; ixAskQ(v)});
 document.addEventListener('keydown',ev=>{const n=ev.target&&ev.target.closest&&ev.target.closest('#ixG [data-ixn]'); if(n&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault(); IXSEL=n.dataset.ixn; ixDraw(); ixTipShow()}});
 // 31.10: on a phone, צ׳יקו and the alert icons over him step aside while the page scrolls down (they sit over the
