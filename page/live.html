@@ -1056,8 +1056,9 @@ td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .prof-b{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 18px 8px;display:flex;flex-direction:column;gap:14px}
 .prof-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .prof-b label{font-size:12.5px;color:var(--ink2)}
-.prof-b input[type=text],.prof-b input[type=email],.prof-b input[type=tel],.prof-b select{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:100%;min-height:42px}
+.prof-b input[type=text],.prof-b input[type=email],.prof-b input[type=tel],.prof-b input[type=date],.prof-b input[type=number],.prof-b select{font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:100%;min-height:42px}
 .prof-b input:focus-visible,.prof-b select:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+.prof-more .prof-g{margin-top:2px} .prof-b input[type=date]{direction:rtl;text-align:start}
 .prof-b input[aria-invalid=true]{border-color:var(--crit-c);background:var(--crit-bg)}
 .prof-b .opt{color:var(--muted);font-weight:400}
 .prof-b .note{max-width:none}
@@ -3258,7 +3259,8 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="viewwrap" role="group" aria-label="גודל הטקסט"><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
         <div class="viewwrap" role="group" aria-label="ניגודיות"><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
         <div class="viewwrap" role="group" aria-label="תנועה"><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
-        <p class="note" style="margin:0;max-width:none">כל הבחירות האלה, וגם איך בחרת לראות את הדף (שקלים או דולרים, החלקים הפתוחים, פס המניות ועוד), נשמרות בחשבון שלך, ויופיעו כך בכל מכשיר ודפדפן שתיכנס ממנו.</p>
+        <div class="viewwrap" role="group" aria-label="הסכומים במסך"><span class="sub">הסכומים במסך</span><div class="chips"><button class="chip" type="button" data-hidenum="0" aria-pressed="true">מוצגים</button><button class="chip" type="button" data-hidenum="1" aria-pressed="false">מוסתרים</button></div></div>
+        <p class="note" style="margin:0;max-width:none">כל הבחירות האלה, וגם איך בחרת לראות את הדף (שקלים או דולרים, החלקים הפתוחים, פס המניות, הסינון והמיון בחדשות, התקופה והמפה ב-Impact, החיפושים האחרונים ועוד), נשמרות בחשבון שלך, ויופיעו כך בכל מכשיר ודפדפן שתיכנס ממנו.</p>
       </div>
     </section>
 
@@ -3489,6 +3491,17 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <fieldset class="risk3 gen3"><legend>איך לפנות אליך</legend>
         <label class="rk"><input type="radio" name="pfGender" value="m"><b>בלשון זכר</b></label>
         <label class="rk"><input type="radio" name="pfGender" value="f"><b>בלשון נקבה</b></label>
+      </fieldset>
+      <fieldset class="risk3 prof-more"><legend>עוד קצת עליך <span class="opt">(הכול לא חובה)</span></legend>
+        <div class="prof-g">
+          <label for="pfBirth">תאריך לידה<input type="date" id="pfBirth" min="1900-01-01" autocomplete="bday"></label>
+          <label for="pfJob">תעסוקה<select id="pfJob"></select></label>
+          <label for="pfCountry">מדינת מגורים<select id="pfCountry" translate="no"></select></label>
+          <label for="pfCity">עיר<input type="text" id="pfCity" maxlength="40" autocomplete="address-level2"></label>
+          <label for="pfFam">מצב משפחתי<select id="pfFam"></select></label>
+          <label for="pfKids">מספר ילדים<input type="number" id="pfKids" min="0" max="20" step="1" inputmode="numeric"></label>
+        </div>
+        <p class="note">הגיל, המצב המשפחתי, מספר הילדים, התעסוקה והמדינה עוברים לצ׳יקו, כדי שיקשר את ההסברים למטרה ולאופק שלך. תאריך הלידה עצמו והעיר לא עוברים לשום מקום. שום פרט מאלה לא משנה את הדירוג, וזו לא המלצה.</p>
       </fieldset>
       <label for="pfLang">באיזו שפה להציג את הדף<select id="pfLang" translate="no"></select></label>
       <p class="note">בכל שפה חוץ מעברית הדף מתורגם אוטומטית, והתרגום נשמר כדי שלא יתורגם שוב. מספרים וסכומים לא עוברים תרגום. הדוחות להורדה נשארים בעברית.</p>
@@ -18265,6 +18278,7 @@ function renderState(){
   const goals=stTry(()=>{const pr=(S.profile||{}), L=[];
     L.push(+S.years>0?`אופק ההשקעה שקבעת: ${S.years} שנים.`:'לא קבעת אופק השקעה.');
     L.push(PURPOSE[pr.purpose]?`בשביל מה: ${PURPOSE[pr.purpose]}.`:'לא כתבת בשביל מה אתה משקיע.');
+    {const ab=aboutMe(); if(ab)L.push('עליך: '+[ab.age_years!=null?`גיל ${ab.age_years}`:'',ab.family_status||'',ab.children!=null?kidsL(ab.children):'',ab.employment||'',ab.country_of_residence||''].filter(Boolean).join(', ')+'.')}
     L.push(+S.goal>0?`יעד כספי: ${ils(+S.goal)}.`:'לא קבעת יעד כספי.');
     {const up=flowsView(S.flows,mAllNow(),+S.years||0).rows.filter(r=>!r.past);
       L.push(up.length?`משיכות והפקדות שתכננת: ${up.slice(0,3).map(r=>`${r.kind==='out'?'משיכה':'הפקדה'} של ${ils(r.amount)} ${moIn(r.months)} (${r.share!=null?pct(r.share):'—'} מהתיק היום)`).join('; ')}${up.length>3?`, ועוד ${up.length-3}`:''}.`:'לא הזנת משיכות או הפקדות צפויות.')}
@@ -18446,8 +18460,12 @@ function renderMonChip(m){
   el.title=`כמה השתנו הניירות שב${acct==='all'?'תיק':'חשבון '+acctName(acct)} מאז ${dmy(r.key)}, לפי המחיר והשער של אותו יום מול היום. בלי הפקדות ובלי מזומן.`;
 }
 // the eye on the card: the sums blurred, for a screen someone else can see; remembered in this browser
-(function eyeBoot(){const on=()=>{let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}catch(e){} document.body.classList.toggle('hidenum',v); const b=$('kEye'); if(b){b.setAttribute('aria-pressed',String(v)); b.setAttribute('aria-label',v?'להציג את הסכומים':'להסתיר את הסכומים'); b.title=b.getAttribute('aria-label')}};
-  document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('#kEye')))return; const v=!document.body.classList.contains('hidenum'); try{localStorage.setItem('tr_hidenum',v?'1':'0')}catch(e){} on()});
+function eyeOn(){let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}catch(e){} document.body.classList.toggle('hidenum',v); const b=$('kEye'); if(b){b.setAttribute('aria-pressed',String(v)); b.setAttribute('aria-label',v?'להציג את הסכומים':'להסתיר את הסכומים'); b.title=b.getAttribute('aria-label')}
+  for(const c of document.querySelectorAll('[data-hidenum]'))c.setAttribute('aria-pressed',String(c.dataset.hidenum===(v?'1':'0')))}
+(function eyeBoot(){const on=eyeOn;
+  document.addEventListener('click',ev=>{const c=ev.target.closest&&ev.target.closest('[data-hidenum]');
+    if(c){try{localStorage.setItem('tr_hidenum',c.dataset.hidenum==='1'?'1':'0')}catch(e){} on(); try{uiPush()}catch(e){} return}
+    if(!(ev.target.closest&&ev.target.closest('#kEye')))return; const v=!document.body.classList.contains('hidenum'); try{localStorage.setItem('tr_hidenum',v?'1':'0')}catch(e){} on(); try{uiPush()}catch(e){}});
   if(document.readyState==='loading')addEventListener('DOMContentLoaded',on); else on()})();
 // the account circle moves from the corner into the header, next to the wordmark, when the site's runtime adds it
 (function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h)h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
@@ -18849,19 +18867,19 @@ function renderTimeline(){
 // ---- privacy: what is kept, where, who sees it, and what goes to Claude ----
 function renderPrivacy(){
   const el=$('privList'); if(!el)return; const R=[];
-  R.push(['מה נשמר','הפרופיל שלך (שם, ואם מילאת גם מייל וטלפון; שפת הדף, סוג המשקיע, ההיכרות עם השוק, בשביל מה אתה משקיע, האופק ויום ההפקדה), האחזקות והמזומן שבטבלה, התוכנית, הכללים והיעדים, משיכות והפקדות צפויות שהזנת, היסטוריית הפעולות, הדוחות ששמרת, סימוני "בדקתי" ותרגומי הדף לשפה שבחרת. הקבצים והצילומים שהעלית לא נשמרים.']);
+  R.push(['מה נשמר','הפרופיל שלך (שם, ואם מילאת גם מייל, טלפון, תאריך לידה, מדינה ועיר, מצב משפחתי, ילדים ותעסוקה; שפת הדף, סוג המשקיע, ההיכרות עם השוק, בשביל מה אתה משקיע, האופק ויום ההפקדה), האחזקות והמזומן שבטבלה, התוכנית, הכללים והיעדים, משיכות והפקדות צפויות שהזנת, היסטוריית הפעולות, הדוחות ששמרת, סימוני "בדקתי" ותרגומי הדף לשפה שבחרת. הקבצים והצילומים שהעלית לא נשמרים.']);
   if(window.__tc&&!LOCAL){ // the site: a server on Railway, Claude through the owner's key, e-mail only when set up
     R.push(['איפה',OWNER?'בבסיס הנתונים של האתר, על שרת ב-Railway (שירות אחסון בענן). כל לילה נשמר עותק בשרת, ואם הגדרת מייל והפעלת את העותק במייל, עותק של הנתונים שלך נשלח גם אליך.':'באזור פרטי שלך בבסיס הנתונים של האתר, על שרת ב-Railway (שירות אחסון בענן) שבעל האתר מנהל. כל לילה נשמר עותק בשרת.']);
     R.push(['מי רואה',OWNER?'רק אתה. כל שותף רואה רק את התיק של עצמו, ומקבל מהשרת מחירים ונתוני אנליסטים רק לניירות שלו. רשימות המעקב של השותפים לא מוצגות לך.':'רק אתה. שותפים אחרים לא רואים את התיק שלך ולא את רשימת הניירות שלך.']);
     if(!OWNER)R.push(['מה בעל האתר רואה','באתר: את המייל שלך ברשימת המשתמשים, וכמה פניות לצ׳יקו שלחת בכל יום, בלי התוכן. את התיק ואת רשימת הניירות שלך הוא לא רואה. כמי שמנהל את השרת, יש לו גישה טכנית לבסיס הנתונים ולגיבויים.']);
-    R.push(['מה נשלח לשירות הבינה המלאכותית','צ׳יקו נעזר בשירות בינה מלאכותית חיצוני. הבקשות עוברות דרך השרת של האתר, עם מפתח ה-API של '+(OWNER?'האתר (שלך)':'בעל האתר')+'. כשאתה מעלה קובץ או מדביק טקסט של דוח: הדף מוחק קודם מהטקסט ת״ז, מספרי חשבון, לקוח ותיק, כתובות, מיילים, טלפונים ואת השם שלך (ליד "שם הלקוח" או "לכבוד", או כמו שכתבת בפרופיל), ורק אז שולח. המחיקה אוטומטית, ופרט שכתוב בצורה לא רגילה עלול לעבור. צילומי מסך ועמודים סרוקים נשלחים כתמונה, כמו שהם, ומהם אי אפשר למחוק: כדאי לחתוך מהם את השם ומספר החשבון לפני ההעלאה. '+'כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' המשימות המתוזמנות בשרת (הודעת הבוקר, הדוחות וההתראות) מחשבות מהנתונים שלך בשרת עצמו, בלי שירות חיצוני.':'')]);
+    R.push(['מה נשלח לשירות הבינה המלאכותית','צ׳יקו נעזר בשירות בינה מלאכותית חיצוני. הבקשות עוברות דרך השרת של האתר, עם מפתח ה-API של '+(OWNER?'האתר (שלך)':'בעל האתר')+'. כשאתה מעלה קובץ או מדביק טקסט של דוח: הדף מוחק קודם מהטקסט ת״ז, מספרי חשבון, לקוח ותיק, כתובות, מיילים, טלפונים ואת השם שלך (ליד "שם הלקוח" או "לכבוד", או כמו שכתבת בפרופיל), ורק אז שולח. המחיקה אוטומטית, ופרט שכתוב בצורה לא רגילה עלול לעבור. צילומי מסך ועמודים סרוקים נשלחים כתמונה, כמו שהם, ומהם אי אפשר למחוק: כדאי לחתוך מהם את השם ומספר החשבון לפני ההעלאה. '+'כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום, וגם הגיל, המצב המשפחתי, מספר הילדים, התעסוקה והמדינה אם מילאת אותם (בלי תאריך הלידה ובלי העיר). משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' המשימות המתוזמנות בשרת (הודעת הבוקר, הדוחות וההתראות) מחשבות מהנתונים שלך בשרת עצמו, בלי שירות חיצוני.':'')]);
     R.push(['הודעות',OWNER?'מיילים אוטומטיים נשלחים רק אם שליחת מייל (Resend) מוגדרת באתר, ורק מה שהפעלת ב"מיילים" (בהגדרות, תחת "ההתראות והצלילים שלי"): הודעת הבוקר, הדוחות וגיבוי לילי של הנתונים שלך. הודעה כשמישהו נרשם נשלחת כשהמייל מוגדר. בלי מייל לא נשלח דבר, והלוג של השרת לא שומר את התוכן. תזכורת ההפקדה מופיעה גם בדף ביום שבחרת.':'האתר לא שולח לך מיילים ולא SMS. תזכורת ההפקדה מופיעה בדף ביום שבחרת.']);
     R.push(['לכמה זמן','עד שתמחק. הכפתור "מחק את כל הנתונים שלי" למטה מוחק הכול מהאתר מיד. העותקים הליליים בשרת נמחקים לבד אחרי 14 יום'+(OWNER?', ועותק שנשלח אליך במייל נשאר בתיבת הדואר שלך.':'.')]);
   }else{
     R.push(['איפה',LOCAL?'רק בדפדפן הזה, במכשיר הזה. הנתונים לא יופיעו במכשיר אחר.':OWNER?'בבסיס הנתונים של הדף, תחת החשבון שלך.':'באזור פרטי שלך בבסיס הנתונים של הדף, תחת החשבון שלך.']);
     R.push(['מי רואה',LOCAL?'רק מי שמשתמש בדפדפן הזה.':OWNER?'רק אתה. מי שמוזמן לדף רואה רק את התיק של עצמו.':'רק אתה. גם בעל הדף לא רואה את התיק שלך.']);
     if(!OWNER&&!LOCAL)R.push(['מה נשלח לבעל הדף','רק רשימת הסימולים שלך: ניירות שאתה מחזיק, שסימנת או שפתחת בחיפוש. בלי כמויות ובלי סכומים. היא משמשת לעדכון המחירים שלהם.']);
-    R.push(['מה נשלח לשירות הבינה המלאכותית','כשאתה מעלה קובץ או צילום, או מדביק טקסט של דוח: התוכן שלו נשלח לשירות הבינה המלאכותית דרך החשבון שלך כדי לקרוא ממנו את האחזקות. כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית דרך החשבון שלך, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום. משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' בנוסף, המשימות המתוזמנות שהגדרת קוראות את הנתונים שלך כדי להפיק דוחות והתראות.':'')]);
+    R.push(['מה נשלח לשירות הבינה המלאכותית','כשאתה מעלה קובץ או צילום, או מדביק טקסט של דוח: התוכן שלו נשלח לשירות הבינה המלאכותית דרך החשבון שלך כדי לקרוא ממנו את האחזקות. כשאתה מבקש מצ׳יקו (עוזר התיק) ניסוח, סיכום או תשובה: סיכום מחושב של התיק (סכומים, משקלים, קבוצות, הכללים, היעדים, התוכנית והמדיניות שכתבת) נשלח לשירות הבינה המלאכותית דרך החשבון שלך, בלי השם שלך ובלי פרטי חשבון; סוג המשקיע, ההיכרות עם השוק, המטרה והאופק שבחרת כלולים בסיכום, וגם הגיל, המצב המשפחתי, מספר הילדים, התעסוקה והמדינה אם מילאת אותם (בלי תאריך הלידה ובלי העיר). משיכות והפקדות צפויות נכללות רק אם סימנת זאת, ורק התאריך והסכום, בלי מה שכתבת עליהן. כשאתה מבקש מצ׳יקו להסביר נייר: פרטי הנייר, נתוני האנליסטים והדוחות שלו והמקום שלו בתיק. כשהדף מוצג בשפה אחרת מעברית: הטקסטים שעל המסך נשלחים לתרגום, בלי מספרים, בלי סכומים, בלי סימולים ובלי השם שלך. המייל והטלפון לא נשלחים לעולם. הקלדה ידנית והניתוח המחושב לא שולחים דבר.'+(OWNER?' בנוסף, המשימות המתוזמנות שהגדרת קוראות את הנתונים שלך כדי להפיק דוחות והתראות.':'')]);
     R.push(['הודעות','הדף לא שולח מיילים ולא SMS. תזכורת ההפקדה מופיעה בדף ביום שבחרת'+(OWNER&&!LOCAL?', וגם בהודעת הבוקר של המשימה המתוזמנת שלך':'')+'.']);
     R.push(['לכמה זמן','עד שתמחק. הכפתור "מחק את כל הנתונים שלי" למטה מוחק הכול מיד.']);
   }
@@ -18962,7 +18980,7 @@ function renderDesk(m,A){
   const need=L.filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep'), st=L.some(x=>x.sev==='crit')?'crit':need.length?'warn':'ok';
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${trustH(T)}${(()=>{try{return nwHealthH(nwHealth())}catch(e){return ''}})()}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${trustH(T)}${(()=>{try{return nwHealthH(nwHealth())}catch(e){return ''}})()}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 const DESK_REP=new Set();
@@ -19798,7 +19816,8 @@ const ANA_RULES=`כללים מחייבים:
 7. investor_profile הוא סוג המשקיע שהמשתמש בחר לעצמו. מותר להתייחס אליו כשהוא עוזר להסביר (למשל תנודתיות גבוהה מול מי שאוהב ללכת על בטוח), אבל הוא לא היתר להמליץ על קנייה או מכירה.
 8. knowledge_level הוא כמה המשתמש מכיר את שוק ההון. "מתחיל": משפטים קצרים, וכל מונח מקצועי (מכפיל, תנודתיות, חשיפה, ריכוז) מוסבר במילים פשוטות בסוגריים. "מכיר את היסודות": בלי להסביר מונחים בסיסיים. "מנוסה": תמציתי ומקצועי, עם המספרים.
 9a. news הן ידיעות ממקורות חיצוניים כפי שנקראו (headline, what, cert). מותר לכתוב מה דווח, בייחוס ("לפי כתבה ב-…"), ואת touches_my_portfolio. אל תכתוב שידיעה גרמה לתנועת מחיר: מותר רק "באותם ימים דווח ש…", ואל תחזה מה יקרה בעקבותיה. כש-cert הוא "הערכה", אמור שזו הערכה. אם אין ידיעה מתאימה לשאלה, אמור שאין.
-9. could_fit הוא דירוג התאמה שהדף חישב (פער מהיעד, פיזור, חפיפה, מטבע, סוג המשקיע). כשנשאלת מה יכול להתאים לתיק, ענה רק מתוכו: אילו ניירות וקרנות מדורגים גבוה ולמה, במילים של הדירוג ("משלימה פער ב…", "מפזרת", "בשקלים"). אל תכתוב "ממליץ", "כדאי לקנות" או "קנה"; סיים במשפט שזה דירוג התאמה לפי הכללים שלו, לא המלצה, ושההחלטה שלו. investor_goal הוא בשביל מה המשתמש משקיע, לכמה שנים ולאיזה סכום: מותר לקשר את המצב אליו (למשל אופק קצר מול תנודתיות גבוהה), בלי המלצה. planned_cash_flows הם משיכות והפקדות שהמשתמש תכנן: מותר לומר כמה זמן נשאר ואיזה חלק מהתיק זה, בלי לקבוע אם התיק מתאים להן ובלי המלצה.`;
+9. could_fit הוא דירוג התאמה שהדף חישב (פער מהיעד, פיזור, חפיפה, מטבע, סוג המשקיע). כשנשאלת מה יכול להתאים לתיק, ענה רק מתוכו: אילו ניירות וקרנות מדורגים גבוה ולמה, במילים של הדירוג ("משלימה פער ב…", "מפזרת", "בשקלים"). אל תכתוב "ממליץ", "כדאי לקנות" או "קנה"; סיים במשפט שזה דירוג התאמה לפי הכללים שלו, לא המלצה, ושההחלטה שלו. investor_goal הוא בשביל מה המשתמש משקיע, לכמה שנים ולאיזה סכום: מותר לקשר את המצב אליו (למשל אופק קצר מול תנודתיות גבוהה), בלי המלצה. planned_cash_flows הם משיכות והפקדות שהמשתמש תכנן: מותר לומר כמה זמן נשאר ואיזה חלק מהתיק זה, בלי לקבוע אם התיק מתאים להן ובלי המלצה.
+10. about_me הוא מה שהמשתמש כתב על עצמו בפרופיל (גיל, מצב משפחתי, ילדים, תעסוקה, מדינה). השתמש בו רק כשהוא עוזר לקשר הסבר למטרה ולאופק שהמשתמש קבע (למשל ילדים ומטרה של לימודים), ובלי להזכיר אותו כשאין צורך. אל תסיק ממנו כמה כסף יש למשתמש או כמה סיכון הוא יכול לשאת, ואל תמליץ על בסיסו. אם המדינה אינה ישראל, מותר לומר שחישובי המס בדף לפי הכללים בישראל.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -19806,6 +19825,23 @@ const ANA_RULES=`כללים מחייבים:
 // figure comes from and the principles it works by.
 const LEVEL={new:'מתחיל',mid:'מכיר את היסודות',pro:'מנוסה'};
 const PURPOSE={home:'דירה',pension:'פנסיה וטווח ארוך',save:'חיסכון כללי',kids:'ילדים ולימודים',income:'הכנסה שוטפת',other:'אחר'};
+// 31.10: more about the person, all optional: the birth date (for the age and the birthday; the date itself goes nowhere),
+// the country and the city, the family and the work. Each word in the form the person chose (זכר, נקבה, or both)
+const FAM={single:['רווק','רווקה','רווק/ה'],couple:['בזוגיות','בזוגיות','בזוגיות'],married:['נשוי','נשואה','נשוי/אה'],divorced:['גרוש','גרושה','גרוש/ה'],widowed:['אלמן','אלמנה','אלמן/ה']};
+const JOB={emp:['שכיר','שכירה','שכיר/ה'],self:['עצמאי','עצמאית','עצמאי/ת'],both:['שכיר ועצמאי','שכירה ועצמאית','שכיר/ה ועצמאי/ת'],army:['בשירות צבאי או לאומי','בשירות צבאי או לאומי','בשירות צבאי או לאומי'],student:['סטודנט','סטודנטית','סטודנט/ית'],retired:['פנסיונר','פנסיונרית','פנסיונר/ית'],none:['לא עובד כרגע','לא עובדת כרגע','לא עובד/ת כרגע'],other:['אחר','אחר','אחר']};
+const gIx=g=>g==='m'?0:g==='f'?1:2, famL=(k,g)=>FAM[k]?FAM[k][gIx(g)]:'', jobL=(k,g)=>JOB[k]?JOB[k][gIx(g)]:'';
+const COUNTRIES=['IL','US','GB','CA','FR','DE','RU','UA','AR','BR','MX','AU','NZ','ZA','NL','BE','CH','AT','IT','ES','PT','IE','SE','NO','DK','FI','PL','CZ','HU','RO','GR','CY','TR','AE','MA','ET','IN','CN','JP','KR','SG','HK','TH','PH'];
+const countryName=(c,ui)=>{if(c==='XX')return 'מדינה אחרת'; try{return new Intl.DisplayNames([ui||'he'],{type:'region'}).of(c)||c}catch(e){return c}};
+const kidsL=n=>n==null||n===''?'':+n===0?'בלי ילדים':+n===1?'ילד אחד':`${+n} ילדים`;
+const BIRTH=/^(\d{4})-(\d{2})-(\d{2})$/;
+function ageOf(b,now=new Date()){const m=BIRTH.exec(b||''); if(!m)return null; const y=+m[1], mo=+m[2], d=+m[3]; let a=now.getFullYear()-y; if(now.getMonth()+1<mo||(now.getMonth()+1===mo&&now.getDate()<d))a--; return a>=0&&a<130?a:null}
+// a birthday on 29 February is kept on the 28th in the other years
+function bdayToday(b,now=new Date()){const m=BIRTH.exec(b||''); if(!m)return false; let mo=+m[2], d=+m[3]; const y=now.getFullYear(); if(mo===2&&d===29&&!(y%4===0&&(y%100!==0||y%400===0)))d=28; return now.getMonth()+1===mo&&now.getDate()===d}
+const birthTxt=b=>{const m=BIRTH.exec(b||''); return m?`${+m[3]}.${+m[2]}.${m[1]}`:''};
+// what צ׳יקו is told about the person: the age (never the date), the family, the work and the country (never the city)
+function aboutMe(){const p=(S&&S.profile)||{}, o={}, a=ageOf(p.birth); if(a!=null)o.age_years=a; if(FAM[p.fam])o.family_status=famL(p.fam,p.gender);
+  if(p.kids!=null&&p.kids!==''&&Number.isInteger(+p.kids))o.children=+p.kids; if(JOB[p.job])o.employment=jobL(p.job,p.gender); if(p.country)o.country_of_residence=countryName(p.country,'he');
+  return Object.keys(o).length?o:null}
 const levelOf=()=>{const l=(S&&S.profile&&S.profile.level)||(S&&S.level);return LEVEL[l]?l:'mid'};
 const purposeOf=()=>{const p=S&&S.profile&&S.profile.purpose;return PURPOSE[p]?p:''};
 // what צ׳יקו is told about the person. The level sets the depth; the goal lets him connect the state of the portfolio to it
@@ -19813,7 +19849,7 @@ const purposeOf=()=>{const p=S&&S.profile&&S.profile.purpose;return PURPOSE[p]?p
 function anaFlowsAI(m){if(!S.flowsAI)return {}; const v=flowsView(S.flows,m,+S.years||0).rows.filter(r=>!r.past); if(!v.length)return {};
   return {planned_cash_flows:v.map(r=>({when:r.ym.slice(5)+'.'+r.ym.slice(0,4),in_months:r.months,kind:r.kind==='out'?'משיכה':'הפקדה חד-פעמית',amount:ils(r.amount),share_of_portfolio_today:r.share!=null?pct(r.share):null}))}}
 const femOn=()=>!!(S&&S.profile&&S.profile.gender==='f');
-function anaPerson(){return {address_form:femOn()?'female (לשון נקבה: את, שלך, תוכלי)':'male (לשון זכר)',knowledge_level:LEVEL[levelOf()],investor_goal:{purpose:purposeOf()?PURPOSE[purposeOf()]:null,horizon_years:+S.years>0?+S.years:null,goal_after_tax:+S.goal>0?ils(+S.goal):null}}}
+function anaPerson(){const ab=aboutMe(); return {address_form:femOn()?'female (לשון נקבה: את, שלך, תוכלי)':'male (לשון זכר)',knowledge_level:LEVEL[levelOf()],...(ab?{about_me:ab}:{}),investor_goal:{purpose:purposeOf()?PURPOSE[purposeOf()]:null,horizon_years:+S.years>0?+S.years:null,goal_after_tax:+S.goal>0?ils(+S.goal):null}}}
 // ---- stage 7: the level of explanation is the person's choice (never the size of the portfolio), and can be changed in the
 // chat. A beginner gets each computed part in plain words as well; an experienced user also how it is computed, the
 // assumptions and the limits. Nobody gets fewer numbers.
@@ -22485,6 +22521,10 @@ function profOpen(src){
   const d=$('profDlg'); if(!d||!canWrite)return; if(d.hidden)PROF_RET=src||document.activeElement;
   const p=S.profile||{};
   $('pfFirst').value=p.first||S.name||''; $('pfLast').value=p.last||''; $('pfEmail').value=p.email||''; $('pfPhone').value=p.phone||'';
+  $('pfBirth').value=BIRTH.test(p.birth||'')?p.birth:''; $('pfBirth').max=isoDay(Date.now()); $('pfCity').value=p.city||''; $('pfKids').value=p.kids!=null&&p.kids!==''?String(p.kids):'';
+  {const ui=I18N.lang||'he', L=COUNTRIES.map(c=>[c,countryName(c,ui)]), top=L.slice(0,2), rest=L.slice(2).sort((a,b)=>a[1].localeCompare(b[1],ui)), o=([c,n])=>`<option value="${c}"${c===p.country?' selected':''}>${esc(n)}</option>`;
+    $('pfCountry').innerHTML=`<option value="">לא צוין</option>${top.map(o).join('')}<optgroup label="עוד מדינות">${rest.map(o).join('')}</optgroup><option value="XX"${p.country==='XX'?' selected':''}>מדינה אחרת</option>`}
+  profWords(p.gender||'m',p.fam,p.job);   // the form checked above when none was chosen
   for(const id of ['pfEmail','pfPhone']){const l=$(id).closest('label'); if(l)l.hidden=false} {const cn=$('pfContactNote'); if(cn)cn.hidden=false}
   $('pfLang').innerHTML=langOpts(I18N_OK(p.lang)?p.lang:(I18N.lang||'he'));
   for(const r of d.querySelectorAll('[name=pfRisk]'))r.checked=r.value===p.risk;
@@ -22498,6 +22538,11 @@ function profOpen(src){
   $('pfDepNote').textContent='ביום הזה תופיע בדף תזכורת להפקדה'+(OWNER&&!LOCAL?', וגם בהודעת הבוקר שנשלחת אליך':'')+'.';
   d.hidden=false; $('profScrim').hidden=false; document.body.classList.add('prof-open');
   setTimeout(()=>{try{$('pfFirst').focus({preventScroll:true})}catch(e){}},40)}
+// the family and the work in the form chosen above them (it can change while the dialog is open)
+function profWords(g,fam,job){const fill=(id,M,v)=>{$(id).innerHTML=`<option value="">לא צוין</option>`+Object.keys(M).map(k=>`<option value="${k}"${k===v?' selected':''}>${esc(M[k][gIx(g)])}</option>`).join('')}; fill('pfFam',FAM,fam); fill('pfJob',JOB,job)}
+document.addEventListener('change',ev=>{const r=ev.target; if(!r||r.name!=='pfGender')return; try{profWords(r.value,$('pfFam').value,$('pfJob').value)}catch(e){}});
+// a field marked as wrong stops being marked once it is changed
+document.addEventListener('input',ev=>{const x=ev.target; if(x&&x.closest&&x.closest('#profDlg')&&x.hasAttribute('aria-invalid'))x.removeAttribute('aria-invalid')});
 function profClose(later){
   const d=$('profDlg'); if(!d||d.hidden)return; d.hidden=true; $('profScrim').hidden=true; document.body.classList.remove('prof-open');
   if(later&&!S.profile){try{localStorage.setItem('tr_prof_later',new Date().toISOString())}catch(e){}}
@@ -22509,10 +22554,14 @@ function profSave(){
   const mark=(id,on)=>{const el=$(id); if(on)el.setAttribute('aria-invalid','true'); else el.removeAttribute('aria-invalid')};
   mark('pfFirst',false);
   const emOk=!em||/^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/.test(em); mark('pfEmail',!emOk); if(!emOk)bad.push('כתובת מייל תקינה, או להשאיר ריק');
+  const bd=$('pfBirth').value||'', bdOk=!bd||(BIRTH.test(bd)&&!isNaN(Date.parse(bd))&&bd>='1900-01-01'&&bd<=isoDay(Date.now())); mark('pfBirth',!bdOk); if(!bdOk)bad.push('תאריך לידה אמיתי, לא בעתיד, או להשאיר ריק');
+  const kv=$('pfKids').value.trim(), kn=kv===''?null:+kv, kOk=kn==null||(Number.isInteger(kn)&&kn>=0&&kn<=20); mark('pfKids',!kOk); if(!kOk)bad.push('מספר ילדים בין 0 ל-20, או להשאיר ריק');
+  const city=$('pfCity').value.replace(/\s+/g,' ').trim().slice(0,40), ct=$('pfCountry').value||'', fam=$('pfFam').value||'', job=$('pfJob').value||'';
   const dg=ph.replace(/\D/g,''), phOk=!ph||(/^\+?[\d\s\-().]+$/.test(ph)&&dg.length>=7&&dg.length<=15); mark('pfPhone',!phOk); if(!phOk)bad.push('מספר טלפון תקין, או להשאיר ריק');
   if(bad.length){$('pfErr').textContent='לא נשמר. צריך לתקן: '+bad.join('; ')+'.'; const x=d.querySelector('[aria-invalid=true]'); try{x&&x.scrollIntoView({block:'center'}); x&&x.focus({preventScroll:true})}catch(e){} return}
   const before=JSON.stringify(S);
-  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',gender:gn==='f'?'f':gn==='m'?'m':'',risk:RISK[rk]?rk:'',level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  S.profile={first:f,last:l,email:em,phone:ph,lang:I18N_OK(lang)?lang:'he',gender:gn==='f'?'f':gn==='m'?'m':'',risk:RISK[rk]?rk:'',level:LEVEL[lv]?lv:'',purpose:PURPOSE[pu]?pu:'',
+    birth:bd&&bdOk?bd:'',country:COUNTRIES.includes(ct)||ct==='XX'?ct:'',city,fam:FAM[fam]?fam:'',kids:kn,job:JOB[job]?job:'',at:(S.profile&&S.profile.at)||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(f)S.name=f; S.depDay=(dep>=1&&dep<=28)||dep===DEP_LAST?dep:0; if(yrs>=1&&yrs<=40)S.years=yrs;
   changed(); profClose(); i18nSync(); try{fillInputs()}catch(e){}
   offerUndo(RISK[rk]?'הפרופיל נשמר':'הפרופיל נשמר. "איזה משקיע אתה" עוד לא נבחר, אז הדירוג מתייחס אליך כ"באמצע"',()=>{S=mergeSettings(JSON.parse(before));fillInputs();changed();i18nSync()})}
@@ -22530,7 +22579,9 @@ function renderMe(){
   $('meNote').innerHTML=p?'הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם. הדירוג ב"מה מתאים לתיק" ובמניות במעקב מותאם לסוג המשקיע שבחרת. זה דירוג התאמה, לא המלצה לקנות. <button class="btn sm" type="button" data-anav="fit">למה שמתאים לתיק ›</button>'
     :'עוד לא מילאת פרופיל. בו קובעים את השם, שפת הדף, סוג המשקיע (שמשנה את דירוג ההתאמה), כמה אתה מכיר את השוק (שקובע את עומק ההסברים של צ׳יקו), בשביל מה אתה משקיע ויום ההפקדה (שממנו מגיעה התזכורת).';
   const span=(t,ltr)=>`<span class="notr"${ltr?' dir="ltr"':''}>${esc(t)}</span>`;
-  const h=p?[['שם',span((p.first||'')+(p.last?' '+p.last:''))],['מייל',p.email?span(p.email,1):'—'],['טלפון',p.phone?span(p.phone,1):'—'],['שפת הדף',span(langName(p.lang||'he',I18N.lang||'he')||p.lang||'')],['סוג המשקיע',esc(RISK[p.risk]||'—')],['היכרות עם השוק',esc(LEVEL[p.level]||'לא נבחר (מכיר את היסודות)')],['בשביל מה',esc(PURPOSE[p.purpose]||'—')],['אופק',+S.years>0?esc(S.years+' שנים'):'—'],['יום ההפקדה',esc(depDayTxt())]].map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join(''):'';
+  const h=p?[['שם',span((p.first||'')+(p.last?' '+p.last:''))],['מייל',p.email?span(p.email,1):'—'],['טלפון',p.phone?span(p.phone,1):'—'],
+    ['תאריך לידה',BIRTH.test(p.birth||'')?esc(birthTxt(p.birth))+(ageOf(p.birth)!=null?` (גיל ${ageOf(p.birth)})`:''):'—'],['מגורים',[p.city?span(p.city):'',p.country?esc(countryName(p.country,I18N.lang||'he')):''].filter(Boolean).join(', ')||'—'],
+    ['משפחה',[famL(p.fam,p.gender),kidsL(p.kids)].filter(Boolean).map(esc).join(', ')||'—'],['תעסוקה',esc(jobL(p.job,p.gender)||'—')],['שפת הדף',span(langName(p.lang||'he',I18N.lang||'he')||p.lang||'')],['סוג המשקיע',esc(RISK[p.risk]||'—')],['היכרות עם השוק',esc(LEVEL[p.level]||'לא נבחר (מכיר את היסודות)')],['בשביל מה',esc(PURPOSE[p.purpose]||'—')],['אופק',+S.years>0?esc(S.years+' שנים'):'—'],['יום ההפקדה',esc(depDayTxt())]].map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join(''):'';
   el.hidden=!p; setH(el,h)}
 document.addEventListener('keydown',e=>{const d=$('profDlg'); if(!d||d.hidden)return;
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();profClose(true);return}
@@ -22741,6 +22792,7 @@ async function i18nReady(){
 function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lang)?S.profile.lang:'he'; if(want==='he'){if(I18N.lang!=='he')i18nSet('he'); i18nFemSet(femOn()); return} if(want!==I18N.lang)i18nSet(want); else if(I18N.on&&!I18N.ready)i18nReady()}
 function i18nBoot(){let l=''; try{l=localStorage.getItem('tr_lang')||''}catch(e){} if(I18N_OK(l)&&l!=='he')i18nSet(l)}
 // the original Hebrew of an element, for code that reads its own status lines
+window.__person=()=>anaPerson();
 window.__i18nState=()=>({on:!!I18N.on,fem:!!I18N.fem,lang:I18N.lang,gender:(S&&S.profile&&S.profile.gender)||'',setk:SETK});
 window.__i18nSrc=el=>{if(!I18N.on)return el.textContent||''; let s=''; const w=document.createTreeWalker(el,4); let n; while(n=w.nextNode()){const r=I18N.orig.get(n); s+=r&&n.nodeValue===r.out?r.src:n.nodeValue} return s};
 document.addEventListener('click',()=>{if(I18N.on)i18nSoon(350)},true);
@@ -25528,7 +25580,10 @@ document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest
 // here goes back to the account within a few seconds
 // this browser's choices (read before anything applies them: the theme's first application happens at load)
 const UXK=k=>{try{return localStorage.getItem(k)}catch(e){return null}}, UXS=(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}};
-const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','tr_theme','acct','tr_kv'];
+const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','tr_theme','acct','tr_kv',
+  // 31.10: and these, which stayed in one browser: the amounts hidden, the news' filters and its tab, the Impact's period,
+  // its map and its levels, the views of the dividends, the regions and the watch chart, the pot, the recent searches
+  'tr_hidenum','tr_nwf','tr_rtt','tr_ixr','tr_ixmap','tr_nxlv','tr_dvv','tr_rgv','tr_wr','tr_pot','tr_recent'];
 const uiLocal=()=>{const o={}; for(const k of UI_KEYS){const v=UXK(k); if(v!=null)o[k]=String(v).slice(0,6000)} return o};
 let UI_APPLIED=false;
 function uiApply(){
@@ -25545,8 +25600,15 @@ function uiApply(){
   try{const v=UXK('tr_sper'); if(['day','week','month','peak'].includes(v))SPER=v}catch(e){}
   try{const a=UXK('acct'); if(a&&ACCTS[a])acct=a}catch(e){} try{const v=UXK('tr_kv'); KV=v==='fund'||v==='stock'?v:'all'}catch(e){}
   try{const v=UXK('tr_tape'); TAPE_ON=v==null?innerWidth>=760:v!=='0'; tapeApply()}catch(e){}
+  try{const v=JSON.parse(UXK('tr_nwf')||'null'); if(v&&typeof v==='object')NWF={...NWF0,...v,q:''}; if(UXK('tr_rtt')==='al')RTT='al'}catch(e){}
+  try{const v=UXK('tr_ixr'); if(['1','7','30','90','all'].includes(v))IXR=v}catch(e){}
+  try{const v=JSON.parse(UXK('tr_nxlv')||'null'); if(Array.isArray(v)&&v.length)NXLV=new Set(v.filter(k=>NX_LV[k]))}catch(e){}
+  try{DVV=UXK('tr_dvv')==='once'?'once':'month'}catch(e){} try{const v=UXK('tr_rgv'); if(RG[v])RGV=v}catch(e){}
+  try{const v=UXK('tr_wr'); if(v!=null&&/^(0|6|12|24)$/.test(v))WR=+v}catch(e){} try{const v=UXK('tr_pot'); if(v)POT=v}catch(e){}
+  try{const d=$('ixMapD'), v=UXK('tr_ixmap'); if(d&&(v==='1'||v==='0'))d.open=v==='1'}catch(e){}
+  try{eyeOn()}catch(e){}
   try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
-  try{render()}catch(e){}
+  try{render()}catch(e){} try{renderNewsX()}catch(e){}
 }
 function uiPush(){
   if(!SETK||!canWrite||!S)return; if(!UI_APPLIED){if(S.ui)return; UI_APPLIED=true}

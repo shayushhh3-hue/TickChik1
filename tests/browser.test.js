@@ -1301,6 +1301,48 @@ test('a new user: the portfolio first; the profile comes after it, with e-mail a
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('my details and my choices: the profile keeps the personal details, צ׳יקו gets the age and not the date, the birthday is in the greeting, and the choices follow the account',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{
+    let {ctx,pg}=await open(390); await tab(pg,'settings'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>document.getElementById('meEdit').click()); await pg.waitForFunction(()=>!document.getElementById('profDlg').hidden);
+    const now=new Date(), md=String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'), age=now.getFullYear()-1988;
+    await pg.fill('#pfFirst','שי'); await pg.evaluate(()=>document.querySelector('#profDlg [name=pfGender][value=m]').click());
+    // the words follow the form chosen
+    const famW=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfFam option')].map(o=>o.textContent));
+    assert.ok((await famW()).includes('נשוי')); await pg.evaluate(()=>document.querySelector('#profDlg [name=pfGender][value=f]').click()); assert.ok((await famW()).includes('נשואה'));
+    await pg.evaluate(()=>document.querySelector('#profDlg [name=pfGender][value=m]').click()); assert.ok((await famW()).includes('נשוי'));
+    // a birth date in the future is not kept
+    await pg.fill('#pfBirth','2096-'+md); await pg.click('#profDlg .prof-f .btn.pri'); await pg.waitForTimeout(300);
+    assert.match(await pg.textContent('#pfErr'),/תאריך לידה/); assert.equal(await pg.getAttribute('#pfBirth','aria-invalid'),'true');
+    assert.equal(await pg.evaluate(()=>document.getElementById('profDlg').hidden),false,'not saved, still open');
+    await pg.fill('#pfBirth','1988-'+md); await pg.selectOption('#pfCountry','IL'); await pg.fill('#pfCity','תל אביב'); await pg.selectOption('#pfFam','married'); await pg.fill('#pfKids','2'); await pg.selectOption('#pfJob','emp');
+    await pg.click('#profDlg .prof-f .btn.pri'); await pg.waitForTimeout(1500);
+    const pr=store.getDoc('settings/main').data.profile;
+    assert.deepEqual({first:pr.first,birth:pr.birth,country:pr.country,city:pr.city,fam:pr.fam,kids:pr.kids,job:pr.job},{first:'שי',birth:'1988-'+md,country:'IL',city:'תל אביב',fam:'married',kids:2,job:'emp'});
+    const me=await pg.evaluate(()=>document.getElementById('meList').innerText);
+    assert.match(me,new RegExp('גיל '+age)); assert.match(me,/תל אביב, ישראל/); assert.match(me,/נשוי, 2 ילדים/); assert.match(me,/שכיר/);
+    assert.deepEqual((await pg.evaluate(()=>window.__person())).about_me,{age_years:age,family_status:'נשוי',children:2,employment:'שכיר',country_of_residence:'ישראל'},'the age, never the date; no city');
+    // the dialog opens again with what was saved
+    await pg.evaluate(()=>document.getElementById('meEdit').click()); await pg.waitForTimeout(200);
+    assert.deepEqual(await pg.evaluate(()=>['pfBirth','pfCountry','pfCity','pfFam','pfKids','pfJob'].map(id=>document.getElementById(id).value)),['1988-'+md,'IL','תל אביב','married','2','emp']);
+    await pg.click('#pfLater'); await tab(pg,'overview'); await pg.waitForTimeout(400);
+    assert.match(await pg.textContent('#hDesk'),/שי, ויום הולדת שמח!/,'the birthday, in the greeting');
+    // the choices that stayed in one browser: the amounts hidden (in the settings too), the Impact's period; they go to the account
+    await tab(pg,'settings'); await pg.waitForTimeout(200); await pg.evaluate(()=>document.querySelector('[data-hidenum="1"]').click());
+    assert.deepEqual(await pg.evaluate(()=>[document.body.classList.contains('hidenum'),document.getElementById('kEye').getAttribute('aria-pressed'),document.querySelector('[data-hidenum="1"]').getAttribute('aria-pressed')]),[true,'true','true']);
+    await pg.evaluate(()=>localStorage.setItem('tr_ixr','30'));
+    const uiOf=()=>store.getDoc('settings/main').data.ui||{}; for(let i=0;i<40&&!(uiOf().tr_hidenum==='1'&&uiOf().tr_ixr==='30');i++)await pg.waitForTimeout(250);
+    assert.equal(uiOf().tr_hidenum,'1'); assert.equal(uiOf().tr_ixr,'30');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // another device, a browser with nothing in its storage
+    ({ctx,pg}=await open(390,{keepUi:true})); await pg.waitForTimeout(800);
+    assert.deepEqual(await pg.evaluate(()=>({hide:document.body.classList.contains('hidenum'),ixr:localStorage.getItem('tr_ixr'),eye:document.getElementById('kEye').getAttribute('aria-pressed')})),{hide:true,ixr:'30',eye:'true'});
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);
