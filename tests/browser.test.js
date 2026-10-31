@@ -623,6 +623,8 @@ test('חיבור למציאות without a portfolio: the news to read and search
   try{
     assert.equal(R['nw@example.com'].doc.items.length,0,'no portfolio: no personal alert is made'); assert.equal(R['nw@example.com'].doc.hasPf,false);
     const {ctx,pg}=await open(390,{who:'nw'}); await tab(pg,'news'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc, #newsFeed .nw-c').length>=2,null,{timeout:15000});
+    // the markup is whole: every tab's pane is inside the page's frame (a stray </div> once left the tabs after חיבור למציאות outside it, under the bottom bar)
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('.pane')].filter(p=>!p.closest('.wrap')).map(p=>p.id||p.className)),[],'every pane inside .wrap');
     const r=await pg.evaluate(()=>({heads:[...document.querySelectorAll('.nw-heads article')].map(a=>a.querySelector('h3, .nw-cs b').textContent),n:document.getElementById('rtAlN').hidden}));
     assert.ok(r.heads.includes('הפד הותיר את הריבית')&&r.heads.includes('אופ״ק קיצצה תפוקה והנפט עלה'),JSON.stringify(r.heads)); assert.equal(r.n,true,'no count of alerts');
     await pg.fill('#nxQ','נפט'); await pg.waitForTimeout(400); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nwc h3')].map(h=>h.textContent)),['אופ״ק קיצצה תפוקה והנפט עלה']);
