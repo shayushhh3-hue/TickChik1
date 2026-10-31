@@ -9,6 +9,11 @@ import {yahooChart, fetchAll, buildQuotesDoc, tickerFor} from '../shared/quotes.
 import {ilOpen, usOpen, inPxWindow, lastSession, pxDue, ilParts} from '../shared/market.js';
 import {mayaFund, isIlFund, fundFromJson, trackOf} from '../shared/quotes.js';
 
+// 31.10: no test reaches the internet. On the CI runner it is open (here it is not), and a source the code fetched for
+// real (the Fed's feed, read with the general news) added an article there and changed what two tests counted. A test
+// that needs an answer from outside gives its own fetch; the server started inside a test is still reached (localhost)
+{const real=globalThis.fetch; globalThis.fetch=async(u,o)=>/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\//.test(String(u&&u.url||u))?real(u,o):new Response('offline in tests',{status:503})}
+
 // a stand-in for Claude's API, on a local port
 let claudeSrv, claudeSeen=[], claudeClosed=0;
 before(async()=>{
