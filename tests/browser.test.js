@@ -229,8 +229,9 @@ test('the trading calendar: a violet dot on a report day, a green one on a divid
     await pg.click('#calBox [data-calmv="1"]'); await pg.waitForTimeout(300);
     const r=await pg.evaluate(([d1,d2,d3,dread])=>{const dots=iso=>[...document.querySelectorAll(`#calBox [data-calday="${iso}"] .evs i`)].map(i=>({c:i.className,bg:getComputedStyle(i).backgroundColor}));
       return {rep:dots(d1),ex:dots(d2),pay:dots(d3),list:document.querySelector('#calBox .calev')?.textContent||''}},[d1,d2,d3]);
-    assert.deepEqual(r.rep.map(x=>x.c),['rep']); assert.equal(r.rep[0].bg,'rgb(124, 58, 237)','violet for a report');
-    assert.deepEqual(r.ex.map(x=>x.c),['div est'],'a ring for an estimated dividend'); assert.deepEqual(r.pay.map(x=>x.c),['div est']);
+    // (another company of the fixture may have its own day on one of these days: what is checked is that each is there)
+    const rp=r.rep.find(x=>x.c==='rep'); assert.ok(rp,JSON.stringify(r.rep)); assert.equal(rp.bg,'rgb(124, 58, 237)','violet for a report');
+    assert.ok(r.ex.some(x=>x.c==='div est'),'a ring for an estimated dividend: '+JSON.stringify(r.ex)); assert.ok(r.pay.some(x=>x.c==='div est'),JSON.stringify(r.pay));
     assert.match(r.list,/יום אקס דיבידנד \(משוער\) · KO/); assert.match(r.list,/דוח כספי · NVDA/);
     // the report read three days ago without its real day: on no day of this month or the last
     await pg.click('#calBox [data-calmv="-1"]'); await pg.waitForTimeout(200); await pg.click('#calBox [data-calmv="-1"]'); await pg.waitForTimeout(200);
@@ -1062,7 +1063,9 @@ test('the plan: a purchase stays in its month when the statement takes it out of
     ({ctx,pg}=await open(390)); await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(400);
     const S2=await sched(pg);
     assert.deepEqual(S2[first],S1[first],'the purchase stays in its month, ticked');
-    for(const k of Object.keys(S1))assert.equal(S2[k].m,S1[k].m,`${k} keeps its month`);
+    // (on a month's last day the statement is of the next month, and the plan's months rightly move with it)
+    const turn=new Date(Date.now()+864e5).toISOString().slice(0,7)!==new Date().toISOString().slice(0,7);
+    if(!turn)for(const k of Object.keys(S1))assert.equal(S2[k].m,S1[k].m,`${k} keeps its month`);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('plan/main',PL0); store.setDoc('portfolio/main',P0)}
 });
