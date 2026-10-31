@@ -277,7 +277,13 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order,['insightBar','quickActs','soonSec','holdSec'],'what happened today, the four actions, the coming two weeks, then the holdings (28.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.slice(0,3),['quickActs','soonSec','holdSec'],'the four actions, the coming two weeks, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
+      const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>p.textContent.replace(/\s+/g,' ').trim()),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
+        news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
+      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.match(td.L.find(x=>/^היום:/.test(x))||'',/^היום: התיק (עלה|ירד) ב-[\d.]+% \(.*\)(, בעיקר בגלל .+)?\.$/);
+      assert.match(td.L.find(x=>/^לטיפול:/.test(x))||'',/^לטיפול: 2 חריגות מהכללים שלך ונושא אחד לבדיקה לבקרה ›$/,JSON.stringify(td.L));
+      assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
       assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
