@@ -2186,6 +2186,8 @@ html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw
 .imp-say{font-size:15px;font-weight:600;line-height:1.55}
 .pl-how{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:14px;border:1px solid rgb(124 58 237 / .28);background:rgb(124 58 237 / .05)} .pl-howh{font-size:14.5px}
 .ix-tip .pl-how{padding:8px} .ix-tip .nwi-r>summary{min-height:40px}
+.nw-tr{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid rgb(34 197 94 / .45);color:#15803D;background:rgb(34 197 94 / .08)} .nw-tr.off{border-color:rgb(59 130 246 / .5);color:#1D4ED8;background:rgb(59 130 246 / .08)}
+html[data-theme="dark"] .nw-tr{color:#86EFAC} html[data-theme="dark"] .nw-tr.off{color:#93C5FD}
 .nx-pend{margin:0;display:flex;align-items:center;gap:8px;font-size:13.5px;line-height:1.5;color:var(--vio-ink);font-weight:600} .nx-pend.fail,.nx-pend.cap,.nx-pend.off{color:var(--ink2);font-weight:500}
 .nx-spin{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid rgb(124 58 237 / .25);border-top-color:#7C3AED;animation:nxspin .9s linear infinite} @keyframes nxspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.nx-spin{animation:none}}
@@ -3001,7 +3003,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="nw-active" id="nwActive" hidden></div>
         <div class="newsfeed" id="newsFeed"><div class="empty">החדשות נטענות…</div></div>
         <p class="note" id="nxStat" hidden></p>
-        <p class="note" id="nxNote">חדשות ממקורות חיצוניים (Finnhub, Yahoo Finance; גלובס לכותרות על מניות שנסחרות בתל אביב, לפי שם החברה בכותרת; פוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת), נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
+        <p class="note" id="nxNote">חדשות ממקורות חיצוניים: הדיווחים הרשמיים של החברות לרשות ניירות הערך האמריקאית (SEC EDGAR) והודעות הפד; כתבות של מו"לים מובילים בלבד (Reuters, Bloomberg, AP, CNBC, The Wall Street Journal, Financial Times ועוד; בעברית גלובס, כלכליסט, TheMarker ועוד) דרך Google News; Finnhub ו-Yahoo Finance; גלובס למניות שנסחרות בתל אביב; ופוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת, נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
       </div>
       <div id="rtAl" class="rt-p ix" role="tabpanel" aria-labelledby="rtTabAl" hidden>
         <div class="ix-head">
@@ -24127,6 +24129,9 @@ function nxPendH(ids){const S=(ids||[]).map(nxRn), st=S.includes('off')?'off':S.
     :st==='fail'?'התרגום לא הצליח כרגע. ננסה שוב אוטומטית בעוד כמה דקות.':'<span class="nx-spin" aria-hidden="true"></span> מתרגם לעברית ומסביר איך זה משפיע…'}</p>`}
 // a Hebrew line for an article not read yet: who it is about and where it is from (the headline in English stays in "עוד")
 function nxPendTitle(syms,pub){const L=(syms||[]).filter(k=>SECKEY.test(k)).slice(0,3).map(k=>NAMEOF[k]&&NAMEOF[k]!==k?`${NAMEOF[k]} (${k})`:k); return `ידיעה ${pub?`מ-${pub} `:''}${L.length?`על ${L.join(', ')}`:'חדשה'}`}
+// 31.10: the publishers the site takes from Google News (server/sources.js), and the official sources
+const NW_TOP=new Set(['Reuters','Bloomberg','Associated Press','CNBC','The Wall Street Journal','Financial Times','MarketWatch',"Barron's",'The New York Times','Fortune','Axios','The Economist','BBC','Nikkei Asia','The Washington Post','TechCrunch','The Verge','גלובס','כלכליסט','Calcalist Tech','TheMarker','ynet','ביזפורטל','הארץ','N12','ice','The Times of Israel','Globes']);
+const NW_OFF=new Set(['SEC EDGAR','Federal Reserve']);
 const CH_HOWT={direct:'בחדשות',supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'אותו ענף',macro:'אירוע רחב'};
 // one company: a line (held or followed, how it is linked, the direction in words, why) that opens its whole way
 function chRowH(x,r,o={}){const S=chFromX(x,{...r,at:o.at}), tag=r.p?`<span class="nwi-t h">בתיק ${pct(r.p.w,0)}</span>`:r.w?'<span class="nwi-t">במעקב</span>':'', ht=r.expo?'דרך הענף':CH_HOWT[r.how]||'';
@@ -24169,7 +24174,8 @@ function nwCard(z,E,o={}){
   const cats=nxCatsOf(it), held=new Map(((z.rel&&z.rel.hits)||[]).filter(h=>h.held).map(h=>[h.sym,h])), when=it.at?`${dmy(it.at)} ${hm(it.at)}`:'';
   const syms=nwSymsOf(it).slice(0,6), lg=syms.filter(k=>SECKEY.test(k)).slice(0,3);
   const fol=nwMatch(it,F);
-  const meta=`<span class="nw-k k-${kind}">${esc(NX_KIND[kind])}</span>${x?`<span class="nx-tag lv-${lv}">${NX_LV[lv]}</span>`:'<span class="nx-tag">עוד לא נקרא</span>'}${cats[0]?`<button type="button" class="nw-cat" data-nwset="cat:${cats[0]}">${esc(NX_CAT_L[cats[0]])}</button>`:''}<span class="nw-src"><bdi>${esc(it.pub||'מקור')}</bdi>${when?' · '+when:''}${it.upd?` · עודכן ${dmy(it.upd)} ${hm(it.upd)}`:''}</span>`;
+  const trust=NW_OFF.has(it.pub)?'<span class="nw-tr off" title="דיווח רשמי, מהגוף עצמו">מקור רשמי</span>':NW_TOP.has(it.pub)?'<span class="nw-tr" title="מו״ל חדשות מוביל">מו״ל מוביל</span>':'';
+  const meta=`<span class="nw-k k-${kind}">${esc(it.pub==='Federal Reserve'?'הודעה רשמית של הפד':NX_KIND[kind])}</span>${trust}${x?`<span class="nx-tag lv-${lv}">${NX_LV[lv]}</span>`:'<span class="nx-tag">עוד לא נקרא</span>'}${cats[0]?`<button type="button" class="nw-cat" data-nwset="cat:${cats[0]}">${esc(NX_CAT_L[cats[0]])}</button>`:''}<span class="nw-src"><bdi>${esc(it.pub||'מקור')}</bdi>${when?' · '+when:''}${it.upd?` · עודכן ${dmy(it.upd)} ${hm(it.upd)}`:''}</span>`;
   const impH=it.src!=='x'?nwImpactH(it,z.rel):'';
   const ents=`${(impH?[]:syms).map(k=>{const h=held.get(k), ok=SECKEY.test(k); return `<${ok?'button type="button"':'span'} class="nw-e${h?' held':''}"${ok?` data-gosec="${esc(k)}"`:''}>${logoHtml(k,'xs')}<b>${esc(k)}</b>${h?` <span class="n">בתיק ${pct(h.w,0)}</span>`:''}</${ok?'button':'span'}>`}).join('')}
     ${((x&&x.sectors)||[]).slice(0,3).map(g=>`<button type="button" class="nw-e t" data-nwset="sec:${esc(g)}">${esc(NX_SEC_HE[g]||g)}</button>`).join('')}${((x&&x.regions)||[]).slice(0,2).map(r=>`<span class="nw-e t r">${esc(NX_REG[r]||r)}</span>`).join('')}`;

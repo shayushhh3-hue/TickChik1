@@ -10,6 +10,7 @@
 import {createHash} from 'node:crypto';
 import {fh, fhKey, fhNews} from './finnhub.js';
 import {xArticles} from './xfeed.js';
+import {fedNews} from './sources.js';
 
 export const NEWSX_DOC='research/newsx';
 const DAY=864e5;
@@ -58,7 +59,7 @@ export function newsPrompt(arts,known=[]){
 8. dir: הכיוון האפשרי לחברה המרכזית או לשוק: pos|neg|mixed|unclear. cert: fact = דיווח על דבר שקרה (דוח פורסם, עסקה נחתמה, החלטה התקבלה); interp = פרשנות או ניתוח של המקור; est = הערכה שלך מתוך הקשר כללי.
 9. unknown: משפט אחד, מה עוד לא ידוע ומה יברר את התמונה. more: משפט אחד עד שניים של רקע שעוזר להבין (ידע כללי מותר כאן, בלי מספרים ובלי תחזיות).
 10. ev: מפתח אירוע קצר באנגלית (עד 5 מילים, מקפים), זהה לכתבות שונות על אותו אירוע, למשל "fed-rate-decision-oct" או "nvda-q3-report".
-11. kind: news = ידיעה על דבר שקרה; analysis = ניתוח או סקירה של כותב; opinion = טור דעה, עצה של כותב, "האם כדאי לקנות" וכדומה; pr = הודעה רשמית של החברה עצמה (הודעה לעיתונות, Business Wire, PR Newswire, GlobeNewswire). אל תציג דעה כעובדה.
+11. kind: news = ידיעה על דבר שקרה; analysis = ניתוח או סקירה של כותב; opinion = טור דעה, עצה של כותב, "האם כדאי לקנות" וכדומה; pr = הודעה רשמית של החברה עצמה (הודעה לעיתונות, Business Wire, PR Newswire, GlobeNewswire, או דיווח של החברה ל-SEC, מהמקור SEC EDGAR). אל תציג דעה כעובדה.
 12. regions: המדינות או האזורים שהאירוע קורה בהם או נוגע להם, מתוך ${REGIONS.join('|')} (עד 3).
 13. occ: התאריך שבו האירוע עצמו קרה, YYYY-MM-DD, רק אם הוא כתוב בכתבה או ברור ממנה; אחרת null. לא תאריך הפרסום.
 14. fac: עד 3 גורמים כלכליים שהאירוע עשוי להזיז, כל אחד {"k":"נושא מתוך themes","move":"up|down|unclear","why":"משפט אחד: איך האירוע נוגע לגורם"}. למשל פגיעה בהיצע הנפט: {"k":"oil","move":"up","why":"..."}. רק כשהקשר ברור; אחרת מערך ריק.
@@ -118,7 +119,7 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
 
 // ---- the run: the articles not yet read (the securities' from research/news, the general ones from Finnhub), newest
 // first, a few batches a run; the analyses kept by article id for a week ----
-export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=10,maxBatches=4,keep=7,ask=null,general=generalNews,market=MARKET,genMax=300}={}){
+export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=10,maxBatches=4,keep=7,ask=null,general=generalNews,fed=fedNews,market=MARKET,genMax=300}={}){
   const t0=Date.now(), iso=now.toISOString(), from=new Date(now.getTime()-keep*DAY).toISOString();
   const old=store.getDoc(NEWSX_DOC), D=old.exists&&old.data?old.data:{}, by={...(D.by||{})}, gen=new Map();
   for(const it of (D.gen||[]))if(it&&it.link&&(it.at||it.seen)>=from)gen.set(it.link,it);
@@ -129,6 +130,8 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
       if(cur){if(a.title&&a.title!==cur.title){cur.prevTitle=cur.title; cur.title=a.title; cur.upd=iso; if(a.sum)cur.sum=a.sum} continue}
       gen.set(a.link,{id:newsId(a.link),title:a.title,pub:a.pub,link:a.link,at:a.at||iso,sum:a.sum||null,syms:a.tickers||[],seen:iso,src:'gen',cat:a.cat||'general'}); st.gen++}}
     catch(e){st.first=st.first||'general: '+e.message}}
+  // 31.10: the Federal Reserve's own monetary-policy releases, everybody's news
+  if(fed){try{for(const a of await fed({fetch:f,now})){if(!a||!a.link||gen.has(a.link))continue; gen.set(a.link,{id:newsId(a.link),title:a.title,pub:a.pub,link:a.link,at:a.at||iso,sum:a.sum||null,syms:[],seen:iso,src:'gen',cat:'macro'}); st.gen++}}catch(e){}}
   // what waits for a reading: the securities' articles of the week, then the general ones
   const news=((store.getDoc('research/news').data||{}).items||[]).filter(it=>it&&it.link&&(it.at||it.seen)>=from).map(it=>({...it,id:newsId(it.link),src:'co'}))
     .concat(xArticles(store,{from}).map(it=>({...it,id:newsId(it.link)})));   // 29.10: the posts from X, when there are any
@@ -337,7 +340,7 @@ const THEME_OF={ai_chips:['ai','chips'],energy:['oil'],macro_rates:['rates','usd
 const DIR_HE={pos:'נראה חיובי',neg:'נראה שלילי',mixed:'השפעה מעורבת',unclear:''};
 // 30.10: the kind of content and the places, by words: a company's own release by its wire, an opinion by its words or its
 // site, an analysis by its words; the rest is a report of something that happened
-const PR_PUB=/business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release/i, OPIN=/\b(opinion|column|should you (buy|sell)|is it time to|why i|stocks? to buy|buy now|top \d+ stocks|my take)\b/i, OPIN_PUB=/motley fool|seeking alpha|investorplace|benzinga pro/i;
+const PR_PUB=/business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release|sec edgar|federal reserve/i, OPIN=/\b(opinion|column|should you (buy|sell)|is it time to|why i|stocks? to buy|buy now|top \d+ stocks|my take)\b/i, OPIN_PUB=/motley fool|seeking alpha|investorplace|benzinga pro/i;
 const ANAL=/\b(analysis|explainer|explained|what .{3,30} means|preview|deep dive|breakdown|takeaways)\b/i;
 const REG_RX=[['china',/\b(china|chinese|beijing|shanghai|hong kong)\b/i],['israel',/\b(israel\w*|tel aviv|bank of israel)\b/i],['europe',/\b(europe\w*|eurozone|ecb|euro area|germany|france|italy|spain)\b/i],
   ['uk',/\b(uk|britain|british|bank of england|london)\b/i],['japan',/\b(japan\w*|boj|tokyo)\b/i],['india',/\b(india\w*)\b/i],['russia',/\b(russia\w*|moscow|kremlin)\b/i],['ukraine',/\b(ukrain\w*|kyiv)\b/i],

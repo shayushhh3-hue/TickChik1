@@ -1167,6 +1167,34 @@ test('Globes for the Tel Aviv shares: headlines matched by the Hebrew names to t
   process.env.IL_NEWS='0'; urls.length=0; const off=await ilNews(s,{fetch:f,now}); delete process.env.IL_NEWS; assert.ok(off.off&&!urls.length);
 });
 
+// 31.10: more sources, only reliable ones: the companies' own SEC reports, the trusted publishers through Google News
+// (a headline that names the company, from a publisher on the list), and the Federal Reserve's monetary releases
+test('more sources: SEC filings, Google News from trusted publishers only, the Fed; once an hour',async()=>{
+  const S=await import('../server/sources.js'); const {newsTask}=await import('../server/newsfeed.js'); const {kindOf}=await import('../server/newsx.js');
+  const now=new Date('2026-10-30T12:00:00Z'), d=h=>new Date(now.getTime()-h*3600e3).toUTCString();
+  const gi=(t,src,url,h,link)=>`<item><title>${t} - ${src}</title><link>${link}</link><guid isPermaLink="false">x</guid><pubDate>${d(h)}</pubDate><description>&lt;a href="x"&gt;${t}&lt;/a&gt;</description><source url="${url}">${src}</source></item>`;
+  const gx=`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>"NVIDIA" - Google News</title>${gi('Nvidia beats estimates as data center sales soar','Reuters','https://www.reuters.com',3,'https://news.google.com/rss/articles/A1?oc=5')}${gi('Is Nvidia stock a buy now?','The Motley Fool','https://www.fool.com',2,'https://news.google.com/rss/articles/A2?oc=5')}${gi('Chip stocks rally; markets climb','CNBC','https://www.cnbc.com',4,'https://news.google.com/rss/articles/A3?oc=5')}${gi('Nvidia supplier TSMC lifts guidance','Bloomberg.com','https://www.bloomberg.com',90,'https://news.google.com/rss/articles/A4?oc=5')}</channel></rss>`;
+  const F=S.parseFeed(gx); assert.equal(F.length,4); assert.equal(F[0].src,'Reuters'); assert.equal(F[0].srcUrl,'https://www.reuters.com');
+  const P=S.gnPick(F,{sym:'NVDA',name:'NVIDIA',aliases:['NVIDIA'],now}); assert.deepEqual(P.map(x=>[x.title,x.pub]),[['Nvidia beats estimates as data center sales soar','Reuters']],'the Fool: not on the list; CNBC: not about the company; Bloomberg: too old');
+  assert.deepEqual(S.aliasesOf(S.shortName('Meta Platforms, Inc. - Class A Common Stock')),['Meta Platforms','Meta']); assert.deepEqual(S.aliasesOf('American Express'),['American Express']);
+  // SEC: an 8-K with results, a 10-Q, an old one, one with only exhibits
+  const sub={name:'NVIDIA CORP',filings:{recent:{form:['8-K','10-Q','8-K','8-K','4'],items:['2.02,9.01','','9.01','5.02','',],accessionNumber:['0001045810-26-000101','0001045810-26-000100','0001045810-26-000099','0001045810-26-000050','x'],
+    primaryDocument:['nvda-8k.htm','nvda-10q.htm','x.htm','y.htm','z'],acceptanceDateTime:[new Date(now-5*3600e3).toISOString(),new Date(now-30*3600e3).toISOString(),new Date(now-6*3600e3).toISOString(),new Date(now-20*864e5).toISOString(),new Date(now).toISOString()]}}};
+  const E=S.secPick(sub,{sym:'NVDA',cik:1045810,now}); assert.deepEqual(E.map(x=>x.title),['NVIDIA filed a report with the SEC (form 8-K): Results of Operations and Financial Condition','NVIDIA filed its quarterly report with the SEC (form 10-Q)']);
+  assert.equal(E[0].link,'https://www.sec.gov/Archives/edgar/data/1045810/000104581026000101/nvda-8k.htm'); assert.equal(E[0].pub,'SEC EDGAR'); assert.equal(kindOf(E[0]),'pr','the company\'s own word');
+  // into the news, once an hour; the Fed into everybody's news
+  const s2=new Store(':memory:'); s2.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:1,name:'NVIDIA Corporation'}]},{silent:true}); s2.setDoc('research/secmap',{map:{NVDA:1045810},updatedAt:now.toISOString()},{silent:true});
+  const fx=`<rss><channel><item><title>Federal Reserve issues FOMC statement</title><link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20261029a.htm</link><pubDate>${d(20)}</pubDate></item></channel></rss>`;
+  const urls=[], f=async u=>{u=String(u); urls.push(u); if(u.includes('news.google.com'))return new Response(gx); if(u.includes('data.sec.gov/submissions'))return Response.json(sub); if(u.includes('federalreserve.gov'))return new Response(fx); return new Response('',{status:404})};
+  const {_resetCiks}=await import('../server/fundamentals.js'); _resetCiks();
+  const st=await newsTask(s2,{fetch:f,now,budgetMs:60e3,market:[],il:null}); const L=s2.getDoc('research/news').data.items;
+  assert.ok(L.some(x=>x.pub==='Reuters'&&x.syms[0]==='NVDA')&&L.some(x=>x.pub==='SEC EDGAR'),JSON.stringify(L.map(x=>x.pub))); assert.ok(!L.some(x=>/Motley/.test(x.pub)));
+  assert.equal(st.more.sec.items,2); assert.equal(st.more.gnews.items,1); assert.match(s2.getDoc('research/news').data.source,/SEC EDGAR.*Google News/);
+  urls.length=0; await newsTask(s2,{fetch:f,now:new Date(now.getTime()+20*60e3),budgetMs:60e3,market:[],il:null}); assert.ok(!urls.some(u=>/news\.google|data\.sec/.test(u)),'not again within the hour');
+  const Fd=await S.fedNews({fetch:f,now}); assert.equal(Fd.length,1); assert.equal(Fd[0].pub,'Federal Reserve'); assert.equal(kindOf(Fd[0]),'pr');
+  process.env.GNEWS='0'; assert.ok((await S.gnewsTask(s2,{syms:['NVDA'],fetch:f,now})).off); delete process.env.GNEWS;
+});
+
 test('report days from the SEC: the earnings release (8-K, item 2.02) or the quarterly report, and a stored report redated by them',async()=>{
   const {secRepDates,_resetCiks}=await import('../server/fundamentals.js'); _resetCiks();
   const sub={filings:{recent:{form:['8-K','10-Q','8-K','4','8-K','10-K'],filingDate:['2026-08-27','2026-08-29','2026-07-02','2026-06-01','2026-05-28','2026-03-14'],items:['2.02,9.01','','5.07','','2.02','',''],reportDate:['','2026-07-27','','','','2026-01-26']}}};
