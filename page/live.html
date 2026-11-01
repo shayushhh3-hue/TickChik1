@@ -2593,7 +2593,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
 <div class="imv" id="imView" role="dialog" aria-modal="true" aria-labelledby="imT" hidden><div class="imv-in">
   <header class="imv-hd"><div class="imv-t"><b id="imT">מפת השפעה</b><div class="imv-sub" id="imSub"></div></div><button type="button" class="stv-x" id="imX" aria-label="סגירת המפה">×</button></header>
   <div class="imv-bar">
-    <div class="imv-views" id="imViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-imv="pf" aria-selected="true">התיק שלי</button><button type="button" role="tab" data-imv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-imv="co" aria-selected="false">חברה</button><button type="button" role="tab" data-imv="world" aria-selected="false">עולם</button></div>
+    <div class="imv-views" id="imViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-imv="pf" aria-selected="true">התיק שלי</button><button type="button" role="tab" data-imv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-imv="co" aria-selected="false">חברה</button></div>
     <div class="imv-tools"><label class="vh" for="imQ">חיפוש במפה</label><input type="search" id="imQ" placeholder="חיפוש: אירוע, חברה, מניה" autocomplete="off">
       <details class="imv-f"><summary class="btn sm">מסננים</summary><div class="imv-fp"><label class="check"><input type="checkbox" id="imFlDirect"><span>רק קשרים ישירים</span></label><label class="check"><input type="checkbox" id="imFlLow"><span>בלי קשרים בביטחון נמוך</span></label><label>כיוון <select id="imFlDir"><option value="">הכל</option><option value="pos">חיובי אפשרי</option><option value="neg">שלילי אפשרי</option><option value="mixed">מעורב</option></select></label></div></details>
 </div>
@@ -3100,11 +3100,11 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="row"><h2 id="hNewsT">חיבור למציאות</h2><span class="sub" id="newsFresh"></span></div>
       <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
         <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">TikChik Impact <span class="rt-n" id="rtAlN" hidden></span></button>
-        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">שוק וחדשות</button>
+        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">החדשות שלי</button>
       </div>
       <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews" hidden>
-        <div class="mk-row" id="mktRow" role="group" aria-label="השווקים עכשיו" hidden></div>
-        <div class="nw-search"><label class="vh" for="nxQ">חיפוש בחדשות</label><input type="search" id="nxQ" placeholder="חיפוש: חברה, סימול, ענף, מדינה, נושא או אירוע" autocomplete="off" enterkeyhint="search"><button type="button" class="btn sm" id="nxFiltBtn" aria-expanded="false" aria-controls="nxFilt">סינון <span id="nxFiltN"></span></button></div>
+        
+        <div class="nw-search"><label class="vh" for="nxQ">חיפוש בחדשות</label><input type="search" id="nxQ" placeholder="חיפוש בחדשות על הניירות שלך" autocomplete="off" enterkeyhint="search"><button type="button" class="btn sm" id="nxFiltBtn" aria-expanded="false" aria-controls="nxFilt">סינון <span id="nxFiltN"></span></button></div>
         <div class="nw-filt panel" id="nxFilt" hidden>
           <div class="nw-fg"><label for="nwRange">זמן</label><select id="nwRange"></select></div>
           <div class="nw-fg" id="nwCustom" hidden><label for="nwFrom">מתאריך</label><input type="date" id="nwFrom"><label for="nwTo">עד</label><input type="date" id="nwTo"></div>
@@ -3118,12 +3118,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <label class="check"><input type="checkbox" id="nwUnread"><span>רק מה שלא קראתי</span></label>
           <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-nwclr="all">לנקות הכול</button></div>
         </div>
-        <div class="chips nx-views" id="nxViews" role="group" aria-label="תצוגה"><button type="button" class="chip" data-nxv="top" aria-pressed="true">ראשי</button><button type="button" class="chip" data-nxv="latest" aria-pressed="false">אחרונות</button><button type="button" class="chip" data-nxv="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-nxv="anal" aria-pressed="false">ניתוחים ודעות</button><button type="button" class="chip" data-nxv="follow" aria-pressed="false">במעקב</button><button type="button" class="chip" data-nxv="events" aria-pressed="false">אירועים במעקב <span class="dv-n" id="nxEvN"></span></button><button type="button" class="chip" data-nxv="cal" aria-pressed="false">לוח אירועים</button><button type="button" class="chip" data-nxv="ins" aria-pressed="false">בעלי עניין</button><button type="button" class="chip" data-nxv="saved" aria-pressed="false">שמורות <span class="dv-n" id="nxSavedN"></span></button><button type="button" class="chip" data-nxv="hist" aria-pressed="false">היסטוריה</button></div>
-        <div class="nw-cats chips" id="nxCats" role="group" aria-label="קטגוריות"></div>
+        <div class="chips nx-views" id="nxViews" role="group" aria-label="תצוגה"><button type="button" class="chip" data-nxv="top" aria-pressed="true">ראשי</button><button type="button" class="chip" data-nxv="latest" aria-pressed="false">אחרונות</button><button type="button" class="chip" data-nxv="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-nxv="anal" aria-pressed="false">ניתוחים ודעות</button><button type="button" class="chip" data-nxv="follow" aria-pressed="false">במעקב</button><button type="button" class="chip" data-nxv="events" aria-pressed="false">אירועים במעקב <span class="dv-n" id="nxEvN"></span></button><button type="button" class="chip" data-nxv="ins" aria-pressed="false">בעלי עניין</button><button type="button" class="chip" data-nxv="saved" aria-pressed="false">שמורות <span class="dv-n" id="nxSavedN"></span></button><button type="button" class="chip" data-nxv="hist" aria-pressed="false">היסטוריה</button></div>
+        <div class="nw-cats chips" id="nxCats" role="group" aria-label="קטגוריות" hidden></div>
         <div class="nw-active" id="nwActive" hidden></div>
         <div class="newsfeed" id="newsFeed"><div class="empty">החדשות נטענות…</div></div>
         <p class="note" id="nxStat" hidden></p>
-        <p class="note" id="nxNote">חדשות ממקורות חיצוניים: הדיווחים הרשמיים של החברות לרשות ניירות הערך האמריקאית (SEC EDGAR) והודעות הפד; כתבות של מו"לים מובילים בלבד (Reuters, Bloomberg, AP, CNBC, The Wall Street Journal, Financial Times ועוד; בעברית גלובס, כלכליסט, TheMarker ועוד) דרך Google News; Finnhub ו-Yahoo Finance; גלובס למניות שנסחרות בתל אביב; ופוסטים מ-X כשהאתר מחובר אליו, מסומנים כמקור לא מאומת, נאספות כל חצי שעה ביום. כל כתבה נקראת פעם אחת על ידי צ׳יקו, מהכותרת והתקציר בלבד: מה קרה, סוג התוכן (ידיעה, ניתוח, דעה או הודעה רשמית של חברה), ואילו חברות, ענפים וגורמים כלכליים היא עשויה להזיז ולמה. עובדה מדווחת, פרשנות של המקור והערכה מסומנות בנפרד. אין כאן תחזית מחיר או המלצה.</p>
+        <p class="note" id="nxNote">כאן רק חדשות שנוגעות לתיק שלך: על הניירות שבתיק ובמעקב, ועל הענפים שלהם. כל כתבה נקראת פעם אחת על ידי צ׳יקו: מה קרה ואת מי זה עשוי להזיז. אין כאן תחזית מחיר או המלצה.</p>
       </div>
       <div id="rtAl" class="rt-p ix" role="tabpanel" aria-labelledby="rtTabAl" hidden>
         <div class="ix-head">
@@ -3133,7 +3133,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="ix-note" id="ixNote" hidden></div>
         <div id="ixBody">
           <div class="ix-kpis" id="ixKpis" hidden></div>
-          <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה על מניה: ההסבר המלא, בשפה פשוטה</span></div>
+          <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה: לדף המניה</span></div>
             <ul class="ix-sl" id="ixStList"></ul><button type="button" class="btn sm ix-more" id="ixStMore" aria-expanded="false" hidden></button></section>
           <div class="ix-grid">
             <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">האירועים שנוגעים לתיק <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
@@ -3147,7 +3147,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <details class="ix-mapd" id="ixMapD"><summary class="ix-ms"><span class="ix-msi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></span><span class="ix-mst"><b>מפת השפעה</b><small>איך האירועים מתחברים למניות שלך, בציור</small></span><span class="ix-msc" aria-hidden="true"></span></summary>
             <section class="ix-map" id="ixMap" aria-labelledby="ixMapH">
               <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><span class="ix-mh"><button type="button" class="ix-tb" id="ixTxtB" aria-pressed="false" aria-controls="ixTxt">המפה במילים</button></span></div>
-              <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button><button type="button" role="tab" data-ixv="world" aria-selected="false">עולם</button></div>
+              <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button></div>
               <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
                 <div class="ix-leg" aria-hidden="true"><span><i style="background:#EF4444"></i>אירוע</span><span><i style="background:#22C55E"></i>גורם כלכלי</span><span><i style="background:#3B82F6"></i>ענף</span><span><i style="background:#F59E0B"></i>חברה</span><span><i style="background:#8B5CF6"></i>החזקה בתיק</span></div>
                 <div class="ix-z" role="group" aria-label="הגדלה והקטנה"><button type="button" id="ixZin" aria-label="הגדלה">+</button><button type="button" id="ixZout" aria-label="הקטנה">−</button><button type="button" id="ixFit" aria-label="חזרה לגודל המקורי">⤢</button></div>
@@ -25336,7 +25336,8 @@ function nwFiltFill(all){
 const RT_MK=[['SPX','bench','S&P 500','market'],['NDX','bench','נאסד״ק 100','tech'],['TA35','bench','ת״א 35','israel'],['TA125','bench','ת״א 125','israel'],['USD','fx','דולר/שקל','fx'],['EUR','mkts','אירו/שקל','fx'],
   ['BRENT','mkts','נפט ברנט','energy'],['GOLD','mkts','זהב','commod'],['BTC','mkts','ביטקוין','crypto'],['VIX','mkts','VIX','market'],['TNX','mkts','אג״ח ארה״ב 10 ש׳','rates']];
 const rtNum=(v,d)=>v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-function rtMarkets(){const el=$('mktRow'); if(!el)return; const B=(Q&&Q.bench)||{}, M=(Q&&Q.mkts)||{};
+function rtMarkets(){const el=$('mktRow'); if(!el)return;   // 1.11: the markets moved to the management's global news model; the site's news is the portfolio's
+  if(true){el.hidden=true; return} const B=(Q&&Q.bench)||{}, M=(Q&&Q.mkts)||{};
   const L=RT_MK.map(([k,src,nm,cat])=>{let px,pv,date;
     if(src==='fx'){px=+(Q&&Q.usdIls); pv=Q&&Q.fxPrev?+Q.fxPrev.rate:0} else{const b=(src==='bench'?B:M)[k]; if(!b)return ''; px=+b.px; pv=+b.prev; date=b.date}
     if(!(px>0)||!(pv>0))return '';
@@ -25474,7 +25475,11 @@ function renderNewsX(){
   const box=$('newsFeed'), fr=$('newsFresh'); if(!box)return;
   const raw=((NEWSD&&NEWSD.items)||[]).concat((XD&&XD.items)||[]); if(raw.some(it=>it&&it.link&&!NXID.has(it.link))){nxIds(raw).then(ok=>{if(ok)try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}})}
   const m=(()=>{try{return mAllNow()}catch(e){return null}})(), F=nwPrefs(), st=nxState();
-  const all=newsAll().map(it=>({it,rel:m&&m.pos&&m.pos.length?newsRel(it,m):null}));
+  // 1.11: the news tab carries only what touches the portfolio: an article naming a holding or a watched security, or
+  // about a sector the portfolio holds. The world's news (the daily picture, the markets, the categories, the calendar)
+  // lives in the management's global news model
+  const all=newsAll().map(it=>({it,rel:m&&m.pos&&m.pos.length?newsRel(it,m):null,mine:(()=>{try{const r=newsRel(it,m||{pos:[]}); return !!(r&&(r.hits.length||r.secs.length))}catch(e){return false}})()})).filter(z=>z.mine);
+  if(NWV==='cal')NWV='top';
   if(fr)fr.textContent=(NXD&&NXD.updatedAt?`עודכן ${ago(NXD.updatedAt)}`:NEWSD&&NEWSD.updatedAt?'כתבות עודכנו '+ago(NEWSD.updatedAt):'')+(NXD&&NXD.ai===false?' · הקריאה של צ׳יקו לא פעילה':'');
   {const n=Object.keys(st.saved||{}).length, e=$('nxSavedN'); if(e)e.textContent=n?String(n):''}
   {const n=NWV==='events'?0:evFreshN(), e=$('nxEvN'); if(e)e.textContent=n?String(n):''}
@@ -25510,7 +25515,7 @@ function renderNewsX(){
   const filtered=nwActive()||NWF.q;
   if(!L.length){const nAll=all.length, nRead=all.filter(z=>z.it.x).length, own=MGR()&&window.__tc&&!LOCAL;
     let t;
-    if(!nAll)t=NEWSD&&NEWSD.updatedAt||NXD&&NXD.updatedAt?'עוד אין כתבות מהשבוע האחרון.':'החדשות נאספות מהמקורות כל חצי שעה ביום (07:10 עד 23:40). עוד לא נאספו.';
+    if(!nAll)t=!(m&&m.pos&&m.pos.length)&&!((WATCH&&WATCH.marks)||[]).length?'כאן מופיעות חדשות על הניירות שבתיק ובמעקב שלך. כשתוסיף תיק או ניירות למעקב, החדשות שלהם יופיעו כאן.':'אין חדשות מהשבוע האחרון על הניירות שלך או על הענפים שלהם.';
     else if(NWV==='follow'&&!Object.values(F).some(v=>Array.isArray(v)&&v.length))t='עוד לא בחרת נושאים לעקוב אחריהם. אפשר לבחור ב"עוד" שעל כל כתבה, או בהגדרות ← חדשות והתראות.';
     else if(filtered)t='אין כתבות שמתאימות לחיפוש ולסינון האלה.';
     else if(nAll&&!nRead)t=`נאספו ${nAll} כתבות, ועוד לא נקראו${NXD&&NXD.ai===false?': הקריאה לא פעילה (אין מפתח Anthropic בשרת)':'. הקריאה רצה כל חצי שעה, מיד אחרי האיסוף'}.`;
@@ -25523,10 +25528,10 @@ function renderNewsX(){
     const evk=z=>z.it.x&&z.it.x.ev?z.it.x.ev:'id:'+z.it.id, used=new Set(head.map(evk)), mine=oneEv(L.filter(z=>!used.has(evk(z))&&nwMatch(z.it,F).length)).sort(byTime).slice(0,4); for(const z of mine)used.add(evk(z));
     const un=(()=>{try{return plItems().filter(plUnread).length}catch(e){return 0}})();
     const cats=NX_CATS.map(c=>({c,L:oneEv(L.filter(z=>!used.has(evk(z))&&nxCatsOf(z.it).includes(c.k))).sort(byTime).slice(0,3)})).filter(g=>g.L.length);
-    box.innerHTML=`${(()=>{try{return dailyH(L,E,F)}catch(e){console.error(e); return nwBriefH()}})()}${un?`<button type="button" class="nw-al" data-rt="al"><b>${un===1?'התראה אישית אחת':un+' התראות אישיות'} שלא נקראו</b><span>מה שנוגע לתיק שלך, עם ההסבר והשרשרת ›</span></button>`:''}
+    box.innerHTML=`${un?`<button type="button" class="nw-al" data-rt="al"><b>${un===1?'התראה אישית אחת':un+' התראות אישיות'} שלא נקראו</b><span>מה שנוגע לתיק שלך, עם ההסבר והשרשרת ›</span></button>`:''}
       <div class="nw-top"><section class="nw-heads" aria-label="כותרות מרכזיות"><h3 class="nw-h">כותרות מרכזיות</h3>${head.map((z,i)=>card(z,{hero:i===0,compact:i>0})).join('')||'<p class="note">אין כותרות מהיממה וחצי האחרונות.</p>'}</section>
       ${mine.length?`<section class="nw-mine" aria-label="במעקב שלך"><h3 class="nw-h">במעקב שלך</h3>${mine.map(z=>card(z,{compact:true})).join('')}</section>`:Object.values(F).some(v=>Array.isArray(v)&&v.length)?'':`<section class="nw-mine" aria-label="במעקב שלך"><h3 class="nw-h">במעקב שלך</h3><p class="note">אפשר לעקוב אחרי קטגוריה, חברה, ענף, מקום או נושא ("עוד" על כרטיס, או בהגדרות). מה שבמעקב מופיע כאן ובתצוגה "במעקב", ושאר החדשות נשארות פתוחות לך.</p></section>`}</div>
-      <div class="nw-cats">${cats.map(g=>`<section class="nw-cg" aria-label="${esc(g.c.l)}"><div class="nw-cgh"><h3 class="nw-h">${esc(g.c.l)}</h3><button type="button" class="lnk" data-nwset="cat:${g.c.k}" data-nwv2="latest">עוד ›</button></div>${g.L.map(z=>card(z,{compact:true})).join('')}</section>`).join('')}</div>`;
+`;
     return}
   L=oneEv(L).sort(sort==='imp'||NWV==='imp'?byImp:byTime);
   const shown=L.slice(0,NWLIM);
@@ -25626,8 +25631,8 @@ function ixAffH(a){const h=(a.holds||[]).slice(0,3).map(x=>{const d=a.kind==='mk
 function ixAff(a){const h=(a.holds||[]).map(x=>x.sym), s=(a.secs||[]).map(x=>NX_SEC_HE[x.g]||x.g); return [...h.slice(0,3),...s.slice(0,2).map(x=>'ענף '+x)].concat(a.usd!=null&&!h.length?['החלק הדולרי']:[]).join(', ')}
 function ixCard(a){const un=plUnread(a);
   return `<article class="ix-a lv-${a.lv}${un?' un':''}" data-ixopen="${esc(a.k)}"><div class="ix-at"><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span class="ix-t">${agoH(a.up||a.at)}</span>${un?`<button type="button" class="ix-x" data-ixdis="${esc(a.k)}" aria-label="לסמן כנקראה (נשארת בהיסטוריה)">×</button>`:''}</div>
-    <h4>${esc(a.title)}</h4>${a.rules?nxPendH((a.arts||[]).map(z=>z.id)):''}${ixAffH(a)}<p class="ix-rel"><i class="dot rel-${a.rel}" aria-hidden="true"></i>רלוונטיות לתיק: <b>${IX_REL_HE[a.rel]||'—'}</b></p>
-    <div class="ix-ab">${a.kind!=='mkt'?`<button type="button" class="btn sm pri" data-ixmap="${esc(a.k)}">פתח מפת השפעה</button>`:''}<button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button></div></article>`}
+    <h4>${esc(a.title)}</h4>${a.rules?nxPendH((a.arts||[]).map(z=>z.id)):''}${ixAffH(a)}
+    <div class="ix-ab">${a.kind!=='mkt'?`<button type="button" class="btn sm" data-ixmap="${esc(a.k)}">על המפה</button>`:''}</div></article>`}
 // the line of time: the period's events, the oldest on the right, each a point with its day
 function ixTimeline(L){const E=L.filter(a=>a.kind!=='mkt').sort((a,b)=>String(a.first||a.at)<String(b.first||b.at)?-1:1).slice(-7);
   if(!E.length)return '<p class="note" style="margin:0">אין אירועים בתקופה הזאת.</p>';
@@ -25674,7 +25679,7 @@ function ixDraw(){const svg=$('ixSvg'), g=$('ixG'); if(!svg||!g)return; let m=nu
   for(const b of document.querySelectorAll('#ixViews [data-ixv]'))b.setAttribute('aria-selected',String(b.dataset.ixv===IXV));
   // 30.10: the map in words instead of the drawing, for a screen reader or whoever reads better than looks
   {const tx=$('ixTxt'), tb=$('ixTxtB'); if(tb)tb.setAttribute('aria-pressed',String(IXTXT)); if(tx){tx.hidden=!IXTXT; if(IXTXT)setH(tx,ixGraphText(G))} if(IXTXT){const t2=$('ixTip'); if(t2)t2.hidden=true; return}}
-  const em=$('ixEmpty'); if(em){const none=!G.center||G.nodes.length<2; em.hidden=!none; if(none)em.textContent=IXV==='pf'?(hasPf()?'אין בתקופה הזאת אירוע עם קשר מבוסס לאחזקות שלך.':'המפה של התיק נבנית מהאחזקות שלך. אפשר לראות בינתיים את "עולם".'):IXV==='ev'?'אין התראה לבחור.':'אין נתונים לתצוגה הזאת.'}
+  const em=$('ixEmpty'); if(em){const none=!G.center||G.nodes.length<2; em.hidden=!none; if(none)em.textContent=IXV==='pf'?(hasPf()?'אין בתקופה הזאת אירוע עם קשר מבוסס לאחזקות שלך.':'המפה של התיק נבנית מהאחזקות שלך.'):IXV==='ev'?'אין התראה לבחור.':'אין נתונים לתצוגה הזאת.'}
   if(!G.center||G.nodes.length<2){g.innerHTML=''; return}
   ixLayout(G,W,H); const byId=new Map(G.nodes.map(n=>[n.id,n]));
   const eH=G.edges.map(e=>{const a=byId.get(e.from), b=byId.get(e.to); if(!a||!b)return ''; const col=e.dir==='pos'?'var(--gain)':e.dir==='neg'?'var(--loss)':e.dir==='mixed'?'#D97706':e.dir==='up'||e.dir==='down'?'#8B5CF6':'#64748B';
@@ -25759,8 +25764,7 @@ function ixStRow(o){const p=o.p, ev=o.L.filter(z=>z.a.kind!=='mkt').length, nm=p
   return `<li><button type="button" class="ix-s lv-${o.top?o.top.lv:'q'}${o.quiet?' q':''}" data-ixst="${esc(o.sym)}">
     <span class="ix-s1">${logoHtml(o.sym,'xs')}<b><bdi>${esc(o.sym)}</bdi></b><span class="ix-sn">${esc(nm)}</span>${p?`<span class="ix-sw">${pct(p.w,1)} מהתיק</span>`:'<span class="ix-sw nm">לא בתיק · במעקב</span>'}</span>
     <span class="ix-s2">${ixDayH(p)}<span class="ix-se">${what}</span></span>
-    ${o.top?`<span class="ix-s3">${ixViaH(o.L[0])}${esc(imCut(o.top.title,80))}</span>`:`<span class="ix-s3 nm">המניה זזה היום יותר מהרגיל, ובחדשות שנאספו אין אירוע שנוגע בה.</span>`}
-    <span class="ix-s4">${dirs?`<span class="vh">כיוון אפשרי: </span>${dirs}`:''}<span class="ix-go">מה קורה? ›</span></span></button></li>`}
+    <span class="ix-s4">${dirs?`<span class="vh">כיוון אפשרי: </span>${dirs}`:''}<span class="ix-go">לדף המניה ›</span></span></button></li>`}
 // a word before a headline that reaches the share not directly: through whom
 function ixViaH(z){const k=z&&z.k; if(!k||k.t==='direct'||z.a.kind==='mkt')return ''; const t=k.t==='sec'?`דרך ענף ${NX_SEC_HE[k.s.g]||k.s.g}`:IX_HOWF[k.h.how]?`${IX_HOWF[k.h.how]} של החברה שבחדשות`:'דרך הענף';
   return `<span class="ix-via">${esc(t)}:</span> `}
@@ -25877,16 +25881,16 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   if(IXST){ixStRender(); return} if(IXFULL){plCenter(); return}
   const F=ixFigures(m), note=$('ixNote');
   if(note){let t=''; if(!pr.on)t=`ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>`;
-    else if(!hp)t=`<b>TikChik Impact נבנה מהתיק שלך.</b> כשתוסיף את האחזקות, המערכת תחבר כל אירוע בחדשות למניות שבידיך, תסביר את הקשר, ותתריע רק כשיש קשר מבוסס. בלי תיק אין כאן התראות "אישיות", כדי לא להציג משהו שלא נבנה עבורך. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button><button type="button" class="btn sm" data-rt="news">בינתיים: שוק וחדשות</button></span>`;
+    else if(!hp)t=`<b>TikChik Impact נבנה מהתיק שלך.</b> הוסף את האחזקות, וכל אירוע שנוגע להן יופיע כאן עם ההסבר. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button></span>`;
     else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
     note.hidden=!t; setH(note,t)}
-  {const k=$('ixKpis'); if(k){k.hidden=!hp||!pr.on; if(hp&&pr.on)setH(k,ixKpis(F))}}
+  {const k=$('ixKpis'); if(k)k.hidden=true}   // 1.11: the figure cards repeated the list below them: gone
   {const n=$('ixAlN'); if(n){n.textContent=F.un.length?String(F.un.length):''; n.hidden=!F.un.length}
     const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
   // the holdings the period touches: each a way into "מה קורה למניה"
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
     if(S.length){setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
-  if(!hp&&IXV==='pf')IXV='world';
+  if(IXV==='world')IXV='pf';   // 1.11: the world view moved to the management's global news model
   {const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v==='1'||(v==null&&!hp)}}
   try{ixDraw()}catch(e){console.error(e)}
   {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
@@ -25895,6 +25899,8 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const r=t.closest('#ixRange [data-ixr]'); if(r){IXR=r.dataset.ixr; try{localStorage.setItem('tr_ixr',IXR)}catch(e){} IXZ={k:1,x:0,y:0}; renderImpact(); return}
   if(t.closest('[data-ixall]')){IXFULL=true; PLF='all'; renderImpact(); try{$('rtAl').scrollIntoView({block:'start'})}catch(e){} return}
   if(t.closest('[data-ixback]')){const was=IXST; IXFULL=false; IXST=null; renderImpact(); if(was)try{const b=document.querySelector(`#ixStList [data-ixst="${CSS.escape(was)}"]`); if(b){b.scrollIntoView({block:'center'}); b.focus({preventScroll:true})}}catch(e){} return}
+  // 1.11: "מה קורה למניה" leads to the stock's own page (the long sheet is gone)
+  {const s2=t.closest('[data-ixst]'); if(s2&&SECKEY.test(s2.dataset.ixst)){try{if(!$('imView').hidden)imClose()}catch(e){} goSec(s2.dataset.ixst); return}}
   const st=t.closest('[data-ixst]'); if(st){IXST=st.dataset.ixst; IXFULL=false; try{if(!$('imView').hidden)imClose()}catch(e){} if(document.body.dataset.page!=='news'){try{showTab('news',true)}catch(e){}} if($('rtAl')&&$('rtAl').hidden){try{rtGo('al')}catch(e){}} renderImpact(); try{$('rtAl').scrollIntoView({block:'start'}); $('ixSvH').focus({preventScroll:true})}catch(e){} return}
   const sq=t.closest('[data-ixsq]'); if(sq&&IXST){ANA_FOCUS=focusOf('st:'+IXST); if(!ANA_FOCUS)return; try{anaOpen(null,false); anaSugg()}catch(e){} const q2=sq.dataset.ixsq; setTimeout(()=>{try{anaRun('q',q2,{fromInput:true})}catch(e){}},30); return}
   const sr=t.closest('[data-ixstr]'); if(sr){IXR=sr.dataset.ixstr; try{localStorage.setItem('tr_ixr',IXR)}catch(e){} renderImpact(); return}
@@ -26043,7 +26049,7 @@ function imDraw(){
   const cH=L.cols.map(c=>`<text class="imc" x="${c.x}" y="${c.y}" text-anchor="${vert?'start':'middle'}" direction="rtl">${IM_COL_HE[c.t]}</text>`).join('');
   g.innerHTML=cH+eH+nH; IMG.L=L; IMG.vert=vert;
   const em=$('imEmpty'); if(em){const none=!G.nodes.length||(G.nodes.length<2&&!G.edges.length);
-    em.hidden=!none; if(none)em.innerHTML=IMV==='pf'?(hasPf()?'אין כרגע אירוע עם קשר מבוסס לאחזקות שלך. כשיהיה, הוא יופיע כאן עם השרשרת.':'מפת התיק נבנית מהאחזקות שלך; בלי תיק אפשר לראות את מפת העולם, של אירוע או של חברה.')
+    em.hidden=!none; if(none)em.innerHTML=IMV==='pf'?(hasPf()?'אין כרגע אירוע עם קשר מבוסס לאחזקות שלך. כשיהיה, הוא יופיע כאן עם השרשרת.':'מפת התיק נבנית מהאחזקות שלך; בלי תיק אפשר לראות מפה של אירוע או של חברה.')
       :IMV==='co'?`אין בימים האחרונים ידיעות שמזכירות את ${esc(IMFOC.sym||'החברה')}.`:IMV==='ev'?'אין אירוע לבחור.':'אין אירועים חשובים מהיומיים האחרונים.'}
   imSubSync(G0); imApply(); imPanel()}
 function imSubSync(G0){const el=$('imSub'); if(!el)return; let h='';
@@ -26136,7 +26142,7 @@ function imPanel(){const el=$('imP'); if(!el||!IMG)return; let h='';
       ${ex}<div class="imp-leg"><b>איך לקרוא:</b><span><i class="lg-l" style="border-color:var(--gain)"></i>חיובי אפשרי</span><span><i class="lg-l" style="border-color:var(--loss)"></i>שלילי אפשרי</span><span><i class="lg-l" style="border-color:#D97706"></i>מעורב</span><span><i class="lg-l" style="border-color:#7C3AED"></i>גורם עולה/יורד</span><span><i class="lg-l" style="border-color:#94A3B8"></i>לא ברור</span><span><i class="lg-l"></i>קו מלא: עובדה או דיווח</span><span><i class="lg-l ds"></i>מקווקו: אפשרי</span><span><i class="lg-l dt"></i>נקודות: ביטחון נמוך</span><span>עובי הקו: רמת הביטחון</span></div>
       <p class="imp-p nm">לגעת בצומת או בקו לפרטים. אין כאן תחזית ולא המלצה; קשר שלא נתמך בקריאה לא מצויר.</p>`}
   setH(el,h); el.classList.toggle('on',!!IMSEL)}
-function imOpen(view,foc){IMV=view||'pf'; IMFOC={ev:null,sym:null,...(foc||{})}; IMSEL=null; IMFOCUS=null; const v=$('imView'); v.hidden=false; document.body.classList.add('st-open');
+function imOpen(view,foc){IMV=view&&view!=='world'?view:'pf'; IMFOC={ev:null,sym:null,...(foc||{})}; IMSEL=null; IMFOCUS=null; const v=$('imView'); v.hidden=false; document.body.classList.add('st-open');
   // on a wide screen the event opened from is chosen (its details at the side); on a phone the map comes first
   imDraw(); requestAnimationFrame(()=>{imDraw(); imFit(); if(foc&&foc.ev&&IMG&&!IMG.vert){const id='ev:'+foc.ev; if(IMG.nodes.some(n=>n.id===id)){IMSEL=id; imDraw()}}}); try{$('imX').focus()}catch(e){}}
 function imClose(){$('imView').hidden=true; document.body.classList.remove('st-open')}
@@ -26148,10 +26154,9 @@ function imTreeOpenFrom(spec){const [k,...r]=String(spec).split(':'), v=r.join('
   if(k==='ev')return imOpen('ev',{ev:v}); if(k==='pl'){const a=plByK(v); return imOpen(a&&hasPf()?'pf':'ev',{ev:imEvKeyOfAlert(v)})}
   if(k==='co')return imOpen('co',{sym:v}); if(k==='world')return imOpen('world'); return imOpen(hasPf()?'pf':'world')}
 function imOpenFrom(spec){const [k,...r]=String(spec).split(':'), v=r.join(':');
-  if(k==='pl'||k==='ev'){const a=k==='pl'?plByK(v):plItems().find(x=>x.ev===v||imEvKeyOfAlert(x.k)===v); if(a){IXV='ev'; IXFOC=a.k; IXSEL='ev:'+a.k} else {IXV=hasPf()?'pf':'world'; IXFOC=null; IXSEL=null}}
+  if(k==='pl'||k==='ev'){const a=k==='pl'?plByK(v):plItems().find(x=>x.ev===v||imEvKeyOfAlert(x.k)===v); if(a){IXV='ev'; IXFOC=a.k; IXSEL='ev:'+a.k} else {IXV='pf'; IXFOC=null; IXSEL=null}}
   else if(k==='co'){IXV='co'; IXFOC=v||null; IMFOC.sym=IXFOC; IXSEL=null}
-  else if(k==='world'){IXV='world'; IXFOC=null; IXSEL=null}
-  else {IXV=hasPf()?'pf':'world'; IXFOC=null; IXSEL=null}
+  else {IXV='pf'; IXFOC=null; IXSEL=null}
   IXZ={k:1,x:0,y:0}; IXTXT=false; IXST=null; IXFULL=false;   // the stock sheet or the full list, if open, give way to the map
   if(document.body.dataset.page!=='news')showTab('news',true); try{rtGo('al')}catch(e){}
   {const d=$('ixMapD'); if(d)d.open=true} try{renderImpact()}catch(e){console.error(e)}

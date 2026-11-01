@@ -407,3 +407,32 @@ test('the API of stage E: a partner refused; the radar scanned and handled by "s
     assert.ok(store.db.prepare("select count(*) n from audit where action in ('radar.scan','intel.ask')").get().n>=2);
   }finally{srv.close()}
 });
+
+import {worldModel, worldBrief} from '../server/admin/world.js';
+import {newsId} from '../server/newsx.js';
+test('the global news model: articles of one event are one event; regions, topics, sectors and the calendar from the readings; the brief checked against the model, cached, audited',async()=>{
+  const s=mk(), U=users(s), at=new Date('2026-11-01T10:00:00Z'), h=n=>new Date(at.getTime()-n*3600e3).toISOString();
+  const A=[{title:'Fed holds',link:'https://a.co/1',pub:'Reuters',at:h(2)},{title:'Fed holds rates',link:'https://b.co/1',pub:'Bloomberg',at:h(3)},{title:'Oil up',link:'https://c.co/1',pub:'Reuters',at:h(30)},{title:'Old',link:'https://d.co/1',pub:'X',at:h(24*9)}];
+  const x=(o)=>({level:'imp',kind:'news',cert:'fact',dir:'neg',regions:['us'],themes:['rates'],sectors:['Finance'],aff:[{sym:'JPM',how:'sector',dir:'neg'}],...o});
+  s.setDoc('research/news',{items:[]},{silent:true});
+  s.setDoc('research/newsx',{updatedAt:at.toISOString(),gen:A,by:{[newsId(A[0].link)]:x({ev:'fed',he:'הפד הותיר את הריבית',level:'crit'}),[newsId(A[1].link)]:x({ev:'fed',he:'הפד הותיר',rules:true}),
+    [newsId(A[2].link)]:x({ev:'oil',he:'הנפט עלה',regions:['middle_east'],themes:['oil'],sectors:['Energy'],dir:'pos',aff:[{sym:'XOM',how:'direct',dir:'pos'}]}),[newsId(A[3].link)]:x({ev:'old',he:'ישן'})}},{silent:true});
+  s.setDoc('research/ecocal',{items:[{d:'2026-11-05',name:'מדד המחירים',cat:'inflation',region:'us',imp:3}]},{silent:true});
+  const M=worldModel(s,{days:3,at});
+  assert.deepEqual(M.events.map(e=>e.k),['fed','oil'],'one event per key, the old one out of the window');
+  const fed=M.events[0]; assert.equal(fed.n,2); assert.equal(fed.pubs.length,2); assert.equal(fed.he,'הפד הותיר את הריבית','Claude\'s reading stands for it'); assert.equal(fed.level,'crit');
+  assert.deepEqual(M.regions.map(r=>r.r),['us','middle_east']); assert.equal(M.sectors.find(x=>x.s==='Energy').lean,'pos'); assert.equal(M.companies.find(c=>c.sym==='XOM').direct,1);
+  assert.equal(M.ahead[0].name,'מדד המחירים'); assert.match(M.ahead[0].watch,/ריבית/); assert.match(M.goal,/רק את מה שנוגע לתיק שלו/);
+  assert.equal(M.quality.read,3); assert.equal(M.quality.rules,1);
+  // the brief: a made-up number is flagged; then the cache; without a key, refused in words
+  let calls=0; const ask=async({system,prompt})=>{calls++; assert.match(system,/אין תחזית מחיר/); assert.match(prompt,/^MODEL:/); return JSON.stringify({headline:'הפד במרכז',developments:[{t:'הפד הותיר את הריבית, 2 מקורות',ev:[0,99],sure:'fact'}],regions:[],sectors:[],ahead:[],scenarios:[{if:'אם',then:'אז',likely:'zzz'}],limits:'רק 4321 כתבות'})};
+  const realNow=Date.now; Date.now=()=>at.getTime();
+  try{
+    const B=await worldBrief(s,U.a,{days:3,ask,force:true}); assert.deepEqual(B.developments[0].ev,[0],'only real events'); assert.equal(B.scenarios[0].likely,'low');
+    assert.equal(B.check.ok,false); assert.ok(B.check.unknown.includes('4321'));
+    assert.equal(auditList(s)[0].action,'world.brief');
+    const r=await worldBrief(s,U.a,{days:3,env:{}}); assert.ok(r.cached||r.unavailable);
+    const k=await worldBrief(s,U.a,{days:7,env:{}}); assert.match(k.unavailable,/ANTHROPIC_API_KEY/);
+    await assert.rejects(()=>worldBrief(s,U.a,{days:1,ask:async()=>'לא JSON',force:true}),/no_answer|unavailable/);
+  }finally{Date.now=realNow}
+});

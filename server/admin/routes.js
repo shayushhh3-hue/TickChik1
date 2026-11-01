@@ -12,6 +12,7 @@ import {newsOps,aiOps,aiQuality,systemOps,incidents,incidentUpdate,security,chec
 import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
+import {worldModel,worldBrief} from './world.js';
 import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
   contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
 
@@ -153,6 +154,13 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   const IERR={short:'כתוב שאלה.',rate:'הגעת ל-20 שאלות בשעה. אפשר להמשיך בעוד מעט.',upstream:'צ׳יקו לא ענה כרגע. נסה שוב בעוד רגע.',no_answer:'התשובה לא הגיעה במבנה הנכון. נסה לנסח אחרת.'};
   app.post('/api/admin/intel',need('view'),async(req,res)=>{const b=req.body||{}; try{res.json(await intelAsk(store,req.user,b.q,{ask:app.locals.intelAsk||null,q:{range:b.range||'30',from:b.from,to:b.to,pageFile},log}))}
     catch(e){res.status(e.message==='rate'?429:e.message==='upstream'?502:400).json({error:{code:e.message,message:IERR[e.message]||e.message}})}});
+
+  // ---- the global news model ----
+  app.get('/api/admin/world',need('view'),(req,res)=>{const M=worldModel(store,{days:+req.query.days||3}); let brief=null; try{brief=JSON.parse(store.getMeta('worldBrief:'+M.days)||'null')}catch(e){} res.json({...M,brief,keyOff:!process.env.ANTHROPIC_API_KEY&&!app.locals.worldAsk})});
+  const WB=new Map();
+  app.post('/api/admin/world/brief',need('view'),async(req,res)=>{const last=WB.get(req.user.id)||0; if(Date.now()-last<20e3)return res.status(429).json({error:{code:'rate_limited',message:'התקציר הקודם עוד נכתב.'}}); WB.set(req.user.id,Date.now());
+    try{res.json(await worldBrief(store,req.user,{days:+(req.body||{}).days||3,force:!!(req.body||{}).force,ask:app.locals.worldAsk||null,log}))}
+    catch(e){res.status(e.message==='upstream'?502:400).json({error:{code:e.message,message:{upstream:'צ׳יקו לא ענה כרגע. נסה שוב בעוד רגע.',no_answer:'התקציר לא הגיע במבנה הנכון. נסה שוב.'}[e.message]||e.message}})}});
 
   // ---- the page: only to someone with "view". Anyone else gets the site's ordinary "not found", not a closed door ----
   const zc={m:0};
