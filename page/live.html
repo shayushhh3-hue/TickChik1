@@ -17697,7 +17697,7 @@ function render(){
     if(empty){const n=acctName(acct); $('hAcctEmpty').textContent=`עוד אין תיק ב${n}`; $('acctEmptyP').textContent=`בתצוגה של ${n} מופיעים רק הנתונים של ${n}. כשתעלה צילום מסך או דוח של ${n}, יופיעו כאן השווי, האחזקות והתשואה שלו.`; $('acctEmptyUp').textContent=`להעלות את התיק של ${n}`}}
   $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${KV==='all'&&k===acct}">${ACCTS[k]}</button>`).join('');
   try{document.querySelector('.wrap').classList.toggle('kvf',KV!=='all')}catch(e){}
-  fillInputs(); renderMine(); try{renderMonths()}catch(e){}
+  try{fillInputs()}catch(e){console.error(e)} try{renderMine()}catch(e){console.error(e)} try{renderMonths()}catch(e){}
   if(!P||!Q){return}
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
@@ -17745,7 +17745,7 @@ function render(){
   const okRow=A.filter(a=>a[0]==='ok').map(a=>`<li class="alert ok" data-line="${esc(line(a))}" data-sev="ok">${niH('ok')}<span><span class="tag">${tagFor.ok}</span> ${esc(a[2])}</span></li>`).join('');
   const alH=okRow+grp; if(alH!==lastAl){lastAl=alH;$('alerts').innerHTML=alH}
   LAST_A=A; try{alertsChime(A)}catch(e){}
-  renderDesk(m,A); renderRules(m); renderBrief(m,A); renderCore(m); try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
+  try{renderDesk(m,A)}catch(e){console.error(e)} try{renderRules(m)}catch(e){console.error(e)} try{renderBrief(m,A)}catch(e){console.error(e)} try{renderCore(m)}catch(e){console.error(e)} try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
   // hero status, movers, ticker tape and heat board
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
   ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
@@ -17812,17 +17812,17 @@ function render(){
       if(sec.classList.contains('top')){let last=null; for(const tr of $('rows').querySelectorAll('tr')){if(tr.classList.contains('sec')){last=tr; tr.classList.remove('xtra')} else if(last&&!tr.classList.contains('xtra'))last=null} // a kind heading whose rows are all hidden hides too
         for(const h of $('rows').querySelectorAll('tr.sec')){let nx=h.nextElementSibling, any=false; while(nx&&!nx.classList.contains('sec')){if(!nx.classList.contains('xtra')){any=true;break} nx=nx.nextElementSibling} h.classList.toggle('xtra',!any)}}}}
   renderPlan(mAllNow());
-  renderRatings(m);
-  renderCands(m);
-  renderCharts(m);
-  renderHistory(); try{renderTimeline()}catch(e){}
-  renderTrend();
-  renderDecomp();
-  renderFees(); try{renderBench()}catch(e){} try{renderTax()}catch(e){} try{renderDD()}catch(e){}
-  renderProfile(m);
+  try{renderRatings(m)}catch(e){console.error(e)}
+  try{renderCands(m)}catch(e){console.error(e)}
+  try{renderCharts(m)}catch(e){console.error(e)}
+  try{renderHistory()}catch(e){console.error(e)} try{renderTimeline()}catch(e){}
+  try{renderTrend()}catch(e){console.error(e)}
+  try{renderDecomp()}catch(e){console.error(e)}
+  try{renderFees()}catch(e){console.error(e)} try{renderBench()}catch(e){} try{renderTax()}catch(e){} try{renderDD()}catch(e){}
+  try{renderProfile(m)}catch(e){console.error(e)}
   try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivAhead(m)}catch(e){console.error(e)} try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
-  renderRisk(m);
-  renderComove(m);
+  try{renderRisk(m)}catch(e){console.error(e)}
+  try{renderComove(m)}catch(e){console.error(e)}
   try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){} try{renderSim()}catch(e){console.error(e)} try{renderTm()}catch(e){console.error(e)}
   if(document.body.dataset.page==='state'){try{renderState()}catch(e){}}
 
@@ -18684,6 +18684,8 @@ function renderComove(m){
   $('prOppNote').textContent=(strongOpp?'':`אין בתיק צמד שנע בכיוונים הפוכים בקשר חזק (מתחת ל-${LRM}−${rule.min}). `)+'מוצגים צמדים שהקשר ההפוך שלהם מובהק, כלומר לא סביר שהוא מקרי, גם אם עוצמתו בינונית.';
 }
 let HS=null, HSUM=[], DY=null, TP=[], TPW=[], dyBusy=false;
+// 1.11: the history as the page reads it always has its arrays, whoever wrote it (a hand-written account, an old save)
+const normHS=h=>{if(!h||typeof h!=='object')return h; const o={...h,accounts:Array.isArray(h.accounts)?h.accounts.map(A=>A&&typeof A==='object'?{...A,deposits:Array.isArray(A.deposits)?A.deposits:[],trades:Array.isArray(A.trades)?A.trades:[],snapshots:Array.isArray(A.snapshots)?A.snapshots:[]}:A).filter(Boolean):h.accounts,monthly:Array.isArray(h.monthly)?h.monthly:(h.monthly||[])}; return o};
 // ---- the value over time, on the home screen: the month-ends, the saved days and today (TP, from the trend), for all the
 // accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
 let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
@@ -18941,7 +18943,8 @@ $('chart3').addEventListener('pointerleave',()=>{$('tip3').hidden=true;const c=$
 // Look-back per account, from a periodic statement or a transactions list: deposits, values, fees and trades.
 function renderHistory(){
   if(!HS||!P||!Q)return;
-  const fx=Q.usdIls, accts=HS.accounts||[HS]; HSUM=[];
+  // 1.11: an account written by hand (no deposits, trades or snapshots yet) must not stop the whole page from drawing
+  const fx=Q.usdIls, accts=(HS.accounts||[HS]).map(A=>({...A,deposits:Array.isArray(A.deposits)?A.deposits:[],trades:Array.isArray(A.trades)?A.trades:[],snapshots:Array.isArray(A.snapshots)?A.snapshots:[]})); HSUM=[];
   const open=new Set([...document.querySelectorAll('#backWrap details[open]')].map(d=>d.dataset.k));
   $('backWrap').innerHTML=accts.map(A=>{
     const usd=A.ccy==='USD', f=(x,d=0)=>usd?'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d||2,maximumFractionDigits:d||2}):ils(x,d), sg=x=>LRM+(x>=0?'+':'−')+f(Math.abs(x));
@@ -23200,6 +23203,8 @@ function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lan
 function i18nBoot(){let l=''; try{l=localStorage.getItem('tr_lang')||''}catch(e){} if(I18N_OK(l)&&l!=='he')i18nSet(l)}
 // the original Hebrew of an element, for code that reads its own status lines
 window.__person=()=>anaPerson(); window.__focus=spec=>focusOf(spec); window.__fit=()=>renderFit();
+// 1.11: what the page's own guards caught, kept for the health page and the tests (console.error still prints)
+window.__cerr=[]; {const ce=console.error.bind(console); console.error=(...a)=>{try{window.__cerr.push(a.map(x=>x&&x.stack?String(x.stack).slice(0,300):String(x)).join(' ').slice(0,400)); if(window.__cerr.length>40)window.__cerr.shift()}catch(e){} ce(...a)}}
 window.__i18nState=()=>({on:!!I18N.on,fem:!!I18N.fem,lang:I18N.lang,gender:(S&&S.profile&&S.profile.gender)||'',setk:SETK});
 window.__i18nSrc=el=>{if(!I18N.on)return el.textContent||''; let s=''; const w=document.createTreeWalker(el,4); let n; while(n=w.nextNode()){const r=I18N.orig.get(n); s+=r&&n.nodeValue===r.out?r.src:n.nodeValue} return s};
 document.addEventListener('click',()=>{if(I18N.on)i18nSoon(350)},true);
@@ -27163,7 +27168,7 @@ try{refreshBack()}catch(e){}
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();renderLater();try{if(document.body.dataset.page==='news')rtMarkets()}catch(e){}try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();renderLater()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};renderLater()},fail);
-  pd('history').onSnapshot(s=>{if(s.exists){HS=s.data();renderLater()}},fail);
+  pd('history').onSnapshot(s=>{if(s.exists){HS=normHS(s.data());renderLater()}},fail);
   db.doc('research/latest').onSnapshot(s=>{if(s.exists){RS=s.data();renderLater()}},fail);
   db.doc('research/candidates').onSnapshot(s=>{if(s.exists){CD=s.data();renderLater()}},fail);
   db.doc('research/longterm').onSnapshot(s=>{if(s.exists){LT=s.data();renderLater()}},fail);

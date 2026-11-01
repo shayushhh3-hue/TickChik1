@@ -2138,6 +2138,17 @@ test('1.11 the monthly review: the theses, what the journal says, the goals, new
   }finally{await ctx.close(); if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main'); store.setDoc('research/latest',R0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
 });
 
+test('1.11 an account written by hand (no deposits, trades or snapshots) does not stop the page: the look-back draws, and the risk screens after it',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const H0=store.getDoc('history/main').data; store.setDoc('history/main',{...H0,accounts:[{acct:'exc',ccy:'ILS'}]},{silent:true});
+  const {ctx,pg}=await open(390); const cons=[]; pg.on('console',m=>{if(m.type()==='error')cons.push(m.text().slice(0,300))});
+  try{
+    await tab(pg,'risk'); await pg.waitForTimeout(600); await pg.click('#riskNav [data-rg="risk"]'); await pg.waitForTimeout(400);
+    const r=await pg.evaluate(()=>({st:document.getElementById('stOut').innerText.length,sim:document.getElementById('simBox').innerText.length,back:document.getElementById('backWrap').innerText.replace(/\s+/g,' ').slice(0,80)}));
+    assert.ok(r.st>50&&r.sim>50,JSON.stringify(r)+' errs='+JSON.stringify(pg.errs)+' cerr='+JSON.stringify(await pg.evaluate(()=>window.__cerr))); assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('history/main',H0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
