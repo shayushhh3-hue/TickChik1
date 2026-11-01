@@ -23823,7 +23823,7 @@ function plRender(m){
   const rest=L.length-ic.length, show=pr.icons&&L.length>0;
   b.hidden=!show; if(!show)return;
   setH(b,ic.map(({a,sym})=>`<button type="button" class="stc${a.lv==='crit'?' crit':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}: ${esc(a.title)}"><span class="in">${sym==='$'?'<span class="stx">$</span>':sym==='•'?'<span class="stx">שוק</span>':logoHtml(sym)}</span></button>`).join('')
-    +(rest>0?`<button type="button" class="stn" data-plall="1" aria-label="עוד ${rest} התראות">+${rest}</button>`:''));
+    +(rest>0?`<button type="button" class="stn" dir="ltr" data-plall="1" aria-label="עוד ${rest} התראות">+${rest}</button>`:''));
   b.setAttribute('aria-label',`${L.length===1?'התראה אחת שלא נקראה':L.length+' התראות שלא נקראו'} מעל צ׳יקו`); stPlace();
   try{plBanner()}catch(e){}
 }
