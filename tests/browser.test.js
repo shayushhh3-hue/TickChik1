@@ -298,7 +298,8 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // one switch for the level of detail: at the end of the home page and in the settings, not above everything
       // 28.10: the lean home ends with the holdings; the detail switch lives in the settings only
       const vs=await pg.evaluate(()=>({n:document.querySelectorAll('.viewsw').length,home:!!document.querySelector('[data-pane="overview"] .viewsw'),last:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).pop()}));
-      assert.deepEqual(vs,{n:1,home:false,last:'idxRow'},'the holdings, then only the indices row');
+      // 1.11: the steps of a new account (when some are left) come after the indices row, at the very end
+      assert.equal(vs.n,1); assert.equal(vs.home,false); assert.ok(vs.last==='idxRow'||vs.last==='obNext','the holdings, then the indices row (then the steps left): '+vs.last);
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'),'simple: no ticker');
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="full"]').click()); await pg.waitForTimeout(300);
@@ -1318,14 +1319,14 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
       kinds:getComputedStyle(document.querySelector('.hold .hkind:not(.hccy)')).display,dep:getComputedStyle(document.getElementById('kDepBox')).display,ox:document.documentElement.scrollWidth<=innerWidth+1}));
     assert.equal(f.k,'שווי הקרנות'); assert.deepEqual(f.pressed,['קרנות']); assert.deepEqual(f.rows,['TA125','TA90']);
     assert.match(f.sec,/^קרנות: 2 ניירות · ₪[\d,]+/); assert.equal(f.tot,f.sec.match(/₪[\d,]+/)[0],'the value is the funds\' sum');
-    assert.match(f.d,/^2 קרנות · [\d.]+% מהתיק · בלי מניות ומזומן$/); assert.equal(f.kinds,'none'); assert.equal(f.dep,'none'); assert.ok(f.ox);
+    assert.match(f.d,/^2 קרנות · [\d.]+% מהתיק · כל התיק ₪[\d,]+$/); assert.equal(f.kinds,'none'); assert.equal(f.dep,'none'); assert.ok(f.ox);
     M=await movers(); assert.deepEqual(M.k,[M.best,M.worst],'the movers are the funds\': '+JSON.stringify(M)); assert.ok(['TA125','TA90'].includes(M.best));
     // "מניות": the same for the stocks only; the two chips are one choice, and both add up to the whole
     await pg.click('#kindRow [data-kv="stock"]'); await pg.waitForTimeout(400);
     const st=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
       pressed:[...document.querySelectorAll('#acctChips .chip,#kindRow [data-kv]')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.querySelector('.kt-k')?x.querySelector('.kt-k').textContent:x.textContent),rows:[...document.querySelectorAll('#rows tr:not(.sec) .sym')].map(x=>x.textContent),sec:document.querySelector('#rows tr.sec').textContent,chart:document.getElementById('wChart').hidden,chartNote:document.getElementById('wChN').hidden?'':document.getElementById('wChN').textContent}));
     assert.equal(st.k,'שווי המניות'); assert.deepEqual(st.pressed,['מניות']); assert.equal(st.rows.length,10); assert.ok(!st.rows.includes('TA125'));
-    assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · בלי קרנות ומזומן$/); assert.equal(st.chart,false,'the value chart stays (the owner asked for it in every view)'); assert.match(st.chartNote,/כל התיק/,'and says it is the whole portfolio\'s');
+    assert.match(st.sec,/^מניות: 10 ניירות · ₪[\d,]+/); assert.match(st.d,/^10 מניות · [\d.]+% מהתיק · כל התיק ₪[\d,]+$/); assert.equal(st.chart,false,'the value chart stays (the owner asked for it in every view)'); assert.match(st.chartNote,/כל התיק/,'and says it is the whole portfolio\'s');
     const num=t=>+t.replace(/[^\d]/g,''); assert.ok(Math.abs(num(st.tot)+num(f.tot)-num(all))<=num(all)*0.02+Math.max(1,num(all)*0.001)||true);
     await pg.click('#kindRow [data-kv="fund"]'); await pg.waitForTimeout(400);
     for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_kv!=='fund');i++)await pg.waitForTimeout(250);
