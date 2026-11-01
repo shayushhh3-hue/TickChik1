@@ -1965,6 +1965,24 @@ test('1.11 the comparison: two to four securities side by side, the same figures
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('1.11 the investor DNA: eight areas of facts from the holdings, the statements, the journal and the theses; the stated profile against the numbers; צ׳יקו carries a brief with every question',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="history"] .subtabs [data-tab="journal"]').click()); await pg.waitForTimeout(800);
+  if(process.env.SHOT)await pg.locator('#dnaSec').screenshot({path:process.env.SHOT});
+  const r=await pg.evaluate(()=>({cards:[...document.querySelectorAll('#dnaBox .dna-c')].map(c=>({h:c.querySelector('h3').textContent,txt:c.innerText.replace(/\s+/g,' ')})),ox:document.documentElement.scrollWidth>innerWidth+1,person:window.__person(),focus:window.__focus('dna')}));
+  assert.equal(r.ox,false,'no sideways scroll'); assert.deepEqual(r.cards.map(c=>c.h),['סוגי חברות','ענפים','רמת הסיכון בפועל','אופק ההשקעה','דפוסי קנייה ומכירה','תגובה לירידות','התאמה בין ההחלטות למטרות','שינויים לאורך זמן']);
+  const C=Object.fromEntries(r.cards.map(c=>[c.h,c.txt]));
+  assert.match(C['סוגי חברות'],/12 ניירות: \d+% מניות בודדות, \d+% קרנות/); assert.match(C['סוגי חברות'],/צמיחת הכנסות מעל 15% \d+%/,'from the research figures');
+  assert.match(C['ענפים'],/לפי קבוצה: טכנולוגיה \d+%/); assert.match(C['רמת הסיכון בפועל'],/הנייר הגדול \d+% \([A-Z]+\)/); assert.match(C['רמת הסיכון בפועל'],/בטא משוקללת \d\.\d\d/); assert.match(C['רמת הסיכון בפועל'],/הצהרת בפרופיל: (סולידי|בינוני|גבוה)/); assert.match(C['רמת הסיכון בפועל'],/מה זה מראה: לפי המספרים התיק מתנהג כמו תיק/);
+  assert.match(C['דפוסי קנייה ומכירה'],/1 עסקאות/); assert.match(C['דפוסי קנייה ומכירה'],/פחות משלוש עסקאות/,'too few to call a pattern'); assert.match(C['תגובה לירידות'],/לא היה חודש של ירידה של 3% ומעלה|חודשים שבהם התיק ירד/);
+  assert.match(C['התאמה בין ההחלטות למטרות'],/תזה כתובה על \d+ מתוך 12/); assert.match(C['שינויים לאורך זמן'],/צריך לפחות שש עסקאות/);
+  for(const c of r.cards)assert.doesNotMatch(c.txt,/אופי|פסיכולוג|אימפולסיב|פחדן|חמדן/,'no labels on the person');
+  // צ׳יקו: the brief rides with every question; the whole on request
+  assert.match(r.person.investor_dna.holdings,/^12 ניירות/); assert.match(r.person.investor_dna.risk_in_practice,/הצהיר: /); assert.match(r.person.investor_dna.rule,/תוויות/);
+  assert.equal(r.focus.kind,'dna'); assert.equal(r.focus.data.types.n,12); assert.ok(r.focus.data.risk.nEff>1); assert.match(r.focus.data.rule,/לא תוויות/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
