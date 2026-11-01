@@ -3,6 +3,7 @@
 // person's devices are kept apart (meta push:<uid>), never sent to any page. What is pushed is the live alerts
 // (server/livealert.js): a price set, a big day, the dollar's rates, a critical reading about a holding. A device that the
 // push service says is gone (404 / 410) is dropped.
+import {bump} from './admin/counter.js';
 import webpush from 'web-push';
 
 const MAX_DEV=6;
@@ -35,5 +36,6 @@ export async function pushTo(store,uid,msg,{env=process.env,send=null,log=()=>{}
   for(const d of L){try{await go({endpoint:d.endpoint,keys:d.keys},body,opts); n++}
     catch(e){const c=e&&e.statusCode; if(c===404||c===410)gone.push(d.endpoint); log(`push: ${c||''} ${String(e&&e.message||e).slice(0,120)}`)}}
   if(gone.length)putDevices(store,uid,L.filter(d=>!gone.includes(d.endpoint)));
+  if(n)bump('push','sent',n); if(L.length-n)bump('push','fail',L.length-n);
   return n;
 }

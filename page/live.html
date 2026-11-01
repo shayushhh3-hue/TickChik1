@@ -24728,7 +24728,7 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   setH(row,want)}
 function showTab(t,user){
   if(!TABS.includes(t))t='overview';
-  try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t)}}catch(e){}
+  try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t); evNav(document.body.dataset.page,t)}}catch(e){}
   document.body.dataset.page=t;   // not data-tab: a click anywhere would then count as a click on a tab button
   // aria-selected belongs to tabs only; the buttons in the text that lead to a tab are plain buttons
   for(const b of document.querySelectorAll('[role="tab"][data-tab]'))b.setAttribute('aria-selected',b.dataset.tab===t);
@@ -26746,6 +26746,16 @@ function useBoot(){let first=true, off=null; try{off=pd('usage').onSnapshot(s=>{
     if(!USE.since)USE.since=ilDay(); USE_READY=true; try{if(off)setTimeout(off,0)}catch(e){} try{renderUse()}catch(e){}},()=>{USE_READY=true})}catch(e){USE_READY=true}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')useSave()});
 let USE_IO=null;
+// 1.11: the moves between the screens and the minutes on each, for the site's management center: sent to the server about
+// once a minute and when the page goes to the background, where they are added to a count per day (and per "new account /
+// veteran"), with nobody's name on them. Nothing of what is on the screen is sent: only which screen led to which
+const EVQ={nav:{},dwell:{}}; let EV_T=null, EV_AT=Date.now(), EV_TAB=null;
+function evNav(from,to){const now=Date.now(); if(EV_TAB&&document.visibilityState!=='hidden')EVQ.dwell[EV_TAB]=(EVQ.dwell[EV_TAB]||0)+Math.min(1800,Math.round((now-EV_AT)/1000));
+  if(from&&to&&from!==to)EVQ.nav[from+'>'+to]=(EVQ.nav[from+'>'+to]||0)+1; EV_TAB=to; EV_AT=now; if(!EV_T)EV_T=setTimeout(evSend,60000)}
+function evSend(){clearTimeout(EV_T); EV_T=null; if(!window.__tc)return; if(EV_TAB){const now=Date.now(); EVQ.dwell[EV_TAB]=(EVQ.dwell[EV_TAB]||0)+Math.min(1800,Math.round((now-EV_AT)/1000)); EV_AT=now}
+  const b={nav:EVQ.nav,dwell:Object.fromEntries(Object.entries(EVQ.dwell).filter(([,v])=>v>0))}; if(!Object.keys(b.nav).length&&!Object.keys(b.dwell).length)return; EVQ.nav={}; EVQ.dwell={};
+  try{fetch('/api/ev',{method:'POST',keepalive:true,credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:JSON.stringify(b)}).catch(()=>{})}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')evSend(); else EV_AT=Date.now()});
 function useWatch(){if(USE_IO||!('IntersectionObserver' in window))return; const tm=new Map();
   USE_IO=new IntersectionObserver(es=>{for(const e of es){const id=e.target.getAttribute('aria-labelledby')||e.target.id; if(!id)continue;
     // seen: 40% of the part, or a part taller than the screen filling 40% of it
@@ -26768,7 +26778,7 @@ function renderUse(){
   const never=dd>=7?(all.length?`<h3 style="margin:0">לא נראו ב-30 הימים האחרונים</h3><p class="tx-l">${all.map(id=>esc(useName('s:'+id))).join(' · ')}</p><p class="note" style="margin:0">אלה המועמדים להסתרה או לאיחוד עם מסך אחר.</p>`:'<p class="tx-l">כל החלקים נראו לפחות פעם אחת.</p>'):`<p class="note" style="margin:0">אחרי שבוע של שימוש (עוד ${7-dd} ימים) יופיע כאן גם מה שלא נפתח בכלל.</p>`;
   $('useSub').textContent=dd?`מ-${dmy(USE.since)} · ${Object.values(T).reduce((a,b)=>a+b,0)} פתיחות ב-30 ימים`:'';
   setH(box,`${tbl(rows('tab:'),'מסכים')}${tbl(rows('s:').slice(0,15),'חלקים שנראו על המסך')}${tbl(Object.keys(T).filter(k=>!/^(tab|s):/.test(k)).sort((a,b)=>T[b]-T[a]),'פעולות')}${never}
-    <p class="note" style="margin:0">נשמר רק בחשבון שלך: אף אחד אחר, גם לא בעל האתר, לא רואה אותו. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
+    <p class="note" style="margin:0">הפירוט נשמר רק בחשבון שלך: אף אחד אחר, גם לא בעל האתר, לא רואה מה אתה פתחת. הנהלת האתר רואה רק סיכום של כל המשתמשים יחד, בלי שמות, וגם זה רק כשיש לפחות שלושה משתמשים פעילים. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
 }
 document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('[data-usereset]')))return; USE={days:{},since:ilDay()}; USE_SEEN.clear(); USE_DIRTY=true; useSave(); renderUse()});
 // ---- 21.10 (4) how the page looks travels with the account, not only with this browser: a phone's browser, the icon on

@@ -28,6 +28,9 @@ import {selfCheckNote} from './pxwatch.js';
 import {healthCheck} from './health.js';
 import {vapid, devices, addDevice, dropDevice, pushTo} from './push.js';
 import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
+import {adminSchema, audit, authEvent, touch, backfillActive, can as canMc} from './admin/core.js';
+import {adminRoutes} from './admin/routes.js';
+import {setCounterStore, bump} from './admin/counter.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -60,6 +63,8 @@ const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
 export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const app=express();
+  // 1.11: the management center's tables (audit, sign-ins, activity, counters) and the counters' store
+  adminSchema(store); setCounterStore(store); if(!store.getMeta('countersSince'))store.setMeta('countersSince',JSON.stringify(new Date().toISOString()));
   app.disable('x-powered-by');
   app.set('trust proxy',1);
   app.use(express.json({limit:'14mb'}));
@@ -68,7 +73,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const COOKIE='tc_sid';
   const parseCookies=req=>Object.fromEntries((req.headers.cookie||'').split(';').map(s=>s.trim()).filter(Boolean).map(s=>{const i=s.indexOf('=');return [s.slice(0,i),decodeURIComponent(s.slice(i+1))]}));
   const setCookie=(res,sid,maxAge)=>res.setHeader('Set-Cookie',`${COOKIE}=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${env.NODE_ENV==='production'||env.RAILWAY_ENVIRONMENT?'; Secure':''}`);
-  app.use((req,res,next)=>{req.sid=parseCookies(req)[COOKIE]||null; req.user=req.sid?store.session(req.sid):null; next()});
+  // 1.11: a suspended account is signed out everywhere (its sessions end when it is suspended, and an old one is refused
+  // here too); each signed-in request marks the person's day of activity (once a minute at most)
+  app.use((req,res,next)=>{req.sid=parseCookies(req)[COOKIE]||null; req.user=req.sid?store.session(req.sid):null; if(req.user&&req.user.status==='suspended'&&req.user.role!=='owner')req.user=null; if(req.user)touch(store,req.user); next()});
   const needUser=(req,res,next)=>req.user?next():res.status(401).json({error:{code:'not_granted',message:'not signed in'}});
   const needOwner=(req,res,next)=>ownerLike(req.user)?next():res.status(403).json({error:{code:'not_granted',message:'owner only'}});
   // state-changing calls must come from the page itself (a custom header no cross-site form can send)
@@ -82,13 +89,15 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/login',(req,res)=>{
     const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
     const {email,password}=req.body||{}; const u=store.userByEmail(email);
-    if(!u||!store.checkPassword(u,password)){b.miss();return res.status(401).json({error:{code:'bad_login',message:'המייל או הסיסמה לא נכונים.'}})}
+    const ev={email,ip:req.ip,ua:req.headers['user-agent']};
+    if(!u||!store.checkPassword(u,password)){b.miss(); authEvent(store,{...ev,user:u,ok:false,reason:u?'bad_password':'unknown_email'}); return res.status(401).json({error:{code:'bad_login',message:'המייל או הסיסמה לא נכונים.'}})}
+    if(u.status==='suspended'&&u.role!=='owner'){authEvent(store,{...ev,user:u,ok:false,reason:'suspended'}); return res.status(403).json({error:{code:'suspended',message:'החשבון מושעה. אפשר לפנות למנהל האתר.'}})}
     const tf=store.totpOf(u.id);
     if(tf&&tf.on&&tf.secret&&env.TWOFA_OFF!=='1'){const code=String((req.body||{}).code||'').trim();
-      if(!code)return res.status(401).json({error:{code:'need_code',message:'הקלד את הקוד מאפליקציית האימות.'}});
+      if(!code){authEvent(store,{...ev,user:u,ok:false,reason:'need_code'}); return res.status(401).json({error:{code:'need_code',message:'הקלד את הקוד מאפליקציית האימות.'}})}
       const k=/^\d{6}$/.test(code.replace(/\s/g,''))?totpMatch(tf.secret,code,{after:tf.last}):-1;
-      if(k>=0)store.totpUsed(u.id,k); else if(!store.totpBackupUse(u.id,codeHash(code))){b.miss();return res.status(401).json({error:{code:'bad_code',message:'הקוד לא נכון, או שכבר השתמשו בו. נסה את הקוד הבא באפליקציה.'}})}}
-    b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
+      if(k>=0)store.totpUsed(u.id,k); else if(!store.totpBackupUse(u.id,codeHash(code))){b.miss(); authEvent(store,{...ev,user:u,ok:false,reason:'bad_code'}); return res.status(401).json({error:{code:'bad_code',message:'הקוד לא נכון, או שכבר השתמשו בו. נסה את הקוד הבא באפליקציה.'}})}}
+    b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400); authEvent(store,{...ev,user:u,ok:true,reason:tf&&tf.on?'2fa':'password'});
     res.json({ok:true,me:me(u)});
   });
   // ---- sign-up with the owner's invite code (no code set = sign-up closed) ----
@@ -103,7 +112,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     let u; try{u=store.addUser({email,name:String(name||'').slice(0,60),password,role:'friend',mustChange:false})}
     catch(e){if(e.message!=='exists')b.miss(); return res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה. אפשר להיכנס איתה.'}[e.message]||e.message}})}
     b.clear(); const sid=store.newSession(u.id,req.headers['user-agent']); setCookie(res,sid,30*86400);
-    log('new sign-up:',u.id);
+    log('new sign-up:',u.id); audit(store,{user:u,action:'user.register',target:u.id,detail:{via:'invite'},ip:req.ip});
     sendMail({subject:'תיק צ׳יק – נרשם משתמש חדש',text:`${u.email} נרשם לאתר עם קוד ההזמנה.\nאפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".`,html:`<p dir="rtl"><b>${mesc(u.email)}</b> נרשם לאתר עם קוד ההזמנה.</p><p dir="rtl">אפשר לראות ולהסיר משתמשים בעמוד "משתמשים ושותפים".</p>`}).catch(()=>{});
     res.json({ok:true,me:me(u)});
   });
@@ -112,12 +121,12 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const newCode=()=>[...randomBytes(8)].map(x=>CODE_ABC[x%CODE_ABC.length]).join('');
   app.get('/api/invite',needOwner,(req,res)=>{const v=invite(); res.json({code:v?v.code:null,setAt:v?v.setAt:null})});
   app.post('/api/invite',needOwner,(req,res)=>{let c=norm((req.body||{}).code); if(c&&!/^[A-Z0-9]{6,24}$/.test(c))return res.status(400).json({error:{code:'invalid_argument',message:'קוד של 6 עד 24 אותיות באנגלית וספרות.'}});
-    if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); res.json(v)});
-  app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); res.json({ok:true})});
+    if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); audit(store,{user:req.user,action:'invite.set',target:'invite',ip:req.ip}); res.json(v)});
+  app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); audit(store,{user:req.user,action:'invite.close',target:'invite',ip:req.ip}); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
   // 31.10: owner is the one person whose documents are portfolio/main and the rest; an admin manages the site (manage)
   // but invests apart, in their own area, like a partner
-  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:isOwner(u),admin:u.role==='admin',manage:ownerLike(u),mustChange:!!u.must_change});
+  const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:isOwner(u),admin:u.role==='admin',manage:ownerLike(u),mc:canMc(u,'view'),mustChange:!!u.must_change});
   // 30.10: the page's version (the built page's hash), so a page left open (a phone's tab, the icon on the home screen)
   // learns that a new one is out and reloads instead of running the old one for days
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
@@ -154,13 +163,20 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
 
   // ---- users (the owner opens the door) ----
   app.get('/api/users',needOwner,(req,res)=>res.json({users:store.users()}));
-  app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true});res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
-  app.post('/api/users/:id/password',needOwner,(req,res)=>{try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id);res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
+  app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true}); audit(store,{user:req.user,action:'user.add',target:u.id,detail:{email:u.email},ip:req.ip}); res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
+  app.post('/api/users/:id/password',needOwner,(req,res)=>{try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id); audit(store,{user:req.user,action:'user.password',target:req.params.id,ip:req.ip}); res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
   // 31.10: an admin runs the site as the owner does: roles too. There is still one owner, whose role nobody changes
   app.post('/api/users/:id/role',needOwner,(req,res)=>{
-    try{const u=store.setRole(req.params.id,(req.body||{}).role); store.endSessions(u.id); res.json({ok:true,role:u.role})}catch(e){res.status(400).json({error:{code:e.message,message:e.message}})}});
+    try{const before=(store.userById(req.params.id)||{}).role, u=store.setRole(req.params.id,(req.body||{}).role); store.endSessions(u.id); audit(store,{user:req.user,action:'user.role',target:u.id,detail:{before,after:u.role},ip:req.ip}); res.json({ok:true,role:u.role})}catch(e){res.status(400).json({error:{code:e.message,message:e.message}})}});
   app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.id===req.user.id)return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את עצמך.'}});
-    store.removeUser(u.id); for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); res.json({ok:true})});
+    store.removeUser(u.id); for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); audit(store,{user:req.user,action:'user.remove',target:u.id,detail:{email:u.email,role:u.role},ip:req.ip}); res.json({ok:true})});
+
+  // 1.11: the moves between the screens and the time on each, sent by the page every minute or so: counted per day and
+  // cohort (an account younger than 30 days or not), never per person. Only known shapes, capped
+  app.post('/api/ev',needUser,(req,res)=>{const b=req.body||{}, ok=k=>/^[a-z0-9_-]{1,24}$/.test(k), cohort=Date.now()-Date.parse(req.user.created_at)<30*864e5?'new':'vet'; let n=0;
+    for(const [k,v] of Object.entries(b.nav||{}).slice(0,40)){const [a,c]=k.split('>'); if(ok(a)&&ok(c)&&a!==c&&+v>0){bump('nav',a+'>'+c,Math.min(50,+v|0),{cohort}); n++}}
+    for(const [k,v] of Object.entries(b.dwell||{}).slice(0,40))if(ok(k)&&+v>0){bump('dwell',k,Math.min(3600,Math.round(+v)),{cohort}); n++}
+    res.json({ok:true,n})});
 
   // ---- documents ----
   const badPath=p=>!p||p.length>400||!/^[A-Za-z0-9_.\-@:]+(\/[A-Za-z0-9_.\-@:]+)*$/.test(p);
@@ -340,8 +356,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(c.files){try{return await readFiles(req,res,c.body,u,day,quick)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}}
     // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
-    let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
-    if(out.aborted){log('ask cancelled by the page');return}
+    const t0=Date.now(); let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
+    if(out.aborted){log('ask cancelled by the page'); bump('ai','cancel'); return}
+    bump('ai',out.text!=null?'ok':'err:'+((out.json&&out.json.error&&out.json.error.code)||out.status)); bump('ai_ms',out.text!=null?'chat':'chat_err',Date.now()-t0);
     if(out.nobill)store.aiAdd(u.id,day,{calls:-1});   // Anthropic answered with an error at once: nothing billed, so it does not count
     if(out.text!=null){
       try{const J=JSON.parse(out.text), us=J.usage||{}, inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
@@ -439,6 +456,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // the owner can run a scheduled job now (setup checks, or after a missed run)
   app.post('/api/jobs/:name',needOwner,(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'jobs are off'}}); if(!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'no such job'}}); res.json({ok:true,queued:req.params.name})});
 
+  // 1.11: TikChik Management Center (/admin and /api/admin/*), its permissions checked on the server
+  adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role)});
   app.use('/api',(req,res)=>res.status(404).json({error:{code:'not_found',message:'no such call'}}));
 
   // ---- the site ----
@@ -477,6 +496,7 @@ export function bootstrap(store){
     else{store.addUser({email:OWNER_EMAIL,name:env.OWNER_NAME||'',password:pw,role:'owner'});log('owner created')}
   }
   if(!store.getMeta('instance'))store.setMeta('instance',randomBytes(8).toString('hex'));
+  adminSchema(store); try{const n=backfillActive(store); if(n)log(`management: ${n} past days of activity taken from the usage, AI and sign-in records`)}catch(e){log('management backfill failed:',e.message)}
   mailNote(store,null);   // system/mail: whether sending is set up (the page shows it next to the consent switches)
 }
 

@@ -2625,3 +2625,45 @@ test('picking files: a pick that brings nothing back is said plainly; a file the
   assert.equal(await pg.evaluate(()=>!!document.querySelector('#staged label.more[for="upFile"]')),true,'"+ עוד קובץ" next to the picked files');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('1.11 TikChik Management Center: the owner opens it from the account menu; every screen draws with its sources, on a phone and a wide screen, by day and by night; a partner gets "not found"; a suspension from the profile is audited',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const pid=store.userByEmail('p2@example.com').id;
+  try{for(const W of [390,1280]){
+    const {ctx,pg}=await open(W); const cerr=[]; pg.on('console',m=>{if(m.type()==='error'&&!/fonts\.g|ERR_FAILED|net::/.test(m.text()))cerr.push(m.text())});
+    // the way in: the account menu, for someone with "view"
+    assert.equal(await pg.evaluate(()=>{const a=document.querySelector('#tcAcctMenu a[href="/admin"]'); return !!a&&!a.hidden}),true,'the account menu leads to the management center');
+    await pg.goto(U+'admin'); await pg.waitForSelector('#view .kpi',{timeout:15000});
+    const ex=await pg.evaluate(()=>({n:document.querySelectorAll('#view .kpi').length,src:[...document.querySelectorAll('#view .kpi .src')].every(s=>s.textContent.trim().length>3),
+      labels:[...document.querySelectorAll('#view .kpi .l')].map(l=>l.textContent),charts:document.querySelectorAll('#view .chart svg').length,soon:document.querySelectorAll('#nav a.soon').length,ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.ok(ex.n>=14,'figures: '+ex.n); assert.ok(ex.src,'a source on every figure'); assert.ok(ex.labels.some(l=>/פעילים היום/.test(l))&&ex.labels.some(l=>/עלות שרתים/.test(l)));
+    assert.equal(ex.charts,2); assert.ok(ex.soon>=8,'the later screens named and marked'); assert.equal(ex.ox,false,'no sideways scroll');
+    assert.match(await pg.evaluate(()=>document.querySelector('#view .kpi[data-k="infra"]').textContent),/לא זמין.*לא מחובר/s,'nothing made up');
+    // the range
+    await pg.click('#range [data-r="7"]'); await pg.waitForFunction(()=>/7 ימים/.test(document.getElementById('sub').textContent),null,{timeout:8000});
+    // every screen
+    for(const [h,sel,re] of [['users','#view tbody tr.click',/משתמשים/],['product','#view .card',/מודיעין מוצר/],['ai','#view .card',/מנועי AI/],['health','#view tbody tr',/תקינות/],['security','#view tbody tr',/אבטחה/],['access','#view tbody tr',/תפקידים/]]){
+      await pg.evaluate(x=>location.hash='#'+x,h); await pg.waitForSelector(sel,{timeout:10000}); assert.match(await pg.textContent('#h1'),re,h);
+      assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,h+': no sideways scroll')}
+    // the table: search and sort
+    await pg.evaluate(()=>location.hash='#users'); await pg.waitForSelector('#view tbody tr.click');
+    await pg.fill('#view input[type=search]','p2@'); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#view tbody tr.click').length),1);
+    await pg.fill('#view input[type=search]',''); await pg.click('#view th[data-k="created"] button'); assert.equal(await pg.getAttribute('#view th[data-k="created"]','aria-sort'),'descending');
+    if(W===1280){
+      // the partner's profile: no portfolio contents, a suspension with its reason, audited, then restored
+      await pg.evaluate(id=>location.hash='#user/'+id,pid); await pg.waitForSelector('#stSusp');
+      assert.match(await pg.textContent('#view'),/תוכן התיק לא מוצג/);
+      await pg.click('#stSusp'); await pg.fill('#suspNote','בדיקת מערכת'); await pg.click('#suspGo'); await pg.waitForSelector('#stRestore',{timeout:8000});
+      assert.equal(store.userById(pid).status,'suspended'); await pg.click('#stRestore'); await pg.waitForSelector('#stSusp',{timeout:8000}); assert.equal(store.userById(pid).status,'active');
+      assert.match(await pg.textContent('#view'),/הושעה.*בדיקת מערכת/s,'the account\'s history from the log');
+      await pg.evaluate(()=>location.hash='#security'); await pg.waitForSelector('#view tbody tr'); assert.match(await pg.textContent('#view'),/השרשרת שלמה/);
+      // by night
+      await pg.click('#themeB'); const bg=await pg.evaluate(()=>getComputedStyle(document.body).backgroundColor); assert.notEqual(bg,'rgb(244, 243, 250)','the night colours: '+bg)}
+    else{await pg.click('#menuB'); assert.equal(await pg.evaluate(()=>document.getElementById('side').classList.contains('on')),true,'the menu on a phone')}
+    assert.deepEqual(pg.errs,[]); assert.deepEqual(cerr,[]); await ctx.close()}
+  // a partner: the ordinary "not found", no menu entry
+  const {ctx,pg}=await open(390,{who:'p2'});
+  assert.equal(await pg.evaluate(()=>{const a=document.querySelector('#tcAcctMenu a[href="/admin"]'); return !a||a.hidden}),true);
+  const r=await pg.goto(U+'admin'); assert.equal(r.status(),404); await ctx.close();
+  }finally{store.db.prepare("update users set status='active' where id=?").run(pid)}
+});

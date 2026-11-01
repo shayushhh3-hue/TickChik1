@@ -60,6 +60,8 @@ function gateEl(){
 }
 let GATE_DONE=null, SIGNUP=false;
 const INVITE=(()=>{try{return new URLSearchParams(location.search).get('invite')||''}catch(e){return ''}})();
+// 1.11: /admin sends a signed-out visitor here with ?next=admin; after signing in, someone allowed goes back there
+const NEXT_ADMIN=(()=>{try{return new URLSearchParams(location.search).get('next')==='admin'}catch(e){return false}})();
 function showGate(kind,x={}){
   const el=gateEl(), head=`<h1 id="tcGateH">תיק צ׳יק</h1><p class="sub">חדר המסחר שלי</p>`;
   if(kind==='loading'){el.innerHTML=`<div class="card">${head}<p class="sub">טוען…</p></div>`;return}
@@ -74,7 +76,7 @@ function showGate(kind,x={}){
     if(toReg)toReg.addEventListener('click',()=>showGate('register',{email:document.getElementById('tcEmail').value})); setTimeout(()=>{try{document.getElementById(x.email?'tcPass':'tcEmail').focus()}catch(e){}},30);
     f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button'); b.disabled=true; document.getElementById('tcErr').textContent='';
       const cb=document.getElementById('tcCodeBox'), otp=document.getElementById('tcOtp');
-      try{const r=await call('POST','/login',{email:document.getElementById('tcEmail').value,password:document.getElementById('tcPass').value,...(cb.hidden?{}:{code:otp.value})}); location.reload()}
+      try{const r=await call('POST','/login',{email:document.getElementById('tcEmail').value,password:document.getElementById('tcPass').value,...(cb.hidden?{}:{code:otp.value})}); if(NEXT_ADMIN&&r&&r.me&&r.me.mc){location.href='/admin';return} location.reload()}
       catch(e){b.disabled=false; if(e.code==='need_code'||e.code==='bad_code'){cb.hidden=false; otp.value=''; setTimeout(()=>{try{otp.focus()}catch(x){}},20)}
         document.getElementById('tcErr').textContent=e.message||'הכניסה לא הצליחה.'}});
     return;
@@ -135,13 +137,14 @@ export async function boot(){
   let who=null; try{who=await call('GET','/me')}catch(e){showGate('error',{err:'השרת לא זמין כרגע. נסה שוב בעוד רגע.'});return {use:async()=>null}}
   if(!who||!who.me){SIGNUP=!!who&&!!who.signup; showGate(SIGNUP&&INVITE?'register':'login',INVITE&&!SIGNUP?{err:'ההרשמה סגורה כרגע. בקש מבעל הדף קוד הזמנה חדש.'}:{}); return {use:()=>new Promise(()=>{})}}
   const me=who.me;
+  if(NEXT_ADMIN&&me.mc&&!me.mustChange){location.replace('/admin'); return {use:()=>new Promise(()=>{})}}
   if(me.mustChange){await new Promise(r=>{GATE_DONE=r;showGate('change')})}
   hideGate();
   if((me.owner||me.manage)&&who.persist===false){try{const w=document.createElement('div');w.setAttribute('role','alert');w.style.cssText='position:sticky;top:0;z-index:999;background:#b42318;color:#fff;padding:10px 16px;font:600 14px/1.5 Heebo,Arial,sans-serif;text-align:center;direction:rtl';
     w.textContent='אזהרה: הנתונים לא נשמרים לצמיתות. לשרת ב-Railway לא מחובר דיסק (Volume), ולכן כל עדכון של האתר מוחק את התיקים ואת המשתמשים. אל תעלה נתונים עד שזה יתוקן.';document.body.prepend(w)}catch(e){}}
   // 31.10: owner is the one person whose documents are the site's shared paths; an admin manages the site (manage) and
   // invests in their own area, like a partner
-  window.__tc={id:me.id,email:me.email,owner:me.owner,admin:!!me.admin,manage:!!(me.owner||me.manage),signOut:async()=>{try{await call('POST','/logout',{})}catch(e){} location.reload()}};
+  window.__tc={id:me.id,email:me.email,owner:me.owner,admin:!!me.admin,manage:!!(me.owner||me.manage),mc:!!me.mc,signOut:async()=>{try{await call('POST','/logout',{})}catch(e){} location.reload()}};
   stream();
 
   // ---- db ----

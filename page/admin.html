@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>TikChik Management Center</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('mc_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{
+  --bg:#F4F3FA;--bg2:#EBE9F6;--panel:#FFFFFF;--panel2:#F8F7FD;--line:#E3E0F0;--line2:#D3CFE6;
+  --ink:#16142B;--ink2:#4B4766;--muted:#7A7594;
+  --acc:#6D28D9;--acc2:#0D9488;--acc-soft:#EDE7FE;--acc2-soft:#DDF5F2;
+  --ok:#15803D;--ok-bg:#E3F6EA;--warn:#B45309;--warn-bg:#FDF0DC;--bad:#BE123C;--bad-bg:#FDE4EA;--off:#64748B;--off-bg:#EEF0F4;
+  --sh:0 1px 2px rgb(22 20 43/.06),0 4px 16px rgb(22 20 43/.05);--r:16px;
+  --c1:#6D28D9;--c2:#0D9488;--c3:#D97706;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0A0918;--bg2:#100E24;--panel:#14122C;--panel2:#1A1836;--line:#262342;--line2:#34305A;
+  --ink:#EEEBFF;--ink2:#B7B2D6;--muted:#8C87AD;
+  --acc:#A78BFA;--acc2:#2DD4BF;--acc-soft:#251E4A;--acc2-soft:#0E2E2C;
+  --ok:#4ADE80;--ok-bg:#0F2A1C;--warn:#FBBF24;--warn-bg:#2B2210;--bad:#FB7185;--bad-bg:#2E1220;--off:#94A3B8;--off-bg:#1C1B33;
+  --sh:0 1px 2px rgb(0 0 0/.3),0 8px 24px rgb(0 0 0/.25);--c1:#A78BFA;--c2:#2DD4BF;--c3:#FBBF24}}
+:root[data-theme="dark"]{
+  --bg:#0A0918;--bg2:#100E24;--panel:#14122C;--panel2:#1A1836;--line:#262342;--line2:#34305A;
+  --ink:#EEEBFF;--ink2:#B7B2D6;--muted:#8C87AD;
+  --acc:#A78BFA;--acc2:#2DD4BF;--acc-soft:#251E4A;--acc2-soft:#0E2E2C;
+  --ok:#4ADE80;--ok-bg:#0F2A1C;--warn:#FBBF24;--warn-bg:#2B2210;--bad:#FB7185;--bad-bg:#2E1220;--off:#94A3B8;--off-bg:#1C1B33;
+  --sh:0 1px 2px rgb(0 0 0/.3),0 8px 24px rgb(0 0 0/.25);--c1:#A78BFA;--c2:#2DD4BF;--c3:#FBBF24}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Heebo,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--acc)}
+.mono,.num{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:6px}
+
+/* ---- shell ---- */
+.shell{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100dvh}
+.scrim{position:fixed;inset:0;background:rgb(10 8 30/.45);z-index:39;display:none}
+.side{position:sticky;top:0;height:100dvh;overflow-y:auto;background:var(--bg2);border-inline-start:1px solid var(--line);padding:18px 14px 24px;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px 10px;border-bottom:1px solid var(--line)}
+.brand .mk{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgb(109 40 217/.35)}
+.brand .mk svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.brand b{display:block;font-size:15px;letter-spacing:.2px} .brand span{display:block;font-size:11.5px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav h4{margin:12px 8px 4px;font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:var(--ink2);text-decoration:none;font-weight:500;font-size:14px;min-height:38px}
+.nav a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav a:hover{background:var(--panel2);color:var(--ink)}
+.nav a[aria-current="page"]{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:var(--sh)}
+.nav a[aria-current="page"] svg{stroke:var(--acc)}
+.nav a.soon{opacity:.55;cursor:default} .nav a.soon:hover{background:none;color:var(--ink2)}
+.nav .tag{margin-inline-start:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--off-bg);color:var(--off)}
+.nav .dot{margin-inline-start:auto;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.side .foot{margin-top:auto;padding:10px 8px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:8px}
+.who{display:flex;align-items:center;gap:8px} .who .av{width:28px;height:28px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.who b{color:var(--ink);font-size:13px;display:block;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main{min-width:0;padding:22px 28px 60px;max-width:1360px;width:100%}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;margin-bottom:18px}
+.top h1{margin:0;font-size:24px;line-height:1.25;letter-spacing:-.2px} .top .sub{color:var(--muted);font-size:13.5px;margin-top:2px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.iconb.menu-b{display:none}
+.iconb{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;cursor:pointer}
+.iconb svg{width:18px;height:18px;stroke:var(--ink2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 11px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;min-height:32px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--acc);color:#fff}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:#120F2A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{color:#120F2A}}
+.custom{display:none;gap:6px;align-items:center} .custom.on{display:inline-flex}
+.custom input{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 8px;font-size:13px;min-height:34px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:7px 13px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:36px;color:var(--ink)}
+.btn:hover{border-color:var(--acc)} .btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#120F2A} @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#120F2A}}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)} .btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:4px 10px;min-height:30px;font-size:12.5px}
+
+/* ---- cards ---- */
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;min-width:0}
+.card h2{margin:0 0 4px;font-size:16px} .card h3{margin:0 0 8px;font-size:14.5px}
+.card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+.kpi{position:relative;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:start;border:1px solid var(--line);background:var(--panel);transition:border-color .15s,transform .15s}
+.kpi:hover{border-color:var(--acc)} .kpi.nogo{cursor:default} .kpi.nogo:hover{border-color:var(--line)}
+.kpi .l{font-size:13px;color:var(--ink2);font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:30px;font-weight:800;line-height:1.1;letter-spacing:-.5px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.kpi .v .of{font-size:14px;color:var(--muted);font-weight:600}
+.kpi .v.na{font-size:16px;color:var(--muted);font-weight:700}
+.kpi .d{font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;align-self:flex-start}
+.d.up{background:var(--ok-bg);color:var(--ok)} .d.down{background:var(--bad-bg);color:var(--bad)} .d.same{background:var(--off-bg);color:var(--off)}
+.kpi .n{font-size:12.5px;color:var(--ink2)} .kpi .src{font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:7px;margin-top:auto;display:flex;gap:6px;align-items:flex-start}
+.kpi .src svg{width:13px;height:13px;flex:none;margin-top:3px;stroke:currentColor;fill:none;stroke-width:2}
+.kpi.st-bad{border-color:color-mix(in srgb,var(--bad) 55%,transparent);background:linear-gradient(0deg,var(--panel),var(--panel)),var(--bad-bg)}
+.kpi.st-bad::before,.kpi.st-warn::before{content:"";position:absolute;inset-inline-start:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--bad)} .kpi.st-warn::before{background:var(--warn)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-off{background:var(--off-bg);color:var(--off)} .p-acc{background:var(--acc-soft);color:var(--acc)}
+.row2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+.banner{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-size:13.5px;color:var(--ink2);margin-bottom:14px}
+.banner svg{width:18px;height:18px;flex:none;stroke:var(--acc);fill:none;stroke-width:2;margin-top:2px}
+.banner.warn{background:var(--warn-bg);border-color:transparent;color:var(--ink)} .banner.warn svg{stroke:var(--warn)}
+.banner.bad{background:var(--bad-bg);border-color:transparent;color:var(--ink)} .banner.bad svg{stroke:var(--bad)}
+.empty{padding:22px;text-align:center;color:var(--muted);font-size:13.5px}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--panel2),var(--line),var(--panel2));background-size:200% 100%;animation:sk 1.2s linear infinite}
+@keyframes sk{to{background-position:-200% 0}} @media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.err{padding:16px;border-radius:12px;background:var(--bad-bg);color:var(--ink);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+
+/* ---- chart ---- */
+.chart{position:relative} .chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .ax{fill:var(--muted);font-size:11px;font-family:Heebo,sans-serif} .chart .gl{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round} .chart .ar{opacity:.12}
+.chart .hv{stroke:var(--line2);stroke-dasharray:3 3} .chart .pt{stroke:var(--panel);stroke-width:2}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:7px 10px;font-size:12.5px;box-shadow:var(--sh);white-space:nowrap;z-index:5;transform:translate(-50%,-110%)}
+.tip b{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-bottom:6px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-inline-end:6px;vertical-align:middle}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,2fr) 60px;gap:10px;align-items:center;font-size:13px}
+.bar .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .bar .tr{height:10px;border-radius:5px;background:var(--panel2);overflow:hidden} .bar .fl{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--acc2),var(--acc))}
+.bar .nv{text-align:end;font-weight:700}
+
+/* ---- tables ---- */
+.tbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tbar input[type=search],.tbar select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:13.5px;min-height:38px}
+.tbar input[type=search]{flex:1 1 200px;min-width:0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 12px;text-align:start;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:700;background:var(--panel2);position:sticky;top:0}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:4px;align-items:center} th button:focus-visible{outline:2px solid var(--acc)}
+th[aria-sort="ascending"] button::after{content:"▲";font-size:9px} th[aria-sort="descending"] button::after{content:"▼";font-size:9px}
+tbody tr:last-child td{border-bottom:0} tbody tr.click{cursor:pointer} tbody tr.click:hover td{background:var(--panel2)}
+td.wrap{white-space:normal;min-width:220px}
+.u1{display:flex;align-items:center;gap:9px} .u1 .av{width:30px;height:30px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.u1 b{display:block;font-size:13.5px} .u1 span{display:block;color:var(--muted);font-size:12px}
+
+/* ---- profile ---- */
+.ph{display:flex;align-items:center;gap:14px;flex-wrap:wrap} .ph .av{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;font-weight:800;font-size:22px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px 18px;margin-top:6px}
+.kv div{font-size:13px} .kv b{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:1px}
+.heat{display:flex;gap:3px;flex-wrap:wrap;direction:ltr} .heat i{width:12px;height:12px;border-radius:3px;background:var(--panel2);border:1px solid var(--line)}
+.heat i.on{background:var(--acc2);border-color:transparent} .heat i.bf{background:color-mix(in srgb,var(--acc2) 45%,transparent);border-color:transparent}
+.checks{display:flex;flex-direction:column;gap:6px} .checks label{display:flex;gap:8px;align-items:flex-start;font-size:13.5px} .checks input{margin-top:4px;accent-color:var(--acc)}
+.checks small{color:var(--muted);display:block}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border-radius:10px;background:var(--panel2);margin-top:8px}
+.inline input[type=text]{flex:1 1 200px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 10px;min-height:34px}
+.msg{font-size:13px;margin-top:6px} .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+.funnel{display:flex;flex-direction:column;gap:6px} .funnel .st{display:grid;grid-template-columns:150px minmax(0,1fr) 70px;gap:10px;align-items:center;font-size:13px}
+.funnel .tr{height:22px;background:var(--panel2);border-radius:6px;overflow:hidden} .funnel .fl{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:6px}
+.chain{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}
+
+@media (max-width:1100px){.row2{grid-template-columns:1fr}}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;inset:0 0 0 auto;width:min(300px,86vw);z-index:40;transform:translateX(100%);transition:transform .2s;box-shadow:-10px 0 40px rgb(0 0 0/.25)}
+  .side.on{transform:none} .scrim.on{display:block}
+  .iconb.menu-b{display:grid} .main{padding:14px 16px 60px}
+  .top h1{font-size:20px} .kpi .v{font-size:24px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px} .kpis .card{padding:12px} .kpi .l{font-size:12.5px} .kpi .src{font-size:11px}
+  .bar{grid-template-columns:minmax(0,1fr) 90px 44px}
+  .funnel .st{grid-template-columns:110px minmax(0,1fr) 54px}
+}
+@media (prefers-reduced-motion:reduce){.side{transition:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="scrim" id="scrim"></div>
+  <aside class="side" id="side" aria-label="ניווט במרכז הניהול">
+    <div class="brand"><div class="mk" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 8-9"/><path d="M15 6h5v5"/></svg></div><div><b>TikChik</b><span>Management Center</span></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot"><div class="who" id="who"></div><a href="/" class="btn sm" style="justify-content:center">חזרה לאתר</a></div>
+  </aside>
+  <main class="main" id="main" tabindex="-1">
+    <header class="top"><div style="display:flex;gap:10px;align-items:center"><button class="iconb menu-b" id="menuB" aria-label="תפריט" aria-controls="side" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <div><h1 id="h1">טוען…</h1><div class="sub" id="sub"></div></div></div>
+      <div class="tools" id="tools"><div class="seg" id="range" role="group" aria-label="טווח זמן"></div><span class="custom" id="custom"><input type="date" id="cFrom" aria-label="מתאריך"><span>–</span><input type="date" id="cTo" aria-label="עד תאריך"><button class="btn sm" id="cGo">הצג</button></span>
+        <button class="iconb" id="themeB" aria-label="יום / לילה"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button></div></header>
+    <div id="view"></div>
+  </main>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id), view=$('view');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NF=new Intl.NumberFormat('he-IL'), nf=v=>v==null?'—':NF.format(v), usd=v=>v==null?'—':'$'+(v<10?v.toFixed(2):NF.format(Math.round(v)));
+const dmy=s=>{if(!s)return '—'; const d=new Date(s.length===10?s+'T12:00:00':s); return d.toLocaleDateString('he-IL',{day:'numeric',month:'numeric',year:'2-digit'})};
+const dt=s=>{if(!s)return '—'; const d=new Date(s); return d.toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})};
+const ago=s=>{if(!s)return 'לא ידוע'; const m=Math.round((Date.now()-Date.parse(s))/6e4); if(m<1)return 'עכשיו'; if(m<60)return `לפני ${m} דק׳`; const h=Math.round(m/60); if(h<48)return `לפני ${h} שע׳`; return `לפני ${Math.round(h/24)} ימים`};
+const ini=s=>esc(String(s||'?').trim().charAt(0).toUpperCase()||'?');
+const ROLE={owner:'בעלים',admin:'מנהל',friend:'שותף'}, STATE={ok:['p-ok','תקין'],warn:['p-warn','אזהרה'],bad:['p-bad','תקלה'],off:['p-off','לא מחובר']};
+const IC={
+  exec:'<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v6h8V3zM3 21h8v-4H3z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.6 3.5 5.4"/>',
+  product:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7"/>',
+  ai:'<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 15h5"/>',health:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  security:'<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',access:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+  support:'<path d="M4 5h16v11H8l-4 4z"/>',roadmap:'<path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/>',content:'<path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h5"/>',
+  biz:'<path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.3-5 3.3S9 9.5 12 10s5 1.6 5 3.6-2.2 3.4-5 3.4-5-1.2-5-3"/>',radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/>',
+  voice:'<path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',intel:'<path d="M12 3l2.4 5.2L20 9l-4.2 3.9L17 19l-5-2.8L7 19l1.2-6.1L4 9l5.6-.8z"/>'};
+const ico=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg>`;
+// the six areas; the screens of the later stages are named, marked, and lead nowhere yet
+const NAV=[
+  {h:'הנהלה',items:[{id:'exec',l:'תמונת מצב'}]},
+  {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה',soon:'שלב ד׳'},{id:'voice',l:'קול המשתמשים',soon:'שלב ה׳'}]},
+  {h:'מודיעין ומוצר',items:[{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח',soon:'שלב ד׳'},{id:'radar',l:'TikChik Radar',soon:'שלב ה׳'},{id:'intel',l:'TikChik Intelligence',soon:'שלב ה׳'}]},
+  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'ai',l:'מנועי AI ועלויות'},{id:'news',l:'מערכת החדשות',soon:'שלב ג׳'},{id:'security',l:'אבטחה ויומן פעולות'},{id:'access',l:'תפקידים והרשאות'}]},
+  {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן',soon:'שלב ד׳'}]},
+  {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence',soon:'שלב ד׳'}]}];
+let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
+const can=p=>PERMS.includes(p);
+// ---- the server ----
+async function api(path,opt={}){const r=await fetch('/api/admin/'+path,{credentials:'same-origin',...opt,headers:{'content-type':'application/json','x-tc':'1',...(opt.headers||{})}});
+  let j=null; try{j=await r.json()}catch(e){} if(!r.ok){const e=new Error((j&&j.error&&j.error.message)||('HTTP '+r.status)); e.status=r.status; throw e} return j}
+const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b||{})});
+// ---- the range ----
+let RANGE={range:'30'}; try{const v=JSON.parse(localStorage.getItem('mc_range')||'null'); if(v&&v.range)RANGE=v}catch(e){}
+const rq=()=>new URLSearchParams(RANGE).toString();
+function rangeBar(show){const el=$('range'); $('custom').classList.toggle('on',show&&RANGE.range==='custom'); el.style.display=show?'':'none'; if(!show){$('custom').classList.remove('on');return}
+  el.innerHTML=[['today','היום'],['7','7 ימים'],['30','30 ימים'],['90','90 ימים'],['custom','מותאם']].map(([k,l])=>`<button type="button" data-r="${k}" aria-pressed="${RANGE.range===k}">${l}</button>`).join('');
+  if(RANGE.range==='custom'){$('cFrom').value=RANGE.from||''; $('cTo').value=RANGE.to||''}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-r]'); if(!b)return; const k=b.dataset.r;
+  if(k==='custom'){RANGE={range:'custom',from:RANGE.from||new Date(Date.now()-13*864e5).toISOString().slice(0,10),to:RANGE.to||new Date().toISOString().slice(0,10)}; rangeBar(true); return}
+  RANGE={range:k}; try{localStorage.setItem('mc_range',JSON.stringify(RANGE))}catch(e){} route()});
+$('cGo').addEventListener('click',()=>{const f=$('cFrom').value, t=$('cTo').value; if(!f||!t)return; RANGE={range:'custom',from:f,to:t}; try{localStorage.setItem('mc_range',JSON.stringify(RANGE))}catch(e){} route()});
+const rangeText=R=>R?(R.key==='today'?'היום':R.from===R.to?dmy(R.from):`${dmy(R.from)} – ${dmy(R.to)} (${R.len} ימים)`):'';
+// ---- the theme ----
+$('themeB').addEventListener('click',()=>{const r=document.documentElement, dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme=dark?'light':'dark'; try{localStorage.setItem('mc_theme',r.dataset.theme)}catch(e){}; if(LAST_CHART)LAST_CHART()});
+// ---- the menu on a phone ----
+const side=$('side'), scrim=$('scrim'), menuOpen=on=>{side.classList.toggle('on',on); scrim.classList.toggle('on',on); $('menuB').setAttribute('aria-expanded',String(on))};
+$('menuB').addEventListener('click',()=>menuOpen(!side.classList.contains('on'))); scrim.addEventListener('click',()=>menuOpen(false));
+function navRender(cur){$('nav').innerHTML=NAV.map(g=>`<h4>${esc(g.h)}</h4>`+g.items.map(it=>it.soon
+    ?`<a class="soon" aria-disabled="true" title="נבנה ב${esc(it.soon)}">${ico(it.id)}<span>${esc(it.l)}</span><span class="tag">${esc(it.soon)}</span></a>`
+    :`<a href="#${it.id}" ${cur===it.id?'aria-current="page"':''}>${ico(it.id)}<span>${esc(it.l)}</span>${it.id==='health'&&HEALTH_BAD?'<span class="dot" aria-label="יש תקלה"></span>':''}</a>`).join('')).join('')}
+// ---- pieces ----
+const loading=n=>`<div class="grid kpis">${Array.from({length:n||8},()=>`<div class="card"><div class="skel" style="width:50%"></div><div class="skel" style="height:28px;margin:12px 0;width:40%"></div><div class="skel" style="width:80%"></div></div>`).join('')}</div>`;
+const errBox=(e,again)=>`<div class="err" role="alert"><span>${e.status===403?'אין לך הרשאה לראות את זה.':'הנתונים לא נטענו: '+esc(e.message)}</span>${e.status===403?'':`<button class="btn sm" data-again="${esc(again)}">לנסות שוב</button>`}</div>`;
+document.addEventListener('click',e=>{if(e.target.closest('[data-again]'))route()});
+const banner=(t,kind='')=>`<div class="banner ${kind}" role="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>${t}</div></div>`;
+const pill=s=>{const [c,l]=STATE[s]||STATE.off; return `<span class="pill ${c}">${l}</span>`};
+function delta(v,p){if(v==null||p==null)return ''; const d=v-p; if(!d)return '<span class="d same">ללא שינוי מהתקופה הקודמת</span>'; return `<span class="d ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${nf(Math.abs(d))} מהתקופה הקודמת</span>`}
+function kpi(m){const na=m.value==null, v=na?'לא זמין':m.unit==='usd'?usd(m.value):nf(m.value);
+  return `<${m.go?'button type="button" data-go="'+esc(m.go)+'"':'div'} class="card kpi${m.go?'':' nogo'}${m.state&&m.state!=='ok'?' st-'+m.state:''}" data-k="${esc(m.k)}">
+    <span class="l">${esc(m.label)}${m.state?' '+pill(m.state):''}</span>
+    <span class="v${na?' na':''}">${na?v:`<span class="num">${v}</span>`}${!na&&m.of!=null?`<span class="of">מתוך ${nf(m.of)}</span>`:''}</span>
+    ${delta(m.value,m.prev)}${m.note?`<span class="n">${esc(m.note)}</span>`:''}${m.churn?`<span class="n">${nf(m.churn)} לא חזרו</span>`:''}
+    <span class="src" title="${esc(m.how||m.src)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>${esc(m.src)}${m.at?` · עודכן ${esc(ago(m.at))}`:''}</span></span></${m.go?'button':'div'}>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]'); if(b)location.hash='#'+b.dataset.go});
+// a line chart: several series over the days, a crosshair with the values on hover / touch
+let LAST_CHART=null;
+function lineChart(el,days,series,{h=220}={}){
+  const draw=()=>{const W=Math.max(320,el.clientWidth||600), H=h, L=36, Rr=10, T=10, B=26, n=days.length, max=Math.max(1,...series.flatMap(s=>s.v)), step=Math.pow(10,Math.floor(Math.log10(max))), top=Math.ceil(max/step)*step||1;
+    // as on the site's own charts: the oldest day on the left, today on the right; the values' scale on the left
+    const X=i=>n<2?(L+W-Rr)/2:L+(W-L-Rr)*i/(n-1), Y=v=>T+(H-T-B)*(1-v/top);
+    const grid=[0,.25,.5,.75,1].map(f=>{const v=top*f, y=Y(v); return `<line class="gl" x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+4}" text-anchor="end">${nf(Math.round(v))}</text>`}).join('');
+    const lab=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>`<text class="ax" x="${X(i)}" y="${H-6}" text-anchor="middle">${esc(dmy(days[i]))}</text>`).join('');
+    const paths=series.map(s=>{const p=s.v.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(''); return `${s.area?`<path class="ar" style="fill:${s.c}" d="${p}L${X(n-1)},${Y(0)}L${X(0)},${Y(0)}Z"/>`:''}<path class="ln" style="stroke:${s.c}" d="${p}"/>`}).join('');
+    el.innerHTML=`<div class="legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.l)}</span>`).join('')}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s=>s.l+': '+s.v.reduce((a,b)=>a+b,0)).join(', '))}">${grid}${lab}${paths}<g id="hv"></g></svg><div class="tip" hidden></div>`;
+    const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), hv=svg.querySelector('#hv');
+    const at=ev=>{const r=svg.getBoundingClientRect(), x=((ev.touches?ev.touches[0].clientX:ev.clientX)-r.left)*W/r.width; let bi=0,bd=1e9; for(let i=0;i<n;i++){const d=Math.abs(X(i)-x); if(d<bd){bd=d;bi=i}} return bi};
+    const show=ev=>{const i=at(ev), x=X(i); hv.innerHTML=`<line class="hv" x1="${x}" x2="${x}" y1="${T}" y2="${H-B}"/>`+series.map(s=>`<circle class="pt" r="4.5" cx="${x}" cy="${Y(s.v[i])}" style="fill:${s.c}"/>`).join('');
+      tip.hidden=false; tip.innerHTML=`<b>${esc(dmy(days[i]))}</b>${series.map(s=>`${esc(s.l)}: <span class="num">${nf(s.v[i])}</span>`).join('<br>')}`; const r=svg.getBoundingClientRect(); tip.style.left=(x*r.width/W)+'px'; tip.style.top=(Y(Math.max(...series.map(s=>s.v[i])))*r.height/H+svg.offsetTop)+'px'};
+    svg.addEventListener('mousemove',show); svg.addEventListener('touchstart',show,{passive:true}); svg.addEventListener('touchmove',show,{passive:true}); svg.addEventListener('mouseleave',()=>{hv.innerHTML=''; tip.hidden=true})};
+  draw(); LAST_CHART=draw; return draw}
+addEventListener('resize',()=>{clearTimeout(window.__rz); window.__rz=setTimeout(()=>{if(LAST_CHART)LAST_CHART()},150)});
+// a sortable, searchable table
+function table(el,{cols,rows,search=null,filters=[],onRow=null,empty='אין נתונים'}){
+  let q='', sort=null, dir=1, F={};
+  const draw=()=>{let L=rows.filter(r=>(!q||(search?search(r):JSON.stringify(r)).toLowerCase().includes(q))&&filters.every(f=>!F[f.k]||String(f.get(r))===F[f.k]));
+    if(sort){const c=cols.find(c=>c.k===sort); L=L.slice().sort((a,b)=>{const x=c.sv?c.sv(a):a[c.k], y=c.sv?c.sv(b):b[c.k]; return (x==null)-(y==null)||(x>y?1:x<y?-1:0)*dir})}
+    el.querySelector('tbody').innerHTML=L.length?L.map((r,i)=>`<tr${onRow?` class="click" tabindex="0" data-i="${rows.indexOf(r)}"`:''}>${cols.map(c=>`<td class="${c.cls||''}">${c.f?c.f(r):esc(r[c.k])}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${cols.length}"><div class="empty">${esc(empty)}</div></td></tr>`;
+    el.querySelector('.cnt').textContent=`${L.length} מתוך ${rows.length}`;
+    for(const th of el.querySelectorAll('th[data-k]'))th.setAttribute('aria-sort',th.dataset.k===sort?(dir>0?'ascending':'descending'):'none')};
+  el.innerHTML=`<div class="tbar">${search?'<input type="search" placeholder="חיפוש…" aria-label="חיפוש בטבלה">':''}${filters.map(f=>`<select data-f="${f.k}" aria-label="${esc(f.l)}"><option value="">${esc(f.l)}: הכל</option>${f.opts.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select>`).join('')}<span class="cnt" style="color:var(--muted);font-size:12.5px;margin-inline-start:auto"></span></div>
+    <div class="tw"><table><thead><tr>${cols.map(c=>`<th data-k="${c.k}" aria-sort="none">${c.nosort?esc(c.l):`<button type="button">${esc(c.l)}</button>`}</th>`).join('')}</tr></thead><tbody></tbody></table></div>`;
+  const s=el.querySelector('input[type=search]'); if(s)s.addEventListener('input',()=>{q=s.value.trim().toLowerCase(); draw()});
+  for(const sel of el.querySelectorAll('select[data-f]'))sel.addEventListener('change',()=>{F[sel.dataset.f]=sel.value; draw()});
+  el.querySelector('thead').addEventListener('click',e=>{const th=e.target.closest('th[data-k]'); if(!th||!th.querySelector('button'))return; if(sort===th.dataset.k)dir=-dir; else{sort=th.dataset.k; dir=th.dataset.k==='name'?1:-1} draw()});
+  if(onRow){const go=e=>{const tr=e.target.closest('tr[data-i]'); if(tr)onRow(rows[+tr.dataset.i])}; el.addEventListener('click',go); el.addEventListener('keydown',e=>{if(e.key==='Enter')go(e)})}
+  draw()}
+
+// ================= the screens =================
+const SCREENS={};
+function head(t,s,{range=false}={}){$('h1').textContent=t; $('sub').textContent=s||''; document.title=t+' · TikChik Management Center'; rangeBar(range)}
+
+// ---- the executive dashboard ----
+SCREENS.exec=async()=>{head('תמונת מצב','',{range:true}); view.innerHTML=loading(12);
+  const d=await api('exec?'+rq()); $('sub').textContent=`טווח: ${rangeText(d.range)} · ההשוואה: מול ${d.range.len} הימים שלפניו`;
+  HEALTH_BAD=d.metrics.some(m=>m.k==='health'&&m.state==='bad'); navRender('exec');
+  const top=['users','dau','wau','mau','new','returning','retention','portfolios'], ops=['analyses','alerts','news','health','issues','aicost','infra'];
+  const by=Object.fromEntries(d.metrics.map(m=>[m.k,m]));
+  view.innerHTML=`${d.metrics.some(m=>m.state==='bad')?banner(`<b>יש תקלה פתוחה:</b> ${esc(by.issues.note||'')}. <a href="#health">לפרטים במסך התקינות</a>`,'bad'):''}
+    <h2 class="vh">משתמשים</h2><div class="grid kpis">${top.map(k=>by[k]&&kpi(by[k])).join('')}</div>
+    <div class="row2" style="margin-top:14px"><section class="card" aria-labelledby="gT"><h2 id="gT">מגמות לאורך זמן</h2><p class="hint">פעילים ביום ופניות לצ׳יקו ביום, בטווח שנבחר. ריחוף או נגיעה מראים את הערכים. ${d.activeSince?`ימי הפעילות נספרים מ-${esc(dmy(d.activeSince))}.`:''}</p><div class="chart" id="ch1"></div></section>
+      <section class="card" aria-labelledby="gU"><h2 id="gU">משתמשים רשומים לאורך זמן</h2><p class="hint">לפי תאריך ההרשמה.</p><div class="chart" id="ch2"></div></section></div>
+    <h2 style="margin:22px 0 10px;font-size:16px">פעילות ותפעול</h2><div class="grid kpis">${ops.map(k=>by[k]&&kpi(by[k])).join('')}</div>`;
+  lineChart($('ch1'),d.series.days,[{l:'פעילים',v:d.series.active,c:'var(--c1)',area:true},{l:'פניות לצ׳יקו',v:d.series.ai,c:'var(--c2)'}]);
+  const d1=LAST_CHART, d2=lineChart($('ch2'),d.series.days,[{l:'משתמשים',v:d.series.users,c:'var(--c3)',area:true}],{h:180});
+  LAST_CHART=()=>{d1(); d2()}};
+
+// ---- the users ----
+SCREENS.users=async()=>{head('משתמשים','כל החשבונות באתר, הפעילות שלהם ומצב החשבון. תוכן התיקים לא מוצג.'); view.innerHTML=loading(4);
+  const d=await api('users'); const box=document.createElement('section'); box.className='card'; view.innerHTML=''; view.append(box);
+  table(box,{rows:d.users,search:u=>u.email+' '+u.name,empty:'אין משתמשים שמתאימים לסינון',
+    filters:[{k:'role',l:'תפקיד',get:u=>u.role,opts:Object.entries(ROLE)},{k:'status',l:'מצב',get:u=>u.status,opts:[['active','פעיל'],['suspended','מושעה']]},{k:'pf',l:'תיק',get:u=>u.portfolio.has?'1':'0',opts:[['1','הוזן'],['0','לא הוזן']]}],
+    cols:[{k:'name',l:'משתמש',sv:u=>(u.name||u.email).toLowerCase(),f:u=>`<div class="u1"><span class="av">${ini(u.name||u.email)}</span><div><b>${esc(u.name||u.email.split('@')[0])}</b><span class="mono">${esc(u.email)}</span></div></div>`},
+      {k:'role',l:'תפקיד',f:u=>`<span class="pill ${u.role==='friend'?'p-off':'p-acc'}">${ROLE[u.role]||esc(u.role)}</span>`},
+      {k:'status',l:'מצב',f:u=>u.status==='suspended'?'<span class="pill p-bad">מושעה</span>':'<span class="pill p-ok">פעיל</span>'},
+      {k:'created',l:'הרשמה',f:u=>esc(dmy(u.created))},{k:'lastSeen',l:'פעילות אחרונה',f:u=>`<span title="${esc(dt(u.lastSeen))}">${esc(u.lastSeen?ago(u.lastSeen):'עוד לא נרשמה')}</span>`},
+      {k:'lastLogin',l:'כניסה אחרונה',f:u=>esc(u.lastLogin?dt(u.lastLogin):'—')},{k:'active30',l:'ימים פעילים (30)',f:u=>`<span class="num">${nf(u.active30)}</span>`},
+      {k:'ai30',l:'צ׳יקו (30)',f:u=>`<span class="num">${nf(u.ai30)}</span>`},{k:'pf',l:'תיק',sv:u=>u.portfolio.has?1:0,f:u=>u.portfolio.has?`<span class="pill p-ok" title="עודכן ${esc(dt(u.portfolio.updatedAt))}">הוזן</span>`:'<span class="pill p-off">אין</span>'},
+      {k:'twofa',l:'אימות דו-שלבי',f:u=>u.twofa?'<span class="pill p-ok">פועל</span>':'<span class="pill p-warn">כבוי</span>'}],
+    onRow:u=>location.hash='#user/'+u.id})};
+
+// ---- one user ----
+SCREENS.user=async id=>{head('משתמש',''); view.innerHTML=loading(3);
+  const d=await api('users/'+encodeURIComponent(id)), u=d.user; head(u.name||u.email,`${ROLE[u.role]||u.role} · נרשם ${dmy(u.created)}`);
+  const canU=can('users')&&u.role!=='owner'&&u.id!==ME.id, own=ME.role==='owner';
+  const days=new Map(d.days.map(x=>[x.day,x])), heat=[]; for(let i=89;i>=0;i--){const k=new Date(Date.now()-i*864e5).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'}), x=days.get(k); heat.push(`<i class="${x?(x.src==='req'?'on':'bf'):''}" title="${esc(dmy(k))}${x?(x.src==='req'?' · פעיל':' · פעיל (שוחזר מ'+({usage:'תיעוד השימוש',ai:'צ׳יקו',login:'כניסה'}[x.src]||x.src)+')'):''}"></i>`)}
+  const permsH=d.user.effective, LBL={view:'צפייה במרכז הניהול',edit:'עריכת הגדרות ותוכן',users:'ניהול משתמשים',system:'ניהול מערכת',sensitive:'מידע אישי רגיש'};
+  const ACT={'user.suspend':'הושעה','user.restore':'הוחזר לפעילות','user.role':'שינוי תפקיד','user.perms':'שינוי הרשאות','user.add':'נוסף','user.register':'נרשם','user.password':'סיסמה אופסה','user.remove':'הוסר','sensitive.view':'צפייה במידע רגיש'};
+  view.innerHTML=`<div class="grid" style="grid-template-columns:minmax(0,1fr)">
+    <section class="card"><div class="ph"><span class="av">${ini(u.name||u.email)}</span><div style="flex:1;min-width:0"><h2 style="margin:0">${esc(u.name||u.email.split('@')[0])}</h2><div class="mono" style="color:var(--muted);font-size:13px">${esc(u.email)}</div></div>
+      ${u.status==='suspended'?'<span class="pill p-bad">מושעה</span>':'<span class="pill p-ok">פעיל</span>'} <span class="pill p-acc">${ROLE[u.role]||esc(u.role)}</span></div>
+      <div class="kv" style="margin-top:14px"><div><b>הרשמה</b>${esc(dt(u.created))}</div><div><b>כניסה אחרונה</b>${esc(dt(u.lastLogin))}</div><div><b>פעילות אחרונה</b>${esc(u.lastSeen?dt(u.lastSeen):'עוד לא נרשמה')}</div>
+        <div><b>אימות דו-שלבי</b>${u.twofa?'פועל':'כבוי'}</div><div><b>תיק השקעות</b>${u.portfolio.has?'הוזן · עודכן '+esc(dt(u.portfolio.updatedAt)):'לא הוזן'}</div><div><b>ימים פעילים ב-30</b>${nf(u.active30)}</div><div><b>פניות לצ׳יקו ב-30</b>${nf(u.ai30)}</div>${u.statusNote?`<div><b>הערת השעיה</b>${esc(u.statusNote)}</div>`:''}</div>
+      ${d.portfolioNote?`<p class="hint" style="margin-top:12px">${esc(d.portfolioNote)}</p>`:''}</section>
+    <div class="row2"><section class="card"><h3>ימי פעילות ב-90 הימים האחרונים</h3><p class="hint">כל ריבוע הוא יום; מלא = פעיל. בהיר יותר: יום ששוחזר מתיעוד קודם (לפני שנאסף מונה הפעילות).</p><div class="heat" aria-label="ימי פעילות">${heat.join('')}</div>
+        <h3 style="margin-top:16px">שימוש בצ׳יקו לפי יום</h3>${d.ai.length?`<div class="tw"><table><thead><tr><th>יום</th><th>פניות</th><th>קריאות מהירות</th><th>טוקנים (קלט / פלט)</th></tr></thead><tbody>${d.ai.slice(0,14).map(r=>`<tr><td>${esc(dmy(r.day))}</td><td class="num">${nf(r.calls)}</td><td class="num">${nf(r.quick)}</td><td class="num">${nf(r.input)} / ${nf(r.output)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין שימוש בצ׳יקו.</div>'}
+        <p class="hint" style="margin-top:12px">${esc(d.usage)}</p></section>
+      <section class="card"><h3>ניהול החשבון</h3>
+        ${u.role==='owner'?'<p class="hint">זה בעל המערכת: אי אפשר להשעות, לשנות תפקיד או הרשאות.</p>':u.id===ME.id?'<p class="hint">זה החשבון שלך: את התפקיד וההרשאות של עצמך משנה מנהל אחר.</p>':!can('users')?'<p class="hint">צריך הרשאת "ניהול משתמשים" כדי לשנות.</p>':''}
+        ${canU?`<div style="display:flex;gap:8px;flex-wrap:wrap"><label class="vh" for="roleSel">תפקיד</label><select id="roleSel" class="btn"><option value="friend" ${u.role==='friend'?'selected':''}>שותף</option><option value="admin" ${u.role==='admin'?'selected':''}>מנהל</option></select>
+          <button class="btn" id="roleGo">לשמור תפקיד</button>${u.status==='suspended'?'<button class="btn" id="stRestore">להחזיר לפעילות</button>':'<button class="btn danger" id="stSusp">להשעות…</button>'}</div>
+          <div class="inline" id="suspBox" hidden><label class="vh" for="suspNote">סיבה</label><input type="text" id="suspNote" placeholder="סיבה (נשמרת ביומן הפעולות)" maxlength="200"><button class="btn danger" id="suspGo">להשעות עכשיו</button><button class="btn" id="suspNo">ביטול</button></div>
+          <p class="hint" style="margin-top:8px">השעיה מנתקת את כל החיבורים של המשתמש ומונעת כניסה. הנתונים שלו נשמרים.</p>`:''}
+        <h3 style="margin-top:14px">הרשאות במרכז הניהול</h3><div class="checks">${Object.entries(LBL).map(([p,l])=>{const dis=!canU||(!own&&(p==='users'||p==='sensitive')); return `<label><input type="checkbox" data-perm="${p}" ${permsH.includes(p)?'checked':''} ${dis?'disabled':''}><span>${esc(l)}${!own&&(p==='users'||p==='sensitive')&&canU?'<small>רק בעל המערכת נותן הרשאה זו</small>':''}</span></label>`}).join('')}</div>
+        ${canU?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pri" id="permGo">לשמור הרשאות</button>${own?'<button class="btn" id="permReset">לפי התפקיד (ברירת מחדל)</button>':''}</div>`:''}<div class="msg" id="uMsg" role="status"></div></section></div>
+    <section class="card"><h3>היסטוריית החשבון</h3><p class="hint">מתוך יומן הפעולות (שאי אפשר לערוך או למחוק).</p>${d.history.length?`<div class="tw"><table><thead><tr><th>מתי</th><th>פעולה</th><th>מי</th><th>פרטים</th></tr></thead><tbody>${d.history.map(h=>`<tr><td>${esc(dt(h.at))}</td><td>${esc(ACT[h.action]||h.action)}</td><td class="mono">${esc(h.actor)}</td><td class="wrap">${esc(h.detail?Object.entries(h.detail).map(([k,v])=>k+': '+(Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v)).join(' · '):'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין פעולות ניהול על החשבון הזה.</div>'}</section>
+    <section class="card"><h3>כניסות לחשבון</h3>${d.logins?(d.logins.length?`<p class="hint">כתובת הרשת מוצגת מקוצרת (בלי המספר האחרון). הצפייה נרשמה ביומן.</p><div class="tw"><table><thead><tr><th>מתי</th><th>תוצאה</th><th>רשת</th><th>מכשיר</th></tr></thead><tbody>${d.logins.map(l=>`<tr><td>${esc(dt(l.at))}</td><td>${l.ok?'<span class="pill p-ok">הצליחה</span>':`<span class="pill p-bad">${esc({bad_password:'סיסמה שגויה',bad_code:'קוד שגוי',need_code:'נדרש קוד',suspended:'חשבון מושעה',unknown_email:'מייל לא מוכר'}[l.reason]||l.reason)}</span>`}</td><td class="mono">${esc(l.ip)}</td><td class="wrap" style="font-size:12px;color:var(--muted)">${esc(l.ua)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין כניסות רשומות (הרישום התחיל ב-1.11.2026).</div>'):'<p class="hint">יומן הכניסות הוא מידע אישי רגיש: מוצג רק למי שיש לו הרשאת "מידע אישי רגיש".</p>'}</section></div>`;
+  const msg=(t,ok)=>{const m=$('uMsg'); m.className='msg '+(ok?'ok':'bad'); m.textContent=t};
+  const act=async(fn,ok)=>{try{await fn(); msg(ok,true); setTimeout(route,700)}catch(e){msg(e.message,false)}};
+  if($('roleGo'))$('roleGo').onclick=()=>act(()=>post(`users/${u.id}/role`,{role:$('roleSel').value}),'התפקיד נשמר. החיבורים של המשתמש נותקו, והוא ייכנס מחדש.');
+  if($('stSusp'))$('stSusp').onclick=()=>{$('suspBox').hidden=false; $('suspNote').focus()};
+  if($('suspNo'))$('suspNo').onclick=()=>{$('suspBox').hidden=true};
+  if($('suspGo'))$('suspGo').onclick=()=>act(()=>post(`users/${u.id}/status`,{status:'suspended',note:$('suspNote').value}),'החשבון הושעה.');
+  if($('stRestore'))$('stRestore').onclick=()=>act(()=>post(`users/${u.id}/status`,{status:'active'}),'החשבון חזר לפעילות.');
+  if($('permGo'))$('permGo').onclick=()=>act(()=>post(`users/${u.id}/perms`,{perms:[...view.querySelectorAll('[data-perm]:checked')].map(x=>x.dataset.perm)}),'ההרשאות נשמרו.');
+  if($('permReset'))$('permReset').onclick=()=>act(()=>post(`users/${u.id}/perms`,{reset:true}),'ההרשאות חזרו לברירת המחדל של התפקיד.')};
+
+// ---- product intelligence ----
+SCREENS.product=async()=>{head('מודיעין מוצר','',{range:true}); view.innerHTML=loading(6);
+  const d=await api('product?'+rq()); $('sub').textContent=`טווח: ${rangeText(d.range)} · ${d.contributors} משתמשים פעילים בטווח`;
+  const KIND={screen:'מסך',part:'חלק במסך',action:'פעולה'};
+  const bars=(L,max)=>L.length?`<div class="bars">${L.map(r=>`<div class="bar"><span class="t" title="${esc(r.name)}">${esc(r.name)}</span><span class="tr"><span class="fl" style="width:${Math.max(2,100*r.n/max)}%;display:block"></span></span><span class="nv num">${nf(r.n)}</span></div>`).join('')}</div>`:'<div class="empty">אין שימוש בטווח.</div>';
+  const scr=d.rows.filter(r=>r.kind==='screen'&&r.n>0), parts=d.rows.filter(r=>r.kind==='part'&&r.n>0), acts=d.rows.filter(r=>r.kind==='action'&&r.n>0), mx=L=>Math.max(1,...L.map(r=>r.n));
+  view.innerHTML=`${d.own?banner(`<b>מוצג רק השימוש שלך.</b> בטווח הזה היו ${d.contributors} משתמשים פעילים; סיכום של כולם מוצג רק כשיש לפחות ${d.k}, כדי שלא יהיה אפשר לזהות מתוכו את השימוש של אדם מסוים. אפשר להרחיב את הטווח.`,'warn'):banner(`הנתונים: ${esc(d.src)}. אף מסך לא מראה מי השתמש במה.`)}
+    <div class="row2"><section class="card"><h2>המסכים הפופולריים</h2><p class="hint">כמה פעמים נפתח כל מסך בטווח.</p>${bars(scr.slice(0,12),mx(scr))}</section>
+      <section class="card"><h2>פעולות</h2><p class="hint">צ׳יקו, דף נייר, ייצוא, חיפוש "לאן להגיע?".</p>${bars(acts.slice(0,10),mx(acts))}</section></div>
+    <section class="card" style="margin-top:14px" id="tblP"></section>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>לא נפתחו בטווח</h2><p class="hint">מסכים וחלקים שקיימים באתר ואף אחד לא ראה בטווח (רשימת החלקים נקראת מהאתר עצמו).</p>${d.never.length?`<div class="tw" style="max-height:320px"><table><thead><tr><th>סוג</th><th>שם</th></tr></thead><tbody>${d.never.slice(0,80).map(r=>`<tr><td>${KIND[r.kind]}</td><td class="wrap">${esc(r.name)}</td></tr>`).join('')}</tbody></table></div><p class="hint" style="margin-top:8px">${d.never.length>80?`ועוד ${d.never.length-80}.`:''}</p>`:'<div class="empty">כל החלקים נראו.</div>'}</section>
+      <section class="card"><h2>השלמת שלבי החשבון</h2><p class="hint">כמה משתמשים הגיעו לכל אחד מששת השלבים שמסך הבית מציע, לפי מה שקיים בחשבון.</p>${d.funnel?`<div class="funnel">${d.funnel.map(s=>`<div class="st"><span>${esc(s.l)}</span><span class="tr"><span class="fl" style="width:${d.funnel[0].n?Math.max(2,100*s.n/d.funnel[0].n):0}%;display:block"></span></span><span class="num">${nf(s.n)} / ${nf(d.funnel[0].n)}</span></div>`).join('')}</div>`:'<div class="empty">מוצג כשיש לפחות '+d.k+' משתמשים פעילים בטווח.</div>'}</section></div>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>מסלולים בין מסכים</h2><p class="hint">המעברים הנפוצים (מאיפה לאן). ${d.navSince?'נספר מ-'+esc(dmy(d.navSince))+'.':'המונה הזה התחיל עכשיו; הנתונים יופיעו מהשימוש הבא.'}</p>${d.moves.length?`<div class="tw"><table><thead><tr><th>מ</th><th>אל</th><th>פעמים</th></tr></thead><tbody>${d.moves.slice(0,15).map(m=>`<tr><td>${esc(m.from)}</td><td>${esc(m.to)}</td><td class="num">${nf(m.n)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין מעברים בטווח.</div>'}</section>
+      <section class="card"><h2>זמן בכל מסך</h2><p class="hint">דקות בטווח, משתמשים חדשים (פחות מ-30 יום) מול ותיקים.</p>${d.time.length?`<div class="tw"><table><thead><tr><th>מסך</th><th>סה״כ</th><th>חדשים</th><th>ותיקים</th></tr></thead><tbody>${d.time.slice(0,15).map(t=>`<tr><td>${esc(t.tab)}</td><td class="num">${nf(t.min)}</td><td class="num">${nf(t.newMin)}</td><td class="num">${nf(t.vetMin)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין נתוני זמן בטווח.</div>'}</section></div>`;
+  table($('tblP'),{rows:d.rows,search:r=>r.name,filters:[{k:'kind',l:'סוג',get:r=>r.kind,opts:Object.entries(KIND)}],empty:'אין שימוש בטווח',
+    cols:[{k:'name',l:'מסך / חלק / פעולה',cls:'wrap'},{k:'kind',l:'סוג',f:r=>KIND[r.kind]},{k:'n',l:'שימושים',f:r=>`<span class="num">${nf(r.n)}</span>`},{k:'prev',l:'בתקופה הקודמת',f:r=>`<span class="num">${nf(r.prev)}</span>`},
+      {k:'chg',l:'שינוי',sv:r=>r.n-r.prev,f:r=>{const x=r.n-r.prev; return x?`<span class="d ${x>0?'up':'down'}">${x>0?'▲':'▼'} ${nf(Math.abs(x))}</span>`:'<span class="d same">=</span>'}},
+      {k:'people',l:'משתמשים',f:r=>r.people==null?'—':`<span class="num">${nf(r.people)}</span>`},{k:'repeat',l:'חזרו אליו ביותר מיום',f:r=>r.repeat==null?'—':`<span class="num">${nf(r.repeat)}</span>`}]});
+  const t=document.createElement('div'); t.innerHTML='<h2 style="margin:0 0 4px">כל השימוש, מול התקופה הקודמת</h2><p class="hint">"חזרו אליו ביותר מיום": כמה משתמשים השתמשו בו בשני ימים שונים לפחות. זה סימן לערך שחוזרים אליו, לא הוכחה.</p>'; $('tblP').prepend(t)};
+
+// ---- AI: use and cost ----
+SCREENS.ai=async()=>{head('מנועי AI ועלויות','',{range:true}); view.innerHTML=loading(4);
+  const d=await api('ai?'+rq()); $('sub').textContent='טווח: '+rangeText(d.range);
+  const models=[...new Set([...d.cost.by.map(r=>r.model),...Object.keys(d.prices)])];
+  view.innerHTML=`${banner('המחירים לא נמשכים מהספק: מזינים אותם כאן (דולר למיליון טוקנים, לפי מחירון החשבון). בלי מחיר למודל, העלות מוצגת כ"לא זמין". מסך מלא של בקרת איכות ותקלות AI ייבנה בשלב ג׳.')}
+    <div class="grid kpis">${kpi({k:'c',label:'עלות בטווח',value:d.cost.total,unit:'usd',src:'טוקנים לפי מודל × מחירים שהוזנו',note:d.cost.note})}${kpi({k:'n',label:'פניות',value:d.byDay.reduce((a,r)=>a+r.calls,0),src:'ai_usage'})}${kpi({k:'t',label:'טוקנים (קלט + פלט)',value:d.byDay.reduce((a,r)=>a+r.input+r.output,0),src:'ai_usage'})}</div>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>לפי מודל</h2>${d.cost.by.length?`<div class="tw"><table><thead><tr><th>מודל</th><th>קריאות</th><th>קלט</th><th>פלט</th><th>עלות</th></tr></thead><tbody>${d.cost.by.map(r=>`<tr><td class="mono">${esc(r.model)}</td><td class="num">${nf(r.calls)}</td><td class="num">${nf(r.input)}</td><td class="num">${nf(r.output)}</td><td class="num">${r.cost==null?'לא זמין':usd(r.cost)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין שימוש בטווח.</div>'}
+      <h2 style="margin-top:16px">פניות ביום</h2><div class="chart" id="chA"></div></section>
+      <section class="card"><h2>מחירים</h2><p class="hint">דולר למיליון טוקנים.</p>${models.length?`<form id="prF"><div class="tw"><table><thead><tr><th>מודל</th><th>קלט</th><th>פלט</th></tr></thead><tbody>${models.map(m=>`<tr><td class="mono">${esc(m)}</td><td><input class="num" style="width:80px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="in" value="${d.prices[m]?d.prices[m].in:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} קלט"></td><td><input class="num" style="width:80px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="out" value="${d.prices[m]?d.prices[m].out:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} פלט"></td></tr>`).join('')}</tbody></table></div>
+        ${can('edit')?'<button class="btn pri" style="margin-top:10px">לשמור מחירים</button>':'<p class="hint">צריך הרשאת עריכה.</p>'}<div class="msg" id="prM" role="status"></div></form>`:'<div class="empty">אין עדיין מודלים בשימוש.</div>'}</section></div>`;
+  if(d.byDay.length)lineChart($('chA'),d.byDay.map(r=>r.day),[{l:'פניות',v:d.byDay.map(r=>r.calls),c:'var(--c1)',area:true}],{h:180}); else $('chA').innerHTML='<div class="empty">אין שימוש בטווח.</div>';
+  const f=$('prF'); if(f)f.addEventListener('submit',async e=>{e.preventDefault(); const P={}; for(const i of f.querySelectorAll('input[data-m]')){const m=i.dataset.m; if(i.value==='')continue; (P[m]=P[m]||{})[i.dataset.io]=+i.value}
+    for(const m of Object.keys(P))if(P[m].in==null||P[m].out==null)delete P[m];
+    try{await post('ai/prices',{prices:P}); $('prM').className='msg ok'; $('prM').textContent='נשמר.'; setTimeout(route,600)}catch(err){$('prM').className='msg bad'; $('prM').textContent=err.message}})};
+
+// ---- the health ----
+SCREENS.health=async()=>{head('תקינות המערכת','כל מקור שהאתר תלוי בו, מתי עבד לאחרונה, ומה המצב. אותה בדיקה שהשרת מריץ ושולחת התראה במייל.'); view.innerHTML=loading(6);
+  const d=await api('health'); const items=d.items||[], c=s=>items.filter(i=>i.state===s).length; HEALTH_BAD=c('bad')>0; navRender('health');
+  const JOBS=[['prices','מחירים'],['news','איסוף חדשות וקריאה'],['newsx','קריאת כתבות'],['research','נתוני חברות'],['backup','גיבוי'],['pxwatch','בדיקת זרימת מחירים'],['insiders','בעלי עניין'],['ecocal','לוח כלכלי']];
+  view.innerHTML=`<div class="grid kpis">${kpi({k:'ok',label:'תקינים',value:c('ok'),src:'בדיקת התקינות',at:d.at})}${kpi({k:'w',label:'אזהרות',value:c('warn'),state:c('warn')?'warn':null,src:'ריצה אחת נכשלה',at:d.at})}${kpi({k:'b',label:'תקלות',value:c('bad'),state:c('bad')?'bad':null,src:'לא עבד יותר מהמותר',at:d.at})}${kpi({k:'o',label:'לא מחוברים',value:c('off'),src:'אין מפתח או לא הוגדר',at:d.at})}</div>
+    <section class="card" style="margin-top:14px" id="tblH"></section>
+    ${can('system')?`<section class="card" style="margin-top:14px"><h2>להריץ משימה עכשיו</h2><p class="hint">המשימה נכנסת לתור של השרת (אחת בכל פעם) ונרשמת ביומן. ${d.jobs?'':'<b>המשימות המתוזמנות כבויות בשרת הזה.</b>'}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${JOBS.map(([k,l])=>`<button class="btn sm" data-job="${k}" ${d.jobs?'':'disabled'}>${esc(l)}</button>`).join('')}</div><div class="msg" id="jM" role="status"></div></section>`:''}`;
+  table($('tblH'),{rows:items,search:i=>i.name+' '+(i.note||''),filters:[{k:'state',l:'מצב',get:i=>i.state,opts:Object.entries(STATE).map(([k,v])=>[k,v[1]])}],
+    cols:[{k:'name',l:'מקור',cls:'wrap'},{k:'state',l:'מצב',sv:i=>({bad:0,warn:1,ok:2,off:3})[i.state],f:i=>pill(i.state)},{k:'okAt',l:'עבד לאחרונה',f:i=>`<span title="${esc(dt(i.okAt))}">${esc(i.okAt?ago(i.okAt):'—')}</span>`},{k:'note',l:'מה קרה',cls:'wrap',f:i=>`<span style="font-size:12.5px;color:var(--ink2)">${esc(i.note||'')}</span>`}]});
+  for(const b of view.querySelectorAll('[data-job]'))b.onclick=async()=>{b.disabled=true; try{await post('jobs/'+b.dataset.job); $('jM').className='msg ok'; $('jM').textContent=`"${b.textContent}" נכנסה לתור.`}catch(e){$('jM').className='msg bad'; $('jM').textContent=e.message} setTimeout(()=>b.disabled=false,4000)}};
+
+// ---- security: the audit log and the sign-ins ----
+SCREENS.security=async()=>{head('אבטחה ויומן פעולות','כל פעולת ניהול נרשמת ביומן שאי אפשר לערוך או למחוק, וכל שורה חתומה בשרשרת עם השורה שלפניה.'); view.innerHTML=loading(4);
+  const [a,l]=await Promise.all([api('audit?limit=300'),can('sensitive')?api('logins').catch(e=>({err:e})):Promise.resolve(null)]);
+  const ACT={'user.suspend':'השעיית משתמש','user.restore':'החזרה לפעילות','user.role':'שינוי תפקיד','user.perms':'שינוי הרשאות','user.add':'הוספת משתמש','user.register':'הרשמה','user.password':'איפוס סיסמה','user.remove':'הסרת משתמש','sensitive.view':'צפייה במידע רגיש','settings.aiPrices':'מחירי AI','system.job':'הרצת משימה','invite.set':'קוד הזמנה','invite.close':'סגירת הרשמה'};
+  view.innerHTML=`<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="margin:0">יומן פעולות הניהול</h2>
+      <span class="chain">${a.verify.ok?`<span class="pill p-ok">השרשרת שלמה</span> ${nf(a.verify.n)} רשומות נבדקו`:`<span class="pill p-bad">השרשרת שבורה ברשומה ${esc(a.verify.brokenAt)}</span>`}</span></div><p class="hint">הגנה: מסד הנתונים מסרב לכל עדכון או מחיקה של שורה ביומן, וכל שורה כוללת את החתימה של הקודמת.</p><div id="tblA"></div></section>
+    <section class="card" style="margin-top:14px"><h2>כניסות למערכת (30 ימים)</h2>${!l?'<p class="hint">יומן הכניסות הוא מידע רגיש: מוצג רק עם הרשאת "מידע אישי רגיש".</p>':l.err?errBox(l.err,'security'):`
+      ${l.odd.length?banner(`<b>${l.odd.length} דברים חריגים:</b> `+l.odd.slice(0,5).map(o=>o.kind==='many_fail'?`${nf(o.fail)} כניסות שנכשלו מרשת ${esc(o.ip)}${o.ok?' (ואחר כך הצלחה)':''}`:`ניסיון עם מייל שלא רשום, מרשת ${esc(o.ip)}`).join(' · '),'warn'):banner('אין ניסיונות כניסה חריגים ב-30 הימים האחרונים (5 כישלונות או יותר מאותה רשת, או מייל שלא רשום).')}
+      <p class="hint">הצפייה נרשמה ביומן. הרשת מוצגת מקוצרת.</p><div id="tblL"></div>`}</section>`;
+  table($('tblA'),{rows:a.items,search:r=>r.actor+' '+r.action+' '+r.target,filters:[{k:'action',l:'פעולה',get:r=>r.action,opts:[...new Set(a.items.map(r=>r.action))].map(k=>[k,ACT[k]||k])}],empty:'היומן ריק.',
+    cols:[{k:'at',l:'מתי',f:r=>esc(dt(r.at))},{k:'action',l:'פעולה',f:r=>esc(ACT[r.action]||r.action)},{k:'actor',l:'מי',f:r=>`<span class="mono">${esc(r.actor)}</span>`},{k:'target',l:'על מה',f:r=>/^u_/.test(r.target)?`<a href="#user/${esc(r.target)}">משתמש</a>`:esc(r.target)},
+      {k:'detail',l:'פרטים',nosort:true,cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--ink2)">${esc(r.detail?Object.entries(r.detail).map(([k,v])=>k+': '+(Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v)).join(' · '):'')}</span>`},{k:'ip',l:'רשת',f:r=>`<span class="mono">${esc(r.ip)}</span>`}]});
+  if(l&&!l.err)table($('tblL'),{rows:l.items,search:r=>r.email+' '+r.ip,filters:[{k:'ok',l:'תוצאה',get:r=>String(r.ok),opts:[['1','הצליחה'],['0','נכשלה']]}],empty:'אין כניסות רשומות.',
+    cols:[{k:'at',l:'מתי',f:r=>esc(dt(r.at))},{k:'email',l:'מייל',f:r=>`<span class="mono">${esc(r.email)}</span>`},{k:'ok',l:'תוצאה',f:r=>r.ok?'<span class="pill p-ok">הצליחה</span>':`<span class="pill p-bad">${esc({bad_password:'סיסמה שגויה',bad_code:'קוד שגוי',need_code:'נדרש קוד',suspended:'חשבון מושעה',unknown_email:'מייל לא מוכר'}[r.reason]||r.reason)}</span>`},{k:'ip',l:'רשת',f:r=>`<span class="mono">${esc(r.ip)}</span>`},{k:'ua',l:'מכשיר',cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--muted)">${esc(r.ua)}</span>`}]})};
+
+// ---- roles and permissions ----
+SCREENS.access=async()=>{head('תפקידים והרשאות','מי יכול לעשות מה במרכז הניהול. ההרשאות נאכפות בשרת, לא רק בתצוגה.'); view.innerHTML=loading(3);
+  const d=await api('users'); const P=['view','edit','users','system','sensitive'], L={view:'צפייה',edit:'עריכה',users:'משתמשים',system:'מערכת',sensitive:'מידע רגיש'};
+  view.innerHTML=`${banner('<b>ברירות מחדל:</b> בעלים — הכל. מנהל — צפייה, עריכה, משתמשים, מערכת (בלי מידע רגיש). שותף — כלום. רק בעל המערכת נותן "ניהול משתמשים" ו"מידע רגיש"; אף אחד לא משנה את ההרשאות של עצמו או של בעל המערכת. כל שינוי נרשם ביומן.')}
+    <section class="card" id="tblR"></section>
+    <section class="card" style="margin-top:14px"><h2>מה כל הרשאה מאפשרת</h2><div class="tw"><table><tbody>
+      <tr><td><b>צפייה</b></td><td class="wrap">כניסה למרכז הניהול: תמונת מצב, משתמשים (בלי מידע רגיש), מודיעין מוצר, תקינות, יומן פעולות הניהול.</td></tr>
+      <tr><td><b>עריכה</b></td><td class="wrap">הגדרות של מרכז הניהול (מחירי מודלי ה-AI), ובהמשך תוכן והודעות.</td></tr>
+      <tr><td><b>משתמשים</b></td><td class="wrap">השעיה והחזרה, שינוי תפקיד והרשאות של משתמשים אחרים.</td></tr>
+      <tr><td><b>מערכת</b></td><td class="wrap">הרצת משימות מתוזמנות עכשיו.</td></tr>
+      <tr><td><b>מידע רגיש</b></td><td class="wrap">יומן הכניסות (עם רשת מקוצרת). כל צפייה נרשמת ביומן. תוכן תיקי השקעות לא זמין גם בהרשאה הזו.</td></tr></tbody></table></div></section>`;
+  table($('tblR'),{rows:d.users,search:u=>u.email+' '+u.name,filters:[{k:'role',l:'תפקיד',get:u=>u.role,opts:Object.entries(ROLE)}],
+    cols:[{k:'name',l:'משתמש',sv:u=>(u.name||u.email).toLowerCase(),f:u=>`<div class="u1"><span class="av">${ini(u.name||u.email)}</span><div><b>${esc(u.name||u.email.split('@')[0])}</b><span class="mono">${esc(u.email)}</span></div></div>`},
+      {k:'role',l:'תפקיד',f:u=>ROLE[u.role]||esc(u.role)},...P.map(p=>({k:'p_'+p,l:L[p],sv:u=>u.effective.includes(p)?1:0,f:u=>u.effective.includes(p)?'<span class="pill p-ok">✓</span>':'<span style="color:var(--muted)">—</span>'})),
+      {k:'src',l:'מקור',f:u=>u.role==='owner'?'בעלים':u.perms?'מותאם':'לפי התפקיד'}],onRow:u=>location.hash='#user/'+u.id})};
+
+// ================= routing =================
+async function route(){const h=(location.hash||'#exec').slice(1), [id,arg]=h.split('/'); menuOpen(false);
+  const known=SCREENS[id]?id:'exec'; navRender(id==='user'?'users':known); LAST_CHART=null;
+  try{await SCREENS[known](arg?decodeURIComponent(arg):undefined)}catch(e){view.innerHTML=errBox(e,known)}
+  $('main').focus({preventScroll:true}); scrollTo(0,0)}
+addEventListener('hashchange',route);
+(async()=>{try{const m=await api('me'); ME=m.me; PERMS=m.me.perms; K=m.k;
+    $('who').innerHTML=`<span class="av">${ini(ME.name||ME.email)}</span><div><b>${esc(ME.name||ME.email)}</b>${esc(ROLE[ME.role]||ME.role)}</div>`;
+    route()}catch(e){view.innerHTML=errBox(e,'exec'); $('h1').textContent='TikChik Management Center'}})();
+})();
+</script>
+</body>
+</html>
