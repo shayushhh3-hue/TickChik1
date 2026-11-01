@@ -7,12 +7,16 @@ import {PERMS,PERM_HE,permsOf,can,need,setPerms,resetPerms,audit,auditList,audit
 import {executive,usersList,product,aiCost,aiPrices,rangeOf,K_ANON} from './metrics.js';
 import {bump} from './counter.js';
 import {healthCheck} from '../health.js';
+import {createHash} from 'node:crypto';
+import {newsOps,aiOps,aiQuality,systemOps,incidents,incidentUpdate,security,checkIncidents,opsSchema} from './ops.js';
+import {backupStatus} from '../backup.js';
 
 const ERR={not_found:'המשתמש לא נמצא.',owner:'אי אפשר לשנות את בעל המערכת.',self:'אי אפשר לשנות את עצמך.',owner_only:'רק בעל המערכת יכול לתת או לקחת את ההרשאה הזאת.',
   permission_denied:'אין הרשאה.',bad_status:'מצב לא מוכר.',bad_role:'תפקיד לא מוכר.'};
 const fail=(res,e,st=400)=>res.status(e.message==='permission_denied'?403:st).json({error:{code:e.message,message:ERR[e.message]||e.message}});
 
-export function adminRoutes(app,{store,pageFile,adminFile,setRole}){
+export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data',dbFile='',persist=true}){
+  opsSchema(store);
   const me=u=>({id:u.id,email:u.email,name:u.name||'',role:u.role,perms:[...permsOf(u)],permNames:PERM_HE});
   app.get('/api/admin/me',need('view'),(req,res)=>res.json({me:me(req.user),perms:PERMS,k:K_ANON,portfolioAccess:PORTFOLIO_ACCESS}));
 
@@ -66,6 +70,30 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole}){
     for(const o of Object.values(byIp))if(o.fail>=5)odd.push({kind:'many_fail',ip:o.ip,fail:o.fail,ok:o.ok,emails:o.emails.size});
     for(const e of L)if(!e.ok&&e.email&&!known.has(e.email))odd.push({kind:'unknown_email',ip:e.ip,at:e.at});
     res.json({items:L.slice(0,500),odd:odd.slice(0,50)})});
+
+  // ---- stage C: the operations ----
+  app.get('/api/admin/news',need('view'),(req,res)=>res.json(newsOps(store)));
+  app.get('/api/admin/aiops',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json({range:R,...aiOps(store,R),quality:aiQuality(store)})});
+  app.get('/api/admin/system',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json({...systemOps(store,{from:R.from,to:R.to,dataDir,dbFile}),range:R})});
+  app.get('/api/admin/incidents',need('view'),(req,res)=>{const L=incidents(store,{days:+req.query.days||30}), U=Object.fromEntries(store.users().map(u=>[u.id,u.email]));
+    res.json({items:L.map(i=>({...i,ownerEmail:i.owner?U[i.owner]||null:null})),managers:store.users().map(u=>store.userById(u.id)).filter(u=>can(u,'view')).map(u=>({id:u.id,email:u.email,name:u.name||''})),
+      cfg:(()=>{try{return JSON.parse(store.getMeta('mcAlerts')||'null')||{push:true,mail:false}}catch(e){return {push:true,mail:false}}})()})});
+  app.post('/api/admin/incidents/check',need('system'),(req,res)=>{const n=checkIncidents(store,{}); audit(store,{user:req.user,action:'incident.check',target:'incidents',detail:{opened:n.length},ip:req.ip}); res.json({ok:true,opened:n.length})});
+  app.post('/api/admin/incidents/:id',need('system'),(req,res)=>{try{res.json({ok:true,item:incidentUpdate(store,req.user,req.params.id,req.body||{},req.ip)})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  app.post('/api/admin/alerts-cfg',need('system'),(req,res)=>{const b=req.body||{}, before=(()=>{try{return JSON.parse(store.getMeta('mcAlerts')||'null')}catch(e){return null}})(), next={push:!!b.push,mail:!!b.mail};
+    store.setMeta('mcAlerts',JSON.stringify(next)); audit(store,{user:req.user,action:'settings.alerts',target:'alerts',detail:{before,after:next},ip:req.ip}); res.json({ok:true,cfg:next})});
+  app.get('/api/admin/security',need('view'),(req,res)=>{const S=security(store,{persist,dataDir,backup:backupStatus(store,{dataDir})}); if(!can(req.user,'sensitive'))delete S.sessions; res.json(S)});
+  // the open sessions: who is signed in, from what device. A session is named by a hash of its id, never by the id
+  const hid=sid=>createHash('sha256').update(String(sid)).digest('hex').slice(0,16);
+  app.get('/api/admin/sessions',need('sensitive'),(req,res)=>{const U=Object.fromEntries(store.users().map(u=>[u.id,u]));
+    const L=store.db.prepare('select sid, uid, created_at, expires_at, ua from sessions where expires_at>? order by created_at desc').all(new Date().toISOString());
+    audit(store,{user:req.user,action:'sensitive.view',target:'sessions',detail:{what:'open sessions'},ip:req.ip});
+    res.json({items:L.map(s=>({h:hid(s.sid),uid:s.uid,email:(U[s.uid]||{}).email||'?',role:(U[s.uid]||{}).role||'',created:s.created_at,expires:s.expires_at,ua:s.ua,mine:s.sid===req.sid}))})});
+  app.post('/api/admin/sessions/end',need('users'),(req,res)=>{const {h,uid}=req.body||{}; const t=store.userById(uid); if(!t)return fail(res,new Error('not_found'),404);
+    if(t.role==='owner'&&req.user.role!=='owner')return fail(res,new Error('owner'));
+    let n=0; if(h==='all'){if(t.id===req.user.id){store.endSessionsBut(t.id,req.sid)}else store.endSessions(t.id); n=-1}
+    else for(const s of store.db.prepare('select sid from sessions where uid=?').all(t.id))if(hid(s.sid)===h&&s.sid!==req.sid){store.endSession(s.sid); n++}
+    audit(store,{user:req.user,action:'session.end',target:t.id,detail:{which:h==='all'?'all':'one',ended:n},ip:req.ip}); res.json({ok:true,ended:n})});
 
   // ---- the page: only to someone with "view". Anyone else gets the site's ordinary "not found", not a closed door ----
   const zc={m:0};

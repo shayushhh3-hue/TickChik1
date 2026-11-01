@@ -30,7 +30,8 @@ import {vapid, devices, addDevice, dropDevice, pushTo} from './push.js';
 import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
 import {adminSchema, audit, authEvent, touch, backfillActive, can as canMc} from './admin/core.js';
 import {adminRoutes} from './admin/routes.js';
-import {setCounterStore, bump} from './admin/counter.js';
+import {reqMeter, startOps} from './admin/ops.js';
+import {setCounterStore, bump, aiMeter} from './admin/counter.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -81,6 +82,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // state-changing calls must come from the page itself (a custom header no cross-site form can send)
   app.use('/api',(req,res,next)=>{if(req.method!=='GET'&&req.headers['x-tc']!=='1')return res.status(403).json({error:{code:'invalid_argument',message:'missing header'}});next()});
   app.use('/api',(req,res,next)=>{res.setHeader('cache-control','no-store');next()});
+  reqMeter(app);   // 1.11: the time and the server errors of every request, per area (the management center's health)
 
   // ---- sign in / out ----
   const tries=new Map(); // ip -> [timestamps], a soft brake on guessing passwords and invite codes
@@ -297,7 +299,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     // Railway closes a request that sends nothing for 5 minutes: after a while, the answer starts with spaces (valid JSON
     // whitespace) until it is ready; an error after that point is sent as {"error":...} with the status already 200
     let started=false; const beat=setInterval(()=>{try{if(!started){res.status(200).type('application/json'); started=true} res.write(' ')}catch(e){}},Math.max(20,+env.AI_KEEPALIVE_MS||15000));
-    const tried=[], att=[]; let out=null, free=true;
+    const tried=[], att=[], t0=Date.now(), feat=quick?'files_quick':'files'; let out=null, free=true;
     const count=(model,us={},calls=1)=>{const inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
       store.aiAdd(u.id,day,{input:inp,output:us.output_tokens||0}); store.aiModelAdd(day,model,{calls,input:inp,output:us.output_tokens||0})};
     // the next model starts only while there is time left for it in Railway's 15 minutes
@@ -308,7 +310,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
         if(out.spent)count(out.spent.model||m,out.spent.usage);
         if(out.aborted||out.message||!out.retry)break; tried.push(m); log('read: '+m+' did not read ('+out.why+')'+(m!==chain[chain.length-1]?', the next model reads':''))}}
     finally{clearInterval(beat)}
-    if(out.aborted){log('read cancelled by the page');return}
+    if(out.aborted){log('read cancelled by the page'); aiMeter({feature:feat,model:body.model,ms:Date.now()-t0,ok:false,code:'cancelled'}); return}
+    aiMeter({feature:feat,model:out.message?out.message.model:att[att.length-1],usage:out.message&&out.message.usage,ms:Date.now()-t0,ok:!!out.message,code:out.message?'':(out.why||out.status)});
     if(out.message){count(out.message.model,out.message.usage||{});
       const txt=JSON.stringify({...out.message,fallbackFrom:tried}); return started?res.end(txt):res.status(200).type('application/json').send(txt)}
     // nothing was read and nothing was billed (every model answered with an error at once): the read does not count
@@ -357,8 +360,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
     const t0=Date.now(); let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
-    if(out.aborted){log('ask cancelled by the page'); bump('ai','cancel'); return}
-    bump('ai',out.text!=null?'ok':'err:'+((out.json&&out.json.error&&out.json.error.code)||out.status)); bump('ai_ms',out.text!=null?'chat':'chat_err',Date.now()-t0);
+    if(out.aborted){log('ask cancelled by the page'); aiMeter({feature:'chat',model:c.body.model,ms:Date.now()-t0,ok:false,code:'cancelled'}); return}
+    {let us=null, mdl=c.body.model; if(out.text!=null)try{const J=JSON.parse(out.text); us=J.usage; mdl=J.model||mdl}catch(e){}
+      aiMeter({feature:'chat',model:mdl,usage:us,ms:Date.now()-t0,ok:out.text!=null,code:(out.json&&out.json.error&&out.json.error.code)||out.status})}
     if(out.nobill)store.aiAdd(u.id,day,{calls:-1});   // Anthropic answered with an error at once: nothing billed, so it does not count
     if(out.text!=null){
       try{const J=JSON.parse(out.text), us=J.usage||{}, inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);
@@ -457,7 +461,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/jobs/:name',needOwner,(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'jobs are off'}}); if(!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'no such job'}}); res.json({ok:true,queued:req.params.name})});
 
   // 1.11: TikChik Management Center (/admin and /api/admin/*), its permissions checked on the server
-  adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role)});
+  adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role),dataDir,dbFile:env.DB_FILE||path.join(dataDir,'tikchik.sqlite'),persist:PERSIST});
   app.use('/api',(req,res)=>res.status(404).json({error:{code:'not_found',message:'no such call'}}));
 
   // ---- the site ----
@@ -509,6 +513,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
+  // 1.11: the heartbeat, the downtime, the incidents and the alerts to the management
+  startOps(store,{log,send:sendMail,push:pushTo});
   // a first copy right away when today has none (a new server, or after an update)
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
   // 31.10: the economic calendar, built at start when it is a day old or missing (a cheap build from what is kept)

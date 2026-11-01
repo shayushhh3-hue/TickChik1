@@ -116,6 +116,7 @@ export function salvageArray(text){
   for(let k=1;k<t.length;k++){const c=t[k]; if(inStr){if(esc)esc=false; else if(c==='\\')esc=true; else if(c==='"')inStr=false; continue} if(c==='"'){inStr=true;continue} if(c==='{')depth++; else if(c==='}'){depth--; if(depth===0)lastEnd=k}}
   if(lastEnd<0)return null; try{const a=JSON.parse(t.slice(0,lastEnd+1)+']'); return Array.isArray(a)&&a.length?a:null}catch(e){return null}
 }
+import {aiMeter} from './admin/counter.js';
 export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask=null,known=[]}={}){
   const key=process.env.ANTHROPIC_API_KEY; if(!key&&!ask)return null;
   const url=(process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages', model=pickModel(), prompt=newsPrompt(arts,known);
@@ -124,9 +125,9 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
     if(ask)text=await ask(prompt);
     // 1.11: a reading in Hebrew is long (a Hebrew token is a letter or two): room for 1,400 tokens an article, and a
     // reading cut short by the budget is still used up to the last whole article (salvageArray), and said in the log
-    else{const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,1400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)});
-      if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} log('news analysis failed: HTTP '+r.status+' '+why); return null}
-      const j=await r.json(); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''; if(j.stop_reason==='max_tokens')log('news analysis: the answer was cut by the token budget; the whole articles are kept')}
+    else{const t0=Date.now(); const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,1400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)}).catch(e=>{aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
+      if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} log('news analysis failed: HTTP '+r.status+' '+why); aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return null}
+      const j=await r.json(); aiMeter({feature:'newsx',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''; if(j.stop_reason==='max_tokens')log('news analysis: the answer was cut by the token budget; the whole articles are kept')}
   }catch(e){log('news analysis failed: '+(e&&e.message||e)); return null}
   const arr=salvageArray(text); if(!arr){log('news analysis: no JSON array in the answer ('+text.slice(0,120).replace(/\s+/g,' ')+')'); return null}
   const out={};
@@ -253,8 +254,8 @@ export async function marketBrief(store,{now=new Date(),by,gen,old=null,ask=null
 ${input}`;
   let text='';
   try{if(ask)text=await ask(prompt);
-    else{const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:pickModel(),max_tokens:2500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
-      if(!r.ok){log('brief failed: HTTP '+r.status); return null} const j=await r.json(); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''}}
+    else{const t0=Date.now(), M=pickModel(); const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:M,max_tokens:2500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
+      if(!r.ok){log('brief failed: HTTP '+r.status); aiMeter({feature:'brief',model:M,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return null} const j=await r.json(); aiMeter({feature:'brief',model:j.model||M,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''}}
   catch(e){log('brief failed: '+(e&&e.message||e)); return null}
   const m=text.match(/\{[\s\S]*\}/); if(!m)return null; let raw; try{raw=JSON.parse(m[0])}catch(e){return null}
   const c=cleanBrief(raw,events,input); if(!c){log('brief: no usable answer'); return null}

@@ -5,6 +5,7 @@
 // sources beside it. Kept in research/stories by the event's key, made again only when new articles joined the event
 // (and at most once in two hours); without a key, a story by rules from the readings, said to be so. Nothing here is a
 // forecast or advice, and a story never says one thing caused another only because they happened together.
+import {aiMeter} from './admin/counter.js';
 import {newsId, heFix, STAGE_HE, TYPE_HE} from './newsx.js';
 
 export const STORIES_DOC='research/stories';
@@ -79,9 +80,9 @@ export function rulesStory(ev,L){
 }
 async function askClaude(prompt,{fetch:f=globalThis.fetch,log=()=>{}}){
   const key=process.env.ANTHROPIC_API_KEY, model=pickModel();
-  const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:6000,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)});
-  if(!r.ok){log('story failed: HTTP '+r.status); return {text:'',model}}
-  const j=await r.json(); return {text:((j.content||[]).find(x=>x.type==='text')||{}).text||'',model};
+  const t0=Date.now(); const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:6000,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)});
+  if(!r.ok){log('story failed: HTTP '+r.status); aiMeter({feature:'story',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return {text:'',model}}
+  const j=await r.json(); aiMeter({feature:'story',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); return {text:((j.content||[]).find(x=>x.type==='text')||{}).text||'',model};
 }
 let BUSY=false;
 // the story of an event: the kept one when nothing changed, else a new one (Claude when there is a key, rules otherwise)

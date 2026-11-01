@@ -63,7 +63,7 @@ export function executive(store,q={}){
     M.push({k:'news',label:'כתבות שנאספו בריצה האחרונה',value:n?n.items:null,src:'איסוף החדשות',how:'הסטטוס שהריצה האחרונה של איסוף הכתבות כתבה',at:n&&n.at||null,note:N?`צ׳יקו: ${N.read||0} נקראו, ${N.waiting||0} ממתינות`:null,go:'health'})}
   {const h=healthCheck(store), items=h.items||[], bad=items.filter(i=>i.state==='bad'), warn=items.filter(i=>i.state==='warn');
     M.push({k:'health',label:'מקורות נתונים תקינים',value:items.filter(i=>i.state==='ok').length,of:items.filter(i=>i.state!=='off').length,src:'בדיקת התקינות',how:'אותה בדיקה ששולחת התראה במייל: כל מקור מול הזמן שמותר לו לא לעבוד',at:h.at,go:'health',state:bad.length?'bad':warn.length?'warn':'ok'});
-    M.push({k:'issues',label:'תקלות פתוחות',value:bad.length+warn.length,src:'בדיקת התקינות',how:'תקלה: מקור שלא עבד יותר מהזמן המותר לו. אזהרה: ריצה אחת נכשלה',at:h.at,go:'health',
+    M.push({k:'issues',label:'תקלות פתוחות',value:bad.length+warn.length,src:'בדיקת התקינות',how:'תקלה: מקור שלא עבד יותר מהזמן המותר לו. אזהרה: ריצה אחת נכשלה',at:h.at,go:'incidents',
       note:[...bad,...warn].slice(0,3).map(i=>i.name).join(' · ')||null,state:bad.length?'bad':warn.length?'warn':'ok'})}
   {const c=aiCost(store,R.from,R.to);
     M.push({k:'aicost',label:'עלות AI בטווח',value:c.total,unit:'usd',src:'טוקנים × מחירים',how:'הטוקנים של כל מודל (ai_models) כפול המחירים שהוזנו במסך מנועי AI',at:now,note:c.note,go:'ai'});

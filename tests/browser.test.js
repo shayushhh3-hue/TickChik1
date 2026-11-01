@@ -2637,12 +2637,12 @@ test('1.11 TikChik Management Center: the owner opens it from the account menu; 
     const ex=await pg.evaluate(()=>({n:document.querySelectorAll('#view .kpi').length,src:[...document.querySelectorAll('#view .kpi .src')].every(s=>s.textContent.trim().length>3),
       labels:[...document.querySelectorAll('#view .kpi .l')].map(l=>l.textContent),charts:document.querySelectorAll('#view .chart svg').length,soon:document.querySelectorAll('#nav a.soon').length,ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.ok(ex.n>=14,'figures: '+ex.n); assert.ok(ex.src,'a source on every figure'); assert.ok(ex.labels.some(l=>/פעילים היום/.test(l))&&ex.labels.some(l=>/עלות שרתים/.test(l)));
-    assert.equal(ex.charts,2); assert.ok(ex.soon>=8,'the later screens named and marked'); assert.equal(ex.ox,false,'no sideways scroll');
+    assert.equal(ex.charts,2); assert.ok(ex.soon>=6,'the later screens named and marked'); assert.equal(ex.ox,false,'no sideways scroll');
     assert.match(await pg.evaluate(()=>document.querySelector('#view .kpi[data-k="infra"]').textContent),/לא זמין.*לא מחובר/s,'nothing made up');
     // the range
     await pg.click('#range [data-r="7"]'); await pg.waitForFunction(()=>/7 ימים/.test(document.getElementById('sub').textContent),null,{timeout:8000});
     // every screen
-    for(const [h,sel,re] of [['users','#view tbody tr.click',/משתמשים/],['product','#view .card',/מודיעין מוצר/],['ai','#view .card',/מנועי AI/],['health','#view tbody tr',/תקינות/],['security','#view tbody tr',/אבטחה/],['access','#view tbody tr',/תפקידים/]]){
+    for(const [h,sel,re] of [['users','#view tbody tr.click',/משתמשים/],['product','#view .card',/מודיעין מוצר/],['ai','#view .card',/מנועי AI/],['health','#view tbody tr',/תקינות/],['incidents','#view .card',/תקלות/],['news','#view tbody tr',/מערכת החדשות/],['security','#view tbody tr',/אבטחה/],['access','#view tbody tr',/תפקידים/]]){
       await pg.evaluate(x=>location.hash='#'+x,h); await pg.waitForSelector(sel,{timeout:10000}); assert.match(await pg.textContent('#h1'),re,h);
       assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,h+': no sideways scroll')}
     // the table: search and sort

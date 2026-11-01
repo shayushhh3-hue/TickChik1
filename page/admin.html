@@ -34,7 +34,10 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Heebo,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--acc)}
-.mono,.num{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;direction:ltr;unicode-bidi:isolate}
+.num{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
+.main:focus{outline:none}
+input[type=number],input[type=text],input[type=date],select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-height:32px}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:6px}
 
@@ -197,7 +200,7 @@ const ROLE={owner:'בעלים',admin:'מנהל',friend:'שותף'}, STATE={ok:['
 const IC={
   exec:'<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v6h8V3zM3 21h8v-4H3z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.6 3.5 5.4"/>',
   product:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7"/>',
-  ai:'<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 15h5"/>',health:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  ai:'<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 15h5"/>',health:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',incidents:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
   security:'<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',access:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
   support:'<path d="M4 5h16v11H8l-4 4z"/>',roadmap:'<path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/>',content:'<path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h5"/>',
   biz:'<path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.3-5 3.3S9 9.5 12 10s5 1.6 5 3.6-2.2 3.4-5 3.4-5-1.2-5-3"/>',radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/>',
@@ -208,7 +211,7 @@ const NAV=[
   {h:'הנהלה',items:[{id:'exec',l:'תמונת מצב'}]},
   {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה',soon:'שלב ד׳'},{id:'voice',l:'קול המשתמשים',soon:'שלב ה׳'}]},
   {h:'מודיעין ומוצר',items:[{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח',soon:'שלב ד׳'},{id:'radar',l:'TikChik Radar',soon:'שלב ה׳'},{id:'intel',l:'TikChik Intelligence',soon:'שלב ה׳'}]},
-  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'ai',l:'מנועי AI ועלויות'},{id:'news',l:'מערכת החדשות',soon:'שלב ג׳'},{id:'security',l:'אבטחה ויומן פעולות'},{id:'access',l:'תפקידים והרשאות'}]},
+  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
   {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן',soon:'שלב ד׳'}]},
   {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence',soon:'שלב ד׳'}]}];
 let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
@@ -243,7 +246,7 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-again]'))route(
 const banner=(t,kind='')=>`<div class="banner ${kind}" role="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>${t}</div></div>`;
 const pill=s=>{const [c,l]=STATE[s]||STATE.off; return `<span class="pill ${c}">${l}</span>`};
 function delta(v,p){if(v==null||p==null)return ''; const d=v-p; if(!d)return '<span class="d same">ללא שינוי מהתקופה הקודמת</span>'; return `<span class="d ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${nf(Math.abs(d))} מהתקופה הקודמת</span>`}
-function kpi(m){const na=m.value==null, v=na?'לא זמין':m.unit==='usd'?usd(m.value):nf(m.value);
+function kpi(m){const na=m.value==null, v=na?'לא זמין':m.unit==='usd'?usd(m.value):m.unit==='pct'?nf(m.value)+'%':m.unit==='ms'?ms(m.value):m.unit==='mb'?nf(m.value)+' מ״ב':nf(m.value);
   return `<${m.go?'button type="button" data-go="'+esc(m.go)+'"':'div'} class="card kpi${m.go?'':' nogo'}${m.state&&m.state!=='ok'?' st-'+m.state:''}" data-k="${esc(m.k)}">
     <span class="l">${esc(m.label)}${m.state?' '+pill(m.state):''}</span>
     <span class="v${na?' na':''}">${na?v:`<span class="num">${v}</span>`}${!na&&m.of!=null?`<span class="of">מתוך ${nf(m.of)}</span>`:''}</span>
@@ -258,7 +261,7 @@ function lineChart(el,days,series,{h=220}={}){
     const X=i=>n<2?(L+W-Rr)/2:L+(W-L-Rr)*i/(n-1), Y=v=>T+(H-T-B)*(1-v/top);
     const grid=[0,.25,.5,.75,1].map(f=>{const v=top*f, y=Y(v); return `<line class="gl" x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+4}" text-anchor="end">${nf(Math.round(v))}</text>`}).join('');
     const lab=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>`<text class="ax" x="${X(i)}" y="${H-6}" text-anchor="middle">${esc(dmy(days[i]))}</text>`).join('');
-    const paths=series.map(s=>{const p=s.v.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(''); return `${s.area?`<path class="ar" style="fill:${s.c}" d="${p}L${X(n-1)},${Y(0)}L${X(0)},${Y(0)}Z"/>`:''}<path class="ln" style="stroke:${s.c}" d="${p}"/>`}).join('');
+    const paths=series.map(s=>{const p=s.v.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(''); return `${s.area?`<path class="ar" style="fill:${s.c}" d="${p}L${X(n-1)},${Y(0)}L${X(0)},${Y(0)}Z"/>`:''}<path class="ln" style="stroke:${s.c}" d="${p}"/>${n<3?s.v.map((v,i)=>`<circle r="4" cx="${X(i)}" cy="${Y(v)}" style="fill:${s.c}"/>`).join(''):''}`}).join('');
     el.innerHTML=`<div class="legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.l)}</span>`).join('')}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s=>s.l+': '+s.v.reduce((a,b)=>a+b,0)).join(', '))}">${grid}${lab}${paths}<g id="hv"></g></svg><div class="tip" hidden></div>`;
     const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), hv=svg.querySelector('#hv');
     const at=ev=>{const r=svg.getBoundingClientRect(), x=((ev.touches?ev.touches[0].clientX:ev.clientX)-r.left)*W/r.width; let bi=0,bd=1e9; for(let i=0;i<n;i++){const d=Math.abs(X(i)-x); if(d<bd){bd=d;bi=i}} return bi};
@@ -372,46 +375,133 @@ SCREENS.product=async()=>{head('מודיעין מוצר','',{range:true}); view.
       {k:'people',l:'משתמשים',f:r=>r.people==null?'—':`<span class="num">${nf(r.people)}</span>`},{k:'repeat',l:'חזרו אליו ביותר מיום',f:r=>r.repeat==null?'—':`<span class="num">${nf(r.repeat)}</span>`}]});
   const t=document.createElement('div'); t.innerHTML='<h2 style="margin:0 0 4px">כל השימוש, מול התקופה הקודמת</h2><p class="hint">"חזרו אליו ביותר מיום": כמה משתמשים השתמשו בו בשני ימים שונים לפחות. זה סימן לערך שחוזרים אליו, לא הוכחה.</p>'; $('tblP').prepend(t)};
 
-// ---- AI: use and cost ----
-SCREENS.ai=async()=>{head('מנועי AI ועלויות','',{range:true}); view.innerHTML=loading(4);
-  const d=await api('ai?'+rq()); $('sub').textContent='טווח: '+rangeText(d.range);
-  const models=[...new Set([...d.cost.by.map(r=>r.model),...Object.keys(d.prices)])];
-  view.innerHTML=`${banner('המחירים לא נמשכים מהספק: מזינים אותם כאן (דולר למיליון טוקנים, לפי מחירון החשבון). בלי מחיר למודל, העלות מוצגת כ"לא זמין". מסך מלא של בקרת איכות ותקלות AI ייבנה בשלב ג׳.')}
-    <div class="grid kpis">${kpi({k:'c',label:'עלות בטווח',value:d.cost.total,unit:'usd',src:'טוקנים לפי מודל × מחירים שהוזנו',note:d.cost.note})}${kpi({k:'n',label:'פניות',value:d.byDay.reduce((a,r)=>a+r.calls,0),src:'ai_usage'})}${kpi({k:'t',label:'טוקנים (קלט + פלט)',value:d.byDay.reduce((a,r)=>a+r.input+r.output,0),src:'ai_usage'})}</div>
-    <div class="row2" style="margin-top:14px"><section class="card"><h2>לפי מודל</h2>${d.cost.by.length?`<div class="tw"><table><thead><tr><th>מודל</th><th>קריאות</th><th>קלט</th><th>פלט</th><th>עלות</th></tr></thead><tbody>${d.cost.by.map(r=>`<tr><td class="mono">${esc(r.model)}</td><td class="num">${nf(r.calls)}</td><td class="num">${nf(r.input)}</td><td class="num">${nf(r.output)}</td><td class="num">${r.cost==null?'לא זמין':usd(r.cost)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין שימוש בטווח.</div>'}
-      <h2 style="margin-top:16px">פניות ביום</h2><div class="chart" id="chA"></div></section>
-      <section class="card"><h2>מחירים</h2><p class="hint">דולר למיליון טוקנים.</p>${models.length?`<form id="prF"><div class="tw"><table><thead><tr><th>מודל</th><th>קלט</th><th>פלט</th></tr></thead><tbody>${models.map(m=>`<tr><td class="mono">${esc(m)}</td><td><input class="num" style="width:80px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="in" value="${d.prices[m]?d.prices[m].in:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} קלט"></td><td><input class="num" style="width:80px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="out" value="${d.prices[m]?d.prices[m].out:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} פלט"></td></tr>`).join('')}</tbody></table></div>
-        ${can('edit')?'<button class="btn pri" style="margin-top:10px">לשמור מחירים</button>':'<p class="hint">צריך הרשאת עריכה.</p>'}<div class="msg" id="prM" role="status"></div></form>`:'<div class="empty">אין עדיין מודלים בשימוש.</div>'}</section></div>`;
-  if(d.byDay.length)lineChart($('chA'),d.byDay.map(r=>r.day),[{l:'פניות',v:d.byDay.map(r=>r.calls),c:'var(--c1)',area:true}],{h:180}); else $('chA').innerHTML='<div class="empty">אין שימוש בטווח.</div>';
+// ---- AI operations: the features, the models, the failures, the quality, the prices ----
+const FEAT_NOTE={chat:'שאלות בצ׳יקו',files:'קריאת דוחות שהועלו (המודל החזק)',files_quick:'הקריאה המהירה שרצה לצידה',newsx:'קריאת הכתבות ברקע',brief:'תמונת המצב היומית בחדשות',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוח רבעוני של חברה'};
+const ms=v=>v==null?'—':v<1000?nf(v)+' מ״ש':(v/1000).toFixed(v<10000?1:0)+' שנ׳';
+SCREENS.ai=async()=>{head('מנועי AI','',{range:true}); view.innerHTML=loading(6);
+  const [d,o]=await Promise.all([api('ai?'+rq()),api('aiops?'+rq())]); $('sub').textContent='טווח: '+rangeText(d.range)+(o.since?` · הפירוט לפי פיצ׳ר נספר מ-${dmy(o.since)}`:'');
+  const models=[...new Set([...d.cost.by.map(r=>r.model),...o.models.map(m=>m.model),...Object.keys(d.prices)])].filter(m=>m&&m!=='?');
+  const tot=o.features.reduce((a,f)=>({c:a.c+f.calls,e:a.e+f.err,ok:a.ok+f.ok,ms:a.ms+f.ms}),{c:0,e:0,ok:0,ms:0}), Q=o.quality;
+  view.innerHTML=`${o.keyOff?banner('<b>צ׳יקו לא מחובר:</b> חסר ANTHROPIC_API_KEY ב-Railway. הקריאות לא רצות.','bad'):''}
+    <div class="grid kpis">${kpi({k:'n',label:'קריאות ל-AI',value:tot.c,src:'מונה ה-AI',how:o.src})}${kpi({k:'e',label:'שיעור כשלונות',value:tot.ok+tot.e?Math.round(1000*tot.e/(tot.ok+tot.e))/10:null,unit:'pct',state:tot.ok+tot.e>=5&&tot.e/(tot.ok+tot.e)>=.2?'warn':null,src:'מונה ה-AI',note:`${nf(tot.e)} נכשלו`})}
+      ${kpi({k:'t',label:'זמן תגובה ממוצע',value:tot.ok+tot.e?Math.round(tot.ms/(tot.ok+tot.e)):null,unit:'ms',src:'מדידה בשרת, מהשליחה עד התשובה'})}${kpi({k:'c',label:'עלות בטווח',value:d.cost.total,unit:'usd',src:'טוקנים × מחירים',note:d.cost.note})}
+      ${kpi({k:'q',label:'ציון בקרת איכות',value:Q.score,unit:'pct',src:'בדיקה לפי כללים',how:Q.how,note:Q.n?`${Q.n} קריאות נבדקו`:'אין קריאות לבדוק',go:null})}</div>
+    <section class="card" style="margin-top:14px" id="tblF"><h2>לפי פיצ׳ר</h2><p class="hint">כל מקום באתר שפונה ל-AI. עלות מוצגת רק כשיש מחיר לכל המודלים שהפיצ׳ר השתמש בהם.</p></section>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>השוואת מודלים</h2>${o.models.length?`<div class="tw"><table><thead><tr><th>מודל</th><th>קריאות</th><th>קלט</th><th>פלט</th><th>פלט ממוצע לקריאה</th><th>עלות</th></tr></thead><tbody>${o.models.map(m=>`<tr><td class="mono">${esc(m.model)}</td><td class="num">${nf(m.calls)}</td><td class="num">${nf(m.input)}</td><td class="num">${nf(m.output)}</td><td class="num">${nf(m.avgOut)}</td><td class="num">${m.cost==null?'לא זמין':usd(m.cost)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין קריאות שנספרו בטווח.</div>'}
+        <h2 style="margin-top:16px">פניות ביום</h2><div class="chart" id="chA"></div></section>
+      <section class="card"><h2>כשלונות</h2>${o.errors.length?`<div class="tw"><table><thead><tr><th>סוג</th><th>פעמים</th></tr></thead><tbody>${o.errors.map(e=>`<tr><td>${esc(ERRHE(e.code))}</td><td class="num">${nf(e.n)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין כשלונות בטווח.</div>'}
+        <h3 style="margin-top:14px">הכשלונות האחרונים</h3>${o.fails.length?`<div class="tw" style="max-height:260px"><table><thead><tr><th>מתי</th><th>פיצ׳ר</th><th>מודל</th><th>מה</th><th>זמן</th></tr></thead><tbody>${o.fails.slice(0,30).map(f=>`<tr><td>${esc(dt(f.at))}</td><td>${esc(FEAT[f.feature]||f.feature)}</td><td class="mono">${esc(f.model)}</td><td>${esc(ERRHE(f.code))}</td><td class="num">${ms(f.ms)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין.</div>'}<p class="hint" style="margin-top:8px">נשמרים רק הקוד, הזמן והמודל. לא השאלה ולא התשובה.</p></section></div>
+    <section class="card" style="margin-top:14px"><h2>בקרת איכות</h2><p class="hint">${esc(Q.how)}</p>
+      ${Q.crit.map(c=>`<div class="bar" style="margin-bottom:8px"><span class="t wrap" style="white-space:normal">${esc(c.l)}</span><span class="tr"><span class="fl" style="width:${c.pct==null?0:Math.max(2,c.pct)}%;display:block"></span></span><span class="nv num">${c.pct==null?'—':c.pct+'%'}</span></div>`).join('')}
+      ${banner('<b>מה הבדיקה לא יודעת:</b> '+esc(Q.limits),'warn')}
+      ${Q.flags.length?`<h3>קריאות שכדאי לבדוק</h3><div class="tw"><table><thead><tr><th>הכותרת של צ׳יקו</th><th>מה נמצא</th><th>מקור</th></tr></thead><tbody>${Q.flags.map(f=>`<tr><td class="wrap">${esc(f.he)}</td><td class="wrap">${f.why.map(w=>`<span class="pill p-warn" style="margin:2px">${esc(w)}</span>`).join(' ')}</td><td>${f.link&&/^https?:/.test(f.link)?`<a href="${esc(f.link)}" target="_blank" rel="noopener noreferrer">${esc(f.pub||'לכתבה')} ↗</a>`:esc(f.pub||'—')}</td></tr>`).join('')}</tbody></table></div>`:Q.n?'<div class="empty">אף קריאה לא סומנה.</div>':''}</section>
+    <section class="card" style="margin-top:14px"><h2>מחירים</h2><p class="hint">דולר למיליון טוקנים, לפי מחירון החשבון. המחירים לא נמשכים מהספק; בלי מחיר למודל, העלות מוצגת "לא זמין".</p>${models.length?`<form id="prF"><div class="tw"><table><thead><tr><th>מודל</th><th>קלט</th><th>פלט</th></tr></thead><tbody>${models.map(m=>`<tr><td class="mono">${esc(m)}</td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="in" value="${d.prices[m]?d.prices[m].in:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} קלט"></td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="out" value="${d.prices[m]?d.prices[m].out:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} פלט"></td></tr>`).join('')}</tbody></table></div>
+      ${can('edit')?'<button class="btn pri" style="margin-top:10px">לשמור מחירים</button>':'<p class="hint">צריך הרשאת עריכה.</p>'}<div class="msg" id="prM" role="status"></div></form>`:'<div class="empty">אין עדיין מודלים בשימוש.</div>'}</section>`;
+  table($('tblF'),{rows:o.features,empty:'אין עדיין קריאות שנספרו בטווח (הספירה לפי פיצ׳ר התחילה בגרסה הזאת).',
+    cols:[{k:'name',l:'פיצ׳ר',cls:'wrap',f:f=>`<b>${esc(f.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(FEAT_NOTE[f.feature]||'')}</div>`},{k:'calls',l:'קריאות',f:f=>`<span class="num">${nf(f.calls)}</span>`},
+      {k:'avg',l:'זמן ממוצע',f:f=>`<span class="num">${ms(f.avg)}</span>`},{k:'errPct',l:'נכשלו',f:f=>f.errPct==null?'—':`<span class="pill ${f.errPct>=33?'p-bad':f.errPct>=10?'p-warn':'p-ok'}">${f.errPct}%</span>`},
+      {k:'tok',l:'טוקנים (קלט / פלט)',sv:f=>f.input+f.output,f:f=>`<span class="num">${nf(f.input)} / ${nf(f.output)}</span>`},{k:'cost',l:'עלות',f:f=>`<span class="num">${f.cost==null?'לא זמין':usd(f.cost)}</span>`}]});
+  if(d.byDay.length)lineChart($('chA'),d.byDay.map(r=>r.day),[{l:'פניות',v:d.byDay.map(r=>r.calls),c:'var(--c1)',area:true}],{h:170}); else $('chA').innerHTML='<div class="empty">אין שימוש בטווח.</div>';
   const f=$('prF'); if(f)f.addEventListener('submit',async e=>{e.preventDefault(); const P={}; for(const i of f.querySelectorAll('input[data-m]')){const m=i.dataset.m; if(i.value==='')continue; (P[m]=P[m]||{})[i.dataset.io]=+i.value}
     for(const m of Object.keys(P))if(P[m].in==null||P[m].out==null)delete P[m];
     try{await post('ai/prices',{prices:P}); $('prM').className='msg ok'; $('prM').textContent='נשמר.'; setTimeout(route,600)}catch(err){$('prM').className='msg bad'; $('prM').textContent=err.message}})};
+const FEAT={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה',newsx:'קריאת כתבות',brief:'תמונת מצב יומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות'};
+const ERRHE=c=>{c=String(c||''); return {timeout:'לא ענה בזמן',network:'אין חיבור',cancelled:'בוטל בדף',rate_limited:'מגבלת קצב',quota_exceeded:'מכסה יומית',sampling_disabled:'לא מחובר / אין יתרה',upstream_error:'שגיאה אצל הספק',refused:'סירב',invalid_argument:'בקשה לא תקינה',prompt_too_large:'גדול מדי'}[c]||(/^HTTP 529/.test(c)?'עומס אצל הספק (529)':/^HTTP 429/.test(c)?'מגבלת קצב (429)':/^HTTP 5/.test(c)?'שגיאת ספק ('+c.slice(5)+')':/^HTTP 4/.test(c)?'בקשה נדחתה ('+c.slice(5)+')':/refusal/.test(c)?'סירב':c)};
 
-// ---- the health ----
-SCREENS.health=async()=>{head('תקינות המערכת','כל מקור שהאתר תלוי בו, מתי עבד לאחרונה, ומה המצב. אותה בדיקה שהשרת מריץ ושולחת התראה במייל.'); view.innerHTML=loading(6);
-  const d=await api('health'); const items=d.items||[], c=s=>items.filter(i=>i.state===s).length; HEALTH_BAD=c('bad')>0; navRender('health');
+// ---- the news system ----
+SCREENS.news=async()=>{head('מערכת החדשות','האיסוף, הקריאה של צ׳יקו, מפת ההשפעה וההתראות האישיות. החדשות הכלליות זהות לכולם; ההתראות האישיות נבנות לכל משתמש מהתיק שלו.'); view.innerHTML=loading(8);
+  const d=await api('news'), A=d.articles, R=d.reading, I=d.impact, P=d.personal;
+  const srcState=s=>s.off?'off':s.first&&!s.ok?'bad':s.fail?'warn':(s.ok===0&&s.of)?'bad':'ok';
+  view.innerHTML=`${R.keyOff?banner('<b>צ׳יקו לא קורא כתבות:</b> חסר ANTHROPIC_API_KEY. הכתבות נקראות לפי כללים בלבד.','bad'):''}
+    <h2 style="margin:0 0 10px;font-size:16px">החדשות הכלליות</h2>
+    <div class="grid kpis">${kpi({k:'a',label:'כתבות שמורות (שבוע)',value:A.total,src:'מסמך החדשות',at:A.updatedAt,note:`${nf(A.company)} על ניירות · ${nf(A.general)} כלליות`})}
+      ${kpi({k:'d',label:'כפולות',value:A.dup,src:'אותה כותרת משני קישורים',state:A.total&&A.dup/A.total>.15?'warn':null})}${kpi({k:'s',label:'בלי מקור תקין',value:A.noSrc,src:'בלי קישור או בלי מו״ל',state:A.noSrc?'warn':null})}
+      ${kpi({k:'r',label:'נקראו על ידי צ׳יקו',value:R.ai,of:R.total,src:'הקריאות השמורות',at:R.at,note:`${nf(R.rules)} לפי כללים בלבד`})}
+      ${kpi({k:'w',label:'ממתינות לקריאה',value:R.waiting,src:'הריצה האחרונה',at:R.at,state:R.waiting>100?'warn':null,note:R.fail?`${nf(R.fail)} נכשלו${R.first?': '+R.first:''}`:R.read!=null?`${nf(R.read)} נקראו בריצה האחרונה`:null})}</div>
+    <section class="card" style="margin-top:14px" id="tblS"><h2>המקורות</h2><p class="hint">כל מקור, מה הביא בריצה האחרונה ומה נכשל.</p></section>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>מפת ההשפעה</h2><div class="kv">
+        <div><b>אירועים ב-3 הימים האחרונים</b><span class="num">${nf(I.events3)}</span></div><div><b>קריאות עם חברה מושפעת</b><span class="num">${nf(I.withCompanies)}</span></div>
+        <div><b>קריטיות / חשובות</b><span class="num">${nf(I.crit)} / ${nf(I.imp)}</span></div>
+        <div><b>לא נמצא קשר לשוק</b><span class="num">${nf(I.unlinked)}</span><small style="display:block;color:var(--muted)">קריאה בלי חברה, ענף או נושא</small></div>
+        <div><b>חברות שלא מוכרות לאתר</b><span class="num">${nf(I.unknownSym)}</span><small style="display:block;color:var(--muted)">סימול שצ׳יקו ציין ואין לו מחיר</small></div></div></section>
+      <section class="card"><h2>המו״לים</h2>${A.pubs.length?`<div class="bars">${A.pubs.slice(0,10).map(p=>`<div class="bar"><span class="t">${esc(p.p)}</span><span class="tr"><span class="fl" style="width:${Math.max(2,100*p.n/A.pubs[0].n)}%;display:block"></span></span><span class="nv num">${nf(p.n)}</span></div>`).join('')}</div>`:'<div class="empty">אין כתבות.</div>'}</section></div>
+    <h2 style="margin:22px 0 10px;font-size:16px">ההתראות האישיות</h2>
+    ${banner('נבנות לכל משתמש מהתיק שלו. כאן רק סיכום של כולם: לא מוצג מי קיבל מה.')}
+    <div class="grid kpis">${kpi({k:'pa',label:'התראות פעילות (30 ימים)',value:P.alerts,src:'מסמכי ההתראות של כל המשתמשים',at:P.at,note:`קריטיות ${nf(P.crit)} · חשובות ${nf(P.imp)} · עדכונים ${nf(P.upd)}`})}
+      ${kpi({k:'pu',label:'משתמשים עם התראות',value:P.users,of:P.of,src:'מסמכי ההתראות'})}${kpi({k:'pf',label:'חדשות או שהתעדכנו ב-24 שעות',value:P.fresh24,src:'מסמכי ההתראות'})}${kpi({k:'ps',label:'התראות לטלפון היום',value:P.pushSent,src:'מונה השליחות'})}</div>`;
+  table($('tblS'),{rows:d.sources,cols:[{k:'name',l:'מקור',cls:'wrap'},{k:'st',l:'מצב',sv:s=>({bad:0,warn:1,ok:2,off:3})[srcState(s)],f:s=>pill(srcState(s))},{k:'items',l:'כתבות',f:s=>`<span class="num">${nf(s.items)}</span>`},
+    {k:'ok',l:'הצליחו / נכשלו',f:s=>s.ok==null?'—':`<span class="num">${nf(s.ok)}${s.of?' מתוך '+nf(s.of):''}${s.fail?' · '+nf(s.fail)+' נכשלו':''}</span>`},{k:'at',l:'ריצה אחרונה',f:s=>esc(s.at?ago(s.at):'—')},
+    {k:'first',l:'הערה',cls:'wrap',f:s=>`<span style="font-size:12px;color:var(--ink2)">${esc(s.off?'לא מחובר (אין מפתח)':s.first||s.note||'')}</span>`}]})};
+
+// ---- the system's health: availability, requests, resources, the sources, running a job ----
+const bytes=v=>v==null?'—':v>=1e9?(v/1e9).toFixed(1)+' GB':(v/1e6).toFixed(0)+' MB';
+SCREENS.health=async()=>{head('תקינות המערכת','',{range:true}); view.innerHTML=loading(8);
+  const [d,s,inc]=await Promise.all([api('health'),api('system?'+rq()),api('incidents')]); $('sub').textContent='טווח: '+rangeText(s.range)+(s.hbSince?` · הדופק נמדד מ-${dmy(s.hbSince)}`:'');
+  const items=d.items||[], c=x=>items.filter(i=>i.state===x).length, open=inc.items.filter(i=>i.status!=='closed'); HEALTH_BAD=c('bad')>0||open.some(i=>i.sev==='bad'); navRender('health');
+  const R=s.res, err=s.areas.reduce((a,x)=>a+x.err,0), n=s.areas.reduce((a,x)=>a+x.n,0);
   const JOBS=[['prices','מחירים'],['news','איסוף חדשות וקריאה'],['newsx','קריאת כתבות'],['research','נתוני חברות'],['backup','גיבוי'],['pxwatch','בדיקת זרימת מחירים'],['insiders','בעלי עניין'],['ecocal','לוח כלכלי']];
-  view.innerHTML=`<div class="grid kpis">${kpi({k:'ok',label:'תקינים',value:c('ok'),src:'בדיקת התקינות',at:d.at})}${kpi({k:'w',label:'אזהרות',value:c('warn'),state:c('warn')?'warn':null,src:'ריצה אחת נכשלה',at:d.at})}${kpi({k:'b',label:'תקלות',value:c('bad'),state:c('bad')?'bad':null,src:'לא עבד יותר מהמותר',at:d.at})}${kpi({k:'o',label:'לא מחוברים',value:c('off'),src:'אין מפתח או לא הוגדר',at:d.at})}</div>
-    <section class="card" style="margin-top:14px" id="tblH"></section>
-    ${can('system')?`<section class="card" style="margin-top:14px"><h2>להריץ משימה עכשיו</h2><p class="hint">המשימה נכנסת לתור של השרת (אחת בכל פעם) ונרשמת ביומן. ${d.jobs?'':'<b>המשימות המתוזמנות כבויות בשרת הזה.</b>'}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${JOBS.map(([k,l])=>`<button class="btn sm" data-job="${k}" ${d.jobs?'':'disabled'}>${esc(l)}</button>`).join('')}</div><div class="msg" id="jM" role="status"></div></section>`:''}`;
+  view.innerHTML=`${open.length?banner(`<b>${open.length} תקלות פתוחות:</b> ${open.slice(0,3).map(i=>esc(i.name)).join(' · ')}. <a href="#incidents">למסך התקלות</a>`,open.some(i=>i.sev==='bad')?'bad':'warn'):''}
+    <div class="grid kpis">${kpi({k:'av',label:'זמינות',value:s.availability,unit:'pct',src:'דופק בכל דקה',how:'דקות שבהן השרת דפק, מתוך הדקות בטווח מאז שהמדידה התחילה',note:s.downMin?`${nf(s.downMin)} דקות בלי דופק · ${nf(s.boots)} הפעלות`:`${nf(s.boots)} הפעלות בטווח`,state:s.availability!=null&&s.availability<99?'warn':null})}
+      ${kpi({k:'rq',label:'בקשות לשרת',value:n,src:'מדידת כל בקשה',note:`${nf(err)} שגיאות שרת (5xx)`,state:err>=20?'warn':null})}
+      ${kpi({k:'ok',label:'מקורות נתונים תקינים',value:c('ok'),of:items.filter(i=>i.state!=='off').length,src:'בדיקת התקינות',at:d.at,state:c('bad')?'bad':c('warn')?'warn':null})}
+      ${kpi({k:'mem',label:'זיכרון בשימוש',value:Math.round(R.rss/1e6),unit:'mb',src:'התהליך של השרת',note:`עלה ${ago(new Date(Date.now()-R.uptime*1000).toISOString()).replace('לפני ','לפני ')} · עומס ${R.load.toFixed(2)} על ${R.cpus} ליבות`})}
+      ${kpi({k:'disk',label:'דיסק פנוי',value:R.disk?Math.round(R.disk.free/1e6):null,unit:'mb',src:'הדיסק של הנתונים',note:R.disk?`מתוך ${bytes(R.disk.total)} · המסד ${bytes(R.dbSize)}`:'לא נמדד',state:R.disk&&R.disk.free/R.disk.total<.1?'bad':null})}</div>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>בקשות ושגיאות לפי יום</h2><div class="chart" id="chS"></div></section>
+      <section class="card"><h2>זמני תגובה לפי אזור</h2><p class="hint">אזור = החלק הראשון בכתובת (db, ask, admin...). "איטיות": מעל 5 שניות.</p>${s.areas.length?`<div class="tw"><table><thead><tr><th>אזור</th><th>בקשות</th><th>ממוצע</th><th>5xx</th><th>איטיות</th></tr></thead><tbody>${s.areas.slice(0,14).map(a=>`<tr><td class="mono">${esc(a.area)}</td><td class="num">${nf(a.n)}</td><td class="num">${ms(a.avg)}</td><td class="num">${a.err?`<span class="pill p-bad">${nf(a.err)}</span>`:'0'}</td><td class="num">${nf(a.slow)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין מדידות (התחילו בגרסה הזאת).</div>'}</section></div>
+    <section class="card" style="margin-top:14px" id="tblH"><h2>מקורות הנתונים</h2><p class="hint">אותה בדיקה ששולחת התראה במייל: כל מקור מול הזמן שמותר לו לא לעבוד.</p></section>
+    ${can('system')?`<section class="card" style="margin-top:14px"><h2>להריץ משימה עכשיו</h2><p class="hint">נכנסת לתור של השרת (אחת בכל פעם) ונרשמת ביומן. ${d.jobs?'':'<b>המשימות המתוזמנות כבויות בשרת הזה.</b>'}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${JOBS.map(([k,l])=>`<button class="btn sm" data-job="${k}" ${d.jobs?'':'disabled'}>${esc(l)}</button>`).join('')}</div><div class="msg" id="jM" role="status"></div></section>`:''}
+    <p class="hint" style="margin-top:12px">Node ${esc(R.node)} · עלה ${esc(dt(s.lastBoot))}</p>`;
+  if(s.byDay.length)lineChart($('chS'),s.byDay.map(x=>x.day),[{l:'בקשות',v:s.byDay.map(x=>x.n),c:'var(--c1)',area:true},{l:'שגיאות שרת',v:s.byDay.map(x=>x.err),c:'var(--bad)'}],{h:180}); else $('chS').innerHTML='<div class="empty">אין עדיין מדידות.</div>';
   table($('tblH'),{rows:items,search:i=>i.name+' '+(i.note||''),filters:[{k:'state',l:'מצב',get:i=>i.state,opts:Object.entries(STATE).map(([k,v])=>[k,v[1]])}],
     cols:[{k:'name',l:'מקור',cls:'wrap'},{k:'state',l:'מצב',sv:i=>({bad:0,warn:1,ok:2,off:3})[i.state],f:i=>pill(i.state)},{k:'okAt',l:'עבד לאחרונה',f:i=>`<span title="${esc(dt(i.okAt))}">${esc(i.okAt?ago(i.okAt):'—')}</span>`},{k:'note',l:'מה קרה',cls:'wrap',f:i=>`<span style="font-size:12.5px;color:var(--ink2)">${esc(i.note||'')}</span>`}]});
   for(const b of view.querySelectorAll('[data-job]'))b.onclick=async()=>{b.disabled=true; try{await post('jobs/'+b.dataset.job); $('jM').className='msg ok'; $('jM').textContent=`"${b.textContent}" נכנסה לתור.`}catch(e){$('jM').className='msg bad'; $('jM').textContent=e.message} setTimeout(()=>b.disabled=false,4000)}};
 
-// ---- security: the audit log and the sign-ins ----
-SCREENS.security=async()=>{head('אבטחה ויומן פעולות','כל פעולת ניהול נרשמת ביומן שאי אפשר לערוך או למחוק, וכל שורה חתומה בשרשרת עם השורה שלפניה.'); view.innerHTML=loading(4);
-  const [a,l]=await Promise.all([api('audit?limit=300'),can('sensitive')?api('logins').catch(e=>({err:e})):Promise.resolve(null)]);
-  const ACT={'user.suspend':'השעיית משתמש','user.restore':'החזרה לפעילות','user.role':'שינוי תפקיד','user.perms':'שינוי הרשאות','user.add':'הוספת משתמש','user.register':'הרשמה','user.password':'איפוס סיסמה','user.remove':'הסרת משתמש','sensitive.view':'צפייה במידע רגיש','settings.aiPrices':'מחירי AI','system.job':'הרצת משימה','invite.set':'קוד הזמנה','invite.close':'סגירת הרשמה'};
-  view.innerHTML=`<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="margin:0">יומן פעולות הניהול</h2>
-      <span class="chain">${a.verify.ok?`<span class="pill p-ok">השרשרת שלמה</span> ${nf(a.verify.n)} רשומות נבדקו`:`<span class="pill p-bad">השרשרת שבורה ברשומה ${esc(a.verify.brokenAt)}</span>`}</span></div><p class="hint">הגנה: מסד הנתונים מסרב לכל עדכון או מחיקה של שורה ביומן, וכל שורה כוללת את החתימה של הקודמת.</p><div id="tblA"></div></section>
+// ---- the incidents: opened by themselves, closed by themselves, or handled by a person ----
+SCREENS.incidents=async()=>{head('תקלות ואירועים','נפתחות לבד כשמקור מפסיק לעבוד או כשמדד חוצה את הסף, ונסגרות לבד כשהוא חוזר. מי שמטפל יכול לקחת, לתעד ולסגור.'); view.innerHTML=loading(3);
+  const d=await api('incidents'), open=d.items.filter(i=>i.status!=='closed'), closed=d.items.filter(i=>i.status==='closed');
+  const ST={open:['p-bad','פתוחה'],ack:['p-warn','בטיפול'],closed:['p-ok','נסגרה']}, KIND={source:'מקור נתונים',errors:'שגיאות שרת',ai:'AI',alerts:'התראות',uptime:'זמינות'};
+  const card=i=>`<article class="card" style="margin-bottom:12px" data-inc="${i.id}"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="pill ${i.sev==='bad'?'p-bad':'p-warn'}">${i.sev==='bad'?'חמורה':'אזהרה'}</span><b style="font-size:15px">${esc(i.name)}</b><span class="pill ${ST[i.status][0]}">${ST[i.status][1]}</span><span style="color:var(--muted);font-size:12.5px;margin-inline-start:auto">${esc(KIND[i.kind]||i.kind)} · נפתחה ${esc(dt(i.opened_at))}${i.closed_at?' · נסגרה '+esc(dt(i.closed_at)):''}</span></div>
+      ${i.note?`<p style="margin:8px 0 0;font-size:13.5px">${esc(i.note)}</p>`:''}${i.resolution?`<p class="hint" style="margin:6px 0 0">פתרון: ${esc(i.resolution)}</p>`:''}${i.ownerEmail?`<p class="hint" style="margin:4px 0 0">אחראי: <span class="mono">${esc(i.ownerEmail)}</span></p>`:''}
+      ${can('system')&&i.status!=='closed'?`<div class="inline"><label class="vh" for="own${i.id}">אחראי</label><select id="own${i.id}" class="btn sm"><option value="">בלי אחראי</option>${d.managers.map(m=>`<option value="${esc(m.id)}" ${m.id===i.owner?'selected':''}>${esc(m.name||m.email)}</option>`).join('')}</select>
+        <input type="text" id="res${i.id}" placeholder="מה נעשה / הפתרון" maxlength="500" value="${esc(i.resolution||'')}"><button class="btn sm" data-iact="ack">לקחתי</button><button class="btn sm pri" data-iact="closed">לסגור</button></div>`:''}</article>`;
+  view.innerHTML=`${can('system')?`<section class="card" style="margin-bottom:14px"><h2>התראות להנהלה</h2><p class="hint">כשנפתחת תקלה חמורה: התראה לטלפון לכל מי שיש לו הרשאת "מערכת" (אם הפעיל התראות בטלפון), ומייל לבעל המערכת אם המייל מוגדר. פעם בשש שעות לכל סוג.</p>
+      <div class="checks"><label><input type="checkbox" id="cfgPush" ${d.cfg.push?'checked':''}><span>התראה לטלפון</span></label><label><input type="checkbox" id="cfgMail" ${d.cfg.mail?'checked':''}><span>מייל לבעל המערכת</span></label></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" id="cfgGo">לשמור</button><button class="btn sm" id="chkGo">לבדוק עכשיו</button></div><div class="msg" id="cfgM" role="status"></div></section>`:''}
+    <h2 style="margin:0 0 10px;font-size:16px">פתוחות (${open.length})</h2>${open.length?open.map(card).join(''):'<div class="card"><div class="empty">אין תקלות פתוחות.</div></div>'}
+    <h2 style="margin:22px 0 10px;font-size:16px">נסגרו ב-30 הימים האחרונים (${closed.length})</h2>${closed.length?closed.map(card).join(''):'<div class="card"><div class="empty">אין.</div></div>'}`;
+  const msg=(t,ok)=>{const m=$('cfgM'); if(m){m.className='msg '+(ok?'ok':'bad'); m.textContent=t}};
+  if($('cfgGo'))$('cfgGo').onclick=async()=>{try{await post('alerts-cfg',{push:$('cfgPush').checked,mail:$('cfgMail').checked}); msg('נשמר.',true)}catch(e){msg(e.message,false)}};
+  if($('chkGo'))$('chkGo').onclick=async()=>{try{const r=await post('incidents/check'); msg(r.opened?`נפתחו ${r.opened} תקלות.`:'הבדיקה רצה; לא נפתחה תקלה חדשה.',true); setTimeout(route,800)}catch(e){msg(e.message,false)}};
+  for(const b of view.querySelectorAll('[data-iact]'))b.onclick=async()=>{const a=b.closest('[data-inc]'), id=a.dataset.inc; b.disabled=true;
+    try{await post('incidents/'+id,{status:b.dataset.iact,owner:$('own'+id).value||null,resolution:$('res'+id).value}); route()}catch(e){b.disabled=false; alertBox(a,e.message)}};
+};
+const alertBox=(el,t)=>{let m=el.querySelector('.msg'); if(!m){m=document.createElement('div'); el.append(m)} m.className='msg bad'; m.textContent=t};
+
+// ---- security: the posture, the keys, the sessions, the audit log and the sign-ins ----
+SCREENS.security=async()=>{head('מרכז אבטחה','מצב האבטחה, החיבורים הפתוחים, יומן הפעולות והכניסות.'); view.innerHTML=loading(4);
+  const sens=can('sensitive');
+  const [S,a,l,ss]=await Promise.all([api('security'),api('audit?limit=300'),sens?api('logins').catch(e=>({err:e})):Promise.resolve(null),sens?api('sessions').catch(e=>({err:e})):Promise.resolve(null)]);
+  const ACT={'user.suspend':'השעיית משתמש','user.restore':'החזרה לפעילות','user.role':'שינוי תפקיד','user.perms':'שינוי הרשאות','user.add':'הוספת משתמש','user.register':'הרשמה','user.password':'איפוס סיסמה','user.remove':'הסרת משתמש','sensitive.view':'צפייה במידע רגיש','settings.aiPrices':'מחירי AI','settings.alerts':'התראות להנהלה','system.job':'הרצת משימה','invite.set':'קוד הזמנה','invite.close':'סגירת הרשמה','incident.update':'טיפול בתקלה','incident.check':'בדיקת תקלות','session.end':'ניתוק חיבור'};
+  const bad=S.checks.filter(c=>!c.ok);
+  view.innerHTML=`<div class="row2"><section class="card"><h2>מצב האבטחה</h2><p class="hint">${bad.length?`${bad.length} בדיקות דורשות טיפול.`:'כל הבדיקות עוברות.'}</p>
+        <div class="tw"><table><tbody>${S.checks.map(c=>`<tr><td style="width:1%">${c.ok?'<span class="pill p-ok">תקין</span>':'<span class="pill p-bad">לטיפול</span>'}</td><td class="wrap"><b>${esc(c.l)}</b>${c.note?`<div style="font-size:12px;color:var(--muted)">${esc(c.note)}</div>`:''}${!c.ok&&c.fix?`<div style="font-size:12.5px;color:var(--bad)">${esc(c.fix)}</div>`:''}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="card"><h2>מפתחות וחיבורים</h2><p class="hint">רק אם מוגדר. הערכים עצמם לא יוצאים מהשרת.</p><div class="tw"><table><tbody>${S.keys.map(k=>`<tr><td>${esc(k.l)}</td><td class="mono" style="font-size:12px;color:var(--muted)">${esc(k.k)}</td><td>${k.set?'<span class="pill p-ok">מוגדר</span>':'<span class="pill p-off">לא מוגדר</span>'}</td></tr>`).join('')}</tbody></table></div></section></div>
+    <section class="card" style="margin-top:14px"><h2>חיבורים פתוחים</h2>${!ss?'<p class="hint">מי מחובר ומאיזה מכשיר: מוצג רק עם הרשאת "מידע אישי רגיש".</p>':ss.err?errBox(ss.err,'security'):`<p class="hint">חיבור מזוהה בקוד מקוצר, לא במזהה האמיתי. ניתוק נרשם ביומן. הצפייה נרשמה ביומן.</p><div id="tblSS"></div><div class="msg" id="ssM" role="status"></div>`}</section>
+    <section class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="margin:0">יומן פעולות הניהול</h2>
+      <span class="chain">${a.verify.ok?`<span class="pill p-ok">השרשרת שלמה</span> ${nf(a.verify.n)} רשומות נבדקו`:`<span class="pill p-bad">השרשרת שבורה ברשומה ${esc(a.verify.brokenAt)}</span>`}</span></div><p class="hint">המסד מסרב לכל עדכון או מחיקה של שורה ביומן, וכל שורה כוללת את החתימה של הקודמת. "צפייה במידע רגיש" מראה כל גישה לפרטים אישיים.</p><div id="tblA"></div></section>
     <section class="card" style="margin-top:14px"><h2>כניסות למערכת (30 ימים)</h2>${!l?'<p class="hint">יומן הכניסות הוא מידע רגיש: מוצג רק עם הרשאת "מידע אישי רגיש".</p>':l.err?errBox(l.err,'security'):`
       ${l.odd.length?banner(`<b>${l.odd.length} דברים חריגים:</b> `+l.odd.slice(0,5).map(o=>o.kind==='many_fail'?`${nf(o.fail)} כניסות שנכשלו מרשת ${esc(o.ip)}${o.ok?' (ואחר כך הצלחה)':''}`:`ניסיון עם מייל שלא רשום, מרשת ${esc(o.ip)}`).join(' · '),'warn'):banner('אין ניסיונות כניסה חריגים ב-30 הימים האחרונים (5 כישלונות או יותר מאותה רשת, או מייל שלא רשום).')}
-      <p class="hint">הצפייה נרשמה ביומן. הרשת מוצגת מקוצרת.</p><div id="tblL"></div>`}</section>`;
+      <div id="tblL"></div>`}</section>`;
   table($('tblA'),{rows:a.items,search:r=>r.actor+' '+r.action+' '+r.target,filters:[{k:'action',l:'פעולה',get:r=>r.action,opts:[...new Set(a.items.map(r=>r.action))].map(k=>[k,ACT[k]||k])}],empty:'היומן ריק.',
     cols:[{k:'at',l:'מתי',f:r=>esc(dt(r.at))},{k:'action',l:'פעולה',f:r=>esc(ACT[r.action]||r.action)},{k:'actor',l:'מי',f:r=>`<span class="mono">${esc(r.actor)}</span>`},{k:'target',l:'על מה',f:r=>/^u_/.test(r.target)?`<a href="#user/${esc(r.target)}">משתמש</a>`:esc(r.target)},
       {k:'detail',l:'פרטים',nosort:true,cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--ink2)">${esc(r.detail?Object.entries(r.detail).map(([k,v])=>k+': '+(Array.isArray(v)?v.join(', '):typeof v==='object'?JSON.stringify(v):v)).join(' · '):'')}</span>`},{k:'ip',l:'רשת',f:r=>`<span class="mono">${esc(r.ip)}</span>`}]});
   if(l&&!l.err)table($('tblL'),{rows:l.items,search:r=>r.email+' '+r.ip,filters:[{k:'ok',l:'תוצאה',get:r=>String(r.ok),opts:[['1','הצליחה'],['0','נכשלה']]}],empty:'אין כניסות רשומות.',
-    cols:[{k:'at',l:'מתי',f:r=>esc(dt(r.at))},{k:'email',l:'מייל',f:r=>`<span class="mono">${esc(r.email)}</span>`},{k:'ok',l:'תוצאה',f:r=>r.ok?'<span class="pill p-ok">הצליחה</span>':`<span class="pill p-bad">${esc({bad_password:'סיסמה שגויה',bad_code:'קוד שגוי',need_code:'נדרש קוד',suspended:'חשבון מושעה',unknown_email:'מייל לא מוכר'}[r.reason]||r.reason)}</span>`},{k:'ip',l:'רשת',f:r=>`<span class="mono">${esc(r.ip)}</span>`},{k:'ua',l:'מכשיר',cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--muted)">${esc(r.ua)}</span>`}]})};
+    cols:[{k:'at',l:'מתי',f:r=>esc(dt(r.at))},{k:'email',l:'מייל',f:r=>`<span class="mono">${esc(r.email)}</span>`},{k:'ok',l:'תוצאה',f:r=>r.ok?'<span class="pill p-ok">הצליחה</span>':`<span class="pill p-bad">${esc({bad_password:'סיסמה שגויה',bad_code:'קוד שגוי',need_code:'נדרש קוד',suspended:'חשבון מושעה',unknown_email:'מייל לא מוכר'}[r.reason]||r.reason)}</span>`},{k:'ip',l:'רשת',f:r=>`<span class="mono">${esc(r.ip)}</span>`},{k:'ua',l:'מכשיר',cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--muted)">${esc(r.ua)}</span>`}]});
+  if(ss&&!ss.err){table($('tblSS'),{rows:ss.items,search:r=>r.email+' '+r.ua,empty:'אין חיבורים פתוחים.',
+      cols:[{k:'email',l:'משתמש',f:r=>`<span class="mono">${esc(r.email)}</span>${r.mine?' <span class="pill p-acc">החיבור הזה</span>':''}`},{k:'created',l:'התחבר',f:r=>esc(dt(r.created))},{k:'expires',l:'פג',f:r=>esc(dmy(r.expires))},
+        {k:'ua',l:'מכשיר',cls:'wrap',f:r=>`<span style="font-size:12px;color:var(--muted)">${esc(r.ua)}</span>`},{k:'act',l:'',nosort:true,f:r=>can('users')&&!r.mine&&(r.role!=='owner'||ME.role==='owner')?`<button class="btn sm danger" data-send="${esc(r.h)}" data-suid="${esc(r.uid)}">לנתק</button>`:''}]});
+    $('tblSS').addEventListener('click',async e=>{const b=e.target.closest('[data-send]'); if(!b)return; b.disabled=true; try{await post('sessions/end',{h:b.dataset.send,uid:b.dataset.suid}); route()}catch(err){$('ssM').className='msg bad'; $('ssM').textContent=err.message; b.disabled=false}})}
+};
 
 // ---- roles and permissions ----
 SCREENS.access=async()=>{head('תפקידים והרשאות','מי יכול לעשות מה במרכז הניהול. ההרשאות נאכפות בשרת, לא רק בתצוגה.'); view.innerHTML=loading(3);

@@ -6,6 +6,7 @@ import {Store} from '../server/store.js';
 import {adminSchema, permsOf, can, setPerms, audit, auditList, auditVerify, setStatus, touch, backfillActive, ipPrefix} from '../server/admin/core.js';
 import {rangeOf, executive, product, aiCost, funnel, catalog, K_ANON} from '../server/admin/metrics.js';
 import {bump, countersSince, setCounterStore} from '../server/admin/counter.js';
+import {createHash} from 'node:crypto';
 
 process.env.OWNER_EMAIL='owner@example.com'; process.env.OWNER_PASSWORD='owner-pass-123'; process.env.ANTHROPIC_API_KEY=''; process.env.JOBS='0';
 const PAGE=new URL('../page/live.html',import.meta.url).pathname;
@@ -159,5 +160,100 @@ test('the API: a partner gets 404 at /admin and 403 at the API; an admin sees, c
     assert.equal(store.db.prepare("select sum(n) n from counters where kind='nav'").get().n,2);
     // activity was recorded for every signed-in person
     assert.ok(store.db.prepare('select count(distinct uid) n from active_days').get().n>=3);
+  }finally{srv.close()}
+});
+
+// ================= stage C =================
+import {aiMeter} from '../server/admin/counter.js';
+import {checkIncidents, incidents, incidentUpdate, newsOps, aiOps, aiQuality, security, systemOps, opsSchema} from '../server/admin/ops.js';
+
+test('the AI meter: every call per feature and model, the background ones also in the cost table, the failures kept without content',()=>{
+  const s=mk(); setCounterStore(s); const d=rangeOf({range:'today'});
+  aiMeter({feature:'newsx',model:'claude-haiku-5-5',usage:{input_tokens:1000,output_tokens:200},ms:1500,ok:true,addModel:true});
+  aiMeter({feature:'newsx',model:'claude-haiku-5-5',ms:3000,ok:false,code:'HTTP 529'});
+  aiMeter({feature:'chat',model:'claude-sonnet-5-5',usage:{input_tokens:500,output_tokens:50},ms:800,ok:true});
+  const O=aiOps(s,d), nx=O.features.find(f=>f.feature==='newsx');
+  assert.equal(nx.calls,2); assert.equal(nx.ok,1); assert.equal(nx.err,1); assert.equal(nx.errPct,50); assert.equal(nx.avg,2250); assert.equal(nx.input,1000); assert.equal(nx.cost,null,'no prices');
+  assert.deepEqual(O.errors,[{code:'HTTP 529',n:1}]); assert.equal(O.fails[0].feature,'newsx'); assert.ok(!('prompt' in O.fails[0]));
+  assert.equal(s.aiModelsSince(d.from).find(r=>r.model==='claude-haiku-5-5').input,1000,'the background call reaches the cost table');
+  assert.equal(s.aiModelsSince(d.from).find(r=>r.model==='claude-sonnet-5-5'),undefined,'the chat is counted there by the chat route, not twice');
+  s.setMeta('aiPrices',JSON.stringify({'claude-haiku-5-5':{in:1,out:5}})); assert.equal(aiOps(s,d).features.find(f=>f.feature==='newsx').cost,0);   // 1000×1/1e6+200×5/1e6 = 0.002 → 0.00
+  setCounterStore(null);
+});
+
+test('incidents: opened when a measure crosses its line, the management told once, closed by itself; a person\'s hand audited and kept',()=>{
+  const s=mk(), U=users(s); setCounterStore(s); opsSchema(s);
+  for(let i=0;i<4;i++)aiMeter({feature:'newsx',model:'m',ok:false,code:'HTTP 500'}); for(let i=0;i<2;i++)aiMeter({feature:'newsx',model:'m',ok:true});
+  const pushed=[], mailed=[]; const push=async(st,uid,msg)=>{pushed.push({uid,msg}); return 1}, send=async m=>{mailed.push(m); return true};
+  let o=checkIncidents(s,{push,send}); assert.ok(o.some(x=>x.key==='ai'),JSON.stringify(o));
+  const ai=incidents(s).find(i=>i.key==='ai'); assert.equal(ai.sev,'bad'); assert.match(ai.note,/קריאת כתבות: 4 מתוך 6/);
+  // told: the phones of everyone with "system" (owner, both admins), not the partner; no mail until switched on
+  assert.deepEqual([...new Set(pushed.map(p=>p.uid))].sort(),[U.o.id,U.a.id,U.a2.id].sort()); assert.equal(mailed.length,0); assert.match(pushed[0].msg.url,/#incidents/);
+  pushed.length=0; checkIncidents(s,{push,send}); assert.equal(pushed.length,0,'once'); assert.equal(incidents(s).filter(i=>i.key==='ai').length,1,'not opened twice');
+  // fine again: closed by itself
+  for(let i=0;i<20;i++)aiMeter({feature:'newsx',model:'m',ok:true}); checkIncidents(s,{push,send});
+  assert.equal(incidents(s).find(i=>i.key==='ai').status,'closed');
+  // a person takes one: audited, and it no longer closes by itself
+  for(let i=0;i<30;i++)bump('rt_5xx','db',1); checkIncidents(s,{});
+  const e=incidents(s).find(i=>i.key==='errors'&&i.status==='open'); incidentUpdate(s,U.a,e.id,{status:'ack',owner:U.a.id,resolution:'בודק'},'10.0.0.1');
+  assert.equal(auditList(s)[0].action,'incident.update'); assert.equal(incidents(s).find(i=>i.id===e.id).auto,0);
+  assert.throws(()=>incidentUpdate(s,U.a,9999,{status:'closed'}),/not_found/);
+  setCounterStore(null);
+});
+
+test('the news system: sources, duplicates, articles without a source, the readings, the impact links, the personal alerts as totals only',()=>{
+  const s=mk(), U=users(s); const now=new Date().toISOString();
+  s.setDoc('research/news',{items:[{title:'Apple beats',pub:'Reuters',link:'https://r/1',syms:['AAPL'],at:now},{title:'Apple beats!',pub:'CNBC',link:'https://c/1',syms:['AAPL'],at:now},{title:'No source',link:'',syms:['MSFT'],at:now}],updatedAt:now});
+  const id=createHash('sha1').update('https://r/1').digest('hex').slice(0,12);
+  s.setDoc('research/newsx',{gen:[],by:{[id]:{he:'אפל עקפה את התחזיות',what:'הכנסות 95 מיליארד',aff:[{sym:'AAPL',how:'direct',why:'החברה עצמה'}],sectors:['Technology'],themes:[],ev:'aapl-q4',at:now,level:'imp',cert:'fact'},x2:{he:'משהו',what:'טקסט',aff:[],sectors:[],themes:[],at:now,level:'info'}}});
+  s.setMeta('newsStatus',JSON.stringify({at:now,ok:5,of:6,fail:1,items:3,first:'MSFT: 404'}));
+  s.setDoc('alerts/pulse',{items:[{k:'a',lv:'crit',at:now},{k:'b',lv:'imp',at:now}]}); s.setDoc(`data/users/${U.f.id}/pulse`,{items:[{k:'c',lv:'upd',at:now}]});
+  const N=newsOps(s);
+  assert.equal(N.articles.total,3); assert.equal(N.articles.dup,1,'"Apple beats" and "Apple beats!" are one headline'); assert.equal(N.articles.noSrc,1);
+  assert.equal(N.reading.ai,2); assert.equal(N.impact.unlinked,1); assert.equal(N.impact.events3,1);
+  assert.deepEqual({a:N.personal.alerts,c:N.personal.crit,u:N.personal.users},{a:3,c:1,u:2}); assert.ok(!JSON.stringify(N.personal).includes(U.f.id),'nobody named');
+  assert.equal(N.sources[0].fail,1); assert.match(N.sources[0].first,/404/);
+});
+
+test('the quality check: rules over the readings, with what it found; a number not in the article and a sure-sounding forecast are flagged',()=>{
+  const s=mk(); const now=new Date().toISOString(), L=['https://a/1','https://a/2'], id=l=>createHash('sha1').update(l).digest('hex').slice(0,12);
+  s.setDoc('research/news',{items:[{title:'Nvidia revenue 35 billion',pub:'Reuters',link:L[0],syms:['NVDA'],at:now},{title:'Tesla news',pub:'CNBC',link:L[1],syms:['TSLA'],at:now}]});
+  s.setDoc('research/newsx',{by:{[id(L[0])]:{he:'אנבידיה',what:'הכנסות 35 מיליארד',aff:[{sym:'NVDA',how:'direct',why:'החברה המדווחת'}],at:now,cert:'fact'},
+    [id(L[1])]:{he:'טסלה תזנק',what:'צפויה עלייה של 40 אחוז',aff:[{sym:'TSLA',how:'direct',why:''},{sym:'GM',how:'direct',why:'מתחרה'}],at:now,kind:'opinion',cert:'fact'}}});
+  const Q=aiQuality(s); assert.equal(Q.n,2); const by=Object.fromEntries(Q.crit.map(c=>[c.k,c]));
+  assert.equal(by.numbers.ok,1); assert.equal(by.numbers.of,2); assert.equal(by.over.ok,1); assert.equal(by.cert.ok,1); assert.equal(by.cert.of,2); assert.equal(by.direct.ok,1); assert.equal(by.reason.ok,1);
+  assert.equal(Q.flags.length,1); assert.deepEqual(Q.flags[0].why.sort(),['דעה סומנה כעובדה','חברה מושפעת בלי הסבר','מספר שלא מופיע בכותרת או בתקציר','ניסוח נחרץ או המלצה','קשר ישיר לחברה שלא מוזכרת'].sort());
+  assert.match(Q.limits,/לא יודעת אם המסקנה נכונה/); assert.ok(Q.score>0&&Q.score<100);
+});
+
+test('the API of stage C: a partner refused everywhere; the sessions named by a hash, ended by "users", audited; the security posture without secrets',async()=>{
+  const {createApp,bootstrap}=await import('../server/index.js');
+  const store=new Store(':memory:'); bootstrap(store);
+  const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false});
+  const srv=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))}), base='http://127.0.0.1:'+srv.address().port, jar={};
+  const req=async(who,method,url,body)=>{const r=await fetch(base+url,{method,headers:{...(jar[who]?{cookie:jar[who]}:{}),'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+    const sc=r.headers.get('set-cookie'); if(sc)jar[who]=sc.split(';')[0]; let j=null; try{j=await r.json()}catch(e){} return {status:r.status,j}};
+  try{
+    store.addUser({email:'p3@x.co',password:'password1',role:'friend'}); store.addUser({email:'ad3@x.co',password:'password1',role:'admin'});
+    await req('p','POST','/api/login',{email:'p3@x.co',password:'password1'}); await req('p2','POST','/api/login',{email:'p3@x.co',password:'password1'});
+    await req('a','POST','/api/login',{email:'ad3@x.co',password:'password1'}); await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
+    for(const u of ['news','aiops','system','incidents','security','sessions'])assert.equal((await req('p','GET','/api/admin/'+u)).status,403,u);
+    for(const u of ['news','aiops?range=7','system?range=7','incidents','security'])assert.equal((await req('a','GET','/api/admin/'+u)).status,200,u);
+    let r=await req('a','GET','/api/admin/security'); assert.equal(r.j.sessions,undefined,'the sessions need "sensitive"'); assert.ok(r.j.checks.length>=8);
+    const raw=JSON.stringify(r.j); assert.ok(!/sk-|owner-pass|password1/.test(raw),'no secret in the posture');
+    assert.equal((await req('a','GET','/api/admin/sessions')).status,403);
+    r=await req('o','GET','/api/admin/sessions'); assert.equal(r.status,200);
+    const mine=r.j.items.filter(x=>x.email==='p3@x.co'); assert.equal(mine.length,2); assert.ok(mine.every(x=>/^[0-9a-f]{16}$/.test(x.h)),'a hash, never the id');
+    assert.ok(!JSON.stringify(r.j).includes(jar.p.split('=')[1]),'the session id itself never leaves');
+    // the admin ends one of the partner's two sessions
+    r=await req('a','POST','/api/admin/sessions/end',{h:mine[0].h,uid:mine[0].uid}); assert.equal(r.j.ended,1);
+    const alive=[(await req('p','GET','/api/me')).j.me,(await req('p2','GET','/api/me')).j.me].filter(Boolean).length; assert.equal(alive,1);
+    assert.equal((await req('a','POST','/api/admin/sessions/end',{h:'all',uid:store.userByEmail('owner@example.com').id})).status,400,'not the owner\'s');
+    assert.ok(store.db.prepare("select count(*) n from audit where action='session.end'").get().n>=1);
+    // the requests are measured; the incidents and the alerts' switch
+    r=await req('a','GET','/api/admin/system?range=today'); assert.ok(r.j.areas.some(x=>x.area==='admin'&&x.n>0),JSON.stringify(r.j.areas)+' '+JSON.stringify(store.db.prepare('select * from counters').all().slice(0,5))); assert.ok(r.j.res.rss>0);
+    assert.equal((await req('p','POST','/api/admin/alerts-cfg',{push:true,mail:true})).status,403);
+    r=await req('a','POST','/api/admin/alerts-cfg',{push:false,mail:true}); assert.deepEqual(r.j.cfg,{push:false,mail:true});
+    r=await req('a','POST','/api/admin/incidents/check',{}); assert.equal(r.status,200);
   }finally{srv.close()}
 });

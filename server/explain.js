@@ -3,6 +3,7 @@
 // report arrives, and kept with it; the security page, the system message and the e-mail all show the same text.
 // Every number in Claude's text must be one of the numbers it was given; a sentence with any other number is dropped.
 // Nothing here is advice: no buy, sell or hold, no forecast, no reason that the sources do not give.
+import {aiMeter} from './admin/counter.js';
 import {sendAllowed, wrapHtml, esc} from './mail.js';
 
 export const bigN=(x,c)=>{if(x==null||!isFinite(x))return null; const a=Math.abs(x), sy=!c||c==='USD'?'$':c==='ILS'?'₪':c+' ';
@@ -120,9 +121,9 @@ FACTS הוא JSON: המספרים מהדוח (רווח למניה מול צפי 
 
 FACTS:
 ${JSON.stringify(facts)}`;
-  try{const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:1500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
-    if(!r.ok){log('report explain failed: HTTP '+r.status);return null}
-    const j=await r.json(), t=((j.content||[]).find(x=>x.type==='text')||{}).text||'', m=t.match(/\{[\s\S]*\}/); if(!m)return null;
+  const t0=Date.now(); try{const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:1500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
+    if(!r.ok){log('report explain failed: HTTP '+r.status); aiMeter({feature:'explain',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return null}
+    const j=await r.json(); aiMeter({feature:'explain',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); const t=((j.content||[]).find(x=>x.type==='text')||{}).text||'', m=t.match(/\{[\s\S]*\}/); if(!m)return null;
     let raw; try{raw=JSON.parse(m[0])}catch(e){return null}
     const c=cleanText(raw,facts); if(!c.findings.length&&!c.explain&&!c.guidance)return null;
     return {...c,model:j.model||model,at:new Date().toISOString(),headlines:facts.headlines.length};
