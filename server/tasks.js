@@ -12,7 +12,7 @@ const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
 // every call out has a time limit, so one site that hangs cannot hold up the whole night (and every job queued after it)
 const fetchFor=(ms)=>(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||AbortSignal.timeout(ms)});
 // the owner's documents the page needs to run headless (nothing of the partners is read)
-export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/main','history/prices','history/daily','quotes/latest','research/latest','research/candidates','research/longterm','research/comove','research/news','research/newsx','alerts/ack','alerts/state'];
+export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/main','history/prices','history/daily','quotes/latest','research/latest','research/candidates','research/longterm','research/comove','research/news','research/newsx','alerts/ack','alerts/state','journal/main','alerts/pulse','news/state','research/insiders','research/ecocal'];
 export function ownerDocs(store){const out={}; for(const p of OWNER_DOCS){const d=store.getDoc(p); if(d.exists)out[p]=d.data} return out}
 const ownerUser=store=>{const o=store.users().find(u=>u.role==='owner'); return {uid:o?o.id:'owner',email:o?o.email:'',owner:true}};
 
@@ -135,8 +135,8 @@ export async function usSnapshot(store,now,log){
 // 30.10: and every partner who switched the morning summary on gets their own, from their own portfolio: the page run on
 // their documents (and the shared ones as they see them), to their own address; their state in meta astate:<id>
 export function partnerDocs(store,u){
-  const out={}; for(const n of ['portfolio','plan','settings','history','daily','ack','newsst']){const p=`data/users/${u.id}/${n}`, d=store.getDoc(p); if(d.exists)out[p]=d.data}
-  for(const p of ['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx']){const d=store.getDoc(p); if(d.exists)out[p]=partnerView(store,u,p,d.data)}
+  const out={}; for(const n of ['portfolio','plan','settings','history','daily','ack','newsst','journal','pulse']){const p=`data/users/${u.id}/${n}`, d=store.getDoc(p); if(d.exists)out[p]=d.data}
+  for(const p of ['quotes/latest','history/prices','research/latest','research/comove','research/longterm','research/news','research/newsx','research/insiders','research/ecocal']){const d=store.getDoc(p); if(d.exists)out[p]=partnerView(store,u,p,d.data)}
   return out}
 const MSEV={crit:'חריגה',warn:'לבדיקה',info:'מידע',ok:'תקין'}, MORDER={crit:0,warn:1,info:2,ok:3}, MCOLOR={crit:'#b42318',warn:'#b7791f',info:'#2464a8',ok:'#2f9e5b'};
 async function morningOne(store,{log,docs,user,state,repMail,send=sendAllowed}){

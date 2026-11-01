@@ -2117,6 +2117,27 @@ test('1.11 the finder: criteria of my own over the ranking (kept on the device),
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('1.11 the monthly review: the theses, what the journal says, the goals, new risks and the points to watch next month, each only from the documents',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const J0=store.getDoc('journal/main'), R0=store.getDoc('research/latest').data, S0=store.getDoc('settings/main').data, now=new Date();
+  const prev=(()=>{const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,15)); return d.toISOString().slice(0,7)})(), nxt=(()=>{const d=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),15)); return d.toISOString().slice(0,7)})();
+  store.setDoc('journal/main',{thesis:{NVDA:{why:'מובילה בשבבי AI',expect:'צמיחה',minus:'',plus:'',horizon:'long',at:prev+'-03T10:00:00Z',updatedAt:prev+'-03T10:00:00Z'}},entries:[{id:'e1',at:prev+'-05',t:'buy',sym:'MSFT',qty:1,px:470,why:'ענן',created:prev+'-05T10:00:00Z'},{id:'e2',at:prev+'-12',t:'lesson',why:'לא למכור אחרי יום אדום אחד',created:prev+'-12T10:00:00Z'},{id:'e3',at:prev+'-20',t:'expect',sym:'KO',expect:'דיבידנד יועלה ברבעון הבא',created:prev+'-20T10:00:00Z'}]},{silent:true});
+  store.setDoc('research/latest',{...R0,companies:{...R0.companies,MSFT:{...R0.companies.MSFT,next:nxt+'-25'}}},{silent:true});
+  store.setDoc('settings/main',{...S0,goal:300000,hsc:{[prev]:71}},{silent:true});
+  const dump=R=>R.R.blocks.map(b=>b.t==='h'?'## '+b.title+(b.sub?' — '+b.sub:''):b.t==='list'?b.lines.join('\n'):b.text||'').join('\n');
+  const {ctx,pg}=await open(1280);
+  try{
+    await pg.waitForFunction(()=>window.__rep&&window.__rep.ready(),null,{timeout:20000});
+    const R=await pg.evaluate(m=>window.__rep.build('month',m),prev); assert.ok(R&&R.R,'a monthly report'); const txt=dump(R);
+    assert.match(txt,/## תזות ההשקעה — 1 תזות כתובות; 1 נכתבו או עודכנו החודש/); assert.match(txt,/NVDA: נכתבה .*"מובילה בשבבי AI"/);
+    assert.match(txt,/## תובנות מהיומן — 3 רשומות בחודש/); assert.match(txt,/ציפייה 1 · טעות \/ תובנה 1 · קנייה 1/); assert.match(txt,/תובנה: "לא למכור אחרי יום אדום אחד"/);
+    assert.match(txt,/## עמידה ביעדים/); assert.match(txt,/הפקדות החודש: ₪[\d,]+ מול תוכנית של ₪600/); assert.match(txt,/היעד הכספי: ₪[\d,]+ מתוך ₪300,000/); assert.match(txt,/מדד איכות התיק: 71 מתוך 100; לא הבטחה לתשואה/);
+    assert.match(txt,/## נקודות למעקב בחודש הבא — מהלוחות, מהיומן ומהתזות; לא תחזית/); assert.match(txt,/דוח כספי: MSFT ב-25\./); assert.match(txt,/ציפייה פתוחה ביומן: KO "דיבידנד יועלה ברבעון הבא"/);
+    const n=(txt.match(/## /g)||[]).length, uniq=new Set(txt.split('\n').filter(l=>l.startsWith('## ')).map(l=>l.replace(/ — .*/,''))).size; assert.equal(n,uniq,'no section twice');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main'); store.setDoc('research/latest',R0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

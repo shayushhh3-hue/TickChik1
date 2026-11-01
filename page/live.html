@@ -21095,7 +21095,52 @@ function monthBlocks(S,ym,embedded){
   if(ch.length){B.push({t:'hbars',items:holdBars(ch,5)});B.push(holdTable(ch));B.push({t:'h',title:'איך זה מסתכם'});B.push(sumBlock(ch,r));B.push({t:'note',text:APPROX})} else B.push({t:'empty',text:'אין מחירי סוף חודש לחודש הזה.'});
   if(m)B.push(...holdSecs(m),...cashSec(m));
   const [a,b]=rangeDates(r); B.push(...activityBlocks(a,b,'תנועות בתיק בחודש'));
+  try{B.push(...reviewBlocks(ym,m||mAllNow()))}catch(e){console.error(e)}
   if(live){B.push({t:'h',title:'תוכנית ההגדלה'});B.push({t:'list',lines:[`יתרה להשקעה: ${txtOf('pBal')} · הוגדלו: ${txtOf('pDone')} · נשאר לממן: ${txtOf('pLeft')} · סיום משוער: ${txtOf('pEnd')}`,txtOf('depState')].filter(Boolean)});B.push(...alertBlocks())}
+  return B;
+}
+// ---- 1.11 (20): the monthly review's own sections, from the documents the page already holds, each only when it has
+// something to say: the exposures against the month's start, the economic events that touched the portfolio, the
+// theses (written or updated, and where each stands now), new risks (the anomalies now, the insiders' material
+// filings), the goals (the targets, the deposits against the plan, the goal), what the journal says, and the points
+// to watch next month (reports, declared dividends, open expectations, followed events, theses to review). Facts
+// and numbers from the documents; nothing repeated from the sections above ----
+function reviewBlocks(ym,m){
+  const B=[], from=ym+'-01', toD=new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),0)).toISOString().slice(0,10), inM=d=>!!d&&String(d).slice(0,7)===ym, nxt=(()=>{const d=new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7),1)); return d.toISOString().slice(0,7)})();
+  const H=(title,sub)=>B.push({t:'h',title,...(sub?{sub}:{})}), L=lines=>{if(lines.length)B.push({t:'list',lines})};
+  if(!m||!m.pos||!m.pos.length)return B;
+  // 1. the exposures against the start of the month (the prices then, today's quantities)
+  try{const pts=(DY&&DY.points)||{}, ds=Object.keys(pts).sort(), d0=ds.find(d=>d>=from&&pts[d]&&pts[d].px); const pt=d0&&pts[d0];
+    if(pt&&pt.fx){let T=0; const val={}; for(const p of m.pos){const px=pt.px[p.sym]; if(!(px>0))continue; val[p.sym]=p.qty*px*(p.ccy==='USD'?pt.fx:1); T+=val[p.sym]}
+      if(T>0){const G={}; for(const p of m.pos)if(val[p.sym]!=null)G[p.group]=(G[p.group]||0)+val[p.sym]/T*100; const rows=Object.keys(GROUPS).filter(k=>k!=='cash'&&(G[k]||(m.groups[k]||{w:0}).w)).map(k=>({k,a:G[k]||0,b:(m.groups[k]||{w:0}).w})).filter(x=>Math.abs(x.b-x.a)>=1.5).sort((x,y)=>Math.abs(y.b-y.a)-Math.abs(x.b-x.a));
+        const top0=Object.entries(val).sort((x,y)=>y[1]-x[1])[0], top1=m.pos[0]; if(rows.length||(top0&&top1&&top0[0]!==top1.sym)){H('שינויים בריכוזיות ובחשיפות',`מול ${dmy(d0)} (המחירים של אז עם הכמויות של היום)`);
+          L([...rows.slice(0,5).map(x=>`${GROUPS[x.k]||x.k}: ${pct(x.a,0)} ← ${pct(x.b,0)} (${x.b>x.a?'+':''}${(x.b-x.a).toFixed(1)} נק׳)`),...(top0&&top1&&top0[0]!==top1.sym?[`הנייר הגדול ביותר התחלף: ${lab(top0[0])} ← ${lab(top1.sym)} (${pct(top1.w,1)})`]:[]),`דולר: ${pct(m.usdPct,0)} מהתיק היום`])}}}}catch(e){}
+  // 2. the economic events that touched the portfolio
+  try{const A=((PULSE&&PULSE.items)||[]).filter(a=>a&&(inM(a.first||a.at)||inM(a.up))&&['crit','imp'].includes(a.lv)).sort((a,b)=>(b.lv==='crit')-(a.lv==='crit')||String(b.up||b.at).localeCompare(String(a.up||a.at)));
+    if(A.length){H('אירועים כלכליים שנגעו לתיק בחודש',`${A.length} התראות ברמה חשוב ומעלה; מתוך מרכז ההתראות`); L(A.slice(0,7).map(a=>`${dmy(a.first||a.at)} · ${a.lv==='crit'?'קריטי':'חשוב'}: ${a.title}${(a.holds||[]).length?' ('+a.holds.slice(0,3).map(h=>h.sym).join(', ')+')':''}`))}}catch(e){}
+  // 3. the theses
+  try{const TH=jrn().thesis||{}, ks=Object.keys(TH).filter(k=>TH[k]&&TH[k].why); if(ks.length){const changed=ks.filter(k=>inM(TH[k].updatedAt||TH[k].at)), st=ks.map(k=>{let R=null; try{R=thesisEval(k)}catch(e){} return {k,st:R?R.status:'none',n:R?R.ev.length:0}});
+      H('תזות ההשקעה',`${ks.length} תזות כתובות${changed.length?'; '+changed.length+' נכתבו או עודכנו החודש':''}`); L([...changed.slice(0,4).map(k=>`${k}: ${TH[k].updatedAt&&TH[k].updatedAt!==TH[k].at?'עודכנה':'נכתבה'} ${dmy(TH[k].updatedAt||TH[k].at)}: "${imCut(TH[k].why,100)}"`),...st.filter(x=>x.st!=='none').slice(0,8).map(x=>`${x.k}: ${TH_ST[x.st][0]}${x.n?' ('+x.n+' עדויות מהחדשות)':''}`)])}}catch(e){}
+  // 4. new risks: the anomalies now and the insiders' material filings of the month
+  try{const an=anomaliesOf(m).slice(0,5), ins=[]; for(const p of m.pos)for(const f of insOf(p.sym))if(f.material&&inM(f.filedAt))ins.push(`${p.sym}: ${INS_KH[f.kind]} של ${f.owner} (${f.role}), $${Math.round(f.value).toLocaleString('en-US')}${f.plan?', בתוכנית מתוכננת':''}`);
+    if(an.length||ins.length){H('סיכונים חדשים ודברים שיצאו מהרגיל',an.length?'מה שחורג היום מהטווח הרגיל, ודיווחי בעלי עניין מהותיים בחודש':'דיווחי בעלי עניין מהותיים בחודש'); L([...an.map(a=>`${a.what} (${a.vs}${a.cause?'; '+a.cause.text:'; סיבה מאומתת לא נמצאה'})`),...ins.slice(0,5)])}}catch(e){}
+  // 5. the goals
+  try{const tg=S.targets||{}, tsum=Object.values(tg).reduce((t,v)=>t+(+v||0),0), dr=+((S.rules||{}).drift)||0, lines=[];
+    if(tsum>0){const off=Object.keys(GROUPS).filter(k=>k!=='cash').map(k=>({k,d:(m.groups[k]||{w:0}).w-(+tg[k]||0)})).filter(x=>Math.abs(x.d)>=(dr||5)); lines.push(off.length?`יעדי ההקצאה: ${off.length} קבוצות רחוקות מהיעד ב-${dr||5} נק׳ ומעלה (${off.map(x=>`${GROUPS[x.k]} ${x.d>0?'+':''}${x.d.toFixed(0)}`).join(', ')})`:'יעדי ההקצאה: כל הקבוצות בטווח שקבעת')}
+    const plan=MTOT(); if(plan>0){let dep=0; for(const a of (HS&&HS.accounts)||[])for(const d of a.deposits||[])if(d&&inM(d.date))dep+=+d.amount||0; lines.push(`הפקדות החודש: ${ils(dep)} מול תוכנית של ${ils(plan)} (${pct(plan?dep/plan*100:0,0)})`)}
+    const goal=+S.goal||0; if(goal>0){const tr=Math.max(0,+S.taxPct||0)/100, netNow=m.total-Math.max(0,m.pnl||0)*tr; lines.push(`היעד הכספי: ${ils(netNow)} מתוך ${ils(goal)} אחרי מס משוער (${pct(Math.min(100,netNow/goal*100),0)}); ${whenH(goalMonths(m.total,plan,+S.ratePct||0,m.pnl,goal))}`)}
+    const hsc=S.hsc||{}, prevYm=(()=>{const d=new Date(Date.UTC(+ym.slice(0,4),+ym.slice(5,7)-2,1)); return d.toISOString().slice(0,7)})(); if(hsc[ym]!=null||hsc[prevYm]!=null){let Hs=null; try{Hs=healthOf(m)}catch(e){} lines.push(`מדד איכות התיק: ${hsc[ym]!=null?hsc[ym]:(Hs?Hs.score:'—')}${hsc[prevYm]!=null?' (חודש קודם '+hsc[prevYm]+')':''} מתוך 100; לא הבטחה לתשואה`)}
+    if(lines.length){H('עמידה ביעדים'); L(lines)}}catch(e){}
+  // 6. what the journal says
+  try{const J=jrnList(), inJ=J.filter(e=>inM(e.at)), outs=J.filter(e=>e.out&&e.out.v&&inM(e.out.at)), lessons=inJ.filter(e=>e.t==='lesson'&&(e.why||e.expect)); if(inJ.length||outs.length){const by={}; for(const e of inJ)by[e.t]=(by[e.t]||0)+1;
+      H('תובנות מהיומן',`${inJ.length} רשומות בחודש`); L([...(inJ.length?[Object.entries(by).map(([k,n])=>`${JRN_K[k]||k} ${n}`).join(' · ')]:[]),...outs.slice(0,4).map(e=>`${e.sym||''} ${JRN_K[e.t]||''} מ-${dmy(e.at)}: ${JRN_OUT[e.out.v]}${e.out.text?' — '+imCut(e.out.text,90):''}`),...lessons.slice(0,3).map(e=>`תובנה: "${imCut(e.why||e.expect,120)}"`)])}}catch(e){}
+  // 7. the points to watch next month
+  try{const lines=[], C=(RS&&RS.companies)||{}; for(const p of m.pos){const c=C[p.sym]; if(c&&c.next&&String(c.next).slice(0,7)===nxt)lines.push(`דוח כספי: ${p.sym} ב-${dmy(c.next)}${c.nextEst?' (משוער)':''}`)}
+    try{const D=divAheadOf(m); for(const r of D.rows)for(const d of r.declared)if(String(d.pay||d.ex).slice(0,7)===nxt)lines.push(`דיבידנד שהוכרז: ${r.sym} ${r.ccy}${d.amt} למניה, תשלום ${dmy(d.pay||d.ex)} (${ils(d.inc||0)} ברוטו)`)}catch(e){}
+    for(const e of jrnList().filter(e=>e.t==='expect'&&!(e.out&&e.out.v)).slice(0,3))lines.push(`ציפייה פתוחה ביומן: ${e.sym||''} "${imCut(e.expect||e.why,90)}"`);
+    try{const F=evFol(); for(const [ev,f] of Object.entries(F))if(f&&f.at&&!f.off){const T=evTimeline(ev); const he=T.length?T[T.length-1].it.x.he:ev; lines.push(`אירוע במעקב: ${imCut(he,80)}`); if(lines.length>12)break}}catch(e){}
+    try{for(const k of Object.keys(jrn().thesis||{})){const R=thesisEval(k); if(R.status==='review'||R.status==='down')lines.push(`תזה לבדיקה: ${k} (${TH_ST[R.status][0]})`)}}catch(e){}
+    if(lines.length){H('נקודות למעקב בחודש הבא','מהלוחות, מהיומן ומהתזות; לא תחזית'); L(lines.slice(0,12))}}catch(e){}
   return B;
 }
 function buildRange(kind,key){
