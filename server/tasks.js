@@ -45,7 +45,7 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
       if(isIlFund(key)){d=await mayaFundSeries(key,{pageSize:300}); src='מאיה (הבורסה)'; if(!d.d.length)throw new Error('Maya: no prices')}
       else{try{if(yahooOff)throw Object.assign(new Error('Yahoo rate-limited this run'),{rate:true}); d=await series(t,'1y','1d'); if(oldW)w=oldW; else try{w=await series(t,'5y','1wk')}catch(e){if(e.rate)Y429++}}
         catch(e){if(Y429>=3&&!yahooOff){yahooOff=true; fails.push('Yahoo: rate-limited, the rest from Stooq')} if(!/^[A-Z][A-Z.\-]{0,5}$/.test(key))throw e; d=await stooqSeries(t); src='Stooq'; if(oldW)w=oldW}}
-      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3){doc.w=w; if(w!==oldW)doc.wAt=now.toISOString()}
+      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,...(d.v?{v:d.v}:{}),updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3){doc.w=w; if(w!==oldW)doc.wAt=now.toISOString()}
       store.setDoc('quotes/c_'+key.replace(':','_'),doc); ok++}
     catch(e){fails.push(key+': '+e.message)}
     await new Promise(r=>setTimeout(r,yahooOff?150:600));
@@ -100,9 +100,10 @@ async function series(t,range,interval){
   if(r.status===429){Y429++; throw Object.assign(new Error('HTTP 429 (Yahoo rate limit)'),{rate:true})} if(r.ok)Y429=0;
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json(); const res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)throw new Error('no result');
-  const off=+res.meta.gmtoffset||0, k=res.meta.currency==='ILA'?0.01:1, cl=((res.indicators||{}).quote||[{}])[0].close||[];
-  const d=[],c=[]; (res.timestamp||[]).forEach((ts,i)=>{if(cl[i]!=null&&cl[i]>0){d.push(new Date((ts+off)*1000).toISOString().slice(0,10));c.push(Math.round(cl[i]*k*1e4)/1e4)}});
-  if(!d.length)throw new Error('empty'); return {d,c};
+  const off=+res.meta.gmtoffset||0, k=res.meta.currency==='ILA'?0.01:1, q0=((res.indicators||{}).quote||[{}])[0], cl=q0.close||[], vo=q0.volume||[];
+  // 1.11: the day's volume beside the close (daily series only), for "an unusual volume" in the anomalies
+  const d=[],c=[],v=[]; let anyV=false; (res.timestamp||[]).forEach((ts,i)=>{if(cl[i]!=null&&cl[i]>0){d.push(new Date((ts+off)*1000).toISOString().slice(0,10));c.push(Math.round(cl[i]*k*1e4)/1e4); v.push(vo[i]!=null?+vo[i]:null); if(vo[i]!=null)anyV=true}});
+  if(!d.length)throw new Error('empty'); return anyV&&interval==='1d'?{d,c,v}:{d,c};
 }
 // the nightly GitHub mirror of the nasdaq.com screener → quotes/all and the bucket series quotes/h_<prefix>
 export async function usSnapshot(store,now,log){

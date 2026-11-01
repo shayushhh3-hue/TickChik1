@@ -2065,7 +2065,8 @@ test('1.11 anomalies: a day far outside the security\'s own range, an analysts\'
   const C0=store.getDoc('quotes/c_NVDA').data, R0=store.getDoc('research/latest').data, now=new Date();
   // NVDA: a calm year (±0.3% a day) before today's −2.4%; MSFT: a target raised 10% in the last run
   const d=[], c=[]; let v=186.5; for(let i=260;i>=1;i--){const t=new Date(now.getTime()-i*864e5); if(t.getUTCDay()===0||t.getUTCDay()===6)continue; v=Math.round(v*(1+(i%2?0.003:-0.003))*100)/100; d.push(t.toISOString().slice(0,10)); c.push(v)}
-  store.setDoc('quotes/c_NVDA',{...C0,d,c},{silent:true});
+  const vol=c.map(()=>20e6); vol[vol.length-1]=70e6;   // the last day: 3.5 times the usual volume
+  store.setDoc('quotes/c_NVDA',{...C0,d,c,v:vol},{silent:true});
   store.setDoc('research/latest',{...R0,companies:{...R0.companies,MSFT:{...R0.companies.MSFT,chg:[{at:new Date(now.getTime()-2*864e5).toISOString(),f:'target',from:500,to:560}]}}},{silent:true});
   const {ctx,pg}=await open(390);
   try{
@@ -2075,6 +2076,7 @@ test('1.11 anomalies: a day far outside the security\'s own range, an analysts\'
     assert.ok(px&&/NVDA .?−2\.4% ביום המסחר האחרון/.test(px.txt),px&&px.txt); assert.match(px.txt,/ביחס למה: יום רגיל שלה בשנה האחרונה זז כ-±0\.\d% .*זה פי \d+/); assert.match(px.txt,/סיבה מאומתת: לא נמצאה בחדשות של הדף; הדף לא ממציא סיבה/); assert.match(px.txt,/ביטחון: גבוה \(מדידה מהמחירים\)/);
     assert.ok(fig&&/MSFT: יעד המחיר הממוצע עלה מ-\$500 ל-\$560/.test(fig.txt),fig&&fig.txt); assert.match(fig.txt,/מול הריצה הקודמת של המחקר/); assert.match(fig.txt,/דעת אנליסטים, לא עובדה על החברה/);
     assert.ok(!r.items.some(x=>/KO|Coca/.test(x.txt)),'a normal mover is not an anomaly');
+    const vm=r.items.find(x=>/an-volm/.test(x.cls)); assert.ok(vm&&/NVDA: מחזור מסחר פי 3\.5 מהרגיל/.test(vm.txt),vm&&vm.txt); assert.match(vm.txt,/70 מיליון מניות מול ממוצע של 20 מיליון/);
     const f=await pg.evaluate(()=>window.__focus('anom')); assert.equal(f.kind,'anom'); assert.ok(f.data.anomalies.some(a=>a.symbol==='NVDA'&&/לא נמצאה/.test(a.verified_cause))); assert.match(f.data.rule,/לא להמציא סיבה/);
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true}); store.setDoc('research/latest',R0,{silent:true})}
