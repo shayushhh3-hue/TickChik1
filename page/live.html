@@ -2046,6 +2046,15 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (9): the journal: the form, the filters, the entries by month, what came of them */
+.jrn{display:flex;flex-direction:column;gap:10px} .jrn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px} .jrn-row.jrn-qty{grid-template-columns:1fr 1fr} .jrn-f input,.jrn-f select{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:38px;min-width:0;width:100%}
+.jrn-st{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2);padding:8px 10px;border-radius:10px;background:var(--surface2,rgb(127 127 127 / .08))} .jrn-filt{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px} .jrn-filt select,.jrn-filt input{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.jrn-m{margin:6px 0 0;font-size:14px;color:var(--ink2)} .jrn-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px} .jrn-e{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14px;line-height:1.5} .jrn-e p{margin:4px 0} .jrn-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px} .jrn-h .sym{font-family:var(--mono);font-weight:700}
+.jrn-e.t-buy .jrn-t{background:rgb(16 185 129 / .15)} .jrn-e.t-sell .jrn-t{background:rgb(239 68 68 / .15)} .jrn-e.t-lesson .jrn-t{background:rgb(245 158 11 / .18)} .jrn-e .up{color:var(--gain)} .jrn-e .down{color:var(--loss)}
+.jrn-out{padding:6px 10px;border-radius:8px;background:rgb(127 127 127 / .1)} .jrn-out.o-right,.nx-tag.o-right{background:rgb(16 185 129 / .15)} .jrn-out.o-wrong,.nx-tag.o-wrong{background:rgb(239 68 68 / .15)} .jrn-out.o-mixed,.nx-tag.o-mixed{background:rgb(245 158 11 / .18)}
+.jrn-outf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px} .jrn-of{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px} .jrn-of input{flex:1 1 180px;font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0} .jrn-acts{display:flex;gap:12px;margin-top:6px;font-size:13px} .jrn-open{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px} .jrn-open li{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.jrn-l.sm .jrn-t{font-size:11px} .sec-jrn{margin-top:10px} .sec-jrn h3{margin:0 0 6px;font-size:14px}
+@media (max-width:560px){.jrn-row{grid-template-columns:1fr 1fr} .jrn-row label:nth-child(3){grid-column:1/-1}}
 /* 1.11: the simulator: the form of an action, the list, before and after, the allocation lab */
 .sim{display:flex;flex-direction:column;gap:8px} .sim-f{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .sim-f select,.sim-f input{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:38px;max-width:150px} .sim-f input[type=number]{width:110px} .sim-sym input{width:120px;font-family:var(--mono)}
 .sim-acts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px} .sim-g{display:flex;flex-direction:column;font-size:13.5px} .sim-r{display:grid;grid-template-columns:1fr 92px 92px;gap:4px 8px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);min-width:0} .sim-g.lab .sim-r{grid-template-columns:1fr 64px 64px 60px} .sim-r.h{font-weight:600;color:var(--ink2);font-size:12.5px} .sim-r>span{min-width:0;overflow-wrap:anywhere} .sim-r .n{font-family:var(--mono)} .sim-r .n small{display:block;font-family:var(--sans);font-size:11.5px;color:var(--ink2)} .sim-r .up{color:var(--gain)} .sim-r .down{color:var(--loss)} .sim-r .gap{grid-column:1/-1;font-size:12.5px;color:var(--ink2)}
@@ -2588,6 +2597,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <button type="button" role="tab" id="tab_forecast" data-tab="forecast" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>יעד ותרחישים</span></button>
     <button type="button" role="tab" id="tab_history" data-tab="history" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
     <button type="button" role="tab" id="tab_reports" data-tab="reports" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg><span>דוחות</span></button>
+    <button type="button" role="tab" id="tab_journal" data-tab="journal" aria-selected="false" hidden><span>יומן ההשקעות</span></button>
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
     <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
@@ -3001,6 +3011,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <div id="backWrap" style="display:flex;flex-direction:column;gap:22px"></div>
   </div>
 
+  <div class="pane" data-pane="journal" hidden>
+    <section aria-labelledby="hJrn" id="jrnSec">
+      <div class="row"><h2 id="hJrn">יומן ההשקעות: מה עשיתי, למה, ומה יצא מזה</h2><span class="sub">קניות, מכירות, החלטות לא לפעול, ציפיות, הערות וטעויות. נשמר בחשבון שלך; נשלח לצ׳יקו רק כשאתה שואל</span></div>
+      <div class="panel jrn" id="jrnBox"></div>
+    </section>
+  </div>
   <div class="pane" data-pane="reports" hidden>
     <section aria-labelledby="hRep">
       <h2 id="hRep">דוחות</h2>
@@ -19903,7 +19919,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):f.kind==='journal'?JRN_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -23781,6 +23797,99 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const d=t.closest('[data-thdel]'); if(d){if(!canWrite)return; const sym=d.dataset.thdel, J=JRN=jrn(), old=(J.thesis||{})[sym]; if(!old)return; delete J.thesis[sym]; TH_EDIT.delete(sym); jrnSave(); offerUndo('התזה נמחקה',()=>{JRN=jrn(); JRN.thesis[sym]=old; jrnSave(); try{renderSec()}catch(x){}}); try{renderSec()}catch(x){} try{renderLater()}catch(x){} return}});
 function secThesis(it){if(!it||!it.sym||it.t==='I')return ''; const held=((P&&P.positions)||[]).some(p=>p.sym===it.sym), has=!!((jrn().thesis||{})[it.sym]||{}).why; if(!held&&!has&&!wmarks().includes(it.sym))return '';
   return thesisH(it.sym,{sec:true,edit:TH_EDIT.has(it.sym),title:held?'התזה שלי על הנייר':'התזה שלי (במעקב)'})}
+// ---- 1.11 (9): the journal: entries a person writes (a buy, a sale, a decision not to act, an expectation, a note, a
+// mistake or a lesson), each with the reason, what was expected, a news event attached, and later what came of it, in the
+// person's own words. The page sets beside a buy or a sale the price since (a fact), and says a price move is not a
+// verdict on the decision. Trades read from the statements that are not yet in the journal are offered, never written in.
+// Searched by security, kind, dates and words. The thesis of a security and the DNA read the same entries ----
+const JRN_K={buy:'קנייה',sell:'מכירה',hold:'החלטה לא לפעול',expect:'ציפייה',note:'הערה',lesson:'טעות / תובנה'};
+const JRN_OUT={right:'התממש',wrong:'לא התממש',mixed:'חלקית'};
+let JF={sym:'',t:'',from:'',to:'',q:''}, JRN_EDIT=null, JRN_PRE=null, JRN_OUTE=null;
+const jrnList=()=>(jrn().entries||[]).slice().sort((a,b)=>String(b.at)<String(a.at)?-1:String(b.at)>String(a.at)?1:String(b.created||'')<String(a.created||'')?-1:1);
+const jrnBySym=sym=>jrnList().filter(e=>e.sym===sym);
+// the trades in the statements (the history document) that no entry carries yet: offered to be written up
+function jrnTradesOpen(days=240){
+  const have=new Set((jrn().entries||[]).map(e=>e.tk).filter(Boolean)), since=new Date(Date.now()-days*864e5).toISOString().slice(0,10), out=[];
+  for(const a of (HS&&HS.accounts)||[])for(const t of a.trades||[]){if(t.div||!t.sym||!t.date||t.date<since)continue; const q=+t.qty||0; if(!q)continue; const tk=`${a.acct}|${t.date}|${t.sym}|${q}`; if(have.has(tk))continue;
+    out.push({tk,acct:a.acct,at:t.date,sym:t.sym,qty:Math.abs(q),px:+t.px||null,ccy:t.ccy||(a.ccy==='USD'?'USD':'ILS'),t:q>0?'buy':'sell'})}
+  return out.sort((a,b)=>a.at<b.at?1:-1).slice(0,12)}
+// the price since an entry: a fact beside the decision, never its grade
+function jrnSince(e){if(!e.sym||!(e.px>0)||!['buy','sell','expect','hold'].includes(e.t))return null; let now=null, ccy=e.ccy||'USD'; try{const q=Q&&Q.prices&&Q.prices[e.sym]; if(q>0){now=q; ccy=ccyOfPos({sym:e.sym},Q)||ccy} else{const pr=priceOf(e.sym); if(pr&&pr.px>0&&pr.ccy!=='PTS'){now=pr.px; ccy=pr.ccy}}}catch(x){} if(!(now>0))return null; return {px:+e.px,now,ccy,pct:(now/+e.px-1)*100}}
+// what the journal says in numbers (the DNA reads this too)
+function jrnStats(L){L=L||jrnList(); const by={}, out={right:0,wrong:0,mixed:0,open:0}, syms={}, mo={}; let withWhy=0, withExp=0, withEv=0;
+  for(const e of L){by[e.t]=(by[e.t]||0)+1; if(e.sym)syms[e.sym]=(syms[e.sym]||0)+1; if(e.why)withWhy++; if(e.expect)withExp++; if(e.ev)withEv++; mo[String(e.at||'').slice(0,7)]=(mo[String(e.at||'').slice(0,7)]||0)+1;
+    if(['buy','sell','expect','hold'].includes(e.t)){if(e.out&&e.out.v)out[e.out.v]=(out[e.out.v]||0)+1; else out.open++}}
+  // the hold time: a sale that follows a buy of the same security in the journal
+  const holds=[]; for(const sE of L.filter(e=>e.t==='sell'&&e.sym)){const b=L.filter(e=>e.t==='buy'&&e.sym===sE.sym&&e.at<=sE.at).sort((x,y)=>x.at<y.at?1:-1)[0]; if(b)holds.push((new Date(sE.at)-new Date(b.at))/864e5)}
+  const months=Object.keys(mo).sort(), pace=months.length?L.length/Math.max(1,months.length):0;
+  return {n:L.length,by,out,withWhy,withExp,withEv,top:Object.entries(syms).sort((a,b)=>b[1]-a[1]).slice(0,5),holdDays:holds.length?holds.reduce((a,b)=>a+b,0)/holds.length:null,holdN:holds.length,pace,first:L.length?L[L.length-1].at:null,last:L.length?L[0].at:null}}
+// the events of the news a person can attach: the latest ones with a key, and the followed ones
+function jrnEvents(){const F=evFol(), by=new Map(); try{for(const it of newsAll()){const x=it.x; if(!x||!x.ev||/^id:/.test(x.ev))continue; const o=by.get(x.ev); const at=it.at||it.seen||''; if(!o||at>o.at)by.set(x.ev,{k:x.ev,he:x.he||it.title,at,fol:!!(F[x.ev]&&F[x.ev].at&&!F[x.ev].off)})}}catch(e){}
+  return [...by.values()].sort((a,b)=>(b.fol-a.fol)||(b.at<a.at?-1:1)).slice(0,40)}
+function jrnFormH(e){
+  e=e||{}; const held=((P&&P.positions)||[]).map(p=>p.sym).filter((k,i,A)=>A.indexOf(k)===i), W=wmarks().filter(k=>!held.includes(k)), EV=jrnEvents(), today=new Date().toISOString().slice(0,10);
+  const o=(v,l,cur)=>`<option value="${esc(v)}"${cur===v?' selected':''}>${esc(l)}</option>`;
+  return `<form class="th-f jrn-f" id="jrnForm" data-id="${esc(e.id||'')}"${e.tk?` data-tk="${esc(e.tk)}"`:''}>
+    <div class="jrn-row"><label>תאריך<input type="date" data-j="at" value="${esc(e.at||today)}" max="${today}" required></label>
+      <label>סוג<select data-j="t">${Object.entries(JRN_K).map(([k,v])=>o(k,v,e.t||'buy')).join('')}</select></label>
+      <label>נייר<input list="jrnSyms" data-j="sym" value="${esc(e.sym||'')}" maxlength="14" placeholder="סימול (לא חובה)" autocomplete="off" style="text-transform:uppercase;font-family:var(--mono)"><datalist id="jrnSyms">${held.map(k=>o(k,lab(k))).join('')}${W.map(k=>o(k,lab(k))).join('')}</datalist></label></div>
+    <div class="jrn-row jrn-qty"><label>כמות<input type="number" data-j="qty" value="${e.qty||''}" min="0" step="0.0001" inputmode="decimal" placeholder="לא חובה"></label><label>מחיר ליחידה<input type="number" data-j="px" value="${e.px||''}" min="0" step="0.01" inputmode="decimal" placeholder="לא חובה"></label></div>
+    <label>למה? הסיבה להחלטה<textarea data-j="why" rows="2" maxlength="800" placeholder="מה הביא אותי לזה: מה ראיתי, מה חשבתי, מה שקלתי">${esc(e.why||'')}</textarea></label>
+    <label>מה אני מצפה שיקרה, ועד מתי<textarea data-j="expect" rows="2" maxlength="600" placeholder="ציפייה אישית, לא תחזית: מה אני מצפה שיקרה ומתי אבדוק">${esc(e.expect||'')}</textarea></label>
+    <label>אירוע מהחדשות (לא חובה)<select data-j="ev"><option value="">בלי אירוע</option>${EV.map(v=>`<option value="${esc(v.k)}" data-he="${esc(v.he)}"${e.ev&&e.ev.k===v.k?' selected':''}>${v.fol?'★ ':''}${esc(imCut(v.he,70))}</option>`).join('')}${e.ev&&!EV.some(v=>v.k===e.ev.k)?`<option value="${esc(e.ev.k)}" data-he="${esc(e.ev.he||'')}" selected>${esc(imCut(e.ev.he||e.ev.k,70))}</option>`:''}</select></label>
+    <div class="acts"><button type="submit" class="btn pri sm">${e.id?'לעדכן':'לשמור ביומן'}</button>${e.id||JRN_PRE?`<button type="button" class="btn sm" data-jrncancel="1">ביטול</button>`:''}</div></form>`}
+function jrnEntryH(e){
+  const since=jrnSince(e), th=!!((jrn().thesis||{})[e.sym]||{}).why, out=e.out&&e.out.v?e.out:null;
+  return `<li class="jrn-e t-${esc(e.t)}" data-jid="${esc(e.id)}"><div class="jrn-h"><span class="nm">${dmy(e.at)}</span><span class="nx-tag jrn-t">${JRN_K[e.t]||e.t}</span>${e.sym?`<button type="button" class="lnk sym" data-gosec="${esc(e.sym)}">${esc(e.sym)}</button>`:''}${e.qty?`<span class="nm">${e.qty} יח׳${e.px?' ב-'+e.px+(e.ccy==='ILS'?' ₪':' $'):''}</span>`:e.px?`<span class="nm">מחיר ${e.px}</span>`:''}${e.from==='trade'?'<span class="nx-tag">מהדוח</span>':''}</div>
+    ${e.why?`<p><b>למה:</b> ${esc(e.why)}</p>`:''}${e.expect?`<p><b>ציפייה:</b> ${esc(e.expect)}</p>`:''}
+    ${e.ev?`<p class="nm">אירוע: <button type="button" class="lnk" data-story="${esc(e.ev.k)}">${esc(e.ev.he||e.ev.k)}</button></p>`:''}
+    ${since?`<p class="nm">מאז: המחיר ${since.px} ← ${Math.round(since.now*100)/100} (<span class="${since.pct>=0?'up':'down'}">${since.pct>=0?'+':''}${since.pct.toFixed(1)}%</span>). תנועת מחיר היא עובדה, לא ציון להחלטה.</p>`:''}
+    ${th&&e.sym?`<p class="nm">יש תזה על ${esc(e.sym)}: <button type="button" class="lnk" data-gosec="${esc(e.sym)}">לפתוח</button></p>`:''}
+    ${out?`<p class="jrn-out o-${esc(out.v)}"><b>מה יצא מזה (${dmy(out.at)}): ${JRN_OUT[out.v]}.</b> ${esc(out.text||'')}</p>`:JRN_OUTE&&JRN_OUTE.id===e.id?`<form class="jrn-of" data-jrnof="${esc(JRN_OUTE.v)}"><b>${JRN_OUT[JRN_OUTE.v]}.</b> <input type="text" maxlength="600" placeholder="מה קרה בפועל, ומה למדתי? (לא חובה)" aria-label="מה יצא מזה"><button type="submit" class="btn sm pri">לשמור</button><button type="button" class="btn sm" data-jrnofc="1">ביטול</button></form>`:['buy','sell','expect','hold'].includes(e.t)&&canWrite?`<div class="jrn-outf"><span class="nm">מה יצא מזה?</span>${Object.entries(JRN_OUT).map(([k,v])=>`<button type="button" class="btn sm" data-jrnout="${k}">${v}</button>`).join('')}</div>`:''}
+    ${canWrite?`<div class="jrn-acts"><button type="button" class="lnk" data-jrnedit="1">לערוך</button>${out?`<button type="button" class="lnk" data-jrnoutclr="1">לבטל את התוצאה</button>`:''}<button type="button" class="lnk" data-jrndel="1">למחוק</button></div>`:''}</li>`}
+function jrnH(){
+  const all=jrnList(), st=jrnStats(all), open=jrnTradesOpen(), q=JF.q.trim().toLowerCase();
+  const L=all.filter(e=>(!JF.sym||e.sym===JF.sym)&&(!JF.t||e.t===JF.t)&&(!JF.from||e.at>=JF.from)&&(!JF.to||e.at<=JF.to)&&(!q||[e.why,e.expect,e.sym,e.ev&&e.ev.he,e.out&&e.out.text].some(x=>x&&String(x).toLowerCase().includes(q))));
+  const syms=[...new Set(all.map(e=>e.sym).filter(Boolean))].sort();
+  const form=JRN_EDIT?jrnFormH(all.find(e=>e.id===JRN_EDIT)||null):jrnFormH(JRN_PRE);
+  const stats=all.length?`<div class="jrn-st"><span><b>${st.n}</b> רשומות${st.first?` מ-${dmy(st.first)}`:''}</span>${Object.entries(st.by).map(([k,n])=>`<span>${JRN_K[k]||k}: <b>${n}</b></span>`).join('')}
+      <span>תוצאות: <b>${st.out.right}</b> התממשו · <b>${st.out.wrong}</b> לא · <b>${st.out.mixed}</b> חלקית · <b>${st.out.open}</b> פתוחות</span>${st.holdN?`<span>זמן החזקה ממוצע ביומן: <b>${Math.round(st.holdDays)}</b> ימים (${st.holdN})</span>`:''}${st.top.length?`<span>הכי הרבה: ${st.top.slice(0,3).map(([k,n])=>`${esc(k)} (${n})`).join(', ')}</span>`:''}</div>`:'';
+  const openH=open.length&&canWrite?`<details class="nx-more" open><summary>תנועות מהדוחות שעוד לא ביומן (${open.length})</summary><ul class="jrn-open">${open.map(t=>`<li><span class="nm">${dmy(t.at)}</span> ${JRN_K[t.t]} <b>${esc(t.sym)}</b> ${t.qty} יח׳${t.px?' ב-'+t.px:''} <button type="button" class="btn sm" data-jrnfrom="${esc(t.tk)}">לתעד: למה?</button></li>`).join('')}</ul><p class="nm">מהדוחות שקראת. היומן לא כותב אותן לבד: הסיבה היא שלך.</p></details>`:'';
+  const months=[]; for(const e of L){const m=String(e.at||'').slice(0,7); let g=months[months.length-1]; if(!g||g.m!==m){g={m,L:[]}; months.push(g)} g.L.push(e)}
+  const mName=m=>{const [y,mm]=m.split('-'); return ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'][+mm-1]+' '+y};
+  const filt=`<div class="jrn-filt"><select data-jf="sym" aria-label="נייר"><option value="">כל הניירות</option>${syms.map(k=>`<option value="${esc(k)}"${JF.sym===k?' selected':''}>${esc(k)}</option>`).join('')}</select><select data-jf="t" aria-label="סוג"><option value="">כל הסוגים</option>${Object.entries(JRN_K).map(([k,v])=>`<option value="${k}"${JF.t===k?' selected':''}>${v}</option>`).join('')}</select>
+      <input type="date" data-jf="from" value="${esc(JF.from)}" aria-label="מתאריך"><input type="date" data-jf="to" value="${esc(JF.to)}" aria-label="עד תאריך"><input type="search" data-jf="q" value="${esc(JF.q)}" placeholder="חיפוש במילים" aria-label="חיפוש"></div>`;
+  return `${canWrite?`<details class="nx-more jrn-new"${JRN_EDIT||JRN_PRE||!all.length?' open':''}><summary>${JRN_EDIT?'עריכת רשומה':'רשומה חדשה'}</summary>${form}</details>`:''}${openH}${stats}
+    ${all.length?filt:''}
+    ${L.length?months.map(g=>`<h3 class="jrn-m">${mName(g.m)} <span class="nm">(${g.L.length})</span></h3><ul class="jrn-l">${g.L.map(jrnEntryH).join('')}</ul>`).join(''):all.length?'<p class="note">אין רשומות שמתאימות לסינון.</p>':'<p class="note" style="margin:0">היומן ריק. הרשומה הראשונה: למה קנית את מה שקנית לאחרונה? בעוד חצי שנה תשמח שכתבת.</p>'}
+    ${all.length?`<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="jrn${JF.sym?':'+esc(JF.sym):''}">שאל את צ׳יקו על היומן</button></div>`:''}`}
+function renderJrn(){const b=$('jrnBox'); if(!b||document.body.dataset.page!=='journal')return; const a=document.activeElement, keep=a&&b.contains(a)&&a.dataset&&(a.dataset.jf||a.dataset.j)?{k:a.dataset.jf||a.dataset.j,f:a.dataset.jf?'jf':'j',s:a.selectionStart}:null; setH(b,jrnH());
+  if(keep){const el=b.querySelector(`[data-${keep.f}="${keep.k}"]`); if(el){el.focus({preventScroll:true}); try{el.setSelectionRange(keep.s,keep.s)}catch(e){}}}}
+function jrnPut(e){const J=jrn(); JRN=J; const i=(J.entries||[]).findIndex(x=>x.id===e.id); if(i>=0)J.entries[i]=e; else J.entries=[e,...(J.entries||[])]; jrnSave()}
+document.addEventListener('submit',ev=>{const f=ev.target; if(!f||f.id!=='jrnForm')return; ev.preventDefault(); if(!canWrite)return;
+  const v=k=>{const el=f.querySelector(`[data-j="${k}"]`); return el?el.value.trim():''}; const at=v('at'), t=v('t'), sym=v('sym').toUpperCase(); if(!at||!t)return;
+  const why=v('why'), expect=v('expect'); if(!why&&!expect&&!sym){rtSay('כתוב לפחות למה, או ציפייה, או נייר'); return}
+  const old=(jrn().entries||[]).find(x=>x.id===f.dataset.id)||{}, evk=v('ev'), evEl=f.querySelector('[data-j="ev"] option:checked');
+  const e={...old,id:old.id||Math.random().toString(36).slice(2,10),at,t,sym:sym||null,qty:+v('qty')||null,px:+v('px')||null,ccy:old.ccy||(sym&&(isF(sym)||/^TLV:|^\d/.test(sym))?'ILS':'USD'),why,expect,ev:evk?{k:evk,he:evEl?evEl.dataset.he||'':''}:null,created:old.created||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  if(f.dataset.tk){e.tk=f.dataset.tk; e.from='trade'} jrnPut(e); JRN_EDIT=null; JRN_PRE=null; try{useAdd('jrn')}catch(x){} rtSay(old.id?'הרשומה עודכנה':'נשמר ביומן'); renderJrn()});
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return; const box=t.closest('#jrnBox'); 
+  const js=t.closest('[data-jrnsym]'); if(js){JF={...JF,sym:js.dataset.jrnsym}; JRN_EDIT=null; JRN_PRE=null; showTab('journal',true); return}
+  const nw=t.closest('[data-jrnnew]'); if(nw){JRN_PRE={sym:nw.dataset.jrnnew,t:'note'}; JRN_EDIT=null; showTab('journal',true); try{$('jrnBox').querySelector('[data-j="why"]')?.focus()}catch(e){} return}
+  if(!box)return;
+  const fr=t.closest('[data-jrnfrom]'); if(fr){const tr=jrnTradesOpen().find(x=>x.tk===fr.dataset.jrnfrom); if(tr){JRN_PRE={...tr}; JRN_EDIT=null; renderJrn(); try{box.querySelector('[data-j="why"]').focus()}catch(e){}} return}
+  if(t.closest('[data-jrncancel]')){JRN_EDIT=null; JRN_PRE=null; renderJrn(); return}
+  const li=t.closest('[data-jid]'), id=li&&li.dataset.jid, E=id&&(jrn().entries||[]).find(x=>x.id===id); if(!E)return;
+  if(t.closest('[data-jrnedit]')){JRN_EDIT=id; JRN_PRE=null; renderJrn(); try{box.querySelector('.jrn-new').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){} return}
+  if(t.closest('[data-jrndel]')){if(!canWrite)return; const J=jrn(); const keep=J.entries.slice(); J.entries=J.entries.filter(x=>x.id!==id); JRN=J; jrnSave(); renderJrn(); offerUndo('הרשומה נמחקה',()=>{JRN.entries=keep; jrnSave(); renderJrn()}); return}
+  if(t.closest('[data-jrnoutclr]')){if(!canWrite)return; jrnPut({...E,out:null}); renderJrn(); return}
+  if(t.closest('[data-jrnofc]')){JRN_OUTE=null; renderJrn(); return}
+  const o=t.closest('[data-jrnout]'); if(o){if(!canWrite)return; JRN_OUTE={id,v:o.dataset.jrnout}; renderJrn(); try{li.querySelector('.jrn-of input').focus()}catch(e){} return}});
+document.addEventListener('submit',ev=>{const f=ev.target; if(!f||!f.classList||!f.classList.contains('jrn-of'))return; ev.preventDefault(); const li=f.closest('[data-jid]'), E=li&&(jrn().entries||[]).find(x=>x.id===li.dataset.jid); if(!E||!canWrite)return;
+  jrnPut({...E,out:{v:f.dataset.jrnof,text:f.querySelector('input').value.trim().slice(0,600),at:new Date().toISOString().slice(0,10)}}); JRN_OUTE=null; renderJrn()});
+document.addEventListener('input',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.jf||!el.closest('#jrnBox'))return; JF[el.dataset.jf]=el.value; clearTimeout(renderJrn.t); renderJrn.t=setTimeout(renderJrn,el.dataset.jf==='q'?350:0)});
+// the security's screen: its last entries, and a way to a new one
+function secJournal(it){if(!it||!it.sym||it.t==='I')return ''; const L=jrnBySym(it.sym); if(!L.length&&!canWrite)return '';
+  return `<section class="sec-jrn"><h3>מהיומן שלי${L.length?` (${L.length})`:''}</h3>${L.length?`<ul class="jrn-l sm">${L.slice(0,3).map(e=>`<li><span class="nm">${dmy(e.at)}</span> <span class="nx-tag jrn-t">${JRN_K[e.t]||e.t}</span> ${esc(imCut(e.why||e.expect||'',120))}${e.out&&e.out.v?` <span class="nx-tag o-${esc(e.out.v)}">${JRN_OUT[e.out.v]}</span>`:''}</li>`).join('')}</ul>`:'<p class="nm">עוד אין רשומות על הנייר הזה.</p>'}<div class="acts" style="justify-content:flex-start">${canWrite?`<button type="button" class="btn sm" data-jrnnew="${esc(it.sym)}">לתעד ביומן</button>`:''}${L.length?`<button type="button" class="btn sm" data-jrnsym="${esc(it.sym)}">כל הרשומות</button>`:''}</div></section>`}
 function secMine(it,on){
   let m=null; try{m=P&&Q?mAllNow():null}catch(e){}
   const p=m&&m.pos.find(x=>x.sym===it.sym), R=S.rules||{}, head='<div class="row" style="margin-top:4px"><h3>מה זה אומר על התיק שלי</h3></div>';
@@ -23841,6 +23950,7 @@ function renderSec(){SECHOV=-1;
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
     ${(()=>{try{return secThesis(it)}catch(e){return ''}})()}
+    ${(()=>{try{return secJournal(it)}catch(e){return ''}})()}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
     ${moreH}
     <p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
@@ -24071,9 +24181,9 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar'];
-const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch'],history:['history','reports'],settings:['settings']};
-const SUBL={news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal'];
+const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch'],history:['history','reports','journal'],settings:['settings']};
+const SUBL={journal:'יומן ההשקעות',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
 const HEADL={news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
@@ -24103,6 +24213,7 @@ function showTab(t,user){
   if(t==='news'){try{const st=nxState(); if(NXPREV===null)NXPREV=st.lastSeen||''; renderNews(); clearTimeout(showTab.nxT); showTab.nxT=setTimeout(()=>{const st2=NEWSST=nxState(); st2.lastSeen=new Date().toISOString(); nxSave()},4000)}catch(e){}}
   if(t==='settings'){try{renderUse()}catch(e){} try{sysFill()}catch(e){} try{nwSetFill()}catch(e){}}
   if(t==='pots'){try{renderPots()}catch(e){}}
+  if(t==='journal'){try{renderJrn()}catch(e){console.error(e)}}
   if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
   if(t==='fit'){try{renderFit(); Promise.all([loadSymDb(),loadFit(),loadAllQ()]).then(()=>{try{renderFit()}catch(e){}})}catch(e){}}
@@ -24602,7 +24713,7 @@ function storyH(ev){
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const b=t.closest('[data-story]'); if(b){const k=b.dataset.story; if(STORY_OPEN.has(k))STORY_OPEN.delete(k); else{STORY_OPEN.add(k); storyLoad(k); try{useAdd('story')}catch(e){}}
     // from the map, a stock's screen or the chat: to the news, on the event's card, with the story open under it
-    if(b.closest('#imView, #ixTip, #ixSv, #anaOut, #rtAl, #nwDaily')){try{imClose()}catch(e){} try{if(!$('anaBox').hidden)$('anaBox').hidden=true}catch(e){} const lead=(()=>{try{return newsAll().filter(it=>it.x&&it.x.ev===k).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1)[0]}catch(e){return null}})();
+    if(b.closest('#imView, #ixTip, #ixSv, #anaOut, #rtAl, #nwDaily, #jrnBox, #secBody')){try{imClose()}catch(e){} try{if(!$('anaBox').hidden)$('anaBox').hidden=true}catch(e){} const lead=(()=>{try{return newsAll().filter(it=>it.x&&it.x.ev===k).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1)[0]}catch(e){return null}})();
       if(lead){showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; NWLIM=Math.max(NWLIM,200); try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(lead.id)}"]`); if(el)el.scrollIntoView({block:'start',behavior:'smooth'})},120); return}}
     try{renderNewsX()}catch(e){} try{plRender(mAllNow())}catch(e){}
     if(STORY_OPEN.has(k))setTimeout(()=>{try{const el=document.querySelector('[data-story-ev="'+CSS.escape(k)+'"], .nw-story'); if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}},50); return}
@@ -25480,6 +25591,7 @@ window.__im={build:imBuild,open:imOpen,openFrom:imOpenFrom,layout:imLayout,sel:i
 // (only when it was), and what is only possible; without Claude the page answers from the same facts by itself ====
 let ANA_FOCUS=null;
 const STORY_Q=['מה הרקע לאירוע הזה, במילים פשוטות?','מה בטוח כאן ומה רק הערכה?','איך זה עשוי לגעת בתיק שלי?','מה כדאי לעקוב אחריו בהמשך?'];
+const JRN_Q=['מה חוזר על עצמו בהחלטות שלי?','איזה סיבות הובילו להחלטות שהתממשו, ואיזה לא?','מה הציפיות הפתוחות שכדאי לי לבדוק עכשיו?','מה הייתי צריך לכתוב ולא כתבתי?'];
 const SIM_Q=['מה משתנה בתיק אחרי הפעולות האלה?','האם אחרי זה אני חורג מהכללים שלי?','מה קורה לפיזור ולריכוזיות?','מה אני צריך לבדוק לפני שאני עושה את זה?'];
 const TH_Q=['האם התזה שלי עדיין תקפה?','מה מהדיווחים נוגע למה שכתבתי שיחליש אותה?','מה אני צריך לבדוק לפני שאשנה משהו?','מה עוד לא ידוע?'];
 const FOCUS_Q=[['why','למה קיבלתי את ההתראה?'],['link','מה הקשר בין האירוע למניה?'],['sector','מה הקשר בין האירוע לענף?'],['exposed','אילו מההחזקות שלי עשויות להיות חשופות?'],['known','מה ידוע בפועל ומה עדיין לא ודאי?'],['changed','מה השתנה מאז העדכון הקודם?'],['sources','אילו מקורות תומכים בהסבר?']];
@@ -25494,6 +25606,10 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
   if(k==='art'){const it=newsAll().find(z=>z.id===v); if(!it||!it.x)return null; const E=nxEvents(newsAll()), e=E.get(it.x.ev||'id:'+it.id);
     return {kind:'article',title:it.x.he,lead:it,data:{...artF(it,it.x),other_sources:e&&e.items.length>1?e.items.filter(q=>q.id!==it.id).slice(0,5).map(q=>({source:q.pub,title:q.title,published_at:q.at})):[],measured:moved(nwSymsOf(it),it.at||it.seen),
       portfolio:m&&m.pos&&m.pos.length?{has_portfolio:true,link_to_my_portfolio:(()=>{try{return newsRel(it,m).text||null}catch(e){return null}})()}:{has_portfolio:false}}}}
+  if(k==='jrn'){const all=jrnList(), L=v?all.filter(e=>e.sym===v):all; if(!L.length)return null; const st=jrnStats(L);
+    const row=e=>{const s=jrnSince(e); return {date:e.at,kind:JRN_K[e.t]||e.t,symbol:e.sym||null,qty:e.qty||null,price:e.px||null,why:e.why||null,expected:e.expect||null,event:e.ev?e.ev.he:null,price_since:s?`${s.px} ← ${Math.round(s.now*100)/100} (${s.pct>=0?'+':''}${s.pct.toFixed(1)}%)`:null,outcome:e.out&&e.out.v?`${JRN_OUT[e.out.v]}${e.out.text?': '+e.out.text:''}`:null}};
+    return {kind:'journal',title:'היומן שלי'+(v?': '+v:''),data:{entries:L.slice(0,30).map(row),stats:{entries:st.n,by_kind:Object.fromEntries(Object.entries(st.by).map(([k,n])=>[JRN_K[k]||k,n])),outcomes:{right:st.out.right,wrong:st.out.wrong,mixed:st.out.mixed,open:st.out.open},with_reason:st.withWhy,with_expectation:st.withExp,with_event:st.withEv,avg_hold_days:st.holdDays!=null?Math.round(st.holdDays):null,most_written:st.top.map(([k,n])=>`${k} (${n})`),since:st.first},
+      thesis:v&&(jrn().thesis||{})[v]&&(jrn().thesis||{})[v].why?{why:(jrn().thesis||{})[v].why,expect:(jrn().thesis||{})[v].expect||null}:null,rule:'היומן הוא דברי המשתמש; לסכם דפוסים מהרשומות ומהתוצאות שסימן, בלי תוויות פסיכולוגיות, בלי לשפוט החלטה לפי תנועת מחיר, בלי ייעוץ'}}}
   if(k==='sim'){const t0=simState(P,null); const {P2,notes}=simApply(P,SIM.acts); const t1=simState(P2,SIM.targets||null); if(!t0||!t1)return null;
     const st=t=>({value:ils(t.m.total),cash:ils(t.m.cash),holdings:t.m.pos.length,biggest_holding:t.top?`${t.top.sym} ${pct(t.top.w,1)}`:null,biggest_group:t.topG?`${GROUPS[t.topG.id]||t.topG.id} ${pct(t.topG.w,1)}`:null,as_many_equal_holdings_as:t.E?+t.E.conc.nEff.toFixed(1):null,usd_part:pct(t.m.usdPct,1),max_drift_from_targets:t.drift!=null?t.drift.toFixed(1)+' נק׳':null,health_score:t.H?t.H.score:null,rule_findings:t.A.map(a=>a[2]),dividend_income_year:ils(t.divY),sectors:t.E?t.E.sector.slice(0,5).map(r=>`${r.label} ${pct(r.w,0)}`):[]});
     return {kind:'sim',title:'תרחיש: '+(SIM.name||'מה אם'),data:{actions:SIM.acts.map(a=>`${a.t==='buy'?'קנייה':a.t==='sell'?'מכירה':a.t==='cash'?'מזומן':'יעד'} ${a.sym||''} ${a.qty?a.qty+' יח׳':a.ils!=null?ils(Math.abs(+a.ils)):''}`),targets_tried:SIM.targets||null,before:st(t0),after:st(t1),notes,rule:'סימולציה על המחירים של היום; לא תחזית ולא המלצה; מראה איך התיק ייראה, לא אם זה כדאי'}}}
@@ -25549,6 +25665,8 @@ function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<
   if(/ענף/.test(t))return `<p>הענפים שהקריאה ציינה:</p>${li((d.sectors||d.sectors_exposure||[]).map(s=>`${esc(s.sector)}${s.through?' דרך '+esc(s.through):''}${s.why?': '+esc(s.why):''}${s.my_share_in_sector||s.share_of_portfolio?` (אצלך ${esc(s.my_share_in_sector||s.share_of_portfolio)})`:''}`))||'<p>לא צוין ענף.</p>'}`;
   if(/חשופ|החזק|אחזק/.test(t)){const L=(d.my_holdings_linked||(d.companies||[]).filter(c=>c.in_my_portfolio).map(c=>({sym:c.sym,weight:c.in_my_portfolio,link:c.link,why:c.why})));
     return L.length?li(L.map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))+'<p class="nm">חשיפה היא קשר שהקריאה ציינה, לא השפעה שנמדדה.</p>':'<p>אף אחת מההחזקות שלך לא מוזכרת בקשר הזה.</p>'}
+  if(f.kind==='journal'){const st=d.stats||{}, o=st.outcomes||{}, E=d.entries||[];
+    return `<p><b>${st.entries} רשומות</b>${st.since?' מ-'+dmy(st.since):''}: ${Object.entries(st.by_kind||{}).map(([k,n])=>`${esc(k)} ${n}`).join(', ')}.</p><p>תוצאות שסימנת: ${o.right||0} התממשו, ${o.wrong||0} לא, ${o.mixed||0} חלקית, ${o.open||0} פתוחות.${st.avg_hold_days!=null?` זמן החזקה ממוצע ביומן: ${st.avg_hold_days} ימים.`:''}</p>${li(E.slice(0,5).map(e=>`<span class="nm">${dmy(e.date)}</span> ${esc(e.kind)}${e.symbol?' <b>'+esc(e.symbol)+'</b>':''}${e.why?': '+esc(imCut(e.why,120)):''}${e.outcome?` <span class="nm">(${esc(imCut(e.outcome,60))})</span>`:''}`))}<p class="nm">${esc(d.rule||'')}</p>`}
   if(f.kind==='sim'){const b=d.before||{}, a=d.after||{}, L=[['שווי',b.value,a.value],['מזומן',b.cash,a.cash],['הנייר הגדול',b.biggest_holding,a.biggest_holding],['הקבוצה הגדולה',b.biggest_group,a.biggest_group],['פיזור (כמו N שווים)',b.as_many_equal_holdings_as,a.as_many_equal_holdings_as],['חלק בדולרים',b.usd_part,a.usd_part],['מדד בריאות',b.health_score,a.health_score]];
     return `<p><b>הפעולות:</b> ${esc((d.actions||[]).join('; ')||'שינוי יעדים בלבד')}.</p>${li(L.map(([l,x,y])=>`${l}: ${esc(String(x??'—'))} ← <b>${esc(String(y??'—'))}</b>`))}${(a.rule_findings||[]).length?`<p><b>הכללים שלך אחרי:</b></p>${li(a.rule_findings.map(esc))}`:'<p>אחרי הפעולות הכללים שלך לא מוצאים חריגה.</p>'}<p class="nm">${esc(d.rule||'')}</p>`}
   if(f.kind==='thesis'){const v=d.page_verdict||{}, R=d.reported_since||[];
@@ -26560,7 +26678,7 @@ try{refreshBack()}catch(e){}
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});
   window.claude.use('downloads').then(d=>{$('btnReport').hidden=!d;$('btnExcel').hidden=!d;$('repWrap').hidden=!d;DLON=!!d;arcUi();fillPeriods();renderCatalog()});
   try{let first=true; pd('journal').onSnapshot(s=>{if(!first)return; first=false; const v=s&&s.exists?s.data():null; const early=JRN_D?jrn():null; JRN=v&&typeof v==='object'?{thesis:v.thesis&&typeof v.thesis==='object'?v.thesis:{},entries:Array.isArray(v.entries)?v.entries:[]}:{thesis:{},entries:[]};
-    if(early){JRN.thesis={...JRN.thesis,...(early.thesis||{})}; const ids=new Set(JRN.entries.map(e=>e.id)); JRN.entries=[...(early.entries||[]).filter(e=>!ids.has(e.id)),...JRN.entries]} JRNK=true; if(JRN_D)jrnSave(); try{renderLater()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{JRNK=true})}catch(e){}
+    try{renderJrn()}catch(e){} if(early){JRN.thesis={...JRN.thesis,...(early.thesis||{})}; const ids=new Set(JRN.entries.map(e=>e.id)); JRN.entries=[...(early.entries||[]).filter(e=>!ids.has(e.id)),...JRN.entries]} JRNK=true; if(JRN_D)jrnSave(); try{renderLater()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{JRNK=true})}catch(e){}
   pd('ack').onSnapshot(s=>{const d=s.exists?s.data():null; ACK=d&&Array.isArray(d.list)?d.list:[]; renderLater()},()=>{});
   try{const u=await window.claude.use('user');const w=u?await u.can('data.write'):null;if(w===false&&OWNER){canWrite=false;fillInputs()}}catch(e){}
 })();

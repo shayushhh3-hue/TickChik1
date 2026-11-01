@@ -1891,6 +1891,47 @@ test('the simulator and the allocation lab: a buy, a sale and a deposit change t
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('1.11 the journal: a trade from the statement written up with its reason, an expectation with an event, what came of it, search by security and words, the security page, צ׳יקו',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), J0=store.getDoc('journal/main');
+  const D=await rtData(); await rtSet(D); store.deleteDoc('journal/main');
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'history'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="history"] .subtabs [data-tab="journal"]').click()); await pg.waitForTimeout(500);
+    const read=()=>pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('jrnBox').innerText.replace(/\s+/g,' '),n:document.querySelectorAll('#jrnBox .jrn-e').length,ox:document.documentElement.scrollWidth>innerWidth+1,inWrap:!!document.getElementById('jrnBox').closest('.wrap')}));
+    let r=await read(); assert.equal(r.page,'journal'); assert.ok(r.inWrap); assert.equal(r.ox,false,'no sideways scroll'); assert.match(r.txt,/היומן ריק/); assert.match(r.txt,/תנועות מהדוחות שעוד לא ביומן \(1\)/); assert.match(r.txt,/קנייה MSFT 2 יח׳ ב-470/);
+    // the trade from the statement: the form is filled, the reason is the person's
+    await pg.click('#jrnBox [data-jrnfrom]'); await pg.waitForTimeout(200);
+    assert.deepEqual(await pg.evaluate(()=>['sym','t','qty','px'].map(k=>document.querySelector(`#jrnForm [data-j="${k}"]`).value)),['MSFT','buy','2','470']);
+    await pg.fill('#jrnForm [data-j="why"]','מובילה בענן ובבינה מלאכותית, מחיר סביר'); await pg.click('#jrnForm button[type=submit]'); await pg.waitForTimeout(400);
+    r=await read(); assert.equal(r.n,1); assert.match(r.txt,/מהדוח/); assert.match(r.txt,/למה: מובילה בענן/); assert.match(r.txt,/מאז: המחיר 470 ← 505 \(\+7\.4%\)/,'the price since, a fact'); assert.match(r.txt,/לא ציון להחלטה/); assert.doesNotMatch(r.txt,/תנועות מהדוחות שעוד לא ביומן/,'written up: no longer offered');
+    // an expectation on NVDA with an event attached
+    await pg.evaluate(()=>{document.querySelector('#jrnBox .jrn-new').open=true}); await pg.selectOption('#jrnForm [data-j="t"]','expect'); await pg.fill('#jrnForm [data-j="sym"]','nvda'); await pg.fill('#jrnForm [data-j="px"]','180');
+    await pg.fill('#jrnForm [data-j="expect"]','שהדוח הבא יראה צמיחה במרכזי נתונים; לבדוק אחרי הדוח');
+    const evN=await pg.evaluate(()=>{const s=document.querySelector('#jrnForm [data-j="ev"]'); if(s.options.length>1){s.value=s.options[1].value} return s.options.length-1}); assert.ok(evN>=1,'events to attach: '+evN);
+    await pg.click('#jrnForm button[type=submit]'); await pg.waitForTimeout(400);
+    r=await read(); assert.equal(r.n,2); assert.match(r.txt,/ציפייה NVDA/); assert.match(r.txt,/אירוע: /); assert.match(r.txt,/2 רשומות/); assert.match(r.txt,/תוצאות: 0 התממשו · 0 לא · 0 חלקית · 2 פתוחות/);
+    // what came of it, in the person's words, inline
+    await pg.click('#jrnBox .jrn-e.t-expect [data-jrnout="right"]'); await pg.waitForTimeout(150); await pg.fill('#jrnBox .jrn-of input','הדוח היכה את התחזיות'); await pg.click('#jrnBox .jrn-of button[type=submit]'); await pg.waitForTimeout(400);
+    r=await read(); assert.match(r.txt,/מה יצא מזה \(.*\): התממש\. הדוח היכה את התחזיות/); assert.match(r.txt,/1 התממשו/);
+    // search: by security, by words
+    await pg.selectOption('#jrnBox [data-jf="sym"]','MSFT'); await pg.waitForTimeout(200); r=await read(); assert.equal(r.n,1); assert.match(r.txt,/MSFT/);
+    await pg.selectOption('#jrnBox [data-jf="sym"]',''); await pg.fill('#jrnBox [data-jf="q"]','מרכזי נתונים'); await pg.waitForTimeout(600); r=await read(); assert.equal(r.n,1); assert.match(r.txt,/NVDA/);
+    await pg.fill('#jrnBox [data-jf="q"]',''); await pg.waitForTimeout(600);
+    if(process.env.SHOT)await pg.locator('#jrnSec').screenshot({path:process.env.SHOT});
+    // kept in the account
+    await pg.waitForTimeout(1200); const J=(store.getDoc('journal/main').data||{}).entries||[]; assert.equal(J.length,2); assert.equal(J.find(e=>e.sym==='MSFT').tk,'exc|'+J.find(e=>e.sym==='MSFT').at+'|MSFT|2'); assert.equal(J.find(e=>e.sym==='NVDA').out.v,'right');
+    // the security page shows the journal and leads to a new entry
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='MSFT'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('.sec-jrn'),null,{timeout:10000});
+    const sj=await pg.evaluate(()=>document.querySelector('.sec-jrn').innerText.replace(/\s+/g,' ')); assert.match(sj,/מהיומן שלי \(1\)/); assert.match(sj,/מובילה בענן/);
+    await pg.click('.sec-jrn [data-jrnnew]'); await pg.waitForTimeout(400); r=await read(); assert.equal(r.page,'journal'); assert.equal(await pg.evaluate(()=>document.querySelector('#jrnForm [data-j="sym"]').value),'MSFT');
+    // צ׳יקו: the entries, the outcomes, never a grade by price
+    const f=await pg.evaluate(()=>window.__focus('jrn')); assert.equal(f.kind,'journal'); assert.equal(f.data.entries.length,2); assert.equal(f.data.stats.outcomes.right,1); assert.match(f.data.rule,/תנועת מחיר/);
+    const f2=await pg.evaluate(()=>window.__focus('jrn:MSFT')); assert.equal(f2.data.entries.length,1); assert.match(f2.data.entries[0].price_since,/470 ← 505/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0); if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main')}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
