@@ -116,6 +116,12 @@ export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8,now=new Date(
 // new values over the old ones; a figure Yahoo does not give keeps its last value (F-score, Z-score, ROIC come only
 // from the old source). The second source of the old data (Investing.com) is not updated any more, so it goes.
 function merge(old,neu){const o={...(old||{})}; for(const [k,v] of Object.entries(neu))if(v!=null)o[k]=v; delete o.inv; return o}
+// 1.11 (6): what changed in the company's figures since the last run, kept on the company (chg: the last 10): the
+// analysts' consensus or their target (7% or more), the growth and the margins (5 points or more), the forward multiple
+// (15% or more). A change is a fact about the figures, said with its two values; nothing here says why
+export function figChanges(old,neu,at){const out=[]; if(!old||!neu)return out; const num=(f,th,rel)=>{const a=+old[f], b=+neu[f]; if(!isFinite(a)||!isFinite(b)||neu[f]==null||old[f]==null)return; const d=rel?Math.abs(b/a-1):Math.abs(b-a); if((rel?a!==0:true)&&d>=th)out.push({at,f,from:a,to:b})};
+  if(old.rating&&neu.rating&&old.rating!==neu.rating)out.push({at,f:'rating',from:old.rating,to:neu.rating}); num('target',0.07,true); num('revg',5,false); num('pm',5,false); num('epsg',10,false); num('fpe',0.15,true); return out}
+const withChg=(old,neu,at)=>{const c=figChanges(old,neu,at); return c.length?{...neu,chg:[...c,...((old&&old.chg)||[])].slice(0,10)}:(old&&old.chg?{...neu,chg:old.chg}:neu)};
 const docKey=k=>'research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_');
 export const tick=(k,map)=>k.startsWith('TLV:')?(map[k]||k.slice(4)+'.TA'):tickerFor(k,null,map);
 // securities queued for a research run of their own (a portfolio just saved): taken by the 'research-new' job
@@ -228,7 +234,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   const heldGot=[...held].filter(k=>got[k]);
   const touched=Object.entries(got).filter(([k,v])=>v.rep&&v.rep.ev&&v.rep.seen&&(now-Date.parse(v.rep.seen))<21*864e5);
   if(heldGot.length||fresh.length||words.length||touched.length||redated.size){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
-    for(const k of heldGot)comp[k]={...merge(comp[k],got[k]),source:srcOf(k,got[k]),updatedAt:iso};
+    for(const k of heldGot)comp[k]=withChg(comp[k],{...merge(comp[k],got[k]),source:srcOf(k,got[k]),updatedAt:iso},iso);
     const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,atEst:!!r.atEst,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
     const upd=new Map(touched.map(([k,v])=>[k+'|'+v.rep.q,evOf([k,v.rep])]));
     const ev=(L.events||[]).filter(e=>!fresh.some(([k,r])=>e.sym===k&&e.q===r.q)).map(e=>upd.get(e.sym+'|'+e.q)||e).map(e=>redated.has(e.sym+'|'+e.q)?{...e,date:redated.get(e.sym+'|'+e.q)}:e)

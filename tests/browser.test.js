@@ -2060,6 +2060,26 @@ test('1.11 the time machine: an episode on the monthly closes the page has, per 
   }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true})}
 });
 
+test('1.11 anomalies: a day far outside the security\'s own range, an analysts\' change since the last run, each with "against what", when, why, a verified cause or none, and the confidence; a quiet portfolio says so',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const C0=store.getDoc('quotes/c_NVDA').data, R0=store.getDoc('research/latest').data, now=new Date();
+  // NVDA: a calm year (±0.3% a day) before today's −2.4%; MSFT: a target raised 10% in the last run
+  const d=[], c=[]; let v=186.5; for(let i=260;i>=1;i--){const t=new Date(now.getTime()-i*864e5); if(t.getUTCDay()===0||t.getUTCDay()===6)continue; v=Math.round(v*(1+(i%2?0.003:-0.003))*100)/100; d.push(t.toISOString().slice(0,10)); c.push(v)}
+  store.setDoc('quotes/c_NVDA',{...C0,d,c},{silent:true});
+  store.setDoc('research/latest',{...R0,companies:{...R0.companies,MSFT:{...R0.companies.MSFT,chg:[{at:new Date(now.getTime()-2*864e5).toISOString(),f:'target',from:500,to:560}]}}},{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'risk'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="risk"] .subtabs [data-tab="state"]').click()); await pg.waitForFunction(()=>!!document.querySelector('#stateBody .anom li.an-px'),null,{timeout:15000});
+    const r=await pg.evaluate(()=>({items:[...document.querySelectorAll('#stateBody .anom li')].map(l=>({cls:l.className,txt:l.innerText.replace(/\s+/g,' ')})),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(r.ox,false); const px=r.items.find(x=>/an-px/.test(x.cls)), fig=r.items.find(x=>/an-fig/.test(x.cls));
+    assert.ok(px&&/NVDA .?−2\.4% ביום המסחר האחרון/.test(px.txt),px&&px.txt); assert.match(px.txt,/ביחס למה: יום רגיל שלה בשנה האחרונה זז כ-±0\.\d% .*זה פי \d+/); assert.match(px.txt,/סיבה מאומתת: לא נמצאה בחדשות של הדף; הדף לא ממציא סיבה/); assert.match(px.txt,/ביטחון: גבוה \(מדידה מהמחירים\)/);
+    assert.ok(fig&&/MSFT: יעד המחיר הממוצע עלה מ-\$500 ל-\$560/.test(fig.txt),fig&&fig.txt); assert.match(fig.txt,/מול הריצה הקודמת של המחקר/); assert.match(fig.txt,/דעת אנליסטים, לא עובדה על החברה/);
+    assert.ok(!r.items.some(x=>/KO|Coca/.test(x.txt)),'a normal mover is not an anomaly');
+    const f=await pg.evaluate(()=>window.__focus('anom')); assert.equal(f.kind,'anom'); assert.ok(f.data.anomalies.some(a=>a.symbol==='NVDA'&&/לא נמצאה/.test(a.verified_cause))); assert.match(f.data.rule,/לא להמציא סיבה/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true}); store.setDoc('research/latest',R0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

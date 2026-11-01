@@ -1886,3 +1886,12 @@ test('1.11 insiders: the task keeps the filings by symbol (new ones fetched, kno
   // the partner: MSFT's only, and only as the holder of it
   const PP=pulseUpdate(s,u,{now}).doc.items; assert.ok(PP.some(x=>x.k==='ins:0002-26-1')); assert.ok(!PP.some(x=>x.k==='ins:0001-26-1'));
 });
+
+test('1.11 anomalies: the figures\' changes between research runs are kept on the company (rating, target 7%, growth and margins 5 points, forward multiple 15%), never a change within the noise',async()=>{
+  const {figChanges}=await import('../server/research.js');
+  const old={rating:'Buy',target:200,revg:20,pm:30,epsg:12,fpe:30}, at='2026-11-01T00:00:00Z';
+  assert.deepEqual(figChanges(old,{...old},at),[]);
+  assert.deepEqual(figChanges(old,{...old,target:210},at),[],'5% is noise');
+  const c=figChanges(old,{rating:'Hold',target:220,revg:14,pm:31,epsg:30,fpe:36},at); assert.deepEqual(c.map(x=>x.f),['rating','target','revg','epsg','fpe']); assert.deepEqual(c[1],{at,f:'target',from:200,to:220});
+  assert.deepEqual(figChanges(old,{...old,target:null},at),[],'a missing figure is not a change'); assert.deepEqual(figChanges(null,old,at),[]);
+});
