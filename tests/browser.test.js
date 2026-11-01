@@ -2099,6 +2099,24 @@ test('1.11 dividends: declared apart from expected and paid, the income by the q
   }finally{await ctx.close(); store.setDoc('research/latest',R0,{silent:true})}
 });
 
+test('1.11 the finder: criteria of my own over the ranking (kept on the device), each row with why it was found and what contradicts it; a find is not a recommendation',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_fitc')}catch(e){}});
+  await tab(pg,'search'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="search"] .subtabs [data-tab="fit"]').click()); await pg.waitForFunction(()=>document.querySelectorAll('#fitBox2 .fitrow').length>=2,null,{timeout:20000}).catch(()=>{});
+  if(await pg.evaluate(()=>document.querySelectorAll('#fitBox2 .fitrow').length<2))throw new Error('fit rows: '+await pg.evaluate(()=>document.getElementById('fitBox2').innerText.slice(0,120))+' errs='+JSON.stringify(pg.errs));
+  const read=()=>pg.evaluate(()=>({n:document.querySelectorAll('#fitBox2 .fitrow').length,syms:[...document.querySelectorAll('#fitBox2 .fitrow .nm i')].map(i=>i.textContent),con:[...document.querySelectorAll('#fitBox2 .fw-con')].map(p=>p.innerText.replace(/\s+/g,' ')),txt:document.getElementById('fitBox2').innerText.replace(/\s+/g,' '),ox:document.documentElement.scrollWidth>innerWidth+1}));
+  let r=await read(); assert.equal(r.ox,false); assert.ok(r.n>=2); assert.equal(r.con.length,r.n,'every row says why and what contradicts');
+  assert.ok(r.con.every(c=>/למה אותר: .+ · מה סותר: .+/.test(c)),r.con[0]); const cost=r.con[r.syms.indexOf('COST')]; assert.ok(cost&&/מכפיל 52/.test(cost),'Costco: the high multiple contradicts: '+cost);
+  assert.match(await pg.evaluate(()=>document.querySelector('#fitBox2 .fitc').textContent),/הסינון אינו המלצה/);
+  // a multiple cap of 20: Exxon passes, Costco does not; a dividend floor: Costco out
+  await pg.evaluate(()=>{document.querySelector('#fitBox2 .fitc').open=true}); await pg.fill('#fitBox2 [data-fitc="peMax"]','20'); await pg.waitForTimeout(700); r=await read();
+  assert.ok(r.syms.includes('XOM')&&!r.syms.includes('COST'),JSON.stringify(r.syms)); assert.match(r.txt,/\d+ מתוך \d+ עומדים בקריטריונים שלך/); assert.match(r.txt,/סינון לפי הקריטריונים שלי \(פעיל\)/);
+  assert.deepEqual(await pg.evaluate(()=>JSON.parse(localStorage.getItem('tr_fitc')).peMax),'20','kept on the device');
+  await pg.fill('#fitBox2 [data-fitc="dyMin"]','5'); await pg.waitForTimeout(700); r=await read(); assert.equal(r.n,0,'nobody yields 5%'); assert.match(r.txt,/0 מתוך/);
+  await pg.click('#fitBox2 [data-fitcclr]'); await pg.waitForTimeout(400); r=await read(); assert.ok(r.syms.includes('COST'),'cleared');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

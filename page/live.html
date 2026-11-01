@@ -2046,6 +2046,9 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (11): the criteria over the ranking, and why / what contradicts */
+.fitc{margin:6px 0} .fitc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 8px} .fitc-g label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .fitc-g input,.fitc-g select{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.fw-con{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.45} .fw-con b{color:var(--ink)}
 /* 1.11 (10): the dividends ahead */
 .dva{display:flex;flex-direction:column;gap:6px} .dva-m{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;align-items:end;height:120px;padding-top:14px} .dva-c{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;height:100%} .dva-b{flex:1;width:100%;display:flex;flex-direction:column-reverse;align-items:stretch} .dva-b i{display:block;width:100%} .dva-b i.s{background:var(--s1)} .dva-b i.e{background:var(--s1);opacity:.4} .dva-c .nm{font-size:10.5px} .dva-c .n{font-size:9.5px;font-family:var(--mono);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} .dva-k{display:inline-block;width:10px;height:10px;vertical-align:middle;background:var(--s1);border-radius:2px;margin:0 2px} .dva-k.e{opacity:.4}
 .dva-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px} .dva-r{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;line-height:1.5} .dva-h{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline} .dva-h .sym{font-family:var(--mono);font-weight:700} .dva-b2{display:flex;flex-direction:column;gap:2px;margin-top:3px} .dva-r .n{font-family:var(--mono)}
@@ -23151,7 +23154,7 @@ async function i18nReady(){
 function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lang)?S.profile.lang:'he'; if(want==='he'){if(I18N.lang!=='he')i18nSet('he'); i18nFemSet(femOn()); return} if(want!==I18N.lang)i18nSet(want); else if(I18N.on&&!I18N.ready)i18nReady()}
 function i18nBoot(){let l=''; try{l=localStorage.getItem('tr_lang')||''}catch(e){} if(I18N_OK(l)&&l!=='he')i18nSet(l)}
 // the original Hebrew of an element, for code that reads its own status lines
-window.__person=()=>anaPerson(); window.__focus=spec=>focusOf(spec);
+window.__person=()=>anaPerson(); window.__focus=spec=>focusOf(spec); window.__fit=()=>renderFit();
 window.__i18nState=()=>({on:!!I18N.on,fem:!!I18N.fem,lang:I18N.lang,gender:(S&&S.profile&&S.profile.gender)||'',setk:SETK});
 window.__i18nSrc=el=>{if(!I18N.on)return el.textContent||''; let s=''; const w=document.createTreeWalker(el,4); let n; while(n=w.nextNode()){const r=I18N.orig.get(n); s+=r&&n.nodeValue===r.out?r.src:n.nodeValue} return s};
 document.addEventListener('click',()=>{if(I18N.on)i18nSoon(350)},true);
@@ -24473,6 +24476,30 @@ function fitScore(k,c,m){
   const after=T+mon>0?(v+mon)/(T+mon)*100:w;
   return {...x,fs,g,w,after,over:w>=mg};
 }
+// ---- 1.11 (11): the criteria a person sets over the ranking (sector, size, multiple, growth, dividend, beta, margin,
+// consensus), kept on the device; and on every row why it was found (its best-scoring parts) beside what contradicts
+// it (the figures that argue against: a high multiple, debt, losses, falling revenue, a high beta, a group already
+// full, a report in days). A find is a row that passed the sieve, never a recommendation ----
+let FITC={sec:'',capMin:'',capMax:'',peMax:'',revgMin:'',dyMin:'',betaMax:'',pmMin:'',rating:''}; try{const v=JSON.parse(localStorage.getItem('tr_fitc')||'null'); if(v&&typeof v==='object')FITC={...FITC,...v}}catch(e){}
+const fitcOn=()=>Object.values(FITC).some(v=>v!==''&&v!=null);
+function fitcPass(r){const c=r.c||{}, it=r.it||{}, n=v=>v===''||v==null?null:+v; const cap=it.cap>0?it.cap/1000:null;   // $B
+  if(FITC.sec&&(it.sec||'')!==FITC.sec)return false; const a=n(FITC.capMin), b=n(FITC.capMax); if(a!=null&&!(cap!=null&&cap>=a))return false; if(b!=null&&!(cap!=null&&cap<=b))return false;
+  const pe=c.fpe!=null?c.fpe:c.pe, peM=n(FITC.peMax); if(peM!=null&&!(pe!=null&&pe>0&&pe<=peM))return false;
+  const rg=n(FITC.revgMin); if(rg!=null&&!(c.revg!=null&&c.revg>=rg))return false; const dy=n(FITC.dyMin); if(dy!=null&&!(c.dy!=null&&c.dy>=dy))return false;
+  const bm=n(FITC.betaMax); if(bm!=null&&!(c.beta!=null&&c.beta<=bm))return false; const pm=n(FITC.pmMin); if(pm!=null&&!(c.pm!=null&&c.pm>=pm))return false;
+  if(FITC.rating==='buy'&&!/buy/i.test(c.rating||''))return false; if(FITC.rating==='nosell'&&/sell|underperform/i.test(c.rating||''))return false; return true}
+function fitcH(secs){const o=(v,ph,k,step)=>`<label>${ph}<input type="number" data-fitc="${k}" value="${esc(FITC[k])}" step="${step||1}" inputmode="decimal" placeholder="—"></label>`;
+  return `<details class="nx-more fitc"${fitcOn()?' open':''}><summary>סינון לפי הקריטריונים שלי${fitcOn()?' (פעיל)':''}</summary><div class="fitc-g">
+    <label>ענף<select data-fitc="sec"><option value="">כל הענפים</option>${secs.map(x=>`<option value="${esc(x)}"${FITC.sec===x?' selected':''}>${esc(x)}</option>`).join('')}</select></label>
+    ${o(FITC.capMin,'שווי שוק מ ($B)','capMin',1)}${o(FITC.capMax,'שווי שוק עד ($B)','capMax',1)}${o(FITC.peMax,'מכפיל רווח עד','peMax',1)}${o(FITC.revgMin,'צמיחת הכנסות מ (%)','revgMin',1)}${o(FITC.dyMin,'תשואת דיבידנד מ (%)','dyMin',0.1)}${o(FITC.betaMax,'בטא עד (סיכון)','betaMax',0.1)}${o(FITC.pmMin,'רווח נקי מ (%)','pmMin',1)}
+    <label>אנליסטים<select data-fitc="rating"><option value="">לא משנה</option><option value="buy"${FITC.rating==='buy'?' selected':''}>קונסנזוס קנייה</option><option value="nosell"${FITC.rating==='nosell'?' selected':''}>לא "מכירה"</option></select></label></div>
+    <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-fitcclr="1"${fitcOn()?'':' disabled'}>לנקות</button></div><p class="nm">נייר בלי הנתון שסיננת לפיו לא עובר את הסינון. הסינון אינו המלצה: הוא רק מראה מי עומד בקריטריונים שקבעת.</p></details>`}
+function fitCon(r,m){const f=r.f, c=r.c||{}, W=fitW(), parts=Object.keys(W).filter(k=>W[k]>0).map(k=>({k,v:f[k]||0,max:W[k],q:(f[k]||0)/W[k]})).sort((a,b)=>b.q-a.q);
+  const why=parts.filter(p=>p.q>=0.7).slice(0,2).map(p=>FITL[p.k]).join(', ');
+  const con=[]; const pe=c.fpe!=null?c.fpe:c.pe; if(pe!=null&&pe>=40)con.push(`מכפיל ${pe.toFixed(0)}`); if(c.de!=null&&c.de>=2)con.push(`חוב פי ${c.de.toFixed(1)} מההון`); if(c.pm!=null&&c.pm<0)con.push('מפסידה'); if(c.revg!=null&&c.revg<0)con.push(`הכנסות יורדות (${spct(c.revg,0)})`); if(c.beta!=null&&c.beta>=1.5)con.push(`בטא ${c.beta.toFixed(1)}`);
+  if(f.over)con.push(`הקבוצה (${GROUPS[f.g]||f.g}) כבר מלאה אצלך`); if(c.next&&daysTo(c.next)>=0&&daysTo(c.next)<=10)con.push(`דוח בעוד ${daysTo(c.next)} ימים`); if(/sell|underperform/i.test(c.rating||''))con.push('קונסנזוס "מכירה"'); if(c.chg52!=null&&c.chg52<=-30)con.push(`ירדה ${pct(Math.abs(c.chg52),0)} בשנה`);
+  const lowParts=parts.filter(p=>p.q<=0.3).slice(0,2).map(p=>FITL[p.k]);
+  return {why:why||(parts[0]?FITL[parts[0].k]:''),con,low:lowParts}}
 function renderFit(){
   const box=$('fitBox2'); if(!box)return;
   if(!P||!Q){box.innerHTML='<div class="empty">הדירוג מחושב מול התיק שלך. קודם צריך תיק.</div>';return}
@@ -24482,6 +24509,7 @@ function renderFit(){
   let rows=Object.keys(figs).map(k=>{const it=itemOf(k);if(!it||it.t==='E')return null;const f=fitScore(k,figs[k],m);return {k,it,c:figs[k],f,held:held.has(it.sym)&&it.t!=='T'}}).filter(Boolean);
   if(FITHELD===false)rows=rows.filter(r=>!r.held);
   if(FITG)rows=rows.filter(r=>r.f.g===FITG);
+  const secsAll=[...new Set(rows.map(r=>r.it.sec).filter(Boolean))].sort(), before=rows.length; if(fitcOn())rows=rows.filter(fitcPass);
   rows.sort((a,b)=>b.f.score-a.f.score||(b.it.cap||0)-(a.it.cap||0));
   const n=rows.length, hi=rows.filter(r=>r.f.score>=80).length, when=FIT&&FIT.updatedAt?dmy(FIT.updatedAt):'';
   const gs=[...new Set(rows.map(r=>r.f.g))];
@@ -24502,12 +24530,14 @@ function renderFit(){
     box.innerHTML=heroF+kindChips+chipsF+`<div class="fitlist">${fr.slice(0,FITN).map(fundRow).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`; return}
   const hero=`<div class="fithero"><b>${n} ניירות מדורגים לפי כמה הם מתאימים לתיק שלך${hi?', '+hi+' מהם מתאימים מאוד':''}.</b><span>${fitHeroTxt()} ${uni?`יש נתונים ל-${total} מתוך ${uni} ניירות ברשימה; הנתונים מושלמים בהדרגה, כל שעתיים.`:`יש נתונים ל-${total} ניירות; ${FIT&&rsStale(FIT.updatedAt)?'':'הרשימה מתרחבת בהדרגה.'}`}${when?(FIT&&rsStale(FIT.updatedAt)?' הנתונים נכונים ל-'+when+' ולא מתעדכנים כרגע.':' עודכן '+when+'.'):''} זה דירוג התאמה, לא המלצת קנייה.</span>${!hasRisk()&&canWrite?'<button class="btn sm" type="button" data-prof="edit">להתאים לסוג המשקיע שלי</button>':''}</div>`;
   const lab=k=>{const c=figs[k];const r=c&&c.rating?RATE_HE[c.rating]||c.rating:'';return r};
-  const list=rows.slice(0,FITN).map(r=>{const pr=priceOf(r.k),f=r.f,tier=f.score>=80?'hi':f.score>=65?'mid':'lo';
-    return `<button type="button" class="fitrow" data-open="${esc(r.k)}"><span class="sc ${tier}" aria-label="התאמה ${f.score} מתוך 100">${f.score}</span>${logoHtml(r.k)}<span class="nm"><b><bdi>${esc(r.it.name||r.it.sym)}</bdi>${r.held?' <span class="tag">בתיק</span>':''}${f.over?' <span class="tag" style="background:var(--warn-bg);color:var(--warn)">הקבוצה מלאה</span>':''}</b><span><i dir="ltr">${esc(r.it.sym)}</i> · ${esc(GROUPS[f.g]||'')} · פיזור ${f.div} · איכות ${f.q}${f.fs?' ('+f.fs.grade+')':''} · תמחור ${f.val}${f.pe!=null?' (מכפיל '+Number(f.pe).toFixed(0)+')':''}${fitRowX(f)}${lab(r.k)?' · אנליסטים: '+esc(lab(r.k)):''}</span></span>${pr?`<span class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</span>`:'<span></span>'}</button>`+fitWhy(f,r.c,m)}).join('');
+  const list=rows.slice(0,FITN).map(r=>{const pr=priceOf(r.k),f=r.f,tier=f.score>=80?'hi':f.score>=65?'mid':'lo', wy=fitCon(r,m);
+    return `<button type="button" class="fitrow" data-open="${esc(r.k)}"><span class="sc ${tier}" aria-label="התאמה ${f.score} מתוך 100">${f.score}</span>${logoHtml(r.k)}<span class="nm"><b><bdi>${esc(r.it.name||r.it.sym)}</bdi>${r.held?' <span class="tag">בתיק</span>':''}${f.over?' <span class="tag" style="background:var(--warn-bg);color:var(--warn)">הקבוצה מלאה</span>':''}</b><span><i dir="ltr">${esc(r.it.sym)}</i> · ${esc(GROUPS[f.g]||'')} · פיזור ${f.div} · איכות ${f.q}${f.fs?' ('+f.fs.grade+')':''} · תמחור ${f.val}${f.pe!=null?' (מכפיל '+Number(f.pe).toFixed(0)+')':''}${fitRowX(f)}${lab(r.k)?' · אנליסטים: '+esc(lab(r.k)):''}</span></span>${pr?`<span class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</span>`:'<span></span>'}</button><p class="fw-con"><b>למה אותר:</b> ${esc(wy.why||'—')}${wy.low.length?` <span class="nm">(חלש ב: ${esc(wy.low.join(', '))})</span>`:''} · <b>מה סותר:</b> ${wy.con.length?esc(wy.con.join(' · ')):'לא נמצא בנתונים שיש לדף'}</p>`+fitWhy(f,r.c,m)}).join('');
   const fundsAll=FITK==='all'?`<div class="row" style="margin:14px 0 8px"><h3>קרנות שיכולות להתאים</h3><span class="sub">${Math.min(8,fr.length)} מתוך ${fr.length}</span></div><div class="fitlist">${fr.slice(0,8).map(fundRow).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`:'';
-  box.innerHTML=hero.replace('</div>',`<div style="margin-top:6px">${askBtn}</div></div>`)+kindChips+chips+`<div class="fitlist">${list||'<div class="empty">אין עדיין ניירות עם נתונים בסינון הזה.</div>'}</div>`+(rows.length>FITN?`<button type="button" class="btn" id="fitMore">להציג עוד ${Math.min(60,rows.length-FITN)}</button>`:'')+fundsAll;
+  box.innerHTML=hero.replace('</div>',`<div style="margin-top:6px">${askBtn}</div></div>`)+kindChips+chips+fitcH(secsAll)+(fitcOn()?`<p class="nm" style="margin:0 0 6px">${rows.length} מתוך ${before} עומדים בקריטריונים שלך.</p>`:'')+`<div class="fitlist">${list||'<div class="empty">אין עדיין ניירות עם נתונים בסינון הזה.</div>'}</div>`+(rows.length>FITN?`<button type="button" class="btn" id="fitMore">להציג עוד ${Math.min(60,rows.length-FITN)}</button>`:'')+fundsAll;
 }
 // "מה מתאים לתיק" is a tab of its own in the research group (25.10); the search keeps only the search
+document.addEventListener('input',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.fitc||!el.closest('#fitBox2'))return; FITC[el.dataset.fitc]=el.value; try{localStorage.setItem('tr_fitc',JSON.stringify(FITC))}catch(e){} clearTimeout(renderFit.t); renderFit.t=setTimeout(()=>{const a=document.activeElement, k=a&&a.dataset&&a.dataset.fitc; renderFit(); if(k){const e2=document.querySelector(`#fitBox2 [data-fitc="${k}"]`); if(e2)e2.focus({preventScroll:true})}},400)});
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#fitBox2 [data-fitcclr]'); if(!b)return; FITC={sec:'',capMin:'',capMax:'',peMax:'',revgMin:'',dyMin:'',betaMax:'',pmMin:'',rating:''}; try{localStorage.removeItem('tr_fitc')}catch(e){} renderFit()});
 function setSV(v){if(v==='fit'){showTab('fit',true);return} SV='search'; for(const b of document.querySelectorAll('#srchView [data-sv]'))b.setAttribute('aria-pressed',String(b.dataset.sv==='search'));
   $('srchBox').hidden=false;$('sqRes').hidden=!!SEC;if(SEC)$('secPage').hidden=false; try{localStorage.setItem('tr_sv','search')}catch(e){} srchRender()}
 function srchQ(){if(document.body.dataset.page==='fit'){renderFit();return}if(SEC)renderSec();else if(!$('sqRes').hidden&&$('sqRes').innerHTML)srchRender()}
