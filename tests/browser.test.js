@@ -2016,6 +2016,29 @@ test('1.11 the insiders: the security page tells a planned sale from an award, t
   }finally{await ctx.close(); if(I0.exists)store.setDoc('research/insiders',I0.data,{silent:true}); else store.deleteDoc('research/insiders'); if(PU0.exists)store.setDoc('alerts/pulse',PU0.data,{silent:true}); else store.deleteDoc('alerts/pulse')}
 });
 
+test('1.11 completions: the X-ray names the common factors and direct against indirect; the health score adds sector, currency, costs, swings and the fit to the horizon, and keeps a mark a month; the goals compass',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data; const {ctx,pg}=await open(390);
+  try{
+    // the X-ray
+    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="mix"]'); await pg.waitForTimeout(400);
+    const xr=await pg.evaluate(()=>({txt:document.getElementById('expBox').innerText.replace(/\s+/g,' '),fac:[...document.querySelectorAll('#expBox .xr-fac li b')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(xr.ox,false); assert.ok(xr.fac.includes('שער הדולר')&&xr.fac.includes('טכנולוגיה ושבבים (AI)')&&xr.fac.includes('ישראל'),JSON.stringify(xr.fac)); assert.match(xr.txt,/שער הדולר \d+% \(\d+ ניירות/); assert.match(xr.txt,/ישיר מול עקיף: \d+% מהתיק בניירות בודדים.*\d+% דרך קרנות/); assert.match(xr.txt,/מדינת הפעילות של כל חברה אינה בנתונים/);
+    // the health score
+    await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(400);
+    const H=await pg.evaluate(()=>({parts:[...document.querySelectorAll('#hParts li')].map(l=>l.textContent.replace(/\s+/g,' ')),hist:document.getElementById('hHist').innerText,score:+document.getElementById('hNum').textContent}));
+    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(H.hist,/לא הבטחה לתשואה/);
+    await pg.waitForTimeout(1500); const ym=new Date().toISOString().slice(0,7); const mk=(store.getDoc('settings/main').data.hsc||{})[ym]; assert.ok(typeof mk==='number'&&Math.abs(mk-H.score)<=5,'one mark a month, in the account: '+mk+' vs '+H.score);
+    // the goals compass: no goal yet, then a goal
+    await tab(pg,'forecast'); await pg.waitForTimeout(500);
+    let c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' ')); assert.match(c,/קבע יעד כספי/);
+    await pg.fill('#inGoal','300000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600);
+    c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' '));
+    assert.match(c,/היום \(אחרי מס משוער\): ₪[\d,]+ מתוך ₪300,000, \d+% מהיעד/); assert.match(c,/בעוד 15 שנים, לפי 7\.0% בשנה ו-₪600 בחודש: ₪[\d,]+ אחרי מס/); assert.match(c,/ליעד מגיעים (בעוד|כבר)/); assert.match(c,/הפקדה חודשית שסוגרת את הפער באותן הנחות: ₪[\d,]+/); assert.match(c,/כל ₪100 נוספים בחודש: עוד כ-₪[\d,]+/); assert.match(c,/לא תחזית ולא טווח הסתברויות/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('settings/main',S0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

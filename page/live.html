@@ -2046,6 +2046,11 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (5): the goals compass */
+.compass{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13.5px;line-height:1.55} .compass h3{margin:0 0 6px;font-size:14px} .compass h4{margin:8px 0 2px;font-size:13.5px} .compass ul{margin:4px 0 0;padding-inline-start:18px} .compass li{margin:2px 0} .compass .up{color:var(--gain)} .compass .down{color:var(--loss)}
+.cmp-bar{height:10px;border-radius:999px;background:rgb(127 127 127 / .18);overflow:hidden} .cmp-bar i{display:block;height:100%;background:var(--s1);border-radius:999px}
+/* 1.11 (3): the X-ray's common factors */
+.xr-fac{margin-top:10px} .xr-fac h3{margin:0 0 2px;font-size:14px} .xr-fac ul{margin:4px 0 0;padding-inline-start:18px;font-size:13.5px;line-height:1.5} .xr-fac li{margin:3px 0} .xr-fac .n{font-family:var(--mono)}
 /* 1.11 (12): the insiders' filings */
 .ins-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px} .ins-r{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;line-height:1.5} .ins-r.mat{border-color:rgb(245 158 11 / .6)} .ins-h{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline} .ins-h .sym{font-family:var(--mono);font-weight:700} .ins-b{margin-top:2px} .ins-r .n{font-family:var(--mono)} .ins-r.k-buy .ins-k{background:rgb(16 185 129 / .15)} .ins-r.k-sell .ins-k{background:rgb(239 68 68 / .15)} .ins-why{font-size:13px;margin-top:2px} .ins-sum{margin:0 0 6px;font-size:13.5px} .nw-ds h5{margin:10px 0 4px;font-size:13.5px}
 /* 1.11 (8): the DNA: eight cards of facts */
@@ -2827,6 +2832,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="legend" style="margin-block:16px 6px"><span><i class="lg-l1"></i>שווי אחרי מס</span><span><i class="lg-l2"></i>מה שהשקעת</span><span>ציר אופקי: שנים מהיום</span></div>
         <div class="chart" id="chart2"><svg id="svg2" viewBox="0 0 640 260" role="img" aria-label="שווי התיק לפי ההנחות שלך מול סך ההפקדות לאורך השנים"></svg><div class="tip" id="tip2" hidden></div></div>
         <p class="note" id="fwdNote"></p>
+        <div class="compass" id="goalCompass" hidden></div>
       </div>
     </section>
     <section aria-labelledby="hScen">
@@ -3178,7 +3184,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     </section>
     <section id="healthHome" aria-labelledby="hHealth" hidden>
       <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
-      <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul>
+      <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul><div id="hHist"></div>
         <p class="note">המדד בודק אם התיק עומד בכללים שקבעת. 100 = הכול בסדר. הוא לא מודד תשואה ולא ממליץ. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
     </section>
     <section aria-labelledby="hMixH" id="mixHome" hidden>
@@ -17609,6 +17615,14 @@ function healthOf(m){
   const sl=+R.stopLoss||0; if(sl){const costed=m.pos.filter(p=>p.cost>0), dnV=costed.filter(p=>(p.costVal-p.cost)/p.cost*100<=-sl).reduce((t,p)=>t+p.val,0), base=costed.reduce((t,p)=>t+p.val,0);
     parts.push({k:'dd',t:'ניירות מתחת לסף הירידה',w:14,s:base>0?1-Math.min(1,dnV/base*2.5):1,d:base>0?`${pct(dnV/base*100)} מהשווי ירדו יותר מ-${sl}% מהעלות`:'אין נתוני עלות'})}
   const uc=+R.usdCap||0; if(uc)parts.push({k:'usd',t:'חשיפה לדולר',w:10,s:lin(m.usdPct,uc*0.9,uc*1.3),d:`${pct(m.usdPct)} בדולרים · הכלל עד ${pct(uc,0)}`});
+  // 1.11 (18): the sector (not the group), the currencies, the costs, the swings, and the fit to the horizon
+  try{const E=exposures(m,P,Q,k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}}); if(E){const sTop=E.sector.filter(r=>r.k!=='cash'&&r.k!=='?')[0]; if(sTop)parts.push({k:'sec',t:'ריכוז בענף',w:8,s:lin(sTop.w,35,70),d:`${sTop.label} ${pct(sTop.w)} · מעל 35% מוריד נקודות`});
+    const cTop=E.ccy[0]; if(cTop)parts.push({k:'ccy',t:'ריכוז במטבע',w:5,s:lin(cTop.w,80,100),d:`${cTop.label} ${pct(cTop.w)}${E.ccy.length>1?' · '+E.ccy.length+' מטבעות':' · מטבע אחד'}`})}}catch(e){}
+  try{const fx=Q.usdIls||0, A=(HS&&HS.accounts)||[], F=A.map(a=>feesOf(a,fx)), known=F.some(f=>f.known), fees=F.reduce((t,f)=>t+(f.known?f.ils:0),0), months=Math.max(1,Math.min(12,((HS&&HS.monthly)||[]).length)), yr=fees/months*12, r=m.total>0?yr/m.total*100:0;
+    if(known)parts.push({k:'cost',t:'עלויות',w:5,s:lin(r,0.3,1.5),d:`עמלות כ-${ils(yr)} בשנה (לפי ${months} חודשים), ${pct(r,2)} מהשווי`})}catch(e){}
+  try{const rows=dnaMonths().filter(r=>r.chg!=null); if(rows.length>=3){const worst=Math.min(...rows.map(r=>r.chg)); parts.push({k:'vol',t:'תנודתיות',w:6,s:lin(-worst,4,15),d:`החודש הגרוע ${spct(worst)} מתוך ${rows.length} חודשים (אחרי ניכוי הפקדות)`})}}catch(e){}
+  try{const yrs=+S.years||0, figs=fitFigs(), bw=m.pos.filter(p=>figs[p.sym]&&figs[p.sym].beta!=null), beta=bw.length?bw.reduce((t,p)=>t+figs[p.sym].beta*p.w,0)/bw.reduce((t,p)=>t+p.w,0):null;
+    if(yrs&&beta!=null){const want=yrs<3?0.9:yrs<7?1.2:1.6; parts.push({k:'fit',t:'התאמה לאופק',w:6,s:lin(beta,want,want+0.6),d:`בטא ${beta.toFixed(2)} מול אופק של ${yrs} שנים${yrs<3?' (קצר: מתאים נמוך מ-0.9)':yrs<7?' (בינוני: עד 1.2)':' (ארוך: עד 1.6)'}`})}}catch(e){}
   {const noPx=(P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).length, old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)).length, late=(()=>{try{return !!pxLate()}catch(e){return false}})();
     const bad=noPx*2+old+(late?1:0)+(m.missingCost||0); parts.push({k:'data',t:'איכות הנתונים',w:4,s:Math.max(0,1-bad*0.2),d:bad?[noPx?noPx+' בלי מחיר':'',old?old+' עם מחיר ישן':'',m.missingCost?m.missingCost+' בלי עלות':'',late?'המחירים לא עודכנו':''].filter(Boolean).join(' · '):'מחירים ועלויות מלאים'})}
   const W=parts.reduce((t,x)=>t+x.w,0), score=Math.round(parts.reduce((t,x)=>t+x.w*x.s,0)/W*100);
@@ -17621,6 +17635,9 @@ function renderHealth(m){
   $('hNum').textContent=H.score; $('hLab').textContent=H.label; const low=H.parts.filter(x=>x.lvl!=='ok').sort((a,b)=>(1-b.s)*b.w-(1-a.s)*a.w);   // the parts that cost the most points first
   $('hWhy').textContent=low.length?`מוריד את המדד: ${low.slice(0,2).map(x=>x.t).join(', ')}`:'כל הבדיקות בטווח שקבעת';
   $('healthSub').textContent=`${H.parts.length} בדיקות · משקלים לפי הכללים שלך`;
+  // 1.11 (18): the score over time: one mark a month, kept in the account; and said what it is not
+  try{const ym=new Date().toISOString().slice(0,7); S.hsc=S.hsc||{}; if(canWrite&&SETK&&!LOCAL&&SYMDB&&S.hsc[ym]==null){S.hsc[ym]=H.score; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)} const hist=Object.entries(S.hsc).sort().slice(-7), el=$('hHist');
+    if(el)el.innerHTML=(hist.length>1?`<p class="nm">לאורך זמן: ${hist.map(([k,v])=>`${k.slice(5)}/${k.slice(2,4)} <b>${v}</b>`).join(' · ')}</p>`:'')+'<p class="nm">המדד בודק את המבנה לפי הכללים שלך; הוא לא הבטחה לתשואה. נשמר ציון אחד לחודש, להשוואה.</p>'}catch(e){}
   $('hParts').innerHTML=H.parts.map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('');
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mixv]'); if(!b)return; try{localStorage.setItem('tr_mixview',b.dataset.mixv)}catch(x){} try{render()}catch(x){}});
@@ -18249,9 +18266,12 @@ function renderExposure(m){
   const unk=EXPV==='sector'&&E.unknownSector.length?`<p class="note">אין ענף ברשימה עבור: ${esc(E.unknownSector.map(lab).join(', '))}.</p>`:'';
   const ov=E.overlap.status==='unknown-possible'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה.</b> ${esc(E.overlap.text)} כדי לחשב אותה צריך את ההרכב של הקרנות, ואין לדף מקור כזה.</p>`
     :E.overlap.status==='unknown'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה,</b> כי אין לדף את ההרכב של ${esc(E.funds.map(lab).join(', '))}. זה לא אומר שאין חפיפה.</p>`:'';
+  // 1.11 (3): the common factors, direct against indirect, and what the page cannot say (the country of business, the funds' holdings)
+  const fac=E.factors&&E.factors.length?`<div class="xr-fac"><h3>גורמי סיכון משותפים</h3><p class="nm">כמה מהתיק זז יחד כשגורם אחד משתנה. נייר יכול להיות תחת כמה גורמים.</p><ul>${E.factors.slice(0,7).map(f=>`<li><b>${esc(f.label)}</b> <span class="n">${pct(f.w,0)}</span> <span class="nm">(${f.syms.length} ניירות: ${esc(f.syms.slice(0,6).map(lab).join(', '))}${f.syms.length>6?'…':''})</span><br><span class="nm">${esc(f.why)}</span></li>`).join('')}</ul></div>`:'';
+  const dir=E.direct?`<p class="note"><b>ישיר מול עקיף:</b> ${pct(E.direct.stocks,0)} מהתיק בניירות בודדים (חשיפה ישירה), ${pct(E.direct.funds,0)} דרך קרנות (עקיפה; החברות שבתוך הקרן אינן בנתוני הדף). <b>מדינה:</b> לפי מקום המסחר בלבד ("שוק"); מדינת הפעילות של כל חברה אינה בנתונים.</p>`:'';
   const co=CM&&CM.to?`<p class="note">גורמים משותפים: ניירות שזזים יחד מופיעים בחלק "נעים יחד", לפי ${CM.days||'?'} ימי מסחר עד ${dmy(CM.to)}${(Date.now()-new Date(CM.to))/864e5>14?' (הנתון הזה לא מתעדכן כרגע)':''}.</p>`:'';
   box.innerHTML=tiles+`<div class="chips" role="group" aria-label="חלוקה לפי" style="margin:14px 0 10px">${Object.keys(EXPL).map(k=>`<button type="button" class="chip" data-expv="${k}" aria-pressed="${k===EXPV}">${EXPL[k]}</button>`).join('')}</div>`
-    +expBars(rows)+`<p class="note">${EXPN[EXPV]} ${EXPV==='sector'||EXPV==='group'?whyBtn('grpsec','מה ההבדל?'):termBtn('expo')}</p>`+unk+ov+co;
+    +expBars(rows)+`<p class="note">${EXPN[EXPV]} ${EXPV==='sector'||EXPV==='group'?whyBtn('grpsec','מה ההבדל?'):termBtn('expo')}</p>`+unk+ov+co+fac+dir;
 }
 function stScen(m){
   const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
@@ -19330,6 +19350,17 @@ function exposures(m,P,Q,secOf){
     kind:list(by(p=>isFund(p)||p.group==='il'?'fund':'stock',k=>k==='fund'?'קרנות':'מניות'),m.cash)};
   out.unknownSector=(sec['?']||{syms:[]}).syms;
   out.funds=pos.filter(isFund).map(p=>p.sym);
+  // 1.11 (3): the common risk factors: one shock that reaches several holdings at once, by what the page knows of each
+  // (its sector, its currency, its group, its size, its figures). The weight is the part of the portfolio that factor
+  // touches; a holding can be under several factors
+  {const figs=(()=>{try{return fitFigs()}catch(e){return {}}})(), capOf=p=>{try{const it=itemOf(p.sym); return it&&it.cap>0?it.cap:null}catch(e){return null}};
+    const FAC=[['usd','שער הדולר',p=>p.ccy==='USD','כל מה שנקוב בדולרים זז עם השער, בלי קשר לחברה'],['tech','טכנולוגיה ושבבים (AI)',p=>/tech|semicond|software/i.test(secOf(p.sym))||p.group==='tech','ביקוש לשבבים ולענן, רגולציה על טכנולוגיה, הערכות שווי גבוהות'],
+      ['rates','רגישות לריבית',p=>/financ|bank|real estate|utilit/i.test(secOf(p.sym))||p.group==='fin','בנקים, נדל״ן ותשתיות: הריבית משנה את הרווח ואת השווי'],['cons','הצרכן',p=>/consumer/i.test(secOf(p.sym))||p.group==='cons','הוצאות משקי הבית: תעסוקה, אינפלציה, ביטחון צרכני'],
+      ['energy','נפט ואנרגיה',p=>/energy|oil/i.test(secOf(p.sym)),'מחיר הנפט והגז'],['il','ישראל',p=>p.ccy==='ILS'||p.group==='il','הביטחון, הריבית של בנק ישראל, הדירוג והשקל'],['mega','ענקיות (מעל $500B)',p=>capOf(p)>=5e5,'כמה חברות ענק קובעות את המדדים; נפילה בהן גוררת את הקרנות'],
+      ['loss','חברות מפסידות',p=>{const c=figs[p.sym]; return !!(c&&c.pm!=null&&c.pm<0)},'תלויות בגיוס הון ובסבלנות השוק'],['hipe','מכפיל רווח מעל 40',p=>{const c=figs[p.sym]; return !!(c&&c.pe>=40)},'הערכת שווי שתלויה בציפיות לצמיחה']];
+    out.factors=FAC.map(([k,label,f,why])=>{const L=pos.filter(f); return {k,label,why,w:W(L.reduce((t,p)=>t+p.val,0)),syms:L.map(p=>p.sym)}}).filter(x=>x.w>=3).sort((a,b)=>b.w-a.w)}
+  // direct (single securities) against indirect (through funds)
+  out.direct={stocks:W(pos.filter(p=>!isFund(p)).reduce((t,p)=>t+p.val,0)),funds:W(pos.filter(isFund).reduce((t,p)=>t+p.val,0))};
   // overlap: possible when a broad fund and single stocks of the same market are both held; its size is not known
   const ov=typeof anaOverlap==='function'?anaOverlap(m):null; out.overlap=ov?{status:'unknown-possible',text:ov.text}:out.funds.length?{status:'unknown'}:{status:'none-held'};
   return out;
@@ -21330,6 +21361,28 @@ function hover(ev){
   const left=px/geo.W*r.width; tip.style.left=Math.max(0,Math.min(r.width-230,left+(left>r.width/2?-240:12)))+'px';
 }
 let FP=[];
+// ---- 1.11 (5): "מצפן המטרות": where the main goal stands today and at the horizon under the assumptions, the gap, the
+// monthly deposit that would close it (solved on the same projection), what a change of deposits does, and the savings
+// by purpose (pots) each with its own progress. Every number says it rests on the assumed return; no probabilities,
+// since the page has no validated model for them ----
+function needMonthly(start,years,rate,unreal,goal){if(!(goal>0)||!(years>0))return null; const net=mo=>{const r=Math.pow(1+rate/100,1/12)-1, tr=Math.max(0,+S.taxPct||0)/100; let v=start,d=start; for(let k=1;k<=years*12;k++){v=v*(1+r)+mo; d+=mo} return v-Math.max(0,v-(d-(unreal||0)))*tr};
+  if(net(0)>=goal)return 0; let lo=0, hi=1e6; for(let i=0;i<40;i++){const mid=(lo+hi)/2; if(net(mid)>=goal)hi=mid; else lo=mid} return Math.round(hi)}
+function renderCompass(pts,e,unreal){
+  const box=$('goalCompass'); if(!box)return; const goal=Math.max(0,+S.goal||0), yrs=+S.years||0, rate=+S.ratePct||0, mo=MTOT(), start=pts[0].val, tr=Math.max(0,+S.taxPct||0)/100;
+  const L=pots(), potH=L.length?`<div class="cmp-pots"><h4>חסכונות לפי מטרה</h4><ul>${L.map(pt=>{let V=null; try{V=potValue(pt)}catch(x){} if(!V)return ''; const gap=V.tgt?Math.max(0,V.tgt-V.total):null;
+    return `<li><b>${esc(pt.name||'חיסכון')}</b>: ${ils(V.total)}${V.tgt?` מתוך ${ils(V.tgt)} (${pct(V.pctT||0,0)})${gap?`, חסר ${ils(gap)}`:', ביעד'}`:' (בלי יעד)'}${pt.date?` · עד ${dmy(pt.date)}`:''}${V.atDate!=null?` · לפי ההנחות: ${ils(V.atDate)} במועד`:''} <button type="button" class="lnk" data-tab="pots" data-pot="${esc(pt.id)}">לפתוח</button></li>`}).join('')}</ul></div>`:'';
+  if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note" style="margin:0">קבע יעד כספי למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש, מה הפער, ואיזו הפקדה חודשית סוגרת אותו לפי ההנחות שלך.</p>${potH}`; return}
+  const netNow=start-Math.max(0,+(EXPM&&EXPM.pnl)||0)*tr, pNow=Math.max(0,Math.min(100,netNow/goal*100)), end=e.net, gap=goal-end, k=goalMonths(start,mo,rate,unreal,goal), need=needMonthly(start,yrs,rate,unreal,goal);
+  const plus=(d)=>{const r=Math.pow(1+rate/100,1/12)-1; let v=0; for(let i=1;i<=yrs*12;i++)v=v*(1+r)+d; return v*(1-tr)};
+  box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3>
+    <div class="cmp-row"><div class="cmp-bar" role="img" aria-label="${pct(pNow,0)} מהיעד היום"><i style="width:${pNow.toFixed(1)}%"></i></div><p class="nm" style="margin:4px 0 0">היום (אחרי מס משוער): <b>${ils(netNow)}</b> מתוך <b>${ils(goal)}</b>, ${pct(pNow,0)} מהיעד.</p></div>
+    <ul class="cmp-l">
+      <li>בעוד ${yrs} שנים, לפי ${pct(rate,1)} בשנה ו-${ils(mo)} בחודש: <b>${ils(end)}</b> אחרי מס — ${gap>0?`<span class="down">חסרים ${ils(gap)}</span>`:`<span class="up">מעבר ליעד ב-${ils(-gap)}</span>`}.</li>
+      <li>ליעד מגיעים ${whenH(k)}.</li>
+      ${need!=null?`<li>הפקדה חודשית שסוגרת את הפער באותן הנחות: <b>${ils(need)}</b>${need>mo?` (עוד ${ils(need-mo)} בחודש)`:need<mo?` (פחות מ-${ils(mo)} של היום)`:' (כמו היום)'}.</li>`:''}
+      <li>כל <b>₪100</b> נוספים בחודש: עוד כ-<b>${ils(plus(100))}</b> אחרי מס בסוף התקופה; <b>₪500</b>: עוד כ-<b>${ils(plus(500))}</b>.</li>
+    </ul>
+    <p class="note" style="margin:6px 0 0">הכול לפי התשואה שהנחת; לא תחזית ולא טווח הסתברויות (אין לדף מודל מאומת לכך). שינוי ההנחה למעלה משנה את כל המספרים כאן.</p>${potH}`}
 function drawFwd(raw,planEndY,unreal,missing){
   const tr=Math.max(0,+S.taxPct||0)/100, pts=raw.map(p=>{const basis=p.dep-(unreal||0),gain=p.val-basis,tax=Math.max(0,gain)*tr;return {y:p.y,val:p.val,dep:basis,gain,tax,net:p.val-tax}});
   FP=pts; const W=cw('chart2'),sm=W<480,H=sm?230:260,L=sm?46:58,Rm=sm?64:74,T=14,Bm=30, n=pts.length-1;
@@ -21355,6 +21408,7 @@ function drawFwd(raw,planEndY,unreal,missing){
   const np=$('fNet'); np.textContent=sgn(e.gain-e.tax); np.className='v '+(e.gain-e.tax>=0?'up':'down'); $('fNetD').textContent=e.dep>0?`${spct((e.gain-e.tax)/e.dep*100)} על מה שהשקעת`:'';
   $('fVal').textContent=ils(e.net); $('fValD').textContent=`לפני מס: ${ils(e.val)}`;
   $('fwdNote').textContent=`מתחילים משווי התיק היום, ${ils(pts[0].val)}, ומפקידים ${ils(MTOT())} בחודש. התשואה היא הנחה שלך ולא תחזית, והמס מחושב כאילו מוכרים הכול בסוף התקופה.`+(missing?` ל-${missing} ניירות חסרה עלות, והרווח שכבר נצבר בהם לא נספר.`:'');
+  try{renderCompass(pts,e,unreal)}catch(x){console.error(x)}
 }
 $('chart2').addEventListener('pointermove',ev=>{
   const svg=$('svg2'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo||!FP.length)return;
