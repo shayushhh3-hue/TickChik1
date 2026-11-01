@@ -1610,7 +1610,7 @@ test('pulse: levels by rules from importance, relevance and confidence; one aler
   // on the server's matrix: a partner reads their own alerts only; nobody else's, not the owner's
   {const {access}=await import('../server/store.js'); assert.equal(access({id:f.id,role:'friend'},`data/users/${f.id}/pulse`),'rw'); assert.equal(access({id:f.id,role:'friend'},`data/users/${g.id}/pulse`),''); assert.equal(access({id:f.id,role:'friend'},'alerts/pulse'),'');
     assert.equal(access({id:'x',role:'admin'},'alerts/pulse'),'','an admin has their own, not the owner\'s'); assert.equal(access({id:'x',role:'admin'},'data/users/x/pulse'),'rw');
-    const {pathsOf}=await import('../server/pulse.js'); assert.deepEqual(pathsOf({id:'x',role:'admin'}),{portfolio:'data/users/x/portfolio',settings:'data/users/x/settings',pulse:'data/users/x/pulse',newsst:'data/users/x/newsst'},'an admin\'s alerts: from his own portfolio')}
+    const {pathsOf}=await import('../server/pulse.js'); assert.deepEqual(pathsOf({id:'x',role:'admin'}),{portfolio:'data/users/x/portfolio',settings:'data/users/x/settings',pulse:'data/users/x/pulse',newsst:'data/users/x/newsst',journal:'data/users/x/journal'},'an admin\'s alerts: from his own portfolio')}
   // the quiet hours, in Israel time
   const pr=pulsePrefs({pulse:{quiet:{from:'22:00',to:'07:00'}}}); assert.equal(inQuiet(pr,new Date('2026-10-30T21:30:00Z')),true,'23:30'); assert.equal(inQuiet(pr,new Date('2026-10-30T08:00:00Z')),false,'10:00');
   assert.equal(inQuiet(pulsePrefs({}),new Date('2026-10-30T04:00:00Z')),true,'06:00, the default quiet until 09:00'); assert.equal(inQuiet(pulsePrefs({pulse:{quiet:{on:false}}}),new Date('2026-10-30T04:00:00Z')),false);

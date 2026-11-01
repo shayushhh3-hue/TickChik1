@@ -2046,6 +2046,11 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11: the thesis: its form, its view, and what was reported beside it */
+.th-f{display:flex;flex-direction:column;gap:8px} .th-f label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink2)} .th-f textarea{font-family:inherit;font-size:14px;direction:rtl;text-align:start;min-height:44px} .th-f select{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.th-v{display:flex;flex-direction:column;gap:6px} .th-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .th-p{margin:0;font-size:14px;line-height:1.55} .th-p b{color:var(--ink)}
+.th-ev{margin:0;padding-inline-start:16px;display:flex;flex-direction:column;gap:5px;font-size:13.5px;line-height:1.5} .th-ev li.d-neg{border-inline-start:3px solid var(--loss);padding-inline-start:8px;list-style:none;margin-inline-start:-16px} .th-ev li.d-pos{border-inline-start:3px solid var(--gain);padding-inline-start:8px;list-style:none;margin-inline-start:-16px}
+.pl-th{padding:10px 12px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .25);font-size:13.5px;line-height:1.55}
 /* 31.10: the economic calendar */
 .eco-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px} .eco-ctl select,.eco-ctl input[type=search]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);min-height:38px} .eco-ctl input[type=search]{flex:1;min-width:160px}
 .eco-i{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);margin-bottom:8px} .eco-i.hl{border-color:var(--vio-ink);box-shadow:0 0 0 3px rgb(124 58 237 / .15)} .eco-i.past{opacity:.7}
@@ -19810,7 +19815,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -21345,7 +21350,7 @@ let ME=null, OWNER=true, LOCAL=false, RAWQ=null;
 // manages the site: the owner, or an admin, who invests in their own area like a partner but sees the system's health,
 // the jobs and the users
 function MGR(){return window.__tc?!!window.__tc.manage:OWNER}
-let PATHS={portfolio:'portfolio/main',plan:'plan/main',settings:'settings/main',history:'history/main',daily:'history/daily',arc:'reports/archive/items',ack:'alerts/ack',usage:'usage/main',newsst:'news/state',pulse:'alerts/pulse'};
+let PATHS={portfolio:'portfolio/main',plan:'plan/main',settings:'settings/main',history:'history/main',daily:'history/daily',arc:'reports/archive/items',ack:'alerts/ack',usage:'usage/main',newsst:'news/state',pulse:'alerts/pulse',journal:'journal/main'};
 const lsGet=n=>{try{const v=localStorage.getItem('tr_'+n);return v?JSON.parse(v):null}catch(e){return null}};
 const lsSet=(n,d)=>{try{localStorage.setItem('tr_'+n,JSON.stringify(d))}catch(e){}};
 const merge=(a,b)=>{for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')merge(a[k],b[k]);else a[k]=b[k]}return a};
@@ -22372,7 +22377,7 @@ async function wipeAll(){
   const pdel=async n=>{if(LOCAL){try{localStorage.removeItem('tr_'+n)}catch(e){}return} await db.doc(PATHS[n]).delete()};
   clearTimeout(pTimer); clearTimeout(timer); stopJobs(); JOBS.length=0; for(const k in HOLD)delete HOLD[k];
   if(db||LOCAL){
-    for(const n of ['portfolio','plan','history','daily','usage'])await run(()=>pdel(n));
+    for(const n of ['portfolio','plan','history','daily','usage','journal'])await run(()=>pdel(n));
     await run(async()=>{if(LOCAL){try{localStorage.removeItem('tr_ack')}catch(e){}return} const r=db.doc(PATHS.ack), sn=await r.get(); if(sn&&sn.exists)await r.delete()});
     try{if(db&&!LOCAL){const coll=OWNER?'settings':(ME?'data/users/'+ME:null); if(coll){const sn=await db.collection(coll).get(); for(const d of sn.docs)if(/^i18n_/.test(d.id))await db.doc(coll+'/'+d.id).delete()}}}catch(e){}
     if(withSet)await run(()=>pdel('settings'));
@@ -22834,7 +22839,7 @@ async function i18nReady(){
 function i18nSync(){if(!SETK)return; const want=S.profile&&I18N_OK(S.profile.lang)?S.profile.lang:'he'; if(want==='he'){if(I18N.lang!=='he')i18nSet('he'); i18nFemSet(femOn()); return} if(want!==I18N.lang)i18nSet(want); else if(I18N.on&&!I18N.ready)i18nReady()}
 function i18nBoot(){let l=''; try{l=localStorage.getItem('tr_lang')||''}catch(e){} if(I18N_OK(l)&&l!=='he')i18nSet(l)}
 // the original Hebrew of an element, for code that reads its own status lines
-window.__person=()=>anaPerson();
+window.__person=()=>anaPerson(); window.__focus=spec=>focusOf(spec);
 window.__i18nState=()=>({on:!!I18N.on,fem:!!I18N.fem,lang:I18N.lang,gender:(S&&S.profile&&S.profile.gender)||'',setk:SETK});
 window.__i18nSrc=el=>{if(!I18N.on)return el.textContent||''; let s=''; const w=document.createTreeWalker(el,4); let n; while(n=w.nextNode()){const r=I18N.orig.get(n); s+=r&&n.nodeValue===r.out?r.src:n.nodeValue} return s};
 document.addEventListener('click',()=>{if(I18N.on)i18nSoon(350)},true);
@@ -23371,6 +23376,7 @@ function plCard(a,o={}){
     <div class="pl-top"><span class="pl-lv lv-${a.lv}">${PL_LVS[a.lv]}</span>${isNew?'<span class="pl-nw">חדשה</span>':isUpd?'<span class="pl-nw up">עדכון</span>':''}${a.followed?'<span class="pl-nw f">במעקב, לא בתיק</span>':''}<span class="pl-when">${agoH(a.up||a.at)}${a.kind!=='mkt'?' · '+esc(NX_KIND[a.kind]||'ידיעה'):''}</span></div>
     <h3>${esc(a.title)}</h3>${a.what?`<p class="pl-what">${esc(a.what)}</p>`:''}
     <div class="pl-why"><b>למה זה נוגע לתיק שלך:</b> ${esc(a.relWhy||'')}${a.kind!=='mkt'&&(a.secs||[]).length&&(a.holds||[]).length?`; וגם ${a.secs.map(s=>`${pct(s.w,0)} מהתיק ב${esc(NX_SEC_HE[s.g]||s.g)}`).join(', ')}`:''}.${holds?`<div class="nw-ents">${holds}</div>`:''}</div>
+    ${a.th?`<div class="pl-th"><b>התזה שלך על ${esc(a.th.sym)}${a.th.at?' (מ-'+dmy(a.th.at)+')':''}:</b> ${esc(imCut(a.th.why||'',220))}${a.th.minus?`<br><b>מה שכתבת שיחליש אותה:</b> ${esc(imCut(a.th.minus,200))}`:''}${a.th.plus?`<br><b>מה שכתבת שיחזק:</b> ${esc(imCut(a.th.plus,200))}`:''}<br><span class="nm">האירוע ${esc(a.th.bearing||'')} את התזה לפי הקריאה; ההכרעה שלך. <button type="button" class="lnk" data-chiko="th:${esc(a.th.sym)}">לבחון עם צ׳יקו ›</button> <button type="button" class="lnk" data-gosec="${esc(a.th.sym)}">לתזה בדף הנייר ›</button></span></div>`:''}
     ${plChain(a)}${plHowH(a)}${meas}${a.kind==='mkt'?plMktH(a):dirTxt+msH}${acts}${a.ev&&STORY_OPEN.has(a.ev)?storyH(a.ev):''}
     <details class="nx-more pl-more"${o.open?' open':''}><summary>פרטים: איך נקבעה הרמה, מקורות וציר זמן</summary>
       <p class="nx-row"><b>הרמה:</b> ${esc(a.lvWhy||'')}.${(a.hist||[]).length>1?` <b>מה השתנה:</b> ${esc(a.hist[a.hist.length-1].t||'')}.`:''}</p>
@@ -23630,6 +23636,63 @@ async function loadCloses(k){if(CLOSES[k])return; if(ilIsNum(k)){await ilFundLoa
   if(gb){const arr=(gb.c||{})[k];if(arr)g={d:gb.d||[],c:arr};const wa=(gb.w||{})[k];if(wa&&gb.wd){const d=[],c=[];gb.wd.forEach((x,i)=>{if(wa[i]!=null){d.push(x);c.push(+wa[i])}});if(d.length>=3)gw={d,c}}}
   const m=mergeSeries(mergeSeries(a,b),g); if(a&&a.w&&a.w.d)m.w=a.w;else if(gw)m.w=gw; if(a&&a.m&&a.m.d)m.m=a.m; CLOSES[k]=m;if(SEC===k)renderSec()}
 // what the security on screen means for the viewer's own portfolio: holding, effect, and the viewer's rules
+// ---- 1.11: "זיכרון תזת ההשקעה" and the journal, one document a person (journal/main or data/users/<id>/journal):
+// thesis = {sym: {why, expect, assume, plus, minus, horizon, risks, at, updatedAt, hist:[{at,status}]}}, entries = the
+// journal (below). The thesis is the person's words; the page sets beside them what was reported since (the readings of
+// the news about the company, the last report), each with how sure it is and its source, and says whether the thesis
+// looks stronger, weaker, unchanged, or in need of a fresh look. A price move alone never decides that ----
+let JRN=null, JRNK=false, JRN_T=null, JRN_D=false;
+const jrn=()=>JRN||{thesis:{},entries:[]};
+function jrnSave(){JRN_D=true; clearTimeout(JRN_T); JRN_T=setTimeout(async()=>{if(!JRN_D)return; if(!JRNK&&!LOCAL)return; JRN_D=false; const J=jrn();
+  try{await pset('journal',{thesis:J.thesis||{},entries:(J.entries||[]).slice(0,600),updatedAt:new Date().toISOString()})}catch(e){JRN_D=true}},800)}
+const TH_FIELDS=[['why','למה רכשתי (או למה אני שוקל)','מה בחברה או בעסק שכנע אותי'],['expect','מה אני מצפה שיקרה','למשל: צמיחה בהכנסות, מוצר חדש, שיפור בשוליים'],['assume','ההנחות המרכזיות','מה חייב להישאר נכון'],['plus','מה יחזק את התזה','אירועים או מספרים שיאשרו אותה'],['minus','מה יחליש או יבטל אותה','מה יגרום לי לבחון מחדש או למכור'],['risks','הסיכונים המרכזיים','']];
+const TH_HOR={'':'לא צוין',short:'עד שנה',mid:'שנה עד שלוש',long:'שלוש עד חמש',vlong:'יותר מחמש שנים'};
+const TH_ST={up:['מתחזקת','ok'],down:['נחלשת','crit'],same:['ללא שינוי מהותי','ok'],review:['דורשת בחינה מחודשת','warn'],none:['עוד אין תזה','']};
+const TH_TYPES=new Set(['earnings','guidance','regulation','legal','management','ma','product','contract','rating']);
+// what was reported about the company since the thesis (the readings), the last report, and the price (shown, not judged)
+function thesisEval(sym){
+  const t=(jrn().thesis||{})[sym]; if(!t||!(t.why||t.minus||t.plus))return {status:'none',ev:[],conf:'',confWhy:''};
+  // what was reported from a week before the thesis was written (the person wrote it with those in mind) up to now, at most 45 days back
+  const since=Date.parse(t.at||t.updatedAt||0)||0, from=Math.max(since-7*864e5,Date.now()-45*864e5), ev=[];
+  let L=[]; try{L=newsAll().filter(it=>it.x&&!it.x.rules&&(it.x.aff||[]).some(a=>a.sym===sym&&a.how==='direct')&&Date.parse(it.at||it.seen||0)>=from)}catch(e){}
+  const E=nxEvents(L), minusT=heTok(t.minus), plusT=heTok(t.plus);
+  for(const e of E.values()){const it=e.items.slice().sort((a,b)=>NX_LVR[b.x.level]-NX_LVR[a.x.level])[0], x=it.x, a=(x.aff||[]).find(z=>z.sym===sym)||{};
+    const txt=`${x.he} ${x.what} ${x.more||''}`, T=heTok(txt), hitM=[...minusT].filter(w=>T.has(w)).length>=2, hitP=[...plusT].filter(w=>T.has(w)).length>=2;
+    const fact=x.cert==='fact'&&x.kind!=='opinion', weight=(fact?1:0.4)*(x.level==='crit'?1.5:x.level==='imp'?1:0.5)*(e.items.length>1?1.2:1);
+    ev.push({k:'news',at:it.at||it.seen,t:x.he,what:x.what,dir:a.dir||x.dir,cert:x.cert,kind:x.kind,level:x.level,n:e.items.length,id:it.id,ev:x.ev,weight,hitM,hitP,substance:fact&&(TH_TYPES.has(x.type)||x.level==='crit'),src:it.pub})}
+  const c=RS&&RS.companies&&RS.companies[sym], r=c&&c.rep; if(r&&r.at&&Date.parse(r.at)>=from&&r.now&&r.now.s!=null)ev.push({k:'report',at:r.at,t:`דוח ${r.label||''}: רווח למניה ${r.now.s>=0?'מעל':'מתחת ל'}צפי (${spct(r.now.s,0)})`,dir:r.now.s>=0?'pos':'neg',cert:'fact',level:'imp',n:1,weight:1.5,substance:true,src:'הדוח'});
+  // the verdict: only from facts of substance; a reading or an opinion is shown, and counted a little
+  let pos=0, neg=0, facts=0; for(const z of ev){const s=z.weight*(z.substance?1:0.3); if(z.dir==='neg')neg+=s; else if(z.dir==='pos')pos+=s; if(z.substance)facts++}
+  const status=!ev.length?'same':neg>=1.5&&neg>pos*1.5?'down':pos>=1.5&&pos>neg*1.5?'up':(pos>=1&&neg>=1)||ev.some(z=>z.hitM&&z.substance)?'review':'same';
+  const conf=facts>=2?'high':facts===1?'mid':'low', confWhy=facts>=2?`${facts} עובדות מדווחות`:facts===1?'עובדה מדווחת אחת':ev.length?'רק פרשנויות ודעות, בלי עובדה מדווחת':'אין התפתחות מדווחת מאז התזה';
+  let mv=null; try{const p=mAllNow().pos.find(z=>z.sym===sym); if(p&&p.cost>0)mv={pct:(p.costVal-p.cost)/p.cost*100}}catch(e){}
+  return {status,ev:ev.sort((a,b)=>String(b.at)<String(a.at)?-1:1),conf,confWhy,pos,neg,mv,since:t.updatedAt||t.at};
+}
+function thesisH(sym,o={}){
+  const t=(jrn().thesis||{})[sym]||{}, has=!!(t.why||t.minus||t.plus), R=thesisEval(sym), [stL,stK]=TH_ST[R.status], open=o.edit||!has;
+  const evH=R.ev.length?`<ul class="th-ev">${R.ev.slice(0,6).map(z=>`<li class="d-${z.dir||'unclear'}"><span class="nm">${dmy(z.at)}</span> <b>${esc(z.t)}</b>${z.what&&z.k==='news'?` <span class="nm">${esc(imCut(z.what,90))}</span>`:''} <span class="nx-tag c-${z.cert||'interp'}">${NX_CERT[z.cert]||'עובדה'}</span>${z.kind==='opinion'?'<span class="nx-tag">דעה</span>':''}${z.hitM?'<span class="nx-tag lv-crit">נוגע למה שכתבת שיחליש</span>':z.hitP?'<span class="nx-tag lv-imp">נוגע למה שכתבת שיחזק</span>':''}${z.n>1?` <span class="nm">${z.n} מקורות</span>`:z.src?` <span class="nm">${esc(z.src)}</span>`:''}${z.id?` <button type="button" class="lnk" data-anav="news:${esc(z.id)}">לידיעה ›</button>`:''}</li>`).join('')}</ul>`:'';
+  const form=`<form class="th-f" data-thsym="${esc(sym)}">${TH_FIELDS.map(([k,l,ph])=>`<label>${l}<textarea data-th="${k}" rows="2" maxlength="600" placeholder="${esc(ph)}">${esc(t[k]||'')}</textarea></label>`).join('')}
+      <label>אופק ההשקעה<select data-th="horizon">${Object.entries(TH_HOR).map(([k,v])=>`<option value="${k}"${(t.horizon||'')===k?' selected':''}>${v}</option>`).join('')}</select></label>
+      <div class="acts"><button type="submit" class="btn pri sm">${has?'לעדכן את התזה':'לשמור את התזה'}</button>${has?`<button type="button" class="btn sm" data-thcancel="${esc(sym)}">ביטול</button><button type="button" class="btn sm" data-thdel="${esc(sym)}">למחוק</button>`:''}</div>
+      <p class="note" style="margin:0">התזה נשמרת בחשבון שלך בלבד. היא לא נשלחת לצ׳יקו אלא כשאתה שואל אותו עליה.</p></form>`;
+  const view=`<div class="th-v"><div class="th-h"><span class="rs ${stK}">${stL}</span>${R.conf?`<span class="nm">ביטחון ${PL_CONF[R.conf]||R.conf}: ${esc(R.confWhy)}</span>`:''}${R.since?`<span class="nm">· התזה מ-${dmy(R.since)}</span>`:''}</div>
+      ${TH_FIELDS.filter(([k])=>t[k]).map(([k,l])=>`<p class="th-p"><b>${l}:</b> ${esc(t[k])}</p>`).join('')}${t.horizon?`<p class="th-p"><b>אופק:</b> ${TH_HOR[t.horizon]}</p>`:''}
+      ${evH?`<p class="th-p"><b>מה דווח מאז:</b></p>${evH}`:'<p class="nm">לא דווח דבר מהותי על החברה מאז שכתבת את התזה.</p>'}
+      ${R.mv?`<p class="nm">המחיר מאז הקנייה: ${spct(R.mv.pct,1)}. תנועת מחיר לבדה לא מאשרת ולא מפריכה תזה, ולכן היא לא נספרת.</p>`:''}
+      <p class="nm">"${stL}" מחושב רק מעובדות מדווחות על החברה עצמה (דוחות, צפי, רגולציה, הנהלה, עסקאות); פרשנויות ודעות מוצגות ונספרות מעט. זו הצבה של המדווח מול מה שכתבת, לא המלצה.</p>
+      <div class="acts"><button type="button" class="btn sm" data-thedit="${esc(sym)}">לערוך</button><button type="button" class="btn sm" data-chiko="th:${esc(sym)}">שאל את צ׳יקו: האם התזה עדיין תקפה?</button>${o.sec?'':`<button type="button" class="btn sm" data-gosec="${esc(sym)}">לדף הנייר</button>`}</div></div>`;
+  return `<section class="repbox th" aria-label="התזה שלי" data-thbox="${esc(sym)}"><div class="row"><h3>${o.title||'התזה שלי'}${o.sec?'':' · '+esc(lab(sym))}</h3>${!has&&!open?'':''}</div>${!canWrite&&!has?'<p class="nm">אין הרשאת עריכה.</p>':open?form:view}</section>`;
+}
+document.addEventListener('submit',ev=>{const f=ev.target.closest&&ev.target.closest('form.th-f'); if(!f)return; ev.preventDefault(); if(!canWrite)return; const sym=f.dataset.thsym, J=JRN=jrn(); J.thesis=J.thesis||{}; const old=J.thesis[sym]||{}, now=new Date().toISOString(), t={...old,at:old.at||now,updatedAt:now,hist:(old.hist||[]).slice(-20)};
+  for(const el of f.querySelectorAll('[data-th]'))t[el.dataset.th]=String(el.value||'').trim().slice(0,600); if(!(t.why||t.minus||t.plus)){rtSay('כדי לשמור תזה צריך לכתוב לפחות למה, מה יחזק או מה יחליש.');return}
+  J.thesis[sym]=t; TH_EDIT.delete(sym); jrnSave(); try{useAdd('thesis')}catch(e){} rtSay('התזה נשמרה. כשידווח משהו מהותי על החברה, תקבל התראה עם התזה לידו.'); try{renderSec()}catch(e){} try{renderLater()}catch(e){}});
+const TH_EDIT=new Set();
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  const e=t.closest('[data-thedit]'); if(e){TH_EDIT.add(e.dataset.thedit); try{renderSec()}catch(x){} try{renderLater()}catch(x){} return}
+  const c=t.closest('[data-thcancel]'); if(c){TH_EDIT.delete(c.dataset.thcancel); try{renderSec()}catch(x){} try{renderLater()}catch(x){} return}
+  const d=t.closest('[data-thdel]'); if(d){if(!canWrite)return; const sym=d.dataset.thdel, J=JRN=jrn(), old=(J.thesis||{})[sym]; if(!old)return; delete J.thesis[sym]; TH_EDIT.delete(sym); jrnSave(); offerUndo('התזה נמחקה',()=>{JRN=jrn(); JRN.thesis[sym]=old; jrnSave(); try{renderSec()}catch(x){}}); try{renderSec()}catch(x){} try{renderLater()}catch(x){} return}});
+function secThesis(it){if(!it||!it.sym||it.t==='I')return ''; const held=((P&&P.positions)||[]).some(p=>p.sym===it.sym), has=!!((jrn().thesis||{})[it.sym]||{}).why; if(!held&&!has&&!wmarks().includes(it.sym))return '';
+  return thesisH(it.sym,{sec:true,edit:TH_EDIT.has(it.sym),title:held?'התזה שלי על הנייר':'התזה שלי (במעקב)'})}
 function secMine(it,on){
   let m=null; try{m=P&&Q?mAllNow():null}catch(e){}
   const p=m&&m.pos.find(x=>x.sym===it.sym), R=S.rules||{}, head='<div class="row" style="margin-top:4px"><h3>מה זה אומר על התיק שלי</h3></div>';
@@ -23689,6 +23752,7 @@ function renderSec(){SECHOV=-1;
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
+    ${(()=>{try{return secThesis(it)}catch(e){return ''}})()}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
     ${moreH}
     <p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
@@ -25328,6 +25392,7 @@ window.__im={build:imBuild,open:imOpen,openFrom:imOpenFrom,layout:imLayout,sel:i
 // (only when it was), and what is only possible; without Claude the page answers from the same facts by itself ====
 let ANA_FOCUS=null;
 const STORY_Q=['מה הרקע לאירוע הזה, במילים פשוטות?','מה בטוח כאן ומה רק הערכה?','איך זה עשוי לגעת בתיק שלי?','מה כדאי לעקוב אחריו בהמשך?'];
+const TH_Q=['האם התזה שלי עדיין תקפה?','מה מהדיווחים נוגע למה שכתבתי שיחליש אותה?','מה אני צריך לבדוק לפני שאשנה משהו?','מה עוד לא ידוע?'];
 const FOCUS_Q=[['why','למה קיבלתי את ההתראה?'],['link','מה הקשר בין האירוע למניה?'],['sector','מה הקשר בין האירוע לענף?'],['exposed','אילו מההחזקות שלי עשויות להיות חשופות?'],['known','מה ידוע בפועל ומה עדיין לא ודאי?'],['changed','מה השתנה מאז העדכון הקודם?'],['sources','אילו מקורות תומכים בהסבר?']];
 function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); let m=null; try{m=mAllNow()}catch(e){}
   const held=new Map(((m&&m.pos)||[]).map(p=>[p.sym,p])), artF=(it,x)=>({headline:x.he,original_title:it.title,source:it.pub||null,published_at:it.at||null,updated_at:it.upd||null,occurred_at:x.occ||null,content_kind:NX_KIND[x.kind||'news'],
@@ -25340,6 +25405,11 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
   if(k==='art'){const it=newsAll().find(z=>z.id===v); if(!it||!it.x)return null; const E=nxEvents(newsAll()), e=E.get(it.x.ev||'id:'+it.id);
     return {kind:'article',title:it.x.he,lead:it,data:{...artF(it,it.x),other_sources:e&&e.items.length>1?e.items.filter(q=>q.id!==it.id).slice(0,5).map(q=>({source:q.pub,title:q.title,published_at:q.at})):[],measured:moved(nwSymsOf(it),it.at||it.seen),
       portfolio:m&&m.pos&&m.pos.length?{has_portfolio:true,link_to_my_portfolio:(()=>{try{return newsRel(it,m).text||null}catch(e){return null}})()}:{has_portfolio:false}}}}
+  if(k==='th'){const t=(jrn().thesis||{})[v]; if(!t)return null; const R=thesisEval(v), p=m&&m.pos&&m.pos.find(z=>z.sym===v);
+    return {kind:'thesis',title:'התזה שלי על '+v,data:{symbol:v,my_thesis:{why:t.why||null,expect:t.expect||null,assumptions:t.assume||null,what_strengthens:t.plus||null,what_weakens:t.minus||null,horizon:TH_HOR[t.horizon||'']||null,risks:t.risks||null,written_at:t.at||null,updated_at:t.updatedAt||null},
+      page_verdict:{status:TH_ST[R.status][0],confidence:PL_CONF[R.conf]||R.conf||null,why:R.confWhy,rule:'רק עובדות מדווחות על החברה נספרות; תנועת מחיר לבדה לא; זו הצבה, לא המלצה'},
+      reported_since:R.ev.slice(0,8).map(z=>({at:z.at,headline:z.t,what:z.what||null,possible_direction:NX_DIR[z.dir]||z.dir,certainty:NX_CERT[z.cert]||z.cert,content_kind:NX_KIND[z.kind]||z.kind||'דוח',sources:z.n,touches_what_i_wrote:z.hitM?'מה שיחליש':z.hitP?'מה שיחזק':null})),
+      in_my_portfolio:p?{weight:pct(p.w,1),value:ils(p.val),since_cost:p.cost>0?spct((p.costVal-p.cost)/p.cost*100,1):null}:null}}}
   if(k==='story'){const st=STORY.get(v), d=st&&st.data; if(!d)return null; const E=imEvents(7), e=E.get(v);
     const P2={}; for(const [kk,t] of ST_PARTS)P2[t]=(d[kk]||[]).map(l=>({text:l.t,certainty:NX_CERT[l.c]||l.c,sources:(l.s||[]).map(i=>(d.arts||[])[i]).filter(Boolean).map(a=>a.pub)}));
     return {kind:'story',title:'הסיפור: '+(d.headline||v),lead:e&&e.lead||null,data:{event:v,stage:ST_STAGE[d.stage]||'לא ידוע',written_by:d.rules?'כללים, מהקריאות':'צ׳יקו',story:P2,sources:(d.arts||[]).map(a=>({source:a.pub,title:a.title,published_at:a.at})),
@@ -25387,6 +25457,8 @@ function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<
   if(/ענף/.test(t))return `<p>הענפים שהקריאה ציינה:</p>${li((d.sectors||d.sectors_exposure||[]).map(s=>`${esc(s.sector)}${s.through?' דרך '+esc(s.through):''}${s.why?': '+esc(s.why):''}${s.my_share_in_sector||s.share_of_portfolio?` (אצלך ${esc(s.my_share_in_sector||s.share_of_portfolio)})`:''}`))||'<p>לא צוין ענף.</p>'}`;
   if(/חשופ|החזק|אחזק/.test(t)){const L=(d.my_holdings_linked||(d.companies||[]).filter(c=>c.in_my_portfolio).map(c=>({sym:c.sym,weight:c.in_my_portfolio,link:c.link,why:c.why})));
     return L.length?li(L.map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))+'<p class="nm">חשיפה היא קשר שהקריאה ציינה, לא השפעה שנמדדה.</p>':'<p>אף אחת מההחזקות שלך לא מוזכרת בקשר הזה.</p>'}
+  if(f.kind==='thesis'){const v=d.page_verdict||{}, R=d.reported_since||[];
+    return `<p><b>${esc(v.status||'')}</b> (ביטחון ${esc(v.confidence||'')}: ${esc(v.why||'')}).</p>${li(R.slice(0,5).map(z=>`${dmy(z.at)}: ${esc(z.headline)} · ${esc(z.certainty)}${z.touches_what_i_wrote?' · נוגע ל'+esc(z.touches_what_i_wrote):''}`))||'<p>לא דווח דבר מהותי מאז התזה.</p>'}<p class="nm">${esc(v.rule||'')}</p>`}
   if(f.kind==='story'){const S=d.story||{}, part=n=>(S[n]||[]).map(l=>`${esc(l.text)} <span class="nm">(${esc(l.certainty)})</span>`);
     if(/רקע|למה|קרה/.test(t))return li(part('מה הרקע').concat(part('למה זה קרה')))||'<p>הסיפור לא אומר מה הרקע.</p>';
     if(/בטוח|ידוע|הערכה|ודאי/.test(t))return `<p><b>עובדות מדווחות:</b></p>${li(Object.values(S).flat().filter(l=>/עובדה/.test(l.certainty)).map(l=>esc(l.text)))||'<p>אין.</p>'}<p><b>הערכות:</b></p>${li(Object.values(S).flat().filter(l=>/הערכה/.test(l.certainty)).map(l=>esc(l.text)))||'<p>אין.</p>'}<p><b>לא ידוע:</b></p>${li(part('מה עדיין לא ידוע'))}`;
@@ -26352,7 +26424,7 @@ try{refreshBack()}catch(e){}
   const fail=e=>{$('fresh').textContent=(e&&e.code==='invalid_response'?'התשובה מהשרת לא תקינה.':'לא הצלחתי לטעון את נתוני התיק.')+' מנסה שוב בעוד כמה שניות. אם זה חוזר, רענן את הדף.'};
   try{const U=await window.claude.use('user');
     if(U&&(await U.isOwner())===false){OWNER=false;ME=await U.id();const w=await U.can('data.write');
-      if(ME&&w!==false){const b='data/users/'+ME+'/';PATHS={portfolio:b+'portfolio',plan:b+'plan',settings:b+'settings',history:b+'history',daily:b+'daily',arc:b+'rep/items',ack:b+'ack',usage:b+'usage',newsst:b+'newsst',pulse:b+'pulse'}}else LOCAL=true}
+      if(ME&&w!==false){const b='data/users/'+ME+'/';PATHS={portfolio:b+'portfolio',plan:b+'plan',settings:b+'settings',history:b+'history',daily:b+'daily',arc:b+'rep/items',ack:b+'ack',usage:b+'usage',newsst:b+'newsst',pulse:b+'pulse',journal:b+'journal'}}else LOCAL=true}
   }catch(e){}
   try{const U=await window.claude.use('user');MYID=U?await U.id():null}catch(e){}
   setView(VIEW||(MGR()?'full':'calm'),true);
@@ -26393,6 +26465,8 @@ try{refreshBack()}catch(e){}
   $('repPer').addEventListener('change',e=>{RP=e.target.value});
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});
   window.claude.use('downloads').then(d=>{$('btnReport').hidden=!d;$('btnExcel').hidden=!d;$('repWrap').hidden=!d;DLON=!!d;arcUi();fillPeriods();renderCatalog()});
+  try{let first=true; pd('journal').onSnapshot(s=>{if(!first)return; first=false; const v=s&&s.exists?s.data():null; const early=JRN_D?jrn():null; JRN=v&&typeof v==='object'?{thesis:v.thesis&&typeof v.thesis==='object'?v.thesis:{},entries:Array.isArray(v.entries)?v.entries:[]}:{thesis:{},entries:[]};
+    if(early){JRN.thesis={...JRN.thesis,...(early.thesis||{})}; const ids=new Set(JRN.entries.map(e=>e.id)); JRN.entries=[...(early.entries||[]).filter(e=>!ids.has(e.id)),...JRN.entries]} JRNK=true; if(JRN_D)jrnSave(); try{renderLater()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{JRNK=true})}catch(e){}
   pd('ack').onSnapshot(s=>{const d=s.exists?s.data():null; ACK=d&&Array.isArray(d.list)?d.list:[]; renderLater()},()=>{});
   try{const u=await window.claude.use('user');const w=u?await u.can('data.write'):null;if(w===false&&OWNER){canWrite=false;fillInputs()}}catch(e){}
 })();

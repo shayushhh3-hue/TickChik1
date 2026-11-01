@@ -105,7 +105,7 @@ export const ownerLike=u=>!!u&&(u.role==='owner'||u.role==='admin');
 export const isOwner=u=>!!u&&u.role==='owner';
 // the owner's own documents: the portfolio, the plan, the settings, the history (not history/prices), the reports, the
 // alerts, the usage and the news' state
-export const OWN_DOCS=new Set(['portfolio','plan','settings','history','reports','alerts','usage','news']);
+export const OWN_DOCS=new Set(['portfolio','plan','settings','history','reports','alerts','usage','news','journal']);   // 1.11: journal/main, the theses and the journal
 // ---- who may read and write a path: the same matrix as the artifact's rules ----
 // user: {id, role:'owner'|'friend'} or null; returns 'rw' | 'r' | ''
 const newsIdOf=link=>createHash('sha1').update(String(link||'')).digest('hex').slice(0,12);

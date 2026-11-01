@@ -1474,6 +1474,32 @@ test('1.11 the settings survive a visit: when the plan arrives before them (a fi
   }finally{store.setDoc('settings/main',S0,{silent:true}); store.setDoc('plan/main',P0,{silent:true})}
 });
 
+test('1.11 the thesis: written on the security page, kept in the account, set against what was reported (a fact of substance), never against the price; the server alerts with the thesis beside the event',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), J0=store.getDoc('journal/main');
+  const D=await rtData(); await rtSet(D); store.deleteDoc('journal/main');
+  const {ctx,pg}=await open(390);
+  try{
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('[data-thbox="NVDA"] form.th-f'),null,{timeout:10000});
+    await pg.fill('[data-thbox="NVDA"] [data-th="why"]','מובילה בשבבי AI עם ביקוש גדל'); await pg.fill('[data-thbox="NVDA"] [data-th="minus"]','הורדת תחזית או ירידה בהכנסות ממרכזי נתונים'); await pg.selectOption('[data-thbox="NVDA"] [data-th="horizon"]','long');
+    await pg.click('[data-thbox="NVDA"] form.th-f button[type=submit]'); await pg.waitForTimeout(1400);
+    const th=(store.getDoc('journal/main').data||{}).thesis||{}; assert.equal(th.NVDA&&th.NVDA.why,'מובילה בשבבי AI עם ביקוש גדל','kept in the account'); assert.equal(th.NVDA.horizon,'long');
+    // the verdict: the report beat (a fact, crit, direct) strengthens; shown with its certainty and source
+    const v=await pg.evaluate(()=>({st:document.querySelector('[data-thbox="NVDA"] .th-h .rs').textContent,ev:[...document.querySelectorAll('[data-thbox="NVDA"] .th-ev li')].map(l=>l.textContent),txt:document.querySelector('[data-thbox="NVDA"]').innerText}));
+    assert.equal(v.st,'מתחזקת'); assert.ok(v.ev.length>=1&&/אנבידיה היכתה/.test(v.ev[0]),JSON.stringify(v.ev)); assert.match(v.ev[0],/עובדה מדווחת/); assert.match(v.txt,/תנועת מחיר לבדה לא מאשרת|לא נספרת|לא דווח/);
+    // the server: an alert that carries the thesis, once per event, as "important", not as a verdict
+    {const {pulseUpdate}=await import('../server/pulse.js'); const r=pulseUpdate(store,null,{}); const a=r.doc.items.find(x=>x.k==='th:NVDA:nvda-q3-report'); assert.ok(a,'the thesis alert: '+r.doc.items.map(x=>x.k).join(',')); assert.equal(a.lv,'imp'); assert.equal(a.th.sym,'NVDA'); assert.match(a.th.minus,/הורדת תחזית/); assert.match(a.lvWhy,/לא קביעה/);
+      assert.ok(!r.doc.items.some(x=>x.k.startsWith('th:KO')),'no thesis, no thesis alert')}
+    // the alert center shows the thesis beside the event, with a way to צ׳יקו
+    await pg.waitForTimeout(800); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
+    const al=await pg.evaluate(()=>{const c=[...document.querySelectorAll('#ixFull .pl')].find(x=>/בדיקת תזה/.test(x.textContent)); return c?{th:c.querySelector('.pl-th')?.textContent||'',chiko:!!c.querySelector('[data-chiko="th:NVDA"]')}:null});
+    assert.ok(al&&/התזה שלך על NVDA/.test(al.th)&&/הורדת תחזית/.test(al.th)&&al.chiko,JSON.stringify(al));
+    // צ׳יקו gets the thesis, the verdict and what was reported, never the price as a proof
+    const f=await pg.evaluate(()=>window.__focus('th:NVDA')); assert.equal(f.kind,'thesis'); assert.equal(f.data.my_thesis.why,'מובילה בשבבי AI עם ביקוש גדל'); assert.equal(f.data.page_verdict.status,'מתחזקת'); assert.ok(f.data.reported_since.length>=1);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0); if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main')}
+});
+
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);

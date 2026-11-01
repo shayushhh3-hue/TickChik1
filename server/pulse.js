@@ -27,8 +27,8 @@ import {symsOfUser} from './store.js';
 
 const H=36e5, DAY=864e5;
 export const pathsOf=u=>!u||u.role==='owner'
-  ?{portfolio:'portfolio/main',settings:'settings/main',pulse:'alerts/pulse',newsst:'news/state'}
-  :{portfolio:`data/users/${u.id}/portfolio`,settings:`data/users/${u.id}/settings`,pulse:`data/users/${u.id}/pulse`,newsst:`data/users/${u.id}/newsst`};
+  ?{portfolio:'portfolio/main',settings:'settings/main',pulse:'alerts/pulse',newsst:'news/state',journal:'journal/main'}
+  :{portfolio:`data/users/${u.id}/portfolio`,settings:`data/users/${u.id}/settings`,pulse:`data/users/${u.id}/pulse`,newsst:`data/users/${u.id}/newsst`,journal:`data/users/${u.id}/journal`};
 
 // ---- the preferences (settings → "חדשות והתראות"), with their defaults ----
 const LVS=['crit','imp','upd'], SENS=['low','mid','high'], FREQ=['live','hour','day'];
@@ -172,7 +172,28 @@ export function pulseCompute(store,u,{now=new Date()}={}){
       arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null})}
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
   for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
+  for(const a of thesisAlerts(store,pa,HD,{now,visible:vis}))if(pr.lv[a.lv])out.push(a);
   return {pr,HD,alerts:out};
+}
+// 1.11: "התראות על שינוי בתזה": a holding the person wrote a thesis for (journal.thesis[sym]), and an event of substance
+// about the company itself: a reported fact (not a reading of a headline, not an opinion), of the kinds that bear on a
+// thesis (a report, the company's outlook, a regulator, a court, the management, a deal), or a critical one from two
+// sources. Never from one headline alone, never from the price. The alert carries the thesis so the page shows them
+// side by side; whether the thesis holds is the person's judgement, the alert only puts the two together
+const TH_TYPES=new Set(['earnings','guidance','regulation','legal','management','ma','product','contract','rating']);
+export function thesisAlerts(store,pa,HD,{now=new Date(),visible=null}={}){
+  const out=[]; let TH={}; try{TH=(store.getDoc(pa.journal).data||{}).thesis||{}}catch(e){} const syms=Object.keys(TH).filter(k=>TH[k]&&(TH[k].why||TH[k].minus||TH[k].plus)); if(!syms.length)return out;
+  const H=new Map(HD.pos.map(h=>[h.sym,h]));
+  for(const e of eventsOf(store,{now,days:3,visible})){const x=e.x; if(!e.ai||x.kind==='opinion')continue;
+    const direct=(x.aff||[]).filter(a=>a.how==='direct'&&TH[a.sym]); if(!direct.length)continue;
+    const substance=x.cert==='fact'&&(TH_TYPES.has(x.type)||(x.level==='crit'&&e.arts.length>=2)); if(!substance)continue;
+    for(const a of direct){const t=TH[a.sym], h=H.get(a.sym), dirHe=a.dir==='neg'?'עשוי להחליש':a.dir==='pos'?'עשוי לחזק':'כיוון לא ברור';
+      out.push({kind:'thesis',k:`th:${a.sym}:${x.ev||e.lead.id}`,lv:x.level==='crit'?'imp':'imp',lvWhy:'אירוע מדווח על חברה שכתבת לה תזה; לא קביעה שהתזה נשברה',ev:x.ev||null,title:`בדיקת תזה: ${a.sym} · ${x.he}`,what:x.what,
+        type:x.type,level:x.level,dir:a.dir,cert:x.cert,rules:false,imp:x.level==='crit'?'high':'mid',rel:h?(h.w>=10?'high':'mid'):'mid',relWhy:h?`${a.sym}, ${h.w}% מהתיק, עם תזה שכתבת`:`${a.sym}: כתבת לה תזה`,conf:e.arts.length>=2?'high':'mid',confWhy:e.arts.length>=2?`${e.arts.length} מקורות דיווחו`:'מקור אחד דיווח כעובדה',
+        followed:false,holds:h?[{sym:a.sym,w:h.w,how:'direct',dir:a.dir,why:a.why||'',link:'direct'}]:[],secs:[],usd:null,fol:[],sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',
+        arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null,st:e.st||'unknown',
+        th:{sym:a.sym,why:String(t.why||'').slice(0,400),expect:String(t.expect||'').slice(0,300),plus:String(t.plus||'').slice(0,300),minus:String(t.minus||'').slice(0,300),bearing:dirHe,at:t.updatedAt||t.at||null}})}}
+  return out;
 }
 // 31.10: a reminder of an event the person saved in the economic calendar (newsst.cal = {id: {at}}): the day before and
 // the day itself, as an update; the date as the calendar has it, said to be estimated when it is
