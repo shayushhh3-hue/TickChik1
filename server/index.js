@@ -21,7 +21,7 @@ import {closesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
-import {backupStatus, backupNow} from './backup.js';
+import {backupStatus, backupNow, backupPeek, backupRestore} from './backup.js';
 import {benchFresh} from './bench.js';
 import {selfCheckNote} from './pxwatch.js';
 import {healthCheck} from './health.js';
@@ -357,6 +357,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,fileQuick:FILE_QUICK_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
   app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
+  // 1.11: what a daily copy holds of the asker's own documents, and a restore of them (the settings and the plans, or the
+  // portfolio with its history) from that copy. The asker's own documents only: the owner's, or an admin's own area
+  app.get('/api/backup/peek',needOwner,(req,res)=>{try{res.json({file:String(req.query.file||''),docs:backupPeek(req.user,{dataDir,file:req.query.file})})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
+  app.post('/api/backup/restore',needOwner,(req,res)=>{try{const done=backupRestore(store,req.user,{dataDir,file:(req.body||{}).file,set:(req.body||{}).set}); log(`restore from ${(req.body||{}).file} (${(req.body||{}).set}) by ${req.user.id}: ${done.join(', ')||'nothing'}`); res.json({ok:true,restored:done})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
   // 30.10: the health of the data: every source, the last time it worked (server/health.js)
   app.get('/api/health',needOwner,(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
   // the analysts' data: when it last ran and how it went, and how old each document is

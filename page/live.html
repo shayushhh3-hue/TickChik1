@@ -17831,7 +17831,9 @@ function renderPlan(mAll){
   $('depState').textContent=(st.depNow?`הפקדת ${MONTHS[new Date().getMonth()]} סומנה.`:`הפקדת ${MONTHS[new Date().getMonth()]} עוד לא סומנה.`)+(+S.depDay?` יום ההפקדה שלך: ${depDayTxt()}.`:'');
   for(const b of document.querySelectorAll('[data-track]'))b.setAttribute('aria-pressed',b.dataset.track===TRACK);
   const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} הוגדלו · ${t} בתור`};
-  {const fs=fixedSum(PLD.idx); if(fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
+  // 1.11: only once the settings have loaded (SETK): before that S is the page's defaults, and this line wrote them over the
+  // saved settings whenever the plan arrived first (the name, the choices and the deposit plan were lost on every visit)
+  {const fs=fixedSum(PLD.idx); if(SETK&&fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
    $('trkS').textContent=`${ils(+S.monthly||0)} בחודש · ${tsum(PLD)}`; $('trkI').textContent=`${ils(+S.monthlyIdx||0)} בחודש · `+(fs!=null?`סכום קבוע ל-${PLD.idx.items.filter(i=>i.status!=='skip'&&+i.amt>0).length} קרנות`:tsum(PLD.idx));
    const a=+S.monthly||0, b=+S.monthlyIdx||0; $('trkTot').textContent=a&&b?`סך ההפקדה החודשית: ${ils(a+b)}, מתוכם ${ils(a)} למניות ו-${ils(b)} למדדים. לכל מסלול תור משלו; יתרת המזומן אחת, משותפת לשניהם.`:'';
    const mi=$('inMonthlyIdx'); if(mi){mi.disabled=fs!=null||!canWrite; mi.title=fs!=null?'הסכום של כל הקרנות במסלול המדדים. משנים אותו בטבלה "הניירות בתוכנית".':''}}
@@ -17952,6 +17954,7 @@ function planAct(a,d){
 function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500)}
 async function savePlan(){
   if(!db||!canWrite)return;
+  if(!PLK&&!LOCAL){clearTimeout(pTimer); pTimer=setTimeout(savePlan,700); return}   // 1.11: not before the saved plan has arrived
   if(pSaving){pTimer=setTimeout(savePlan,400);return}
   pSaving=true;$('planSaved').textContent='שומר…'; const seq=P_SEQ;
   try{await pset('plan',JSON.parse(JSON.stringify(PLD))); if(seq===P_SEQ)pDirty=false; else{clearTimeout(pTimer);pTimer=setTimeout(savePlan,300)} $('planSaved').textContent='נשמר'}
@@ -21249,6 +21252,8 @@ let S_SEQ=0;   // every change of the settings counts; a save clears "dirty" onl
 function changed(){dirty=true;S_SEQ++;render();clearTimeout(timer);timer=setTimeout(save,700)}
 async function save(){
   if(!db||!canWrite){$('saved').textContent=db?'':'השינויים לא נשמרים בתצוגה הזו';return}
+  // 1.11: never before the saved settings have arrived: a save then would put the page's defaults in their place
+  if(!SETK&&!LOCAL){clearTimeout(timer); timer=setTimeout(save,700); return}
   if(saving){timer=setTimeout(save,400);return}
   saving=true;$('saved').textContent='שומר…'; const seq=S_SEQ;
   try{await pset('settings',JSON.parse(JSON.stringify(S))); if(seq===S_SEQ)dirty=false; else{clearTimeout(timer);timer=setTimeout(save,300)} $('saved').textContent='נשמר'}
@@ -24026,6 +24031,7 @@ const HEE_='(?![֐-׿])';
 const HEFIX=[[new RegExp(HEB_+'(ירד|ירדה|ירדו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בירידה חדה'],[new RegExp(HEB_+'(עלה|עלתה|עלו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בעלייה חדה'],
   [new RegExp(HEB_+'(צנח|צנחה|צנחו|זינק|זינקה|זינקו|נפל|נפלה|נפלו|קפץ|קפצה|קפצו|טיפס|טיפסה|טיפסו|התרסק|התרסקה|התרסקו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'$1 בחדות']];
 const heFix=t=>HEFIX.reduce((x,[re,to])=>x.replace(re,to),String(t||''));
+let NXK=false;   // 1.11: the news state has arrived (nothing is written before)
 let NXD=null, XD=null, NEWSST=null, NXV='all', NXLV=new Set(['crit','imp']), NXT='', NXUN=false, NXPREV=null, NXT_SAVE=null, NXDIRTY=false;
 const NX_LV={crit:'קריטי',imp:'חשוב',watch:'למעקב',info:'מידע'};
 // 29.10: the screen shows the critical and the important by default; the rest is kept (and read) but behind the filter, which this browser remembers
@@ -24079,7 +24085,8 @@ function newsRel(it,m){
 }
 const nxLvOf=it=>it.x?it.x.level:'info';
 function nxState(){return NEWSST||{read:{},saved:{}}}
-function nxSave(){NXDIRTY=true; clearTimeout(NXT_SAVE); NXT_SAVE=setTimeout(async()=>{if(!NXDIRTY)return; NXDIRTY=false; const st=nxState(); const cut=o=>Object.fromEntries(Object.entries(o||{}).sort((a,b)=>a[1]<b[1]?1:-1).slice(0,400));
+function nxSave(){NXDIRTY=true; clearTimeout(NXT_SAVE); NXT_SAVE=setTimeout(async()=>{if(!NXDIRTY)return; if(!NXK&&!LOCAL)return;   // written once the saved state is here (the snapshot calls again)
+  NXDIRTY=false; const st=nxState(); const cut=o=>Object.fromEntries(Object.entries(o||{}).sort((a,b)=>a[1]<b[1]?1:-1).slice(0,400));
   // 30.10: the short copies only of what is saved or in the history; the alerts' marks, the last 250
   const keep=new Set([...Object.keys(st.saved||{}),...(st.hist||[]).map(h=>h&&h.id)]), snap=Object.fromEntries(Object.entries(st.snap||{}).filter(([k])=>keep.has(k))), pl=Object.fromEntries(Object.entries(st.pl||{}).slice(-250));
   try{await pset('newsst',{...st,read:cut(st.read),saved:cut(st.saved),snap,pl,hist:(st.hist||[]).slice(0,150),updatedAt:new Date().toISOString()})}catch(e){NXDIRTY=true}},800)}
@@ -26357,13 +26364,19 @@ try{refreshBack()}catch(e){}
   ARCON=!LOCAL; arcUi();
   if(ARCON){try{db.collection(PATHS.arc).orderBy('createdAt','desc').limit(80).onSnapshot(s=>{ARC=s.docs.map(d=>({id:d.id,...d.data()}));renderArc()},()=>{})}catch(e){ARCON=false;arcUi()}}
   try{useBoot(); setTimeout(useWatch,1500)}catch(e){}
-  try{let first=true; pd('newsst').onSnapshot(s=>{if(!first||NXDIRTY)return; first=false; const v=s&&s.exists?s.data():null; NEWSST=v&&typeof v==='object'?{read:v.read||{},saved:v.saved||{},lastSeen:v.lastSeen||null,hist:Array.isArray(v.hist)?v.hist:[],snap:v.snap&&typeof v.snap==='object'?v.snap:{},follow:v.follow&&typeof v.follow==='object'?v.follow:{},cal:v.cal&&typeof v.cal==='object'?v.cal:{},daily:v.daily&&typeof v.daily==='object'?v.daily:null,pl:v.pl&&typeof v.pl==='object'?v.pl:{}}:{read:{},saved:{}}; try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}},()=>{NEWSST=NEWSST||{read:{},saved:{}}})}catch(e){}
+  try{let first=true; pd('newsst').onSnapshot(s=>{if(!first)return; first=false; const v=s&&s.exists?s.data():null; const early=NXDIRTY?nxState():null; NEWSST=v&&typeof v==='object'?{read:v.read||{},saved:v.saved||{},lastSeen:v.lastSeen||null,hist:Array.isArray(v.hist)?v.hist:[],snap:v.snap&&typeof v.snap==='object'?v.snap:{},follow:v.follow&&typeof v.follow==='object'?v.follow:{},cal:v.cal&&typeof v.cal==='object'?v.cal:{},daily:v.daily&&typeof v.daily==='object'?v.daily:null,pl:v.pl&&typeof v.pl==='object'?v.pl:{}}:{read:{},saved:{}};
+    // 1.11: what this visit marked before the state arrived (a read, a saved article, a followed event) is merged into it
+    if(early){for(const k of ['read','saved','follow','cal','pl','snap'])if(early[k]&&typeof early[k]==='object')NEWSST[k]={...(NEWSST[k]||{}),...early[k]}; if(early.daily)NEWSST.daily=early.daily; if(Array.isArray(early.hist)&&early.hist.length)NEWSST.hist=[...early.hist,...(NEWSST.hist||[])].slice(0,150)}
+    NXK=true; if(NXDIRTY)nxSave(); try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}},()=>{NEWSST=NEWSST||{read:{},saved:{}}; NXK=true})}catch(e){}
   // 30.10: the personal alerts, made on the server for this person alone
   try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.kind==='cal'){a.kind='mkt'; a.mk={t:'cal',...(a.cal||{})}}}catch(e){}   // 31.10: a calendar reminder is drawn like a measured fact
     try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
+  // 1.11: the settings first (the name, the choices, the plans), then everything else: a document that arrives late is a
+  // document another one's render may write over
+  pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());renderLater()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
+  pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!pSaving&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}renderLater()},fail);
   pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();renderLater()}else{$('fresh').textContent='עדיין אין נתוני תיק.';renderLater()}},fail);
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();renderLater();try{if(document.body.dataset.page==='news')rtMarkets()}catch(e){}try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
-  pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!pSaving&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}renderLater()},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();renderLater()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};renderLater()},fail);
   pd('history').onSnapshot(s=>{if(s.exists){HS=s.data();renderLater()}},fail);
@@ -26380,7 +26393,6 @@ try{refreshBack()}catch(e){}
   $('repPer').addEventListener('change',e=>{RP=e.target.value});
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});
   window.claude.use('downloads').then(d=>{$('btnReport').hidden=!d;$('btnExcel').hidden=!d;$('repWrap').hidden=!d;DLON=!!d;arcUi();fillPeriods();renderCatalog()});
-  pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());renderLater()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
   pd('ack').onSnapshot(s=>{const d=s.exists?s.data():null; ACK=d&&Array.isArray(d.list)?d.list:[]; renderLater()},()=>{});
   try{const u=await window.claude.use('user');const w=u?await u.can('data.write'):null;if(w===false&&OWNER){canWrite=false;fillInputs()}}catch(e){}
 })();

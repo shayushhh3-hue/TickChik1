@@ -1292,6 +1292,25 @@ test('31.10 the story behind the headline: one per event from its readings, ever
       assert.equal((await req('o','POST','/api/newsx/story',{ev:'bad key!'})).status,400)}finally{if(k1b!=null)process.env.ANTHROPIC_API_KEY=k1b}}finally{srv.close()}
 });
 
+test('1.11 a daily copy: what it holds of my documents, and a restore of the settings and the plans (or the portfolio) from it; an admin only their own',async()=>{
+  const {backupNow,backupPeek,backupRestore}=await import('../server/backup.js'); const fs=await import('node:fs'); const os=await import('node:os'); const path=await import('node:path');
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tcbk-')), s=new Store(':memory:');
+  const o=s.addUser({email:'shai@example.com',password:'owner-pass-123',role:'owner'}), a=s.addUser({email:'ori@example.com',password:'friend-pass-1',role:'friend'}); s.setRole(a.id,'admin');
+  s.setDoc('settings/main',{profile:{first:'שי'},monthly:800,depDay:10,targets:{tech:50},ui:{tr_view:'full'}}); s.setDoc('plan/main',{items:[{sym:'MSFT'}],idx:{items:[{sym:'TA125'}]},purchases:[]}); s.setDoc('portfolio/main',{positions:[{sym:'MSFT',qty:1}]}); s.setDoc('history/main',{accounts:[{id:'exc'}]});
+  s.setDoc(`data/users/${a.id}/settings`,{profile:{first:'אורי'}}); s.setDoc(`data/users/${a.id}/plan`,{items:[]});
+  const r=backupNow(s,{dataDir:dir,now:new Date('2026-11-01T00:30:00Z')}); const file=path.basename(r.file);
+  // the owner's look: the name, the deposit, the plan, the portfolio
+  const pk=backupPeek(o,{dataDir:dir,file}); assert.equal(pk.settings.name,'שי'); assert.equal(pk.settings.monthly,800); assert.equal(pk.settings.ui,true); assert.equal(pk.plan.items,1); assert.equal(pk.plan.idx,1); assert.equal(pk.portfolio.positions,1); assert.equal(pk.history.accounts,1);
+  // the page wrote defaults over the settings and the plan: restored from the copy, the portfolio untouched
+  s.setDoc('settings/main',{monthly:500,targets:{}}); s.setDoc('plan/main',{items:[]}); s.setDoc('portfolio/main',{positions:[{sym:'MSFT',qty:2}]});
+  const done=backupRestore(s,o,{dataDir:dir,file,set:'settings'}); assert.deepEqual(done.sort(),['plan/main','settings/main']);
+  assert.equal(s.getDoc('settings/main').data.profile.first,'שי'); assert.equal(s.getDoc('settings/main').data.monthly,800); assert.equal(s.getDoc('plan/main').data.items.length,1); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,2,'the portfolio as it is now');
+  // the admin: their own documents, never the owner's
+  assert.equal(backupPeek(a,{dataDir:dir,file}).settings.name,'אורי'); s.setDoc(`data/users/${a.id}/settings`,{}); assert.deepEqual(backupRestore(s,a,{dataDir:dir,file,set:'settings'}).sort(),[`data/users/${a.id}/plan`,`data/users/${a.id}/settings`]); assert.equal(s.getDoc(`data/users/${a.id}/settings`).data.profile.first,'אורי');
+  assert.throws(()=>backupPeek(o,{dataDir:dir,file:'../x.sqlite'}),/bad file/); assert.throws(()=>backupRestore(s,o,{dataDir:dir,file,set:'users'}),/bad set/);
+  fs.rmSync(dir,{recursive:true,force:true});
+});
+
 test('the news understood: one reading per article, shared; the general news; a partner sees the readings of their own securities and the general ones',async()=>{
   const {newsxTask,cleanX,newsId,newsPrompt}=await import('../server/newsx.js'); const {partnerView}=await import('../server/store.js');
   const s=new Store(':memory:'), now=new Date('2026-10-29T08:25:00Z'), iso=now.toISOString();

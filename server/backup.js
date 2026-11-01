@@ -96,6 +96,28 @@ export async function backupTask(store,{log=()=>{},dataDir,now=new Date()}={}){
   return {...r,mailed:!!ok,full};
 }
 
+// 1.11: a look into one daily copy, and a restore of a few documents from it (the owner's, or an admin's own), after the
+// page wrote defaults over the settings. The copy is opened read-only; nothing in it changes
+const inDir=(dataDir,file)=>{const f=String(file||''); if(!NAME.test(f))throw new Error('bad file'); const p=path.join(dirOf(dataDir),f); if(!fs.existsSync(p))throw new Error('no such backup'); return p};
+export const RESTORE_SETS={settings:['settings','plan'],portfolio:['portfolio','history','daily','ack','newsst']};
+export function userPaths(u,names){const own=u&&u.role==='owner'; const M={settings:own?'settings/main':`data/users/${u.id}/settings`,plan:own?'plan/main':`data/users/${u.id}/plan`,portfolio:own?'portfolio/main':`data/users/${u.id}/portfolio`,history:own?'history/main':`data/users/${u.id}/history`,daily:own?'history/daily':`data/users/${u.id}/daily`,ack:own?'alerts/ack':`data/users/${u.id}/ack`,newsst:own?'news/state':`data/users/${u.id}/newsst`};
+  return names.map(n=>M[n]).filter(Boolean)}
+export function backupPeek(u,{dataDir,file}={}){
+  const p=inDir(dataDir,file), db=new DatabaseSync(p,{readOnly:true});
+  try{const out={}; for(const name of ['settings','plan','portfolio','history']){const [path2]=userPaths(u,[name]); const r=db.prepare('select data, updated_at from docs where path=?').get(path2); if(!r)continue; let d=null; try{d=JSON.parse(r.data)}catch(e){}
+      const o={at:r.updated_at}; if(name==='settings'&&d){o.name=[(d.profile||{}).first,(d.profile||{}).last].filter(Boolean).join(' ')||d.name||''; o.monthly=d.monthly; o.depDay=d.depDay; o.targets=Object.keys(d.targets||{}).length; o.ui=!!d.ui}
+      if(name==='plan'&&d){o.items=(d.items||[]).length; o.idx=((d.idx||{}).items||[]).length; o.purchases=(d.purchases||[]).length} if(name==='portfolio'&&d){o.positions=(d.positions||[]).length} if(name==='history'&&d){o.accounts=(d.accounts||[]).length}
+      out[name]=o}
+    return out}
+  finally{db.close()}
+}
+export function backupRestore(store,u,{dataDir,file,set='settings'}={}){
+  const names=RESTORE_SETS[set]; if(!names)throw new Error('bad set');
+  const p=inDir(dataDir,file), db=new DatabaseSync(p,{readOnly:true}), done=[];
+  try{for(const path2 of userPaths(u,names)){const r=db.prepare('select data from docs where path=?').get(path2); if(!r)continue; let d; try{d=JSON.parse(r.data)}catch(e){continue} if(!d||typeof d!=='object')continue; store.setDoc(path2,d); done.push(path2)}}
+  finally{db.close()}
+  return done;
+}
 export function backupStatus(store,{dataDir}={}){
   const dir=dirOf(dataDir); let files=[];
   try{files=fs.readdirSync(dir).filter(f=>NAME.test(f)).sort().reverse().map(f=>({name:f,size:fs.statSync(path.join(dir,f)).size}))}catch(e){}

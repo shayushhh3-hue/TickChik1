@@ -54,6 +54,7 @@ code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,monospace
   <p class="muted" style="margin:6px 0 0">כל פנייה לצ׳יקו או קריאת דוח היא פנייה אחת. הקריאה המהירה שרצה לצד קריאת הדוח נספרת בנפרד, עם מכסה משלה באותו גודל. לשותפים יש מכסה יומית; לך אין. טוקנים הם יחידת החיוב של ספק המודל: מה שנשלח למנוע ומה שהוא כתב.</p></div>
 <div class="card"><h2>גיבויים</h2>
   <div id="bk"><p class="muted">טוען…</p></div>
+  <div id="bkList"></div>
   <p style="margin:10px 0 0"><button class="btn" type="button" id="bkNow">גיבוי עכשיו</button> <span id="bkRes" class="muted" role="status"></span></p></div>
 <div class="card"><h2>נתוני אנליסטים</h2>
   <div id="rs"><p class="muted">טוען…</p></div>
@@ -95,7 +96,24 @@ async function loadBk(){
       (b.mail&&!b.mailOn?`<p class="err" style="margin:6px 0 0">המייל מוגדר, אבל העותק במייל כבוי. מפעילים אותו בדף: הגדרות ← ההתראות והצלילים שלי ← מיילים.</p>`
       :b.mail?`<p class="ok" style="margin:6px 0 0">עותק של הנתונים שלך נשלח אליך במייל כל לילה${b.lastMail?' (אחרון: '+esc(new Date(b.lastMail).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}))+')':''}.</p>`+(b.fullKey?`<p class="ok" style="margin:6px 0 0">${b.lastMailInfo&&!b.lastMailInfo.full?esc(b.lastMailInfo.what):'מצורף גם עותק מלא של בסיס הנתונים (כולל השותפים), מוצפן בסיסמה BACKUP_KEY.'}</p>`:`<p class="muted" style="margin:6px 0 0">העותק במייל כולל רק את הנתונים שלך. כדי שגם עותק מלא (כולל השותפים) יצא מהשרת, מוצפן: מוסיפים ב-Railway את BACKUP_KEY (SETUP.md ← גיבויים).</p>`):`<p class="err" style="margin:6px 0 0">אין עותק מחוץ ל-Railway: המייל (Resend) לא מוגדר. אחרי שתגדיר אותו ותפעיל בדף את העותק במייל (הגדרות ← ההתראות והצלילים שלי ← מיילים), עותק של הנתונים שלך יישלח אליך כל לילה.</p>`)}
   catch(x){$('bk').innerHTML='<p class="err">'+esc(x.message)+'</p>'}
+  loadBkList();
 }
+// 1.11: the daily copies, each with what it holds of my own documents, and a restore from it (the settings and the plans,
+// or the portfolio with its history) after something wrote over them
+async function loadBkList(){
+  const box=document.getElementById('bkList'); if(!box)return;
+  try{const b=await call('GET','/backup/status'); if(!b.files.length){box.innerHTML='';return}
+    const rows=[]; for(const f of b.files.slice(0,14)){let d={}; try{d=(await call('GET','/backup/peek?file='+encodeURIComponent(f.name))).docs||{}}catch(x){}
+      const day=(f.name.match(/(\d{4}-\d\d-\d\d)/)||[])[1]||f.name, s=d.settings, p=d.plan, pf=d.portfolio;
+      const what=[s?`הגדרות${s.name?' ('+esc(s.name)+')':''}${s.monthly?', הפקדה '+s.monthly+' ₪':''}${s.ui?', העדפות':''}`:'',p?`תוכנית: ${p.items} ניירות${p.idx?' + '+p.idx+' מדדים':''}${p.purchases?', '+p.purchases+' קניות':''}`:'',pf?`תיק: ${pf.positions} אחזקות`:''].filter(Boolean).join(' · ')||'אין בו מסמכים שלך';
+      rows.push(`<tr style="border-top:1px solid #eef1f4"><td style="padding:6px 0;white-space:nowrap">${esc(day)}</td><td style="padding:6px 8px">${what}</td><td style="padding:6px 0;white-space:nowrap">${s||p?`<button class="btn" data-rs="settings" data-f="${esc(f.name)}">לשחזר הגדרות ותוכניות</button>`:''} ${pf?`<button class="btn" data-rs="portfolio" data-f="${esc(f.name)}">לשחזר תיק</button>`:''}</td></tr>`)}
+    box.innerHTML=`<h3 style="margin:14px 0 6px;font-size:15px">לשחזר מגיבוי</h3><p class="muted" style="margin:0 0 6px">כל גיבוי הוא עותק של הבוקר (02:30) של אותו יום. "הגדרות ותוכניות": השם, הפרופיל, ההעדפות, הכללים, היעדים, תוכנית ההפקדה ותוכנית ההגדלה. "תיק": האחזקות, המזומן וההיסטוריה. השחזור מחליף את מה שיש עכשיו במה שהיה בגיבוי; הגיבוי עצמו לא משתנה.</p><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="text-align:start">יום</th><th style="text-align:start">מה יש בו</th><th></th></tr>${rows.join('')}</table><p id="rsRes" class="muted" style="margin:6px 0 0"></p>`}
+  catch(x){box.innerHTML='<p class="err">'+esc(x.message)+'</p>'}
+}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-rs]'); if(!b)return; const set=b.dataset.rs, f=b.dataset.f, day=(f.match(/(\d{4}-\d\d-\d\d)/)||[])[1]||f;
+  if(!confirm(set==='settings'?`לשחזר את ההגדרות, הפרופיל, ההעדפות ותוכניות ההפקדה וההגדלה מהגיבוי של ${day}? מה שיש עכשיו יוחלף.`:`לשחזר את התיק וההיסטוריה מהגיבוי של ${day}? מה שיש עכשיו יוחלף.`))return;
+  b.disabled=true; const r=document.getElementById('rsRes'); if(r)r.textContent='משחזר…';
+  try{const j=await call('POST','/backup/restore',{file:f,set}); if(r)r.textContent=j.restored.length?`שוחזר: ${j.restored.join(', ')}. תרענן את דף הבית כדי לראות.`:'לא נמצא מה לשחזר בגיבוי הזה.'}catch(x){if(r)r.textContent=x.message} b.disabled=false});
 $('bkNow').onclick=async()=>{const b=$('bkNow'); b.disabled=true; $('bkRes').textContent='מגבה…';
   try{await call('POST','/jobs/backup',{}); setTimeout(()=>{loadBk(); $('bkRes').textContent='בוצע'; b.disabled=false},2500)}catch(x){$('bkRes').textContent=x.message; b.disabled=false}};
 const hd=iso=>iso?new Date(iso).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):'—';

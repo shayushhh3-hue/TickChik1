@@ -1459,6 +1459,21 @@ test('31.10 a long line on the home screen ("אין מחיר ל-…") is cut wit
   }finally{store.setDoc('quotes/latest',q0,{silent:true}); store.setDoc('portfolio/main',P0,{silent:true})}
 });
 
+test('1.11 the settings survive a visit: when the plan arrives before them (a fixed index plan), the page no longer writes its defaults over the name, the choices and the deposit plan',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data, P0=store.getDoc('plan/main').data;
+  store.setDoc('settings/main',{...S0,name:'שי',profile:{...(S0.profile||{}),first:'שי'},monthly:800,depDay:10,monthlyIdx:0},{silent:true});
+  store.setDoc('plan/main',{...P0,idx:{...((P0&&P0.idx)||{}),mode:'fixed',start:'2026-01',items:[{sym:'TA125',status:'todo',note:'',amt:300}],purchases:[]}},{silent:true});
+  // the settings answer two seconds late, so the plan (and thirty other documents) arrive first
+  const slow=(r,u)=>{if(r.request().method()==='GET'&&/path=settings%2Fmain/.test(u)){setTimeout(()=>{try{r.continue()}catch(e){}},2000);return true}return false};
+  try{const {ctx,pg}=await open(390,{route:slow}); await pg.waitForTimeout(4500);
+    const sv=store.getDoc('settings/main').data; assert.equal(sv.profile.first,'שי','the name is still there'); assert.equal(sv.monthly,800,'the deposit plan is still there');
+    assert.equal(await pg.evaluate(()=>window.__model?!!document.querySelector('#hDesk')&&/שי/.test(document.getElementById('hDesk').textContent):true),true,'and the page shows it');
+    assert.equal(sv.monthlyIdx,300,'the fixed sum reaches the settings once they have loaded');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true}); store.setDoc('plan/main',P0,{silent:true})}
+});
+
 test('the plan chart: the real deposits up to today, the same total as the headline, then the plan from there',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); const dep=await pg.evaluate(()=>document.getElementById('kDepD').textContent.match(/הופקדו (₪[\d,]+)/)?.[1]);
