@@ -10,6 +10,8 @@ import {healthCheck} from '../health.js';
 import {createHash} from 'node:crypto';
 import {newsOps,aiOps,aiQuality,systemOps,incidents,incidentUpdate,security,checkIncidents,opsSchema} from './ops.js';
 import {backupStatus} from '../backup.js';
+import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
+import {catalog} from './metrics.js';
 import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
   contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
 
@@ -18,12 +20,15 @@ const ERR={not_found:'המשתמש לא נמצא.',owner:'אי אפשר לשנו
 const fail=(res,e,st=400)=>res.status(e.message==='permission_denied'?403:st).json({error:{code:e.message,message:ERR[e.message]||e.message}});
 
 export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data',dbFile='',persist=true,push=null,log=()=>{}}){
-  opsSchema(store); bizSchema(store);
+  opsSchema(store); bizSchema(store); intelSchema(store);
   const me=u=>({id:u.id,email:u.email,name:u.name||'',role:u.role,perms:[...permsOf(u)],permNames:PERM_HE});
   app.get('/api/admin/me',need('view'),(req,res)=>res.json({me:me(req.user),perms:PERMS,k:K_ANON,portfolioAccess:PORTFOLIO_ACCESS}));
 
   // ---- stage B: the dashboard, the users, the product ----
-  app.get('/api/admin/exec',need('view'),(req,res)=>res.json(executive(store,req.query)));
+  app.get('/api/admin/exec',need('view'),(req,res)=>{const E=executive(store,req.query);
+    // 1.11 stage E: the radar's open findings beside the company's figures
+    try{const L=radarList(store).filter(r=>!['resolved','dismissed'].includes(r.status)), bad=L.filter(r=>r.sev==='bad').length; E.metrics.push({k:'radar',label:'ממצאים פתוחים ב-Radar',value:L.length,src:'TikChik Radar',how:'גלאים שרצים כל חצי שעה על השימוש, השגיאות, ה-AI, החדשות, המחירים והפניות',at:(()=>{try{return JSON.parse(store.getMeta('radarAt')||'null')}catch(e){return null}})(),go:'radar',state:bad?'bad':L.length?'warn':null,note:L.slice(0,2).map(r=>r.title).join(' · ')||null})}catch(e){}
+    res.json(E)});
   app.get('/api/admin/users',need('view'),(req,res)=>{const L=usersList(store), sens=can(req.user,'sensitive');
     res.json({users:L.map(u=>({...u,perms:u.perms,effective:[...permsOf(store.userById(u.id))]})),sensitive:sens,at:new Date().toISOString()})});
   app.get('/api/admin/users/:id',need('view'),(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found',message:ERR.not_found}});
@@ -137,6 +142,17 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
     catch(e){res.status(e.message==='not_found'?404:400).json({error:{code:e.message,message:UERR[e.message]||e.message}})}});
   app.get('/api/content',signed,(req,res)=>{const u=req.user, pf=store.getDoc(u.role==='owner'?'portfolio/main':`data/users/${u.id}/portfolio`), hasPf=!!(pf.exists&&pf.data&&(pf.data.positions||[]).some(p=>p&&+p.qty>0));
     res.json({items:contentFor(store,u,{hasPf,newUser:Date.now()-Date.parse(u.created_at)<30*864e5}),unread:ticketsOfUser(store,u.id).filter(t=>t.unread).length})});
+
+  // ---- stage E: the radar, the voice of the users, the intelligence ----
+  app.get('/api/admin/radar',need('view'),(req,res)=>res.json({items:radarList(store,{days:+req.query.days||30}),at:(()=>{try{return JSON.parse(store.getMeta('radarAt')||'null')}catch(e){return null}})(),
+    staff:store.users().map(u=>store.userById(u.id)).filter(u=>can(u,'view')).map(u=>({id:u.id,email:u.email,name:u.name||''}))}));
+  app.post('/api/admin/radar/scan',need('system'),(req,res)=>{const o=radarScan(store,{cat:catalog(pageFile),log,push}); audit(store,{user:req.user,action:'radar.scan',target:'radar',detail:{opened:o.length},ip:req.ip}); res.json({ok:true,opened:o.length})});
+  app.post('/api/admin/radar/:id',need('system'),(req,res)=>{try{res.json({ok:true,item:radarUpdate(store,req.user,req.params.id,req.body||{},req.ip)})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  app.get('/api/admin/voice',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json(voice(store,R))});
+  app.get('/api/admin/intel',need('view'),(req,res)=>res.json({items:intelHistory(store,req.user.id),keyOff:!process.env.ANTHROPIC_API_KEY&&!app.locals.intelAsk}));
+  const IERR={short:'כתוב שאלה.',rate:'הגעת ל-20 שאלות בשעה. אפשר להמשיך בעוד מעט.',upstream:'צ׳יקו לא ענה כרגע. נסה שוב בעוד רגע.',no_answer:'התשובה לא הגיעה במבנה הנכון. נסה לנסח אחרת.'};
+  app.post('/api/admin/intel',need('view'),async(req,res)=>{const b=req.body||{}; try{res.json(await intelAsk(store,req.user,b.q,{ask:app.locals.intelAsk||null,q:{range:b.range||'30',from:b.from,to:b.to,pageFile},log}))}
+    catch(e){res.status(e.message==='rate'?429:e.message==='upstream'?502:400).json({error:{code:e.message,message:IERR[e.message]||e.message}})}});
 
   // ---- the page: only to someone with "view". Anyone else gets the site's ordinary "not found", not a closed door ----
   const zc={m:0};

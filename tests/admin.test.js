@@ -335,3 +335,75 @@ test('the API of stage D: a user opens a ticket and sees only their own; the sta
     assert.ok(store.db.prepare("select count(*) n from audit where action in ('ticket.update','content.add','content.publish','ledger.add')").get().n>=5);
   }finally{srv.close()}
 });
+
+// ================= stage E =================
+import {intelSchema, radarScan, radarList, radarUpdate, voice, intelAsk, factsFor} from '../server/admin/intel.js';
+
+test('the radar: findings with the eight answers, fact apart from suspicion, opened once, the management told, closed by itself when gone, kept when a person took it',()=>{
+  const s=mk(), U=users(s); bizSchema(s); intelSchema(s); setCounterStore(s);
+  const t=rangeOf({range:'today'}).to, back=n=>new Date(Date.parse(t+'T12:00:00Z')-n*864e5).toISOString().slice(0,10);
+  // server errors: 40 today against 1 a day before
+  for(let i=1;i<=7;i++)bump('rt_5xx','db',1,{day:back(i)}); bump('rt_5xx','db',140);
+  // complaints about prices from two people this week
+  for(const u of [U.f,U.a2,U.f])ticketCreate(s,u,{type:'bug',subject:'המחיר לא מתעדכן',body:'המחיר של המניה לא זז מהבוקר'});
+  const pushed=[]; const push=async(st,uid,m)=>{pushed.push(uid); return 1};
+  let o=radarScan(s,{push}); const keys=o.map(x=>x.key).sort(); assert.ok(keys.includes('errors')&&keys.includes('complaints:prices'),JSON.stringify(keys));
+  const L=radarList(s), e=L.find(r=>r.key==='errors');
+  for(const f of ['title','scope','affected','source','cause','action','started_at','sev'])assert.ok(e[f],'the finding says '+f);
+  assert.equal(e.verified,1,'the errors were counted: a fact'); assert.match(e.cause,/אפשרי/); assert.match(e.scope,/140 בקשות/); assert.equal(e.sev,'bad');
+  assert.ok(pushed.length>0,'the management told about a bad one');
+  assert.equal(radarScan(s,{}).length,0,'not opened twice'); assert.equal(radarList(s).filter(r=>r.key==='errors').length,1);
+  // a person takes the complaints; the errors go away by themselves
+  const c=radarList(s).find(r=>r.key==='complaints:prices'); radarUpdate(s,U.a,c.id,{status:'ack',owner:U.a.id,resolution:'בודקים את מקור המחירים'},'');
+  s.db.prepare("delete from counters where kind='rt_5xx'").run(); s.db.prepare('delete from tickets').run(); radarScan(s,{});
+  assert.equal(radarList(s).find(r=>r.key==='errors').status,'resolved'); assert.equal(radarList(s).find(r=>r.key==='complaints:prices').status,'ack','a person\'s hand: it stays');
+  assert.equal(auditList(s)[0].action,'radar.update'); setCounterStore(null);
+});
+
+test('the voice of the users: the five main pains ranked by people, tickets and severity; recurring apart from single; the frustration and the asks',()=>{
+  const s=mk(), U=users(s); bizSchema(s);
+  ticketCreate(s,U.f,{type:'bug',subject:'לא מצליח להתחבר',body:'הקוד לא עובד שוב ושוב, מתסכל'}); ticketCreate(s,U.a2,{type:'bug',subject:'בעיה בכניסה',body:'לא מצליח להתחבר עם הקוד'});
+  ticketCreate(s,U.f,{type:'idea',subject:'להוסיף גרף דיבידנדים לתוכנית',body:'הצעה לתוכנית ההפקדות'}); ticketCreate(s,U.a,{type:'question',subject:'איך מוסיפים קרן לתיק',body:'מחפש איפה'});
+  const V=voice(s,rangeOf({range:'30'}));
+  assert.equal(V.top5[0].k,'login'); assert.equal(V.top5[0].people,2); assert.equal(V.top5[0].recurring,true); assert.equal(V.top5[0].sev,'high'); assert.equal(V.top5[0].frust,2,'"לא מצליח" in both');
+  assert.ok(V.top5.find(t=>t.k==='plan').recurring===false,'a single complaint said as single'); assert.match(V.top5[0].improve,/כניסה/);
+  assert.equal(V.asks.length,1); assert.equal(V.frustration.length,2); assert.equal(V.n,4); assert.equal(V.people,3); assert.match(V.sources,/אין עדיין מקור משוב אחר/);
+});
+
+test('TikChik Intelligence: answers only from the facts, every number checked against them; no names, e-mails or portfolio in the facts; refused without a key; audited',async()=>{
+  const s=mk(), U=users(s); bizSchema(s); intelSchema(s);
+  s.setDoc('portfolio/main',{positions:[{sym:'SECRETSYM',qty:7,costIls:12345}]}); ticketCreate(s,U.f,{type:'bug',subject:'לא מצליח להתחבר',body:'עזרה בבקשה'});
+  const F=JSON.stringify(factsFor(s,U.a,{range:'30'}));
+  for(const bad of ['@x.co','SECRETSYM','12345','password','totp'])assert.ok(!F.includes(bad),'not in the facts: '+bad);
+  assert.ok(F.includes('executive')&&F.includes('support'));
+  let seen=null; const ask=async({system,prompt})=>{seen={system,prompt}; return JSON.stringify({conclusion:'יש 4 משתמשים רשומים ופנייה אחת פתוחה. ההבדל: 999 שלא בנתונים.',data:[{fact:'משתמשים רשומים',value:'4',source:'executive'}],range:'30 ימים',sources:['executive','support'],certainty:'medium',certaintyWhy:'מעט משתמשים',action:null,missing:''})};
+  const a=await intelAsk(s,U.a,'כמה משתמשים יש לנו?',{ask,q:{range:'30'}});
+  assert.match(seen.system,/רק מתוך FACTS/); assert.match(seen.system,/אתה לא מבצע שום פעולה/); assert.match(seen.prompt,/כמה משתמשים יש לנו/);
+  assert.equal(a.certainty,'medium'); assert.equal(a.data[0].value,'4'); assert.equal(a.check.ok,false); assert.deepEqual(a.check.unknown,['999'],'a made-up number is flagged');
+  assert.equal(auditList(s)[0].action,'intel.ask');
+  const b=await intelAsk(s,U.a,'כמה משתמשים?',{ask:async()=>JSON.stringify({conclusion:'יש 4 משתמשים.',data:[],sources:['executive'],certainty:'high'}),q:{range:'30'}}); assert.equal(b.check.ok,true);
+  await assert.rejects(()=>intelAsk(s,U.a,'שאלה',{ask:async()=>'לא JSON',q:{}}),/no_answer/);
+  const r=await intelAsk(s,U.a,'שאלה',{env:{}}); assert.match(r.unavailable,/ANTHROPIC_API_KEY/);
+  await assert.rejects(()=>intelAsk(s,U.a,'x',{ask}),/short/);
+});
+
+test('the API of stage E: a partner refused; the radar scanned and handled by "system"; the voice and the assistant by "view"',async()=>{
+  const {createApp,bootstrap}=await import('../server/index.js');
+  const store=new Store(':memory:'); bootstrap(store);
+  const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false});
+  app.locals.intelAsk=async()=>JSON.stringify({conclusion:'אין מספיק מידע כדי לדעת.',data:[],sources:[],certainty:'low',certaintyWhy:'אין נתונים בטווח',action:null,missing:'שימוש של יותר משתמשים'});
+  const srv=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))}), base='http://127.0.0.1:'+srv.address().port, jar={};
+  const req=async(who,method,url,body)=>{const r=await fetch(base+url,{method,headers:{...(jar[who]?{cookie:jar[who]}:{}),'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+    const sc=r.headers.get('set-cookie'); if(sc)jar[who]=sc.split(';')[0]; let j=null; try{j=await r.json()}catch(e){} return {status:r.status,j}};
+  try{
+    store.addUser({email:'p6@x.co',password:'password1',role:'friend'}); store.addUser({email:'ad6@x.co',password:'password1',role:'admin'});
+    await req('p','POST','/api/login',{email:'p6@x.co',password:'password1'}); await req('a','POST','/api/login',{email:'ad6@x.co',password:'password1'});
+    for(const [m,u] of [['GET','radar'],['GET','voice'],['GET','intel'],['POST','intel'],['POST','radar/scan']])assert.equal((await req('p',m,'/api/admin/'+u,m==='POST'?{q:'שאלה ארוכה'}:undefined)).status,403,u);
+    assert.equal((await req('a','POST','/api/admin/radar/scan',{})).status,200);
+    let r=await req('a','GET','/api/admin/exec?range=7'); assert.ok(r.j.metrics.some(m=>m.k==='radar'),'the radar on the dashboard');
+    assert.equal((await req('a','GET','/api/admin/voice?range=30')).status,200);
+    r=await req('a','POST','/api/admin/intel',{q:'מה השתנה החודש?',range:'30'}); assert.equal(r.status,200); assert.equal(r.j.certainty,'low'); assert.match(r.j.missing,/יותר משתמשים/);
+    r=await req('a','GET','/api/admin/intel'); assert.equal(r.j.items.length,1); assert.equal(r.j.items[0].q,'מה השתנה החודש?');
+    assert.ok(store.db.prepare("select count(*) n from audit where action in ('radar.scan','intel.ask')").get().n>=2);
+  }finally{srv.close()}
+});

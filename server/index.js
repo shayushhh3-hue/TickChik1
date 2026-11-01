@@ -31,6 +31,8 @@ import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js'
 import {adminSchema, audit, authEvent, touch, backfillActive, can as canMc} from './admin/core.js';
 import {adminRoutes} from './admin/routes.js';
 import {reqMeter, startOps} from './admin/ops.js';
+import {startRadar} from './admin/intel.js';
+import {catalog as mcCatalog} from './admin/metrics.js';
 import {setCounterStore, bump, aiMeter} from './admin/counter.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
@@ -515,6 +517,7 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
   // 1.11: the heartbeat, the downtime, the incidents and the alerts to the management
   startOps(store,{log,send:sendMail,push:pushTo});
+  startRadar(store,{log,push:pushTo,cat:()=>mcCatalog(path.join(ROOT,'page','live.html'))});
   // a first copy right away when today has none (a new server, or after an update)
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
   // 31.10: the economic calendar, built at start when it is a day old or missing (a cheap build from what is kept)
