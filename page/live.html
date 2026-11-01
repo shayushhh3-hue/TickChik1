@@ -25038,7 +25038,7 @@ function nxPendH(ids){const S=(ids||[]).map(nxRn), st=S.includes('off')?'off':S.
     :st==='cap'?'הגענו למכסת התרגומים המיידיים של היום. התרגום וההסבר יגיעו באיסוף הקרוב (כל 10 דקות ביום).'
     :st==='fail'?'התרגום לא הצליח כרגע. ננסה שוב אוטומטית בעוד כמה דקות.':'<span class="nx-spin" aria-hidden="true"></span> מתרגם לעברית ומסביר איך זה משפיע…'}</p>`}
 // a Hebrew line for an article not read yet: who it is about and where it is from (the headline in English stays in "עוד")
-function nxPendTitle(syms,pub){const L=(syms||[]).filter(k=>SECKEY.test(k)).slice(0,3).map(k=>NAMEOF[k]&&NAMEOF[k]!==k?`${NAMEOF[k]} (${k})`:k); return `ידיעה ${pub?`מ-${pub} `:''}${L.length?`על ${L.join(', ')}`:'חדשה'}`}
+function nxPendTitle(syms,pub,orig){const L=(syms||[]).filter(k=>SECKEY.test(k)).slice(0,3).map(k=>NAMEOF[k]&&NAMEOF[k]!==k?`${NAMEOF[k]} (${k})`:k); const o=String(orig||'').trim(); return `ידיעה ${pub?`מ-${pub} `:''}${L.length?`על ${L.join(', ')}`:'חדשה'}${o?': '+o.slice(0,90):''}`}   // 1.11: the original headline says what it is about; the generic words alone said nothing
 // 31.10: the publishers the site takes from Google News (server/sources.js), and the official sources
 const NW_TOP=new Set(['Reuters','Bloomberg','Associated Press','CNBC','The Wall Street Journal','Financial Times','MarketWatch',"Barron's",'The New York Times','Fortune','Axios','The Economist','BBC','Nikkei Asia','The Washington Post','TechCrunch','The Verge','גלובס','כלכליסט','Calcalist Tech','TheMarker','ynet','ביזפורטל','הארץ','N12','ice','The Times of Israel','Globes']);
 const NW_OFF=new Set(['SEC EDGAR','Federal Reserve']);
@@ -25105,7 +25105,7 @@ function nwCard(z,E,o={}){
     </details>`;
   const acts=`<div class="nw-acts"><a class="nw-b" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(it.id)}">למקור ↗</a>${x&&it.src!=='x'?`<button type="button" class="nw-b" data-imopen="ev:${esc(evk)}">מפת השפעה</button><button type="button" class="nw-b" data-chiko="art:${esc(it.id)}">שאל את צ׳יקו</button>`:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(it.id)}" aria-pressed="${saved}">${saved?'★ שמור':'☆ לשמור'}</button>${x&&!x.rules&&it.src!=='x'&&!/^id:/.test(evk)?`<button type="button" class="nw-b nw-st" data-story="${esc(evk)}" aria-expanded="${STORY_OPEN.has(evk)}">${STORY_OPEN.has(evk)?'לסגור את הסיפור':'הסיפור מאחורי הכותרת'}</button>${evFolBtn(evk,it)}`:''}</div>${STORY_OPEN.has(evk)?storyH(evk):''}`;
   const body=`<div class="nw-meta">${meta}</div>
-    <h3>${x&&!x.rules?esc(x.he):/[\u0590-\u05FF]/.test(it.title||'')?esc(it.title):esc(nxPendTitle(nwSymsOf(it),it.pub))}</h3>
+    <h3>${x&&!x.rules?esc(x.he):/[\u0590-\u05FF]/.test(it.title||'')?esc(it.title):esc(nxPendTitle(nwSymsOf(it),it.pub,it.title))}</h3>
     ${x&&!x.rules?`<p class="nw-sum">${glWrap(esc(x.what))}</p>`:''}
     ${fol.length?`<p class="nw-why">במעקב שלך: ${[...new Set(fol.map(([k,v])=>NW_FK[k].he(v)))].slice(0,3).map(esc).join(', ')}</p>`:''}
     ${impH||(x&&!x.rules?'':it.src!=='x'?nxPendH([it.id]):'')}${ents.trim()?`<div class="nw-ents">${ents}</div>`:''}${acts}${more}`;
@@ -25452,9 +25452,11 @@ function renderNewsX(){
   const E=nxEvents(all.map(z=>z.it)), card=(z,o)=>nwCard(z,E,{F,...(o||{})});
   // one card per event: the article that matters most stands for it (Claude's reading before the rules', the higher level,
   // then the newest), and the event is as recent as its newest article; the others are its "more sources"
-  const oneEv=L=>{const G2=new Map(); for(const z of L){const k=z.it.x&&z.it.x.ev?z.it.x.ev:'id:'+z.it.id, g=G2.get(k); if(!g){G2.set(k,{...z,_t:String(z.it.at||z.it.seen||'')}); continue}
+  // 1.11: a reading by the rules (no event key yet) about one company on one day is one card, as on the server
+  const kOf=z=>{const x=z.it.x; if(x&&x.ev)return x.ev; if(x&&x.rules){const sym=((x.aff||[]).find(a=>a&&a.sym)||{}).sym||(z.it.syms||[])[0]; if(sym)return `rd:${sym}:${String(z.it.at||z.it.seen||'').slice(0,10)}`} return 'id:'+z.it.id};
+  const oneEv=L=>{const G2=new Map(); for(const z of L){const k=kOf(z), g=G2.get(k); if(!g){G2.set(k,{...z,_t:String(z.it.at||z.it.seen||'')}); continue}
       const t=String(z.it.at||z.it.seen||''); if(t>g._t)g._t=t; const a=z.it.x, b=g.it.x, better=!b?!!a:a&&(((b.rules?1:0)-(a.rules?1:0))||(NX_LVR[a.level]-NX_LVR[b.level]))>0; if(better)G2.set(k,{...z,_t:g._t})}
-    const order=[...new Set(L.map(z=>z.it.x&&z.it.x.ev?z.it.x.ev:'id:'+z.it.id))]; return order.map(k=>G2.get(k))};
+    const order=[...new Set(L.map(kOf))]; return order.map(k=>G2.get(k))};
   const sort=NWF.sort||F.sort, byTime=(a,b)=>String(b._t||b.it.at||b.it.seen)<String(a._t||a.it.at||a.it.seen)?-1:1, byImp=(a,b)=>nwScore(b,E,F)-nwScore(a,E,F)||byTime(a,b);
   const more=n=>n>NWLIM?`<div class="acts"><button type="button" class="btn" data-nwmore="1">להציג עוד ${Math.min(30,n-NWLIM)} (${n-NWLIM} נוספות)</button></div>`:'';
   // the saved and the history: the live article when it is still here, its short copy otherwise
@@ -25575,7 +25577,9 @@ const IX_REL_HE={high:'גבוהה',mid:'בינונית',low:'נמוכה',none:'�
 // the figures; "relevance" is measured: the share of the portfolio (by value now) in the holdings the period's alerts touch
 function ixFigures(m){const L=ixItems(), ev=L.filter(a=>a.kind!=='mkt'), un=L.filter(plUnread), syms=new Set(), dir=new Set();
   for(const a of L){for(const h of (a.holds||[])){syms.add(h.sym); if(h.link==='direct')dir.add(h.sym)} for(const s of (a.secs||[]))for(const k of (s.syms||[]))syms.add(k)}
-  const pos=(m&&m.pos)||[], w=pos.filter(p=>syms.has(p.sym)).reduce((t,p)=>t+p.w,0), strong=L.some(a=>a.rel==='high'&&(a.lv==='crit'||a.lv==='imp'));
+  // 1.11: only what is held now counts as a holding touched (an alert keeps the names it once touched; the watch list is not a holding)
+  const pos=(m&&m.pos)||[], held=new Set(pos.map(p=>p.sym)); for(const k of [...syms])if(!held.has(k)){syms.delete(k); dir.delete(k)}
+  const w=pos.filter(p=>syms.has(p.sym)).reduce((t,p)=>t+p.w,0), strong=L.some(a=>a.rel==='high'&&(a.lv==='crit'||a.lv==='imp'));
   const lvl=!syms.size?'none':w>=40&&strong?'high':w>=15||strong?'mid':'low';
   const n=IXR==='1'?6:IXR==='all'?12:Math.min(+IXR,15), span=(IXR==='1'?36e5*4:IXR==='all'?30*864e5/12:Math.max(1,(+IXR)/n)*864e5), now=Date.now(), bars=Array(n).fill(0);
   for(const a of ev){const i=n-1-Math.floor((now-Date.parse(a.at))/span); if(i>=0&&i<n)bars[i]++}
@@ -27219,7 +27223,7 @@ try{refreshBack()}catch(e){}
     NXK=true; if(NXDIRTY)nxSave(); try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}},()=>{NEWSST=NEWSST||{read:{},saved:{}}; NXK=true})}catch(e){}
   // 30.10: the personal alerts, made on the server for this person alone
   try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.kind==='cal'){a.kind='mkt'; a.mk={t:'cal',...(a.cal||{})}} else if(a&&a.kind==='insider'){a.kind='mkt'; a.mk={t:'ins',...(a.ins||{})}}}catch(e){}   // 31.10: a calendar reminder is drawn like a measured fact
-    try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
+    try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub,a.orig); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
   // 1.11: the settings first (the name, the choices, the plans), then everything else: a document that arrives late is a
   // document another one's render may write over
   pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());renderLater()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);

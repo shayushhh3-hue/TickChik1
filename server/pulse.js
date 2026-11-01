@@ -77,7 +77,10 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null}={}){
   for(const it of (X.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
   const E=new Map();
   for(const a of arts.values()){const x=by[a.id]; if(!x||(a.at||a.seen||'')<from||(visible&&!visible(a)))continue;   // posts on X are not a source for an alert: they are not in these two lists
-    const k=x.ev?'ev:'+x.ev:'id:'+a.id, e=E.get(k)||{k,arts:[]}; e.arts.push({a,x}); E.set(k,e)}
+    // 1.11: a reading by the rules has no event key, so every article about the same company on the same day was an
+    // alert of its own; those are one event (its first symbol and the day) until Claude reads them and names the event
+    const day=String(a.at||a.seen||'').slice(0,10), sym0=((x.aff||[]).find(z=>z&&z.sym)||{}).sym||((a.syms||[])[0])||'';
+    const k=x.ev?'ev:'+x.ev:(x.rules&&sym0?`rd:${sym0}:${day}`:'id:'+a.id), e=E.get(k)||{k,arts:[]}; e.arts.push({a,x}); E.set(k,e)}
   for(const e of E.values()){
     // the reading that stands for the event: Claude's before the rules', the higher level, then the newest
     e.arts.sort((p,q)=>((p.x.rules?1:0)-(q.x.rules?1:0))||(LV_RANK[q.x.level]-LV_RANK[p.x.level])||(String(q.a.at||q.a.seen)<String(p.a.at||p.a.seen)?-1:1));

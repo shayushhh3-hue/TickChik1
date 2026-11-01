@@ -1570,7 +1570,7 @@ test('pulse: levels by rules from importance, relevance and confidence; one aler
   // OPEC, through the energy sector (30% of the portfolio: XOM and CVX are not named), important in itself: a portfolio update, with the sector's share and path
   assert.equal(A['ev:opec-cut'].lv,'upd'); assert.equal(A['ev:opec-cut'].rel,'mid'); assert.equal(A['ev:opec-cut'].conf,'low'); assert.deepEqual(A['ev:opec-cut'].secs.map(x=>x.g+':'+x.w),['Energy:30']); assert.equal(A['ev:opec-cut'].fac[0].k,'oil');
   // an opinion about a holding is never more than a portfolio update; a reading by rules neither
-  assert.equal(A['ev:ko-op'].lv,'upd'); assert.equal(A['id:'+newsId('https://x/rule')].lv,'upd'); assert.equal(A['id:'+newsId('https://x/rule')].conf,'low');
+  assert.equal(A['ev:ko-op'].lv,'upd'); assert.equal(A[Object.keys(A).find(k=>k.startsWith('rd:KO:'))].lv,'upd'); assert.equal(A[Object.keys(A).find(k=>k.startsWith('rd:KO:'))].conf,'low');
   // nothing about securities not held, whatever their level
   assert.ok(!A['ev:tiny']&&!A['ev:jpm']); assert.equal(r.fresh.length,r.doc.items.length,'all new');
   assert.ok(A['ev:nvda-cut'].hist[0].why==='new'&&A['ev:nvda-cut'].at===iso);
@@ -1911,4 +1911,14 @@ test('1.11 the readings: an answer cut short by the token budget is used up to t
   const calls=[]; const f=async(u,o)=>{calls.push(JSON.parse(o.body)); return new Response(JSON.stringify({content:[{type:'text',text:'[{"i":0,"he":"כותרת","what":"מה קרה","type":"company","level":"info","dir":"unclear","cert":"fact"},{"i":1,"he":"כותרת 2","what":"מה'}],stop_reason:'max_tokens'}),{status:200})};
   process.env.ANTHROPIC_API_KEY='sk-test'; const got=await analyzeBatch([{title:'a',link:'https://x/1'},{title:'b',link:'https://x/2'}],{fetch:f}); delete process.env.ANTHROPIC_API_KEY;
   assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,1400*2+800);
+});
+
+test('1.11 alerts: articles read by the rules about the same company on the same day are one event, not one alert each',async()=>{
+  const {newsId,ruleRead}=await import('../server/newsx.js'); const {eventsOf,pulseUpdate}=await import('../server/pulse.js');
+  const s=new Store(':memory:'), now=new Date(), iso=k=>new Date(now.getTime()-k*3600e3).toISOString();
+  s.setDoc('portfolio/main',{positions:[{sym:'META',qty:1,ccy:'USD'}]},{silent:true}); s.setDoc('quotes/latest',{prices:{META:600},usdIls:3.7,updatedAt:now.toISOString()},{silent:true});
+  const A=[1,2,3].map(i=>({title:'Meta news '+i,pub:'Yahoo',link:'https://x/meta'+i,at:iso(i),syms:['META'],seen:iso(i)}));
+  s.setDoc('research/news',{items:A,updatedAt:iso(0)},{silent:true}); s.setDoc('research/newsx',{by:Object.fromEntries(A.map(a=>[newsId(a.link),{...ruleRead(a),at:iso(0)}])),gen:[],updatedAt:iso(0)},{silent:true});
+  const E=eventsOf(s,{now}); assert.equal(E.length,1,'one event for the day'); assert.equal(E[0].arts.length,3); assert.match(E[0].k,/^rd:META:/);
+  const P=pulseUpdate(s,null,{now}).doc.items.filter(a=>a.holds.some(h=>h.sym==='META')); assert.equal(P.length,1,'one alert, three sources'); assert.equal(P[0].n,3);
 });
