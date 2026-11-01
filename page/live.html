@@ -17731,8 +17731,11 @@ function render(){
   const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):'';
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
   pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
-  $('kPnlD').textContent=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(mH.cost?` · ${sgn(mH.pnl)} בשקלים`:''):'אין נתוני עלות')
-    :(mH.cost?spct(mH.pnlPct)+(mH.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(mH.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):'אין נתוני עלות');
+  // 1.11: an empty tile says where to complete the figure, in one tap
+  const fillB=canWrite?' <button type="button" class="lnk" data-tab="mine" data-goid="fillWiz">להשלים ›</button>':'';
+  {const pd=$('kPnlD'), txt=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(mH.cost?` · ${sgn(mH.pnl)} בשקלים`:''):null)
+    :(mH.cost?spct(mH.pnlPct)+(mH.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(mH.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):null);
+    if(txt!=null)pd.textContent=txt; else pd.innerHTML='אין נתוני עלות'+fillB}
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
   {const ye=$('kYtd'), yd=$('kYtdD'), yk=$('kYtdK'), de=$('kDep'), dd=$('kDepD'); let y=null, dp=null;
@@ -17744,7 +17747,7 @@ function render(){
     if(y){yk.textContent=y.cut||y.fromZero?'מ'+ymFull(y.first):'מתחילת השנה'; ye.textContent=spct(y.pct,1); ye.className='v '+(y.pct>=0?'up':'down'); yd.textContent=sgn(y.gain)}
     else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=kvf?'של כל התיק, בתצוגת "הכל"':HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
     if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
-    else{de.textContent='—'; de.className='v'; dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':one?'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"':'אין רישום הפקדות'}}
+    else{de.textContent='—'; de.className='v'; if(kvf||one)dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"'; else dd.innerHTML='אין רישום הפקדות'+fillB}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
 
   // alerts: the same engine the assistant uses (alertsOf)
@@ -23719,8 +23722,9 @@ function plSet(k,what,v){const P2=plSt(), o=P2[k]||(P2[k]={}); if(v==null)delete
 const plSort=(a,b)=>(plUnread(b)-plUnread(a))||(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1);
 const plByK=k=>(PULSE&&PULSE.items||[]).find(a=>a.k===k)||null;
 // the counts: on the tab, on the menu, in "חיבור למציאות"
-function plCount(){const un=plItems().filter(plUnread), n=$('rtAlN'); if(n){n.hidden=!un.length; n.textContent=un.length>99?'99+':String(un.length); n.classList.toggle('crit',un.some(a=>a.lv==='crit'))}
-  return un.length}
+// 1.11: the badge counts the important unread alerts (critical and important); the updates are inside, not on the tab
+function plCount(){const un=plItems().filter(plUnread), im=un.filter(a=>a.lv==='crit'||a.lv==='imp'), n=$('rtAlN'); if(n){n.hidden=!im.length; n.textContent=im.length>99?'99+':String(im.length); n.title=un.length>im.length?`ועוד ${un.length-im.length} עדכונים`:''; n.classList.toggle('crit',im.some(a=>a.lv==='crit'))}
+  return im.length}
 // the measured move of a holding since the alert's first article (a fact from the saved prices, never said to be caused)
 function plMeasured(a){if(a.kind==='mkt'||!a.first)return []; return (a.holds||[]).filter(h=>h.link==='direct').map(h=>({h,m:nxMove(h.sym,a.first)})).filter(z=>z.m)}
 // the chain in one line: the event → the economic factor → the sector → the company → the holding
@@ -25728,7 +25732,8 @@ function ixStocks(m){const L=ixItems(), pos=(m&&m.pos)||[], P=new Map(pos.map(p=
     for(const sym of syms){const k=ixLinkOf(a,sym); if(!k)continue; const o=by.get(sym)||mk(sym); o.L.push({a,k}); if(a.kind!=='mkt'){o.dirs[k.dir]++; if(k.t==='direct')o.direct++} by.set(sym,o)}}
   for(const o of by.values()){o.L.sort((x,y)=>(PL_LVR[y.a.lv]-PL_LVR[x.a.lv])||((x.a.kind==='mkt')-(y.a.kind==='mkt'))||(IX_TR[x.k.t]-IX_TR[y.k.t])||(String(y.a.up||y.a.at)>String(x.a.up||x.a.at)?1:-1)); o.top=o.L[0].a; o.lv=PL_LVR[o.top.lv]||0}
   for(const p of pos)if(!by.has(p.sym)&&p.dayPct!=null&&Math.abs(p.dayPct)>=3)by.set(p.sym,{...mk(p.sym),quiet:true});
-  return [...by.values()].sort((x,y)=>(y.lv-x.lv)||(y.direct-x.direct)||(((y.p||{}).w||0)-((x.p||{}).w||0)))}
+  // 1.11: what is held comes first, whatever its level; a security only followed (an alert kept its name) after, marked
+  return [...by.values()].sort((x,y)=>((y.p?1:0)-(x.p?1:0))||(y.lv-x.lv)||(y.direct-x.direct)||(((y.p||{}).w||0)-((x.p||{}).w||0)))}
 function ixStOf(sym,m){const o=ixStocks(m).find(x=>x.sym===sym); if(o)return o; const p=((m&&m.pos)||[]).find(x=>x.sym===sym)||null; return {sym,p,L:[],dirs:{pos:0,neg:0,mixed:0,unclear:0},direct:0,top:null,lv:0,quiet:true}}
 const ixJoin=L=>L.length>1?L.slice(0,-1).join(', ')+(/^\d/.test(L[L.length-1])?' ו-':' ו')+L[L.length-1]:L[0]||'';
 function ixDirSay(d){return ixJoin([d.pos?(d.pos===1?'אחד חיובי':`${d.pos} חיוביים`):'',d.neg?(d.neg===1?'אחד שלילי':`${d.neg} שליליים`):'',d.mixed?(d.mixed===1?'אחד מעורב':`${d.mixed} מעורבים`):'',d.unclear?(d.unclear===1?'אחד שכיוונו לא ברור':`${d.unclear} שכיוונם לא ברור`):''].filter(Boolean))}
@@ -25740,7 +25745,7 @@ function ixStRow(o){const p=o.p, ev=o.L.filter(z=>z.a.kind!=='mkt').length, nm=p
   const dirs=['pos','neg','mixed'].filter(k=>d[k]).map(k=>ixDwH(k,d[k])).join('');
   const what=ev?(ev===1?'אירוע אחד':`${ev} אירועים`):o.quiet?'לא נמצא אירוע בחדשות':'עובדות מהשוק';
   return `<li><button type="button" class="ix-s lv-${o.top?o.top.lv:'q'}${o.quiet?' q':''}" data-ixst="${esc(o.sym)}">
-    <span class="ix-s1">${logoHtml(o.sym,'xs')}<b><bdi>${esc(o.sym)}</bdi></b><span class="ix-sn">${esc(nm)}</span>${p?`<span class="ix-sw">${pct(p.w,1)} מהתיק</span>`:''}</span>
+    <span class="ix-s1">${logoHtml(o.sym,'xs')}<b><bdi>${esc(o.sym)}</bdi></b><span class="ix-sn">${esc(nm)}</span>${p?`<span class="ix-sw">${pct(p.w,1)} מהתיק</span>`:'<span class="ix-sw nm">לא בתיק · במעקב</span>'}</span>
     <span class="ix-s2">${ixDayH(p)}<span class="ix-se">${what}</span></span>
     ${o.top?`<span class="ix-s3">${ixViaH(o.L[0])}${esc(imCut(o.top.title,80))}</span>`:`<span class="ix-s3 nm">המניה זזה היום יותר מהרגיל, ובחדשות שנאספו אין אירוע שנוגע בה.</span>`}
     <span class="ix-s4">${dirs?`<span class="vh">כיוון אפשרי: </span>${dirs}`:''}<span class="ix-go">מה קורה? ›</span></span></button></li>`}
