@@ -461,7 +461,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/jobs/:name',needOwner,(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'jobs are off'}}); if(!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'no such job'}}); res.json({ok:true,queued:req.params.name})});
 
   // 1.11: TikChik Management Center (/admin and /api/admin/*), its permissions checked on the server
-  adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role),dataDir,dbFile:env.DB_FILE||path.join(dataDir,'tikchik.sqlite'),persist:PERSIST});
+  adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role),dataDir,dbFile:env.DB_FILE||path.join(dataDir,'tikchik.sqlite'),persist:PERSIST,push:pushTo,log});
   app.use('/api',(req,res)=>res.status(404).json({error:{code:'not_found',message:'no such call'}}));
 
   // ---- the site ----

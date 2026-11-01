@@ -46,12 +46,19 @@ export function buildSite(root){
 </script>
 `;
   const acct=`<div id="tcAcct" hidden><button type="button" id="tcAcctBtn" aria-haspopup="true" aria-expanded="false" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-<div id="tcAcctMenu" hidden><div class="who"></div><a href="/admin" class="mc" hidden>מרכז הניהול</a><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="security.html">אימות דו-שלבי</a><a href="/api/db/export">גיבוי הנתונים שלי (קובץ)</a><a href="import.html">שחזור מגיבוי</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
+<div id="tcAcctMenu" hidden><div class="who"></div><a href="/admin" class="mc" hidden>מרכז הניהול</a><a href="users.html" class="own" hidden>משתמשים ושותפים</a><a href="help.html" id="tcHelp">עזרה ותמיכה<span class="dot" hidden></span></a><a href="help.html?type=bug" id="tcBug">דיווח על תקלה</a><a href="security.html">אימות דו-שלבי</a><a href="/api/db/export">גיבוי הנתונים שלי (קובץ)</a><a href="import.html">שחזור מגיבוי</a><button type="button" id="tcOutBtn">יציאה</button></div></div>
 <style>
 #tcAcct{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;z-index:55;font-family:Heebo,Arial,sans-serif}
 #tcAcctBtn{width:40px;height:40px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;color:#2e4a66;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgb(30 52 78 / .14)}
 #tcAcctMenu{position:absolute;bottom:48px;right:0;min-width:210px;background:#fff;border:1px solid #dfe4ea;border-radius:12px;box-shadow:0 8px 28px rgb(30 52 78 / .18);padding:6px;display:flex;flex-direction:column}
 #tcAcctMenu[hidden]{display:none}
+#tcAcctMenu .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e11d48;margin-inline-start:6px;vertical-align:middle} #tcAcctMenu .dot[hidden]{display:none}
+#tcAcctBtn .dot{position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:#e11d48;border:2px solid #fff} #tcAcctBtn{position:relative}
+#tcNotes{position:sticky;top:0;z-index:60;display:flex;flex-direction:column;gap:0;font-family:Heebo,Arial,sans-serif}
+#tcNotes .n{display:flex;gap:10px;align-items:flex-start;padding:9px 14px;background:#EDE7FE;color:#2a1b5c;font-size:14px;line-height:1.5;border-bottom:1px solid rgb(0 0 0 / .06)}
+#tcNotes .n.warn{background:#FDF0DC;color:#5b3a06} #tcNotes .n.critical{background:#FDE4EA;color:#6b0f24}
+#tcNotes .n div{flex:1;min-width:0} #tcNotes .n b{margin-inline-end:6px} #tcNotes .n button{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:inherit;padding:0 4px;min-width:32px;min-height:32px}
+html[data-theme="dark"] #tcNotes .n{background:#2A2040;color:#EDE7FE} html[data-theme="dark"] #tcNotes .n.warn{background:#2b2210;color:#fde68a} html[data-theme="dark"] #tcNotes .n.critical{background:#2e1220;color:#fecdd3}
 #tcAcctMenu .who{font-size:12.5px;color:#657587;padding:8px 10px;border-bottom:1px solid #eef1f4;margin-bottom:4px;direction:ltr;text-align:right;word-break:break-all}
 #tcAcctMenu a,#tcAcctMenu button{display:block;text-align:start;padding:9px 10px;border-radius:8px;font:inherit;font-size:14px;color:#1b2a3c;text-decoration:none;background:none;border:0;cursor:pointer}
 #tcAcctMenu a:hover,#tcAcctMenu button:hover{background:#f1f5f9}
@@ -62,11 +69,24 @@ html[data-theme="dark"] #tcAcctMenu a,html[data-theme="dark"] #tcAcctMenu button
 <script>
 (function(){
   function show(){var t=window.__tc; if(!t){return setTimeout(show,400)} var a=document.getElementById('tcAcct'); a.hidden=false; a.querySelector('.who').textContent=t.email;
-    a.querySelectorAll('.own').forEach(function(x){x.hidden=!t.manage}); a.querySelectorAll('.mc').forEach(function(x){x.hidden=!t.mc})}
+    a.querySelectorAll('.own').forEach(function(x){x.hidden=!t.manage}); a.querySelectorAll('.mc').forEach(function(x){x.hidden=!t.mc}); notes()}
+  // 1.11: the messages the management published for this person (a system or maintenance message, an announcement): a
+  // strip at the top, each closed for good on this device; and a dot on the account button when a ticket has an answer
+  function notes(){fetch('/api/content',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null}).then(function(d){if(!d)return;
+    var dis=[]; try{dis=JSON.parse(localStorage.getItem('tr_cnt_dis')||'[]')}catch(e){}
+    var L=(d.items||[]).filter(function(c){return (c.kind==='banner'||c.kind==='maintenance'||c.kind==='announcement')&&dis.indexOf(c.id)<0});
+    if(L.length){var box=document.getElementById('tcNotes'); if(!box){box=document.createElement('div'); box.id='tcNotes'; box.setAttribute('role','region'); box.setAttribute('aria-label','הודעות מהאתר'); document.body.insertBefore(box,document.body.firstChild)}
+      box.innerHTML=''; L.forEach(function(c){var n=document.createElement('div'); n.className='n '+(c.level==='critical'?'critical':(c.level==='warn'||c.kind==='maintenance')?'warn':''); n.setAttribute('data-cnt',c.id);
+        var t=document.createElement('div'), b=document.createElement('b'); b.textContent=c.title; t.appendChild(b); if(c.body){t.appendChild(document.createTextNode(c.body.length>220?c.body.slice(0,220)+'…':c.body))}
+        var x=document.createElement('button'); x.type='button'; x.setAttribute('aria-label','לסגור את ההודעה'); x.textContent='×'; x.onclick=function(){dis.push(c.id); try{localStorage.setItem('tr_cnt_dis',JSON.stringify(dis.slice(-200)))}catch(e){} n.remove()};
+        n.appendChild(t); n.appendChild(x); box.appendChild(n)})}
+    var dot=document.querySelector('#tcHelp .dot'); if(dot)dot.hidden=!d.unread;
+    var btn=document.getElementById('tcAcctBtn'); if(btn&&d.unread&&!btn.querySelector('.dot')){var s=document.createElement('span'); s.className='dot'; s.setAttribute('aria-label','יש תשובה לפנייה שלך'); btn.appendChild(s)}}).catch(function(){})}
   show();
   document.addEventListener('click',function(e){var m=document.getElementById('tcAcctMenu'),b=document.getElementById('tcAcctBtn'); if(!m)return;
     if(e.target.closest('#tcAcctBtn')){m.hidden=!m.hidden;b.setAttribute('aria-expanded',String(!m.hidden));return}
     if(e.target.closest('#tcOutBtn')){window.__tc&&window.__tc.signOut();return}
+    var bug=e.target.closest('#tcBug'); if(bug){bug.href='help.html?type=bug&screen='+encodeURIComponent(document.body.dataset.page||'')}
     if(!e.target.closest('#tcAcctMenu')){m.hidden=true;b.setAttribute('aria-expanded','false')}});
 })();
 </script>

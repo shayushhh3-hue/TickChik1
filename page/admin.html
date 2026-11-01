@@ -209,11 +209,11 @@ const ico=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg>`;
 // the six areas; the screens of the later stages are named, marked, and lead nowhere yet
 const NAV=[
   {h:'הנהלה',items:[{id:'exec',l:'תמונת מצב'}]},
-  {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה',soon:'שלב ד׳'},{id:'voice',l:'קול המשתמשים',soon:'שלב ה׳'}]},
-  {h:'מודיעין ומוצר',items:[{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח',soon:'שלב ד׳'},{id:'radar',l:'TikChik Radar',soon:'שלב ה׳'},{id:'intel',l:'TikChik Intelligence',soon:'שלב ה׳'}]},
+  {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה'},{id:'voice',l:'קול המשתמשים',soon:'שלב ה׳'}]},
+  {h:'מודיעין ומוצר',items:[{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח'},{id:'radar',l:'TikChik Radar',soon:'שלב ה׳'},{id:'intel',l:'TikChik Intelligence',soon:'שלב ה׳'}]},
   {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
-  {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן',soon:'שלב ד׳'}]},
-  {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence',soon:'שלב ד׳'}]}];
+  {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן'}]},
+  {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence'}]}];
 let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
 const can=p=>PERMS.includes(p);
 // ---- the server ----
@@ -245,12 +245,12 @@ const errBox=(e,again)=>`<div class="err" role="alert"><span>${e.status===403?'�
 document.addEventListener('click',e=>{if(e.target.closest('[data-again]'))route()});
 const banner=(t,kind='')=>`<div class="banner ${kind}" role="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>${t}</div></div>`;
 const pill=s=>{const [c,l]=STATE[s]||STATE.off; return `<span class="pill ${c}">${l}</span>`};
-function delta(v,p){if(v==null||p==null)return ''; const d=v-p; if(!d)return '<span class="d same">ללא שינוי מהתקופה הקודמת</span>'; return `<span class="d ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${nf(Math.abs(d))} מהתקופה הקודמת</span>`}
+function delta(v,p,u){if(v==null||p==null)return ''; const d=Math.round((v-p)*100)/100; if(!d)return '<span class="d same">ללא שינוי מהתקופה הקודמת</span>'; return `<span class="d ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${u==='usd'?usd(Math.abs(d)):nf(Math.abs(d))} מהתקופה הקודמת</span>`}
 function kpi(m){const na=m.value==null, v=na?'לא זמין':m.unit==='usd'?usd(m.value):m.unit==='pct'?nf(m.value)+'%':m.unit==='ms'?ms(m.value):m.unit==='mb'?nf(m.value)+' מ״ב':nf(m.value);
   return `<${m.go?'button type="button" data-go="'+esc(m.go)+'"':'div'} class="card kpi${m.go?'':' nogo'}${m.state&&m.state!=='ok'?' st-'+m.state:''}" data-k="${esc(m.k)}">
     <span class="l">${esc(m.label)}${m.state?' '+pill(m.state):''}</span>
     <span class="v${na?' na':''}">${na?v:`<span class="num">${v}</span>`}${!na&&m.of!=null?`<span class="of">מתוך ${nf(m.of)}</span>`:''}</span>
-    ${delta(m.value,m.prev)}${m.note?`<span class="n">${esc(m.note)}</span>`:''}${m.churn?`<span class="n">${nf(m.churn)} לא חזרו</span>`:''}
+    ${delta(m.value,m.prev,m.unit)}${m.note?`<span class="n">${esc(m.note)}</span>`:''}${m.churn?`<span class="n">${nf(m.churn)} לא חזרו</span>`:''}
     <span class="src" title="${esc(m.how||m.src)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>${esc(m.src)}${m.at?` · עודכן ${esc(ago(m.at))}`:''}</span></span></${m.go?'button':'div'}>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]'); if(b)location.hash='#'+b.dataset.go});
 // a line chart: several series over the days, a crosshair with the values on hover / touch
@@ -503,6 +503,140 @@ SCREENS.security=async()=>{head('מרכז אבטחה','מצב האבטחה, הח
     $('tblSS').addEventListener('click',async e=>{const b=e.target.closest('[data-send]'); if(!b)return; b.disabled=true; try{await post('sessions/end',{h:b.dataset.send,uid:b.dataset.suid}); route()}catch(err){$('ssM').className='msg bad'; $('ssM').textContent=err.message; b.disabled=false}})}
 };
 
+// ================= stage D =================
+const TTYPE={question:'שאלה',bug:'תקלה',idea:'הצעה',request:'בקשה'}, TST={new:['p-bad','חדשה'],open:['p-warn','בטיפול'],waiting:['p-acc','ממתינה למשתמש'],resolved:['p-ok','נפתרה'],closed:['p-off','נסגרה']}, TPR={low:'נמוכה',normal:'רגילה',high:'גבוהה',urgent:'דחופה'};
+const hrsTxt=h=>h==null?'—':h<1?Math.round(h*60)+' דק׳':h<48?(Math.round(h*10)/10)+' שע׳':Math.round(h/24)+' ימים';
+// ---- support ----
+SCREENS.support=async()=>{head('שירות ותמיכה','',{range:true}); view.innerHTML=loading(6);
+  const d=await api('support?'+rq()), S=d.stats; $('sub').textContent='טווח: '+rangeText(d.range)+' · פניות נכנסות מעמוד "עזרה ותמיכה" באתר';
+  view.innerHTML=`<div class="grid kpis">${kpi({k:'o',label:'פתוחות',value:S.open,src:'טבלת הפניות',state:S.urgent?'warn':null,note:S.urgent?`${S.urgent} בעדיפות גבוהה או דחופה`:null})}${kpi({k:'w',label:'ממתינות לתשובה שלנו',value:S.awaiting,src:'ההודעה האחרונה היא של המשתמש',state:S.awaiting?'warn':null})}
+      ${kpi({k:'n',label:'נפתחו בטווח',value:S.n,src:'טבלת הפניות',note:Object.entries(S.byType).filter(([,v])=>v).map(([k,v])=>`${TTYPE[k]} ${v}`).join(' · ')||null})}
+      ${kpi({k:'fr',label:'זמן עד תשובה ראשונה (חציון)',value:null,src:'מהפתיחה עד התשובה הראשונה של הצוות',note:S.answered?`${hrsTxt(S.firstReplyH)} · ${S.answered} פניות`:'אין עדיין פניות שנענו'})}
+      ${kpi({k:'rs',label:'זמן עד פתרון (חציון)',value:null,src:'מהפתיחה עד "נפתרה"',note:S.resolved?`${hrsTxt(S.resolveH)} · ${S.resolved} פניות`:'אין עדיין פניות שנפתרו'})}</div>
+    <div class="row2" style="margin-top:14px"><section class="card" id="tblT"><h2>הפניות</h2></section>
+      <section class="card"><h2>נושאים</h2><p class="hint">לפי המילים בפנייה (סיווג גס, אפשר לתקן בפנייה עצמה). "חוזר": אצל שני משתמשים או יותר.</p>${S.topics.length?`<div class="tw"><table><thead><tr><th>נושא</th><th>פניות</th><th>משתמשים</th><th>תקלות</th></tr></thead><tbody>${S.topics.map(t=>`<tr><td>${esc(t.name)}${t.recurring?' <span class="pill p-warn">חוזר</span>':''}</td><td class="num">${nf(t.n)}</td><td class="num">${nf(t.people)}</td><td class="num">${nf(t.bugs)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין פניות בטווח.</div>'}</section></div>`;
+  // the stat cards for times carry the time in their note: show it as the value
+  for(const k of ['fr','rs']){const c=view.querySelector(`.kpi[data-k="${k}"] .v`); const h=k==='fr'?S.firstReplyH:S.resolveH; if(c&&h!=null){c.classList.remove('na'); c.innerHTML=`<span class="num">${esc(hrsTxt(h))}</span>`}}
+  table($('tblT'),{rows:d.tickets,search:t=>t.subject+' '+t.email,empty:'אין פניות. משתמשים פונים מהקישור "עזרה ותמיכה" בתפריט החשבון באתר.',
+    filters:[{k:'status',l:'מצב',get:t=>t.status,opts:Object.entries(TST).map(([k,v])=>[k,v[1]])},{k:'type',l:'סוג',get:t=>t.type,opts:Object.entries(TTYPE)},{k:'topic',l:'נושא',get:t=>t.topic||'other',opts:Object.entries(d.topics)}],
+    cols:[{k:'subject',l:'פנייה',cls:'wrap',f:t=>`<b>${esc(t.subject)}</b>${t.awaitingStaff?' <span class="pill p-bad">ממתינה לנו</span>':''}<div style="font-size:12px;color:var(--muted)">${esc(TTYPE[t.type])} · ${esc(d.topics[t.topic]||'')} · ${esc(t.name||t.email)}</div>`},
+      {k:'status',l:'מצב',sv:t=>Object.keys(TST).indexOf(t.status),f:t=>`<span class="pill ${TST[t.status][0]}">${TST[t.status][1]}</span>`},{k:'priority',l:'עדיפות',sv:t=>Object.keys(TPR).indexOf(t.priority),f:t=>`<span class="pill ${t.priority==='urgent'||t.priority==='high'?'p-warn':'p-off'}">${TPR[t.priority]}</span>`},
+      {k:'updated_at',l:'עודכנה',f:t=>esc(ago(t.updated_at))},{k:'assigneeEmail',l:'מטפל',f:t=>`<span class="mono" style="font-size:12px">${esc(t.assigneeEmail||'—')}</span>`}],
+    onRow:t=>location.hash='#ticket/'+t.id})};
+SCREENS.ticket=async id=>{head('פנייה',''); view.innerHTML=loading(2);
+  const d=await api('support/'+encodeURIComponent(id)), t=d.ticket; head(t.subject,`${TTYPE[t.type]} · ${t.name||t.email} · נפתחה ${dt(t.created_at)}`); navRender('support');
+  const ed=can('edit');
+  view.innerHTML=`<div class="row2"><section class="card"><h2>השיחה</h2><div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">${t.msgs.map(m=>`<div style="padding:10px 12px;border-radius:12px;white-space:pre-wrap;font-size:14px;${m.role==='user'?'background:var(--panel2);align-self:flex-start;max-width:90%':m.role==='note'?'background:var(--warn-bg);align-self:stretch':'background:var(--acc-soft);align-self:flex-end;max-width:90%'}">${esc(m.body)}<div style="font-size:11.5px;color:var(--muted);margin-top:4px">${m.role==='user'?'המשתמש':m.role==='note'?'הערה פנימית · '+esc(m.by):'תשובה · '+esc(m.by)} · ${esc(dt(m.at))}</div></div>`).join('')}</div>
+      ${ed?`<label class="vh" for="tRep">תשובה</label><textarea id="tRep" rows="5" style="width:100%;margin-top:14px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit" placeholder="תשובה למשתמש, או הערה פנימית"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn pri" id="tSend">לשלוח למשתמש</button><button class="btn" id="tNote">לשמור כהערה פנימית</button></div><p class="hint" style="margin-top:6px">תשובה מגיעה למשתמש בעמוד "עזרה ותמיכה" ובהתראה לטלפון (אם הפעיל). הערה פנימית לא מוצגת לו.</p>`:'<p class="hint">צריך הרשאת עריכה כדי לענות.</p>'}<div class="msg" id="tM" role="status"></div></section>
+    <section class="card"><h2>פרטים</h2><div class="kv"><div><b>מאת</b><a href="#user/${esc(t.uid)}" class="mono">${esc(t.email)}</a></div><div><b>מסך באתר</b>${esc(t.screen||'—')}</div><div><b>גרסה</b>${esc(t.ver||'—')}</div><div><b>תשובה ראשונה</b>${esc(t.first_reply_at?dt(t.first_reply_at):'עוד לא')}</div><div><b>נפתרה</b>${esc(t.resolved_at?dt(t.resolved_at):'—')}</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">${esc(t.ua||'')}</div>
+      ${ed?`<div class="checks" style="margin-top:14px;gap:10px">
+        <label style="display:block">מצב <select id="tSt">${Object.entries(TST).map(([k,v])=>`<option value="${k}" ${k===t.status?'selected':''}>${v[1]}</option>`).join('')}</select></label>
+        <label style="display:block">עדיפות <select id="tPr">${Object.entries(TPR).map(([k,v])=>`<option value="${k}" ${k===t.priority?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label style="display:block">סוג <select id="tTy">${Object.entries(TTYPE).map(([k,v])=>`<option value="${k}" ${k===t.type?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label style="display:block">נושא <select id="tTo">${Object.entries({login:'כניסה וחשבון',statement:'דוחות וקבצים',prices:'מחירים ושער',chiko:'צ׳יקו',news:'חדשות והתראות',plan:'תוכנית ויעדים',portfolio:'התיק',speed:'מהירות ותקיעות',other:'אחר'}).map(([k,v])=>`<option value="${k}" ${k===t.topic?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label style="display:block">מטפל <select id="tAs"><option value="">אף אחד</option>${(d.staff||[]).map(m=>`<option value="${esc(m.id)}" ${m.id===t.assignee?'selected':''}>${esc(m.name||m.email)}</option>`).join('')}</select></label></div>
+        <button class="btn" id="tSave" style="margin-top:10px">לשמור</button>
+        ${t.type==='idea'||t.type==='request'||t.type==='bug'?`<h3 style="margin-top:16px">לניהול המוצר</h3>${t.roadmap_id?`<p class="hint">מקושרת לפריט <a href="#roadmap">#${t.roadmap_id}</a>.</p>`:`<button class="btn sm" id="tToRm">ליצור פריט חדש מהפנייה</button>${d.roadmap.length?` <select id="tRmSel" class="btn sm"><option value="">או לקשר לפריט קיים…</option>${d.roadmap.map(r=>`<option value="${r.id}">${esc(r.title)}</option>`).join('')}</select>`:''}`}`:''}`:''}
+      <h3 style="margin-top:16px">היסטוריה</h3>${d.history.length?`<ul style="margin:0;padding-inline-start:18px;font-size:12.5px;color:var(--ink2)">${d.history.map(h=>`<li>${esc(dt(h.at))} · <span class="mono">${esc(h.actor)}</span>: ${esc(Object.entries(h.detail||{}).filter(([k])=>k!=='subject').map(([k,v])=>k+' '+v).join(', '))}</li>`).join('')}</ul>`:'<p class="hint">אין עדיין.</p>'}</section></div>`;
+  const msg=(x,ok)=>{const m=$('tM'); m.className='msg '+(ok?'ok':'bad'); m.textContent=x};
+  const go=async(b,ok)=>{try{await post('support/'+t.id,b); msg(ok,true); setTimeout(route,500)}catch(e){msg(e.message,false)}};
+  if($('tSend'))$('tSend').onclick=()=>go({reply:$('tRep').value,...($('tSt').value!==t.status?{status:$('tSt').value}:{})},'נשלח.');
+  if($('tNote'))$('tNote').onclick=()=>go({reply:$('tRep').value,internal:true},'נשמר כהערה.');
+  if($('tSave'))$('tSave').onclick=()=>go({status:$('tSt').value,priority:$('tPr').value,type:$('tTy').value,topic:$('tTo').value,assignee:$('tAs').value||null},'נשמר.');
+  if($('tToRm'))$('tToRm').onclick=async()=>{try{await post('roadmap',{title:t.subject,descr:t.msgs[0]?t.msgs[0].body:'',kind:t.type==='bug'?'bug':'idea',status:'idea',ticket:t.id}); msg('נוצר פריט בניהול המוצר.',true); setTimeout(route,500)}catch(e){msg(e.message,false)}};
+  if($('tRmSel'))$('tRmSel').onchange=async e=>{const id=e.target.value; if(!id)return; const r=(await api('roadmap')).items.find(x=>String(x.id)===id); if(!r)return; try{await post('roadmap',{...r,ticket:t.id}); msg('קושר.',true); setTimeout(route,500)}catch(err){msg(err.message,false)}}};
+
+// ---- the roadmap ----
+const RST=[['idea','רעיונות'],['planned','מתוכנן'],['dev','בפיתוח'],['test','בבדיקה'],['launched','הושק'],['existing','קיים']], RKIND={feature:'פיצ׳ר',bug:'תקלה',task:'משימה',idea:'רעיון'};
+SCREENS.roadmap=async()=>{head('ניהול מוצר ופיתוח','מרעיון ועד השקה, ומה קרה אחרי ההשקה.'); view.innerHTML=loading(4);
+  const d=await api('roadmap'), ed=can('edit'), by=Object.fromEntries(RST.map(([k])=>[k,d.items.filter(r=>r.status===k)]));
+  const card=r=>`<button type="button" class="card" data-rm="${r.id}" style="display:block;width:100%;text-align:start;padding:12px;margin-bottom:8px;cursor:pointer;font:inherit;color:inherit">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px"><span class="pill p-off">${RKIND[r.kind]}</span>${r.priority==='urgent'||r.priority==='high'?`<span class="pill p-warn">${TPR[r.priority]}</span>`:''}${r.late?'<span class="pill p-bad">באיחור</span>':''}${r.tickets?`<span class="pill p-acc">${r.tickets} פניות</span>`:''}</div>
+      <b style="font-size:14px">${esc(r.title)}</b><div style="font-size:12px;color:var(--muted);margin-top:4px">${r.ownerEmail?esc(r.ownerEmail):'בלי אחראי'}${r.due?' · יעד '+esc(dmy(r.due)):''}${r.launched_at?' · הושק '+esc(dmy(r.launched_at)):''}</div>
+      ${r.impact?(r.impact.hidden?`<div class="hint" style="margin:6px 0 0">מדידה אחרי השקה: מעט מדי משתמשים (${r.impact.people})</div>`:`<div style="font-size:12.5px;margin-top:6px">שימוש: <span class="num">${nf(r.impact.before)}</span> ב-30 ימים לפני → <span class="num">${nf(r.impact.after)}</span> ב-${r.impact.days} ימים אחרי</div>`):''}</button>`;
+  view.innerHTML=`${ed?`<div style="margin-bottom:12px"><button class="btn pri" id="rmNew">פריט חדש</button></div>`:''}<div id="rmForm"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-items:start">${RST.map(([k,l])=>`<section aria-label="${l}"><h3 style="margin:0 0 8px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between">${l}<span class="num">${by[k].length}</span></h3>${by[k].map(card).join('')||'<div class="empty" style="border:1px dashed var(--line);border-radius:12px">—</div>'}</section>`).join('')}</div>
+    ${banner('<b>מדידת הצלחה:</b> לפריט שהושק אפשר לקשר חלק באתר (למשל tab:news או s:hRisk). מוצג השימוש בו ב-30 הימים לפני ההשקה ואחריה, מסיכום של כל המשתמשים, רק כשיש לפחות 3.')}`;
+  const form=r=>{r=r||{status:'idea',kind:'feature',priority:'normal'}; $('rmForm').innerHTML=`<section class="card" style="margin-bottom:14px"><h2>${r.id?'עריכה':'פריט חדש'}</h2>
+      <div class="kv" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <label>כותרת<input type="text" id="rT" value="${esc(r.title||'')}" maxlength="140" style="width:100%"></label>
+        <label>סוג<select id="rK" style="width:100%">${Object.entries(RKIND).map(([k,v])=>`<option value="${k}" ${k===r.kind?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label>מצב<select id="rS" style="width:100%">${RST.map(([k,v])=>`<option value="${k}" ${k===r.status?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label>עדיפות<select id="rP" style="width:100%">${Object.entries(TPR).map(([k,v])=>`<option value="${k}" ${k===r.priority?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label>אחראי<select id="rO" style="width:100%"><option value="">—</option>${d.staff.map(m=>`<option value="${esc(m.id)}" ${m.id===r.owner?'selected':''}>${esc(m.name||m.email)}</option>`).join('')}</select></label>
+        <label>תאריך יעד<input type="date" id="rD" value="${esc(r.due||'')}" style="width:100%"></label>
+        <label>חלק באתר למדידה<input type="text" id="rM" value="${esc(r.metric_key||'')}" placeholder="tab:news" class="mono" style="width:100%"></label>
+        <label>מה ייחשב הצלחה<input type="text" id="rSu" value="${esc(r.success||'')}" maxlength="400" style="width:100%"></label></div>
+      <label style="display:block;margin-top:8px">תיאור<textarea id="rDe" rows="4" style="width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit">${esc(r.descr||'')}</textarea></label>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pri" id="rGo">לשמור</button><button class="btn" id="rNo">ביטול</button>${r.id?'<button class="btn danger" id="rDel">למחוק…</button>':''}</div>
+      <div class="inline" id="rDelBox" hidden>למחוק את "${esc(r.title||'')}"? הפעולה נרשמת ביומן. <button class="btn danger sm" id="rDelGo">למחוק</button><button class="btn sm" id="rDelNo">ביטול</button></div><div class="msg" id="rMsg" role="status"></div></section>`;
+    $('rT').focus();
+    const m=(x,ok)=>{$('rMsg').className='msg '+(ok?'ok':'bad'); $('rMsg').textContent=x};
+    $('rNo').onclick=()=>{$('rmForm').innerHTML=''};
+    $('rGo').onclick=async()=>{try{await post('roadmap',{id:r.id,title:$('rT').value,kind:$('rK').value,status:$('rS').value,priority:$('rP').value,owner:$('rO').value||null,due:$('rD').value,metric_key:$('rM').value.trim(),success:$('rSu').value,descr:$('rDe').value}); route()}catch(e){m(e.message,false)}};
+    if($('rDel')){$('rDel').onclick=()=>{$('rDelBox').hidden=false}; $('rDelNo').onclick=()=>{$('rDelBox').hidden=true}; $('rDelGo').onclick=async()=>{try{await api('roadmap/'+r.id,{method:'DELETE'}); route()}catch(e){m(e.message,false)}}}};
+  if($('rmNew'))$('rmNew').onclick=()=>form(null);
+  for(const b of view.querySelectorAll('[data-rm]'))b.onclick=()=>{const r=d.items.find(x=>String(x.id)===b.dataset.rm); if(ed)form(r)}};
+
+// ---- the content ----
+const CKIND={banner:'הודעת מערכת',maintenance:'הודעת תחזוקה',announcement:'הודעה למשתמשים',guide:'מדריך',faq:'שאלה נפוצה'}, CAUD={all:'כל המשתמשים',friend:'שותפים',admin:'מנהלים',new:'משתמשים חדשים (30 יום)',with_pf:'מי שהזין תיק',no_pf:'מי שעוד לא הזין תיק'}, CST={draft:['p-off','טיוטה'],published:['p-ok','מפורסם'],archived:['p-off','בארכיון']};
+SCREENS.content=async()=>{head('מרכז תוכן','הודעות מערכת ותחזוקה, הודעות לכולם או לקבוצה, מדריכים ושאלות נפוצות. הודעות מופיעות כפס בראש האתר; מדריכים ושאלות בעמוד "עזרה ותמיכה".'); view.innerHTML=loading(3);
+  const d=await api('content'), ed=can('edit');
+  view.innerHTML=`${ed?'<div style="margin-bottom:12px"><button class="btn pri" id="cNew">תוכן חדש</button></div>':''}<div id="cForm"></div><section class="card" id="tblC"></section>`;
+  table($('tblC'),{rows:d.items,search:c=>c.title+' '+c.body,empty:'אין עדיין תוכן.',filters:[{k:'kind',l:'סוג',get:c=>c.kind,opts:Object.entries(CKIND)},{k:'status',l:'מצב',get:c=>c.status,opts:Object.entries(CST).map(([k,v])=>[k,v[1]])}],
+    cols:[{k:'title',l:'כותרת',cls:'wrap',f:c=>`<b>${esc(c.title)}</b><div style="font-size:12px;color:var(--muted)">${esc(CKIND[c.kind])} · ${esc(CAUD[c.audience])}</div>`},{k:'status',l:'מצב',f:c=>`<span class="pill ${CST[c.status][0]}">${CST[c.status][1]}</span>`},
+      {k:'when',l:'מתי',f:c=>esc([c.starts_at?'מ-'+dmy(c.starts_at):'',c.ends_at?'עד '+dmy(c.ends_at):''].filter(Boolean).join(' ')||'תמיד')},{k:'published_at',l:'פורסם',f:c=>c.published_at?`${esc(dt(c.published_at))}<div class="mono" style="font-size:11.5px;color:var(--muted)">${esc(c.byEmail||'')}</div>`:'—'}],
+    onRow:c=>ed&&form(c)});
+  const prev=c=>c.kind==='guide'||c.kind==='faq'?`<details open style="border:1px solid var(--line);border-radius:12px;background:var(--panel)"><summary style="padding:10px 12px;font-weight:600">${esc(c.title||'(כותרת)')}</summary><div style="padding:0 12px 12px;white-space:pre-wrap;color:var(--ink2)">${esc(c.body)}</div></details>`
+    :`<div style="display:flex;gap:10px;padding:9px 14px;border-radius:10px;background:${c.level==='critical'?'var(--bad-bg)':c.level==='warn'||c.kind==='maintenance'?'var(--warn-bg)':'var(--acc-soft)'}"><div><b style="margin-inline-end:6px">${esc(c.title||'(כותרת)')}</b>${esc((c.body||'').slice(0,220))}</div><span style="margin-inline-start:auto">×</span></div>`;
+  const form=c=>{c=c||{kind:'announcement',audience:'all',level:'info',status:'draft'}; $('cForm').innerHTML=`<section class="card" style="margin-bottom:14px"><h2>${c.id?'עריכה':'תוכן חדש'} ${c.id?`<span class="pill ${CST[c.status][0]}">${CST[c.status][1]}</span>`:''}</h2>
+      <div class="kv" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <label>סוג<select id="cK" style="width:100%">${Object.entries(CKIND).map(([k,v])=>`<option value="${k}" ${k===c.kind?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label>למי<select id="cA" style="width:100%">${Object.entries(CAUD).map(([k,v])=>`<option value="${k}" ${k===c.audience?'selected':''}>${v}</option>`).join('')}</select></label>
+        <label>רמה<select id="cL" style="width:100%"><option value="info" ${c.level==='info'?'selected':''}>מידע</option><option value="warn" ${c.level==='warn'?'selected':''}>אזהרה</option><option value="critical" ${c.level==='critical'?'selected':''}>קריטי</option></select></label>
+        <label>מתאריך<input type="date" id="cS" value="${esc((c.starts_at||'').slice(0,10))}" style="width:100%"></label><label>עד תאריך<input type="date" id="cE" value="${esc((c.ends_at||'').slice(0,10))}" style="width:100%"></label>
+        <label>סדר<input type="number" id="cO" value="${+c.sort||0}" style="width:100%"></label></div>
+      <label style="display:block;margin-top:8px">כותרת<input type="text" id="cT" value="${esc(c.title||'')}" maxlength="140" style="width:100%"></label>
+      <label style="display:block;margin-top:8px">תוכן<textarea id="cB" rows="6" style="width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit">${esc(c.body||'')}</textarea></label>
+      <h3 style="margin-top:12px">תצוגה מקדימה</h3><p class="hint">כך זה ייראה ${c.kind==='guide'||c.kind==='faq'?'בעמוד "עזרה ותמיכה"':'כפס בראש האתר'}.</p><div id="cPrev">${prev(c)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="cSave">לשמור טיוטה</button>${c.id&&c.status!=='published'?'<button class="btn pri" id="cPub">לפרסם</button>':''}${c.id&&c.status==='published'?'<button class="btn" id="cUnpub">להוריד מהאתר</button>':''}${c.id&&c.status!=='archived'?'<button class="btn" id="cArc">לארכיון</button>':''}<button class="btn" id="cNo">סגירה</button></div>
+      <p class="hint" style="margin-top:6px">שמירה של תוכן שכבר מפורסם מעדכנת אותו באתר מיד. כל פרסום נרשם ביומן: מי ומתי.</p><div class="msg" id="cMsg" role="status"></div></section>`;
+    const cur=()=>({id:c.id,kind:$('cK').value,audience:$('cA').value,level:$('cL').value,starts_at:$('cS').value,ends_at:$('cE').value,sort:$('cO').value,title:$('cT').value,body:$('cB').value});
+    for(const id of ['cK','cL','cT','cB'])$(id).addEventListener('input',()=>{$('cPrev').innerHTML=prev(cur())});
+    const m=(x,ok)=>{$('cMsg').className='msg '+(ok?'ok':'bad'); $('cMsg').textContent=x};
+    $('cNo').onclick=()=>{$('cForm').innerHTML=''};
+    $('cSave').onclick=async()=>{try{const r=await post('content',cur()); m('נשמר.',true); c=r.item; setTimeout(route,400)}catch(e){m(e.message,false)}};
+    const st=s=>async()=>{try{await post('content',cur()); await post('content/'+c.id+'/status',{status:s}); route()}catch(e){m(e.message,false)}};
+    if($('cPub'))$('cPub').onclick=st('published'); if($('cUnpub'))$('cUnpub').onclick=st('draft'); if($('cArc'))$('cArc').onclick=st('archived')};
+  if($('cNew'))$('cNew').onclick=()=>form(null)};
+
+// ---- business intelligence ----
+SCREENS.biz=async()=>{head('Business Intelligence','עלויות, הכנסות ועלות למשתמש, לפי חודש. רק מה שנרשם או חושב, בלי נתונים מדומים.'); view.innerHTML=loading(6);
+  const d=await api('biz'), ed=can('edit'), M=d.months, cur=M[M.length-1], prev=M[M.length-2]||{};
+  const usd2=v=>v==null?'—':'$'+(Math.round(v*100)/100).toLocaleString('he-IL',{minimumFractionDigits:v<100?2:0,maximumFractionDigits:2});
+  view.innerHTML=`<div class="grid kpis">${kpi({k:'c',label:'עלות החודש',value:cur.cost,unit:'usd',prev:prev.cost,src:'יומן הכספים + AI מחושב',note:cur.aiMissing?'חסרים מחירי AI: העלות חלקית':cur.cost==null?'לא נרשמו עלויות החודש':null})}
+      ${kpi({k:'u',label:'עלות למשתמש פעיל',value:cur.perUser,unit:'usd',src:'עלות החודש ÷ משתמשים פעילים בחודש',note:`${nf(cur.active)} פעילים החודש`})}
+      ${kpi({k:'r',label:'הכנסות החודש',value:cur.revenue,unit:'usd',src:'יומן הכספים',note:d.hasRevenue?null:'אין הכנסות רשומות'})}
+      ${kpi({k:'f',label:'תחזית לחודש הבא',value:d.forecast?d.forecast.next:null,unit:'usd',src:'קו ישר על חודשי העבר',note:d.forecast?`מ-${d.forecast.from} חודשים · שיפוע ${usd2(d.forecast.slope)} לחודש · הערכה, לא הבטחה`:'צריך לפחות 3 חודשים עם עלויות'})}</div>
+    <div class="row2" style="margin-top:14px"><section class="card"><h2>הוצאות והכנסות לפי חודש</h2><div class="chart" id="chB"></div>
+        <div class="tw" style="margin-top:12px"><table><thead><tr><th>חודש</th><th>נרשם</th><th>AI מחושב</th><th>סה״כ עלות</th><th>הכנסות</th><th>פעילים</th><th>למשתמש</th></tr></thead><tbody>${M.slice().reverse().map(r=>`<tr><td>${esc(r.month.split('-').reverse().join('.'))}</td><td class="num">${r.entered?usd2(r.entered):'—'}</td><td class="num">${r.ai!=null?usd2(r.ai):r.aiMissing?'<span class="pill p-warn">חסר מחיר</span>':'—'}</td><td class="num"><b>${usd2(r.cost)}</b></td><td class="num">${usd2(r.revenue)}</td><td class="num">${nf(r.active)}</td><td class="num">${usd2(r.perUser)}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="card"><h2>עלות AI לפי פיצ׳ר</h2><p class="hint">שלושת החודשים האחרונים, מהמונה לפי פיצ׳ר (נספר מ-1.11.2026).</p>${d.featCost.length?`<div class="tw"><table><tbody>${d.featCost.map(f=>`<tr><td>${esc(FEAT[f.feature]||f.feature)}</td><td class="num">${f.cost==null?'<span class="pill p-warn">חסר מחיר</span>':usd2(f.cost)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">אין עדיין נתונים.</div>'}
+        <h2 style="margin-top:16px">מה המספרים לא כוללים</h2><ul style="margin:0;padding-inline-start:18px;font-size:13px;color:var(--ink2)">${d.notes.map(n=>`<li style="margin:4px 0">${esc(n)}</li>`).join('')}</ul>${d.fx?`<p class="hint" style="margin-top:8px">סכומים בשקלים מומרים לפי ${d.fx.toFixed(3)} ₪ לדולר (השער העדכני באתר).</p>`:''}</section></div>
+    <section class="card" style="margin-top:14px"><h2>יומן הכספים</h2><p class="hint">חשבוניות ועלויות שאין להן חיבור אוטומטי (Railway, ספקי נתונים, דומיין), והכנסות כשיהיו. כל רישום ומחיקה נרשמים ביומן הפעולות.</p>
+      ${ed?`<form id="lF" class="inline" style="margin-bottom:12px"><select id="lK"><option value="cost">הוצאה</option><option value="revenue">הכנסה</option></select><input type="month" id="lM" value="${esc(d.cur)}" aria-label="חודש" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-height:32px">
+        <select id="lC" aria-label="קטגוריה"></select><input type="text" id="lV" placeholder="ספק" maxlength="60" style="flex:1 1 120px"><input type="number" id="lA" placeholder="סכום" min="0" step="0.01" style="width:110px"><select id="lY"><option>USD</option><option>ILS</option></select>
+        <input type="text" id="lN" placeholder="הערה" maxlength="200" style="flex:1 1 140px"><button class="btn pri sm">להוסיף</button></form><div class="msg" id="lMsg" role="status"></div>`:''}
+      <div id="tblL2"></div></section>`;
+  lineChart($('chB'),M.map(r=>r.month+'-15'),[{l:'עלות',v:M.map(r=>r.cost||0),c:'var(--c1)',area:true},{l:'הכנסות',v:M.map(r=>r.revenue||0),c:'var(--c2)'}],{h:180});
+  table($('tblL2'),{rows:d.ledger,search:r=>r.vendor+' '+r.note,empty:'אין רישומים עדיין.',filters:[{k:'kind',l:'סוג',get:r=>r.kind,opts:[['cost','הוצאה'],['revenue','הכנסה']]}],
+    cols:[{k:'month',l:'חודש',f:r=>esc(r.month.split('-').reverse().join('.'))},{k:'kind',l:'סוג',f:r=>r.kind==='cost'?'הוצאה':'הכנסה'},{k:'category',l:'קטגוריה',f:r=>esc(d.cats[r.category]||r.category)},{k:'vendor',l:'ספק',f:r=>esc(r.vendor||'—')},
+      {k:'amount',l:'סכום',f:r=>`<span class="num">${r.ccy==='ILS'?'₪'+nf(r.amount):usd2(r.amount)}</span>`},{k:'note',l:'הערה',cls:'wrap',f:r=>esc(r.note||'')},{k:'x',l:'',nosort:true,f:r=>ed?`<button class="btn sm danger" data-ldel="${r.id}">למחוק</button>`:''}]});
+  const CATS={cost:['servers','ai','api','domain','mail','tools','other'],revenue:['subscription','one_time','other']}, fill=()=>{$('lC').innerHTML=CATS[$('lK').value].map(k=>`<option value="${k}">${esc(d.cats[k]||k)}</option>`).join('')};
+  if($('lF')){fill(); $('lK').onchange=fill; $('lF').addEventListener('submit',async e=>{e.preventDefault(); try{await post('ledger',{kind:$('lK').value,month:$('lM').value,category:$('lC').value,vendor:$('lV').value,amount:$('lA').value,ccy:$('lY').value,note:$('lN').value}); route()}catch(err){$('lMsg').className='msg bad'; $('lMsg').textContent=err.message}})}
+  $('tblL2').addEventListener('click',async e=>{const b=e.target.closest('[data-ldel]'); if(!b)return; if(b.dataset.sure!=='1'){b.dataset.sure='1'; b.textContent='בטוח?'; return} try{await api('ledger/'+b.dataset.ldel,{method:'DELETE'}); route()}catch(err){b.textContent=err.message}})};
+
 // ---- roles and permissions ----
 SCREENS.access=async()=>{head('תפקידים והרשאות','מי יכול לעשות מה במרכז הניהול. ההרשאות נאכפות בשרת, לא רק בתצוגה.'); view.innerHTML=loading(3);
   const d=await api('users'); const P=['view','edit','users','system','sensitive'], L={view:'צפייה',edit:'עריכה',users:'משתמשים',system:'מערכת',sensitive:'מידע רגיש'};
@@ -521,7 +655,7 @@ SCREENS.access=async()=>{head('תפקידים והרשאות','מי יכול ל�
 
 // ================= routing =================
 async function route(){const h=(location.hash||'#exec').slice(1), [id,arg]=h.split('/'); menuOpen(false);
-  const known=SCREENS[id]?id:'exec'; navRender(id==='user'?'users':known); LAST_CHART=null;
+  const known=SCREENS[id]?id:'exec'; navRender(id==='user'?'users':id==='ticket'?'support':known); LAST_CHART=null;
   try{await SCREENS[known](arg?decodeURIComponent(arg):undefined)}catch(e){view.innerHTML=errBox(e,known)}
   $('main').focus({preventScroll:true}); scrollTo(0,0)}
 addEventListener('hashchange',route);

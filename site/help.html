@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>תיק צ׳יק – עזרה ותמיכה</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('tr_theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--line:#e2e8f0;--ink:#1e293b;--ink2:#45566b;--muted:#64748b;--acc:#6D28D9;--acc-soft:#EDE7FE;--ok:#15803d;--ok-bg:#e3f6ea;--warn:#b45309;--warn-bg:#fdf0dc;--bad:#b42318;--bad-bg:#fde4ea;color-scheme:light}
+html[data-theme="dark"]{--bg:#0E0A14;--card:#1A1320;--line:#33263A;--ink:#F4ECF2;--ink2:#CDBFCB;--muted:#A895A7;--acc:#A78BFA;--acc-soft:#2A2040;--ok:#4ade80;--ok-bg:#0f2a1c;--warn:#fbbf24;--warn-bg:#2b2210;--bad:#fb7185;--bad-bg:#2e1220;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Heebo,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;margin:0} h2{font-size:17px;margin:0 0 10px} h3{font-size:15px;margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px;min-height:40px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff} html[data-theme="dark"] .btn.pri{color:#140f22}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+label{display:block;font-size:13px;color:var(--ink2);margin:12px 0 4px;font-weight:600}
+input[type=text],textarea{width:100%;font:inherit;font-size:16px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:120px;resize:vertical}
+.types{display:flex;flex-wrap:wrap;gap:8px} .types label{margin:0;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:600;color:var(--ink)}
+.types input{accent-color:var(--acc)} .types label:has(input:checked){border-color:var(--acc);background:var(--acc-soft)}
+.muted{color:var(--muted);font-size:13.5px} .msg{min-height:1.2em;font-size:13.5px;margin-top:8px} .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+details{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--card)} details>summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details>summary::-webkit-details-marker{display:none} details>summary::after{content:"+";color:var(--muted)} details[open]>summary::after{content:"−"}
+details .bd{padding:0 14px 14px;white-space:pre-wrap;color:var(--ink2)}
+.note{border-radius:12px;padding:12px 14px;margin:10px 0;border:1px solid var(--line);background:var(--card)} .note.warn{background:var(--warn-bg);border-color:transparent} .note.critical{background:var(--bad-bg);border-color:transparent}
+.note b{display:block} .note p{margin:4px 0 0;white-space:pre-wrap}
+.tk{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--line);border-radius:12px;margin:8px 0;cursor:pointer;background:var(--card);width:100%;text-align:start;font:inherit;color:inherit}
+.tk:hover{border-color:var(--acc)} .tk .s{font-size:12.5px;color:var(--muted)}
+.pill{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--acc-soft);color:var(--acc)} .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-inline-start:6px}
+.conv{display:flex;flex-direction:column;gap:10px;margin:12px 0} .bub{max-width:88%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;font-size:14.5px}
+.bub.user{align-self:flex-start;background:var(--acc-soft);border-start-start-radius:4px} .bub.staff{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-start-end-radius:4px}
+.bub small{display:block;color:var(--muted);font-size:11.5px;margin-top:4px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><h1>עזרה ותמיכה</h1><a class="btn" href="./">חזרה לאתר</a></div>
+  <p class="muted">מדריכים ושאלות נפוצות, ופנייה לצוות האתר: שאלה, תקלה, הצעה לשיפור או בקשה.</p>
+  <div id="notes"></div>
+  <section class="card" id="convBox" hidden aria-labelledby="convT"><div class="top"><h2 id="convT"></h2><button class="btn" id="convBack" type="button">לכל הפניות</button></div><div id="convMeta" class="muted"></div><div class="conv" id="conv"></div>
+    <label for="rep">להוסיף לפנייה</label><textarea id="rep" maxlength="4000"></textarea><button class="btn pri" id="repGo" type="button" style="margin-top:10px">לשלוח</button><div class="msg" id="repM" role="status"></div></section>
+  <section class="card" id="mineBox" hidden aria-labelledby="mineT"><h2 id="mineT">הפניות שלי</h2><div id="mine"></div></section>
+  <section class="card" aria-labelledby="newT"><h2 id="newT">פנייה חדשה</h2>
+    <form id="f"><div class="types" role="radiogroup" aria-label="סוג הפנייה">
+      <label><input type="radio" name="type" value="question" checked>שאלה</label><label><input type="radio" name="type" value="bug">תקלה</label><label><input type="radio" name="type" value="idea">הצעה לשיפור</label><label><input type="radio" name="type" value="request">בקשה</label></div>
+      <label for="subj">נושא</label><input type="text" id="subj" maxlength="120" required>
+      <label for="body">מה קרה, או מה היית רוצה?</label><textarea id="body" maxlength="4000" required></textarea>
+      <p class="muted" id="what">נשלח: מה שכתבת, המסך שהיית בו וסוג הדפדפן. לא נשלח שום פרט מהתיק שלך.</p>
+      <button class="btn pri" type="submit">לשלוח</button><div class="msg" id="fM" role="status"></div></form></section>
+  <section class="card" id="guideBox" hidden aria-labelledby="gT"><h2 id="gT">מדריכים</h2><div id="guides"></div></section>
+  <section class="card" id="faqBox" hidden aria-labelledby="qT"><h2 id="qT">שאלות נפוצות</h2><div id="faqs"></div></section>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id), esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const call=async(m,u,b)=>{const r=await fetch('/api'+u,{method:m,credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:b?JSON.stringify(b):undefined}); let j=null; try{j=await r.json()}catch(e){}
+  if(r.status===401){location.href='./';throw new Error('')} if(!r.ok)throw new Error((j&&j.error&&j.error.message)||('שגיאה '+r.status)); return j};
+const dt=s=>s?new Date(s).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+const TYPE={question:'שאלה',bug:'תקלה',idea:'הצעה',request:'בקשה'}, ST={new:['','התקבלה'],open:['','בטיפול'],waiting:['warn','ממתינה לתגובה שלך'],resolved:['ok','נפתרה'],closed:['ok','נסגרה']};
+const Q=new URLSearchParams(location.search), screen=(Q.get('screen')||'').slice(0,40), ver=(Q.get('v')||'').slice(0,20);
+if(Q.get('type')){const r=document.querySelector(`input[name=type][value="${CSS.escape(Q.get('type'))}"]`); if(r)r.checked=true}
+if(screen)$('what').textContent=`נשלח: מה שכתבת, המסך שהיית בו ("${screen}") וסוג הדפדפן. לא נשלח שום פרט מהתיק שלך.`;
+async function content(){try{const d=await call('GET','/content'); const L=d.items||[];
+  $('notes').innerHTML=L.filter(c=>['banner','maintenance','announcement'].includes(c.kind)).map(c=>`<div class="note ${c.level==='critical'?'critical':c.level==='warn'||c.kind==='maintenance'?'warn':''}"><b>${esc(c.title)}</b>${c.body?`<p>${esc(c.body)}</p>`:''}</div>`).join('');
+  const box=(k,id,wrap)=>{const X=L.filter(c=>c.kind===k); $(wrap).hidden=!X.length; $(id).innerHTML=X.map(c=>`<details><summary>${esc(c.title)}</summary><div class="bd">${esc(c.body)}</div></details>`).join('')};
+  box('guide','guides','guideBox'); box('faq','faqs','faqBox')}catch(e){}}
+async function mine(){try{const d=await call('GET','/support'); $('mineBox').hidden=!d.items.length;
+  $('mine').innerHTML=d.items.map(t=>`<button type="button" class="tk" data-t="${t.id}"><span><b>${esc(t.subject)}</b>${t.unread?'<span class="dot" aria-label="תשובה חדשה"></span>':''}<span class="s" style="display:block">${TYPE[t.type]||''} · נפתחה ${dt(t.created_at)} · עודכנה ${dt(t.updated_at)}</span></span><span class="pill ${ST[t.status][0]}">${ST[t.status][1]}</span></button>`).join('')}catch(e){$('mine').textContent=e.message}}
+let CUR=null;
+async function open(id){try{const t=await call('GET','/support/'+id); CUR=t.id; $('convBox').hidden=false; $('convT').textContent=t.subject; $('convMeta').innerHTML=`${TYPE[t.type]||''} · <span class="pill ${ST[t.status][0]}">${ST[t.status][1]}</span>`;
+  $('conv').innerHTML=t.msgs.map(m=>`<div class="bub ${m.role==='staff'?'staff':'user'}">${esc(m.body)}<small>${m.role==='staff'?'צוות תיק צ׳יק':'את/ה'} · ${dt(m.at)}</small></div>`).join(''); $('repM').textContent=''; $('convBox').scrollIntoView({behavior:'smooth',block:'start'}); mine()}
+  catch(e){$('convBox').hidden=true}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-t]'); if(b){location.hash='t'+b.dataset.t}});
+$('convBack').onclick=()=>{location.hash=''; $('convBox').hidden=true};
+addEventListener('hashchange',()=>{const m=location.hash.match(/^#t(\d+)$/); if(m)open(m[1])});
+$('repGo').onclick=async()=>{const v=$('rep').value.trim(); if(!v||!CUR)return; $('repGo').disabled=true; try{await call('POST','/support/'+CUR,{body:v}); $('rep').value=''; open(CUR)}catch(e){$('repM').className='msg bad'; $('repM').textContent=e.message} $('repGo').disabled=false};
+$('f').addEventListener('submit',async e=>{e.preventDefault(); const b=e.target.querySelector('button[type=submit]'); b.disabled=true; const m=$('fM');
+  try{const r=await call('POST','/support',{type:(document.querySelector('input[name=type]:checked')||{}).value,subject:$('subj').value,body:$('body').value,screen,ver});
+    m.className='msg ok'; m.textContent='הפנייה נשלחה. התשובה תופיע כאן, ותגיע התראה לטלפון אם הפעלת התראות.'; $('subj').value=''; $('body').value=''; await mine(); location.hash='t'+r.id}
+  catch(err){m.className='msg bad'; m.textContent=err.message} b.disabled=false});
+content(); mine(); {const m=location.hash.match(/^#t(\d+)$/); if(m)open(m[1])}
+})();
+</script>
+</body>
+</html>

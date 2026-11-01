@@ -2637,12 +2637,12 @@ test('1.11 TikChik Management Center: the owner opens it from the account menu; 
     const ex=await pg.evaluate(()=>({n:document.querySelectorAll('#view .kpi').length,src:[...document.querySelectorAll('#view .kpi .src')].every(s=>s.textContent.trim().length>3),
       labels:[...document.querySelectorAll('#view .kpi .l')].map(l=>l.textContent),charts:document.querySelectorAll('#view .chart svg').length,soon:document.querySelectorAll('#nav a.soon').length,ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.ok(ex.n>=14,'figures: '+ex.n); assert.ok(ex.src,'a source on every figure'); assert.ok(ex.labels.some(l=>/פעילים היום/.test(l))&&ex.labels.some(l=>/עלות שרתים/.test(l)));
-    assert.equal(ex.charts,2); assert.ok(ex.soon>=6,'the later screens named and marked'); assert.equal(ex.ox,false,'no sideways scroll');
+    assert.equal(ex.charts,2); assert.ok(ex.soon>=3,'the later screens named and marked'); assert.equal(ex.ox,false,'no sideways scroll');
     assert.match(await pg.evaluate(()=>document.querySelector('#view .kpi[data-k="infra"]').textContent),/לא זמין.*לא מחובר/s,'nothing made up');
     // the range
     await pg.click('#range [data-r="7"]'); await pg.waitForFunction(()=>/7 ימים/.test(document.getElementById('sub').textContent),null,{timeout:8000});
     // every screen
-    for(const [h,sel,re] of [['users','#view tbody tr.click',/משתמשים/],['product','#view .card',/מודיעין מוצר/],['ai','#view .card',/מנועי AI/],['health','#view tbody tr',/תקינות/],['incidents','#view .card',/תקלות/],['news','#view tbody tr',/מערכת החדשות/],['security','#view tbody tr',/אבטחה/],['access','#view tbody tr',/תפקידים/]]){
+    for(const [h,sel,re] of [['users','#view tbody tr.click',/משתמשים/],['product','#view .card',/מודיעין מוצר/],['ai','#view .card',/מנועי AI/],['health','#view tbody tr',/תקינות/],['incidents','#view .card',/תקלות/],['news','#view tbody tr',/מערכת החדשות/],['security','#view tbody tr',/אבטחה/],['access','#view tbody tr',/תפקידים/],['support','#view .card',/שירות ותמיכה/],['roadmap','#view section',/ניהול מוצר/],['content','#view .card',/מרכז תוכן/],['biz','#view .card',/Business Intelligence/]]){
       await pg.evaluate(x=>location.hash='#'+x,h); await pg.waitForSelector(sel,{timeout:10000}); assert.match(await pg.textContent('#h1'),re,h);
       assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,h+': no sideways scroll')}
     // the table: search and sort
@@ -2666,4 +2666,40 @@ test('1.11 TikChik Management Center: the owner opens it from the account menu; 
   assert.equal(await pg.evaluate(()=>{const a=document.querySelector('#tcAcctMenu a[href="/admin"]'); return !a||a.hidden}),true);
   const r=await pg.goto(U+'admin'); assert.equal(r.status(),404); await ctx.close();
   }finally{store.db.prepare("update users set status='active' where id=?").run(pid)}
+});
+
+test('1.11 support and content: a partner writes from "עזרה ותמיכה", the owner answers in the management center, the partner sees the answer and a dot; a published message is a strip on the site, closed for good',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const pid=store.userByEmail('p2@example.com').id;
+  try{
+    // the partner: the help page from the account menu, a ticket about a bug on the screen they were on
+    let {ctx,pg}=await open(390,{who:'p2'});
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#tcAcctMenu a#tcHelp')),true);
+    await pg.goto(U+'help.html?type=bug&screen=mine'); await pg.waitForSelector('#f');
+    assert.equal(await pg.evaluate(()=>document.querySelector('input[name=type]:checked').value),'bug'); assert.match(await pg.textContent('#what'),/"mine"/);
+    await pg.fill('#subj','הגרף לא נטען'); await pg.fill('#body','בתיק שלי הגרף ריק מאתמול'); await pg.click('#f button[type=submit]');
+    await pg.waitForSelector('#convBox:not([hidden])',{timeout:8000}); assert.match(await pg.textContent('#conv'),/הגרף ריק/);
+    assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
+    const tk=store.db.prepare('select * from tickets where uid=? order by id desc').get(pid); assert.equal(tk.screen,'mine'); assert.equal(tk.priority,'high');
+    // the owner: the queue, the ticket, an answer; a message published to everybody
+    ({ctx,pg}=await open(1280));
+    await pg.goto(U+'admin#support'); await pg.waitForSelector('#view tbody tr.click'); assert.match(await pg.textContent('#view'),/ממתינה לנו/);
+    await pg.click('#view tbody tr.click'); await pg.waitForSelector('#tRep'); await pg.fill('#tRep','תוקן, אפשר לנסות שוב'); await pg.click('#tSend');
+    await pg.waitForFunction(()=>/תוקן, אפשר לנסות שוב/.test(document.getElementById('view').textContent),null,{timeout:8000});
+    await pg.goto(U+'admin#content'); await pg.waitForSelector('#cNew'); await pg.click('#cNew'); await pg.selectOption('#cK','announcement'); await pg.fill('#cT','גרסה חדשה'); await pg.fill('#cB','נוסף מסך עזרה');
+    assert.match(await pg.textContent('#cPrev'),/גרסה חדשה.*נוסף מסך עזרה/s,'the preview');
+    await pg.click('#cSave'); await pg.waitForFunction(()=>[...document.querySelectorAll('#tblC tbody tr')].some(r=>/גרסה חדשה/.test(r.textContent)),null,{timeout:8000});
+    await pg.click('#tblC tbody tr.click'); await pg.waitForSelector('#cPub'); await pg.click('#cPub'); await pg.waitForFunction(()=>/מפורסם/.test(document.getElementById('tblC').textContent),null,{timeout:8000});
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // the partner again: the strip on the site, the dot, the answer
+    ({ctx,pg}=await open(390,{who:'p2'}));
+    await pg.waitForSelector('#tcNotes .n',{timeout:8000}); assert.match(await pg.textContent('#tcNotes'),/גרסה חדשה/);
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#tcAcctBtn .dot')),true,'a dot: an answer is waiting');
+    await pg.click('#tcNotes .n button'); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcNotes .n').length),0);
+    await pg.goto(U+'help.html'); await pg.waitForSelector('#mine .tk'); assert.match(await pg.textContent('#mine'),/ממתינה לתגובה שלך/);
+    await pg.click('#mine .tk'); await pg.waitForFunction(()=>/תוקן, אפשר לנסות שוב/.test(document.getElementById('conv').textContent),null,{timeout:8000});
+    await pg.goto(U); await pg.waitForSelector('#tcAcctBtn'); await pg.waitForTimeout(1500);
+    assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcNotes .n').length),0,'closed for good on this device');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.db.exec("delete from content; delete from ticket_msgs; delete from tickets")}
 });

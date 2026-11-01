@@ -257,3 +257,81 @@ test('the API of stage C: a partner refused everywhere; the sessions named by a 
     r=await req('a','POST','/api/admin/incidents/check',{}); assert.equal(r.status,200);
   }finally{srv.close()}
 });
+
+// ================= stage D =================
+import {bizSchema, ticketCreate, ticketStaff, ticketUserView, ticketsOfUser, supportStats, topicOf, roadmapSave, roadmapList, launchImpact, contentSave, contentStatus, contentFor, ledgerAdd, business} from '../server/admin/biz.js';
+
+test('support: a ticket from the site, classified; the staff\'s answer reaches the user, the internal note never does; the times measured; audited',()=>{
+  const s=mk(), U=users(s); bizSchema(s);
+  assert.equal(topicOf('לא מצליח להתחבר, הקוד לא עובד'),'login'); assert.equal(topicOf('המחיר של NVDA לא מתעדכן'),'prices'); assert.equal(topicOf('שלום'),'other');
+  const t=ticketCreate(s,U.f,{type:'bug',subject:'הדוח לא נקרא',body:'העליתי PDF והוא נתקע',screen:'mine'});
+  assert.equal(t.priority,'high','a bug starts high'); assert.equal(t.topic,'statement'); assert.equal(t.status,'new');
+  assert.throws(()=>ticketCreate(s,U.f,{subject:'x',body:'y'}),/short/);
+  for(let i=0;i<4;i++)ticketCreate(s,U.f,{subject:'עוד פנייה '+i,body:'פרטים פרטים'}); assert.throws(()=>ticketCreate(s,U.f,{subject:'שישית',body:'פרטים פרטים'}),/rate/,'five an hour');
+  ticketStaff(s,U.a,t.id,{reply:'בודקים פנימית',internal:true},'');
+  ticketStaff(s,U.a,t.id,{reply:'תודה, תיקנו. נסה שוב.',status:'resolved',assignee:U.a.id},'');
+  const v=ticketUserView(s,U.f,t.id); assert.deepEqual(v.msgs.map(m=>m.role),['user','staff'],'no internal note for the user'); assert.equal(v.status,'resolved');
+  assert.equal(ticketUserView(s,U.a2,t.id),null,'someone else\'s ticket: nothing');
+  assert.equal(ticketsOfUser(s,U.f.id).find(x=>x.id===t.id).unread,false,'seen now');
+  const st=supportStats(s,rangeOf({range:'7'})); assert.equal(st.n,5); assert.equal(st.answered,1); assert.equal(st.resolved,1); assert.ok(st.firstReplyH>=0);
+  assert.equal(auditList(s)[0].action,'ticket.update'); assert.match(JSON.stringify(auditList(s)[0].detail),/resolved/);
+});
+
+test('the roadmap: a launch keeps its day; the use before and after it, only with three people; content for the right group and time; the money without anything made up',()=>{
+  const s=mk(), U=users(s); bizSchema(s);
+  let r=roadmapSave(s,U.a,{title:'מסך חדשות',kind:'feature',status:'dev',metric_key:'tab:news',due:'2020-01-01'},'');
+  assert.equal(roadmapList(s)[0].late,true,'past its date and not out');
+  r=roadmapSave(s,U.a,{...r,status:'launched'},''); assert.ok(r.launched_at); const day=r.launched_at;
+  const back=n=>new Date(Date.parse(day+'T12:00:00Z')-n*864e5).toISOString().slice(0,10);
+  const usage={[U.o.id]:{[back(5)]:{'tab:news':2},[day]:{'tab:news':6}},[U.f.id]:{[day]:{'tab:news':3}}};
+  let im=launchImpact(s,r,{users:s.users(),usageOf:u=>usage[u.id]}); assert.equal(im.hidden,true,'two people: hidden');
+  usage[U.a.id]={[day]:{'tab:news':1}}; im=launchImpact(s,r,{users:s.users(),usageOf:u=>usage[u.id]}); assert.deepEqual({b:im.before,a:im.after},{b:2,a:10});
+  assert.throws(()=>roadmapSave(s,U.a,{title:'x'},''),/short/);
+  // content: the audience and the time window
+  const c1=contentSave(s,U.a,{kind:'banner',title:'תחזוקה הלילה',audience:'all'},''), c2=contentSave(s,U.a,{kind:'announcement',title:'למי שאין תיק',body:'הוסיפו תיק',audience:'no_pf'},''), c3=contentSave(s,U.a,{kind:'faq',title:'עבר',body:'עבר זמנו',ends_at:'2020-01-01'},'');
+  assert.equal(contentFor(s,U.f,{hasPf:false}).length,0,'drafts are not shown');
+  for(const c of [c1,c2,c3])contentStatus(s,U.a,c.id,'published','');
+  assert.deepEqual(contentFor(s,U.f,{hasPf:false}).map(c=>c.title).sort(),['למי שאין תיק','תחזוקה הלילה'].sort());
+  assert.deepEqual(contentFor(s,U.f,{hasPf:true}).map(c=>c.title),['תחזוקה הלילה'],'past items and other groups not shown');
+  assert.ok(auditList(s).some(a=>a.action==='content.publish'&&a.actor==='a@x.co'));
+  // money: an entry, the AI from its tokens when no AI bill was entered, never both; no revenue = not available
+  const m=new Date().toISOString().slice(0,7);
+  ledgerAdd(s,U.a,{kind:'cost',month:m,category:'servers',vendor:'Railway',amount:20,ccy:'USD'},''); ledgerAdd(s,U.a,{kind:'cost',month:m,category:'api',amount:37,ccy:'ILS'},'');
+  s.setMeta('aiPrices',JSON.stringify({'claude-haiku-5-5':{in:1,out:5}})); s.aiModelAdd(m+'-02','claude-haiku-5-5',{calls:2,input:1e6,output:0});
+  let B=business(s,{fx:3.7}), row=B.months.find(x=>x.month===m); assert.equal(row.entered,30); assert.equal(row.ai,1); assert.equal(row.cost,31); assert.equal(row.revenue,null); assert.equal(B.forecast,null,'one month: no forecast');
+  ledgerAdd(s,U.a,{kind:'cost',month:m,category:'ai',amount:5},''); row=business(s,{fx:3.7}).months.find(x=>x.month===m); assert.equal(row.ai,null,'an AI bill entered: the computed AI is not added'); assert.equal(row.cost,35);
+  assert.throws(()=>ledgerAdd(s,U.a,{kind:'cost',month:'bad',amount:1},''),/bad_amount/);
+  assert.equal(business(s,{fx:null}).months.find(x=>x.month===m).fxMissing,true,'shekels with no rate: said');
+});
+
+test('the API of stage D: a user opens a ticket and sees only their own; the staff answer with "edit"; the content reaches the site; a partner cannot manage',async()=>{
+  const {createApp,bootstrap}=await import('../server/index.js');
+  const store=new Store(':memory:'); bootstrap(store);
+  const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false});
+  const srv=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))}), base='http://127.0.0.1:'+srv.address().port, jar={};
+  const req=async(who,method,url,body)=>{const r=await fetch(base+url,{method,headers:{...(jar[who]?{cookie:jar[who]}:{}),'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+    const sc=r.headers.get('set-cookie'); if(sc)jar[who]=sc.split(';')[0]; let j=null; try{j=await r.json()}catch(e){} return {status:r.status,j}};
+  try{
+    store.addUser({email:'p4@x.co',password:'password1',role:'friend'}); store.addUser({email:'p5@x.co',password:'password1',role:'friend'}); store.addUser({email:'ad4@x.co',password:'password1',role:'admin'});
+    for(const [w,e] of [['p','p4@x.co'],['q','p5@x.co'],['a','ad4@x.co']])await req(w,'POST','/api/login',{email:e,password:'password1'});
+    assert.equal((await req('x','POST','/api/support',{subject:'שלום',body:'עזרה'})).status,401);
+    let r=await req('p','POST','/api/support',{type:'question',subject:'איך מוסיפים קרן?',body:'לא מוצא את הכפתור',screen:'mine'}); assert.equal(r.status,200); const id=r.j.id;
+    assert.equal((await req('q','GET','/api/support/'+id)).status,404,'not someone else\'s');
+    assert.equal((await req('q','GET','/api/support')).j.items.length,0);
+    for(const u of ['support','roadmap','content','biz'])assert.equal((await req('p','GET','/api/admin/'+u)).status,403,u);
+    assert.equal((await req('p','POST','/api/admin/content',{kind:'banner',title:'x'})).status,403);
+    r=await req('a','GET','/api/admin/support?range=7'); assert.equal(r.j.tickets[0].awaitingStaff,true); assert.equal(r.j.tickets[0].email,'p4@x.co');
+    assert.equal((await req('a','POST','/api/admin/support/'+id,{reply:'פנימי',internal:true})).status,200);
+    assert.equal((await req('a','POST','/api/admin/support/'+id,{reply:'בתיק שלי ← הוספה'})).status,200);
+    r=await req('p','GET','/api/support'); assert.equal(r.j.items[0].unread,true); assert.equal(r.j.items[0].status,'waiting');
+    r=await req('p','GET','/api/support/'+id); assert.deepEqual(r.j.msgs.map(m=>m.role),['user','staff']); assert.ok(!JSON.stringify(r.j).includes('פנימי'));
+    assert.equal((await req('p','POST','/api/support/'+id,{body:'תודה!'})).status,200);
+    assert.equal((await req('a','GET','/api/admin/support/'+id)).j.ticket.msgs.length,4);
+    // content: published by the admin, read by the partner on the site
+    r=await req('a','POST','/api/admin/content',{kind:'maintenance',title:'עבודות תחזוקה',body:'בין 2 ל-3',level:'warn'}); await req('a','POST',`/api/admin/content/${r.j.item.id}/status`,{status:'published'});
+    r=await req('p','GET','/api/content'); assert.deepEqual(r.j.items.map(c=>c.title),['עבודות תחזוקה']); assert.equal(r.j.unread,0);
+    r=await req('a','POST','/api/admin/ledger',{kind:'cost',month:new Date().toISOString().slice(0,7),category:'servers',amount:5}); assert.equal(r.status,200);
+    r=await req('a','GET','/api/admin/biz'); assert.equal(r.status,200); assert.equal(r.j.months.length,12);
+    assert.ok(store.db.prepare("select count(*) n from audit where action in ('ticket.update','content.add','content.publish','ledger.add')").get().n>=5);
+  }finally{srv.close()}
+});

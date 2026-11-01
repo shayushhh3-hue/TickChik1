@@ -10,13 +10,15 @@ import {healthCheck} from '../health.js';
 import {createHash} from 'node:crypto';
 import {newsOps,aiOps,aiQuality,systemOps,incidents,incidentUpdate,security,checkIncidents,opsSchema} from './ops.js';
 import {backupStatus} from '../backup.js';
+import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
+  contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
 
 const ERR={not_found:'המשתמש לא נמצא.',owner:'אי אפשר לשנות את בעל המערכת.',self:'אי אפשר לשנות את עצמך.',owner_only:'רק בעל המערכת יכול לתת או לקחת את ההרשאה הזאת.',
   permission_denied:'אין הרשאה.',bad_status:'מצב לא מוכר.',bad_role:'תפקיד לא מוכר.'};
 const fail=(res,e,st=400)=>res.status(e.message==='permission_denied'?403:st).json({error:{code:e.message,message:ERR[e.message]||e.message}});
 
-export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data',dbFile='',persist=true}){
-  opsSchema(store);
+export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data',dbFile='',persist=true,push=null,log=()=>{}}){
+  opsSchema(store); bizSchema(store);
   const me=u=>({id:u.id,email:u.email,name:u.name||'',role:u.role,perms:[...permsOf(u)],permNames:PERM_HE});
   app.get('/api/admin/me',need('view'),(req,res)=>res.json({me:me(req.user),perms:PERMS,k:K_ANON,portfolioAccess:PORTFOLIO_ACCESS}));
 
@@ -94,6 +96,47 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
     let n=0; if(h==='all'){if(t.id===req.user.id){store.endSessionsBut(t.id,req.sid)}else store.endSessions(t.id); n=-1}
     else for(const s of store.db.prepare('select sid from sessions where uid=?').all(t.id))if(hid(s.sid)===h&&s.sid!==req.sid){store.endSession(s.sid); n++}
     audit(store,{user:req.user,action:'session.end',target:t.id,detail:{which:h==='all'?'all':'one',ended:n},ip:req.ip}); res.json({ok:true,ended:n})});
+
+  // ---- stage D: support (the management's side) ----
+  const tell=(uids,msg)=>{if(!push)return; for(const id of new Set(uids))push(store,id,msg,{log}).catch(()=>{})};
+  const staffIds=p=>store.users().map(u=>store.userById(u.id)).filter(u=>can(u,p)).map(u=>u.id);
+  app.get('/api/admin/support',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json({range:R,stats:supportStats(store,R),tickets:ticketsList(store),topics:TOPIC_HE,
+    staff:store.users().map(u=>store.userById(u.id)).filter(u=>can(u,'view')).map(u=>({id:u.id,email:u.email,name:u.name||''}))})});
+  app.get('/api/admin/support/:id',need('view'),(req,res)=>{const t=ticketGet(store,req.params.id); if(!t)return fail(res,new Error('not_found'),404);
+    store.db.prepare('update tickets set staff_seen_at=? where id=?').run(new Date().toISOString(),t.id); const U=store.userById(t.uid)||{};
+    res.json({ticket:{...t,email:U.email||'(משתמש שהוסר)',name:U.name||'',role:U.role||'',msgs:t.msgs.map(m=>({...m,by:m.uid===t.uid?'user':((store.userById(m.uid)||{}).email||'?')}))},
+      history:auditList(store,{target:'tkt:'+t.id,limit:50}),staff:store.users().map(u=>store.userById(u.id)).filter(u=>can(u,'view')).map(u=>({id:u.id,email:u.email,name:u.name||''})),roadmap:roadmapList(store).filter(r=>!['launched','existing'].includes(r.status)).map(r=>({id:r.id,title:r.title}))})});
+  app.post('/api/admin/support/:id',need('edit'),(req,res)=>{try{const t=ticketStaff(store,req.user,req.params.id,req.body||{},req.ip);
+    if((req.body||{}).reply&&!(req.body||{}).internal)tell([t.uid],{title:'תשובה לפנייה שלך',body:t.subject.slice(0,120),url:'./help.html#t'+t.id,tag:'ticket-'+t.id}); res.json({ok:true,ticket:t})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  // ---- the roadmap ----
+  const usageOf=u=>{const d=store.getDoc(u.role==='owner'?'usage/main':`data/users/${u.id}/usage`); return d.exists&&d.data&&d.data.days||{}};
+  app.get('/api/admin/roadmap',need('view'),(req,res)=>{const users=store.users(); res.json({items:roadmapList(store).map(r=>({...r,impact:launchImpact(store,r,{users,usageOf,k:K_ANON})})),
+    staff:users.map(u=>store.userById(u.id)).filter(u=>can(u,'view')).map(u=>({id:u.id,email:u.email,name:u.name||''}))})});
+  app.post('/api/admin/roadmap',need('edit'),(req,res)=>{try{res.json({ok:true,item:roadmapSave(store,req.user,req.body||{},req.ip)})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  app.delete('/api/admin/roadmap/:id',need('edit'),(req,res)=>{try{roadmapDelete(store,req.user,req.params.id,req.ip); res.json({ok:true})}catch(e){fail(res,e,404)}});
+  // ---- the content ----
+  app.get('/api/admin/content',need('view'),(req,res)=>res.json({items:contentList(store)}));
+  app.post('/api/admin/content',need('edit'),(req,res)=>{try{res.json({ok:true,item:contentSave(store,req.user,req.body||{},req.ip)})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  app.post('/api/admin/content/:id/status',need('edit'),(req,res)=>{try{res.json({ok:true,item:contentStatus(store,req.user,req.params.id,(req.body||{}).status,req.ip)})}catch(e){fail(res,e,e.message==='not_found'?404:400)}});
+  // ---- the money ----
+  const fxNow=()=>{const q=store.getDoc('quotes/latest').data; return q&&+q.usdIls>0?+q.usdIls:null};
+  app.get('/api/admin/biz',need('view'),(req,res)=>res.json({...business(store,{months:Math.min(24,Math.max(3,+req.query.months||12)),fx:fxNow()}),cats:CAT_HE}));
+  app.post('/api/admin/ledger',need('edit'),(req,res)=>{try{res.json({ok:true,item:ledgerAdd(store,req.user,req.body||{},req.ip)})}catch(e){fail(res,e)}});
+  app.delete('/api/admin/ledger/:id',need('edit'),(req,res)=>{try{ledgerDelete(store,req.user,req.params.id,req.ip); res.json({ok:true})}catch(e){fail(res,e,404)}});
+
+  // ---- stage D, the users' side: a ticket from the site, their own tickets and answers, the content for them ----
+  const signed=(req,res,next)=>req.user?next():res.status(401).json({error:{code:'not_granted',message:'not signed in'}});
+  const UERR={short:'כתוב נושא ותיאור קצר.',rate:'נשלחו כבר כמה פניות בשעה האחרונה. אפשר להוסיף לפנייה קיימת.',not_found:'הפנייה לא נמצאה.'};
+  app.post('/api/support',signed,(req,res)=>{try{const t=ticketCreate(store,req.user,req.body||{},{ua:req.headers['user-agent']});
+      bump('tickets',t.type,1); tell(staffIds('edit').filter(id=>id!==req.user.id),{title:'פנייה חדשה: '+({bug:'תקלה',idea:'הצעה',request:'בקשה',question:'שאלה'}[t.type]),body:t.subject.slice(0,120),url:'/admin#ticket/'+t.id,tag:'mc-ticket'});
+      res.json({ok:true,id:t.id})}catch(e){res.status(e.message==='rate'?429:400).json({error:{code:e.message,message:UERR[e.message]||e.message}})}});
+  app.get('/api/support',signed,(req,res)=>res.json({items:ticketsOfUser(store,req.user.id)}));
+  app.get('/api/support/:id',signed,(req,res)=>{const t=ticketUserView(store,req.user,req.params.id); t?res.json(t):res.status(404).json({error:{code:'not_found',message:UERR.not_found}})});
+  app.post('/api/support/:id',signed,(req,res)=>{try{ticketUserReply(store,req.user,req.params.id,(req.body||{}).body); const t=ticketGet(store,req.params.id);
+      tell([t.assignee].filter(Boolean).length?[t.assignee]:staffIds('edit').filter(id=>id!==req.user.id),{title:'תגובה לפנייה',body:t.subject.slice(0,120),url:'/admin#ticket/'+t.id,tag:'mc-ticket'}); res.json({ok:true})}
+    catch(e){res.status(e.message==='not_found'?404:400).json({error:{code:e.message,message:UERR[e.message]||e.message}})}});
+  app.get('/api/content',signed,(req,res)=>{const u=req.user, pf=store.getDoc(u.role==='owner'?'portfolio/main':`data/users/${u.id}/portfolio`), hasPf=!!(pf.exists&&pf.data&&(pf.data.positions||[]).some(p=>p&&+p.qty>0));
+    res.json({items:contentFor(store,u,{hasPf,newUser:Date.now()-Date.parse(u.created_at)<30*864e5}),unread:ticketsOfUser(store,u.id).filter(t=>t.unread).length})});
 
   // ---- the page: only to someone with "view". Anyone else gets the site's ordinary "not found", not a closed door ----
   const zc={m:0};
