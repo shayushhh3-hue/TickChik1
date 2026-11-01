@@ -3565,6 +3565,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <tbody id="pfRows"><tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
         </table>
         <p class="sub" id="pfTot" style="margin-top:8px"></p>
+        <div class="dup" id="grpHint" hidden></div>
         <div class="dup" id="dupBox" hidden></div>
         <p class="note" style="margin-top:10px">סימול: הטיקר האמריקאי (למשל MSFT). לקרנות המדד הישראליות: TA125 או TA90. עלות שלא ידועה אפשר להשאיר ריקה. "עלות כוללת $": מה הקנייה עלתה בדולרים (בבלינק: השווי פחות "שינוי ממועד הקנייה"), כדי שפירוק התוצאה יפריד בין מחיר המניה לשער הדולר; בלי זה ההפרדה מוערכת. "מחיר בדוח" משמש רק עד שמגיע מחיר חי לנייר.</p>
       </div>
@@ -16711,7 +16712,7 @@ const $=id=>document.getElementById(id);
   const paint=el=>{const t=String(window.__i18nSrc?window.__i18nSrc(el):(el.textContent||'')).trim();el.classList.remove('ok','warn','err','info');if(!t){el.classList.remove('msg');return}el.classList.add('msg',kind(t))};
   ['saved','planSaved','pfSaved','listState','upState','wipeState'].forEach(id=>{const el=document.getElementById(id);if(!el)return;try{new MutationObserver(()=>paint(el)).observe(el,{childList:true,characterData:true,subtree:true})}catch(e){}paint(el)});
 })();
-const GROUPS={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה וביטחון',health:'בריאות',cons:'צריכה ונדל״ן',space:'חלל',il:'ישראל (קרנות ומדדים)',cash:'מזומן'};
+const GROUPS={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה וביטחון',health:'בריאות',cons:'צריכה ונדל״ן',space:'חלל',etf:'קרנות סל (ארה״ב ועולם)',il:'ישראל (קרנות ומדדים)',cash:'מזומן'};
 // ======== v126: status icons in the style the owner chose: nodes joined by lines ========
 // success green, failure red, alert yellow, information dark blue, messages light blue. One set of drawing operations
 // (two optical sizes on a 48 grid: s up to ~32px, l from 40px) feeds the SVG sprite on the page, the small icons that
@@ -17283,9 +17284,11 @@ function usStatusTxt(now){
 // the price label without its US close date (said instead by usStatusTxt), and a missing US session said plainly
 const pxLabelTxt=()=>{let l=String(Q.priceLabel||''); const usLive=/^מסחר חי, עיכוב/.test(l);
   if(!usLive){l=l.replace(/\s*·\s*ארה״ב: סגירה [\d.]+/,'').replace(/^סגירה ([\d.]+) · תל אביב: סגירה ([\d.]+)$/,'תל אביב: סגירה $2'); const us=usStatusTxt(); if(us)l=(l?l+' · ':'')+us}
-  const lg=Q.lag&&Q.lag.us; if(lg&&lg.want)l+=` · חסרה סגירת ${dmy(lg.want)} בארה״ב`;
+  // 1.11 (9): said as what it is: how many securities still lack the last close, not a line that contradicts the first
+  const lg=Q.lag&&Q.lag.us; if(lg&&lg.want)l+=` · ל-${lg.n||1}${lg.of?' מתוך '+lg.of:''} ניירות עוד אין את סגירת ${dmy(lg.want)}`;
   return l};
-const freshTxt=()=>`${(()=>{try{return pxLabelTxt()}catch(e){return Q.priceLabel||''}})()} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
+let FRESH_L='';
+const freshTxt=()=>`${(()=>{try{return FRESH_L=pxLabelTxt()}catch(e){return FRESH_L=Q.priceLabel||''}})()} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()||/נפתחת/.test(FRESH_L||'')?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
 // an open page keeps that line true as the hours pass, and redraws when the prices turn late (or stop being late)
 let FRESH='', LATE=null;
 setInterval(()=>{try{if(pxHonest()){render();return} if(!P||!Q||!Q.updatedAt||noPf())return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}
@@ -17681,7 +17684,7 @@ function renderMixHome(m){
   $('mixList').innerHTML=gs.map(g=>{const w=g.val/tot*100, over=cap>0&&g.id!=='cash'&&w>cap; return `<li><i style="background:${GCOL[g.id]||'#94A3B8'}"></i><span>${esc(GROUPS[g.id])} <span class="gv n">${ils(g.val)}</span></span><span class="gw n${over?' over':''}">${pct(w)}${over?' ▲':''}</span></li>`}).join('');
 }
 function render(){
-  setTimeout(()=>{try{riskNavSync()}catch(e){}},0);
+  setTimeout(()=>{try{riskNavSync()}catch(e){}},0); rulesAutoApply();
   try{const w=document.querySelector('.wrap'), was=w.classList.contains('nopf'); w.classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length))); if(was!==w.classList.contains('nopf'))pxLine()}catch(e){}
   try{renderOb()}catch(e){}
   try{fabSync()}catch(e){}
@@ -17709,7 +17712,7 @@ function render(){
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
   try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
-  $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי מניות ומזומן`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · בלי קרנות ומזומן`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
+  $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
   try{renderAnaNow(m)}catch(e){}
   try{renderHealth(m)}catch(e){}
@@ -19164,11 +19167,15 @@ async function doUndo(){const f=undoFn, go=undoGo; undoFn=null; undoGo=false; cl
 // a rule, a target or the goal was typed over: after a short pause, offer the values from before the typing
 // ---- stage 8: rules nobody chose are not "the rules you set". Until the user changes a rule or says "these are my
 // rules", rules with the page's default values are named as the default, with a way to check them ----
-const rulesDefault=()=>!!S&&!S.rulesAt&&Object.keys(DEF.rules).every(k=>+((S.rules||{})[k])===+DEF.rules[k]);
+// 1.11 (7): the default cap on one security follows how many securities there are (ten of them cannot each be under 10%);
+// a person's own rule (rulesAt) is never touched. The note says it is the page's default by the count
+const defMaxPos=n=>n<=3?40:n<=5?30:n<=8?20:n<=12?15:10;
+const rulesDefault=()=>!!S&&!S.rulesAt&&Object.keys(DEF.rules).every(k=>(k==='maxPos'&&S.rulesAuto)||+((S.rules||{})[k])===+DEF.rules[k]);
+function rulesAutoApply(){try{if(!S||S.rulesAt||!P)return; const n=new Set(((P.positions)||[]).map(p=>p.sym).filter(Boolean)).size; if(!n)return; const was=+(S.rules||{}).maxPos; if(S.rulesAuto||was===+DEF.rules.maxPos){const sug=defMaxPos(n); if(S.rules.maxPos!==sug||S.rulesAuto!==n){S.rules.maxPos=sug; S.rulesAuto=n}}}catch(e){}}
 function rulesNote(){if(!rulesDefault())return ''; const R=S.rules;
-  return `<div class="rl-def"><p>הכללים עדיין ברירת המחדל של הדף: עד ${pct(R.maxPos,0)} לנייר בודד, עד ${pct(R.maxGroup,0)} לקבוצה, ובדיקה בירידה של ${pct(R.stopLoss,0)} מהעלות. החריגות נבדקות מולם, אז כדאי לבדוק שהם מתאימים לך.</p><div class="ana-navs"><button type="button" class="btn sm" data-rules="go">לכללים בהגדרות</button>${canWrite?'<button type="button" class="btn sm" data-rules="mine">אלה הכללים שלי</button>':''}</div></div>`}
+  return `<div class="rl-def"><p>הכללים עדיין ברירת המחדל של הדף${S.rulesAuto?` (לפי ${S.rulesAuto} ניירות בתיק)`:''}: עד ${pct(R.maxPos,0)} לנייר בודד, עד ${pct(R.maxGroup,0)} לקבוצה, ובדיקה בירידה של ${pct(R.stopLoss,0)} מהעלות. החריגות נבדקות מולם, אז כדאי לבדוק שהם מתאימים לך.</p><div class="ana-navs"><button type="button" class="btn sm" data-rules="go">לכללים בהגדרות</button>${canWrite?'<button type="button" class="btn sm" data-rules="mine">אלה הכללים שלי</button>':''}</div></div>`}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-rules]'); if(!b)return;
-  if(b.dataset.rules==='mine'){if(!canWrite)return; S.rulesAt=new Date().toISOString(); changed(); for(const n of document.querySelectorAll('.rl-def'))n.remove(); try{for(const f of Object.values(ANA_REDRAW))f()}catch(e){} return}
+  if(b.dataset.rules==='mine'){if(!canWrite)return; S.rulesAt=new Date().toISOString(); delete S.rulesAuto; changed(); for(const n of document.querySelectorAll('.rl-def'))n.remove(); try{for(const f of Object.values(ANA_REDRAW))f()}catch(e){} return}
   if(b.closest('#anaBox')&&!anaDock())anaClose(true); showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const h=$('hRules'); if(h)h.scrollIntoView({block:'start'})},60)});
 function settingTouched(before){if(!setBefore)setBefore=before; clearTimeout(setT); setT=setTimeout(()=>{const b=setBefore; setBefore=null; if(b===JSON.stringify(S))return;
   offerUndo('ההגדרות עודכנו',()=>{S=mergeSettings(JSON.parse(b));fillInputs();changed()})},1600)}
@@ -20778,10 +20785,13 @@ function catalog(){
   const dk=Object.keys((DY&&DY.points)||{}).sort();
   if(TP.length>1){const first=dk.length?+new Date(dk[0]+'T00:00:00'):Infinity; let to=NOW, n=0;
     while(n<30){const from=to-7*864e5; if(n&&(from<first-864e5))break; out.push({kind:'week',key:n?isoDay(to):'',title:'דוח שבועי',period:`${dFull(from)} עד ${dFull(to)}`,cur:!n,t:to}); if(!dk.length)break; to-=7*864e5; n++}}
-  for(const m of Object.keys(S))out.push({kind:'month',key:m,title:'דוח חודשי',period:ymFull(m),cur:m===cur,t:endOf(m)});
-  for(const kind of ['quarter','half','year'])for(const [k,label] of periodOptions(kind)){const ms=monthsOf(kind,k).filter(m=>S[m]);
+  // 1.11 (8): a month with nothing in it (a restored month before the money came) is not a report; a quarter, a half
+  // or a year is offered once it has two months of data, and "all the months" once it has three
+  const has=m=>S[m]&&(S[m].val>0||S[m].dep>0||S[m].now), MS=Object.keys(S).filter(has);
+  for(const m of MS)out.push({kind:'month',key:m,title:'דוח חודשי',period:ymFull(m),cur:m===cur,t:endOf(m)});
+  for(const kind of ['quarter','half','year'])for(const [k,label] of periodOptions(kind)){const ms=monthsOf(kind,k).filter(has); if(ms.length<2)continue;
     out.push({kind,key:k,title:`דוח ${RKN[kind]}`,period:label,cur:ms.includes(cur),t:endOf(ms[ms.length-1])})}
-  for(const [y] of periodOptions('year'))out.push({kind:'months',key:y,title:'דוחות חודשיים, חודש אחר חודש',period:`כל חודשי ${y} בקובץ אחד`,cur:y===cur.slice(0,4),t:endOf(monthsOf('year',y).filter(m=>S[m]).pop())});
+  for(const [y] of periodOptions('year')){const ms=monthsOf('year',y).filter(has); if(ms.length<3)continue; out.push({kind:'months',key:y,title:'דוחות חודשיים, חודש אחר חודש',period:`כל חודשי ${y} בקובץ אחד`,cur:y===cur.slice(0,4),t:endOf(ms.pop())})}
   return out.sort((a,b)=>b.t-a.t||RANK[a.kind]-RANK[b.kind]);
 }
 const CAT_ICON={
@@ -21630,11 +21640,11 @@ async function save(){
 }
 document.addEventListener('input',ev=>{
   const el=ev.target;
-  if(MAP[el.id]){const sb=JSON.stringify(S), v=el.value===''?0:+el.value,[a,b]=MAP[el.id]; if(b)S[a][b]=v; else S[a]=v; if(b&&a==='rules')S.rulesAt=new Date().toISOString(); changed(); if(b==null?a==='goal':a==='rules')settingTouched(sb)}
+  if(MAP[el.id]){const sb=JSON.stringify(S), v=el.value===''?0:+el.value,[a,b]=MAP[el.id]; if(b)S[a][b]=v; else S[a]=v; if(b&&a==='rules'){S.rulesAt=new Date().toISOString(); delete S.rulesAuto} changed(); if(b==null?a==='goal':a==='rules')settingTouched(sb)}
   else if(el.id==='inFrac'){S.fractional=el.checked;changed()}
   else if(WIK[el.id]){WI[WIK[el.id]]=+el.value||0;try{renderGoal(mAllNow())}catch(e){}}
   else if(el.dataset.pf&&DRAFT){const p=DRAFT.positions[+el.dataset.i],f=el.dataset.pf; if(!p)return;
-    if(f==='qty')p.qty=+el.value||0; else if(f==='costIls'||f==='costUsd'||f==='px')p[f]=el.value===''?null:+el.value; else if(f==='sym')p.sym=el.value.trim().toUpperCase(); else{p[f]=el.value; if(f==='ccy'&&el.value==='ILS')p.costUsd=null} pfDirty(); if(f==='ccy')renderMine(true)}
+    if(f==='qty')p.qty=+el.value||0; else if(f==='costIls'||f==='costUsd'||f==='px')p[f]=el.value===''?null:+el.value; else if(f==='sym'){p.sym=el.value.trim().toUpperCase(); if(p.sym&&(!p._g||p._g==='auto')){const g=groupOf(p.sym); if(GK.includes(g)){p.group=g; p._g='auto'; const gs=el.closest('tr,.pfrow')&&el.closest('tr,.pfrow').querySelector('[data-pf="group"]'); if(gs)gs.value=g}}} else{p[f]=el.value; if(f==='group')p._g='user'; if(f==='ccy'&&el.value==='ILS')p.costUsd=null} pfDirty(); if(f==='ccy')renderMine(true)}
   else if(el.dataset.cash&&DRAFT){const [a,c]=el.dataset.cash.split(':');(DRAFT.cash[a]=DRAFT.cash[a]||{ILS:0,USD:0})[c]=+el.value||0;pfDirty()}
   else if(el.dataset.dep){planAct('depToggle',{ym:el.dataset.dep})}
   else if(el.dataset.buy){planAct('buyToggle',{sym:el.dataset.buy,ym:el.dataset.ym})}
@@ -21686,6 +21696,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent='';try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
+  if(ev.target.id==='grpApply'){if(!DRAFT)DRAFT=draftFromP(); for(const h of groupHints(DRAFT))for(const p of DRAFT.positions)if(p.sym===h.sym){p.group=h.g; p._g='auto'} pfDirty(); renderMine(true); return}
   if(ev.target.id==='btnPfReset'){dDirty=false;PFS.resets++;FIXED.clear();FIRSTX=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
   if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,costUsd:null,px:null,group:'tech'});pfDirty();renderMine(true);return}
   if(ev.target.dataset&&ev.target.dataset.pfdel!=null&&DRAFT){const ix=+ev.target.dataset.pfdel, gone=DRAFT.positions.splice(ix,1)[0];pfDirty();renderMine(true);
@@ -21850,6 +21861,7 @@ function renderMine(force){
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
   try{renderRecon()}catch(e){}
+  try{const H=groupHints(DRAFT), el=$('grpHint'); if(el){el.hidden=!H.length; el.innerHTML=H.length?`<b>קבוצה לפי הנייר:</b> ${H.map(h=>`${esc(h.sym)} מסומן "טכנולוגיה"; לפי הנייר עצמו: <b>${esc(GROUPS[h.g])}</b>`).join(' · ')}. <button type="button" class="lnk" id="grpApply"${canWrite?'':' disabled'}>לסמן לפי הנייר</button> <span class="nm">(ואז לשמור; הקבוצה היא שלך לשנות)</span>`:''}}catch(e){}
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
     <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
@@ -21996,8 +22008,13 @@ function dupAcct(acct){
   pfDirty(); renderMine(true);
 }
 // local parser: no Claude, no files, no rate limits - one line per security
-const GRP={tech:'MSFT NVDA AAPL GOOGL GOOG META AMZN TSLA AMD INTC ORCL CRM AVGO PLTR AEHR NFLX ADBE CSCO QCOM TSM ASML MBLY',fin:'JPM V MA AXP BAC WFC GS MS C BRK.B BRKB PYPL SCHW',ind:'CAT LMT RTX GE BA HON DE UPS NOC GD MMM',health:'JNJ UNH PFE LLY MRK ABBV TMO ABT AMGN',cons:'KO PEP WMT O MCD PG COST NKE SBUX HD DIS',space:'RKLB RDW SPCX ASTS LUNR',il:'TA125 TA90'};
-function groupOf(sym){if(NUMSYM.test(sym))return 'il'; for(const k in GRP)if(GRP[k].split(' ').includes(sym))return k;return 'tech'}
+const GRP={tech:'MSFT NVDA AAPL GOOGL GOOG META AMZN TSLA AMD INTC ORCL CRM AVGO PLTR AEHR NFLX ADBE CSCO QCOM TSM ASML MBLY',fin:'JPM V MA AXP BAC WFC GS MS C BRK.B BRKB PYPL SCHW SPGI',ind:'CAT LMT RTX GE BA HON DE UPS NOC GD MMM XOM CVX COP ESLT',health:'JNJ UNH PFE LLY MRK ABBV TMO ABT AMGN TEVA',cons:'KO PEP WMT O MCD PG COST NKE SBUX HD DIS',space:'RKLB RDW SPCX ASTS LUNR',etf:'SPY VOO IVV VTI QQQ VT VXUS VEA VWO IWM SCHD VIG VYM CSPX VUSA VWRA IWDA SWRD ACWI SPLG ITOT SCHB DIA XLK XLF XLE XLV',il:'TA125 TA90'};
+// 1.11: the group of a security the page has never seen in the lists above: an index fund is an index fund (never
+// "technology"), a company goes by its sector when the search list knows it, and only then the default
+function groupOf(sym){if(NUMSYM.test(sym))return 'il'; for(const k in GRP)if(GRP[k].split(' ').includes(sym))return k;
+  try{const it=itemOf(sym); if(it){if(it.t==='T'||it.t==='F'||it.t==='I')return 'il'; if(it.t==='E'||isFundLike(sym,it.name,''))return 'etf'; if(it.sec)return SEC2G(it.sec)}}catch(e){} return 'tech'}
+// a holding whose group looks like the default (technology) while the security itself says otherwise: a suggestion, never a change
+function groupHints(P0){const out=[]; for(const p of ((P0&&P0.positions)||[])){if(!p||!p.sym||p.group!=='tech')continue; const g=groupOf(p.sym); if(g!=='tech'&&g!==p.group)out.push({sym:p.sym,g})} return out.filter((x,i,A)=>A.findIndex(y=>y.sym===x.sym)===i)}
 // ---- the quick pick: the big names as logos, a quantity for each, into the table with src:'pick'. A later statement or
 // screenshot of the same account replaces the row (apply() merges by symbol), and says so; nothing is counted twice
 const PICKS=[['AAPL','Apple'],['MSFT','Microsoft'],['NVDA','NVIDIA'],['AMZN','Amazon'],['GOOGL','Alphabet'],['META','Meta'],['TSLA','Tesla'],['BRK.B','Berkshire'],['AVGO','Broadcom'],['JPM','JPMorgan'],['V','Visa'],['MA','Mastercard'],['LLY','Eli Lilly'],['UNH','UnitedHealth'],['XOM','Exxon'],['JNJ','J&J'],['PG','P&G'],['COST','Costco'],['HD','Home Depot'],['NFLX','Netflix'],['KO','Coca-Cola'],['AMD','AMD'],['PLTR','Palantir'],['INTC','Intel']];
@@ -22348,7 +22365,7 @@ async function readStatement0(J){
     const accTot=numOr((outs.find(o=>o&&numOr(o.accountTotal,null)!=null)||{}).accountTotal,null), accCcy=(outs.find(o=>o&&o.accountTotalCcy)||{}).accountTotalCcy==='USD'?'USD':'ILS';
     const rows=(Array.isArray(out&&out.positions)?out.positions:[]).map(r=>({acct:acR,
       sym:canonSym(r&&r.sym,r&&r.name).slice(0,12), name:String(r&&r.name||'').replace(/[<>]/g,'').slice(0,60),
-      qty:numOr(r&&r.qty,0), ccy:(r&&r.ccy==='ILS')||/^TA(125|90)$/i.test(String(r&&r.sym||''))?'ILS':'USD', costIls:numOr(r&&r.costIls,null), costUsd:numOr(r&&r.costUsd,null), px:/^TA(125|90)$/i.test(String(r&&r.sym||''))&&!(r&&r.ccy==='ILS')?null:numOr(r&&r.px,null), value:numOr(r&&r.value,null), valueCcy:r&&r.valueCcy==='USD'?'USD':r&&r.valueCcy==='ILS'?'ILS':null, group:NUMSYM.test(String(r&&r.sym||''))?'il':GK.includes(r&&r.group)?r.group:'tech'})).filter(r=>r.sym&&r.qty>0).slice(0,80);
+      qty:numOr(r&&r.qty,0), ccy:(r&&r.ccy==='ILS')||/^TA(125|90)$/i.test(String(r&&r.sym||''))?'ILS':'USD', costIls:numOr(r&&r.costIls,null), costUsd:numOr(r&&r.costUsd,null), px:/^TA(125|90)$/i.test(String(r&&r.sym||''))&&!(r&&r.ccy==='ILS')?null:numOr(r&&r.px,null), value:numOr(r&&r.value,null), valueCcy:r&&r.valueCcy==='USD'?'USD':r&&r.valueCcy==='ILS'?'ILS':null, group:NUMSYM.test(String(r&&r.sym||''))?'il':GK.includes(r&&r.group)?r.group:groupOf(String(r&&r.sym||'').toUpperCase())})).filter(r=>r.sym&&r.qty>0).slice(0,80);
     const dateNote=yearFixed?` ${yearFixed===1?'התאריך של פעולה אחת היה אחרי היום, ולכן הוזז שנה אחורה':`התאריכים של ${yearFixed} פעולות היו אחרי היום, ולכן הוזזו שנה אחורה`}. בדוק ברשימת הפעולות.`:'';
     return {left,by,who,partial,partNote:partNote+dateNote,out,known,ac:acR,txs,accTot,accCcy,rows,mon,cut:!!who.cut};
   }
@@ -22663,7 +22680,7 @@ async function saveHistOnly(st){
     DRAFT.tx=[]; DRAFT.monthly={}; dDirty=cashMoved; renderTx(); try{render()}catch(e){}
     st.textContent='נשמר בהיסטוריה.'+(hx?histNote(hx):'')+' עוד אין כאן רשימת אחזקות, ולכן אין שווי עדכני לתיק. כשתעלה אותה, השווי יחושב לפי המחירים של היום.'+(cashMoved?' יתרת המזומן שעודכנה תישמר יחד עם האחזקות.':'');
     if(hx)offerUndo('ההיסטוריה נשמרה',async()=>{const back=H0||{accounts:[],depIlsNow:0,monthly:[]}; await pset('history',back); HS=H0?back:null; if(dyMoved&&DY0){DY={exists:true,points:DY0}; await pset('daily',{points:DY0})} try{render()}catch(e){} $('pfSaved').textContent='השמירה בוטלה. ההיסטוריה חזרה למצב שלפניה.'},15000)}
-  catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
+  catch(e){st.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); console.error(e)}
   $('btnPfSave').disabled=!canWrite;
 }
 async function savePf(){
@@ -22707,7 +22724,7 @@ async function savePf(){
         if(dDirty){FIRSTX=true;return} FIRSTX=false; try{if(document.body.dataset.page==='mine')showTab('overview',true); anaRun('explain',null,{first:true})}catch(e){}})}
     const miss=pos.filter(p=>!RAWQ||(RAWQ.prices||{})[p.sym]==null).map(p=>p.sym);
     if(miss.length)$('upState').textContent=`עדיין אין מחיר חי ל-${[...new Set(miss)].join(', ')}. עד שיתווסף, מוצג המחיר מהדוח.`;
-  }catch(e){st.textContent='השמירה נכשלה, נסה שוב'}
+  }catch(e){st.textContent='השמירה נכשלה, נסה שוב'+(e&&(e.code||e.message)?' ('+String(e.code==='not_granted'?'אין הרשאה':e.code==='invalid_argument'?'הנתונים לא התקבלו בשרת':e.message).slice(0,80)+')':''); console.error(e)}
   $('btnPfSave').disabled=!canWrite;
 }
 
@@ -25524,7 +25541,7 @@ function ixKpis(F){const sp=F.bars, mx=Math.max(1,...sp), path=sp.map((v,i)=>`${
   return `<div class="ix-k k-rel"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></span><div><span class="ix-kl">רמת רלוונטיות כללית</span><b class="ix-kv rel-${F.lvl}">${IX_REL_HE[F.lvl]}</b>
       <span class="ix-bar" role="img" aria-label="${pct(F.w,0)} מהתיק"><i style="width:${Math.min(100,F.w).toFixed(0)}%"></i></span><span class="ix-ks">${F.syms.size?`${pct(F.w,0)} מהתיק נוגע לאירועים`:'אין אירועים שנוגעים לתיק'}</span></div></div>
     <div class="ix-k k-hold"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v9h9a9 9 0 1 1-9-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></span><div><b class="ix-kv">${F.syms.size}</b><span class="ix-kl">החזקות מושפעות</span><span class="ix-ks">${F.dir.size?`${F.dir.size} ישירות`:F.syms.size?'דרך ענף או קשר עקיף':''}</span></div></div>
-    <div class="ix-k k-al"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><div><b class="ix-kv">${F.un.length}</b><span class="ix-kl">התראות חדשות</span><span class="ix-ks">${F.un.filter(a=>a.lv==='crit').length?`${F.un.filter(a=>a.lv==='crit').length} קריטיות`:''}</span></div></div>
+    <div class="ix-k k-al"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><div><b class="ix-kv">${F.un.filter(a=>a.lv==='crit'||a.lv==='imp').length}</b><span class="ix-kl">התראות חשובות חדשות</span><span class="ix-ks">${F.un.filter(a=>a.lv==='crit').length?`${F.un.filter(a=>a.lv==='crit').length} קריטיות · `:''}${F.un.filter(a=>a.lv!=='crit'&&a.lv!=='imp').length?`ועוד ${F.un.filter(a=>a.lv!=='crit'&&a.lv!=='imp').length} עדכונים`:''}</span></div></div>
     <div class="ix-k k-ev"><span class="ix-ki" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span><div><b class="ix-kv">${F.ev.length}</b><span class="ix-kl">אירועים רלוונטיים</span><svg class="ix-sp" viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="אירועים לאורך התקופה: ${sp.join(', ')}"><path d="${path}"/></svg></div></div>`}
 // an alert, short: its level, when, the headline, whom it touches, how relevant, and the two ways on
 function ixAffH(a){const h=(a.holds||[]).slice(0,3).map(x=>{const d=a.kind==='mkt'||a.rules||!IX_DW[x.dir]||x.dir==='unclear'?null:x.dir, w=d?CH_DIRF[d]:null; return `<button type="button" class="ix-chip${d?' d-'+d:''}" data-ixst="${esc(x.sym)}" aria-label="מה קורה ל-${esc(x.sym)}${w?', '+w[2]:''}"><bdi>${esc(x.sym)}</bdi>${w?` <span aria-hidden="true">${w[1]}</span>`:''}</button>`}), s=(a.secs||[]).slice(0,2).map(x=>`<span>ענף ${esc(NX_SEC_HE[x.g]||x.g)}</span>`), u=a.usd!=null&&!(a.holds||[]).length?['<span>החלק הדולרי</span>']:[], L=[...h,...s,...u];
@@ -26872,7 +26889,7 @@ function todoOf(m,A,T){
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
     L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
-  if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל: עד ${nn(pct(R.maxPos,0))} לנייר, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
+  if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל${S.rulesAuto?` (עד ${nn(pct(R.maxPos,0))} לנייר, לפי ${S.rulesAuto} ניירות בתיק)`:`: עד ${nn(pct(R.maxPos,0))} לנייר`}, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
   const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
   const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});
   if(!UXK('tr_tour'))L.push({sev:'tip',ic:'info',cat:'סיור',h:'סיור של דקה: איפה רואים כמה יש לך, מה לעשות, ואיך מעלים דוח.',b:'<button type="button" class="dk-go" data-uxgo="tour">להתחיל סיור ›</button><button type="button" class="dk-ack" data-uxx="tr_tour">לא צריך</button>'});

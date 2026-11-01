@@ -28,7 +28,8 @@ export async function yahooSession({fetch:f=globalThis.fetch}={}){
       cookie=sc.map(x=>String(x).split(';')[0].trim()).filter(x=>x.includes('=')).join('; '); if(cookie)break}catch(e){}
   }
   if(!cookie)throw Object.assign(new Error('no cookie from Yahoo'),{session:true});
-  const r=await F('https://query1.finance.yahoo.com/v1/test/getcrumb',{headers:{'user-agent':UA,cookie}});
+  let r=await F('https://query1.finance.yahoo.com/v1/test/getcrumb',{headers:{'user-agent':UA,cookie}});
+  if(r.status===429){await new Promise(x=>setTimeout(x,60000)); r=await F('https://query1.finance.yahoo.com/v1/test/getcrumb',{headers:{'user-agent':UA,cookie}})}   // 1.11 (6): one minute, one more try
   const crumb=(await r.text()).trim();
   if(!r.ok||!crumb||crumb.length>40||/[<{\s]/.test(crumb))throw Object.assign(new Error('no crumb from Yahoo (HTTP '+r.status+')'),{session:true});
   return {cookie,crumb};

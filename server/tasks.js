@@ -33,20 +33,22 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
   const keys=new Set(held.filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s)||isIlFund(s)||PROXY[s]||/^TLV:[A-Z0-9]{1,7}$/.test(s)));
   for(const w of store.listDocs('watch'))for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(s))keys.add(s);
   const map=((docs['settings/main']||{}).symMap)||{};
-  let ok=0; const fails=[], until=Date.now()+12*60e3;
+  let ok=0, yahooOff=false; const fails=[], until=Date.now()+12*60e3; Y429=0;
   for(const key of [...keys].slice(0,maxSeries)){
     if(Date.now()>until){fails.push('stopped after 12 minutes');break}
     const t=PROXY[key]?PROXY[key].index:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
+    const old=store.getDoc('quotes/c_'+key.replace(':','_')), oldW=old.exists&&old.data&&old.data.w&&old.data.wAt&&now-Date.parse(old.data.wAt)<7*864e5?old.data.w:null;
     try{let d, w=null, src='Yahoo Finance';
-      // a mutual fund: its official prices from Maya (a year of days); a share or a tracker: Yahoo, then Stooq for a US share
+      // a mutual fund: its official prices from Maya (a year of days); a share or a tracker: Yahoo, then Stooq for a US share.
+      // 1.11: the weekly series is asked once a week, not every night (half the calls); after three rate limits in a row,
+      // Yahoo is left alone for the rest of the run and the US shares come from Stooq
       if(isIlFund(key)){d=await mayaFundSeries(key,{pageSize:300}); src='מאיה (הבורסה)'; if(!d.d.length)throw new Error('Maya: no prices')}
-      else{try{d=await series(t,'1y','1d'); try{w=await series(t,'5y','1wk')}catch(e){}}
-        catch(e){if(!/^[A-Z][A-Z.\-]{0,5}$/.test(key))throw e; d=await stooqSeries(t); src='Stooq'}}
-      const old=store.getDoc('quotes/c_'+key.replace(':','_'));
-      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3)doc.w=w;
+      else{try{if(yahooOff)throw Object.assign(new Error('Yahoo rate-limited this run'),{rate:true}); d=await series(t,'1y','1d'); if(oldW)w=oldW; else try{w=await series(t,'5y','1wk')}catch(e){if(e.rate)Y429++}}
+        catch(e){if(Y429>=3&&!yahooOff){yahooOff=true; fails.push('Yahoo: rate-limited, the rest from Stooq')} if(!/^[A-Z][A-Z.\-]{0,5}$/.test(key))throw e; d=await stooqSeries(t); src='Stooq'; if(oldW)w=oldW}}
+      const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3){doc.w=w; if(w!==oldW)doc.wAt=now.toISOString()}
       store.setDoc('quotes/c_'+key.replace(':','_'),doc); ok++}
     catch(e){fails.push(key+': '+e.message)}
-    await new Promise(r=>setTimeout(r,250));
+    await new Promise(r=>setTimeout(r,yahooOff?150:600));
   }
   log(`close series: ${ok}/${Math.min(keys.size,maxSeries)}${fails.length?'; failed: '+fails.slice(0,5).join(' | '):''}`);
   try{await usSnapshot(store,now,log)}catch(e){log('US snapshot failed:',e.message)}
@@ -55,7 +57,7 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
 // From the close series the night holds: the groups that move together (research/comove), the long-term ties
 // (research/longterm) and the month-end closes (history/prices), for every security anyone holds. The Hebrew group
 // names mirror the page's GROUPS; a group of mixed kinds is named by its members.
-const GROUP_HE={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה וביטחון',health:'בריאות',cons:'צריכה ונדל״ן',space:'חלל',il:'ישראל (קרנות ומדדים)'};
+const GROUP_HE={tech:'טכנולוגיה',fin:'פיננסים',ind:'תעשייה וביטחון',health:'בריאות',cons:'צריכה ונדל״ן',space:'חלל',etf:'קרנות סל (ארה״ב ועולם)',il:'ישראל (קרנות ומדדים)'};
 export function comoveTask(store,{log=console.log}={}){
   const now=new Date(), held=new Set(), names={};
   const P=store.getDoc('portfolio/main'); for(const x of ((P.exists&&P.data.positions)||[]))if(x&&x.sym){held.add(x.sym); if(x.group)names[x.sym]=x.group}
@@ -89,8 +91,13 @@ export async function closesFor(key,map={}){
   try{const m=await series(t,'max','1mo'); if(m.d.length>=3)doc.m=m}catch(e){}
   return doc;
 }
+// 1.11 (6): Yahoo rate-limits a busy address (HTTP 429): one wait of 45 seconds and one more try, then the error carries
+// the flag so the run can stop asking Yahoo for a while instead of failing every security in turn
+let Y429=0;
 async function series(t,range,interval){
-  const r=await fetchFor(20000)(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=${range}&interval=${interval}&includePrePost=false`,{headers:{'user-agent':UA}});
+  let r=await fetchFor(20000)(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=${range}&interval=${interval}&includePrePost=false`,{headers:{'user-agent':UA}});
+  if(r.status===429){await new Promise(x=>setTimeout(x,45000)); r=await fetchFor(20000)(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=${range}&interval=${interval}&includePrePost=false`,{headers:{'user-agent':UA}})}
+  if(r.status===429){Y429++; throw Object.assign(new Error('HTTP 429 (Yahoo rate limit)'),{rate:true})} if(r.ok)Y429=0;
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json(); const res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)throw new Error('no result');
   const off=+res.meta.gmtoffset||0, k=res.meta.currency==='ILA'?0.01:1, cl=((res.indicators||{}).quote||[{}])[0].close||[];
