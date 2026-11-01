@@ -2046,6 +2046,12 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11: the simulator: the form of an action, the list, before and after, the allocation lab */
+.sim{display:flex;flex-direction:column;gap:8px} .sim-f{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .sim-f select,.sim-f input{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:38px;max-width:150px} .sim-f input[type=number]{width:110px} .sim-sym input{width:120px;font-family:var(--mono)}
+.sim-acts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px} .sim-g{display:flex;flex-direction:column;font-size:13.5px} .sim-r{display:grid;grid-template-columns:1fr 92px 92px;gap:4px 8px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line);min-width:0} .sim-g.lab .sim-r{grid-template-columns:1fr 64px 64px 60px} .sim-r.h{font-weight:600;color:var(--ink2);font-size:12.5px} .sim-r>span{min-width:0;overflow-wrap:anywhere} .sim-r .n{font-family:var(--mono)} .sim-r .n small{display:block;font-family:var(--sans);font-size:11.5px;color:var(--ink2)} .sim-r .up{color:var(--gain)} .sim-r .down{color:var(--loss)} .sim-r .gap{grid-column:1/-1;font-size:12.5px;color:var(--ink2)}
+.sim-tg{width:56px;font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+.sim-al{margin:0;padding:8px 10px;border-radius:10px;background:var(--warn-bg,rgb(245 158 11 / .12));font-size:13.5px;line-height:1.5} .sim-al.ok{background:rgb(16 185 129 / .12)}
+@media (max-width:560px){.sim-g{font-size:12.5px} .sim-r{grid-template-columns:1fr 76px 76px;gap:3px 5px} .sim-g.lab .sim-r{grid-template-columns:1fr 52px 52px 54px} .sim-tg{width:50px;padding:4px 3px} .sim-f input[type=number]{width:96px}}
 /* 1.11: the thesis: its form, its view, and what was reported beside it */
 .th-f{display:flex;flex-direction:column;gap:8px} .th-f label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink2)} .th-f textarea{font-family:inherit;font-size:14px;direction:rtl;text-align:start;min-height:44px} .th-f select{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .th-v{display:flex;flex-direction:column;gap:6px} .th-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .th-p{margin:0;font-size:14px;line-height:1.55} .th-p b{color:var(--ink)}
@@ -3184,6 +3190,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="st-form" id="stForm"></div>
         <div id="stOut" aria-live="polite"></div>
       </div>
+    </section>
+    <section aria-labelledby="hSim" id="simSec">
+      <div class="row"><h2 id="hSim">מה אם אקנה, אמכור או אשנה את ההקצאה? סימולטור</h2><span class="sub">לפני ואחרי, על החשיפות והכללים שלך. בלי פעולה בפועל, בלי תחזית</span></div>
+      <div class="panel sim" id="simBox"></div>
     </section>
     <section aria-labelledby="hPnl">
         <div class="row"><h2 id="hPnl">מי מרוויח ומי מפסיד בתיק?</h2><span class="sub" id="pnlSub"></span></div>
@@ -17739,7 +17749,7 @@ function render(){
   try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
   renderRisk(m);
   renderComove(m);
-  try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){}
+  try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){} try{renderSim()}catch(e){console.error(e)}
   if(document.body.dataset.page==='state'){try{renderState()}catch(e){}}
 
   // allocation
@@ -18216,6 +18226,84 @@ function stScen(m){
   if(ST.kind==='usd')return {sc:{kind:'usd',pct:-n(ST.usd)},label:`הדולר יורד ב-${n(ST.usd)}% מול השקל, והמחירים בדולרים בלי שינוי`};
   return {sc:{kind:'all',pct:-n(ST.pct)},label:`ירידה אחידה של ${n(ST.pct)}% בכל הניירות`};
 }
+// ---- 1.11: the decision simulator and the allocation lab, one engine: a list of actions (buy, sell, cash in or out, a new
+// target for a group) applied to a copy of the portfolio; the same model, exposures, health score and rules run on the
+// copy, and the screen puts before and after side by side: value and cash, the biggest holding and group, "as many equal
+// holdings as", the dollar part, the sectors, the drift from the targets, the health score, the rules' findings, the
+// dividend income. Scenarios are kept in the settings (S.sims) to compare. Nothing is bought or sold, nothing is forecast ----
+let SIM={acts:[],name:'',open:null};
+const simPx=sym=>{const q=Q&&Q.prices&&Q.prices[sym]; if(q>0)return {px:q,ccy:ccyOfPos({sym},Q)||'USD'}; try{const pr=priceOf(sym); if(pr&&pr.px>0&&pr.ccy!=='PTS')return {px:pr.px,ccy:pr.ccy}}catch(e){} return null};
+function simApply(P0,acts){
+  const P2=JSON.parse(JSON.stringify(P0||{positions:[],cash:[]})); P2.positions=P2.positions||[]; P2.cash=P2.cash||[]; const notes=[];
+  const cashAdd=(ils,usd)=>{let c=P2.cash.find(x=>x.ccy!=='USD'); if(!c){c={acct:(P2.positions[0]||{}).acct||'exc',ccy:'ILS',amount:0}; P2.cash.push(c)} c.amount=(+c.amount||0)+ils};
+  for(const a of acts){
+    if(a.t==='cash'){cashAdd(+a.ils||0); continue}
+    if(a.t==='target')continue;
+    const sym=String(a.sym||'').toUpperCase(); if(!sym)continue; const px=a.px>0?{px:+a.px,ccy:a.ccy||'USD'}:simPx(sym); if(!px){notes.push(`ל-${sym} אין מחיר, הפעולה לא חושבה.`); continue}
+    const rt=px.ccy==='USD'?(Q.usdIls||0):1, pos=P2.positions.filter(p=>p.sym===sym), have=pos.reduce((t,p)=>t+(+p.qty||0),0);
+    let q=+a.qty>0?+a.qty:(+a.ils>0?Math.floor((+a.ils)/(px.px*rt)*1e4)/1e4:0); if(!(q>0)){notes.push(`ל-${sym} לא צוינה כמות או סכום.`); continue}
+    if(a.t==='buy'){const cost=q*px.px*rt; const p=pos[0]; if(p){p.qty=(+p.qty||0)+q; if(p.costIls!=null)p.costIls+=cost} else P2.positions.push({sym,name:(itemOf(sym)||{}).name||sym,qty:q,ccy:px.ccy,acct:(P2.positions[0]||{}).acct||'exc',group:a.group||(isF(sym)?'il':'tech'),costIls:cost}); cashAdd(-cost)}
+    else if(a.t==='sell'){if(q>have+1e-9){notes.push(`אין ${q} יחידות של ${sym}; יש ${have}. נמכרו ${have}.`); q=have} let left=q; for(const p of pos){const take=Math.min(left,+p.qty||0); if(p.costIls!=null&&p.qty>0)p.costIls*=1-take/p.qty; p.qty-=take; left-=take; if(left<=1e-9)break} P2.positions=P2.positions.filter(p=>p.qty>1e-9); cashAdd(q*px.px*rt)}}
+  return {P2,notes};
+}
+// the model, exposures, health and rules of a portfolio that is not the saved one (they read the page's P: swapped for the call)
+function withP(P2,fn){const P0=P; P=P2; try{return fn()}finally{P=P0}}
+function simState(P2,targets){
+  return withP(P2,()=>{const m=model(P2,Q,'all',null); if(!(m.total>0))return null; const secOf=k=>{try{const it=itemOf(k); return (it&&it.sec)||''}catch(e){return ''}};
+    let E=null, H=null, A=[]; try{E=exposures(m,P2,Q,secOf)}catch(e){} try{H=healthOf(m)}catch(e){} try{A=alertsOf(m).filter(a=>a[0]==='crit'||a[0]==='warn')}catch(e){}
+    const T=targets||(S&&S.targets)||{}, tsum=Object.values(T).reduce((t,v)=>t+(+v||0),0), drift=tsum>0?Math.max(0,...Object.keys(GROUPS).map(k=>Math.abs((m.groups[k]||{w:0}).w-(+T[k]||0)))):null;
+    const C=(RS&&RS.companies)||{}, divY=m.pos.reduce((t,p)=>{const c=C[p.sym]; return t+(c&&c.dy>0?p.val*c.dy/100:0)},0);
+    return {m,E,H,A,drift,tsum,divY,top:m.pos[0]||null,topG:Object.values(m.groups).filter(g=>g.id!=='cash').sort((a,b)=>b.w-a.w)[0]||null}})}
+function simLabH(t0,t1,T){
+  const ks=Object.keys(GROUPS).filter(k=>k!=='cash'), cur=t0.m.groups, aft=t1.m.groups, tot=t1.m.total;
+  return `<div class="sim-g lab" role="table" aria-label="יעדים לקבוצות"><div class="sim-r h" role="row"><span>קבוצה</span><span>היום</span><span>אחרי</span><span>היעד %</span></div>${ks.filter(k=>(cur[k]&&cur[k].w>0)||(aft[k]&&aft[k].w>0)||+T[k]>0).map(k=>{const w0=(cur[k]||{w:0}).w, w1=(aft[k]||{w:0}).w, tg=+T[k]||0, gap=tg?(tg-w1)/100*tot:null;
+    return `<div class="sim-r" role="row"><span>${esc(GROUPS[k]||k)}</span><span class="n">${pct(w0,1)}</span><span class="n ${Math.abs(w1-w0)>0.05?(w1>w0?'up':'down'):''}">${pct(w1,1)}</span><span><input type="number" class="sim-tg" data-simtg="${k}" min="0" max="100" step="1" value="${tg||''}" aria-label="יעד ל${esc(GROUPS[k]||k)}" inputmode="numeric"></span>${gap==null?'':`<span class="gap">${Math.abs(gap)<1?'ביעד':'כדי להגיע ליעד: '+(gap>0?'לקנות ':'למכור ')+ils(Math.abs(gap))}</span>`}</div>`}).join('')}</div>
+    <p class="nm">היעדים כאן הם ניסוי (מעבדת ההקצאה); "קבע יעדים אלה" מעתיק אותם ל"הקצאה מול יעד" בהגדרות. "כדי להגיע ליעד" הוא הפרש בשקלים לפי השווי של היום, לא הוראה.</p>`}
+function simH(){
+  if(!P||!Q||!(P.positions||[]).length)return '<p class="note" style="margin:0">כשיהיה תיק, אפשר יהיה לבחון כאן פעולות לפני שעושים אותן.</p>';
+  const acts=SIM.acts, T=SIM.targets||null, t0=simState(P,null), {P2,notes}=simApply(P,acts), t1=simState(P2,T||null); if(!t0)return '';
+  const held=((P&&P.positions)||[]).map(p=>p.sym).filter((k,i,A)=>A.indexOf(k)===i), W=[...new Set([...(WATCH&&WATCH.marks||[]),...(WATCH&&WATCH.held||[])])].filter(k=>!held.includes(k));
+  const opt=k=>`<option value="${esc(k)}">${esc(lab(k))}</option>`;
+  const row=(a,i)=>`<li>${a.t==='buy'?'קנייה':a.t==='sell'?'מכירה':a.t==='cash'?(a.ils>=0?'הפקדה':'משיכה'):'יעד'} ${a.sym?`<b>${esc(a.sym)}</b> `:''}${a.qty?`${a.qty} יח׳`:a.ils!=null?ils(Math.abs(+a.ils)):''}${a.px?` במחיר ${a.px}`:''} <button type="button" class="lnk" data-simdel="${i}" aria-label="להסיר">×</button></li>`;
+  const form=`<form class="sim-f" id="simForm"><select id="simT" aria-label="סוג הפעולה"><option value="buy">לקנות</option><option value="sell">למכור</option><option value="cash">להפקיד / למשוך</option></select>
+      <span class="sim-sym"><input list="simSyms" id="simSym" placeholder="סימול" maxlength="14" aria-label="סימול" autocomplete="off" style="text-transform:uppercase"><datalist id="simSyms">${held.map(opt).join('')}${W.map(opt).join('')}</datalist></span>
+      <input type="number" id="simQty" placeholder="כמות" min="0" step="0.0001" inputmode="decimal" aria-label="כמות"><span class="nm">או</span><input type="number" id="simIls" placeholder="סכום ב-₪" min="0" step="1" inputmode="numeric" aria-label="סכום בשקלים">
+      <input type="number" id="simPx" placeholder="מחיר (אם אין)" min="0" step="0.01" inputmode="decimal" aria-label="מחיר"><button type="submit" class="btn sm pri">להוסיף פעולה</button></form>`;
+  const K=(l,v0,v1,fmt,bad,s0,s1)=>{const f=fmt||(x=>x); const ch=v0!=null&&v1!=null&&Math.abs(v1-v0)>1e-9; return `<div class="sim-r" role="row"><span>${l}</span><span class="n">${v0==null?'—':f(v0)}${s0?`<small>${esc(s0)}</small>`:''}</span><span class="n ${ch?(bad?(v1>v0?'down':'up'):(v1>v0?'up':'down')):''}">${v1==null?'—':f(v1)}${s1?`<small>${esc(s1)}</small>`:''}</span></div>`};
+  const cmp=t1?`<div class="sim-g cmp" role="table" aria-label="לפני ואחרי"><div class="sim-r h" role="row"><span></span><span>היום</span><span>אחרי</span></div>
+      ${K('שווי התיק',t0.m.total,t1.m.total,v=>ils(v))}${K('מזומן',t0.m.cash,t1.m.cash,v=>ils(v))}${K('ניירות',t0.m.pos.length,t1.m.pos.length)}
+      ${K('הנייר הגדול ביותר',t0.top?t0.top.w:null,t1.top?t1.top.w:null,v=>pct(v,1),true,t0.top?t0.top.sym:'',t1.top?t1.top.sym:'')}
+      ${K('הקבוצה הגדולה ביותר',t0.topG?t0.topG.w:null,t1.topG?t1.topG.w:null,v=>pct(v,1),true,t0.topG?GROUPS[t0.topG.id]||t0.topG.id:'',t1.topG?GROUPS[t1.topG.id]||t1.topG.id:'')}
+      ${K('פיזור: כמו N ניירות שווים',t0.E?t0.E.conc.nEff:null,t1.E?t1.E.conc.nEff:null,v=>v.toFixed(1))}${K('חלק בדולרים',t0.m.usdPct,t1.m.usdPct,v=>pct(v,1))}
+      ${t0.tsum>0||t1.tsum>0?K('הסטייה הגדולה מהיעדים',t0.drift,t1.drift,v=>v.toFixed(1)+' נק׳',true):''}${K('מדד בריאות התיק',t0.H?t0.H.score:null,t1.H?t1.H.score:null,v=>v+' / 100')}
+      ${K('חריגות וממצאים (הכללים שלך)',t0.A.length,t1.A.length,v=>String(v),true)}${K('דיבידנדים בשנה (לפי התשואה היום)',t0.divY,t1.divY,v=>ils(v))}
+    </div>
+    ${t1.m.cash<-0.5?`<p class="sim-al"><b>המזומן יורד מתחת לאפס (${ils(t1.m.cash)}):</b> הקניות עולות יותר ממה שיש; בפועל זה דורש הפקדה או מכירה קודם. החלוקה למטה מחושבת על השווי כולל המזומן השלילי.</p>`:''}
+    ${t1.A.length?`<p class="sim-al"><b>אחרי הפעולות, הכללים שלך מוצאים:</b> ${t1.A.slice(0,4).map(a=>esc(a[2])).join(' · ')}</p>`:acts.length?'<p class="sim-al ok">אחרי הפעולות, הכללים שלך לא מוצאים חריגה.</p>':''}
+    ${t1.E&&t1.E.sector?`<p class="nm"><b>ענפים אחרי:</b> ${t1.E.sector.slice(0,4).map(r=>`${esc(r.label)} ${pct(r.w,0)}`).join(' · ')}</p>`:''}`:'<p class="note">אחרי הפעולות לא נשאר תיק לחשב.</p>';
+  const saved=(S.sims||[]).map((sc,i)=>`<li><button type="button" class="lnk" data-simload="${i}">${esc(sc.name||'תרחיש '+(i+1))}</button> <span class="nm">${(sc.acts||[]).length} פעולות · ${dmy(sc.at)}</span> <button type="button" class="lnk" data-simrm="${i}" aria-label="למחוק">×</button></li>`).join('');
+  return `${form}${notes.length?`<p class="note" style="margin:6px 0 0">${notes.map(esc).join(' ')}</p>`:''}
+    ${acts.length?`<ul class="sim-acts">${acts.map(row).join('')}</ul>`:'<p class="nm" style="margin:6px 0">עוד אין פעולות. הוסף קנייה, מכירה או הפקדה, או שנה יעד בטבלת ההקצאה למטה.</p>'}
+    ${cmp}
+    <details class="nx-more" ${T||acts.length?'open':''}><summary>מעבדת הקצאה: יעדים לקבוצות</summary>${t1?simLabH(t0,t1,T||S.targets||{}):''}<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-simtgset="1"${!canWrite||!T?' disabled':''}>קבע יעדים אלה בהגדרות</button><button type="button" class="btn sm" data-simtgclr="1"${T?'':' disabled'}>לחזור ליעדים השמורים</button></div></details>
+    <div class="acts" style="justify-content:flex-start"><input type="text" id="simName" placeholder="שם לתרחיש" maxlength="40" aria-label="שם לתרחיש" style="max-width:180px"><button type="button" class="btn sm" data-simsave="1"${!canWrite||!(acts.length||T)?' disabled':''}>לשמור תרחיש</button><button type="button" class="btn sm" data-simclr="1"${acts.length||T?'':' disabled'}>לנקות</button><button type="button" class="btn sm" data-chiko="sim"${acts.length||T?'':' disabled'}>שאל את צ׳יקו על התרחיש</button></div>
+    ${saved?`<p class="nm" style="margin:8px 0 2px"><b>תרחישים שמורים:</b></p><ul class="sim-acts">${saved}</ul>`:''}
+    <p class="note" style="margin:6px 0 0">חישוב על המחירים של היום. "מחיר (אם אין)" רק לנייר שאין לו מחיר בדף. לא ייעוץ: הסימולטור מראה איך התיק ייראה, לא אם זה כדאי.</p>`;
+}
+function renderSim(){const b=$('simBox'); if(!b)return; const a=document.activeElement, keep=a&&b.contains(a)?{id:a.id,v:a.value,s:a.selectionStart}:null; setH(b,simH()); if(keep&&keep.id){const el=$(keep.id); if(el){el.focus({preventScroll:true}); try{el.setSelectionRange(keep.s,keep.s)}catch(e){}}}}
+document.addEventListener('submit',ev=>{const f=ev.target; if(!f||f.id!=='simForm')return; ev.preventDefault(); const t=$('simT').value, sym=$('simSym').value.trim().toUpperCase(), qty=+$('simQty').value||0, ilsV=+$('simIls').value||0, px=+$('simPx').value||0;
+  if(t==='cash'){if(!ilsV){rtSay('כמה להפקיד או למשוך?');return} SIM.acts.push({t:'cash',ils:$('simSym').value.trim().startsWith('-')?-ilsV:ilsV})}
+  else{if(!sym){rtSay('איזה נייר?');return} if(!qty&&!ilsV){rtSay('כמות או סכום');return} const a={t,sym}; if(qty)a.qty=qty; else a.ils=ilsV; if(px)a.px=px; if(!simPx(sym)&&!px){rtSay(`ל-${sym} אין מחיר בדף. אפשר להזין מחיר בשדה "מחיר".`);return} SIM.acts.push(a)}
+  for(const id of ['simSym','simQty','simIls','simPx'])$(id).value=''; try{useAdd('sim')}catch(e){} renderSim()});
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#simBox'))return;
+  const d=t.closest('[data-simdel]'); if(d){SIM.acts.splice(+d.dataset.simdel,1); renderSim(); return}
+  if(t.closest('[data-simclr]')){SIM={acts:[],name:'',targets:null}; renderSim(); return}
+  if(t.closest('[data-simtgclr]')){SIM.targets=null; renderSim(); return}
+  if(t.closest('[data-simtgset]')){if(!canWrite||!SIM.targets)return; const before=JSON.stringify(S.targets); S.targets={...SIM.targets}; changed(); SIM.targets=null; offerUndo('היעדים עודכנו בהגדרות',()=>{S.targets=JSON.parse(before); changed(); renderSim()}); renderSim(); return}
+  const sv=t.closest('[data-simsave]'); if(sv){if(!canWrite)return; const name=($('simName')||{}).value||''; S.sims=[...(S.sims||[]),{id:Math.random().toString(36).slice(2,9),name:name.trim().slice(0,40)||`תרחיש ${(S.sims||[]).length+1}`,at:new Date().toISOString(),acts:SIM.acts.slice(),targets:SIM.targets||null}].slice(-20); changed(); rtSay('התרחיש נשמר'); renderSim(); return}
+  const ld=t.closest('[data-simload]'); if(ld){const sc=(S.sims||[])[+ld.dataset.simload]; if(sc){SIM={acts:(sc.acts||[]).slice(),name:sc.name,targets:sc.targets||null}; renderSim(); try{$('simBox').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}} return}
+  const rm=t.closest('[data-simrm]'); if(rm){if(!canWrite)return; S.sims=(S.sims||[]).filter((_,i)=>i!==+rm.dataset.simrm); changed(); renderSim(); return}});
+document.addEventListener('input',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.simtg)return; SIM.targets={...(SIM.targets||S.targets||{})}; const v=+el.value; if(v>0)SIM.targets[el.dataset.simtg]=v; else delete SIM.targets[el.dataset.simtg]; clearTimeout(renderSim.t); renderSim.t=setTimeout(renderSim,350)});
 function renderStress(m){
   const kb=$('stKind'), fm=$('stForm'), out=$('stOut'); if(!kb||!m)return; EXPM=m;
   const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
@@ -18818,7 +18906,7 @@ function foldIs(){return true}
 // 28.10: the control screen in three parts instead of one long page: "מצב" (the score, what needs attention, what moved),
 // "פיזור" (the groups, the exposure, what moves together) and "סיכון ותרחישים" (what if prices fall, what shakes the
 // portfolio). Each section belongs to one part; the row at the top switches between them, and a link to a section opens its part
-const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hKpi','hRk']};
+const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hKpi','hRk']};
 const RGL={now:'מצב',mix:'פיזור',risk:'סיכון ותרחישים'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
@@ -19815,7 +19903,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -25392,6 +25480,7 @@ window.__im={build:imBuild,open:imOpen,openFrom:imOpenFrom,layout:imLayout,sel:i
 // (only when it was), and what is only possible; without Claude the page answers from the same facts by itself ====
 let ANA_FOCUS=null;
 const STORY_Q=['מה הרקע לאירוע הזה, במילים פשוטות?','מה בטוח כאן ומה רק הערכה?','איך זה עשוי לגעת בתיק שלי?','מה כדאי לעקוב אחריו בהמשך?'];
+const SIM_Q=['מה משתנה בתיק אחרי הפעולות האלה?','האם אחרי זה אני חורג מהכללים שלי?','מה קורה לפיזור ולריכוזיות?','מה אני צריך לבדוק לפני שאני עושה את זה?'];
 const TH_Q=['האם התזה שלי עדיין תקפה?','מה מהדיווחים נוגע למה שכתבתי שיחליש אותה?','מה אני צריך לבדוק לפני שאשנה משהו?','מה עוד לא ידוע?'];
 const FOCUS_Q=[['why','למה קיבלתי את ההתראה?'],['link','מה הקשר בין האירוע למניה?'],['sector','מה הקשר בין האירוע לענף?'],['exposed','אילו מההחזקות שלי עשויות להיות חשופות?'],['known','מה ידוע בפועל ומה עדיין לא ודאי?'],['changed','מה השתנה מאז העדכון הקודם?'],['sources','אילו מקורות תומכים בהסבר?']];
 function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); let m=null; try{m=mAllNow()}catch(e){}
@@ -25405,6 +25494,9 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
   if(k==='art'){const it=newsAll().find(z=>z.id===v); if(!it||!it.x)return null; const E=nxEvents(newsAll()), e=E.get(it.x.ev||'id:'+it.id);
     return {kind:'article',title:it.x.he,lead:it,data:{...artF(it,it.x),other_sources:e&&e.items.length>1?e.items.filter(q=>q.id!==it.id).slice(0,5).map(q=>({source:q.pub,title:q.title,published_at:q.at})):[],measured:moved(nwSymsOf(it),it.at||it.seen),
       portfolio:m&&m.pos&&m.pos.length?{has_portfolio:true,link_to_my_portfolio:(()=>{try{return newsRel(it,m).text||null}catch(e){return null}})()}:{has_portfolio:false}}}}
+  if(k==='sim'){const t0=simState(P,null); const {P2,notes}=simApply(P,SIM.acts); const t1=simState(P2,SIM.targets||null); if(!t0||!t1)return null;
+    const st=t=>({value:ils(t.m.total),cash:ils(t.m.cash),holdings:t.m.pos.length,biggest_holding:t.top?`${t.top.sym} ${pct(t.top.w,1)}`:null,biggest_group:t.topG?`${GROUPS[t.topG.id]||t.topG.id} ${pct(t.topG.w,1)}`:null,as_many_equal_holdings_as:t.E?+t.E.conc.nEff.toFixed(1):null,usd_part:pct(t.m.usdPct,1),max_drift_from_targets:t.drift!=null?t.drift.toFixed(1)+' נק׳':null,health_score:t.H?t.H.score:null,rule_findings:t.A.map(a=>a[2]),dividend_income_year:ils(t.divY),sectors:t.E?t.E.sector.slice(0,5).map(r=>`${r.label} ${pct(r.w,0)}`):[]});
+    return {kind:'sim',title:'תרחיש: '+(SIM.name||'מה אם'),data:{actions:SIM.acts.map(a=>`${a.t==='buy'?'קנייה':a.t==='sell'?'מכירה':a.t==='cash'?'מזומן':'יעד'} ${a.sym||''} ${a.qty?a.qty+' יח׳':a.ils!=null?ils(Math.abs(+a.ils)):''}`),targets_tried:SIM.targets||null,before:st(t0),after:st(t1),notes,rule:'סימולציה על המחירים של היום; לא תחזית ולא המלצה; מראה איך התיק ייראה, לא אם זה כדאי'}}}
   if(k==='th'){const t=(jrn().thesis||{})[v]; if(!t)return null; const R=thesisEval(v), p=m&&m.pos&&m.pos.find(z=>z.sym===v);
     return {kind:'thesis',title:'התזה שלי על '+v,data:{symbol:v,my_thesis:{why:t.why||null,expect:t.expect||null,assumptions:t.assume||null,what_strengthens:t.plus||null,what_weakens:t.minus||null,horizon:TH_HOR[t.horizon||'']||null,risks:t.risks||null,written_at:t.at||null,updated_at:t.updatedAt||null},
       page_verdict:{status:TH_ST[R.status][0],confidence:PL_CONF[R.conf]||R.conf||null,why:R.confWhy,rule:'רק עובדות מדווחות על החברה נספרות; תנועת מחיר לבדה לא; זו הצבה, לא המלצה'},
@@ -25457,6 +25549,8 @@ function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<
   if(/ענף/.test(t))return `<p>הענפים שהקריאה ציינה:</p>${li((d.sectors||d.sectors_exposure||[]).map(s=>`${esc(s.sector)}${s.through?' דרך '+esc(s.through):''}${s.why?': '+esc(s.why):''}${s.my_share_in_sector||s.share_of_portfolio?` (אצלך ${esc(s.my_share_in_sector||s.share_of_portfolio)})`:''}`))||'<p>לא צוין ענף.</p>'}`;
   if(/חשופ|החזק|אחזק/.test(t)){const L=(d.my_holdings_linked||(d.companies||[]).filter(c=>c.in_my_portfolio).map(c=>({sym:c.sym,weight:c.in_my_portfolio,link:c.link,why:c.why})));
     return L.length?li(L.map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))+'<p class="nm">חשיפה היא קשר שהקריאה ציינה, לא השפעה שנמדדה.</p>':'<p>אף אחת מההחזקות שלך לא מוזכרת בקשר הזה.</p>'}
+  if(f.kind==='sim'){const b=d.before||{}, a=d.after||{}, L=[['שווי',b.value,a.value],['מזומן',b.cash,a.cash],['הנייר הגדול',b.biggest_holding,a.biggest_holding],['הקבוצה הגדולה',b.biggest_group,a.biggest_group],['פיזור (כמו N שווים)',b.as_many_equal_holdings_as,a.as_many_equal_holdings_as],['חלק בדולרים',b.usd_part,a.usd_part],['מדד בריאות',b.health_score,a.health_score]];
+    return `<p><b>הפעולות:</b> ${esc((d.actions||[]).join('; ')||'שינוי יעדים בלבד')}.</p>${li(L.map(([l,x,y])=>`${l}: ${esc(String(x??'—'))} ← <b>${esc(String(y??'—'))}</b>`))}${(a.rule_findings||[]).length?`<p><b>הכללים שלך אחרי:</b></p>${li(a.rule_findings.map(esc))}`:'<p>אחרי הפעולות הכללים שלך לא מוצאים חריגה.</p>'}<p class="nm">${esc(d.rule||'')}</p>`}
   if(f.kind==='thesis'){const v=d.page_verdict||{}, R=d.reported_since||[];
     return `<p><b>${esc(v.status||'')}</b> (ביטחון ${esc(v.confidence||'')}: ${esc(v.why||'')}).</p>${li(R.slice(0,5).map(z=>`${dmy(z.at)}: ${esc(z.headline)} · ${esc(z.certainty)}${z.touches_what_i_wrote?' · נוגע ל'+esc(z.touches_what_i_wrote):''}`))||'<p>לא דווח דבר מהותי מאז התזה.</p>'}<p class="nm">${esc(v.rule||'')}</p>`}
   if(f.kind==='story'){const S=d.story||{}, part=n=>(S[n]||[]).map(l=>`${esc(l.text)} <span class="nm">(${esc(l.certainty)})</span>`);

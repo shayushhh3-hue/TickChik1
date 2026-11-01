@@ -1855,6 +1855,42 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('the simulator and the allocation lab: a buy, a sale and a deposit change the after column, a target shows the drift, a scenario is saved, צ׳יקו gets before and after',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="risk"]'); await pg.waitForTimeout(300);
+  const read=()=>pg.evaluate(()=>{const rows={}; for(const tr of document.querySelectorAll('#simBox .sim-g.cmp .sim-r:not(.h)')){const c=[...tr.children].map(x=>(x.firstChild&&x.firstChild.nodeType===3?x.firstChild.textContent:x.textContent).trim()); if(c[0])rows[c[0]]=[c[1],c[2]]} return {rows,txt:document.getElementById('simBox').textContent.replace(/\s+/g,' '),ox:document.documentElement.scrollWidth>innerWidth+1,inWrap:!!document.getElementById('simBox').closest('.wrap')}});
+  let r=await read(); assert.ok(r.inWrap,'the simulator sits inside the page'); assert.equal(r.ox,false,'no sideways scroll'); assert.match(r.txt,/עוד אין פעולות/);
+  const num=s=>+String(s).replace(/[^\d.-]/g,'');
+  // a buy of 20 NVDA (the second-largest holding becomes the largest): the value stays, the cash falls, the top holding grows
+  await pg.fill('#simSym','nvda'); await pg.fill('#simQty','20'); await pg.click('#simForm button[type=submit]'); await pg.waitForTimeout(300);
+  r=await read(); assert.match(r.txt,/קנייה NVDA 20 יח׳/);
+  const v=r.rows['שווי התיק'], c=r.rows['מזומן'], top=r.rows['הנייר הגדול ביותר'];
+  assert.equal(num(v[0]),num(v[1]),'a buy moves cash into a holding, the value does not change');
+  assert.ok(num(c[1])<num(c[0]),'the cash falls by the cost'); assert.ok(num(top[1])>num(top[0]),'the biggest holding is bigger after');
+  assert.match(r.txt,/NVDA/); assert.match(r.txt,/הכללים שלך מוצאים|לא מוצאים חריגה/);
+  // a sale of more than held: the note says how many there are
+  await pg.selectOption('#simT','sell'); await pg.fill('#simSym','CAT'); await pg.fill('#simQty','5'); await pg.click('#simForm button[type=submit]'); await pg.waitForTimeout(300);
+  r=await read(); assert.match(r.txt,/אין 5 יחידות של CAT; יש 1/); assert.equal(num(r.rows['ניירות'][1]),num(r.rows['ניירות'][0])-1,'CAT sold out: one holding fewer');
+  // a deposit: the value and the cash rise by it
+  await pg.selectOption('#simT','cash'); await pg.fill('#simIls','1000'); await pg.click('#simForm button[type=submit]'); await pg.waitForTimeout(300);
+  r=await read(); assert.match(r.txt,/הפקדה/); assert.equal(Math.round(num(r.rows['שווי התיק'][1])-num(r.rows['שווי התיק'][0])),1000,'the value rises by the deposit');
+  // a symbol with no price asks for one
+  await pg.selectOption('#simT','buy'); await pg.fill('#simSym','ZZZQ'); await pg.fill('#simQty','1'); await pg.click('#simForm button[type=submit]'); await pg.waitForTimeout(300);
+  r=await read(); assert.doesNotMatch(r.txt,/קנייה ZZZQ/,'no price, no action');
+  // the allocation lab: a target of 60% for technology shows the drift and what it takes
+  await pg.evaluate(()=>document.querySelector('#simBox details').open=true); await pg.fill('#simBox [data-simtg="tech"]','60'); await pg.waitForTimeout(600);
+  r=await read(); assert.match(r.txt,/הסטייה הגדולה מהיעדים/); assert.match(r.txt,/לקנות ₪|למכור ₪|ביעד/,'the lab says what it takes to reach the target');
+  assert.ok(num(r.rows['הסטייה הגדולה מהיעדים'][1])>0,'a drift after the targets');
+  // a saved scenario comes back
+  await pg.fill('#simName','בדיקה'); await pg.click('#simBox [data-simsave]'); await pg.waitForTimeout(1500);
+  await pg.click('#simBox [data-simclr]'); await pg.waitForTimeout(200); r=await read(); assert.match(r.txt,/עוד אין פעולות/); assert.match(r.txt,/תרחישים שמורים: ?בדיקה/);
+  await pg.click('#simBox [data-simload]'); await pg.waitForTimeout(300); r=await read(); assert.match(r.txt,/קנייה NVDA 20 יח׳/,'the scenario is back');
+  if(process.env.SHOT)await pg.locator('#simSec').screenshot({path:process.env.SHOT});
+  // צ׳יקו gets before and after
+  const f=await pg.evaluate(()=>window.__focus('sim')); assert.equal(f.kind,'sim'); assert.equal(f.data.actions.length,3); assert.ok(f.data.before.value&&f.data.after.value); assert.equal(f.data.targets_tried.tech,60); assert.match(f.data.rule,/לא תחזית/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
