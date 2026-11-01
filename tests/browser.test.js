@@ -548,7 +548,7 @@ test('31.10 the news that explains, follows, teaches and prepares: the daily pic
     // 3. the daily picture: five parts, the top events with why, the markets, a trend, what is ahead from the calendar, the first time
     const dl=await pg.evaluate(()=>{const d=document.getElementById('nwDaily'); return {open:d.open,h:[...d.querySelectorAll('.nw-ds h4')].map(h=>h.textContent),top:[...d.querySelectorAll('.nw-d5 li')].map(l=>l.innerText),why:d.querySelectorAll('.nw-dy').length,
       ahead:d.querySelector('.nw-ds:nth-child(4)').innerText,changed:d.querySelector('.nw-ds:nth-child(5)').innerText,trend:d.querySelector('.nw-dt')?.innerText||'',when:d.querySelector('.nw-dh .nm').textContent}});
-    assert.equal(dl.open,true); assert.deepEqual(dl.h,['חמשת האירועים החשובים','מה קורה בשווקים','מגמות מתחזקות','מה צפוי בהמשך','מה השתנה מאז הפעם הקודמת']);
+    assert.equal(dl.open,true); assert.deepEqual(dl.h,['חמשת האירועים החשובים','מה קורה בשווקים','על מה מדברים יותר מהרגיל','מה צפוי בהמשך','מה השתנה מאז הפעם הקודמת']);
     assert.ok(dl.top.length>=3&&dl.top.length<=5,'3 to 5 events: '+dl.top.length); assert.equal(dl.why,dl.top.length,'each with why'); assert.match(dl.top[0],/אנבידיה/); assert.match(dl.top.join(' '),/למה זה חשוב/);
     assert.match(dl.ahead,/החלטת הריבית של הפד/); assert.match(dl.ahead,/דוח כספי NVDA|דוח כספי: NVIDIA/); assert.match(dl.changed,/הפעם הראשונה/); assert.match(dl.when,/עודכן/);
     // 5. the glossary: a term in a reading's text opens its explanation, for this level, with the sentence; Escape closes it
@@ -615,7 +615,8 @@ test('חיבור למציאות, the news: its own product with search, categori
     let L=await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nwc h3')].map(h=>h.textContent)); assert.deepEqual(L,['אופ״ק קיצצה תפוקה והנפט עלה']);
     assert.equal(await pg.evaluate(()=>document.querySelector('#nxViews [aria-pressed="true"]').dataset.nxv),'latest');
     // the search: Hebrew, a ticker, an English company name; the filters said and removable
-    await pg.click('[data-nwclr="cat"]'); await pg.fill('#nxQ','מיקרוסופט'); await pg.waitForTimeout(400);
+    await pg.click('[data-nwclr="cat"]'); await pg.waitForTimeout(300); await pg.fill('#nxQ','מיקרוסופט');
+    await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc h3').length<=2,null,{timeout:5000}).catch(()=>{});
     L=await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nwc h3')].map(h=>h.textContent)); assert.ok(L.includes('האיחוד האירופי פתח בחקירה נגד מיקרוסופט')&&L.length<=2,JSON.stringify(L));
     await pg.fill('#nxQ','AAPL'); await pg.waitForTimeout(400); L=await pg.evaluate(()=>[...document.querySelectorAll('#newsFeed .nwc h3')].map(h=>h.textContent)); assert.deepEqual(L,['האם הגיע הזמן לקנות את אפל?']);
     // the kind of content: an opinion says so, a company's release says so, an updated article says when
@@ -768,6 +769,9 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.deepEqual(sv.kb.map(x=>x.replace(/^[✓?…]/,'')),['ידוע','אפשרי (השערה מהקריאה)','עוד לא ידוע']);
     assert.ok(sv.ev.some(x=>/אנבידיה היכתה את התחזיות והעלתה את התחזית$/.test(x)),JSON.stringify(sv.ev)); assert.match(sv.how,/איך זה נוגע ב-NVDA:/); assert.match(sv.how,/חיובי אפשרי/); assert.match(sv.how,/מה קרה למחיר מאז הפרסום|עוד אין מדידה של המחיר/);
     assert.deepEqual(sv.qs,['מה קורה למניה הזאת?','למה המניה זזה היום?','מה הכי חשוב לדעת עליה עכשיו?','מה ידוע ומה עוד לא ודאי?']); assert.equal(sv.ox,false);
+    // 1.11 the price chart: one circle per day with the count of its events, said in words under the chart
+    const ch=await pg.evaluate(()=>{const b=document.getElementById('ixSvB'), M=[...b.querySelectorAll('.ixs-m')]; return {n:M.length,txt:M.map(g=>(g.querySelector('text')||{}).textContent||''),tip:M.map(g=>g.getAttribute('aria-label')||''),cap:(b.querySelector('figcaption')||{}).textContent||'',days:b.querySelectorAll('.ixs-days li').length}});
+    if(ch.n){assert.ok(ch.txt.every(t=>/^\d+\+?$/.test(t)),'a count on every circle: '+JSON.stringify(ch.txt)); assert.ok(ch.tip.every(t=>/אירוע/.test(t)),'a tooltip on every circle'); assert.match(ch.cap,/עיגול = יום/); assert.ok(ch.days>=1&&ch.days<=3,'the last days in words')}
     seen.length=0; await pg.click('#ixSvB [data-ixsq]'); await pg.waitForFunction(()=>/על מניה מהתיק/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
     assert.ok(seen.some(x=>x.includes('how_it_reaches_the_stock')&&x.includes('NVDA')),'the share reaches צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
     await pg.click('#ixSv [data-ixback]'); await pg.waitForTimeout(200); assert.ok(await pg.evaluate(()=>document.getElementById('ixSv').hidden&&!document.getElementById('ixBody').hidden));
@@ -835,7 +839,12 @@ test('the impact map: opened from an article and from an alert; the chain with a
   try{for(const W of [390,1280]){
     const {ctx,pg}=await open(W); await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc').length>=1,null,{timeout:15000});
     // from the article
-    await pg.click(`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"] [data-imopen]`); await pg.waitForTimeout(600);
+    // 1.11: the "map" button of an article lands on the round personal map (the tree is not shown to the users)
+    await pg.click(`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"] [data-imopen]`); await pg.waitForTimeout(700);
+    const rd=await pg.evaluate(()=>({tree:document.getElementById('imView').hidden,al:document.getElementById('rtTabAl').getAttribute('aria-selected'),open:document.getElementById('ixMapD').open,view:document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv,ev:document.querySelectorAll('#ixG .ixn.t-ev').length,exp:!!document.getElementById('ixExp')}));
+    assert.equal(rd.tree,true,'the tree stays hidden'); assert.equal(rd.al,'true'); assert.ok(rd.open,'the round map opened'); assert.equal(rd.view,'ev'); assert.ok(rd.ev>=1,'the event on the round map'); assert.equal(rd.exp,false,'no button to the tree');
+    // the tree itself (kept for its explanations; reachable in the code only)
+    await pg.evaluate(()=>window.__im.open('ev',{ev:'nvda-q3-report'})); await pg.waitForTimeout(600);
     const m=await pg.evaluate(()=>({open:!document.getElementById('imView').hidden,view:document.querySelector('#imViews [aria-selected="true"]').dataset.imv,
       nodes:[...document.querySelectorAll('#imG .imn')].map(n=>n.dataset.imn),edges:[...document.querySelectorAll('#imG .ime')].map(e=>e.dataset.ime),cols:[...document.querySelectorAll('#imG .imc')].map(c=>c.textContent),
       ox:document.documentElement.scrollWidth>innerWidth+1,panel:getComputedStyle(document.getElementById('imP')).position}));
@@ -877,6 +886,8 @@ test('the impact map: opened from an article and from an alert; the chain with a
     await pg.keyboard.press('Escape'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('imView').hidden),true);
     // from an alert
     await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300); await pg.click('[data-ixall]'); await pg.waitForTimeout(200); await pg.click('#plList [data-plk="ev:nvda-q3-report"] [data-imopen]'); await pg.waitForTimeout(500);
+    assert.ok(await pg.evaluate(()=>document.getElementById('imView').hidden&&document.getElementById('ixMapD').open&&document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv==='ev'),'the alert\'s map button lands on the round map');
+    await pg.evaluate(()=>window.__im.open('pf',{ev:'nvda-q3-report'})); await pg.waitForTimeout(500);
     assert.ok(await pg.evaluate(()=>!document.getElementById('imView').hidden&&document.querySelectorAll('#imG [data-imn="h:NVDA"]').length===1));
     // צ׳יקו with the link's context: the facts he is given, the answer apart from the portfolio's
     await pg.evaluate(()=>window.__im.sel('ev:nvda-q3-report>c:NVDA')); await pg.waitForTimeout(150); seen.length=0;
