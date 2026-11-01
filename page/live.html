@@ -2046,6 +2046,9 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (4): the time machine */
+.tm{display:flex;flex-direction:column;gap:8px} .tm-what{margin:0;font-size:13.5px;line-height:1.5} .tm-sum{padding:8px 10px;border-radius:10px;background:rgb(127 127 127 / .1);font-size:13.5px;line-height:1.5} .tm-sum p{margin:0} .tm-sum ul{margin:4px 0 0;padding-inline-start:18px} .tm-sum .up,.tm-t .up{color:var(--gain)} .tm-sum .down,.tm-t .down{color:var(--loss)}
+.tm-t{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px} .tm-t th,.tm-t td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top;white-space:normal;overflow-wrap:anywhere;font-size:inherit} .tm-t thead th{font-weight:600;color:var(--ink2);font-size:11.5px} .tm-t tbody th{font-weight:600;width:26%} .tm-t td.n{font-family:var(--mono)} .tm-t tr.ix th{color:var(--ink2);font-weight:500}
 /* 1.11 (5): the goals compass */
 .compass{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13.5px;line-height:1.55} .compass h3{margin:0 0 6px;font-size:14px} .compass h4{margin:8px 0 2px;font-size:13.5px} .compass ul{margin:4px 0 0;padding-inline-start:18px} .compass li{margin:2px 0} .compass .up{color:var(--gain)} .compass .down{color:var(--loss)}
 .cmp-bar{height:10px;border-radius:999px;background:rgb(127 127 127 / .18);overflow:hidden} .cmp-bar i{display:block;height:100%;background:var(--s1);border-radius:999px}
@@ -3237,6 +3240,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <section aria-labelledby="hSim" id="simSec">
       <div class="row"><h2 id="hSim">מה אם אקנה, אמכור או אשנה את ההקצאה? סימולטור</h2><span class="sub">לפני ואחרי, על החשיפות והכללים שלך. בלי פעולה בפועל, בלי תחזית</span></div>
       <div class="panel sim" id="simBox"></div>
+    </section>
+    <section aria-labelledby="hTm" id="tmSec">
+      <div class="row"><h2 id="hTm">מכונת זמן: איך ההרכב של היום היה עובר משברים קודמים</h2><span class="sub">על הסגירות החודשיות האמיתיות של הניירות שלך; מה שלא היה קיים אז נאמר, לא מומצא. סימולציה, לא תוצאה היסטורית</span></div>
+      <div class="panel tm" id="tmBox"></div>
     </section>
     <section aria-labelledby="hPnl">
         <div class="row"><h2 id="hPnl">מי מרוויח ומי מפסיד בתיק?</h2><span class="sub" id="pnlSub"></span></div>
@@ -17803,7 +17810,7 @@ function render(){
   try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
   renderRisk(m);
   renderComove(m);
-  try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){} try{renderSim()}catch(e){console.error(e)}
+  try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){} try{renderSim()}catch(e){console.error(e)} try{renderTm()}catch(e){console.error(e)}
   if(document.body.dataset.page==='state'){try{renderState()}catch(e){}}
 
   // allocation
@@ -18361,6 +18368,49 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.clos
   const ld=t.closest('[data-simload]'); if(ld){const sc=(S.sims||[])[+ld.dataset.simload]; if(sc){SIM={acts:(sc.acts||[]).slice(),name:sc.name,targets:sc.targets||null}; renderSim(); try{$('simBox').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}} return}
   const rm=t.closest('[data-simrm]'); if(rm){if(!canWrite)return; S.sims=(S.sims||[]).filter((_,i)=>i!==+rm.dataset.simrm); changed(); renderSim(); return}});
 document.addEventListener('input',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.simtg)return; SIM.targets={...(SIM.targets||S.targets||{})}; const v=+el.value; if(v>0)SIM.targets[el.dataset.simtg]=v; else delete SIM.targets[el.dataset.simtg]; clearTimeout(renderSim.t); renderSim.t=setTimeout(renderSim,350)});
+// ---- 1.11 (4): the time machine: the portfolio of today put through past crises, on the monthly closes the source has for
+// each holding (and the indices). For each episode: the fall from the month before it to the trough, the months to
+// regain the starting price, the year after the trough, the swings inside it; per holding, and for the portfolio by
+// today's weights over the holdings that existed then, with the coverage said. What did not exist is listed. Nothing
+// here is a historical result of this portfolio: the companies, the weights and the world were different ----
+const TM_EP=[
+  {id:'dotcom',name:'התפוצצות הדוט-קום',from:'2000-03',to:'2002-10',what:'מניות הטכנולוגיה איבדו רוב ערכן בשנתיים וחצי; נאסד״ק כ-78%, S&P 500 כ-49% (בקירוב)'},
+  {id:'gfc',name:'המשבר הפיננסי 2008',from:'2007-10',to:'2009-03',what:'S&P 500 ירד כ-57% מהשיא לשפל; בנקים קרסו; השיא הוחזר אחרי כ-4 שנים (בקירוב)'},
+  {id:'covid',name:'הקורונה 2020',from:'2020-02',to:'2020-03',what:'נפילה של כ-34% בחודש וחצי, והתאוששות מהירה (בקירוב)'},
+  {id:'infl',name:'אינפלציה וריבית 2022',from:'2022-01',to:'2022-10',what:'העלאות ריבית מהירות; S&P 500 ירד כ-25%, טכנולוגיה יותר (בקירוב)'},
+  {id:'il23',name:'אוקטובר 2023 בישראל',from:'2023-09',to:'2023-10',what:'ת״א 125 ירד בשבועות הראשונים של המלחמה והשקל נחלש; הוולסטריט המשיכה כרגיל'},
+  {id:'tariff',name:'המכסים, אפריל 2025',from:'2025-02',to:'2025-04',what:'הודעת המכסים הפילה את S&P 500 כ-19% מהשיא בתוך שבועות (בקירוב)'}];
+let TMS={ep:null}, TMD={}, TMQ=new Set();
+async function tmLoad(key){if(TMD[key]!==undefined||TMQ.has(key))return; TMQ.add(key); try{const r=await fetch('/api/closes/long?key='+encodeURIComponent(key),{credentials:'same-origin'}); const j=await r.json(); TMD[key]=r.ok&&j.m&&j.m.d?j.m:null}catch(e){TMD[key]=null} TMQ.delete(key); try{renderTm()}catch(e){}}
+// one series through one episode: the start (the first month of the episode), the trough, the regain, the year after, the swings
+function tmRun(m,ep){if(!m||!m.d||m.d.length<3)return null; const ym=i=>String(m.d[i]).slice(0,7); let i0=-1; for(let i=0;i<m.d.length;i++){if(ym(i)>=ep.from){i0=i;break}} if(i0<0||ym(i0)>ep.from||i0>=m.d.length-1)return {missing:true,first:String(m.d[0]).slice(0,7)};
+  const c0=+m.c[i0]; if(!(c0>0))return null; let it=i0, lo=c0; for(let i=i0;i<m.d.length&&ym(i)<=ep.to;i++){const v=+m.c[i]; if(v>0&&v<lo){lo=v; it=i}}
+  let rec=null; for(let i=it+1;i<m.d.length;i++){if(+m.c[i]>=c0){rec=i-it;break}} const i12=it+12, after=i12<m.d.length&&+m.c[i12]>0?(+m.c[i12]/lo-1)*100:null;
+  const R=[]; for(let i=i0+1;i<=it;i++){const a=+m.c[i-1], b=+m.c[i]; if(a>0&&b>0)R.push(Math.log(b/a))} const mu=R.length?R.reduce((x,y)=>x+y,0)/R.length:0, vol=R.length>1?Math.sqrt(R.reduce((x,y)=>x+(y-mu)*(y-mu),0)/(R.length-1))*Math.sqrt(12)*100:null;
+  return {fall:(lo/c0-1)*100,months:it-i0,rec,recOpen:rec==null,after,vol,start:ym(i0),trough:ym(it)}}
+function tmH(){
+  const m=(()=>{try{return mAllNow()}catch(e){return null}})(); if(!m||!m.pos.length)return '<p class="note" style="margin:0">כשיהיה תיק, אפשר יהיה להעביר אותו כאן דרך משברים קודמים.</p>';
+  const chips=`<div class="chips" role="group" aria-label="משבר">${TM_EP.map(e=>`<button type="button" class="chip" data-tmep="${e.id}" aria-pressed="${TMS.ep===e.id}">${e.name}</button>`).join('')}</div>`;
+  const ep=TM_EP.find(e=>e.id===TMS.ep); if(!ep)return `${chips}<p class="note" style="margin:8px 0 0">בחר משבר. הדף ימשוך את הסגירות החודשיות של הניירות שלך ושל המדדים עד כמה שהמקור מחזיק, ויראה לכל נייר ולתיק (לפי המשקלים של היום) כמה נפל, כמה חודשים עד שחזר, ומה קרה בשנה שאחרי השפל. חברה שלא נסחרה אז נאמרת, לא מומצאת.</p>`;
+  const keys=[...new Set(m.pos.map(p=>p.sym))], idx=['IDX:SPX','IDX:TA125']; for(const k of [...keys,...idx])if(TMD[k]===undefined)tmLoad(k);
+  const loading=[...keys,...idx].filter(k=>TMD[k]===undefined).length;
+  const rows=m.pos.map(p=>({p,r:TMD[p.sym]?tmRun(TMD[p.sym],ep):TMD[p.sym]===null?{nodata:true}:null}));
+  const ok=rows.filter(x=>x.r&&!x.r.missing&&!x.r.nodata), cov=ok.reduce((t,x)=>t+x.p.w,0), wsum=ok.reduce((t,x)=>t+x.p.w,0);
+  const agg=k=>wsum>0?ok.filter(x=>x.r[k]!=null).reduce((t,x)=>t+x.r[k]*x.p.w,0)/Math.max(1e-9,ok.filter(x=>x.r[k]!=null).reduce((t,x)=>t+x.p.w,0)):null;
+  const fall=agg('fall'), after=agg('after'), recMax=ok.length?Math.max(...ok.map(x=>x.r.recOpen?999:x.r.rec)):null;
+  const row=x=>{const r=x.r, p=x.p; if(!r)return `<tr><th>${esc(lab(p.sym))}</th><td colspan="5" class="nm">טוען…</td></tr>`; if(r.nodata)return `<tr><th>${esc(lab(p.sym))}</th><td colspan="5" class="nm">אין סגירות חודשיות במקור</td></tr>`;
+    if(r.missing)return `<tr><th>${esc(lab(p.sym))}</th><td colspan="5" class="nm">לא נסחרה אז (הנתונים מתחילים ${r.first}${LISTED[p.sym]?'; הונפקה ב-'+LISTED[p.sym]:''})</td></tr>`;
+    return `<tr><th>${esc(lab(p.sym))} <small class="nm">${pct(p.w,0)}</small></th><td class="n ${r.fall<0?'down':'up'}">${spct(r.fall,0)}</td><td class="n">${r.months}</td><td class="n">${r.recOpen?'לא חזר עד היום':r.rec+' חוד׳'}</td><td class="n ${r.after!=null?(r.after>=0?'up':'down'):''}">${r.after!=null?spct(r.after,0):'—'}</td><td class="n">${r.vol!=null?pct(r.vol,0):'—'}</td></tr>`};
+  const ix=idx.map(k=>{const r=TMD[k]?tmRun(TMD[k],ep):null, name=k==='IDX:SPX'?'S&P 500':'ת״א 125'; return r&&!r.missing?`<tr class="ix"><th>${name}</th><td class="n ${r.fall<0?'down':'up'}">${spct(r.fall,0)}</td><td class="n">${r.months}</td><td class="n">${r.recOpen?'לא חזר':r.rec+' חוד׳'}</td><td class="n">${r.after!=null?spct(r.after,0):'—'}</td><td class="n">${r.vol!=null?pct(r.vol,0):'—'}</td></tr>`:`<tr class="ix"><th>${name}</th><td colspan="5" class="nm">${TMD[k]===undefined?'טוען…':'אין נתונים'}</td></tr>`}).join('');
+  const sumH=ok.length?`<div class="tm-sum"><p><b>התיק של היום, לפי המשקלים של היום, על ${pct(cov,0)} ממנו שהיה קיים אז${cov<99.5?' (השאר לא נסחר או בלי נתונים; המשקלים חושבו מחדש על מה שקיים)':''}:</b></p>
+      <ul><li>נפילה מתחילת התקופה לשפל: <b class="${fall<0?'down':'up'}">${spct(fall,0)}</b> (ממוצע משוקלל של הניירות; בשקלים של היום זה כ-<b>${ils(m.total*cov/100*Math.abs(fall)/100)}</b>)</li>
+      <li>השנה שאחרי השפל: <b class="${after>=0?'up':'down'}">${after!=null?spct(after,0):'—'}</b></li><li>עד שכל הניירות חזרו למחיר ההתחלה: ${recMax===999?'חלק מהם לא חזרו':recMax+' חודשים'}</li></ul></div>`:'';
+  return `${chips}<p class="tm-what"><b>${esc(ep.name)}</b> (${ep.from} עד ${ep.to}): ${esc(ep.what)}</p>${loading?`<p class="nm">טוען סגירות חודשיות (${loading} נשארו)…</p>`:''}${sumH}
+    <table class="tm-t"><thead><tr><th>נייר</th><th>נפילה לשפל</th><th>חודשים</th><th>חזרה למחיר ההתחלה</th><th>השנה שאחרי השפל</th><th>תנודתיות</th></tr></thead><tbody>${rows.map(row).join('')}${ix}</tbody></table>
+    <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="tm"${ok.length?'':' disabled'}>שאל את צ׳יקו על המשבר הזה</button></div>
+    <p class="note" style="margin:6px 0 0">סגירות חודשיות (היום הראשון בכל חודש) מהמקור של המחירים; "נפילה" היא מהחודש הראשון של התקופה לחודש הנמוך בתוכה, לא מהשיא היומי. <b>מגבלות:</b> ההרכב של היום לא היה קיים אז (חברות שלא נסחרו, קרנות שהוקמו אחר כך, משקלים אחרים); דולר/שקל לא נכלל; דיבידנדים לא נכללים. סימולציה היפותטית, לא תוצאה היסטורית של התיק, ולא תחזית למשבר הבא.</p>`}
+function renderTm(){const b=$('tmBox'); if(!b)return; setH(b,tmH())}
+document.addEventListener('click',ev=>{const c=ev.target.closest&&ev.target.closest('#tmBox [data-tmep]'); if(!c)return; TMS.ep=c.dataset.tmep; try{useAdd('tm')}catch(e){} renderTm()});
 function renderStress(m){
   const kb=$('stKind'), fm=$('stForm'), out=$('stOut'); if(!kb||!m)return; EXPM=m;
   const groups=[...new Set(m.pos.map(p=>p.group))], co=(()=>{try{const c=coOf(m); return c?c.strong:[]}catch(e){return []}})();
@@ -18963,7 +19013,7 @@ function foldIs(){return true}
 // 28.10: the control screen in three parts instead of one long page: "מצב" (the score, what needs attention, what moved),
 // "פיזור" (the groups, the exposure, what moves together) and "סיכון ותרחישים" (what if prices fall, what shakes the
 // portfolio). Each section belongs to one part; the row at the top switches between them, and a link to a section opens its part
-const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hKpi','hRk']};
+const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hTm','hKpi','hRk']};
 const RGL={now:'מצב',mix:'פיזור',risk:'סיכון ותרחישים'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
@@ -19971,7 +20021,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):f.kind==='journal'?JRN_Q.map(q=>['g',q]):f.kind==='compare'?CMP_Q.map(q=>['g',q]):f.kind==='dna'?DNA_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):f.kind==='tm'?TM_Q.map(q=>['g',q]):f.kind==='journal'?JRN_Q.map(q=>['g',q]):f.kind==='compare'?CMP_Q.map(q=>['g',q]):f.kind==='dna'?DNA_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -25868,6 +25918,7 @@ const STORY_Q=['מה הרקע לאירוע הזה, במילים פשוטות?','
 const DNA_Q=['מה המספרים מראים על איך אני משקיע בפועל?','איפה יש פער בין מה שהצהרתי למה שאני עושה?','מה השתנה אצלי לאורך זמן?','מה הייתי רוצה לבדוק על עצמי בחצי השנה הקרובה?'];
 const CMP_Q=['במה כל אחד מהם חזק יותר מהאחרים, לפי המספרים?','מה ההבדל בסיכון ביניהם?','איזה מספרים חסרים כדי להשוות באמת?','מה מהם כבר יש לי בתיק, ומה זה אומר על ההשוואה?'];
 const JRN_Q=['מה חוזר על עצמו בהחלטות שלי?','איזה סיבות הובילו להחלטות שהתממשו, ואיזה לא?','מה הציפיות הפתוחות שכדאי לי לבדוק עכשיו?','מה הייתי צריך לכתוב ולא כתבתי?'];
+const TM_Q=['מה היה קורה לתיק של היום במשבר הזה, ומה המגבלות של החישוב?','איזה ניירות היו נופלים הכי הרבה, ולמה בכלל זה רלוונטי להיום?','כמה זמן לקח לחזור, ומה זה אומר על אופק ההשקעה שלי?'];
 const SIM_Q=['מה משתנה בתיק אחרי הפעולות האלה?','האם אחרי זה אני חורג מהכללים שלי?','מה קורה לפיזור ולריכוזיות?','מה אני צריך לבדוק לפני שאני עושה את זה?'];
 const TH_Q=['האם התזה שלי עדיין תקפה?','מה מהדיווחים נוגע למה שכתבתי שיחליש אותה?','מה אני צריך לבדוק לפני שאשנה משהו?','מה עוד לא ידוע?'];
 const FOCUS_Q=[['why','למה קיבלתי את ההתראה?'],['link','מה הקשר בין האירוע למניה?'],['sector','מה הקשר בין האירוע לענף?'],['exposed','אילו מההחזקות שלי עשויות להיות חשופות?'],['known','מה ידוע בפועל ומה עדיין לא ודאי?'],['changed','מה השתנה מאז העדכון הקודם?'],['sources','אילו מקורות תומכים בהסבר?']];
@@ -25891,6 +25942,9 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
     const row=e=>{const s=jrnSince(e); return {date:e.at,kind:JRN_K[e.t]||e.t,symbol:e.sym||null,qty:e.qty||null,price:e.px||null,why:e.why||null,expected:e.expect||null,event:e.ev?e.ev.he:null,price_since:s?`${s.px} ← ${Math.round(s.now*100)/100} (${s.pct>=0?'+':''}${s.pct.toFixed(1)}%)`:null,outcome:e.out&&e.out.v?`${JRN_OUT[e.out.v]}${e.out.text?': '+e.out.text:''}`:null}};
     return {kind:'journal',title:'היומן שלי'+(v?': '+v:''),data:{entries:L.slice(0,30).map(row),stats:{entries:st.n,by_kind:Object.fromEntries(Object.entries(st.by).map(([k,n])=>[JRN_K[k]||k,n])),outcomes:{right:st.out.right,wrong:st.out.wrong,mixed:st.out.mixed,open:st.out.open},with_reason:st.withWhy,with_expectation:st.withExp,with_event:st.withEv,avg_hold_days:st.holdDays!=null?Math.round(st.holdDays):null,most_written:st.top.map(([k,n])=>`${k} (${n})`),since:st.first},
       thesis:v&&(jrn().thesis||{})[v]&&(jrn().thesis||{})[v].why?{why:(jrn().thesis||{})[v].why,expect:(jrn().thesis||{})[v].expect||null}:null,rule:'היומן הוא דברי המשתמש; לסכם דפוסים מהרשומות ומהתוצאות שסימן, בלי תוויות פסיכולוגיות, בלי לשפוט החלטה לפי תנועת מחיר, בלי ייעוץ'}}}
+  if(k==='tm'){const ep=TM_EP.find(e=>e.id===TMS.ep), m=mAllNow(); if(!ep||!m)return null; const rows=m.pos.map(p=>{const r=TMD[p.sym]?tmRun(TMD[p.sym],ep):null; return {symbol:p.sym,weight_today:pct(p.w,1),...(r&&!r.missing?{fall_to_trough:spct(r.fall,1),months_to_trough:r.months,months_to_regain:r.recOpen?'לא חזר עד היום':r.rec,year_after_trough:r.after!=null?spct(r.after,1):null,volatility:r.vol!=null?pct(r.vol,0):null}:{note:r&&r.missing?'לא נסחרה אז':'אין נתונים'})}});
+    const ix=['IDX:SPX','IDX:TA125'].map(k=>{const r=TMD[k]?tmRun(TMD[k],ep):null; return r&&!r.missing?{index:k==='IDX:SPX'?'S&P 500':'TA-125',fall:spct(r.fall,1),months_to_regain:r.recOpen?'לא חזר':r.rec,year_after:r.after!=null?spct(r.after,1):null}:null}).filter(Boolean);
+    return {kind:'tm',title:'מכונת זמן: '+ep.name,data:{episode:{name:ep.name,from:ep.from,to:ep.to,what:ep.what},holdings:rows,indices:ix,rule:'סימולציה על ההרכב של היום עם סגירות חודשיות אמיתיות; החברות והמשקלים של אז היו אחרים; לא תוצאה היסטורית של התיק ולא תחזית; מה שלא נסחר אז נאמר'}}}
   if(k==='sim'){const t0=simState(P,null); const {P2,notes}=simApply(P,SIM.acts); const t1=simState(P2,SIM.targets||null); if(!t0||!t1)return null;
     const st=t=>({value:ils(t.m.total),cash:ils(t.m.cash),holdings:t.m.pos.length,biggest_holding:t.top?`${t.top.sym} ${pct(t.top.w,1)}`:null,biggest_group:t.topG?`${GROUPS[t.topG.id]||t.topG.id} ${pct(t.topG.w,1)}`:null,as_many_equal_holdings_as:t.E?+t.E.conc.nEff.toFixed(1):null,usd_part:pct(t.m.usdPct,1),max_drift_from_targets:t.drift!=null?t.drift.toFixed(1)+' נק׳':null,health_score:t.H?t.H.score:null,rule_findings:t.A.map(a=>a[2]),dividend_income_year:ils(t.divY),sectors:t.E?t.E.sector.slice(0,5).map(r=>`${r.label} ${pct(r.w,0)}`):[]});
     return {kind:'sim',title:'תרחיש: '+(SIM.name||'מה אם'),data:{actions:SIM.acts.map(a=>`${a.t==='buy'?'קנייה':a.t==='sell'?'מכירה':a.t==='cash'?'מזומן':'יעד'} ${a.sym||''} ${a.qty?a.qty+' יח׳':a.ils!=null?ils(Math.abs(+a.ils)):''}`),targets_tried:SIM.targets||null,before:st(t0),after:st(t1),notes,rule:'סימולציה על המחירים של היום; לא תחזית ולא המלצה; מראה איך התיק ייראה, לא אם זה כדאי'}}}
@@ -26010,7 +26064,7 @@ document.addEventListener('submit',ev=>{const f=ev.target; if(!f||!f.matches||!f
   if(!/^[A-Z][A-Z.\-]{0,6}$/.test(v)){rtSay('סימול לא תקין');return} if(f.dataset.nwsadd==='news'){nwFollow('syms',v,true)} else{const pr=plPrefs(); if(!pr.syms.includes(v))plSetPr({syms:[...pr.syms,v].slice(0,40)}); rtSay(`במעקב להתראות: ${v}`)} i.value=''; nwSetFill()});
 // 30.10: a question about something open (an article, an event, an alert, a link on the map): answered from that item,
 // with the portfolio when there is one; without Claude, the page answers from the same facts
-const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה',impact:'ההשפעה על התיק בתקופה',stock:'מניה מהתיק',story:'הסיפור מאחורי הכותרת',thesis:'בדיקת התזה שלי',sim:'תרחיש בסימולטור',journal:'היומן שלי',compare:'השוואת ניירות',dna:'טביעת האצבע שלי כמשקיע'};
+const FOCUS_KIND_HE={article:'כתבה',event:'אירוע',alert:'התראה אישית',map:'קשר במפת ההשפעה',impact:'ההשפעה על התיק בתקופה',stock:'מניה מהתיק',story:'הסיפור מאחורי הכותרת',thesis:'בדיקת התזה שלי',sim:'תרחיש בסימולטור',tm:'מכונת זמן (משבר קודם)',journal:'היומן שלי',compare:'השוואת ניירות',dna:'טביעת האצבע שלי כמשקיע'};
 async function anaFocusRun(q,o){const f=ANA_FOCUS, qq=String(q||'').replace(/\s+/g,' ').trim().slice(0,300); if(!qq||!f)return;
   if(Q_ADVICE.test(qq))return anaRun('advice',null,{...o,said:qq,nofocus:true}); if(Q_FUTURE.test(qq))return anaRun('future',null,{...o,said:qq,nofocus:true});
   anaOpen(o.src); anaUser(qq,!o.fromInput); const id='c'+(++ANA_SEQ), ai=!!SAMPLE&&!SAMPLE_OFF, st={note:ai?'thinking':'noai'}; let ans=null;

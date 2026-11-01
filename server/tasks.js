@@ -71,6 +71,15 @@ export function comoveTask(store,{log=console.log}={}){
   return {cm,lt,px};
 }
 // the chart series of one security (daily for a year, weekly for five, monthly since listing), for the page's charts
+// 1.11 (4): the monthly closes as far back as the source has them (for the time machine), merged into the stored closes
+export async function longClosesFor(store,key,map={}){
+  const p='quotes/c_'+key.replace(':','_'), old=store.getDoc(p), have=old.exists&&old.data&&old.data.m&&Array.isArray(old.data.m.d)?old.data.m:null;
+  if(have&&have.d.length>=3&&old.data.mAt&&Date.now()-new Date(old.data.mAt).getTime()<30*864e5)return have;
+  if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');
+  const t=key.startsWith('IDX:')?BENCH[key.slice(4)].t:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
+  const m=await series(t,'max','1mo'); if(m.d.length<3)throw new Error('no monthly closes');
+  store.setDoc(p,{...(old.exists?old.data:{key,d:[],c:[]}),key,m,mAt:new Date().toISOString()},{silent:true}); return m;
+}
 export async function closesFor(key,map={}){
   // an index: IDX:SPX, IDX:TA125 (the indices the page knows, BENCH)
   if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');

@@ -18,7 +18,7 @@ import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
-import {closesFor} from './tasks.js';
+import {closesFor,longClosesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
@@ -414,6 +414,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // 31.10: "הסיפור מאחורי הכותרת" of one event: kept per event, made again when new articles joined it. Once in five
   // seconds a person; a partner's story rests only on the articles they may read
   const STNOW=new Map();
+  // 1.11 (4): the monthly closes back to the source's first month (the time machine); kept in the closes document
+  const LONGQ=new Map();
+  app.get('/api/closes/long',needUser,async(req,res)=>{const key=String(req.query.key||'').toUpperCase(); if(!/^(IDX:|TLV:)?[A-Z0-9.\-]{1,10}$/.test(key))return res.status(400).json({error:{code:'invalid_argument',message:'key'}});
+    try{if(!LONGQ.has(key)){const pr=longClosesFor(store,key,(store.getDoc('settings/main').data||{}).symMap||{}).finally(()=>setTimeout(()=>LONGQ.delete(key),30000).unref()); LONGQ.set(key,pr)} const m=await LONGQ.get(key); res.json({key,m})}
+    catch(e){res.status(404).json({error:{code:'not_found',message:e.message}})}});
   app.post('/api/newsx/story',needUser,async(req,res)=>{const u=req.user, ev=String((req.body||{}).ev||'').slice(0,60); if(!/^[a-z0-9\-]{3,60}$/.test(ev))return res.status(400).json({error:{code:'invalid_argument',message:'bad event'}});
     const last=STNOW.get(u.id)||0; if(Date.now()-last<5e3)return res.status(429).json({error:{code:'rate_limited',message:'הסיפור הקודם עוד נכתב'}});
     STNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));

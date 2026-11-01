@@ -2039,6 +2039,27 @@ test('1.11 completions: the X-ray names the common factors and direct against in
   }finally{await ctx.close(); store.setDoc('settings/main',S0,{silent:true})}
 });
 
+test('1.11 the time machine: an episode on the monthly closes the page has, per holding and for the portfolio by today\'s weights, what did not exist said, the limits said, צ׳יקו',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const C0=store.getDoc('quotes/c_NVDA').data, now=new Date().toISOString();
+  // NVDA: monthly closes from 2019, +1% a month, with the covid fall (March 2020 −34%) and a three-month regain
+  const d=[], c=[]; let v=100; for(let y=2019;y<=2026;y++)for(let m=1;m<=12;m++){const ym=`${y}-${String(m).padStart(2,'0')}`; if(ym>now.slice(0,7))break; if(ym==='2020-03')v=66; else if(ym==='2020-04')v=85; else if(ym==='2020-05')v=95; else if(ym==='2020-06')v=101; else if(ym>'2020-06')v=Math.round(v*1.01*100)/100; d.push(ym+'-01'); c.push(v)}
+  store.setDoc('quotes/c_NVDA',{...C0,m:{d,c},mAt:now},{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="risk"]'); await pg.waitForTimeout(300);
+    let r=await pg.evaluate(()=>document.getElementById('tmBox').innerText.replace(/\s+/g,' ')); assert.match(r,/בחר משבר/);
+    await pg.click('#tmBox [data-tmep="covid"]'); await pg.waitForFunction(()=>!/טוען/.test(document.getElementById('tmBox').innerText),null,{timeout:20000});
+    const T2=await pg.evaluate(()=>({txt:document.getElementById('tmBox').innerText.replace(/\s+/g,' '),rows:Object.fromEntries([...document.querySelectorAll('#tmBox .tm-t tbody tr')].map(tr=>[tr.querySelector('th').textContent.trim().split(' ')[0],[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())])),ox:document.documentElement.scrollWidth>innerWidth+1,pressed:document.querySelector('#tmBox [data-tmep="covid"]').getAttribute('aria-pressed')}));
+    assert.equal(T2.ox,false); assert.equal(T2.pressed,'true'); assert.match(T2.txt,/הקורונה 2020 \(2020-02 עד 2020-03\)/);
+    const nv=T2.rows['NVIDIA']||T2.rows['NVDA']; assert.ok(nv,JSON.stringify(Object.keys(T2.rows))); assert.match(nv[0],/−34%/,'the fall to the trough'); assert.equal(nv[1],'1'); assert.equal(nv[2],'3 חוד׳','regained in three months'); assert.match(nv[3],/\+\d+%/,'the year after');
+    assert.match((T2.rows['Microsoft']||T2.rows['MSFT'])[0],/אין סגירות חודשיות במקור/,'no monthly closes reachable: said, not invented');
+    assert.match(T2.txt,/התיק של היום, לפי המשקלים של היום, על \d+% ממנו שהיה קיים אז/); assert.match(T2.txt,/נפילה מתחילת התקופה לשפל: .?−34%/); assert.match(T2.txt,/סימולציה היפותטית, לא תוצאה היסטורית/);
+    const f=await pg.evaluate(()=>window.__focus('tm')); assert.equal(f.kind,'tm'); assert.equal(f.data.episode.name,'הקורונה 2020'); const h=f.data.holdings.find(x=>x.symbol==='NVDA'); assert.equal(h.months_to_regain,3); assert.match(f.data.rule,/לא תוצאה היסטורית/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
