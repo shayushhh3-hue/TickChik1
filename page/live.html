@@ -3562,7 +3562,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="panel wiz" id="fillWiz" data-mvp="hold" hidden></div>
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
-        <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></div>
+        <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><span><button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">ייצוא CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
         <table class="pf">
           <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>עלות כוללת $</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
           <tbody id="pfRows"><tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
@@ -21715,6 +21715,10 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent='';try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
+  if(ev.target.id==='btnCsv'){try{const rows=[['symbol','name','qty','ccy','account','group','cost_ils','cost_usd','price_now','value_ils']]; let m=null; try{m=mAllNow()}catch(e){}
+      for(const p of ((P&&P.positions)||[])){const mp=m&&m.pos.find(x=>x.sym===p.sym&&x.acct===p.acct)||m&&m.pos.find(x=>x.sym===p.sym); rows.push([p.sym,p.name||'',p.qty,p.ccy||'',p.acct||'',GROUPS[p.group]||p.group||'',p.costIls??'',p.costUsd??'',mp?mp.px:'',mp?Math.round(mp.val):''])}
+      for(const c of ((P&&P.cash)||[]))rows.push(['CASH','מזומן',c.amount,c.ccy,c.acct,'מזומן','','','','']);
+      const csv='\ufeff'+rows.map(r=>r.map(v=>{const t=String(v??''); return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}).join(',')).join('\n'), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=`tikchik-holdings-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); try{useAdd('csv')}catch(e){}}catch(e){console.error(e)} return}
   if(ev.target.id==='grpApply'){if(!DRAFT)DRAFT=draftFromP(); for(const h of groupHints(DRAFT))for(const p of DRAFT.positions)if(p.sym===h.sym){p.group=h.g; p._g='auto'} pfDirty(); renderMine(true); return}
   if(ev.target.id==='btnPfReset'){dDirty=false;PFS.resets++;FIXED.clear();FIRSTX=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
   if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,costUsd:null,px:null,group:'tech'});pfDirty();renderMine(true);return}
