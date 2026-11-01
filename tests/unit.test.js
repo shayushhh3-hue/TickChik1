@@ -1834,3 +1834,55 @@ test('a share\'s moves around its earnings releases: from the close before to th
   const s=new Store(':memory:'); s.setDoc('research/latest',{companies:{NVDA:{repDates:R}}}); s.setDoc('quotes/c_NVDA',{d,c});
   assert.equal(erxPass(s,['NVDA','MSFT'],{now:new Date('2026-09-01T00:00:00Z')}),1); assert.equal(s.getDoc('research/latest').data.companies.NVDA.erx.n,2);
 });
+
+// ---- 1.11 (12): the insiders' filings (form 4) ----
+const F4=(o={})=>`<?xml version="1.0"?><ownershipDocument><periodOfReport>${o.date||'2026-10-28'}</periodOfReport><issuer><issuerCik>1045810</issuerCik><issuerName>NVIDIA CORP</issuerName><issuerTradingSymbol>NVDA</issuerTradingSymbol></issuer>
+<reportingOwner><reportingOwnerId><rptOwnerCik>1</rptOwnerCik><rptOwnerName>${o.name||'Huang Jen Hsun'}</rptOwnerName></reportingOwnerId><reportingOwnerRelationship><isDirector>${o.dir?1:0}</isDirector><isOfficer>${o.off===false?0:1}</isOfficer><isTenPercentOwner>0</isTenPercentOwner><officerTitle>${o.title||'President and CEO'}</officerTitle></reportingOwnerRelationship></reportingOwner>
+${o.aff?'<aff10b5One>1</aff10b5One>':''}<nonDerivativeTable>${(o.txs||[{code:'S',sh:120000,px:182.5,ad:'D',after:75000000,fn:'F1'}]).map(t=>`<nonDerivativeTransaction><securityTitle><value>Common Stock</value></securityTitle><transactionDate><value>${o.date||'2026-10-28'}</value></transactionDate><transactionCoding><transactionFormType>4</transactionFormType><transactionCode>${t.code}</transactionCode><equitySwapInvolved>0</equitySwapInvolved>${t.fn?`<footnoteId id="${t.fn}"/>`:''}</transactionCoding><transactionAmounts><transactionShares><value>${t.sh}</value></transactionShares>${t.px!=null?`<transactionPricePerShare><value>${t.px}</value></transactionPricePerShare>`:'<transactionPricePerShare><footnoteId id="F9"/></transactionPricePerShare>'}<transactionAcquiredDisposedCode><value>${t.ad}</value></transactionAcquiredDisposedCode></transactionAmounts><postTransactionAmounts><sharesOwnedFollowingTransaction><value>${t.after}</value></sharesOwnedFollowingTransaction></postTransactionAmounts><ownershipNature><directOrIndirectOwnership><value>D</value></directOrIndirectOwnership></ownershipNature></nonDerivativeTransaction>`).join('')}</nonDerivativeTable>
+<footnotes><footnote id="F1">Sale under a Rule 10b5-1 trading plan adopted March 2026.</footnote><footnote id="F9">Shares withheld to cover tax.</footnote></footnotes></ownershipDocument>`;
+test('1.11 insiders: a form 4 is read (who, role, each transaction told apart, the plan from the footnote), summed up per filing, and marked material by plain thresholds',async()=>{
+  const {parseForm4,filingSummary,markFilings,pickForm4,form4Url}=await import('../server/insiders.js');
+  const p=parseForm4(F4({})); assert.equal(p.issuer.sym,'NVDA'); assert.equal(p.owners[0].name,'Huang Jen Hsun'); assert.equal(p.owners[0].title,'President and CEO'); assert.equal(p.txs[0].kind,'sell'); assert.equal(p.txs[0].plan,true,'the plan from the footnote'); assert.equal(p.txs[0].after,75000000);
+  const f=filingSummary(p,{sym:'NVDA',cik:1045810,acc:'0001-26-1',filedAt:'2026-10-30T20:00:00Z',link:'L'}); assert.equal(f.kind,'sell'); assert.equal(f.value,21900000); assert.equal(f.plan,true); assert.equal(f.top,true); assert.match(f.role,/President and CEO/); assert.equal(f.deliberate,true);
+  // pay mechanics: an award and a tax withholding are not a decision; an exercise with a sale leads with the sale
+  const q=parseForm4(F4({name:'Kress Colette',title:'EVP and CFO',txs:[{code:'A',sh:5000,px:0,ad:'A',after:500000},{code:'F',sh:2000,px:null,ad:'D',after:498000}]})), g=filingSummary(q,{sym:'NVDA',cik:1,acc:'a2',filedAt:'2026-10-29T00:00:00Z',link:'L'});
+  assert.equal(g.kind,'award'); assert.equal(g.deliberate,false); assert.deepEqual(g.kinds.map(k=>k.kind),['award','tax']);
+  const r=parseForm4(F4({name:'X',title:'VP',txs:[{code:'M',sh:1000,px:20,ad:'A',after:3000},{code:'S',sh:1000,px:180,ad:'D',after:2000}]})), h=filingSummary(r,{sym:'NVDA',cik:1,acc:'a3',filedAt:'2026-10-29T00:00:00Z',link:'L'});
+  assert.equal(h.kind,'sell'); assert.equal(h.value,180000); assert.equal(h.deliberate,true);
+  // material: the CEO's planned sale of $21.9M yes; a VP's $180K sale no; three buyers in 30 days: a cluster; one person three times: repeat
+  const M=markFilings([f,g,h]); assert.equal(M[0].material,true); assert.match(M[0].why[0],/מכירה בשוק של נושא משרה בכיר.*\$21,900,000.*מתוכננת/); assert.equal(M[1].material,false); assert.equal(M[2].material,false);
+  const buy=(n,d)=>({acc:'b'+n+d,owner:n,kind:'buy',deliberate:true,value:30000,top:false,plan:false,txDate:d,filedAt:d+'T00:00:00Z'});
+  const C=markFilings([buy('A','2026-10-01'),buy('B','2026-10-10'),buy('C','2026-10-20')]); assert.ok(C.every(x=>x.cluster&&x.material),'a cluster of three buyers');
+  const R=markFilings([buy('A','2026-08-01'),buy('A','2026-09-01'),buy('A','2026-10-01')]); assert.ok(R.every(x=>x.repeat),'the same person three times'); assert.equal(R[0].cluster,false);
+  // the filings picked from the submissions: form 4 within the days, the xsl prefix dropped from the document
+  const sub={filings:{recent:{form:['4','8-K','4/A','4'],accessionNumber:['0001-26-1','0001-26-2','0001-26-3','0001-26-4'],primaryDocument:['xslF345X05/wk-form4_1.xml','x.htm','xslF345X05/f4a.xml','old.xml'],acceptanceDateTime:['2026-10-30T20:00:00.000Z','2026-10-29T20:00:00.000Z','2026-10-28T20:00:00.000Z','2026-01-01T20:00:00.000Z']}}};
+  const L=pickForm4(sub,{now:new Date('2026-11-01T00:00:00Z')}); assert.deepEqual(L.map(x=>x.acc),['0001-26-1','0001-26-3']); assert.equal(L[1].amend,true);
+  assert.equal(form4Url(1045810,'0001-26-1','xslF345X05/wk-form4_1.xml'),'https://www.sec.gov/Archives/edgar/data/1045810/0001261/wk-form4_1.xml');
+  assert.equal(parseForm4('<html>not a form</html>'),null);
+});
+test('1.11 insiders: the task keeps the filings by symbol (new ones fetched, known ones kept), partners see only their own companies, and the alerts: material as important, a plain open-market trade of a holding as an update, pay mechanics never',async()=>{
+  const {insidersTask}=await import('../server/insiders.js'); const {pulseUpdate}=await import('../server/pulse.js'); const {_resetCiks}=await import('../server/fundamentals.js'); _resetCiks();
+  const s=new Store(':memory:'), now=new Date('2026-11-01T06:00:00Z'); const calls=[];
+  const f=async u=>{calls.push(u); u=String(u);
+    if(u.includes('company_tickers'))return new Response(JSON.stringify({0:{cik_str:1045810,ticker:'NVDA'},1:{cik_str:789019,ticker:'MSFT'}}),{status:200});
+    if(u.includes('/submissions/CIK0001045810'))return new Response(JSON.stringify({name:'NVIDIA CORP',filings:{recent:{form:['4','4'],accessionNumber:['0001-26-1','0001-26-2'],primaryDocument:['xslF345X05/a.xml','xslF345X05/b.xml'],acceptanceDateTime:['2026-10-30T20:00:00.000Z','2026-10-29T20:00:00.000Z']}}}),{status:200});
+    if(u.includes('/submissions/CIK0000789019'))return new Response(JSON.stringify({name:'MICROSOFT',filings:{recent:{form:['4'],accessionNumber:['0002-26-1'],primaryDocument:['xslF345X05/c.xml'],acceptanceDateTime:['2026-10-31T20:00:00.000Z']}}}),{status:200});
+    if(u.endsWith('/a.xml'))return new Response(F4({}),{status:200});
+    if(u.endsWith('/b.xml'))return new Response(F4({name:'Kress Colette',title:'EVP and CFO',txs:[{code:'A',sh:5000,px:0,ad:'A',after:500000}]}),{status:200});
+    if(u.endsWith('/c.xml'))return new Response(F4({name:'Smith John',title:'VP Finance',txs:[{code:'S',sh:300,px:505,ad:'D',after:9000}]}),{status:200});
+    return new Response('',{status:404})};
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:6,ccy:'USD'},{sym:'MSFT',qty:2,ccy:'USD'}]},{silent:true}); s.setDoc('quotes/latest',{prices:{NVDA:182,MSFT:505},usdIls:3.7,updatedAt:now.toISOString()},{silent:true});
+  const r=await insidersTask(s,{fetch:f,now,pause:0}); assert.equal(r.got,3); assert.equal(r.ok,2);
+  const D=s.getDoc('research/insiders').data; assert.equal(D.by.NVDA.length,2); assert.equal(D.by.NVDA[0].kind,'sell'); assert.equal(D.by.NVDA[0].material,true); assert.equal(D.by.NVDA[1].kind,'award'); assert.equal(D.by.MSFT[0].value,151500); assert.equal(D.by.MSFT[0].material,false);
+  // a second run fetches no filing again
+  const n0=calls.length; await insidersTask(s,{fetch:f,now,pause:0}); assert.equal(calls.filter(u=>String(u).endsWith('.xml')).length,3,'known filings are not fetched again'); assert.ok(calls.length>n0);
+  // a partner who holds MSFT only
+  const u=s.addUser({email:'p@x.com',password:'friend-pass-1',role:'friend'}); s.setDoc(`data/users/${u.id}/portfolio`,{positions:[{sym:'MSFT',qty:1,ccy:'USD'}]},{silent:true});
+  const pv=partnerView(s,u,'research/insiders',D); assert.deepEqual(Object.keys(pv.by),['MSFT']); assert.equal(pv.checked,undefined);
+  // the alerts: the CEO's planned sale (material) as important; a VP's $151K sale of a holding as an update; the award never
+  const P=pulseUpdate(s,null,{now}).doc.items, a1=P.find(x=>x.k==='ins:0001-26-1'), a2=P.find(x=>x.k==='ins:0002-26-1'), a3=P.find(x=>x.k==='ins:0001-26-2');
+  assert.ok(a1&&a1.lv==='imp'&&a1.kind==='insider'&&a1.ins.plan===true&&/Huang/.test(a1.title),JSON.stringify(a1&&[a1.lv,a1.title])); assert.match(a1.what,/מכירה בשוק של 120,000 מניות בשווי \$21,900,000, בתוכנית מסחר מתוכננת/); assert.equal(a1.cert,'fact');
+  assert.ok(a2&&a2.lv==='upd',JSON.stringify(a2&&a2.lv)); assert.equal(a3,undefined,'pay mechanics never alert');
+  // the partner: MSFT's only, and only as the holder of it
+  const PP=pulseUpdate(s,u,{now}).doc.items; assert.ok(PP.some(x=>x.k==='ins:0002-26-1')); assert.ok(!PP.some(x=>x.k==='ins:0001-26-1'));
+});

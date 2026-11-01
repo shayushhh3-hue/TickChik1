@@ -173,6 +173,7 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
   for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
   for(const a of thesisAlerts(store,pa,HD,{now,visible:vis}))if(pr.lv[a.lv])out.push(a);
+  for(const a of insiderAlerts(store,HD,{now,followed:pr.syms}))if(pr.lv[a.lv])out.push(a);
   return {pr,HD,alerts:out};
 }
 // 1.11: "התראות על שינוי בתזה": a holding the person wrote a thesis for (journal.thesis[sym]), and an event of substance
@@ -193,6 +194,24 @@ export function thesisAlerts(store,pa,HD,{now=new Date(),visible=null}={}){
         followed:false,holds:h?[{sym:a.sym,w:h.w,how:'direct',dir:a.dir,why:a.why||'',link:'direct'}]:[],secs:[],usd:null,fol:[],sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',
         arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null,st:e.st||'unknown',
         th:{sym:a.sym,why:String(t.why||'').slice(0,400),expect:String(t.expect||'').slice(0,300),plus:String(t.plus||'').slice(0,300),minus:String(t.minus||'').slice(0,300),bearing:dirHe,at:t.updatedAt||t.at||null}})}}
+  return out;
+}
+// 1.11 (12): the insiders' filings (research/insiders, from the SEC) about a holding or a followed security, of the last
+// three days: a material one (by the module's plain thresholds: a big open-market trade, the chief officers, a cluster of
+// buyers, a repeating seller) as "important", any other open-market buy or sale of a holding as an update. Awards,
+// option exercises and tax withholdings never alert: they are the mechanics of pay, not a decision. The alert carries
+// the filing (who, what, how much, planned or not, the link) and says a filing is a fact about the insider's trade, not
+// about the company's prospects
+export function insiderAlerts(store,HD,{now=new Date(),followed=[]}={}){
+  const out=[], D=store.getDoc('research/insiders').data; if(!D||!D.by)return out; const from=new Date(now.getTime()-3*DAY).toISOString(), H=new Map(HD.pos.map(h=>[h.sym,h])), F=new Set(followed||[]);
+  const KH={buy:'קנייה בשוק',sell:'מכירה בשוק'};
+  for(const [sym,L] of Object.entries(D.by)){const h=H.get(sym); if(!h&&!F.has(sym))continue;
+    for(const f of L||[]){if(!f||!f.deliberate||f.filedAt<from)continue; if(!f.material&&!h)continue;
+      const v=f.value?'$'+Math.round(f.value).toLocaleString('en-US'):'', what=`${f.owner} (${f.role}): ${KH[f.kind]||f.kind} של ${(f.shares||0).toLocaleString('en-US')} מניות${v?' בשווי '+v:''}${f.plan?', בתוכנית מסחר מתוכננת (10b5-1)':''}${f.after!=null?'; מחזיק אחרי העסקה '+f.after.toLocaleString('en-US'):''}. דווח ל-SEC ${f.filedAt.slice(0,10)}${f.txDate?', העסקה '+f.txDate:''}.`;
+      out.push({kind:'insider',type:'insider',cert:'fact',rules:false,conf:'high',confWhy:'דיווח רשמי של בעל העניין ל-SEC (טופס 4)',k:`ins:${f.acc}`,lv:f.material?'imp':'upd',lvWhy:f.material?(f.why||[]).join('; ')||'דיווח מהותי של בעל עניין':'קנייה או מכירה בשוק של בעל עניין בחברה שאתה מחזיק (לא מהותית לפי הספים)',
+        title:`בעלי עניין: ${sym} · ${KH[f.kind]||f.kind} של ${f.owner}`,what,dir:f.kind==='buy'?'pos':f.kind==='sell'?'neg':'unclear',imp:f.material?'high':'mid',rel:h?(h.w>=10?'high':'mid'):'low',relWhy:h?`${sym}, ${h.w}% מהתיק`:`${sym} במעקב`,
+        holds:h?[{sym,w:h.w,how:'direct',dir:f.kind==='buy'?'pos':'neg',why:'דיווח של בעל עניין בחברה עצמה',link:'direct'}]:[],secs:[],usd:null,fol:h?[]:[{sym}],followed:!h,sectors:[],themes:[],regions:['us'],fac:[],secx:[],occ:f.txDate||f.filedAt.slice(0,10),unknown:'',arts:[],n:0,first:f.filedAt,
+        ins:{sym,acc:f.acc,owner:f.owner,role:f.role,kind:f.kind,shares:f.shares,value:f.value,plan:f.plan,txDate:f.txDate,filedAt:f.filedAt,after:f.after,link:f.link,why:f.why||[],cluster:f.cluster,repeat:f.repeat}})}}
   return out;
 }
 // 31.10: a reminder of an event the person saved in the economic calendar (newsst.cal = {id: {at}}): the day before and

@@ -12,6 +12,7 @@ import {Store, canRead, canWrite, partnerView, ownerLike, isOwner, symsOfUser} f
 import {newsxReadNow} from './newsx.js';
 import {storyOf} from './story.js';
 import {ecocalTask} from './ecocal.js';
+import {insidersTask,INS_DOC} from './insiders.js';
 import {pulseTask} from './pulse.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
@@ -486,6 +487,7 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   // a first copy right away when today has none (a new server, or after an update)
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
   // 31.10: the economic calendar, built at start when it is a day old or missing (a cheap build from what is kept)
+  {const c=store.getDoc(INS_DOC); const age=c.exists&&c.data.updatedAt?Date.now()-new Date(c.data.updatedAt).getTime():Infinity; if(age>14*36e5)setTimeout(()=>{insidersTask(store,{log}).catch(e=>log('insiders at start failed:',e.message))},20000)}
   {const c=store.getDoc('research/ecocal'); const age=c.exists&&c.data.updatedAt?Date.now()-new Date(c.data.updatedAt).getTime():Infinity; if(age>20*36e5)setTimeout(()=>{try{ecocalTask(store,{log})}catch(e){log('ecocal at start failed:',e.message)}},3000)}
   // no prices yet (a new server, or an import without them), or prices older than a quarter hour (a deploy): fetch them now
   // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it

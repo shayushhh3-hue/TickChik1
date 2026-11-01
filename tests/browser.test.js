@@ -1983,6 +1983,39 @@ test('1.11 the investor DNA: eight areas of facts from the holdings, the stateme
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
+test('1.11 the insiders: the security page tells a planned sale from an award, the news view lists the material ones of the portfolio, the alert center draws the filing with its link',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const PU0=store.getDoc('alerts/pulse'), I0=store.getDoc('research/insiders'), now=Date.now(), d=k=>new Date(now-k*864e5).toISOString();
+  const F=(o)=>({acc:o.acc,sym:o.sym,cik:1,link:'https://www.sec.gov/Archives/edgar/data/1/'+o.acc+'-index.htm',filedAt:o.filed,owner:o.owner,role:o.role,top:!!o.top,officer:true,director:false,tenPct:false,kind:o.kind,shares:o.shares,value:o.value||0,plan:!!o.plan,deliberate:o.kind==='buy'||o.kind==='sell',kinds:[{kind:o.kind,shares:o.shares,value:o.value||0,n:1,plan:!!o.plan}],txDate:o.tx||o.filed.slice(0,10),after:o.after||null,txs:[],material:!!o.material,why:o.why||[],cluster:false,repeat:false});
+  store.setDoc('research/insiders',{by:{NVDA:[F({acc:'0001-26-1',sym:'NVDA',filed:d(1),owner:'Huang Jen Hsun',role:'President and CEO, דירקטור',top:true,kind:'sell',shares:120000,value:21900000,plan:true,after:75000000,material:true,why:['מכירה בשוק של נושא משרה בכיר או בעל עניין בשווי $21,900,000 (בתוכנית מסחר מתוכננת)']}),
+    F({acc:'0001-26-2',sym:'NVDA',filed:d(2),owner:'Kress Colette',role:'EVP and CFO',top:true,kind:'award',shares:5000,after:500000}),F({acc:'0001-26-3',sym:'NVDA',filed:d(40),owner:'Dabiri Jay',role:'דירקטור',kind:'buy',shares:500,value:85000,after:12000})],
+    MSFT:[F({acc:'0002-26-1',sym:'MSFT',filed:d(1),owner:'Smith John',role:'VP Finance',kind:'sell',shares:300,value:151500,after:9000})]},checked:{NVDA:d(0),MSFT:d(0),KO:d(0)},updatedAt:d(0),source:'SEC EDGAR, טפסי 4 (דיווחי בעלי עניין)'},{silent:true});
+  {const {pulseUpdate}=await import('../server/pulse.js'); pulseUpdate(store,null,{})}
+  const {ctx,pg}=await open(390);
+  try{
+    // the security page: the summary and the rows, each kind told apart
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('#secPage .ins-l'),null,{timeout:10000});
+    const sec=await pg.evaluate(()=>({sum:document.querySelector('#secPage .ins-sum').innerText.replace(/\s+/g,' '),rows:[...document.querySelectorAll('#secPage .ins-r')].map(r=>({cls:r.className,txt:r.innerText.replace(/\s+/g,' '),link:r.querySelector('a[href*="sec.gov"]')?.href})),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(sec.ox,false); assert.match(sec.sum,/ב-90 הימים: 1 קניות בשוק \(1 אנשים, \$85,000\) · 1 מכירות בשוק \(1 אנשים, \$21,900,000, 1 בתוכנית מתוכננת\) · 1 דיווחי תגמול/);
+    assert.equal(sec.rows.length,3); assert.match(sec.rows[0].cls,/k-sell mat/); assert.match(sec.rows[0].txt,/Huang Jen Hsun.*President and CEO.*מכירה בשוק 120,000 מניות · \$21,900,000.*תוכנית מסחר מתוכננת \(10b5-1\).*מחזיק אחרי: 75,000,000.*מהותי:/); assert.match(sec.rows[0].link,/0001-26-1-index\.htm$/);
+    assert.match(sec.rows[1].txt,/Kress Colette.*תגמול \/ הענקה 5,000 מניות/); assert.doesNotMatch(sec.rows[1].txt,/מהותי/); assert.match(sec.rows[2].txt,/קנייה בשוק 500 מניות/);
+    assert.match(await pg.evaluate(()=>document.querySelector('#secPage .ins-l').nextElementSibling.textContent),/קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול/);
+    // a company checked with no filings says so
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='KO'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForTimeout(800); assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage .ins-l')),false); assert.match(await pg.evaluate(()=>document.getElementById('secPage').innerText),/לא נמצאו דיווחי טופס 4/);
+    // the news view: material first, then plain trades, pay mechanics folded
+    await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('#nxViews [data-nxv="ins"]').click()); await pg.waitForTimeout(400);
+    const nv=await pg.evaluate(()=>({h5:[...document.querySelectorAll('#newsFeed h5')].map(x=>x.textContent),rows:[...document.querySelectorAll('#newsFeed .ins-r')].map(r=>r.innerText.replace(/\s+/g,' ').slice(0,60)),txt:document.getElementById('newsFeed').innerText.replace(/\s+/g,' ')}));
+    assert.deepEqual(nv.h5,['מהותי לפי הספים (1)','קניות ומכירות בשוק, לא מהותיות (1)']); assert.match(nv.rows[0],/NVDA Huang Jen Hsun/); assert.match(nv.rows[1],/MSFT Smith John/); assert.match(nv.txt,/תגמול, מימושים וניכויי מס \(1\)/); assert.match(nv.txt,/חברות אמריקאיות בלבד/); assert.match(nv.txt,/לא תחזית ולא המלצה/);
+    // the alert center: the filing as a measured fact, with the link and the way to the security
+    await pg.click('[data-rt="al"]'); await pg.waitForTimeout(500); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
+    const al=await pg.evaluate(()=>{const c=[...document.querySelectorAll('#ixFull .pl')].find(x=>/בעלי עניין: NVDA/.test(x.textContent)); return c?{txt:c.innerText.replace(/\s+/g,' '),link:c.querySelector('a[href*="sec.gov"]')?.href,go:!!c.querySelector('[data-gosec="NVDA"]')}:null});
+    assert.ok(al,'the alert is drawn'); assert.match(al.txt,/מכירה בשוק של 120,000 מניות בשווי \$21,900,000, בתוכנית מסחר מתוכננת/); assert.match(al.txt,/עובדה על העסקה של המדווח, לא על עתיד החברה/); assert.ok(al.link&&al.go);
+    // צ׳יקו's stock focus carries the 90 days
+    const f=await pg.evaluate(()=>window.__focus('st:NVDA')); assert.equal(f.data.insiders_90d.open_market_sells,1); assert.equal(f.data.insiders_90d.planned_program_sales,1); assert.equal(f.data.insiders_90d.pay_mechanics_filings,1);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); if(I0.exists)store.setDoc('research/insiders',I0.data,{silent:true}); else store.deleteDoc('research/insiders'); if(PU0.exists)store.setDoc('alerts/pulse',PU0.data,{silent:true}); else store.deleteDoc('alerts/pulse')}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
