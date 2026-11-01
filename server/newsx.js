@@ -107,18 +107,29 @@ export function cleanX(raw){
   return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:str(raw.more,400),ev:ev||null,st};
 }
 // Claude reads a batch; the answers by article index. Nothing is written for an article that got no usable answer
+// the JSON array in an answer, whole or cut short: the text from the first "[", parsed as is, else cut back to the last
+// complete object and closed; null when not even one object can be read
+export function salvageArray(text){
+  const i=String(text||'').indexOf('['); if(i<0)return null; const t=String(text).slice(i);
+  const m=t.match(/^\[[\s\S]*\]/); if(m){try{const a=JSON.parse(m[0]); if(Array.isArray(a))return a}catch(e){}}
+  let depth=0, inStr=false, esc=false, lastEnd=-1;
+  for(let k=1;k<t.length;k++){const c=t[k]; if(inStr){if(esc)esc=false; else if(c==='\\')esc=true; else if(c==='"')inStr=false; continue} if(c==='"'){inStr=true;continue} if(c==='{')depth++; else if(c==='}'){depth--; if(depth===0)lastEnd=k}}
+  if(lastEnd<0)return null; try{const a=JSON.parse(t.slice(0,lastEnd+1)+']'); return Array.isArray(a)&&a.length?a:null}catch(e){return null}
+}
 export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask=null,known=[]}={}){
   const key=process.env.ANTHROPIC_API_KEY; if(!key&&!ask)return null;
   const url=(process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages', model=pickModel(), prompt=newsPrompt(arts,known);
   let text='';
   try{
     if(ask)text=await ask(prompt);
-    else{const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(8000,700*arts.length+500),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)});
-      if(!r.ok){log('news analysis failed: HTTP '+r.status); return null}
-      const j=await r.json(); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''}
+    // 1.11: a reading in Hebrew is long (a Hebrew token is a letter or two): room for 1,400 tokens an article, and a
+    // reading cut short by the budget is still used up to the last whole article (salvageArray), and said in the log
+    else{const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,1400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)});
+      if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} log('news analysis failed: HTTP '+r.status+' '+why); return null}
+      const j=await r.json(); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''; if(j.stop_reason==='max_tokens')log('news analysis: the answer was cut by the token budget; the whole articles are kept')}
   }catch(e){log('news analysis failed: '+(e&&e.message||e)); return null}
-  const m=text.match(/\[[\s\S]*\]/); if(!m)return null; let arr; try{arr=JSON.parse(m[0])}catch(e){return null}
-  if(!Array.isArray(arr))return null; const out={};
+  const arr=salvageArray(text); if(!arr){log('news analysis: no JSON array in the answer ('+text.slice(0,120).replace(/\s+/g,' ')+')'); return null}
+  const out={};
   arr.forEach((raw,k)=>{const i=raw&&Number.isInteger(raw.i)?raw.i:k; const x=cleanX(raw); if(x&&arts[i])out[i]={...x,model,at:new Date().toISOString()}});
   return out;
 }
@@ -242,7 +253,7 @@ export async function marketBrief(store,{now=new Date(),by,gen,old=null,ask=null
 ${input}`;
   let text='';
   try{if(ask)text=await ask(prompt);
-    else{const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:pickModel(),max_tokens:1200,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
+    else{const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model:pickModel(),max_tokens:2500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)});
       if(!r.ok){log('brief failed: HTTP '+r.status); return null} const j=await r.json(); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''}}
   catch(e){log('brief failed: '+(e&&e.message||e)); return null}
   const m=text.match(/\{[\s\S]*\}/); if(!m)return null; let raw; try{raw=JSON.parse(m[0])}catch(e){return null}

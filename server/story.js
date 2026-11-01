@@ -79,7 +79,7 @@ export function rulesStory(ev,L){
 }
 async function askClaude(prompt,{fetch:f=globalThis.fetch,log=()=>{}}){
   const key=process.env.ANTHROPIC_API_KEY, model=pickModel();
-  const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:3000,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)});
+  const r=await f((process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages',{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:6000,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)});
   if(!r.ok){log('story failed: HTTP '+r.status); return {text:'',model}}
   const j=await r.json(); return {text:((j.content||[]).find(x=>x.type==='text')||{}).text||'',model};
 }

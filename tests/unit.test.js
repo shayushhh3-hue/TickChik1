@@ -1902,3 +1902,13 @@ test('1.11 dividends: the plan keeps the last paid ones (for a raise or a cut) a
   const p=divPlan(H,{now}); assert.equal(p.freq,'quarterly'); assert.equal(p.stopped,false); assert.deepEqual(p.hist.map(x=>x.amt),[0.51,0.51,0.485,0.485]); assert.ok(p.next.length>=1&&p.next[0].est,'the next by rhythm, estimated');
   const q=divPlan(H.map((x,i)=>({...x,ex:d(-280-91*i),pay:d(-265-91*i)})),{now}); assert.equal(q.stopped,true,'well over the rhythm: stopped'); assert.equal(q.next.length,0,'a stopped one is not projected');
 });
+
+test('1.11 the readings: an answer cut short by the token budget is used up to the last whole article; a longer budget per article',async()=>{
+  const {salvageArray,analyzeBatch}=await import('../server/newsx.js');
+  const whole=JSON.stringify([{i:0,he:'א',what:'ב'},{i:1,he:'ג',what:'ד'}]); assert.equal(salvageArray('הנה:\n'+whole).length,2);
+  const cut='[{"i":0,"he":"א","what":"ב","aff":[{"sym":"X","why":"a } b"}]},{"i":1,"he":"ג","what":"ד","unknown":"בלי סו'; const a=salvageArray(cut); assert.equal(a.length,1); assert.equal(a[0].aff[0].why,'a } b');
+  assert.equal(salvageArray('no json here'),null); assert.equal(salvageArray('[{"i":0,"he":'),null);
+  const calls=[]; const f=async(u,o)=>{calls.push(JSON.parse(o.body)); return new Response(JSON.stringify({content:[{type:'text',text:'[{"i":0,"he":"כותרת","what":"מה קרה","type":"company","level":"info","dir":"unclear","cert":"fact"},{"i":1,"he":"כותרת 2","what":"מה'}],stop_reason:'max_tokens'}),{status:200})};
+  process.env.ANTHROPIC_API_KEY='sk-test'; const got=await analyzeBatch([{title:'a',link:'https://x/1'},{title:'b',link:'https://x/2'}],{fetch:f}); delete process.env.ANTHROPIC_API_KEY;
+  assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,1400*2+800);
+});
