@@ -2046,6 +2046,12 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (14): the comparison: the picks, the table, strong and weak */
+.cmp{display:flex;flex-direction:column;gap:10px} .cmp-pick .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center} .cmp-pick .chip.on{display:inline-flex;align-items:center;gap:6px} .cmp-pick .chip .x{border:0;background:none;color:inherit;font-size:16px;line-height:1;padding:0 2px;cursor:pointer} .cmp-add{display:inline-flex;gap:6px;align-items:center} .cmp-add input{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:140px;font-family:var(--mono)}
+.cmp-t{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse;font-size:13.5px} .cmp-t th,.cmp-t td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top;overflow-wrap:anywhere;white-space:normal;font-size:inherit} .cmp-t thead th{font-weight:700} .cmp-t thead th b{font-family:var(--mono)} .cmp-t thead th small{display:block;font-weight:400;color:var(--ink2);font-size:11px;line-height:1.3} .cmp-t tbody th{font-weight:500;color:var(--ink2)} .cmp-t th:first-child{width:31%} .cmp-t tbody th small{display:block;font-size:10.5px} .cmp-t tr.g th{background:rgb(127 127 127 / .08);font-weight:700;color:var(--ink);padding:5px 6px;font-size:12.5px;width:auto}
+.cmp-t td.n{font-family:var(--mono)} .cmp-t td.n small{display:block;font-family:var(--sans);font-size:11px;color:var(--ink2)} .cmp-t td.best{color:var(--gain);font-weight:700} .cmp-t td.worst{color:var(--loss)}
+@media (max-width:560px){.cmp-t{font-size:12.5px} .cmp-t.n4{font-size:11.5px} .cmp-t.n4 th,.cmp-t.n4 td{padding:5px 3px} .cmp-t th:first-child{width:29%}}
+.cmp-sws{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px} .cmp-sw{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13.5px;line-height:1.5} .cmp-sw h4{margin:0 0 4px;display:flex;align-items:center;gap:6px;font-size:14px} .cmp-sw p{margin:3px 0}
 /* 1.11 (9): the journal: the form, the filters, the entries by month, what came of them */
 .jrn{display:flex;flex-direction:column;gap:10px} .jrn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px} .jrn-row.jrn-qty{grid-template-columns:1fr 1fr} .jrn-f input,.jrn-f select{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:38px;min-width:0;width:100%}
 .jrn-st{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink2);padding:8px 10px;border-radius:10px;background:var(--surface2,rgb(127 127 127 / .08))} .jrn-filt{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px} .jrn-filt select,.jrn-filt input{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
@@ -2600,6 +2606,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <button type="button" role="tab" id="tab_journal" data-tab="journal" aria-selected="false" hidden><span>יומן ההשקעות</span></button>
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
     <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
+    <button type="button" role="tab" id="tab_compare" data-tab="compare" aria-selected="false" hidden><span>השוואה</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
     <div class="tsub" id="riskSub" role="group" aria-label="החלקים של בקרה וסיכון"></div>
     <button type="button" role="tab" id="tab_calendar" data-tab="calendar" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="15" r="1.3"/><circle cx="15.5" cy="15" r="1.3"/></svg><span>לוח מסחר</span></button>
@@ -3136,6 +3143,12 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         </details>
         </div>
       </div>
+    </section>
+  </div>
+  <div class="pane" data-pane="compare" hidden>
+    <section aria-labelledby="hCmp" id="cmpSec">
+      <div class="row"><h2 id="hCmp">השוואת ניירות: אותם מספרים, זה מול זה</h2><span class="sub">2 עד 4 ניירות. מספרים מהדוחות ומהשוק, עם המקור והתאריך; "חזק ב" ו"חלש ב" הם יחסית לניירות שבהשוואה בלבד, לא ציון</span></div>
+      <div class="panel cmp" id="cmpBox"></div>
     </section>
   </div>
   <div class="pane" data-pane="watch" hidden>
@@ -19919,7 +19932,7 @@ function anaHello(){const box=$('anaOut'); if(!box)return; {const st=box.querySe
 function anaHelloAi(){const p=$('anaHelloAi'); if(!p)return; const on=!!SAMPLE&&!SAMPLE_OFF; p.textContent=!ANA_READY?'':on?'אפשר לבחור הצעה למטה, או לכתוב שאלה במילים שלך.':'כרגע זמין הניתוח שהדף מחשב. סיכום יומי ושאלות חופשיות זמינים כשצ׳יקו מחובר לדף.'}
 function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAMPLE_OFF, L=[];
   // 30.10: a question about something open: its own questions first
-  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):f.kind==='journal'?JRN_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
+  if(ANA_FOCUS){const f=ANA_FOCUS, Qs=f.kind==='impact'?IX_Q_GEN.map(q=>['g',q]):f.kind==='stock'?IX_Q_ST.map(q=>['g',q]):f.kind==='story'?STORY_Q.map(q=>['g',q]):f.kind==='thesis'?TH_Q.map(q=>['g',q]):f.kind==='sim'?SIM_Q.map(q=>['g',q]):f.kind==='journal'?JRN_Q.map(q=>['g',q]):f.kind==='compare'?CMP_Q.map(q=>['g',q]):FOCUS_Q.filter(([k])=>(k!=='why'||f.kind==='alert')&&(k!=='changed'||f.kind==='alert'||f.kind==='article'));
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -23924,6 +23937,89 @@ function secPriceBlock(it,pr,on,fx){
   const upd=pf('עדכון המחיר <span class="tag mkt">נתון שוק</span>',when||'—',pr.daily?(on?'מחיר יומי · המחיר השעתי יגיע בעדכון הבא':'מחיר יומי · הוסף למעקב ויתעדכן כל שעה'):'מתעדכן כל שעה בימי מסחר');
   return `<div class="big"><div class="pxrow"><span class="v">${fmtPx(pr.px,pr.ccy)}</span>${pr.chg!=null?`<span class="chg ${up?'up':'down'}"><b>${spct(pr.chg*100)}</b><small>${pr.today?'היום':'ביום המסחר האחרון'}</small></span>`:''}</div>
     <div class="pxfacts">${conv}${pf(pr.ccy==='PTS'?'יחידה':'מטבע ובורסה',pr.ccy==='PTS'?'נקודות מדד':pr.ccy==='ILS'?'שקל':'דולר',pr.ccy==='PTS'?'':exch)}${upd}</div></div>`}
+// ---- 1.11 (14): the comparison: two to four securities, the same figures side by side (the price over a period chosen
+// to fit, the market value, the valuation, growth, profitability, debt, cash flow, the analysts, the risk figures, the
+// coming report), each with its source and date. "Strong in" and "weak in" are relative to the securities compared, and
+// said so; nothing here is a grade or advice. What the page has no source for is listed as missing, never invented ----
+const CMP_RNG=[['1m','חודש'],['3m','3 חודשים'],['6m','חצי שנה'],['ytd','מתחילת השנה'],['1y','שנה'],['3y','3 שנים']];
+let CMP={syms:[],rng:'1y'}; try{const v=JSON.parse(localStorage.getItem('tr_cmp')||'null'); if(v&&Array.isArray(v.syms))CMP={syms:v.syms.slice(0,4),rng:v.rng||'1y'}}catch(e){}
+const cmpKeep=()=>{try{localStorage.setItem('tr_cmp',JSON.stringify(CMP))}catch(e){}};
+// the price over the period: the change, the deepest fall inside it, how much it moved day to day (annualized)
+function cmpPerf(k,rng){const c=CLOSES[k]; if(!c||!c.d||!c.c||c.d.length<3)return null;
+  const now=Date.now(), y0=new Date(new Date().getFullYear(),0,1).getTime(), from=rng==='ytd'?y0:now-({'1m':31,'3m':92,'6m':183,'1y':366,'3y':1096}[rng]||366)*864e5;
+  const pts=[]; for(let i=0;i<c.d.length;i++){const t=new Date(c.d[i]).getTime(); if(t>=from&&c.c[i]>0)pts.push(+c.c[i])} if(pts.length<3)return null;
+  const first=new Date(c.d[0]).getTime(), short=first>from+7*864e5;
+  let peak=pts[0], dd=0; for(const v of pts){if(v>peak)peak=v; dd=Math.min(dd,v/peak-1)}
+  const r=[]; for(let i=1;i<pts.length;i++)r.push(Math.log(pts[i]/pts[i-1])); const mu=r.reduce((a,b)=>a+b,0)/r.length, sd=Math.sqrt(r.reduce((a,b)=>a+(b-mu)*(b-mu),0)/Math.max(1,r.length-1))*Math.sqrt(252)*100;
+  return {chg:(pts[pts.length-1]/pts[0]-1)*100,dd:dd*100,vol:sd,n:pts.length,short,since:short?c.d[0]:null}}
+// the figures of one security, every one with where it comes from
+function cmpFigs(k){const it=itemOf(k)||{sym:k,name:k}, figs=fitFigs()[k]||{}, rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null, c={...figs,...(rs||{})}, pr=priceOf(k), perf=cmpPerf(k,CMP.rng), m=mAllNow(), pos=m?m.pos.find(p=>p.sym===it.sym):null, th=(jrn().thesis||{})[it.sym]||null, jn=jrnBySym(it.sym).length;
+  const up=c.target&&pr&&pr.px>0&&pr.ccy==='USD'?(c.target/pr.px-1)*100:null, rep=rs&&rs.rep&&rs.rep.q?rs.rep:null;
+  return {k,it,name:it.name||k,sec:it.sec||'',cap:it.cap||null,capCcy:it.t==='T'?'₪':'$',px:pr?pr.px:null,ccy:pr?pr.ccy:null,perf,chg52:c.chg52??null,pe:c.pe??null,fpe:c.fpe??null,revg:c.revg??null,epsg:c.epsg??null,gm:c.gm??null,om:c.om??null,pm:c.pm??null,roe:c.roe??null,de:c.de??null,cr:c.cr??null,fcfm:c.fcfm??null,dy:c.dy??null,beta:c.beta??null,rating:c.rating||null,analysts:c.analysts||null,target:c.target||null,up,votes:rs&&rs.votes||null,next:c.next||null,rep,
+    w:pos?pos.w:0,th:!!(th&&th.why),thMinus:th&&th.minus||'',jn,src:rs&&rs.source||(RS&&RS.source)||'',at:rs&&rs.updatedAt||(FIT&&FIT.updatedAt)||null,isFund:it.t==='E'||it.t==='F'||it.t==='I'||isF(k)}}
+// the rows: label, the value, how to read it, which way is "more" (hi / lo / none), the group
+const CMP_ROWS=[
+  ['perf','מחיר בתקופה',f=>f.perf?f.perf.chg:null,v=>spct(v),'hi','שוק','שינוי המחיר בתקופה שנבחרה (סגירות)'],
+  ['dd','הנפילה העמוקה בתקופה',f=>f.perf?f.perf.dd:null,v=>spct(v),'hi','סיכון','מהשיא לשפל בתוך התקופה'],
+  ['vol','תנודתיות (שנתית)',f=>f.perf?f.perf.vol:null,v=>pct(v,0),'lo','סיכון','סטיית תקן של השינויים היומיים, במונחי שנה'],
+  ['chg52','52 שבועות',f=>f.chg52,v=>spct(v),'hi','שוק','שינוי המחיר בשנה האחרונה (מקור חיצוני)'],
+  ['cap','שווי שוק',f=>f.cap,(v,f)=>f.capCcy+(v>=1e6?(v/1e6).toFixed(2)+'T':v>=1000?(v/1000).toFixed(v>=1e4?0:1)+'B':v+'M'),'none','שוק','שווי כל המניות'],
+  ['pe','מכפיל רווח',f=>f.pe,v=>v.toFixed(1),'lo','תמחור','מחיר חלקי רווח למניה (12 חודשים)'],
+  ['fpe','מכפיל רווח צפוי',f=>f.fpe,v=>v.toFixed(1),'lo','תמחור','לפי תחזיות האנליסטים לרווח'],
+  ['revg','צמיחת הכנסות',f=>f.revg,v=>spct(v),'hi','צמיחה','מול הרבעון המקביל'],
+  ['epsg','צמיחת רווח',f=>f.epsg,v=>spct(v),'hi','צמיחה','מול הרבעון המקביל'],
+  ['gm','רווח גולמי',f=>f.gm,v=>pct(v,0),'hi','רווחיות','מההכנסות'],
+  ['om','רווח תפעולי',f=>f.om,v=>pct(v,0),'hi','רווחיות','מההכנסות'],
+  ['pm','רווח נקי',f=>f.pm,v=>pct(v,0),'hi','רווחיות','מההכנסות'],
+  ['roe','תשואה על ההון',f=>f.roe,v=>pct(v,0),'hi','רווחיות','רווח נקי חלקי ההון העצמי'],
+  ['de','חוב להון',f=>f.de,v=>v.toFixed(2),'lo','חוב ומאזן','חוב חלקי הון עצמי; לבנקים המספר גבוה מטבעו'],
+  ['cr','יחס שוטף',f=>f.cr,v=>v.toFixed(2),'hi','חוב ומאזן','נכסים שוטפים חלקי התחייבויות שוטפות'],
+  ['fcfm','תזרים חופשי מההכנסות',f=>f.fcfm,v=>pct(v,0),'hi','תזרים','מזומן שנשאר אחרי השקעות, חלקי ההכנסות'],
+  ['dy','תשואת דיבידנד',f=>f.dy,v=>pct(v,2),'hi','תזרים','דיבידנד שנתי חלקי המחיר'],
+  ['beta','בטא',f=>f.beta,v=>v.toFixed(2),'none','סיכון','כמה המניה זזה עם השוק (1 = כמו השוק)'],
+  ['rating','קונסנזוס אנליסטים',f=>f.rating,v=>`<bdi>${esc(v)}</bdi>`,'none','אנליסטים','דעת אנליסטים, לא המלצה של הדף'],
+  ['up','יעד ממוצע מול המחיר',f=>f.up,(v,f)=>spct(v)+(f.analysts?` <small>${f.analysts} אנליסטים</small>`:''),'none','אנליסטים','יעד המחיר הממוצע של האנליסטים ביחס למחיר היום'],
+  ['next','הדוח הבא',f=>f.next,v=>dmy(v)+(daysTo(v)>=0?` <small>בעוד ${daysTo(v)} ימים</small>`:''),'none','דוחות','מועד הדוח הרבעוני הבא'],
+  ['rep','הדוח האחרון מול הצפי',f=>f.rep?f.rep:null,v=>v.eps!=null&&v.est!=null?`${v.eps>=v.est?'מעל':'מתחת'} <small>${v.eps} מול ${v.est}</small>`:(v.beat===true?'מעל':v.beat===false?'מתחת':'—'),'none','דוחות','רווח למניה שדווח מול תחזית האנליסטים'],
+  ['w','בתיק שלי',f=>f.w||null,v=>pct(v,1),'none','שלי','חלק מהתיק היום'],
+];
+function cmpH(){
+  const F=CMP.syms.map(cmpFigs), held=((P&&P.positions)||[]).map(p=>p.sym).filter((k,i,A)=>A.indexOf(k)===i), W=wmarks().filter(k=>!held.includes(k)), quick=[...held,...W].filter(k=>!CMP.syms.includes(k)).slice(0,10);
+  const pick=`<div class="cmp-pick"><div class="chips">${F.map(f=>`<span class="chip on">${logoHtml(f.k,'sm')}<bdi>${esc(f.name)}</bdi> <button type="button" class="x" data-cmprm="${esc(f.k)}" aria-label="להסיר ${esc(f.k)}">×</button></span>`).join('')}
+      ${CMP.syms.length<4?`<form class="cmp-add" id="cmpAdd"><input list="cmpSyms" id="cmpIn" placeholder="סימול להוספה" maxlength="14" autocomplete="off" aria-label="סימול להוספה" style="text-transform:uppercase"><datalist id="cmpSyms">${[...held,...W].map(k=>`<option value="${esc(k)}">${esc(lab(k))}</option>`).join('')}</datalist><button type="submit" class="btn sm">להוסיף</button></form>`:''}</div>
+    ${quick.length&&CMP.syms.length<4?`<p class="nm" style="margin:4px 0 0">מהתיק והמעקב: ${quick.map(k=>`<button type="button" class="lnk" data-cmpadd="${esc(k)}">${esc(k)}</button>`).join(' · ')}</p>`:''}</div>`;
+  if(F.length<2)return `${pick}<p class="note" style="margin:8px 0 0">בחר לפחות שני ניירות. ההשוואה מראה אותם מספרים זה מול זה, עם המקור של כל מספר; היא לא אומרת מה עדיף.</p>`;
+  const rng=`<div class="chips rng" role="group" aria-label="תקופת המחיר">${CMP_RNG.map(([k,l])=>`<button type="button" class="chip" data-cmprng="${k}" aria-pressed="${CMP.rng===k}">${l}</button>`).join('')}</div>`;
+  const funds=F.filter(f=>f.isFund); const rows=CMP_ROWS.filter(([id])=>!(funds.length===F.length&&['pe','fpe','revg','epsg','gm','om','pm','roe','de','cr','fcfm','rating','up','next','rep'].includes(id)));
+  const groups=[]; for(const r of rows){const g=r[5]; let G=groups[groups.length-1]; if(!G||G.g!==g){G={g,R:[]}; groups.push(G)} G.R.push(r)}
+  // "more" and "less" per row, among those that have the figure; a lone figure is not a comparison
+  const best={}, worst={}; for(const [id,,get,,dir] of rows){if(dir==='none')continue; const vals=F.map(f=>{const v=get(f); return typeof v==='number'&&isFinite(v)?v:null}); const have=vals.filter(v=>v!=null); if(have.length<2)continue; const mx=Math.max(...have), mn=Math.min(...have); if(mx===mn)continue; best[id]=vals.indexOf(dir==='hi'?mx:mn); worst[id]=vals.indexOf(dir==='hi'?mn:mx)}
+  const cell=(r,f,i)=>{const [id,,get,fmt,dir]=r; const v=get(f); const has=v!=null&&!(typeof v==='number'&&!isFinite(v)); return `<td class="n${best[id]===i?' best':worst[id]===i?' worst':''}">${has?fmt(v,f):'<span class="nm">אין נתון</span>'}${id==='perf'&&f.perf&&f.perf.short?`<small class="nm">מ-${dmy(f.perf.since)}</small>`:''}</td>`};
+  const table=`<table class="cmp-t n${F.length}"><thead><tr><th></th>${F.map(f=>`<th><button type="button" class="lnk" data-gosec="${esc(f.k)}"><b>${esc(f.k.replace(/^TLV:/,''))}</b></button><small><bdi>${esc(imCut(f.name,26))}</bdi>${f.px?'<br>'+fmtPx(f.px,f.ccy):''}</small></th>`).join('')}</tr></thead>
+    <tbody>${groups.map(G=>`<tr class="g"><th colspan="${F.length+1}">${G.g}</th></tr>${G.R.map(r=>`<tr><th><span title="${esc(r[6])}">${r[1]}</span>${r[4]!=='none'?`<small class="nm">${r[4]==='hi'?'גבוה = יותר':'נמוך = יותר'}</small>`:''}</th>${F.map((f,i)=>cell(r,f,i)).join('')}</tr>`).join('')}`).join('')}</tbody></table>`;
+  // strong in, weak in: by the rows where it is first or last among the compared; and what the page would add to the risks
+  const sw=F.map((f,i)=>{const st=rows.filter(r=>best[r[0]]===i).map(r=>r[1]), wk=rows.filter(r=>worst[r[0]]===i).map(r=>r[1]), risks=[];
+    if(f.perf&&f.perf.dd<=-20)risks.push(`נפלה ${pct(Math.abs(f.perf.dd),0)} מהשיא בתוך התקופה`); if(f.beta!=null&&f.beta>=1.5)risks.push(`זזה פי ${f.beta.toFixed(1)} מהשוק (בטא)`); if(f.de!=null&&f.de>=2)risks.push(`חוב של פי ${f.de.toFixed(1)} מההון`);
+    if(f.pm!=null&&f.pm<0)risks.push('מפסידה (רווח נקי שלילי)'); if(f.next&&daysTo(f.next)>=0&&daysTo(f.next)<=14)risks.push(`דוח בעוד ${daysTo(f.next)} ימים`); if(f.w>=15)risks.push(`כבר ${pct(f.w,0)} מהתיק שלך`); if(f.thMinus)risks.push(`מה שכתבת שיחליש את התזה: ${imCut(f.thMinus,80)}`);
+    const miss=rows.filter(r=>{const v=r[2](f); return v==null||(typeof v==='number'&&!isFinite(v))}).map(r=>r[1]);
+    return `<div class="cmp-sw"><h4>${logoHtml(f.k,'sm')}<bdi>${esc(f.name)}</bdi>${f.th?' <span class="nx-tag">יש תזה</span>':''}${f.jn?` <span class="nx-tag">${f.jn} ביומן</span>`:''}</h4>
+      <p><b>חזק ב (מול האחרים כאן):</b> ${st.length?esc(st.join(', ')):'לא ראשון באף שורה'}</p><p><b>חלש ב:</b> ${wk.length?esc(wk.join(', ')):'לא אחרון באף שורה'}</p>${risks.length?`<p><b>מה לשים לב אליו:</b> ${esc(risks.join(' · '))}</p>`:''}${miss.length?`<p class="nm">אין נתון: ${esc(miss.slice(0,6).join(', '))}${miss.length>6?'…':''}</p>`:''}</div>`}).join('');
+  const srcs=[...new Set(F.map(f=>f.src).filter(Boolean))], ats=F.map(f=>f.at).filter(Boolean).sort();
+  return `${pick}${rng}${table}<div class="cmp-sws">${sw}</div>
+    <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="cmp">שאל את צ׳יקו על ההשוואה</button><button type="button" class="btn sm" data-cmpclr="1">לנקות</button></div>
+    <p class="note" style="margin:6px 0 0">מקורות: ${esc(srcs.join('; ')||'ריצת המחקר של הדף')}${ats.length?' · עודכן '+dmy(ats[ats.length-1]):''}; המחירים כמו בדף. "מחיר בתקופה", "הנפילה" ו"תנודתיות" מחושבים כאן מהסגירות. אין בדף: מתחרים ונתח שוק, הערכות שווי של אנליסטים מעבר ליעד הממוצע, והיסטוריה של מכפילים. ההשוואה לא אומרת מה כדאי.</p>`}
+function renderCmp(){const b=$('cmpBox'); if(!b||document.body.dataset.page!=='compare')return; setH(b,cmpH());
+  // what is still to come: the figures and the closes of each security, then once more
+  const need=CMP.syms.filter(k=>RSX[k]===undefined||!CLOSES[k]); if(need.length&&!renderCmp.busy){renderCmp.busy=true; Promise.all([loadFit(),loadAllQ(),...need.map(k=>loadResearch(k).catch(()=>null)),...need.map(k=>loadCloses(k).catch(()=>null))]).then(()=>{renderCmp.busy=false; for(const k of need)if(RSX[k]===undefined)RSX[k]=null; renderCmp()})}}
+function cmpAdd(k){k=String(k||'').trim().toUpperCase(); if(!k||!SECKEY.test(k)||CMP.syms.includes(k)||CMP.syms.length>=4)return false; CMP.syms.push(k); cmpKeep(); try{useAdd('cmp')}catch(e){} return true}
+document.addEventListener('submit',ev=>{const f=ev.target; if(!f||f.id!=='cmpAdd')return; ev.preventDefault(); const v=$('cmpIn').value; if(!cmpAdd(v))rtSay('סימול לא מוכר, או שכבר יש 4'); renderCmp()});
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  const go=t.closest('[data-cmpgo]'); if(go){cmpAdd(go.dataset.cmpgo); showTab('compare',true); return}
+  if(!t.closest('#cmpBox'))return;
+  const a=t.closest('[data-cmpadd]'); if(a){cmpAdd(a.dataset.cmpadd); renderCmp(); return}
+  const r=t.closest('[data-cmprm]'); if(r){CMP.syms=CMP.syms.filter(k=>k!==r.dataset.cmprm); cmpKeep(); renderCmp(); return}
+  const g=t.closest('[data-cmprng]'); if(g){CMP.rng=g.dataset.cmprng; cmpKeep(); renderCmp(); return}
+  if(t.closest('[data-cmpclr]')){CMP.syms=[]; cmpKeep(); renderCmp(); return}});
 function renderSec(){SECHOV=-1;
   const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
   const pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
@@ -23943,7 +24039,7 @@ function renderSec(){SECHOV=-1;
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     ${secPriceBlock(it,pr,on,fx)}
     ${secPxAlert(k,pr)}
-    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}">${r[1]}</button>`).join('')}</div>
+    <div class="chips rng" role="group" aria-label="טווח הגרף"><button type="button" class="chip" data-cmpgo="${esc(k)}">להשוות ⇄</button>${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}">${r[1]}</button>`).join('')}</div>
     <div class="chread" id="secRead" aria-live="polite"></div>
     <canvas id="secChart" aria-label="גרף מחיר"></canvas><p class="note" id="secChartNote"></p>
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
@@ -24181,9 +24277,9 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal'];
-const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch'],history:['history','reports','journal'],settings:['settings']};
-const SUBL={journal:'יומן ההשקעות',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
+const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
+const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
 const HEADL={news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
@@ -24214,6 +24310,7 @@ function showTab(t,user){
   if(t==='settings'){try{renderUse()}catch(e){} try{sysFill()}catch(e){} try{nwSetFill()}catch(e){}}
   if(t==='pots'){try{renderPots()}catch(e){}}
   if(t==='journal'){try{renderJrn()}catch(e){console.error(e)}}
+  if(t==='compare'){try{loadSymDb().then(()=>renderCmp()); renderCmp()}catch(e){console.error(e)}}
   if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
   if(t==='fit'){try{renderFit(); Promise.all([loadSymDb(),loadFit(),loadAllQ()]).then(()=>{try{renderFit()}catch(e){}})}catch(e){}}
@@ -25591,6 +25688,7 @@ window.__im={build:imBuild,open:imOpen,openFrom:imOpenFrom,layout:imLayout,sel:i
 // (only when it was), and what is only possible; without Claude the page answers from the same facts by itself ====
 let ANA_FOCUS=null;
 const STORY_Q=['מה הרקע לאירוע הזה, במילים פשוטות?','מה בטוח כאן ומה רק הערכה?','איך זה עשוי לגעת בתיק שלי?','מה כדאי לעקוב אחריו בהמשך?'];
+const CMP_Q=['במה כל אחד מהם חזק יותר מהאחרים, לפי המספרים?','מה ההבדל בסיכון ביניהם?','איזה מספרים חסרים כדי להשוות באמת?','מה מהם כבר יש לי בתיק, ומה זה אומר על ההשוואה?'];
 const JRN_Q=['מה חוזר על עצמו בהחלטות שלי?','איזה סיבות הובילו להחלטות שהתממשו, ואיזה לא?','מה הציפיות הפתוחות שכדאי לי לבדוק עכשיו?','מה הייתי צריך לכתוב ולא כתבתי?'];
 const SIM_Q=['מה משתנה בתיק אחרי הפעולות האלה?','האם אחרי זה אני חורג מהכללים שלי?','מה קורה לפיזור ולריכוזיות?','מה אני צריך לבדוק לפני שאני עושה את זה?'];
 const TH_Q=['האם התזה שלי עדיין תקפה?','מה מהדיווחים נוגע למה שכתבתי שיחליש אותה?','מה אני צריך לבדוק לפני שאשנה משהו?','מה עוד לא ידוע?'];
@@ -25606,6 +25704,9 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
   if(k==='art'){const it=newsAll().find(z=>z.id===v); if(!it||!it.x)return null; const E=nxEvents(newsAll()), e=E.get(it.x.ev||'id:'+it.id);
     return {kind:'article',title:it.x.he,lead:it,data:{...artF(it,it.x),other_sources:e&&e.items.length>1?e.items.filter(q=>q.id!==it.id).slice(0,5).map(q=>({source:q.pub,title:q.title,published_at:q.at})):[],measured:moved(nwSymsOf(it),it.at||it.seen),
       portfolio:m&&m.pos&&m.pos.length?{has_portfolio:true,link_to_my_portfolio:(()=>{try{return newsRel(it,m).text||null}catch(e){return null}})()}:{has_portfolio:false}}}}
+  if(k==='cmp'){const F=CMP.syms.map(cmpFigs); if(F.length<2)return null; const rows=CMP_ROWS.filter(r=>r[0]!=='w');
+    return {kind:'compare',title:'השוואה: '+F.map(f=>f.k).join(' / '),data:{period:(CMP_RNG.find(x=>x[0]===CMP.rng)||[])[1]||CMP.rng,securities:F.map(f=>{const o={symbol:f.k,name:f.name,sector:f.sec||null,in_my_portfolio:f.w?pct(f.w,1):null,my_thesis:f.th?'יש':null,journal_entries:f.jn||0}; for(const r of rows){const v=r[2](f); o[r[1]]=v==null?null:r[0]==='rep'?(v.eps!=null&&v.est!=null?`${v.eps} מול צפי ${v.est}`:null):typeof v==='number'?Math.round(v*100)/100:v} return o}),
+      figures_read_as:Object.fromEntries(rows.map(r=>[r[1],r[6]+(r[4]==='hi'?' (גבוה = יותר)':r[4]==='lo'?' (נמוך = יותר)':'')])),missing_in_page:['מתחרים ונתח שוק','היסטוריה של מכפילים','הערכות שווי מעבר ליעד הממוצע'],rule:'להשוות את המספרים זה מול זה ולומר מה כל אחד מראה; "חזק/חלש" רק יחסית לניירות שכאן; לא לדרג ולא להמליץ; לומר מה חסר'}}}
   if(k==='jrn'){const all=jrnList(), L=v?all.filter(e=>e.sym===v):all; if(!L.length)return null; const st=jrnStats(L);
     const row=e=>{const s=jrnSince(e); return {date:e.at,kind:JRN_K[e.t]||e.t,symbol:e.sym||null,qty:e.qty||null,price:e.px||null,why:e.why||null,expected:e.expect||null,event:e.ev?e.ev.he:null,price_since:s?`${s.px} ← ${Math.round(s.now*100)/100} (${s.pct>=0?'+':''}${s.pct.toFixed(1)}%)`:null,outcome:e.out&&e.out.v?`${JRN_OUT[e.out.v]}${e.out.text?': '+e.out.text:''}`:null}};
     return {kind:'journal',title:'היומן שלי'+(v?': '+v:''),data:{entries:L.slice(0,30).map(row),stats:{entries:st.n,by_kind:Object.fromEntries(Object.entries(st.by).map(([k,n])=>[JRN_K[k]||k,n])),outcomes:{right:st.out.right,wrong:st.out.wrong,mixed:st.out.mixed,open:st.out.open},with_reason:st.withWhy,with_expectation:st.withExp,with_event:st.withEv,avg_hold_days:st.holdDays!=null?Math.round(st.holdDays):null,most_written:st.top.map(([k,n])=>`${k} (${n})`),since:st.first},
@@ -25665,6 +25766,8 @@ function focusAnswerH(q,f){const d=f.data||{}, li=L=>L.length?`<ul>${L.map(x=>`<
   if(/ענף/.test(t))return `<p>הענפים שהקריאה ציינה:</p>${li((d.sectors||d.sectors_exposure||[]).map(s=>`${esc(s.sector)}${s.through?' דרך '+esc(s.through):''}${s.why?': '+esc(s.why):''}${s.my_share_in_sector||s.share_of_portfolio?` (אצלך ${esc(s.my_share_in_sector||s.share_of_portfolio)})`:''}`))||'<p>לא צוין ענף.</p>'}`;
   if(/חשופ|החזק|אחזק/.test(t)){const L=(d.my_holdings_linked||(d.companies||[]).filter(c=>c.in_my_portfolio).map(c=>({sym:c.sym,weight:c.in_my_portfolio,link:c.link,why:c.why})));
     return L.length?li(L.map(h=>`${esc(h.sym)} (${esc(h.weight)}), ${esc(h.link)}${h.why?': '+esc(h.why):''}`))+'<p class="nm">חשיפה היא קשר שהקריאה ציינה, לא השפעה שנמדדה.</p>':'<p>אף אחת מההחזקות שלך לא מוזכרת בקשר הזה.</p>'}
+  if(f.kind==='compare'){const S_=d.securities||[]; const keys=['מחיר בתקופה','מכפיל רווח','צמיחת הכנסות','רווח נקי','חוב להון','תשואת דיבידנד','בטא'];
+    return `<p><b>${esc(d.period||'')}:</b></p>${li(S_.map(s=>`<b>${esc(s.symbol)}</b> ${keys.map(k=>s[k]!=null?`${k} ${typeof s[k]==='number'?(/מחיר|צמיחה|רווח נקי|תשואת/.test(k)?spct(s[k]):s[k]):esc(String(s[k]))}`:null).filter(Boolean).join(' · ')}`))}<p class="nm">${esc(d.rule||'')}</p>`}
   if(f.kind==='journal'){const st=d.stats||{}, o=st.outcomes||{}, E=d.entries||[];
     return `<p><b>${st.entries} רשומות</b>${st.since?' מ-'+dmy(st.since):''}: ${Object.entries(st.by_kind||{}).map(([k,n])=>`${esc(k)} ${n}`).join(', ')}.</p><p>תוצאות שסימנת: ${o.right||0} התממשו, ${o.wrong||0} לא, ${o.mixed||0} חלקית, ${o.open||0} פתוחות.${st.avg_hold_days!=null?` זמן החזקה ממוצע ביומן: ${st.avg_hold_days} ימים.`:''}</p>${li(E.slice(0,5).map(e=>`<span class="nm">${dmy(e.date)}</span> ${esc(e.kind)}${e.symbol?' <b>'+esc(e.symbol)+'</b>':''}${e.why?': '+esc(imCut(e.why,120)):''}${e.outcome?` <span class="nm">(${esc(imCut(e.outcome,60))})</span>`:''}`))}<p class="nm">${esc(d.rule||'')}</p>`}
   if(f.kind==='sim'){const b=d.before||{}, a=d.after||{}, L=[['שווי',b.value,a.value],['מזומן',b.cash,a.cash],['הנייר הגדול',b.biggest_holding,a.biggest_holding],['הקבוצה הגדולה',b.biggest_group,a.biggest_group],['פיזור (כמו N שווים)',b.as_many_equal_holdings_as,a.as_many_equal_holdings_as],['חלק בדולרים',b.usd_part,a.usd_part],['מדד בריאות',b.health_score,a.health_score]];

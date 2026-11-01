@@ -1932,6 +1932,39 @@ test('1.11 the journal: a trade from the statement written up with its reason, a
   }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0); if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main')}
 });
 
+test('1.11 the comparison: two to four securities side by side, the same figures with their sources, strong and weak only among the compared, the period, the security page leads to it, צ׳יקו',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_cmp')}catch(e){}});
+  await tab(pg,'search'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="search"] .subtabs [data-tab="compare"]').click()); await pg.waitForTimeout(500);
+  const read=()=>pg.evaluate(()=>{const T=document.querySelector('#cmpBox .cmp-t'); const rows={}; if(T)for(const tr of T.querySelectorAll('tbody tr:not(.g)')){const th=tr.querySelector('th span'); if(th)rows[th.textContent]=[...tr.querySelectorAll('td')].map(td=>({t:td.textContent.trim(),best:td.classList.contains('best'),worst:td.classList.contains('worst')}))}
+    return {page:document.body.dataset.page,txt:document.getElementById('cmpBox').innerText.replace(/\s+/g,' '),heads:T?[...T.querySelectorAll('thead th')].slice(1).map(x=>x.textContent.trim()):[],rows,ox:document.documentElement.scrollWidth>innerWidth+1,sw:[...document.querySelectorAll('#cmpBox .cmp-sw')].map(x=>x.innerText.replace(/\s+/g,' '))}});
+  let r=await read(); assert.equal(r.page,'compare'); assert.match(r.txt,/בחר לפחות שני ניירות/); assert.match(r.txt,/מהתיק והמעקב: MSFT/);
+  await pg.click('#cmpBox [data-cmpadd="MSFT"]'); await pg.waitForTimeout(200); await pg.fill('#cmpIn','nvda'); await pg.click('#cmpAdd button'); await pg.waitForTimeout(1500);
+  r=await read(); assert.equal(r.ox,false,'no sideways scroll'); assert.match(r.heads[0],/^MSFT.*Microsoft/); assert.match(r.heads[1],/^NVDA.*NVIDIA/);
+  // the figures from the research, with "more" marked only among those compared, and the way to read each
+  assert.deepEqual(r.rows['מכפיל רווח'].map(c=>c.t),['36.0','52.0']); assert.equal(r.rows['מכפיל רווח'][0].best,true,'the lower multiple is marked'); assert.equal(r.rows['מכפיל רווח'][1].worst,true);
+  assert.deepEqual(r.rows['צמיחת הכנסות'].map(c=>c.best),[false,true]); assert.deepEqual(r.rows['חוב להון'].map(c=>c.t),['0.30','0.13']); assert.match(r.txt,/נמוך = יותר/); assert.match(r.txt,/גבוה = יותר/);
+  // the price over the period from the closes the page has (NVDA has them in the fixture), said when they fall short; a figure the page lacks says so
+  assert.match(r.rows['מחיר בתקופה'][1].t,/[+−]\d.*%/,'NVDA: a change over the period'); assert.match(r.rows['מחיר בתקופה'][0].t,/אין נתון/,'MSFT: no closes, said so'); assert.match(r.rows['תזרים חופשי מההכנסות'][0].t,/אין נתון/);
+  assert.match(r.rows['הדוח הבא'][0].t,/בעוד 20 ימים/); assert.match(r.rows['בתיק שלי'][0].t,/%/);
+  // strong and weak, only relative, and what to watch
+  assert.equal(r.sw.length,2); assert.match(r.sw[1],/חזק ב \(מול האחרים כאן\): .*צמיחת הכנסות/); assert.match(r.sw[1],/מה לשים לב אליו: .*זזה פי 1\.9 מהשוק/); assert.match(r.sw[0],/חלש ב: .*צמיחת הכנסות/);
+  assert.match(r.txt,/ההשוואה לא אומרת מה כדאי/); assert.match(r.txt,/אין בדף: מתחרים/);
+  if(process.env.SHOT)await pg.locator('#cmpSec').screenshot({path:process.env.SHOT});
+  // the period changes the price row
+  const before=r.rows['מחיר בתקופה'][1].t; await pg.click('#cmpBox [data-cmprng="1m"]'); await pg.waitForTimeout(300); r=await read(); assert.equal(await pg.evaluate(()=>document.querySelector('#cmpBox [data-cmprng="1m"]').getAttribute('aria-pressed')),'true'); assert.notEqual(r.rows['מחיר בתקופה'][1].t,before,'a shorter period, another change');
+  // a third from the security page
+  await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='KO'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForSelector('#secPage [data-cmpgo="KO"]',{timeout:10000}); await pg.click('#secPage [data-cmpgo="KO"]'); await pg.waitForTimeout(1200);
+  r=await read(); assert.equal(r.page,'compare'); assert.equal(r.heads.length,3); assert.match(r.heads[2],/^KO/);
+  // kept for the next visit, and the fourth is the last
+  assert.deepEqual(await pg.evaluate(()=>JSON.parse(localStorage.getItem('tr_cmp')).syms),['MSFT','NVDA','KO']);
+  await pg.click('#cmpBox [data-cmpadd="AAPL"]'); await pg.waitForTimeout(1000); r=await read(); assert.equal(r.heads.length,4); assert.equal(await pg.evaluate(()=>!!document.getElementById('cmpAdd')),false,'four is the most');
+  await pg.click('#cmpBox [data-cmprm="KO"]'); await pg.waitForTimeout(300); r=await read(); assert.equal(r.heads.length,3);
+  // צ׳יקו: the same figures, how to read them, what is missing, and the rule
+  const f=await pg.evaluate(()=>window.__focus('cmp')); assert.equal(f.kind,'compare'); assert.equal(f.data.securities.length,3); assert.equal(f.data.securities[0]['מכפיל רווח'],36); assert.ok(f.data.figures_read_as['חוב להון']); assert.match(f.data.rule,/לא לדרג/);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
