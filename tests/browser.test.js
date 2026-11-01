@@ -2149,6 +2149,33 @@ test('1.11 an account written by hand (no deposits, trades or snapshots) does no
   }finally{await ctx.close(); store.setDoc('history/main',H0,{silent:true})}
 });
 
+test('1.11 the data-completion panel: a hand-typed portfolio (no costs, no deposits) is asked for its buying prices (or "don\'t remember", an estimate) and its deposits, once; written like a statement would',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main').data;
+  store.setDoc('portfolio/main',{...P0,positions:P0.positions.slice(0,3).map(p=>({sym:p.sym,name:p.name,qty:p.qty,ccy:p.ccy,acct:p.acct,group:p.group}))},{silent:true});
+  store.setDoc('history/main',{accounts:[{acct:'exc',ccy:'ILS'}],depIlsNow:0,monthly:[]},{silent:true});
+  const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_wiz_later')}catch(e){}});
+  try{
+    // the overview says what to complete; the panel sits in "התיק שלי"
+    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(300); const todo=await pg.evaluate(()=>document.querySelector('[data-pane="risk"]').innerText.replace(/\s+/g,' ')); assert.match(todo,/אין מחיר קנייה/);
+    await tab(pg,'mine'); await pg.waitForTimeout(600);
+    const w=await pg.evaluate(()=>({hidden:document.getElementById('fillWiz').hidden,txt:document.getElementById('fillWiz').innerText.replace(/\s+/g,' '),rows:[...document.querySelectorAll('#fillWiz .wz-r')].map(r=>r.dataset.sym),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(w.hidden,false); assert.equal(w.ox,false); assert.deepEqual(w.rows,['MSFT','NVDA','AAPL']); assert.match(w.txt,/ל-3 ניירות אין מחיר קנייה/); assert.match(w.txt,/כמה כסף הכנסת לחשבון עד היום/);
+    // MSFT: a price and a month; NVDA: "don't remember"; AAPL left empty; the deposits: ₪20,000 from this month
+    await pg.fill('#fillWiz [data-sym="MSFT"] [data-wz="px"]','400'); await pg.fill('#fillWiz [data-sym="MSFT"] [data-wz="at"]','2026-03'); await pg.click('#fillWiz [data-sym="NVDA"] [data-wz="est"]');
+    await pg.fill('#fillWiz [data-wz="dep"]','20000'); await pg.click('#wizForm button[type=submit]'); await pg.waitForTimeout(1500);
+    const st=await pg.evaluate(()=>document.getElementById('wizState').textContent); assert.match(st,/נשמר: 2 מחירי קנייה \(1 משוערים\), הפקדות ₪20,000/);
+    const P1=store.getDoc('portfolio/main').data, ms=P1.positions.find(p=>p.sym==='MSFT'), nv=P1.positions.find(p=>p.sym==='NVDA'), ap=P1.positions.find(p=>p.sym==='AAPL');
+    assert.equal(ms.costUsd,800); assert.equal(ms.costIls,Math.round(800*3.7*100)/100); assert.equal(ms.buyAt,'2026-03-01'); assert.equal(ms.costSrc,'wiz'); assert.equal(nv.costUsd,6*182); assert.equal(nv.costSrc,'wiz-est'); assert.equal(nv.costEst,true); assert.equal(ap.costUsd,undefined,'left empty stays empty');
+    const H1=store.getDoc('history/main').data; assert.equal(H1.depIlsNow,20000); assert.equal(H1.accounts[0].deposits[0].amount,20000); assert.equal(H1.accounts[0].deposits[0].src,'wiz');
+    // the panel asks again only for what is still missing (AAPL), and the look-back has the deposits
+    await pg.waitForTimeout(800); const w2=await pg.evaluate(()=>({hidden:document.getElementById('fillWiz').hidden,rows:[...document.querySelectorAll('#fillWiz .wz-r')].map(r=>r.dataset.sym),dep:!!document.querySelector('#fillWiz [data-wz="dep"]')}));
+    assert.equal(w2.hidden,false); assert.deepEqual(w2.rows,['AAPL']); assert.equal(w2.dep,false,'the deposits are no longer asked');
+    await pg.click('#fillWiz [data-wzlater]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('fillWiz').hidden),true,'"later" hides it for a week');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('portfolio/main',P0,{silent:true}); store.setDoc('history/main',H0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

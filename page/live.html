@@ -2046,6 +2046,8 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11: the data-completion panel */
+.wiz{display:flex;flex-direction:column;gap:6px} .wz-l{display:flex;flex-direction:column;gap:6px} .wz-r{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;align-items:end} .wz-r>b,.wz-r>.nm{grid-column:1/-1} .wz-r label,.wz-dep label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .wz-r input[type=number],.wz-r input[type=month],.wz-dep input[type=number],.wz-dep input[type=month]{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%} .wz-chk{grid-column:1/-1;flex-direction:row!important;align-items:center;gap:6px!important;font-size:13px!important;color:var(--ink)!important} .wz-dep{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;align-items:end} .wz-dep p{grid-column:1/-1}
 /* 1.11 (11): the criteria over the ranking, and why / what contradicts */
 .fitc{margin:6px 0} .fitc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 8px} .fitc-g label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .fitc-g input,.fitc-g select{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
 .fw-con{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.45} .fw-con b{color:var(--ink)}
@@ -3557,6 +3559,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="srch" id="wsBox" style="margin-top:4px"><input id="wsQ" type="text" placeholder="למשל: SAP, Toyota, Shell, ASML" autocomplete="off" aria-label="חיפוש נייר בכל העולם"><button type="button" class="btn sm" id="wsGo">חפש</button></div>
         <div class="wsres" id="wsRes" hidden></div>
       </div>
+      <div class="panel wiz" id="fillWiz" data-mvp="hold" hidden></div>
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
         <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></div>
@@ -19433,6 +19436,7 @@ function nextChecks(A,m){
   if(!(tsum>0))add('לקבוע יעדי הקצאה','בלי יעדים אי אפשר לבדוק אם התיק בנוי כמו שתכננת.',{t:'settings',l:'לקבוע יעדים'},'setup');
   const co=coOf(m); if(co&&co.strong.length&&co.w>=20)add(ACTT['נעים יחד'],`${pct(co.w)} מהתיק בניירות שעלו וירדו יחד ברוב הימים.`,{t:'risk',l:ANAV.risk},'info');
   const ov=anaOverlap(m); if(ov)add(ACTT['חפיפה'],ov.lead,{t:'risk',l:ANAV.risk},'info');
+  try{if(fillNeeded()&&canWrite)add('להשלים מחירי קנייה והפקדות',`${fillNeedCost().length?fillNeedCost().length+' ניירות בלי מחיר קנייה':''}${fillNeedCost().length&&fillNeedDep()?', ו':''}${fillNeedDep()?'אין סכום הפקדות':''}; בלי זה הרווח, "מול ההפקדות" וההשוואה למדדים ריקים.`,{t:'mine',l:'להשלים'},'setup')}catch(e){}
   if(!(+S.goal>0))add('לקבוע יעד כספי','יעד מאפשר לבדוק אם קצב ההפקדות מספיק כדי להגיע אליו.',{t:'forecast',l:'לקבוע יעד'},'setup');
   add('לבדוק לאן תלך ההפקדה הבאה','התוכנית מראה מה הבא בתור ומה אפשר לקנות ביתרה.',{t:'plan',l:ANAV.plan},'info');
   return out;
@@ -21860,7 +21864,7 @@ function renderMine(force){
   const opt=(v,cur,l)=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`, dis=canWrite?'':' disabled', nv=v=>v==null||v===''?'':esc(v);
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
-  try{renderRecon()}catch(e){}
+  try{renderRecon()}catch(e){} try{renderFillWiz()}catch(e){console.error(e)}
   try{const H=groupHints(DRAFT), el=$('grpHint'); if(el){el.hidden=!H.length; el.innerHTML=H.length?`<b>קבוצה לפי הנייר:</b> ${H.map(h=>`${esc(h.sym)} מסומן "טכנולוגיה"; לפי הנייר עצמו: <b>${esc(GROUPS[h.g])}</b>`).join(' · ')}. <button type="button" class="lnk" id="grpApply"${canWrite?'':' disabled'}>לסמן לפי הנייר</button> <span class="nm">(ואז לשמור; הקבוצה היא שלך לשנות)</span>`:''}}catch(e){}
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
@@ -23875,6 +23879,44 @@ function reconOf(ac,R,m,fx){
   return {ac,at:R.at,asOf:R.asOf,shot:R.shot,there,here:m.total,gap,listed,cashThere,cashHere:m.cash,cashDiff,sum,bRate,fx,
     other:there!=null&&rows.every(r=>r.there!=null)?there-listed:0,rows:rows.sort((a,b)=>Math.abs(b.diff||0)-Math.abs(a.diff||0))}}
 const RC_WHY={same:'זהה',price:'המחיר',fx:'שער הדולר',qty:'הכמות',rest:'עיגול או מקור',only:'רק אצלם',new:'רק כאן',noval:'אין שווי בדוח'};
+// ---- 1.11: "השלמת נתונים": a portfolio typed by hand has no buying prices and no deposits, and then the profit, "against
+// the deposits", the benchmarks and the monthly returns stay empty. One panel asks for the two things the page cannot
+// know: what each security cost (a price and a month, or "don't remember" = today's price, marked as an estimate) and how
+// much money came in up to today (one sum, and the month it began). Written to the portfolio and the history documents
+// like a statement would; a statement read later replaces them. Never invented: an estimate stays marked ----
+const fillNeedCost=()=>((P&&P.positions)||[]).filter(p=>p&&p.sym&&+p.qty>0&&(p.costIls==null||!isFinite(+p.costIls))&&(p.costUsd==null||!isFinite(+p.costUsd)));
+const fillNeedDep=()=>!!(P&&(P.positions||[]).length)&&!(HS&&((+HS.depIlsNow>0)||(HS.accounts||[]).some(A=>(A.deposits||[]).some(d=>+d.amount>0))));
+const fillNeeded=()=>fillNeedCost().length>0||fillNeedDep();
+function fillWizH(){
+  const costs=fillNeedCost(), dep=fillNeedDep(), ym=new Date().toISOString().slice(0,7), fx=Q&&Q.usdIls||0; if(!costs.length&&!dep)return '';
+  const row=(p,i)=>{const pr=(()=>{try{return priceOf(p.sym)}catch(e){return null}})(), cc=p.ccy==='ILS'?'₪':'$';
+    return `<div class="wz-r" data-wzi="${i}" data-sym="${esc(p.sym)}"><b>${esc(lab(p.sym))}</b> <span class="nm">${p.qty} יח׳${pr?' · היום '+fmtPx(pr.px,pr.ccy):''}</span>
+      <label>מחיר קנייה ליחידה (${cc})<input type="number" data-wz="px" min="0" step="0.01" inputmode="decimal" placeholder="${pr?pr.px:''}"></label><label>מתי (חודש)<input type="month" data-wz="at" max="${ym}"></label>
+      <label class="wz-chk"><input type="checkbox" data-wz="est"> לא זוכר: לפי המחיר של היום, מסומן כמשוער</label></div>`};
+  return `<div class="row"><h3>השלמת נתונים: ${costs.length&&dep?'עלויות והפקדות':costs.length?'מחירי הקנייה':'ההפקדות'}</h3><span class="sub">בלי זה הרווח, "מול ההפקדות", ההשוואה למדדים והתשואה החודשית נשארים ריקים</span></div>
+    <form id="wizForm">${costs.length?`<p class="nm" style="margin:0 0 6px">ל-${costs.length} ניירות אין מחיר קנייה. מחיר ליחידה במטבע הנייר, או "לא זוכר".</p><div class="wz-l">${costs.map(row).join('')}</div>`:''}
+      ${dep?`<div class="wz-dep"><p class="nm" style="margin:8px 0 4px">כמה כסף הכנסת לחשבון עד היום, בסך הכול?</p><label>סכום (₪)<input type="number" data-wz="dep" min="0" step="100" inputmode="numeric" placeholder="למשל 25000"></label><label>מאיזה חודש התחלת<input type="month" data-wz="depAt" max="${ym}" value="${ym}"></label>
+        <label class="wz-chk"><input type="checkbox" data-wz="depVal"> לפי שווי התיק היום (${ils((mAllNow()||{total:0}).total)}), מסומן כמשוער</label></div>`:''}
+      <div class="acts" style="justify-content:flex-start"><button type="submit" class="btn pri sm"${canWrite?'':' disabled'}>לשמור</button><button type="button" class="btn sm" data-wzlater="1">אחר כך</button><span class="saved" id="wizState" role="status"></span></div>
+      <p class="note" style="margin:6px 0 0">מה שתכתוב כאן נשמר כמו שורה מדוח; דוח או צילום שתעלה אחר כך מחליפים אותו. אומדן נשאר מסומן "משוער" בכל המסכים.</p></form>`}
+let WIZ_MSG='';
+function renderFillWiz(){const b=$('fillWiz'); if(!b)return; const later=(()=>{try{return +localStorage.getItem('tr_wiz_later')||0}catch(e){return 0}})(); const need=fillNeeded()&&canWrite&&Date.now()-later>7*864e5;
+  if(!need&&WIZ_MSG){b.hidden=false; setH(b,`<p class="saved" id="wizState" role="status" style="margin:0">${esc(WIZ_MSG)}</p>`); return} b.hidden=!need; if(need&&(!b.innerHTML||b.dataset.msg!==WIZ_MSG)){b.dataset.msg=WIZ_MSG; setH(b,fillWizH()); if(WIZ_MSG){const st=$('wizState'); if(st)st.textContent=WIZ_MSG}}}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#fillWiz'))return; if(t.closest('[data-wzlater]')){try{localStorage.setItem('tr_wiz_later',String(Date.now()))}catch(e){} $('fillWiz').hidden=true}
+  const chk=t.closest('input[data-wz="est"]'); if(chk){const r=chk.closest('.wz-r'); for(const i of r.querySelectorAll('[data-wz="px"],[data-wz="at"]'))i.disabled=chk.checked}
+  const dv=t.closest('input[data-wz="depVal"]'); if(dv){const i=$('wizForm').querySelector('[data-wz="dep"]'); i.disabled=dv.checked}});
+document.addEventListener('submit',async ev=>{const f=ev.target; if(!f||f.id!=='wizForm')return; ev.preventDefault(); if(!canWrite||!P)return; const st=$('wizState'); st.textContent='שומר…';
+  try{const fx=Q&&Q.usdIls||0, P2=JSON.parse(JSON.stringify(P)); let nCost=0, nEst=0;
+    for(const r of f.querySelectorAll('.wz-r')){const sym=r.dataset.sym, est=r.querySelector('[data-wz="est"]').checked, pxIn=+r.querySelector('[data-wz="px"]').value||0, at=r.querySelector('[data-wz="at"]').value||'';
+      const pr=(()=>{try{return priceOf(sym)}catch(e){return null}})(), px=est?(pr&&pr.px>0?pr.px:0):pxIn; if(!(px>0))continue;
+      for(const p of P2.positions){if(p.sym!==sym||p.costIls!=null||p.costUsd!=null)continue; const il=p.ccy==='ILS'; if(il){p.costIls=Math.round(p.qty*px*100)/100} else {p.costUsd=Math.round(p.qty*px*100)/100; p.costIls=fx?Math.round(p.qty*px*fx*100)/100:null} p.costEst=est||!il; p.costSrc=est?'wiz-est':'wiz'; if(at)p.buyAt=at+'-01'; nCost++; if(est)nEst++}}
+    const depEl=f.querySelector('[data-wz="dep"]'), depVal=f.querySelector('[data-wz="depVal"]'), depAt=f.querySelector('[data-wz="depAt"]'); let dep=0, depEst=false;
+    if(depEl){if(depVal&&depVal.checked){dep=Math.round((mAllNow()||{total:0}).total); depEst=true} else dep=+depEl.value||0}
+    if(nCost){await pset('portfolio',P2); P=P2; if(!dDirty)DRAFT=draftFromP()}
+    if(dep>0){const H=HS?JSON.parse(JSON.stringify(HS)):{accounts:[],depIlsNow:0,monthly:[]}; const ac=(P2.positions[0]||{}).acct||acctIds()[0]||'exc'; let A=(H.accounts||[]).find(x=>x.acct===ac); if(!A){A={acct:ac,ccy:'ILS',deposits:[],trades:[],snapshots:[]}; H.accounts=[...(H.accounts||[]),A]} A.deposits=[...(A.deposits||[]),{date:(depAt&&depAt.value||new Date().toISOString().slice(0,7))+'-01',amount:dep,ccy:'ILS',src:'wiz',...(depEst?{est:true}:{})}];
+      H.depIlsNow=Math.round(((+H.depIlsNow||0)+dep)*100)/100; H.depSrc='wiz'; await pset('history',H); HS=normHS(H)}
+    WIZ_MSG=`נשמר${nCost?`: ${nCost} מחירי קנייה${nEst?' ('+nEst+' משוערים)':''}`:''}${dep?`${nCost?', ':': '}הפקדות ${ils(dep)}${depEst?' (משוער)':''}`:''}`; st.textContent=WIZ_MSG; try{useAdd('wiz')}catch(e){} $('fillWiz').innerHTML=''; render(); setTimeout(()=>{try{renderFillWiz()}catch(e){}},50); setTimeout(()=>{WIZ_MSG=''; try{renderFillWiz()}catch(e){}},20000)}
+  catch(e){st.textContent='השמירה נכשלה'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); console.error(e)}});
 function renderRecon(){
   const box=$('reconBox'); if(!box)return; const src=(DRAFT&&DRAFT.recon)||{}, saved=(P&&P.recon)||{}, accts=[...new Set([...Object.keys(saved),...Object.keys(src)])].filter(a=>acctIds().includes(a));
   if(!accts.length||!Q||!Q.usdIls){box.hidden=true;return}
