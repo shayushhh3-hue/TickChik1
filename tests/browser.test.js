@@ -775,6 +775,13 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     seen.length=0; await pg.click('#ixSvB [data-ixsq]'); await pg.waitForFunction(()=>/על מניה מהתיק/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
     assert.ok(seen.some(x=>x.includes('how_it_reaches_the_stock')&&x.includes('NVDA')),'the share reaches צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
     await pg.click('#ixSv [data-ixback]'); await pg.waitForTimeout(200); assert.ok(await pg.evaluate(()=>document.getElementById('ixSv').hidden&&!document.getElementById('ixBody').hidden));
+    // 1.11 a "map" button used while the share's sheet is open: the sheet gives way and the round map shows that view
+    await pg.evaluate(()=>window.__ix.stock('NVDA')); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.getElementById('ixSv').hidden),false);
+    await pg.evaluate(()=>window.__im.toRound('co:NVDA')); await pg.waitForTimeout(400);
+    const rm=await pg.evaluate(()=>({sheet:document.getElementById('ixSv').hidden,open:document.getElementById('ixMapD').open,view:document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv,center:(window.__ix.graph()||{}).center}));
+    assert.deepEqual(rm,{sheet:true,open:true,view:'co',center:'c:NVDA'},JSON.stringify(rm));
+    await pg.evaluate(()=>window.__im.toRound('world')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>(window.__ix.graph()||{}).center),'world');
+    await pg.evaluate(()=>window.__im.toRound('pf:')); await pg.waitForTimeout(300);
     // the map in words, for whoever reads better than looks
     await pg.evaluate(()=>{document.getElementById('ixMapD').open=true}); await pg.waitForTimeout(150);
     await pg.click('#ixTxtB'); await pg.waitForTimeout(150); const tx=await pg.evaluate(()=>({cv:document.getElementById('ixCv').hidden,t:document.getElementById('ixTxt').innerText.replace(/\s+/g,' ')}));
