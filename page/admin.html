@@ -581,6 +581,7 @@ SCREENS.roadmap=async()=>{head('ניהול מוצר ופיתוח','מרעיון 
   for(const b of view.querySelectorAll('[data-rm]'))b.onclick=()=>{const r=d.items.find(x=>String(x.id)===b.dataset.rm); if(ed)form(r)}};
 
 // ---- the content ----
+let C_REOPEN=null;
 const CKIND={banner:'הודעת מערכת',maintenance:'הודעת תחזוקה',announcement:'הודעה למשתמשים',guide:'מדריך',faq:'שאלה נפוצה'}, CAUD={all:'כל המשתמשים',friend:'שותפים',admin:'מנהלים',new:'משתמשים חדשים (30 יום)',with_pf:'מי שהזין תיק',no_pf:'מי שעוד לא הזין תיק'}, CST={draft:['p-off','טיוטה'],published:['p-ok','מפורסם'],archived:['p-off','בארכיון']};
 SCREENS.content=async()=>{head('מרכז תוכן','הודעות מערכת ותחזוקה, הודעות לכולם או לקבוצה, מדריכים ושאלות נפוצות. הודעות מופיעות כפס בראש האתר; מדריכים ושאלות בעמוד "עזרה ותמיכה".'); view.innerHTML=loading(3);
   const d=await api('content'), ed=can('edit');
@@ -607,10 +608,12 @@ SCREENS.content=async()=>{head('מרכז תוכן','הודעות מערכת ות
     for(const id of ['cK','cL','cT','cB'])$(id).addEventListener('input',()=>{$('cPrev').innerHTML=prev(cur())});
     const m=(x,ok)=>{$('cMsg').className='msg '+(ok?'ok':'bad'); $('cMsg').textContent=x};
     $('cNo').onclick=()=>{$('cForm').innerHTML=''};
-    $('cSave').onclick=async()=>{try{const r=await post('content',cur()); m('נשמר.',true); c=r.item; setTimeout(route,400)}catch(e){m(e.message,false)}};
+    $('cSave').onclick=async()=>{try{const r=await post('content',cur()); C_REOPEN=r.item.id; await route()}catch(e){m(e.message,false)}};
     const st=s=>async()=>{try{await post('content',cur()); await post('content/'+c.id+'/status',{status:s}); route()}catch(e){m(e.message,false)}};
     if($('cPub'))$('cPub').onclick=st('published'); if($('cUnpub'))$('cUnpub').onclick=st('draft'); if($('cArc'))$('cArc').onclick=st('archived')};
-  if($('cNew'))$('cNew').onclick=()=>form(null)};
+  if($('cNew'))$('cNew').onclick=()=>form(null);
+  // after a save the editor stays open on the saved item (with its publish button), drawn once, with nothing redrawn later
+  if(C_REOPEN){const c=d.items.find(x=>x.id===C_REOPEN); C_REOPEN=null; if(c&&ed){form(c); $('cMsg').className='msg ok'; $('cMsg').textContent='נשמר.'}}};
 
 // ---- business intelligence ----
 SCREENS.biz=async()=>{head('Business Intelligence','עלויות, הכנסות ועלות למשתמש, לפי חודש. רק מה שנרשם או חושב, בלי נתונים מדומים.'); view.innerHTML=loading(6);

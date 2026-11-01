@@ -17665,7 +17665,11 @@ function healthOf(m){
   return {score,parts,label:score>=80?'בריא לפי הכללים שלך':score>=60?'יש מה לבדוק':'חורג מהכללים שלך',lvl:score>=80?'ok':score>=60?'warn':'crit'};
 }
 function renderHealth(m){
-  const sec=$('healthHome'); if(!sec)return; const H=healthOf(m); if(!H){sec.hidden=true;return}
+  const sec=$('healthHome'); if(!sec)return;
+  // 1.11: the sector part needs the list of securities (loaded lazily): drawn again once it is there, so the score never
+  // comes out without its sector part just because the list was late
+  if(!SYMDB&&!renderHealth.asked){renderHealth.asked=true; try{loadSymDb().then(()=>{try{renderHealth(mAllNow())}catch(e){}})}catch(e){}}
+  const H=healthOf(m); if(!H){sec.hidden=true;return}
   sec.hidden=false; const ring=$('hRing'); ring.style.setProperty('--p',H.score); ring.style.setProperty('--c',H.lvl==='ok'?'var(--gain)':H.lvl==='warn'?'var(--warn-c)':'var(--loss)'); ring.setAttribute('aria-label',`${H.score} מתוך 100`);
   $('hNum').textContent=H.score; $('hLab').textContent=H.label; const low=H.parts.filter(x=>x.lvl!=='ok').sort((a,b)=>(1-b.s)*b.w-(1-a.s)*a.w);   // the parts that cost the most points first
   $('hWhy').textContent=low.length?`מוריד את המדד: ${low.slice(0,2).map(x=>x.t).join(', ')}`:'כל הבדיקות בטווח שקבעת';

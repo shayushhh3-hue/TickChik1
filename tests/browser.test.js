@@ -2689,11 +2689,11 @@ test('1.11 support and content: a partner writes from "עזרה ותמיכה", t
     await pg.goto(U+'admin#content'); await pg.waitForSelector('#cNew'); await pg.click('#cNew'); await pg.selectOption('#cK','announcement'); await pg.fill('#cT','גרסה חדשה'); await pg.fill('#cB','נוסף מסך עזרה');
     assert.match(await pg.textContent('#cPrev'),/גרסה חדשה.*נוסף מסך עזרה/s,'the preview');
     await pg.click('#cSave'); await pg.waitForFunction(()=>[...document.querySelectorAll('#tblC tbody tr')].some(r=>/גרסה חדשה/.test(r.textContent)),null,{timeout:8000});
-    await pg.click('#tblC tbody tr.click'); await pg.waitForSelector('#cPub'); await pg.click('#cPub'); await pg.waitForFunction(()=>/מפורסם/.test(document.getElementById('tblC').textContent),null,{timeout:8000});
+    await pg.click('#tblC tbody tr.click'); await pg.waitForSelector('#cPub'); await pg.click('#cPub'); await pg.waitForFunction(()=>[...document.querySelectorAll('#tblC tbody tr')].some(r=>/גרסה חדשה/.test(r.textContent)&&/מפורסם/.test(r.textContent)),null,{timeout:8000}).catch(async e=>{throw new Error('not published: '+await pg.evaluate(()=>(document.getElementById('cMsg')||{}).textContent||'(no message)')+' | '+await pg.evaluate(()=>document.getElementById('tblC').innerText.slice(0,300)))});
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // the partner again: the strip on the site, the dot, the answer
     ({ctx,pg}=await open(390,{who:'p2'}));
-    await pg.waitForSelector('#tcNotes .n',{timeout:8000}); assert.match(await pg.textContent('#tcNotes'),/גרסה חדשה/);
+    await pg.waitForSelector('#tcNotes .n',{timeout:8000}).catch(async e=>{throw new Error('no strip: '+JSON.stringify(store.db.prepare('select id,kind,status,audience,starts_at,ends_at from content').all())+' api: '+await pg.evaluate(()=>fetch('/api/content').then(r=>r.text()))+' tc: '+await pg.evaluate(()=>JSON.stringify(window.__tc||null)))}); assert.match(await pg.textContent('#tcNotes'),/גרסה חדשה/);
     assert.equal(await pg.evaluate(()=>!!document.querySelector('#tcAcctBtn .dot')),true,'a dot: an answer is waiting');
     await pg.click('#tcNotes .n button'); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcNotes .n').length),0);
     await pg.goto(U+'help.html'); await pg.waitForSelector('#mine .tk'); assert.match(await pg.textContent('#mine'),/ממתינה לתגובה שלך/);
