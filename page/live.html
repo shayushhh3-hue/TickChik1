@@ -17607,12 +17607,19 @@ function renderOb(){
   const tsum=Object.values((S&&S.targets)||{}).reduce((t,v)=>t+(+v||0),0), R=(S&&S.rules)||{}, D=DEF.rules;
   const rulesDone=!!S.rulesOk||tsum>0||['maxPos','maxGroup','stopLoss','drift','minHoldMonths'].some(k=>+R[k]!==+D[k]);
   const planDone=((PLD&&PLD.items)||[]).length>0||((PLD&&PLD.idx&&PLD.idx.items)||[]).length>0;
+  // 1.11 (12): the journey of a new account, in the order the page needs it: the data the page cannot know, the rules
+  // the checks run by, the targets, the goal, and how to be told. Each step is done by what is actually in the account
+  const fillDone=(()=>{try{return !fillNeeded()}catch(e){return true}})(), goalDone=+S.goal>0&&+S.years>0;
+  const alertsDone=!!(S.pulse&&typeof S.pulse==='object'&&Object.keys(S.pulse).length)||!!(S.mail&&Object.values(S.mail).some(Boolean))||!!(S.liveAl&&Object.keys(S.liveAl).length)||(typeof PUSH_ON!=='undefined'&&!!PUSH_ON);
   const steps=[
+    {done:fillDone,t:'מחירי קנייה והפקדות',x:'מה כל נייר עלה לך וכמה כסף הכנסת. בלי זה אין רווח, אין "מול ההפקדות" ואין השוואה למדדים.',b:'<button class="btn sm pri" type="button" data-tab="mine" data-goid="fillWiz">להשלים</button>'},
     {done:tsum>0,t:'יעדי הקצאה',x:'כמה אחוז מהתיק לכל קבוצה. בלי יעדים אין בדיקה אם התיק בנוי כמו שתכננת.',b:'<button class="btn sm pri" type="button" data-tab="settings">לקבוע יעדים</button>'},
     {done:rulesDone,t:'הכללים שלך',x:`כרגע: עד ${pct(+R.maxPos||0,0)} לנייר אחד, עד ${pct(+R.maxGroup||0,0)} לקבוצה, ובדיקה כשנייר יורד ${pct(+R.stopLoss||0,0)} מהעלות.`,b:'<button class="btn sm" type="button" data-oba="rulesOk">הכללים מתאימים לי</button><button class="btn sm" type="button" data-tab="settings">לשנות</button>'},
-    {done:planDone,t:'תוכנית הפקדה חודשית',x:'כמה אתה מפקיד בכל חודש ואילו ניירות להגדיל. ממנה הדף מחשב מה הבא בתור.',b:'<button class="btn sm" type="button" data-tab="plan">לבנות תוכנית</button>'}];
+    {done:planDone,t:'תוכנית הפקדה חודשית',x:'כמה אתה מפקיד בכל חודש ואילו ניירות להגדיל. ממנה הדף מחשב מה הבא בתור.',b:'<button class="btn sm" type="button" data-tab="plan">לבנות תוכנית</button>'},
+    {done:goalDone,t:'יעד כספי ואופק',x:'כמה אתה רוצה שיהיה ומתי. ממנו מצפן המטרות מחשב כמה מהדרך עברת ומה סוגר את הפער.',b:'<button class="btn sm" type="button" data-tab="forecast" data-goid="inGoal">לקבוע יעד</button>'},
+    {done:alertsDone,t:'איך להודיע לך',x:'התראה כשמניה עוברת מחיר שקבעת, כשהדולר זז, או כשיש ידיעה חשובה: לדפדפן, לטלפון או למייל.',b:'<button class="btn sm" type="button" data-tab="settings" data-goid="pushBox">לבחור התראות</button>'}];
   const left=steps.filter(x=>!x.done).length; ob.hidden=!(has&&left&&!skip&&canWrite); if(ob.hidden)return;
-  $('obCnt').textContent=`${3-left} מתוך 3 בוצעו`;
+  $('obCnt').textContent=`${steps.length-left} מתוך ${steps.length} בוצעו`; const hh=$('hOb'); if(hh)hh.textContent=left===steps.length?'חמישה צעדים כדי שהבקרה תעבוד בשבילך':`עוד ${left===1?'צעד אחד':left+' צעדים'} כדי שהבקרה תעבוד בשבילך`;
   const h=steps.map(x=>`<li class="${x.done?'done':''}"><span class="obk" aria-hidden="true">${x.done?'✓':''}</span><div><b>${x.t}</b>${x.done?' <span class="sub">בוצע</span>':''}<p>${x.x}</p>${x.done?'':`<div class="acts">${x.b}</div>`}</div></li>`).join('');
   setH($('obList'),h);
 }
@@ -21670,7 +21677,8 @@ document.addEventListener('click',ev=>{
   if(ev.target.closest('[data-depban]')){try{localStorage.setItem('tr_depban',ymNow())}catch(e){} renderDepBan(); return}
   const i18b=ev.target.closest('[data-i18n]'); if(i18b){if(i18b.dataset.i18n==='go'){I18N.stop='';i18nPump();i18nPill()} else {if(S.profile&&S.profile.lang&&S.profile.lang!=='he'&&canWrite){S.profile={...S.profile,lang:'he'};changed()} i18nSet('he')} return}
   const vw=ev.target.closest('[data-view]'); if(vw){try{useAdd('view:'+vw.dataset.view)}catch(e){} setView(vw.dataset.view);return}
-  const tb=ev.target.closest('[data-tab]'); if(tb){if(tb.dataset.pot){POT=tb.dataset.pot; try{localStorage.setItem('tr_pot',POT)}catch(x){}} showTab(tb.dataset.tab,true);setNav(false);return}
+  const tb=ev.target.closest('[data-tab]'); if(tb){if(tb.dataset.pot){POT=tb.dataset.pot; try{localStorage.setItem('tr_pot',POT)}catch(x){}} showTab(tb.dataset.tab,true);setNav(false);
+    if(tb.dataset.goid)setTimeout(()=>{const el=document.getElementById(tb.dataset.goid); if(el&&!el.hidden){try{el.scrollIntoView({block:'start',behavior:'smooth'})}catch(e){} if(/INPUT|SELECT/.test(el.tagName))try{el.focus({preventScroll:true})}catch(e){}}},250); return}
   if(ev.target.closest&&ev.target.closest('#kStatus')){showTab('overview');$('desk').scrollIntoView({behavior:'smooth',block:'center'});return}
   if(ev.target.id==='calmMore'){setMore(!MORE);return}
   const ak=ev.target.closest('[data-ack]'); if(ak){const sig=ak.dataset.ack; ackToggle(sig,true); offerUndo('סימנת שבדקת. הנושא ירד מהרשימה עד שמשהו בו ישתנה.',()=>ackToggle(sig,false)); try{(document.querySelector('#desk .dk-ack')||$('desk')).focus({preventScroll:true})}catch(e){} return}

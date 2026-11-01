@@ -2178,6 +2178,24 @@ test('1.11 the data-completion panel: a hand-typed portfolio (no costs, no depos
   }finally{await ctx.close(); store.setDoc('portfolio/main',P0,{silent:true}); store.setDoc('history/main',H0,{silent:true})}
 });
 
+test('1.11 the five steps of a new account: done by what is in the account, each with a way to the right place, the count and the heading follow',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data, H0=store.getDoc('history/main').data;
+  store.setDoc('settings/main',{...S0,targets:{},goal:0,rulesOk:false,rulesAt:undefined,rules:{...S0.rules,maxPos:10,maxGroup:40,stopLoss:15,drift:5,minHoldMonths:12},mail:{},pulse:undefined,liveAl:undefined},{silent:true});
+  const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_ob_skip')}catch(e){}});
+  try{
+    await pg.reload(); await pg.waitForFunction(()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000}); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>({hidden:document.getElementById('obNext').hidden,h:document.getElementById('hOb').textContent,cnt:document.getElementById('obCnt').textContent,steps:[...document.querySelectorAll('#obList li')].map(l=>({t:l.querySelector('b').textContent,done:l.classList.contains('done')}))}));
+    assert.equal(r.hidden,false); assert.deepEqual(r.steps.map(x=>x.t),['מחירי קנייה והפקדות','יעדי הקצאה','הכללים שלך','תוכנית הפקדה חודשית','יעד כספי ואופק','איך להודיע לך']);
+    assert.equal(r.steps[0].done,true,'the fixture has costs and deposits'); assert.equal(r.steps[4].done,false); assert.match(r.cnt,/מתוך 6 בוצעו/); assert.match(r.h,/עוד \d צעדים כדי שהבקרה תעבוד/);
+    // the goal step leads to the goal field
+    await pg.click('#obList [data-goid="inGoal"]'); await pg.waitForTimeout(600); assert.equal(await pg.evaluate(()=>document.body.dataset.page+' '+document.activeElement.id),'forecast inGoal');
+    await pg.fill('#inGoal','250000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600); await tab(pg,'overview'); await pg.waitForTimeout(300);
+    const r2=await pg.evaluate(()=>[...document.querySelectorAll('#obList li')].map(l=>l.classList.contains('done'))); assert.equal(r2[4],true,'the goal step is done once a goal and a horizon are set');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('settings/main',S0,{silent:true}); store.setDoc('history/main',H0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
