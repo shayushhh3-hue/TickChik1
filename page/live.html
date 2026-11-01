@@ -25307,7 +25307,8 @@ function secInsiders(it){if(!it||!it.sym||it.t==='I'||it.t==='E'||it.t==='F'||it
   const head=`<div class="row" style="margin-top:12px"><h3>בעלי עניין: מה דיווחו ל-SEC</h3><span class="sub">${esc(INS.source||'SEC EDGAR')}${INS.updatedAt?' · '+rsWhen(INS.updatedAt):''}</span></div>`;
   if(!L.length)return `${head}<p class="note">${checked?'ב-120 הימים האחרונים לא נמצאו דיווחי טופס 4 של בעלי עניין בחברה.':'הדיווחים של החברה הזו עוד לא נמשכו (נמשכים לניירות בתיק ובמעקב, פעמיים ביום).'}</p>`;
   const sum=`<p class="ins-sum">ב-${S9.days} הימים: <b>${S9.buy.n}</b> קניות בשוק${S9.buy.n?` (${S9.buy.who.size} אנשים, ${usd0(S9.buy.v)})`:''} · <b>${S9.sell.n}</b> מכירות בשוק${S9.sell.n?` (${S9.sell.who.size} אנשים, ${usd0(S9.sell.v)}${S9.plan?`, ${S9.plan} בתוכנית מתוכננת`:''})`:''} · <b>${S9.pay}</b> דיווחי תגמול, מימוש או מס.</p>`;
-  return `${head}${sum}<ul class="ins-l">${L.slice(0,8).map(f=>insRowH(f,false)).join('')}</ul>${L.length>8?`<p class="nm">${L.length-8} דיווחים נוספים ב-200 הימים האחרונים.</p>`:''}
+  const Ls=L.slice().sort((a,b)=>(b.deliberate-a.deliberate)||(b.material-a.material)||(a.filedAt<b.filedAt?1:-1));   // the decisions with their own money first, then the pay mechanics
+  return `${head}${sum}<ul class="ins-l">${Ls.slice(0,8).map(f=>insRowH(f,false)).join('')}</ul>${L.length>8?`<p class="nm">${L.length-8} דיווחים נוספים ב-200 הימים האחרונים (תגמול, מימוש ומס בסוף).</p>`:''}
     <p class="note">קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול, לא החלטה. מכירה בתוכנית מתוכננת נקבעה מראש. דיווח הוא עובדה על העסקה של המדווח, לא על עתיד החברה; המידע מפגר ביחס לעסקה (דיווח תוך יומיים). לא ייעוץ.</p>`}
 // the news page: the filings of the last 30 days in the companies held or followed, the material ones first
 function insViewH(){
