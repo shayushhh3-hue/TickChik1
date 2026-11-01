@@ -53,5 +53,7 @@ export function divPlan(hist,{now=new Date(),months=12}={}){
   if(step&&last&&gap(last.ex,today)<=step*1.6){let d=last.ex, guard=0;
     while(guard++<40){d=add(d,step); if(d>end)break; if(d<today)continue; if(out.some(x=>Math.abs(gap(x.ex,d))<step*0.5))continue;
       out.push({ex:d,pay:payGap!=null?add(d,payGap):null,amt:last.amt||null,est:true})}}
-  return {next:out.sort((a,b)=>a.ex<b.ex?-1:1),freq,last:last?{ex:last.ex,pay:last.pay||null,amt:last.amt}:null};
+  // 1.11 (10): the last eight paid, so the page can say a raise, a cut, or a stop; and whether the rhythm broke
+  const histL=past.slice(0,8).map(x=>({ex:x.ex,pay:x.pay||null,amt:x.amt})), stopped=!!(step&&last&&gap(last.ex,today)>step*1.6);
+  return {next:out.sort((a,b)=>a.ex<b.ex?-1:1),freq,last:last?{ex:last.ex,pay:last.pay||null,amt:last.amt}:null,hist:histL,stopped};
 }

@@ -2046,6 +2046,10 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 @media (min-width:900px){.mk-row{flex-wrap:wrap;overflow:visible}}
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
+/* 1.11 (10): the dividends ahead */
+.dva{display:flex;flex-direction:column;gap:6px} .dva-m{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;align-items:end;height:120px;padding-top:14px} .dva-c{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;height:100%} .dva-b{flex:1;width:100%;display:flex;flex-direction:column-reverse;align-items:stretch} .dva-b i{display:block;width:100%} .dva-b i.s{background:var(--s1)} .dva-b i.e{background:var(--s1);opacity:.4} .dva-c .nm{font-size:10.5px} .dva-c .n{font-size:9.5px;font-family:var(--mono);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} .dva-k{display:inline-block;width:10px;height:10px;vertical-align:middle;background:var(--s1);border-radius:2px;margin:0 2px} .dva-k.e{opacity:.4}
+.dva-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px} .dva-r{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;line-height:1.5} .dva-h{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline} .dva-h .sym{font-family:var(--mono);font-weight:700} .dva-b2{display:flex;flex-direction:column;gap:2px;margin-top:3px} .dva-r .n{font-family:var(--mono)}
+@media (max-width:560px){.dva-c .n{display:none}}
 /* 1.11 (6): the anomalies */
 .anom{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px} .anom li{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;line-height:1.5} .an-h{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline} .an-b{display:flex;flex-direction:column;gap:2px;margin-top:4px;font-size:13px;color:var(--ink2)} .an-b b{color:var(--ink)}
 /* 1.11 (4): the time machine */
@@ -2899,6 +2903,10 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <p class="note" id="divNote" style="margin-top:10px"></p>
         <p class="note" id="divRe" style="margin-top:6px"></p>
       </div>
+    </section>
+    <section aria-labelledby="hDivAhead" id="divAheadSec" hidden>
+      <div class="row"><h2 id="hDivAhead">לוח הדיבידנדים: הוכרז, צפוי, שולם</h2><span class="sub" id="divAheadSub"></span></div>
+      <div class="panel dva" id="divAhead"></div>
     </section>
     <section aria-labelledby="hDivCalc" id="divCalc">
       <div class="row"><h2 id="hDivCalc">מחשבון דיבידנדים</h2><span class="sub" id="divCalcSub"></span></div>
@@ -17809,7 +17817,7 @@ function render(){
   renderDecomp();
   renderFees(); try{renderBench()}catch(e){} try{renderTax()}catch(e){} try{renderDD()}catch(e){}
   renderProfile(m);
-  try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
+  try{renderDivGot(m)}catch(e){} renderDividends(m); try{renderDivAhead(m)}catch(e){console.error(e)} try{renderDivCalc(m)}catch(e){} try{renderFxCalc()}catch(e){}
   renderRisk(m);
   renderComove(m);
   try{renderExposure(m)}catch(e){} try{renderStress(m)}catch(e){} try{renderSim()}catch(e){console.error(e)} try{renderTm()}catch(e){console.error(e)}
@@ -18093,6 +18101,39 @@ function renderDividends(m){
     +(rows.length?`<tr class="sec"><td colspan="3">סך הכול בשנה</td><td class="num"><span class="n">${ils(g)}</span></td><td class="num"><span class="n down">${LRM}−${ils(g*WH)}</span></td><td class="num"><span class="n">${ils(g*(1-WH))}</span></td></tr>`:'')||'<tr><td colspan="6" class="empty">אין בתיק ניירות שמחלקים דיבידנד.</td></tr>';
   {const d=divReinvest(g); $('divRe').innerHTML=g>0?`אם הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש בתיק: בעוד ${nn(d.Y)} שנים, בתשואה של ${nn(pct(d.R))} בשנה (ההנחה שלך במסך היעד), הוא מצטבר לכ-${nn(ils(d.fv))}, לעומת ${nn(ils(d.flat))} אם הוא נשאר במזומן. זה אפקט הריבית דריבית, לא תחזית.`:''}
   $('divNote').textContent=`המס מנוכה מכל תשלום בנפרד, ברגע שהוא משולם, גם כשהדיבידנד מושקע מחדש. זה ההבדל ממניה שעלתה: על עלייה במחיר משלמים מס רווחי הון רק כשמוכרים, ועד אז כל הסכום ממשיך לעבוד בתיק. בדיבידנד, ${pct(WH*100,0)} יוצאים מהתיק בכל חלוקה ולא מצטברים, ולאורך שנים ההפרש גדל (המחשבון למטה מראה כמה). הצפי מניח שכל חברה תמשיך לחלק באותו שיעור ושהמחיר והכמות לא ישתנו. חברה יכולה להגדיל, לקצץ או לבטל דיבידנד. מועדי החלוקה לא מוצגים, כי אין לי להם מקור נתונים. קרנות המדד לא נכללות.`;
+}
+// ---- 1.11 (10): the dividends ahead and behind, per holding: the last amount per share and its rhythm, a raise or a cut
+// against the one before, a stop (nothing for well over the rhythm), the declared ones (an ex-dividend day and a payment
+// day the company announced) apart from the expected ones (by the rhythm, estimated), the income of each by the quantity
+// held, the income by month for the year ahead, and what was paid into the account (the statements), gross and net ----
+function divAheadOf(m){
+  const C=(RS&&RS.companies)||{}, fx=Q.usdIls||0, today=new Date().toISOString().slice(0,10), paid=divHistory(), rows=[], months={}; let noPlan=[];
+  for(const p of m.pos){const c=C[p.sym], dp=c&&c.divPlan; if(!dp){if(c&&c.dy>0)noPlan.push(p.sym); continue} if(dp.none){continue}
+    const il=p.ccy==='ILS', rate=il?1:fx, H=dp.hist||[], last=dp.last, prev=H.find(x=>last&&x.amt!=null&&last.amt!=null&&x.ex<last.ex&&Math.abs(x.amt-last.amt)>1e-6), prevSame=H.find(x=>last&&x.ex<last.ex);
+    const chg=last&&last.amt!=null&&prevSame&&prevSame.amt!=null?(last.amt/prevSame.amt-1)*100:null;
+    const next=(dp.next||[]).filter(x=>x.ex>=today||(x.pay&&x.pay>=today)).map(x=>({...x,inc:x.amt!=null?x.amt*p.qty*rate:null}));
+    for(const x of next){const ym=(x.pay||x.ex).slice(0,7); const o=months[ym]=months[ym]||{sure:0,est:0,n:0}; if(x.inc!=null){if(x.est)o.est+=x.inc; else o.sure+=x.inc; o.n++}}
+    const got=paid.rows.find(r=>r.sym===p.sym)||null;
+    rows.push({sym:p.sym,name:p.name,qty:p.qty,ccy:il?'₪':'$',freq:dp.freq,last,chg,stopped:!!dp.stopped,declared:next.filter(x=>!x.est),expected:next.filter(x=>x.est),yearInc:next.reduce((t,x)=>t+(x.inc||0),0),got,src:dp.src||'',at:dp.at||null,perShareIls:last&&last.amt!=null?last.amt*rate:null})}
+  rows.sort((a,b)=>b.yearInc-a.yearInc);
+  return {rows,months,noPlan,year:rows.reduce((t,r)=>t+r.yearInc,0)}}
+function renderDivAhead(m){
+  const sec=$('divAheadSec'), box=$('divAhead'); if(!sec||!box)return; if(!RS||!RS.companies||!m||!m.pos.length){sec.hidden=true;return}
+  const D=divAheadOf(m); if(!D.rows.length&&!D.noPlan.length){sec.hidden=true;return} sec.hidden=false;
+  const FREQ={monthly:'חודשי',quarterly:'רבעוני',semi:'חצי שנתי',yearly:'שנתי'}, WH=0.25;
+  $('divAheadSub').textContent=`${D.rows.length} ניירות עם לוח · ${ils(D.year)} ברוטו בשנה הקרובה לפי הלוח${D.noPlan.length?' · '+D.noPlan.length+' בלי לוח עדיין':''}`;
+  const ms=[]; {const d=new Date(); d.setUTCDate(1); for(let i=0;i<12;i++){const ym=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+i,1)).toISOString().slice(0,7); ms.push({ym,...(D.months[ym]||{sure:0,est:0,n:0})})}}
+  const mx=Math.max(1,...ms.map(x=>x.sure+x.est)), MN=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
+  const bars=`<div class="dva-m" role="img" aria-label="הכנסה מדיבידנדים לפי חודש, שנה קדימה">${ms.map(x=>`<div class="dva-c"><div class="dva-b"><i class="s" style="height:${(x.sure/mx*100).toFixed(1)}%"></i><i class="e" style="height:${(x.est/mx*100).toFixed(1)}%"></i></div><span class="nm">${MN[+x.ym.slice(5)-1]}</span><span class="n">${x.sure+x.est>0?ils(x.sure+x.est):''}</span></div>`).join('')}</div><p class="nm" style="margin:2px 0 8px">לפי חודש התשלום (או האקס כשאין מועד תשלום). <i class="dva-k s"></i> הוכרז <i class="dva-k e"></i> צפוי לפי הקצב (משוער). ברוטו; המס במקור (25%) יורד מכל תשלום.</p>`;
+  const row=r=>{const d=r.declared[0], e=r.expected[0], gotH=r.got?`שולם לחשבון: ${r.got.n||'?'} תשלומים, ברוטו ${ils(r.got.gross)}, נטו ${ils(r.got.net)}${r.got.last?' (אחרון '+dmy(r.got.last)+')':''}`:'בדוחות שנקראו: עוד לא נרשם תשלום';
+    const chgH=r.stopped?'<span class="nx-tag lv-crit">הפסקה: לא חולק זמן רב מהקצב הרגיל</span>':r.chg==null?'':Math.abs(r.chg)<0.5?'<span class="nx-tag">ללא שינוי מול הקודם</span>':r.chg>0?`<span class="nx-tag lv-imp">הועלה ${spct(r.chg,1)} מול הקודם</span>`:`<span class="nx-tag lv-crit">הופחת ${spct(r.chg,1)} מול הקודם</span>`;
+    return `<li class="dva-r"><div class="dva-h"><span class="sym">${esc(lab(r.sym))}</span><span class="nm">${esc(r.name||'')}</span>${r.freq?`<span class="nx-tag">${FREQ[r.freq]||r.freq}</span>`:''}${chgH}</div>
+      <div class="dva-b2">${r.last?`<span>אחרון: <span class="n">${r.ccy}${r.last.amt!=null?r.last.amt:'?'}</span> למניה, אקס ${dmy(r.last.ex)}${r.last.pay?', שולם '+dmy(r.last.pay):''}</span>`:''}
+      ${d?`<span><b>הוכרז:</b> אקס ${dmy(d.ex)}${d.pay?', תשלום '+dmy(d.pay):''}, <span class="n">${r.ccy}${d.amt}</span> למניה → <span class="n">${d.inc!=null?ils(d.inc):'—'}</span> ברוטו על ${r.qty} יח׳ (נטו כ-${d.inc!=null?ils(d.inc*(1-WH)):'—'})</span>`:''}
+      ${!d&&e?`<span><b>צפוי (משוער לפי הקצב):</b> אקס ~${dmy(e.ex)}${e.pay?', תשלום ~'+dmy(e.pay):''}, <span class="n">${r.ccy}${e.amt!=null?e.amt:'?'}</span> למניה → <span class="n">${e.inc!=null?ils(e.inc):'—'}</span> ברוטו</span>`:''}
+      <span>בשנה הקרובה לפי הלוח: <span class="n">${ils(r.yearInc)}</span> ברוטו (${r.declared.length} הוכרזו, ${r.expected.length} משוערים)</span><span class="nm">${gotH}</span></div></li>`};
+  box.innerHTML=bars+`<ul class="dva-l">${D.rows.map(row).join('')}</ul>${D.noPlan.length?`<p class="note">בלי לוח עדיין (יש תשואה, הלוח נמשך בריצת המחקר הבאה): ${esc(D.noPlan.map(lab).join(', '))}.</p>`:''}
+    <p class="note" style="margin-top:8px">הבחנה: <b>הוכרז</b> = החברה פרסמה את יום האקס ואת יום התשלום; <b>צפוי</b> = לפי הקצב של התשלומים הקודמים, משוער; <b>שולם</b> = מופיע בדוחות החשבון שקראת. המטבע כמטבע הנייר (דולר או שקל); ברוטו לפני מס, נטו אחרי 25% במקור. המקורות: ${esc([...new Set(D.rows.map(r=>r.src).filter(Boolean))].join(', ')||'ריצת המחקר')}. לא תחזית ולא ייעוץ.</p>`;
 }
 // dividend calculator: a sandbox on the viewer's numbers (value, yield, monthly deposit) or any numbers typed in
 const DC={set:false};

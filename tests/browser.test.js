@@ -2080,6 +2080,25 @@ test('1.11 anomalies: a day far outside the security\'s own range, an analysts\'
   }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true}); store.setDoc('research/latest',R0,{silent:true})}
 });
 
+test('1.11 dividends: declared apart from expected and paid, the income by the quantity, a raise and a stop said, the months ahead',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const R0=store.getDoc('research/latest').data, now=Date.now(), d=k=>new Date(now+k*864e5).toISOString().slice(0,10);
+  const C={...R0.companies, KO:{...(R0.companies.KO||{}),dy:3,divPlan:{next:[{ex:d(10),pay:d(25),amt:0.51,est:false},{ex:d(101),pay:d(116),amt:0.51,est:true},{ex:d(192),pay:d(207),amt:0.51,est:true},{ex:d(283),pay:d(298),amt:0.51,est:true}],freq:'quarterly',last:{ex:d(-80),pay:d(-65),amt:0.51},hist:[{ex:d(-80),amt:0.51},{ex:d(-171),amt:0.485}],stopped:false,src:'Nasdaq',at:new Date().toISOString()}},
+    PG:{...(R0.companies.PG||{}),dy:2.4,divPlan:{next:[],freq:'quarterly',last:{ex:d(-250),pay:d(-235),amt:1.0},hist:[{ex:d(-250),amt:1.0},{ex:d(-341),amt:1.0}],stopped:true,src:'Nasdaq',at:new Date().toISOString()}}};
+  store.setDoc('research/latest',{...R0,companies:C},{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'forecast'); await pg.waitForTimeout(600); await pg.evaluate(()=>{try{setView('full')}catch(e){}}); await pg.waitForTimeout(400);
+    const r=await pg.evaluate(()=>({hidden:document.getElementById('divAheadSec').hidden,sub:document.getElementById('divAheadSub').textContent,rows:[...document.querySelectorAll('#divAhead .dva-r')].map(x=>x.innerText.replace(/\s+/g,' ')),bars:[...document.querySelectorAll('#divAhead .dva-c')].map(c=>({s:c.querySelector('i.s').style.height,e:c.querySelector('i.e').style.height})),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    assert.equal(r.hidden,false); assert.equal(r.ox,false); assert.match(r.sub,/2 ניירות עם לוח/);
+    const ko=r.rows.find(x=>/^KO/.test(x)), pgR=r.rows.find(x=>/^PG/.test(x)); assert.ok(ko&&pgR,JSON.stringify(r.rows));
+    assert.match(ko,/רבעוני/); assert.match(ko,/הועלה .?\+5\.2% מול הקודם/); assert.match(ko,/הוכרז: אקס .*תשלום .*\$0\.51 למניה → ₪\d+ ברוטו על 5 יח׳ \(נטו כ-₪\d+\)/); assert.match(ko,/1 הוכרזו, 3 משוערים/); assert.match(ko,/עוד לא נרשם תשלום/);
+    assert.match(pgR,/הפסקה: לא חולק זמן רב מהקצב הרגיל/); assert.match(pgR,/0 הוכרזו, 0 משוערים/);
+    assert.ok(r.bars.some(b=>parseFloat(b.s)>0),'a declared month is solid'); assert.ok(r.bars.some(b=>parseFloat(b.e)>0),'an expected month is faint');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); store.setDoc('research/latest',R0,{silent:true})}
+});
+
 test('the crisis center: up and down days, old prices, concentration, a missing price, a scenario, the market, no known cause',T,async t=>{
   if(skip())return t.skip('no browser');
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;

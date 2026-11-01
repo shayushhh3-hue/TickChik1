@@ -1895,3 +1895,10 @@ test('1.11 anomalies: the figures\' changes between research runs are kept on th
   const c=figChanges(old,{rating:'Hold',target:220,revg:14,pm:31,epsg:30,fpe:36},at); assert.deepEqual(c.map(x=>x.f),['rating','target','revg','epsg','fpe']); assert.deepEqual(c[1],{at,f:'target',from:200,to:220});
   assert.deepEqual(figChanges(old,{...old,target:null},at),[],'a missing figure is not a change'); assert.deepEqual(figChanges(null,old,at),[]);
 });
+
+test('1.11 dividends: the plan keeps the last paid ones (for a raise or a cut) and says when the rhythm broke',async()=>{
+  const {divPlan}=await import('../server/divs.js'); const now=new Date('2026-11-01T00:00:00Z'), d=k=>new Date(now.getTime()+k*864e5).toISOString().slice(0,10);
+  const H=[{ex:d(-80),pay:d(-65),amt:0.51},{ex:d(-171),pay:d(-156),amt:0.51},{ex:d(-262),pay:d(-247),amt:0.485},{ex:d(-353),pay:d(-338),amt:0.485}];
+  const p=divPlan(H,{now}); assert.equal(p.freq,'quarterly'); assert.equal(p.stopped,false); assert.deepEqual(p.hist.map(x=>x.amt),[0.51,0.51,0.485,0.485]); assert.ok(p.next.length>=1&&p.next[0].est,'the next by rhythm, estimated');
+  const q=divPlan(H.map((x,i)=>({...x,ex:d(-280-91*i),pay:d(-265-91*i)})),{now}); assert.equal(q.stopped,true,'well over the rhythm: stopped'); assert.equal(q.next.length,0,'a stopped one is not projected');
+});
