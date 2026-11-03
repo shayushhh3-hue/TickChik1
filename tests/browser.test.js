@@ -2667,3 +2667,73 @@ test('1.11 support and content: a partner writes from "עזרה ותמיכה", t
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.db.exec("delete from content; delete from ticket_msgs; delete from tickets")}
 });
+
+test('3.11 צ׳יקו across the site: what he found (seven parts, once, silenced on request), the screen\'s questions, the engines a question needs, a change only with a "yes" and never a trade, the conversations kept in this browser, what he remembers, the page\'s own answer when he cannot answer',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), S0=store.getDoc('settings/main').data;
+  const D=await rtData(); await rtSet(D); store.setDoc('news/state',{read:{},saved:{}},{silent:true}); {const x={...S0}; delete x.chico; store.setDoc('settings/main',x,{silent:true})}
+  try{
+    const {ctx,pg}=await open(1280);
+    const say=async q=>{const n=await pg.evaluate(()=>document.querySelectorAll('#anaOut .msg.bot, #anaOut .ana-card').length), s0=seen.length; await pg.fill('#anaQ',q); await pg.click('#anaForm .chat-send');
+      await pg.waitForFunction(n=>document.querySelectorAll('#anaOut .msg.bot, #anaOut .ana-card').length>n&&!document.querySelector('#anaOut .ana-wait'),n,{timeout:15000}); await pg.waitForTimeout(300); return seen.slice(s0)};
+    // the nudge: a ring and a dot on צ׳יקו, said in words
+    await pg.waitForFunction(()=>document.getElementById('chatFab').dataset.mood==='alert',null,{timeout:15000});
+    assert.match(await pg.evaluate(()=>document.getElementById('chatFab').getAttribute('aria-label')||''),/תובנ/);
+    // what he found: up to three, each in the seven parts
+    await pg.click('#chatFab'); await pg.waitForSelector('#anaOut [data-chicoins] details');
+    const ins=await pg.evaluate(()=>{const L=[...document.querySelectorAll('#anaOut [data-chicoins] details')]; L[0].open=true; return {n:L.length,first:L[0].querySelector('summary').textContent,dt:[...L[0].querySelectorAll('dt')].map(x=>x.textContent),k:L.map(x=>x.dataset.chicok)}});
+    assert.ok(ins.n>=1&&ins.n<=3,JSON.stringify(ins)); assert.match(ins.first,/אנבידיה/); assert.match(ins.first,/אירוע שנוגע בכמה החזקות/,'one event, several holdings');
+    for(const x of ['למה אני פונה עכשיו','למה זה נוגע לך','ההשפעה האפשרית','מה כדאי לבדוק','מקורות','ודאות ומגבלות'])assert.ok(ins.dt.includes(x),x+' in '+JSON.stringify(ins.dt));
+    assert.equal(await pg.evaluate(()=>document.getElementById('chatFab').dataset.mood),'','the ring goes once he is open');
+    // "הבנתי": it goes, and it is kept in the account
+    await pg.click(`#anaOut [data-chicoseen="${ins.k[0]}"]`); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(k=>!!document.querySelector(`#anaOut [data-chicok="${k}"]`),ins.k[0]),false);
+    {let ok=false; for(let i=0;i<25&&!ok;i++){await pg.waitForTimeout(200); ok=!!(((store.getDoc('settings/main').data||{}).chico||{}).seen||{})[ins.k[0]]} assert.ok(ok,'seen is saved')}
+    // silenced: no more nudges; asked for, still there
+    await pg.evaluate(()=>{const b=document.querySelector('#anaOut [data-chicopro="0"]'); if(b)b.click()}); await pg.waitForTimeout(200);
+    assert.match(await pg.evaluate(()=>(document.querySelector('#anaOut [data-chicoins]')||{}).textContent||'השתקה'),/מושתקות|השתקה/);
+    {let ok=false; for(let i=0;i<25&&!ok;i++){await pg.waitForTimeout(200); ok=((store.getDoc('settings/main').data||{}).chico||{}).pro===false} assert.ok(ok,'the silence is saved')}
+    await pg.evaluate(()=>{window.__chico.nudge()}); assert.equal(await pg.evaluate(()=>document.getElementById('chatFab').dataset.mood),'','silenced: no ring');
+    await pg.evaluate(()=>window.__ana.close());
+    // the screen: the risk screen's questions; a typed question reaches the X-ray, and the card says what it leaned on
+    await tab(pg,'risk'); await pg.evaluate(()=>window.__ana.open()); await pg.waitForTimeout(200);
+    const sg=await pg.evaluate(()=>({h:(document.querySelector('#anaSugg .chico-scr')||{}).textContent||'',q:[...document.querySelectorAll('#anaSugg .sg')].map(b=>b.textContent)}));
+    assert.match(sg.h,/במסך הזה: בקרה וסיכון/); assert.ok(sg.q.includes('יש לי חשיפה כפולה?'),JSON.stringify(sg.q));
+    let P1=await say('יש לי חשיפה כפולה?'); const pr=P1.find(x=>x.includes('ענה על שאלה'))||'';
+    assert.ok(pr.includes('chico_engines')&&pr.includes('funds_overlap_double_exposure')&&pr.includes('common_risk_factors'),'the X-ray reaches צ׳יקו');
+    assert.ok(pr.includes('screen_now')&&pr.includes('בקרה וסיכון'),'the screen too');
+    assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .chico-used')].pop().textContent),/נשען על: נתוני התיק והכללים · רנטגן התיק/);
+    // two securities: the comparison engine
+    P1=await say('השווה בין MSFT ל-NVDA'); {const x=P1.find(y=>y.includes('ענה על שאלה'))||''; assert.ok(x.includes('compare')&&x.includes('MSFT')&&x.includes('NVDA')&&x.includes('weight_in_my_portfolio'),'the comparison reaches צ׳יקו')}
+    // a trade: refused, nothing asked of Claude; a follow: shown, done only on "yes"
+    P1=await say('תמכור את NVDA'); assert.equal(P1.length,0,'no call for a trade'); assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent),/אני לא מבצע קנייה, מכירה/);
+    P1=await say('תעקוב אחרי TSLA'); assert.equal(P1.length,0); assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent),/זה השינוי שאעשה, רק אם תאשר/);
+    assert.ok(!((((store.getDoc('settings/main').data||{}).pulse)||{}).syms||[]).includes('TSLA'),'nothing changed before the yes');
+    await pg.click('#anaOut [data-chicoact="fol:TSLA"]'); await pg.waitForTimeout(300); assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .ana-card')].pop().textContent),/TSLA נוסף למעקב ההתראות/);
+    {let ok=false; for(let i=0;i<25&&!ok;i++){await pg.waitForTimeout(200); ok=((((store.getDoc('settings/main').data||{}).pulse)||{}).syms||[]).includes('TSLA')} assert.ok(ok,'the follow is saved, after the yes')}
+    // he cannot answer: the page's own computed lines
+    P1=await say('FAILTEST יש לי חשיפה כפולה?'); assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .chico-local')].pop().textContent),/מה שהדף יודע על השאלה גם בלי צ׳יקו.*חפיפה בין קרנות למניות/s);
+    // the conversations: in this browser, and continued
+    assert.ok(await pg.evaluate(()=>window.__chico.hist().length>=1&&window.__chico.hist()[0].turns.some(t=>t.q==='יש לי חשיפה כפולה?')),'kept in this browser');
+    await pg.click('#anaBox [data-ana="new"]'); await pg.waitForTimeout(200); await pg.click('#anaSugg [data-chicomem="h"]'); await pg.waitForSelector('#anaOut .chico-h [data-chicohist^="go:"]');
+    await pg.click('#anaOut .chico-h [data-chicohist^="go:"]'); await pg.waitForTimeout(300); assert.match(await pg.evaluate(()=>document.getElementById('anaOut').textContent),/ממשיכים מהשיחה/);
+    // what he remembers: told apart from inferred
+    await pg.click('#anaBox [data-chicomem="m"]'); await pg.waitForSelector('#anaOut .chico-mem');
+    const mem=await pg.evaluate(()=>[...document.querySelectorAll('#anaOut .chico-mem h4')].map(h=>h.textContent)); assert.equal(mem[0],'מה שסיפרת לי'); assert.match(mem[1],/מה הדף הסיק מהנתונים.*הסקה, לא מה שאמרת/);
+    // compact beside the page
+    await pg.click('#anaBox [data-chicomin]'); assert.ok(await pg.evaluate(()=>document.getElementById('anaBox').classList.contains('min')&&document.getElementById('anaOut').offsetParent===null)); await pg.click('#anaBox [data-chicomin]');
+    // a security's page: its own questions
+    await pg.evaluate(()=>window.__ana.close()); await pg.evaluate(()=>window.__chico.go('sec:NVDA')); await pg.waitForTimeout(500); await pg.evaluate(()=>window.__ana.open()); await pg.waitForTimeout(200);
+    const sq=await pg.evaluate(()=>[...document.querySelectorAll('#anaSugg .sg')].map(b=>b.textContent)); assert.ok(sq.includes('מה הקשר של NVDA לתיק שלי?')&&sq.includes('הסבר לי את NVDA'),JSON.stringify(sq));
+    P1=await say('מה דווח לאחרונה על NVDA?'); {const x=P1.find(y=>y.includes('ענה על שאלה'))||''; assert.ok(x.includes('securities_named')&&x.includes('news_last_7_days'),'the security named reaches צ׳יקו')}
+    // the AI meter counts צ׳יקו's free questions apart
+    assert.ok(store.db.prepare("select count(*) n from counters where kind='ai_calls' and key like 'chico_q|%'").get().n>=1,'chico_q counted '+JSON.stringify(store.db.prepare("select key,n from counters where kind='ai_calls'").all()));
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // a phone: no sideways scroll with what he found open
+    {const {ctx:c2,pg:p2}=await open(390); await p2.evaluate(()=>window.__ana.open()); await p2.waitForTimeout(300); assert.equal(await p2.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(p2.errs,[]); await c2.close()}
+    // a new user: how to start, nothing found, nothing made up
+    {const {ctx:c3,pg:p3}=await open(390,{who:'new'}); await p3.evaluate(()=>window.__ana.open()); await p3.waitForTimeout(300);
+      assert.equal(await p3.evaluate(()=>!!document.querySelector('#anaOut [data-chicoins]')),false); assert.ok((await p3.evaluate(()=>[...document.querySelectorAll('#anaSugg .sg')].map(b=>b.textContent))).includes('איך מתחילים?'));
+      assert.deepEqual(await p3.evaluate(()=>window.__chico.insights()),[]); assert.deepEqual(p3.errs,[]); await c3.close()}
+  }finally{rtRestore(N0,X0,ST0,PU0,S0)}
+});

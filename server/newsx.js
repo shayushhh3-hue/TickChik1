@@ -165,7 +165,7 @@ export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=n
   const seenT=new Set(), todo=news.concat([...gen.values()]).filter(a=>!by[a.id]||(by[a.id].rules&&st.ai)).filter(a=>{if(seenT.has(a.id))return false; seenT.add(a.id); return true}).sort((a,b)=>(pri(a)-pri(b))||(String(b.at||b.seen)<String(a.at||a.seen)?-1:1));
   if(st.ai){for(let b=0;b<maxBatches&&b*perBatch<todo.length;b++){
       if(Date.now()-t0>budgetMs){st.stopped='time';break}
-      const batch=todo.slice(b*perBatch,(b+1)*perBatch), got=await analyzeBatch(batch,{fetch:f,log,ask,known:knownEvents(by)});
+      const batch=todo.slice(b*perBatch,(b+1)*perBatch), got=await analyzeBatch(batch,{fetch:f,log,ask,known:knownEvents(by,{now})});
       if(!got){st.fail++; st.first=st.first||'analysis: no usable answer'; if(st.fail>=2)break; continue}
       st.batches++; for(const [i,x] of Object.entries(got)){const a=batch[+i]; if(a){const y=by[a.id]=unifyEv(x,a,by,atOf); st.read++; if(y.evJoined)st.joined=(st.joined||0)+1}}
       await sleep(300)}}

@@ -55,7 +55,7 @@ const RULES=[
   // the notifications: half or more of the pushes today failed, at least 5
   {key:'push',kind:'alerts',name:'התראות לטלפון נכשלות',check:s=>{const R=countersSince(s,'push',today(),today()), ok=sum(R.filter(r=>r.key==='sent')), f=sum(R.filter(r=>r.key==='fail'));
     return ok+f>=5&&f/(ok+f)>=.5?{sev:'warn',note:`${f} מתוך ${ok+f} התראות לא הגיעו`}:null}}];
-export const FEAT_HE={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה של דוחות',newsx:'קריאת כתבות',brief:'תמונת המצב היומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות של חברות',intel:'TikChik Intelligence',world:'התקציר העולמי'};
+export const FEAT_HE={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה של דוחות',newsx:'קריאת כתבות',brief:'תמונת המצב היומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות של חברות',intel:'TikChik Intelligence',world:'התקציר העולמי',chico_q:'צ׳יקו: שאלה חופשית',chico_explain:'צ׳יקו: הסבר התיק',chico_analyze:'צ׳יקו: ניתוח התיק',chico_day:'צ׳יקו: סיכום יומי',chico_focus:'צ׳יקו: שאלה על פריט פתוח'};
 export function checkIncidents(store,{send=null,push=null,users=null,log=()=>{},now=new Date()}={}){
   opsSchema(store); const iso=now.toISOString(), opened=[];
   const openOf=key=>store.db.prepare("select * from incidents where key=? and status in ('open','ack') order by id desc limit 1").get(key);

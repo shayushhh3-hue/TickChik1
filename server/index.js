@@ -344,7 +344,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     }
     const body={model:b.model,max_tokens:Math.max(1,Math.min(files?AI_MAX_TOKENS_FILES:AI_MAX_TOKENS,Math.floor(+b.max_tokens||1024))),messages:out};
     if(typeof b.system==='string'&&b.system)body.system=b.system.slice(0,AI_MAX_SYSTEM);
-    return {body,files};
+    // 3.11: the part of צ׳יקו that asks, for the AI meter only (never sent on to Anthropic)
+    const feature=typeof b.feature==='string'&&/^chico_[a-z]{1,12}$/.test(b.feature)?b.feature:null;
+    return {body,files,feature};
   }
   const inflight=new Map(); // user id -> requests running now
   app.post('/api/ask',needUser,async(req,res)=>{
@@ -362,9 +364,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     // the page's "stop" closes the request: the call to Claude stops too, instead of running (and being billed) to the end
     const ctl=new AbortController(); res.on('close',()=>{if(!res.writableEnded)ctl.abort()});
     const t0=Date.now(); let out; try{out=await askClaude(c.body,ctl.signal)}finally{const n=(inflight.get(u.id)||1)-1; if(n>0)inflight.set(u.id,n); else inflight.delete(u.id)}
-    if(out.aborted){log('ask cancelled by the page'); aiMeter({feature:'chat',model:c.body.model,ms:Date.now()-t0,ok:false,code:'cancelled'}); return}
+    if(out.aborted){log('ask cancelled by the page'); aiMeter({feature:c.feature||'chat',model:c.body.model,ms:Date.now()-t0,ok:false,code:'cancelled'}); return}
     {let us=null, mdl=c.body.model; if(out.text!=null)try{const J=JSON.parse(out.text); us=J.usage; mdl=J.model||mdl}catch(e){}
-      aiMeter({feature:'chat',model:mdl,usage:us,ms:Date.now()-t0,ok:out.text!=null,code:(out.json&&out.json.error&&out.json.error.code)||out.status})}
+      aiMeter({feature:c.feature||'chat',model:mdl,usage:us,ms:Date.now()-t0,ok:out.text!=null,code:(out.json&&out.json.error&&out.json.error.code)||out.status})}
     if(out.nobill)store.aiAdd(u.id,day,{calls:-1});   // Anthropic answered with an error at once: nothing billed, so it does not count
     if(out.text!=null){
       try{const J=JSON.parse(out.text), us=J.usage||{}, inp=(us.input_tokens||0)+(us.cache_read_input_tokens||0)+(us.cache_creation_input_tokens||0);

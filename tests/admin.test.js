@@ -411,7 +411,7 @@ test('the API of stage E: a partner refused; the radar scanned and handled by "s
 import {worldModel, worldBrief} from '../server/admin/world.js';
 import {newsId} from '../server/newsx.js';
 test('the global news model: articles of one event are one event; regions, topics, sectors and the calendar from the readings; the brief checked against the model, cached, audited',async()=>{
-  const s=mk(), U=users(s), at=new Date('2026-11-01T10:00:00Z'), h=n=>new Date(at.getTime()-n*3600e3).toISOString();
+  const s=mk(), U=users(s), at=new Date(), h=n=>new Date(at.getTime()-n*3600e3).toISOString();
   const A=[{title:'Fed holds',link:'https://a.co/1',pub:'Reuters',at:h(2)},{title:'Fed holds rates',link:'https://b.co/1',pub:'Bloomberg',at:h(3)},{title:'Oil up',link:'https://c.co/1',pub:'Reuters',at:h(30)},{title:'Old',link:'https://d.co/1',pub:'X',at:h(24*9)}];
   const x=(o)=>({level:'imp',kind:'news',cert:'fact',dir:'neg',regions:['us'],themes:['rates'],sectors:['Finance'],aff:[{sym:'JPM',how:'sector',dir:'neg'}],...o});
   s.setDoc('research/news',{items:[]},{silent:true});

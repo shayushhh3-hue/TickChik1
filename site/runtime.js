@@ -192,6 +192,8 @@ export async function boot(){
     const tier=['quick','complex','files','quickfiles'].includes(opts.modelTier)?opts.modelTier:'default', fileRead=tier==='files'||tier==='quickfiles';
     const body={model:MODELS[tier],max_tokens:fileRead?32000:8192,messages}; if(fileRead)body.purpose='files';
     if(opts.json)body.system='Reply with a single JSON value and nothing else: no prose, no code fences.';
+    // 3.11: which part of צ׳יקו asks (the management counts the AI costs by it); a short name, nothing else
+    if(typeof opts.feature==='string'&&/^chico_[a-z]{1,12}$/.test(opts.feature))body.feature=opts.feature;
     const r=await call('POST','/ask',body,opts.signal);
     const text=((r&&r.content)||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     // which model answered, and which could not (the page says so under a reading)

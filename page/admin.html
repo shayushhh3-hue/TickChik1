@@ -405,7 +405,7 @@ SCREENS.ai=async()=>{head('מנועי AI','',{range:true}); view.innerHTML=loadi
   const f=$('prF'); if(f)f.addEventListener('submit',async e=>{e.preventDefault(); const P={}; for(const i of f.querySelectorAll('input[data-m]')){const m=i.dataset.m; if(i.value==='')continue; (P[m]=P[m]||{})[i.dataset.io]=+i.value}
     for(const m of Object.keys(P))if(P[m].in==null||P[m].out==null)delete P[m];
     try{await post('ai/prices',{prices:P}); $('prM').className='msg ok'; $('prM').textContent='נשמר.'; setTimeout(route,600)}catch(err){$('prM').className='msg bad'; $('prM').textContent=err.message}})};
-const FEAT={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה',newsx:'קריאת כתבות',brief:'תמונת מצב יומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות',intel:'Intelligence',world:'התקציר העולמי'};
+const FEAT={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה',newsx:'קריאת כתבות',brief:'תמונת מצב יומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות',intel:'Intelligence',world:'התקציר העולמי',chico_q:'צ׳יקו: שאלה',chico_explain:'צ׳יקו: הסבר התיק',chico_analyze:'צ׳יקו: ניתוח',chico_day:'צ׳יקו: סיכום יומי',chico_focus:'צ׳יקו: פריט פתוח'};
 const ERRHE=c=>{c=String(c||''); return {timeout:'לא ענה בזמן',network:'אין חיבור',cancelled:'בוטל בדף',rate_limited:'מגבלת קצב',quota_exceeded:'מכסה יומית',sampling_disabled:'לא מחובר / אין יתרה',upstream_error:'שגיאה אצל הספק',refused:'סירב',invalid_argument:'בקשה לא תקינה',prompt_too_large:'גדול מדי'}[c]||(/^HTTP 529/.test(c)?'עומס אצל הספק (529)':/^HTTP 429/.test(c)?'מגבלת קצב (429)':/^HTTP 5/.test(c)?'שגיאת ספק ('+c.slice(5)+')':/^HTTP 4/.test(c)?'בקשה נדחתה ('+c.slice(5)+')':/refusal/.test(c)?'סירב':c)};
 
 // ---- the news system ----
