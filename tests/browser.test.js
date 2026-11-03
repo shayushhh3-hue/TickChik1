@@ -2732,7 +2732,7 @@ test('3.11 צ׳יקו across the site: what he found (seven parts, once, silence
     // a phone: no sideways scroll with what he found open
     {const {ctx:c2,pg:p2}=await open(390); await p2.evaluate(()=>window.__ana.open()); await p2.waitForTimeout(300); assert.equal(await p2.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(p2.errs,[]); await c2.close()}
     // a new user: how to start, nothing found, nothing made up
-    {const {ctx:c3,pg:p3}=await open(390,{who:'new'}); await p3.evaluate(()=>window.__ana.open()); await p3.waitForTimeout(300);
+    {const {ctx:c3,pg:p3}=await open(390,{who:'nw'}); await p3.evaluate(()=>window.__ana.open()); await p3.waitForTimeout(300);
       assert.equal(await p3.evaluate(()=>!!document.querySelector('#anaOut [data-chicoins]')),false); assert.ok((await p3.evaluate(()=>[...document.querySelectorAll('#anaSugg .sg')].map(b=>b.textContent))).includes('איך מתחילים?'));
       assert.deepEqual(await p3.evaluate(()=>window.__chico.insights()),[]); assert.deepEqual(p3.errs,[]); await c3.close()}
   }finally{rtRestore(N0,X0,ST0,PU0,S0)}
