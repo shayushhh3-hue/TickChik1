@@ -2406,7 +2406,7 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 /* the links that are buttons in the new parts: a target of 24px at least */
 .nw-cgh .lnk,.nws .lnk,.liveal .lnk,.imp-l .lnk,.imp-t .lnk,.nw-active .lnk,.pl .lnk{min-height:24px;display:inline-flex;align-items:center}
 /* צ׳יקו with a context */
-.ana-foc{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-basis:100%;padding:6px 10px;border-radius:10px;background:rgb(124 58 237 / .08);font-size:13px} .ana-foc .lnk{font-size:18px;line-height:1;text-decoration:none}
+.ana-foc,.chico-scr{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-basis:100%;padding:6px 10px;border-radius:10px;background:rgb(124 58 237 / .08);font-size:13px} .ana-foc .lnk{font-size:18px;line-height:1;text-decoration:none}
 .ana-foc-h{margin:0 0 6px;font-size:12.5px;color:var(--muted)}
 /* 30.10: the check against the house: what the last statement or screenshot said, against the site now, and why */
 .recon{display:flex;flex-direction:column;gap:10px} .recon h3{margin:0} .recon .rc-l{margin:0;font-size:15px}
@@ -20158,7 +20158,7 @@ function anaSugg(){const el=$('anaSugg'); if(!el)return; const on=!!SAMPLE&&!SAM
     setH(el,`<div class="ana-foc"><span>שואל על: <b>${esc(imCut(f.title,48))}</b></span><button type="button" class="lnk" data-anafoc="x" aria-label="לחזור לשאלות על התיק">×</button></div>`+Qs.map(([k,t])=>`<button type="button" class="sg" data-ana="q" data-q="${esc(t)}"${ANA_BUSY?' disabled':''}>${esc(t)}</button>`).join('')); el.classList.add('all'); return}
   if(on&&ANA_LASTX)L.push(ANA_LASTX);
   // 3.11: the screen he is opened on, its own questions first (each routed like a typed one)
-  let scrH=''; try{const sc=chicoScreen(), Qs=on?chicoScreenQs(sc):[]; if(Qs.length&&!['overview','mine'].includes(sc.k)){scrH=`<div class="ana-foc chico-scr"><span>במסך הזה: <b>${esc(sc.he)}</b></span></div>`; for(const q of Qs)L.push({k:'q',q,t:q})}
+  let scrH=''; try{const sc=chicoScreen(), Qs=on?chicoScreenQs(sc):[]; if(Qs.length&&!['overview','mine'].includes(sc.k)){scrH=`<div class="chico-scr"><span>במסך הזה: <b>${esc(sc.he)}</b></span></div>`; for(const q of Qs)L.push({k:'q',q,t:q})}
     if(sc.k==='sec'&&!L.some(x=>x.k==='sec'))L.unshift({k:'sec',sym:sc.sym,t:`הסבר לי את ${lab(sc.sym)}`})}catch(e){}
   if(chicoHist().length&&!ANA_TURNS.length)L.push({k:'hist',t:'להמשיך שיחה קודמת'});
   if(!hasPf()){L.push({k:'start',t:'איך מתחילים?'})}
@@ -20701,7 +20701,12 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 
 // ---- what he found for you: proactive, ranked, once ----
 const CHICO_LV={crit:3,imp:2,info:1}, CHICO_KH={event:'אירוע',multi:'אירוע שנוגע בכמה החזקות',thesis:'תזת השקעה',conc:'ריכוזיות',dbl:'חשיפה כפולה',anom:'חריגה',eco:'אירוע כלכלי קרוב'};
-const chicoSt=()=>{const c=(S&&S.chico)||{}; return {pro:c.pro!==false,seen:c.seen&&typeof c.seen==='object'?c.seen:{},nudge:c.nudge||'',nudged:c.nudged&&typeof c.nudged==='object'?c.nudged:{}}};
+// the person's choices (silence, "הבנתי") are kept in the account; the nudge's own bookkeeping (when it was last shown,
+// what was shown) only in this browser, so opening the page never writes the settings
+const CHICO_NK=()=>'tr_chico_n_'+(MYID||'me');
+const chicoN=()=>{try{const v=JSON.parse(localStorage.getItem(CHICO_NK())||'{}'); return v&&typeof v==='object'?v:{}}catch(e){return {}}};
+const chicoNSet=o=>{try{localStorage.setItem(CHICO_NK(),JSON.stringify({...chicoN(),...o}))}catch(e){}};
+const chicoSt=()=>{const c=(S&&S.chico)||{}, n=chicoN(); return {pro:c.pro!==false,seen:c.seen&&typeof c.seen==='object'?c.seen:{},nudge:n.nudge||'',nudged:n.nudged&&typeof n.nudged==='object'?n.nudged:{}}};
 function chicoSet(o){if(!canWrite||!S)return; S.chico={...((S&&S.chico)||{}),...o}; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
 function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m=mAllNow()}catch(e){return out} if(!m||!m.pos||!m.pos.length)return out;
   const add=x=>{if(!out.some(y=>y.k===x.k))out.push(x)};
@@ -20736,11 +20741,11 @@ function chicoInsH(L,st){if(!L.length)return '';
 function chicoInsDraw(){const box=$('anaOut'); if(!box)return; const old=box.querySelector('[data-chicoins]'); const L=chicoInsights(), h=chicoInsH(L,chicoSt());
   if(old){if(h)old.outerHTML=h; else old.remove()} else if(h)box.insertAdjacentHTML('afterbegin',h)
   // what was shown is not a nudge any more
-  const st=chicoSt(); if(L.length&&L.some(x=>!st.nudged[x.k])){const n={...st.nudged}; for(const x of L)n[x.k]=new Date().toISOString(); for(const k of Object.keys(n))if(Date.now()-Date.parse(n[k])>30*864e5)delete n[k]; chicoSet({nudged:n})}}
+  const st=chicoSt(); if(L.length&&L.some(x=>!st.nudged[x.k])){const n={...st.nudged}; for(const x of L)n[x.k]=new Date().toISOString(); for(const k of Object.keys(n))if(Date.now()-Date.parse(n[k])>30*864e5)delete n[k]; chicoNSet({nudged:n})}}
 // the nudge: a dot on צ׳יקו and his ring, at most once a day, only for something not yet shown, never when silenced
 function chicoNudge(){const f=$('chatFab'); if(!f)return; const st=chicoSt(), L=st.pro?chicoInsights().filter(x=>!st.nudged[x.k]):[], today=isoDay(Date.now());
   const mood=L.some(x=>x.lv==='crit'||x.lv==='imp')?'alert':L.length?'info':''; f.dataset.mood=mood;
-  if(L.length&&st.nudge!==today){f.classList.add('new'); f.setAttribute('aria-label',`צ׳יקו: יש ${L.length===1?'תובנה חדשה':L.length+' תובנות חדשות'}`); chicoSet({nudge:today})}
+  if(L.length&&st.nudge!==today){f.classList.add('new'); f.setAttribute('aria-label',`צ׳יקו: יש ${L.length===1?'תובנה חדשה':L.length+' תובנות חדשות'}`); chicoNSet({nudge:today})}
   else if(!L.length)f.removeAttribute('aria-label')}
 document.addEventListener('click',e=>{const t=e.target; if(!t.closest)return;
   const s=t.closest('[data-chicoseen]'); if(s){const st=chicoSt(); chicoSet({seen:{...st.seen,[s.dataset.chicoseen]:new Date().toISOString()}}); chicoInsDraw(); anaLive('סומן כנקרא');return}
