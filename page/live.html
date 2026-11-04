@@ -24985,7 +24985,8 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   PTV[t]=k; try{localStorage.setItem('tr_ptv',JSON.stringify(PTV))}catch(e){}
   let nav=pane.querySelector(':scope>.ptnav'); if(!nav){nav=document.createElement('div'); nav.className='ptnav'; nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של המסך'); const sub=pane.querySelector(':scope>.subtabs'); sub?sub.after(nav):pane.prepend(nav)}
   nav.innerHTML=live.map(x=>`<button type="button" class="chip" role="tab" data-pt="${t}:${x}" aria-pressed="${x===k}" aria-selected="${x===k}">${P[x][0]}</button>`).join('');
-  for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',o!==k)}}
+  let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}   // every part at once (the page's own tests of each screen)
+  for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
 try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
 function ptReveal(el){if(!el||!el.closest)return; const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const k=sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}

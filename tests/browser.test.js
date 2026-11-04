@@ -95,12 +95,14 @@ before(async()=>{
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 
 // a signed-in page; prices are not fetched (the page's "update now" answers at once), the profile and tip prompts wait
-async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false}={}){
+async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,parts=false}={}){
   // the choices of how the page looks follow the account (S.ui); each test starts without the ones an earlier test made,
   // unless it is checking that they come along (another device: keepUi)
   if(!keepUi)for(const p of ['settings/main',...store.users().filter(u=>u.role!=='owner').map(u=>`data/users/${u.id}/settings`)]){const d=store.getDoc(p); if(d.exists&&d.data&&d.data.ui){const x={...d.data}; delete x.ui; store.setDoc(p,x,{silent:true})}}
   const ctx=await browser.newContext({viewport:{width:W,height:W<600?844:900},locale:'he-IL',timezoneId:'Asia/Jerusalem'});
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
+  // 4.11: the long screens show one part at a time; the tests of their sections see every part (the parts have a test of their own)
+  if(!parts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_pt_all','1')}catch(e){}});
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='nw'?['nw@example.com','friend-pass-7']:who==='p2'?['p2@example.com','friend-pass-2']:who==='adm'?['adm@example.com','admin-pass-1']:['owner@example.com','owner-pass-123'];
@@ -282,7 +284,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.slice(0,3),['quickActs','soonSec','holdSec'],'the four actions, the coming two weeks, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['quickActs','holdSec'],'4.11: the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>p.textContent.replace(/\s+/g,' ').trim()),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
         news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
@@ -2172,12 +2174,14 @@ test('1.11 the five steps of a new account: done by what is in the account, each
   try{
     await pg.reload(); await pg.waitForFunction(()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||''),null,{timeout:20000}); await pg.waitForTimeout(800);
     const r=await pg.evaluate(()=>({hidden:document.getElementById('obNext').hidden,h:document.getElementById('hOb').textContent,cnt:document.getElementById('obCnt').textContent,steps:[...document.querySelectorAll('#obList li')].map(l=>({t:l.querySelector('b').textContent,done:l.classList.contains('done')}))}));
-    assert.equal(r.hidden,false); assert.deepEqual(r.steps.map(x=>x.t),['מחירי קנייה והפקדות','יעדי הקצאה','הכללים שלך','תוכנית הפקדה חודשית','יעד כספי ואופק','איך להודיע לך']);
-    assert.equal(r.steps[0].done,true,'the fixture has costs and deposits'); assert.equal(r.steps[4].done,false); assert.match(r.cnt,/מתוך 6 בוצעו/); assert.match(r.h,/עוד \d צעדים כדי שהבקרה תעבוד/);
+    // 4.11: what is left in full, what is done in one line
+    assert.equal(r.hidden,false); const left=r.steps.filter(x=>!x.done).map(x=>x.t), doneTxt=await pg.evaluate(()=>(document.querySelector('#obList li.done')||{}).textContent||'');
+    assert.ok(left.includes('יעד כספי ואופק')&&!left.includes('מחירי קנייה והפקדות'),JSON.stringify(left)); assert.match(doneTxt,/בוצע:.*מחירי קנייה והפקדות/,'the fixture has costs and deposits');
+    assert.match(r.cnt,/מתוך 6 בוצעו/); assert.match(r.h,/עוד \d צעדים כדי שהבקרה תעבוד/);
     // the goal step leads to the goal field
     await pg.click('#obList [data-goid="inGoal"]'); await pg.waitForTimeout(600); assert.equal(await pg.evaluate(()=>document.body.dataset.page+' '+document.activeElement.id),'forecast inGoal');
     await pg.fill('#inGoal','250000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600); await tab(pg,'overview'); await pg.waitForTimeout(300);
-    const r2=await pg.evaluate(()=>[...document.querySelectorAll('#obList li')].map(l=>l.classList.contains('done'))); assert.equal(r2[4],true,'the goal step is done once a goal and a horizon are set');
+    assert.match(await pg.evaluate(()=>(document.querySelector('#obList li.done')||{}).textContent||''),/יעד כספי ואופק/,'the goal step is done once a goal and a horizon are set');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('settings/main',S0,{silent:true}); store.setDoc('history/main',H0,{silent:true})}
 });
@@ -2772,4 +2776,25 @@ test('4.11 one count for the same list, the news load in a word and its numbers,
       assert.deepEqual(p.errs,[]); await c.close()}
     {const {ctx:c,pg:p}=await open(390,{who:'p2'}); const res=await p.request.get(U+'api/admin/yahoo'); assert.ok([403,404].includes(res.status()),'a partner: '+res.status()); await c.close()}
   }finally{rtRestore(N0,X0,ST0,PU0)}
+});
+
+test('4.11 the long screens in parts: one part at a time, the choice kept, a link to a section opens its part; much shorter on a phone',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{parts:true});
+  await tab(pg,'settings'); await pg.waitForTimeout(400);
+  const a=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="settings"] .ptnav .chip')].map(c=>c.textContent),on:(document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]')||{}).textContent,
+    rules:!!document.getElementById('rMaxPos').offsetParent,me:!!document.getElementById('meSec').offsetParent,h:document.documentElement.scrollHeight}));
+  assert.ok(['פרופיל ופרטיות','חדשות והתראות','חשבונות וכללים'].every(x=>a.chips.includes(x)),JSON.stringify(a.chips)); assert.equal(a.on,'פרופיל ופרטיות'); assert.equal(a.me,true); assert.equal(a.rules,false,'the rules are in another part');
+  await pg.click('[data-pane="settings"] .ptnav [data-pt="settings:money"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>!!document.getElementById('rMaxPos').offsetParent),true);
+  // a link to a section opens its part
+  await pg.evaluate(()=>window.__chico.go('set:nwSetSec')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>!!document.getElementById('nwSetSec').offsetParent&&document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות והתראות');
+  // kept for next time
+  await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות והתראות');
+  // the goal screen: the goal part first; the home steps' "לקבוע יעד" reaches the field through its part
+  await tab(pg,'forecast'); await pg.waitForTimeout(300); const f=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="forecast"] .ptnav .chip')].map(c=>c.textContent),h:document.documentElement.scrollHeight}));
+  assert.deepEqual(f.chips,['היעד שלי','תרחישים','דיבידנדים','מחשבונים']); assert.ok(f.h<5000,'the goal screen on a phone: '+f.h);
+  await pg.click('[data-pane="forecast"] .ptnav [data-pt="forecast:calc"]'); await pg.evaluate(()=>document.getElementById('inGoal').scrollIntoView()); await pg.waitForTimeout(200);
+  assert.equal(await pg.evaluate(()=>!!document.getElementById('inGoal').offsetParent),true,'a scroll to a field opens its part');
+  await tab(pg,'history'); await pg.waitForTimeout(300); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('[data-pane="history"] .ptnav .chip')].map(c=>c.textContent)),['מבט מהיר','לאורך זמן','עמלות ומס']);
+  assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
