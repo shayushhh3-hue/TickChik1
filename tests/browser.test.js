@@ -2798,3 +2798,18 @@ test('4.11 the long screens in parts: one part at a time, the choice kept, a lin
   await tab(pg,'history'); await pg.waitForTimeout(300); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('[data-pane="history"] .ptnav .chip')].map(c=>c.textContent)),['מבט מהיר','לאורך זמן','עמלות ומס']);
   assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('4.11 inside the funds: the X-ray adds what the funds hold to what is held directly, names the fund it read and what stays unknown; צ׳יקו and his findings get the numbers',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const E0=store.getDoc('research/etf');
+  store.setDoc('research/etf',{updatedAt:new Date().toISOString(),by:{TA125:{etf:'TA125',proxy:null,src:'stockanalysis.com',asOf:'2026-10-23',n:125,top:[['NVDA',40],['MSFT',20]],cover:60,at:new Date().toISOString()}}},{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>{const b=document.querySelector('.xr-look'); return b?{txt:b.innerText.replace(/\s+/g,' '),rows:[...b.querySelectorAll('tbody tr')].map(tr=>[...tr.children].map(td=>td.textContent))}:null});
+    assert.ok(r,'the look-through is drawn'); assert.match(r.txt,/מוחזקות גם ישירות וגם דרך קרנות/); assert.match(r.txt,/לא ידוע: TA90/); assert.match(r.txt,/המקור: stockanalysis\.com/);
+    const nv=r.rows.find(x=>/NVDA/.test(x[0])); assert.ok(nv,JSON.stringify(r.rows)); const n=s=>parseFloat(String(s).replace('%',''));
+    assert.ok(Math.abs(n(nv[1])+n(nv[2])-n(nv[3]))<=0.15,'direct + through funds = total: '+nv.join(' | ')); assert.ok(n(nv[2])>0);
+    const facts=await pg.evaluate(()=>JSON.stringify(window.__chico.route('יש לי חשיפה כפולה?').facts.xray||{})); assert.match(facts,/דרך קרנות/);
+    assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(E0.exists)store.setDoc('research/etf',E0.data,{silent:true}); else store.deleteDoc('research/etf')}
+});

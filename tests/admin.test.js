@@ -464,3 +464,22 @@ test('4.11 the article itself: its paragraphs (no scripts or menus) go to the re
   const got=await analyzeBatch([{title:'A',link:'https://x/full',pub:'R'},{title:'B',link:'https://x/pay',pub:'W'}],{fetch:f,ask:async p=>{prompt=p; return JSON.stringify([{i:0,he:'א',what:'w',type:'earnings',level:'imp',dir:'pos',cert:'fact',kind:'news',aff:[]},{i:1,he:'ב',what:'w',type:'earnings',level:'imp',dir:'pos',cert:'fact',kind:'news',aff:[]}])}});
   assert.ok(prompt.includes('data center demand'),'the text reaches the reading'); assert.equal(got[0].rd,'full'); assert.equal(got[1].rd,'head'); assert.ok(!JSON.stringify(got).includes('data center demand'),'the text itself is not kept');
 });
+
+import {etfParse,etfTargets,etfTask} from '../server/etf.js';
+import {partnerView} from '../server/store.js';
+test('4.11 inside the funds: the 25 largest holdings with their weights, an Israeli index fund through a US fund of the same index (and said so), a share is not asked, a partner sees only their own funds',async()=>{
+  const row=(n,s,nm,w)=>`<tr><td>${n}</td><td><a href="/stocks/${s.toLowerCase()}/">${s}</a></td><td>${nm}</td><td>${w}%</td><td>1,000</td></tr>`;
+  const html=`<p>Showing 25 of 505 holdings</p><table><thead><tr><th>No.</th><th>Symbol</th></tr></thead><tbody>${row(1,'NVDA','NVIDIA Corporation','7.77')}${row(2,'AAPL','Apple Inc.','7.72')}${row(3,'MSFT','Microsoft Corporation','5.93')}</tbody></table><span>Updated Oct 23, 2026</span>`;
+  const P=etfParse(html); assert.deepEqual(P.top.map(x=>x[0]),['NVDA','AAPL','MSFT']); assert.equal(P.top[0][2],7.77); assert.equal(P.n,505); assert.equal(P.asOf,'2026-10-23');
+  const s=new Store(':memory:'); s.setDoc('portfolio/main',{positions:[{sym:'VOO',name:'Vanguard S&P 500 ETF',qty:1},{sym:'NVDA',name:'NVIDIA',qty:1},{sym:'5129283',name:'הראל מחקה NASDAQ 100',qty:3}]});
+  s.setDoc('data/users/p1/portfolio',{positions:[{sym:'QQQM',name:'Invesco NASDAQ 100 ETF',qty:1}]});
+  const T=etfTargets(s); assert.deepEqual(T.map(t=>[t.held,t.etf]).sort(),[['5129283','QQQ'],['QQQM','QQQM'],['VOO','VOO']],'a share is not asked'); assert.match(T.find(t=>t.held==='5129283').proxy,/QQQ.*נאסד״ק 100/);
+  const asked=[]; const f=async u=>{asked.push(String(u)); return /qqqm/.test(u)?{ok:false,status:404}:{ok:true,status:200,text:async()=>html}};
+  const st=await etfTask(s,{fetch:f,pause:0}); assert.equal(st.ok,2); assert.equal(st.none,1); assert.ok(asked.every(u=>u.startsWith('https://stockanalysis.com/etf/')));
+  const D=s.getDoc('research/etf').data; assert.equal(D.by.VOO.cover,21.4); assert.equal(D.by['5129283'].etf,'QQQ'); assert.ok(D.none.QQQM);
+  // again within the week: nothing asked
+  asked.length=0; await etfTask(s,{fetch:f,pause:0}); assert.equal(asked.length,0);
+  // a partner: only the funds they hold
+  s.addUser({email:'p@x.co',password:'password1',role:'friend'}); const pu=s.users().find(u=>u.email==='p@x.co'); s.setDoc(`data/users/${pu.id}/portfolio`,{positions:[{sym:'VOO',qty:1}]});
+  const V=partnerView(s,pu,'research/etf',D); assert.deepEqual(Object.keys(V.by),['VOO']); assert.equal(V.none,undefined);
+});

@@ -18378,7 +18378,7 @@ function renderExposure(m){
     <p class="note">"כמו ניירות שווים": התיק מפוזר כמו תיק של ${C.nEff?C.nEff.toFixed(1):'—'} ניירות באותו גודל. ככל שהמספר קטן מ-${C.n}, יותר מהתיק תלוי בכמה ניירות גדולים. ${termBtn('conc')}</p>`;
   const rows=E[EXPV]||E.sector;
   const unk=EXPV==='sector'&&E.unknownSector.length?`<p class="note">אין ענף ברשימה עבור: ${esc(E.unknownSector.map(lab).join(', '))}.</p>`:'';
-  const ov=E.overlap.status==='unknown-possible'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה.</b> ${esc(E.overlap.text)} כדי לחשב אותה צריך את ההרכב של הקרנות, ואין לדף מקור כזה.</p>`
+  const ov=E.overlap.status==='known'?etfLookH(E):E.overlap.status==='unknown-possible'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה.</b> ${esc(E.overlap.text)} כדי לחשב אותה צריך את ההרכב של הקרנות, ואין לדף מקור כזה.</p>`
     :E.overlap.status==='unknown'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה,</b> כי אין לדף את ההרכב של ${esc(E.funds.map(lab).join(', '))}. זה לא אומר שאין חפיפה.</p>`:'';
   // 1.11 (3): the common factors, direct against indirect, and what the page cannot say (the country of business, the funds' holdings)
   const fac=E.factors&&E.factors.length?`<div class="xr-fac"><h3>גורמי סיכון משותפים</h3><p class="nm">כמה מהתיק זז יחד כשגורם אחד משתנה. נייר יכול להיות תחת כמה גורמים.</p><ul>${E.factors.slice(0,7).map(f=>`<li><b>${esc(f.label)}</b> <span class="n">${pct(f.w,0)}</span> <span class="nm">(${f.syms.length} ניירות: ${esc(f.syms.slice(0,6).map(lab).join(', '))}${f.syms.length>6?'…':''})</span><br><span class="nm">${esc(f.why)}</span></li>`).join('')}</ul></div>`:'';
@@ -19571,6 +19571,15 @@ function exposures(m,P,Q,secOf){
   out.direct={stocks:W(pos.filter(p=>!isFund(p)).reduce((t,p)=>t+p.val,0)),funds:W(pos.filter(isFund).reduce((t,p)=>t+p.val,0))};
   // overlap: possible when a broad fund and single stocks of the same market are both held; its size is not known
   const ov=typeof anaOverlap==='function'?anaOverlap(m):null; out.overlap=ov?{status:'unknown-possible',text:ov.text}:out.funds.length?{status:'unknown'}:{status:'none-held'};
+  // 4.11: inside the funds (research/etf): each fund's largest holdings times its value, added to what is held directly. A
+  // fund without its holdings stays named as unknown; a fund read through another that follows the same index says so
+  {const EB=(typeof ETFD!=='undefined'&&ETFD&&ETFD.by)||{}, via={}, known=[], unk=[];
+    for(const p of pos.filter(isFund)){const d=EB[p.sym]; if(!d||!Array.isArray(d.top)||!d.top.length){unk.push(p.sym);continue} known.push({sym:p.sym,etf:d.etf,proxy:d.proxy||null,cover:d.cover,asOf:d.asOf,w:W(p.val)});
+      for(const [k,w] of d.top)via[k]=(via[k]||0)+p.val*(+w||0)/100}
+    if(known.length){const dir={}; for(const p of pos)if(!isFund(p))dir[p.sym]=(dir[p.sym]||0)+p.val;
+      const all=[...new Set([...Object.keys(dir),...Object.keys(via)])].map(k=>({sym:k,direct:W(dir[k]||0),via:W(via[k]||0)})).map(x=>({...x,total:x.direct+x.via})).sort((a,b)=>b.total-a.total);
+      out.look={funds:known,unknown:unk,double:all.filter(x=>x.direct>0&&x.via>=0.1),top:all.slice(0,8),note:'לפי 25 ההחזקות הגדולות של כל קרן (רוב המשקל בקרן מדד); השאר לא נספר'};
+      out.overlap={status:'known',double:out.look.double,unknown:unk,text:out.look.double.length?`${out.look.double.length===1?'מניה אחת':out.look.double.length+' מניות'} מוחזקות גם ישירות וגם דרך קרנות`:'אין מניה שמוחזקת גם ישירות וגם דרך הקרנות שהרכבן ידוע'}}}
   return out;
 }
 // one scenario on today's values. sc: {kind:'all'|'group'|'groups'|'co'|'usd', pct (negative = down), group, by:{group:pct}, syms}
@@ -20678,7 +20687,7 @@ function chicoRoute(q,m,scr){scr=scr||chicoScreen(); const used=['pf'], facts={}
   if(syms.length&&/תז[הת]|השתנ/.test(q))want.add('thesis');
   const pos=m&&m.pos?m.pos:[];
   if(want.has('xray')&&m){try{const E=exposures(m,P,Q,secOfIt); if(E){used.push('xray');
-    const ov=E.overlap.status==='none-held'?'אין קרנות בתיק, ולכן אין חפיפה בין קרנות למניות':E.overlap.status==='unknown-possible'?`אפשרית ולא ידועה בגודלה: ${E.overlap.text||''} לדף אין את הרכב הקרנות`:`לא ידועה: לדף אין את הרכב הקרנות (${E.funds.map(lab).join(', ')}). זה לא אומר שאין חפיפה`;
+    const ov=E.overlap.status==='known'?`${E.overlap.text}: ${(E.look.double.length?E.look.double:E.look.top).slice(0,5).map(x=>`${lab(x.sym)} ${pct(x.direct,1)} ישירות + ${pct(x.via,1)} דרך קרנות = ${pct(x.total,1)}`).join('; ')}${E.overlap.unknown.length?`. ההרכב של ${E.overlap.unknown.map(lab).join(', ')} לא ידוע`:''} (לפי 25 ההחזקות הגדולות של כל קרן)`:E.overlap.status==='none-held'?'אין קרנות בתיק, ולכן אין חפיפה בין קרנות למניות':E.overlap.status==='unknown-possible'?`אפשרית ולא ידועה בגודלה: ${E.overlap.text||''} לדף אין את הרכב הקרנות`:`לא ידועה: לדף אין את הרכב הקרנות (${E.funds.map(lab).join(', ')}). זה לא אומר שאין חפיפה`;
     facts.xray={common_risk_factors:(E.factors||[]).slice(0,6).map(f=>({factor:f.label,share_of_portfolio:pct(f.w),holdings:f.syms.map(lab),why:f.why})),direct_stocks:pct(E.direct.stocks),through_funds:pct(E.direct.funds),
       funds_overlap_double_exposure:ov,concentration:{largest:E.conc.top1?`${lab(E.conc.top1.sym)} ${pct(E.conc.top1.w)}`:null,top3:pct(E.conc.top3),as_many_equal_holdings:E.conc.nEff?E.conc.nEff.toFixed(1):null},
       note:'גורם יכול לגעת בכמה החזקות; האחוזים לא מסתכמים ל-100. מדינה = מקום המסחר, לא מקום הפעילות'};
@@ -20751,7 +20760,9 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
   try{const F=anaFacts(); if(!F.empty)for(const i of anaIssues(F).filter(i=>!i.acked&&i.sev==='crit'&&/ריכוז|נייר|קבוצה/.test((i.cat||'')+(i.title||''))).slice(0,1))
     add({k:'iss:'+i.id,kind:'conc',lv:'imp',what:i.title||i.cat,whatMore:anaStrip(i.text||''),whyNow:'המשקל עבר את הכלל שקבעת (גם עלייה במחיר יכולה לגרום לזה)',why:'זה כלל שאתה קבעת לעצמך',impact:'תנועה של נייר או קבוצה אחת משפיעה יותר על כל התיק',check:'לבדוק בבקרה את המשקל מול הכלל, ובסימולטור מה משנה אותו',src:['חישוב הדף מהמחירים והכללים'],cert:'מדידה',limits:'לא אומר שצריך למכור',nav:{t:'risk',l:'לבקרה'}})}catch(e){}
   // 4. a double exposure that may be there: a broad fund and single shares of the same market
-  try{const E=exposures(m,P,Q,secOfIt); if(E&&E.overlap.status==='unknown-possible')add({k:'dbl',kind:'dbl',lv:'info',what:'ייתכן שיש לך חשיפה כפולה',whatMore:E.overlap.text||'',whyNow:'הדף זיהה קרן רחבה לצד מניות בודדות מאותו שוק',why:'אותה חברה יכולה להיות גם ישירות וגם בתוך הקרן',impact:'הפיזור בפועל נמוך ממה שנראה',check:'לבדוק ברנטגן את הגורמים המשותפים',src:['רנטגן התיק'],cert:'אפשרות',limits:'לדף אין את הרכב הקרנות, ולכן גודל החפיפה לא ידוע',nav:{t:'risk',l:'לרנטגן'}})}catch(e){}
+  try{const E=exposures(m,P,Q,secOfIt); const d0=E&&E.overlap.status==='known'?E.look.double[0]:null;
+    if(d0&&d0.total>=5)add({k:'dbl:'+d0.sym+':'+Math.round(d0.total),kind:'dbl',lv:d0.total>=(+(S.rules||{}).maxPos||15)?'imp':'info',what:`${lab(d0.sym)}: ${pct(d0.total,1)} מהתיק, כולל דרך הקרנות`,whatMore:`${pct(d0.direct,1)} ישירות ועוד ${pct(d0.via,1)} דרך הקרנות שבתיק`,whyNow:'ההרכב של הקרנות נקרא, והחשיפה הכפולה חושבה',why:`הכלל שלך: עד ${pct(+(S.rules||{}).maxPos||0,0)} לנייר אחד`,impact:'תנועה של המניה הזאת מזיזה את התיק יותר ממה שנראה מהשורה שלה לבד',check:'לבדוק ברנטגן את החשיפה הכוללת',src:['stockanalysis.com (ההחזקות הגדולות של כל קרן)'],cert:'חישוב',limits:'לפי 25 ההחזקות הגדולות של כל קרן; קרן שההרכב שלה לא ידוע לא נספרת',nav:{t:'risk',l:'לרנטגן'}});
+    if(E&&E.overlap.status==='unknown-possible')add({k:'dbl',kind:'dbl',lv:'info',what:'ייתכן שיש לך חשיפה כפולה',whatMore:E.overlap.text||'',whyNow:'הדף זיהה קרן רחבה לצד מניות בודדות מאותו שוק',why:'אותה חברה יכולה להיות גם ישירות וגם בתוך הקרן',impact:'הפיזור בפועל נמוך ממה שנראה',check:'לבדוק ברנטגן את הגורמים המשותפים',src:['רנטגן התיק'],cert:'אפשרות',limits:'לדף אין את הרכב הקרנות, ולכן גודל החפיפה לא ידוע',nav:{t:'risk',l:'לרנטגן'}})}catch(e){}
   // 5. an anomaly measured in the prices
   try{const A=anomaliesOf(m).filter(a=>a.conf==='high'&&(a.k==='px'||a.k==='volm'))[0]; if(A)add({k:'an:'+A.k+':'+A.sym+':'+(A.when||''),kind:'anom',lv:'info',what:A.what,whatMore:A.vs||'',whyNow:'מדידה מהמחירים האחרונים',why:A.why||'',impact:'תנועה חריגה ביחס לרגיל של הנייר',check:'לבדוק אם דווחה סיבה',src:['המחירים והסגירות'],cert:A.cause?`סיבה מדווחת: ${A.cause.text}`:'לא נמצאה סיבה מדווחת',limits:'חריגה סטטיסטית אינה סיבה',nav:{t:'state',l:'לחריגות'}})}catch(e){}
   // 6. an important economic event within three days
@@ -25619,7 +25630,12 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
 // already has: the readings, the markets' document, the calendar; צ׳יקו's lines ("מה קורה בשווקים") give the "why"
 // when he wrote them, the readings otherwise. With the time of the last gathering and reading; nothing of it is a
 // forecast, and a part with no data says so ----
-let ECO=null;   // research/ecocal, the economic calendar (server/ecocal.js)
+let ECO=null, ETFD=null, etfAsked=false;   // 4.11: research/etf, what is inside the held funds
+// the double exposure, in the X-ray: a share held directly and again through funds, with its total
+function etfLookH(E){const L=E.look; if(!L)return ''; const rows=(L.double.length?L.double:L.top.slice(0,5)).slice(0,8);
+  return `<div class="xr-look"><h3>חשיפה כוללת, כולל מה שבתוך הקרנות</h3><p class="nm">${esc(E.overlap.text)}. ${esc(L.note)}.</p>
+    <div class="tw"><table class="mini"><thead><tr><th>חברה</th><th>ישירות</th><th>דרך קרנות</th><th>סה״כ</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(lab(x.sym))}</td><td class="num">${x.direct?pct(x.direct,1):'—'}</td><td class="num">${x.via?pct(x.via,1):'—'}</td><td class="num"><b>${pct(x.total,1)}</b></td></tr>`).join('')}</tbody></table></div>
+    <p class="nm">${L.funds.map(f=>`${esc(lab(f.sym))}: ${f.proxy?esc(f.proxy)+', ':''}${f.cover?pct(f.cover,0)+' מהקרן ידוע':''}${f.asOf?' ('+dmy(f.asOf)+')':''}`).join(' · ')}${L.unknown.length?` · <b>לא ידוע:</b> ${esc(L.unknown.map(lab).join(', '))}`:''}. המקור: stockanalysis.com.</p></div>`}   // research/ecocal, the economic calendar (server/ecocal.js)
 let INS=null;   // research/insiders, the insiders' filings (server/insiders.js)
 // ---- 1.11 (12): "בעלי עניין": the insiders' form-4 filings of the US companies held or followed, from the SEC, each told
 // apart: an open-market buy or sale (a decision with their own money) against an award, an option exercise, a tax
@@ -27588,6 +27604,9 @@ try{refreshBack()}catch(e){}
   db.doc('research/x').onSnapshot(s=>{XD=s.exists?s.data():null; nxIds((XD&&XD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}})},fail);
   try{db.doc('research/stories').onSnapshot(s=>{STORIES=s.exists?s.data():null},()=>{})}catch(e){}
   try{db.doc('research/insiders').onSnapshot(s=>{INS=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{})}catch(e){}
+  try{db.doc('research/etf').onSnapshot(s=>{ETFD=s.exists?s.data():null; try{if(['risk','state'].includes(document.body.dataset.page))render()}catch(e){}
+    // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)
+    try{if(!LOCAL&&!etfAsked&&P&&(P.positions||[]).some(p=>isF(p.sym)&&!((ETFD&&ETFD.by)||{})[p.sym])){etfAsked=true; fetch('/api/etf/refresh',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:'{}'}).catch(()=>{})}}catch(e){}},()=>{})}catch(e){}
   try{db.doc('research/ecocal').onSnapshot(s=>{ECO=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}},()=>{})}catch(e){}
   db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{renderNewsChip()}catch(e){} try{for(const x of Object.values((NXD&&NXD.by)||{}))if(x){x.he=heFix(x.he); x.what=heFix(x.what)}}catch(e){} try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){} try{newsCount()}catch(e){}},fail);
   $('repKind').value=RK;$('repKind').addEventListener('change',e=>{RK=e.target.value;RP='';try{localStorage.setItem('repKind',RK)}catch(x){};fillPeriods()});

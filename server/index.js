@@ -35,6 +35,7 @@ import {startRadar} from './admin/intel.js';
 import {catalog as mcCatalog} from './admin/metrics.js';
 import {setCounterStore, bump, aiMeter} from './admin/counter.js';
 import {meterYahoo} from './admin/yahoo.js';
+import {etfTask} from './etf.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -424,6 +425,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;
   // the owner's page found a gap between two of its views: kept, and the price watch tells the owner (with consent)
   app.post('/api/selfcheck',needOwner,(req,res)=>res.json(selfCheckNote(store,req.body||{})));
+  // 4.11: what is inside the held funds, now (the page asks when a fund it shows has no holdings yet); once in ten minutes
+  let etfLast=0, etfBusy=null;
+  app.post('/api/etf/refresh',needUser,async(req,res)=>{if(etfBusy||Date.now()-etfLast<10*60e3)return res.json({ok:true,cached:true}); etfLast=Date.now();
+    try{etfBusy=etfTask(store,{log}); const st=await etfBusy; res.json({ok:true,read:st.ok,none:st.none,fail:st.fail})}catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}finally{etfBusy=null}});
   app.post('/api/research/one',needUser,async(req,res)=>{const k=String((req.body||{}).sym||'').trim().toUpperCase().slice(0,16);
     if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
     const last=RSONE.get(k); if(last&&Date.now()-last<20*60e3)return res.json({ok:true,cached:true});

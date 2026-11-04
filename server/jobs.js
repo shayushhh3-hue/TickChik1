@@ -15,6 +15,7 @@ import {liveTask} from './livealert.js';
 import {pulseTask} from './pulse.js';
 import {ecocalTask} from './ecocal.js';
 import {insidersTask} from './insiders.js';
+import {etfTask} from './etf.js';
 import {newsSyms} from './newsfeed.js';
 import {jobNote, healthCheck} from './health.js';
 
@@ -34,6 +35,8 @@ export const SCHEDULE=[
   {name:'ecocal',  when:p=>p.h===6&&p.min===40, run:(s,o)=>ecocalTask(s,o)},
   // 1.11: the insiders' filings (form 4) of everybody's US securities, twice a day (the SEC accepts them until 22:00 New York)
   {name:'insiders',when:p=>(p.h===3||p.h===15)&&p.min===40, run:(s,o)=>insidersTask(s,o)},
+  // 4.11: what is inside the funds that are held (their largest holdings), once a night; a fund is read again after a week
+  {name:'etf',when:p=>p.h===2&&p.min===50, run:(s,o)=>etfTask(s,o)},
   // a company's report soon after it is out: only the securities whose report date has come (and the reports of the last
   // days still waiting for their revenue, the e-mail or the share's move). Every 20 minutes when the US reports come out
   // (before the open: 13:00-16:40, after the close: 22:00-01:40, Israel time), and in the morning and the evening
