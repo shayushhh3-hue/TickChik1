@@ -2796,6 +2796,7 @@ test('4.11 the long screens in parts: one part at a time, the choice kept, a lin
   await pg.click('[data-pane="forecast"] .ptnav [data-pt="forecast:calc"]'); await pg.evaluate(()=>document.getElementById('inGoal').scrollIntoView()); await pg.waitForTimeout(200);
   assert.equal(await pg.evaluate(()=>!!document.getElementById('inGoal').offsetParent),true,'a scroll to a field opens its part');
   await tab(pg,'history'); await pg.waitForTimeout(300); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('[data-pane="history"] .ptnav .chip')].map(c=>c.textContent)),['מבט מהיר','לאורך זמן','עמלות ומס']);
+  assert.match(await pg.evaluate(()=>document.getElementById('quickSay').textContent),/^צ׳יקו: התיק שווה ₪[\d,]+ (יותר|פחות) ממה שהפקדת/,'צ׳יקו says what the numbers add up to');
   assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
