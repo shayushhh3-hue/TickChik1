@@ -34,6 +34,7 @@ import {reqMeter, startOps} from './admin/ops.js';
 import {startRadar} from './admin/intel.js';
 import {catalog as mcCatalog} from './admin/metrics.js';
 import {setCounterStore, bump, aiMeter} from './admin/counter.js';
+import {meterYahoo} from './admin/yahoo.js';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(HERE,'..');
@@ -67,7 +68,7 @@ const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const app=express();
   // 1.11: the management center's tables (audit, sign-ins, activity, counters) and the counters' store
-  adminSchema(store); setCounterStore(store); if(!store.getMeta('countersSince'))store.setMeta('countersSince',JSON.stringify(new Date().toISOString()));
+  adminSchema(store); setCounterStore(store); meterYahoo(store); if(!store.getMeta('countersSince'))store.setMeta('countersSince',JSON.stringify(new Date().toISOString()));
   app.disable('x-powered-by');
   app.set('trust proxy',1);
   app.use(express.json({limit:'14mb'}));

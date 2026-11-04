@@ -273,12 +273,17 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       // future) and by the dollar, marked as an estimate beside the official price and its date
       const B=q.base, b=B&&fetched.bench&&fetched.bench[B.k], fxN=fetched.fx&&fetched.fx.live&&fetched.fx.live.px>0?fetched.fx.live.px:(fetched.fx&&fetched.fx.boi?fetched.fx.boi.rate:0);
       const lvl=b&&b.px>0?b.px*(b.fut&&b.fut.px>0&&b.fut.prev>0&&b.fut.date>b.date?b.fut.px/b.fut.prev:1):0, r=B&&lvl>0&&fxN>0?(lvl/B.idx)*(fxN/B.fx):0;
-      if(r>0&&Math.abs(r-1)<0.25&&Math.abs(r-1)>0.0002){prices[sym]=round(q.px*r,4); prevC[sym]=round(q.px,4);
+      // 4.11: the day's change of an estimated fund is the day's change of its index and of the dollar, not the whole way
+      // from its official price (which can be several days old): the official price as "yesterday" made a week's move look
+      // like one day's
+      const fxP=fetched.fx&&fetched.fx.live&&fetched.fx.live.prev>0?fetched.fx.live.prev:fxN, dayR=b&&b.px>0&&b.prev>0?(b.fut&&b.fut.px>0&&b.fut.prev>0&&b.fut.date>b.date?b.fut.px/b.fut.prev:b.px/b.prev)*(fxN>0&&fxP>0?fxN/fxP:1):0;
+      if(r>0&&Math.abs(r-1)<0.25&&Math.abs(r-1)>0.0002){prices[sym]=round(q.px*r,4); if(dayR>0&&Math.abs(dayR-1)<0.2)prevC[sym]=round(q.px*r/dayR,4); else delete prevC[sym];
         meta[sym].est={nav:round(q.px,4),pct:round((r-1)*100,3),idx:B.idx,idxDate:B.idxDate,fx:B.fx,lvl:round(lvl,2),fxNow:round(fxN,4)};
         stale[sym]=`הערכה לפי ${BENCH[B.k].name} ושער הדולר · מחיר רשמי ${q.closeDate?dm(q.closeDate):''}`.trim()}
-      else{prices[sym]=round(q.px,4); if(q.prev>0)prevC[sym]=round(q.prev,4)}
+      else{prices[sym]=round(q.px,4); if(q.prev>0&&Math.abs(q.px/q.prev-1)<0.2)prevC[sym]=round(q.prev,4); else delete prevC[sym]}   // no previous price of this answer: no day's change (an old one would span days)
       continue}
-    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null)prevC[sym]=round(q.prev); meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
+    // 4.11: a new price with an old "previous" made a change of several days look like one: no previous, no day's change
+    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null&&q.prev>0)prevC[sym]=round(q.prev); else delete prevC[sym]; meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
       if(q.src==='stooq')stale[sym]='סגירה '+dm(q.closeDate);

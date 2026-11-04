@@ -434,7 +434,7 @@ test('prices: a fund that follows a US index is carried from its official price 
   // now: the index 2% above the 14.10 close, the dollar 1% below the 15.10 rate
   all.bench={NDX:{px:20400,prev:20300,date:'2026-10-19'}}; all.fx={live:{px:3.6828}};
   const d=buildQuotesDoc({prev:{prices:{'5129283':373}},fetched:all,symbols:['5129283'],now:new Date('2026-10-20T10:00:00Z')});
-  assert.ok(Math.abs(d.prices['5129283']-373.6*1.02*0.99)<1e-3); assert.equal(d.prev['5129283'],373.6);
+  assert.ok(Math.abs(d.prices['5129283']-373.6*1.02*0.99)<1e-3); assert.ok(Math.abs(d.prev['5129283']-d.prices['5129283']/(20400/20300))<1e-3,'4.11: the day\'s change is the index\'s day, not the way from the official price');
   assert.match(d.stale['5129283'],/^הערכה לפי נאסד״ק 100 ושער הדולר · מחיר רשמי 15.10$/); assert.equal(d.lag.il,undefined,'an estimate is not a missing session');
   // overnight: the future's move since its last settlement is added to the index's close
   all.bench={NDX:{px:20400,prev:20300,date:'2026-10-19',fut:{px:20604,prev:20400,date:'2026-10-20'}}};

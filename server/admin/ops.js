@@ -133,18 +133,27 @@ export function newsOps(store){
   const unknownSym=ai.reduce((a,x)=>a+(x.aff||[]).filter(f=>universe.size&&!universe.has(f.sym)).length,0);
   // the personal alerts: counted over everybody, never shown one by one here
   const users=store.users(); let pa=0, crit=0, imp=0, upd=0, withAl=0, fresh24=0, pulseAt=null; const d1=new Date(Date.now()-864e5).toISOString();
+  // 4.11: the news load, by day over two weeks: the alerts made, the important ones, per person who has any (summed over
+  // everybody, never one person's), against the two weeks' average
+  const LD={}, ilD=t=>{try{return new Date(t).toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'})}catch(e){return ''}}, d14=new Date(Date.now()-14*864e5).toISOString();
   for(const u of users){const d=store.getDoc(u.role==='owner'?'alerts/pulse':`data/users/${u.id}/pulse`); if(!d.exists)continue; const L=(d.data&&d.data.items)||[]; if(L.length)withAl++;
+    for(const a of L){const t=a.at||a.up||''; if(t<d14)continue; const k=ilD(t), o=LD[k]||(LD[k]={d:k,n:0,imp:0,mkt:0}); o.n++; if(a.lv==='crit'||a.lv==='imp')o.imp++; if(a.kind==='mkt')o.mkt++}
     pa+=L.length; for(const a of L){if(a.lv==='crit')crit++; else if(a.lv==='imp')imp++; else upd++; if((a.up||a.at||'')>=d1)fresh24++} pulseAt=[pulseAt,d.updatedAt].filter(Boolean).sort().pop()}
   const sources=[{k:'yahoo',name:'כתבות על הניירות (Yahoo / Finnhub)',ok:NS?NS.ok:null,of:NS?NS.of:null,fail:NS?NS.fail:null,items:NS?NS.items:null,first:NS&&NS.first,at:NS&&NS.at,stopped:NS&&NS.stopped}];
   if(NS&&NS.il)sources.push({k:'globes',name:'גלובס (מניות תל אביב)',ok:NS.il.ok,of:NS.il.of,fail:NS.il.fail,items:NS.il.items,first:NS.il.first,at:NS.at,off:!!NS.il.off});
   if(NS&&NS.more)for(const [k,v] of Object.entries(NS.more))if(v&&typeof v==='object'&&!Array.isArray(v)&&k!=='first')sources.push({k,name:{sec:'דיווחי החברות ל-SEC',gnews:'מו״לים מובילים (Google News)',fed:'הפדרל ריזרב'}[k]||k,ok:v.ok,fail:v.fail,items:v.items,first:v.first,at:NS.at});
   sources.push({k:'general',name:'חדשות כלליות (Finnhub + הפד)',items:gen.length,at:XS&&XS.at,ok:null,note:XS?`${XS.gen||0} חדשות בריצה האחרונה`:null});
   sources.push({k:'x',name:'פוסטים מ-X',off:!process.env.X_BEARER_TOKEN,ok:XT?XT.ok:null,items:XT?XT.items:null,at:XT&&XT.at,first:XT&&(XT.first||XT.stopped)});
+  // 4.11: an error note starts with the ticker that failed ("FORTY: HTTP 429"); a ticker can tell whose portfolio it is
+  for(const x of sources)if(x.first)x.first=String(x.first).replace(/^[A-Z0-9.\-^=]{1,12}:\s*/,'נייר אחד: ');
   return {at:new Date().toISOString(),sources,
     articles:{total:all.length,company:items.length,general:gen.length,dup,noSrc,pubs:Object.entries(pubs).map(([p,n])=>({p,n})).sort((a,b)=>b.n-a.n).slice(0,15),newest:all.map(a=>a.at||a.seen).filter(Boolean).sort().pop()||null,updatedAt:N.updatedAt||null},
     reading:{total:R.length,ai:ai.length,rules:rules.length,waiting:XS?XS.waiting:null,read:XS?XS.read:null,fail:XS?XS.fail:null,first:XS&&XS.first,stopped:XS&&XS.stopped,at:XS&&XS.at,seconds:XS&&XS.seconds,keyOff:!process.env.ANTHROPIC_API_KEY},
     impact:{events3:evs.size,withCompanies:ai.filter(x=>(x.aff||[]).length).length,unlinked,unknownSym,crit:R.filter(x=>x.level==='crit').length,imp:R.filter(x=>x.level==='imp').length},
-    personal:{alerts:pa,crit,imp,upd,users:withAl,of:users.length,fresh24,at:pulseAt,pushSent:sum(countersSince(store,'push',today(),today()).filter(r=>r.key==='sent'))}};
+    personal:{alerts:pa,crit,imp,upd,users:withAl,of:users.length,fresh24,at:pulseAt,load:(()=>{const days=[]; for(let i=13;i>=0;i--){const k=ilD(Date.now()-i*864e5), o=LD[k]||{d:k,n:0,imp:0,mkt:0}; days.push({...o,perUser:withAl?Math.round(o.n/withAl*10)/10:null,impPerUser:withAl?Math.round(o.imp/withAl*10)/10:null})}
+      const prev=days.slice(0,13), avg=prev.reduce((t,x)=>t+(x.perUser||0),0)/13, now=days[13].perUser||0, r=avg>0?now/avg:now>0?2:1;
+      const level=now===0&&avg<0.5?'calm':r<0.6?'calm':r<1.4?'normal':r<2.2?'busy':'storm', flood=(days[13].impPerUser||0)>8;
+      return {days,todayPerUser:now,avgPerUser:Math.round(avg*10)/10,ratio:Math.round(r*10)/10,level,flood,note:'התראות שנוצרו בכל יום, מחולקות במספר המשתמשים שיש להם התראות; סיכום של כולם יחד, לא של אדם אחד'}})(),pushSent:sum(countersSince(store,'push',today(),today()).filter(r=>r.key==='sent'))}};
 }
 
 // ---- the AI engines ----

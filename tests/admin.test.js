@@ -436,3 +436,31 @@ test('the global news model: articles of one event are one event; regions, topic
     await assert.rejects(()=>worldBrief(s,U.a,{days:1,ask:async()=>'לא JSON',force:true}),/no_answer|unavailable/);
   }finally{Date.now=realNow}
 });
+
+import {meterYahoo,yahooStatus,marketData} from '../server/admin/yahoo.js';
+test('4.11 Yahoo: every request counted by kind and outcome, never its address; the prices counted by source, never named; the market itself',async()=>{
+  const s=mk(); setCounterStore(s);
+  const T={fetch:async u=>{u=String(u); if(u.includes('fail'))throw Object.assign(new Error('x'),{name:'TimeoutError'}); return {ok:!u.includes('429'),status:u.includes('429')?429:200}}};
+  meterYahoo(s,{target:T}); meterYahoo(s,{target:T});   // once only
+  await T.fetch('https://query1.finance.yahoo.com/v8/finance/chart/SECRETSYM?range=10d'); await T.fetch('https://query2.finance.yahoo.com/v8/finance/chart/X?429');
+  await T.fetch('https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAA'); await T.fetch('https://example.com/not-yahoo');
+  await assert.rejects(()=>T.fetch('https://query1.finance.yahoo.com/v1/finance/search?q=fail'));
+  s.setDoc('quotes/latest',{prices:{SECRETSYM:1,B:2,C:3},meta:{SECRETSYM:{src:'yahoo'},B:{src:'nasdaq'},C:{src:'yahoo'}},stale:{C:'מחיר קודם'},usdIls:3.7,fxPrev:{rate:3.6},bench:{SPX:{px:5900,prev:5800,date:'2026-11-03'}},mkts:{GOLD:{px:2500,prev:2550,date:'2026-11-03'}},rates:{EUR:{rate:4,prev:4.1}},updatedAt:new Date().toISOString()},{silent:true});
+  const S=yahooStatus(s,{days:7}); const J=JSON.stringify(S);
+  assert.equal(S.total,4,'the other site is not counted'); assert.equal(S.ok,2); assert.equal(S.limited,1); assert.equal(S.state,'warn');
+  assert.deepEqual(S.kinds.find(k=>k.kind==='chart').codes,[{c:'429',n:1}]); assert.deepEqual(S.kinds.find(k=>k.kind==='search').codes,[{c:'timeout',n:1}]);
+  assert.ok(!J.includes('SECRETSYM')&&!J.includes('AAA'),'no ticker anywhere'); assert.deepEqual(S.prices.bySource.map(x=>[x.s,x.n]),[['yahoo',2],['nasdaq',1]]); assert.equal(S.prices.stale,1);
+  assert.ok(S.last.ok&&S.last.fail&&S.last.fail.code==='timeout');
+  const M=marketData(s); assert.equal(M.bench.find(b=>b.k==='SPX').chg,1.72); assert.equal(M.mkts.find(b=>b.k==='GOLD').chg,-1.96); assert.equal(M.fx.chg,2.78); assert.equal(M.rates[0].chg,-2.44);
+  setCounterStore(null);
+});
+
+import {articleTextOf,analyzeBatch} from '../server/newsx.js';
+test('4.11 the article itself: its paragraphs (no scripts or menus) go to the reading only; a page with too little text leaves the headline',async()=>{
+  const para='Nvidia said revenue rose sharply in the quarter as data center demand kept growing across its largest customers.';
+  const html=`<html><head><script>var x="<p>NOT THIS ONE BECAUSE IT IS INSIDE A SCRIPT TAG AND MUST BE DROPPED</p>"</script></head><body><nav><p>Home Markets Tech Opinion menu items that are not the article</p></nav><p>${para}</p><p>${para} Second.</p><p>${para} Third.</p><p>short</p><footer><p>Copyright notice and other footer text that is long enough</p></footer></body></html>`;
+  const t=articleTextOf(html); assert.ok(t.includes('data center demand')&&!t.includes('NOT THIS')&&!t.includes('menu items')&&!t.includes('footer text')); assert.equal(articleTextOf('<p>Subscribe to read</p>'),null);
+  let prompt=''; const f=async u=>({ok:true,status:200,headers:{get:()=>'text/html'},text:async()=>String(u).includes('full')?html:'<p>paywall</p>'});
+  const got=await analyzeBatch([{title:'A',link:'https://x/full',pub:'R'},{title:'B',link:'https://x/pay',pub:'W'}],{fetch:f,ask:async p=>{prompt=p; return JSON.stringify([{i:0,he:'א',what:'w',type:'earnings',level:'imp',dir:'pos',cert:'fact',kind:'news',aff:[]},{i:1,he:'ב',what:'w',type:'earnings',level:'imp',dir:'pos',cert:'fact',kind:'news',aff:[]}])}});
+  assert.ok(prompt.includes('data center demand'),'the text reaches the reading'); assert.equal(got[0].rd,'full'); assert.equal(got[1].rd,'head'); assert.ok(!JSON.stringify(got).includes('data center demand'),'the text itself is not kept');
+});

@@ -2406,6 +2406,8 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 /* the links that are buttons in the new parts: a target of 24px at least */
 .nw-cgh .lnk,.nws .lnk,.liveal .lnk,.imp-l .lnk,.imp-t .lnk,.nw-active .lnk,.pl .lnk{min-height:24px;display:inline-flex;align-items:center}
 /* צ׳יקו with a context */
+.ix-load{margin:2px 0 8px;font-size:13px} .ix-load .nl{display:inline-block;padding:2px 9px;border-radius:999px;background:rgb(99 102 241 / .12)} .ix-load .nl-busy{background:rgb(217 119 6 / .16)} .ix-load .nl-storm{background:rgb(220 38 38 / .16)} .ix-load .nl-calm{background:rgb(22 163 74 / .14)}
+.srcref{color:inherit;font-weight:600} .srcref.nw-sref{display:inline-block;min-width:1.4em;text-align:center;border-radius:6px;background:rgb(124 58 237 / .1);font-size:11px}
 .ana-foc,.chico-scr{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-basis:100%;padding:6px 10px;border-radius:10px;background:rgb(124 58 237 / .08);font-size:13px} .ana-foc .lnk{font-size:18px;line-height:1;text-decoration:none}
 .ana-foc-h{margin:0 0 6px;font-size:12.5px;color:var(--muted)}
 /* 30.10: the check against the house: what the last statement or screenshot said, against the site now, and why */
@@ -3150,7 +3152,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
           <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה: לדף המניה</span></div>
             <ul class="ix-sl" id="ixStList"></ul><button type="button" class="btn sm ix-more" id="ixStMore" aria-expanded="false" hidden></button></section>
           <div class="ix-grid">
-            <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">האירועים שנוגעים לתיק <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><div class="ix-alist" id="ixAlList"></div></section>
+            <section class="ix-col ix-al" aria-labelledby="ixAlH"><div class="ix-ch"><h3 id="ixAlH">מה נוגע לתיק <span class="ix-n" id="ixAlN" hidden></span></h3><button type="button" class="lnk" data-ixall="1">הצג הכל ›</button></div><p class="ix-load" id="ixLoad" role="status" hidden></p><div class="ix-alist" id="ixAlList"></div></section>
             <section class="ix-col ix-ch2" aria-labelledby="ixChH"><h3 class="vh" id="ixChH">צ׳יקו</h3>
               <div class="ix-me"><span class="chiko ix-av" aria-hidden="true"></span><div class="ix-bub">היי! איך אוכל לעזור?<small>שאל על האירועים, על המניות שלך או על התיק</small></div></div>
               <div class="ix-qs" id="ixQs"></div>
@@ -17378,6 +17380,11 @@ function mktDay(iso){
 }
 // "today" only when the last trades are from today; on a weekend or a holiday the move is the last trading day's
 const dayWord=()=>{const lt=Q&&Q.lastTradeDay; return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
+// 4.11: the tense follows the clock. While a market is open the day is still moving ("יורד"); after the close it is done
+// ("ירד"); a day that is not today is named by its date
+const dayLab=()=>{const w=dayWord(); return w==='היום'?'היום':'ביום המסחר האחרון'+(Q&&Q.lastTradeDay?' ('+dmy(Q.lastTradeDay)+')':'')};
+const dayLive=()=>{try{const now=new Date(); return dayWord()==='היום'&&(usOpen(now)||ilOpen(now))}catch(e){return false}};
+const dayVerb=up=>dayLive()?(up?'עולה':'יורד'):(up?'עלה':'ירד');
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
 const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}catch(e){PXF=null} if(PXF&&!(Date.now()-new Date(PXF.at)<PXWAIT*6e4))PXF=null};
 const pxSave=()=>{try{if(PXF)localStorage.setItem('tr_pxfire',JSON.stringify(PXF));else localStorage.removeItem('tr_pxfire')}catch(e){}};
@@ -17463,7 +17470,10 @@ function model(P,Q,acct,adj){
     const px=prices[p.sym]; if(px==null)continue;
     const cut=OUT?(OUT.get(p)||0):0, q=p.qty-cut; if(cut&&!(q>1e-9))continue;
     const cc=ccyOfPos(p,Q), rt=rateOf(cc,Q); if(rt==null){if(!noRate.includes(p.sym))noRate.push(p.sym);continue}
-    const pxIls=px*rt, val=q*pxIls, pv=(Q.prev||{})[p.sym];
+    // 4.11: a price that is not today's (kept from before, from the statement, or an older close) has no "day's change":
+    // its old pair made a move of another day look like today's
+    const stl=(Q.stale||{})[p.sym]||'', md=((Q.meta||{})[p.sym]||{}).date||'', oldPx=/^(מחיר קודם|מחיר מהדוח)/.test(stl)||(/^סגירה /.test(stl)&&!!md&&md<(cc==='ILS'?(Q.ilDate||''):(Q.usDate||'')));
+    const pxIls=px*rt, val=q*pxIls, pv=oldPx?null:(Q.prev||{})[p.sym];
     const g0=effGroup(p); NAMEOF[p.sym]=p.name; FUNDOF[p.sym]=isFundLike(p.sym,p.name,g0);
     const m=by[p.sym]||(by[p.sym]={sym:p.sym,name:p.name,group:g0,ccy:cc,px,pxIls,qty:0,val:0,cost:0,costVal:0,accts:[],noCost:false,dayPct:pv?(px/pv-1)*100:null,dayIls:0});
     m.qty+=q; m.val+=val; if(pv)m.dayIls+=q*(px-pv)*rt; if(!m.accts.includes(p.acct))m.accts.push(p.acct); if(cut)m.potQty=Math.round(((m.potQty||0)+cut)*1e4)/1e4;
@@ -19117,7 +19127,7 @@ function renderBrief(m,A){
   const R=S.rules, L=[], nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length;
   if(m.hasDay&&m.dayPct!=null&&Math.abs(m.dayIls)>=1){
     const up=m.dayIls>=0, same=m.pos.filter(p=>p.dayIls!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)), top=same.slice(0,2), share=top.length?Math.abs(top[0].dayIls/m.dayIls)*100:0;
-    L.push(`<b>היום:</b> התיק ${up?'עלה':'ירד'} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(ils(Math.abs(m.dayIls)))})${top.length?`, בעיקר בגלל ${top.map(p=>`<span class="sym">${esc(lab(p.sym))}</span> ${nn(sgn(p.dayIls),up?'up':'down')}`).join(' ו-')}`:''}.${share>=50&&m.pos.length>=4?` נייר אחד אחראי ל${nn(pct(share,0))} מהתנועה: כך זה נראה כשנייר אחד שוקל הרבה.`:''} תנועה של יום אחד לא אומרת כלום על החברות עצמן.`)}
+    L.push(`<b>${dayLab()}:</b> התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(ils(Math.abs(m.dayIls)))})${top.length?`, בעיקר בגלל ${top.map(p=>`<span class="sym">${esc(lab(p.sym))}</span> ${nn(sgn(p.dayIls),up?'up':'down')}`).join(' ו-')}`:''}.${share>=50&&m.pos.length>=4?` נייר אחד אחראי ל${nn(pct(share,0))} מהתנועה: כך זה נראה כשנייר אחד שוקל הרבה.`:''} תנועה של יום אחד לא אומרת כלום על החברות עצמן.`)}
   const tg=Object.keys(GROUPS).filter(k=>k!=='cash').map(k=>m.groups[k]).sort((a,b)=>b.w-a.w)[0];
   if(tg&&tg.val>0){
     if(tg.w>R.maxGroup) L.push(`<b>הסיכון הגדול:</b> ${esc(GROUPS[tg.id])} היא ${nn(pct(tg.w))} מהתיק, מעל הסף שלך (${pct(R.maxGroup,0)}). כשקבוצה אחת כל כך גדולה, ירידה של 10% בה לבדה מורידה כ-${nn(ils(tg.val*0.1))} מהתיק, כלומר ${nn(pct(tg.w*0.1))} מהשווי הכולל.`);
@@ -19313,7 +19323,7 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   const L=[], sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
   if(sv)L.push(['since','מאז הביקור האחרון',esc(sv)]);
   if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2);
-    L.push(['day','היום',Math.abs(m.dayPct)<0.05?'התיק כמעט לא זז.':`התיק ${up?'עלה':'ירד'} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(sgn(m.dayIls),up?'up':'down')})${top.length?`, בעיקר בגלל ${top.map(p=>`${symH(p.sym)} ${nn(spct(p.dayPct,1),p.dayPct>=0?'up':'down')}`).join(' ו-')}`:''}.`])}
+    L.push(['day',dayLab(),Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו.':'התיק כמעט לא זז.'):`התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(sgn(m.dayIls),up?'up':'down')})${top.length?`, בעיקר בגלל ${top.map(p=>`${symH(p.sym)} ${nn(spct(p.dayPct,1),p.dayPct>=0?'up':'down')}`).join(' ו-')}`:''}.`])}
   // the news: on the ones that moved first, else the most important of the last day and a half
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
@@ -19822,6 +19832,7 @@ function anaFactsAI(F,issues,checks){
     total:ils(m.total), cash:`${ils(m.cash)} (${pct(m.total?m.cash/m.total*100:0)})`,
     holdings_count:m.pos.length, funds_count:F.funds.length, stocks_count:F.stocks.length,
     last_trading_day:m.hasDay&&m.dayPct!=null?`${sgn(m.dayIls)} (${spct(m.dayPct,2)})`:null,
+    last_trading_day_is:dayLive()?'היום, המסחר עדיין פתוח':dayLab()==='היום'?'היום, המסחר נסגר':dayLab(),
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
     from_peak:(()=>{try{const cr=crisisInfo(m);return cr&&cr.peak?`${spct(-cr.peak.pct)} מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))})`:null}catch(e){return null}})(),
     movers:m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).slice(0,6).map(p=>`${lab(p.sym)} ${spct(p.dayPct,2)} (${sgn(p.dayIls)})`),
@@ -19868,6 +19879,7 @@ function anaFactsAI(F,issues,checks){
         screen:'סקירה → "מדד בריאות התיק"; הכללים עצמם ב"כללים ויעדים"'}}catch(e){return null}})(),
     benchmark:benchFacts(), tax_if_sold_today:taxFacts(),
     news:nxFacts(m),
+    news_load:(()=>{try{const NL=newsLoad(); return {level:NL.he,events_today:NL.n,important_today:NL.imp,daily_average_week_before:NL.avg}}catch(e){return null}})(),
     // what each screen of the page is for, so questions about the system itself get an answer
     app_guide:{screens:{overview:'סקירה: שווי התיק, השינוי היומי, סימן "המחירים עדכניים" (או מה לא התעדכן), רשימת "מה לעשות" (חריגות, הפקדה, דוח חדש של חברה, הצעות), מדד בריאות התיק, פיזור לפי הקבוצות שהמשתמש קבע',mine:'התיק שלי: האחזקות, כמות, מחיר, עלות ורווח, לפי חשבון',search:'חיפוש: ניירות בארה״ב ובתל אביב, גרף ונתונים',plan:'תוכנית: ההפקדה החודשית ותור הקניות',forecast:'יעד ותרחישים',history:'מבט לאחור: פעולות, הפקדות ודיבידנדים, שווי מול הפקדות, "האם אני עושה טוב?" (התיק מול S&P 500 ות״א 125), עמלות, ומס אם מוכרים היום',reports:'דוחות: שבועי, חודשי, רבעוני, PDF ואקסל',ratings:'דירוג החברות וציון פיננסי',watch:'מניות במעקב',risk:'בקרה: ריכוז, חשיפות (ענף, מטבע, בורסה, סוג, הקבוצות שלי) ותרחישי ירידה',settings:'כללים ויעדים: הספים שמהם נבנים ההתראות ומדד הבריאות',pots:'חסכונות לפי מטרה (בתוכנית ויעד): חיסכון לילד, משכנתא וכו\', לא נספר פעמיים בשווי',calendar:'לוח מסחר: מתי תל אביב וניו יורק פתוחות, בשעון ישראל, וימי הדוחות והדיבידנדים של המניות בתיק; בתפריט "עוד"'},
       find_a_screen:'בתפריט ("עוד" בטלפון) יש חיפוש "לאן להגיע?": כותבים מילה כמו "עמלות" ומגיעים למקום. שם גם "מה חדש באתר" ו"סיור באתר"',
@@ -20202,7 +20214,8 @@ const ANA_RULES=`כללים מחייבים:
 9a. news הן ידיעות ממקורות חיצוניים כפי שנקראו (headline, what, cert). מותר לכתוב מה דווח, בייחוס ("לפי כתבה ב-…"), ואת touches_my_portfolio. אל תכתוב שידיעה גרמה לתנועת מחיר: מותר רק "באותם ימים דווח ש…", ואל תחזה מה יקרה בעקבותיה. כש-cert הוא "הערכה", אמור שזו הערכה. אם אין ידיעה מתאימה לשאלה, אמור שאין.
 9. could_fit הוא דירוג התאמה שהדף חישב (פער מהיעד, פיזור, חפיפה, מטבע, סוג המשקיע). כשנשאלת מה יכול להתאים לתיק, ענה רק מתוכו: אילו ניירות וקרנות מדורגים גבוה ולמה, במילים של הדירוג ("משלימה פער ב…", "מפזרת", "בשקלים"). אל תכתוב "ממליץ", "כדאי לקנות" או "קנה"; סיים במשפט שזה דירוג התאמה לפי הכללים שלו, לא המלצה, ושההחלטה שלו. investor_goal הוא בשביל מה המשתמש משקיע, לכמה שנים ולאיזה סכום: מותר לקשר את המצב אליו (למשל אופק קצר מול תנודתיות גבוהה), בלי המלצה. planned_cash_flows הם משיכות והפקדות שהמשתמש תכנן: מותר לומר כמה זמן נשאר ואיזה חלק מהתיק זה, בלי לקבוע אם התיק מתאים להן ובלי המלצה.
 10. about_me הוא מה שהמשתמש כתב על עצמו בפרופיל (גיל, מצב משפחתי, ילדים, תעסוקה, מדינה). השתמש בו רק כשהוא עוזר לקשר הסבר למטרה ולאופק שהמשתמש קבע (למשל ילדים ומטרה של לימודים), ובלי להזכיר אותו כשאין צורך. אל תסיק ממנו כמה כסף יש למשתמש או כמה סיכון הוא יכול לשאת, ואל תמליץ על בסיסו. אם המדינה אינה ישראל, מותר לומר שחישובי המס בדף לפי הכללים בישראל.
-11. נתון חסר אינו אפס: "אין רישום", null, "—" או "לא ידוע" פירושם שהדף לא יודע, לא שהערך הוא 0. אל תכתוב "הופקדו ₪0" או "אין רווח" כשאין רישום; כתוב שהנתון חסר ואיפה משלימים אותו (התיק שלי ← השלמת נתונים). כשמבקשים "מה הכי חשוב", דרג לכל היותר שלושה דברים, הקונקרטי ביותר קודם, ואל תפנה לרשימות ארוכות ("יש לך 150 התראות").`;
+11. נתון חסר אינו אפס: "אין רישום", null, "—" או "לא ידוע" פירושם שהדף לא יודע, לא שהערך הוא 0. אל תכתוב "הופקדו ₪0" או "אין רווח" כשאין רישום; כתוב שהנתון חסר ואיפה משלימים אותו (התיק שלי ← השלמת נתונים). כשמבקשים "מה הכי חשוב", דרג לכל היותר שלושה דברים, הקונקרטי ביותר קודם, ואל תפנה לרשימות ארוכות ("יש לך 150 התראות").
+12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -20356,7 +20369,7 @@ function repBlock(k,rs){
   const dueTxt=due?`החברה אמורה הייתה לפרסם דוח ב-${dmy(rs.next)}, והוא עוד לא נקלט. בימי הדוחות הדף בודק כל 20 דקות, והניתוח יופיע כאן.`:'';
   if(!r)return `<section class="repbox" aria-labelledby="${hid}"><h3 id="${hid}">ניתוח הדוח האחרון</h3><p class="note">${dueTxt||(rs&&rs.next?`עוד אין לנייר הזה דוח שנקלט. הדוח הבא צפוי ב-${dmy(rs.next)}.`:'עוד אין לנייר הזה דוח רבעוני שנקלט.')}</p><div class="acts" style="justify-content:flex-start">${chk}</div>${msg}</section>`;
   const S=repSumOf(r), ai=r.ai&&((r.ai.findings||[]).length||r.ai.explain)?r.ai:null, F=ai&&ai.findings&&ai.findings.length?ai.findings:(r.find||[]), X=repXLines(S);
-  const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer"><bdi>${esc(a.title)}</bdi></a><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
+  const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><span class="srcref"><bdi>${esc(a.title)}</bdi></span><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
   const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
   return `<section class="repbox" aria-labelledby="${hid}">
     <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at&&!r.atEst?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
@@ -23929,7 +23942,7 @@ const plSort=(a,b)=>(plUnread(b)-plUnread(a))||(PL_LVR[b.lv]-PL_LVR[a.lv])||(Str
 const plByK=k=>(PULSE&&PULSE.items||[]).find(a=>a.k===k)||null;
 // the counts: on the tab, on the menu, in "חיבור למציאות"
 // 1.11: the badge counts the important unread alerts (critical and important); the updates are inside, not on the tab
-function plCount(){const un=plItems().filter(plUnread), im=un.filter(a=>a.lv==='crit'||a.lv==='imp'), n=$('rtAlN'); if(n){n.hidden=!im.length; n.textContent=im.length>99?'99+':String(im.length); n.title=un.length>im.length?`ועוד ${un.length-im.length} עדכונים`:''; n.classList.toggle('crit',im.some(a=>a.lv==='crit'))}
+function plCount(){const un=plDedup(plItems()).filter(plUnread), im=un.filter(a=>a.lv==='crit'||a.lv==='imp'), n=$('rtAlN'); if(n){n.hidden=!im.length; n.textContent=im.length>99?'99+':String(im.length); n.title=un.length>im.length?`ועוד ${un.length-im.length} עדכונים`:''; n.classList.toggle('crit',im.some(a=>a.lv==='crit'))}
   clearTimeout(plCount.t); plCount.t=setTimeout(()=>{try{chicoNudge()}catch(e){}},1500);
   return im.length}
 // the measured move of a holding since the alert's first article (a fact from the saved prices, never said to be caused)
@@ -23963,7 +23976,7 @@ function plMktH(a){const k=a.mk||{}, m=(()=>{try{return mAllNow()}catch(e){retur
       ${x?`<p class="pl-p">סביב ${x.n} הדוחות האחרונים המניה זזה בממוצע <b class="n">±${x.avgAbs.toFixed(1)}%</b> (מהסגירה שלפני הדוח לסגירה שאחריו).${p?` תזוזה כזו היא בערך <span class="n">±${ils(p.val*x.avgAbs/100)}</span> בשווי שלך.`:''}</p>`:''}
       <p class="note" style="margin:0">עובדות מהדוחות הקודמים ומהצפי, לא תחזית לדוח הזה.</p>`}
   if(k.t==='move')return `<p class="pl-p">נמדד: <span class="n ${k.pct>=0?'up':'down'}">${spct(k.pct,1)}</span> היום${p?`; השינוי בשווי שלך: <span class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</span>`:''}. תנועת מחיר מדודה; היא לא אומרת למה.</p>`;
-  if(k.t==='ins')return `<p class="pl-p">${esc(k.owner||'')} (${esc(k.role||'')}): ${INS_KH[k.kind]||k.kind} של <span class="n">${(k.shares||0).toLocaleString('en-US')}</span> מניות${k.value?` בשווי <span class="n">${usd0(k.value)}</span>`:''}${k.plan?', בתוכנית מסחר מתוכננת (10b5-1)':''}${k.after!=null?`; מחזיק אחרי העסקה <span class="n">${k.after.toLocaleString('en-US')}</span>`:''}.${(k.why||[]).length?` <b>מהותי:</b> ${esc(k.why.join('; '))}.`:''} <a href="${esc(k.link||'#')}" target="_blank" rel="noopener noreferrer">לדיווח ↗</a> · <button type="button" class="lnk" data-gosec="${esc(k.sym||'')}">לדף הנייר ›</button></p><p class="note" style="margin:0">עובדה על העסקה של המדווח, לא על עתיד החברה.</p>`;
+  if(k.t==='ins')return `<p class="pl-p">${esc(k.owner||'')} (${esc(k.role||'')}): ${INS_KH[k.kind]||k.kind} של <span class="n">${(k.shares||0).toLocaleString('en-US')}</span> מניות${k.value?` בשווי <span class="n">${usd0(k.value)}</span>`:''}${k.plan?', בתוכנית מסחר מתוכננת (10b5-1)':''}${k.after!=null?`; מחזיק אחרי העסקה <span class="n">${k.after.toLocaleString('en-US')}</span>`:''}.${(k.why||[]).length?` <b>מהותי:</b> ${esc(k.why.join('; '))}.`:''} <span class="srcref">לדיווח</span> · <button type="button" class="lnk" data-gosec="${esc(k.sym||'')}">לדף הנייר ›</button></p><p class="note" style="margin:0">עובדה על העסקה של המדווח, לא על עתיד החברה.</p>`;
   if(k.t==='cal')return `<p class="pl-p">מהלוח: ${esc(k.src||'')}${k.est?' (מועד משוער)':''}. <button type="button" class="lnk" data-nxv2="cal" data-calid="${esc(k.id||'')}">ללוח האירועים ›</button>${k.sym?` <button type="button" class="lnk" data-gosec="${esc(k.sym)}">לדף הנייר ›</button>`:''}</p>`;
   if(k.t==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0; return uv>0?`<p class="pl-p">שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי התיק.</p>`:''}
   return ''}
@@ -23975,10 +23988,10 @@ function plCard(a,o={}){
   const dirTxt=a.kind==='mkt'?'':a.dir&&a.dir!=='unclear'?`<p class="pl-p"><b>כיוון אפשרי:</b> ${esc(NX_DIR[a.dir]||'')} <span class="nm">(השערה מהקריאה, לא השפעה שנמדדה)</span></p>`:`<p class="pl-p"><b>כיוון ההשפעה:</b> עוד לא ברור מהמידע שיש.</p>`;
   const msH=M.length?`<p class="pl-p"><b>נמדד מאז הפרסום:</b> ${M.map(z=>`${esc(z.h.sym)} <span class="n ${z.m.pct>=0?'up':'down'}">${spct(z.m.pct,1)}</span>${z.h.w!=null?` <span class="nm">(≈${spct(z.m.pct*z.h.w/100,2)} מהתיק)</span>`:''}`).join(' · ')} <span class="nm">נתון מהמחירים השמורים; הוא לא מוכיח שהאירוע הוא הסיבה.</span></p>`:a.kind!=='mkt'?`<p class="pl-p nm">השפעה בפועל על המחיר עוד לא נמדדה.</p>`:'';
   const meas=`<div class="pl-ms"><span class="pl-m" title="עד כמה האירוע משמעותי בפני עצמו"><i>חשיבות האירוע</i><b>${PL_IMP[a.imp]||'—'}</b></span><span class="pl-m" title="${esc(a.relWhy||'')}"><i>רלוונטיות לתיק</i><b>${PL_REL[a.rel]||'—'}</b></span><span class="pl-m c-${a.conf}" title="${esc(a.confWhy||'')}"><i>ביטחון בהסבר</i><b>${PL_CONF[a.conf]||'—'}</b></span></div>`;
-  const srcs=(a.arts||[]).map(s=>`<li><a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(s.id)}"><bdi>${esc(s.pub||'מקור')}</bdi></a> · ${s.at?`${dmy(s.at)} ${hm(s.at)}`:''} · ${esc(NX_KIND[s.kind]||'ידיעה')}${s.rules?' · קריאה אוטומטית':''}<div class="nm"><bdi>${esc(s.title)}</bdi></div></li>`).join('');
+  const srcs=(a.arts||[]).map(s=>`<li><span class="srcref"><bdi>${esc(s.pub||'מקור')}</bdi></span> · ${s.at?`${dmy(s.at)} ${hm(s.at)}`:''} · ${esc(NX_KIND[s.kind]||'ידיעה')}${s.rules?' · קריאה אוטומטית':''}<div class="nm"><bdi>${esc(s.title)}</bdi></div></li>`).join('');
   const evk=a.k.startsWith('ev:')?a.k.slice(3):a.k;
   const acts=`<div class="pl-acts">${a.kind!=='mkt'?`<button type="button" class="btn sm pri" data-imopen="pl:${esc(a.k)}">מפת השפעה</button>`:''}<button type="button" class="btn sm" data-chiko="pl:${esc(a.k)}">שאל את צ׳יקו</button>${a.kind!=='mkt'&&a.ev&&!a.rules?`<button type="button" class="btn sm" data-story="${esc(a.ev)}" aria-expanded="${STORY_OPEN.has(a.ev)}">${STORY_OPEN.has(a.ev)?'לסגור את הסיפור':'הסיפור מאחורי הכותרת'}</button>${evFolBtn(a.ev,lead)}`:''}
-    ${lead?`<a class="btn sm" href="${esc(lead.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(lead.id)}">לכתבה ↗</a>`:a.kind==='mkt'&&SECKEY.test(((a.holds||[])[0]||{}).sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(a.holds[0].sym)}">לדף המניה</button>`:''}
+    ${lead?``:a.kind==='mkt'&&SECKEY.test(((a.holds||[])[0]||{}).sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(a.holds[0].sym)}">לדף המניה</button>`:''}
     <button type="button" class="btn sm" data-plread="${esc(a.k)}" aria-pressed="${!un}">${un?'סמן כנקראה':'נקראה ✓'}</button><button type="button" class="btn sm" data-plsave="${esc(a.k)}" aria-pressed="${sv}">${sv?'★ שמורה':'☆ לשמור'}</button>
     ${a.kind!=='mkt'?`<details class="pl-fol"><summary class="btn sm">לעקוב אחרי הנושא</summary><div class="nw-fol">${[...new Set([...(a.fac||[]).map(f=>f.k),...(a.themes||[])])].slice(0,3).map(t=>['themes',t]).concat((a.sectors||[]).slice(0,2).map(g=>['secs',g])).concat((a.holds||[]).filter(h=>SECKEY.test(h.sym)).slice(0,2).map(h=>['syms',h.sym]))
       .map(([k,v])=>{const on=nwPrefs()[k].includes(v); return `<button type="button" class="chip sm" data-nwfol="${k}:${esc(v)}" aria-pressed="${on}">${on?'✓ ':'+ '}${esc(NW_FK[k].he(v))}</button>`}).join('')||'<span class="nm">אין נושא לעקוב אחריו</span>'}</div></details>`:''}</div>`;
@@ -24019,7 +24032,7 @@ function plCenter(){
 // duplicates), at most three and "+N" for the rest. Gentle: they fade in once; "fewer movements" turns that off
 function plRender(m){
   plCount(); const pr=plPrefs(), b=$('stBub'); try{nxNavDot()}catch(e){}
-  if(!b)return; const L=plItems().filter(plFloat).sort(plSort);
+  if(!b)return; const L=plDedup(plItems()).filter(plFloat).sort(plSort);
   const ic=[], seen=new Set(); for(const a of L){const sym=((a.holds||[]).find(h=>h.link==='direct')||(a.holds||[])[0]||{}).sym||(a.usd!=null?'$':'•'); if(seen.has(sym))continue; seen.add(sym); ic.push({a,sym}); if(ic.length===3)break}
   const rest=L.length-ic.length, show=pr.icons&&L.length>0;
   b.hidden=!show; if(!show)return;
@@ -25013,7 +25026,7 @@ function renderNewsOld(){
   if(!L.length){const own=MGR()&&window.__tc&&!LOCAL;
     box.innerHTML=`<div class="empty">${!P||!(P.positions||[]).length?'כשיהיה תיק, יופיעו כאן הכתבות על המניות שבו.':NEWSD&&NEWSD.updatedAt?'אין כתבות מהשבוע האחרון על המניות שלך.':'הכתבות נאספות מהמקור כל חצי שעה ביום; עוד לא נאספו.'}${own&&!(NEWSD&&NEWSD.updatedAt)?' <button type="button" class="btn sm" data-rsrun="news">לאסוף עכשיו</button>':''}</div>`; return}
   const days=[]; for(const it of L){const d=String(it.at||it.seen).slice(0,10); let g=days[days.length-1]; if(!g||g.d!==d){g={d,items:[]}; days.push(g)} g.items.push(it)}
-  box.innerHTML=days.map(g=>`<h3 class="news-d">${newsDayL(g.d)}</h3><ul class="news-l">${g.items.map(it=>`<li class="news-i"><a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer"><span class="news-syms">${(it.syms||[]).slice(0,3).map(k=>`<span class="pill">${logoHtml(k,'xs')}${esc(lab(k))}</span>`).join('')}</span><b><bdi>${esc(it.title)}</bdi></b>${it.sum?`<span class="news-sum"><bdi>${esc(it.sum)}</bdi></span>`:''}<span class="sub">${esc(it.pub||'')}${it.at?' · '+hm(it.at):''}</span></a></li>`).join('')}</ul>`).join('');
+  box.innerHTML=days.map(g=>`<h3 class="news-d">${newsDayL(g.d)}</h3><ul class="news-l">${g.items.map(it=>`<li class="news-i"><span class="srcref"><span class="news-syms">${(it.syms||[]).slice(0,3).map(k=>`<span class="pill">${logoHtml(k,'xs')}${esc(lab(k))}</span>`).join('')}</span><b><bdi>${esc(it.title)}</bdi></b>${it.sum?`<span class="news-sum"><bdi>${esc(it.sum)}</bdi></span>`:''}<span class="sub">${esc(it.pub||'')}${it.at?' · '+hm(it.at):''}</span></span></li>`).join('')}</ul>`).join('');
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#newsChips [data-nf]'); if(!b)return; NEWSF=b.dataset.nf; renderNews()});
 // ---- 29.10: the news understood. research/newsx holds one reading per article (what happened, in Hebrew; the kind of
@@ -25323,12 +25336,13 @@ function nwCard(z,E,o={}){
       ${imp?`<p class="nx-row"><b>לתיק שלך:</b> ${imp}</p>`:''}${z.rel?nxTrackH(it,z.rel)+nxWhatIfH(it,z.rel):''}
       ${x&&(x.fac||[]).length?`<p class="nx-row"><b>גורמים כלכליים:</b> ${x.fac.map(f=>`${esc(NX_THEME[f.k]||f.k)} ${f.move==='up'?'↑':f.move==='down'?'↓':''}${f.why?' ('+esc(f.why)+')':''}`).join('; ')}</p>`:''}
       ${x&&x.unknown?`<p class="nx-row"><b>מה לא ידוע:</b> ${glWrap(esc(x.unknown))}</p>`:''}${x&&x.more?`<p class="nx-row"><b>רקע:</b> ${glWrap(esc(x.more))}</p>`:''}
+      <p class="nx-row"><b>המקור:</b> <span class="srcref"><bdi>${esc(it.pub||'לא ידוע')}</bdi></span>${it.at||it.seen?`, ${esc(dmy(it.at||it.seen))}`:''}. הנתונים מגיעים משם; כאן מוצגת הקריאה של צ׳יקו.</p>
       <p class="nx-row"><b>במקור:</b> <span class="nx-orig">${esc(it.title)}</span>${it.prevTitle?` <span class="nm">(כותרת קודמת: <bdi>${esc(it.prevTitle)}</bdi>)</span>`:''}${it.sum?` <span class="nx-orig">${esc(it.sum)}</span>`:''}</p>
-      ${others.length?`<p class="nx-row"><b>עוד על אותו אירוע:</b> ${others.map(q=>`<a href="${esc(q.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(q.id)}"><bdi>${esc(q.pub||'מקור')}</bdi></a>`).join(' · ')}</p>`:''}
-      ${x?`<p class="nx-row nm">${x.rules?'קריאה אוטומטית לפי מילים בכותרת; צ׳יקו יקרא את הכתבה במלואה בהמשך.':'הקריאה בעברית: צ׳יקו, מהכותרת והתקציר בלבד.'} לא תחזית ולא המלצה.</p>`:''}
+      ${others.length?`<p class="nx-row"><b>עוד על אותו אירוע:</b> ${others.map(q=>`<span class="srcref"><bdi>${esc(q.pub||'מקור')}</bdi></span>`).join(' · ')}</p>`:''}
+      ${x?`<p class="nx-row nm">${x.rules?'קריאה אוטומטית לפי מילים בכותרת; צ׳יקו יקרא את הכתבה במלואה בהמשך.':(x.rd==='full'?`הקריאה בעברית: צ׳יקו, מהכתבה המלאה ב-${esc(it.pub||'מקור')}.`:`הקריאה בעברית: צ׳יקו, מהכותרת והתקציר בלבד (${esc(it.pub||'המקור')} לא אפשר לקרוא את הכתבה עצמה).`)} לא תחזית ולא המלצה.</p>`:''}
       ${folH?`<div class="nx-row"><b>לעקוב אחרי:</b>${folH}</div>`:''}
     </details>`;
-  const acts=`<div class="nw-acts"><a class="nw-b" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(it.id)}">למקור ↗</a>${x&&it.src!=='x'?`<button type="button" class="nw-b" data-imopen="ev:${esc(evk)}">מפת השפעה</button><button type="button" class="nw-b" data-chiko="art:${esc(it.id)}">שאל את צ׳יקו</button>`:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(it.id)}" aria-pressed="${saved}">${saved?'★ שמור':'☆ לשמור'}</button>${x&&!x.rules&&it.src!=='x'&&!/^id:/.test(evk)?`<button type="button" class="nw-b nw-st" data-story="${esc(evk)}" aria-expanded="${STORY_OPEN.has(evk)}">${STORY_OPEN.has(evk)?'לסגור את הסיפור':'הסיפור מאחורי הכותרת'}</button>${evFolBtn(evk,it)}`:''}</div>${STORY_OPEN.has(evk)?storyH(evk):''}`;
+  const acts=`<div class="nw-acts">${x&&it.src!=='x'?`<button type="button" class="nw-b" data-imopen="ev:${esc(evk)}">מפת השפעה</button><button type="button" class="nw-b" data-chiko="art:${esc(it.id)}">שאל את צ׳יקו</button>`:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(it.id)}" aria-pressed="${saved}">${saved?'★ שמור':'☆ לשמור'}</button>${x&&!x.rules&&it.src!=='x'&&!/^id:/.test(evk)?`<button type="button" class="nw-b nw-st" data-story="${esc(evk)}" aria-expanded="${STORY_OPEN.has(evk)}">${STORY_OPEN.has(evk)?'לסגור את הסיפור':'הסיפור מאחורי הכותרת'}</button>${evFolBtn(evk,it)}`:''}</div>${STORY_OPEN.has(evk)?storyH(evk):''}`;
   const body=`<div class="nw-meta">${meta}</div>
     <h3>${x&&!x.rules?esc(x.he):/[\u0590-\u05FF]/.test(it.title||'')?esc(it.title):esc(nxPendTitle(nwSymsOf(it),it.pub,it.title))}</h3>
     ${x&&!x.rules?`<p class="nw-sum">${glWrap(esc(x.what))}</p>`:''}
@@ -25429,7 +25443,7 @@ async function storyLoad(ev){
 function storyH(ev){
   const st=STORY.get(ev), d=st&&st.data;
   if(!d)return `<section class="nw-story" aria-label="הסיפור מאחורי הכותרת"><div class="nw-sth"><b>הסיפור מאחורי הכותרת</b></div><p class="note" style="margin:0">${st&&st.loading?'צ׳יקו כותב את הסיפור מכל הכתבות על האירוע…':st&&st.err?esc(st.err):'טוען…'}</p>${st&&st.err?`<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-story-retry="${esc(ev)}">לנסות שוב</button></div>`:''}</section>`;
-  const A=d.arts||[], src=i=>A[i]?`<a class="nw-sref" href="${esc(A[i].link)}" target="_blank" rel="noopener noreferrer" title="${esc(A[i].pub||'')}: ${esc(A[i].title||'')}">${i+1}</a>`:'';
+  const A=d.arts||[], src=i=>A[i]?`<span class="srcref nw-sref">${i+1}</span>`:'';
   const line=l=>`<li><span class="nw-sl">${glWrap(esc(l.t))}</span> <span class="nx-tag c-${l.c}">${NX_CERT[l.c]||l.c}</span>${l.s&&l.s.length?`<span class="nw-srefs">${l.s.map(src).join('')}</span>`:''}</li>`;
   const parts=ST_PARTS.map(([k,t])=>{const L=d[k]||[]; return L.length?`<div class="nw-stp"><h4>${t}</h4><ul>${L.map(line).join('')}</ul></div>`:''}).join('');
   const lead=(()=>{try{return newsAll().find(it=>it.x&&it.x.ev===ev)}catch(e){return null}})();
@@ -25437,7 +25451,7 @@ function storyH(ev){
     <div class="nw-sth"><b>${esc(d.headline||'הסיפור מאחורי הכותרת')}</b><span class="nx-tag st-${esc(d.stage||'unknown')}">${ST_STAGE[d.stage]||ST_STAGE.unknown}</span><span class="nm">${d.rules?'לפי כללים, מהקריאות שכבר יש (צ׳יקו יכתוב סיפור מלא כשיהיה זמין)':'צ׳יקו, מ-'+(d.n||A.length)+' כתבות'}${d.at?' · '+agoH(d.at):''}</span></div>
     <p class="nw-stk"><span class="nx-tag c-fact">עובדה מדווחת</span> מה שהמקורות דיווחו · <span class="nx-tag c-interp">פרשנות</span> קריאה של המקור או של צ׳יקו · <span class="nx-tag c-est">הערכה</span> ידע כללי, לא מהכתבות. המספרים ליד כל שורה הם המקורות שלה.</p>
     ${parts}
-    ${A.length?`<div class="nw-stp"><h4>המקורות</h4><ol class="nw-ssrc">${A.map(a=>`<li><a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(a.id)}"><bdi>${esc(a.pub||'מקור')}</bdi>: <bdi>${esc(a.title||'')}</bdi></a>${a.at?` <span class="nm">${dmy(a.at)} ${hm(a.at)}</span>`:''}${a.rules?' <span class="nm">(נקראה לפי כללים בלבד)</span>':''}</li>`).join('')}</ol></div>`:''}
+    ${A.length?`<div class="nw-stp"><h4>המקורות</h4><ol class="nw-ssrc">${A.map(a=>`<li><span class="srcref"><bdi>${esc(a.pub||'מקור')}</bdi>: <bdi>${esc(a.title||'')}</bdi></span>${a.at?` <span class="nm">${dmy(a.at)} ${hm(a.at)}</span>`:''}${a.rules?' <span class="nm">(נקראה לפי כללים בלבד)</span>':''}</li>`).join('')}</ol></div>`:''}
     <div class="nw-acts">${evFolBtn(ev,lead)}<button type="button" class="nw-b" data-imopen="ev:${esc(ev)}">מפת השפעה</button><button type="button" class="nw-b" data-chiko="story:${esc(ev)}">שאל את צ׳יקו על הסיפור</button><button type="button" class="nw-b" data-story="${esc(ev)}" aria-expanded="true">לסגור</button></div>
     <p class="note" style="margin:0">הסיפור נכתב מהכותרות והתקצירים שנאספו, לא מגוף הכתבות. לא תחזית ולא המלצה. קשר בזמן אינו קשר סיבתי.</p>
   </section>`;
@@ -25481,7 +25495,7 @@ function evFollowH(all){
   if(!E.length)return `<div class="empty">עוד לא בחרת אירועים לעקוב אחריהם. "עקוב אחר האירוע" על כתבה או בסיפור שמאחורי הכותרת שומר אותו כאן, עם ציר הזמן של ההתפתחויות שלו.</div>`;
   const one=([ev,f])=>{const T=evTimeline(ev), stg=evStage(T), devs=T.filter(o=>o.dev), fresh=devs.filter(o=>o.at>(f.seen||f.at)&&o.at>f.at), lead=T[T.length-1]&&T[T.length-1].it;
     const x=lead&&lead.x, syms=[...new Set(T.flatMap(o=>nwSymsOf(o.it)))].filter(k=>SECKEY.test(k)).slice(0,6), secs=[...new Set(T.flatMap(o=>(o.it.x.sectors||[])))].slice(0,4);
-    const row=o=>`<li class="${o.dev?'dev':'rep'}${o.at>(f.seen||f.at)&&o.at>f.at&&o.dev?' new':''}"><span class="ev-t">${dmy(o.at)} ${hm(o.at)}</span><span class="ev-w">${o.dev?`<b>${esc(o.it.x.he)}</b> ${glWrap(esc(o.it.x.what||''))}`:`<span class="nm">אותו דבר, מקור נוסף: ${esc(o.it.x.he)}</span>`}${o.it.x.st&&o.it.x.st!=='unknown'?` <span class="nx-tag st-${o.it.x.st}">${ST_STAGE[o.it.x.st]}</span>`:''} <a href="${esc(o.it.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(o.it.id)}"><bdi>${esc(o.it.pub||'מקור')}</bdi> ↗</a></span></li>`;
+    const row=o=>`<li class="${o.dev?'dev':'rep'}${o.at>(f.seen||f.at)&&o.at>f.at&&o.dev?' new':''}"><span class="ev-t">${dmy(o.at)} ${hm(o.at)}</span><span class="ev-w">${o.dev?`<b>${esc(o.it.x.he)}</b> ${glWrap(esc(o.it.x.what||''))}`:`<span class="nm">אותו דבר, מקור נוסף: ${esc(o.it.x.he)}</span>`}${o.it.x.st&&o.it.x.st!=='unknown'?` <span class="nx-tag st-${o.it.x.st}">${ST_STAGE[o.it.x.st]}</span>`:''} <span class="srcref"><bdi>${esc(o.it.pub||'מקור')}</bdi></span></span></li>`;
     return `<article class="nx nwc ev-f${f.off?' off':''}" data-evf="${esc(ev)}"><div class="nw-meta"><span class="nx-tag st-${stg}">${ST_STAGE[stg]}</span>${fresh.length?`<span class="nx-tag lv-imp">${fresh.length===1?'התפתחות חדשה':fresh.length+' התפתחויות חדשות'}</span>`:''}<span class="nw-src">${f.off?'הפסקת לעקוב '+dmy(f.off):'במעקב מ-'+dmy(f.at)}${T.length?' · '+(devs.length===1?'התפתחות אחת':devs.length+' התפתחויות')+(T.length>devs.length?', '+(T.length-devs.length)+' חזרות':''):''}</span></div>
       <h3>${esc((x&&x.he)||f.title||ev)}</h3><p class="nw-sum">${glWrap(esc(f.what||(x&&x.what)||''))}</p>
       ${syms.length||secs.length?`<div class="nw-ents">${syms.map(k=>`<button type="button" class="nw-e" data-gosec="${esc(k)}">${logoHtml(k,'xs')}<b>${esc(k)}</b></button>`).join('')}${secs.map(g=>`<button type="button" class="nw-e t" data-nwset="sec:${esc(g)}">${esc(NX_SEC_HE[g]||g)}</button>`).join('')}</div>`:''}
@@ -25496,7 +25510,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // a saved or read article that is no longer in the week the site keeps: its short copy
 function nwSnapCard(id,s,read){return `<article class="nx nwc lv-${s.lv||'info'} snap${read?' read':''}" data-nid="${esc(id)}"><div class="nw-meta"><span class="nw-k k-${s.k||'news'}">${esc(NX_KIND[s.k]||'ידיעה')}</span><span class="nw-src"><bdi>${esc(s.p||'')}</bdi>${s.a?' · '+dmy(s.a):''}</span></div>
   <h3>${esc(s.t||s.o)}</h3>${s.w?`<p class="nw-sum">${esc(s.w)}</p>`:''}<p class="note" style="margin:0">הכתבה כבר לא ברשימה של השבוע האחרון; נשמר כאן העותק הקצר.</p>
-  <div class="nw-acts">${s.l?`<a class="nw-b" href="${esc(s.l)}" target="_blank" rel="noopener noreferrer">למקור ↗</a>`:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(id)}" aria-pressed="${!!(nxState().saved||{})[id]}">${(nxState().saved||{})[id]?'★ שמור':'☆ לשמור'}</button></div></article>`}
+  <div class="nw-acts">${s.l?``:''}<button type="button" class="nw-b nw-sv" data-nxsave="${esc(id)}" aria-pressed="${!!(nxState().saved||{})[id]}">${(nxState().saved||{})[id]?'★ שמור':'☆ לשמור'}</button></div></article>`}
 // the tabs of "חיבור למציאות": the news and the personal alerts (with the count of the unread)
 function rtTabsSync(){if(RTT==null)RTT=hasPf()?'al':'news';
   for(const b of document.querySelectorAll('[data-rt]')){const on=b.dataset.rt===RTT; b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1}
@@ -25569,7 +25583,7 @@ function insRowH(f,withSym){const tx=f.kinds&&f.kinds.length>1?f.kinds.map(k=>`$
   return `<li class="ins-r k-${esc(f.kind)}${f.material?' mat':''}"><div class="ins-h"><span class="nm">${dmy(f.txDate||f.filedAt)}</span>${withSym?`<button type="button" class="lnk sym" data-gosec="${esc(f.sym)}">${esc(f.sym)}</button>`:''}<b>${esc(f.owner)}</b><span class="nm">${esc(f.role)}</span></div>
     <div class="ins-b"><span class="nx-tag ins-k">${INS_KH[f.kind]||f.kind}</span> <span class="n">${(f.shares||0).toLocaleString('en-US')}</span> מניות${f.value?` · <span class="n">${usd0(f.value)}</span>`:''}${f.plan?' <span class="nx-tag">תוכנית מסחר מתוכננת (10b5-1)</span>':''}${f.amend?' <span class="nx-tag">תיקון</span>':''}${f.after!=null?` · מחזיק אחרי: <span class="n">${f.after.toLocaleString('en-US')}</span>`:''}</div>
     ${tx?`<div class="nm">בדיווח: ${esc(tx)}</div>`:''}${f.material?`<div class="ins-why"><b>מהותי:</b> ${esc((f.why||[]).join('; '))}</div>`:''}
-    <div class="nm">דווח ל-SEC ${dmy(f.filedAt)} · <a href="${esc(f.link)}" target="_blank" rel="noopener noreferrer">לדיווח המקורי ↗</a></div></li>`}
+    <div class="nm">דווח ל-SEC ${dmy(f.filedAt)} · </div></li>`}
 function secInsiders(it){if(!it||!it.sym||it.t==='I'||it.t==='E'||it.t==='F'||it.t==='T'||/^TLV:|^\d/.test(it.sym))return '';
   const L=insOf(it.sym); if(!INS)return ''; const S9=insSum(L), checked=INS.checked&&INS.checked[it.sym];
   const head=`<div class="row" style="margin-top:12px"><h3>בעלי עניין: מה דיווחו ל-SEC</h3><span class="sub">${esc(INS.source||'SEC EDGAR')}${INS.updatedAt?' · '+rsWhen(INS.updatedAt):''}</span></div>`;
@@ -25619,7 +25633,7 @@ function ecoCalH(){
   const row=e=>{const held=(P&&P.positions||[]).some(p=>p.sym===e.sym), on=!!sv[e.id];
     return `<article class="eco-i${e.id===CALID?' hl':''}${e.d<today?' past':''}" data-calid="${esc(e.id)}"><div class="eco-h"><span class="eco-imp" aria-label="חשיבות ${e.imp} מתוך 3">${'●'.repeat(e.imp||1)}${'○'.repeat(3-(e.imp||1))}</span><b>${esc(e.name)}</b>${e.sym?`<button type="button" class="nw-e${held?' held':''}" data-gosec="${esc(e.sym)}">${logoHtml(e.sym,'xs')}<b>${esc(e.sym)}</b>${held?' <span class="n">בתיק</span>':''}</button>`:''}</div>
       <div class="eco-m"><span class="nx-tag">${esc(ECO_CAT[e.cat]||e.cat)}</span><span class="nx-tag">${esc(ECO_REG[e.region]||e.region)}</span>${e.time?`<span class="nx-tag">${esc(e.time)}${e.tz==='America/New_York'&&/\d/.test(e.time)?' ניו יורק':''}${e.timeEst?' (לפי הנוהג)':''}</span>`:''}<span class="nx-tag ${e.est?'c-est':'c-fact'}">${e.est?'מועד משוער':'מועד מאושר'}</span></div>
-      ${e.desc?`<p class="eco-d">${esc(e.desc)}</p>`:''}<p class="nm">מקור: ${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.src||e.url)}</a>`:esc(e.src||'')}${e.who&&!e.sym?' · '+esc(e.who):''}</p>
+      ${e.desc?`<p class="eco-d">${esc(e.desc)}</p>`:''}<p class="nm">מקור: ${e.url?`<span class="srcref">${esc(e.src||e.url)}</span>`:esc(e.src||'')}${e.who&&!e.sym?' · '+esc(e.who):''}</p>
       <div class="nw-acts"><button type="button" class="nw-b nw-sv" data-calsave="${esc(e.id)}" aria-pressed="${on}">${on?'★ שמור, עם תזכורת':'☆ לשמור ולהזכיר'}</button>${e.sym?`<button type="button" class="nw-b" data-gosec="${esc(e.sym)}">לדף הנייר</button>`:''}${e.cat!=='earnings'?`<button type="button" class="nw-b" data-nwset="cat:${e.cat==='rates'?'rates':e.cat==='inflation'?'macro':e.cat==='jobs'||e.cat==='growth'?'macro':'market'}" data-nwv2="latest">חדשות בתחום</button>`:`<button type="button" class="nw-b" data-nwset="sym:${esc(e.sym)}" data-nwv2="latest">חדשות על החברה</button>`}</div></article>`};
   const ctl=`<div class="eco-ctl"><div class="chips" role="group" aria-label="טווח">${[['day','היום'],['week','7 ימים'],['month','31 ימים']].map(([k,l])=>`<button type="button" class="chip sm" data-calv="${k}" aria-pressed="${CALV===k}">${l}</button>`).join('')}</div>
     <select id="calReg" aria-label="מדינה"><option value="">כל המדינות</option>${Object.entries(ECO_REG).map(([k,v])=>`<option value="${k}"${CALR===k?' selected':''}>${v}</option>`).join('')}</select>
@@ -25790,7 +25804,7 @@ function nxAlerts(m){const out=[]; try{for(const a of plItems().filter(a=>(a.lv=
     x.each=[{key:'news:'+(a.ev||a.k),text:x[2]}]; x.pl=a.k; x.nx=((a.arts||[])[0]||{}).id||null; out.push(x)}}catch(e){} return out}
 // for the security's page: the readings about it, compact
 function nxSecBlock(k){try{const m=mAllNow(), L=newsAll().filter(it=>it.x&&((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k))).slice(0,4); if(!L.length)return '';
-  const E=nxEvents(L); return `<section class="repbox" aria-label="ידיעות על הנייר"><div class="row"><h3>מה קרה לאחרונה, ומה זה אומר</h3><span><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button> · <button type="button" class="lnk" data-imopen="co:${esc(k)}">מפת השפעה ›</button>${/^[A-Z][A-Z.\-]{0,6}$/.test(k)?` · <a class="lnk" href="${xSearchUrl(k)}" target="_blank" rel="noopener noreferrer">לדיון ב-X ›</a>`:''}</span></div><div class="nx-secl">${L.map(it=>nwCard({it,rel:m&&m.pos&&m.pos.length?newsRel(it,m):null},E,{compact:true})).join('')}</div></section>`}catch(e){return ''}}
+  const E=nxEvents(L); return `<section class="repbox" aria-label="ידיעות על הנייר"><div class="row"><h3>מה קרה לאחרונה, ומה זה אומר</h3><span><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button> · <button type="button" class="lnk" data-imopen="co:${esc(k)}">מפת השפעה ›</button></span></div><div class="nx-secl">${L.map(it=>nwCard({it,rel:m&&m.pos&&m.pos.length?newsRel(it,m):null},E,{compact:true})).join('')}</div></section>`}catch(e){return ''}}
 // for צ׳יקו: the readings that touch this portfolio, as data (what a source reported, how sure, what is not known)
 function nxFacts(m){try{const L=newsAll().map(it=>({it,rel:newsRel(it,m)})).filter(z=>z.it.x&&z.rel.text).sort((a,b)=>b.rel.score-a.rel.score).slice(0,6);
   if(!L.length)return null; return {note:'ידיעות ממקורות חיצוניים מהימים האחרונים, כפי שצ׳יקו קרא אותן מהכותרת והקטע; "cert" אומר אם זו עובדה מדווחת, פרשנות של המקור או הערכה. ידיעה אינה סיבה לתנועת מחיר אלא אם כתוב שהיא כזו, ואין כאן תחזית',
@@ -25804,7 +25818,21 @@ window.__nx={all:newsAll,rel:newsRel,holdings:nxForHoldings,alerts:nxAlerts,fact
 let IXR='7', IXFULL=false, IXV='pf', IXFOC=null, IXSEL=null, IXZ={k:1,x:0,y:0}, IXG=null, IXWH=[760,540];
 try{const v=localStorage.getItem('tr_ixr'); if(['1','7','30','90','all'].includes(v))IXR=v}catch(e){}
 const IX_RL={'1':'24 שעות','7':'7 ימים','30':'30 ימים','90':'90 ימים',all:'כל התקופה'};
-function ixItems(){const L=plItems(); if(IXR==='all')return L; const from=new Date(Date.now()-(+IXR)*864e5).toISOString(); return L.filter(a=>(a.up||a.at)>=from)}
+// 4.11: one line per story. A price move of the same share on several days is one item (the newest), so the count is of
+// things to know, not of days; the badge and the "all" button count the same list
+function ixItems(){let L=plItems(); if(IXR!=='all'){const from=new Date(Date.now()-(+IXR)*864e5).toISOString(); L=L.filter(a=>(a.up||a.at)>=from)} return plDedup(L)}
+// 4.11: the news load on the portfolio: today's events (not price moves) against the daily average of the week before,
+// in a word and in the two numbers it comes from
+const NL_HE={calm:'רגוע',normal:'רגיל',busy:'ער',storm:'סוער'};
+function newsLoad(){const L=plDedup(plItems()).filter(a=>a.kind!=='mkt'), dOf=a=>{try{return isoDay(Date.parse(a.at||a.up||0))}catch(e){return ''}}, today=isoDay(Date.now()), by={}, imp={};
+  for(const a of L){const d=dOf(a); by[d]=(by[d]||0)+1; if(a.lv==='crit'||a.lv==='imp')imp[d]=(imp[d]||0)+1}
+  let tot=0; for(let i=1;i<=7;i++)tot+=by[isoDay(Date.now()-i*864e5)]||0; const avg=tot/7, n=by[today]||0, r=avg>0?n/avg:n>0?2:1;
+  const k=n===0&&avg<0.5?'calm':r<0.6?'calm':r<1.4?'normal':r<2.2?'busy':'storm';
+  return {k,he:NL_HE[k],n,imp:imp[today]||0,avg:Math.round(avg*10)/10,ratio:Math.round(r*10)/10}}
+function plDedup(L){
+  const key=a=>{const m=/^(mv|px):([^:]+):/.exec(a.k||''); return a.kind==='mkt'&&m?m[1]+':'+m[2]:a.kind==='mkt'&&/^usd:/.test(a.k||'')?'usd':null}, best=new Map();
+  for(const a of L){const k=key(a); if(!k)continue; const o=best.get(k); if(!o||String(a.up||a.at)>String(o.up||o.at))best.set(k,a)}
+  return L.filter(a=>{const k=key(a); return !k||best.get(k)===a})}
 const IX_REL_HE={high:'גבוהה',mid:'בינונית',low:'נמוכה',none:'—'};
 // the figures; "relevance" is measured: the share of the portfolio (by value now) in the holdings the period's alerts touch
 function ixFigures(m){const L=ixItems(), ev=L.filter(a=>a.kind!=='mkt'), un=L.filter(plUnread), syms=new Set(), dir=new Set();
@@ -25899,7 +25927,7 @@ function ixTip(){const el=$('ixTip'); if(!el)return; const n=IXSEL&&IXG&&IXG.nod
   const ins=IXG.edges.filter(e=>e.to===n.id||e.from===n.id).length; let h='';
   if(n.t==='ev'&&n.a){const a=n.a, lead=(a.arts||[])[0];
     h=`<span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span> <b>${esc(a.title)}</b>${a.rules?'':a.what?`<p><b>מה קרה:</b> ${esc(a.what)}</p>`:''}${plHowH(a,{open:true})}
-      <div class="ix-ab">${a.rules?'':`<button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button>`}<button type="button" class="btn sm" data-ixopen="${esc(a.k)}">להתראה</button>${lead&&lead.link?`<a class="btn sm" href="${esc(lead.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(lead.id)}">לכתבה ↗</a>`:''}</div>`}
+      <div class="ix-ab">${a.rules?'':`<button type="button" class="btn sm" data-ixask="${esc(a.k)}">שאל את צ׳יקו</button>`}<button type="button" class="btn sm" data-ixopen="${esc(a.k)}">להתראה</button>${lead&&lead.link?``:''}</div>`}
   else if(n.t==='ev'&&n.e){h=`<b>${esc(n.label)}</b><p>${esc(n.e.x.what||'')}</p><div class="ix-ab"><button type="button" class="btn sm" data-story="${esc(n.e.k)}">הסיפור</button><button type="button" class="btn sm" data-chiko="ev:${esc(n.e.k)}">שאל את צ׳יקו</button></div>`}
   else if(n.t==='hold'||n.held){const p=m&&m.pos?m.pos.find(x=>x.sym===n.sym):null, al=ixItems().filter(a=>(a.holds||[]).some(h=>h.sym===n.sym)||(a.secs||[]).some(s=>(s.syms||[]).includes(n.sym)));
     h=`<b>${esc(n.sym||n.label)}${p?` · ${pct(p.w,1)} מהתיק`:''}</b><p>${al.length?`${al.length===1?'אירוע אחד':al.length+' אירועים'} בתקופה נוגעים לה: ${al.slice(0,3).map(a=>esc(a.title)).join('; ')}`:'אירועים מהתצוגה הזאת נוגעים לה.'}</p><div class="ix-ab">${p?`<button type="button" class="btn sm pri" data-ixst="${esc(n.sym||n.label)}">מה קורה למניה?</button>`:''}<button type="button" class="btn sm${p?'':' pri'}" data-imopen="co:${esc(n.sym||n.label)}">מפת החברה</button>${SECKEY.test(n.sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(n.sym)}">לדף המניה</button>`:''}</div>`}
@@ -26031,7 +26059,7 @@ function ixStKnow(o){const sym=o.sym, ev=o.L.filter(z=>z.a.kind!=='mkt'), mk=o.L
 // one event, as it touches this share
 function ixStEv(z,i,sym){const a=z.a, k=z.k, dw=IX_DW[k.dir]||IX_DW.unclear;
   if(a.kind==='mkt')return `<li class="ixs-e mk lv-${a.lv}"><div class="ixs-et"><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span>${agoH(a.up||a.at)}</span><span class="ixs-k">עובדה מהשוק</span></div><h5>${esc(a.title)}</h5>${a.what?`<p>${esc(a.what)}</p>`:''}${plMktH(a)}</li>`;
-  const mv=nxMove(sym,a.first||a.at), srcs=(a.arts||[]).slice(0,6).map(s=>`<li><a href="${esc(s.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(s.id)}"><bdi>${esc(s.pub||'מקור')}</bdi> ↗</a> · ${s.at?`${dmy(s.at)} ${hm(s.at)}`:''}${s.he&&s.he!==a.title?`<div><bdi>${esc(s.he)}</bdi></div>`:''}<div class="nm nx-orig"><bdi>${esc(s.title)}</bdi></div></li>`).join('');
+  const mv=nxMove(sym,a.first||a.at), srcs=(a.arts||[]).slice(0,6).map(s=>`<li><span class="srcref"><bdi>${esc(s.pub||'מקור')}</bdi></span> · ${s.at?`${dmy(s.at)} ${hm(s.at)}`:''}${s.he&&s.he!==a.title?`<div><bdi>${esc(s.he)}</bdi></div>`:''}<div class="nm nx-orig"><bdi>${esc(s.title)}</bdi></div></li>`).join('');
   return `<li class="ixs-e lv-${a.lv}">
     <div class="ixs-et"><span class="ixs-num ${dw[0]}" aria-hidden="true">${i}</span><span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span><span>${agoH(a.first||a.at)}</span><span class="ixs-k">${esc(NX_KIND[a.kind]||'ידיעה')}</span>${(a.ver||1)>1?'<span class="ixs-k">עודכן</span>':''}</div>
     <h5><span class="vh">אירוע ${i}: </span>${ixViaH(z)}${esc(a.title)}</h5>
@@ -26082,8 +26110,9 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
     else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
     note.hidden=!t; setH(note,t)}
   {const k=$('ixKpis'); if(k)k.hidden=true}   // 1.11: the figure cards repeated the list below them: gone
-  {const n=$('ixAlN'); if(n){n.textContent=F.un.length?String(F.un.length):''; n.hidden=!F.un.length}
-    const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">עוד ${F.L.length-nn} התראות ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
+  {const el=$('ixLoad'); if(el){const NL=hp&&pr.on&&PULSE?newsLoad():null; el.hidden=!NL; if(NL)setH(el,`<span class="nl nl-${NL.k}">עומס חדשותי בתיק: <b>${NL.he}</b></span> <span class="nm">${NL.n===1?'אירוע אחד':NL.n+' אירועים'} היום${NL.imp?` (${NL.imp} חשובים)`:''}, מול ${String(NL.avg).replace('.',',')} ביום בממוצע בשבוע שלפני</span>`)}}
+  {const n=$('ixAlN'); if(n){n.textContent=F.un.length?`${F.un.length} חדשות`:''; n.hidden=!F.un.length; n.setAttribute('aria-label',`${F.un.length} שלא נקראו מתוך ${F.L.length}`)}
+    const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">לכל ${F.L.length} ההתראות${F.un.length?` (${F.un.length} חדשות)`:''} ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
   // the holdings the period touches: each a way into "מה קורה למניה"
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
     if(S.length){setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
@@ -26313,7 +26342,7 @@ function imNodeH(n,G){const ins=G.edges.filter(e=>e.to===n.id), outs=G.edges.fil
   let body='', m=null; try{m=mAllNow()}catch(e){}
   if(n.t==='ev'){const e=n.e, x=e.x; body=`<p class="imp-p">${esc(x.what||'')}</p><div class="imp-tags"><span class="nx-tag lv-${x.level}">${NX_LV[x.level]}</span><span class="nx-tag">${esc(NX_KIND[x.kind||'news'])}</span><span class="nx-tag c-${x.cert}">${esc(NX_CERT[x.cert]||'')}</span>${x.rules?'<span class="nx-tag">קריאה אוטומטית</span>':''}</div>
       ${x.unknown?`<p class="imp-p"><b>מה לא ידוע:</b> ${esc(x.unknown)}</p>`:''}<p class="imp-p"><b>מתי:</b> ${x.occ?`קרה ב-${dmy(x.occ)}; `:''}פורסם ${e.lead.at?dmy(e.lead.at)+' '+hm(e.lead.at):'—'}</p>
-      <div class="imp-p"><b>מקורות:</b><ul class="pl-src">${e.items.slice(0,5).map(it=>`<li><a href="${esc(it.link)}" target="_blank" rel="noopener noreferrer" data-nwopen="${esc(it.id)}"><bdi>${esc(it.pub||'מקור')}</bdi></a> · ${it.at?dmy(it.at)+' '+hm(it.at):''}<div class="nm"><bdi>${esc(it.title)}</bdi></div></li>`).join('')}</ul></div>
+      <div class="imp-p"><b>מקורות:</b><ul class="pl-src">${e.items.slice(0,5).map(it=>`<li><span class="srcref"><bdi>${esc(it.pub||'מקור')}</bdi></span> · ${it.at?dmy(it.at)+' '+hm(it.at):''}<div class="nm"><bdi>${esc(it.title)}</bdi></div></li>`).join('')}</ul></div>
       <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-story="${esc(e.k)}">הסיפור מאחורי הכותרת</button>${evFolBtn(e.k,e.lead).replace('nw-b nw-ef','btn sm nw-ef')}<button type="button" class="btn sm" data-chiko="ev:${esc(e.k)}">שאל את צ׳יקו</button><button type="button" class="btn sm" data-nxsave="${esc(e.lead.id)}" aria-pressed="${!!(nxState().saved||{})[e.lead.id]}">${(nxState().saved||{})[e.lead.id]?'★ שמור':'☆ לשמור'}</button>${IMV!=='ev'?`<button type="button" class="btn sm" data-imgo="ev:${esc(e.k)}">למפת האירוע</button>`:''}</div>`}
   else if(n.t==='co'||n.t==='hold'){const p=m&&m.pos?m.pos.find(x=>x.sym===n.sym):null, px=Q&&Q.prices?Q.prices[n.sym]:null;
     const evs=G.edges.filter(e=>(e.to==='c:'+n.sym)&&e.from.startsWith('ev:')||e.to===n.id).flatMap(e=>e.items.map(i=>i.ev)).filter(Boolean);
@@ -26693,6 +26722,7 @@ function renderPots(){
   const cur0=L.find(p=>p.id===sel);
   const note=`<p class="potnote">${cur0&&cur0.sep?'החיסכון הזה נפרד מהתיק: ניירות שהועברו אליו מהתיק יוצאים משווי התיק, מהפיזור, מהבקרה ומהדוחות. היציאה נרשמת כמו משיכה, ולא כהפסד. הסרת נייר מהחיסכון, או מעבר ל"נספר גם בתיק", מחזירה אותו לתיק.':'נייר שהועתק מהתיק לחיסכון הזה נשאר גם בשווי התיק, ורק נרשם גם כאן. נייר או מזומן שהוספת ישירות לחיסכון לא נספרים בשווי התיק. כדי להוציא מהתיק את מה שהועתק, בחר למעלה "חיסכון נפרד".'}</p>`;
   if(sel==='new'){box.innerHTML=`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
+    <div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsepnew="0" aria-pressed="${!POTDRAFT.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsepnew="1" aria-pressed="${!!POTDRAFT.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div></div>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="potCreate"${dis}>צור חיסכון</button><span class="saved" id="potState" role="status"></span></div></div>${note}`; return}
   const pt=L.find(p=>p.id===sel); if(!pt){POT='new';renderPots();return}
   const V=potValue(pt), m=(()=>{try{return P&&Q?mAllNow():null}catch(e){return null}})();
@@ -26717,9 +26747,10 @@ function potChanged(s0,why){try{potFlowRec(s0,why)}catch(e){} potSyncWatch(); ch
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox'))return; if(!canWrite)return; const s0=potOutSnap();
   const sp=t.closest('[data-potsep]'); if(sp){const pt=potCur(); if(!pt)return; const on=sp.dataset.potsep==='1'; if(!!pt.sep===on)return; pt.sep=on; potChanged(s0,on?'sep':'join'); return}
   const k=t.closest('[data-potkind]'); if(k){const pt=potSel()==='new'?null:potCur(); if(pt){pt.kind=k.dataset.potkind;potChanged(s0)} else{POTDRAFT.kind=k.dataset.potkind; renderPots()} return}
+  {const sn=t.closest('[data-potsepnew]'); if(sn){POTDRAFT={...POTDRAFT,sep:sn.dataset.potsepnew==='1'}; for(const b of document.querySelectorAll('[data-potsepnew]'))b.setAttribute('aria-pressed',String(b.dataset.potsepnew===(POTDRAFT.sep?'1':'0'))); return}}
   if(t.closest('#potCreate')){const nm=$('pf_name').value.trim(); if(!nm){$('potState').textContent='כתוב שם לחיסכון.';$('pf_name').focus();return}
     const kind=POTDRAFT.kind||'other', id='p'+Date.now().toString(36);
-    S.pots=pots().concat([{id,name:nm.slice(0,40),kind,target:+$('pf_target').value||null,date:$('pf_date').value||null,monthly:+$('pf_monthly').value||null,cash:0,items:[],createdAt:new Date().toISOString()}]);
+    S.pots=pots().concat([{id,name:nm.slice(0,40),kind,...(POTDRAFT.sep?{sep:true}:{}),target:+$('pf_target').value||null,date:$('pf_date').value||null,monthly:+$('pf_monthly').value||null,cash:0,items:[],createdAt:new Date().toISOString()}]);
     POT=id; POTDRAFT={kind:'child'}; try{localStorage.setItem('tr_pot',id)}catch(x){} potChanged(s0); return}
   if(t.closest('#potDel')){const pt=potCur(); if(!pt)return; if(POTDEL!==pt.id){POTDEL=pt.id; renderPots(); setTimeout(()=>{if(POTDEL===pt.id){POTDEL=null;try{renderPots()}catch(x){}}},5000); return}
     S.pots=pots().filter(p=>p.id!==pt.id); POTDEL=null; POT=null; potChanged(s0); offerUndo(`החיסכון "${pt.name}" נמחק`,()=>{const u0=potOutSnap(); S.pots=pots().concat([pt]); POT=pt.id; potChanged(u0)}); return}
@@ -27099,8 +27130,8 @@ function ilFundLoad(id){const e=ILF[id]; if(e&&e.v)return Promise.resolve(e.v); 
 const ilIsNum=k=>/^\d{6,9}$/.test(String(k||''));
 const ilIdx=k=>String(k||'').startsWith('IDX:')?k.slice(4):'';
 // the links for an Israeli fund's own pages
-function ilLinks(id){const n=encodeURIComponent(id), traded=/^11\d{5}$/.test(id);
-  return `<div class="ilx"><a class="btn sm" href="https://maya.tase.co.il/he/funds/mutual-funds/${n}" target="_blank" rel="noopener">מאיה ↗</a><a class="btn sm" href="https://www.funder.co.il/fund/${n}" target="_blank" rel="noopener">פאנדר ↗</a><a class="btn sm" href="https://www.bizportal.co.il/${traded?'tradedfund':'mutualfunds'}/quote/profile/${n}" target="_blank" rel="noopener">ביזפורטל ↗</a></div>`}
+function ilLinks(id){   // 4.11: the source named, the person kept here (no way out to other sites)
+  return `<p class="note ilx">נתוני הקרן מגיעים ממאיה (הבורסה לניירות ערך בתל אביב), מספר נייר ${esc(String(id))}.</p>`}
 // what the page of a fund or an index says in place of a company's analysts and reports
 function ilSecMore(k,it){
   const ix=ilIdx(k);

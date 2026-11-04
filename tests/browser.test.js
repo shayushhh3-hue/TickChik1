@@ -981,6 +981,7 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
     await tab(pg,'plan'); await pg.waitForTimeout(400);
     await pg.evaluate(()=>document.querySelector('.subtabs [data-pot="new"]').click()); await pg.waitForTimeout(400);
     assert.match(await pg.evaluate(()=>document.querySelector('#potBox h3').textContent),/בוא נפתח חיסכון לפי מטרה/);
+    assert.ok(await pg.evaluate(()=>!!document.querySelector('#potBox [data-potsepnew="1"]')&&/חיסכון נפרד/.test(document.getElementById('potBox').textContent)),'4.11: the "חיסכון נפרד" the note names is in the form');
     await pg.fill('#pf_name','חיסכון לנועה'); await pg.fill('#pf_target','100000'); await pg.fill('#pf_date','2036-09'); await pg.fill('#pf_monthly','500');
     await pg.evaluate(()=>document.querySelector('#potBox [data-potkind="child"]').click()); await pg.waitForTimeout(200);
     assert.equal(await pg.inputValue('#pf_name'),'חיסכון לנועה','what was typed stays after choosing the kind');
@@ -2736,4 +2737,37 @@ test('3.11 צ׳יקו across the site: what he found (seven parts, once, silence
       assert.equal(await p3.evaluate(()=>!!document.querySelector('#anaOut [data-chicoins]')),false); assert.ok((await p3.evaluate(()=>[...document.querySelectorAll('#anaSugg .sg')].map(b=>b.textContent))).includes('איך מתחילים?'));
       assert.deepEqual(await p3.evaluate(()=>window.__chico.insights()),[]); assert.deepEqual(p3.errs,[]); await c3.close()}
   }finally{rtRestore(N0,X0,ST0,PU0,S0)}
+});
+
+test('4.11 one count for the same list, the news load in a word and its numbers, the source named and no way out to other sites, the full article\'s mark; the management\'s Yahoo and market screen without a ticker of anybody',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
+  const D=await rtData(); for(const k of Object.keys(D.by))D.by[k].rd='full'; await rtSet(D); store.setDoc('news/state',{read:{},saved:{}},{silent:true});
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400);
+    const r=await pg.evaluate(()=>({load:(document.getElementById('ixLoad')||{}).textContent||'',hid:document.getElementById('ixLoad').hidden,n:document.getElementById('ixAlN').textContent,aria:document.getElementById('ixAlN').getAttribute('aria-label')||'',
+      more:(document.querySelector('#ixAlList .ix-more')||{}).textContent||'',h:document.getElementById('ixAlH').textContent}));
+    assert.equal(r.hid,false); assert.match(r.load,/עומס חדשותי בתיק: (רגוע|רגיל|ער|סוער)/); assert.match(r.load,/(אירוע אחד|\d+ אירועים) היום.*ביום בממוצע בשבוע שלפני/);
+    assert.match(r.n,/^\d+ חדשות$/); const un=+r.n.split(' ')[0], tot=+(r.aria.match(/מתוך (\d+)/)||[])[1]; assert.ok(tot>=un,'unread out of all');
+    if(r.more)assert.ok(r.more.includes(`לכל ${tot} ההתראות`)&&r.more.includes(`(${un} חדשות)`),'the button counts the same list: '+r.more);
+    assert.match(r.h,/^מה נוגע לתיק/);
+    // the news: the source named, the reading's basis said, not one link out of the site
+    await pg.click('[data-rt="news"]'); await pg.waitForTimeout(300); await pg.evaluate(()=>{const d=document.querySelector('#newsFeed details'); if(d)d.open=true});
+    const nw=await pg.evaluate(()=>({out:[...document.querySelectorAll('a[href]')].filter(a=>/^https?:/.test(a.href)&&new URL(a.href).origin!==location.origin).map(a=>a.href).slice(0,3),txt:document.getElementById('newsFeed').textContent}));
+    assert.deepEqual(nw.out,[],'no link out of the site'); assert.match(nw.txt,/המקור: .*הנתונים מגיעים משם/); assert.match(nw.txt,/מהכתבה המלאה ב-/);
+    // the alert's sheet: no "to the article", the sources by name
+    await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300); await pg.evaluate(()=>{const b=document.querySelector('#ixAlList [data-ixopen]'); if(b)b.click()}); await pg.waitForTimeout(300);
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('a[href]')].filter(a=>/^https?:/.test(a.href)&&new URL(a.href).origin!==location.origin).length),0);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // the management: Yahoo and the market, at a phone's width and a wide one
+    store.setDoc('quotes/latest',{...store.getDoc('quotes/latest').data,bench:{SPX:{px:5900,prev:5800,date:'2026-11-03'}},mkts:{GOLD:{px:2500,prev:2550,date:'2026-11-03'}}},{silent:true});
+    for(const W of [390,1280]){const {ctx:c,pg:p}=await open(W); await p.goto(U+'admin#yahoo'); await p.waitForSelector('#view .kpi',{timeout:15000}); await p.waitForTimeout(300);
+      const a=await p.evaluate(()=>({h:document.getElementById('h1').textContent,t:document.getElementById('view').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+      assert.equal(a.h,'Yahoo ונתוני שוק'); assert.match(a.t,/המדדים והשווקים/); assert.match(a.t,/S&P 500.*\+1\.72%/s); assert.match(a.t,/מאיפה הגיעו \(ספירה, לא פירוט\)/); assert.equal(a.ox,false,'no sideways scroll at '+W);
+      for(const k of ['MSFT','NVDA','KO'])assert.ok(!a.t.includes(k),'no ticker of anybody: '+k);
+      // the news screen: the load
+      await p.goto(U+'admin#news'); await p.waitForSelector('#chLoad',{timeout:15000}); assert.match(await p.evaluate(()=>document.getElementById('view').textContent),/מדד העומס החדשותי/);
+      assert.deepEqual(p.errs,[]); await c.close()}
+    {const {ctx:c,pg:p}=await open(390,{who:'p2'}); const res=await p.request.get(U+'api/admin/yahoo'); assert.ok([403,404].includes(res.status()),'a partner: '+res.status()); await c.close()}
+  }finally{rtRestore(N0,X0,ST0,PU0)}
 });
