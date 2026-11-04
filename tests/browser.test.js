@@ -2088,9 +2088,11 @@ test('1.11 dividends: declared apart from expected and paid, the income by the q
 test('1.11 the finder: criteria of my own over the ranking (kept on the device), each row with why it was found and what contradicts it; a find is not a recommendation',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_fitc')}catch(e){}});
-  await tab(pg,'search'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="search"] .subtabs [data-tab="fit"]').click()); await pg.waitForFunction(()=>document.querySelectorAll('#fitBox2 .fitrow').length>=2,null,{timeout:20000}).catch(()=>{});
-  if(await pg.evaluate(()=>document.querySelectorAll('#fitBox2 .fitrow').length<2))throw new Error('fit rows: '+await pg.evaluate(()=>document.getElementById('fitBox2').innerText.slice(0,120))+' errs='+JSON.stringify(pg.errs));
-  const read=()=>pg.evaluate(()=>({n:document.querySelectorAll('#fitBox2 .fitrow').length,syms:[...document.querySelectorAll('#fitBox2 .fitrow .nm i')].map(i=>i.textContent),con:[...document.querySelectorAll('#fitBox2 .fw-con')].map(p=>p.innerText.replace(/\s+/g,' ')),txt:document.getElementById('fitBox2').innerText.replace(/\s+/g,' '),ox:document.documentElement.scrollWidth>innerWidth+1}));
+  // 4.11: "מה מתאים לתיק" is the watch screen's full ranking, in the watch list's cards
+  await tab(pg,'fit'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'watch'); await pg.waitForFunction(()=>document.querySelectorAll('#fitBox2 .wc').length>=2,null,{timeout:20000}).catch(()=>{});
+  assert.equal(await pg.evaluate(()=>document.querySelector('#wView [data-wv="all"]').getAttribute('aria-pressed')),'true','on the full ranking');
+  if(await pg.evaluate(()=>document.querySelectorAll('#fitBox2 .wc').length<2))throw new Error('fit rows: '+await pg.evaluate(()=>document.getElementById('fitBox2').innerText.slice(0,120))+' errs='+JSON.stringify(pg.errs));
+  const read=()=>pg.evaluate(()=>({n:document.querySelectorAll('#fitBox2 .wc').length,syms:[...document.querySelectorAll('#fitBox2 .wc .sym')].map(i=>i.textContent),con:[...document.querySelectorAll('#fitBox2 .fw-con')].map(p=>p.innerText.replace(/\s+/g,' ')),txt:document.getElementById('fitBox2').innerText.replace(/\s+/g,' '),ox:document.documentElement.scrollWidth>innerWidth+1}));
   let r=await read(); assert.equal(r.ox,false); assert.ok(r.n>=2); assert.equal(r.con.length,r.n,'every row says why and what contradicts');
   assert.ok(r.con.every(c=>/למה אותר: .+ · מה סותר: .+/.test(c)),r.con[0]); const cost=r.con[r.syms.indexOf('COST')]; assert.ok(cost&&/מכפיל 52/.test(cost),'Costco: the high multiple contradicts: '+cost);
   assert.match(await pg.evaluate(()=>document.querySelector('#fitBox2 .fitc').textContent),/הסינון אינו המלצה/);
