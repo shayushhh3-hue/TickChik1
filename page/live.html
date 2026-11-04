@@ -1496,6 +1496,12 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 .fitwhy .fw-miss .ni{width:16px;height:16px;flex:none;margin-top:2px;color:var(--muted)}
 .fitwhy .fw-foot{margin:8px 0 0;font-size:12px;color:var(--muted)}
 /* 28.10: the control screen's three parts: a segmented row at the top, and only the chosen part's sections below it */
+/* 4.11: on the control screen צ׳יקו is a slim strip (the button that opens him is everywhere anyway) */
+#anaSec .ae-t .sub{display:none} #anaSec .ana-chips .btn:not([data-ana="explain"]):not([data-ana="open"]){display:none}
+.ptnav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
+.ptnav .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap;padding-inline:12px}
+.ptnav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .pt-off{display:none!important}
+@media (max-width:640px){.ptnav .chip{font-size:13px;padding-inline:9px}}
 #riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 #riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
@@ -1578,17 +1584,17 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 @media (max-width:759px){
   table.pf,table.pf tbody{display:block;width:100%}
   table.pf thead{display:none}
-  table.pf tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"sym sym acct acct" "name name name del" "qty qty ccy ccy" "cost cost costu costu" "px px grp grp";gap:8px 10px;padding:12px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  table.pf tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-areas:"sym sym qty qty acct acct" "name name name name del del" "ccy ccy cost cost costu costu" "px px grp grp grp grp";gap:6px 8px;padding:10px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
   table.pf td{display:flex;flex-direction:column;gap:4px;padding:0;white-space:normal;min-width:0}
   table.pf tr.fixed{background:var(--warn-bg);border-color:var(--warn-c)}
   table.pf td .flag{align-self:flex-start;margin:0}
-  table.pf td[data-l]::before{content:attr(data-l);font-size:12px;color:var(--muted)}
+  table.pf td[data-l]::before{content:attr(data-l);font-size:11px;color:var(--muted);line-height:1.2} table.pf td.pfn::before{display:none}
   table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
   table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
   table.pf td:nth-child(7){grid-area:costu} table.pf td:nth-child(8){grid-area:px} table.pf td:nth-child(9){grid-area:grp} table.pf td:nth-child(10){grid-area:del}
   table.pf td.pfx{justify-content:flex-end;align-items:flex-end}
   table.pf td.pfx .btn{min-height:40px}
-  table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:40px}
+  table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:38px;padding-block:4px}
   table.pf tr:has(>td.empty){display:block;padding:0;border:0;background:none}
   table.pf td.empty{display:block;grid-area:auto}
 }
@@ -17653,7 +17659,9 @@ function renderOb(){
     {done:alertsDone,t:'איך להודיע לך',x:'התראה כשמניה עוברת מחיר שקבעת, כשהדולר זז, או כשיש ידיעה חשובה: לדפדפן, לטלפון או למייל.',b:'<button class="btn sm" type="button" data-tab="settings" data-goid="pushBox">לבחור התראות</button>'}];
   const left=steps.filter(x=>!x.done).length; ob.hidden=!(has&&left&&!skip&&canWrite); if(ob.hidden)return;
   $('obCnt').textContent=`${steps.length-left} מתוך ${steps.length} בוצעו`; const hh=$('hOb'); if(hh)hh.textContent=left===steps.length?'חמישה צעדים כדי שהבקרה תעבוד בשבילך':`עוד ${left===1?'צעד אחד':left+' צעדים'} כדי שהבקרה תעבוד בשבילך`;
-  const h=steps.map(x=>`<li class="${x.done?'done':''}"><span class="obk" aria-hidden="true">${x.done?'✓':''}</span><div><b>${x.t}</b>${x.done?' <span class="sub">בוצע</span>':''}<p>${x.x}</p>${x.done?'':`<div class="acts">${x.b}</div>`}</div></li>`).join('');
+  // 4.11: what is left in full, what is done in one line
+  const dn=steps.filter(x=>x.done), h=steps.filter(x=>!x.done).map(x=>`<li><span class="obk" aria-hidden="true"></span><div><b>${x.t}</b><p>${x.x}</p><div class="acts">${x.b}</div></div></li>`).join('')
+    +(dn.length?`<li class="done"><span class="obk" aria-hidden="true">✓</span><div><b>בוצע:</b> <span class="sub">${dn.map(x=>x.t).join(' · ')}</span></div></li>`:'');
   setH($('obList'),h);
 }
 // ---- render -----------------------------------------------------------
@@ -18803,7 +18811,7 @@ function soonEvents(now){
 function renderSoon(m){
   const sec=$('soonSec'), box=$('soonList'); if(!sec||!box)return; let L=[]; try{L=soonEvents(new Date())}catch(e){}
   let dv=null; try{if(RS&&RS.companies&&m&&m.pos){const g=m.pos.reduce((t,p)=>{const y=(RS.companies[p.sym]||{}).dy; return t+(y>0?p.val*y/100:0)},0); if(g>0)dv=g}}catch(e){}
-  if(!L.length&&!dv){sec.hidden=true;return} sec.hidden=false;
+  if(!L.length){sec.hidden=true;return} sec.hidden=false;   // 4.11: nothing coming: no card (the dividends' year is in the plan)
   const today=ilDay(), IC={rep:'rep',ex:'div',pay:'div',dep:'dep',mkt:'mkt'};
   const day=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
   setH(box,L.length?L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${esc(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${esc(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join('')
@@ -19453,7 +19461,7 @@ const anaNavBtn=(n,cls)=>n?`<button type="button" class="btn sm${cls?' '+cls:''}
 function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));return} if(t==='prof'){try{profOpen()}catch(e){} return}
   if(t.startsWith('news:')){const id=t.slice(5); showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; NWLIM=Math.max(NWLIM,200); try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(id)}"]`); if(el){el.scrollIntoView({block:'center'}); el.querySelector('details.nw-more')?.setAttribute('open','')}},120); return}
   if(t.startsWith('pl:')){try{plOpen(t.slice(3))}catch(e){} return}
-  if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el)el.scrollIntoView({block:'start'})},80); return}
+  if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el){try{ptReveal(el)}catch(x){} el.scrollIntoView({block:'start'})}},80); return}
   // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
   if(t.startsWith('fold:')){const [,id,stk]=t.split(':'); if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab('risk',true); try{setNav(false)}catch(e){} try{foldSet(id,true)}catch(e){}
     setTimeout(()=>{const s=document.querySelector(`[data-pane="risk"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60); return}
@@ -24961,6 +24969,27 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   const chip=(x,l,pot)=>{const on=x===t&&(pot==null||potSel()===pot); return `<button type="button" class="chip${pot==='new'?' potnew':''}" role="tab" data-tab="${x}"${pot!=null?` data-pot="${esc(pot)}"`:''} aria-selected="${on}" aria-pressed="${on}">${l}</button>`};
   const want=list.map(x=>x==='pots'?pots().map(pt=>chip('pots',esc(pt.name||'חיסכון'),pt.id)).join('')+chip('pots',pots().length?'+ חיסכון חדש':'+ חיסכון לפי מטרה','new'):chip(x,SUBL[x]||x)).join('');
   setH(row,want)}
+
+// 4.11: the long screens in parts, like the control screen (no folds: a row at the top shows one part at a time, the
+// choice kept for next time). A link to a section inside (set:..., a scroll) opens the part that holds it
+const PARTS={
+  settings:{me:['פרופיל ופרטיות',['hMe','hUse','hData']],news:['חדשות והתראות',['hNwSet','hNotif']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
+  forecast:{goal:['היעד שלי',['hGoal','hFlows','hFwd']],scen:['תרחישים',['hScen','hWhatIf']],div:['דיבידנדים',['hDivGot','hDiv','hDivAhead']],calc:['מחשבונים',['hDivCalc','hFxCalc']]},
+  history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']]}};
+const PTV={}; try{Object.assign(PTV,JSON.parse(localStorage.getItem('tr_ptv')||'{}'))}catch(e){}
+function ptSecs(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return []; return [...pane.querySelectorAll('section[aria-labelledby]')].filter(x=>x.parentElement===pane||x.parentElement.parentElement===pane)}
+function ptOf(t,sec){const id=sec.getAttribute('aria-labelledby'); for(const [k,[,ids]] of Object.entries(PARTS[t]||{}))if(ids.includes(id))return k; return null}
+function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return;
+  // a part whose every section is hidden by its own logic (the system's health for a viewer) is not offered
+  const live=Object.keys(P).filter(x=>ptSecs(t).some(sec=>ptOf(t,sec)===x&&!sec.hidden)); if(!live.length)return; if(!live.includes(k))k=live.includes(PTV[t])?PTV[t]:live[0];
+  PTV[t]=k; try{localStorage.setItem('tr_ptv',JSON.stringify(PTV))}catch(e){}
+  let nav=pane.querySelector(':scope>.ptnav'); if(!nav){nav=document.createElement('div'); nav.className='ptnav'; nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של המסך'); const sub=pane.querySelector(':scope>.subtabs'); sub?sub.after(nav):pane.prepend(nav)}
+  nav.innerHTML=live.map(x=>`<button type="button" class="chip" role="tab" data-pt="${t}:${x}" aria-pressed="${x===k}" aria-selected="${x===k}">${P[x][0]}</button>`).join('');
+  for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',o!==k)}}
+// every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
+try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
+function ptReveal(el){if(!el||!el.closest)return; const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const k=sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 function showTab(t,user){
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
   if(!TABS.includes(t))t='overview';
@@ -24971,7 +25000,7 @@ function showTab(t,user){
   {const hb=$('tab_'+navGroup(t));if(hb)hb.setAttribute('aria-selected','true')}
   try{bbSync(t)}catch(e){}
   for(const s of document.querySelectorAll('[data-pane]'))s.hidden=s.dataset.pane!==t;
-  try{subTabs(t)}catch(e){}
+  try{subTabs(t)}catch(e){} try{if(PARTS[t])ptSet(t,PTV[t])}catch(e){}
   try{localStorage.setItem('tab',t)}catch(e){}
   if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){}}
   if(t==='state'){try{renderState()}catch(e){}}
