@@ -2646,7 +2646,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     <button type="button" role="tab" id="tab_reports" data-tab="reports" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg><span>דוחות</span></button>
     <button type="button" role="tab" id="tab_journal" data-tab="journal" aria-selected="false" hidden><span>יומן ההשקעות</span></button>
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
-    <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
+    <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מעקב ומה מתאים</span></button>
     <button type="button" role="tab" id="tab_compare" data-tab="compare" aria-selected="false" hidden><span>השוואה</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
     <div class="tsub" id="riskSub" role="group" aria-label="החלקים של בקרה וסיכון"></div>
@@ -3104,13 +3104,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
     </section>
   </div>
 
-  <div class="pane" data-pane="fit" hidden>
-    <section aria-labelledby="hFit">
-      <div class="row"><h2 id="hFit">מה מתאים לתיק שלי</h2><span class="sub">מהדירוג של כל הניירות במערכת, מול התיק, הכללים והיעדים שלך</span></div>
-      <div class="fitbox" id="fitBox2"><div class="empty">טוען…</div></div>
-      <p class="note">דירוג התאמה הוא חישוב של הדף מהנתונים שיש לו: הוא אומר מה משלים את התיק לפי הכללים שקבעת, לא מה כדאי לקנות. בכל שורה "למה?" פותח את החישוב.</p>
-    </section>
-  </div>
+  <div class="pane" data-pane="fit" hidden></div>
   <div class="pane" data-pane="news" hidden>
     <section aria-labelledby="hNewsT" class="nxsec">
       <div class="row"><h2 id="hNewsT">חיבור למציאות</h2><span class="sub" id="newsFresh"></span></div>
@@ -3203,13 +3197,18 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
   </div>
   <div class="pane" data-pane="watch" hidden>
     <section aria-labelledby="hWatch">
-      <div class="row"><h2 id="hWatch">מניות במעקב</h2><span class="sub" id="candFresh"></span></div>
+      <div class="row"><h2 id="hWatch">מעקב ומה מתאים לתיק</h2><span class="sub" id="candFresh"></span></div>
+      <div class="chips" id="wView" role="group" aria-label="תצוגה" style="align-self:flex-start"><button type="button" class="chip" data-wv="mine" aria-pressed="true">המעקב שלי והמומלצים</button><button type="button" class="chip" data-wv="all" aria-pressed="false">כל הדירוג</button></div>
+      <div id="wMine">
       <div class="rhero" id="candHero"></div>
       <div class="wprefs" id="candPrefs"></div>
       <div class="wleg" aria-hidden="true"><span><i class="d hi"></i>התאמה גבוהה, 80 ומעלה</span><span><i class="d mid"></i>בינונית, 65 עד 79</span><span><i class="d lo"></i>נמוכה, מתחת ל-65</span></div>
       <div class="chips" id="candChips" role="group" aria-label="סינון לפי קבוצה" style="align-self:flex-start"></div>
       <div class="wgrid" id="candList"><div class="empty">המניות במעקב יופיעו כאן.</div></div>
       <p class="note" id="candNote"></p>
+      </div>
+      <div id="wAll" hidden><div class="fitbox" id="fitBox2"><div class="empty">טוען…</div></div>
+        <p class="note">דירוג התאמה הוא חישוב של הדף מהנתונים שיש לו: הוא אומר מה משלים את התיק לפי הכללים שקבעת, לא מה כדאי לקנות.</p></div>
     </section>
   </div>
 
@@ -23679,24 +23678,15 @@ function candPool(m){
   for(const r of out){if(pick.length>=WATCHN||r.f.score<40)break; if((per[r.f.g]||0)>=3)continue; pick.push(r); per[r.f.g]=(per[r.f.g]||0)+1}
   for(const r of out.filter(x=>x.under>0)){if(pick.some(x=>x.f.g===r.f.g)||r.f.score<50)continue; if(pick.length>=WATCHN)pick.pop(); pick.push(r)}
   pick.sort((a,b)=>b.f.score-a.f.score); return {pick,n:out.length}}
-function renderCandsP(m,pool,mine=''){
-  const box=$('candList'), mg=+(S.rules||{}).maxGroup||40, its=pool.pick.map(r=>{const p=priceOf(r.k);return {sym:r.k,price:p?p.px:null}}), pv=its.some(x=>x.price>0)?watchPrev(its):null;
-  $('candFresh').textContent=FIT&&FIT.updatedAt?'נתונים מ-'+dmy(FIT.updatedAt)+(rsStale(FIT.updatedAt)?' · לא מתעדכן':''):'';
-  const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter='';
-  $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
-  const hi=pool.pick.filter(r=>r.f.score>=80).length;
-  // the big number is what matters to the reader: how many fit very well (80 and up); the rest fit partly
-  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${hi||pool.pick.length}</div><div><b>${hi?`מניות שמתאימות מאוד לתיק שלך${pool.pick.length>hi?`, ועוד ${pool.pick.length-hi} שמתאימות חלקית`:''}`:'מניות שיכולות להתאים לתיק שלך'}.</b><p>הדירוג לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
-  const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
-  const markH=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'');
-  const rows=pool.pick.filter(r=>!candFilter||GROUPS[r.f.g]===candFilter);
-  box.innerHTML=markH+(rows.map(r=>{
+// 4.11: one card for a security, in the watch list's look, for both views of the merged screen ("המעקב שלי והמומלצים"
+// and "כל הדירוג")
+function wcCardH(r,m,pv,mg){const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
     const c=r.c, f=r.f, tier=f.score>=80?'hi':f.score>=65?'mid':'lo', gr=f.fs?f.fs.grade:null, p=priceOf(r.k), it=r.it;
     const fc=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
     const was=pv&&pv.px[r.k]>0&&p&&p.px>0?(p.px/pv.px[r.k]-1)*100:null, dn=c.next?daysTo(c.next):null;
     // what it is strong in, of the parts that weigh in the match (the viewer's choices among them)
     const strong=Object.keys(f.W||{}).filter(x=>f.W[x]>0&&f[x]!=null).map(x=>[x,f[x]/f.W[x]]).filter(x=>x[1]>=0.7).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>FITL[x[0]]);
-    const tags=(strong.length?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
+    const tags=(r.held?'<span class="tag">בתיק</span>':'')+(strong.length?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
       +(r.under>0?`<span class="tag new">הקבוצה ${nn(r.under.toFixed(0))} נק׳ אחוז מתחת ליעד שלך</span>`:!m.groups[f.g]||!(m.groups[f.g].w>0)?`<span class="tag new">אין בתיק בכלל</span>`:'')
       +(f.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(dn!=null&&dn>=0&&dn<=21?`<span class="tag" style="background:var(--sunk);color:var(--ink2)">דוח בעוד ${dn===0?'היום':dn===1?'יום':dn+' ימים'}</span>`:'')
       +(wmarks().includes(r.k)?'<span class="tag an">סימנת</span>':'');
@@ -23708,7 +23698,25 @@ function renderCandsP(m,pool,mine=''){
       ${tags?`<div class="wtags">${tags}</div>`:''}
       <div class="wfit"><span class="sub">פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}${fitRowX(f)}</span>${sk?`<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-anav="sec:${esc(r.k)}">לדף הנייר ›</button><button type="button" class="btn sm" data-wmark="${esc(r.k)}" aria-pressed="${wmarks().includes(r.k)}">${wmarks().includes(r.k)?'הסר סימון':'סמן למעקב'}</button></div>`:''}</div>
       ${fitWhy(f,c,m)}
-    </article>`}).join('')||'<div class="empty">אין ניירות בסינון הזה.</div>');
+    </article>`}
+function wcFundH(r){const f=r.f, tier=f.score>=70?'hi':f.score>=50?'mid':'lo', p=priceOf(r.k), fc=(l,x)=>`<span class="fc"><i>${l}</i><b>${x}</b></span>`;
+  return `<article class="wc" style="--gc:${GCOL[r.g]||'#64748B'}"><div class="wh"><div class="wt">${logoHtml(r.k,'s')}<span class="sym">${esc(r.sym)}</span><span class="wn">${esc(r.name)}</span><span class="ws"><b>${esc(r.g?GROUPS[r.g]||'':'')}</b></span></div>
+    <div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${f.score} מתוך 100"><b>${f.score}</b></div><span>התאמה</span></div></div>
+    <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>`:'—')}${fc('סוג',esc(FUNDK[r.kind]||''))}</div>
+    ${f.held||f.why.length?`<div class="wtags">${f.held?'<span class="tag">בתיק</span>':''}${f.why.slice(0,2).map(w=>`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">${esc(w)}</span>`).join('')}</div>`:''}
+    <div class="wfit"><div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-open="${esc(r.k)}">לדף הנייר ›</button></div></div></article>`}
+function renderCandsP(m,pool,mine=''){
+  const box=$('candList'), mg=+(S.rules||{}).maxGroup||40, its=pool.pick.map(r=>{const p=priceOf(r.k);return {sym:r.k,price:p?p.px:null}}), pv=its.some(x=>x.price>0)?watchPrev(its):null;
+  $('candFresh').textContent=FIT&&FIT.updatedAt?'נתונים מ-'+dmy(FIT.updatedAt)+(rsStale(FIT.updatedAt)?' · לא מתעדכן':''):'';
+  const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter='';
+  $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
+  const hi=pool.pick.filter(r=>r.f.score>=80).length;
+  // the big number is what matters to the reader: how many fit very well (80 and up); the rest fit partly
+  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${hi||pool.pick.length}</div><div><b>${hi?`מניות שמתאימות מאוד לתיק שלך${pool.pick.length>hi?`, ועוד ${pool.pick.length-hi} שמתאימות חלקית`:''}`:'מניות שיכולות להתאים לתיק שלך'}.</b><p>הדירוג לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
+  const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
+  const markH=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'');
+  const rows=pool.pick.filter(r=>!candFilter||GROUPS[r.f.g]===candFilter);
+  box.innerHTML=markH+(rows.map(r=>wcCardH(r,m,pv,mg)).join('')||'<div class="empty">אין ניירות בסינון הזה.</div>');
   $('candNote').textContent='הדירוג מחושב בדפדפן שלך מהתיק, הכללים והיעדים שלך. '+(FIT&&FIT.updatedAt?`נתוני החברות ${rsStale(FIT.updatedAt)?'נכונים ל-'+dmy(FIT.updatedAt)+' ולא מתעדכנים כרגע':'עודכנו '+dmy(FIT.updatedAt)}; `:'')+'מחירים: סגירה יומית, ונייר שסימנת מקבל מחיר כל כמה דקות בשעות המסחר.';
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-wmark]'); if(!b)return; toggleMark(b.dataset.wmark).then(()=>{try{renderCands(mAllNow())}catch(e){}})});
@@ -24757,6 +24765,10 @@ function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.get
 function secHoverOff(){if(SECHOV!==-1){SECHOV=-1;drawSec()}}
 // ---- "what fits my portfolio": every security with figures, ranked by the viewer's own rules (not a buy call) ----
 let FIT=null, FITLOAD=null, SV='search', FITG='', FITHELD=false, FITN=60, FITK='stock';
+let WV='mine'; try{if(localStorage.getItem('tr_wv')==='all')WV='all'}catch(e){}
+function wvSet(v){WV=v==='all'?'all':'mine'; try{localStorage.setItem('tr_wv',WV)}catch(e){} const a=$('wAll'), b=$('wMine'); if(a)a.hidden=WV!=='all'; if(b)b.hidden=WV==='all'; for(const x of document.querySelectorAll('#wView [data-wv]'))x.setAttribute('aria-pressed',String(x.dataset.wv===WV));
+  if(WV==='all'){try{renderFit(); Promise.all([loadSymDb(),loadFit(),loadAllQ()]).then(()=>{try{renderFit()}catch(e){}})}catch(e){}} else{try{renderCands(mAllNow())}catch(e){}}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#wView [data-wv]'); if(b)wvSet(b.dataset.wv)});
 try{const v=localStorage.getItem('tr_fitk'); if(['stock','fund','all'].includes(v))FITK=v}catch(e){}
 const SEC2G=s=>{s=(s||'').toLowerCase();if(/tech|telecom|software|semicond/.test(s))return 'tech';if(/financ|bank|insur/.test(s))return 'fin';if(/industr|energy|material|defen|aero/.test(s))return 'ind';if(/health|pharma|biotech/.test(s))return 'health';if(/consumer|real estate|utilit|retail|food/.test(s))return 'cons';return 'ind'};
 function loadFit(){if(FITLOAD)return FITLOAD;if(!db)return Promise.resolve(null);FITLOAD=(async()=>{try{const s=await db.doc('research/fit').get();FIT=s.exists?(s.data()||null):null}catch(e){FIT=null;FITLOAD=null}return FIT})();return FITLOAD}
@@ -24874,20 +24886,20 @@ function renderFit(){
     const fgs=[...new Set(fitFunds(m).map(r=>r.g).filter(Boolean))];
     const chipsF=`<div class="chips" role="group" aria-label="קבוצה"><button type="button" class="chip" data-fg="" aria-pressed="${!FITG}">הכל</button>${Object.keys(GROUPS).filter(g=>g!=='cash'&&fgs.includes(g)).map(g=>`<button type="button" class="chip" data-fg="${g}" aria-pressed="${FITG===g}">${GROUPS[g]}</button>`).join('')}</div>
       <div class="chips" role="group" aria-label="סינון"><button type="button" class="chip" data-fh="0" aria-pressed="${!FITHELD}">לא בתיק</button><button type="button" class="chip" data-fh="1" aria-pressed="${FITHELD}">כולל מה שבתיק</button></div>`;
-    box.innerHTML=heroF+kindChips+chipsF+`<div class="fitlist">${fr.slice(0,FITN).map(fundRow).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`; return}
+    box.innerHTML=heroF+kindChips+chipsF+`<div class="wgrid">${fr.slice(0,FITN).map(wcFundH).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`; return}
   const hero=`<div class="fithero"><b>${n} ניירות מדורגים לפי כמה הם מתאימים לתיק שלך${hi?', '+hi+' מהם מתאימים מאוד':''}.</b><span>${fitHeroTxt()} ${uni?`יש נתונים ל-${total} מתוך ${uni} ניירות ברשימה; הנתונים מושלמים בהדרגה, כל שעתיים.`:`יש נתונים ל-${total} ניירות; ${FIT&&rsStale(FIT.updatedAt)?'':'הרשימה מתרחבת בהדרגה.'}`}${when?(FIT&&rsStale(FIT.updatedAt)?' הנתונים נכונים ל-'+when+' ולא מתעדכנים כרגע.':' עודכן '+when+'.'):''} זה דירוג התאמה, לא המלצת קנייה.</span>${!hasRisk()&&canWrite?'<button class="btn sm" type="button" data-prof="edit">להתאים לסוג המשקיע שלי</button>':''}</div>`;
   const lab=k=>{const c=figs[k];const r=c&&c.rating?RATE_HE[c.rating]||c.rating:'';return r};
-  const list=rows.slice(0,FITN).map(r=>{const pr=priceOf(r.k),f=r.f,tier=f.score>=80?'hi':f.score>=65?'mid':'lo', wy=fitCon(r,m);
-    return `<button type="button" class="fitrow" data-open="${esc(r.k)}"><span class="sc ${tier}" aria-label="התאמה ${f.score} מתוך 100">${f.score}</span>${logoHtml(r.k)}<span class="nm"><b><bdi>${esc(r.it.name||r.it.sym)}</bdi>${r.held?' <span class="tag">בתיק</span>':''}${f.over?' <span class="tag" style="background:var(--warn-bg);color:var(--warn)">הקבוצה מלאה</span>':''}</b><span><i dir="ltr">${esc(r.it.sym)}</i> · ${esc(GROUPS[f.g]||'')} · פיזור ${f.div} · איכות ${f.q}${f.fs?' ('+f.fs.grade+')':''} · תמחור ${f.val}${f.pe!=null?' (מכפיל '+Number(f.pe).toFixed(0)+')':''}${fitRowX(f)}${lab(r.k)?' · אנליסטים: '+esc(lab(r.k)):''}</span></span>${pr?`<span class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</span>`:'<span></span>'}</button><p class="fw-con"><b>למה אותר:</b> ${esc(wy.why||'—')}${wy.low.length?` <span class="nm">(חלש ב: ${esc(wy.low.join(', '))})</span>`:''} · <b>מה סותר:</b> ${wy.con.length?esc(wy.con.join(' · ')):'לא נמצא בנתונים שיש לדף'}</p>`+fitWhy(f,r.c,m)}).join('');
-  const fundsAll=FITK==='all'?`<div class="row" style="margin:14px 0 8px"><h3>קרנות שיכולות להתאים</h3><span class="sub">${Math.min(8,fr.length)} מתוך ${fr.length}</span></div><div class="fitlist">${fr.slice(0,8).map(fundRow).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`:'';
-  box.innerHTML=hero.replace('</div>',`<div style="margin-top:6px">${askBtn}</div></div>`)+kindChips+chips+fitcH(secsAll)+(fitcOn()?`<p class="nm" style="margin:0 0 6px">${rows.length} מתוך ${before} עומדים בקריטריונים שלך.</p>`:'')+`<div class="fitlist">${list||'<div class="empty">אין עדיין ניירות עם נתונים בסינון הזה.</div>'}</div>`+(rows.length>FITN?`<button type="button" class="btn" id="fitMore">להציג עוד ${Math.min(60,rows.length-FITN)}</button>`:'')+fundsAll;
+  const mg0=+(S.rules||{}).maxGroup||40, tsum0=Object.values(S.targets||{}).reduce((t,x)=>t+(+x||0),0);
+  const list=rows.slice(0,FITN).map(r=>wcCardH({...r,under:tsum0>0&&(+S.targets[r.f.g]||0)-r.f.w>=2?(+S.targets[r.f.g]||0)-r.f.w:0},m,null,mg0)).join('');
+  const fundsAll=FITK==='all'?`<div class="row" style="margin:14px 0 8px"><h3>קרנות שיכולות להתאים</h3><span class="sub">${Math.min(8,fr.length)} מתוך ${fr.length}</span></div><div class="wgrid">${fr.slice(0,8).map(wcFundH).join('')||'<div class="empty">אין קרנות בסינון הזה.</div>'}</div>`:'';
+  box.innerHTML=hero.replace('</div>',`<div style="margin-top:6px">${askBtn}</div></div>`)+kindChips+chips+fitcH(secsAll)+(fitcOn()?`<p class="nm" style="margin:0 0 6px">${rows.length} מתוך ${before} עומדים בקריטריונים שלך.</p>`:'')+`<div class="wgrid">${list||'<div class="empty">אין עדיין ניירות עם נתונים בסינון הזה.</div>'}</div>`+(rows.length>FITN?`<button type="button" class="btn" id="fitMore">להציג עוד ${Math.min(60,rows.length-FITN)}</button>`:'')+fundsAll;
 }
 // "מה מתאים לתיק" is a tab of its own in the research group (25.10); the search keeps only the search
 document.addEventListener('input',ev=>{const el=ev.target; if(!el||!el.dataset||!el.dataset.fitc||!el.closest('#fitBox2'))return; FITC[el.dataset.fitc]=el.value; try{localStorage.setItem('tr_fitc',JSON.stringify(FITC))}catch(e){} clearTimeout(renderFit.t); renderFit.t=setTimeout(()=>{const a=document.activeElement, k=a&&a.dataset&&a.dataset.fitc; renderFit(); if(k){const e2=document.querySelector(`#fitBox2 [data-fitc="${k}"]`); if(e2)e2.focus({preventScroll:true})}},400)});
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#fitBox2 [data-fitcclr]'); if(!b)return; FITC={sec:'',capMin:'',capMax:'',peMax:'',revgMin:'',dyMin:'',betaMax:'',pmMin:'',rating:''}; try{localStorage.removeItem('tr_fitc')}catch(e){} renderFit()});
 function setSV(v){if(v==='fit'){showTab('fit',true);return} SV='search'; for(const b of document.querySelectorAll('#srchView [data-sv]'))b.setAttribute('aria-pressed',String(b.dataset.sv==='search'));
   $('srchBox').hidden=false;$('sqRes').hidden=!!SEC;if(SEC)$('secPage').hidden=false; try{localStorage.setItem('tr_sv','search')}catch(e){} srchRender()}
-function srchQ(){if(document.body.dataset.page==='fit'){renderFit();return}if(SEC)renderSec();else if(!$('sqRes').hidden&&$('sqRes').innerHTML)srchRender()}
+function srchQ(){if(document.body.dataset.page==='watch'&&WV==='all'){renderFit();return}if(SEC)renderSec();else if(!$('sqRes').hidden&&$('sqRes').innerHTML)srchRender()}
 function srchBoot(){
   document.addEventListener('click',e=>{const r=e.target.closest('.secl[data-sec]');if(!r||e.target.closest('button,a,input,select,label'))return;if(window.getSelection&&String(window.getSelection()))return;e.preventDefault();goSec(r.dataset.sec)});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const r=e.target.closest&&e.target.closest('.secl[data-sec]');if(r&&e.target===r)goSec(r.dataset.sec)});
@@ -24926,8 +24938,8 @@ function srchDb(){
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
 const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
-const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','fit','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
-const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מתאים לתיק',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
+const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מעקב ומה מתאים',ratings:'דירוג',watch:'מעקב ומה מתאים',history:'היסטוריה',reports:'דוחות'};
 const HEADL={news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
@@ -24941,6 +24953,7 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   const want=list.map(x=>x==='pots'?pots().map(pt=>chip('pots',esc(pt.name||'חיסכון'),pt.id)).join('')+chip('pots',pots().length?'+ חיסכון חדש':'+ חיסכון לפי מטרה','new'):chip(x,SUBL[x]||x)).join('');
   setH(row,want)}
 function showTab(t,user){
+  if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
   if(!TABS.includes(t))t='overview';
   try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t); evNav(document.body.dataset.page,t)}}catch(e){}
   document.body.dataset.page=t;   // not data-tab: a click anywhere would then count as a click on a tab button
@@ -24961,7 +24974,7 @@ function showTab(t,user){
   if(t==='compare'){try{loadSymDb().then(()=>renderCmp()); renderCmp()}catch(e){console.error(e)}}
   if(t==='mine'&&window.__tcLib)setTimeout(()=>{libNeed('pdf');libNeed('xlsx')},1500);   // ready before a statement is picked
   if(t==='watch'){try{Promise.all([loadSymDb(),loadFit().then(()=>{FITTRIED=true}),loadAllQ()]).then(()=>{try{renderCands(mAllNow())}catch(e){}})}catch(e){}}
-  if(t==='fit'){try{renderFit(); Promise.all([loadSymDb(),loadFit(),loadAllQ()]).then(()=>{try{renderFit()}catch(e){}})}catch(e){}}
+  if(t==='watch'){try{wvSet(WV)}catch(e){}}
   if(t==='search'){try{loadSymDb().then(()=>srchRender());loadAllQ().then(()=>srchQ())}catch(e){}}
   try{if(user){const pn=document.querySelector('[data-pane="'+t+'"]'),bh=0,top=pn.getBoundingClientRect().top+window.scrollY-bh-10;if(window.scrollY>top)window.scrollTo(0,Math.max(0,top))}}catch(e){}
 }
@@ -27327,8 +27340,8 @@ const GO=[
   {id:'reps',l:'הדוחות שלי (שבועי, חודשי)',k:'דוח שבועי חודשי רבעוני pdf',tab:'reports'},
   {id:'srch',l:'חיפוש נייר: מניות, קרנות ומדדים',k:'חיפוש מניה נייר סימול קרן קרנות מדד מדדים ישראלי תל אביב',tab:'search'},
   {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
-  {id:'fit',l:'מה מתאים לתיק',k:'דירוג התאמה הצעות',tab:'fit'},
-  {id:'watch',l:'מניות במעקב',k:'מעקב רשימה',tab:'watch'},
+  {id:'fit',l:'מה מתאים לתיק (במעקב ומה מתאים)',k:'דירוג התאמה הצעות',tab:'fit'},
+  {id:'watch',l:'מעקב ומה מתאים לתיק',k:'מעקב רשימה מניות במעקב',tab:'watch'},
   {id:'nx',l:'חיבור למציאות: מערכת החדשות',k:'חדשות כתבות ידיעות אירועים מה קורה מציאות חיבור שוק חיפוש',fn:()=>{showTab('news',true); rtGo('news')}},
   {id:'pulse',l:'חיבור למציאות: ההתראות האישיות',k:'התראות אישיות פולס קריטי חשוב עדכון תיק',fn:()=>{showTab('news',true); rtGo('al')}},
   {id:'imap',l:'מפת ההשפעה: מה בחדשות נוגע לתיק שלי',k:'מפה השפעה קשרים שרשרת גרף',fn:()=>imOpenFrom('pf:')},
