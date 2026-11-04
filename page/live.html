@@ -17479,7 +17479,7 @@ function model(P,Q,acct,adj){
     const cc=ccyOfPos(p,Q), rt=rateOf(cc,Q); if(rt==null){if(!noRate.includes(p.sym))noRate.push(p.sym);continue}
     // 4.11: a price that is not today's (kept from before, from the statement, or an older close) has no "day's change":
     // its old pair made a move of another day look like today's
-    const stl=(Q.stale||{})[p.sym]||'', md=((Q.meta||{})[p.sym]||{}).date||'', oldPx=/^(מחיר קודם|מחיר מהדוח)/.test(stl)||(/^סגירה /.test(stl)&&!!md&&md<(cc==='ILS'?(Q.ilDate||''):(Q.usDate||'')));
+    const stl=(Q.stale||{})[p.sym]||'', md=((Q.meta||{})[p.sym]||{}).date||'', oldPx=/^מחיר מהדוח/.test(stl)||(/^(מחיר קודם|סגירה )/.test(stl)&&!!md&&md<(cc==='ILS'?(Q.ilDate||''):(Q.usDate||'')));   // a kept price is today's when its date is the market's last day
     const pxIls=px*rt, val=q*pxIls, pv=oldPx?null:(Q.prev||{})[p.sym];
     const g0=effGroup(p); NAMEOF[p.sym]=p.name; FUNDOF[p.sym]=isFundLike(p.sym,p.name,g0);
     const m=by[p.sym]||(by[p.sym]={sym:p.sym,name:p.name,group:g0,ccy:cc,px,pxIls,qty:0,val:0,cost:0,costVal:0,accts:[],noCost:false,dayPct:pv?(px/pv-1)*100:null,dayIls:0});
