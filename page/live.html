@@ -3011,6 +3011,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="stat" id="kYtdBox"><div class="k" id="kYtdK">מתחילת השנה</div><span class="v" id="kYtd">—</span><div class="d" id="kYtdD"></div></div>
         <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
       </div>
+      <p class="chsay quick-say" id="quickSay" hidden></p>
     </section>
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
@@ -17794,6 +17795,13 @@ function render(){
     if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
     else{de.textContent='—'; de.className='v'; if(kvf||one)dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"'; else dd.innerHTML='אין רישום הפקדות'+fillB}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
+  // 4.11: צ׳יקו says in one sentence what the numbers above add up to (from the same numbers; nothing new, no advice)
+  try{const el=$('quickSay'); if(el){const L=[]; let dp=null, y=null; if(acct==='all'&&!(mH.fund||mH.stock)){try{const dt=HS?depTotal():0; if(dt>0)dp=m.total-dt}catch(e){} try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r.pct}}catch(e){}}
+    if(dp!=null)L.push(dp>=0?`התיק שווה ${ils(dp)} יותר ממה שהפקדת`:`התיק שווה ${ils(-dp)} פחות ממה שהפקדת`);
+    else if(mH.cost)L.push(mH.pnl>=0?`הניירות שווים ${ils(mH.pnl)} יותר ממה שעלו לך`:`הניירות שווים ${ils(-mH.pnl)} פחות ממה שעלו לך`);
+    if(y!=null)L.push(`מתחילת השנה התיק ${y>=0?'עלה':'ירד'} ${spct(Math.abs(y),1).replace(/^[+−-]/,'')}`);
+    if(m.usdPct>=30)L.push(`${pct(m.usdPct,0)} ממנו בדולרים, ולכן גם השער מזיז אותו`);
+    el.hidden=!L.length; if(L.length)el.innerHTML=`<span><b>צ׳יקו:</b> ${esc(L.join('; '))}.</span>`}}catch(e){}
 
   // alerts: the same engine the assistant uses (alertsOf)
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
