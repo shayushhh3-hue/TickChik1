@@ -27160,7 +27160,7 @@ function ilSecMore(k,it){
     <p class="note">מדד הוא לא נייר שקונים ישירות: חשיפה אליו היא דרך קרן מחקה או קרן סל שעוקבת אחריו. חפש "${esc(it.name)}" כדי למצוא קרנות כאלה.</p>`;
   const f=ILF[k]&&ILF[k].v, cls=it.sec||'';
   return `<div class="facts" style="margin-top:6px">${cls?`<div class="fact"><div class="k">סיווג</div><div class="v t">${esc(cls)}</div></div>`:''}${it.kind?`<div class="fact"><div class="k">פרופיל חשיפה</div><div class="v t">${esc(it.kind)}</div></div>`:''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
-    <p class="note" style="margin:8px 0 4px">דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן: בדפים של הקרן.</p>${ilLinks(k)}
+    <p class="note" style="margin:8px 0 4px">דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.</p>${ilLinks(k)}
     <p class="note">המחיר הרשמי של קרן נאמנות נקבע פעם ביום, אחרי סגירת הבורסה, ומתפרסם במאיה. פאנדר וביזפורטל הם אתרים חיצוניים, והקישורים פותחים אותם בחלון חדש.</p>`;
 }
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----

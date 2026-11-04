@@ -207,7 +207,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     assert.deepEqual(r.old,['Q2 2026 · פורסם 29.7 · רווח למניה 3.65$ (מעל הצפי) · הכנסות 76.40 מיליארד דולר (מעל הצפי)'],'the report before it');
     assert.ok(!r.tbl,'no table of the report\'s figures'); assert.match(r.txt,/זה ניתוח, לא המלצה לקנות או למכור/);
     await pg.evaluate(()=>document.querySelector('#secPage [data-repnews="MSFT"]').click()); await pg.waitForTimeout(600);
-    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks a')].some(a=>/cloud grows/.test(a.textContent)&&a.target==='_blank')),'the articles, opening outside');
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#secPage .replinks .srcref')].some(a=>/cloud grows/.test(a.textContent))&&!document.querySelector('#secPage .replinks a[target="_blank"]')),'4.11: the articles named, no way out of the site');
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'nothing sideways');
     // "הבנתי" hides that report's message for good
     await tab(pg,'overview'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#desk li.rep [data-repban]').click()); await pg.waitForTimeout(300);
@@ -286,7 +286,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>p.textContent.replace(/\s+/g,' ').trim()),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
         news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
-      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.match(td.L.find(x=>/^היום:/.test(x))||'',/^היום: התיק (עלה|ירד) ב-[\d.]+% \(.*\)(, בעיקר בגלל .+)?\.$/);
+      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.match(td.L.find(x=>/^היום:/.test(x))||'',/^היום: התיק (עלה|ירד|עולה|יורד) ב-[\d.]+% \(.*\)(, בעיקר בגלל .+)?\.$/);   // 4.11: present while a market is open
       assert.match(td.L.find(x=>/^לטיפול:/.test(x))||'',/^לטיפול: 2 חריגות מהכללים שלך ונושא אחד לבדיקה לבקרה ›$/,JSON.stringify(td.L));
       assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
       // a mail kind switched on from the list: the owner's consent, by a click
@@ -442,10 +442,10 @@ test('Israeli securities in the search: Tel Aviv shares in Hebrew, the indices, 
     r=await q('5129283'); assert.match(r[0]||'',/^5129283 .*לחפש במאיה את נייר מספר 5129283/);
     const t0=Date.now(); await pg.evaluate(()=>document.querySelector('#sqRes [data-open="5129283"]').click());
     assert.ok(Date.now()-t0<3000,'the page stays responsive while Maya answers: '+(Date.now()-t0)+'ms'); await pg.waitForTimeout(1200);
-    const f=await pg.evaluate(()=>({h:document.querySelector('#secPage h2')?.textContent,px:document.querySelector('#secPage .pxrow .v')?.textContent,links:[...document.querySelectorAll('#secPage .ilx a')].map(a=>a.href),
+    const f=await pg.evaluate(()=>({h:document.querySelector('#secPage h2')?.textContent,px:document.querySelector('#secPage .pxrow .v')?.textContent,links:(document.querySelector('#secPage .ilx')||{}).textContent||'',
       rep:!!document.querySelector('#secPage .repbox'),txt:document.getElementById('secPage').textContent}));
     assert.equal(f.h,'הראל מחקה נאסד"ק 100'); assert.equal(f.px,'₪367.77'); assert.ok(!f.rep,'no company report box for a fund');
-    assert.deepEqual(f.links,['https://maya.tase.co.il/he/funds/mutual-funds/5129283','https://www.funder.co.il/fund/5129283','https://www.bizportal.co.il/mutualfunds/quote/profile/5129283']);
+    assert.match(f.links,/נתוני הקרן מגיעים ממאיה.*5129283/,'4.11: the source named, no links out');
     assert.match(f.txt,/מחיר רשמי 19\.10/); assert.match(f.txt,/נקבע פעם ביום/);
     // a number Maya does not know: "looking", then its answer, and the page never stuck
     {const t1=Date.now(); await pg.evaluate(()=>window.__srch.open('9999999')); assert.ok(Date.now()-t1<3000,'responsive: '+(Date.now()-t1)+'ms');
@@ -710,7 +710,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.ok(v.open); assert.equal(v.h,'אנבידיה היכתה את התחזיות והעלתה את התחזית'); assert.equal(v.lv,'התראה קריטית'); assert.match(v.chain,/האירוע ← NVDA ← ההחזקה שלך/);
     assert.deepEqual(v.ms.map(x=>x.split(' ')[0]),['חשיבות','רלוונטיות','ביטחון'],'three measures, apart'); assert.match(v.ms[0],/קריטית$/); assert.match(v.why,/ההחזקה עצמה מוזכרת: NVDA/);
     assert.match(v.dir,/כיוון אפשרי: השפעה חיובית אפשרית \(השערה מהקריאה, לא השפעה שנמדדה\)/); assert.match(v.dir,/נמדד מאז הפרסום|השפעה בפועל על המחיר עוד לא נמדדה/);
-    assert.ok(['מפת השפעה','שאל את צ׳יקו','לכתבה ↗','נקראה ✓','☆ לשמור'].every(x=>v.acts.includes(x)),'the actions, read on opening: '+JSON.stringify(v.acts));
+    assert.ok(['מפת השפעה','שאל את צ׳יקו','נקראה ✓','☆ לשמור'].every(x=>v.acts.includes(x)),'the actions, read on opening: '+JSON.stringify(v.acts));
     // closing the sheet: the icon goes, the alert stays in the center (and is read)
     await pg.click('#plShX'); await pg.waitForTimeout(300);
     {const lb=await pg.evaluate(()=>[...document.querySelectorAll('#stBub .stc')].map(b=>b.getAttribute('aria-label')).join('|')+' hidden:'+document.getElementById('stBub').hidden+' st:'+JSON.stringify(window.__nx.state().pl||null)); assert.ok(!/אנבידיה/.test(lb.split(' hidden:')[0])||/hidden:true/.test(lb),'off the icons: '+lb)}
