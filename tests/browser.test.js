@@ -1983,7 +1983,7 @@ test('1.11 the insiders: the security page tells a planned sale from an award, t
     await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('#secPage .ins-l'),null,{timeout:10000});
     const sec=await pg.evaluate(()=>({sum:document.querySelector('#secPage .ins-sum').innerText.replace(/\s+/g,' '),rows:[...document.querySelectorAll('#secPage .ins-r')].map(r=>({cls:r.className,txt:r.innerText.replace(/\s+/g,' '),link:r.querySelector('a[href*="sec.gov"]')?.href})),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(sec.ox,false); assert.match(sec.sum,/ב-90 הימים: 1 קניות בשוק \(1 אנשים, \$85,000\) · 1 מכירות בשוק \(1 אנשים, \$21,900,000, 1 בתוכנית מתוכננת\) · 1 דיווחי תגמול/);
-    assert.equal(sec.rows.length,3); assert.match(sec.rows[0].cls,/k-sell mat/); assert.match(sec.rows[0].txt,/Huang Jen Hsun.*President and CEO.*מכירה בשוק 120,000 מניות · \$21,900,000.*תוכנית מסחר מתוכננת \(10b5-1\).*מחזיק אחרי: 75,000,000.*מהותי:/); assert.match(sec.rows[0].link,/0001-26-1-index\.htm$/);
+    assert.equal(sec.rows.length,3); assert.match(sec.rows[0].cls,/k-sell mat/); assert.match(sec.rows[0].txt,/Huang Jen Hsun.*President and CEO.*מכירה בשוק 120,000 מניות · \$21,900,000.*תוכנית מסחר מתוכננת \(10b5-1\).*מחזיק אחרי: 75,000,000.*מהותי:/); assert.equal(sec.rows[0].link,undefined,'4.11: no link out of the site'); assert.match(sec.rows[0].txt,/דווח ל-SEC/,'the source named');
     assert.match(sec.rows[1].txt,/קנייה בשוק 500 מניות/,'the trades with their own money first'); assert.match(sec.rows[2].txt,/Kress Colette.*תגמול \/ הענקה 5,000 מניות/); assert.doesNotMatch(sec.rows[2].txt,/מהותי/);
     assert.match(await pg.evaluate(()=>document.querySelector('#secPage .ins-l').nextElementSibling.textContent),/קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול/);
     // a company checked with no filings says so
@@ -1995,7 +1995,7 @@ test('1.11 the insiders: the security page tells a planned sale from an award, t
     // the alert center: the filing as a measured fact, with the link and the way to the security
     await pg.click('[data-rt="al"]'); await pg.waitForTimeout(500); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
     const al=await pg.evaluate(()=>{const c=[...document.querySelectorAll('#ixFull .pl')].find(x=>/בעלי עניין: NVDA/.test(x.textContent)); return c?{txt:c.innerText.replace(/\s+/g,' '),link:c.querySelector('a[href*="sec.gov"]')?.href,go:!!c.querySelector('[data-gosec="NVDA"]')}:null});
-    assert.ok(al,'the alert is drawn'); assert.match(al.txt,/מכירה בשוק של 120,000 מניות בשווי \$21,900,000, בתוכנית מסחר מתוכננת/); assert.match(al.txt,/עובדה על העסקה של המדווח, לא על עתיד החברה/); assert.ok(al.link&&al.go);
+    assert.ok(al,'the alert is drawn'); assert.match(al.txt,/מכירה בשוק של 120,000 מניות בשווי \$21,900,000, בתוכנית מסחר מתוכננת/); assert.match(al.txt,/עובדה על העסקה של המדווח, לא על עתיד החברה/); assert.ok(!al.link&&al.go,'4.11: the filing named, no link out; the security\'s page in the site');
     // צ׳יקו's stock focus carries the 90 days
     const f=await pg.evaluate(()=>window.__focus('st:NVDA')); assert.equal(f.data.insiders_90d.open_market_sells,1); assert.equal(f.data.insiders_90d.planned_program_sales,1); assert.equal(f.data.insiders_90d.pay_mechanics_filings,1);
     assert.deepEqual(pg.errs,[]);
