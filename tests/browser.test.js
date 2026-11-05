@@ -2301,8 +2301,10 @@ test('the home chart: the value over months, a range to choose, a cursor that re
     await pg.waitForFunction(()=>{const b=document.getElementById('wChart'); return b&&!b.hidden&&document.querySelector('#wChS path')},null,{timeout:20000});
     const r0=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r0,/^(שנה|מאז .+): [▲▼] ₪[\d,]+/);
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#wChS text')].every(t=>!/^\d+\.\d+/.test(t.textContent))),'the axis names months, never days');
-    await pg.click('[data-wr="0"]'); await pg.waitForTimeout(200);
-    assert.equal(await pg.evaluate(()=>document.querySelector('[data-wr="0"]').getAttribute('aria-pressed')),'true');
+    // 5.11: the ranges the history does not reach are not offered; with none left the chart says since when
+    if(await pg.evaluate(()=>!document.querySelector('#wchH .wch-rg').hidden)){await pg.click('[data-wr="0"]'); await pg.waitForTimeout(200);
+      assert.equal(await pg.evaluate(()=>document.querySelector('[data-wr="0"]').getAttribute('aria-pressed')),'true')}
+    else assert.match(r0,/^מאז /,'no range buttons, and the line says since when');
     const box=await (await pg.$('#wChS')).boundingBox(); await pg.mouse.move(box.x+box.width*0.15,box.y+box.height/2,{steps:3}); await pg.waitForTimeout(150);
     const r1=await pg.evaluate(()=>document.getElementById('wChR').textContent); assert.match(r1,/: ₪[\d,]+ · מאז \u200e?[+−-]₪/,'the cursor reads a point: '+r1);
     await pg.focus('#wChS'); await pg.keyboard.press('ArrowRight'); assert.match(await pg.evaluate(()=>document.getElementById('wChR').textContent),/: ₪[\d,]+/);

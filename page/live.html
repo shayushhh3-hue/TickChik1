@@ -1831,7 +1831,7 @@ body:not([data-page="overview"]) .hero .worth{flex-direction:column;padding:12px
 body:not([data-page="overview"]) .hero .ktiles,body:not([data-page="overview"]) .hero .mchip{display:none}
 /* the kind tiles: stocks, funds, cash (and the dollar part), each with its value, its share and a coloured bar */
 .ktiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.ktiles.n4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ktiles.n4{grid-template-columns:repeat(4,minmax(0,1fr))} #holdSec.nocost th:nth-child(7),#holdSec.nocost th:nth-child(8),#holdSec.nocost td:nth-child(7),#holdSec.nocost td:nth-child(8){display:none} .ktiles.n2{grid-template-columns:repeat(2,minmax(0,1fr))} .ktiles.n1{grid-template-columns:minmax(0,1fr)}
 .kt{display:flex;flex-direction:column;gap:3px;min-width:0;padding:12px 12px 11px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow);color:var(--ink);font:inherit;text-align:start;cursor:default}
 button.kt{cursor:pointer} button.kt:hover{border-color:#C4B5FD}
 .kt[aria-pressed="true"]{box-shadow:0 0 0 2px #A78BFA,var(--shadow);border-color:transparent}
@@ -1857,8 +1857,8 @@ html[data-theme="dark"] .insight{background:linear-gradient(90deg,rgb(45 212 191
 /* the four quick actions */
 .qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 @media (max-width:360px){.qa{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.qa-b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:88px;padding:12px 6px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--vio-ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);text-align:center}
-.qa-b svg{width:30px;height:30px}
+.qa-b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:64px;padding:8px 6px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--vio-ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);text-align:center}
+.qa-b svg{width:24px;height:24px}   /* 5.11: lower (64px), they lead to screens the bar also reaches */
 .qa-b:hover{border-color:#C4B5FD}
 .qa-b.pri{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 10px 24px rgb(124 58 237 / .3)}
 html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
@@ -2472,7 +2472,7 @@ button.soon-e{cursor:pointer} button.soon-e:hover .sym{text-decoration:underline
 .soon-none{margin:0;font-size:13px;color:var(--muted)}
 .soon-dv{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:8px 0 0;padding:10px 12px;border-radius:14px;background:rgb(16 185 129 / .08);border:1px solid rgb(16 185 129 / .25);font-size:13.5px;color:var(--ink)}
 .soon-dv .sd-ic{width:10px;height:10px;border-radius:50%;background:#10B981;margin-inline-end:2px}
-@media (min-width:761px){.soon-s{flex-wrap:wrap;overflow:visible} .soon-d{flex:1 1 170px;max-width:none}}
+@media (min-width:761px){.soon-s{flex-wrap:wrap;overflow:visible} .soon-d{flex:0 1 220px;max-width:280px}}   /* 5.11: a day with one line does not stretch over half the page */
 /* 28.10: צ׳יקו's button on a phone: a small round face without the word, so it covers less of the page */
 @media (max-width:640px){
   .chatfab{width:52px;height:52px;min-height:52px;padding:0;justify-content:center;inset-inline-end:12px;bottom:calc(96px + env(safe-area-inset-bottom,0px))}
@@ -17325,7 +17325,10 @@ function usStatusTxt(now){
 const pxLabelTxt=()=>{let l=String(Q.priceLabel||''); const usLive=/^מסחר חי, עיכוב/.test(l);
   if(!usLive){l=l.replace(/\s*·\s*ארה״ב: סגירה [\d.]+/,'').replace(/^סגירה ([\d.]+) · תל אביב: סגירה ([\d.]+)$/,'תל אביב: סגירה $2'); const us=usStatusTxt(); if(us)l=(l?l+' · ':'')+us}
   // 1.11 (9): said as what it is: how many securities still lack the last close, not a line that contradicts the first
-  const lg=Q.lag&&Q.lag.us; if(lg&&lg.want)l+=` · ל-${lg.n||1}${lg.of?' מתוך '+lg.of:''} ניירות עוד אין את סגירת ${dmy(lg.want)}`;
+  // 5.11: counted over the person's own holdings (the server's count is over every security it prices, 35 for a portfolio
+  // of 8); nothing said when all of theirs have the close
+  const lg=Q.lag&&Q.lag.us; if(lg&&lg.want){const mine=[...new Set(((P&&P.positions)||[]).filter(p=>p&&+p.qty&&!ilPos(p)).map(p=>p.sym))], late=mine.filter(k=>{const d=((Q.meta||{})[k]||{}).date; return d&&d<lg.want}).length;
+    if(late)l+=` · ל-${late===1?'נייר אחד':late+' ניירות'} שלך עוד אין את סגירת ${dmy(lg.want)}`}
   return l};
 let FRESH_L='';
 const freshTxt=()=>`${(()=>{try{return FRESH_L=pxLabelTxt()}catch(e){return FRESH_L=Q.priceLabel||''}})()} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()||/נפתחת/.test(FRESH_L||'')?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
@@ -17872,6 +17875,10 @@ function render(){
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
   {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+  // 5.11: no buying price anywhere: the two columns of cost and profit would be a dash in every row; they leave, and the
+  // line above says where to add the costs
+  {const sec=$('holdSec'), nc=!(m.pos||[]).some(p=>p.cost>0); if(sec)sec.classList.toggle('nocost',nc);
+    const hs=$('holdSub'); if(hs&&nc&&m.pos.length&&!/בלי עלויות קנייה/.test(hs.textContent))hs.textContent+=' · בלי עלויות קנייה, ולכן בלי רווח והפסד (אפשר להוסיף ב"התיק שלי")'}
   const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x)=>`<tr class="sec"><td colspan="8">${t} · ${n}${x||''}</td></tr>`;
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
   for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
@@ -18795,9 +18802,10 @@ function renderKinds(m,both){
   const money=v=>HC==='usd'&&fxV?dlr(v/fxV):ils(v);
   const tile=(k,lab,v,bc,kv)=>{const w=T?v/T*100:0, press=kv?` aria-pressed="${KV===kv}" data-kv="${kv}" title="${kv==='stock'?'רק המניות':'רק הקרנות'}: השווי, השינוי היומי והרווח שלהן"`:'';
     return `<${kv?'button type="button"':'div'} class="kt" data-k="${k}"${press}><span class="kt-k">${lab}</span><span class="kt-v">${money(v)}</span><span class="kt-p">${pct(w,1)}</span><i class="kt-bar" style="--w:${Math.min(100,w).toFixed(1)}%;--bc:${bc}" aria-hidden="true"></i></${kv?'button':'div'}>`};
-  const L=[tile('stock','מניות',sv,'#2DD4BF',both?'stock':null),tile('fund','קרנות',fv,'#7C3AED',both?'fund':null),tile('cash','מזומן',m.cash||0,'#A1A1AA',null)];
+  // 5.11: a tile of nothing (no cash, or a portfolio of shares only) is left out instead of "₪0 · 0.0%"
+  const L=[sv>0?tile('stock','מניות',sv,'#2DD4BF',both?'stock':null):'',fv>0?tile('fund','קרנות',fv,'#7C3AED',both?'fund':null):'',(m.cash||0)>=1?tile('cash','מזומן',m.cash,'#A1A1AA',null):''].filter(Boolean);
   if(uv>0&&T&&uv/T>0.02&&uv/T<0.98)L.push(tile('usd','בדולרים',uv,'#6366F1',null));
-  box.classList.toggle('n4',L.length===4); box.innerHTML=L.join(''); box.hidden=!T;
+  box.classList.toggle('n4',L.length===4); box.classList.toggle('n2',L.length===2); box.classList.toggle('n1',L.length===1); box.innerHTML=L.join(''); box.hidden=!T;
 }
 // the chip at the top of the card: the last month's change of the view, as the mock-up's "+12.8% בחודש האחרון"
 // 28.10: the compact value card on the other screens: beside the value, three short lines in words, from the figures the
@@ -24033,7 +24041,10 @@ const plSt=()=>{const st=NEWSST=nxState(); st.pl=st.pl||{}; return st.pl};
 // the alerts to show: what the server made, under the preferences as they are now (a level switched off is not shown)
 function plItems(){const pr=plPrefs(); if(!PULSE||!pr.on)return []; return (PULSE.items||[]).filter(a=>a&&pr.lv[a.lv])}
 const plUnread=a=>{const s=plSt()[a.k]; return !s||!(s.r>=a.ver)};
-const plFloat=a=>(a.lv==='crit'||a.lv==='imp')&&plUnread(a)&&!((plSt()[a.k]||{}).d>=a.ver);
+// 5.11: only what is fresh floats over צ׳יקו (the last two days); an important item from last week that was never opened
+// waits in "מה נוגע לתיק" instead of growing a "+57" over the page
+const PL_FLOAT_H=48;
+const plFloat=a=>(a.lv==='crit'||a.lv==='imp')&&plUnread(a)&&!((plSt()[a.k]||{}).d>=a.ver)&&!(Date.now()-Date.parse(a.up||a.at||0)>PL_FLOAT_H*36e5);
 function plSet(k,what,v){const P2=plSt(), o=P2[k]||(P2[k]={}); if(v==null)delete o[what]; else o[what]=v; NEWSST=nxState(); nxSave()}
 const plSort=(a,b)=>(plUnread(b)-plUnread(a))||(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1);
 const plByK=k=>(PULSE&&PULSE.items||[]).find(a=>a.k===k)||null;
