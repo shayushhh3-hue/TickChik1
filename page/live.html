@@ -1498,6 +1498,8 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 /* 28.10: the control screen's three parts: a segmented row at the top, and only the chosen part's sections below it */
 /* 4.11: on the control screen צ׳יקו is a slim strip (the button that opens him is everywhere anyway) */
 #anaSec .ae-t .sub{display:none} #anaSec .ana-chips .btn:not([data-ana="explain"]):not([data-ana="open"]){display:none}
+.ladder tr.far{display:none} .ladder tr.lad-more td{text-align:center;padding-top:10px}
+[data-pane="risk"] > section[aria-labelledby="hHeat"]{display:none!important}   /* 5.11: "מה זז היום" is on the home and in "מה קורה בתיק" */
 .ptnav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
 .ptnav .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap;padding-inline:12px}
 .ptnav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .pt-off{display:none!important}
@@ -2896,7 +2898,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="form">
           <label for="wiMonthly">אוסיף להפקדה החודשית (₪)<input type="number" id="wiMonthly" step="100" value="0"><input type="range" class="wi-r" id="wiMonthlyR" min="-2000" max="5000" step="100" value="0" aria-label="אוסיף להפקדה החודשית, בשקלים"></label>
           <label for="wiYears">אשקיע עוד שנים<input type="number" id="wiYears" step="1" min="-30" max="30" value="0"><input type="range" class="wi-r" id="wiYearsR" min="-20" max="20" step="1" value="0" aria-label="אשקיע עוד שנים"></label>
-          <label for="wiRate">התשואה תהיה שונה ב- (נק׳ אחוז)<input type="number" id="wiRate" step="0.5" min="-15" max="15" value="0"><input type="range" class="wi-r" id="wiRateR" min="-8" max="8" step="0.5" value="0" aria-label="התשואה תהיה שונה ב, נקודות אחוז"></label>
+          <label for="wiRate">התשואה תהיה שונה ב- (נקודות אחוז)<input type="number" id="wiRate" step="0.5" min="-15" max="15" value="0"><input type="range" class="wi-r" id="wiRateR" min="-8" max="8" step="0.5" value="0" aria-label="התשואה תהיה שונה ב, נקודות אחוז"></label>
           <label for="wiCrash">ירידה חד-פעמית בשוק עכשיו (%)<input type="number" id="wiCrash" step="5" min="0" max="60" value="0"><input type="range" class="wi-r" id="wiCrashR" min="0" max="60" step="5" value="0" aria-label="ירידה חד-פעמית בשוק עכשיו, באחוזים"></label>
         </div>
         <p class="wi-out" id="wiOut"></p>
@@ -3012,6 +3014,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
       </div>
       <p class="chsay quick-say" id="quickSay" hidden></p>
+      <p class="nm quick-3">שלושה מספרים, שלוש שאלות: <b>מול העלות</b> כמה הניירות שקנית שווים יותר ממה ששילמת עליהם; <b>מול ההפקדות</b> כמה התיק כולו (כולל מזומן ודיבידנדים) שווה יותר מהכסף שהכנסת; <b>לאורך התקופה</b> התשואה מחודש לחודש, בלי ההפקדות עצמן. לכן הם לא שווים זה לזה.</p>
     </section>
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
@@ -17590,7 +17593,7 @@ function alertsOf(m){
   if(+R.usdCap>0&&m.total>0&&m.usdPct>+R.usdCap){A.push(['crit','מטבע',`החשיפה לדולר היא ${pct(m.usdPct)} מהתיק, מעל התקרה של ${pct(+R.usdCap,0)} שקבעת.`,['דולר']]);const u=A[A.length-1];
     u.why={src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(+R.usdCap,0))} מהתיק בדולרים`],['בפועל',`${nn(pct(m.usdPct))} · ${nn(ils(m.usdPct/100*m.total))}`],['שער הדולר',nn(Q.usdIls.toFixed(3))]],tab:'settings',tl:'לשנות את התקרה'};u.each=[{key:'usd:cap',text:u[2]}]}
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
-  if(tsum>0) for(const k in GROUPS){const d=m.groups[k].w-(+S.targets[k]||0); if(Math.abs(d)>=R.drift){A.push(['warn','סטייה',`${GROUPS[k]} ${d>0?'מעל':'מתחת'} ליעד ב-${Math.abs(d).toFixed(1)} נק׳ אחוז (${ils(Math.abs(d)/100*m.total)}).`,[GROUPS[k]]]);A[A.length-1].why=whyDrift(k,d,m)}}
+  if(tsum>0) for(const k in GROUPS){const d=m.groups[k].w-(+S.targets[k]||0); if(Math.abs(d)>=R.drift){A.push(['warn','סטייה',`${GROUPS[k]} ${d>0?'מעל':'מתחת'} ליעד ב-${Math.abs(d).toFixed(1)} נקודות אחוז (${ils(Math.abs(d)/100*m.total)}).`,[GROUPS[k]]]);A[A.length-1].why=whyDrift(k,d,m)}}
   if(pxLate()) A.push(['warn','נתונים',`המחירים עודכנו ${ago(Q.updatedAt)}, ועדכון מתוכנן לא הגיע מאז. עד העדכון הבא הבקרה מחושבת לפי המחירים האלה.`]);
   const lagged=new Set();
   for(const g of pxLagInfo(m)){g.syms.forEach(x=>lagged.add(x)); const n=g.syms.length;
@@ -17697,7 +17700,7 @@ function healthOf(m){
     if(known)parts.push({k:'cost',t:'עלויות',w:5,s:lin(r,0.3,1.5),d:`עמלות כ-${ils(yr)} בשנה (לפי ${months} חודשים), ${pct(r,2)} מהשווי`})}catch(e){}
   try{const rows=dnaMonths().filter(r=>r.chg!=null); if(rows.length>=3){const worst=Math.min(...rows.map(r=>r.chg)); parts.push({k:'vol',t:'תנודתיות',w:6,s:lin(-worst,4,15),d:`החודש הגרוע ${spct(worst)} מתוך ${rows.length} חודשים (אחרי ניכוי הפקדות)`})}}catch(e){}
   try{const yrs=+S.years||0, figs=fitFigs(), bw=m.pos.filter(p=>figs[p.sym]&&figs[p.sym].beta!=null), beta=bw.length?bw.reduce((t,p)=>t+figs[p.sym].beta*p.w,0)/bw.reduce((t,p)=>t+p.w,0):null;
-    if(yrs&&beta!=null){const want=yrs<3?0.9:yrs<7?1.2:1.6; parts.push({k:'fit',t:'התאמה לאופק',w:6,s:lin(beta,want,want+0.6),d:`בטא ${beta.toFixed(2)} מול אופק של ${yrs} שנים${yrs<3?' (קצר: מתאים נמוך מ-0.9)':yrs<7?' (בינוני: עד 1.2)':' (ארוך: עד 1.6)'}`})}}catch(e){}
+    if(yrs&&beta!=null){const want=yrs<3?0.9:yrs<7?1.2:1.6; parts.push({k:'fit',t:'התאמה לאופק',w:6,s:lin(beta,want,want+0.6),d:levelOf()==='new'?`כשהשוק זז ב-1%, התיק זז בממוצע ב-${beta.toFixed(1)}%; לאופק של ${yrs} שנים זה ${beta<=want?'בטווח':'מעל מה'} שמתאים${beta<=want?'':' (עד '+want+')'}`:`בטא ${beta.toFixed(2)} מול אופק של ${yrs} שנים${yrs<3?' (קצר: מתאים נמוך מ-0.9)':yrs<7?' (בינוני: עד 1.2)':' (ארוך: עד 1.6)'}`})}}catch(e){}
   {const noPx=(P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).length, old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)).length, late=(()=>{try{return !!pxLate()}catch(e){return false}})();
     const bad=noPx*2+old+(late?1:0)+(m.missingCost||0); parts.push({k:'data',t:'איכות הנתונים',w:4,s:Math.max(0,1-bad*0.2),d:bad?[noPx?noPx+' בלי מחיר':'',old?old+' עם מחיר ישן':'',m.missingCost?m.missingCost+' בלי עלות':'',late?'המחירים לא עודכנו':''].filter(Boolean).join(' · '):'מחירים ועלויות מלאים'})}
   const W=parts.reduce((t,x)=>t+x.w,0), score=Math.round(parts.reduce((t,x)=>t+x.w*x.s,0)/W*100);
@@ -17716,7 +17719,7 @@ function renderHealth(m){
   $('healthSub').textContent=`${H.parts.length} בדיקות · משקלים לפי הכללים שלך`;
   // 1.11 (18): the score over time: one mark a month, kept in the account; and said what it is not
   try{const ym=new Date().toISOString().slice(0,7); S.hsc=S.hsc||{}; if(canWrite&&SETK&&!LOCAL&&SYMDB&&S.hsc[ym]==null){S.hsc[ym]=H.score; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)} const hist=Object.entries(S.hsc).sort().slice(-7), el=$('hHist');
-    if(el)el.innerHTML=(hist.length>1?`<p class="nm">לאורך זמן: ${hist.map(([k,v])=>`${k.slice(5)}/${k.slice(2,4)} <b>${v}</b>`).join(' · ')}</p>`:'')+'<p class="nm">המדד בודק את המבנה לפי הכללים שלך; הוא לא הבטחה לתשואה. נשמר ציון אחד לחודש, להשוואה.</p>'}catch(e){}
+    if(el)el.innerHTML=(hist.length>1?`<p class="nm">לאורך זמן: ${hist.map(([k,v])=>`${k.slice(5)}/${k.slice(2,4)} <b>${v}</b>`).join(' · ')}</p>`:'')}catch(e){}
   $('hParts').innerHTML=H.parts.map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('');
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mixv]'); if(!b)return; try{localStorage.setItem('tr_mixview',b.dataset.mixv)}catch(x){} try{render()}catch(x){}});
@@ -17799,13 +17802,14 @@ function render(){
   try{const el=$('quickSay'); if(el){const L=[]; let dp=null, y=null; if(acct==='all'&&!(mH.fund||mH.stock)){try{const dt=HS?depTotal():0; if(dt>0)dp=m.total-dt}catch(e){} try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r.pct}}catch(e){}}
     if(dp!=null)L.push(dp>=0?`התיק שווה ${ils(dp)} יותר ממה שהפקדת`:`התיק שווה ${ils(-dp)} פחות ממה שהפקדת`);
     else if(mH.cost)L.push(mH.pnl>=0?`הניירות שווים ${ils(mH.pnl)} יותר ממה שעלו לך`:`הניירות שווים ${ils(-mH.pnl)} פחות ממה שעלו לך`);
-    if(y!=null)L.push(`מתחילת השנה התיק ${y>=0?'עלה':'ירד'} ${spct(Math.abs(y),1).replace(/^[+−-]/,'')}`);
+    if(y!=null){const yl=(($('kYtdK')||{}).textContent||'מתחילת השנה').trim(); L.push(`${yl} התיק ${y>=0?'עלה':'ירד'} ${spct(Math.abs(y),1).replace(/^[+−-]/,'')}`)}
     if(m.usdPct>=30)L.push(`${pct(m.usdPct,0)} ממנו בדולרים, ולכן גם השער מזיז אותו`);
     el.hidden=!L.length; if(L.length)el.innerHTML=`<span><b>צ׳יקו:</b> ${esc(L.join('; '))}.</span>`}}catch(e){}
 
   // alerts: the same engine the assistant uses (alertsOf)
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
-  const A=alertsOf(m);
+  // 5.11: a price that did not come is said once, in the morning card above with its buttons; the list keeps the portfolio's own matters
+  const A=alertsOf(m).filter(a=>!(a[1]==='מחיר'&&$('deskSec')&&!$('deskSec').hidden&&/מחיר/.test(($('desk')||{}).textContent||'')));
   const tagFor={crit:'חריגה',warn:'לבדיקה',ok:'תקין',info:'מידע'};
   const line=a=>`${tagFor[a[0]]} · ${a[1]}: ${a[2]}`;
   const grp=[['crit','חריגות'],['warn','לבדיקה'],['info','מידע']].map(([sv,title])=>{const g=A.filter(a=>a[0]===sv); if(!g.length)return '';
@@ -17857,7 +17861,7 @@ function render(){
     return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s')}<span class="sym">${esc(lab(p.sym))}</span>${nxDotH(p.sym)}${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
     <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
-    <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
+    <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(/^מחיר קודם/.test(old)&&((Q.meta||{})[p.sym]||{}).date?'מחיר מ-'+dmy(Q.meta[p.sym].date).slice(0,5):/^מחיר קודם/.test(old)?'מחיר לא עדכני':old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>`};
   {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
@@ -18033,7 +18037,7 @@ function renderPlan(mAll){
     run+=(d?+d.amount||0:0)+onAmt-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     pd+=B+onAmt; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=(d?+d.amount||0:0)+onAmt; ai+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     CH.push({ym,pd,pi,ad,ai,act:m<=lastMark,buys:buys.slice(),cur:m===st.cur});
-    const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':''].join(' ');
+    const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur+3?'far':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?'<div class="nm">החודש</div>':m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
     <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):'<span class="nm">צבירה</span>'}</div></td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
@@ -18049,6 +18053,8 @@ function renderPlan(mAll){
    drawChart(L?pts:CH)}
   drawFwd(project(mAll.total,MTOT(),Math.max(1,Math.min(40,+S.years||1)),+S.ratePct||0),todo.length&&st.lad.complete?(lastM-st.cur+1)/12:null,mAll.pnl,mAll.missingCost);
   try{renderGoal(mAll)}catch(e){}
+  // 5.11: three months ahead, the rest a tap away (the plan ran 17 rows to its end)
+  {const far=Math.max(0,nRows-(st.cur+4)); if(far>0)h+=`<tr class="lad-more"><td colspan="4"><button type="button" class="btn sm" data-ladall="1">${LADALL?'להציג רק 3 חודשים קדימה':`להציג את כל הלוח (עוד ${far} חודשים, עד ${ymShort(ymAdd(st.start,nRows-1))})`}</button></td></tr>`}
   if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
   try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
@@ -18291,7 +18297,7 @@ function renderDecomp(){
 // on the viewer's own data; nothing saved changes, only how it is added up.
 function calcFixNote(){
   const el=$('calcFix'); if(!el)return; let off=false; try{off=localStorage.getItem('tr_calcfix_1310')==='1'}catch(e){}
-  if(off||!HS||!P||!Q){el.hidden=true;return}
+  if(off||!HS||!P||!Q||Date.now()>Date.parse('2026-11-01T00:00:00+02:00')){el.hidden=true;return}   // 5.11: a note of 13.10, retired
   const fx=Q.usdIls, L=[];
   const depOld=(+HS.depIlsNow||0)+allDep().reduce((t,d)=>t+(+d.amount||0),0), depNew=depTotal()-depUp();
   if(Math.abs(depOld-depNew)>=1){const w=(+HS.depIlsNow||0)-depNet(), p=depOld-(+HS.depIlsNow||0)-planDepExtra();
@@ -18591,7 +18597,7 @@ function anomaliesOf(m){
   // 1. a day's move against the security's own year; 2. the swings of the last two weeks against the sixty days before
   for(const p of held){const C=CLOSES[p.sym]; if(!C||!C.c||C.c.length<30){if(CLOSES[p.sym]===undefined&&held.length<=25)try{loadCloses(p.sym).then(()=>{if(document.body.dataset.page==='state')renderState()})}catch(e){} continue}
     const n=C.c.length, sd=sdOf(C.c,n-60,n); if(sd&&p.dayPct!=null&&Math.abs(p.dayPct)>=2){const z=Math.abs(p.dayPct)/sd; if(z>=2.5){const c=anomCause(p.sym);
-      out.push({k:'px',sym:p.sym,what:`${lab(p.sym)} ${spct(p.dayPct,1)} ביום המסחר האחרון`,vs:`יום רגיל שלה בשנה האחרונה זז כ-±${sd.toFixed(1)}% (סטיית תקן של 60 ימים); זה פי ${z.toFixed(1)}`,when:Q.updatedAt?dmy(Q.updatedAt)+' '+hm(Q.updatedAt):'',why:`${pct(p.w,1)} מהתיק; השינוי בשווי שלך ${sgn(p.dayIls||0)}`,cause:causeH(c),conf:'high',confWhy:'מדידה מהמחירים'})}}
+      out.push({k:'px',sym:p.sym,what:`${lab(p.sym)} ${spct(p.dayPct,1)} ביום המסחר האחרון`,vs:levelOf()==='new'?`ביום רגיל היא זזה בערך ${sd.toFixed(1)}% למעלה או למטה; היום זה פי ${z.toFixed(1)} מהרגיל`:`יום רגיל שלה בשנה האחרונה זז כ-±${sd.toFixed(1)}% (סטיית תקן של 60 ימים); זה פי ${z.toFixed(1)}`,when:Q.updatedAt?dmy(Q.updatedAt)+' '+hm(Q.updatedAt):'',why:`${pct(p.w,1)} מהתיק; השינוי בשווי שלך ${sgn(p.dayIls||0)}`,cause:causeH(c),conf:'high',confWhy:'מדידה מהמחירים'})}}
     // 1.11 (15): the last day's volume against the sixty days before (when the closes carry volumes)
     if(Array.isArray(C.v)&&C.v.length===n&&C.v[n-1]>0){const prev=C.v.slice(Math.max(0,n-61),n-1).filter(x=>x>0); if(prev.length>=20){const avg=prev.reduce((a,b)=>a+b,0)/prev.length, ratio=C.v[n-1]/avg; if(ratio>=2.5){const c=anomCause(p.sym,72);
       out.push({k:'volm',sym:p.sym,what:`${lab(p.sym)}: מחזור מסחר פי ${ratio.toFixed(1)} מהרגיל ב-${dmy(C.d[n-1])}`,vs:`${Math.round(C.v[n-1]/1e6*10)/10} מיליון מניות מול ממוצע של ${Math.round(avg/1e6*10)/10} מיליון ב-60 הימים שלפני`,when:dmy(C.d[n-1]),why:'מחזור גדול אומר שהרבה ידיים החליפו את הנייר באותו יום; לרוב סביב דוח, הודעה או שינוי במדד',cause:causeH(c),conf:'high',confWhy:'מדידה מנתוני המסחר (המקור של המחירים)'})}}}
@@ -19174,7 +19180,7 @@ function foldIs(){return true}
 // 28.10: the control screen in three parts instead of one long page: "מצב" (the score, what needs attention, what moved),
 // "פיזור" (the groups, the exposure, what moves together) and "סיכון ותרחישים" (what if prices fall, what shakes the
 // portfolio). Each section belongs to one part; the row at the top switches between them, and a link to a section opens its part
-const RG={now:['hDesk','hHealth','hCtl','hPnl','hHeat','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hTm','hKpi','hRk']};
+const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hTm','hKpi','hRk']};
 const RGL={now:'מצב',mix:'פיזור',risk:'סיכון ותרחישים'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
@@ -19297,12 +19303,12 @@ let WPREV; function watchPrev(items){
 const cntH=(n,one,many)=>n===1?one:n+' '+many, symH=s=>`<span class="sym">${esc(lab(s))}</span>`;
 const topM=(a,n)=>a.slice().sort((x,y)=>y.w-x.w).slice(0,n).map(p=>`${symH(p.sym)} ${nn(pct(p.w))}`).join(' · ');
 function whyPos(big,m){const R=S.rules;return {src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(R.maxPos,0))} מהתיק לנייר בודד`]].concat(big.slice(0,6).map(p=>[symH(p.sym),`${nn(pct(p.w))} מהתיק · ${nn(ils(p.val))} · ${nn(ils((p.w-R.maxPos)/100*m.total))} מעל הסף`])),tab:'settings',tl:'לשנות את הכלל'}}
-function whyGrp(g,m){const R=S.rules, over=g.w-R.maxGroup;return {src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(R.maxGroup,0))} מהתיק לקבוצה אחת`],['בפועל',`${nn(pct(g.w))} · ${nn(ils(g.val))}`],['החריגה',`${nn(over.toFixed(1))} נק׳ אחוז · ${nn(ils(over/100*m.total))}`],['מה משפיע הכי הרבה',topM(g.members,4)]],tab:'settings',tl:'לשנות את הכלל'}}
+function whyGrp(g,m){const R=S.rules, over=g.w-R.maxGroup;return {src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(R.maxGroup,0))} מהתיק לקבוצה אחת`],['בפועל',`${nn(pct(g.w))} · ${nn(ils(g.val))}`],['החריגה',`${nn(over.toFixed(1))} נקודות אחוז · ${nn(ils(over/100*m.total))}`],['מה משפיע הכי הרבה',topM(g.members,4)]],tab:'settings',tl:'לשנות את הכלל'}}
 function whyDrop(dn,m){const R=S.rules, rows=[['הכלל שלך',`בדיקה כשנייר יורד ${nn(pct(R.stopLoss,0))} ומעלה ממחיר הקנייה`]].concat(dn.slice(0,6).map(x=>[symH(x.p.sym),`עלות ${nn(ils(x.p.cost))} · שווה עכשיו ${nn(ils(x.p.costVal))} · ${nn(spct(x.d),'down')}`]));
   if(m){const gs=[...new Set(dn.map(x=>x.p.group))].map(g=>{const ps=m.pos.filter(p=>p.group===g&&p.cost>0), c=ps.reduce((t,p)=>t+p.cost,0), v=ps.reduce((t,p)=>t+p.costVal,0);return c>0&&ps.length>1?`${esc(GROUPS[g]||g)} ${nn(spct((v-c)/c*100),v>=c?'up':'down')} (${ps.length} ניירות)`:null}).filter(Boolean);
     if(gs.length)rows.push(['הקבוצה שלהם מול העלות',gs.join(' · ')+'. כשכל הקבוצה ירדה בערך באותה מידה, זו כנראה תנועה של התחום כולו ולא של חברה אחת.'])}
   return {src:'rule',rows,tab:'settings',tl:'לשנות את הכלל'}}
-function whyDrift(k,d,m){const R=S.rules, g=m.groups[k], rows=[['היעד שלך',nn(pct(+S.targets[k]||0,0))],['בפועל',`${nn(pct(g.w))} · ${nn(ils(g.val))}`],['הפער',`${nn((d>0?'+':'−')+Math.abs(d).toFixed(1))} נק׳ אחוז · ${nn(ils(Math.abs(d)/100*m.total))}`],['הסף להתראה',`${nn(R.drift)} נק׳ אחוז`]];
+function whyDrift(k,d,m){const R=S.rules, g=m.groups[k], rows=[['היעד שלך',nn(pct(+S.targets[k]||0,0))],['בפועל',`${nn(pct(g.w))} · ${nn(ils(g.val))}`],['הפער',`${nn((d>0?'+':'−')+Math.abs(d).toFixed(1))} נקודות אחוז · ${nn(ils(Math.abs(d)/100*m.total))}`],['הסף להתראה',`${nn(R.drift)} נקודות אחוז`]];
   if(g.members&&g.members.length)rows.push(['הניירות בקבוצה',topM(g.members,4)]); return {src:'rule',rows,tab:'settings',tl:'לשנות יעד או סף'}}
 // ---- v136: price alerts the person sets. S.pxAlerts = {key: {above, below, at}}; key = the security's catalog key ----
 const pxLab=k=>k.startsWith('TLV:')?k.slice(4):lab(k);
@@ -19832,7 +19838,7 @@ function anaPlan(F){
     rows.push({k:(F.depS===false||F.depI===false)?'warn':'ok',t:'הפקדה חודשית',x:parts.join('. ')+'.',nav:{t:'plan',l:ANAV.plan}})}
   else rows.push({k:'unset',t:'הפקדה חודשית',x:'לא הוגדר סכום הפקדה חודשי.',nav:{t:'plan',l:ANAV.plan}});
   if(F.tsum>0){const off=F.groups.filter(g=>g.off).sort((a,b)=>Math.abs(b.dev)-Math.abs(a.dev));
-    rows.push({k:off.length?'warn':'ok',t:'יעדי הקצאה',x:off.length?`${off.length===1?'קבוצה אחת רחוקה':off.length+' קבוצות רחוקות'} מהיעד ביותר מ-${R.drift} נק׳ אחוז: ${off.slice(0,3).map(g=>`${g.name} ${LRM+(g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)}`).join(', ')}.`:`כל הקבוצות בטווח של ${R.drift} נק׳ אחוז מהיעד שקבעת.`,nav:{t:'settings',l:ANAV.settings}})}
+    rows.push({k:off.length?'warn':'ok',t:'יעדי הקצאה',x:off.length?`${off.length===1?'קבוצה אחת רחוקה':off.length+' קבוצות רחוקות'} מהיעד ביותר מ-${R.drift} נקודות אחוז: ${off.slice(0,3).map(g=>`${g.name} ${LRM+(g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)}`).join(', ')}.`:`כל הקבוצות בטווח של ${R.drift} נקודות אחוז מהיעד שקבעת.`,nav:{t:'settings',l:ANAV.settings}})}
   else rows.push({k:'unset',t:'יעדי הקצאה',x:'לא הוגדרו יעדים, ולכן אי אפשר לבדוק אם ההקצאה תואמת את התוכנית.',nav:{t:'settings',l:'לקבוע יעדים'}});
   const crit=F.A.filter(a=>a[0]==='crit');
   rows.push({k:crit.length?'crit':'ok',t:'הכללים שלך',x:crit.length?`${crit.length===1?'חריגה אחת':crit.length+' חריגות'} מהכללים: ${[...new Set(crit.map(a=>a[1]==='ריכוז'?(/לנייר בודד/.test(a[2])?'נייר בודד מעל הסף':'קבוצה מעל הסף'):a[1]==='יתרה'?'יתרה שלילית בתוכנית':a[1]==='מטבע'?'חשיפה לדולר מעל התקרה':a[1]))].join(', ')}.`:'התיק עומד בכללי הריכוז והירידה שקבעת.',nav:{t:'settings',l:ANAV.settings}});
@@ -19878,8 +19884,8 @@ function anaFactsAI(F,issues,checks){
     vs_deposits:F.vd?`${sgn(F.vd.diff)} (${spct(F.vd.pct)}) מול ${ils(F.vd.dep)} שהופקדו`:null,
     top3:`${F.top3.map(p=>lab(p.sym)+' '+pct(p.w)).join(', ')}; יחד ${pct(F.top3w)}`,
     usd_exposure:pct(m.usdPct), index_funds_core:pct(F.coreW),
-    groups:F.groups.map(g=>({name:g.name,actual:pct(g.w),value:ils(g.val),target:F.tsum>0?pct(g.t,0):null,gap:g.dev!=null?((g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)+' נק׳ אחוז'):null,above_group_limit:g.over})),
-    rules:{single_holding_max:pct(R.maxPos,0),group_max:pct(R.maxGroup,0),check_drop_from_cost:pct(R.stopLoss,0),target_gap_alert:R.drift+' נק׳ אחוז',min_holding:R.minHoldMonths+' חודשים',usd_max:+R.usdCap>0?pct(+R.usdCap,0):null},
+    groups:F.groups.map(g=>({name:g.name,actual:pct(g.w),value:ils(g.val),target:F.tsum>0?pct(g.t,0):null,gap:g.dev!=null?((g.dev>0?'+':'−')+Math.abs(g.dev).toFixed(1)+' נקודות אחוז'):null,above_group_limit:g.over})),
+    rules:{single_holding_max:pct(R.maxPos,0),group_max:pct(R.maxGroup,0),check_drop_from_cost:pct(R.stopLoss,0),target_gap_alert:R.drift+' נקודות אחוז',min_holding:R.minHoldMonths+' חודשים',usd_max:+R.usdCap>0?pct(+R.usdCap,0):null},
     targets_set:F.tsum>0,
     issues:issues.map(i=>({id:i.id,severity:ANA_SEV[i.sev],type:i.cat,title:i.title||i.cat,text:i.text,basis:i.rows?i.rows.map(r=>anaStrip(r[0])+': '+anaStrip(r[1])):[],user_marked_checked:i.acked||undefined})),
     checks:(checks||[]).map((a,k)=>({id:'k'+(k+1),title:a.title,basis:anaStrip(a.why),screen:a.nav?a.nav.t:null})),
@@ -19998,7 +20004,7 @@ function anaReportHtml(F,issues,det,st){
     anaTile('חשיפה לדולר',pct(m.usdPct),+R.usdCap>0?`התקרה שלך ${nn(pct(+R.usdCap,0))}`:`לפי שער ${nn(Q.usdIls.toFixed(3))}`,+R.usdCap>0&&m.usdPct>+R.usdCap?'down':'')].join('');
   const mx=Math.max(1,...F.groups.map(g=>Math.max(g.w,g.t)));
   const alloc=`<div class="ana-al">${F.groups.map(g=>`<div class="ana-ar${g.over?' over':g.off?' off':''}"><span class="nm1">${esc(g.name)}</span><div class="tr" role="img" aria-label="${esc(g.name)}: ${pct(g.w)}${F.tsum>0?', היעד '+pct(g.t,0):''}"><i style="width:${(g.w/mx*100).toFixed(1)}%"></i>${F.tsum>0?`<u style="inset-inline-start:calc(${(g.t/mx*100).toFixed(1)}% - 1px)"></u>`:''}</div><span class="vals"><b>${pct(g.w)}</b>${F.tsum>0?` <small>יעד ${pct(g.t,0)}</small>`:''}</span></div>`).join('')}</div>
-    <p class="note">${F.tsum>0?`הפס הוא המצב בפועל והקו האנכי הוא היעד שלך. כתום: רחוק מהיעד ביותר מ-${R.drift} נק׳ אחוז. אדום: מעל הסף של ${pct(R.maxGroup,0)} לקבוצה.`:'לא הוגדרו יעדי הקצאה, ולכן מוצג רק המצב בפועל.'} כל נייר נספר בקבוצה אחת, וחשיפה עקיפה דרך קרנות לא נכללת בחלוקה.</p>${lvP(LVN.anaAlloc)}`;
+    <p class="note">${F.tsum>0?`הפס הוא המצב בפועל והקו האנכי הוא היעד שלך. כתום: רחוק מהיעד ביותר מ-${R.drift} נקודות אחוז. אדום: מעל הסף של ${pct(R.maxGroup,0)} לקבוצה.`:'לא הוגדרו יעדי הקצאה, ולכן מוצג רק המצב בפועל.'} כל נייר נספר בקבוצה אחת, וחשיפה עקיפה דרך קרנות לא נכללת בחלוקה.</p>${lvP(LVN.anaAlloc)}`;
   const itH=i=>{const x=(ai.items&&ai.items[i.id])||{}, d=ANA_DEF[i.cat]||{}, why=x.why||d.why, chk=x.check||d.check, cav=anaCav(i);
     return `<li class="ana-it ${i.sev}"><div class="h"><b>${tx(i.title||i.cat)}</b><span class="rs ${i.sev}">${ANA_SEV[i.sev]}</span>${i.acked?'<span class="ackt">סימנת שבדקת</span>':''}</div><p>${tx(i.text)}</p>${why?`<p class="x"><b>למה זה חשוב?</b> ${tx(why)}</p>`:''}${chk?`<p class="x"><b>מה אפשר לבדוק?</b> ${tx(chk)}</p>`:''}${cav?`<p class="cav">${tx(cav)}</p>`:''}${i.rows?`<details class="why"><summary>על מה זה מבוסס</summary><div class="wy"><dl>${i.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl></div></details>`:''}${anaNavBtn(i.nav)}</li>`};
   const its=(issues.length?`<ul class="ana-its">${issues.slice(0,3).map(itH).join('')}</ul>`+(issues.length>3?`<details class="ana-more"><summary>עוד ${issues.length-3} ${issues.length-3===1?'נושא':'נושאים'}: ${esc([...new Set(issues.slice(3).map(i=>i.cat))].join(', '))}</summary><ul class="ana-its">${issues.slice(3).map(itH).join('')}</ul></details>`:''):'<p class="ana-ok">לפי הכללים שקבעת, אין כרגע דבר שדורש את תשומת לבך.</p>')+lvP(LVN.anaIssues);
@@ -20848,7 +20854,7 @@ function renderRules(m){
   if(m.pos.length){const cap=+R.usdCap||0; row('חשיפה לדולר',cap>0?`עד ${nn(pct(cap,0))}`:'—',`${nn(pct(m.usdPct))} מהתיק בדולרים`,cap>0?(m.usdPct>cap?'crit':'ok'):'unset')}
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   if(tsum>0){const off=Object.keys(GROUPS).map(k=>({k,d:m.groups[k].w-(+S.targets[k]||0)})).filter(x=>Math.abs(x.d)>=R.drift).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
-    row('יעדי הקצאה',`עד ${nn(R.drift)} נק׳ אחוז מהיעד`,off.length?off.slice(0,3).map(x=>`${esc(GROUPS[x.k])} ${nn((x.d>0?'+':'−')+Math.abs(x.d).toFixed(1))}`).join(' · ')+(off.length>3?` · ועוד ${off.length-3}`:''):'כל הקבוצות בטווח היעד',off.length?'warn':'ok')}
+    row('יעדי הקצאה',`עד ${nn(R.drift)} נקודות אחוז מהיעד`,off.length?off.slice(0,3).map(x=>`${esc(GROUPS[x.k])} ${nn((x.d>0?'+':'−')+Math.abs(x.d).toFixed(1))}`).join(' · ')+(off.length>3?` · ועוד ${off.length-3}`:''):'כל הקבוצות בטווח היעד',off.length?'warn':'ok')}
   else if(m.pos.length)row('יעדי הקצאה','—','עוד לא נקבע יעד לכל קבוצה, ולכן אין בדיקת סטייה','unset');
   sec.hidden=!rows.length; const h=rows.join(''); setH($('rulesRows'),h);
 }
@@ -20960,7 +20966,7 @@ function renderCore(m){
     <div class="cf"><div><span class="k">שווי</span><span class="v">${ils(a.val)}</span></div><div><span class="k">היום</span><span class="v ${cls(a.dayPct)}">${fmtP(a.dayPct)}</span></div><div><span class="k">מול עלות</span><span class="v ${cls(a.pnl)}">${fmtP(a.pnl)}</span></div></div>
     <div class="cm">${list.length?list.slice(0,10).map(p=>`<span class="sym">${esc(lab(p.sym))}</span>`).join('')+(list.length>10?`<span class="sym">+${list.length-10}</span>`:''):'<span class="sub">אין ניירות בקבוצה הזו.</span>'}</div></div>`;
   let note='';
-  if(c.pnl!=null&&s.pnl!=null)note=`מאז הקנייה הלוויינים עומדים על ${nn(spct(s.pnl),cls(s.pnl))} והליבה על ${nn(spct(c.pnl),cls(c.pnl))}, הפרש של ${nn(spct(Math.abs(s.pnl-c.pnl)).replace('%','').replace('+',''))} נק׳ אחוז ${s.pnl>=c.pnl?'לטובת הלוויינים':'לטובת הליבה'}. ההשוואה תלויה גם במועדי הקנייה.`;
+  if(c.pnl!=null&&s.pnl!=null)note=`מאז הקנייה הלוויינים עומדים על ${nn(spct(s.pnl),cls(s.pnl))} והליבה על ${nn(spct(c.pnl),cls(c.pnl))}, הפרש של ${nn(spct(Math.abs(s.pnl-c.pnl)).replace('%','').replace('+',''))} נקודות אחוז ${s.pnl>=c.pnl?'לטובת הלוויינים':'לטובת הליבה'}. ההשוואה תלויה גם במועדי הקנייה.`;
   else if(!C.length)note='אין בתיק קרנות מדד רחבות, ולכן אין ליבה להשוות אליה. אפשר לסמן נייר כליבה בהגדרה למטה.';
   $('core').innerHTML=`<div class="cbar" role="img" aria-label="ליבה ${pct(c.w)}, לוויינים ${pct(s.w)}, מזומן ${pct(cashW)}"><i class="k1" style="width:${c.w.toFixed(2)}%"></i><i class="k2" style="width:${s.w.toFixed(2)}%"></i><i class="k3" style="width:${cashW.toFixed(2)}%"></i></div>
     <div class="cleg"><span><i style="background:var(--s1)"></i>ליבה ${pct(c.w)}</span><span><i style="background:var(--accent)"></i>לוויינים ${pct(s.w)}</span><span><i style="background:#C9D1DB"></i>מזומן ${pct(cashW)}</span></div>
@@ -23722,7 +23728,7 @@ function wcCardH(r,m,pv,mg){const pc=x=>x==null?'':`<small class="${x>=0?'up':'d
     // what it is strong in, of the parts that weigh in the match (the viewer's choices among them)
     const strong=Object.keys(f.W||{}).filter(x=>f.W[x]>0&&f[x]!=null).map(x=>[x,f[x]/f.W[x]]).filter(x=>x[1]>=0.7).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>FITL[x[0]]);
     const tags=(r.held?'<span class="tag">בתיק</span>':'')+(strong.length?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">חזק ב${esc(andJ(strong))}</span>`:'')+(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(pv.at)}): <bdi>${spct(was)}</bdi></span>`:'')
-      +(r.under>0?`<span class="tag new">הקבוצה ${nn(r.under.toFixed(0))} נק׳ אחוז מתחת ליעד שלך</span>`:!m.groups[f.g]||!(m.groups[f.g].w>0)?`<span class="tag new">אין בתיק בכלל</span>`:'')
+      +(r.under>0?`<span class="tag new">הקבוצה ${nn(r.under.toFixed(0))} נקודות אחוז מתחת ליעד שלך</span>`:!m.groups[f.g]||!(m.groups[f.g].w>0)?`<span class="tag new">אין בתיק בכלל</span>`:'')
       +(f.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(dn!=null&&dn>=0&&dn<=21?`<span class="tag" style="background:var(--sunk);color:var(--ink2)">דוח בעוד ${dn===0?'היום':dn===1?'יום':dn+' ימים'}</span>`:'')
       +(wmarks().includes(r.k)?'<span class="tag an">סימנת</span>':'');
     const sk=SECKEY.test(r.k);
@@ -24843,7 +24849,7 @@ function fundFit(sym,name,kind,g,m){
   // what it adds (40): a sector or an Israeli fund fills a gap to the target or a thin group; a broad fund adds breadth
   if(kind==='sector'||kind==='il'){
     if(w>=mg){o.add=0; why.push(`${GROUPS[g]} כבר מעל התקרה שקבעת (${pct(w)} מול ${pct(mg,0)})`)}
-    else if(tsum>0){const gap=t-w; o.add=Math.round(40*cl01(gap/Math.max(5,t||5))); why.push(gap>=1?`משלימה פער של ${gap.toFixed(1)} נק׳ אחוז ב${GROUPS[g]} מול היעד`:`${GROUPS[g]} כבר ביעד (${pct(w)})`)}
+    else if(tsum>0){const gap=t-w; o.add=Math.round(40*cl01(gap/Math.max(5,t||5))); why.push(gap>=1?`משלימה פער של ${gap.toFixed(1)} נקודות אחוז ב${GROUPS[g]} מול היעד`:`${GROUPS[g]} כבר ביעד (${pct(w)})`)}
     else {o.add=Math.round(40*cl01(1-w/mg)); why.push(w<1?`${GROUPS[g]} לא בתיק היום`:`${GROUPS[g]} היא ${pct(w)} מהתיק`)}}
   else if(kind==='broad'){o.add=Math.round(40*cl01((12-nEff)/10)); const exUS=/VWO|VEA|VXUS|IWDA|VT$|VWRA|ACWI/.test(sym), usW=m.pos.filter(p=>p.ccy==='USD').reduce((x,p)=>x+p.w,0);
     if(exUS&&usW>=50){o.add=Math.min(40,o.add+14); why.push(`מפזרת אל מחוץ לארה״ב, שבה ${pct(usW)} מהתיק היום`)}
@@ -25638,7 +25644,8 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
 // already has: the readings, the markets' document, the calendar; צ׳יקו's lines ("מה קורה בשווקים") give the "why"
 // when he wrote them, the readings otherwise. With the time of the last gathering and reading; nothing of it is a
 // forecast, and a part with no data says so ----
-let ECO=null, ETFD=null, etfAsked=false;   // 4.11: research/etf, what is inside the held funds
+let ECO=null; var ETFD=null, etfAsked=false, LADALL=false;   // var: the plan is drawn before this line runs
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladall]'); if(!b)return; LADALL=!LADALL; try{render()}catch(x){}});   // 4.11: research/etf, what is inside the held funds
 // the double exposure, in the X-ray: a share held directly and again through funds, with its total
 function etfLookH(E){const L=E.look; if(!L)return ''; const rows=(L.double.length?L.double:L.top.slice(0,5)).slice(0,8);
   return `<div class="xr-look"><h3>חשיפה כוללת, כולל מה שבתוך הקרנות</h3><p class="nm">${esc(E.overlap.text)}. ${esc(L.note)}.</p>
@@ -26614,13 +26621,12 @@ function nwSetFill(){const box=$('nwSetBox'); if(!box)return; const F=nwPrefs(),
   const chips=(kind,L)=>L.map(([v,l])=>`<button type="button" class="chip sm" data-nwfol="${kind}:${esc(v)}" aria-pressed="${F[kind].includes(v)}"${dis}>${esc(l)}</button>`).join('');
   const thm=(sel,kind)=>Object.entries(NX_THEME).map(([v,l])=>`<button type="button" class="chip sm" data-${kind}="${v}" aria-pressed="${sel.includes(v)}"${dis}>${esc(l)}</button>`).join('');
   setH(box,`<div class="nws-g"><h3>חדשות</h3>
-      <div class="nws-r"><b>קטגוריות מועדפות</b><div class="nws-c">${chips('cats',NX_CATS.map(c=>[c.k,c.l]))}</div></div>
-      <div class="nws-r"><b>ענפים</b><div class="nws-c">${chips('secs',Object.entries(NX_SEC_HE))}</div></div>
-      <div class="nws-r"><b>מדינות ואזורים</b><div class="nws-c">${chips('regions',Object.entries(NX_REG))}</div></div>
-      <div class="nws-r"><b>נושאים</b><div class="nws-c">${chips('themes',Object.entries(NX_THEME))}</div></div>
+      ${(()=>{// 5.11: the news are the portfolio's own; what is followed is listed (and removed with ×), and added from any article ("לעקוב אחרי")
+        const L={cats:Object.fromEntries(NX_CATS.map(c=>[c.k,c.l])),secs:NX_SEC_HE,regions:NX_REG,themes:NX_THEME}, on=Object.keys(L).flatMap(k=>(F[k]||[]).filter(v=>L[k][v]).map(v=>[k,v,L[k][v]]));
+        return `<div class="nws-r"><b>נושאים שאתה עוקב אחריהם</b><div class="nws-c">${on.length?on.map(([k,v,l])=>`<button type="button" class="chip sm" data-nwfol="${k}:${esc(v)}" aria-pressed="true"${dis}>${esc(l)} ×</button>`).join(''):'<span class="nm">אין עדיין. בכל כתבה, ב"לעקוב אחרי", אפשר להוסיף ענף, אזור או נושא.</span>'}</div></div>`})()}
       <div class="nws-r"><b>חברות ומניות במעקב</b><div class="nws-c">${F.syms.map(k=>`<button type="button" class="chip sm" data-nwfol="syms:${esc(k)}" aria-pressed="true"${dis}>${esc(k)} ×</button>`).join('')}<form class="nws-add" data-nwsadd="news"><label class="vh" for="nwsSym">סימול להוספה</label><input id="nwsSym" placeholder="סימול, למשל NVDA" maxlength="8"${dis}><button class="btn sm" type="submit"${dis}>להוסיף</button></form></div></div>
       <div class="nws-r"><b>מיון ברירת מחדל</b><select id="nwsSort"${dis}><option value="time"${F.sort==='time'?' selected':''}>לפי מועד פרסום</option><option value="imp"${F.sort==='imp'?' selected':''}>לפי חשיבות</option></select></div>
-      <p class="note">מה שבמעקב מופיע ב"ראשי" ובתצוגה "במעקב", ומקבל עדיפות במיון לפי חשיבות. שאר החדשות נשארות פתוחות לחיפוש ולגילוי.</p></div>
+      <p class="note">החדשות באתר הן של הניירות שבתיק ובמעקב שלך. מה שבמעקב מקבל עדיפות במיון לפי חשיבות ומופיע בתצוגה "במעקב".</p></div>
     <div class="nws-g"><h3>התראות אישיות</h3>
       <label class="check"><input type="checkbox" id="plsOn"${pr.on?' checked':''}${dis}><span>התראות אישיות פעילות</span></label>
       <div class="nws-r"><b>רמות</b><div class="nws-c"><label class="check"><input type="checkbox" data-plslv="crit"${pr.lv.crit?' checked':''}${dis}><span>קריטית</span></label><label class="check"><input type="checkbox" data-plslv="imp"${pr.lv.imp?' checked':''}${dis}><span>חשובה</span></label><label class="check"><input type="checkbox" data-plslv="upd"${pr.lv.upd?' checked':''}${dis}><span>עדכון תיק</span></label></div></div>

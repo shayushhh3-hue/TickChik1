@@ -879,15 +879,17 @@ test('the impact map: opened from an article and from an alert; the chain with a
 test('the settings "חדשות והתראות": the news\' topics and the alerts\' levels, sensitivity, quiet hours, frequency, icons; saved, and they change what happens',T,async t=>{
   if(skip())return t.skip('no browser');
   const S0=store.getDoc('settings/main').data, PU0=store.getDoc('alerts/pulse'), N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state');
-  const D=await rtData(); await rtSet(D);
+  const D=await rtData(); await rtSet(D); store.setDoc('settings/main',{...S0,news:{...((S0||{}).news||{}),regions:['israel']}},{silent:true});
   try{
     const {ctx,pg}=await open(390); await tab(pg,'settings'); await pg.waitForFunction(()=>document.querySelectorAll('#nwSetBox [data-plslv]').length===3,null,{timeout:10000});
+    // 5.11: no grid of every topic; what is followed is listed, and removed with ×
+    assert.ok(await pg.evaluate(()=>document.querySelectorAll('#nwSetBox [data-nwfol]').length<10),'not the 66 topics');
     await pg.click('#nwSetBox [data-nwfol="regions:israel"]'); await pg.waitForTimeout(150);
     await pg.click('#nwSetBox [data-plslv="upd"]'); await pg.selectOption('#plsSens','high'); await pg.selectOption('#plsFreq','hour');
     await pg.fill('#plsQf','22:00'); await pg.dispatchEvent('#plsQf','change'); await pg.click('#plsCq'); await pg.click('#plsIcons'); await pg.click('#nwSetBox [data-plspu="imp"]');
     await pg.fill('#plsSym','TSLA'); await pg.click('#nwSetBox [data-nwsadd="pulse"] button'); await pg.waitForTimeout(1500);
     const S1=store.getDoc('settings/main').data;
-    assert.deepEqual(S1.news.regions,['israel']); assert.equal(S1.pulse.lv.upd,false); assert.equal(S1.pulse.sens,'high'); assert.equal(S1.pulse.freq,'hour'); assert.equal(S1.pulse.quiet.from,'22:00'); assert.equal(S1.pulse.critQuiet,true);
+    assert.deepEqual(S1.news.regions,[],'removed with ×'); assert.equal(S1.pulse.lv.upd,false); assert.equal(S1.pulse.sens,'high'); assert.equal(S1.pulse.freq,'hour'); assert.equal(S1.pulse.quiet.from,'22:00'); assert.equal(S1.pulse.critQuiet,true);
     assert.equal(S1.pulse.icons,false); assert.equal(S1.pulse.push.imp,true); assert.deepEqual(S1.pulse.syms,['TSLA']);
     // on the page: the icons gone; the portfolio updates not shown
     assert.equal(await pg.evaluate(()=>document.getElementById('stBub').hidden),true,'the icons switched off');
