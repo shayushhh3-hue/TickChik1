@@ -1507,8 +1507,8 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 #riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 #riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
-@media (max-width:640px){#riskNav{top:0;margin-inline:0} #riskNav .chip{font-size:13.5px;padding-inline:8px}}
-[data-pane="risk"][data-rgv="now"] > [data-rg]:not([data-rg="now"]),[data-pane="risk"][data-rgv="mix"] > [data-rg]:not([data-rg="mix"]),[data-pane="risk"][data-rgv="risk"] > [data-rg]:not([data-rg="risk"]){display:none!important}
+@media (max-width:640px){#riskNav{top:0;margin-inline:0;overflow-x:auto;scrollbar-width:none} #riskNav .chip{flex:1 0 auto;font-size:13px;padding-inline:7px}}
+[data-pane="risk"][data-rgv="now"] > [data-rg]:not([data-rg="now"]),[data-pane="risk"][data-rgv="mix"] > [data-rg]:not([data-rg="mix"]),[data-pane="risk"][data-rgv="risk"] > [data-rg]:not([data-rg="risk"]),[data-pane="risk"][data-rgv="co"] > [data-rg]:not([data-rg="co"]),[data-pane="risk"][data-rgv="vol"] > [data-rg]:not([data-rg="vol"]){display:none!important}
 /* the groups once: the group card (bar or pie) when it is there, not the donut of the same groups again */
 #mixHome:not([hidden]) ~ section[aria-labelledby="hMix"]{display:none!important}
 /* the rules once: the health card lists each rule with its limit and the actual figure, so the rules table is not repeated */
@@ -18676,9 +18676,9 @@ function renderState(){
       ${B.blend!=null?`<li>${STAG.calc} שקלול לפי התיק שלך (${tx(pct(B.wUS*100,0))} נסחרים בארה״ב, ${tx(pct(B.wIL*100,0))} בתל אביב): ${tx(spct(B.blend,2))}. התיק: ${tx(spct(B.pf,2))}.</li>`:''}</ul>
       <p class="note">למה המדדים האלה: הם המדדים הרחבים של שתי הבורסות שבהן הניירות שלך נסחרים. מה המגבלות: שינוי מחיר בלבד, כל מדד במטבע שלו, ליום המסחר האחרון של כל בורסה${B.dates.length===2&&B.dates[0]!==B.dates[1]?' (ימים שונים)':''}. התיק מרוכז יותר מהמדדים, ולכן זו תמונת רקע ולא ציון.</p>`)},'השוק באותו יום');
   // 5. stress
-  const sim=stTry(()=>{const rs=[20,30,40].map(x=>({x,R:stressRun(m,P,Q,{kind:'all',pct:-x})})).filter(o=>o.R);
-    return stSec('sim','מה אם המחירים יורדים עוד',`<ul class="why-l">${rs.map(o=>`<li>ירידה אחידה של ${o.x}% בכל הניירות: ${ils(o.R.before)} ← <b class="n">${ils(o.R.after)}</b> (${money(o.R.d)})</li>`).join('')}</ul>
-      <p class="note">תרחיש, לא תחזית: כל נייר יורד באותו אחוז, המזומן והשער לא זזים.</p><button type="button" class="btn sm" data-gofold="hStress">למבחן הלחץ המלא</button>`)},'מה אם המחירים יורדים עוד');
+  // 5.11: one line here; the three drops, by group and by security, are the stress test in "בקרה › תרחישים"
+  const sim=stTry(()=>{const R=stressRun(m,P,Q,{kind:'all',pct:-20}); if(!R)return '';
+    return stSec('sim','מה אם המחירים יורדים עוד',`<p style="margin:0">ירידה אחידה של 20% בכל הניירות: ${ils(R.before)} ← <b class="n">${ils(R.after)}</b> (${money(R.d)}). תרחיש, לא תחזית.</p><button type="button" class="btn sm" data-gofold="hStress" style="margin-top:8px">ל-30%, 40% ולפי קבוצה ›</button>`)},'מה אם המחירים יורדים עוד');
   // 6. what the user set
   const goals=stTry(()=>{const pr=(S.profile||{}), L=[];
     L.push(+S.years>0?`אופק ההשקעה שקבעת: ${S.years} שנים.`:'לא קבעת אופק השקעה.');
@@ -19191,8 +19191,11 @@ function foldIs(){return true}
 // 28.10: the control screen in three parts instead of one long page: "מצב" (the score, what needs attention, what moved),
 // "פיזור" (the groups, the exposure, what moves together) and "סיכון ותרחישים" (what if prices fall, what shakes the
 // portfolio). Each section belongs to one part; the row at the top switches between them, and a link to a section opens its part
-const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore','hCo','hPr','hOp'],risk:['hStress','hSim','hTm','hKpi','hRk']};
-const RGL={now:'מצב',mix:'פיזור',risk:'סיכון ותרחישים'};
+// 5.11: five parts instead of three. "פיזור" was five screens of eight analyses and "סיכון ותרחישים" five more: what moves
+// together (the co-movement and both kinds of pairs, one question) and the risk measures (the snapshot and the securities
+// that shake the portfolio) are parts of their own
+const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk']};
+const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
 function rgSet(k){if(!RG[k])k='now'; RGV=k; try{localStorage.setItem('tr_rgv',k)}catch(e){}

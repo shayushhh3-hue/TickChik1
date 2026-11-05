@@ -1827,7 +1827,10 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   await tab(pg,'risk'); await pg.waitForTimeout(800);
   // 28.10: no folds any more: every section is open
   // and the screen in three parts: the exposures under "פיזור", the stress test under "סיכון ותרחישים", one part at a time
-  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].map(b=>b.textContent)),['מצב','פיזור','סיכון ותרחישים']);
+  // 5.11: five parts: what moves together and the risk measures have their own
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].map(b=>b.textContent)),['מצב','פיזור','מה זז יחד','תרחישים','מדדי סיכון']);
+  assert.ok(await pg.evaluate(()=>{const n=document.getElementById('riskNav'); return n.scrollWidth<=n.clientWidth+1}),'the five fit on a phone');
+  for(const [k,id] of [['co','hCo'],['vol','hRk']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150); assert.ok(await pg.evaluate(id=>!!document.getElementById(id).offsetParent&&!document.getElementById('hExp').offsetParent,id),'its own part: '+k)}
   for(const [k,id,other] of [['mix','hExp','hStress'],['risk','hStress','hExp']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150);
     assert.ok(await pg.evaluate(([id,other])=>!!document.getElementById(id).offsetParent&&!document.getElementById(other).offsetParent&&!document.querySelector('.fold-t'),[id,other]),'one part at a time: '+k)}
   const e=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
@@ -2203,7 +2206,7 @@ test('the crisis center: up and down days, old prices, concentration, a missing 
     assert.ok(r.cardW>=r.boxW-2&&r.cardW>200,'the parts are full-width cards, not circles (the story icons once took their class): '+r.cardW+'/'+r.boxW);
     assert.match(r.txt,/השווי זז ב-\u200e?−₪/); assert.match(r.txt,/מעל הכלל שלך/); assert.match(r.txt,/S&P 500/); assert.match(r.txt,/שקלול לפי התיק שלך/);
     assert.match(r.txt,/ירידה אחידה של 20% בכל הניירות/); assert.match(r.txt,/הסיבה לתנועת המחירים \(אין מקור חדשות\)/);
-    for(const v of await pg.evaluate(()=>window.__model.stateSim()))assert.ok(r.txt.includes(v),'the scenario shows the computed value '+v);
+    {const v=(await pg.evaluate(()=>window.__model.stateSim()))[0]; assert.ok(r.txt.includes(v),'the scenario shows the computed value '+v)}   // 5.11: one line, 20%; the rest in the stress test
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // an up day, and no index data: said, not invented
     const up={...Q0,prices:Object.fromEntries(Object.entries(Q0.prices).map(([k,v])=>[k,Q0.prev[k]*1.02])),bench:{}};
