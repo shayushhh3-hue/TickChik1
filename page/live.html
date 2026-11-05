@@ -24814,15 +24814,19 @@ function drawSec(){
   g.font='12px '+FONT;g.textAlign='left';g.textBaseline='middle';
   const lastY=y(pts[pts.length-1][1]);   // the axis label the last price's tag would cover is left out
   for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle=GRID;g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();if(Math.abs(yy-lastY)>14){g.fillStyle=LAB;g.fillText(fmtN(v),L+PW+10,yy)}}
-  // the range's first price, dotted in the accent: the line is read against it
-  const yb=y(base);g.setLineDash([2,5]);g.lineWidth=1.2;g.strokeStyle=ACC;g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.setLineDash([]);
+  // the range's first price, dotted in the muted ink (the violet is the line's): the line is read against it
+  const yb=y(base);g.setLineDash([2,5]);g.lineWidth=1.3;g.strokeStyle=LAB;g.globalAlpha=.7;g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.globalAlpha=1;g.setLineDash([]);
   // a stretch with no data (longer than a holiday for this kind of series) is hatched and named in the note; the line there only joins the two ends
   const gapMs=({'יומי':8,'שבועי':21,'חודשי':75}[freq]||Infinity)*864e5, gaps=[]; for(let i=1;i<pts.length;i++)if(pts[i][0]-pts[i-1][0]>gapMs)gaps.push([pts[i-1][0],pts[i][0]]);
   for(const [a,b] of gaps){g.fillStyle=DK?'rgba(255,255,255,.06)':'rgba(11,18,32,.06)';g.fillRect(x(a),T,Math.max(2,x(b)-x(a)),PH)}
   const path=()=>{g.beginPath();pts.forEach((p,i)=>{i?g.lineTo(x(p[0]),y(p[1])):g.moveTo(x(p[0]),y(p[1]))})};
-  // the area under the line: a flat tint of the accent (no gradients in this look); the line itself is the page's ink, rounded
-  path();g.lineTo(x(t1),T+PH);g.lineTo(x(t0),T+PH);g.closePath();g.fillStyle=DK?'rgba(77,141,255,.16)':'rgba(8,102,255,.10)';g.fill();
-  path();g.strokeStyle=DK?'#FFFFFF':INK;g.lineWidth=2.4;g.lineJoin='round';g.lineCap='round';g.stroke();
+  // 5.11: the home chart's look (the owner asked for a violet line): a violet line, light to deep along the range, over an
+  // area that fades from violet to a trace of mint, as on the home screen
+  const VA=DK?'#C4B5FD':'#A78BFA', VB=DK?'#A78BFA':'#7C3AED';
+  {const gf=g.createLinearGradient(0,T,0,T+PH); gf.addColorStop(0,DK?'rgba(139,92,246,.34)':'rgba(124,58,237,.26)'); gf.addColorStop(1,'rgba(45,212,191,.03)');
+    path();g.lineTo(x(t1),T+PH);g.lineTo(x(t0),T+PH);g.closePath();g.fillStyle=gf;g.fill()}
+  {const gl=g.createLinearGradient(L,0,L+PW,0); gl.addColorStop(0,VA); gl.addColorStop(1,VB);
+    path();g.strokeStyle=gl;g.lineWidth=2.6;g.lineJoin='round';g.lineCap='round';g.stroke()}
   // x labels: days, weeks, months or years depending on the span
   const spanD=(t1-t0)/864e5,ticks=[];const dt0=new Date(t0),dt1=new Date(t1);
   if(spanD<=12){for(let t=t0;t<=t1;t+=864e5){const dd=new Date(t);ticks.push([t,dd.getDate()+'.'+(dd.getMonth()+1)])}}
@@ -24833,12 +24837,14 @@ function drawSec(){
   for(const [t,lab] of ticks){const xx=x(t);if(xx-lastX<44||xx<L+14||xx>L+PW-14)continue;lastX=xx;g.fillText(lab,xx,H-9)}
   // the last price: a halo on the point and a tag on the axis, in the color of the range's result
   const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px '+FONT;const tw=g.measureText(txt).width+14,yy=Math.max(T+9,Math.min(T+PH-9,y(v)));g.fillStyle=fill;const rx=L+PW+5,ry=yy-10;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,20,10):g.rect(rx,ry,tw,20);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+7,yy)};
-  tag(last[1],'#FFFFFF',col);
-  g.fillStyle=DK?'rgba(77,141,255,.3)':'rgba(8,102,255,.18)';g.beginPath();g.arc(x(last[0]),y(last[1]),9,0,7);g.fill();
-  g.fillStyle=ACC;g.beginPath();g.arc(x(last[0]),y(last[1]),4.5,0,7);g.fill();
+  // the tag in the violet of the line (the range's gain or loss is in the line above the chart, in its color)
+  tag(last[1],'#FFFFFF',VB);
+  g.fillStyle='rgba(139,92,246,.22)';g.beginPath();g.arc(x(last[0]),y(last[1]),9,0,7);g.fill();
+  g.fillStyle=DK?'#111233':'#FFFFFF';g.beginPath();g.arc(x(last[0]),y(last[1]),6.5,0,7);g.fill();
+  g.fillStyle=VB;g.beginPath();g.arc(x(last[0]),y(last[1]),4.5,0,7);g.fill();
   // the point under the finger: a hairline, a ringed dot, and a small pill with the date and the price beside it
   if(SECHOV>=0&&SECHOV<pts.length){const hp=pts[SECHOV],hx=x(hp[0]),hy=y(hp[1]);g.strokeStyle=DK?'rgba(255,255,255,.5)':'rgba(11,18,32,.4)';g.lineWidth=1;g.beginPath();g.moveTo(hx,T);g.lineTo(hx,T+PH);g.stroke();
-    g.fillStyle=DK?'#111233':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=ACC;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
+    g.fillStyle=DK?'#111233':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=VB;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
     const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 12px '+FONT; const tw=g.measureText(lab).width+16, th=22;
     let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
     g.fillStyle=DK?'#FFFFFF':INK; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,11):g.rect(px,py,tw,th); g.fill(); g.fillStyle=DK?INK:'#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2)}
@@ -24859,7 +24865,7 @@ function secReadout(pts,base,last,hp,freq){const el=$('secRead');if(!el)return;e
       (isLast?'.':` · מאז ${toLast>=0?'עלה':'ירד'} ב-${pa(toLast)} עד המחיר האחרון, ${P(last[1])}.`);
   }else{
     el.innerHTML=`<b>${RNGL[SECRNG]||''}</b>: מ-${dateLab(first[0],last[0]-first[0])} עד ${dateLab(last[0],last[0]-first[0])} · פתיחה ${P(base)} ← אחרון ${P(last[1])} · <b>${pc(chAll)}</b> ${upAll?'עלייה':'ירידה'}`+
-      `<span class="hint">גע או עבור עם העכבר על הגרף כדי לראות תאריך ומחיר. הקו המקווקו הכחול הוא המחיר בתחילת הטווח.</span>`}}
+      `<span class="hint">גע או עבור עם העכבר על הגרף כדי לראות תאריך ומחיר. הקו המקווקו הוא המחיר בתחילת הטווח.</span>`}}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
 function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.getBoundingClientRect(),px=ev.clientX-r.left;let best=-1,bd=1e9;SECV.pts.forEach((p,i)=>{const d=Math.abs(SECV.x(p[0])-px);if(d<bd){bd=d;best=i}});if(best!==SECHOV){SECHOV=best;drawSec()}}
