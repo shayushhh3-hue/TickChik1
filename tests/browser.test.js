@@ -2948,3 +2948,20 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   finally{store.setDoc('research/latest',R0,{silent:true})}
 });
+
+test('5.11 the portfolio\'s value at the top only where it is the base of the screen: the full card on the home, one thin line that leads home on the portfolio, the control and the plan, nothing on the other screens; hidden with the amounts',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  const at=()=>pg.evaluate(()=>{const b=document.getElementById('kLine'), m=document.querySelector('.hero .main'); return {line:!!(b&&b.offsetParent),aria:b?b.getAttribute('aria-label'):'',main:!!(m&&m.offsetParent)}});
+  let r=await at(); assert.equal(r.main,true,'the home: the full card'); assert.equal(r.line,false,'and no line');
+  for(const p of ['mine','risk','state','plan','forecast','pots']){await tab(pg,p); await pg.waitForTimeout(250); r=await at();
+    assert.equal(r.main,false,p+': no card'); assert.equal(r.line,true,p+': the line');
+    assert.match(r.aria,/^שווי (התיק|המניות|הקרנות) [₪$][\d,]+, [+−][\d.]+% (היום|ביום המסחר האחרון)\. לדף הבית$/,p+': the value and the day, without the date')}
+  for(const p of ['search','news','reports','journal','ratings','watch','compare','calendar','settings','history']){await tab(pg,p); await pg.waitForTimeout(200); r=await at();
+    assert.deepEqual([r.main,r.line],[false,false],p+': nothing at the top')}
+  // the amounts hidden: the value in the line too
+  await tab(pg,'mine'); await pg.waitForTimeout(200); await pg.evaluate(()=>document.body.classList.add('hidenum'));
+  assert.match(await pg.evaluate(()=>getComputedStyle(document.querySelector('#kLine .kl-v')).filter),/blur/); await pg.evaluate(()=>document.body.classList.remove('hidenum'));
+  await pg.click('#kLine'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'overview','a tap leads home');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});

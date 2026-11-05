@@ -2644,6 +2644,18 @@ html[data-theme="dark"].a11y-hc .chip,html[data-theme="dark"].a11y-hc .btn,html[
 html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
 /* the switch at the top: a moon in the day, a sun at night */
 .hbtn .th-sun,html[data-theme="dark"] .hbtn .th-moon{display:none} html[data-theme="dark"] .hbtn .th-sun{display:block}
+/* 5.11: the portfolio's value at the top only where it is the base of the screen (the owner's choice). The full card on the
+   home; on the portfolio, the control (with "מה קורה בתיק") and the plan (with the goal and the savings) one thin line that
+   leads home; on every other screen nothing, so the screen's own content starts at the top */
+body:not([data-page="overview"]) .hero .main{display:none!important}
+.kline{display:none;align-self:flex-start;align-items:baseline;flex-wrap:wrap;gap:2px 8px;max-width:100%;box-sizing:border-box;margin:2px 6px 10px;padding:7px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink2);font:inherit;font-size:13px;line-height:1.4;text-align:start;cursor:pointer}
+body[data-page="mine"] .kline,body[data-page="risk"] .kline,body[data-page="state"] .kline,body[data-page="plan"] .kline,body[data-page="forecast"] .kline,body[data-page="pots"] .kline{display:inline-flex}
+.kline .kl-k{color:var(--muted)} .kline .kl-v{color:var(--ink);font-size:15px;font-weight:700} .kline .kl-s{color:var(--muted)}
+.kline .kl-d{font-weight:600;color:var(--ink2)} .kline .kl-d.up{color:var(--gain)} .kline .kl-d.down{color:var(--loss)}
+.kline .kl-go{color:var(--muted);font-size:16px;line-height:1;margin-inline-start:2px}
+.kline:hover{border-color:var(--accent)} .kline:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
+.noacct .kline{display:none!important}
 </style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
@@ -2734,6 +2746,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       </div>
       <div class="ktiles" id="kindRow" role="group" aria-label="מניות, קרנות ומזומן"></div>
     </div>
+    <button type="button" class="kline" id="kLine" data-tab="overview" hidden></button>
     <div class="taperow" id="tapeRow" data-adv><button type="button" class="tapetg" id="tapeTg" aria-expanded="true" aria-label="להסתיר את פס המניות" title="להסתיר את פס המניות">−</button><div class="tapewrap" dir="ltr" aria-hidden="true"><div class="tape" id="tape"></div></div></div>
   </header>
 
@@ -17808,7 +17821,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kLineFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -18882,6 +18895,15 @@ function renderSoon(m){
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-godiv]'); if(!b)return; showTab('forecast',true);
   setTimeout(()=>{const s=document.querySelector('section[aria-labelledby="hDiv"]'); if(s){if(s.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}} try{s.scrollIntoView({block:'start'})}catch(e){}}},80)});
+// 5.11: the thin line of the portfolio's value, on the screens where the value is their base (the portfolio, the control,
+// the plan): the value and the day's change as the home's card says them, without the date (it is on the home, one tap away)
+function kLineFill(){
+  const b=$('kLine'); if(!b)return; const tx=id=>{const e=$(id); return e?e.textContent.trim():''}, tot=tx('kTotal');
+  if(!tot||tot==='—'){b.hidden=true; b.textContent=''; return}
+  const k=tx('kTotK')||'שווי התיק', m=(tx('kDayD').split(' · ')[0]||'').replace(/\u200E/g,'').match(/^([+−-][\d.,]+%)\s*(.*)$/), d=($('hero')&&$('hero').dataset.d)||'';
+  const dw=m?m[2].replace(/\s*\([\d.]+\)$/,''):'';
+  b.innerHTML=`<span class="kl-k">${esc(k)}</span><b class="kl-v n">${esc(tot)}</b>${m?`<span class="kl-s" aria-hidden="true">·</span><span class="kl-d${d==='up'||d==='down'?' '+d:''}"><span class="n">${esc(m[1])}</span> ${esc(dw)}</span>`:''}<span class="kl-go" aria-hidden="true">‹</span>`;
+  b.setAttribute('aria-label',`${k} ${tot}${m?', '+m[1]+' '+dw:''}. לדף הבית`); b.title='לדף הבית'; b.hidden=false}
 function kMiniFill(){
   const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
   const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};
