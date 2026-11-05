@@ -1503,6 +1503,7 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 .ptnav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
 .ptnav .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap;padding-inline:12px}
 .ptnav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .pt-off{display:none!important}
+/* 5.11: on "מבט לאחור" the day's figures are right below; the header does not repeat them */ body[data-page="history"] #kMini{display:none!important}
 @media (max-width:640px){.ptnav .chip{font-size:13px;padding-inline:9px}}
 #riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
@@ -3080,7 +3081,7 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
       <div class="row"><h2 id="hTax">מס: כמה הייתי משלם אם הייתי מוכר היום</h2><span class="sub" id="taxSub"></span></div>
       <div class="panel taxnow" id="taxBox"><div class="empty">החישוב יופיע כאן אחרי שהתיק והמחירים ייטענו.</div></div>
     </section>
-    <div id="backWrap" style="display:flex;flex-direction:column;gap:22px"></div>
+    <div id="backWrap" data-ptid="backWrap" style="display:flex;flex-direction:column;gap:22px"></div>
   </div>
 
   <div class="pane" data-pane="journal" hidden>
@@ -25045,16 +25046,20 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
 // 4.11: the long screens in parts, like the control screen (no folds: a row at the top shows one part at a time, the
 // choice kept for next time). A link to a section inside (set:..., a scroll) opens the part that holds it
 const PARTS={
-  settings:{me:['פרופיל ופרטיות',['hMe','hUse','hData']],news:['חדשות והתראות',['hNwSet','hNotif']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
+  // 5.11: the profile (6 screens with the usage tables and the privacy text) and the news and alerts (5 screens, 107
+  // controls) each in two
+  settings:{me:['פרופיל',['hMe']],priv:['פרטיות',['hUse','hData']],news:['חדשות',['hNwSet']],notif:['התראות',['hNotif']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
   forecast:{goal:['היעד שלי',['hGoal','hFlows','hFwd']],scen:['תרחישים',['hScen','hWhatIf']],div:['דיבידנדים',['hDivGot','hDiv','hDivAhead']],calc:['מחשבונים',['hDivCalc','hFxCalc']]},
-  history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']]},
+  history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']],acct:['לפי חשבון',['backWrap']]},
   journal:{jrn:['היומן שלי',['hJrn']],dna:['טביעת האצבע שלי (DNA)',['hDna']]}};
 const PTV={}; try{Object.assign(PTV,JSON.parse(localStorage.getItem('tr_ptv')||'{}'))}catch(e){}
-function ptSecs(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return []; return [...pane.querySelectorAll('section[aria-labelledby]')].filter(x=>x.parentElement===pane||x.parentElement.parentElement===pane)}
-function ptOf(t,sec){const id=sec.getAttribute('aria-labelledby'); for(const [k,[,ids]] of Object.entries(PARTS[t]||{}))if(ids.includes(id))return k; return null}
+// 5.11: a block that is not a section (the accounts' look back, drawn by the page) joins a part by data-ptid; before, it
+// stood outside every part and showed under each of them
+function ptSecs(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return []; return [...pane.querySelectorAll('section[aria-labelledby]')].filter(x=>x.parentElement===pane||x.parentElement.parentElement===pane).concat([...pane.querySelectorAll(':scope>[data-ptid]')])}
+function ptOf(t,sec){const id=sec.dataset.ptid||sec.getAttribute('aria-labelledby'); for(const [k,[,ids]] of Object.entries(PARTS[t]||{}))if(ids.includes(id))return k; return null}
 function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return;
   // a part whose every section is hidden by its own logic (the system's health for a viewer) is not offered
-  const live=Object.keys(P).filter(x=>ptSecs(t).some(sec=>ptOf(t,sec)===x&&!sec.hidden)); if(!live.length)return; if(!live.includes(k))k=live.includes(PTV[t])?PTV[t]:live[0];
+  const live=Object.keys(P).filter(x=>ptSecs(t).some(sec=>ptOf(t,sec)===x&&!sec.hidden&&!(sec.dataset.ptid&&!sec.children.length))); if(!live.length)return; if(!live.includes(k))k=live.includes(PTV[t])?PTV[t]:live[0];
   PTV[t]=k; try{localStorage.setItem('tr_ptv',JSON.stringify(PTV))}catch(e){}
   let nav=pane.querySelector(':scope>.ptnav'); if(!nav){nav=document.createElement('div'); nav.className='ptnav'; nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של המסך'); const sub=pane.querySelector(':scope>.subtabs'); sub?sub.after(nav):pane.prepend(nav)}
   nav.innerHTML=live.map(x=>`<button type="button" class="chip" role="tab" data-pt="${t}:${x}" aria-pressed="${x===k}" aria-selected="${x===k}">${P[x][0]}</button>`).join('');
@@ -25062,7 +25067,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
 try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
-function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const k=sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
+function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 function showTab(t,user){
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
@@ -25076,7 +25081,7 @@ function showTab(t,user){
   for(const s of document.querySelectorAll('[data-pane]'))s.hidden=s.dataset.pane!==t;
   try{subTabs(t)}catch(e){} try{if(PARTS[t])ptSet(t,PTV[t])}catch(e){}
   try{localStorage.setItem('tab',t)}catch(e){}
-  if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){}}
+  if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){} try{if(PARTS[t])ptSet(t,PTV[t])}catch(e){}}   // 5.11: a part filled by the render (the accounts' look back) is offered once it has content
   if(t==='state'){try{renderState()}catch(e){}}
   if(t==='calendar'){try{renderCal()}catch(e){}}
   if(t==='news'){try{const st=nxState(); if(NXPREV===null)NXPREV=st.lastSeen||''; renderNews(); clearTimeout(showTab.nxT); showTab.nxT=setTimeout(()=>{const st2=NEWSST=nxState(); st2.lastSeen=new Date().toISOString(); nxSave()},4000)}catch(e){}}

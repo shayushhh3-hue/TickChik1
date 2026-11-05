@@ -2789,18 +2789,21 @@ test('4.11 the long screens in parts: one part at a time, the choice kept, a lin
   await tab(pg,'settings'); await pg.waitForTimeout(400);
   const a=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="settings"] .ptnav .chip')].map(c=>c.textContent),on:(document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]')||{}).textContent,
     rules:!!document.getElementById('rMaxPos').offsetParent,me:!!document.getElementById('meSec').offsetParent,h:document.documentElement.scrollHeight}));
-  assert.ok(['פרופיל ופרטיות','חדשות והתראות','חשבונות וכללים'].every(x=>a.chips.includes(x)),JSON.stringify(a.chips)); assert.equal(a.on,'פרופיל ופרטיות'); assert.equal(a.me,true); assert.equal(a.rules,false,'the rules are in another part');
+  assert.ok(['פרופיל','פרטיות','חדשות','התראות','חשבונות וכללים'].every(x=>a.chips.includes(x)),JSON.stringify(a.chips)); assert.equal(a.on,'פרופיל'); assert.equal(a.me,true); assert.equal(a.rules,false,'the rules are in another part');
   await pg.click('[data-pane="settings"] .ptnav [data-pt="settings:money"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>!!document.getElementById('rMaxPos').offsetParent),true);
   // a link to a section opens its part
-  await pg.evaluate(()=>window.__chico.go('set:nwSetSec')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>!!document.getElementById('nwSetSec').offsetParent&&document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות והתראות');
+  await pg.evaluate(()=>window.__chico.go('set:nwSetSec')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>!!document.getElementById('nwSetSec').offsetParent&&document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות');
   // kept for next time
-  await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות והתראות');
+  await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות');
   // the goal screen: the goal part first; the home steps' "לקבוע יעד" reaches the field through its part
   await tab(pg,'forecast'); await pg.waitForTimeout(300); const f=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="forecast"] .ptnav .chip')].map(c=>c.textContent),h:document.documentElement.scrollHeight}));
   assert.deepEqual(f.chips,['היעד שלי','תרחישים','דיבידנדים','מחשבונים']); assert.ok(f.h<5000,'the goal screen on a phone: '+f.h);
   await pg.click('[data-pane="forecast"] .ptnav [data-pt="forecast:calc"]'); await pg.evaluate(()=>document.getElementById('inGoal').scrollIntoView()); await pg.waitForTimeout(200);
   assert.equal(await pg.evaluate(()=>!!document.getElementById('inGoal').offsetParent),true,'a scroll to a field opens its part');
-  await tab(pg,'history'); await pg.waitForTimeout(300); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('[data-pane="history"] .ptnav .chip')].map(c=>c.textContent)),['מבט מהיר','לאורך זמן','עמלות ומס']);
+  await tab(pg,'history'); await pg.waitForTimeout(300); assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('[data-pane="history"] .ptnav .chip')].map(c=>c.textContent)),['מבט מהיר','לאורך זמן','עמלות ומס','לפי חשבון']);
+  // 5.11: the accounts' look back is its own part, not under each of the others
+  {const v=await pg.evaluate(()=>{const b=document.getElementById('backWrap'), on=()=>!!b.offsetParent&&b.getBoundingClientRect().height>0, out=[]; for(const k of ['quick','time','cost','acct']){document.querySelector(`[data-pt="history:${k}"]`).click(); out.push(on())} return out});
+    assert.deepEqual(v,[false,false,false,true])}
   assert.match(await pg.evaluate(()=>document.getElementById('quickSay').textContent),/^צ׳יקו: התיק שווה ₪[\d,]+ (יותר|פחות) ממה שהפקדת/,'צ׳יקו says what the numbers add up to');
   assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
