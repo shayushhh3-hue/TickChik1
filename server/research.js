@@ -176,7 +176,11 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   const uni=((store.getDoc('research/universe').data||{}).keys)||defaultUniverse();
   const order=only?[...new Set(only.filter(usable))]:[...new Set([...held].filter(usable).concat([...watched].filter(usable),uni.filter(usable)))];
   const got={}; let sess=null, ok=0, none=0, fail=0, first=null, stopped=null;
-  for(const k of order){
+  // 5.11: while Yahoo refuses the server its company data ("no crumb", 429), it is not asked every night: a refusal pauses it
+  // for three days (the figures come from FMP, Finnhub, Nasdaq and the companies' reports), then one try tells if it is back
+  let yhPause=null; try{yhPause=JSON.parse(store.getMeta('yhCoPause')||'null')}catch(e){} if(yhPause&&!(Date.parse(yhPause.until)>now.getTime()))yhPause=null;
+  if(yhPause)stopped='paused';
+  for(const k of (yhPause?[]:order)){
     if(Date.now()-t0>budgetMs){stopped='time';break}
     try{
       if(!sess)sess=await yahooSession({fetch:f});
@@ -184,9 +188,11 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       catch(e){if(!e.auth)throw e; sess=await yahooSession({fetch:f}); res=await quoteSummary(tick(k,map),sess,{fetch:f})}
       if(res){got[k]=figures(res,now);ok++} else none++;
     }catch(e){fail++; first=first||`${k}: ${e.message}`;
-      if(e.session){stopped='session';break} if(e.slow)await sleep(Math.min(30000,pause*50)); if(fail>=25&&!ok){stopped='errors';break}}
+      if(e.session){stopped='session'; if(!ok){yhPause={until:new Date(now.getTime()+3*864e5).toISOString(),at:iso,why:String(e.message||'').slice(0,80)}; try{store.setMeta('yhCoPause',JSON.stringify(yhPause))}catch(x){}} break}
+      if(e.slow)await sleep(Math.min(30000,pause*50)); if(fail>=25&&!ok){stopped='errors';break}}
     if(pause)await sleep(pause);
   }
+  const yh=new Set(Object.keys(got));   // 5.11: what Yahoo itself gave (taken before the other sources add theirs)
   // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
   let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
   // 5.11: Financial Modeling Prep (with the owner's key) for what Yahoo and Finnhub did not give, within its daily budget
@@ -199,7 +205,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   let sd=null; if(secDates){try{sd=await secDates(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched})}catch(e){log('report dates failed: '+(e&&e.message||e))}}
   // 25.10: what Yahoo did not give (all of it, when its company data refuses the server): the companies' own reports at the
   // SEC, Finnhub with a key, and the beta from the daily closes (server/fundamentals.js)
-  const yh=new Set(Object.keys(got)); let fund=null;
+  let fund=null;
   try{fund=await fill(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,budgetMs:only?3*60e3:Math.max(6*60e3,budgetMs-(Date.now()-t0))})}catch(e){log('fundamentals failed: '+(e&&e.message||e))}
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
@@ -272,7 +278,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
   // 30.10: how far each held or followed share moved around its last earnings releases (for the card before the next one)
   let erxN=0; try{erxN=erxPass(store,[...new Set([...held,...watched])],{now})}catch(e){log('report moves failed: '+(e&&e.message||e))}
-  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,fmp:fms,nq:nqs,dates:sd,divs:dvs,erx:erxN,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  if(ok>0){try{store.setMeta('yhCoPause','null')}catch(e){}}   // Yahoo answered: no pause
+  const st={at:iso,ok,none,fail,of:order.length,yhPause:yhPause&&yhPause.until||null,fund,fh:fhs,fmp:fms,nq:nqs,dates:sd,divs:dvs,erx:erxN,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;

@@ -1922,3 +1922,17 @@ test('1.11 alerts: articles read by the rules about the same company on the same
   const E=eventsOf(s,{now}); assert.equal(E.length,1,'one event for the day'); assert.equal(E[0].arts.length,3); assert.match(E[0].k,/^rd:META:/);
   const P=pulseUpdate(s,null,{now}).doc.items.filter(a=>a.holds.some(h=>h.sym==='META')); assert.equal(P.length,1,'one alert, three sources'); assert.equal(P[0].n,3);
 });
+
+test('5.11 while Yahoo refuses the server its company data, it is not asked again for three days; then one try; an answer clears the pause',async()=>{
+  const {researchTask}=await import('../server/research.js'); const s=new Store(':memory:');
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA'}]}); s.setDoc('research/universe',{keys:['NVDA','KO']});
+  const off=fakeYahoo({crumbFail:true}), noKeys={noFh:true,secDates:null,divs:null,nq:null,fm:null,fill:async()=>null,explain:async()=>null,mail:async()=>true,pause:0};
+  let st=await researchTask(s,{...noKeys,fetch:off.f,now:new Date('2026-11-05T23:15:00Z')});
+  assert.equal(st.stopped,'session'); assert.ok(st.yhPause,'paused'); assert.ok(off.seen.some(u=>u.includes('getcrumb')));
+  const n0=off.seen.filter(u=>/yahoo\.com/.test(u)).length;
+  st=await researchTask(s,{...noKeys,fetch:off.f,now:new Date('2026-11-06T23:15:00Z')});
+  assert.equal(st.stopped,'paused'); assert.equal(off.seen.filter(u=>/getcrumb|quoteSummary/.test(u)).length,off.seen.slice(0,n0).filter(u=>/getcrumb|quoteSummary/.test(u)).length,'not asked the next night');
+  // after three days: one try, and Yahoo answering clears the pause
+  const on=fakeYahoo(); st=await researchTask(s,{...noKeys,fetch:on.f,now:new Date('2026-11-09T23:15:00Z')});
+  assert.ok(on.seen.some(u=>u.includes('getcrumb')),'asked again after the pause'); assert.ok(st.ok>0); assert.equal(st.yhPause,null); assert.equal(s.getMeta('yhCoPause'),'null');
+});
