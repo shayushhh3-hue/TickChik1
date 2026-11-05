@@ -2909,15 +2909,21 @@ test('5.11 the security chart for reading: figures as tiles (the price, the chan
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(500);
   await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500); await pg.evaluate(()=>document.querySelector('[data-rng="1y"]').click()); await pg.waitForTimeout(800);
-  const r=await pg.evaluate(()=>({tiles:[...document.querySelectorAll('#secRead .crt .k')].map(x=>x.textContent),pos:[...document.querySelectorAll('.mypos .mp .k')].map(x=>x.textContent),
+  // 5.11 (the owner's choice): the price at the top is the box: one line under it, no cards
+  const r=await pg.evaluate(()=>({line:document.getElementById('secRead').textContent.replace(/\s+/g,' '),cards:document.querySelectorAll('#secPage .crt').length,head:document.querySelector('#secPage .big .pxrow .v').textContent,
+    pos:[...document.querySelectorAll('.mypos .mp .k')].map(x=>x.textContent),
     above:(()=>{const a=document.querySelector('.mypos'), b=document.querySelector('#secPage .repbox'); return !!a&&!!b&&!!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)})(),
+    lineAbove:!!(document.getElementById('secRead').compareDocumentPosition(document.getElementById('secChart'))&Node.DOCUMENT_POSITION_FOLLOWING),
     sw:[...document.querySelectorAll('[data-seccc]')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed')).join(','),ox:document.documentElement.scrollWidth<=innerWidth+1}));
-  assert.deepEqual(r.tiles.slice(0,4),['המחיר האחרון','השינוי בשנה','שיא בטווח','מתחת לשיא']);
+  assert.match(r.line,/^בשנה [+−][\d.]+% · שיא \$[\d,.]+ \(/); assert.equal(r.cards,0,'no cards'); assert.ok(r.lineAbove,'the line is above the chart');
   assert.deepEqual(r.pos,['השווי שלך','ביום המסחר האחרון','מול הקנייה']); assert.ok(r.above,'the holding right above the report'); assert.equal(r.sw,'בדולרים:true,בשקלים:false'); assert.ok(r.ox);
-  // a day under the finger: its tiles; the label over the line is not drawn for the last day (the tag says it)
+  // a day under the finger: the price at the top and its pill are that day's; the line says it against the range and today
   await pg.evaluate(()=>document.getElementById('secChart').scrollIntoView({block:'center'})); await pg.waitForTimeout(200);
   const cb=await (await pg.$('#secChart')).boundingBox(); await pg.mouse.move(cb.x+cb.width*0.4,cb.y+cb.height/2); await pg.waitForTimeout(250);
-  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#secRead .crt .k')].map(x=>x.textContent).slice(0,3)),['מחיר הסגירה','מתחילת הטווח','מאז ועד היום']);
+  const h=await pg.evaluate(()=>({head:document.querySelector('#secPage .big .pxrow .v').textContent,pill:document.querySelector('#secPage .big .pxrow .chg').textContent,line:document.getElementById('secRead').textContent}));
+  assert.notEqual(h.head,r.head,'the price at the top is the day\'s'); assert.match(h.pill,/\d{1,2}\.\d{1,2}\.\d{4}/); assert.match(h.line,/מתחילת הטווח · [+−][\d.]+% עד היום/);
+  await pg.focus('#secChart'); await pg.keyboard.press('Escape'); await pg.mouse.move(2,2); await pg.waitForTimeout(200);
+  assert.equal(await pg.evaluate(()=>document.querySelector('#secPage .big .pxrow .v').textContent),r.head,'and back');
   // shekels without the rates' history: said, and the chart stays in dollars
   await pg.click('[data-seccc="ils"]'); await pg.waitForTimeout(500);
   assert.match(await pg.evaluate(()=>document.getElementById('secRead').textContent),/בדולרים|בשקלים/);

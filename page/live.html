@@ -719,6 +719,8 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp canvas{width:100%;height:230px;display:block;touch-action:pan-y;cursor:crosshair;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .chread{background:var(--sunk);border-radius:14px;padding:10px;font-size:12.5px;line-height:1.5;color:var(--ink2);min-height:48px}
 /* 5.11: the box above the security chart as tiles, the holding's strip, the dollar/shekel switch */
+.chline{margin:2px 0 8px;font-size:13.5px;line-height:1.55;color:var(--ink2);min-height:1.55em} .chline b{font-family:var(--mono);font-weight:700;color:var(--ink);direction:ltr;unicode-bidi:isolate;white-space:nowrap} .chline b.up{color:var(--gain)} .chline b.down{color:var(--loss)} .chline small{color:var(--muted);font-size:12px}
+@media (max-width:520px){.chline{min-height:3.1em}} .pxrow .chg.nd{background:var(--sunk);color:var(--ink2)} .pxrow .chg.nd b{color:var(--ink)}
 .crx{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
 .crt{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .crt .k{font-size:12px;color:var(--muted);font-weight:600} .crt .v{font-size:17px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap}
@@ -24794,9 +24796,9 @@ function renderSec(){SECHOV=-1;
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     ${secPriceParts(it,pr,on,fx)[0]}
+    <p class="chline" id="secRead" aria-live="polite"></p>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
-    <div class="chread" id="secRead" aria-live="polite"></div>
     ${secPriceParts(it,pr,on,fx)[1]}
     ${secPxAlert(k,pr)}
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
@@ -24960,7 +24962,8 @@ function drawSec(){
     g.fillStyle=DK?'#111233':'#FFFFFF';g.beginPath();g.arc(hx,hy,7,0,7);g.fill();g.fillStyle=VB;g.beginPath();g.arc(hx,hy,4.5,0,7);g.fill();
     // 5.11: the label in the line's violet with white figures in both looks (in the dark look it was white on white); on the
     // last point the price tag beside the axis already says it
-    if(SECHOV!==pts.length-1){const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 13px '+FONT; const tw=g.measureText(lab).width+20, th=26;
+    // 5.11: the day's price and date are in the header now (the price at the top follows the finger): no label on the line
+    if(false){const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 13px '+FONT; const tw=g.measureText(lab).width+20, th=26;
       let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
       g.fillStyle=VB; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,13):g.rect(px,py,tw,th); g.fill(); g.fillStyle='#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2+0.5)}}
   secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq,{CC,NAT,iHi,iLo,MY,EV,fxNo});
@@ -24969,6 +24972,8 @@ function drawSec(){
   SECV={pts,x,L,PW};
   const ch=last[1]/base-1;const late=days!==Infinity&&t0>from+days*864e5*0.25;
   const itc=itemOf(SEC), ils=pr?pr.ccy==='ILS':String(SEC).startsWith('TLV:')||(itc&&(itc.t==='T'||(itc.t==='H'&&itc.ex==='TLV'))), cur=CC!==NAT?'בשקלים, לפי שער הדולר בכל יום':ils?'בשקלים':'בדולרים', dm=t=>dmy(new Date(t).toISOString());
+  // 5.11: the note only when there is something to know (a gap, data that starts late, the chart in shekels); otherwise none
+  note.hidden=!(gaps.length||late||CC!==NAT);
   note.textContent=`${pts.length} נקודות (${freq}), מחירי סגירה ${cur}. השינוי בגרף הוא של המחיר בלבד, בלי דיבידנדים.`+(late?' הנתונים מתחילים מאוחר יותר מתחילת הטווח; ההיסטוריה המלאה תימשך בלילה הקרוב.':'')
     +(gaps.length?` באפור: ${gaps.length===1?'תקופה':'תקופות'} בלי נתונים (${gaps.slice(0,3).map(([a,b])=>dm(a)+'–'+dm(b)).join(', ')}${gaps.length>3?' ועוד':''}); הקו שם רק מחבר בין שתי הנקודות.`:'');
 }
@@ -24978,18 +24983,22 @@ function fullDate(t){const d=new Date(t);return 'יום '+HEDAY[d.getDay()]+' '+
 // below it, and the person's average when they hold it; touching a day shows that day, and what happened on it
 const RNGIN={'1w':'בשבוע','1m':'בחודש','3m':'ב-3 חודשים','6m':'בחצי שנה','1y':'בשנה','5y':'ב-5 שנים','max':'מההנפקה'};
 function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return;el.hidden=false; X=X||{}; const ccy=X.CC||'USD', MY=X.MY||{trades:[]}, EV=X.EV||[];
-  const pa=v=>pct(Math.abs(v)*100,1), sg=v=>(v>=0?'+':'−')+pa(v), cls=v=>v>=0?'up':'down', F=v=>fmtPx(v,ccy);
-  const tile=(k,v,sub,c,main)=>`<div class="crt${main?' main':''}"><span class="k">${k}</span><b class="v n ${c||''}">${v}</b>${sub?`<span class="s">${sub}</span>`:''}</div>`;
+  // 5.11 (the owner's choice): the price at the top is the box. Its figure and pill show the day under the finger; the line
+  // under it says the range (the change, the high, how far below it), or that day against the range and today
+  const pa=v=>pct(Math.abs(v)*100,1), sg=v=>(v>=0?'+':'−')+pa(v), cls=v=>v>=0?'up':'down', F=v=>fmtPx(v,ccy), B=(v,c)=>`<b class="${c||''}">${v}</b>`;
   const first=pts[0], span=last[0]-first[0], D=t=>dateLab(t,span), win=({'יומי':2,'שבועי':4,'חודשי':16}[freq]||2)*864e5;
+  const row=document.querySelector('#secPage .big .pxrow'); if(row&&row.dataset.base==null)row.dataset.base=row.innerHTML;
   let H='';
   if(hp){const ch=hp[1]/base-1, toLast=last[1]/hp[1]-1, isLast=hp===last;
+    if(row){row.innerHTML=`<span class="v">${F(hp[1])}</span><span class="chg nd"><b>${(d=>d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear())(new Date(hp[0]))}</b><small>${isLast?'המחיר האחרון':'מחיר הסגירה'}</small></span>`; row.classList.add('hov')}
     const near=EV.filter(e=>Math.abs(e.t-hp[0])<=win), tr=(MY.trades||[]).filter(t=>Math.abs(t.t-hp[0])<=win);
-    H=`<div class="crx">${tile(isLast?'המחיר האחרון':'מחיר הסגירה',F(hp[1]),fullDate(hp[0]),'',1)}${tile('מתחילת הטווח',sg(ch),'מ-'+F(base),cls(ch))}${isLast?'':tile('מאז ועד היום',sg(toLast),'עד '+F(last[1]),cls(toLast))}${MY.avg?tile('מול הממוצע שלך',sg(hp[1]/MY.avg-1),'הממוצע '+F(MY.avg),cls(hp[1]/MY.avg-1)):''}</div>`
-      +(near.length||tr.length?`<ul class="crev">${tr.map(t=>`<li class="${t.side}"><i aria-hidden="true"></i>${t.side==='buy'?'קנית':'מכרת'} ${nn(Math.abs(t.q))} יח׳ ב-<span class="n">${F(t.px)}</span> · ${D(t.t)}</li>`).join('')}${near.map(e=>`<li class="${e.k}"><i aria-hidden="true"></i>${esc(e.l)} · ${D(e.t)}</li>`).join('')}</ul>`:'');
-  }else{const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, lo=pts[X.iLo||0]||first, top=hi===last, fromHi=last[1]/hi[1]-1;
-    H=`<div class="crx">${tile('המחיר האחרון',F(last[1]),fullDate(last[0]),'',1)}${tile('השינוי '+(RNGIN[SECRNG]||''),sg(chAll),`מ-${F(base)} ב-${D(first[0])}`,cls(chAll))}${tile('שיא בטווח',F(hi[1]),D(hi[0]))}${tile(top?'במחיר השיא':'מתחת לשיא',top?'0%':'−'+pa(fromHi),`שפל ${F(lo[1])} ב-${D(lo[0])}`,top?'':'down')}${MY.avg?tile('מול הממוצע שלך',sg(last[1]/MY.avg-1),'קנית בממוצע ב-'+F(MY.avg),cls(last[1]/MY.avg-1)):''}</div>`;
-    if(X.fxNo)H+=`<p class="hint">שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.</p>`}
-  if(!hp){el.style.minHeight=''; el.innerHTML=H; try{el.style.minHeight=el.offsetHeight+'px'}catch(e){}} else el.innerHTML=H}
+    H=[`${B(sg(ch),cls(ch))} מתחילת הטווח`,isLast?'':`${B(sg(toLast),cls(toLast))} עד היום`,MY.avg?`${B(sg(hp[1]/MY.avg-1),cls(hp[1]/MY.avg-1))} מול הממוצע שלך`:'',
+      ...tr.map(t=>`${t.side==='buy'?'קנית':'מכרת'} ${nn(Math.abs(t.q))} יח׳ ב-${F(t.px)}`),...near.map(e=>esc(e.l))].filter(Boolean).join(' · ');
+  }else{if(row&&row.dataset.base!=null){row.innerHTML=row.dataset.base; row.classList.remove('hov')}
+    const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, top=hi===last, fromHi=last[1]/hi[1]-1;
+    H=[`${RNGIN[SECRNG]||''} ${B(sg(chAll),cls(chAll))}`,`שיא ${B(F(hi[1]))} (${D(hi[0])})`,top||Math.abs(fromHi)<0.0005?'':`${B('−'+pa(fromHi),'down')} מהשיא`].filter(Boolean).join(' · ')
+      +(X.fxNo?'<br><small>שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.</small>':'')}
+  el.innerHTML=H}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
 function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.getBoundingClientRect(),px=ev.clientX-r.left;let best=-1,bd=1e9;SECV.pts.forEach((p,i)=>{const d=Math.abs(SECV.x(p[0])-px);if(d<bd){bd=d;best=i}});if(best!==SECHOV){SECHOV=best;drawSec()}}
