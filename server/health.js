@@ -5,6 +5,7 @@
 // failed: a single failure is "warn" until the next run. The price watch (server/pxwatch.js) mails the bad ones to the
 // owner, once in 12 hours each. Facts about the site only: nothing about any portfolio.
 import {pxProblems} from './pxwatch.js';
+import {fmpKey} from './fmp.js';
 import {mailReady, mailAllowed, MAIL_KINDS, mailAllowedFor, mailFromOwnDomain, kindsOf} from './mail.js';
 
 const H=36e5;
@@ -27,6 +28,10 @@ export function sources(store,{env=process.env,now=new Date()}={}){
   {const fh=R&&R.fh, off=!env.FINNHUB_API_KEY;
     out.push({key:'finnhub',name:'Finnhub: דוחות, תחזיות ואנליסטים',max:80,off,ran:fh?R.at:null,ok:!!(fh&&fh.stopped!=='key'&&((fh.filled||0)+(fh.cal||0)+(fh.recs||0)>0)),
       note:off?'אין מפתח (FINNHUB_API_KEY)':fh?(fh.stopped==='key'?'המפתח נדחה':`${fh.filled||0} חברות, ${fh.cal||0} מועדי דוחות${fh.fail?`, ${fh.fail} נכשלו`:''}`):'עוד לא רץ'})}
+  // 5.11: Financial Modeling Prep, with the owner's key: the company figures when Yahoo refuses the server
+  {const fm=R&&R.fmp, off=!fmpKey(env);
+    out.push({key:'fmp',name:'FMP: נתוני החברות (מכפילים, שוליים, חוב, אנליסטים)',max:80,off,ran:fm?R.at:null,ok:!!(fm&&fm.stopped!=='key'&&fm.filled>0),
+      note:off?'אין מפתח (FMP_API_KEY)':fm?(fm.stopped==='key'?'המפתח נדחה':`${fm.filled||0} חברות מולאו, ${fm.calls||0} קריאות (${fm.today||0} היום מתוך 200)${fm.off&&fm.off.length?`, לא בתוכנית שלך: ${fm.off.join(', ')}`:''}${fm.stopped==='limit'?', הגיע למכסה היומית':''}`):'עוד לא רץ מאז שהמפתח נוסף'})}
   {const d=R&&R.dates; out.push({key:'sec',name:'מועדי הדוחות (SEC)',max:80,ran:d?R.at:null,ok:!!(d&&d.dated>0),note:d?`${d.dated} מתוך ${d.tried}${d.fail?`, ${d.fail} נכשלו`:''}${d.first&&!d.dated?': '+d.first:''}`:'עוד לא רץ'})}
   {const d=R&&R.divs; out.push({key:'divs',name:'דיבידנדים קדימה',max:80,ran:d?R.at:null,ok:!!(d&&(d.nasdaq+d.yahoo>0||(d.tried>0&&!d.fail))),note:d?`Nasdaq ${d.nasdaq}, Yahoo ${d.yahoo} מתוך ${d.tried}${d.fail?`, ${d.fail} בלי תשובה`:''}`:'עוד לא רץ'})}
   // the news runs every half hour from 07:00 to 23:00: the night is the longest gap

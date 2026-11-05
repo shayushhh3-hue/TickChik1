@@ -724,10 +724,10 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crt .k{font-size:12px;color:var(--muted);font-weight:600} .crt .v{font-size:17px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap}
 .crt.main .v{font-size:20px} .crt .v.up,.mp .v.up{color:var(--gain)} .crt .v.down,.mp .v.down{color:var(--loss)} .crt .s{font-size:12px;color:var(--ink2)}
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
-.crev i,.lg i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
-.crev .buy i,.lg.buy i{background:#0D9488;border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)} .crev .sell i,.lg.sell i{background:#E11D48;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)}
-.crev .rep i,.lg.rep i{background:#7C3AED} .crev .ex i,.lg.ex i{background:#0D9488} .crev .al i,.lg.al i{background:#F59E0B} .lg.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
-.chread p.hint{margin:8px 2px 0} .lgs{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:4px} .lg{display:inline-flex;align-items:center;gap:5px;color:var(--ink2);font-size:12px}
+.crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
+.crev .buy i,.cll.buy i{background:#0D9488;border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)} .crev .sell i,.cll.sell i{background:#E11D48;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)}
+.crev .rep i,.cll.rep i{background:#7C3AED} .crev .ex i,.cll.ex i{background:#0D9488} .crev .al i,.cll.al i{background:#F59E0B} .cll.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
+.chread p.hint{margin:8px 2px 0} .clls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:4px} .cll{display:inline-flex;align-items:center;gap:5px;color:var(--ink2);font-size:12px}
 .mypos{margin:16px 0 6px} .mypos h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
@@ -24908,8 +24908,8 @@ function drawSec(){
     g.fillStyle=TEAL; g.beginPath(); g.roundRect?g.roundRect(L+4,yy,w,18,9):g.rect(L+4,yy,w,18); g.fill(); heb(lb,L+4+w/2,yy+9.5,'#FFFFFF')}
   const ring=(xx,yy,c)=>{g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,5.5,0,7); g.fill(); g.lineWidth=2.2; g.strokeStyle=c; g.beginPath(); g.arc(xx,yy,4,0,7); g.stroke()};
   if(pts.length>8){const cx=xx=>xx;
-    if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,VB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),DK?'#DDD6FE':'#5B21B6','center',1)}
-    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t='שפל '+fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LAB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),Math.min(T+PH-26,ly+14),DK?'#C4C9D4':'#4B5563','center',1)}}
+    if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,GAIN); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),GAIN,'center',1)}
+    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t='שפל '+fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LOSS); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),Math.min(T+PH-26,ly+14),LOSS,'center',1)}}
   for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
     g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
   {const EVC={rep:[VB,'ד'],ex:[TEAL,'$'],al:[AMB,'!']}, placed=[];
@@ -24963,9 +24963,9 @@ function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return
       +(near.length||tr.length?`<ul class="crev">${tr.map(t=>`<li class="${t.side}"><i aria-hidden="true"></i>${t.side==='buy'?'קנית':'מכרת'} ${nn(Math.abs(t.q))} יח׳ ב-<span class="n">${F(t.px)}</span> · ${D(t.t)}</li>`).join('')}${near.map(e=>`<li class="${e.k}"><i aria-hidden="true"></i>${esc(e.l)} · ${D(e.t)}</li>`).join('')}</ul>`:'');
   }else{const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, lo=pts[X.iLo||0]||first, top=hi===last, fromHi=last[1]/hi[1]-1;
     H=`<div class="crx">${tile('המחיר האחרון',F(last[1]),fullDate(last[0]),'',1)}${tile('השינוי '+(RNGIN[SECRNG]||''),sg(chAll),`מ-${F(base)} ב-${D(first[0])}`,cls(chAll))}${tile('שיא בטווח',F(hi[1]),D(hi[0]))}${tile(top?'במחיר השיא':'מתחת לשיא',top?'0%':'−'+pa(fromHi),`שפל ${F(lo[1])} ב-${D(lo[0])}`,top?'':'down')}${MY.avg?tile('מול הממוצע שלך',sg(last[1]/MY.avg-1),'קנית בממוצע ב-'+F(MY.avg),cls(last[1]/MY.avg-1)):''}</div>`;
-    const leg=[]; if((MY.trades||[]).some(t=>t.side==='buy'))leg.push('<span class="lg buy"><i></i>קנייה שלך</span>'); if((MY.trades||[]).some(t=>t.side==='sell'))leg.push('<span class="lg sell"><i></i>מכירה שלך</span>'); if(MY.avg&&!MY.off)leg.push('<span class="lg avg"><i></i>המחיר הממוצע שלך</span>');
-    for(const [k,l] of [['rep','ד = דוח'],['ex','$ = דיבידנד'],['al','! = אירוע בחדשות']])if(EV.some(e=>e.k===k))leg.push(`<span class="lg ${k}"><i></i>${l}</span>`);
-    H+=`<p class="hint">${leg.length?`<span class="lgs">${leg.join('')}</span>`:''}גע בגרף או עבור עליו כדי לראות כל יום${EV.length?' ומה קרה בו':''}.${X.fxNo?' שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.':''}</p>`}
+    const leg=[]; if((MY.trades||[]).some(t=>t.side==='buy'))leg.push('<span class="cll buy"><i></i>קנייה שלך</span>'); if((MY.trades||[]).some(t=>t.side==='sell'))leg.push('<span class="cll sell"><i></i>מכירה שלך</span>'); if(MY.avg&&!MY.off)leg.push('<span class="cll avg"><i></i>המחיר הממוצע שלך</span>');
+    for(const [k,l] of [['rep','ד = דוח'],['ex','$ = דיבידנד'],['al','! = אירוע בחדשות']])if(EV.some(e=>e.k===k))leg.push(`<span class="cll ${k}"><i></i>${l}</span>`);
+    H+=`<p class="hint">${leg.length?`<span class="clls">${leg.join('')}</span>`:''}גע בגרף או עבור עליו כדי לראות כל יום${EV.length?' ומה קרה בו':''}.${X.fxNo?' שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.':''}</p>`}
   if(!hp){el.style.minHeight=''; el.innerHTML=H; try{el.style.minHeight=el.offsetHeight+'px'}catch(e){}} else el.innerHTML=H}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year

@@ -2,6 +2,7 @@
 // It is not an official API: Yahoo can change or refuse it at any time. When an update fails the last values stay,
 // with their date, and the page says how old they are. Numbers in, numbers out: nothing here is advice.
 import {nasdaqPass} from './nasdaqfig.js';
+import {fmpPass,fmpKey} from './fmp.js';
 import {mailAllowedFor} from './mail.js';
 import {tickerFor} from '../shared/quotes.js';
 import fs from 'node:fs';
@@ -165,8 +166,8 @@ const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,atSrc:o.atSrc||null,
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false,secDates=secDatesPass,divs=divsPass,nq=nasdaqPass}={}){
-  const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.fhAt?'Finnhub':null,v&&v.nqAt?'Nasdaq':null,v&&v.src2&&v.src2.includes('SEC')?'דוחות החברה (SEC)':null].filter(Boolean).join(' + ')||SOURCE;
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false,secDates=secDatesPass,divs=divsPass,nq=nasdaqPass,fm=fmpPass}={}){
+  const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.fhAt?'Finnhub':null,v&&v.fmpAt?'FMP':null,v&&v.nqAt?'Nasdaq':null,v&&v.src2&&v.src2.includes('SEC')?'דוחות החברה (SEC)':null].filter(Boolean).join(' + ')||SOURCE;
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
   for(const w of W)for(const s of ((w.data||{}).held||[]))held.add(s);
@@ -188,6 +189,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   }
   // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
   let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
+  // 5.11: Financial Modeling Prep (with the owner's key) for what Yahoo and Finnhub did not give, within its daily budget
+  let fms=null; if(fm&&fmpKey()){try{fms=await fm(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?6:60})}catch(e){log('fmp failed: '+(e&&e.message||e))}}
   // 5.11: Nasdaq's own figures for what is still missing (all of it when Yahoo refuses the server)
   let nqs=null; if(nq){try{nqs=await nq(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?10:80,budgetMs:only?60e3:6*60e3})}catch(e){log('nasdaq figures failed: '+(e&&e.message||e))}}
   // 28.10: the dividends ahead (declared, and the next ones by the company's rhythm, estimated) for the calendar
@@ -269,7 +272,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
     store.setDoc('research/candidates',{...C.data,items,source:SOURCE,updatedAt:iso})}
   // 30.10: how far each held or followed share moved around its last earnings releases (for the card before the next one)
   let erxN=0; try{erxN=erxPass(store,[...new Set([...held,...watched])],{now})}catch(e){log('report moves failed: '+(e&&e.message||e))}
-  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,nq:nqs,dates:sd,divs:dvs,erx:erxN,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
+  const st={at:iso,ok,none,fail,of:order.length,fund,fh:fhs,fmp:fms,nq:nqs,dates:sd,divs:dvs,erx:erxN,held:heldGot.length,reports:fresh.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),only:!!only};
   store.setMeta('researchStatus',JSON.stringify(st));
   log(`research: ${ok}/${order.length} updated, ${none} not covered, ${fail} failed${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;

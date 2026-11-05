@@ -3,6 +3,7 @@
 // once ("not connected to the site"), instead of looking as if it were working. A check on request asks the service
 // itself with the key (a light, free call) and keeps only the outcome and its time.
 import {DW} from '../ilsyms.js';
+import {FMP_NAMES,FMP_BASE} from '../fmp.js';
 
 export const KEYS={
   ANTHROPIC_API_KEY:{what:'Claude: צ׳יקו, קריאת הדוחות והכתבות',test:'anthropic'},
@@ -18,13 +19,15 @@ export const KEYS={
   ANTHROPIC_BASE_URL:{what:'כתובת שירות Claude (אם לא הרגילה)'},
   MAIL_USER:{what:'כתובת השולח של המיילים'}
 };
+// 5.11: Financial Modeling Prep, under any of the names the site reads
+for(const n of FMP_NAMES)KEYS[n]={what:'FMP (Financial Modeling Prep): נתוני החברות כש-Yahoo חוסם את השרת',test:'fmp',alias:n!=='FMP_API_KEY'};   // the other spellings are listed only when saved
 // what looks like a key or a secret (the platform's own variables are not listed)
 const SECRETISH=/(^|_)(API_?KEY|KEY|TOKEN|SECRET|SECRET_KEY|PASSWORD|PASS|BEARER(_TOKEN)?|ACCESS_KEY(_ID)?|CREDENTIALS?|DSN)$/i;
 const SYSTEM=/^(RAILWAY_|NIXPACKS_|NODE_|NPM_|npm_|PATH$|HOME$|HOSTNAME$|PWD$|SHLVL$|TERM$|LANG$|YARN_|COREPACK_)/;
 
 export function keysList(store,{env=process.env}={}){
   let last={}; try{last=JSON.parse(store.getMeta('keyTests')||'{}')}catch(e){}
-  const names=new Set([...Object.keys(env).filter(n=>!SYSTEM.test(n)&&(SECRETISH.test(n)||KEYS[n])&&String(env[n]||'').trim()),...Object.keys(KEYS).filter(n=>KEYS[n].test)]);
+  const names=new Set([...Object.keys(env).filter(n=>!SYSTEM.test(n)&&(SECRETISH.test(n)||KEYS[n])&&String(env[n]||'').trim()),...Object.keys(KEYS).filter(n=>KEYS[n].test&&!KEYS[n].alias)]);
   const rows=[...names].map(n=>{const K=KEYS[n]||null, set=!!String(env[n]||'').trim();
     return {name:n,set,used:!!K,what:K?K.what:null,canTest:!!(K&&K.test&&set),last:last[n]||null}});
   // the unknown ones first (that is what a newly added key looks like), then the ones in use, then the missing ones
@@ -33,7 +36,7 @@ export function keysList(store,{env=process.env}={}){
 }
 
 const T=12000;
-const said={ok:'עובד',bad:'נדחה',limit:'עובד, אבל הגיע למכסה כרגע',down:'השירות לא ענה',restricted:'עובד (מפתח לשליחה בלבד)'};
+const said={ok:'עובד',bad:'נדחה',limit:'עובד, אבל הגיע למכסה כרגע',down:'השירות לא ענה',restricted:'עובד (מפתח לשליחה בלבד)',plan:'המפתח תקין, אבל הבדיקה לא כלולה בתוכנית שלך'};
 // one light call per service; the answer is only its outcome, never the service's text back to the page
 export async function keyTest(store,name,{env=process.env,fetch:f=globalThis.fetch,now=new Date()}={}){
   const K=KEYS[name]; if(!K)throw new Error('unknown');
@@ -49,10 +52,12 @@ export async function keyTest(store,name,{env=process.env,fetch:f=globalThis.fet
       const txt=r.ok?await r.text():''; st=r.ok&&!/Request Rejected/i.test(txt)?'ok':r.status===401||r.status===403||/Request Rejected/i.test(txt)?'bad':r.status===429?'limit':'down'; if(st==='ok')extra='רשימת המדדים התקבלה'}
     else if(K.test==='x'){const r=await get('https://api.twitter.com/2/users/by/username/Reuters',{authorization:'Bearer '+key}); code=r.status;
       st=r.ok?'ok':r.status===401||r.status===403?'bad':r.status===429?'limit':'down'}
+    else if(K.test==='fmp'){const r=await get(FMP_BASE+'/quote?symbol=AAPL&apikey='+encodeURIComponent(key),{accept:'application/json'}); code=r.status;
+      if(r.ok){let j=null; try{j=await r.json()}catch(e){} const q=Array.isArray(j)?j[0]:j; st=q&&+q.price>0?'ok':'down'; if(st==='ok')extra='מחיר AAPL התקבל'} else st=r.status===401?'bad':r.status===402||r.status===403?'plan':r.status===429?'limit':'down'}
     else if(K.test==='resend'){const r=await get('https://api.resend.com/domains',{authorization:'Bearer '+key}); code=r.status;
       if(r.ok)st='ok'; else if(r.status===401){let j=null; try{j=await r.json()}catch(e){} st=j&&/restricted/i.test(String(j.name||j.message||''))?'restricted':'bad'} else st=r.status===429?'limit':'down'}
   }catch(e){st='down'; code=e&&e.name==='TimeoutError'?'timeout':'network'}
-  const out={name,st,ok:st==='ok'||st==='limit'||st==='restricted',said:said[st]+(extra?' · '+extra:''),code,ms:Date.now()-t0,at:now.toISOString()};
+  const out={name,st,ok:st==='ok'||st==='limit'||st==='restricted'||st==='plan',said:said[st]+(extra?' · '+extra:''),code,ms:Date.now()-t0,at:now.toISOString()};
   let L={}; try{L=JSON.parse(store.getMeta('keyTests')||'{}')}catch(e){} L[name]=out; store.setMeta('keyTests',JSON.stringify(L));
   return out;
 }

@@ -8,6 +8,7 @@ import {rangeOf, executive, product, aiCost, funnel, catalog, K_ANON} from '../s
 import {bump, countersSince, setCounterStore} from '../server/admin/counter.js';
 import {createHash} from 'node:crypto';
 import {keysList,keyTest} from '../server/admin/keys.js';
+import {fmpPass,fmpRatiosParse,fmpGradesParse,fmpEarningsParse,fmpKey,fmpKeyName} from '../server/fmp.js';
 
 process.env.OWNER_EMAIL='owner@example.com'; process.env.OWNER_PASSWORD='owner-pass-123'; process.env.ANTHROPIC_API_KEY=''; process.env.JOBS='0';
 const PAGE=new URL('../page/live.html',import.meta.url).pathname;
@@ -512,4 +513,26 @@ test('5.11 the keys in Railway by name only: a key the site does not read is sai
   await assert.rejects(()=>keyTest(st,'POLYGON_API_KEY',{env,fetch:f(200)}),/unknown/); await assert.rejects(()=>keyTest(st,'TASE_API_KEY',{env,fetch:f(200)}),/missing/);
   const kept=st.getMeta('keyTests'); assert.ok(kept&&!/SECRET|re_x/.test(kept),'only the outcome is kept'); assert.equal(keysList(st,{env}).rows.find(r=>r.name==='FINNHUB_API_KEY').last.st,'bad','the last check is shown');
   assert.ok(calls.every(c=>/^https:\/\/(finnhub\.io|api\.anthropic\.com|api\.resend\.com)\//.test(c.u)),'only the services themselves');
+});
+
+test('5.11 FMP with the owner\'s key (any of its spellings): the trailing ratios, the profile, the target, the votes and the next report, only where missing, the held first, a daily budget, an endpoint outside the plan left for a week, a refused key stops',async()=>{
+  assert.equal(fmpKeyName({FPM_API_KEY:'k1'}),'FPM_API_KEY','the spelling the owner used is read'); assert.equal(fmpKey({}),'');
+  assert.deepEqual(fmpRatiosParse([{grossProfitMarginTTM:0.46,operatingProfitMarginTTM:0.31,netProfitMarginTTM:0.25,currentRatioTTM:0.9,debtToEquityRatioTTM:1.5,priceToEarningsRatioTTM:34.1,dividendYieldTTM:0.0045,freeCashFlowPerShareTTM:6,revenuePerShareTTM:24}]),
+    {gm:46,om:31,pm:25,cr:0.9,de:1.5,pe:34.1,dy:0.45,roe:null,fcfm:25});
+  assert.deepEqual(fmpGradesParse([{strongBuy:5,buy:20,hold:8,sell:1,strongSell:0,consensus:'Buy'}]),{votes:{buy:25,hold:8,sell:1},analysts:34,rating:'Buy'});
+  const now=new Date('2026-11-05T10:00:00Z');
+  assert.deepEqual(fmpEarningsParse([{date:'2026-10-28',epsActual:1},{date:'2027-01-27',epsEstimated:3.9,revenueEstimated:8e10}],now).next,'2027-01-27','the next report, not a past one');
+  const st=mk(), asked=[];
+  const body={'ratios-ttm':[{netProfitMarginTTM:0.2,priceToEarningsRatioTTM:20,debtToEquityRatioTTM:0.5}],profile:[{beta:1.1,sector:'Energy'}],'price-target-consensus':[{targetConsensus:130}],'grades-consensus':[{buy:3,hold:2,sell:0,consensus:'Buy'}],earnings:[{date:'2027-02-01',epsEstimated:2}]};
+  const f=async u=>{u=String(u); asked.push(u); const ep=u.split('/stable/')[1].split('?')[0]; if(ep==='grades-consensus')return {ok:false,status:402,json:async()=>({})}; return {ok:true,status:200,json:async()=>body[ep]}};
+  const got={MSFT:{pe:30,pm:35,de:0.4,beta:0.9,target:500,next:'2027-01-27',votes:{buy:1,hold:0,sell:0}},XOM:{pe:14},CVX:{}}, order=['CVX','XOM','MSFT','123456','TEVA.TA'];
+  const r=await fmpPass(st,order,got,{key:'k',fetch:f,now,held:new Set(['XOM']),pause:0});
+  assert.equal(got.XOM.pe,14,'what Yahoo gave stays'); assert.equal(got.XOM.pm,20); assert.equal(got.XOM.target,130); assert.equal(got.XOM.next,'2027-02-01'); assert.ok(got.XOM.fmpAt);
+  assert.ok(asked[0].includes('symbol=XOM'),'the held first'); assert.ok(!asked.some(u=>/MSFT|123456|TEVA/.test(u)),'a complete share, and Tel Aviv, are not asked');
+  assert.ok(asked.every(u=>u.startsWith('https://financialmodelingprep.com/stable/')),'only FMP'); assert.deepEqual(r.off,['grades-consensus']);
+  assert.equal(asked.filter(u=>u.includes('grades-consensus')).length,1,'an endpoint outside the plan is asked once');
+  const n0=asked.length; await fmpPass(st,['XOM'],{XOM:{}},{key:'k',fetch:f,now,pause:0}); assert.ok(!asked.slice(n0).some(u=>u.includes('grades-consensus')),'and left for a week');
+  assert.ok(JSON.parse(st.getMeta('fmpCalls')).n>=asked.length-0,'the day\'s calls are counted');
+  const r2=await fmpPass(mk(),['AAA','BBB'],{},{key:'k',fetch:async()=>({ok:false,status:401,json:async()=>({})}),now,pause:0}); assert.equal(r2.stopped,'key'); assert.equal(r2.calls,1,'a refused key stops at once');
+  const r3=await fmpPass(mk(),['AAA','BBB','CCC'],{},{key:'k',fetch:f,now,pause:0,cap:3}); assert.equal(r3.stopped,'budget'); assert.equal(r3.calls,3,'the budget holds');
 });

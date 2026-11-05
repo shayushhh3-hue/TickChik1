@@ -1,0 +1,75 @@
+// 5.11: Financial Modeling Prep, with the owner's key (FMP_API_KEY; FPM_API_KEY and a few other spellings are read too):
+// the company figures Yahoo no longer gives the server (its company data answers 429): the margins, the debt, the current
+// ratio, the valuation, the dividend's yield, the beta and the sector, the analysts' target and their votes, and the next
+// report with what is expected of it. Only what is still missing is asked and filled, the held shares first, US shares
+// only, within a daily budget (the free plan allows 250 calls a day; the site keeps to 200). An endpoint the plan does not
+// open (HTTP 402 or 403) is left for a week instead of asked again; a refused key (401) or the day's limit (429) stops
+// the pass. The share says where its figures came from (fmpAt).
+export const FMP_NAMES=['FMP_API_KEY','FPM_API_KEY','FMP_KEY','FPM_KEY','FMP_TOKEN','FMP','FPM','FINANCIAL_MODELING_PREP_API_KEY','FINANCIALMODELINGPREP_API_KEY'];
+export const fmpKeyName=(env=process.env)=>FMP_NAMES.find(n=>String(env[n]||'').trim())||null;
+export const fmpKey=(env=process.env)=>{const n=fmpKeyName(env); return n?String(env[n]).trim():''};
+export const FMP_BASE='https://financialmodelingprep.com/stable';
+export const FMP_DAY_CAP=200;
+
+const num=v=>{if(v==null||v==='')return null; const n=+v; return Number.isFinite(n)?n:null};
+const r2=x=>x==null?null:Math.round(x*100)/100;
+const pc=x=>x==null?null:r2(x*100);
+const pick=(o,...ks)=>{for(const k of ks){const v=num(o&&o[k]); if(v!=null)return v} return null};
+const one=j=>Array.isArray(j)?(j[0]||null):(j&&typeof j==='object'?j:null);
+const some=o=>Object.values(o).some(v=>v!=null);
+
+// the trailing year's ratios (fractions in the answer; the site keeps percents, and the debt as a ratio)
+export function fmpRatiosParse(j){const o=one(j); if(!o)return null;
+  const fcfps=pick(o,'freeCashFlowPerShareTTM'), rps=pick(o,'revenuePerShareTTM');
+  const out={gm:pc(pick(o,'grossProfitMarginTTM','grossProfitMargin')),om:pc(pick(o,'operatingProfitMarginTTM','operatingProfitMargin')),pm:pc(pick(o,'netProfitMarginTTM','netProfitMargin')),
+    cr:r2(pick(o,'currentRatioTTM','currentRatio')),de:r2(pick(o,'debtToEquityRatioTTM','debtEquityRatioTTM','debtToEquityTTM','debtToEquity')),
+    pe:r2(pick(o,'priceToEarningsRatioTTM','peRatioTTM','priceEarningsRatioTTM')),dy:pc(pick(o,'dividendYieldTTM','dividendYielTTM','dividendYield')),
+    roe:pc(pick(o,'returnOnEquityTTM','returnOnEquity')),fcfm:fcfps!=null&&rps>0?r2(fcfps/rps*100):null};
+  if(out.pe!=null&&out.pe<=0)out.pe=null;   // a loss gives no multiple
+  return some(out)?out:null}
+export function fmpProfileParse(j){const o=one(j); if(!o)return null;
+  const out={beta:r2(pick(o,'beta')),sector:o.sector||null,industry:o.industry||null,name:o.companyName||o.name||null,cap:pick(o,'marketCap','mktCap')};
+  return some(out)?out:null}
+export function fmpTargetParse(j){const o=one(j); if(!o)return null; const t=pick(o,'targetConsensus','targetMedian'); return t>0?{target:r2(t),targetHi:r2(pick(o,'targetHigh')),targetLo:r2(pick(o,'targetLow'))}:null}
+const CONS={'strong buy':'Strong Buy','buy':'Buy','hold':'Hold','sell':'Sell','strong sell':'Strong Sell'};
+export function fmpGradesParse(j){const o=one(j); if(!o)return null; const n=k=>pick(o,k)||0;
+  const votes={buy:n('strongBuy')+n('buy'),hold:n('hold'),sell:n('sell')+n('strongSell')}, tot=votes.buy+votes.hold+votes.sell; if(!tot)return null;
+  return {votes,analysts:tot,rating:CONS[String(o.consensus||'').toLowerCase()]||null}}
+// the next report on or after today, with what the analysts expect of it
+export function fmpEarningsParse(j,now=new Date()){if(!Array.isArray(j))return null; const today=now.toISOString().slice(0,10);
+  const L=j.filter(x=>x&&/^\d{4}-\d\d-\d\d/.test(String(x.date||''))&&String(x.date).slice(0,10)>=today).sort((a,b)=>a.date<b.date?-1:1); const x=L[0]; if(!x)return null;
+  const d=String(x.date).slice(0,10); return {next:d,est:{date:d,eps:r2(pick(x,'epsEstimated','estimatedEarning','epsEstimate')),rev:pick(x,'revenueEstimated','revenueEstimate'),at:now.toISOString(),src:'FMP'}}}
+
+const US=k=>/^[A-Z]{1,5}([.\-][A-Z])?$/.test(k);   // a US share, a class share (BRK.B) too; not Tel Aviv's .TA or another exchange's suffix
+const day=now=>now.toISOString().slice(0,10);
+export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.fetch,tick=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),max=60,cap=FMP_DAY_CAP,pause=250,budgetMs=8*60e3}={}){
+  const st={tried:0,filled:0,calls:0,fail:0,stopped:null,first:null,off:[]}; if(!key){st.stopped='nokey';return st}
+  const t0=Date.now(), today=day(now);
+  let C={day:today,n:0}; try{const x=JSON.parse(store.getMeta('fmpCalls')||'null'); if(x&&x.day===today)C=x}catch(e){}
+  let OFF={}; try{OFF=JSON.parse(store.getMeta('fmpOff')||'{}')||{}}catch(e){} for(const [ep,d] of Object.entries(OFF))if(!(Date.parse(d)>now.getTime()-7*864e5))delete OFF[ep];
+  const save=()=>{try{store.setMeta('fmpCalls',JSON.stringify(C)); store.setMeta('fmpOff',JSON.stringify(OFF))}catch(e){}};
+  const ask=async(ep,q)=>{if(OFF[ep])return null; if(C.n>=cap){st.stopped='budget';return null}
+    C.n++; st.calls++; const r=await f(`${FMP_BASE}/${ep}?${q}&apikey=${encodeURIComponent(key)}`,{headers:{accept:'application/json'},signal:AbortSignal.timeout(12000)});
+    if(r.status===402||r.status===403){OFF[ep]=now.toISOString(); if(!st.off.includes(ep))st.off.push(ep); return null}
+    if(r.status===401){st.stopped='key'; return null} if(r.status===429){st.stopped='limit'; return null}
+    if(!r.ok)throw new Error('HTTP '+r.status); return r.json()};
+  const miss=(v,ks)=>!v||ks.some(k=>v[k]==null);
+  const want=k=>{const v=got[k]; return miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)};
+  const list=[...new Set([...order.filter(k=>held.has(k)),...order.filter(k=>watched.has(k)),...order])].filter(k=>US(k)&&want(k)).slice(0,max);
+  try{
+    for(const k of list){if(st.stopped)break; if(Date.now()-t0>budgetMs){st.stopped='time';break}
+      const t=encodeURIComponent(String(tick(k)).replace(/\./g,'-')), v=got[k]||{}, add={}; st.tried++;
+      try{
+        if(miss(v,['gm','om','pm','cr','de','pe','dy'])){const x=fmpRatiosParse(await ask('ratios-ttm','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&miss(v,['beta','sector'])){const x=fmpProfileParse(await ask('profile','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&v.target==null){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&!v.votes){const x=fmpGradesParse(await ask('grades-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&!v.next){const x=fmpEarningsParse(await ask('earnings','symbol='+t+'&limit=8'),now); if(x)Object.assign(add,x)}
+      }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=8&&!st.filled){st.stopped='errors'}}
+      // only what is missing: a figure Yahoo, Finnhub or the reports already gave is never replaced
+      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes))){g[a]=b; n++}
+      if(n){g.fmpAt=now.toISOString(); st.filled++}
+      if(pause)await new Promise(r=>setTimeout(r,pause))}
+  }finally{save()}
+  if(st.tried||st.stopped)log(`fmp: ${st.filled} filled with ${st.calls} calls (${C.n} today)${st.off.length?', not in the plan: '+st.off.join(', '):''}${st.stopped?', stopped: '+st.stopped:''}`);
+  st.today=C.n; return st}
