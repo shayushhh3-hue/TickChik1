@@ -199,7 +199,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
-      under:(n=>n===b||(n&&n.classList.contains('mypos')&&n.nextElementSibling===b))(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
+      under:(n=>{while(n&&(n.classList.contains('mypos')||n.classList.contains('ancard')))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
       what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
     assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
     assert.deepEqual(r.cards,['רווח למניה צפי 3.41$ בפועל 3.62$ מעל הצפי · +6.2%','הכנסות צפי 75.30 מיליארד דולר בפועל 77.70 מיליארד דולר מעל הצפי · +3.2%']);

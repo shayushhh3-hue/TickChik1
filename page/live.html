@@ -728,7 +728,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev .buy i,.cll.buy i{background:#0D9488;border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)} .crev .sell i,.cll.sell i{background:#E11D48;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)}
 .crev .rep i,.cll.rep i{background:#7C3AED} .crev .ex i,.cll.ex i{background:#0D9488} .crev .al i,.cll.al i{background:#F59E0B} .cll.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
 .chread p.hint{margin:8px 2px 0} .clls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:4px} .cll{display:inline-flex;align-items:center;gap:5px;color:var(--ink2);font-size:12px}
-.mypos{margin:16px 0 6px} .mypos h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.mypos,.ancard{margin:16px 0 6px} .mypos h3,.ancard h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
 .anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
@@ -24854,7 +24854,7 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
     rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${fmtPx(+rs.targetLo,ccy)} – ${fmtPx(+rs.targetHi,ccy)}</span>`,'הנמוך והגבוה',''):''].filter(Boolean).join('');
   const bar=v?`<div class="anbar" role="img" aria-label="${v.buy} ממליצים לקנות, ${v.hold} להחזיק, ${v.sell} למכור"><i class="b" style="width:${w(v.buy)}%"></i><i class="h" style="width:${w(v.hold)}%"></i><i class="s" style="width:${w(v.sell)}%"></i></div>
     <div class="anleg"><span class="b"><i></i>קנייה ${v.buy}</span><span class="h"><i></i>החזקה ${v.hold}</span><span class="s"><i></i>מכירה ${v.sell}</span></div>`:'';
-  return `<section class="mypos ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}
+  return `<section class="ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}
     <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${rs.updatedAt?' · '+rsWhen(rs.updatedAt):''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid
