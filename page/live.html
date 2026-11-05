@@ -709,7 +709,13 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp .pxfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:12px} .secp .pf{background:var(--sunk);border-radius:10px;padding:8px 10px;min-width:0} .secp .pf .k{font-size:12px;color:var(--muted);line-height:1.3} .secp .pf .k .tag{font-size:12px;padding:0 5px;vertical-align:middle} .secp .pf .v{font-family:var(--mono);font-size:15px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:plaintext} .secp .pf .s{font-size:12px;color:var(--ink2);margin-top:3px;line-height:1.35}
 .secp .pxrow .v{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.02em;direction:ltr;unicode-bidi:isolate;line-height:1.1}
 .secp .big .l{color:var(--muted);font-size:12px;flex-basis:100%}
-.secp .rng{display:flex;gap:0;align-self:flex-start}
+.secp .rng{display:flex;flex-wrap:nowrap;gap:2px;padding:4px;align-self:stretch;overflow-x:auto;scrollbar-width:none;border-radius:999px;box-shadow:var(--shadow)}
+.secp .rng::-webkit-scrollbar{display:none}
+.secp .chips.rng .chip{flex:1 0 auto;display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:999px;background:transparent;min-height:38px;padding:4px 12px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.secp .chips.rng .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
+.secp .rng .rg-sht{display:none} @media (max-width:520px){.secp .rng .rg-lng{display:none} .secp .rng .rg-sht{display:inline} .secp .chips.rng .chip{padding-inline:6px;font-size:13.5px;min-width:0}}
+.sectools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.secp canvas:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:10px}
 .secp canvas{width:100%;height:230px;display:block;touch-action:pan-y;cursor:crosshair;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .chread{background:var(--sunk);border-radius:14px;padding:10px;font-size:12.5px;line-height:1.5;color:var(--ink2);min-height:48px}
 /* 5.11: the box above the security chart as tiles, the holding's strip, the dollar/shekel switch */
@@ -24771,7 +24777,7 @@ function renderSec(){SECHOV=-1;
   const qty=pos.reduce((t,p)=>t+(+p.qty||0),0);
   const capTxt=it.cap?(it.t==='T'?'₪':'$')+(it.cap>=1e6?(it.cap/1e6).toFixed(2)+'T':it.cap>=1000?(it.cap/1000).toFixed(it.cap>=1e4?0:1)+'B':it.cap+'M'):'';
   const f=(kk,v,t)=>v?`<div class="fact"><div class="k">${kk}</div><div class="v${t?' t':''}">${v}</div></div>`:'';
-  const RNG=[['1w','שבוע'],['1m','חודש'],['3m','3 חודשים'],['6m','חצי שנה'],['1y','שנה'],['5y','5 שנים'],['max','מההנפקה']];
+  const RNG=[['1w','שבוע','שבוע'],['1m','חודש','חודש'],['3m','3 חודשים','3 ח׳'],['6m','חצי שנה','6 ח׳'],['1y','שנה','שנה'],['5y','5 שנים','5 ש׳'],['max','מההנפקה','הכל']];
   const ilm=it.t==='F'||it.t==='I'||ilIsNum(k)||!!ilIdx(k), moreH=ilm?ilSecMore(k,it):`<details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
     <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
     <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
@@ -24783,10 +24789,10 @@ function renderSec(){SECHOV=-1;
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     ${secPriceBlock(it,pr,on,fx)}
     ${secPxAlert(k,pr)}
-    <div class="chips rng" role="group" aria-label="טווח הגרף"><button type="button" class="chip" data-cmpgo="${esc(k)}">להשוות ⇄</button>${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}">${r[1]}</button>`).join('')}</div>
-    ${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}
+    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div>
+    <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     <div class="chread" id="secRead" aria-live="polite"></div>
-    <canvas id="secChart" aria-label="גרף מחיר"></canvas><p class="note" id="secChartNote"></p>
+    <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas><p class="note" id="secChartNote"></p>
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${nxSecBlock(k)}
@@ -24896,14 +24902,14 @@ function drawSec(){
   // the days that may explain a move (a report, an ex-dividend day, an important event in "מה נוגע לתיק")
   let iHi=0,iLo=0; pts.forEach((q,i)=>{if(q[1]>pts[iHi][1])iHi=i; if(q[1]<pts[iLo][1])iLo=i});
   const EV=secEvents(SEC,t0,t1), TEAL='#0D9488', ROSE='#E11D48', AMB='#F59E0B', SURF=DK?'#111233':'#FFFFFF';
-  const heb=(txt,xx,yy,c,al)=>{g.direction='rtl'; g.font='bold 11px '+FONT; g.fillStyle=c; g.textAlign=al||'center'; g.textBaseline='middle'; g.fillText(txt,xx,yy); g.direction='ltr'};
+  const heb=(txt,xx,yy,c,al,halo)=>{g.direction='rtl'; g.font='bold 11px '+FONT; g.textAlign=al||'center'; g.textBaseline='middle'; if(halo){g.lineJoin='round'; g.lineWidth=4; g.strokeStyle=SURF; g.strokeText(txt,xx,yy)} g.fillStyle=c; g.fillText(txt,xx,yy); g.direction='ltr'};
   if(MY.avg&&!MY.off){const ya=y(MY.avg); g.setLineDash([6,4]); g.lineWidth=1.6; g.strokeStyle=TEAL; g.beginPath(); g.moveTo(L,ya); g.lineTo(L+PW,ya); g.stroke(); g.setLineDash([]);
     const lb='הממוצע שלך '+fmtN(MY.avg); g.font='bold 11px '+FONT; const w=g.measureText(lb).width+14, yy=Math.max(T,Math.min(T+PH-20,ya-9));
     g.fillStyle=TEAL; g.beginPath(); g.roundRect?g.roundRect(L+4,yy,w,18,9):g.rect(L+4,yy,w,18); g.fill(); heb(lb,L+4+w/2,yy+9.5,'#FFFFFF')}
   const ring=(xx,yy,c)=>{g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,5.5,0,7); g.fill(); g.lineWidth=2.2; g.strokeStyle=c; g.beginPath(); g.arc(xx,yy,4,0,7); g.stroke()};
   if(pts.length>8){const cx=xx=>xx;
-    if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,VB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),DK?'#DDD6FE':'#5B21B6')}
-    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t='שפל '+fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LAB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),Math.min(T+PH-26,ly+14),LAB)}}
+    if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,VB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),DK?'#DDD6FE':'#5B21B6','center',1)}
+    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t='שפל '+fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LAB); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),Math.min(T+PH-26,ly+14),DK?'#C4C9D4':'#4B5563','center',1)}}
   for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
     g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
   {const EVC={rep:[VB,'ד'],ex:[TEAL,'$'],al:[AMB,'!']}, placed=[];
@@ -24933,6 +24939,8 @@ function drawSec(){
       let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
       g.fillStyle=VB; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,13):g.rect(px,py,tw,th); g.fill(); g.fillStyle='#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2+0.5)}}
   secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq,{CC,NAT,iHi,iLo,MY,EV,fxNo});
+  // 5.11: the day under the finger (or the arrows) in words, for a screen reader
+  {const iv=SECHOV>=0&&SECHOV<pts.length?SECHOV:pts.length-1, q=pts[iv]; cv.setAttribute('aria-valuemax',String(pts.length-1)); cv.setAttribute('aria-valuenow',String(iv)); cv.setAttribute('aria-valuetext',`${fullDate(q[0])}: ${fmtPx(q[1],CC)}, ${(q[1]/base-1)>=0?'עלייה':'ירידה'} של ${pct(Math.abs(q[1]/base-1)*100,1)} מתחילת הטווח`)}
   SECV={pts,x,L,PW};
   const ch=last[1]/base-1;const late=days!==Infinity&&t0>from+days*864e5*0.25;
   const itc=itemOf(SEC), ils=pr?pr.ccy==='ILS':String(SEC).startsWith('TLV:')||(itc&&(itc.t==='T'||(itc.t==='H'&&itc.ex==='TLV'))), cur=CC!==NAT?'בשקלים, לפי שער הדולר בכל יום':ils?'בשקלים':'בדולרים', dm=t=>dmy(new Date(t).toISOString());
@@ -24958,11 +24966,17 @@ function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return
     const leg=[]; if((MY.trades||[]).some(t=>t.side==='buy'))leg.push('<span class="lg buy"><i></i>קנייה שלך</span>'); if((MY.trades||[]).some(t=>t.side==='sell'))leg.push('<span class="lg sell"><i></i>מכירה שלך</span>'); if(MY.avg&&!MY.off)leg.push('<span class="lg avg"><i></i>המחיר הממוצע שלך</span>');
     for(const [k,l] of [['rep','ד = דוח'],['ex','$ = דיבידנד'],['al','! = אירוע בחדשות']])if(EV.some(e=>e.k===k))leg.push(`<span class="lg ${k}"><i></i>${l}</span>`);
     H+=`<p class="hint">${leg.length?`<span class="lgs">${leg.join('')}</span>`:''}גע בגרף או עבור עליו כדי לראות כל יום${EV.length?' ומה קרה בו':''}.${X.fxNo?' שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.':''}</p>`}
-  el.innerHTML=H}
+  if(!hp){el.style.minHeight=''; el.innerHTML=H; try{el.style.minHeight=el.offsetHeight+'px'}catch(e){}} else el.innerHTML=H}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
 function secHover(ev){const cv=$('secChart');if(!cv||!SECV)return;const r=cv.getBoundingClientRect(),px=ev.clientX-r.left;let best=-1,bd=1e9;SECV.pts.forEach((p,i)=>{const d=Math.abs(SECV.x(p[0])-px);if(d<bd){bd=d;best=i}});if(best!==SECHOV){SECHOV=best;drawSec()}}
 function secHoverOff(){if(SECHOV!==-1){SECHOV=-1;drawSec()}}
+// 5.11: the arrows move along the days (right is later, as on the axis), Home and End to the first and the last, Page keys
+// by ten, Escape back to the summary
+document.addEventListener('keydown',e=>{if(!e.target||e.target.id!=='secChart'||!SECV)return; const n=SECV.pts.length; let i=SECHOV<0?n-1:SECHOV;
+  if(e.key==='ArrowRight'||e.key==='ArrowUp')i=Math.min(n-1,i+1); else if(e.key==='ArrowLeft'||e.key==='ArrowDown')i=Math.max(0,i-1); else if(e.key==='Home')i=0; else if(e.key==='End')i=n-1;
+  else if(e.key==='PageUp')i=Math.min(n-1,i+10); else if(e.key==='PageDown')i=Math.max(0,i-10); else if(e.key==='Escape'){secHoverOff(); return} else return;
+  e.preventDefault(); SECHOV=i; drawSec()});
 // ---- "what fits my portfolio": every security with figures, ranked by the viewer's own rules (not a buy call) ----
 let FIT=null, FITLOAD=null, SV='search', FITG='', FITHELD=false, FITN=60, FITK='stock';
 let WV='mine'; try{if(localStorage.getItem('tr_wv')==='all')WV='all'}catch(e){}
