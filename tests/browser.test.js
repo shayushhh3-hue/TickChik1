@@ -2816,3 +2816,34 @@ test('4.11 inside the funds: the X-ray adds what the funds hold to what is held 
     assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false); assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{if(E0.exists)store.setDoc('research/etf',E0.data,{silent:true}); else store.deleteDoc('research/etf')}
 });
+
+test('5.11 did it help: a row under each answer and each finding, counted for the management in sums; after a report of a company with a thesis צ׳יקו asks whether it still holds, and the answer is kept with the thesis',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const J0=store.getDoc('journal/main'), R0=store.getDoc('research/latest').data, S0=store.getDoc('settings/main').data;
+  const ago=n=>new Date(Date.now()-n*864e5).toISOString();
+  store.setDoc('journal/main',{thesis:{NVDA:{why:'מובילה בשבבי AI',minus:'ירידה בהזמנות של מרכזי נתונים',plus:'',at:ago(40),updatedAt:ago(40)}},entries:[]},{silent:true});
+  store.setDoc('research/latest',{...R0,companies:{...R0.companies,NVDA:{...(R0.companies.NVDA||{}),rep:{...((R0.companies.NVDA||{}).rep||{}),at:ago(2),label:'Q3',now:{...(((R0.companies.NVDA||{}).rep||{}).now||{}),s:12}}}}},{silent:true});
+  {const x={...S0}; delete x.chico; store.setDoc('settings/main',x,{silent:true})}
+  try{
+    const {ctx,pg}=await open(1280); await pg.click('#chatFab'); await pg.waitForSelector('#anaOut [data-chicoins] details');
+    const k=await pg.evaluate(()=>{const d=[...document.querySelectorAll('#anaOut details.chico-i')].find(x=>/פרסמה דוח/.test(x.textContent)); if(!d)return null; d.open=true; return {k:d.dataset.chicok,t:d.innerText.replace(/\s+/g,' ')}});
+    assert.ok(k,'the check-in is among the findings'); assert.match(k.t,/NVDA פרסמה דוח \(Q3\)\. התזה שלך עדיין מחזיקה\?/); assert.match(k.t,/כתבת: "מובילה בשבבי AI"/); assert.match(k.t,/מה כתבת שיחליש אותה: "ירידה בהזמנות/);
+    await pg.click(`#anaOut [data-chicok="${k.k}"] [data-thchk="NVDA:hold"]`); await pg.waitForTimeout(300); assert.match(await pg.evaluate(k=>document.querySelector(`#anaOut [data-chicok="${k}"]`).textContent,k.k),/נשמר עם התזה: עדיין מחזיקה/);
+    {let ok=false; for(let i=0;i<30&&!ok;i++){await pg.waitForTimeout(200); const T=((store.getDoc('journal/main').data||{}).thesis||{}).NVDA||{}; ok=Array.isArray(T.checks)&&T.checks[0]&&T.checks[0].v==='hold'&&T.checks[0].rep==='Q3'} assert.ok(ok,'kept with the thesis')}
+    // the finding: "לא ידעתי"
+    await pg.evaluate(()=>{const d=document.querySelector('#anaOut details.chico-i'); d.open=true}); await pg.click('#anaOut details.chico-i[open] .fbk [data-fb="new"]'); await pg.waitForTimeout(200);
+    assert.match(await pg.evaluate(()=>document.querySelector('#anaOut details.chico-i[open] .fbk').textContent),/תודה, נרשם/);
+    // an answer: "עזר"
+    await pg.fill('#anaQ','מה הסיכון הכי גדול בתיק שלי?'); await pg.click('#anaForm .chat-send'); await pg.waitForSelector('#anaOut .ana-a .fbk',{timeout:15000});
+    await pg.click('#anaOut .ana-a .fbk [data-fb="up"]'); await pg.waitForTimeout(1500);
+    const me=(store.users().find(u=>u.role==='owner')||{}).id, U=store.getDoc('usage/main').data||store.getDoc(`data/users/${me}/usage`).data||{}, all={}; for(const D of Object.values(U.days||{}))for(const [kk,n] of Object.entries(D))all[kk]=(all[kk]||0)+n;
+    assert.ok(all['v:fb:up:ans']>=1&&all['v:fb:new:ins']>=1&&all['v:ins:shown']>=1,'counted: '+JSON.stringify(Object.keys(all).filter(x=>x.startsWith('v:'))));
+    // the thesis card says what was checked
+    await pg.evaluate(()=>window.__ana.close()); await pg.evaluate(()=>window.__chico.go('sec:NVDA')); await pg.waitForTimeout(800);
+    assert.match(await pg.evaluate(()=>(document.querySelector('[data-thbox="NVDA"]')||{}).textContent||''),/הבדיקות שלך אחרי דוחות: .*\(Q3\): עדיין מחזיקה/);
+    // the management: the value card
+    await pg.goto(U0()+'admin#product'); await pg.waitForSelector('#view .kpi',{timeout:15000}); assert.match(await pg.evaluate(()=>document.getElementById('view').textContent),/הערך של צ׳יקו.*"לא ידעתי"/s);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main'); store.setDoc('research/latest',R0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
+});
+const U0=()=>U;

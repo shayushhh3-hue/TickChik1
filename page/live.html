@@ -2423,6 +2423,7 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .chsay{display:flex;gap:9px;align-items:flex-start} .chsay::before{content:"";width:26px;height:26px;margin-top:1px} .chsay>*{flex:1;min-width:0}
 .chsay-h{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:0 0 6px} .chsay-h .av.chiko{width:22px;height:22px}
 @media (prefers-reduced-motion:no-preference){.pane .empty::before,.chsay::before{animation:chIn .5s ease-out both}} @keyframes chIn{from{opacity:0;transform:scale(.85)}}
+.fbk{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px} .fbk .chip.sm{min-height:30px;font-size:12.5px}
 .srcref{color:inherit;font-weight:600} .srcref.nw-sref{display:inline-block;min-width:1.4em;text-align:center;border-radius:6px;background:rgb(124 58 237 / .1);font-size:11px}
 .ana-foc,.chico-scr{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-basis:100%;padding:6px 10px;border-radius:10px;background:rgb(124 58 237 / .08);font-size:13px} .ana-foc .lnk{font-size:18px;line-height:1;text-decoration:none}
 .ana-foc-h{margin:0 0 6px;font-size:12.5px;color:var(--muted)}
@@ -20031,7 +20032,7 @@ function anaDayHtml(F,det,res,st,crisis){
 function anaQaHtml(F,q,ans,st){
   let body;
   if(st.note==='thinking')body=anaWait('צ׳יקו עונה מתוך נתוני התיק…');
-  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${chicoUsedH(st.used)}${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
+  else if(ans&&ans.text)body=`<div class="ana-a"><p>${tx(ans.text)}</p>${chicoUsedH(st.used)}${fbH('ans')}${ans.nav.length?`<div class="ana-navs">${ans.nav.map(n=>anaNavBtn(n)).join('')}</div>`:''}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך נתוני התיק שבדף. ${anaWhen(F)}. המספרים בתשובה נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי הופיע בו מספר שלא נמצא בנתונים או ניסוח של המלצה`:''}. זה הסבר, לא ייעוץ השקעות.</p>${F.miss&&F.miss.length?`<details class="why"><summary>מה חסר בנתונים, ולכן לא נכלל בתשובה (${F.miss.length})</summary><ul class="note" style="margin:6px 0 0;padding-inline-start:18px">${F.miss.map(x=>`<li>${tx(x)}</li>`).join('')}</ul></details>`:''}</div>`;
   else if(ans)body=`<p>לא הצלחתי לענות על זה רק מתוך נתוני התיק. אפשר לנסח אחרת, או לפתוח את הניתוח המלא.</p><div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else if(st.note==='noai')body=`<p class="ana-err">שאלות חופשיות זמינות כשצ׳יקו מחובר לדף. הניתוח המחושב זמין תמיד:</p>${chicoLocalH(st)}<div class="ana-navs"><button type="button" class="btn sm" data-ana="analyze">נתח לי את התיק</button></div>`;
   else body=`<p class="ana-err">${esc(anaMsg(ANA_QERR,st.note))}</p>${chicoLocalH(st)}${st.retry?`<div class="ana-navs"><button type="button" class="btn sm" data-ana="q" data-retry data-q="${esc(q)}">נסה שוב</button></div>`:''}`;
@@ -20732,6 +20733,18 @@ function chicoRoute(q,m,scr){scr=scr||chicoScreen(); const used=['pf'], facts={}
 const CHICO_ENG_HE={pf:'נתוני התיק והכללים',xray:'רנטגן התיק',thesis:'זיכרון התזה',anom:'מנוע החריגות',divs:'מעקב הדיבידנדים',eco:'לוח האירועים הכלכלי',cmp:'השוואת ניירות',sec:'נתוני הנייר',news:'החדשות שלי'};
 // without צ׳יקו (not connected, or his answer did not come): what the engines computed, in the page's own words
 const chicoLocalH=st=>st&&st.local&&st.local.length?`<div class="chico-local"><p class="note"><span class="tag">מחושב</span> מה שהדף יודע על השאלה גם בלי צ׳יקו:</p><ul>${st.local.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${chicoUsedH(st.used)}</div>`:'';
+// 5.11: did it help? a row under each answer and each finding; the answer is counted, never what was asked
+const fbH=(kind,ins)=>`<div class="fbk" data-fbk="${kind}"><span class="nm">${ins?'זה היה שימושי?':'התשובה עזרה?'}</span>${ins?'<button type="button" class="chip sm" data-fb="new">לא ידעתי, תודה</button>':''}<button type="button" class="chip sm" data-fb="up">עזר</button><button type="button" class="chip sm" data-fb="down">${ins?'לא רלוונטי':'לא עזר'}</button></div>`;
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.fbk [data-fb]'); if(!b)return; const w=b.closest('.fbk'), kind=w.dataset.fbk, v=b.dataset.fb;
+  try{useAdd(`v:fb:${v}:${kind}`)}catch(x){} try{useSave()}catch(x){}
+  if(kind==='ins'&&v==='down'){const d=w.closest('[data-chicok]'); if(d){const st=chicoSt(); chicoSet({seen:{...st.seen,[d.dataset.chicok]:new Date().toISOString()}})}}
+  w.innerHTML=`<span class="nm">תודה, נרשם.${v==='down'?' זה עוזר לי לדעת מה פחות מועיל.':''}</span>`; anaLive('נרשם')});
+document.addEventListener('toggle',e=>{const d=e.target; if(d&&d.matches&&d.matches('details.chico-i')&&d.open)try{useAdd('v:ins:open')}catch(x){}},true);
+// the answer to "does the thesis still hold?": kept with the thesis (when, and against which report), and the finding goes
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-thchk]'); if(!b||!canWrite)return; const [sym,v]=b.dataset.thchk.split(':'), J=JRN=jrn(), t=(J.thesis||{})[sym]; if(!t)return;
+  const r=(RS&&RS.companies&&RS.companies[sym]&&RS.companies[sym].rep)||{}, at=new Date().toISOString();
+  J.thesis[sym]={...t,checkedAt:at,checks:[...(Array.isArray(t.checks)?t.checks:[]).slice(-11),{at,v,rep:r.label||null,repAt:r.at||null}]}; jrnSave(); try{useAdd('v:th:'+v)}catch(x){}
+  const w=b.closest('.th-chk'); if(w)w.innerHTML=`<p class="note">✓ נשמר עם התזה: ${v==='hold'?'עדיין מחזיקה':'נחלשה'} (${dmy(at)}).${v==='weak'?' כדאי לעדכן אותה בדף הנייר.':''}</p>`; anaLive('נשמר עם התזה')});
 const chicoUsedH=used=>used&&used.length?`<p class="note chico-used"><b>נשען על:</b> ${used.map(k=>esc(CHICO_ENG_HE[k]||k)).join(' · ')}</p>`:'';
 
 // ---- a change only with a "yes"; a trade never ----
@@ -20770,6 +20783,14 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
   try{const T=jrn().thesis||{}; for(const p of m.pos){if(!T[p.sym])continue; const v=thesisEval(p.sym); if(v.status!=='down'&&v.status!=='review')continue;
     add({k:`th:${p.sym}:${v.status}:${(v.ev[0]||{}).id||''}`,kind:'thesis',lv:v.status==='down'&&v.conf!=='low'?'imp':'info',what:`התזה שלך על ${lab(p.sym)} ${v.status==='down'?'נחלשת':'דורשת בדיקה'}`,whatMore:v.ev[0]?v.ev[0].t:'',whyNow:`התפתחות מדווחת מאז שכתבת את התזה${v.since?' ('+dmy(v.since)+')':''}`,
       why:`${lab(p.sym)} הוא ${pct(p.w,1)} מהתיק, וכתבת לו תזה`,impact:'לא השפעה על המחיר: בדיקה מול ההנחות שכתבת',check:'לפתוח את התזה ולבדוק אם מה שכתבת שיחליש אותה קרה',src:v.ev.slice(0,3).map(z=>z.src).filter(Boolean),cert:v.confWhy,limits:'ההערכה נשענת רק על עובדות מדווחות, לא על המחיר',nav:{t:'sec:'+p.sym,l:'לתזה'}})}}catch(e){}
+  // 2b. 5.11: a company with a written thesis reported: does the thesis still hold? asked once per report, answered in place
+  try{const T=jrn().thesis||{}; for(const p of m.pos){const t=T[p.sym]; if(!t||!(t.why||t.minus||t.plus))continue; const c=RS&&RS.companies&&RS.companies[p.sym], r=c&&c.rep; if(!r||!r.at)continue;
+    if(Date.now()-Date.parse(r.at)>14*864e5||String(t.checkedAt||'')>=String(r.at))continue;
+    const s0=r.now&&r.now.s!=null?`רווח למניה ${r.now.s>=0?'מעל':'מתחת ל'}צפי האנליסטים (${spct(r.now.s,0)})`:'';
+    add({k:`threp:${p.sym}:${String(r.at).slice(0,10)}`,kind:'thesis',lv:'imp',what:`${lab(p.sym)} פרסמה דוח${r.label?' ('+r.label+')':''}. התזה שלך עדיין מחזיקה?`,whatMore:[s0,t.why?`כתבת: "${String(t.why).slice(0,120)}"`:''].filter(Boolean).join('. '),
+      whyNow:`דוח חדש יצא ב-${dmy(r.at)}, אחרי שכתבת את התזה${t.updatedAt||t.at?' ('+dmy(t.updatedAt||t.at)+')':''}`,why:`${lab(p.sym)} הוא ${pct(p.w,1)} מהתיק`,impact:'לא השפעה על המחיר: בדיקה של ההנחות שלך מול מה שדווח',
+      check:t.minus?`מה כתבת שיחליש אותה: "${String(t.minus).slice(0,120)}". קרה?`:'לבדוק את מה שכתבת מול מה שדווח בדוח',src:[c.source||'הדוחות של החברה'],cert:'עובדה מדווחת (הדוח)',limits:'רק את/ה יודע/ת אם התזה מחזיקה; הדף לא מכריע',nav:{t:'sec:'+p.sym,l:'לדוח ולתזה'},
+      acts:`<div class="ana-navs th-chk"><button type="button" class="btn sm pri" data-thchk="${esc(p.sym)}:hold">עדיין מחזיקה</button><button type="button" class="btn sm" data-thchk="${esc(p.sym)}:weak">נחלשה</button></div>`})}}catch(e){}
   // 3. a rule crossed: concentration
   try{const F=anaFacts(); if(!F.empty)for(const i of anaIssues(F).filter(i=>!i.acked&&i.sev==='crit'&&/ריכוז|נייר|קבוצה/.test((i.cat||'')+(i.title||''))).slice(0,1))
     add({k:'iss:'+i.id,kind:'conc',lv:'imp',what:i.title||i.cat,whatMore:anaStrip(i.text||''),whyNow:'המשקל עבר את הכלל שקבעת (גם עלייה במחיר יכולה לגרום לזה)',why:'זה כלל שאתה קבעת לעצמך',impact:'תנועה של נייר או קבוצה אחת משפיעה יותר על כל התיק',check:'לבדוק בבקרה את המשקל מול הכלל, ובסימולטור מה משנה אותו',src:['חישוב הדף מהמחירים והכללים'],cert:'מדידה',limits:'לא אומר שצריך למכור',nav:{t:'risk',l:'לבקרה'}})}catch(e){}
@@ -20789,10 +20810,11 @@ function chicoInsH(L,st){if(!L.length)return '';
     ${L.map(x=>`<details class="chico-i lv-${x.lv}" data-chicok="${esc(x.k)}"><summary><span class="tag">${esc(CHICO_KH[x.kind]||'')}</span> ${esc(x.what)}</summary><dl>
       ${x.whatMore?`<dt>מה קרה</dt><dd>${esc(x.whatMore)}</dd>`:''}<dt>למה אני פונה עכשיו</dt><dd>${esc(x.whyNow)}</dd><dt>למה זה נוגע לך</dt><dd>${esc(x.why)}</dd><dt>ההשפעה האפשרית</dt><dd>${esc(x.impact)}</dd>
       <dt>מה כדאי לבדוק</dt><dd>${esc(x.check)}</dd><dt>מקורות</dt><dd>${esc((x.src||[]).join(', ')||'—')}</dd><dt>ודאות ומגבלות</dt><dd>${esc(x.cert)}. ${esc(x.limits)}</dd></dl>
-      <div class="ana-navs">${anaNavBtn(x.nav)}<button type="button" class="btn sm" data-chicoseen="${esc(x.k)}">הבנתי</button></div></details>`).join('')}
+      ${x.acts||''}<div class="ana-navs">${anaNavBtn(x.nav)}<button type="button" class="btn sm" data-chicoseen="${esc(x.k)}">הבנתי</button></div>${fbH('ins',true)}</details>`).join('')}
     <p class="note">${st.pro?'אני פונה רק כשיש משהו חדש וחשוב, פעם ביום לכל היותר.':'הפניות היזומות מושתקות: אני מראה את זה רק כשאתה פותח אותי.'} <button type="button" class="lnk" data-chicopro="${st.pro?'0':'1'}">${st.pro?'להשתיק פניות יזומות':'להחזיר פניות יזומות'}</button></p></div></article>`}
 function chicoInsDraw(){const box=$('anaOut'); if(!box)return; const old=box.querySelector('[data-chicoins]'); const L=chicoInsights(), h=chicoInsH(L,chicoSt());
   if(old){if(h)old.outerHTML=h; else old.remove()} else if(h)box.insertAdjacentHTML('afterbegin',h)
+  if(L.length)try{useAdd('v:ins:shown')}catch(e){}
   // what was shown is not a nudge any more
   const st=chicoSt(); if(L.length&&L.some(x=>!st.nudged[x.k])){const n={...st.nudged}; for(const x of L)n[x.k]=new Date().toISOString(); for(const k of Object.keys(n))if(Date.now()-Date.parse(n[k])>30*864e5)delete n[k]; chicoNSet({nudged:n})}}
 // the nudge: a dot on צ׳יקו and his ring, at most once a day, only for something not yet shown, never when silenced
@@ -24391,6 +24413,7 @@ function thesisH(sym,o={}){
   const view=`<div class="th-v"><div class="th-h"><span class="rs ${stK}">${stL}</span>${R.conf?`<span class="nm">ביטחון ${PL_CONF[R.conf]||R.conf}: ${esc(R.confWhy)}</span>`:''}${R.since?`<span class="nm">· התזה מ-${dmy(R.since)}</span>`:''}</div>
       ${TH_FIELDS.filter(([k])=>t[k]).map(([k,l])=>`<p class="th-p"><b>${l}:</b> ${esc(t[k])}</p>`).join('')}${t.horizon?`<p class="th-p"><b>אופק:</b> ${TH_HOR[t.horizon]}</p>`:''}
       ${evH?`<p class="th-p"><b>מה דווח מאז:</b></p>${evH}`:'<p class="nm">לא דווח דבר מהותי על החברה מאז שכתבת את התזה.</p>'}
+      ${Array.isArray(t.checks)&&t.checks.length?`<p class="th-p"><b>הבדיקות שלך אחרי דוחות:</b> ${t.checks.slice(-4).map(c=>`${dmy(c.at)}${c.rep?' ('+esc(c.rep)+')':''}: ${c.v==='hold'?'עדיין מחזיקה':'נחלשה'}`).join(' · ')}</p>`:''}
       ${R.mv?`<p class="nm">המחיר מאז הקנייה: ${spct(R.mv.pct,1)}. תנועת מחיר לבדה לא מאשרת ולא מפריכה תזה, ולכן היא לא נספרת.</p>`:''}
       <p class="nm">"${stL}" מחושב רק מעובדות מדווחות על החברה עצמה (דוחות, צפי, רגולציה, הנהלה, עסקאות); פרשנויות ודעות מוצגות ונספרות מעט. זו הצבה של המדווח מול מה שכתבת, לא המלצה.</p>
       <div class="acts"><button type="button" class="btn sm" data-thedit="${esc(sym)}">לערוך</button><button type="button" class="btn sm" data-chiko="th:${esc(sym)}">שאל את צ׳יקו: האם התזה עדיין תקפה?</button>${o.sec?'':`<button type="button" class="btn sm" data-gosec="${esc(sym)}">לדף הנייר</button>`}</div></div>`;
@@ -26672,7 +26695,7 @@ async function anaFocusRun(q,o){const f=ANA_FOCUS, qq=String(q||'').replace(/\s+
   ans=anaCleanAnswer(raw,set); st.note='ai'; draw(); anaLive('התשובה מוכנה')}
 function anaFocusHtml(f,q,ans,st){const head=`<p class="ana-foc-h">על ${esc(FOCUS_KIND_HE[f.kind]||'')}: <b>${esc(f.title)}</b></p>`;
   if(st.note==='thinking')return head+anaWait('צ׳יקו קורא את הפריט ועונה…');
-  if(ans&&ans.text)return head+`<div class="ana-a"><p>${tx(ans.text)}</p><p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך הפריט והתיק שבדף. המספרים נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי לא עמדו בכללים`:''}.</p></div>`;
+  if(ans&&ans.text)return head+`<div class="ana-a"><p>${tx(ans.text)}</p>${fbH('focus')}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך הפריט והתיק שבדף. המספרים נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי לא עמדו בכללים`:''}.</p></div>`;
   return head+`<div class="ana-a">${focusAnswerH(q,f)}<p class="note ana-basis"><span class="tag">מחושב</span> תשובה של הדף מאותם נתונים${st.note==='noai'?'':' (צ׳יקו לא ענה)'}: עובדה, קשר שהקריאה ציינה, מה שנמדד ומה שאפשרי מסומנים בנפרד.</p></div>`}
 document.addEventListener('click',e=>{const t=e.target; if(!t.closest)return; if(t.closest('[data-anafoc]')||t.closest('#anaBox [data-ana="new"]')){ANA_FOCUS=null; setTimeout(()=>{try{anaSugg()}catch(x){}},0)}});
 function renderCal(){

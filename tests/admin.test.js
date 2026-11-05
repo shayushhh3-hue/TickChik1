@@ -483,3 +483,14 @@ test('4.11 inside the funds: the 25 largest holdings with their weights, an Isra
   s.addUser({email:'p@x.co',password:'password1',role:'friend'}); const pu=s.users().find(u=>u.email==='p@x.co'); s.setDoc(`data/users/${pu.id}/portfolio`,{positions:[{sym:'VOO',qty:1}]});
   const V=partnerView(s,pu,'research/etf',D); assert.deepEqual(Object.keys(V.by),['VOO']); assert.equal(V.none,undefined);
 });
+
+import {nasdaqSummaryParse,nasdaqEarnParse,nasdaqPass} from '../server/nasdaqfig.js';
+test('5.11 Nasdaq for what Yahoo did not give: the multiple, the forward one, the yield, the target and the next report, only where missing, the held first, a share of Tel Aviv not asked',async()=>{
+  const sum={data:{summaryData:{PERatio:{label:'P/E Ratio',value:'34.56'},ForwardPE1Yr:{value:'29.1'},Yield:{value:'0.45%'},OneYrTarget:{value:'$250.00'},EarningsPerShare:{value:'$6.1'}}}};
+  assert.deepEqual(nasdaqSummaryParse(sum),{pe:34.56,fpe:29.1,dy:0.45,target:250}); assert.equal(nasdaqSummaryParse({data:{summaryData:{PERatio:{value:'N/A'}}}}),null);
+  const now=new Date('2026-11-05T10:00:00Z'); assert.equal(nasdaqEarnParse({data:{announcement:'Earnings announcement* for MSFT: Jan 27, 2027'}},now),'2027-01-27'); assert.equal(nasdaqEarnParse({data:{announcement:'for X: Oct 1, 2026'}},now),null,'a past date is not the next');
+  const asked=[]; const f=async u=>{u=String(u); asked.push(u); return {ok:true,status:200,json:async()=>u.includes('earnings-date')?{data:{announcement:'Earnings announcement for X: Jan 27, 2027'}}:sum}};
+  const got={MSFT:{pe:30,dy:null}}; const st=await nasdaqPass(null,['KO','MSFT','TLV:LUMI','5129283'],got,{fetch:f,now,held:new Set(['MSFT']),pause:0});
+  assert.equal(got.MSFT.pe,30,'what Yahoo gave stays'); assert.equal(got.MSFT.dy,0.45); assert.equal(got.MSFT.next,'2027-01-27'); assert.ok(got.MSFT.nqAt); assert.ok(got.KO&&got.KO.pe===34.56);
+  assert.ok(asked[0].includes('/quote/MSFT/'),'the held first'); assert.ok(!asked.some(u=>/LUMI|5129283/.test(u)),'Tel Aviv and funds by number are not asked'); assert.equal(st.filled,2);
+});

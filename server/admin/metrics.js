@@ -124,7 +124,7 @@ export function product(store,q={},{viewer,pageFile}){
       for(const k of mine)people[k]=(people[k]||0)+1}
     return {T,people,daysUsed}};
   const C=sum(R.from,R.to), P=sum(R.prevFrom,R.prevTo);
-  const rows=Object.keys({...C.T,...P.T}).map(k=>{const L=useLabel(k,cat), du=C.daysUsed[k]||[], perUser={}; for(const x of du){const u=x.split('|')[0]; perUser[u]=(perUser[u]||0)+1}
+  const rows=Object.keys({...C.T,...P.T}).filter(k=>!k.startsWith('v:')).map(k=>{const L=useLabel(k,cat), du=C.daysUsed[k]||[], perUser={}; for(const x of du){const u=x.split('|')[0]; perUser[u]=(perUser[u]||0)+1}
     const rep=Object.values(perUser).filter(n=>n>=2).length;
     return {k,...L,n:C.T[k]||0,prev:P.T[k]||0,people:ok?C.people[k]||0:null,repeat:ok?rep:null}}).sort((a,b)=>b.n-a.n);
   const seen=new Set(rows.filter(r=>r.n>0).map(r=>r.k));
@@ -134,7 +134,13 @@ export function product(store,q={},{viewer,pageFile}){
   const moves={}; for(const r of nav)moves[r.key]=(moves[r.key]||0)+r.n;
   const time={}; for(const r of dwell){const T=time[r.key]||(time[r.key]={all:0,new:0,vet:0}); T.all+=r.n; if(r.cohort==='new'||r.cohort==='vet')T[r.cohort]+=r.n}
   const navFirst=store.db.prepare("select min(day) d from counters where kind='nav'").get();
-  return {range:R,ok,k:K_ANON,contributors:contrib.size,own:!ok,rows,never,
+  // 5.11: the value: what צ׳יקו found and how people judged it, and how his answers were judged (sums only)
+  const V=k=>C.T[k]||0, VP=k=>P.T[k]||0, fb=(v,kind)=>V(`v:fb:${v}:${kind}`);
+  const value={shown:V('v:ins:shown'),opened:V('v:ins:open'),learned:fb('new','ins'),helped:fb('up','ins'),notRelevant:fb('down','ins'),
+    answers:{up:fb('up','ans')+fb('up','focus'),down:fb('down','ans')+fb('down','focus')},prev:{learned:VP('v:fb:new:ins'),up:VP('v:fb:up:ans')+VP('v:fb:up:focus')+VP('v:fb:up:ins')}};
+  value.rate=(value.answers.up+value.answers.down)>0?Math.round(value.answers.up/(value.answers.up+value.answers.down)*100):null;
+  value.insRate=(value.learned+value.helped+value.notRelevant)>0?Math.round((value.learned+value.helped)/(value.learned+value.helped+value.notRelevant)*100):null;
+  return {range:R,ok,k:K_ANON,contributors:contrib.size,own:!ok,rows,never,value,
     moves:Object.entries(moves).map(([k,n])=>{const [a,b]=k.split('>'); return {from:cat.tabs[a]||a,to:cat.tabs[b]||b,n}}).sort((a,b)=>b.n-a.n).slice(0,30),
     time:Object.entries(time).map(([k,v])=>({tab:cat.tabs[k]||k,min:Math.round(v.all/60),newMin:Math.round(v.new/60),vetMin:Math.round(v.vet/60)})).sort((a,b)=>b.min-a.min),
     funnel:ok?funnel(store,users):null, navSince:navFirst&&navFirst.d||null,
