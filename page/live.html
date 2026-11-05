@@ -710,7 +710,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp .pxrow .v{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.02em;direction:ltr;unicode-bidi:isolate;line-height:1.1}
 .secp .big .l{color:var(--muted);font-size:12px;flex-basis:100%}
 .secp .rng{display:flex;flex-wrap:nowrap;gap:2px;padding:4px;align-self:stretch;overflow-x:auto;scrollbar-width:none;border-radius:999px;box-shadow:var(--shadow)}
-.secp .rng::-webkit-scrollbar{display:none}
+.secp .rng::-webkit-scrollbar{display:none} .secp canvas+.rng{margin-top:4px}
 .secp .chips.rng .chip{flex:1 0 auto;display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:999px;background:transparent;min-height:38px;padding:4px 12px;font-weight:600;color:var(--ink2);white-space:nowrap}
 .secp .chips.rng .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
 .secp .rng .rg-sht{display:none} @media (max-width:520px){.secp .rng .rg-lng{display:none} .secp .rng .rg-sht{display:inline} .secp .chips.rng .chip{padding-inline:6px;font-size:13.5px;min-width:0}}
@@ -24789,10 +24789,10 @@ function renderSec(){SECHOV=-1;
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     ${secPriceBlock(it,pr,on,fx)}
     ${secPxAlert(k,pr)}
-    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     <div class="chread" id="secRead" aria-live="polite"></div>
-    <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas><p class="note" id="secChartNote"></p>
+    <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
+    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${nxSecBlock(k)}
