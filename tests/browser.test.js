@@ -199,7 +199,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
-      under:(n=>{while(n&&['mypos','ancard','big','pxal'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
+      under:(n=>{while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
       what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
     assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
     assert.deepEqual(r.cards,['רווח למניה צפי 3.41$ בפועל 3.62$ מעל הצפי · +6.2%','הכנסות צפי 75.30 מיליארד דולר בפועל 77.70 מיליארד דולר מעל הצפי · +3.2%']);
@@ -219,7 +219,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // a security nobody holds: the same analysis on its page, and nothing on the home page
     store.setDoc('research/s_NFLX',{sym:'NFLX',name:'Netflix',source:'Yahoo Finance',rep:{...rep,label:'Q3 2026'},next:'2027-01-20'},{silent:true});
     const o=await open(390); await tab(o.pg,'search'); await o.pg.waitForTimeout(500); await o.pg.evaluate(()=>window.__srch.open('NFLX')); await o.pg.waitForTimeout(1200);
-    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); let n=document.getElementById('secChartNote').nextElementSibling; while(n&&['mypos','ancard','big','pxal'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return !!b&&n===b&&b.querySelectorAll('.rpc').length===2}),'on the page of a security not held');
+    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); let n=document.getElementById('secChartNote').nextElementSibling; while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return !!b&&n===b&&b.querySelectorAll('.rpc').length===2}),'on the page of a security not held');
     assert.deepEqual(o.pg.errs,[]); await o.ctx.close();
   }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
 });

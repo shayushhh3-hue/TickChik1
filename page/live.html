@@ -24680,6 +24680,9 @@ function secMine(it,on){
   const g=m.groups[p.group]; if(g&&p.group!=='cash'&&R.maxGroup)rules.push(rule(g.w>R.maxGroup?'crit':'ok','קבוצה:',`${esc(GROUPS[p.group]||'')} היא ${pct(g.w,1)} מהתיק; הסף שלך ${pct(R.maxGroup,0)}${g.w>R.maxGroup?' – מעל הסף':''}.`));
   return rules.length?head+`<div class="rules">${rules.join('')}</div>`:'';   // 5.11: the figures are in "האחזקה שלך" above the report
 }
+// 5.11: the price block in two (the owner's swap): the big price with the day's move right under the name, above the chart;
+// its three facts lower, under the figures of the chart
+function secPriceParts(it,pr,on,fx){const h=secPriceBlock(it,pr,on,fx), i=h.indexOf('<div class="pxfacts">'); if(i<0)return [h,'']; return [h.slice(0,i)+'</div>','<div class="big bigf">'+h.slice(i)]}
 // price block: the figure, the day's move as a pill, then three small facts in plain words
 function secPriceBlock(it,pr,on,fx){
   const pf=(k,v,sub)=>`<div class="pf"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
@@ -24790,10 +24793,11 @@ function renderSec(){SECHOV=-1;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(it.t==='S'&&it.sec?it.sec+' · מניה זרה':(TYPEL[it.t]||''))}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
-    <div class="chread" id="secRead" aria-live="polite"></div>
+    ${secPriceParts(it,pr,on,fx)[0]}
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
-    ${secPriceBlock(it,pr,on,fx)}
+    <div class="chread" id="secRead" aria-live="polite"></div>
+    ${secPriceParts(it,pr,on,fx)[1]}
     ${secPxAlert(k,pr)}
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
     ${(()=>{try{return secAnalysts(it,k,rs,pr)}catch(e){return ''}})()}
