@@ -24789,12 +24789,12 @@ function renderSec(){SECHOV=-1;
     </details>`;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(it.t==='S'&&it.sec?it.sec+' · מניה זרה':(TYPEL[it.t]||''))}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
     <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
-    ${secPriceBlock(it,pr,on,fx)}
-    ${secPxAlert(k,pr)}
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     <div class="chread" id="secRead" aria-live="polite"></div>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
+    ${secPriceBlock(it,pr,on,fx)}
+    ${secPxAlert(k,pr)}
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
     ${(()=>{try{return secAnalysts(it,k,rs,pr)}catch(e){return ''}})()}
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
