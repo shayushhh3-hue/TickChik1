@@ -102,7 +102,7 @@ input[type=number],input[type=text],input[type=date],select{background:var(--pan
 .kpi.st-bad::before,.kpi.st-warn::before{content:"";position:absolute;inset-inline-start:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--bad)} .kpi.st-warn::before{background:var(--warn)}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-off{background:var(--off-bg);color:var(--off)} .p-acc{background:var(--acc-soft);color:var(--acc)}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .keys{display:flex;flex-direction:column;gap:8px} .krow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) minmax(0,1.4fr);gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px} .kn{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .kn code{font-size:13px;font-weight:700;word-break:break-all} .kw{font-size:13px} .kt{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end} .ksub{font-size:12px;color:var(--muted)} @media (max-width:700px){.krow{grid-template-columns:1fr} .kt{justify-content:flex-start}} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-off{background:var(--off-bg);color:var(--off)} .p-acc{background:var(--acc-soft);color:var(--acc)}
 .row2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
 .banner{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-size:13.5px;color:var(--ink2);margin-bottom:14px}
 .banner svg{width:18px;height:18px;flex:none;stroke:var(--acc);fill:none;stroke-width:2;margin-top:2px}
@@ -199,6 +199,7 @@ const ini=s=>esc(String(s||'?').trim().charAt(0).toUpperCase()||'?');
 const ROLE={owner:'בעלים',admin:'מנהל',friend:'שותף'}, STATE={ok:['p-ok','תקין'],warn:['p-warn','אזהרה'],bad:['p-bad','תקלה'],off:['p-off','לא מחובר']};
 const IC={
   yahoo:'<path d="M3 17l5-6 4 4 8-9"/><path d="M15 6h5v5"/>',
+  keys:'<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M17 5l2 2M15 7l2 2"/>',
   exec:'<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v6h8V3zM3 21h8v-4H3z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.6 3.5 5.4"/>',
   product:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7"/>',
   ai:'<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 15h5"/>',health:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',incidents:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
@@ -212,7 +213,7 @@ const NAV=[
   {h:'הנהלה',items:[{id:'exec',l:'תמונת מצב'}]},
   {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה'},{id:'voice',l:'קול המשתמשים'}]},
   {h:'מודיעין ומוצר',items:[{id:'world',l:'חדר החדשות העולמי'},{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח'},{id:'radar',l:'TikChik Radar'},{id:'intel',l:'TikChik Intelligence'}]},
-  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'yahoo',l:'Yahoo ונתוני שוק'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
+  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'yahoo',l:'Yahoo ונתוני שוק'},{id:'keys',l:'מפתחות ו-API'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
   {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן'}]},
   {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence'}]}];
 let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
@@ -446,6 +447,19 @@ SCREENS.news=async()=>{head('מערכת החדשות','האיסוף, הקריא�
     {k:'first',l:'הערה',cls:'wrap',f:s=>`<span style="font-size:12px;color:var(--ink2)">${esc(s.off?'לא מחובר (אין מפתח)':s.first||s.note||'')}</span>`}]})};
 
 // ---- 4.11: Yahoo, the main market source, and the market it brings ----
+// 5.11: the keys saved in Railway, by name only: whether the site reads each and for what, and a check against its service.
+// A key saved under a name the site does not read is said first ("לא מחובר לאתר")
+SCREENS.keys=async()=>{head('מפתחות ו-API','כל מפתח ששמור ב-Railway, לפי השם בלבד: האם האתר משתמש בו ולמה, ובדיקה מול השירות עצמו.');
+  view.innerHTML=loading(2); let d; try{d=await api('keys')}catch(e){view.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
+  const unk=d.rows.filter(r=>r.set&&!r.used);
+  const st=r=>!r.set?'<span class="pill p-off">לא שמור</span>':!r.used?'<span class="pill p-warn">לא מחובר לאתר</span>':'<span class="pill p-ok">שמור</span>';
+  const lt=x=>x?`<span class="pill ${x.ok?'p-ok':'p-bad'}">${esc(x.said)}</span> <span class="ksub">בדיקה אחרונה ${dt(x.at)}</span>`:'';
+  view.innerHTML=(unk.length?banner(`<b>${unk.length===1?'מפתח אחד שמור ב-Railway, אבל האתר לא משתמש בו':unk.length+' מפתחות שמורים ב-Railway, אבל האתר לא משתמש בהם'}:</b> ${unk.map(r=>`<code dir="ltr">${esc(r.name)}</code>`).join(', ')}. כדי לחבר, ספר ל-Claude לאיזה שירות כל אחד שייך.`,'warn'):'')
+    +`<div class="card"><p class="ksub" style="margin:0 0 10px">${esc(d.note)}</p><div class="keys">${d.rows.map(r=>`<div class="krow" data-k="${esc(r.name)}"><div class="kn"><code dir="ltr">${esc(r.name)}</code>${st(r)}</div><div class="kw">${r.what?esc(r.what):'האתר לא קורא את המפתח הזה.'}</div><div class="kt"><span class="kres" aria-live="polite">${lt(r.last)}</span>${r.canTest?`<button type="button" class="btn sm" data-ktest="${esc(r.name)}">בדיקה עכשיו</button>`:''}</div></div>`).join('')}</div></div>`};
+document.addEventListener('click',async ev=>{const b=ev.target.closest&&ev.target.closest('[data-ktest]'); if(!b)return; const row=b.closest('.krow'), out=row&&row.querySelector('.kres'); b.disabled=true; b.textContent='בודק…';
+  try{const r=await post('keys/test',{name:b.dataset.ktest}); if(out)out.innerHTML=`<span class="pill ${r.ok?'p-ok':'p-bad'}">${esc(r.said)}</span> <span class="ksub">${r.code?'קוד '+esc(String(r.code))+' · ':''}${r.ms} מ״ש</span>`}
+  catch(e){if(out)out.innerHTML=`<span class="pill p-bad">${esc(e.message)}</span>`}
+  b.disabled=false; b.textContent='בדיקה עכשיו'});
 SCREENS.yahoo=async()=>{head('Yahoo ונתוני שוק','המקור הראשי של המחירים, הסגירות ונתוני החברות: כמה בקשות, כמה הצליחו, כמה זמן לקחו, ומה הביאו. כתובות הבקשות לא נשמרות, ולכן אין כאן סימולים של מישהו.');
   view.innerHTML=loading(3); let d; try{d=await api('yahoo?days=7')}catch(e){view.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
   const S=d.status, M=d.market, chg=v=>v==null?'—':`<span class="d ${v>0?'up':v<0?'down':'same'}" dir="ltr">${v>0?'+':''}${v.toFixed(2)}%</span>`, px=v=>v==null?'—':nf(Math.round(v*100)/100);

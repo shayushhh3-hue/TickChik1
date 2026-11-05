@@ -7,6 +7,7 @@ import {adminSchema, permsOf, can, setPerms, audit, auditList, auditVerify, setS
 import {rangeOf, executive, product, aiCost, funnel, catalog, K_ANON} from '../server/admin/metrics.js';
 import {bump, countersSince, setCounterStore} from '../server/admin/counter.js';
 import {createHash} from 'node:crypto';
+import {keysList,keyTest} from '../server/admin/keys.js';
 
 process.env.OWNER_EMAIL='owner@example.com'; process.env.OWNER_PASSWORD='owner-pass-123'; process.env.ANTHROPIC_API_KEY=''; process.env.JOBS='0';
 const PAGE=new URL('../page/live.html',import.meta.url).pathname;
@@ -493,4 +494,22 @@ test('5.11 Nasdaq for what Yahoo did not give: the multiple, the forward one, th
   const got={MSFT:{pe:30,dy:null}}; const st=await nasdaqPass(null,['KO','MSFT','TLV:LUMI','5129283'],got,{fetch:f,now,held:new Set(['MSFT']),pause:0});
   assert.equal(got.MSFT.pe,30,'what Yahoo gave stays'); assert.equal(got.MSFT.dy,0.45); assert.equal(got.MSFT.next,'2027-01-27'); assert.ok(got.MSFT.nqAt); assert.ok(got.KO&&got.KO.pe===34.56);
   assert.ok(asked[0].includes('/quote/MSFT/'),'the held first'); assert.ok(!asked.some(u=>/LUMI|5129283/.test(u)),'Tel Aviv and funds by number are not asked'); assert.equal(st.filled,2);
+});
+
+test('5.11 the keys in Railway by name only: a key the site does not read is said first, the platform\'s own variables are not listed, no value ever leaves, and a check asks the service and keeps only the outcome',async()=>{
+  const st=mk(), env={RAILWAY_ENVIRONMENT:'production',PATH:'/bin',NODE_ENV:'production',FINNHUB_API_KEY:'fh-SECRET-123',ANTHROPIC_API_KEY:'sk-SECRET',POLYGON_API_KEY:'pg-SECRET-9',SITE_URL:'https://x'};
+  const L=keysList(st,{env}), names=L.rows.map(r=>r.name), json=JSON.stringify(L);
+  assert.equal(L.rows[0].name,'POLYGON_API_KEY'); assert.equal(L.rows[0].used,false); assert.equal(L.rows[0].canTest,false,'an unknown key: shown, not testable');
+  assert.ok(!names.includes('RAILWAY_ENVIRONMENT')&&!names.includes('PATH')&&!names.includes('NODE_ENV'),'the platform is not listed');
+  assert.ok(names.includes('TASE_API_KEY')&&!L.rows.find(r=>r.name==='TASE_API_KEY').set,'a key the site reads and that is missing is listed as missing');
+  assert.ok(!/SECRET|fh-|sk-|pg-/.test(json),'no value, no piece of one');
+  // the checks: the service's answer becomes an outcome
+  const calls=[]; const f=code=>async(u,o)=>{calls.push({u:String(u),h:o&&o.headers}); return {ok:code===200,status:code,json:async()=>String(u).includes('finnhub')?{c:271.3}:String(u).includes('resend')?{name:'restricted_api_key'}:{data:[{id:'m'}]},text:async()=>'{}'}};
+  let r=await keyTest(st,'FINNHUB_API_KEY',{env,fetch:f(200)}); assert.equal(r.st,'ok'); assert.ok(r.ok); assert.match(r.said,/עובד/);
+  r=await keyTest(st,'FINNHUB_API_KEY',{env,fetch:f(401)}); assert.equal(r.st,'bad'); assert.equal(r.ok,false); assert.match(r.said,/נדחה/);
+  r=await keyTest(st,'ANTHROPIC_API_KEY',{env,fetch:f(200)}); assert.equal(r.st,'ok'); assert.equal(calls.at(-1).h['x-api-key'],'sk-SECRET','the key goes only to its own service');
+  r=await keyTest(st,'RESEND_API_KEY',{env:{...env,RESEND_API_KEY:'re_x'},fetch:f(401)}); assert.equal(r.st,'restricted','a sending-only key is a working key');
+  await assert.rejects(()=>keyTest(st,'POLYGON_API_KEY',{env,fetch:f(200)}),/unknown/); await assert.rejects(()=>keyTest(st,'TASE_API_KEY',{env,fetch:f(200)}),/missing/);
+  const kept=st.getMeta('keyTests'); assert.ok(kept&&!/SECRET|re_x/.test(kept),'only the outcome is kept'); assert.equal(keysList(st,{env}).rows.find(r=>r.name==='FINNHUB_API_KEY').last.st,'bad','the last check is shown');
+  assert.ok(calls.every(c=>/^https:\/\/(finnhub\.io|api\.anthropic\.com|api\.resend\.com)\//.test(c.u)),'only the services themselves');
 });

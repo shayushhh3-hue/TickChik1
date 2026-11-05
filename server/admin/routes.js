@@ -14,6 +14,7 @@ import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory}
 import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
 import {yahooStatus,marketData} from './yahoo.js';
+import {keysList,keyTest} from './keys.js';
 import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
   contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
 
@@ -155,6 +156,14 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   const IERR={short:'כתוב שאלה.',rate:'הגעת ל-20 שאלות בשעה. אפשר להמשיך בעוד מעט.',upstream:'צ׳יקו לא ענה כרגע. נסה שוב בעוד רגע.',no_answer:'התשובה לא הגיעה במבנה הנכון. נסה לנסח אחרת.'};
   app.post('/api/admin/intel',need('view'),async(req,res)=>{const b=req.body||{}; try{res.json(await intelAsk(store,req.user,b.q,{ask:app.locals.intelAsk||null,q:{range:b.range||'30',from:b.from,to:b.to,pageFile},log}))}
     catch(e){res.status(e.message==='rate'?429:e.message==='upstream'?502:400).json({error:{code:e.message,message:IERR[e.message]||e.message}})}});
+
+  // 5.11: the keys in Railway, by name only, and a check of one against its own service (the outcome and its time are kept)
+  app.get('/api/admin/keys',need('system'),(req,res)=>res.json(keysList(store)));
+  const KT=new Map(), KERR={unknown:'האתר לא משתמש במפתח בשם הזה, ולכן אין מה לבדוק. ספר ל-Claude לאיזה שירות הוא שייך, והוא יחובר.',missing:'המפתח לא שמור ב-Railway.',no_test:'למפתח הזה אין בדיקה מול שירות.'};
+  app.post('/api/admin/keys/test',need('system'),async(req,res)=>{const n=String((req.body||{}).name||'').slice(0,64), last=KT.get(n)||0;
+    if(Date.now()-last<10e3)return res.status(429).json({error:{code:'rate_limited',message:'בדיקה של המפתח הזה רצה לפני רגע. אפשר שוב בעוד כמה שניות.'}}); KT.set(n,Date.now());
+    try{const r=await keyTest(store,n,{fetch:app.locals.keyFetch||globalThis.fetch}); audit(store,{user:req.user,action:'keys.test',target:n,detail:{st:r.st,code:r.code},ip:req.ip}); res.json(r)}
+    catch(e){res.status(400).json({error:{code:e.message,message:KERR[e.message]||e.message}})}});
 
   // ---- the global news model ----
   // 4.11: Yahoo as a source (counted by kind and outcome) and the market it brings (public data)
