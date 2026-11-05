@@ -17809,10 +17809,10 @@ function render(){
   // alerts: the same engine the assistant uses (alertsOf)
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   // 5.11: a price that did not come is said once, in the morning card above with its buttons; the list keeps the portfolio's own matters
-  const A=alertsOf(m).filter(a=>!(a[1]==='מחיר'&&$('deskSec')&&!$('deskSec').hidden&&/מחיר/.test(($('desk')||{}).textContent||'')));
+  const A=alertsOf(m), AL=A.filter(a=>!(a[1]==='מחיר'&&$('deskSec')&&!$('deskSec').hidden&&/מחיר/.test(($('desk')||{}).textContent||'')));
   const tagFor={crit:'חריגה',warn:'לבדיקה',ok:'תקין',info:'מידע'};
   const line=a=>`${tagFor[a[0]]} · ${a[1]}: ${a[2]}`;
-  const grp=[['crit','חריגות'],['warn','לבדיקה'],['info','מידע']].map(([sv,title])=>{const g=A.filter(a=>a[0]===sv); if(!g.length)return '';
+  const grp=[['crit','חריגות'],['warn','לבדיקה'],['info','מידע']].map(([sv,title])=>{const g=AL.filter(a=>a[0]===sv); if(!g.length)return '';
     const pv=[...new Set(g.flatMap(a=>a[3]&&a[3].length?a[3]:[a[1]]))];
     return `<li class="agw"><details class="ag ${sv}" data-sv="${sv}"${AG_OPEN[sv]?' open':''}><summary>${niH(SEVI[sv],'ag-ic')}<span class="agt">${title}</span><span class="agn">${g.length}</span><span class="agp">${pv.slice(0,6).map(x=>`<bdi>${esc(x)}</bdi>`).join(' · ')}${pv.length>6?` · <bdi>ועוד ${pv.length-6}</bdi>`:''}</span></summary><ul class="agl">${g.map(a=>`<li data-line="${esc(line(a))}" data-sev="${a[0]}">${catIconH(a[1],a[0])}<span class="tag">${esc(a[1])}</span><div class="agb">${ackd(a)?'<span class="ackt">סימנת שבדקת</span>':''}${a[4]?esc(a[4].lead)+'<span class="ais">'+a[4].items.map(x=>`<bdi class="ai">${esc(x)}</bdi>`).join('')+'</span>':esc(a[2])}${whyH(a.why)}${a.why?'':anaNavBtn(alertNav(a),'agnav')}</div></li>`).join('')}</ul></details></li>`}).join('');
   const okRow=A.filter(a=>a[0]==='ok').map(a=>`<li class="alert ok" data-line="${esc(line(a))}" data-sev="ok">${niH('ok')}<span><span class="tag">${tagFor.ok}</span> ${esc(a[2])}</span></li>`).join('');

@@ -1437,7 +1437,7 @@ test('31.10 a long line on the home screen ("אין מחיר ל-…") is cut wit
   store.setDoc('portfolio/main',{...P0,positions:[...(P0.positions||[]),...extra]},{silent:true});
   const syms=[...(P0.positions||[]).map(p=>p.sym),...extra.map(p=>p.sym)], prices={...q0.prices}, prev={...q0.prev}; for(const e of extra){prices[e.sym]=100; prev[e.sym]=99}
   const stale={}; for(const k of syms)stale[k]='סגירה קודמת'; store.setDoc('quotes/latest',{...q0,prices,prev,stale},{silent:true});
-  try{const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-cut'),null,{timeout:15000});
+  try{const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-cut'),null,{timeout:15000}).catch(async e=>{throw new Error('DESK: '+await pg.evaluate(()=>{const d=document.getElementById('desk'); return (d?d.innerText:'none').slice(0,600)+' | hidden:'+document.getElementById('deskSec').hidden}))});
     const before=await pg.evaluate(()=>({cut:document.querySelector('#desk .dk-cut').textContent,full:document.querySelector('#desk .dk-full').hidden}));
     assert.match(before.cut,/…/); assert.equal(before.full,true);
     await pg.evaluate(()=>document.querySelector('#desk [data-dkmore="1"]').click()); await pg.waitForTimeout(100);
@@ -2015,7 +2015,7 @@ test('1.11 completions: the X-ray names the common factors and direct against in
     // the health score
     await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(400);
     const H=await pg.evaluate(()=>({parts:[...document.querySelectorAll('#hParts li')].map(l=>l.textContent.replace(/\s+/g,' ')),hist:document.getElementById('hHist').innerText,score:+document.getElementById('hNum').textContent}));
-    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(H.hist,/לא הבטחה לתשואה/);
+    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(await pg.evaluate(()=>document.querySelector('#healthHome').innerText),/לא מודד תשואה ולא ממליץ/,'5.11: one sentence about the index');
     await pg.waitForTimeout(1500); const ym=new Date().toISOString().slice(0,7); const mk=(store.getDoc('settings/main').data.hsc||{})[ym]; assert.ok(typeof mk==='number'&&Math.abs(mk-H.score)<=5,'one mark a month, in the account: '+mk+' vs '+H.score);
     // the goals compass: no goal yet, then a goal
     await tab(pg,'forecast'); await pg.waitForTimeout(500);
