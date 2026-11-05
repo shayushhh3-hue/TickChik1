@@ -24909,7 +24909,8 @@ function drawSec(){
   const ring=(xx,yy,c)=>{g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,5.5,0,7); g.fill(); g.lineWidth=2.2; g.strokeStyle=c; g.beginPath(); g.arc(xx,yy,4,0,7); g.stroke()};
   if(pts.length>8){const cx=xx=>xx;
     if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,GAIN); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),GAIN,'center',1)}
-    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t='שפל '+fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LOSS); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),Math.min(T+PH-26,ly+14),LOSS,'center',1)}}
+    // 5.11: the low is the red ring only (its price and day are in the box above); the owner took its label off
+    if(iLo!==pts.length-1&&iLo!==iHi)ring(x(pts[iLo][0]),y(pts[iLo][1]),LOSS)}
   for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
     g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
   {const EVC={rep:[VB,'ד'],ex:[TEAL,'$'],al:[AMB,'!']}, placed=[];
