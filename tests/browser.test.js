@@ -199,7 +199,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
-      under:document.getElementById('secChartNote').nextElementSibling===b,cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
+      under:(n=>n===b||(n&&n.classList.contains('mypos')&&n.nextElementSibling===b))(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
       what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
     assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
     assert.deepEqual(r.cards,['רווח למניה צפי 3.41$ בפועל 3.62$ מעל הצפי · +6.2%','הכנסות צפי 75.30 מיליארד דולר בפועל 77.70 מיליארד דולר מעל הצפי · +3.2%']);
@@ -2902,5 +2902,25 @@ test('5.11 the home from the recording: "today" by the markets the portfolio hol
   assert.equal(r.n,2); assert.equal(r.g,'ind:auto,etf:auto,tech,tech:user,fin','only the default changes; a group the user chose stays');
   assert.match(r.all[0],new RegExp(`הצג הכל \\(${r.all[1]} ניירות\\)`),'the button counts the securities, not the cash row');
   for(const c of r.chips.split(',')){const [w,v]=c.split(':'); if(+w>0)assert.equal(v,r.span<=+w?'h':'v',`range ${w} with ${r.span.toFixed(1)} months of data`)}
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('5.11 the security chart for reading: figures as tiles (the price, the change, the high, below it), "האחזקה שלך" above the report for a holding, a dollar/shekel switch, and the markers of the high and the low',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(500);
+  await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500); await pg.evaluate(()=>document.querySelector('[data-rng="1y"]').click()); await pg.waitForTimeout(800);
+  const r=await pg.evaluate(()=>({tiles:[...document.querySelectorAll('#secRead .crt .k')].map(x=>x.textContent),pos:[...document.querySelectorAll('.mypos .mp .k')].map(x=>x.textContent),
+    above:(()=>{const a=document.querySelector('.mypos'), b=document.querySelector('#secPage .repbox'); return !!a&&!!b&&!!(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)})(),
+    sw:[...document.querySelectorAll('[data-seccc]')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed')).join(','),ox:document.documentElement.scrollWidth<=innerWidth+1}));
+  assert.deepEqual(r.tiles.slice(0,4),['המחיר האחרון','השינוי בשנה','שיא בטווח','מתחת לשיא']);
+  assert.deepEqual(r.pos,['השווי שלך','ביום המסחר האחרון','מול הקנייה']); assert.ok(r.above,'the holding right above the report'); assert.equal(r.sw,'בדולרים:true,בשקלים:false'); assert.ok(r.ox);
+  // a day under the finger: its tiles; the label over the line is not drawn for the last day (the tag says it)
+  await pg.evaluate(()=>document.getElementById('secChart').scrollIntoView({block:'center'})); await pg.waitForTimeout(200);
+  const cb=await (await pg.$('#secChart')).boundingBox(); await pg.mouse.move(cb.x+cb.width*0.4,cb.y+cb.height/2); await pg.waitForTimeout(250);
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#secRead .crt .k')].map(x=>x.textContent).slice(0,3)),['מחיר הסגירה','מתחילת הטווח','מאז ועד היום']);
+  // shekels without the rates' history: said, and the chart stays in dollars
+  await pg.click('[data-seccc="ils"]'); await pg.waitForTimeout(500);
+  assert.match(await pg.evaluate(()=>document.getElementById('secRead').textContent),/בדולרים|בשקלים/);
+  await pg.click('[data-seccc="usd"]');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
