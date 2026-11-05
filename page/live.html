@@ -1968,12 +1968,12 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .16)!important} html[data-theme="dark"] .trk[aria-pressed="true"] b{color:#E9E3FF}
 /* 28.10: the growth plan in two tabs: the monthly deposit (how to buy, the months, the chart, the securities) and the
    one-time deposit (its form and list); the balance strip shows in both */
-.dvtabs{display:flex;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
-.dvtabs .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
+.dvtabs{display:flex;gap:0;padding:4px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
+.dvtabs .chip{flex:1 0 auto;padding-inline:12px;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 .dvtabs .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
 .dvtabs .dv-n:not(:empty){display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-inline-start:6px;border-radius:999px;background:rgb(124 58 237 / .14);font-size:12px}
 .dvtabs .chip[aria-pressed="true"] .dv-n{background:rgb(255 255 255 / .25)}
-section[data-dvv="month"] [data-dvp="once"],section[data-dvv="once"] [data-dvp="month"]{display:none!important}
+.dv-off{display:none!important} @media (max-width:440px){#dvTabs .chip{padding-inline:6px;font-size:13px}}
 /* 30.10: the stories. A circle per security with something new (a reading that matters, a big day, a price that was set,
    the dollar): a halo while it is unread, grey once seen. Over צ׳יקו up to three of them and the count; in "חיבור למציאות" the
    whole row; a tap opens the viewer, one card at a time */
@@ -2777,26 +2777,26 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
       </div>
       <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
-      <div class="dvtabs" id="dvTabs" role="tablist" aria-label="סוג ההפקדה"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">הפקדה חודשית</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">הפקדה חד פעמית <span class="dv-n" id="dvOnceN"></span></button></div>
-      <div class="panel howbuy">
+      <div class="dvtabs" id="dvTabs" role="tablist" aria-label="החלקים של התוכנית"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">החודש</button><button type="button" class="chip" role="tab" data-dv="rows" aria-pressed="false" aria-selected="false">הניירות</button><button type="button" class="chip" role="tab" data-dv="chart" aria-pressed="false" aria-selected="false">הגרף</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">חד פעמית <span class="dv-n" id="dvOnceN"></span></button><button type="button" class="chip" role="tab" data-dv="set" aria-pressed="false" aria-selected="false">הגדרות</button></div>
+      <div class="panel howbuy" data-dvp="rows">
         <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
         <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
         <p class="note" id="kindNote"></p>
       </div>
-      <div class="panel ob" id="planOb" hidden>
+      <div class="panel ob" id="planOb" data-dvp="all" hidden>
         <h3>בונים תוכנית הגדלה</h3>
         <p class="note" id="obLead"></p>
         <div class="form" id="obForm"><label for="obMonthly">כמה להפקיד כל חודש (₪)<input type="number" id="obMonthly" min="0" step="50"></label></div>
         <div id="obPick"><div class="k" style="margin-bottom:6px">אילו ניירות להגדיל</div><div class="cm" id="obChips"></div></div>
         <div class="obact"><button class="btn pri" id="obGo" type="button" data-pa="initPlan">בנה תוכנית</button><button class="btn" id="obToPf" type="button" data-tab="mine" hidden>לעבור ל"התיק שלי"</button></div>
       </div>
-      <div class="strip">
+      <div class="strip" data-dvp="month once">
         <div class="cell"><div class="k">יתרה להשקעה</div><span class="v" id="pBal">—</span><div class="d" id="pBalD">&nbsp;</div></div>
         <div class="cell"><div class="k">הוגדלו</div><span class="v" id="pDone">—</span><div class="prog" style="margin-top:8px"><div id="pBar" style="width:0"></div></div></div>
         <div class="cell"><div class="k">נשאר לממן</div><span class="v" id="pLeft">—</span><div class="d" id="pLeftD">&nbsp;</div></div>
         <div class="cell"><div class="k">סיום משוער</div><span class="v" id="pEnd" style="direction:rtl">—</span><div class="d" id="pEndD">&nbsp;</div></div>
       </div>
-      <div class="panel scroll">
+      <div class="panel scroll" data-dvp="month">
         <div class="row" style="margin-bottom:8px"><h3>מעקב חודשי</h3><span class="sub" id="depState"></span></div>
         <table class="ladder">
           <thead><tr><th>חודש</th><th>הפקדה</th><th>קנייה</th><th class="num">יתרה</th></tr></thead>
@@ -2816,19 +2816,19 @@ html[data-theme="dark"].a11y-hc :focus-visible{outline-color:#C4B5FD!important}
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="onceAdd">הוסף הפקדה</button><span class="saved" id="onceState" role="status"></span></div>
         <ul class="oncelist" id="onceList"></ul>
       </div>
-      <div class="panel">
+      <div class="panel" data-dvp="chart">
         <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: בפועל · מקווקו: לפי הלוח</span></div></div>
         <div class="chart" id="chart"><svg id="svg" viewBox="0 0 640 260" role="img" aria-label="סך ההפקדות מול הסכום שהושקע במניות, חודש אחר חודש"></svg><div class="tip" id="tip" hidden></div></div>
         <p class="note" id="projNote"></p>
       </div>
-      <div class="panel scroll">
+      <div class="panel scroll" data-dvp="rows">
         <div class="row" style="margin-bottom:8px"><h3>הניירות בתוכנית</h3></div>
         <table>
           <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
           <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
         </table>
       </div>
-      <div class="panel">
+      <div class="panel" data-dvp="set">
         <div class="form">
           <label for="inMonthly">הפקדה חודשית למניות (₪)<input type="number" id="inMonthly" min="0" step="50"></label>
           <label for="inMonthlyIdx">הפקדה חודשית למדדים (₪)<input type="number" id="inMonthlyIdx" min="0" step="50"></label>
@@ -25023,7 +25023,8 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
 const PARTS={
   settings:{me:['פרופיל ופרטיות',['hMe','hUse','hData']],news:['חדשות והתראות',['hNwSet','hNotif']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
   forecast:{goal:['היעד שלי',['hGoal','hFlows','hFwd']],scen:['תרחישים',['hScen','hWhatIf']],div:['דיבידנדים',['hDivGot','hDiv','hDivAhead']],calc:['מחשבונים',['hDivCalc','hFxCalc']]},
-  history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']]}};
+  history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']]},
+  journal:{jrn:['היומן שלי',['hJrn']],dna:['טביעת האצבע שלי (DNA)',['hDna']]}};
 const PTV={}; try{Object.assign(PTV,JSON.parse(localStorage.getItem('tr_ptv')||'{}'))}catch(e){}
 function ptSecs(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return []; return [...pane.querySelectorAll('section[aria-labelledby]')].filter(x=>x.parentElement===pane||x.parentElement.parentElement===pane)}
 function ptOf(t,sec){const id=sec.getAttribute('aria-labelledby'); for(const [k,[,ids]] of Object.entries(PARTS[t]||{}))if(ids.includes(id))return k; return null}
@@ -25037,7 +25038,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
 try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
-function ptReveal(el){if(!el||!el.closest)return; const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const k=sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
+function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const k=sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 function showTab(t,user){
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
@@ -26743,12 +26744,18 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
 // ---- a one-time deposit: money in beyond the monthly amount, on its day, to a track. It is a plan deposit like the monthly
 // ones (allDep), so it is in the cash of the portfolio's value, in the deposits total and in the plan's balance, until a
 // statement of the account holds it; marked once:true so a month's regular deposit is never taken for it ----
-// 28.10: the two tabs of the growth plan. Every part of the plan section after the tab row belongs to the monthly tab,
-// except the one-time deposit's box and the balance strip (both tabs); the choice is kept in this browser
-let DVV='month'; try{if(localStorage.getItem('tr_dvv')==='once')DVV='once'}catch(e){}
-function dvSet(v){DVV=v==='once'?'once':'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
+// 28.10: the tabs of the growth plan. 5.11: five parts, like the control screen (one shown at a time, no folds): this
+// month (the balance and the monthly track), the securities and how they are bought, the chart, the one-time deposit
+// (with the balance) and the settings. The choice is kept in this browser. The page's own tests see the old two tabs
+// (tr_pt_all: the month shows every monthly part)
+const DVK=['month','rows','chart','once','set'];
+let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))DVV=v}catch(e){}
+function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
-  for(const b of row.querySelectorAll('[data-dv]')){const on=b.dataset.dv===DVV; b.setAttribute('aria-pressed',String(on)); b.setAttribute('aria-selected',String(on))}}
+  let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
+  if(sec)for(const el of sec.querySelectorAll('[data-dvp]')){const ks=el.dataset.dvp.split(' '); el.classList.toggle('dv-off',!(ks.includes('all')||ks.includes(DVV)||(all&&DVV==='month'&&!ks.includes('once'))))}
+  for(const b of row.querySelectorAll('[data-dv]')){const on=b.dataset.dv===DVV; b.setAttribute('aria-pressed',String(on)); b.setAttribute('aria-selected',String(on))}
+  if(DVV==='chart'){try{if(PTS.length)drawChart(PTS)}catch(e){}}}
 (function dvBoot(){const go=()=>{const row=$('dvTabs'); if(!row)return; let after=false;
     for(const el of row.parentElement.children){if(el===row){after=true;continue} if(!after||el.dataset.dvp||el.classList.contains('strip'))continue; el.dataset.dvp='month'}
     dvSet(DVV)};
@@ -27475,7 +27482,7 @@ function goTo(d){
   showTab(d.tab,true);
   if(!d.el)return;
   setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
-    {const dp=el.closest('[data-dvp]'); if(dp)try{dvSet(dp.dataset.dvp)}catch(e){}}
+    {const dp=el.closest('[data-dvp]'); if(dp&&dp.classList.contains('dv-off'))try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}}
     {const mp=el.closest('[data-mvp]'); if(mp)try{mvSet(mp.dataset.mvp)}catch(e){}}
     const fs=el.closest('[data-pane="risk"] > [data-rg]'); if(fs){try{rgSet(fs.dataset.rg)}catch(e){}}
     if(el.closest('[data-adv]')&&VIEW==='calm'){try{setView('full')}catch(e){}}

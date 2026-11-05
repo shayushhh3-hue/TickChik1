@@ -2847,3 +2847,32 @@ test('5.11 did it help: a row under each answer and each finding, counted for th
   }finally{if(J0.exists)store.setDoc('journal/main',J0.data,{silent:true}); else store.deleteDoc('journal/main'); store.setDoc('research/latest',R0,{silent:true}); store.setDoc('settings/main',S0,{silent:true})}
 });
 const U0=()=>U;
+
+test('5.11 the crowded screens in parts like the control screen: the growth plan in five (this month, the securities, the chart, one-time, settings) and the journal in two; the choice kept, a link opens its part',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{parts:true});
+  await pg.evaluate(()=>{try{localStorage.removeItem('tr_dvv')}catch(e){}});
+  await tab(pg,'plan'); await pg.waitForTimeout(500);
+  const vis=()=>pg.evaluate(()=>['ladRows','planRows','chart','onceAmt','inMonthly','pBal'].map(id=>!!document.getElementById(id).offsetParent));
+  const fit=()=>pg.evaluate(()=>{const r=document.getElementById('dvTabs'); return r.scrollWidth<=r.clientWidth+1});
+  assert.ok(await fit(),'the five fit on a phone');
+  assert.deepEqual(await vis(),[true,false,false,false,false,true],'this month');
+  await pg.click('#dvTabs [data-dv="rows"]'); assert.deepEqual(await vis(),[false,true,false,false,false,false]);
+  await pg.click('#dvTabs [data-dv="chart"]'); await pg.waitForTimeout(200); assert.deepEqual(await vis(),[false,false,true,false,false,false]);
+  assert.ok(await pg.evaluate(()=>document.getElementById('svg').querySelectorAll('path,polyline,line').length>3),'the chart drawn when shown');
+  await pg.click('#dvTabs [data-dv="once"]'); assert.deepEqual(await vis(),[false,false,false,true,false,true]);
+  await pg.click('#dvTabs [data-dv="set"]'); assert.deepEqual(await vis(),[false,false,false,false,true,false]);
+  // the choice kept; a scroll to a place in another part opens it
+  await pg.reload(); await pg.waitForFunction(()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||'')); await tab(pg,'plan'); await pg.waitForTimeout(400);
+  assert.equal(await pg.evaluate(()=>document.querySelector('#dvTabs [aria-pressed="true"]').dataset.dv),'set');
+  await pg.evaluate(()=>document.getElementById('ladRows').scrollIntoView()); await pg.waitForTimeout(100);
+  assert.equal(await pg.evaluate(()=>document.querySelector('#dvTabs [aria-pressed="true"]').dataset.dv),'month');
+  // the journal
+  await tab(pg,'journal'); await pg.waitForTimeout(500);
+  const j=()=>pg.evaluate(()=>[!!document.getElementById('jrnBox').offsetParent,!!document.getElementById('dnaBox').offsetParent,[...document.querySelectorAll('[data-pane="journal"] .ptnav [data-pt]')].map(b=>b.textContent).join('|')]);
+  assert.deepEqual(await j(),[true,false,'היומן שלי|טביעת האצבע שלי (DNA)']);
+  await pg.click('[data-pt="journal:dna"]'); assert.deepEqual((await j()).slice(0,2),[false,true]);
+  await pg.evaluate(()=>document.getElementById('jrnBox').scrollIntoView()); assert.deepEqual((await j()).slice(0,2),[true,false]);
+  assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no sideways scroll');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
