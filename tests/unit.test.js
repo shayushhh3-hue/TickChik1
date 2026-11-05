@@ -1936,3 +1936,14 @@ test('5.11 while Yahoo refuses the server its company data, it is not asked agai
   const on=fakeYahoo(); st=await researchTask(s,{...noKeys,fetch:on.f,now:new Date('2026-11-09T23:15:00Z')});
   assert.ok(on.seen.some(u=>u.includes('getcrumb')),'asked again after the pause'); assert.ok(st.ok>0); assert.equal(st.yhPause,null); assert.equal(s.getMeta('yhCoPause'),'null');
 });
+
+test('5.11 the background figures once in a quarter of an hour: a run between asks the holdings and the index a held fund is carried by, not the other indices, futures and markets',async()=>{
+  const asked=[]; const f=async u=>{u=String(u); asked.push(u); const t=decodeURIComponent((u.match(/chart\/([^?]+)/)||[])[1]||'');
+    const meta={regularMarketPrice:100,chartPreviousClose:99,currency:'USD',exchangeName:'X',regularMarketTime:Math.floor(Date.now()/1000),gmtoffset:0};
+    return new Response(JSON.stringify({chart:{result:[{meta,timestamp:[Math.floor(Date.now()/1000)-86400,Math.floor(Date.now()/1000)],indicators:{quote:[{close:[99,100]}]}}]}}),{headers:{'content-type':'application/json'}})};
+  const between=await fetchAll(['MSFT'],{fetch:f,ctx:false}); const yq=asked.map(u=>decodeURIComponent((u.match(/chart\/([^?]+)/)||[])[1]||'')).filter(Boolean);
+  assert.ok(yq.includes('MSFT'),'the holding'); assert.ok(!yq.includes('^GSPC')&&!yq.includes('GC=F')&&!yq.includes('BTC-USD')&&!yq.includes('ES=F'),'no background between: '+yq.join(','));
+  assert.deepEqual(between.mkts,{});
+  asked.length=0; const full=await fetchAll(['MSFT'],{fetch:f,ctx:true}); const yq2=asked.map(u=>decodeURIComponent((u.match(/chart\/([^?]+)/)||[])[1]||'')).filter(Boolean);
+  assert.ok(yq2.includes('^GSPC')&&yq2.includes('GC=F'),'the quarter-hour run asks them'); assert.ok(Object.keys(full.mkts).length>0);
+});

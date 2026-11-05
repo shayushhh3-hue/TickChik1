@@ -220,7 +220,7 @@ export async function boiUsd({fetch:f=timedFetch}={}){
 }
 
 // everything the quotes document needs: {quotes:{SYM:{px,prev,...}}, fx:{rate,boi,live}, errors:[]}
-export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,concurrency=6,log=()=>{}}={}){
+export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,concurrency=6,log=()=>{},ctx=true}={}){
   const posOf=Object.fromEntries(positions.map(p=>[p.sym,p]));
   const out={}, errors=[], idx={};
   const need=[...new Set(symbols)].filter(Boolean);
@@ -248,9 +248,13 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
   // other currencies seen in this run's quotes, against the shekel
   const needCcy=[...new Set(Object.values(out).map(q=>q&&q.ccy).filter(c=>c&&CCYS.includes(c)))], rates={};
   await Promise.all(needCcy.map(async c=>{try{const q=await yahooChart(c+'ILS=X',{fetch:f}); if(q&&q.px>0)rates[c]={rate:q.px,prev:q.prev||null,date:q.closeDate}}catch(e){}}));
-  const bench={}; await Promise.all(Object.entries(BENCH).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}
+  // 5.11: the indices, their futures and the markets (oil, gold, bitcoin, VIX, the bond) are the page's background, asked
+  // every quarter of an hour (ctx) instead of every run; an index a held fund is carried by (its estimate needs the index and
+  // its future now) is asked every run. Between, the page keeps the last values with their times
+  const needK=new Set(fb.map(([s,q])=>trackOf(q.name)).filter(Boolean));
+  const bench={}; await Promise.all(Object.entries(BENCH).filter(([k])=>ctx||needK.has(k)||(k==='TA125'&&idx.TA125)).map(async([k,b])=>{try{const q=idx.TA125&&k==='TA125'?idx.TA125:await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)bench[k]={px:q.px,prev:q.prev,date:q.closeDate,prevDate:q.prevDate||null,at:q.time}}catch(e){}
     if(b.fut){try{const q=await yahooChart(b.fut,{fetch:f}); if(q&&q.px>0&&q.prev>0&&bench[k])bench[k].fut={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}}));
-  const mkts={}; await Promise.all(Object.entries(MKTS).map(async([k,b])=>{try{const q=await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)mkts[k]={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}));
+  const mkts={}; if(ctx)await Promise.all(Object.entries(MKTS).map(async([k,b])=>{try{const q=await yahooChart(b.t,{fetch:f}); if(q&&q.px>0&&q.prev>0)mkts[k]={px:q.px,prev:q.prev,date:q.closeDate,at:q.time}}catch(e){}}));
   return {quotes:out,index:idx,fx:{boi,live},bench,mkts,rates,errors};
 }
 
@@ -330,6 +334,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
     source:(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='finnhub')?'Finnhub, ':'')+'Yahoo Finance'+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='nasdaq')?', Nasdaq':'')+(Object.values(fetched.quotes||{}).some(q=>q&&q.src==='stooq')?', Stooq':'')+', מאיה (הבורסה) לקרנות נאמנות, בנק ישראל',
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
+    mktsAt:Object.keys(fetched.mkts||{}).length?now.toISOString():(old.mktsAt||null),
     usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag,
     errors:(fetched.errors||[]).slice(0,40)};
 }

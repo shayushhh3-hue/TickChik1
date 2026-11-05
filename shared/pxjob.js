@@ -12,7 +12,9 @@ export async function refreshQuotes(fs,{fetch:f=timedFetch,now=new Date(),log=()
   const map=(S.exists&&S.data.symMap)||{};
   const symbols=[...syms].slice(0,120);
   log(`fetching ${symbols.length} symbols${reason?' ('+reason+')':''}`);
-  const fetched=await fetchAll(symbols,{positions,map,fetch:f,log});
+  // 5.11: the background (indices, futures, markets) once in a quarter of an hour; the holdings every run
+  const old=Q.exists?Q.data:{}, ctx=!old.mktsAt||now.getTime()-Date.parse(old.mktsAt)>=14*60e3;
+  const fetched=await fetchAll(symbols,{positions,map,fetch:f,log,ctx});
   const doc=buildQuotesDoc({prev:Q.exists?Q.data:{},fetched,symbols,positions,now,usOpen:usOpen(now),ilOpen:ilOpen(now)});
   if(reason)doc.lastReason=reason;
   await fs.setDoc('quotes/latest',doc);
