@@ -72,7 +72,7 @@ h3{font-size:15px;font-weight:700;margin:0}
 .worth{display:flex;flex-direction:column;gap:2px;min-width:0;padding:16px 18px;margin:6px 12px 12px;border-radius:20px;background:var(--worth);border:1px solid var(--line);box-shadow:0 12px 30px var(--worth-sh);color:var(--ink)}
 @media (max-width:760px){.worth{margin:6px 10px 10px}}
 /* the value over time, in the value card: drag a finger (or the mouse, or the arrows) along it to read any point */
-.wch{margin-top:12px} .wch[hidden]{display:none}
+.wch{margin-top:12px} .wch[hidden]{display:none} .wch-rg[hidden],.wch-rg button[hidden]{display:none!important}
 .wch-h{display:flex;flex-direction:column;gap:6px}
 /* one line, always the same height: the text changes under the finger, and the chart must not move under it */
 .wch-r{font-size:13.5px;color:var(--ink2);line-height:22px;height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;order:2} .wch-r b{color:var(--ink);font-weight:700} .wch-r .up{color:var(--gain)} .wch-r .down{color:var(--loss)}
@@ -17397,11 +17397,16 @@ function mktDay(iso){
   return {iso,il,us};
 }
 // "today" only when the last trades are from today; on a weekend or a holiday the move is the last trading day's
-const dayWord=()=>{const lt=Q&&Q.lastTradeDay; return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
+// 5.11: the day is the day of the markets the portfolio holds. A portfolio of US shares at 14:30 in Israel, while Tel Aviv
+// trades, shows the change of the last New York session: that is not "today", and it is not still moving
+const ilPos=p=>p&&(p.ccy==='ILS'||/^\d{5,9}$/.test(String(p.sym||'')));
+const pfMk=()=>{const ps=((P&&P.positions)||[]).filter(p=>p&&+p.qty); if(!ps.length)return {us:true,il:true}; return {us:ps.some(p=>!ilPos(p)),il:ps.some(ilPos)}};
+const pfTradeDay=()=>{if(!Q)return ''; const m=pfMk(), d=[m.us?Q.usDate:'',m.il?Q.ilDate:''].filter(Boolean).sort().at(-1); return d||Q.lastTradeDay||''};
+const dayWord=()=>{const lt=pfTradeDay(); return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
 // 4.11: the tense follows the clock. While a market is open the day is still moving ("יורד"); after the close it is done
 // ("ירד"); a day that is not today is named by its date
-const dayLab=()=>{const w=dayWord(); return w==='היום'?'היום':'ביום המסחר האחרון'+(Q&&Q.lastTradeDay?' ('+dmy(Q.lastTradeDay)+')':'')};
-const dayLive=()=>{try{const now=new Date(); return dayWord()==='היום'&&(usOpen(now)||ilOpen(now))}catch(e){return false}};
+const dayLab=()=>{const w=dayWord(), lt=pfTradeDay(); return w==='היום'?'היום':'ביום המסחר האחרון'+(lt?' ('+dmy(lt)+')':'')};
+const dayLive=()=>{try{const now=new Date(), m=pfMk(); return dayWord()==='היום'&&((m.us&&usOpen(now))||(m.il&&ilOpen(now)))}catch(e){return false}};
 const dayVerb=up=>dayLive()?(up?'עולה':'יורד'):(up?'עלה':'ירד');
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
 const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}catch(e){PXF=null} if(PXF&&!(Date.now()-new Date(PXF.at)<PXWAIT*6e4))PXF=null};
@@ -17878,11 +17883,11 @@ function render(){
         if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,' '+whyBtn('fundpx','למה התאריך של אתמול?'))+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
-    +`<tr><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
+    +`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   // the home shows the five largest holdings; "הצג הכל" opens the rest (the section's rows stay in the page, hidden)
   {const sec=$('holdSec'), trs=[...$('rows').querySelectorAll('tr:not(.sec)')]; let n=0; for(const tr of trs){tr.classList.toggle('xtra',n>=5); n++}
-    const b=$('holdAll'); if(sec&&b){const more=trs.length>5; sec.classList.toggle('top',!HOLDALL); b.hidden=!more; b.setAttribute('aria-expanded',String(HOLDALL)); b.textContent=HOLDALL?'להציג פחות ›':`הצג הכל (${trs.length}) ‹`;
+    const b=$('holdAll'); if(sec&&b){const more=trs.length>5; sec.classList.toggle('top',!HOLDALL); b.hidden=!more; b.setAttribute('aria-expanded',String(HOLDALL)); b.textContent=HOLDALL?'להציג פחות ›':`הצג הכל (${trs.filter(tr=>!tr.classList.contains('cashrow')).length} ניירות) ‹`;   // 5.11: the securities, as the line above counts them (the cash row is not one)
       if(sec.classList.contains('top')){let last=null; for(const tr of $('rows').querySelectorAll('tr')){if(tr.classList.contains('sec')){last=tr; tr.classList.remove('xtra')} else if(last&&!tr.classList.contains('xtra'))last=null} // a kind heading whose rows are all hidden hides too
         for(const h of $('rows').querySelectorAll('tr.sec')){let nx=h.nextElementSibling, any=false; while(nx&&!nx.classList.contains('sec')){if(!nx.classList.contains('xtra')){any=true;break} nx=nx.nextElementSibling} h.classList.toggle('xtra',!any)}}}}
   renderPlan(mAllNow());
@@ -18769,12 +18774,16 @@ const normHS=h=>{if(!h||typeof h!=='object')return h; const o={...h,accounts:Arr
 // accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
 let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
 // month by month: the month-ends the page holds (not the single days saved inside a month) and today
+// 5.11: a range the data does not reach is not offered (two years of a portfolio with six weeks of history drew the six
+// weeks under "שנתיים"): the chips longer than the history hide, and the chart says since when it has data
+let WSPAN=0; const WRE=()=>WR&&WSPAN>WR?WR:0;
 function wPts(){
   const one=acct!=='all', mk=L=>L.map(p=>({t:p.t,label:p.label,ym:p.ym||'',v:one?(p.by&&p.by[acct]!=null?+p.by[acct]:null):+p.val,dep:one?null:(p.dep!=null?+p.dep:null),now:!!p.now})).filter(p=>p.v!=null&&isFinite(p.v)&&p.v>0);
   // month by month; when the page knows fewer than two month-ends (a new portfolio), the days it saved stand in
   let all=mk(TPW&&TPW.length?TPW:(TP||[]).filter(p=>p.now||/^סוף /.test(p.label||'')));
   if(all.length<2)all=mk(TP||[]);
-  if(!WR)return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
+  WSPAN=all.length>1?(all[all.length-1].t-all[0].t)/(30.44*864e5):0;
+  if(!WRE())return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
 }
 let WSIG='';
 // 28.10: the tiles under the value card (the mock-up's row): stocks, funds, cash, and the dollar part when there is one;
@@ -18875,8 +18884,9 @@ function eyeOn(){let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}cat
 (function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('hdrAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
-  for(const b of document.querySelectorAll('[data-wr]'))b.setAttribute('aria-pressed',String(+b.dataset.wr===WR));
   const P0=wPts(); box.hidden=false;
+  {let any=false; for(const b of document.querySelectorAll('[data-wr]')){const r=+b.dataset.wr; b.hidden=r>0&&WSPAN<=r; if(r>0&&!b.hidden)any=true; b.setAttribute('aria-pressed',String(r===WRE()))}
+    const g=document.querySelector('#wchH .wch-rg'); if(g)g.hidden=!any}
   {const n=$('wChN'); if(n){n.textContent=KV!=='all'?'הגרף מציג את שווי כל התיק: עוד אין היסטוריה חודשית נפרדת ל'+(KV==='fund'?'קרנות':'מניות')+'.':''; n.hidden=KV==='all'}}
   if(P0.length<2){WCP=null;WSIG=''; svg.innerHTML=''; svg.setAttribute('viewBox','0 0 320 60'); svg.innerHTML='<text x="160" y="34" font-size="13" style="fill:var(--muted)" text-anchor="middle" font-family="var(--sans)">הגרף יתמלא בסוף החודש הראשון של '+(acct==='all'?'התיק':esc(acctName(acct)))+'</text>'; const r=$('wChR'); if(r)r.textContent=''; return}
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
@@ -18887,7 +18897,7 @@ function renderWChart(){
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
   let IX=null; if(acct==='all'&&KV==='all'&&!slim){try{const FL=benchFlows(); if(FL&&FL.F){const v=P0.map(p=>benchValAt(FL.F,'spx',p.now?ilDay():isoDay(p.t))); if(v.every(x=>x!=null&&x>0))IX=v}}catch(e){}}
-  const sig=W+'|'+WR+'|'+acct+'|'+(IX?'ix':'')+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
+  const sig=W+'|'+WRE()+'|'+acct+'|'+(IX?'ix':'')+'|'+P0.map(p=>p.t+':'+p.v).join(','); if(sig===WSIG&&svg.firstChild)return; WSIG=sig;   // the same picture is not drawn twice
   {const lg=$('wLeg'); if(lg){lg.hidden=!IX; if(IX)lg.innerHTML=`<span><i class="me"></i>התיק</span><span><i class="ix"></i>אותן הפקדות ב-S&P 500</span><span><i class="dp"></i>ההפקדות</span>`}}
   const vs=P0.map(p=>p.v).concat(IX||[]), lo0=Math.min(...vs), hi0=Math.max(...vs), pad=Math.max((hi0-lo0)*0.12,hi0*0.01,1), lo=lo0-pad, hi=hi0+pad;
   const t0=P0[0].t, t1=P0[P0.length-1].t, x=t=>L+(W-L-R)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
@@ -18917,7 +18927,7 @@ const wLab=p=>p.now?'היום':p.label||dmy(isoDay(p.t));
 function wRead(i){
   const el=$('wChR'); if(!el||!WCP)return; const P0=WCP.P, a=P0[0], z=P0[P0.length-1];
   const c=$('wChC'); if(c)c.style.display=i<0?'none':'';
-  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WR?({6:'6 חודשים',12:'שנה',24:'שנתיים'})[WR]:'מאז '+wLab(a);
+  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WRE()?({6:'6 חודשים',12:'שנה',24:'שנתיים'})[WRE()]:'מאז '+wLab(a);
     const dep=a.dep!=null&&z.dep!=null?z.dep-a.dep:null;
     el.innerHTML=`${rg}: <b class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'} <span class="n">${ils(Math.abs(ch))}</span>${pc!=null?` (<span class="n">${spct(pc,1)}</span>)`:''}</b>`+(dep!=null&&Math.abs(dep)>=1?` · הפקדות <span class="n">${ils(dep)}</span>`:'');return}
   const p=P0[i], px=WCP.x(p.t), py=WCP.y(p.v); $('wChCl').setAttribute('x1',px); $('wChCl').setAttribute('x2',px); $('wChCd').setAttribute('cx',px); $('wChCd').setAttribute('cy',py);
@@ -19345,6 +19355,9 @@ document.addEventListener('click',ev=>{
   if(ev.target.closest('#pxAlDel')){const box=ev.target.closest('#pxAl'); if(!box||!canWrite)return; pxAlertSet(box.dataset.k,null,null); try{renderSec()}catch(e){} return}
 });
 window.__pxal={hits:pxAlertHits,set:pxAlertSet,price:pxKeyPrice};
+// 5.11: the home's day and groups, for the page's tests (the day of a given portfolio over given market dates)
+window.__home={day:(P2,q2)=>{const keys=['usDate','ilDate','lastTradeDay'], Q0={}; for(const k of keys)Q0[k]=Q[k]; Object.assign(Q,q2||{}); try{return withP(P2,()=>[dayWord(),dayLab(),dayLive()])}finally{Object.assign(Q,Q0)}},
+  grpAuto:P0=>grpAuto(P0),span:()=>WSPAN,today:()=>tzDay('Asia/Jerusalem'),dmy:d=>dmy(d)};
 function whyH(w){if(!w)return'';return `<details class="why"><summary>למה אני רואה את זה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
 // 31.10: the day in three short lines, at the top of the home: what the portfolio did and who moved it; the news on the
 // ones that moved (or the most important news of the day) and what it may mean for them; and whether anything needs the
@@ -19358,7 +19371,11 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
     let a=null, sym=null; for(const k of movers){a=N.find(z=>(z.holds||[]).some(h=>h.sym===k&&h.link==='direct')); if(a){sym=k; break}}
-    if(!a){a=N.find(z=>z.lv==='crit'||z.lv==='imp')||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||(a.holds||[])[0]||{}).sym||null}
+    // 5.11: otherwise an important item about a holding itself; an item that reaches the portfolio only through a fund or a
+    // sector (a headline on Musk put under VOO, "עשויה ליהנות") is not pinned on a holding: a critical one is told as the
+    // market's news, without a holding and without a direction, and the rest wait in "מה נוגע לתיק"
+    if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
+    if(!a){a=N.find(z=>z.lv==='crit')||null; sym=null}
     if(a){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear';
       L.push(['news','בחדשות',`${sym?`על ${symH(sym)}: `:''}"${esc(imCut(a.title,90))}"${d!=='unclear'?' '+chBadge(d,true):''} ${sym&&SECKEY.test(sym)?`<button type="button" class="lnk kt-go" data-ixst="${esc(sym)}">מה זה אומר ›</button>`:`<button type="button" class="lnk kt-go" data-ixopen="${esc(a.k)}">לידיעה ›</button>`}`])}
     else if(typeof PULSE!=='undefined'&&PULSE)L.push(['news','בחדשות','אין היום ידיעה חשובה על המניות שלך.'])}
@@ -22315,6 +22332,10 @@ function groupOf(sym){if(NUMSYM.test(sym))return 'il'; for(const k in GRP)if(GRP
   try{const it=itemOf(sym); if(it){if(it.t==='T'||it.t==='F'||it.t==='I')return 'il'; if(it.t==='E'||isFundLike(sym,it.name,''))return 'etf'; if(it.sec)return SEC2G(it.sec)}}catch(e){} return 'tech'}
 // a holding whose group looks like the default (technology) while the security itself says otherwise: a suggestion, never a change
 function groupHints(P0){const out=[]; for(const p of ((P0&&P0.positions)||[])){if(!p||!p.sym||p.group!=='tech')continue; const g=groupOf(p.sym); if(g!=='tech'&&g!==p.group)out.push({sym:p.sym,g})} return out.filter((x,i,A)=>A.findIndex(y=>y.sym===x.sym)===i)}
+// 5.11: a holding left in the default group (technology) while the security says otherwise (Exxon, an S&P 500 fund) is
+// counted in its own group on the screen, so the concentration checks and the labels are right. Only the default: a group
+// the user chose (_g 'user') is never changed. Nothing is saved until the portfolio is saved
+function grpAuto(P0){let n=0; for(const p of ((P0&&P0.positions)||[])){if(!p||!p.sym||p.group!=='tech'||p._g==='user')continue; const g=groupOf(p.sym); if(g&&g!=='tech'&&GROUPS[g]){p.group=g; p._g='auto'; n++}} return n}
 // ---- the quick pick: the big names as logos, a quantity for each, into the table with src:'pick'. A later statement or
 // screenshot of the same account replaces the row (apply() merges by symbol), and says so; nothing is counted twice
 const PICKS=[['AAPL','Apple'],['MSFT','Microsoft'],['NVDA','NVIDIA'],['AMZN','Amazon'],['GOOGL','Alphabet'],['META','Meta'],['TSLA','Tesla'],['BRK.B','Berkshire'],['AVGO','Broadcom'],['JPM','JPMorgan'],['V','Visa'],['MA','Mastercard'],['LLY','Eli Lilly'],['UNH','UnitedHealth'],['XOM','Exxon'],['JNJ','J&J'],['PG','P&G'],['COST','Costco'],['HD','Home Depot'],['NFLX','Netflix'],['KO','Coca-Cola'],['AMD','AMD'],['PLTR','Palantir'],['INTC','Intel']];
@@ -27635,7 +27656,7 @@ try{refreshBack()}catch(e){}
   // document another one's render may write over
   pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());renderLater()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
   pd('plan').onSnapshot(s=>{PLK=true;if(s.exists&&!pDirty&&!pSaving&&!s.metadata.hasPendingWrites){PLD=normPlan(s.data());setTrack()}renderLater()},fail);
-  pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));mergeQ();renderLater()}else{$('fresh').textContent='עדיין אין נתוני תיק.';renderLater()}},fail);
+  pd('portfolio').onSnapshot(s=>{if(!PFK)setTimeout(()=>{try{botTip()}catch(e){}},2600);PFK=true;setTimeout(()=>{try{profMaybe()}catch(e){}},3000);if(s.exists){P=JSON.parse(JSON.stringify(s.data()));try{grpAuto(P)}catch(e){}mergeQ();renderLater()}else{$('fresh').textContent='עדיין אין נתוני תיק.';renderLater()}},fail);
   db.doc('quotes/latest').onSnapshot(s=>{if(s.exists){RAWQ=s.data();mergeQ();renderLater();try{if(document.body.dataset.page==='news')rtMarkets()}catch(e){}try{pxOnQuotes()}catch(e){} try{anaPendX()}catch(e){}}},fail);
   db.doc('history/prices').onSnapshot(s=>{if(s.exists){PX=s.data();renderLater()}},fail);
   pd('daily').onSnapshot(s=>{DY={exists:s.exists,points:s.exists?(s.data().points||{}):{}};renderLater()},fail);

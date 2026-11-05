@@ -2876,3 +2876,23 @@ test('5.11 the crowded screens in parts like the control screen: the growth plan
   assert.equal(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no sideways scroll');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('5.11 the home from the recording: "today" by the markets the portfolio holds, the default group corrected (Exxon is not technology), "הצג הכל" counts securities, no chart range past the data, a news item pinned on a holding only when it is about it',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280);
+  const r=await pg.evaluate(()=>{const H=window.__home, t=H.today(), d=new Date(t+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()-1); const y=d.toISOString().slice(0,10), q={usDate:y,ilDate:t,lastTradeDay:t};
+    const us={positions:[{sym:'XOM',qty:5,ccy:'USD'},{sym:'VOO',qty:3,ccy:'USD'}]}, mix={positions:[{sym:'XOM',qty:5,ccy:'USD'},{sym:'TA125',qty:3,ccy:'ILS'}]};
+    const out={us:H.day(us,q),mix:H.day(mix,q).slice(0,2),y:H.dmy(y)};
+    const G={positions:[{sym:'XOM',group:'tech'},{sym:'VOO',group:'tech'},{sym:'MSFT',group:'tech'},{sym:'CVX',group:'tech',_g:'user'},{sym:'JPM',group:'fin'}]};
+    out.n=H.grpAuto(G); out.g=G.positions.map(p=>p.group+(p._g?':'+p._g:'')).join(',');
+    const rows=[...document.querySelectorAll('#rows tr:not(.sec):not(.cashrow)')].length; out.all=[document.getElementById('holdAll').textContent,rows];
+    out.span=H.span(); out.chips=[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr+':'+(b.hidden?'h':'v')).join(',');
+    return out});
+  assert.deepEqual(r.us.slice(0,2),[`ביום המסחר האחרון (${r.y})`,`ביום המסחר האחרון (${r.y})`],'US shares only: the last New York day, while Tel Aviv trades');
+  assert.equal(r.us[2],false,'and not "still moving"');
+  assert.deepEqual(r.mix,['היום','היום'],'with an Israeli holding the day is today');
+  assert.equal(r.n,2); assert.equal(r.g,'ind:auto,etf:auto,tech,tech:user,fin','only the default changes; a group the user chose stays');
+  assert.match(r.all[0],new RegExp(`הצג הכל \\(${r.all[1]} ניירות\\)`),'the button counts the securities, not the cash row');
+  for(const c of r.chips.split(',')){const [w,v]=c.split(':'); if(+w>0)assert.equal(v,r.span<=+w?'h':'v',`range ${w} with ${r.span.toFixed(1)} months of data`)}
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
