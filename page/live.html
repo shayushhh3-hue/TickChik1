@@ -24913,9 +24913,8 @@ function drawSec(){
     if(iLo!==pts.length-1&&iLo!==iHi)ring(x(pts[iLo][0]),y(pts[iLo][1]),LOSS)}
   for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
     g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
-  {const EVC={rep:[VB,'ד'],ex:[TEAL,'$'],al:[AMB,'!']}, placed=[];
-    for(const e of EV){const xx=Math.max(L+9,Math.min(L+PW-9,x(e.t))); let lv=0; while(placed.some(q=>Math.abs(q.x-xx)<17&&q.lv===lv))lv++; placed.push({x:xx,lv}); const yy=T+PH-10-lv*18, [c,ch]=EVC[e.k];
-      g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,9,0,7); g.fill(); g.fillStyle=c; g.beginPath(); g.arc(xx,yy,7.5,0,7); g.fill(); g.fillStyle='#FFFFFF'; g.font='bold 10.5px '+FONT; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,xx,yy+0.5)}}
+  // 5.11: no marks for the reports and the events at the foot of the chart (the owner took them off); touching a day still
+  // lists what happened on it
   // x labels: days, weeks, months or years depending on the span
   const spanD=(t1-t0)/864e5,ticks=[];const dt0=new Date(t0),dt1=new Date(t1);
   if(spanD<=12){for(let t=t0;t<=t1;t+=864e5){const dd=new Date(t);ticks.push([t,dd.getDate()+'.'+(dd.getMonth()+1)])}}
@@ -24964,9 +24963,7 @@ function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return
       +(near.length||tr.length?`<ul class="crev">${tr.map(t=>`<li class="${t.side}"><i aria-hidden="true"></i>${t.side==='buy'?'קנית':'מכרת'} ${nn(Math.abs(t.q))} יח׳ ב-<span class="n">${F(t.px)}</span> · ${D(t.t)}</li>`).join('')}${near.map(e=>`<li class="${e.k}"><i aria-hidden="true"></i>${esc(e.l)} · ${D(e.t)}</li>`).join('')}</ul>`:'');
   }else{const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, lo=pts[X.iLo||0]||first, top=hi===last, fromHi=last[1]/hi[1]-1;
     H=`<div class="crx">${tile('המחיר האחרון',F(last[1]),fullDate(last[0]),'',1)}${tile('השינוי '+(RNGIN[SECRNG]||''),sg(chAll),`מ-${F(base)} ב-${D(first[0])}`,cls(chAll))}${tile('שיא בטווח',F(hi[1]),D(hi[0]))}${tile(top?'במחיר השיא':'מתחת לשיא',top?'0%':'−'+pa(fromHi),`שפל ${F(lo[1])} ב-${D(lo[0])}`,top?'':'down')}${MY.avg?tile('מול הממוצע שלך',sg(last[1]/MY.avg-1),'קנית בממוצע ב-'+F(MY.avg),cls(last[1]/MY.avg-1)):''}</div>`;
-    const leg=[]; if((MY.trades||[]).some(t=>t.side==='buy'))leg.push('<span class="cll buy"><i></i>קנייה שלך</span>'); if((MY.trades||[]).some(t=>t.side==='sell'))leg.push('<span class="cll sell"><i></i>מכירה שלך</span>'); if(MY.avg&&!MY.off)leg.push('<span class="cll avg"><i></i>המחיר הממוצע שלך</span>');
-    for(const [k,l] of [['rep','ד = דוח'],['ex','$ = דיבידנד'],['al','! = אירוע בחדשות']])if(EV.some(e=>e.k===k))leg.push(`<span class="cll ${k}"><i></i>${l}</span>`);
-    H+=`<p class="hint">${leg.length?`<span class="clls">${leg.join('')}</span>`:''}גע בגרף או עבור עליו כדי לראות כל יום${EV.length?' ומה קרה בו':''}.${X.fxNo?' שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.':''}</p>`}
+    if(X.fxNo)H+=`<p class="hint">שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.</p>`}
   if(!hp){el.style.minHeight=''; el.innerHTML=H; try{el.style.minHeight=el.offsetHeight+'px'}catch(e){}} else el.innerHTML=H}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
 function dateLab(t,span){const dd=new Date(t);return span>400*864e5?(dd.getMonth()+1)+'.'+dd.getFullYear():dmy(dd.toISOString())}   // a day from another year carries the year
