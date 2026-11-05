@@ -383,13 +383,13 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
     if(Date.now()-t0>budgetMs){st.stopped='time';break}
     if(!us(k))continue; const g=got[k]||{}, mine=held.has(k)||watched.has(k), t=tk(k);
     const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
-    const have=x=>had.has(k)&&g[x]!=null, needF=FHN.some(x=>!have(x)), needR=!have('rating'), needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
+    const have=x=>had.has(k)&&g[x]!=null, needF=FHN.some(x=>!have(x)), needR=!have('rating')||(mine&&!doc.recHist&&!g.recHist), needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
     if(!needF&&!needR&&!needE&&!needT)continue;
     if(!had.has(k)&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
     const x={}; let any=false;
     try{
       if(needF){const m=await fhMetrics(t,o); for(const n of [...FHN,'gm','om','cr','epsg'])if(g[n]==null&&m[n]!=null){x[n]=m[n]; any=true} if(any)st.figs++}
-      if(needR){const r=await fhRecs(t,o); if(r){x.rating=r.rating; x.analysts=r.analysts; x.votes=r.votes; any=true; st.recs++}}
+      if(needR){const r=await fhRecs(t,o); if(r){if(!have('rating')){x.rating=r.rating; x.analysts=r.analysts; x.votes=r.votes} x.votes5=r.votes5; x.recHist=r.recHist; x.recAt=r.recAt; any=true; st.recs++}}
       if(needE){const h=await fhEarnings(t,o); const L=h.at(-1); if(L){x.rep={q:L.q,label:`Q${Math.ceil(+L.q.slice(5,7)/3)} ${L.q.slice(0,4)}`,ccy:'USD',eps:{a:L.a,e:L.e,s:L.s},hist:h,fin:[],init:true,src:'Finnhub'}; any=true; st.eps++}}
       if(needT){try{const tg=await fhTarget(t,o); if(tg){x.target=tg; any=true; st.target++}}catch(e){if(!e.plan)throw e}}
     }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(e.auth){st.stopped='key';break} if(st.fail>=12&&!st.filled){st.stopped='errors';break}}

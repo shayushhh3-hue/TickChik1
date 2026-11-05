@@ -30,11 +30,16 @@ export function fmpRatiosParse(j){const o=one(j); if(!o)return null;
 export function fmpProfileParse(j){const o=one(j); if(!o)return null;
   const out={beta:r2(pick(o,'beta')),sector:o.sector||null,industry:o.industry||null,name:o.companyName||o.name||null,cap:pick(o,'marketCap','mktCap')};
   return some(out)?out:null}
-export function fmpTargetParse(j){const o=one(j); if(!o)return null; const t=pick(o,'targetConsensus','targetMedian'); return t>0?{target:r2(t),targetHi:r2(pick(o,'targetHigh')),targetLo:r2(pick(o,'targetLow'))}:null}
+export function fmpTargetParse(j){const o=one(j); if(!o)return null; const t=pick(o,'targetConsensus','targetMedian'); return t>0?{target:r2(t),targetHi:r2(pick(o,'targetHigh')),targetLo:r2(pick(o,'targetLow')),targetMed:r2(pick(o,'targetMedian'))}:null}
 const CONS={'strong buy':'Strong Buy','buy':'Buy','hold':'Hold','sell':'Sell','strong sell':'Strong Sell'};
 export function fmpGradesParse(j){const o=one(j); if(!o)return null; const n=k=>pick(o,k)||0;
   const votes={buy:n('strongBuy')+n('buy'),hold:n('hold'),sell:n('sell')+n('strongSell')}, tot=votes.buy+votes.hold+votes.sell; if(!tot)return null;
-  return {votes,analysts:tot,rating:CONS[String(o.consensus||'').toLowerCase()]||null}}
+  return {votes,votes5:{sb:n('strongBuy'),b:n('buy'),h:n('hold'),s:n('sell'),ss:n('strongSell')},analysts:tot,rating:CONS[String(o.consensus||'').toLowerCase()]||null}}
+// 5.11: the analysts' latest changes (the last 90 days, newest first, six at most): the day, the firm, the grade before and after
+export function fmpGradesListParse(j,now=new Date()){if(!Array.isArray(j))return null; const from=new Date(now.getTime()-90*864e5).toISOString().slice(0,10);
+  const L=j.filter(x=>x&&/^\d{4}-\d\d-\d\d/.test(String(x.date||''))&&String(x.date).slice(0,10)>=from&&(x.gradingCompany||x.firm)).sort((a,b)=>a.date<b.date?1:-1).slice(0,6)
+    .map(x=>({d:String(x.date).slice(0,10),firm:String(x.gradingCompany||x.firm).slice(0,40),from:String(x.previousGrade||'').slice(0,24),to:String(x.newGrade||'').slice(0,24),act:String(x.action||'').toLowerCase().slice(0,12)}));
+  return L}
 // the next report on or after today, with what the analysts expect of it
 export function fmpEarningsParse(j,now=new Date()){if(!Array.isArray(j))return null; const today=now.toISOString().slice(0,10);
   const L=j.filter(x=>x&&/^\d{4}-\d\d-\d\d/.test(String(x.date||''))&&String(x.date).slice(0,10)>=today).sort((a,b)=>a.date<b.date?-1:1); const x=L[0]; if(!x)return null;
@@ -54,7 +59,7 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
     if(r.status===401){st.stopped='key'; return null} if(r.status===429){st.stopped='limit'; return null}
     if(!r.ok)throw new Error('HTTP '+r.status); return r.json()};
   const miss=(v,ks)=>!v||ks.some(k=>v[k]==null);
-  const want=k=>{const v=got[k]; return miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)};
+  const want=k=>{const v=got[k]; return held.has(k)||miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)};   // 5.11: a held share every night (its analysts' latest changes)
   const list=[...new Set([...order.filter(k=>held.has(k)),...order.filter(k=>watched.has(k)),...order])].filter(k=>US(k)&&want(k)).slice(0,max);
   try{
     for(const k of list){if(st.stopped)break; if(Date.now()-t0>budgetMs){st.stopped='time';break}
@@ -62,12 +67,13 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
       try{
         if(miss(v,['gm','om','pm','cr','de','pe','dy'])){const x=fmpRatiosParse(await ask('ratios-ttm','symbol='+t)); if(x)Object.assign(add,x)}
         if(!st.stopped&&miss(v,['beta','sector'])){const x=fmpProfileParse(await ask('profile','symbol='+t)); if(x)Object.assign(add,x)}
-        if(!st.stopped&&v.target==null){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x)}
-        if(!st.stopped&&!v.votes){const x=fmpGradesParse(await ask('grades-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&(v.target==null||(held.has(k)&&v.targetHi==null))){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&!(v.votes&&v.votes5)){const x=fmpGradesParse(await ask('grades-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&held.has(k)){const x=fmpGradesListParse(await ask('grades','symbol='+t),now); if(x)add.gradesL=x}
         if(!st.stopped&&!v.next){const x=fmpEarningsParse(await ask('earnings','symbol='+t+'&limit=8'),now); if(x)Object.assign(add,x)}
       }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=8&&!st.filled){st.stopped='errors'}}
       // only what is missing: a figure Yahoo, Finnhub or the reports already gave is never replaced
-      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes))){g[a]=b; n++}
+      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes)||a==='gradesL')){g[a]=b; n++}
       if(n){g.fmpAt=now.toISOString(); st.filled++}
       if(pause)await new Promise(r=>setTimeout(r,pause))}
   }finally{save()}

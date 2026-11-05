@@ -48,7 +48,9 @@ export function fhRating(arr){
   const t=(Array.isArray(arr)?arr:[]).filter(x=>x&&x.period).sort((a,b)=>a.period<b.period?1:-1)[0]; if(!t)return null;
   const sb=+t.strongBuy||0,b=+t.buy||0,h=+t.hold||0,s=+t.sell||0,ss=+t.strongSell||0, n=sb+b+h+s+ss; if(!n)return null;
   const mean=(sb+2*b+3*h+4*s+5*ss)/n;
-  return {rating:RATING(mean),analysts:n,votes:{buy:sb+b,hold:h,sell:s+ss},recAt:t.period};
+  // 5.11: the five levels as they are, and the last four months (oldest first), for the trend on the security's page
+  const H=(Array.isArray(arr)?arr:[]).filter(x=>x&&x.period).sort((a,b)=>a.period<b.period?-1:1).slice(-4).map(x=>({p:String(x.period).slice(0,7),sb:+x.strongBuy||0,b:+x.buy||0,h:+x.hold||0,s:+x.sell||0,ss:+x.strongSell||0}));
+  return {rating:RATING(mean),analysts:n,votes:{buy:sb+b,hold:h,sell:s+ss},votes5:{sb,b,h,s,ss},recHist:H,recAt:t.period};
 }
 // the last quarters: earnings per share against the estimate, oldest first (the shape research.js keeps as rep.hist)
 export function fhEps(arr){

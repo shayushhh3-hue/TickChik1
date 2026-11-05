@@ -8,7 +8,7 @@ import {rangeOf, executive, product, aiCost, funnel, catalog, K_ANON} from '../s
 import {bump, countersSince, setCounterStore} from '../server/admin/counter.js';
 import {createHash} from 'node:crypto';
 import {keysList,keyTest} from '../server/admin/keys.js';
-import {fmpPass,fmpRatiosParse,fmpGradesParse,fmpEarningsParse,fmpKey,fmpKeyName} from '../server/fmp.js';
+import {fmpPass,fmpRatiosParse,fmpGradesParse,fmpEarningsParse,fmpKey,fmpKeyName,fmpGradesListParse,fmpTargetParse} from '../server/fmp.js';
 
 process.env.OWNER_EMAIL='owner@example.com'; process.env.OWNER_PASSWORD='owner-pass-123'; process.env.ANTHROPIC_API_KEY=''; process.env.JOBS='0';
 const PAGE=new URL('../page/live.html',import.meta.url).pathname;
@@ -519,7 +519,7 @@ test('5.11 FMP with the owner\'s key (any of its spellings): the trailing ratios
   assert.equal(fmpKeyName({FPM_API_KEY:'k1'}),'FPM_API_KEY','the spelling the owner used is read'); assert.equal(fmpKey({}),'');
   assert.deepEqual(fmpRatiosParse([{grossProfitMarginTTM:0.46,operatingProfitMarginTTM:0.31,netProfitMarginTTM:0.25,currentRatioTTM:0.9,debtToEquityRatioTTM:1.5,priceToEarningsRatioTTM:34.1,dividendYieldTTM:0.0045,freeCashFlowPerShareTTM:6,revenuePerShareTTM:24}]),
     {gm:46,om:31,pm:25,cr:0.9,de:1.5,pe:34.1,dy:0.45,roe:null,fcfm:25});
-  assert.deepEqual(fmpGradesParse([{strongBuy:5,buy:20,hold:8,sell:1,strongSell:0,consensus:'Buy'}]),{votes:{buy:25,hold:8,sell:1},analysts:34,rating:'Buy'});
+  assert.deepEqual(fmpGradesParse([{strongBuy:5,buy:20,hold:8,sell:1,strongSell:0,consensus:'Buy'}]),{votes:{buy:25,hold:8,sell:1},votes5:{sb:5,b:20,h:8,s:1,ss:0},analysts:34,rating:'Buy'});
   const now=new Date('2026-11-05T10:00:00Z');
   assert.deepEqual(fmpEarningsParse([{date:'2026-10-28',epsActual:1},{date:'2027-01-27',epsEstimated:3.9,revenueEstimated:8e10}],now).next,'2027-01-27','the next report, not a past one');
   const st=mk(), asked=[];
@@ -535,4 +535,12 @@ test('5.11 FMP with the owner\'s key (any of its spellings): the trailing ratios
   assert.ok(JSON.parse(st.getMeta('fmpCalls')).n>=asked.length-0,'the day\'s calls are counted');
   const r2=await fmpPass(mk(),['AAA','BBB'],{},{key:'k',fetch:async()=>({ok:false,status:401,json:async()=>({})}),now,pause:0}); assert.equal(r2.stopped,'key'); assert.equal(r2.calls,1,'a refused key stops at once');
   const r3=await fmpPass(mk(),['AAA','BBB','CCC'],{},{key:'k',fetch:f,now,pause:0,cap:3}); assert.equal(r3.stopped,'budget'); assert.equal(r3.calls,3,'the budget holds');
+});
+
+test('5.11 the analysts from FMP: the target with its median, high and low, and the latest changes (90 days, newest first, six at most)',()=>{
+  assert.deepEqual(fmpTargetParse([{targetConsensus:131.2,targetMedian:130,targetHigh:160,targetLow:95}]),{target:131.2,targetHi:160,targetLo:95,targetMed:130});
+  const now=new Date('2026-11-05T10:00:00Z');
+  const L=fmpGradesListParse([{date:'2026-11-01',gradingCompany:'Goldman Sachs',previousGrade:'Neutral',newGrade:'Buy',action:'upgrade'},{date:'2026-06-01',gradingCompany:'Old',previousGrade:'Buy',newGrade:'Sell',action:'downgrade'},{date:'2026-10-20',gradingCompany:'Morgan Stanley',previousGrade:'Overweight',newGrade:'Overweight',action:'maintain'}],now);
+  assert.deepEqual(L.map(x=>x.firm),['Goldman Sachs','Morgan Stanley'],'the last 90 days, newest first'); assert.deepEqual(L[0],{d:'2026-11-01',firm:'Goldman Sachs',from:'Neutral',to:'Buy',act:'upgrade'});
+  assert.equal(fmpGradesListParse({}),null);
 });

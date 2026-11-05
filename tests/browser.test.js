@@ -2930,3 +2930,21 @@ test('5.11 the security chart for reading: figures as tiles (the price, the chan
   await pg.click('[data-seccc="usd"]');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('5.11 the analysts\' card: the five levels, the months, the target with its range and median, what the next report is expected to bring, and the latest changes by the firms',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const R0=store.getDoc('research/latest').data, d=new Date(Date.now()+20*864e5).toISOString().slice(0,10);
+  const N={...(R0.companies.NVDA||{}),rating:'Buy',analysts:40,votes:{buy:30,hold:8,sell:2},votes5:{sb:12,b:18,h:8,s:2,ss:0},recHist:[{p:'2026-08',sb:8,b:16,h:12,s:3,ss:1},{p:'2026-09',sb:10,b:17,h:10,s:2,ss:1},{p:'2026-10',sb:11,b:18,h:9,s:2,ss:0},{p:'2026-11',sb:12,b:18,h:8,s:2,ss:0}],
+    recAt:'2026-11-01',target:220,targetHi:260,targetLo:150,targetMed:225,est:{date:d,eps:1.05,rev:6.5e10},gradesL:[{d:'2026-11-02',firm:'Goldman Sachs',from:'Neutral',to:'Buy',act:'upgrade'},{d:'2026-10-20',firm:'Morgan Stanley',from:'Overweight',to:'Overweight',act:'maintain'}],source:'Finnhub + FMP'};
+  store.setDoc('research/latest',{...R0,companies:{...R0.companies,NVDA:N}},{silent:true});
+  try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500);
+    const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.antr-m').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
+    assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 קנייה 18 החזקה 8 מכירה 2 מכירה חזקה 0/);
+    assert.match(a.txt,/יעד המחיר הממוצע \(12 חודשים\) \$220\.00 גבוה ב-[\d.]+% מהמחיר עכשיו/); assert.match(a.txt,/טווח היעדים \$150 – \$260 חציון \$225\.00/);
+    assert.equal(a.months,4); assert.match(a.txt,/יותר אנליסטים ממליצים לקנות: 60% באוג׳, 75% בנוב׳/);
+    assert.match(a.txt,/הצפי לדוח הבא \([\d.]+\): רווח למניה \$1\.05 · הכנסות 65\.00 מיליארד דולר/);
+    assert.equal(a.changes,2); assert.match(a.txt,/Goldman Sachs: Neutral ← Buy \(שדרוג\)/); assert.match(a.txt,/Finnhub \+ FMP · נכון ל-1\.11/); assert.ok(a.ox);
+    if(process.env.SHOT)await (await pg.$('.ancard')).screenshot({path:process.env.SHOT});
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+  finally{store.setDoc('research/latest',R0,{silent:true})}
+});

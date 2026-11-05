@@ -735,6 +735,10 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
 .anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
 .anleg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--ink2)} .anleg span{display:inline-flex;align-items:center;gap:6px} .anleg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.anbar .sb,.anleg .sb i{background:#15803D} .anbar .ss,.anleg .ss i{background:#991B1B} .anbar.sm{height:8px;margin-top:0}
+.antr{margin-top:12px} .antr .k,.angr .k{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px} .antr-r{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.antr-m span{display:block;font-size:12px;color:var(--ink2);margin-top:4px} .antr .s{margin:6px 0 0;font-size:13px;color:var(--ink2)} .anx{margin:12px 0 0;font-size:13.5px;color:var(--ink2)} .anx b{color:var(--ink)}
+.angr{margin-top:12px} .angr ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .angr .d{font-family:var(--mono);color:var(--muted)} .angr .a{color:var(--muted)} .angr li.up .a{color:var(--gain)} .angr li.down .a{color:var(--loss)}
 .ccsw{display:inline-flex;align-self:flex-start;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
 .ccsw button{border:0;background:transparent;border-radius:999px;padding:5px 14px;min-height:34px;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer} .ccsw button[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .chread b{color:var(--ink);font-weight:600} .chread .n{font-family:var(--mono);unicode-bidi:isolate} .chread .hint{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .secp .facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -24851,17 +24855,33 @@ function secEvents(sym,t0,t1){const E=[]; let c=null; try{c=RSX[sym]||((RS&&RS.c
 // from the sources with the owner's keys (Finnhub, FMP) and marked so; the page itself does not recommend
 const AN_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'החזקה','Sell':'מכירה','Strong Sell':'מכירה חזקה'};
 function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.buy+rs.votes.hold+rs.votes.sell)>0?rs.votes:null, t=+rs.target>0?+rs.target:null;
-  if(!rs.rating&&!v&&!t)return '';
-  const n=rs.analysts||(v?v.buy+v.hold+v.sell:0), ccy=pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:'USD', px=pr&&pr.px>0?pr.px:null, up=t&&px?t/px-1:null;
+  const v5=rs.votes5&&(rs.votes5.sb+rs.votes5.b+rs.votes5.h+rs.votes5.s+rs.votes5.ss)>0?rs.votes5:null;
+  if(!rs.rating&&!v&&!v5&&!t)return '';
+  const n=rs.analysts||(v5?v5.sb+v5.b+v5.h+v5.s+v5.ss:v?v.buy+v.hold+v.sell:0), ccy=pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:'USD', px=pr&&pr.px>0?pr.px:null, up=t&&px?t/px-1:null;
   const T=(lab,val,sub,c)=>`<div class="mp"><span class="k">${lab}</span><b class="v ${c||''}">${val}</b>${sub?`<span class="s">${sub}</span>`:''}</div>`;
-  const tot=v?v.buy+v.hold+v.sell:0, w=x=>tot?Math.round(x/tot*1000)/10:0;
   const tiles=[rs.rating?T('הקונסנזוס',AN_HE[rs.rating]||esc(rs.rating),n?`${n} אנליסטים`:'',/Buy/.test(rs.rating)?'up':/Sell/.test(rs.rating)?'down':''):'',
-    t?T('יעד המחיר הממוצע',`<span class="n">${fmtPx(t,ccy)}</span>`,up!=null?`${up>=0?'גבוה':'נמוך'} ב-${pct(Math.abs(up)*100,1)} מהמחיר עכשיו`:'',''):'',
-    rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${fmtPx(+rs.targetLo,ccy)} – ${fmtPx(+rs.targetHi,ccy)}</span>`,'הנמוך והגבוה',''):''].filter(Boolean).join('');
-  const bar=v?`<div class="anbar" role="img" aria-label="${v.buy} ממליצים לקנות, ${v.hold} להחזיק, ${v.sell} למכור"><i class="b" style="width:${w(v.buy)}%"></i><i class="h" style="width:${w(v.hold)}%"></i><i class="s" style="width:${w(v.sell)}%"></i></div>
-    <div class="anleg"><span class="b"><i></i>קנייה ${v.buy}</span><span class="h"><i></i>החזקה ${v.hold}</span><span class="s"><i></i>מכירה ${v.sell}</span></div>`:'';
-  return `<section class="ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}
-    <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${rs.updatedAt?' · '+rsWhen(rs.updatedAt):''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
+    t?T('יעד המחיר הממוצע (12 חודשים)',`<span class="n">${fmtPx(t,ccy)}</span>`,up!=null?`${up>=0?'גבוה':'נמוך'} ב-${pct(Math.abs(up)*100,1)} מהמחיר עכשיו`:'',up==null?'':up>=0?'up':'down'):'',
+    rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetLo)} – ${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetHi)}</span>`,rs.targetMed>0?`חציון ${fmtPx(+rs.targetMed,ccy)}`:'הנמוך והגבוה'):''].filter(Boolean).join('');
+  // how the votes split: five levels when the source gives them, three otherwise
+  const L5=v5?[['sb','קנייה חזקה',v5.sb],['b','קנייה',v5.b],['h','החזקה',v5.h],['s','מכירה',v5.s],['ss','מכירה חזקה',v5.ss]]:v?[['b','קנייה',v.buy],['h','החזקה',v.hold],['s','מכירה',v.sell]]:[];
+  const tot=L5.reduce((a,x)=>a+x[2],0), w=x=>tot?Math.round(x/tot*1000)/10:0;
+  const bar=tot?`<div class="anbar" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
+    <div class="anleg">${L5.map(x=>`<span class="${x[0]}"><i></i>${x[1]} ${x[2]}</span>`).join('')}</div>`:'';
+  // the last months: the share of "buy" (strong and plain) month by month, and the first against the last in words
+  const H=Array.isArray(rs.recHist)?rs.recHist.filter(x=>x&&(x.sb+x.b+x.h+x.s+x.ss)>0):[];
+  let trend=''; if(H.length>=2){const share=x=>(x.sb+x.b)/(x.sb+x.b+x.h+x.s+x.ss), a=share(H[0]), z=share(H[H.length-1]), mo=p=>HEM[+String(p).slice(5,7)-1]||p;
+    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="antr-r">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), wh=Math.round(x.h/n2*100); return `<div class="antr-m"><div class="anbar sm" role="img" aria-label="${mo(x.p)}: ${wb}% קנייה"><i class="b" style="width:${wb}%"></i><i class="h" style="width:${wh}%"></i><i class="s" style="width:${100-wb-wh}%"></i></div><span>${mo(x.p)} · ${wb}% קנייה</span></div>`}).join('')}</div>
+      <p class="s">${Math.abs(z-a)<0.02?'כמעט בלי שינוי':(z>a?'יותר אנליסטים ממליצים לקנות':'פחות אנליסטים ממליצים לקנות')}: ${Math.round(a*100)}% ב${mo(H[0].p)}, ${Math.round(z*100)}% ב${mo(H[H.length-1].p)}.</p></div>`}
+  // what is expected of the next report
+  const e=rs.est&&rs.est.date&&rs.est.date>=tzDay('Asia/Jerusalem')?rs.est:null;
+  const est=e&&(e.eps!=null||e.rev)?`<p class="anx"><b>הצפי לדוח הבא (${dmy(e.date)}):</b> ${e.eps!=null?`רווח למניה <span class="n">${fmtPx(e.eps,ccy)}</span>`:''}${e.eps!=null&&e.rev?' · ':''}${e.rev?`הכנסות <span class="n">${e.rev>=1e9?(e.rev/1e9).toFixed(2)+' מיליארד':(e.rev/1e6).toFixed(0)+' מיליון'}</span> ${ccy==='USD'?'דולר':'₪'}`:''}</p>`:'';
+  // the latest changes by the firms (the last 90 days)
+  const ACT={upgrade:'שדרוג',downgrade:'הורדה',maintain:'שמר',reiterate:'חזר על',init:'התחיל לסקר',initiate:'התחיל לסקר',initialise:'התחיל לסקר'};
+  const G=Array.isArray(rs.gradesL)?rs.gradesL.slice(0,5):[];
+  const chg=G.length?`<div class="angr"><span class="k">שינויי דירוג אחרונים</span><ul>${G.map(x=>`<li class="${x.act==='upgrade'?'up':x.act==='downgrade'?'down':''}"><span class="d">${dmy(x.d)}</span> <bdi>${esc(x.firm)}</bdi>: ${x.from&&x.from!==x.to?`<bdi>${esc(x.from)}</bdi> ← `:''}<bdi>${esc(x.to)}</bdi>${ACT[x.act]?` <span class="a">(${ACT[x.act]})</span>`:''}</li>`).join('')}</ul></div>`:'';
+  const when=rs.recAt?`נכון ל-${dmy(String(rs.recAt).slice(0,10))}`:rs.updatedAt?rsWhen(rs.updatedAt):'';
+  return `<section class="ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${trend}${est}${chg}
+    <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${when?' · '+when:''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid
 function secPosStrip(it,k,rs){let m=null; try{m=P&&Q?mAllNow():null}catch(e){} const p=m&&m.pos.find(x=>x.sym===it.sym); if(!p)return '';

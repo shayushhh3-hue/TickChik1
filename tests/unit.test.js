@@ -1088,7 +1088,7 @@ test('fundamentals: twelve months from the reports, the ratios at the price, the
 // 25.10: Finnhub with the owner's key: the figures, the analysts, the coming reports, the earnings, the news
 test('finnhub: parsing, the paced client, and the pass that fills what Yahoo did not give',async()=>{
   const F=await import('../server/finnhub.js'); const {finnhubPass,newsFor}=await import('../server/research.js');
-  assert.deepEqual(F.fhRating([{period:'2026-09-01',strongBuy:1,buy:1,hold:1,sell:0,strongSell:0},{period:'2026-10-01',strongBuy:10,buy:20,hold:5,sell:1,strongSell:0}]),{rating:'Buy',analysts:36,votes:{buy:30,hold:5,sell:1},recAt:'2026-10-01'});
+  assert.deepEqual(F.fhRating([{period:'2026-09-01',strongBuy:1,buy:1,hold:1,sell:0,strongSell:0},{period:'2026-10-01',strongBuy:10,buy:20,hold:5,sell:1,strongSell:0}]),{rating:'Buy',analysts:36,votes:{buy:30,hold:5,sell:1},votes5:{sb:10,b:20,h:5,s:1,ss:0},recHist:[{p:'2026-09',sb:1,b:1,h:1,s:0,ss:0},{p:'2026-10',sb:10,b:20,h:5,s:1,ss:0}],recAt:'2026-10-01'});   // 5.11: the five levels and the months
   assert.deepEqual(F.fhEps([{period:'2026-06-30',actual:1.2,estimate:1.1,surprisePercent:9.09},{period:'2026-03-31',actual:1,estimate:1,surprisePercent:0}]).map(x=>x.q),['2026-03-31','2026-06-30']);
   assert.deepEqual(F.fhCalendar({earningsCalendar:[{symbol:'acme',date:'2026-11-05',epsEstimate:1.3,revenueEstimate:5e9,hour:'amc'}]}),{ACME:{date:'2026-11-05',eps:1.3,rev:5e9,hour:'amc'}});
   const N=F.fhNews([{headline:'A',url:'https://x.com/a',source:'X',datetime:1761300000,related:'ACME'},{headline:'B',url:'javascript:x'}]); assert.equal(N.length,1); assert.equal(N[0].pub,'X');
