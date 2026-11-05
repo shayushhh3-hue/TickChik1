@@ -731,6 +731,8 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mypos{margin:16px 0 6px} .mypos h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
+.anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
+.anleg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--ink2)} .anleg span{display:inline-flex;align-items:center;gap:6px} .anleg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .ccsw{display:inline-flex;align-self:flex-start;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
 .ccsw button{border:0;background:transparent;border-radius:999px;padding:5px 14px;min-height:34px;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer} .ccsw button[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .chread b{color:var(--ink);font-weight:600} .chread .n{font-family:var(--mono);unicode-bidi:isolate} .chread .hint{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .secp .facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -24794,6 +24796,7 @@ function renderSec(){SECHOV=-1;
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
+    ${(()=>{try{return secAnalysts(it,k,rs,pr)}catch(e){return ''}})()}
     ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
@@ -24837,6 +24840,22 @@ function secEvents(sym,t0,t1){const E=[]; let c=null; try{c=RSX[sym]||((RS&&RS.c
     for(const x of [c.div].concat(c.divHist||[]))if(x&&x.ex)add(x.ex,'ex','יום אקס דיבידנד'+(x.last&&x.last.amt!=null&&x.last.date===x.ex?' ($'+x.last.amt+' למניה)':''))}
   try{for(const a of plItems())if(a&&(a.lv==='crit'||a.lv==='imp')&&(a.holds||[]).some(h=>h.sym===sym&&h.link==='direct'))add(a.at||a.up,'al',(a.lv==='crit'?'אירוע קריטי: ':'אירוע חשוב: ')+imCut(a.title||'',80))}catch(e){}
   return E.sort((a,b)=>a.t-b.t)}
+// 5.11: the analysts' view as a card of its own (it sat inside "פרטים נוספים"): the consensus, how the votes split, how
+// many analysts, the average target and how far it is from the price now, and the range of the targets. Their opinion,
+// from the sources with the owner's keys (Finnhub, FMP) and marked so; the page itself does not recommend
+const AN_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'החזקה','Sell':'מכירה','Strong Sell':'מכירה חזקה'};
+function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.buy+rs.votes.hold+rs.votes.sell)>0?rs.votes:null, t=+rs.target>0?+rs.target:null;
+  if(!rs.rating&&!v&&!t)return '';
+  const n=rs.analysts||(v?v.buy+v.hold+v.sell:0), ccy=pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:'USD', px=pr&&pr.px>0?pr.px:null, up=t&&px?t/px-1:null;
+  const T=(lab,val,sub,c)=>`<div class="mp"><span class="k">${lab}</span><b class="v ${c||''}">${val}</b>${sub?`<span class="s">${sub}</span>`:''}</div>`;
+  const tot=v?v.buy+v.hold+v.sell:0, w=x=>tot?Math.round(x/tot*1000)/10:0;
+  const tiles=[rs.rating?T('הקונסנזוס',AN_HE[rs.rating]||esc(rs.rating),n?`${n} אנליסטים`:'',/Buy/.test(rs.rating)?'up':/Sell/.test(rs.rating)?'down':''):'',
+    t?T('יעד המחיר הממוצע',`<span class="n">${fmtPx(t,ccy)}</span>`,up!=null?`${up>=0?'גבוה':'נמוך'} ב-${pct(Math.abs(up)*100,1)} מהמחיר עכשיו`:'',''):'',
+    rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${fmtPx(+rs.targetLo,ccy)} – ${fmtPx(+rs.targetHi,ccy)}</span>`,'הנמוך והגבוה',''):''].filter(Boolean).join('');
+  const bar=v?`<div class="anbar" role="img" aria-label="${v.buy} ממליצים לקנות, ${v.hold} להחזיק, ${v.sell} למכור"><i class="b" style="width:${w(v.buy)}%"></i><i class="h" style="width:${w(v.hold)}%"></i><i class="s" style="width:${w(v.sell)}%"></i></div>
+    <div class="anleg"><span class="b"><i></i>קנייה ${v.buy}</span><span class="h"><i></i>החזקה ${v.hold}</span><span class="s"><i></i>מכירה ${v.sell}</span></div>`:'';
+  return `<section class="mypos ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}
+    <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${rs.updatedAt?' · '+rsWhen(rs.updatedAt):''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid
 function secPosStrip(it,k,rs){let m=null; try{m=P&&Q?mAllNow():null}catch(e){} const p=m&&m.pos.find(x=>x.sym===it.sym); if(!p)return '';
@@ -24909,8 +24928,10 @@ function drawSec(){
   const ring=(xx,yy,c)=>{g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,5.5,0,7); g.fill(); g.lineWidth=2.2; g.strokeStyle=c; g.beginPath(); g.arc(xx,yy,4,0,7); g.stroke()};
   if(pts.length>8){const cx=xx=>xx;
     if(iHi!==pts.length-1){const hx=x(pts[iHi][0]),hy=y(pts[iHi][1]), t='שיא '+fmtN(pts[iHi][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(hx,hy,GAIN); heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,cx(hx))),Math.max(T+5,hy-13),GAIN,'center',1)}
-    // 5.11: the low is the red ring only (its price and day are in the box above); the owner took its label off
-    if(iLo!==pts.length-1&&iLo!==iHi)ring(x(pts[iLo][0]),y(pts[iLo][1]),LOSS)}
+    // 5.11: the low: the red ring and its price in red (the number alone, as the owner asked), under the point, or over it
+    // when the point is at the foot of the chart
+    if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t=fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LOSS);
+      heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),ly+15<=T+PH-2?ly+15:ly-14,LOSS,'center',1)}}
   for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
     g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
   // 5.11: no marks for the reports and the events at the foot of the chart (the owner took them off); touching a day still
