@@ -1947,3 +1947,22 @@ test('5.11 the background figures once in a quarter of an hour: a run between as
   asked.length=0; const full=await fetchAll(['MSFT'],{fetch:f,ctx:true}); const yq2=asked.map(u=>decodeURIComponent((u.match(/chart\/([^?]+)/)||[])[1]||'')).filter(Boolean);
   assert.ok(yq2.includes('^GSPC')&&yq2.includes('GC=F'),'the quarter-hour run asks them'); assert.ok(Object.keys(full.mkts).length>0);
 });
+
+test('5.11 off Yahoo: a share\'s history from one Stooq request (a year by day with volumes, five years by week, every month), and Yahoo\'s news asked at most once in 12 hours when Finnhub has nothing',async()=>{
+  const {stooqHistParse}=await import('../shared/quotes.js');
+  const days=[]; const t0=Date.parse('2019-01-01T12:00:00Z'); for(let i=0;i<2600;i++){const d=new Date(t0+i*864e5); if(d.getUTCDay()%6===0)continue; days.push(d.toISOString().slice(0,10))}
+  const csv='Date,Open,High,Low,Close,Volume\n'+days.map((d,i)=>`${d},1,1,1,${(100+i/10).toFixed(2)},${1000+i}`).join('\n');
+  const h=stooqHistParse(csv,{now:new Date('2026-02-10T00:00:00Z')});
+  assert.equal(h.d.length,260); assert.equal(h.d.at(-1),days.at(-1)); assert.equal(h.v.length,260); assert.equal(h.v.at(-1),1000+days.length-1);
+  assert.ok(h.w.d.length>=250&&h.w.d.length<=262,'about five years of weeks: '+h.w.d.length); assert.ok(h.w.d[0]>='2021-02','five years back');
+  assert.equal(h.m.d[0].slice(0,7),'2019-01'); assert.equal(h.m.d.at(-1),days.at(-1),'each month by its last close');
+  assert.throws(()=>stooqHistParse('Date,Open\n'),/no rows/);
+  // the news: Finnhub with nothing → Yahoo once, then not again for 12 hours
+  const {newsFor}=await import('../server/research.js'); const was=process.env.FINNHUB_API_KEY; process.env.FINNHUB_API_KEY='k';
+  try{const asked=[]; const f=async u=>{u=String(u); asked.push(u); return u.includes('finnhub')?new Response('[]',{headers:{'content-type':'application/json'}}):new Response(JSON.stringify({news:[{title:'x',publisher:'p',link:'https://a.b/c',providerPublishTime:1}]}),{headers:{'content-type':'application/json'}})};
+    const now=new Date('2026-11-05T10:00:00Z');
+    await newsFor('VOOX',{fetch:f,now}); await newsFor('VOOX',{fetch:f,now:new Date(now.getTime()+3600e3)});
+    assert.equal(asked.filter(u=>u.includes('yahoo')).length,1,'Yahoo once in 12 hours');
+    await newsFor('VOOX',{fetch:f,now:new Date(now.getTime()+13*3600e3)}); assert.equal(asked.filter(u=>u.includes('yahoo')).length,2,'and again after them')}
+  finally{if(was==null)delete process.env.FINNHUB_API_KEY; else process.env.FINNHUB_API_KEY=was}
+});

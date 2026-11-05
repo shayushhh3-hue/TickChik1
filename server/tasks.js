@@ -4,7 +4,7 @@ import {withPage, applyWrites} from './headless.js';
 import {sendAllowed, mailAllowed, mailAllowedFor, wrapHtml, esc} from './mail.js';
 import {partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
-import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries} from '../shared/quotes.js';
+import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
 
@@ -33,7 +33,8 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
   const keys=new Set(held.filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s)||isIlFund(s)||PROXY[s]||/^TLV:[A-Z0-9]{1,7}$/.test(s)));
   for(const w of store.listDocs('watch'))for(const k of ['syms','marks','held','seen'])for(const s of ((w.data||{})[k]||[]))if(/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(s))keys.add(s);
   const map=((docs['settings/main']||{}).symMap)||{};
-  let ok=0, yahooOff=false; const fails=[], until=Date.now()+12*60e3; Y429=0;
+  let ok=0, yahooOff=false, stooqOff=false; const fails=[], until=Date.now()+12*60e3; Y429=0;
+  const usShare=k=>/^[A-Z]{1,5}([.\-][A-Z])?$/.test(k)&&!PROXY[k];
   for(const key of [...keys].slice(0,maxSeries)){
     if(Date.now()>until){fails.push('stopped after 12 minutes');break}
     const t=PROXY[key]?PROXY[key].index:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
@@ -43,6 +44,9 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
       // 1.11: the weekly series is asked once a week, not every night (half the calls); after three rate limits in a row,
       // Yahoo is left alone for the rest of the run and the US shares come from Stooq
       if(isIlFund(key)){d=await mayaFundSeries(key,{pageSize:300}); src='מאיה (הבורסה)'; if(!d.d.length)throw new Error('Maya: no prices')}
+      // 5.11: a US share from Stooq first (the year by day with its volumes and five years by week, in one request); Yahoo
+      // only when Stooq has nothing
+      else if(usShare(key)&&!stooqOff&&await (async()=>{try{const h=await stooqHist(t,{now}); d={d:h.d,c:h.c,...(h.v?{v:h.v}:{})}; w=h.w&&h.w.d.length>=3?h.w:null; src='Stooq'; return true}catch(e){if(/daily limit/.test(e.message))stooqOff=true; return false}})()){}
       else{try{if(yahooOff)throw Object.assign(new Error('Yahoo rate-limited this run'),{rate:true}); d=await series(t,'1y','1d'); if(oldW)w=oldW; else try{w=await series(t,'5y','1wk')}catch(e){if(e.rate)Y429++}}
         catch(e){if(Y429>=3&&!yahooOff){yahooOff=true; fails.push('Yahoo: rate-limited, the rest from Stooq')} if(!/^[A-Z][A-Z.\-]{0,5}$/.test(key))throw e; d=await stooqSeries(t); src='Stooq'; if(oldW)w=oldW}}
       const doc={...(old.exists?old.data:{}),key,d:d.d,c:d.c,...(d.v?{v:d.v}:{}),updatedAt:now.toISOString(),source:src}; if(w&&w.d.length>=3){doc.w=w; if(w!==oldW)doc.wAt=now.toISOString()}
@@ -79,13 +83,17 @@ export async function longClosesFor(store,key,map={}){
   if(have&&have.d.length>=3&&old.data.mAt&&Date.now()-new Date(old.data.mAt).getTime()<30*864e5)return have;
   if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');
   const t=key.startsWith('IDX:')?BENCH[key.slice(4)].t:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
-  const m=await series(t,'max','1mo'); if(m.d.length<3)throw new Error('no monthly closes');
+  // 5.11: a US share's months from Stooq first (its whole history in one request); Yahoo when Stooq has nothing
+  let m=null; if(/^[A-Z]{1,5}([.\-][A-Z])?$/.test(key)&&!PROXY[key]){try{const h=await stooqHist(t); if(h.m&&h.m.d.length>=3)m=h.m}catch(e){}}
+  if(!m)m=await series(t,'max','1mo'); if(m.d.length<3)throw new Error('no monthly closes');
   store.setDoc(p,{...(old.exists?old.data:{key,d:[],c:[]}),key,m,mAt:new Date().toISOString()},{silent:true}); return m;
 }
 export async function closesFor(key,map={}){
   // an index: IDX:SPX, IDX:TA125 (the indices the page knows, BENCH)
   if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');
   const t=key.startsWith('IDX:')?BENCH[key.slice(4)].t:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
+  // 5.11: a US share from Stooq first: the year, the five years by week and the months in one request
+  if(/^[A-Z]{1,5}([.\-][A-Z])?$/.test(key)&&!PROXY[key]){try{const h=await stooqHist(t); return {key,d:h.d,c:h.c,...(h.v?{v:h.v}:{}),...(h.w&&h.w.d.length>=3?{w:h.w}:{}),...(h.m&&h.m.d.length>=3?{m:h.m}:{}),updatedAt:new Date().toISOString(),source:'Stooq'}}catch(e){}}
   const d=await series(t,'1y','1d'); const doc={key,d:d.d,c:d.c,updatedAt:new Date().toISOString(),source:'Yahoo Finance'};
   try{const w=await series(t,'5y','1wk'); if(w.d.length>=3)doc.w=w}catch(e){}
   try{const m=await series(t,'max','1mo'); if(m.d.length>=3)doc.m=m}catch(e){}

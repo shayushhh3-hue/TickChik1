@@ -197,6 +197,22 @@ export async function stooqDaily(ticker,{fetch:f=timedFetch}={}){
 
 // a US share's daily closes from Stooq (the whole history as CSV), the last `days` of them: a second source for the
 // night's series when Yahoo refuses the server
+// 5.11: a US share's whole history from Stooq in one request (no key, no Yahoo): the last year by day with the volumes,
+// five years by week (each week's last close) and every month since it is listed (each month's last close)
+export function stooqHistParse(csv,{days=260,now=new Date()}={}){
+  const rows=String(csv||'').trim().split('\n').slice(1).map(l=>l.split(',')).filter(p=>p.length>=5&&/^\d{4}-\d\d-\d\d$/.test(p[0])&&+p[4]>0);
+  if(rows.length<10)throw new Error('Stooq: no rows');
+  const r4=x=>Math.round(+x*1e4)/1e4, D=rows.slice(-days);
+  const out={d:D.map(p=>p[0]),c:D.map(p=>r4(p[4]))}; if(D.some(p=>p[5]!=null&&p[5]!==''&&+p[5]>=0))out.v=D.map(p=>p[5]!=null&&p[5]!==''?+p[5]:null);
+  const wk=d=>{const t=new Date(d+'T12:00:00Z'), day=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-day); return t.toISOString().slice(0,10)};
+  const from5=new Date(now.getTime()-5*366*864e5).toISOString().slice(0,10), W=new Map(), M=new Map();
+  for(const p of rows){if(p[0]>=from5)W.set(wk(p[0]),p); M.set(p[0].slice(0,7),p)}
+  out.w={d:[...W.values()].map(p=>p[0]),c:[...W.values()].map(p=>r4(p[4]))}; out.m={d:[...M.values()].map(p=>p[0]),c:[...M.values()].map(p=>r4(p[4]))};
+  return out}
+export async function stooqHist(ticker,{fetch:f=timedFetch,now=new Date()}={}){
+  const r=await f(`https://stooq.com/q/d/l/?s=${encodeURIComponent(String(ticker).toLowerCase()+'.us')}&i=d`,{headers:{'user-agent':UA}});
+  if(!r.ok)throw new Error('Stooq HTTP '+r.status); const t=await r.text(); if(/Exceeded the daily hits limit/i.test(t))throw new Error('Stooq: daily limit');
+  return stooqHistParse(t,{now})}
 export async function stooqSeries(ticker,{fetch:f=timedFetch,days=260}={}){
   const r=await f(`https://stooq.com/q/d/l/?s=${encodeURIComponent(ticker.toLowerCase()+'.us')}&i=d`,{headers:{'user-agent':UA}});
   if(!r.ok)throw new Error('Stooq HTTP '+r.status);

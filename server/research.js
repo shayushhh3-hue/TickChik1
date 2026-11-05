@@ -107,9 +107,11 @@ export function reportOf(res){
 }
 // the articles about a security, newest first (Yahoo's search: title, publisher, link, time); data to show and to read,
 // not instructions
+const YH_NEWS=new Map();
 export async function newsFor(ticker,{fetch:f=globalThis.fetch,n=8,now=new Date()}={}){
   // Finnhub's company news first for a US share (with a key); Yahoo's search otherwise, or when Finnhub has nothing
-  if(fhKey()&&/^[A-Z][A-Z.\-]{0,6}$/.test(ticker)){try{const a=await fhCompanyNews(ticker,{fetch:f,now,n}); if(a.length)return a}catch(e){}}
+  // 5.11: when Finnhub answers with nothing (most funds), Yahoo is asked at most once in 12 hours for that security
+  if(fhKey()&&/^[A-Z][A-Z.\-]{0,6}$/.test(ticker)){try{const a=await fhCompanyNews(ticker,{fetch:f,now,n}); if(a.length)return a; const last=YH_NEWS.get(ticker)||0; if(now.getTime()-last<12*36e5)return []; YH_NEWS.set(ticker,now.getTime())}catch(e){}}
   const r=await timed(f,12000)(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&quotesCount=0&newsCount=${n}&listsCount=0`,{headers:{'user-agent':UA,accept:'application/json'}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
