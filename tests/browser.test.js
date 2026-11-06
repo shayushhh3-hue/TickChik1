@@ -309,7 +309,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // 28.10: the lean home: the six figures of the day are on "מבט לאחור", the day's movers after the two results
       await tab(pg,'history'); await pg.waitForTimeout(300);
       const K=await pg.evaluate(()=>[...document.querySelectorAll('#quickSec .side>.stat')].filter(x=>x.offsetParent).map(x=>x.querySelector('.k').textContent));
-      assert.equal(K.length,6); assert.deepEqual(K.slice(0,4),['רווח מול עלות','מול ההפקדות','עלתה הכי הרבה היום','ירדה הכי הרבה היום']);
+      assert.equal(K.length,6); assert.deepEqual(K.slice(0,2),['רווח מול עלות','מול ההפקדות']); assert.match(K[2],/^עלתה הכי הרבה (היום|ב-[\d.]+)$/); assert.match(K[3],/^ירדה הכי הרבה (היום|ב-[\d.]+)$/);   // 6.11: the day the figures are of
       await tab(pg,'overview'); await pg.waitForTimeout(300);
       // the funds' date, in plain words behind "למה?"
       await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);

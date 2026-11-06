@@ -17321,10 +17321,10 @@ const I18N_OK=c=>typeof c==='string'&&/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(c);
 const libNeed=n=>{try{return window.__tcLib?window.__tcLib(n).catch(()=>{}):Promise.resolve()}catch(e){return Promise.resolve()}};
 const setH=(el,h)=>{if(!el)return false; if(I18N.on?el.__h===h:el.innerHTML===h)return false; el.__h=h; el.innerHTML=h; return true};
 const LRM='\u200E'; // keeps a leading + or − on the left of its number inside Hebrew text
-const sgn=(x,d=0)=>LRM+(x>=0?'+':'−')+ils(Math.abs(x),d);
+const sgn=(x,d=0)=>LRM+(Math.round(Math.abs(+x||0)*Math.pow(10,d))===0?'':(x>=0?'+':'−'))+ils(Math.abs(x),d);   // 6.11: a zero has no sign
 const dlr=(x,d=0)=>'$'+Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}), sgnDlr=(x,d=0)=>LRM+(x>=0?'+':'−')+dlr(Math.abs(x),d);
 const pct=(x,d=1)=>Number(x).toFixed(d)+'%';
-const spct=(x,d=1)=>LRM+(x>=0?'+':'−')+Math.abs(x).toFixed(d)+'%';
+const spct=(x,d=1)=>{const a=Math.abs(x).toFixed(d); return LRM+(+a===0?'':(x>=0?'+':'−'))+a+'%'};   // 6.11: "−0%" was a small loss rounded to nothing
 const hm=iso=>{const d=new Date(iso);return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 const ago=iso=>{const m=Math.max(0,Math.round((Date.now()-new Date(iso))/6e4));return m<60?`לפני ${m} דקות`:m<1440?`לפני ${Math.round(m/60)} שעות`:`לפני ${Math.round(m/1440)} ימים`};
 // day.month; a date from another year also carries the year (12.10.25), so last year's data never reads as this year's
@@ -17896,10 +17896,13 @@ function render(){
   const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
   const mv=mH.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0]&&mv[0].dayPct>0?mv[0]:null, worst=mv.length&&mv[mv.length-1].dayPct<0?mv[mv.length-1]:null;
   const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):mH.stock?(up?'אף מניה לא עלתה היום':'אף מניה לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
+  // 6.11: the tiles say the day their figures are of ("היום" read in the morning about the US close of the day before)
+  const mvDay=(()=>{try{const w=dayWord(), m=/\((\d{1,2}\.\d{1,2})\)/.exec(w); return w==='היום'?'היום':m?'ב-'+m[1]:'ביום המסחר האחרון'}catch(e){return 'היום'}})();
+  try{$('kBestBox').querySelector('.k').textContent='עלתה הכי הרבה '+mvDay; $('kWorstBox').querySelector('.k').textContent='ירדה הכי הרבה '+mvDay}catch(e){}
   const mvCard=(id,p,up)=>{const box=$(id+'Box'), v=$(id), d=$(id+'D'); v.innerHTML=p?`<span class="sym">${esc(lab(p.sym))}</span>${chg(p)}`:'—';
     d.innerHTML=p?`${esc(p.name||'')}${p.dayIls?` · <bdi>${HC==='usd'?sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</bdi>`:''}`:esc(mvNo(up));
     const lk=!!p&&SECKEY.test(p.sym); box.classList.toggle('secl',lk);
-    if(lk){box.dataset.sec=p.sym; box.tabIndex=0; box.setAttribute('role','link'); box.setAttribute('aria-label',`${up?'עלתה הכי הרבה היום':'ירדה הכי הרבה היום'}: ${p.name||lab(p.sym)}, ${spct(p.dayPct,2)}. לדף של הנייר`)}
+    if(lk){box.dataset.sec=p.sym; box.tabIndex=0; box.setAttribute('role','link'); box.setAttribute('aria-label',`${up?'עלתה הכי הרבה':'ירדה הכי הרבה'} ${mvDay}: ${p.name||lab(p.sym)}, ${spct(p.dayPct,2)}. לדף של הנייר`)}
     else{delete box.dataset.sec; box.removeAttribute('tabindex'); box.removeAttribute('role'); box.removeAttribute('aria-label')}};
   mvCard('kBest',best,true); mvCard('kWorst',worst,false);
   const tape=mH.pos.map(p=>`<span class="tk"><b class="sym">${esc(lab(p.sym))}</b><span class="n">${fmtPx(p.px,p.ccy)}</span>${p.dayPct==null?'':chg(p)}</span>`).join('');
@@ -24268,7 +24271,8 @@ function plMktH(a){const k=a.mk||{}, m=(()=>{try{return mAllNow()}catch(e){retur
       ${hist.length?`<p class="pl-p">בדוחות הקודמים, הרווח מול הצפי: ${hist.map(h=>`<span class="n ${h.s>=0?'up':'down'}">${spct(h.s,0)}</span>`).join(' · ')}.</p>`:''}
       ${x?`<p class="pl-p">סביב ${x.n} הדוחות האחרונים המניה זזה בממוצע <b class="n">±${x.avgAbs.toFixed(1)}%</b> (מהסגירה שלפני הדוח לסגירה שאחריו).${p?` תזוזה כזו היא בערך <span class="n">±${ils(p.val*x.avgAbs/100)}</span> בשווי שלך.`:''}</p>`:''}
       <p class="note" style="margin:0">עובדות מהדוחות הקודמים ומהצפי, לא תחזית לדוח הזה.</p>`}
-  if(k.t==='move')return `<p class="pl-p">נמדד: <span class="n ${k.pct>=0?'up':'down'}">${spct(k.pct,1)}</span> היום${p?`; השינוי בשווי שלך: <span class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</span>`:''}. תנועת מחיר מדודה; היא לא אומרת למה.</p>`;
+  if(k.t==='move'){const pc=+k.from>0&&+k.to>0?(k.to/k.from-1)*100:+k.pct, md=String(a.occ||''), w=md&&md<ilDay()?'ב-'+dmy(md):'היום';
+    return `<p class="pl-p">נמדד: <span class="n ${pc>=0?'up':'down'}">${spct(pc,1)}</span> ${w}${p&&w==='היום'?`; השינוי בשווי שלך: <span class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</span>`:''}.</p>`;}
   if(k.t==='ins')return `<p class="pl-p">${esc(k.owner||'')} (${esc(k.role||'')}): ${INS_KH[k.kind]||k.kind} של <span class="n">${(k.shares||0).toLocaleString('en-US')}</span> מניות${k.value?` בשווי <span class="n">${usd0(k.value)}</span>`:''}${k.plan?', בתוכנית מסחר מתוכננת (10b5-1)':''}${k.after!=null?`; מחזיק אחרי העסקה <span class="n">${k.after.toLocaleString('en-US')}</span>`:''}.${(k.why||[]).length?` <b>מהותי:</b> ${esc(k.why.join('; '))}.`:''} <span class="srcref">לדיווח</span> · <button type="button" class="lnk" data-gosec="${esc(k.sym||'')}">לדף הנייר ›</button></p><p class="note" style="margin:0">עובדה על העסקה של המדווח, לא על עתיד החברה.</p>`;
   if(k.t==='cal')return `<p class="pl-p">מהלוח: ${esc(k.src||'')}${k.est?' (מועד משוער)':''}. <button type="button" class="lnk" data-nxv2="cal" data-calid="${esc(k.id||'')}">ללוח האירועים ›</button>${k.sym?` <button type="button" class="lnk" data-gosec="${esc(k.sym)}">לדף הנייר ›</button>`:''}</p>`;
   if(k.t==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0; return uv>0?`<p class="pl-p">שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי התיק.</p>`:''}

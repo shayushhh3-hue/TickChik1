@@ -244,9 +244,12 @@ export function mktAlerts(store,P,S,Q,HD,now=new Date()){
   const relOf=h=>h&&h.w!=null?(h.w>=SENS_T.mid.dHigh?'high':'mid'):'high', relW=h=>h&&h.w!=null?`${h.sym}, ${h.w}% מהתיק`:`${h?h.sym:''} שבתיק`;
   if(fresh)for(const h of HD.pos){const px=+(Q.prices||{})[h.sym], pv=+(Q.prev||{})[h.sym]; if(!(px>0)||!(pv>0)||(Q.stale||{})[h.sym])continue; const d=(px/pv-1)*100; if(Math.abs(d)<mv)continue;
     const big=Math.abs(d)>=mv*2&&relOf(h)==='high';
-    out.push({...base,k:`mv:${h.sym}:${today}:${d>0?'u':'d'}`,lv:big?'crit':relOf(h)==='high'?'imp':'upd',lvWhy:big?`תנועה חריגה במיוחד (פי שניים מהסף שקבעת) באחזקה משמעותית`:`תנועה של יותר מ-${mv}% ביום, הסף שקבעת${relOf(h)==='high'?'':'; אחזקה קטנה, ולכן עדכון ולא התראה חשובה'}`,
-      title:`${h.sym} ${d>0?'עלתה':'ירדה'} היום ${d>0?'+':'−'}${Math.abs(d).toFixed(1)}%`,what:`מ-${pv} ל-${px}. תנועת מחיר מדודה; היא לא אומרת למה.`,dir:d>0?'pos':'neg',imp:'high',rel:relOf(h),relWhy:relW(h),
-      holds:[{sym:h.sym,w:h.w,how:'direct',dir:d>0?'pos':'neg',why:'תנועת המחיר היום',link:'direct',measured:Math.round(d*100)/100}],first:at,mk:{t:'move',pct:Math.round(d*100)/100,from:pv,to:px,mv}})}
+    // 6.11: the move's own trading day (the price's date): one alert per move, said "היום" only on its day (the US close of
+    // 5.11 was a new alert again on the morning of 6.11, "ירדה היום")
+    const md=String(((Q.meta||{})[h.sym]||{}).date||'')||today, word=md<today?`ב-${+md.slice(8)}.${+md.slice(5,7)}`:'היום';
+    out.push({...base,occ:md,k:`mv:${h.sym}:${md}:${d>0?'u':'d'}`,lv:big?'crit':relOf(h)==='high'?'imp':'upd',lvWhy:big?`תנועה חריגה במיוחד (פי שניים מהסף שקבעת) באחזקה משמעותית`:`תנועה של יותר מ-${mv}% ביום, הסף שקבעת${relOf(h)==='high'?'':'; אחזקה קטנה, ולכן עדכון ולא התראה חשובה'}`,
+      title:`${h.sym} ${d>0?'עלתה':'ירדה'} ${word} ${d>0?'+':'−'}${Math.abs(d).toFixed(1)}%`,what:`מ-${pv} ל-${px}. תנועת מחיר מדודה; היא לא אומרת למה.`,dir:d>0?'pos':'neg',imp:'high',rel:relOf(h),relWhy:relW(h),
+      holds:[{sym:h.sym,w:h.w,how:'direct',dir:d>0?'pos':'neg',why:`תנועת המחיר ${word}`,link:'direct',measured:Math.round(d*100)/100}],first:at,mk:{t:'move',pct:Math.round(d*100)/100,from:pv,to:px,mv}})}
   for(const [k,t] of Object.entries((S&&S.pxAlerts)||{})){if(!t)continue; const px=+(Q.prices||{})[k]||+(Q.prices||{})[k.replace(/^TLV:/,'')]; if(!(px>0))continue; const sym=k.replace(/^TLV:/,''), h=H.get(k)||H.get(sym);
     for(const [dk,lim] of [['up',+t.above],['down',+t.below]]){if(!(lim>0)||(dk==='up'?px<lim:px>lim))continue;
       out.push({...base,k:`px:${k}:${dk}:${lim}:${today}`,lv:'imp',lvWhy:'מחיר שקבעת בהתראות נחצה',title:`${sym} ${dk==='up'?'עברה את':'ירדה אל'} המחיר שקבעת`,what:`עכשיו ${px}; הסף ${dk==='up'?'למעלה':'למטה'}: ${lim}.`,dir:dk==='up'?'pos':'neg',imp:'high',

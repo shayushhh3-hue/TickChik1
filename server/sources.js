@@ -108,7 +108,7 @@ export function secPick(sub,{sym,cik,now=new Date(),days=7,n=4}){
 export async function secNewsTask(store,{syms=[],fetch:f=globalThis.fetch,now=new Date(),pause=150,budgetMs=60e3}={}){
   if(off('SEC_NEWS'))return {items:[],ok:0,fail:0,off:true};
   const t0=Date.now(), out=[]; let ok=0, fail=0, first=null, ciks=null;
-  try{ciks=await secCiks(store,{fetch:f})}catch(e){return {items:[],ok:0,fail:1,first:'SEC tickers: '+e.message}}
+  try{ciks=await secCiks(store,{fetch:f,now:now.getTime()})}catch(e){return {items:[],ok:0,fail:1,first:'SEC tickers: '+e.message}}   // 6.11: the run's own time (the real clock made a week-old map look stale in a test)
   for(const sym of syms.filter(s=>TICK.test(s))){if(Date.now()-t0>budgetMs)break; const cik=ciks[sym]||ciks[sym.replace(/[.\-]/g,'')]; if(!cik)continue;
     try{const sub=await secSubmissions(cik,{fetch:f}); if(sub){out.push(...secPick(sub,{sym,cik,now})); ok++}}catch(e){fail++; first=first||`${sym}: ${e.message}`; if(fail>=4&&!ok)break} await sleep(pause)}
   return {items:out,ok,fail,first};

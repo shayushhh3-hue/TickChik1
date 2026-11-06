@@ -26,8 +26,12 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null),user=null}={}
     if(+t.below>0&&p<=+t.below)out.push({key:`px:${k}:down:${t.below}`,sym:s,sev:'warn',text:`${s} ירד אל המחיר שקבעת: ${p} (מתחת ל-${t.below}).`})}
   // a big day for a holding (not a stale price, not an estimate of a fund)
   const held=[...new Set(((P&&P.positions)||[]).map(p=>p.sym))];
+  // 6.11: the move belongs to its trading day (the price's own date), not to the Israeli day it is seen in: before, the US
+  // close of 5.11 was sent again on the morning of 6.11 as "ירדה היום" (the day's list of what was sent starts empty)
+  const today=now.toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'});
   for(const k of held){const p=px(k), b=+(Q.prev||{})[k]; if(!p||!(b>0)||(Q.stale||{})[k])continue; const d=(p/b-1)*100;
-    if(Math.abs(d)>=move)out.push({key:`move:${k}:${d>0?'up':'down'}`,sym:k,d,move,sev:Math.abs(d)>=move*2?'crit':'warn',text:`${k} ${d>0?'עלתה':'ירדה'} היום ${pct(d)} (מ-${b} ל-${p}), יותר מ-${move}% שקבעת.`})}
+    const md=String(((Q.meta||{})[k]||{}).date||'')||today, word=md<today?`ב-${+md.slice(8)}.${+md.slice(5,7)}`:'היום';
+    if(Math.abs(d)>=move)out.push({key:`move:${k}:${md}:${d>0?'up':'down'}`,alt:`move:${k}:${d>0?'up':'down'}`,sym:k,d,move,sev:Math.abs(d)>=move*2?'crit':'warn',text:`${k} ${d>0?'עלתה':'ירדה'} ${word} ${pct(d)} (מ-${b} ל-${p}), יותר מ-${move}% שקבעת.`})}
   // the dollar
   const fx=+Q.usdIls; if(fx>0){if(+A.usdAbove>0&&fx>=+A.usdAbove)out.push({key:`usd:up:${A.usdAbove}`,sev:'warn',text:`הדולר עבר את ${A.usdAbove}: ${fx.toFixed(3)} ₪.`});
     if(+A.usdBelow>0&&fx<=+A.usdBelow)out.push({key:`usd:down:${A.usdBelow}`,sev:'warn',text:`הדולר ירד אל ${A.usdBelow}: ${fx.toFixed(3)} ₪.`})}
@@ -66,14 +70,15 @@ export async function liveTask(store,{log=()=>{},now=new Date(),send=sendAllowed
 async function liveFor(store,u,{log,now,day,send,push}){
   const own=u.role==='owner', stKey=own?null:'live:'+u.id;
   const st=own?store.getDoc('alerts/live'):{exists:!!store.getMeta(stKey),data:(()=>{try{return JSON.parse(store.getMeta(stKey)||'null')}catch(e){return null}})()};
-  const D=st.exists&&st.data&&st.data.date===day?st.data:{date:day,sent:[],lastAt:null};
+  // a new day keeps the moves already sent (each with its trading day), so a close is not sent again the next morning
+  const D=st.exists&&st.data&&st.data.date===day?st.data:{date:day,sent:((st.exists&&st.data&&st.data.sent)||[]).filter(k=>/^move:.+:\d{4}-\d\d-\d\d:(up|down)$/.test(k)),lastAt:null};
   const save=x=>own?store.setDoc('alerts/live',x,{silent:true}):store.setMeta(stKey,JSON.stringify(x));
   const pr=pulsePrefs(store.getDoc(pathsOf(u).settings).data||{});
   if(!pr.on)return {off:true,hits:0,fresh:0};
   let hits=liveHits(store,{now,paths:pathsOf(u),user:own?null:u});
   // the quiet hours: nothing, or only the critical ones when the person allowed them; once a day only critical ones
   const quiet=inQuiet(pr,now); if(quiet)hits=hits.filter(x=>x.sev==='crit'&&pr.critQuiet); if(pr.freq==='day')hits=hits.filter(x=>x.sev==='crit');
-  const fresh=hits.filter(x=>!D.sent.includes(x.key));
+  const fresh=hits.filter(x=>!D.sent.includes(x.key)&&!(x.alt&&D.sent.includes(x.alt)));
   if(!fresh.length){save({...D,checkedAt:now.toISOString()}); return quiet?{quiet:true,hits:hits.length,fresh:0}:{hits:hits.length,fresh:0}}
   const gap=(pr.freq==='hour'?60:20)*60e3;
   if(D.lastAt&&now-new Date(D.lastAt)<gap){log(`live${own?'':' ('+u.id+')'}: ${fresh.length} waiting for the next ${gap/60e3} minutes`); return {hits:hits.length,fresh:fresh.length,waiting:true}}

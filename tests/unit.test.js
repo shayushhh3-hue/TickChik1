@@ -1502,7 +1502,7 @@ test('live alerts: a price set, a big day, the dollar, a critical reading; once 
   const {createHash}=await import('node:crypto'); const id=createHash('sha1').update('https://x/n').digest('hex').slice(0,12), now=new Date('2026-10-30T13:00:00Z');
   s.setDoc('research/news',{items:[{title:'t',link:'https://x/n',at:new Date(now-36e5).toISOString(),syms:['NVDA']}]});
   s.setDoc('research/newsx',{by:{[id]:{he:'אנבידיה הורידה את התחזית',what:'w',level:'crit',dir:'neg',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nvda-cut'}}});
-  const H=liveHits(s,{now}); assert.deepEqual(H.map(h=>h.key).sort(),['move:NVDA:down','news:nvda-cut','px:MSFT:up:480','usd:up:3.8']);
+  const H=liveHits(s,{now}); assert.deepEqual(H.map(h=>h.key).sort(),[`move:NVDA:${(s.getDoc('quotes/latest').data.meta||{}).NVDA?.date||now.toLocaleDateString('en-CA',{timeZone:'Asia/Jerusalem'})}:down`,'news:nvda-cut','px:MSFT:up:480','usd:up:3.8']);   // 6.11: a move is keyed by its trading day
   assert.ok(!H.some(h=>/KO/.test(h.key)),'KO moved 0.3%: nothing');
   const sent=[]; const send=async(st,kind,msg)=>{sent.push([kind,msg]); return true};
   let r=await liveTask(s,{now,send}); assert.equal(r.fresh,4); assert.equal(sent.length,1); assert.equal(sent[0][0],'live'); assert.match(sent[0][1].text,/NVDA ירדה היום −5\.0%/); assert.match(sent[0][1].text,/הדולר עבר את 3\.8/);
@@ -2042,4 +2042,18 @@ test('6.11 one split is one event: found by two days (the announced one and the 
   // through the catch-up check: the repair, then nothing applied again
   s.setDoc('portfolio/main',P2); reconcileSplits(s,{now:new Date('2026-11-06T09:00:00Z')}); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,9);
   reconcileSplits(s,{now:new Date('2026-11-06T10:00:00Z')}); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,9,'stays');
+});
+
+test('6.11 a big day is one alert, on its own trading day: the US close of 5.11 seen on the morning of 6.11 says "ב-5.11", keeps its key, and is not sent again',async()=>{
+  const {liveHits,liveTask}=await import('../server/livealert.js'), {mktAlerts}=await import('../server/pulse.js');
+  const s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  s.setDoc('portfolio/main',{positions:[{sym:'SOXX',qty:30,acct:'exc',ccy:'USD'}]});
+  s.setDoc('quotes/latest',{prices:{SOXX:131.9},prev:{SOXX:150.14},meta:{SOXX:{src:'yahoo',date:'2026-11-05'}},usdIls:3.2,updatedAt:'2026-11-06T07:00:00Z'});
+  const H=liveHits(s,{now:new Date('2026-11-06T07:05:00Z')}); assert.equal(H[0].key,'move:SOXX:2026-11-05:down'); assert.match(H[0].text,/^SOXX ירדה ב-5\.11 −12\.1%/);
+  const A=mktAlerts(s,s.getDoc('portfolio/main').data,{},s.getDoc('quotes/latest').data,{pos:[{sym:'SOXX',w:13.1}]},new Date('2026-11-06T07:05:00Z'));
+  assert.equal(A[0].k,'mv:SOXX:2026-11-05:d'); assert.equal(A[0].title,'SOXX ירדה ב-5.11 −12.1%'); assert.equal(A[0].occ,'2026-11-05');
+  // yesterday's list had it: today it is not sent again
+  s.setDoc('alerts/live',{date:'2026-11-05',sent:['move:SOXX:2026-11-05:down'],lastAt:'2026-11-05T21:00:00Z'},{silent:true});
+  const sent=[]; await liveTask(s,{now:new Date('2026-11-06T07:05:00Z'),send:async(...a)=>{sent.push(a)},push:async()=>{}});
+  assert.equal(sent.length,0,'not again'); assert.deepEqual(s.getDoc('alerts/live').data.sent,['move:SOXX:2026-11-05:down']);
 });
