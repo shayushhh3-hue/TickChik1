@@ -4,6 +4,7 @@ import {withPage, applyWrites} from './headless.js';
 import {sendAllowed, mailAllowed, mailAllowedFor, wrapHtml, esc} from './mail.js';
 import {partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
+import {reconcileSplits} from '../shared/splits.js';
 import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
@@ -55,6 +56,8 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
     await new Promise(r=>setTimeout(r,yahooOff?150:600));
   }
   log(`close series: ${ok}/${Math.min(keys.size,maxSeries)}${fails.length?'; failed: '+fails.slice(0,5).join(' | '):''}`);
+  // 6.11: a split the live prices did not catch, from the saved daily prices against the fresh series (shared/splits.js)
+  try{reconcileSplits(store,{now,log})}catch(e){log('splits: '+(e&&e.message||e))}
   try{await usSnapshot(store,now,log)}catch(e){log('US snapshot failed:',e.message)}
   try{comoveTask(store,{log})}catch(e){log('comove failed:',e.message)}
 }

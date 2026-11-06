@@ -2965,3 +2965,21 @@ test('5.11 the portfolio\'s value at the top only where it is the base of the sc
   await pg.click('#kLine'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'overview','a tap leads home');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('6.11 a share split applied by the server: said on the security page (the units before and after, the worth unchanged) and by צ׳יקו; the owner can undo it on his units',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, Q0=store.getDoc('quotes/latest').data, i=P0.positions.findIndex(p=>p.sym==='RKLB'), acct=P0.positions[i].acct, d=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  try{
+    const P1=JSON.parse(JSON.stringify(P0)); P1.positions[i].qty=30; P1.splits={[`RKLB:${d}`]:{sym:'RKLB',d,r:3,at:new Date().toISOString(),rows:[{acct,q0:10,q1:30}]}};
+    store.setDoc('portfolio/main',P1); store.setDoc('quotes/latest',{...Q0,splits:{RKLB:{d,r:3,src:'prices'}}});
+    const {ctx,pg}=await open(390);
+    const ins=await pg.evaluate(()=>window.__chico.insights().filter(x=>/^split:/.test(x.k)).map(x=>({what:x.what,more:x.whatMore,impact:x.impact})));
+    assert.equal(ins.length,1); assert.match(ins[0].what,/^RKLB: פיצול 3 ל-1 ב-/); assert.match(ins[0].more,/השווי שלך לא השתנה בגלל הפיצול עצמו\. הכמות אצלך עודכנה: 10 ← 30/);
+    await pg.evaluate(()=>window.__chico.go('sec:RKLB')); await pg.waitForTimeout(900);
+    const note=await pg.evaluate(()=>{const n=document.querySelector('#secPage .mypos .spnote'); return n?n.textContent.replace(/\s+/g,' ').trim():null});
+    assert.match(note||'',/^פיצול 3 ל-1 ב-[\d.]+\. כל יחידה הפכה ל-3 יחידות והמחיר ירד בהתאם; השווי לא השתנה בגלל הפיצול\. הכמות עודכנה: 10 ← 30/);
+    await pg.click('[data-spundo]'); for(let k=0;k<30&&!(store.getDoc('portfolio/main').data.splits[`RKLB:${d}`]||{}).undone;k++)await pg.waitForTimeout(200);
+    const P2=store.getDoc('portfolio/main').data; assert.ok(P2.splits[`RKLB:${d}`].undone,'kept, marked'); assert.equal(P2.positions[i].qty,10,'the units back');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
+});

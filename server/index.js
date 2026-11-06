@@ -15,6 +15,7 @@ import {ecocalTask} from './ecocal.js';
 import {insidersTask,INS_DOC} from './insiders.js';
 import {pulseTask} from './pulse.js';
 import {refreshQuotes} from '../shared/pxjob.js';
+import {reconcileSplits} from '../shared/splits.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
@@ -535,6 +536,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it
   {const q=store.getDoc('quotes/latest'); const age=q.exists&&q.data.updatedAt?Date.now()-new Date(q.data.updatedAt).getTime():Infinity;
     if(!q.exists||age>15*60e3)setTimeout(()=>refreshQuotes(store,{log,reason:'הפעלת השרת'}).catch(e=>log('price update at start failed:',e.message)),5000);}
+  // 6.11: a split that came while the server was down, or before this check (SOXX, 5.11): found and applied at start
+  {const t=setTimeout(()=>{try{reconcileSplits(store,{log})}catch(e){log('splits at start failed:',e&&e.message)}},40000); if(t&&t.unref)t.unref()}
   // 29.10: the news and their readings older than an hour (a deploy in the middle of the day): gathered and read now,
   // so the screen does not wait for the next half hour
   {const j=app.locals.jobs, x=store.getDoc('research/newsx'); const age=x.exists&&x.data&&x.data.updatedAt?Date.now()-new Date(x.data.updatedAt).getTime():Infinity;

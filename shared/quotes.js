@@ -3,6 +3,7 @@ export const timedFetch=(u,o={})=>globalThis.fetch(u,{...o,signal:o.signal||Abor
 // Market prices for the page: Yahoo Finance (US and Tel Aviv), Stooq as a fallback for US tickers, the Bank of Israel
 // representative rate and the live USD/ILS rate. Plain fetch, so the same code runs in GitHub Actions and in the
 // Cloudflare function. Nothing here is advice: numbers in, numbers out.
+import {splitFromQuote} from './splits.js';
 import {dm, nyParts, ilParts, lastSession} from './market.js';
 
 const UA='Mozilla/5.0 (compatible; tik-chik/1.0)';
@@ -277,6 +278,8 @@ export async function fetchAll(symbols,{positions=[],map={},fetch:f=timedFetch,c
 // the next quotes/latest document, from the fetched prices and the stored one
 export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new Date(),usOpen=false,ilOpen=false}){
   const prices={...(old.prices||{})}, prevC={...(old.prev||{})}, stale={}, meta={...(old.meta||{})};
+  // 6.11: the splits found (shared/splits.js), kept for 400 days for the page to say
+  const splits=Object.fromEntries(Object.entries(old.splits||{}).filter(([k,v])=>v&&v.d&&Date.parse(v.d)>now.getTime()-400*864e5));
   const posOf=Object.fromEntries(positions.map(p=>[p.sym,p]));
   let usDate='', prevDate='', ilDate='', got=0;
   for(const sym of symbols){
@@ -303,7 +306,8 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       else{prices[sym]=round(q.px,4); if(q.prev>0&&Math.abs(q.px/q.prev-1)<0.2)prevC[sym]=round(q.prev,4); else delete prevC[sym]}   // no previous price of this answer: no day's change (an old one would span days)
       continue}
     // 4.11: a new price with an old "previous" made a change of several days look like one: no previous, no day's change
-    if(q){got++; prices[sym]=round(q.px); if(q.prev!=null&&q.prev>0)prevC[sym]=round(q.prev); else delete prevC[sym]; meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
+    if(q){const sp=splitFromQuote(sym,old,q); if(sp&&!(splits[sym]&&splits[sym].d===sp.d))splits[sym]={...sp,at:now.toISOString(),src:'prices'};
+      got++; prices[sym]=round(q.px); if(q.prev!=null&&q.prev>0)prevC[sym]=round(q.prev); else delete prevC[sym]; meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
       if(q.src==='stooq')stale[sym]='סגירה '+dm(q.closeDate);
@@ -351,7 +355,7 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
     // updatedAt = the last time prices actually arrived; a run that got nothing keeps the old time, so the page can say the prices are late
     updatedAt:failed?(old.updatedAt||null):now.toISOString(), attemptAt:now.toISOString(), got, of:symbols.length,
     mktsAt:Object.keys(fetched.mkts||{}).length?now.toISOString():(old.mktsAt||null),
-    usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag,
+    usDate:usD, ilDate:ilD, lastTradeDay:[usD,ilD].sort().at(-1)||'', live:usLive||ilLive, lag, splits,
     errors:(fetched.errors||[]).slice(0,40)};
 }
 const round=(x,n=2)=>{const k=Math.pow(10,n);return Math.round(x*k)/k};

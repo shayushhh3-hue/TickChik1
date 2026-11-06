@@ -1978,3 +1978,47 @@ test('6.11 the readings\' facts: the names as written in Hebrew, no price move i
   assert.equal(b,'5 ניירות ירדו היום ביותר מ-5%: RDW −19.8%, DRAM −18.0%, MU −17.5% ועוד 2.\nהרשימה המלאה באתר.');
   assert.equal(pushBody([mk('SOXX',-12.1)]),'SOXX ירדה היום','one item as it is');
 });
+
+test('6.11 share splits: found from the prices (the kept close against the source\'s adjusted previous close, a clean ratio) and from the saved days against the series; applied once to the units of a statement older than the split, the saved daily prices and the price alerts, for the owner and a partner; a later statement is kept',async()=>{
+  const {splitFromQuote,splitRatio,applySplits,reconcileSplits,splitFromSeries}=await import('../shared/splits.js');
+  const old={prices:{SOXX:450.42,NVDA:200},meta:{SOXX:{src:'yahoo',date:'2026-11-04'},NVDA:{src:'yahoo',date:'2026-11-04'}}};
+  assert.deepEqual(splitFromQuote('SOXX',old,{px:131.9,prev:150.14,closeDate:'2026-11-05',src:'yahoo',ccy:'USD'}),{d:'2026-11-05',r:3,ref:450.42,prev:150.14});
+  assert.equal(splitFromQuote('NVDA',old,{px:181.5,prev:200,closeDate:'2026-11-05',src:'yahoo',ccy:'USD'}),null,'a big day is not a split');
+  assert.equal(splitFromQuote('SOXX',old,{px:150.14,prev:152,closeDate:'2026-11-04',src:'yahoo',ccy:'USD'}).d,'2026-11-05','an adjusted price before the open: the split is the next trading day');
+  assert.equal(splitFromQuote('SOXX',{...old,meta:{SOXX:{src:'maya',date:'2026-11-04'}}},{px:131.9,prev:150.14,closeDate:'2026-11-05',src:'yahoo'}),null,'not a fund priced by Maya');
+  assert.equal(splitRatio(1.37),null); assert.equal(splitRatio(2.97),3); assert.equal(splitRatio(0.1003),0.1); assert.equal(splitRatio(1.1),null);
+  const doc=buildQuotesDoc({prev:old,fetched:{quotes:{SOXX:{px:131.9,prev:150.14,closeDate:'2026-11-05',src:'yahoo',ccy:'USD'}},index:{},errors:[]},symbols:['SOXX'],now:new Date('2026-11-05T20:00:00Z')});
+  assert.equal(doc.splits.SOXX.r,3); assert.equal(doc.prices.SOXX,131.9);
+  // applied: the owner's statement is from before the split, the partner's from after it
+  const s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); const f=s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  s.setDoc('portfolio/main',{asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:10,acct:'exc',ccy:'USD',costUsd:4000,px:400},{sym:'NVDA',qty:5,acct:'exc',ccy:'USD'}]});
+  s.setDoc('history/daily',{points:{'2026-11-04':{v:1,px:{SOXX:450.42,NVDA:200}},'2026-11-05':{v:1,px:{SOXX:131.9,NVDA:181.5}}}});
+  s.setDoc('settings/main',{pxAlerts:{SOXX:{below:400,above:500}}});
+  s.setDoc(`data/users/${f.id}/portfolio`,{asOf:{blink:'2026-11-06'},positions:[{sym:'SOXX',qty:30,acct:'blink',ccy:'USD'}]});
+  const sp={SOXX:{d:'2026-11-05',r:3}}; const r=applySplits(s,sp,{now:new Date('2026-11-05T20:00:00Z')});
+  const P=s.getDoc('portfolio/main').data; assert.equal(P.positions[0].qty,30); assert.equal(P.positions[0].costUsd,4000,'the cost stays'); assert.ok(Math.abs(P.positions[0].px-133.333333)<1e-5); assert.equal(P.positions[1].qty,5);
+  assert.deepEqual(P.splits['SOXX:2026-11-05'].rows,[{acct:'exc',q0:10,q1:30}]);
+  const D=s.getDoc('history/daily').data.points; assert.ok(Math.abs(D['2026-11-04'].px.SOXX-150.14)<1e-6); assert.equal(D['2026-11-05'].px.SOXX,131.9); assert.equal(D['2026-11-04'].px.NVDA,200);
+  assert.deepEqual(s.getDoc('settings/main').data.pxAlerts.SOXX,{below:133.33,above:166.67});
+  const FP=s.getDoc(`data/users/${f.id}/portfolio`).data; assert.equal(FP.positions[0].qty,30,'a statement after the split is kept'); assert.equal(FP.splits['SOXX:2026-11-05'].rows[0].kept,true);
+  assert.equal(r.length,2); assert.equal(applySplits(s,sp).length,0,'once'); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,30);
+  // a split the live prices missed (SOXX, before this check): the saved days in the old units against the adjusted series
+  const ser={d:['2026-10-30','2026-11-02','2026-11-03','2026-11-04','2026-11-05'],c:[153.33,151.67,150.67,150.14,131.9]};
+  assert.deepEqual(splitFromSeries('SOXX',{'2026-11-03':{px:{SOXX:452}},'2026-11-04':{px:{SOXX:450.42}},'2026-11-05':{px:{SOXX:131.9}}},ser),{d:'2026-11-05',r:3,ref:450.42,prev:150.14,src:'series'});
+  assert.equal(splitFromSeries('SOXX',{'2026-11-04':{px:{SOXX:150.3}}},ser),null);
+  const s2=new Store(':memory:'); s2.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  s2.setDoc('quotes/latest',{prices:{SOXX:131.9},meta:{SOXX:{src:'yahoo',date:'2026-11-05'}}}); s2.setDoc('quotes/c_SOXX',{d:ser.d,c:ser.c});
+  s2.setDoc('portfolio/main',{asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:10,acct:'exc',ccy:'USD'}]});
+  s2.setDoc('history/daily',{points:{'2026-11-03':{px:{SOXX:452}},'2026-11-04':{px:{SOXX:450.42}}}});
+  reconcileSplits(s2,{now:new Date('2026-11-06T08:00:00Z')}); assert.equal(s2.getDoc('portfolio/main').data.positions[0].qty,30); assert.equal(s2.getDoc('quotes/latest').data.splits.SOXX.r,3);
+  reconcileSplits(s2,{now:new Date('2026-11-06T09:00:00Z')}); assert.equal(s2.getDoc('portfolio/main').data.positions[0].qty,30,'not twice');
+});
+
+test('6.11 a split found late is not applied to units fixed by hand since: with a known cost, only when it brings the cost of a unit nearer to the price',async()=>{
+  const {splitPortfolio}=await import('../shared/splits.js');
+  const sp={d:'2026-11-05',r:3}, P=q=>({asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:q,acct:'exc',ccy:'USD',costUsd:4000}]});
+  assert.equal(splitPortfolio(P(10),'SOXX',sp,new Date(),{late:true,px:131.9}).P.positions[0].qty,30,'bought at $400 a unit: the split brings it to $133');
+  const k=splitPortfolio(P(30),'SOXX',sp,new Date(),{late:true,px:131.9}); assert.equal(k.P.positions[0].qty,30,'already 30 by hand: kept'); assert.equal(k.rows[0].why,'cost');
+  assert.equal(splitPortfolio(P(30),'SOXX',sp,new Date(),{late:false,px:131.9}).P.positions[0].qty,90,'found on the day: the statement date decides');
+  assert.equal(splitPortfolio({...P(10),positions:[{...P(10).positions[0],qAt:'2026-11-06'}]},'SOXX',sp).P.positions[0].qty,10,'units written by hand after the split are kept');
+});

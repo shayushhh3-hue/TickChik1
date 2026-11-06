@@ -2656,6 +2656,8 @@ body[data-page="mine"] .kline,body[data-page="risk"] .kline,body[data-page="stat
 .kline:hover{border-color:var(--accent)} .kline:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .noacct .kline{display:none!important}
+.mypos .spnote{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--sunk);color:var(--ink2);font-size:13.5px;line-height:1.55}
+.mypos .spnote b{color:var(--ink)}
 </style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
@@ -19953,6 +19955,7 @@ function anaFactsAI(F,issues,checks){
     holdings_count:m.pos.length, funds_count:F.funds.length, stocks_count:F.stocks.length,
     last_trading_day:m.hasDay&&m.dayPct!=null?`${sgn(m.dayIls)} (${spct(m.dayPct,2)})`:null,
     last_trading_day_is:dayLive()?'היום, המסחר עדיין פתוח':dayLab()==='היום'?'היום, המסחר נסגר':dayLab(),
+    share_splits:(()=>{try{const L=spRecent(30).map(x=>({security:lab(x.sym),date:dmy(x.d),ratio:spRatioH(+x.r),your_units:(x.rows||[]).filter(r=>!r.kept).map(r=>`${+(+r.q0).toFixed(4)} ← ${+(+r.q1).toFixed(4)}`).join(', ')})); return L.length?L:null}catch(e){return null}})(),
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
     from_peak:(()=>{try{const cr=crisisInfo(m);return cr&&cr.peak?`${spct(-cr.peak.pct)} מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))})`:null}catch(e){return null}})(),
     movers:m.pos.filter(p=>p.dayPct!=null).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).slice(0,6).map(p=>`${lab(p.sym)} ${spct(p.dayPct,2)} (${sgn(p.dayIls)})`),
@@ -20335,7 +20338,8 @@ const ANA_RULES=`כללים מחייבים:
 9. could_fit הוא דירוג התאמה שהדף חישב (פער מהיעד, פיזור, חפיפה, מטבע, סוג המשקיע). כשנשאלת מה יכול להתאים לתיק, ענה רק מתוכו: אילו ניירות וקרנות מדורגים גבוה ולמה, במילים של הדירוג ("משלימה פער ב…", "מפזרת", "בשקלים"). אל תכתוב "ממליץ", "כדאי לקנות" או "קנה"; סיים במשפט שזה דירוג התאמה לפי הכללים שלו, לא המלצה, ושההחלטה שלו. investor_goal הוא בשביל מה המשתמש משקיע, לכמה שנים ולאיזה סכום: מותר לקשר את המצב אליו (למשל אופק קצר מול תנודתיות גבוהה), בלי המלצה. planned_cash_flows הם משיכות והפקדות שהמשתמש תכנן: מותר לומר כמה זמן נשאר ואיזה חלק מהתיק זה, בלי לקבוע אם התיק מתאים להן ובלי המלצה.
 10. about_me הוא מה שהמשתמש כתב על עצמו בפרופיל (גיל, מצב משפחתי, ילדים, תעסוקה, מדינה). השתמש בו רק כשהוא עוזר לקשר הסבר למטרה ולאופק שהמשתמש קבע (למשל ילדים ומטרה של לימודים), ובלי להזכיר אותו כשאין צורך. אל תסיק ממנו כמה כסף יש למשתמש או כמה סיכון הוא יכול לשאת, ואל תמליץ על בסיסו. אם המדינה אינה ישראל, מותר לומר שחישובי המס בדף לפי הכללים בישראל.
 11. נתון חסר אינו אפס: "אין רישום", null, "—" או "לא ידוע" פירושם שהדף לא יודע, לא שהערך הוא 0. אל תכתוב "הופקדו ₪0" או "אין רווח" כשאין רישום; כתוב שהנתון חסר ואיפה משלימים אותו (התיק שלי ← השלמת נתונים). כשמבקשים "מה הכי חשוב", דרג לכל היותר שלושה דברים, הקונקרטי ביותר קודם, ואל תפנה לרשימות ארוכות ("יש לך 150 התראות").
-12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.`;
+12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.
+13. share_splits הם פיצולי מניות שהאתר זיהה והחיל: כל יחידה הפכה לכמה יחידות (או כמה לאחת), והמחיר השתנה ביחס הפוך. ירידת מחיר של נייר ביום הפיצול שלו אינה הפסד: אמור שהשווי לא השתנה בגלל הפיצול, ושהכמות עודכנה.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -20864,6 +20868,7 @@ function plMeasured(a,m){try{if(!Q||!Q.usDate)return ''; const t=Date.parse(a.fi
     for(const [re,k] of [[/נאסד|nasdaq/i,'NDX'],[/S&P|אס.?אנד.?פי/i,'SPX'],[/דאו|dow jones/i,'DJI'],[/ראסל|russell/i,'RUT']])if(re.test(txt)&&B[k]&&B[k].prev>0&&B[k].px>0){out.push(`${B[k].name||k} ${spct((B[k].px/B[k].prev-1)*100,1)}`); break}
     for(const s of [...new Set((a.holds||[]).filter(h=>h.link==='direct').map(h=>h.sym))].slice(0,4)){const p=m.pos.find(x=>x.sym===s); if(p&&p.dayPct!=null&&(p.ccy||'USD')!=='ILS')out.push(`${lab(s)} ${spct(p.dayPct,1)}`)}
     return out.length?`במחירי האתר, ${Q.usDate>=tzDay('Asia/Jerusalem')?'היום':'ב-'+dmy(Q.usDate)}: ${out.join(' · ')}.`:''}catch(e){return ''}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-spundo]'); if(b){e.preventDefault(); b.disabled=true; spUndo(b.dataset.spundo)}});
 function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m=mAllNow()}catch(e){return out} if(!m||!m.pos||!m.pos.length)return out;
   const add=x=>{if(!out.some(y=>y.k===x.k))out.push(x)};
   // 1. the personal alerts not read: an event, one that touches several holdings, a thesis to check
@@ -20871,6 +20876,11 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
     add({k:'pl:'+a.k,kind:a.kind==='thesis'?'thesis':multi?'multi':'event',lv:a.lv,what:a.title,whatMore:[a.what||'',plMeasured(a,m)].filter(Boolean).join(' '),whyNow:a.lvWhy||'התראה חדשה שעוד לא נקראה',why:a.relWhy||(H.length?`נוגע ב-${H.map(h=>h.sym).join(', ')}`:'נוגע לענף שלך'),
       impact:H.length?H.slice(0,4).map(h=>`${h.sym}${h.w!=null?' ('+pct(h.w,1)+' מהתיק)':''}: ${h.dir==='pos'?'השפעה חיובית אפשרית':h.dir==='neg'?'השפעה שלילית אפשרית':'כיוון לא ברור'}${h.link==='indirect'?', בעקיפין':''}`).join(' · '):'לא נמדדה השפעה',
       check:'לקרוא את ההתראה ואת שרשרת ההשפעה, ולבדוק את משקל ההחזקות שנוגעות',src:(a.arts||[]).slice(0,3).map(z=>z.pub).filter(Boolean),cert:a.cert==='fact'?'עובדה מדווחת':a.cert==='est'?'הערכה':'פרשנות',limits:a.unknown||'כיוון ההשפעה הוא השערה מהקריאה, לא מדידה',nav:{t:'pl:'+a.k,l:'להתראה'}})}}catch(e){}
+  // 6.11: a share split applied to the units (the price fell by the ratio; the worth did not)
+  try{for(const x of spRecent(14))add({k:'split:'+x.key,kind:'event',lv:'imp',what:`${lab(x.sym)}: פיצול ${spRatioH(+x.r)} ב-${dmy(x.d)}`,
+    whatMore:`כל יחידה הפכה ל-${+(+x.r).toFixed(2)} יחידות, והמחיר ירד בהתאם. השווי שלך לא השתנה בגלל הפיצול עצמו. הכמות אצלך עודכנה: ${(x.rows||[]).filter(r=>!r.kept).map(r=>`${+(+r.q0).toFixed(4)} ← ${+(+r.q1).toFixed(4)}${r.acct?' ('+acctName(r.acct)+')':''}`).join(', ')}.`,
+    whyNow:'הכמות והמחיר של אחזקה שלך השתנו, והשווי נשאר',why:`${lab(x.sym)} בתיק שלך`,impact:'אין השפעה על השווי. ירידת המחיר ביום הפיצול אינה הפסד',
+    check:'בדוח הבא מהבנק, לוודא שהכמות שם זהה לכמות המעודכנת כאן',src:['מחירי השוק'],cert:'עובדה מדווחת',limits:'הפיצול זוהה מהמחירים עצמם: המחיר הקודם והמחיר המתוקן של אותו יום שונים ביחס של פיצול',nav:{t:'sec:'+x.sym,l:'לדף של '+lab(x.sym)}})}catch(e){}
   // 2. a thesis weaker since it was written, or with something to check
   try{const T=jrn().thesis||{}; for(const p of m.pos){if(!T[p.sym])continue; const v=thesisEval(p.sym); if(v.status!=='down'&&v.status!=='review')continue;
     add({k:`th:${p.sym}:${v.status}:${(v.ev[0]||{}).id||''}`,kind:'thesis',lv:v.status==='down'&&v.conf!=='low'?'imp':'info',what:`התזה שלך על ${lab(p.sym)} ${v.status==='down'?'נחלשת':'דורשת בדיקה'}`,whatMore:v.ev[0]?v.ev[0].t:'',whyNow:`התפתחות מדווחת מאז שכתבת את התזה${v.since?' ('+dmy(v.since)+')':''}`,
@@ -22333,9 +22343,28 @@ function renderTx(){
     <div class="scroll"><table><thead><tr><th>תאריך</th><th>פעולה</th><th>נייר</th><th>כמות</th><th>מחיר</th><th>סכום</th><th>חשבון</th><th></th></tr></thead><tbody>${T.map((t,i)=>`<tr><td><span class="n">${esc(t.date)}</span></td><td>${SIDE[t.side]||t.side}</td><td>${t.sym?`<span class="sym">${esc(t.sym)}</span>`:''}${t.name&&t.name!==t.sym?` <span class="nm">${esc(t.name)}</span>`:''}</td><td><span class="n">${t.qty!=null?+(+t.qty).toFixed(4):'—'}</span></td><td><span class="n">${t.side==='fx'?(t.px!=null?(+t.px).toFixed(4):'—'):money(t.px,t.ccy)}</span></td><td><span class="n">${t.side==='fx'?conv(t):money(t.amount,t.ccy)}</span></td><td>${ACCTS[t.acct]||''}</td><td><button class="btn sm" type="button" data-txdel="${i}">הסר</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 // FIFO realized profit per security, in the account's currency, from the trades in date order
+// 6.11: share splits. The server finds a split from the prices (shared/splits.js, Q.splits) and applies it to the units, the
+// saved daily prices and the price alerts (P.splits keeps each row's units before and after). What the page keeps as it
+// was read (the statements' trades, a close series saved before the split) is put in the new units where it is used.
+const spOf=sym=>{const x=Q&&Q.splits&&Q.splits[sym]; return x&&x.d&&+x.r>0?x:null};
+const spF=(sym,date)=>{const x=spOf(sym); return x&&date&&String(date).slice(0,10)<x.d?+x.r:1};
+function spRecent(days=21){const out=[]; for(const [k,v] of Object.entries((P&&P.splits)||{})){if(!v||!v.d||!v.at||v.undone||Date.parse(v.at)<Date.now()-days*864e5)continue; if(!(v.rows||[]).some(x=>!x.kept))continue; out.push({...v,key:k})} return out.sort((a,b)=>a.d<b.d?1:-1)}
+const spRatioH=r=>r>=1?`${+r.toFixed(2)} ל-1`:`1 ל-${+(1/r).toFixed(2)}`;
+// a close series that mixes days in the old units (saved before the split) with days in the new: from the split day back,
+// a day whose close is the split's ratio away from the next day's is in the old units, and is divided
+function serSplit(k,sr){const x=spOf(k); if(!x||!sr||!sr.d||!sr.c)return sr; const r=+x.r, tol=Math.min(0.25,Math.abs(r-1)/3); let next=null;
+  for(let i=sr.d.length-1;i>=0;i--){const d=String(sr.d[i]).slice(0,10), v=+sr.c[i]; if(!(v>0))continue; if(d>=x.d){next=v; continue}
+    if(next!=null&&Math.abs(v/next/r-1)<tol)sr.c[i]=v/r; next=+sr.c[i]}
+  return sr}
+// undoing a split on this person's units (the record stays, marked, so the server does not apply it again)
+async function spUndo(key){const rec=P&&P.splits&&P.splits[key]; if(!rec||rec.undone||!canWrite)return;
+  const P2=JSON.parse(JSON.stringify(P)); for(const row of rec.rows||[]){if(row.kept)continue; const p=P2.positions.find(x=>x.sym===rec.sym&&(x.acct||null)===row.acct&&Math.abs((+x.qty||0)-row.q1)<1e-6); if(p){p.qty=row.q0; if(+p.px>0)p.px=Math.round(p.px*rec.r*1e6)/1e6}}
+  P2.splits[key]={...rec,undone:new Date().toISOString()};
+  try{await pset('portfolio',P2); P=P2; if(DY&&DY.points){const pts=JSON.parse(JSON.stringify(DY.points)); for(const [d,pt] of Object.entries(pts))if(d<rec.d&&pt&&pt.px&&+pt.px[rec.sym]>0)pt.px[rec.sym]=Math.round(pt.px[rec.sym]*rec.r*1e6)/1e6; await pset('daily',{...DY,points:pts}); DY={...DY,points:pts}}
+    try{render()}catch(e){} try{if(SEC===rec.sym)renderSec()}catch(e){}}catch(e){console.error(e)}}
 function realizedOf(trades){
   const lots={}; let real=0;
-  for(const t of trades.slice().sort((a,b)=>a.date<b.date?-1:1)){const L=lots[t.sym]=lots[t.sym]||[];
+  for(const t0 of trades.slice().sort((a,b)=>a.date<b.date?-1:1)){const F=typeof spF==='function'?spF(t0.sym,t0.date):1, t=F===1?t0:{...t0,qty:t0.qty*F,px:(t0.px||0)/F}; const L=lots[t.sym]=lots[t.sym]||[];
     if(t.qty>0)L.push({q:t.qty,px:t.px||0});
     else if(t.qty<0){let q=-t.qty; while(q>1e-9&&L.length){const lot=L[0], take=Math.min(q,lot.q); real+=take*((t.px||0)-lot.px); lot.q-=take; q-=take; if(lot.q<=1e-9)L.shift()}}}
   return Math.round(real*100)/100;
@@ -23081,8 +23110,9 @@ async function saveHistOnly(st){
 }
 async function savePf(){
   if(!DRAFT)return; const st=$('pfSaved');
+  const qOld=new Map(((P&&P.positions)||[]).map(p=>[`${p.sym}|${p.acct}`,+p.qty])), qDay=ilDay();   // 6.11: units changed by hand carry their day (qAt), for a split after it
   const pos=DRAFT.positions.filter(p=>p.sym&&+p.qty>0).map(p=>{const o={...p,sym:String(p.sym).toUpperCase().replace(/[^A-Z0-9.]/g,'').slice(0,16),name:String(p.name||p.sym).slice(0,60),qty:+p.qty,
-      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; o.costUsd=o.ccy==='ILS'?null:numOr(p.costUsd,null); const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
+      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; if(qOld.get(`${o.sym}|${o.acct}`)!==o.qty)o.qAt=qDay; o.costUsd=o.ccy==='ILS'?null:numOr(p.costUsd,null); const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
   if(!pos.length){const had=P&&(P.positions||[]).length;
     // no holdings yet, but deposits, conversions or monthly results to keep: they are saved to the history on their own
     if(!had&&(LOCAL||db)&&((DRAFT.tx||[]).length||Object.values(DRAFT.monthly||{}).some(r=>r&&r.length))){await saveHistOnly(st);return}
@@ -24468,6 +24498,7 @@ async function loadCloses(k){if(CLOSES[k])return; if(ilIsNum(k)){await ilFundLoa
   if(gb){const arr=(gb.c||{})[k];if(arr)g={d:gb.d||[],c:arr};const wa=(gb.w||{})[k];if(wa&&gb.wd){const d=[],c=[];gb.wd.forEach((x,i)=>{if(wa[i]!=null){d.push(x);c.push(+wa[i])}});if(d.length>=3)gw={d,c}}}
   const m=mergeSeries(mergeSeries(a,b),g); if(a&&a.w&&a.w.d)m.w=a.w;else if(gw)m.w=gw; if(a&&a.m&&a.m.d)m.m=a.m;
   if(a&&Array.isArray(a.v)&&a.v.length===(a.d||[]).length){const vm=new Map(a.d.map((dt,i)=>[dt,a.v[i]])); m.v=m.d.map(dt=>vm.has(dt)?vm.get(dt):null)}   // 1.11: the volumes, aligned to the merged days
+  try{serSplit(k,m); if(m.w)serSplit(k,m.w); if(m.m)serSplit(k,m.m)}catch(e){}   // 6.11: days saved before a split, in the new units
   CLOSES[k]=m;if(SEC===k)renderSec()}
 // what the security on screen means for the viewer's own portfolio: holding, effect, and the viewer's rules
 // ---- 1.11: "זיכרון תזת ההשקעה" and the journal, one document a person (journal/main or data/users/<id>/journal):
@@ -24863,8 +24894,8 @@ function secMy(sym,CC,NAT,t0,t1){const out={avg:null,trades:[]}; if(NAT!=='USD')
   let fxS=null; try{fxS=BENCH_D&&BENCH_D.fx}catch(e){}
   for(const A of ((typeof HS!=='undefined'&&HS&&HS.accounts)||[]))for(const t of A.trades||[]){if(!t||t.div||t.sym!==sym||!t.date||!(+t.qty)||!(+t.px>0))continue;
     const day=String(t.date).slice(0,10), tm=Date.parse(day+'T12:00:00Z'); if(!(tm>=t0-864e5&&tm<=t1+864e5))continue;
-    const c=t.ccy||(A.ccy==='USD'?'USD':'ILS'); let px=+t.px; if(c!==CC){if(c==='USD'&&CC==='ILS'){const f=serAt(fxS,day); if(!f)continue; px*=f.c} else continue}
-    out.trades.push({t:tm,px,q:+t.qty,side:+t.qty>0?'buy':'sell'})}
+    const c=t.ccy||(A.ccy==='USD'?'USD':'ILS'), F=spF(sym,day); let px=+t.px/F; if(c!==CC){if(c==='USD'&&CC==='ILS'){const f=serAt(fxS,day); if(!f)continue; px*=f.c} else continue}
+    out.trades.push({t:tm,px,q:+t.qty*F,side:+t.qty>0?'buy':'sell'})}
   const ps=((P&&P.positions)||[]).filter(p=>p&&p.sym===sym&&+p.qty>0), q=ps.reduce((a,p)=>a+(+p.qty),0);
   if(q>0){if(CC==='ILS'&&ps.every(p=>p.costIls!=null&&+p.costIls>0))out.avg=ps.reduce((a,p)=>a+(+p.costIls),0)/q;
     else if(CC==='USD'&&ps.every(p=>p.costUsd!=null&&+p.costUsd>0))out.avg=ps.reduce((a,p)=>a+(+p.costUsd),0)/q
@@ -24925,7 +24956,8 @@ function secPosStrip(it,k,rs){let m=null; try{m=P&&Q?mAllNow():null}catch(e){} c
   const r=rs&&rs.rep, C=CLOSES[k]; if(r&&r.at&&!r.atEst&&C&&C.d&&C.c&&pr&&pr.px>0){const rd=String(r.at).slice(0,10); let i=-1; for(let j=0;j<C.d.length;j++){if(String(C.d[j]).slice(0,10)<rd)i=j; else break}
     if(i>=0&&+C.c[i]>0){const ch=pr.px/(+C.c[i])-1; out.push(T('מאז הדוח'+(r.label?' '+esc(r.label):''),spct(ch*100,1),`מ-${fmtPx(+C.c[i],pr.ccy)}, לפני הדוח (${dmy(rd)})`,ch>=0?'up':'down'))}}
   out.push(p.cost?T('מול הקנייה',sgn(p.costVal-p.cost),`${spct((p.costVal-p.cost)/p.cost*100,1)} · שילמת ${ils(p.cost)}`,(p.costVal-p.cost)>=0?'up':'down'):T('מול הקנייה','—','אין מחיר קנייה שמור. אפשר להוסיף ב"התיק שלי"'));
-  return `<section class="mypos" aria-label="האחזקה שלך"><h3>האחזקה שלך</h3><div class="mps">${out.join('')}</div></section>`}
+  const spl=spRecent(60).filter(x=>x.sym===it.sym)[0], spH=spl?`<p class="spnote" role="note"><b>פיצול ${esc(spRatioH(+spl.r))} ב-${dmy(spl.d)}.</b> כל יחידה הפכה ל-${+(+spl.r).toFixed(2)} יחידות והמחיר ירד בהתאם; השווי לא השתנה בגלל הפיצול. הכמות עודכנה: ${(spl.rows||[]).filter(x=>!x.kept).map(x=>`${nn(+(+x.q0).toFixed(4))} ← ${nn(+(+x.q1).toFixed(4))}${x.acct?' ('+esc(acctName(x.acct))+')':''}`).join(', ')}.${canWrite?` <button type="button" class="lnk" data-spundo="${esc(spl.key)}">זה לא נכון אצלי, לבטל</button>`:''}</p>`:'';
+  return `<section class="mypos" aria-label="האחזקה שלך"><h3>האחזקה שלך</h3><div class="mps">${out.join('')}</div>${spH}</section>`}
 const HEM=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יונ׳','יול׳','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
 function niceStep(span,n){const raw=span/n,p=Math.pow(10,Math.floor(Math.log10(raw)));for(const m of [1,2,2.5,5,10])if(raw<=m*p)return m*p;return 10*p}
 function fmtN(v){return v.toLocaleString('en-US',{maximumFractionDigits:v<10?2:v<1000?1:0,minimumFractionDigits:v<10?2:0})}
