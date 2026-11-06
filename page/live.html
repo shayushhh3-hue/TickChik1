@@ -22452,7 +22452,7 @@ function serSplit(k,sr){const x=spOf(k); if(!x||!sr||!sr.d||!sr.c)return sr; con
 async function spUndo(key){const rec=P&&P.splits&&P.splits[key]; if(!rec||rec.undone||!canWrite)return;
   const P2=JSON.parse(JSON.stringify(P)); for(const row of rec.rows||[]){if(row.kept)continue; const p=P2.positions.find(x=>x.sym===rec.sym&&(x.acct||null)===row.acct&&Math.abs((+x.qty||0)-row.q1)<1e-6); if(p){p.qty=row.q0; if(+p.px>0)p.px=Math.round(p.px*rec.r*1e6)/1e6}}
   P2.splits[key]={...rec,undone:new Date().toISOString()};
-  try{await pset('portfolio',P2); P=P2; if(DY&&DY.points){const pts=JSON.parse(JSON.stringify(DY.points)); for(const [d,pt] of Object.entries(pts))if(d<rec.d&&pt&&pt.px&&+pt.px[rec.sym]>0)pt.px[rec.sym]=Math.round(pt.px[rec.sym]*rec.r*1e6)/1e6; await pset('daily',{...DY,points:pts}); DY={...DY,points:pts}}
+  try{await pset('portfolio',P2); P=P2;
     try{render()}catch(e){} try{if(SEC===rec.sym)renderSec()}catch(e){}}catch(e){console.error(e)}}
 function realizedOf(trades){
   const lots={}; let real=0;
@@ -24285,7 +24285,7 @@ function plCard(a,o={}){
   const evk=a.k.startsWith('ev:')?a.k.slice(3):a.k;
   const acts=`<div class="pl-acts">${a.kind!=='mkt'?`<button type="button" class="btn sm pri" data-imopen="pl:${esc(a.k)}">מפת השפעה</button>`:''}<button type="button" class="btn sm" data-chiko="pl:${esc(a.k)}">שאל את צ׳יקו</button>${a.kind!=='mkt'&&a.ev&&!a.rules?`<button type="button" class="btn sm" data-story="${esc(a.ev)}" aria-expanded="${STORY_OPEN.has(a.ev)}">${STORY_OPEN.has(a.ev)?'לסגור את הסיפור':'הסיפור מאחורי הכותרת'}</button>${evFolBtn(a.ev,lead)}`:''}
     ${lead?``:a.kind==='mkt'&&SECKEY.test(((a.holds||[])[0]||{}).sym||'')?`<button type="button" class="btn sm" data-gosec="${esc(a.holds[0].sym)}">לדף המניה</button>`:''}
-    <button type="button" class="btn sm" data-plread="${esc(a.k)}" aria-pressed="${!un}">${un?'סמן כנקראה':'נקראה ✓'}</button><button type="button" class="btn sm" data-plsave="${esc(a.k)}" aria-pressed="${sv}">${sv?'★ שמורה':'☆ לשמור'}</button>
+    ${o.sheet?`<button type="button" class="btn sm pri" data-plread="${esc(a.k)}" data-pldone="1">${o.sheet.more?'נקראה · להתראה הבאה':'נקראה · לסגור'}</button>`:`<button type="button" class="btn sm" data-plread="${esc(a.k)}" aria-pressed="${!un}">${un?'סמן כנקראה':'נקראה ✓'}</button>`}<button type="button" class="btn sm" data-plsave="${esc(a.k)}" aria-pressed="${sv}">${sv?'★ שמורה':'☆ לשמור'}</button>
     ${a.kind!=='mkt'?`<details class="pl-fol"><summary class="btn sm">לעקוב אחרי הנושא</summary><div class="nw-fol">${[...new Set([...(a.fac||[]).map(f=>f.k),...(a.themes||[])])].slice(0,3).map(t=>['themes',t]).concat((a.sectors||[]).slice(0,2).map(g=>['secs',g])).concat((a.holds||[]).filter(h=>SECKEY.test(h.sym)).slice(0,2).map(h=>['syms',h.sym]))
       .map(([k,v])=>{const on=nwPrefs()[k].includes(v); return `<button type="button" class="chip sm" data-nwfol="${k}:${esc(v)}" aria-pressed="${on}">${on?'✓ ':'+ '}${esc(NW_FK[k].he(v))}</button>`}).join('')||'<span class="nm">אין נושא לעקוב אחריו</span>'}</div></details>`:''}</div>`;
   return `<article class="pl lv-${a.lv}${un?' un':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}: ${esc(a.title)}">
@@ -24348,7 +24348,7 @@ const PLV={L:[],i:0,from:null,seen:new Set()};
 function plOpen(k,list){const a=plByK(k); if(!a)return; PLV.L=(list||[a.k]).filter(x=>plByK(x)); PLV.i=Math.max(0,PLV.L.indexOf(a.k)); PLV.from=document.activeElement; PLV.seen=new Set();
   const sh=$('plSheet'); sh.hidden=false; document.body.classList.add('st-open'); plShow(); try{$('plShX').focus()}catch(e){} try{plBanner()}catch(e){}}
 function plShow(){const k=PLV.L[PLV.i], a=plByK(k); if(!a)return plClose(); PLV.seen.add(k); const was=plUnread(a)?((a.ver||1)>1?'עדכון':'חדשה'):''; if(was)plSet(a.k,'r',a.ver||1);   // opened: read
-  setH($('plShB'),plCard(a,{open:false})); $('plShB').scrollTop=0;
+  setH($('plShB'),plCard(a,{open:false,sheet:{more:PLV.i<PLV.L.length-1}})); $('plShB').scrollTop=0;
   $('plShN').textContent=[was,PLV.L.length>1?`${PLV.i+1} מתוך ${PLV.L.length}`:''].filter(Boolean).join(' · '); const nx=$('plShNext'); nx.hidden=PLV.i>=PLV.L.length-1}
 function plClose(){const sh=$('plSheet'); if(sh.hidden)return; for(const k of PLV.seen){const a=plByK(k); if(a)plSet(k,'d',a.ver||1)}   // closing the immediate display: the icons of what was seen go, the alerts stay
   sh.hidden=true; document.body.classList.remove('st-open'); try{render()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{PLV.from&&PLV.from.focus&&PLV.from.focus()}catch(e){}}
@@ -24365,7 +24365,10 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   if(t.closest('#plSheet [data-gosec], #plSheet [data-imopen], #plSheet [data-chiko]')){const sh=$('plSheet'); sh.hidden=true; document.body.classList.remove('st-open')}
   if(t.closest('#plBanGo')){const k=$('plBan').dataset.plk; plSet(k,'b',1); plOpen(k); return} if(t.closest('#plBanX')){const k=$('plBan').dataset.plk, a=plByK(k); plSet(k,'b',1); if(a)plSet(k,'d',a.ver||1); plBanner(); try{plRender()}catch(e){} return}
   const f=t.closest('#plLv [data-plf]'); if(f){PLF=f.dataset.plf; plCenter(); return}
-  const r=t.closest('[data-plread]'); if(r){const a=plByK(r.dataset.plread); if(!a)return; plSet(a.k,'r',plUnread(a)?(a.ver||1):null); if(!$('plSheet').hidden)plShow(); else plCenter(); try{plRender()}catch(e){} return}
+  const r=t.closest('[data-plread]'); if(r){const a=plByK(r.dataset.plread); if(!a)return;
+    // 6.11: in the window, "נקראה" is done with it: read, off the icons, and the next alert (or the window closes); it was a toggle there too, so a tap made it unread again
+    if(r.dataset.pldone){plSet(a.k,'r',a.ver||1); plSet(a.k,'d',a.ver||1); PLV.L=PLV.L.filter(x=>x!==a.k); PLV.seen.delete(a.k); if(!PLV.L.length){plClose(); return} PLV.i=Math.min(PLV.i,PLV.L.length-1); plShow(); try{plRender()}catch(e){} return}
+    plSet(a.k,'r',plUnread(a)?(a.ver||1):null); if(!$('plSheet').hidden)plShow(); else plCenter(); try{plRender()}catch(e){} return}
   const s=t.closest('[data-plsave]'); if(s){const k=s.dataset.plsave, on=!(plSt()[k]||{}).s; plSet(k,'s',on?new Date().toISOString():null); if(on){const a=plByK(k), lead=a&&(a.arts||[])[0]; if(lead){try{nwSaveToggle(lead.id,true)}catch(e){}}} rtSay(on?'ההתראה נשמרה':'ההתראה הוסרה מהשמורות');
     s.setAttribute('aria-pressed',String(on)); s.textContent=on?'★ שמורה':'☆ לשמור'; return}
   const pl=t.closest('[data-plopen]'); if(pl){plOpen(pl.dataset.plopen); return}

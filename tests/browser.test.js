@@ -712,9 +712,12 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.ok(v.open); assert.equal(v.h,'אנבידיה היכתה את התחזיות והעלתה את התחזית'); assert.equal(v.lv,'התראה קריטית'); assert.match(v.chain,/האירוע ← NVDA ← ההחזקה שלך/);
     assert.deepEqual(v.ms.map(x=>x.split(' ')[0]),['חשיבות','רלוונטיות','ביטחון'],'three measures, apart'); assert.match(v.ms[0],/קריטית$/); assert.match(v.why,/ההחזקה עצמה מוזכרת: NVDA/);
     assert.match(v.dir,/כיוון אפשרי: השפעה חיובית אפשרית \(השערה מהקריאה, לא השפעה שנמדדה\)/); assert.match(v.dir,/נמדד מאז הפרסום|השפעה בפועל על המחיר עוד לא נמדדה/);
-    assert.ok(['מפת השפעה','שאל את צ׳יקו','נקראה ✓','☆ לשמור'].every(x=>v.acts.includes(x)),'the actions, read on opening: '+JSON.stringify(v.acts));
+    assert.ok(['מפת השפעה','שאל את צ׳יקו','☆ לשמור'].every(x=>v.acts.includes(x))&&v.acts.some(x=>/^נקראה · (לסגור|להתראה הבאה)$/.test(x)),'the actions, read on opening: '+JSON.stringify(v.acts));
+    // 6.11: "נקראה" in the window is done with it: the next alert, or the window closes (it was a toggle: a tap made it unread)
+    {const h0=v.h; await pg.click('#plShB [data-pldone]'); await pg.waitForTimeout(300);
+      const w=await pg.evaluate(()=>({open:!document.getElementById('plSheet').hidden,h:(document.querySelector('#plShB h3')||{}).textContent||''})); assert.ok(!w.open||w.h!==h0,'closed, or the next alert: '+JSON.stringify(w))}
     // closing the sheet: the icon goes, the alert stays in the center (and is read)
-    await pg.click('#plShX'); await pg.waitForTimeout(300);
+    if(await pg.evaluate(()=>!document.getElementById('plSheet').hidden)){await pg.click('#plShX'); await pg.waitForTimeout(300)}
     {const lb=await pg.evaluate(()=>[...document.querySelectorAll('#stBub .stc')].map(b=>b.getAttribute('aria-label')).join('|')+' hidden:'+document.getElementById('stBub').hidden+' st:'+JSON.stringify(window.__nx.state().pl||null)); assert.ok(!/אנבידיה/.test(lb.split(' hidden:')[0])||/hidden:true/.test(lb),'off the icons: '+lb)}
     await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300);
     // TikChik Impact: the four figures, the alerts short, the round map with the portfolio in the middle, the line of time, צ׳יקו

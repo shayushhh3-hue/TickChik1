@@ -2022,3 +2022,24 @@ test('6.11 a split found late is not applied to units fixed by hand since: with 
   assert.equal(splitPortfolio(P(30),'SOXX',sp,new Date(),{late:false,px:131.9}).P.positions[0].qty,90,'found on the day: the statement date decides');
   assert.equal(splitPortfolio({...P(10),positions:[{...P(10).positions[0],qAt:'2026-11-06'}]},'SOXX',sp).P.positions[0].qty,10,'units written by hand after the split are kept');
 });
+
+test('6.11 one split is one event: found by two days (the announced one and the saved days) it is applied once; a split applied twice is undone back to its first application, and the saved days divided twice are put back',async()=>{
+  const {applySplits,reconcileSplits,splitDaily,splitRepairP}=await import('../shared/splits.js');
+  const s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  s.setDoc('quotes/latest',{prices:{SOXX:131.9},meta:{SOXX:{src:'yahoo',date:'2026-11-05'}}});
+  s.setDoc('portfolio/main',{asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:3,acct:'exc',ccy:'USD'}]});
+  s.setDoc('history/daily',{points:{'2026-11-03':{px:{SOXX:452}},'2026-11-04':{px:{SOXX:450.42}},'2026-11-05':{px:{SOXX:131.9}}}});
+  applySplits(s,{SOXX:{d:'2026-11-06',r:3}},{now:new Date('2026-11-06T07:00:00Z')});   // found by the saved days, a day late
+  applySplits(s,{SOXX:{d:'2026-11-05',r:3}},{now:new Date('2026-11-06T07:10:00Z')});   // the announced day: the same split
+  assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,9,'once');
+  const D=s.getDoc('history/daily').data.points; assert.ok(Math.abs(D['2026-11-04'].px.SOXX-150.14)<1e-6); assert.equal(D['2026-11-05'].px.SOXX,131.9);
+  // a portfolio where it was applied twice (before): the later is undone; the saved days divided twice are put back
+  const P2={asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:27,acct:'exc',ccy:'USD'}],splits:{'SOXX:2026-11-06':{sym:'SOXX',d:'2026-11-06',r:3,at:'2026-11-06T07:00:00Z',rows:[{acct:'exc',q0:3,q1:9}]},'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,at:'2026-11-06T07:10:00Z',rows:[{acct:'exc',q0:9,q1:27}]}}};
+  const r=splitRepairP(P2); assert.equal(r.P.positions[0].qty,9); assert.deepEqual(r.fixed,['SOXX:2026-11-05']); assert.equal(r.P.splits['SOXX:2026-11-05'].why,'double');
+  const d2=splitDaily({points:{'2026-11-03':{px:{SOXX:452/9}},'2026-11-04':{px:{SOXX:450.42/9}},'2026-11-05':{px:{SOXX:131.9}}}},'SOXX',{d:'2026-11-05',r:3});
+  assert.ok(Math.abs(d2.D.points['2026-11-04'].px.SOXX-150.14)<1e-4&&Math.abs(d2.D.points['2026-11-03'].px.SOXX-150.667)<1e-3,'divided twice: put back once');
+  assert.equal(splitDaily(d2.D,'SOXX',{d:'2026-11-05',r:3}),null,'right: nothing to change');
+  // through the catch-up check: the repair, then nothing applied again
+  s.setDoc('portfolio/main',P2); reconcileSplits(s,{now:new Date('2026-11-06T09:00:00Z')}); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,9);
+  reconcileSplits(s,{now:new Date('2026-11-06T10:00:00Z')}); assert.equal(s.getDoc('portfolio/main').data.positions[0].qty,9,'stays');
+});

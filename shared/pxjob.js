@@ -18,6 +18,8 @@ export async function refreshQuotes(fs,{fetch:f=timedFetch,now=new Date(),log=()
   const fetched=await fetchAll(symbols,{positions,map,fetch:f,log,ctx});
   const doc=buildQuotesDoc({prev:Q.exists?Q.data:{},fetched,symbols,positions,now,usOpen:usOpen(now),ilOpen:ilOpen(now)});
   if(reason)doc.lastReason=reason;
+  // 6.11: a split written to the quotes while this run fetched (the catch-up check) is kept, not overwritten by the older copy
+  try{const cur=await fs.getDoc('quotes/latest'); const cs=(cur&&cur.exists&&cur.data&&cur.data.splits)||{}; doc.splits={...cs,...(doc.splits||{})}}catch(e){}
   await fs.setDoc('quotes/latest',doc);
   // 6.11: a split found in this run is applied once to the units, the saved prices and the price alerts of everyone holding it
   try{const nw=Object.fromEntries(Object.entries(doc.splits||{}).filter(([k,v])=>!((old.splits||{})[k]&&old.splits[k].d===v.d)));

@@ -33,12 +33,17 @@ export function splitFromQuote(sym,old,q){
   return {d:newDay?nd:nextWeekday(od),r,ref:r6(ref),prev:r6(cand)}}
 
 const key=(sym,sp)=>`${sym}:${sp.d}`;
+const dd=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))/864e5;
+// 6.11: one split is one event: the same security, the same ratio, within a week. Found once by the announced day and once
+// by the saved days, it was two keys, and was applied twice
+export const sameSplit=(a,sym,sp)=>!!a&&a.sym===sym&&!!a.d&&dd(a.d,sp.d)<=7&&Math.abs((+a.r)/(+sp.r)-1)<0.03;
+const recsOf=(P,sym)=>Object.entries((P&&P.splits)||{}).map(([k,v])=>({k,...(v||{})})).filter(x=>x.sym===sym);
 // a portfolio: the units of the security, in every account whose statement (or the hand-written units, qAt) is older
 // than the split; the statement's own price divided. The record keeps each row's units before and after.
 // late (found days after the split): units someone may have fixed by hand since. With a known cost, the split is applied
 // only when it brings the cost of a unit nearer to the price (a holding bought at $400 is not worth $44 a unit)
 export function splitPortfolio(P,sym,sp,now=new Date(),{late=false,px=null}={}){
-  if(!P||!Array.isArray(P.positions)||((P.splits||{})[key(sym,sp)]))return null;
+  if(!P||!Array.isArray(P.positions)||((P.splits||{})[key(sym,sp)])||recsOf(P,sym).some(x=>sameSplit(x,sym,sp)))return null;
   if(!P.positions.some(p=>p&&p.sym===sym))return null;
   const P2=JSON.parse(JSON.stringify(P)), asOf=P2.asOf||{}, rows=[];
   for(const p of P2.positions){if(!p||p.sym!==sym)continue; const a=String(asOf[p.acct]||''), qa=String(p.qAt||'');
@@ -48,15 +53,21 @@ export function splitPortfolio(P,sym,sp,now=new Date(),{late=false,px=null}={}){
     p.qty=r6(q0*sp.r); if(+p.px>0)p.px=r6(+p.px/sp.r); rows.push({acct:p.acct||null,q0,q1:p.qty})}
   P2.splits={...(P2.splits||{}),[key(sym,sp)]:{sym,d:sp.d,r:sp.r,at:now.toISOString(),rows}};
   return {P:P2,rows}}
-// the saved daily prices before the split, in the new units (an Israeli day before the US split day)
+// the saved daily prices before the split, in the new units (an Israeli day before the US split day), from the prices
+// themselves: from the split day back, a day the split's ratio away from the next one is in the old units (divided), a day
+// the ratio below it was divided twice (put back), any other day is already right. Running it again changes nothing.
 export function splitDaily(DY,sym,sp){
-  if(!DY||!DY.points||((DY.splits||{})[key(sym,sp)]))return null;
-  const D=JSON.parse(JSON.stringify(DY)); let n=0;
-  for(const [k,pt] of Object.entries(D.points))if(k<sp.d&&pt&&pt.px&&+pt.px[sym]>0){pt.px[sym]=r6(+pt.px[sym]/sp.r); n++}
-  D.splits={...(D.splits||{}),[key(sym,sp)]:true}; return {D,n}}
+  const r=+sp.r; if(!DY||!DY.points||!(r>0)||Math.abs(r-1)<0.2)return null;
+  const D=JSON.parse(JSON.stringify(DY)), days=Object.keys(D.points).filter(k=>D.points[k]&&D.points[k].px&&+D.points[k].px[sym]>0).sort();
+  const firstNew=days.find(k=>k>=sp.d); let next=firstNew?+D.points[firstNew].px[sym]:(+sp.prev>0?+sp.prev:null); if(!(next>0))return null;
+  const L=Math.log(r), tol=Math.min(0.22,Math.abs(L)/3); let n=0;
+  for(const k of days.filter(k=>k<sp.d).reverse()){const v=+D.points[k].px[sym], x=Math.log(v/next); let w=v;
+    if(Math.abs(x-L)<tol)w=v/r; else if(Math.abs(x+L)<tol)w=v*r;
+    if(w!==v){D.points[k].px[sym]=r6(w); n++} next=w}
+  if(!n)return null; D.splits={...(D.splits||{}),[key(sym,sp)]:true}; return {D,n}}
 // the price alerts set on the security (an alert "below 400" on a price that is now 132 would fire at once)
 export function splitSettings(S,sym,sp){
-  const a=S&&S.pxAlerts&&S.pxAlerts[sym]; if(!a||((S.splits||{})[key(sym,sp)]))return null;
+  const a=S&&S.pxAlerts&&S.pxAlerts[sym]; if(!a||Object.keys(S.splits||{}).some(k=>k.split(':')[0]===sym&&dd(k.slice(sym.length+1),sp.d)<=7))return null;
   const S2=JSON.parse(JSON.stringify(S)), t=S2.pxAlerts[sym];
   for(const k of ['above','below'])if(+t[k]>0)t[k]=Math.round(+t[k]/sp.r*100)/100;
   S2.splits={...(S2.splits||{}),[key(sym,sp)]:true}; return {S:S2}}
@@ -67,11 +78,11 @@ export function applySplits(store,splits,{now=new Date(),log=()=>{},late=false}=
   const sets=[{port:'portfolio/main',daily:'history/daily',set:'settings/main',who:'owner'},...[...ids].map(id=>({port:`data/users/${id}/portfolio`,daily:`data/users/${id}/daily`,set:`data/users/${id}/settings`,who:id}))];
   for(const [sym,sp] of Object.entries(splits)){
     for(const w of sets){
-      const P=store.getDoc(w.port); if(!P.exists)continue; const px=+((((store.getDoc('quotes/latest')||{}).data||{}).prices||{})[sym])||null; const r=splitPortfolio(P.data,sym,sp,now,{late,px}); if(!r)continue;
+      const P=store.getDoc(w.port); if(!P.exists||!((P.data||{}).positions||[]).some(p=>p&&p.sym===sym))continue;
+      const DY=store.getDoc(w.daily); if(DY.exists){const d=splitDaily(DY.data,sym,sp); if(d){store.setDoc(w.daily,d.D,{silent:true}); log(`split ${sym}: ${d.n} saved day(s) put in the new units for ${w.who}`)}}
+      const px=+((((store.getDoc('quotes/latest')||{}).data||{}).prices||{})[sym])||null; const r=splitPortfolio(P.data,sym,sp,now,{late,px}); if(!r)continue;
       store.setDoc(w.port,r.P);
-      if(r.rows.some(x=>!x.kept)){
-        const DY=store.getDoc(w.daily); if(DY.exists){const d=splitDaily(DY.data,sym,sp); if(d)store.setDoc(w.daily,d.D,{silent:true})}
-        const S=store.getDoc(w.set); if(S.exists){const s=splitSettings(S.data,sym,sp); if(s)store.setDoc(w.set,s.S)}}
+      if(r.rows.some(x=>!x.kept)){const S=store.getDoc(w.set); if(S.exists){const s=splitSettings(S.data,sym,sp); if(s)store.setDoc(w.set,s.S)}}
       out.push({who:w.who,sym,d:sp.d,r:sp.r,rows:r.rows}); log(`split ${sym} ${sp.r}:1 on ${sp.d} applied for ${w.who}: ${r.rows.map(x=>`${x.acct||'-'} ${x.q0}→${x.q1}`).join(', ')}`)}}
   return out}
 
@@ -87,7 +98,7 @@ export function splitFromSeries(sym,pts,ser){
   // the last day whose saved price is a split's ratio away from the series, and every later day in agreement
   let i=rs.length-1; while(i>=0&&Math.abs(rs[i].x-1)<0.12)i--; if(i<0)return null;
   const r=splitRatio(rs[i].x); if(!r)return null;
-  const after=rs.slice(i+1); if(after.some(z=>Math.abs(z.x-1)>=0.12))return null;
+  const after=rs.slice(i+1); if(!after.length||after.some(z=>Math.abs(z.x-1)>=0.12))return null;
   // the days before it in the old units agree on the ratio (a lone odd price is not a split)
   const before=rs.slice(0,i+1).filter(z=>Math.abs(z.x-1)>=0.12); if(before.some(z=>Math.abs(z.x/r-1)>0.05))return null;
   const last=rs[i].k, nextSer=ser.d.filter(d=>d>last).sort()[0];
@@ -102,13 +113,33 @@ export function reconcileSplits(store,{now=new Date(),log=()=>{}}={}){
   for(const sym of Object.keys(Q.prices||{})){const m=meta[sym]||{}; if(m.src==='maya'||m.src==='index'||(m.ccy&&m.ccy!=='USD')||/\.TA$|^TLV:|^\d/.test(sym))continue;
     const S=store.getDoc('quotes/c_'+sym.replace(':','_')); if(!S.exists||!S.data)continue;
     for(const D of dailies){const sp=splitFromSeries(sym,D.data.points,S.data); if(!sp)continue;
-      const had=(Q.splits||{})[sym]; if(had&&had.d===sp.d)break;   // known: applied where it was not yet (the records say)
+      const had=(Q.splits||{})[sym]; if(had&&sameSplit({...had,sym},sym,sp))break;   // known: applied where it was not yet (the records say)
       found[sym]={...sp,at:now.toISOString()}; break}}
   // the splits announced by the fund or the company itself, for the days before this check existed (iShares announced SOXX's
   // 3-for-1 split for 5.11; the saved days find it too when the source's series is adjusted)
-  for(const [sym,v] of Object.entries(KNOWN))if(!found[sym]&&!((Q.splits||{})[sym]&&Q.splits[sym].d===v.d)&&Date.parse(v.d)>now.getTime()-60*864e5&&(Q.prices||{})[sym]!=null)found[sym]={...v,at:now.toISOString()};
+  for(const [sym,v] of Object.entries(KNOWN))if(!found[sym]&&!sameSplit({...((Q.splits||{})[sym]||{}),sym},sym,v)&&Date.parse(v.d)>now.getTime()-60*864e5&&(Q.prices||{})[sym]!=null)found[sym]={...v,at:now.toISOString()};
   const all={...(Q.splits||{}),...found};
   if(Object.keys(found).length){store.setDoc('quotes/latest',{...Q,splits:all}); log(`split found in the saved prices: ${Object.entries(found).map(([k,v])=>`${k} ${v.r} (${v.d})`).join(', ')}`)}
+  // a split applied twice (before one event was one): the later application is undone, the units back to its "before"
+  try{repairSplits(store,{now,log})}catch(e){log('split repair: '+(e&&e.message||e))}
   // apply every kept split where it was not applied yet (each portfolio keeps its record)
   return applySplits(store,Object.fromEntries(Object.entries(all).filter(([k,v])=>v&&v.d&&Date.parse(v.d)>now.getTime()-60*864e5)),{now,log,late:true});
 }
+export function splitRepairP(P,now=new Date()){
+  const R=Object.entries((P&&P.splits)||{}).map(([k,v])=>({k,...(v||{})})).filter(x=>x.sym&&!x.undone&&(x.rows||[]).some(r=>!r.kept)).sort((a,b)=>String(a.at)<String(b.at)?-1:String(a.at)>String(b.at)?1:a.k<b.k?-1:1);
+  let P2=null; const fixed=[];
+  R.forEach((b,j)=>{if(!R.slice(0,j).some(a=>!fixed.includes(a.k)&&sameSplit(a,b.sym,b)))return; P2=P2||JSON.parse(JSON.stringify(P));
+    for(const row of b.rows||[]){if(row.kept)continue; const p=P2.positions.find(x=>x.sym===b.sym&&(x.acct||null)===(row.acct||null)&&Math.abs((+x.qty||0)-row.q1)<1e-6); if(p){p.qty=row.q0; if(+p.px>0)p.px=r6(+p.px*b.r)}}
+    P2.splits[b.k]={...P2.splits[b.k],undone:now.toISOString(),why:'double'}; fixed.push(b.k)});
+  return P2?{P:P2,fixed}:null}
+export function repairSplits(store,{now=new Date(),log=()=>{}}={}){
+  const ids=new Set(); try{for(const p of (store.pathsUnder?store.pathsUnder('data/users'):[])){const m=/^data\/users\/([^/]+)\//.exec(p); if(m)ids.add(m[1])}}catch(e){}
+  const sets=[{port:'portfolio/main',set:'settings/main',who:'owner'},...[...ids].map(id=>({port:`data/users/${id}/portfolio`,set:`data/users/${id}/settings`,who:id}))], out=[];
+  const Q=(store.getDoc('quotes/latest').data)||{};
+  for(const w of sets){const P=store.getDoc(w.port); if(!P.exists)continue; const r=splitRepairP(P.data,now); if(!r)continue; store.setDoc(w.port,r.P); out.push({who:w.who,fixed:r.fixed}); log(`split applied twice, undone for ${w.who}: ${r.fixed.join(', ')}`);
+    // the price alerts divided twice: once back
+    const S=store.getDoc(w.set); if(S.exists&&S.data&&S.data.pxAlerts){const S2=JSON.parse(JSON.stringify(S.data)); let ch=false;
+      for(const k of r.fixed){const sym=k.split(':')[0], rr=+((r.P.splits[k]||{}).r)||+((Q.splits||{})[sym]||{}).r, t=S2.pxAlerts[sym]; if(!t||!(rr>0)||!(S2.splits||{})[k])continue;
+        for(const f of ['above','below'])if(+t[f]>0)t[f]=Math.round(+t[f]*rr*100)/100; delete S2.splits[k]; ch=true}
+      if(ch)store.setDoc(w.set,S2)}}
+  return out}
