@@ -2983,3 +2983,38 @@ test('6.11 a share split applied by the server: said on the security page (the u
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); store.setDoc('quotes/latest',Q0)}
 });
+
+test('6.11 "מכירה" in התיק שלי: a sale written by hand says the gain before and after tax, then takes the units out, puts the money in the account\'s cash and keeps the sale with its result; undone in one tap; a purchase adds units and cost',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
+  try{
+    // a holding of five units bought at $100 each
+    const Pt=JSON.parse(JSON.stringify(P0)), i=Pt.positions.findIndex(x=>x.ccy==='USD'); Pt.positions[i].qty=5; Pt.positions[i].costUsd=500; store.setDoc('portfolio/main',Pt);
+    const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(300);
+    await pg.click('#mvTabs [data-mv="sell"]'); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(()=>{const r=document.getElementById('mvTabs'); return r.scrollWidth<=r.clientWidth+1}),'four tabs fit on a phone');
+    const p=Pt.positions[i], key=`${p.sym}|${p.acct}`, avg=100;
+    await pg.selectOption('#slSym',key); await pg.waitForTimeout(150);
+    assert.equal(Math.round(+(await pg.inputValue('#slBuy'))*100)/100,Math.round(avg*100)/100,'the purchase price from the holding');
+    await pg.fill('#slQty','1'); await pg.fill('#slAmt',String(Math.round(avg*1.2*100)/100)); await pg.waitForTimeout(150);
+    const res=await pg.evaluate(()=>document.getElementById('slRes').textContent.replace(/\s+/g,' ').trim());
+    assert.match(res,/^רווח של \$[\d,.]+ \(‎?\+20\.0%\) · כ-₪[\d,]+ לפי השער של היום · מס רווחי הון משוער \(25%\): ₪[\d,]+, נטו כ-₪[\d,]+/,res);
+    assert.match(res,/המזומן ב.+ יעלה ב-\$/);
+    if(process.env.SHOT)await (await pg.$('#sellBox')).screenshot({path:process.env.SHOT});
+    const cash0=(Pt.cash||[]).filter(c=>c.acct===p.acct&&c.ccy==='USD').reduce((t,c)=>t+(+c.amount||0),0);
+    await pg.click('#slSave'); for(let k=0;k<30&&+(store.getDoc('portfolio/main').data.positions.find(x=>x.sym===p.sym&&x.acct===p.acct)||{qty:0}).qty===+p.qty;k++)await pg.waitForTimeout(200);
+    const P1=store.getDoc('portfolio/main').data, x=P1.positions.find(z=>z.sym===p.sym&&z.acct===p.acct);
+    assert.equal(+x.qty,+p.qty-1); assert.ok(Math.abs(+x.costUsd-(+p.costUsd-avg))<0.02,'the sold unit\'s cost out');
+    const cash1=(P1.cash||[]).filter(c=>c.acct===p.acct&&c.ccy==='USD').reduce((t,c)=>t+(+c.amount||0),0); assert.ok(Math.abs(cash1-cash0-Math.round(avg*1.2*100)/100)<0.02,'the money in the cash');
+    const recOf=()=>{const h=store.getDoc('history/main'); const A=h.exists?((h.data.accounts||[]).find(a=>a.acct===p.acct)||{}):{}; return (A.manual||[]).at(-1)};
+    for(let k=0;k<30&&!recOf();k++)await pg.waitForTimeout(200); const rec=recOf();
+    assert.equal(rec.side,'sell'); assert.equal(rec.sym,p.sym); assert.ok(Math.abs(rec.real-(Math.round(avg*1.2*100)/100-avg))<0.02);
+    assert.match(await pg.textContent('#slState'),/^נרשמה מכירה של 1 /);
+    await pg.click('#toastUndo'); for(let k=0;k<30&&+(store.getDoc('portfolio/main').data.positions.find(z=>z.sym===p.sym&&z.acct===p.acct)||{}).qty!==+p.qty;k++)await pg.waitForTimeout(200);
+    assert.equal(+store.getDoc('portfolio/main').data.positions.find(z=>z.sym===p.sym&&z.acct===p.acct).qty,+p.qty,'undone');
+    // a purchase of more
+    await pg.click('#sellBox [data-sellm="buy"]'); await pg.waitForTimeout(150); await pg.selectOption('#slSym',key); await pg.fill('#slQty','2'); await pg.fill('#slAmt',String(Math.round(avg*2*100)/100)); await pg.waitForTimeout(150);
+    assert.match(await pg.evaluate(()=>document.getElementById('slRes').textContent),/אחרי הקנייה: [\d.]+ יחידות, מחיר ממוצע \$/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data)}
+});

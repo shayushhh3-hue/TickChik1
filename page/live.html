@@ -2475,7 +2475,21 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .hl .bad .hs{background:var(--crit-bg);color:var(--crit-ink)} .hl .warn .hs{background:var(--warn-bg);color:var(--warn)} .hl .ok .hs{background:var(--ok-bg);color:var(--ok-ink)}
 .hl .hn{grid-column:2/4;font-size:13.5px;color:var(--muted)} .hl .hn .btn{margin-inline-start:6px}
 /* 30.10: "התיק שלי" in three tabs: the holdings, an update from a statement, and adding by hand */
-section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]){display:none!important}
+section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]),section[data-mvv="sell"] [data-mvp]:not([data-mvp="sell"]){display:none!important}
+/* 6.11: a sale or a purchase written by hand */
+.sellp{display:flex;flex-direction:column;gap:12px}
+.sellp h3{margin:0}
+.sellp .slm{display:flex;gap:6px}
+.sellp .slg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
+.sellp label{display:flex;flex-direction:column;gap:5px;font-size:13.5px;color:var(--ink2);font-weight:600}
+.sellp label .nm{font-weight:400}
+.sellp input,.sellp select{font:inherit;font-size:16px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);min-height:44px;box-sizing:border-box;width:100%}
+.sellp .slq{display:flex;gap:6px;align-items:stretch}
+.sellp .slq .btn{flex:none}
+.sellp .slres{margin:0;padding:12px 14px;border-radius:12px;background:var(--sunk);font-size:14.5px;line-height:1.6;color:var(--ink)}
+.sellp .slres:empty{display:none}
+.sellp .slres .up{color:var(--gain);font-weight:700} .sellp .slres .down{color:var(--loss);font-weight:700}
+.sellp .slres .nm{display:block;font-size:13px;color:var(--muted);margin-top:4px}
 .mvtabs{margin-top:4px}
 .mvmsg{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .25);font-size:14px;color:var(--ink)}
 @media (max-width:420px){.mvtabs .chip{font-size:13px;padding-inline:6px}}
@@ -3583,7 +3597,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section aria-labelledby="hMine" data-mvv="hold">
       <div class="row"><h2 id="hMine">התיק שלי</h2><span class="saved" id="pfSaved"></span></div>
       <p class="note" id="pfWho"></p>
-      <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">עדכון מדוח</button><button type="button" class="chip" role="tab" data-mv="type" aria-pressed="false" aria-selected="false">הוספה ידנית</button></div>
+      <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">עדכון מדוח</button><button type="button" class="chip" role="tab" data-mv="type" aria-pressed="false" aria-selected="false">הוספה ידנית</button><button type="button" class="chip" role="tab" data-mv="sell" aria-pressed="false" aria-selected="false">מכירה</button></div>
       <p class="mvmsg" id="mvMsg" role="status" hidden></p>
       <div class="panel up" id="upPanel" data-mvp="up">
         <h3>העלאה: דוח או צילומי מסך</h3>
@@ -3640,6 +3654,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <div class="srch" id="wsBox" style="margin-top:4px"><input id="wsQ" type="text" placeholder="למשל: SAP, Toyota, Shell, ASML" autocomplete="off" aria-label="חיפוש נייר בכל העולם"><button type="button" class="btn sm" id="wsGo">חפש</button></div>
         <div class="wsres" id="wsRes" hidden></div>
       </div>
+      <div class="panel sellp" id="sellBox" data-mvp="sell"></div>
       <div class="panel wiz" id="fillWiz" data-mvp="hold" hidden></div>
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
@@ -17181,10 +17196,12 @@ function costBasis(P,Q,hs=HS){
 }
 // what an account's sales realized, in shekels: the trades' own prices, shekel trades as they are and the rest at today's
 // dollar rate; an account with no trades keeps the number its statement gave (realizedUsd)
+// 6.11: a sale written by hand (A.manual) carries its own result, from the purchase price that was written with it
+const manualReal=(A,fx)=>(A.manual||[]).filter(x=>x&&x.side==='sell'&&x.real!=null).reduce((t,x)=>t+(+x.real)*(x.ccy==='ILS'?1:fx),0);
 function realizedIls(A,fx){
-  const tr=(A.trades||[]).filter(t=>!t.div); if(!tr.length)return (+A.realizedUsd||0)*fx;
+  const tr=(A.trades||[]).filter(t=>!t.div); if(!tr.length)return (+A.realizedUsd||0)*fx+(typeof manualReal==='function'?manualReal(A,fx):0);
   const il=t=>(t.ccy||(A.ccy==='USD'?'USD':''))==='ILS';
-  return realizedOf(tr.filter(t=>!il(t)))*fx+realizedOf(tr.filter(il));
+  return realizedOf(tr.filter(t=>!il(t)))*fx+realizedOf(tr.filter(il))+(typeof manualReal==='function'?manualReal(A,fx):0);
 }
 // an account's dividends, net, in shekels: the dividend rows among its trades (the amount received, which is after the
 // tax; a reinvestment's own price times its units when no amount is shown); else the totals its statement gave
@@ -22169,7 +22186,82 @@ const FIXED=new Map(), PFS={saves:0,resets:0,gen:0};
 let FIRSTX=false;
 // the tabs of "התיק שלי": chosen by the viewer, or opened by what was just done (an add shows the table, a file the upload)
 let MVV=null, MV_SET=false;
-function mvSet(v,msg,auto){if(!auto)MV_SET=true; MVV=['hold','up','type'].includes(v)?v:'hold'; const sec=document.querySelector('[data-pane="mine"] section'); if(sec)sec.dataset.mvv=MVV;
+// 6.11: "מכירה וקנייה" in התיק שלי: a sale (or more of a held security) written by hand: what, how many, for how much, and
+// at what price it was bought; the gain or loss before and after tax is said before saving (an estimate: the house's annual
+// report is what counts). Saving takes the units out of the holding (and their part of the cost), puts the money in the
+// account's cash, and keeps the sale with its result in the history (A.manual): the value, the cash, the result against the
+// cost, the year's realized gains and the security's chart all follow. The next statement from the bank replaces it.
+let SELLM='sell', SELLK='';
+const slR=(x,d=2)=>Math.round(x*Math.pow(10,d))/Math.pow(10,d);
+const slCcyS=c=>c==='ILS'?'₪':c==='USD'?'$':(c||'');
+const slAmt=(x,c)=>c==='ILS'?ils(x,x%1?2:0):c==='USD'?dlr(x,Math.abs(x)<1000?2:0):`${(+x).toFixed(2)} ${c}`;
+const slB=t=>`<bdi class="n">${t}</bdi>`;
+function slRows(){return ((P&&P.positions)||[]).filter(p=>p&&p.sym&&+p.qty>0).map(p=>({k:`${p.sym}|${p.acct||''}`,p})).sort((a,b)=>a.p.sym<b.p.sym?-1:1)}
+function slAvg(p){const c=p.ccy==='ILS'?p.costIls:p.costUsd; return c!=null&&+c>0&&+p.qty>0?+c/+p.qty:null}
+function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows();
+  if(!R.length){el.innerHTML='<h3>מכירה או קנייה של נייר שבתיק</h3><p class="note" style="margin:0">עוד אין אחזקות בתיק. אחרי שתוסיף אותן, אפשר יהיה לרשום כאן מכירה או קנייה.</p>'; return}
+  if(!R.some(r=>r.k===SELLK))SELLK=R[0].k; const multi=new Set(R.map(r=>r.p.acct)).size>1, sell=SELLM==='sell';
+  el.innerHTML=`<h3>מכירה או קנייה של נייר שבתיק</h3>
+    <div class="dvtabs slm" role="radiogroup" aria-label="מה עשית"><button type="button" class="chip" role="radio" data-sellm="sell" aria-checked="${sell}" aria-pressed="${sell}">מכרתי</button><button type="button" class="chip" role="radio" data-sellm="buy" aria-checked="${!sell}" aria-pressed="${!sell}">קניתי עוד</button></div>
+    <label for="slSym"><span>הנייר</span><select id="slSym">${R.map(r=>`<option value="${esc(r.k)}"${r.k===SELLK?' selected':''}>${esc(lab(r.p.sym))}${r.p.name&&r.p.name!==r.p.sym?' · '+esc(String(r.p.name).slice(0,28)):''}${multi?' · '+esc(acctName(r.p.acct)):''} · ${+(+r.p.qty).toFixed(4)} יח׳</option>`).join('')}</select></label>
+    <div class="slg">
+      <label for="slQty"><span>${sell?'כמה יחידות מכרת':'כמה יחידות קנית'}</span><span class="slq"><input id="slQty" type="number" inputmode="decimal" min="0" step="any" autocomplete="off">${sell?'<button type="button" class="btn sm" id="slAll">הכל</button>':''}</span></label>
+      <label for="slAmt"><span>${sell?'סכום המכירה':'סכום ששילמת'} (<span id="slC1"></span>)</span><input id="slAmt" type="number" inputmode="decimal" min="0" step="any" autocomplete="off"><span class="nm" id="slAmtH"></span></label>
+      ${sell?`<label for="slBuy"><span>מחיר הקנייה ליחידה (<span id="slC2"></span>)</span><input id="slBuy" type="number" inputmode="decimal" min="0" step="any" autocomplete="off"><span class="nm" id="slBuyH"></span></label>`:''}
+      <label for="slDate"><span>${sell?'תאריך המכירה':'תאריך הקנייה'}</span><input id="slDate" type="date" value="${ilDay()}" max="${ilDay()}"></label>
+    </div>
+    <p class="slres" id="slRes" aria-live="polite"></p>
+    <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="slSave" type="button" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><span class="saved" id="slState" role="status"></span></div>
+    <p class="note" style="margin:0">${sell?'הכמות יורדת מהאחזקה, הסכום נכנס למזומן של החשבון, והרווח או ההפסד נשמרים במכירות של השנה.':'הכמות והעלות עולות, והסכום יורד מהמזומן של החשבון.'} כשיגיע הדוח הבא מהבנק, הוא יחליף את מה שנרשם כאן. לנייר שעוד אין בתיק: "הוספה ידנית".</p>`;
+  slPick(); slCalc()}
+function slCur(){const r=slRows().find(x=>x.k===SELLK); return r?r.p:null}
+function slPick(){const p=slCur(); if(!p)return; const c=p.ccy||'USD', avg=slAvg(p);
+  for(const id of ['slC1','slC2']){const e=$(id); if(e)e.textContent=slCcyS(c)}
+  const b=$('slBuy'), bh=$('slBuyH'); if(b){b.value=avg!=null?slR(avg,4):''; if(bh)bh.textContent=avg!=null?`לפי מה ששמור בתיק: ${slAmt(avg,c)} ליחידה. אפשר לשנות`:(p.costIls!=null&&c!=='ILS'?`אין מחיר קנייה ב${c==='USD'?'דולרים':c}; יש עלות בשקלים: ${ils(+p.costIls/+p.qty,2)} ליחידה`:'אין מחיר קנייה שמור. כתוב אותו כדי לראות רווח או הפסד')}
+  const q=$('slQty'); if(q)q.max=SELLM==='sell'?String(+p.qty):''}
+function slVals(){const p=slCur(); if(!p)return null; const c=p.ccy||'USD', q=+(($('slQty')||{}).value||0), amt=+(($('slAmt')||{}).value||0), bp=+(($('slBuy')||{}).value||0), d=(($('slDate')||{}).value||ilDay());
+  return {p,c,q,amt,bp,d,sell:SELLM==='sell'}}
+function slCalc(){const v=slVals(), out=$('slRes'), btn=$('slSave'), ah=$('slAmtH'); if(!v||!out)return; const {p,c,q,amt,bp,sell}=v; let ok=false, H='';
+  const pr=(()=>{try{return priceOf(p.sym)}catch(e){return null}})(), now=pr&&pr.px>0&&pr.ccy===c?pr.px:null;
+  if(ah)ah.textContent=q>0&&amt>0?`= ${slAmt(amt/q,c)} ליחידה`:q>0&&now?`לפי המחיר עכשיו: כ-${slAmt(q*now,c)}`:'';
+  const fx=c==='USD'?((Q&&Q.usdIls)||0):c==='ILS'?1:null;
+  if(!(q>0))H=''; else if(sell&&q>+p.qty+1e-9)H=`יש לך ${+(+p.qty).toFixed(4)} יחידות של ${esc(lab(p.sym))}${p.acct?' ב'+esc(acctName(p.acct)):''}.`;
+  else if(!(amt>0))H=''; else if(sell&&!(bp>0))H='כדי לחשב רווח או הפסד צריך את מחיר הקנייה ליחידה.';
+  else if(sell){const cost=q*bp, g=amt-cost, pc=cost>0?g/cost*100:null, gI=fx?g*fx:null, left=slR(+p.qty-q,6);
+    H=`<span class="${g>=0?'up':'down'}">${g>=0?'רווח':'הפסד'} של ${slB(slAmt(Math.abs(g),c))}</span>${pc!=null?` (${slB(spct(pc,1))})`:''}${gI!=null&&c!=='ILS'?` · כ-${slB(ils(Math.abs(gI)))} לפי השער של היום`:''}`
+      +(gI!=null?(g>0?` · מס רווחי הון משוער (25%): ${slB(ils(gI*0.25))}, נטו כ-${slB(ils(gI*0.75))}`:g<0?' · הפסד כזה אפשר לקזז מול רווחים שמומשו באותה שנה':''):'')
+      +`<span class="nm">${left>0?`נשארות ${+left.toFixed(4)} יחידות`:'כל האחזקה נמכרת'} · המזומן ב${esc(acctName(p.acct))} יעלה ב-${slB(slAmt(amt,c))}. המס הוא הערכה; מה שקובע הוא הדוח השנתי של הבנק.</span>`; ok=true}
+  else{const avg=slAvg(p), q2=+p.qty+q, a2=avg!=null?(avg*+p.qty+amt)/q2:null;
+    H=`${slB(slAmt(amt/q,c))} ליחידה · אחרי הקנייה: ${+q2.toFixed(4)} יחידות${a2!=null?`, מחיר ממוצע ${slB(slAmt(a2,c))}`:''}<span class="nm">המזומן ב${esc(acctName(p.acct))} ירד ב-${slB(slAmt(amt,c))}.</span>`; ok=true}
+  out.innerHTML=H; if(btn)btn.disabled=!ok||!canWrite}
+async function slSave(){const v=slVals(); if(!v||!canWrite)return; const st=$('slState'); const {p,c,q,amt,bp,d,sell}=v;
+  if(dDirty){st.textContent='יש שינויים בטבלת האחזקות שלא נשמרו. שמור אותם קודם (בלשונית "האחזקות").'; return}
+  if(!(q>0)||!(amt>0)||(sell&&(!(bp>0)||q>+p.qty+1e-9)))return;
+  const cl=x=>x==null?null:JSON.parse(JSON.stringify(x)), P0=cl(P), H0=cl(HS), P2=cl(P), fx=c==='USD'?((Q&&Q.usdIls)||null):c==='ILS'?1:null;
+  const x=P2.positions.find(z=>z.sym===p.sym&&(z.acct||'')===(p.acct||'')&&Math.abs(+z.qty-+p.qty)<1e-9); if(!x){st.textContent='האחזקה השתנתה בינתיים. נסה שוב.'; renderSell(); return}
+  const f=q/(+x.qty); P2.cash=Array.isArray(P2.cash)?P2.cash:[];
+  let cash=P2.cash.find(z=>z.acct===x.acct&&z.ccy===(c==='ILS'?'ILS':'USD')); if(!cash){cash={acct:x.acct,ccy:c==='ILS'?'ILS':'USD',amount:0}; P2.cash.push(cash)}
+  if(sell){if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
+  else{const avgOk=slAvg(x)!=null||(x.costUsd==null&&x.costIls==null&&+x.qty===0); if(c==='ILS'){if(x.costIls!=null)x.costIls=slR(+x.costIls+amt)} else {if(x.costUsd!=null)x.costUsd=slR(+x.costUsd+amt); if(x.costIls!=null&&fx)x.costIls=slR(+x.costIls+amt*fx)}
+    x.qty=slR(+x.qty+q,6); cash.amount=slR(Math.max(0,(+cash.amount||0)-amt))}
+  x.qAt=ilDay(); P2.positions=P2.positions.filter(z=>+z.qty>1e-9); P2.updatedAt=new Date().toISOString();
+  const H=HS?cl(HS):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; let A=H.accounts.find(z=>z.acct===x.acct); if(!A){A={acct:x.acct,ccy:acctCcy(x.acct),deposits:[],trades:[],snapshots:[]}; H.accounts.push(A)}
+  const rec={id:Date.now().toString(36),date:d,sym:x.sym,side:sell?'sell':'buy',qty:q,px:slR(amt/q,6),amt:slR(amt),ccy:c,fx:fx||null,at:new Date().toISOString()};
+  if(sell){rec.buyPx=slR(bp,6); rec.real=slR(amt-q*bp)}
+  A.manual=[...(A.manual||[]),rec];
+  st.textContent='שומר…'; $('slSave').disabled=true;
+  try{await pset('portfolio',P2); P=P2; await pset('history',H); HS=H; if(!dDirty)DRAFT=draftFromP();
+    const msg=sell?`נרשמה מכירה של ${+q.toFixed(4)} ${lab(x.sym)} ב-${slAmt(amt,c)}${rec.real!=null?` (${rec.real>=0?'רווח':'הפסד'} של ${slAmt(Math.abs(rec.real),c)})`:''}.`:`נרשמה קנייה של ${+q.toFixed(4)} ${lab(x.sym)} ב-${slAmt(amt,c)}.`;
+    st.textContent=msg; try{render()}catch(e){} renderSell(); $('slState').textContent=msg;
+    offerUndo(sell?'המכירה נרשמה':'הקנייה נרשמה',async()=>{await pset('portfolio',P0); P=P0; if(H0)await pset('history',H0); else await pset('history',{accounts:[],depIlsNow:0,monthly:[]}); HS=H0; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){} renderSell()})}
+  catch(e){st.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); $('slSave').disabled=false}}
+document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#sellBox'))slCalc()});
+document.addEventListener('change',e=>{if(e.target.id==='slSym'){SELLK=e.target.value; const q=$('slQty'), a=$('slAmt'); if(q)q.value=''; if(a)a.value=''; slPick(); slCalc()}});
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#sellBox [data-sellm],#slAll,#slSave'); if(!t)return;
+  if(t.dataset.sellm){SELLM=t.dataset.sellm; renderSell(); return}
+  if(t.id==='slAll'){const p=slCur(); if(p){$('slQty').value=+(+p.qty).toFixed(6); slCalc()} return}
+  if(t.id==='slSave')slSave()});
+function mvSet(v,msg,auto){if(!auto)MV_SET=true; MVV=['hold','up','type','sell'].includes(v)?v:'hold'; if(MVV==='sell')try{renderSell()}catch(e){console.error(e)} const sec=document.querySelector('[data-pane="mine"] section'); if(sec)sec.dataset.mvv=MVV;
   for(const b of document.querySelectorAll('#mvTabs [data-mv]')){const on=b.dataset.mv===MVV; b.setAttribute('aria-pressed',on); b.setAttribute('aria-selected',on)}
   const m=$('mvMsg'); if(m){m.textContent=msg||''; m.hidden=!msg}}
 function mvGo(v,msg,el){mvSet(v,msg); try{(el||document.querySelector('[data-pane="mine"] section')).scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}}
@@ -24896,6 +24988,8 @@ function secMy(sym,CC,NAT,t0,t1){const out={avg:null,trades:[]}; if(NAT!=='USD')
     const day=String(t.date).slice(0,10), tm=Date.parse(day+'T12:00:00Z'); if(!(tm>=t0-864e5&&tm<=t1+864e5))continue;
     const c=t.ccy||(A.ccy==='USD'?'USD':'ILS'), F=spF(sym,day); let px=+t.px/F; if(c!==CC){if(c==='USD'&&CC==='ILS'){const f=serAt(fxS,day); if(!f)continue; px*=f.c} else continue}
     out.trades.push({t:tm,px,q:+t.qty*F,side:+t.qty>0?'buy':'sell'})}
+  for(const A of ((typeof HS!=='undefined'&&HS&&HS.accounts)||[]))for(const x of (A.manual||[])){if(!x||x.sym!==sym||!x.date||!(+x.qty)||!(+x.px>0))continue; const day=String(x.date).slice(0,10), tm=Date.parse(day+'T12:00:00Z'); if(!(tm>=t0-864e5&&tm<=t1+864e5))continue;
+    let px=+x.px; if((x.ccy||'USD')!==CC){if(x.ccy==='USD'&&CC==='ILS'){const f=serAt(fxS,day); if(!f)continue; px*=f.c} else continue} out.trades.push({t:tm,px,q:x.side==='sell'?-x.qty:+x.qty,side:x.side==='sell'?'sell':'buy'})}
   const ps=((P&&P.positions)||[]).filter(p=>p&&p.sym===sym&&+p.qty>0), q=ps.reduce((a,p)=>a+(+p.qty),0);
   if(q>0){if(CC==='ILS'&&ps.every(p=>p.costIls!=null&&+p.costIls>0))out.avg=ps.reduce((a,p)=>a+(+p.costIls),0)/q;
     else if(CC==='USD'&&ps.every(p=>p.costUsd!=null&&+p.costUsd>0))out.avg=ps.reduce((a,p)=>a+(+p.costUsd),0)/q
@@ -27328,7 +27422,7 @@ function renderDD(){
 function realizedYear(year){
   const fx=(Q&&Q.usdIls)||usdRate(), out={year,gain:0,loss:0,sales:[],unmatched:[],byAcct:{},lump:[],any:false};
   for(const A of (HS&&HS.accounts)||[]){
-    const tr=(A.trades||[]).filter(t=>t&&!t.div&&t.sym&&+t.qty).slice().sort((a,b)=>String(a.date)<String(b.date)?-1:1);
+    const tr=(A.trades||[]).filter(t=>t&&!t.div&&t.sym&&+t.qty).map(t=>{const F=typeof spF==='function'?spF(t.sym,t.date):1; return F===1?t:{...t,qty:+t.qty*F,px:(+t.px||0)/F}}).sort((a,b)=>String(a.date)<String(b.date)?-1:1);
     if(!tr.length){if(+A.realizedUsd)out.lump.push(A.acct); continue}
     const lots={};
     for(const t of tr){const il=(t.ccy||(A.ccy==='USD'?'USD':''))==='ILS', rate=il?1:fx, L=lots[t.sym]=lots[t.sym]||[];
@@ -27337,6 +27431,8 @@ function realizedYear(year){
       if(!String(t.date||'').startsWith(String(year)))continue;
       out.any=true; if(q>1e-9)out.unmatched.push(t.sym);
       if(got>0){const gi=g*rate; out.sales.push({acct:A.acct,sym:t.sym,date:t.date,qty:got,g:gi}); if(gi>=0)out.gain+=gi; else out.loss-=gi; out.byAcct[A.acct]=(out.byAcct[A.acct]||0)+gi}}}
+  // 6.11: the sales written by hand, with the result they were written with
+  for(const A of (HS&&HS.accounts)||[])for(const x of (A.manual||[])){if(!x||x.side!=='sell'||x.real==null||!String(x.date||'').startsWith(String(year)))continue; const gi=(+x.real)*(x.ccy==='ILS'?1:fx); out.any=true; out.sales.push({acct:A.acct,sym:x.sym,date:x.date,qty:+x.qty,g:gi,manual:true}); if(gi>=0)out.gain+=gi; else out.loss-=gi; out.byAcct[A.acct]=(out.byAcct[A.acct]||0)+gi}
   out.net=out.gain-out.loss; out.unmatched=[...new Set(out.unmatched)]; return out}
 function yearEndCalc(T,m){
   const today=ilDay(), y=+today.slice(0,4), R=realizedYear(y), days=Math.round((Date.parse(y+'-12-31')-Date.parse(today))/864e5);
