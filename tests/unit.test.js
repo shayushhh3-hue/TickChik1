@@ -1966,3 +1966,15 @@ test('5.11 off Yahoo: a share\'s history from one Stooq request (a year by day w
     await newsFor('VOOX',{fetch:f,now:new Date(now.getTime()+13*3600e3)}); assert.equal(asked.filter(u=>u.includes('yahoo')).length,2,'and again after them')}
   finally{if(was==null)delete process.env.FINNHUB_API_KEY; else process.env.FINNHUB_API_KEY=was}
 });
+
+test('6.11 the readings\' facts: the names as written in Hebrew, no price move in percent from an article (the site has its own), business numbers kept; the phone gets a summary',async()=>{
+  const {factFix}=await import('../server/newsx.js'), {pushBody}=await import('../server/livealert.js');
+  assert.equal(factFix('מדד נאסד"ק ירד בכ-4.7%, ונווידיה, מיקרון ו-AMD ירדו בחדות אחרי בחירות הביניים.'),'מדד נאסד"ק ירד, ואנבידיה, מיקרון ו-AMD ירדו בחדות אחרי בחירות הביניים.');
+  assert.equal(factFix('מניית רדוויר ירדה בכ-21 אחוזים אחרי שההכנסות פספסו את הציפיות.'),'מניית רדוויר ירדה אחרי שההכנסות פספסו את הציפיות.');
+  assert.equal(factFix('AMD ירדה 17.3% במסחר'),'AMD ירדה במסחר'); assert.equal(factFix('מניות השבבים רשמו ירידה חדה של 10% השבוע'),'מניות השבבים רשמו ירידה חדה השבוע');
+  for(const t of ['ההכנסות עלו ב-12% ל-109 מיליון דולר','האינפלציה עלתה ב-0.3%','CPI עלה ב-0.3% בספטמבר','דאו ג׳ונס צנח ב-1,833 נקודות'])assert.equal(factFix(t),t,'not a price move: '+t);
+  const mk=(k,d)=>({key:`move:${k}:down`,sym:k,d,move:5,text:`${k} ירדה היום`});
+  const b=pushBody([mk('SOXX',-12.1),mk('DRAM',-18),mk('MU',-17.5),mk('RKLB',-12.2),mk('RDW',-19.8)]);
+  assert.equal(b,'5 ניירות ירדו היום ביותר מ-5%: RDW −19.8%, DRAM −18.0%, MU −17.5% ועוד 2.\nהרשימה המלאה באתר.');
+  assert.equal(pushBody([mk('SOXX',-12.1)]),'SOXX ירדה היום','one item as it is');
+});

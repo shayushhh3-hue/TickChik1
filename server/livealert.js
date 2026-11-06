@@ -22,12 +22,12 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null),user=null}={}
   const out=[], px=k=>{const v=+(Q.prices||{})[k]; return v>0?v:null}, A=S.liveAl||{}, move=+A.move>0?+A.move:5;
   // the prices set by the owner
   for(const [k,t] of Object.entries(S.pxAlerts||{})){if(!t)continue; const p=px(k)||px(k.replace(/^TLV:/,'')); if(!p)continue; const s=k.replace(/^TLV:/,'');
-    if(+t.above>0&&p>=+t.above)out.push({key:`px:${k}:up:${t.above}`,sev:'warn',text:`${s} עבר את המחיר שקבעת: ${p} (מעל ${t.above}).`});
-    if(+t.below>0&&p<=+t.below)out.push({key:`px:${k}:down:${t.below}`,sev:'warn',text:`${s} ירד אל המחיר שקבעת: ${p} (מתחת ל-${t.below}).`})}
+    if(+t.above>0&&p>=+t.above)out.push({key:`px:${k}:up:${t.above}`,sym:s,sev:'warn',text:`${s} עבר את המחיר שקבעת: ${p} (מעל ${t.above}).`});
+    if(+t.below>0&&p<=+t.below)out.push({key:`px:${k}:down:${t.below}`,sym:s,sev:'warn',text:`${s} ירד אל המחיר שקבעת: ${p} (מתחת ל-${t.below}).`})}
   // a big day for a holding (not a stale price, not an estimate of a fund)
   const held=[...new Set(((P&&P.positions)||[]).map(p=>p.sym))];
   for(const k of held){const p=px(k), b=+(Q.prev||{})[k]; if(!p||!(b>0)||(Q.stale||{})[k])continue; const d=(p/b-1)*100;
-    if(Math.abs(d)>=move)out.push({key:`move:${k}:${d>0?'up':'down'}`,sev:Math.abs(d)>=move*2?'crit':'warn',text:`${k} ${d>0?'עלתה':'ירדה'} היום ${pct(d)} (מ-${b} ל-${p}), יותר מ-${move}% שקבעת.`})}
+    if(Math.abs(d)>=move)out.push({key:`move:${k}:${d>0?'up':'down'}`,sym:k,d,move,sev:Math.abs(d)>=move*2?'crit':'warn',text:`${k} ${d>0?'עלתה':'ירדה'} היום ${pct(d)} (מ-${b} ל-${p}), יותר מ-${move}% שקבעת.`})}
   // the dollar
   const fx=+Q.usdIls; if(fx>0){if(+A.usdAbove>0&&fx>=+A.usdAbove)out.push({key:`usd:up:${A.usdAbove}`,sev:'warn',text:`הדולר עבר את ${A.usdAbove}: ${fx.toFixed(3)} ₪.`});
     if(+A.usdBelow>0&&fx<=+A.usdBelow)out.push({key:`usd:down:${A.usdBelow}`,sev:'warn',text:`הדולר ירד אל ${A.usdBelow}: ${fx.toFixed(3)} ₪.`})}
@@ -39,6 +39,19 @@ export function liveHits(store,{now=new Date(),paths=pathsOf(null),user=null}={}
       out.push({key:a.ver>1?`${base}:v${a.ver}`:base,sev:a.lv==='crit'?'crit':'warn',lv:a.lv,text:`${who.length?who.join(', ')+': ':''}${a.title}. ${a.what||''}`.trim()+(a.ver>1?` (עדכון: ${(a.hist[a.hist.length-1]||{}).t||'התפתחות'})`:''),link:(a.arts[0]||{}).link||null})}}catch(e){}}
   return out;
 }
+// 6.11: the phone gets a summary, not the list (eleven lines were too many to read): the day's big moves in one line (how
+// many, the three biggest), the prices that were crossed in one, the dollar, the news in one; the whole list is on the site
+// and in the e-mail. One item is sent as it is.
+export function pushBody(fresh){
+  if(fresh.length===1)return fresh[0].text.slice(0,300);
+  const of=p=>fresh.filter(x=>x.key.startsWith(p)), mv=of('move:'), px=of('px:'), usd=of('usd:'), nw=of('news:'), L=[];
+  if(mv.length){const lim=mv[0].move||5, dn=mv.every(x=>x.d<0), up=mv.every(x=>x.d>0), top=mv.slice().sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,3);
+    L.push(`${mv.length===1?'נייר אחד':mv.length+' ניירות'} ${dn?(mv.length===1?'ירד':'ירדו'):up?(mv.length===1?'עלה':'עלו'):'זזו'} היום ביותר מ-${lim}%: ${top.map(x=>`${x.sym} ${pct(x.d)}`).join(', ')}${mv.length>3?` ועוד ${mv.length-3}`:''}.`)}
+  if(px.length)L.push(px.length===1?px[0].text:`${px.length} מחירים שקבעת נחצו: ${px.slice(0,3).map(x=>x.sym).join(', ')}${px.length>3?` ועוד ${px.length-3}`:''}.`);
+  for(const x of usd)L.push(x.text);
+  if(nw.length)L.push(nw.length===1?nw[0].text.slice(0,110):`${nw.length} ידיעות חשובות על התיק, למשל: ${nw[0].text.slice(0,70)}…`);
+  L.push('הרשימה המלאה באתר.');
+  return L.join('\n').slice(0,300)}
 // 30.10: quiet hours are each person's (settings → "חדשות והתראות"; nothing from midnight to 09:00 unless set otherwise),
 // and so are how often a message may come and whether a critical one may come in the quiet hours
 export async function liveTask(store,{log=()=>{},now=new Date(),send=sendAllowed,push=null}={}){
@@ -71,7 +84,7 @@ async function liveFor(store,u,{log,now,day,send,push}){
     const html=wrapHtml('התראה',`<ul style="padding-inline-start:18px">${fresh.map(x=>`<li style="margin:6px 0;${x.sev==='crit'?'color:#b42318;font-weight:700':''}">${esc(x.text)}${x.link?` <a href="${esc(x.link)}">לכתבה</a>`:''}</li>`).join('')}</ul>${url?`<p><a href="${esc(url)}">לאתר</a></p>`:''}<p style="color:#64748b;font-size:13px">עובדות מהמחירים ומהידיעות; לא המלצה לקנות או למכור.</p>`);
     if(own||mailAllowedFor(store,u,'live'))ok=await send(store,'live',{subject:`תיק צ׳יק – ${head}`,text,html},log,own?undefined:u)}
   // the phone: the same items, short (a tap opens the site on the stories)
-  let pushed=0; try{pushed=await (push||pushTo)(store,u.id,{title:fresh.length===1?'תיק צ׳יק':`תיק צ׳יק · ${fresh.length} התראות`,body:fresh.map(x=>x.text).join('\n').slice(0,300),url:'./?st=1',tag:'live'},{log})}catch(e){log('push failed: '+(e&&e.message||e))}
+  let pushed=0; try{pushed=await (push||pushTo)(store,u.id,{title:fresh.length===1?'תיק צ׳יק':`תיק צ׳יק · ${fresh.length} התראות`,body:pushBody(fresh),url:'./?st=1',tag:'live'},{log})}catch(e){log('push failed: '+(e&&e.message||e))}
   // marked as sent even when nothing went out, so that switching on does not send the whole day at once
   save({date:day,sent:[...D.sent,...fresh.map(x=>x.key)],lastAt:now.toISOString(),checkedAt:now.toISOString(),last:fresh.map(x=>({key:x.key,text:x.text,sev:x.sev})).slice(0,10),mailed:!!ok,pushed});
   log(`live${own?'':' ('+u.id+')'}: ${fresh.length} new (${ok?'e-mailed':'not e-mailed'}, ${pushed} device(s))`); return {hits:hits.length,fresh:fresh.length,sent:ok,pushed};

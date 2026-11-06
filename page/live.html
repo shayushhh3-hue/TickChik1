@@ -17854,7 +17854,7 @@ function render(){
   try{const el=$('quickSay'); if(el){const L=[]; let dp=null, y=null; if(acct==='all'&&!(mH.fund||mH.stock)){try{const dt=HS?depTotal():0; if(dt>0)dp=m.total-dt}catch(e){} try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r.pct}}catch(e){}}
     if(dp!=null)L.push(dp>=0?`התיק שווה ${ils(dp)} יותר ממה שהפקדת`:`התיק שווה ${ils(-dp)} פחות ממה שהפקדת`);
     else if(mH.cost)L.push(mH.pnl>=0?`הניירות שווים ${ils(mH.pnl)} יותר ממה שעלו לך`:`הניירות שווים ${ils(-mH.pnl)} פחות ממה שעלו לך`);
-    if(y!=null){const yl=(($('kYtdK')||{}).textContent||'מתחילת השנה').trim(); L.push(`${yl} התיק ${y>=0?'עלה':'ירד'} ${spct(Math.abs(y),1).replace(/^[+−-]/,'')}`)}
+    if(y!=null){const yl=(($('kYtdK')||{}).textContent||'מתחילת השנה').trim(); L.push(`${yl} התיק ${y>=0?'עלה':'ירד'} ${Math.abs(y).toFixed(1)}%`)}
     if(m.usdPct>=30)L.push(`${pct(m.usdPct,0)} ממנו בדולרים, ולכן גם השער מזיז אותו`);
     el.hidden=!L.length; if(L.length)el.innerHTML=`<span><b>צ׳יקו:</b> ${esc(L.join('; '))}.</span>`}}catch(e){}
 
@@ -18928,7 +18928,8 @@ function monChipCalc(m){
 function renderMonChip(m){
   const el=$('kMon'); if(!el)return; let r=null; try{r=monChipCalc(m)}catch(e){}
   if(!r||!isFinite(r.ret)){el.hidden=true;return} const v=r.ret;
-  el.hidden=false; el.className='mchip'+(v<0?' down':''); el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${v>=0?'M4 16l5-5 4 4 7-8M15 7h5v5':'M4 8l5 5 4-4 7 8M15 17h5v-5'}"/></svg><span class="n">${spct(v,1)}</span> ${r.since?'מאז '+dmy(r.key).slice(0,5):'ב-30 יום'}`;
+  el.hidden=false; el.className='mchip'+(v<0?' down':''); el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${v>=0?'M4 16l5-5 4 4 7-8M15 7h5v5':'M4 8l5 5 4-4 7 8M15 17h5v-5'}"/></svg><span class="n">${spct(v,1)}</span> ${r.since?`ב-${r.days} הימים האחרונים`:'בחודש האחרון'}`;
+  el.setAttribute('aria-label',`הניירות ${v>=0?'עלו':'ירדו'} ${Math.abs(v).toFixed(1)}% ${r.since?`ב-${r.days} הימים האחרונים (מ-${dmy(r.key)}, היום הראשון שנשמר)`:'בחודש האחרון'}, בלי הפקדות ומזומן`);
   el.title=`כמה השתנו הניירות שב${acct==='all'?'תיק':'חשבון '+acctName(acct)} מאז ${dmy(r.key)}, לפי המחיר והשער של אותו יום מול היום. בלי הפקדות ובלי מזומן.`;
 }
 // the eye on the card: the sums blurred, for a screen someone else can see; remembered in this browser
@@ -19429,7 +19430,7 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   const L=[], sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
   if(sv)L.push(['since','מאז הביקור האחרון',esc(sv)]);
   if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2);
-    L.push(['day',dayLab(),Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו.':'התיק כמעט לא זז.'):`התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(sgn(m.dayIls),up?'up':'down')})${top.length?`, בעיקר בגלל ${top.map(p=>`${symH(p.sym)} ${nn(spct(p.dayPct,1),p.dayPct>=0?'up':'down')}`).join(' ו-')}`:''}.`])}
+    L.push(['day',dayLab(),Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו.':'התיק כמעט לא זז.'):`התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(sgn(m.dayIls),up?'up':'down')})${top.length?`, בעיקר בגלל ${top.map(p=>`${symH(p.sym)} (${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')})`).join(' ו-')}`:''}.`])}
   // the news: on the ones that moved first, else the most important of the last day and a half
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
@@ -20852,11 +20853,22 @@ const chicoN=()=>{try{const v=JSON.parse(localStorage.getItem(CHICO_NK())||'{}')
 const chicoNSet=o=>{try{localStorage.setItem(CHICO_NK(),JSON.stringify({...chicoN(),...o}))}catch(e){}};
 const chicoSt=()=>{const c=(S&&S.chico)||{}, n=chicoN(); return {pro:c.pro!==false,seen:c.seen&&typeof c.seen==='object'?c.seen:{},nudge:n.nudge||'',nudged:n.nudged&&typeof n.nudged==='object'?n.nudged:{}}};
 function chicoSet(o){if(!canWrite||!S)return; S.chico={...((S&&S.chico)||{}),...o}; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
+// 6.11: the moves an event card speaks of, from the site's own prices (the article's number is often from the middle of the
+// trading day): the held companies it names and the index it mentions, when the event is about the last US trading day
+function plMeasured(a,m){try{if(!Q||!Q.usDate)return ''; const t=Date.parse(a.first||a.at||a.up||((a.arts||[])[0]||{}).at||''); if(!isFinite(t))return '';
+    let d=new Date(t); const ny=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(d), hh=+(ny.find(x=>x.type==='hour')||{}).value||0, mi=+(ny.find(x=>x.type==='minute')||{}).value||0;
+    let day=tzDay('America/New_York',d); if(hh*60+mi<570){d=new Date(t-864e5); day=tzDay('America/New_York',d)}
+    for(let i=0;i<3&&[0,6].includes(new Date(day+'T12:00:00Z').getUTCDay());i++)day=isoAdd(day,-1);
+    if(day!==Q.usDate)return '';
+    const out=[], B=Q.bench||{}, txt=String(a.what||'')+' '+String(a.title||'');
+    for(const [re,k] of [[/נאסד|nasdaq/i,'NDX'],[/S&P|אס.?אנד.?פי/i,'SPX'],[/דאו|dow jones/i,'DJI'],[/ראסל|russell/i,'RUT']])if(re.test(txt)&&B[k]&&B[k].prev>0&&B[k].px>0){out.push(`${B[k].name||k} ${spct((B[k].px/B[k].prev-1)*100,1)}`); break}
+    for(const s of [...new Set((a.holds||[]).filter(h=>h.link==='direct').map(h=>h.sym))].slice(0,4)){const p=m.pos.find(x=>x.sym===s); if(p&&p.dayPct!=null&&(p.ccy||'USD')!=='ILS')out.push(`${lab(s)} ${spct(p.dayPct,1)}`)}
+    return out.length?`במחירי האתר, ${Q.usDate>=tzDay('Asia/Jerusalem')?'היום':'ב-'+dmy(Q.usDate)}: ${out.join(' · ')}.`:''}catch(e){return ''}}
 function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m=mAllNow()}catch(e){return out} if(!m||!m.pos||!m.pos.length)return out;
   const add=x=>{if(!out.some(y=>y.k===x.k))out.push(x)};
   // 1. the personal alerts not read: an event, one that touches several holdings, a thesis to check
   try{for(const a of plItems().filter(plUnread).filter(a=>a.lv==='crit'||a.lv==='imp').sort((a,b)=>PL_LVR[b.lv]-PL_LVR[a.lv]).slice(0,4)){const H=(a.holds||[]), multi=new Set(H.map(h=>h.sym)).size>=2;
-    add({k:'pl:'+a.k,kind:a.kind==='thesis'?'thesis':multi?'multi':'event',lv:a.lv,what:a.title,whatMore:a.what||'',whyNow:a.lvWhy||'התראה חדשה שעוד לא נקראה',why:a.relWhy||(H.length?`נוגע ב-${H.map(h=>h.sym).join(', ')}`:'נוגע לענף שלך'),
+    add({k:'pl:'+a.k,kind:a.kind==='thesis'?'thesis':multi?'multi':'event',lv:a.lv,what:a.title,whatMore:[a.what||'',plMeasured(a,m)].filter(Boolean).join(' '),whyNow:a.lvWhy||'התראה חדשה שעוד לא נקראה',why:a.relWhy||(H.length?`נוגע ב-${H.map(h=>h.sym).join(', ')}`:'נוגע לענף שלך'),
       impact:H.length?H.slice(0,4).map(h=>`${h.sym}${h.w!=null?' ('+pct(h.w,1)+' מהתיק)':''}: ${h.dir==='pos'?'השפעה חיובית אפשרית':h.dir==='neg'?'השפעה שלילית אפשרית':'כיוון לא ברור'}${h.link==='indirect'?', בעקיפין':''}`).join(' · '):'לא נמדדה השפעה',
       check:'לקרוא את ההתראה ואת שרשרת ההשפעה, ולבדוק את משקל ההחזקות שנוגעות',src:(a.arts||[]).slice(0,3).map(z=>z.pub).filter(Boolean),cert:a.cert==='fact'?'עובדה מדווחת':a.cert==='est'?'הערכה':'פרשנות',limits:a.unknown||'כיוון ההשפעה הוא השערה מהקריאה, לא מדידה',nav:{t:'pl:'+a.k,l:'להתראה'}})}}catch(e){}
   // 2. a thesis weaker since it was written, or with something to check
@@ -25367,6 +25379,18 @@ const HEE_='(?![֐-׿])';
 const HEFIX=[[new RegExp(HEB_+'(ירד|ירדה|ירדו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בירידה חדה'],[new RegExp(HEB_+'(עלה|עלתה|עלו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'בעלייה חדה'],
   [new RegExp(HEB_+'(צנח|צנחה|צנחו|זינק|זינקה|זינקו|נפל|נפלה|נפלו|קפץ|קפצה|קפצו|טיפס|טיפסה|טיפסו|התרסק|התרסקה|התרסקו)\\s+(חד|חדה|חדים|חדות)'+HEE_,'g'),'$1 בחדות']];
 const heFix=t=>HEFIX.reduce((x,[re,to])=>x.replace(re,to),String(t||''));
+// 6.11: the names as they are written in Hebrew, and no price move in percent from an article (it is often from the middle
+// of the trading day; the site's own prices say the move): the same as server/newsx.js factFix, for the readings made before
+const FX_HB='֐-׿', FX_PFX='([והבלמשכ]{0,2})';
+const FX_NAMES=[[/(?:נווידיה|נבידיה|אנווידיה|אנוידיה|נוידיה|אן-וידיה|אנבידייה|אנבידיא)/,'אנבידיה'],[/מייקרון/,'מיקרון'],[/טסלא/,'טסלה'],[/אמאזון/,'אמזון'],[/אלפאבית/,'אלפבית']]
+  .map(([re,to])=>[new RegExp(`(?<![${FX_HB}])${FX_PFX}${re.source}(?![${FX_HB}])`,'g'),'$1'+to]);
+const FX_MVN='אנבידיה|מיקרון|אינטל|אפל|מיקרוסופט|אמזון|גוגל|אלפבית|מטא|טסלה|ברודקום|קוואלקום|קואלקום|אורקל|פלנטיר|נטפליקס|טבע|אלביט|נייס|וויקס|מונדיי|סאנדיסק|סמסונג|קורוויב|רדוויר|רוקט לאב|ג׳ונסון אנד ג׳ונסון|קוקה קולה|ג׳יי פי מורגן|קטרפילר';
+const FX_VERB='(?:ירד|ירדה|ירדו|עלה|עלתה|עלו|צנח|צנחה|צנחו|זינק|זינקה|זינקו|נפל|נפלה|נפלו|קפץ|קפצה|קפצו|טיפס|טיפסה|טיפסו|התרסק|התרסקה|התרסקו|איבד|איבדה|איבדו|הוסיף|הוסיפה|הוסיפו|התחזק|התחזקה|התחזקו|נחלש|נחלשה|נחלשו|קרס|קרסה|קרסו|צלל|צללה|צללו|נסגר|נסגרה|נסגרו|ננעל|ננעלה|ננעלו)';
+const FX_SUBJ=`(?:(?:ו|ה|וה)?מדד\\s+[^\\s,.;:]+(?:\\s+\\d+)?|(?:ו|ה|וה)?נאסד["״'׳]?ק(?:\\s+\\d+)?|(?:ו|ה|וה)?נאסדק(?:\\s+\\d+)?|S&P\\s*500|אס[ -]אנד[ -]פי(?:\\s+500)?|(?:ו|ה|וה)?דאו(?:\\s+ג['׳]ונס)?|(?:ו|ה|וה)?ראסל(?:\\s+2000)?|ת["״]א[- ]?\\d+|(?:ו|ה|וה)?(?:מניית|מניות|המניה|המניות|מניה)(?:\\s+[^\\s,.;:]+){0,3}|(?<![A-Za-z0-9])(?!(?:CPI|PPI|PCE|GDP|PMI|ISM|FED|FOMC|ECB|BOJ|BOE|NFP|IMF|OPEC|EU|USD|ILS|EUR)\\b)[A-Z]{1,5}(?:\\.[A-Z])?|(?:ו|ה)?(?:${FX_MVN}))`;
+const FX_NUM='\\s*(?:בכ\\s*[-־]?|ב\\s*[-־]?|כ\\s*[-־]?)?\\s*[\\u200E\\u200F]?[+−-]?\\d+(?:[.,]\\d+)?\\s*[\\u200E\\u200F]?(?:%|\\s*אחוזים|\\s*אחוז)';
+const FX_MV=[new RegExp(`(${FX_SUBJ}\\s+${FX_VERB}(?:\\s+(?:היום|אתמול|השבוע|בחדות|במסחר|בתחילת המסחר|בסוף המסחר))?)${FX_NUM}(?![\\d.])`,'g'),
+  new RegExp(`(${FX_SUBJ}\\s+(?:רשמה|רשם|רשמו|נרשמה|נרשמו)\\s+(?:ירידה|עלייה|זינוק|צניחה|נפילה|קפיצה)(?:\\s+חדה)?)\\s+(?:של\\s+)?${FX_NUM}(?![\\d.])`,'g')];
+const factFix=t=>FX_MV.reduce((x,re)=>x.replace(re,'$1'),FX_NAMES.reduce((x,[re,to])=>x.replace(re,to),heFix(t))).replace(/\s+([,.;:])/g,'$1').replace(/\s{2,}/g,' ').trim();
 let NXK=false;   // 1.11: the news state has arrived (nothing is written before)
 let NXD=null, XD=null, NEWSST=null, NXV='all', NXLV=new Set(['crit','imp']), NXT='', NXUN=false, NXPREV=null, NXT_SAVE=null, NXDIRTY=false;
 const NX_LV={crit:'קריטי',imp:'חשוב',watch:'למעקב',info:'מידע'};
@@ -27857,7 +27881,8 @@ try{refreshBack()}catch(e){}
     NXK=true; if(NXDIRTY)nxSave(); try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}},()=>{NEWSST=NEWSST||{read:{},saved:{}}; NXK=true})}catch(e){}
   // 30.10: the personal alerts, made on the server for this person alone
   try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.kind==='cal'){a.kind='mkt'; a.mk={t:'cal',...(a.cal||{})}} else if(a&&a.kind==='insider'){a.kind='mkt'; a.mk={t:'ins',...(a.ins||{})}}}catch(e){}   // 31.10: a calendar reminder is drawn like a measured fact
-    try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub,a.orig); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
+    try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub,a.orig); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&/^(ev|id):/.test(a.k||'')&&a.kind!=='mkt'){a.title=factFix(a.title); a.what=factFix(a.what)}}catch(e){}
+    try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
   // 1.11: the settings first (the name, the choices, the plans), then everything else: a document that arrives late is a
   // document another one's render may write over
   pd('settings').onSnapshot(s=>{const first=!SETK;SETK=true;if(s.exists&&!dirty&&!saving&&!s.metadata.hasPendingWrites){S=mergeSettings(s.data());renderLater()} if(first)try{uiApply()}catch(e){}i18nSync();if(first)setTimeout(profMaybe,900)},fail);
@@ -27879,7 +27904,7 @@ try{refreshBack()}catch(e){}
     // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)
     try{if(!LOCAL&&!etfAsked&&P&&(P.positions||[]).some(p=>isF(p.sym)&&!((ETFD&&ETFD.by)||{})[p.sym])){etfAsked=true; fetch('/api/etf/refresh',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:'{}'}).catch(()=>{})}}catch(e){}},()=>{})}catch(e){}
   try{db.doc('research/ecocal').onSnapshot(s=>{ECO=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}},()=>{})}catch(e){}
-  db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{renderNewsChip()}catch(e){} try{for(const x of Object.values((NXD&&NXD.by)||{}))if(x){x.he=heFix(x.he); x.what=heFix(x.what)}}catch(e){} try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){} try{newsCount()}catch(e){}},fail);
+  db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{renderNewsChip()}catch(e){} try{for(const x of Object.values((NXD&&NXD.by)||{}))if(x){x.he=factFix(x.he); x.what=factFix(x.what); if(x.more)x.more=factFix(x.more)}}catch(e){} try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){} try{newsCount()}catch(e){}},fail);
   $('repKind').value=RK;$('repKind').addEventListener('change',e=>{RK=e.target.value;RP='';try{localStorage.setItem('repKind',RK)}catch(x){};fillPeriods()});
   $('repPer').addEventListener('change',e=>{RP=e.target.value});
   $('catFilter').addEventListener('change',e=>{CATF=e.target.value;try{localStorage.setItem('repFilter',CATF)}catch(x){};renderCatalog()});

@@ -22,7 +22,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {newsId} from './newsx.js';
+import {newsId, factFix} from './newsx.js';
 import {symsOfUser} from './store.js';
 
 const H=36e5, DAY=864e5;
@@ -119,7 +119,9 @@ export function measuresOf(e,L,sens='mid'){
   // relevance: the strongest link, said in words
   let rel='none', why='';
   const dW=L.direct.filter(d=>d.w!=null).sort((a,b)=>b.w-a.w)[0], iW=L.indirect.filter(d=>d.w!=null).sort((a,b)=>b.w-a.w)[0], sW=L.secs.reduce((t,s)=>t+s.w,0);
-  if(L.direct.length){const big=!dW||dW.w>=T.dHigh; rel=big?'high':'mid'; why=dW?`ההחזקה עצמה מוזכרת: ${dW.sym}, ${dW.w}% מהתיק`:`ההחזקה עצמה מוזכרת: ${L.direct[0].sym} (המשקל בתיק לא ידוע כרגע)`}
+  if(L.direct.length){const big=!dW||dW.w>=T.dHigh, D=L.direct.filter(d=>d.w!=null).sort((a,b)=>b.w-a.w).filter((d,i,A)=>A.findIndex(z=>z.sym===d.sym)===i); rel=big?'high':'mid';
+    // 6.11: every held company the event names (the biggest first), not only the biggest one
+    why=D.length>1?`ההחזקות עצמן מוזכרות: ${D.slice(0,3).map(d=>`${d.sym}, ${d.w}% מהתיק`).join(' · ')}${D.length>3?` ועוד ${D.length-3}`:''}`:dW?`ההחזקה עצמה מוזכרת: ${dW.sym}, ${dW.w}% מהתיק`:`ההחזקה עצמה מוזכרת: ${L.direct[0].sym} (המשקל בתיק לא ידוע כרגע)`}
   else if(L.indirect.length){const big=!iW||iW.w>=T.iMid; rel=big?'mid':'low'; const z=iW||L.indirect[0]; why=`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''}, ${HOW_HE[z.how]||'קשורה'}${z.how==='sector'?' לזו':''} של החברה שבידיעה`}
   else if(sW>=T.sMid){rel='mid'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
   else if(sW>=T.sLow){rel='low'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
@@ -139,7 +141,9 @@ export const LEVEL_RULES=[
   {lv:'crit',why:'אירוע קריטי בפני עצמו, נוגע ישירות לאחזקה משמעותית בתיק, והקשר מבוסס',test:(m,k)=>m.imp==='crit'&&m.rel==='high'&&m.conf!=='low'&&(k==='news'||k==='pr')},
   // 4.11: "חשובה" is kept for what touches a meaningful holding directly, or a critical event with a stated link; the rest
   // is an update (there were 135 important alerts for two people)
-  {lv:'imp',why:'אירוע חשוב שנוגע ישירות לאחזקה משמעותית, או אירוע קריטי עם קשר מוסבר לתיק',test:(m,k)=>((m.imp==='crit'&&['high','mid'].includes(m.rel))||(m.imp==='high'&&m.rel==='high'))&&m.conf!=='low'&&k!=='opinion'},
+  // 6.11: each says the reason that applies ("... או ..." said the rule, not the reason)
+  {lv:'imp',why:'אירוע קריטי, והקשר שלו לתיק מוסבר',test:(m,k)=>m.imp==='crit'&&['high','mid'].includes(m.rel)&&m.conf!=='low'&&k!=='opinion'},
+  {lv:'imp',why:'אירוע חשוב שנוגע ישירות לאחזקה משמעותית בתיק',test:(m,k)=>m.imp==='high'&&m.rel==='high'&&m.conf!=='low'&&k!=='opinion'},
   {lv:'upd',why:'נוגע לתיק, אבל פחות דחוף או פחות ודאי',test:(m,k)=>(['high','mid'].includes(m.rel)&&m.imp!=='low')||(m.rel==='low'&&['crit','high'].includes(m.imp)&&m.conf!=='low')}];
 export function levelOf(m,kind='news'){const r=LEVEL_RULES.find(r=>r.test(m,kind)); return r?{lv:r.lv,why:r.why}:null}
 
@@ -170,7 +174,7 @@ export function pulseCompute(store,u,{now=new Date()}={}){
     if(!r&&x.ev&&FOL[x.ev]&&e.ai){r={lv:'upd',why:'אירוע שבחרת לעקוב אחריו'}; followedEv=true}
     if(!r||!pr.lv[r.lv])continue;
     // 30.10: an event Claude has not read yet: its title is the article's own headline (the rules' "JPM: אחר" says nothing)
-    out.push({k:e.k,lv:r.lv,lvWhy:r.why,ev:x.ev||null,title:e.ai?x.he:((e.lead&&e.lead.title)||x.he),what:x.what,kind:x.kind||'news',type:x.type,level:x.level,dir:x.dir,cert:x.cert||'interp',rules:!e.ai,
+    out.push({k:e.k,lv:r.lv,lvWhy:r.why,ev:x.ev||null,title:factFix(e.ai?x.he:((e.lead&&e.lead.title)||x.he)),what:factFix(x.what),kind:x.kind||'news',type:x.type,level:x.level,dir:x.dir,cert:x.cert||'interp',rules:!e.ai,
       imp:m.imp,rel:m.rel,relWhy:m.relWhy,conf:m.conf,confWhy:m.confWhy,followed,followedEv,st:e.st||'unknown',folAt:followedEv?FOL[x.ev].at||null:null,
       holds:L.direct.map(d=>({...d,link:'direct'})).concat(L.indirect.map(d=>({...d,link:'indirect'}))),secs:L.secs,usd:L.usd,fol:L.followed,
       sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',

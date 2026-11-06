@@ -419,7 +419,7 @@ test('the global news model: articles of one event are one event; regions, topic
   s.setDoc('research/news',{items:[]},{silent:true});
   s.setDoc('research/newsx',{updatedAt:at.toISOString(),gen:A,by:{[newsId(A[0].link)]:x({ev:'fed',he:'הפד הותיר את הריבית',level:'crit'}),[newsId(A[1].link)]:x({ev:'fed',he:'הפד הותיר',rules:true}),
     [newsId(A[2].link)]:x({ev:'oil',he:'הנפט עלה',regions:['middle_east'],themes:['oil'],sectors:['Energy'],dir:'pos',aff:[{sym:'XOM',how:'direct',dir:'pos'}]}),[newsId(A[3].link)]:x({ev:'old',he:'ישן'})}},{silent:true});
-  s.setDoc('research/ecocal',{items:[{d:'2026-11-05',name:'מדד המחירים',cat:'inflation',region:'us',imp:3}]},{silent:true});
+  s.setDoc('research/ecocal',{items:[{d:new Date(at.getTime()+864e5).toISOString().slice(0,10),name:'מדד המחירים',cat:'inflation',region:'us',imp:3}]},{silent:true});   // tomorrow (a fixed day passed)
   const M=worldModel(s,{days:3,at});
   assert.deepEqual(M.events.map(e=>e.k),['fed','oil'],'one event per key, the old one out of the window');
   const fed=M.events[0]; assert.equal(fed.n,2); assert.equal(fed.pubs.length,2); assert.equal(fed.he,'הפד הותיר את הריבית','Claude\'s reading stands for it'); assert.equal(fed.level,'crit');
