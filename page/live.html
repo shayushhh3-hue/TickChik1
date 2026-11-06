@@ -2672,6 +2672,9 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .noacct .kline{display:none!important}
 .mypos .spnote{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--sunk);color:var(--ink2);font-size:13.5px;line-height:1.55}
 .mypos .spnote b{color:var(--ink)}
+.stbub .stc.stc1{width:30px;height:30px;padding:2px;box-shadow:0 3px 8px rgb(20 18 46 / .3)} .stbub .stc1 .in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:var(--surface)} .stbub .stc1 .stx{font-size:13px;font-weight:800;color:var(--ink);line-height:1}
+/* 6.11: Chiko's card: the source and how sure, one small line under the three parts */
+.chico-i .ci-src{margin:2px 0 8px;font-size:12.5px;color:var(--muted);line-height:1.5}
 </style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
@@ -3242,8 +3245,8 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
                 <div class="ix-empty" id="ixEmpty" hidden></div></div>
               <div class="ix-txt" id="ixTxt" hidden></div>
               <details class="ix-key"><summary>איך לקרוא את המפה</summary>
-                <ul class="ix-keyl"><li><i class="kd" style="background:#7C3AED"></i><b>במרכז:</b> התיק שלך (או האירוע, החברה או העולם, לפי התצוגה)</li><li><i class="kd" style="background:#EF4444"></i><b>אירוע:</b> ידיעה שנקראה. הילה גדולה: אירוע קריטי</li><li><i class="kd" style="background:#22C55E"></i><b>גורם כלכלי:</b> מחיר, שער או ריבית שהאירוע עשוי להזיז (↑ עשוי לעלות, ↓ לרדת)</li><li><i class="kd" style="background:#3B82F6"></i><b>ענף:</b> הענף שהאירוע נוגע בו</li><li><i class="kd" style="background:#F59E0B"></i><b>חברה</b></li><li><i class="kd" style="background:#8B5CF6"></i><b>החזקה בתיק:</b> עם האחוז שלה מהתיק</li></ul>
-                <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שעשוי לעלות או לרדת</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
+                <ul class="ix-keyl"><li><i class="kd" style="background:#7C3AED"></i><b>במרכז:</b> התיק שלך (או האירוע, החברה או העולם, לפי התצוגה)</li><li><i class="kd" style="background:#EF4444"></i><b>אירוע:</b> ידיעה שנקראה. הילה גדולה: אירוע קריטי</li><li><i class="kd" style="background:#22C55E"></i><b>גורם כלכלי:</b> מחיר, שער או ריבית שהאירוע עשוי להזיז (השערה: ↑ עלייה, ↓ ירידה)</li><li><i class="kd" style="background:#3B82F6"></i><b>ענף:</b> הענף שהאירוע נוגע בו</li><li><i class="kd" style="background:#F59E0B"></i><b>חברה</b></li><li><i class="kd" style="background:#8B5CF6"></i><b>החזקה בתיק:</b> עם האחוז שלה מהתיק</li></ul>
+                <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שהאירוע עשוי להזיז (השערה)</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
                 <p class="nm" style="margin:0">לגעת בנקודה או בשם שלה מציג פרטים. הכיוון הוא השערה מהקריאה של החדשות, לא מדידה ולא תחזית.</p></details>
               <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
             </section>
@@ -20930,8 +20933,8 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
 function chicoInsH(L,st){if(!L.length)return '';
   return `<article class="msg bot chico-ins" data-chicoins><div class="msg-by"><span class="av chiko" aria-hidden="true"></span><b>צ׳יקו</b></div><div class="ana-card"><p class="hl">מה מצאתי בשבילך</p>
     ${L.map(x=>`<details class="chico-i lv-${x.lv}" data-chicok="${esc(x.k)}"><summary><span class="tag">${esc(CHICO_KH[x.kind]||'')}</span> ${esc(x.what)}</summary><dl>
-      ${x.whatMore?`<dt>מה קרה</dt><dd>${esc(x.whatMore)}</dd>`:''}<dt>למה אני פונה עכשיו</dt><dd>${esc(x.whyNow)}</dd><dt>למה זה נוגע לך</dt><dd>${esc(x.why)}</dd><dt>ההשפעה האפשרית</dt><dd>${esc(x.impact)}</dd>
-      <dt>מה כדאי לבדוק</dt><dd>${esc(x.check)}</dd><dt>מקורות</dt><dd>${esc((x.src||[]).join(', ')||'—')}</dd><dt>ודאות ומגבלות</dt><dd>${esc(x.cert)}. ${esc(x.limits)}</dd></dl>
+      ${x.whatMore?`<dt>מה קרה</dt><dd>${esc(x.whatMore)}</dd>`:''}<dt>למה זה נוגע לך</dt><dd>${esc(x.why)}</dd><dt>מה כדאי לבדוק</dt><dd>${esc(x.check)}</dd></dl>
+      <p class="ci-src">${(x.src||[]).length?`מקור: ${esc((x.src||[]).join(', '))} · `:''}${esc(x.cert)}. ${esc(x.limits)}</p>
       ${x.acts||''}<div class="ana-navs">${anaNavBtn(x.nav)}<button type="button" class="btn sm" data-chicoseen="${esc(x.k)}">הבנתי</button></div>${fbH('ins',true)}</details>`).join('')}
     <p class="note">${st.pro?'אני פונה רק כשיש משהו חדש וחשוב, פעם ביום לכל היותר.':'הפניות היזומות מושתקות: אני מראה את זה רק כשאתה פותח אותי.'} <button type="button" class="lnk" data-chicopro="${st.pro?'0':'1'}">${st.pro?'להשתיק פניות יזומות':'להחזיר פניות יזומות'}</button></p></div></article>`}
 function chicoInsDraw(){const box=$('anaOut'); if(!box)return; const old=box.querySelector('[data-chicoins]'); const L=chicoInsights(), h=chicoInsH(L,chicoSt());
@@ -24330,17 +24333,15 @@ function plCenter(){
 function plRender(m){
   plCount(); const pr=plPrefs(), b=$('stBub'); try{nxNavDot()}catch(e){}
   if(!b)return; const L=plDedup(plItems()).filter(plFloat).sort(plSort);
-  const ic=[], seen=new Set(); for(const a of L){const sym=((a.holds||[]).find(h=>h.link==='direct')||(a.holds||[])[0]||{}).sym||(a.usd!=null?'$':'•'); if(seen.has(sym))continue; seen.add(sym); ic.push({a,sym}); if(ic.length===3)break}
-  const rest=L.length-ic.length, show=pr.icons&&L.length>0;
-  b.hidden=!show; if(!show)return;
-  setH(b,ic.map(({a,sym})=>`<button type="button" class="stc${a.lv==='crit'?' crit':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}: ${esc(a.title)}"><span class="in">${sym==='$'?'<span class="stx">$</span>':sym==='•'?'<span class="stx">שוק</span>':logoHtml(sym)}</span></button>`).join('')
-    +(rest>0?`<button type="button" class="stn" dir="ltr" data-plall="1" aria-label="עוד ${rest} התראות">+${rest}</button>`:''));
+  // 6.11: one small count on צ׳יקו's corner (the row of icons and "+6" covered the chart); a tap opens them one by one
+  const show=pr.icons&&L.length>0; b.hidden=!show; if(!show)return; const a0=L[0], n=L.length;
+  setH(b,`<button type="button" class="stc stc1${L.some(a=>a.lv==='crit')?' crit':''}" data-plk="${esc(a0.k)}" aria-label="${esc(PL_LVS[a0.lv])}: ${esc(a0.title)}${n>1?` · ועוד ${n-1} ${n-1===1?'התראה':'התראות'}`:''}"><span class="in"><span class="stx" dir="ltr">${n}</span></span></button>`);
   b.setAttribute('aria-label',`${L.length===1?'התראה אחת שלא נקראה':L.length+' התראות שלא נקראו'} מעל צ׳יקו`); stPlace();
   try{plBanner()}catch(e){}
 }
 function stPlace(){const b=$('stBub'), f=$('chatFab'); if(!b||b.hidden)return; if(!f||f.hidden){b.style.visibility='hidden';return}
   const r=f.getBoundingClientRect(); if(!r.width){b.style.visibility='hidden';return} b.style.visibility='';
-  const w=b.offsetWidth||60, x=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(8,innerHeight-r.top+10)+'px'}
+  const w=b.offsetWidth||30, h=b.offsetHeight||30, x=Math.max(4,Math.min(innerWidth-w-4,r.right-w*0.8)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-h*0.6)+'px'}   // on the button's top corner
 addEventListener('resize',()=>{try{stPlace()}catch(e){}});
 setInterval(()=>{const b=$('stBub'); if(b&&!b.hidden)try{stPlace()}catch(e){}},1500);
 // a critical alert: a banner at the top, once per version, not in the quiet hours (unless allowed)
@@ -25720,9 +25721,10 @@ function nwSaveToggle(id,on){const st=NEWSST=nxState(); if(on){const it=newsAll(
 // holding. Each step says what it is, the direction in words (a sign with a word, never a color alone) and why; the
 // bottom line apart: a guess from the reading, not a measurement and not a forecast. The news cards, the impact map and
 // its panels all say it the same way ====
-const CH_MOVE={up:['mv','↑','עשוי לעלות'],down:['mv','↓','עשוי לרדת'],unclear:['unc','↕','עשוי לזוז, כיוון לא ברור']};
-const CH_DIR={pos:['pos','▲','עשוי ליהנות מזה'],neg:['neg','▼','עשוי להיפגע מזה'],mixed:['mix','◆','השפעה מעורבת'],unclear:['unc','•','הכיוון לא ברור']};
-const CH_DIRF={pos:['pos','▲','עשויה ליהנות מזה'],neg:['neg','▼','עשויה להיפגע מזה'],mixed:['mix','◆','השפעה מעורבת'],unclear:['unc','•','הכיוון לא ברור']};
+// 6.11: a direction read from the news is a hypothesis, and is said so ("עשויה להיפגע מזה" read as a forecast)
+const CH_MOVE={up:['mv','↑','השערה: עלייה'],down:['mv','↓','השערה: ירידה'],unclear:['unc','↕','השערה: תנודה, בלי כיוון ברור']};
+const CH_DIR={pos:['pos','▲','השערה: לטובה'],neg:['neg','▼','השערה: לרעה'],mixed:['mix','◆','השערה: השפעה מעורבת'],unclear:['unc','•','הכיוון לא ברור']};
+const CH_DIRF=CH_DIR;
 const CH_HOW={direct:'החברה שהידיעה עוסקת בה',supplier:'ספקית של החברה שבחדשות',customer:'לקוחה של החברה שבחדשות',competitor:'מתחרה של החברה שבחדשות',sector:'באותו ענף כמו החברה שבחדשות',macro:'מושפעת מאירוע רחב'};
 const chBadge=(dir,fem,mv)=>{const w=mv?(CH_MOVE[dir]||CH_MOVE.unclear):((fem?CH_DIRF:CH_DIR)[dir]||CH_DIR.unclear); return `<span class="ix-dw ${w[0]}"><span aria-hidden="true">${w[1]}</span> ${w[2]}</span>`};
 function chainH(S,bottom=''){return `<ol class="chn">${S.map((s,i)=>`<li class="chn-s t-${s.t}"><span class="chn-i" aria-hidden="true">${i+1}</span><div class="chn-b"><span class="chn-k">${esc(s.k)}</span><span class="chn-m"><b><bdi>${esc(s.main)}</bdi></b>${s.dir?' '+chBadge(s.dir,s.fem,s.t==='fac'):''}</span>${s.why?`<span class="chn-w">${s.t==='ev'||s.t==='hold'?'':'למה: '}${esc(s.why)}</span>`:''}${s.extra||''}</div></li>`).join('')}</ol>${bottom}`}
@@ -26580,7 +26582,7 @@ function ixStH(sym){let m=null; try{m=mAllNow()}catch(e){} const o=ixStOf(sym,m)
 // drawn again (new prices, new alerts): the place the reader was on keeps the focus
 function ixStRender(){const el=$('ixSvB'); if(!el||!IXST)return; const f=document.activeElement, fid=f&&f.id&&el.contains(f)?f.id:null; if(setH(el,ixStH(IXST))&&fid){const n=$(fid); if(n)try{n.focus({preventScroll:true})}catch(e){}}}
 // the map in words: from each event, the ways it goes to the holdings, each step with what it is
-const IX_EDIR={pos:'חיובי אפשרי',neg:'שלילי אפשרי',mixed:'מעורב',up:'עשוי לעלות',down:'עשוי לרדת',unclear:'כיוון לא ברור'};
+const IX_EDIR={pos:'חיובי אפשרי',neg:'שלילי אפשרי',mixed:'מעורב',up:'השערה: עלייה',down:'השערה: ירידה',unclear:'כיוון לא ברור'};
 function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm">אין מה לתאר בתצוגה הזאת.</p>';
   let m=null; try{m=mAllNow()}catch(e){} const held=new Set(((m&&m.pos)||[]).map(p=>p.sym)), by=new Map(G.nodes.map(n=>[n.id,n])), out=new Map();
   for(const e of G.edges){if(!out.has(e.from))out.set(e.from,[]); out.get(e.from).push(e)}
@@ -26785,7 +26787,7 @@ function imZoom(f,cx,cy){const cv=$('imCv'); if(!cv)return; const r=cv.getBoundi
 function imCenterOn(id){const n=IMG&&IMG.nodes.find(x=>x.id===id), cv=$('imCv'); if(!n||!cv)return; IMZ.x=cv.clientWidth/2-(n.x+n.w/2)*IMZ.k; IMZ.y=cv.clientHeight/2-(n.y+n.h/2)*IMZ.k; imApply()}
 // the details: a point (what kind, what it is, its links) or a link (what, why, direct or not, direction, confidence,
 // what it rests on, known or possible, measured when it was); with nothing chosen, how to read the map
-const IM_DIR_HE={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'כיוון לא ברור',up:'עשוי לעלות',down:'עשוי לרדת',none:'—'};
+const IM_DIR_HE={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'כיוון לא ברור',up:'השערה: עלייה',down:'השערה: ירידה',none:'—'};
 const IM_KIND_HE={direct:'קשר ישיר',indirect:'קשר עקיף',possible:'קשר אפשרי',exposure:'חשיפה דרך הענף',fact:'עובדה מהתיק שלך',ctx:'הקשר גיאוגרפי'};
 // 30.10: the ways from the events to one point, each its links in order (three at most), and the same chain in words
 function imPaths(G,id){const into=new Map(), byId=new Map(G.nodes.map(n=>[n.id,n])); for(const e of G.edges){if(!into.has(e.to))into.set(e.to,[]); into.get(e.to).push(e)} const out=[];
@@ -26816,7 +26818,7 @@ function imSay(e,a,b){const d=e.dir;
   if(e.kind==='fact')return `זו ההחזקה שלך ב-${b&&b.sym||''}: מה שקורה למניה קורה לחלק הזה של התיק.`;
   if(b&&b.t==='fac')return `האירוע עשוי להזיז את ${b.label}: ${(CH_MOVE[d]||CH_MOVE.unclear)[2]}.`;
   if(b&&b.t==='sec')return `${a&&a.t==='fac'?`שינוי ב${a.label}`:'האירוע'} עשוי לגעת בענף ${b.label}: ${(CH_DIR[d]||CH_DIR.unclear)[2]}.`;
-  if(b&&b.t==='co')return e.kind==='direct'?`הידיעה עוסקת ב-${b.sym} עצמה: ${(CH_DIRF[d]||CH_DIRF.unclear)[2]}.`:`${b.sym} קשורה ל${a&&a.t==='sec'?'ענף '+a.label:a&&a.t==='fac'?a.label:'אירוע'}: ${(CH_DIRF[d]||CH_DIRF.unclear)[2]}.`;
+  if(b&&b.t==='co')return e.kind==='direct'?`הידיעה עוסקת ב-${b.sym} עצמה (${(CH_DIRF[d]||CH_DIRF.unclear)[2]}).`:`${b.sym} קשורה ל${a&&a.t==='sec'?'ענף '+a.label:a&&a.t==='fac'?a.label:'אירוע'} (${(CH_DIRF[d]||CH_DIRF.unclear)[2]}).`;
   if(b&&b.t==='hold'&&e.kind==='exposure')return `${b.sym} בענף ${a?a.label:''}, ולכן עשויה להיות מושפעת דרכו. הקריאה לא הזכירה אותה בשמה.`;
   if(b&&b.t==='ev'&&a&&a.t==='reg')return `האירוע קורה ב${a.label} או נוגע לשם.`;
   return ''}

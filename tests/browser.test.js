@@ -617,11 +617,11 @@ test('חיבור למציאות, the news: the portfolio\'s news with search, fi
     const nv=`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"]`;
     // who this may touch and why: on the card itself, the holdings first, each a chain in words
     const imp=await pg.evaluate(s=>{const b=document.querySelector(s+' .nwi'); return b?{hd:b.querySelector('.nwi-hd').textContent.replace(/\s+/g,' '),rows:[...b.querySelectorAll('.nwi-r>summary')].map(x=>x.innerText.replace(/\s+/g,' ').trim())}:null},nv);
-    assert.ok(imp,'the block is there'); assert.match(imp.hd,/על מי זה משפיע, ולמה.*נוגע ב-NVDA/); assert.match(imp.rows[0],/NVDA בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/,JSON.stringify(imp.rows));
+    assert.ok(imp,'the block is there'); assert.match(imp.hd,/על מי זה משפיע, ולמה.*נוגע ב-NVDA/); assert.match(imp.rows[0],/NVDA בתיק \d+% בחדשות ▲ השערה: לטובה/,JSON.stringify(imp.rows));
     assert.ok(imp.rows.some(r=>/MSFT .*לקוחה .*השפעה מעורבת/.test(r)),JSON.stringify(imp.rows));
     await pg.click(nv+' .nwi-r>summary'); await pg.waitForTimeout(150);
     assert.deepEqual(await pg.evaluate(s=>[...document.querySelectorAll(s+' .nwi-r[open] .chn-k')].map(x=>x.textContent),nv),['מה קרה','החברה','ההחזקה שלך']);
-    assert.match(await pg.evaluate(s=>document.querySelector(s+' .nwi-r[open] .chn-bl').innerText.replace(/\s+/g,' '),nv),/בשורה התחתונה: NVDA ▲ עשויה ליהנות מזה.*הידיעה עצמה דווחה כעובדה/);
+    assert.match(await pg.evaluate(s=>document.querySelector(s+' .nwi-r[open] .chn-bl').innerText.replace(/\s+/g,' '),nv),/בשורה התחתונה: NVDA ▲ השערה: לטובה.*הידיעה עצמה דווחה כעובדה/);
     await pg.click(nv+' details.nw-more>summary'); await pg.waitForTimeout(200);
     const more=await pg.evaluate(s=>document.querySelector(s+' details.nw-more').textContent.replace(/\s+/g,' '),nv);
     assert.match(more,/מה לא ידוע: איך השוק יגיב\./); assert.match(more,/גורמים כלכליים: שבבים ↑ \(ביקוש גבוה לשבבי AI\)/); assert.match(more,/עוד על אותו אירוע: CNBC/); assert.match(more,/לתיק שלך:/);
@@ -704,8 +704,8 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
     // the icons over צ׳יקו: buttons, the critical first, never more than three; no stories viewer
     const bub=await pg.evaluate(()=>({n:document.querySelectorAll('#stBub .stc').length,first:document.querySelector('#stBub .stc').getAttribute('aria-label'),crit:document.querySelector('#stBub .stc').classList.contains('crit'),bars:!!document.getElementById('stBars'),
-      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.bottom<=f.top+1&&a.right>f.left&&a.left<f.right})()}));
-    assert.ok(bub.n>=1&&bub.n<=3); assert.match(bub.first,/^התראה קריטית: אנבידיה/); assert.ok(bub.crit&&bub.over); assert.equal(bub.bars,false,'no stories bars');
+      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 6.11: one count on the button's corner
+    assert.equal(bub.n,1); assert.match(bub.first,/^התראה קריטית: אנבידיה/); assert.ok(bub.crit&&bub.over,JSON.stringify(bub)); assert.equal(bub.bars,false,'no stories bars');
     await pg.click('#stBub .stc'); await pg.waitForTimeout(300);
     let v=await pg.evaluate(()=>{const b=document.getElementById('plShB'); return {open:!document.getElementById('plSheet').hidden,h:b.querySelector('h3').textContent,lv:b.querySelector('.pl-lv').textContent,chain:b.querySelector('.pl-chain')?.textContent.replace(/\s+/g,' '),
       ms:[...b.querySelectorAll('.pl-m')].map(m=>m.textContent.replace(/\s+/g,' ').trim()),why:b.querySelector('.pl-why').textContent.replace(/\s+/g,' '),dir:b.textContent.replace(/\s+/g,' '),acts:[...b.querySelectorAll('.pl-acts > .btn, .pl-acts > a')].map(x=>x.textContent.trim())}});
@@ -739,7 +739,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     // an event tapped on the map: in words, how it may touch each holding, the first one's way open
     await pg.evaluate(()=>window.__ix.sel('ev:ev:nvda-q3-report')); await pg.waitForTimeout(200);
     const tp=await pg.evaluate(()=>{const t=document.getElementById('ixTip'); return {t:t.innerText.replace(/\s+/g,' '),k:[...t.querySelectorAll('.nwi-r[open] .chn-k')].map(x=>x.textContent)}});
-    assert.match(tp.t,/מה קרה: /); assert.match(tp.t,/איך זה עשוי להשפיע על (המניות שלך|NVDA)/); assert.match(tp.t,/NVDA בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/); assert.deepEqual(tp.k,['מה קרה','החברה','ההחזקה שלך']);
+    assert.match(tp.t,/מה קרה: /); assert.match(tp.t,/איך זה עשוי להשפיע על (המניות שלך|NVDA)/); assert.match(tp.t,/NVDA בתיק \d+% בחדשות ▲ השערה: לטובה/); assert.deepEqual(tp.k,['מה קרה','החברה','ההחזקה שלך']);
     assert.match(tp.t,/בשורה התחתונה: NVDA/);
     // "מה קורה למניה": the holdings touched, a card (a button) each; the share's own view in plain words
     const sl=await pg.evaluate(()=>[...document.querySelectorAll('#ixStList [data-ixst]')].map(b=>({s:b.dataset.ixst,t:b.innerText.replace(/\s+/g,' ')})));
@@ -801,7 +801,7 @@ test('the news in Hebrew at once: an article on the screen that צ׳יקו has n
     assert.ok(!/JPMorgan names/.test(t0),'not the English headline: '+t0);
     await pg.waitForFunction(s=>{const c=document.querySelector(s); return c&&/ג׳יי\.פי מורגן מינתה/.test(c.textContent)},sel,{timeout:25000});
     const c=await pg.evaluate(s=>{const c=document.querySelector(s), d=c.querySelector('details.nw-cd'); if(d)d.open=true; return c.innerText.replace(/\s+/g,' ')},sel);
-    assert.match(c,/על מי זה משפיע, ולמה/); assert.match(c,/JPM בתיק \d+% בחדשות ▲ עשויה ליהנות מזה/); assert.ok(seen.some(p=>p.includes('ARTICLES')&&p.includes('JPMorgan names new head')),'read on the server');
+    assert.match(c,/על מי זה משפיע, ולמה/); assert.match(c,/JPM בתיק \d+% בחדשות ▲ השערה: לטובה/); assert.ok(seen.some(p=>p.includes('ARTICLES')&&p.includes('JPMorgan names new head')),'read on the server');
     // the alert: the read one, in Hebrew, in place of the one from the headline alone
     await pg.waitForFunction(id=>((window.__nx.pulse()||{}).items||[]).some(a=>(a.arts||[]).some(z=>z.id===id)&&!a.rules),jid,{timeout:15000});
     const al=await pg.evaluate(id=>((window.__nx.pulse()||{}).items||[]).filter(a=>(a.arts||[]).some(z=>z.id===id)).map(a=>({t:a.title,r:!!a.rules})),jid);
@@ -845,7 +845,7 @@ test('the impact map: opened from an article and from an alert; the chain with a
     assert.match(sw.p,/איך זה מגיע ל-MSFT, צעד אחר צעד/); assert.deepEqual(sw.k.slice(0,5),['מה קרה','מה זה עשוי להזיז','הענף','החברה','ההחזקה שלך'],JSON.stringify(sw.k)); assert.match(sw.p,/בשורה התחתונה: MSFT/);
     assert.ok(sw.dim>0,'the other points dimmed'); assert.ok(sw.b.includes('▲')&&sw.b.includes('↑'),'the signs on the links: '+JSON.stringify(sw.b));
     await pg.evaluate(()=>window.__im.sel('ev:nvda-q3-report')); await pg.waitForTimeout(200);
-    assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' ')),/מה זה אומר למניות שלך.*NVDA.*עשויה ליהנות מזה/);
+    assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' ')),/מה זה אומר למניות שלך.*NVDA.*השערה: לטובה/);
     await pg.click('#imP .imp-hr'); await pg.waitForTimeout(200); assert.match(await pg.evaluate(()=>document.getElementById('imP').textContent.replace(/\s+/g,' ')),/צעד אחר צעד/);
     // a tap on a point; focus; the filters
     const box=await pg.evaluate(()=>{const r=document.querySelector('#imG [data-imn="s:Technology"] rect').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}});
@@ -2700,7 +2700,9 @@ test('3.11 צ׳יקו across the site: what he found (seven parts, once, silence
     await pg.click('#chatFab'); await pg.waitForSelector('#anaOut [data-chicoins] details');
     const ins=await pg.evaluate(()=>{const L=[...document.querySelectorAll('#anaOut [data-chicoins] details')]; L[0].open=true; return {n:L.length,first:L[0].querySelector('summary').textContent,dt:[...L[0].querySelectorAll('dt')].map(x=>x.textContent),k:L.map(x=>x.dataset.chicok)}});
     assert.ok(ins.n>=1&&ins.n<=3,JSON.stringify(ins)); assert.match(ins.first,/אנבידיה/); assert.match(ins.first,/אירוע שנוגע בכמה החזקות/,'one event, several holdings');
-    for(const x of ['למה אני פונה עכשיו','למה זה נוגע לך','ההשפעה האפשרית','מה כדאי לבדוק','מקורות','ודאות ומגבלות'])assert.ok(ins.dt.includes(x),x+' in '+JSON.stringify(ins.dt));
+    // 6.11: three parts (the reason to turn to you and the guessed effect are gone); the source and how sure in one line
+    for(const x of ['למה זה נוגע לך','מה כדאי לבדוק'])assert.ok(ins.dt.includes(x),x+' in '+JSON.stringify(ins.dt)); for(const x of ['למה אני פונה עכשיו','ההשפעה האפשרית'])assert.ok(!ins.dt.includes(x),x);
+    assert.match(await pg.evaluate(()=>document.querySelector('#anaOut [data-chicoins] details .ci-src').textContent),/\. /);
     assert.equal(await pg.evaluate(()=>document.getElementById('chatFab').dataset.mood),'','the ring goes once he is open');
     // "הבנתי": it goes, and it is kept in the account
     await pg.click(`#anaOut [data-chicoseen="${ins.k[0]}"]`); await pg.waitForTimeout(300);
