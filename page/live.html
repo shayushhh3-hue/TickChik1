@@ -3687,7 +3687,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
       <div class="panel recon sdiff" id="sdBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
-        <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><span><button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">ייצוא CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
+        <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><span><button class="btn sm" id="btnXlsx" type="button" title="כל התיק לאקסל: אחזקות, מזומן, פעולות, הפקדות, היסטוריה יומית ופיצולים">ייצוא לאקסל</button> <button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
         <table class="pf">
           <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>עלות כוללת $</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
           <tbody id="pfRows"><tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
@@ -22203,6 +22203,31 @@ document.addEventListener('click',ev=>{
       for(const p of ((P&&P.positions)||[])){const mp=m&&m.pos.find(x=>x.sym===p.sym&&x.acct===p.acct)||m&&m.pos.find(x=>x.sym===p.sym); rows.push([p.sym,p.name||'',p.qty,p.ccy||'',p.acct||'',GROUPS[p.group]||p.group||'',p.costIls??'',p.costUsd??'',mp?mp.px:'',mp?Math.round(mp.val):''])}
       for(const c of ((P&&P.cash)||[]))rows.push(['CASH','מזומן',c.amount,c.ccy,c.acct,'מזומן','','','','']);
       const csv='\ufeff'+rows.map(r=>r.map(v=>{const t=String(v??''); return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}).join(',')).join('\n'), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=`tikchik-holdings-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); try{useAdd('csv')}catch(e){}}catch(e){console.error(e)} return}
+  // 8.11: the whole portfolio to Excel, in one tap: the holdings as the site values them today, the cash, every trade and
+  // deposit known (the statements' and the ones written here), the saved daily values, the splits applied. Built here,
+  // from this person's own documents; nothing leaves the browser.
+  if(ev.target.id==='btnXlsx'){const b=ev.target; (async()=>{try{b.disabled=true; const t0=b.textContent; b.textContent='מכין אקסל…'; await libNeed('xlsx'); if(!window.XLSX)throw new Error('xlsx');
+      const wb=XLSX.utils.book_new(), add=(name,aoa,widths)=>{const ws=XLSX.utils.aoa_to_sheet(aoa); if(widths)ws['!cols']=widths.map(w=>({wch:w})); XLSX.utils.book_append_sheet(wb,ws,name)};
+      let m=null; try{m=mAllNow()}catch(e){} const fx=usdRate();
+      const H=[['נייר','שם','חשבון','קבוצה','כמות','מטבע','מחיר עכשיו','שווי ₪','שינוי היום %','משקל %','עלות ₪','עלות $','מקור המחיר','יום המחיר']];
+      for(const p of ((P&&P.positions)||[])){const mp=m&&(m.pos.find(x=>x.sym===p.sym&&x.acct===p.acct)||m.pos.find(x=>x.sym===p.sym)), md=(Q&&Q.meta&&Q.meta[p.sym])||{};
+        H.push([p.sym,p.name||'',acctName(p.acct)||p.acct||'',GROUPS[p.group]||p.group||'',+p.qty,p.ccy||'',mp?mp.px:(Q&&Q.prices&&Q.prices[p.sym])||'',mp?Math.round(mp.val):'',mp&&mp.dayPct!=null?+(+mp.dayPct).toFixed(2):'',mp&&mp.w!=null?+(+mp.w).toFixed(2):'',p.costIls??'',p.costUsd??'',(Q&&Q.stale&&Q.stale[p.sym])||md.src||'',md.date||''])}
+      if(m)H.push([],['סה״כ אחזקות','','','','','','',Math.round(m.pos.reduce((t,x)=>t+x.val,0))],['מזומן','','','','','','',Math.round(m.cash||0)],['שווי התיק','','','','','','',Math.round(m.total)],['שער הדולר',fx],['נכון ל',Q&&Q.updatedAt?new Date(Q.updatedAt).toLocaleString('he-IL'):'']);
+      add('אחזקות',H,[10,28,12,14,10,6,12,12,12,10,12,12,18,12]);
+      add('מזומן',[['חשבון','מטבע','סכום','שווי ₪'],...((P&&P.cash)||[]).map(c=>[acctName(c.acct)||c.acct||'',c.ccy||'ILS',+c.amount,Math.round((+c.amount||0)*(c.ccy==='USD'?fx:1))])],[14,8,12,12]);
+      const T=[['תאריך','חשבון','נייר','פעולה','כמות','מחיר','מטבע','סכום','שער','מאיפה']];
+      for(const A of (HS&&HS.accounts)||[]){for(const t of A.trades||[])T.push([String(t.date||'').slice(0,10),acctName(A.acct)||A.acct,t.sym||'',t.div?'דיבידנד':t.side==='sell'?'מכירה':'קנייה',t.qty??'',t.px??'',t.ccy||'',t.amt??'',t.fx??'','דוח']);
+        for(const t of A.manual||[])T.push([String(t.date||'').slice(0,10),acctName(A.acct)||A.acct,t.sym||'',t.side==='sell'?'מכירה':'קנייה',t.qty??'',t.px??'',t.ccy||'',t.amt??'',t.fx??'','נרשם באתר'+(t.real!=null?` (רווח ממומש ${Math.round(t.real)} ₪)`:'')])}
+      T.splice(1,T.length-1,...T.slice(1).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))); add('פעולות',T,[11,12,10,10,10,10,6,12,8,22]);
+      const D=[['תאריך','חשבון','סוג','סכום','מטבע']]; for(const A of (HS&&HS.accounts)||[])for(const d of A.deposits||[])D.push([String(d.date||'').slice(0,10),acctName(A.acct)||A.acct,+d.amount>=0?'הפקדה':'משיכה',Math.abs(+d.amount||0),d.ccy||A.ccy||'ILS']);
+      D.splice(1,D.length-1,...D.slice(1).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))); add('הפקדות ומשיכות',D,[11,12,8,12,6]);
+      const accts=[...new Set(Object.values((DY&&DY.points)||{}).flatMap(x=>Object.keys(x.by||{})))].sort(), Y=[['תאריך','שווי ₪','הופקד נטו ₪','שער הדולר',...accts.map(a=>acctName(a)||a)]];
+      for(const k of Object.keys((DY&&DY.points)||{}).sort()){const x=DY.points[k]; if(!x)continue; Y.push([k,Math.round(+x.v||0),Math.round(+x.dep||0),x.fx??'',...accts.map(a=>x.by&&x.by[a]!=null?Math.round(x.by[a]):'')])}
+      add('היסטוריה יומית',Y,[11,12,12,10,...accts.map(()=>12)]);
+      const SP=[['נייר','יום הפיצול','יחס','נמצא ב','חשבון','כמות לפני','כמות אחרי','הערה']]; for(const [k,v] of Object.entries((P&&P.splits)||{})){for(const r of v.rows||[])SP.push([v.sym,v.d,`1:${v.r}`,String(v.at||'').slice(0,10),acctName(r.acct)||r.acct||'',r.q0,r.q1,v.undone?'בוטל':r.kept?'נשמר (דוח חדש יותר)':''])}
+      if(SP.length>1)add('פיצולים',SP,[10,11,8,11,12,12,12,20]);
+      const out=XLSX.write(wb,{type:'array',bookType:'xlsx'}), a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); a.download=`tikchik-${new Date().toISOString().slice(0,10)}.xlsx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+      try{useAdd('export:portfolio-xlsx')}catch(e){} b.textContent=t0}catch(e){console.error(e); b.textContent='האקסל לא נוצר'; setTimeout(()=>{b.textContent='ייצוא לאקסל'},2500)} finally{b.disabled=false}})(); return}
   if(ev.target.id==='grpApply'){if(!DRAFT)DRAFT=draftFromP(); for(const h of groupHints(DRAFT))for(const p of DRAFT.positions)if(p.sym===h.sym){p.group=h.g; p._g='auto'} pfDirty(); renderMine(true); return}
   if(ev.target.id==='btnPfReset'){dDirty=false;PFS.resets++;FIXED.clear();FIRSTX=false;$('pfSaved').textContent='';renderMine(true);renderTx();upStep(0);return}
   if(ev.target.id==='btnAddRow'){if(!DRAFT)DRAFT=draftFromP();DRAFT.positions.push({sym:'',name:'',acct:acctPick(),qty:0,ccy:'USD',costIls:null,costUsd:null,px:null,group:'tech'});pfDirty();renderMine(true);return}

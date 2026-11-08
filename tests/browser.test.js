@@ -3102,3 +3102,20 @@ test('8.11 the pressure gauge on the control screen: the owner sees the part, th
     assert.deepEqual(P2.pg.errs,[]); await P2.ctx.close();
   }finally{store.deleteDoc('research/pressure'); store.deleteDoc('research/pressure_track')}
 });
+
+test('8.11 the whole portfolio to Excel in one tap: a workbook with the holdings as valued today, the cash, the trades and deposits, the daily history and the splits',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300);
+  // the download is caught in the page: the blob the link would save is read back and opened with the same library
+  const r=await pg.evaluate(async()=>{const saved=[]; const o=URL.createObjectURL; URL.createObjectURL=b=>{saved.push(b); return 'blob:x'}; const click=HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click=function(){};
+    try{document.getElementById('btnXlsx').click(); for(let i=0;i<60&&!saved.length;i++)await new Promise(r=>setTimeout(r,100)); if(!saved.length)return {err:'no file'};
+      const buf=new Uint8Array(await saved[0].arrayBuffer()), wb=XLSX.read(buf,{type:'array'}); const S=n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1});
+      return {names:wb.SheetNames,hold:S('אחזקות'),cash:S('מזומן').length,trades:S('פעולות'),deps:S('הפקדות ומשיכות').length,hist:S('היסטוריה יומית'),btn:document.getElementById('btnXlsx').textContent}}
+    finally{URL.createObjectURL=o; HTMLAnchorElement.prototype.click=click}});
+  assert.ok(!r.err,r.err); assert.deepEqual(r.names.slice(0,5),['אחזקות','מזומן','פעולות','הפקדות ומשיכות','היסטוריה יומית']);
+  assert.deepEqual(r.hold[0].slice(0,8),['נייר','שם','חשבון','קבוצה','כמות','מטבע','מחיר עכשיו','שווי ₪']);
+  const rows=r.hold.slice(1).filter(x=>x.length&&x[0]&&!/סה״כ|מזומן|שווי|שער|נכון/.test(x[0])); assert.ok(rows.length>=5,'the holdings are there: '+rows.length); assert.ok(rows.every(x=>typeof x[4]==='number'&&x[4]>0),'quantities as numbers');
+  assert.ok(rows.some(x=>typeof x[7]==='number'&&x[7]>0),'a value in shekels'); assert.ok(r.hold.some(x=>x[0]==='שווי התיק'&&x[7]>0),'the total');
+  assert.deepEqual(r.trades[0].slice(0,4),['תאריך','חשבון','נייר','פעולה']); assert.ok(r.hist.length>=2,'the daily history'); assert.equal(r.btn,'ייצוא לאקסל');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
