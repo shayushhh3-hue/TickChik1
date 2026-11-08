@@ -30,7 +30,7 @@ import {backupStatus, backupNow, backupPeek, backupRestore} from './backup.js';
 import {benchFresh} from './bench.js';
 import {selfCheckNote} from './pxwatch.js';
 import {healthCheck} from './health.js';
-import {vapid, devices, addDevice, dropDevice, pushTo} from './push.js';
+import {vapid, devices, addDevice, dropDevice, pushTo, putDevices} from './push.js';
 import {totpMatch, newSecret, otpUri, newBackupCodes, codeHash} from './totp.js';
 import {adminSchema, audit, authEvent, touch, backfillActive, can as canMc} from './admin/core.js';
 import {adminRoutes} from './admin/routes.js';
@@ -150,6 +150,15 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); audit(store,{user:req.user,action:'invite.set',target:'invite',ip:req.ip}); res.json(v)});
   app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); audit(store,{user:req.user,action:'invite.close',target:'invite',ip:req.ip}); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
+  // 8.11: a partner or an admin deletes their own account: their documents, their watch list, their devices, their
+  // sessions and the user row, after their password; the owner cannot (the site is theirs). Audited by e-mail only.
+  app.post('/api/me/delete',needUser,(req,res)=>{const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
+    const u=store.userById(req.user.id); if(!u)return res.status(401).json({error:{code:'not_granted',message:'not signed in'}});
+    if(u.role==='owner')return res.status(403).json({error:{code:'owner',message:'בעל האתר לא יכול למחוק את החשבון שלו מכאן'}});
+    if(!store.checkPassword(u,String((req.body||{}).password||''))){b.miss(); return res.status(401).json({error:{code:'bad_password',message:'הסיסמה לא נכונה'}})}
+    try{for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); try{putDevices(store,u.id,[])}catch(e){}
+      audit(store,{user:{id:u.id,email:u.email},action:'user.selfdelete',target:u.email,detail:{note:'המשתמש מחק את החשבון שלו'},ip:req.ip}); store.removeUser(u.id); setCookie(res,'',0); res.json({ok:true})}
+    catch(e){log('self delete failed:',e&&e.message||e); res.status(500).json({error:{code:'failed',message:'המחיקה לא הושלמה'}})}});
   // 31.10: owner is the one person whose documents are portfolio/main and the rest; an admin manages the site (manage)
   // but invests apart, in their own area, like a partner
   const me=u=>({id:u.id,email:u.email,name:u.name||'',owner:isOwner(u),admin:u.role==='admin',manage:ownerLike(u),mc:canMc(u,'view'),mustChange:!!u.must_change});

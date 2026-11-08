@@ -15,7 +15,7 @@ export function vapid(store,{env=process.env}={}){
 }
 const subject=env=>/^https:\/\//.test(env.SITE_URL||'')?env.SITE_URL:'mailto:noreply@tikchik.invalid';
 export function devices(store,uid){try{const L=JSON.parse(store.getMeta('push:'+uid)||'[]'); return Array.isArray(L)?L:[]}catch(e){return []}}
-const putDevices=(store,uid,L)=>store.setMeta('push:'+uid,JSON.stringify(L.slice(-MAX_DEV)));
+export const putDevices=(store,uid,L)=>store.setMeta('push:'+uid,JSON.stringify(L.slice(-MAX_DEV)));
 // a subscription as the browser gives it: an https endpoint and its two keys
 export function cleanSub(s){
   if(!s||typeof s!=='object')return null; const e=String(s.endpoint||''), k=s.keys||{};

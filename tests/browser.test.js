@@ -3157,3 +3157,17 @@ test('8.11 "מאז הביקור האחרון": with a visit two days back, the l
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('history/daily',DY0); store.setDoc('portfolio/main',P0); if(PR0.exists)store.setDoc('research/pressure',PR0.data); else store.deleteDoc('research/pressure')}
 });
+
+test('8.11 the wipe dialog offers a partner to delete the account itself, with the password; the owner is not offered it',T,async t=>{
+  if(skip())return t.skip('no browser');
+  for(const [who,shown] of [['p2',true],['owner',false]]){const {ctx,pg}=await open(1280,{who}); await tab(pg,'settings'); await pg.waitForTimeout(200);
+    await pg.evaluate(()=>document.getElementById('btnWipe').click()); await pg.waitForTimeout(150);
+    const v=await pg.evaluate(()=>{const l=document.getElementById('wipeAcctL'), pw=document.getElementById('wipeAcctPw'); return {ask:document.getElementById('wipeAsk').hidden,acct:!l.hidden,pwBefore:!pw.hidden}});
+    assert.equal(v.ask,false); assert.equal(v.acct,shown,who+': the account option'); assert.equal(v.pwBefore,false);
+    if(shown){await pg.evaluate(()=>document.getElementById('wipeAcct').click()); await pg.waitForTimeout(100);
+      const w=await pg.evaluate(()=>({pw:!document.getElementById('wipeAcctPw').hidden,set:document.getElementById('wipeSet').checked})); assert.deepEqual(w,{pw:true,set:true},'the password field appears and the settings go with the account');
+      // asked to delete with no password: stopped before anything is touched
+      await pg.evaluate(()=>document.getElementById('btnWipeYes').click()); await pg.waitForTimeout(200);
+      assert.match(await pg.evaluate(()=>document.getElementById('wipeState').textContent),/הזן את הסיסמה/); assert.ok(store.users().some(u=>u.email==='p2@example.com'),'nothing deleted')}
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+});

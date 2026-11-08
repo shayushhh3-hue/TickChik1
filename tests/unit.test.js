@@ -2281,3 +2281,19 @@ test('8.11 the security headers and the API ceiling: every answer carries the he
     assert.equal((await fetch(base+'/api/csp-report',{method:'POST',headers:{'content-type':'application/csp-report','x-tc':'1'},body:'{}'})).status,204,'a report still lands past the ceiling')}
   finally{process.env.API_RPM=saved; srv.closeAllConnections(); srv.close()}
 });
+
+test('8.11 a partner deletes their own account: the password first, then their documents, watch list, devices, sessions and the user row go; the owner cannot', async()=>{
+  const {createApp}=await import('../server/index.js'); const store=new Store(':memory:'); const o=store.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}), f=store.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  store.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'KO',qty:1}]}); store.setDoc(`data/users/${f.id}/settings`,{a:1}); store.setDoc('watch/'+f.id,{syms:['KO']}); store.setMeta('push:'+f.id,JSON.stringify([{endpoint:'https://x/1',keys:{}}]));
+  const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false}); const srv=http.createServer(app); await new Promise(r=>srv.listen(0,r)); const base='http://127.0.0.1:'+srv.address().port;
+  try{const login=async(email,password)=>{const r=await fetch(base+'/api/login',{method:'POST',headers:{'content-type':'application/json','x-tc':'1'},body:JSON.stringify({email,password})}); return (r.headers.get('set-cookie')||'').split(';')[0]};
+    const post=(cookie,body)=>fetch(base+'/api/me/delete',{method:'POST',headers:{'content-type':'application/json','x-tc':'1',cookie},body:JSON.stringify(body)});
+    const ck=await login('f@example.com','friend-pass-1'); assert.ok(ck,'signed in');
+    let r=await post(ck,{password:'wrong-pass-123'}); assert.equal(r.status,401); assert.ok(store.userById(f.id),'still there after a wrong password');
+    r=await post(ck,{password:'friend-pass-1'}); assert.equal(r.status,200); assert.match(r.headers.get('set-cookie')||'',/Max-Age=0/,'the session cookie is cleared');
+    assert.ok(!store.userById(f.id),'the user row is gone'); assert.equal(store.pathsUnder('data/users/'+f.id).length,0); assert.equal(store.getDoc('watch/'+f.id).exists,false); assert.deepEqual(JSON.parse(store.getMeta('push:'+f.id)),[]);
+    assert.ok(store.db.prepare("select 1 from audit where action='user.selfdelete' and target='f@example.com'").get(),'audited');
+    assert.equal((await fetch(base+'/api/me',{headers:{cookie:ck}}).then(r=>r.json())).me,null,'the session is gone');
+    const ok2=await login('o@example.com','owner-pass-123'); r=await post(ok2,{password:'owner-pass-123'}); assert.equal(r.status,403); assert.ok(store.userById(o.id),'the owner stays');
+  }finally{srv.closeAllConnections(); srv.close()}
+});

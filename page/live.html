@@ -3616,6 +3616,8 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <div class="wipeask" id="wipeAsk" hidden role="alertdialog" aria-labelledby="wipeQ">
           <p id="wipeQ"><b>למחוק הכול לצמיתות?</b> יימחקו: <span id="wipeList"></span>. אי אפשר לשחזר.</p>
           <label for="wipeSet"><input type="checkbox" id="wipeSet"> למחוק גם את ההגדרות, הכללים והפרופיל שלי (אחוזי יעד, כללי סיכון, המדיניות שכתבתי, השם, המייל, הטלפון, השפה ויום ההפקדה)</label>
+          <label for="wipeAcct" id="wipeAcctL" hidden><input type="checkbox" id="wipeAcct"> למחוק גם את החשבון עצמו: הכניסה שלי לאתר תימחק, ולא אוכל להיכנס שוב</label>
+          <div id="wipeAcctPw" hidden><label for="wipePw" style="font-size:13px">הסיסמה שלך, לאישור</label> <input type="password" id="wipePw" autocomplete="current-password" style="max-width:220px"></div>
           <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipeNo" type="button">ביטול</button><button class="btn danger" id="btnWipeYes" type="button">כן, מחק הכול</button></div>
         </div>
       </div>
@@ -22209,9 +22211,10 @@ document.addEventListener('click',ev=>{
     showStaged(); pump(); return}
   if(ev.target.id==='btnStop'){stopJobs();return}
   if(ev.target.id==='btnPfSave'){savePf();return}
-  if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent='';try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
+  if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent=''; try{$('wipeAcctL').hidden=!!OWNER||LOCAL||!db}catch(e){} try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
+  if(ev.target.id==='wipeAcct'){$('wipeAcctPw').hidden=!ev.target.checked; if(ev.target.checked)$('wipeSet').checked=true; return}
   if(ev.target.id==='btnCsv'){try{const rows=[['symbol','name','qty','ccy','account','group','cost_ils','cost_usd','price_now','value_ils']]; let m=null; try{m=mAllNow()}catch(e){}
       for(const p of ((P&&P.positions)||[])){const mp=m&&m.pos.find(x=>x.sym===p.sym&&x.acct===p.acct)||m&&m.pos.find(x=>x.sym===p.sym); rows.push([p.sym,p.name||'',p.qty,p.ccy||'',p.acct||'',GROUPS[p.group]||p.group||'',p.costIls??'',p.costUsd??'',mp?mp.px:'',mp?Math.round(mp.val):''])}
       for(const c of ((P&&P.cash)||[]))rows.push(['CASH','מזומן',c.amount,c.ccy,c.acct,'מזומן','','','','']);
@@ -23450,7 +23453,8 @@ async function purgeSyms(gone){
   return ok;
 }
 async function wipeAll(){
-  if(!canWrite)return; const st=$('wipeState'), withSet=$('wipeSet').checked; let ok=true;
+  if(!canWrite)return; const st=$('wipeState'), delAcct=!!($('wipeAcct')&&$('wipeAcct').checked&&!OWNER), withSet=$('wipeSet').checked||delAcct; let ok=true;
+  if(delAcct&&!$('wipePw').value){st.textContent='כדי למחוק את החשבון, הזן את הסיסמה'; $('wipePw').focus(); return}
   st.textContent='מוחק…'; $('btnWipeYes').disabled=true; $('btnWipeNo').disabled=true;
   const run=async f=>{try{await f()}catch(e){ok=false}};
   const pdel=async n=>{if(LOCAL){try{localStorage.removeItem('tr_'+n)}catch(e){}return} await db.doc(PATHS[n]).delete()};
@@ -23477,7 +23481,12 @@ async function wipeAll(){
   st.textContent=wipeMsg(ok);
   // the screens still hold the old numbers until they are redrawn, so the page starts over from what is actually stored
   try{sessionStorage.setItem('wiped',ok?'ok':'fail')}catch(e){}
-  setTimeout(()=>{try{location.reload()}catch(e){}},700);
+  // 8.11: the account itself, when asked (a partner or an admin; the owner's box is not shown): the password, then the server
+  // deletes the user and ends the session, and the page goes back to the sign-in
+  if(delAcct&&db&&!LOCAL&&!OWNER){try{const r=await fetch('/api/me/delete',{method:'POST',headers:{'content-type':'application/json','x-tc':'1'},body:JSON.stringify({password:$('wipePw').value})}); const j=await r.json().catch(()=>({}));
+      if(r.ok){st.textContent='החשבון נמחק. להתראות.'; try{sessionStorage.setItem('wiped','account')}catch(e){} setTimeout(()=>{try{location.href='./'}catch(e){}},1200); return}
+      st.textContent=(j.error&&j.error.message)||'מחיקת החשבון לא הושלמה; הנתונים נמחקו'; $('wipePw').value=''}catch(e){st.textContent='מחיקת החשבון לא הושלמה; הנתונים נמחקו'}}
+  setTimeout(()=>{try{location.reload()}catch(e){}},delAcct?2500:700);
 }
 const wipeMsg=ok=>ok?'הושלם. התיק, התוכנית וההיסטוריה נמחקו מהחשבון שלך ומהדפדפן הזה.':'המחיקה לא הצליחה במלואה. נסה שוב.';
 
