@@ -21,6 +21,7 @@ import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {smokeOnStart} from './control.js';
+import {startRt} from './rt.js';
 import {closesFor,longClosesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
@@ -527,6 +528,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
+  // 8.11: live US prices from Finnhub's trade stream during the New York session (server/rt.js)
+  if(env.JOBS!=='0'&&env.RT!=='0')try{app.locals.rt=startRt(store,{log})}catch(e){log('rt: '+e.message)}
   // 8.11: the smoke test once per build, 45 seconds after the start (server/control.js)
   if(env.JOBS!=='0')try{smokeOnStart(store,{port:PORT,version:app.locals.verOf?app.locals.verOf():'',log})}catch(e){log('smoke: '+e.message)}
   // 1.11: the heartbeat, the downtime, the incidents and the alerts to the management

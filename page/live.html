@@ -17421,7 +17421,7 @@ const pxLabelTxt=()=>{let l=String(Q.priceLabel||''); const usLive=/^מסחר ח
     if(late)l+=` · ל-${late===1?'נייר אחד':late+' ניירות'} שלך עוד אין את סגירת ${dmy(lg.want)}`}
   return l};
 let FRESH_L='';
-const freshTxt=()=>`${(()=>{try{return FRESH_L=pxLabelTxt()}catch(e){return FRESH_L=Q.priceLabel||''}})()} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()||/נפתחת/.test(FRESH_L||'')?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
+const freshTxt=()=>`${Q.rt&&Q.rt.at&&Date.now()-Date.parse(Q.rt.at)<3*60e3?'זרם חי · ':''}${(()=>{try{return FRESH_L=pxLabelTxt()}catch(e){return FRESH_L=Q.priceLabel||''}})()} · עודכן ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}${Q.attemptAt&&Q.updatedAt&&new Date(Q.attemptAt)-new Date(Q.updatedAt)>6e4?' · העדכון האחרון לא הביא מחירים':''}${mktOpen()||/נפתחת/.test(FRESH_L||'')?'':' · הבורסות\u00a0סגורות'}${pxNextTxt()}`;
 // an open page keeps that line true as the hours pass, and redraws when the prices turn late (or stop being late)
 let FRESH='', LATE=null;
 setInterval(()=>{try{if(pxHonest()){render();return} if(!P||!Q||!Q.updatedAt||noPf())return; const t=freshTxt(); if(t!==FRESH){FRESH=t; if(!PXF)$('fresh').textContent=t}

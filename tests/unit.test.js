@@ -2223,3 +2223,41 @@ test('8.11 control that speaks first: a scheduled job that did not run is a bad 
   assert.equal(typeof siteVersion(),'string');
   fs.rmSync(dir,{recursive:true,force:true});
 });
+
+test('8.11 live US prices: the stream\'s symbols, its trades written as prices with a stamp, a bad tick dropped, the session\'s hours kept, and the delayed run keeping a fresher live price', async()=>{
+  const {rtSymbols,rtApply,startRt,finnhubSym}=await import('../server/rt.js');
+  const Q={updatedAt:'2026-11-09T14:40:00Z',usDate:'2026-11-06',usdIls:3.2,prices:{NVDA:181.5,'BRK-B':480,'TLV:1159235':12.3,'1159235':12.3,TA125:2500,SPY:600,KO:70},prev:{NVDA:180,'BRK-B':478,SPY:598,KO:69},
+    meta:{NVDA:{date:'2026-11-06',src:'yahoo'},'BRK-B':{date:'2026-11-06',src:'yahoo'},TA125:{src:'index',ccy:'ILS'},'1159235':{src:'maya',ccy:'ILS'},SPY:{date:'2026-11-06',src:'yahoo'},KO:{date:'2026-11-06',src:'stooq'}},stale:{KO:'סגירה 6.11'}};
+  assert.deepEqual(rtSymbols(Q),['BRK-B','KO','NVDA','SPY']); assert.equal(finnhubSym('BRK-B'),'BRK.B');
+  const s=new Store(':memory:'); s.setDoc('quotes/latest',Q);
+  // Monday 10:00 New York: the session is open
+  const open=new Date('2026-11-09T15:00:00Z');
+  const n=rtApply(s,{NVDA:{p:185.25,t:1},KO:{p:70.4,t:1},SPY:{p:900,t:1}},{now:open});
+  assert.equal(n,2,'SPY at +50% is a bad tick'); const Q2=s.getDoc('quotes/latest').data;
+  assert.equal(Q2.prices.NVDA,185.25); assert.equal(Q2.prices.SPY,600); assert.equal(Q2.meta.NVDA.date,'2026-11-09'); assert.equal(Q2.meta.NVDA.rt,open.toISOString()); assert.equal(Q2.prev.NVDA,180,'the previous close is not touched');
+  assert.equal(Q2.usDate,'2026-11-09'); assert.equal(Q2.updatedAt,open.toISOString()); assert.ok(!Q2.stale.KO,'a live price is not stale'); assert.deepEqual(Q2.rt,{at:open.toISOString(),n:3});
+  assert.equal(rtApply(s,{NVDA:{p:185.25,t:2}},{now:open}),0,'the same price again is not a write');
+  // the stream with a stand-in socket: connects in the session, subscribes to the symbols, takes trades, flushes, closes after the bell
+  const made=[]; class FakeWS{constructor(u){this.url=u; this.readyState=0; this.sent=[]; this.L={}; made.push(this); setTimeout(()=>{this.readyState=1; this.emit('open',{})},0)} addEventListener(k,f){(this.L[k]=this.L[k]||[]).push(f)} emit(k,ev){for(const f of this.L[k]||[])f(ev)} send(x){this.sent.push(JSON.parse(x))} close(){this.readyState=3; this.emit('close',{})}}
+  let NOW=open; const log=[]; const rt=startRt(s,{key:'test-key',WS:FakeWS,now:()=>NOW,every:1e6,flush:1e6,log:m=>log.push(m)});
+  await new Promise(r=>setTimeout(r,10));
+  assert.equal(made.length,1); assert.match(made[0].url,/^wss:\/\/ws\.finnhub\.io\?token=test-key$/); assert.deepEqual(made[0].sent.map(x=>x.symbol).sort(),['BRK.B','KO','NVDA','SPY']); assert.ok(made[0].sent.every(x=>x.type==='subscribe'));
+  made[0].emit('message',{data:JSON.stringify({type:'trade',data:[{s:'NVDA',p:186.1,t:1,v:10},{s:'BRK.B',p:481.2,t:1,v:1},{s:'ZZZ',p:1,t:1}]})});
+  assert.equal(rt.state().trades,2,'an unsubscribed symbol is ignored'); rt.flush();
+  const Q3=s.getDoc('quotes/latest').data; assert.equal(Q3.prices.NVDA,186.1); assert.equal(Q3.prices['BRK-B'],481.2,'Finnhub\'s dot is our dash'); assert.ok(rt.state().flushed);
+  assert.equal(JSON.parse(s.getMeta('rtStatus')).on,true);
+  // 16:30 New York: the bell rang; the tick closes the socket and does not reconnect
+  NOW=new Date('2026-11-09T21:30:00Z'); rt.tick(); assert.equal(rt.state().on,false); assert.equal(made.length,1); assert.ok(log.some(m=>/the session is over/.test(m)));
+  assert.equal(JSON.parse(s.getMeta('rtStatus')).open,false); rt.stop();
+  // no key: off, quietly
+  assert.deepEqual(startRt(new Store(':memory:'),{key:'',WS:FakeWS,log(){}}).state(),{off:true});
+  // the delayed run: a live price from two minutes ago on the same day is kept, with its stamp; an old one is replaced; a split is not blocked
+  const old={prices:{NVDA:186.1},prev:{NVDA:180},meta:{NVDA:{date:'2026-11-09',src:'yahoo',rt:'2026-11-09T15:28:00Z'}},usdIls:3.2,updatedAt:'2026-11-09T15:28:00Z'};
+  const q=(px,prev,date)=>({px,prev,closeDate:date,ccy:'USD',src:'yahoo',time:'t'});
+  let d=buildQuotesDoc({prev:old,fetched:{quotes:{NVDA:q(185.9,180,'2026-11-09')},index:{},errors:[]},symbols:['NVDA'],now:new Date('2026-11-09T15:30:00Z'),usOpen:true});
+  assert.equal(d.prices.NVDA,186.1,'the stream\'s price stands'); assert.equal(d.meta.NVDA.rt,'2026-11-09T15:28:00Z'); assert.equal(d.prev.NVDA,180);
+  d=buildQuotesDoc({prev:old,fetched:{quotes:{NVDA:q(185.9,180,'2026-11-09')},index:{},errors:[]},symbols:['NVDA'],now:new Date('2026-11-09T15:40:00Z'),usOpen:true});
+  assert.equal(d.prices.NVDA,185.9,'twelve minutes old: the source\'s price'); assert.ok(!d.meta.NVDA.rt);
+  d=buildQuotesDoc({prev:old,fetched:{quotes:{NVDA:q(185.9,180,'2026-11-10')},index:{},errors:[]},symbols:['NVDA'],now:new Date('2026-11-09T15:30:00Z'),usOpen:true});
+  assert.equal(d.prices.NVDA,185.9,'another day: the source\'s price');
+});

@@ -307,7 +307,10 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
       continue}
     // 4.11: a new price with an old "previous" made a change of several days look like one: no previous, no day's change
     if(q){const sp=splitFromQuote(sym,old,q); if(sp&&!(splits[sym]&&splits[sym].d===sp.d))splits[sym]={...sp,at:now.toISOString(),src:'prices'};
-      got++; prices[sym]=round(q.px); if(q.prev!=null&&q.prev>0)prevC[sym]=round(q.prev); else delete prevC[sym]; meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{})};
+      // 8.11: a price the live stream (server/rt.js) set in the last three minutes, on this same day, is fresher than this
+      // delayed source: kept, with its stamp; the previous close and the day come from the source
+      const om=(old.meta||{})[sym]||{}, live=!!(om.rt&&now.getTime()-Date.parse(om.rt)<3*60e3&&old.prices&&old.prices[sym]>0&&om.date&&om.date===q.closeDate&&!sp);
+      got++; prices[sym]=live?old.prices[sym]:round(q.px); if(q.prev!=null&&q.prev>0)prevC[sym]=round(q.prev); else delete prevC[sym]; meta[sym]={src:q.src,date:q.closeDate,at:q.time,...(q.ccy&&q.ccy!=='USD'?{ccy:q.ccy}:{}),...(live?{rt:om.rt}:{})};
       if(q.ccy==='USD'&&q.closeDate>usDate){usDate=q.closeDate;prevDate=q.prevDate||prevDate}
       if(q.ccy==='ILS'&&q.closeDate>ilDate)ilDate=q.closeDate;
       if(q.src==='stooq')stale[sym]='סגירה '+dm(q.closeDate);
