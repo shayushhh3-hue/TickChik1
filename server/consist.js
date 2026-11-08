@@ -18,7 +18,7 @@ export const KIND_HE={
   splitUnits:'יחידות שונות ממה שנרשם אחרי הפיצול', splitDaily:'מחירים יומיים מלפני הפיצול שלא הותאמו', dailyJump:'קפיצה בשווי השמור שהמחירים לא מסבירים',
   negCash:'מזומן שלילי', pulseTotal:'השרת והדף מחשבים שווי שונה', totalAccounts:'סך החשבונות שונה משווי התיק', dayAccounts:'השינוי היומי לפי חשבונות שונה מהשינוי בתיק',
   acctsSame:'אותם מספרים בכל החשבונות אף שההחזקות שונות', dayWhy:'חלקי "למה זז" לא מסתכמים לשינוי היומי', heroTotal:'המסך הראשי מציג שווי שונה מהחישוב',
-  heroDay:'המסך הראשי מציג שינוי יומי שונה מהחישוב', pulsePct:'התראת תנועה אומרת אחוז שונה מהדף', pulseW:'משקל בהתראה שונה מהמשקל בתיק', page:'הדף לא נטען לבדיקה'};
+  heroDay:'המסך הראשי מציג שינוי יומי שונה מהחישוב', pulsePct:'התראת תנועה אומרת אחוז שונה מהדף', pulseW:'משקל בהתראה שונה מהמשקל בתיק', page:'הדף לא נטען לבדיקה', ledger:'יומן הפעולות נותן כמות שונה מזו שבתיק'};
 const ils=x=>'₪'+Math.round(+x||0).toLocaleString('en-US');
 const num=s=>{const m=String(s||'').replace(/[^\d.\-−]/g,'').replace('−','-'); return m===''||m==='-'?null:+m};
 const dmy=iso=>{const s=String(iso||'').slice(0,10); return s?`${+s.slice(8)}.${+s.slice(5,7)}`:''};
@@ -83,6 +83,8 @@ export function consistPage(out){
   for(const a of out.pulse||[]){const p=pos.get(a.sym); if(!p||!near(a.to,p.px,1e-9))continue;
     if(p.dayPct!=null&&a.pct!=null&&!near(a.pct,p.dayPct,0.1))F.push({k:'pulsePct',sev:'bad',sym:a.sym,a:a.pct,b:p.dayPct,t:`התראת התנועה של ${a.sym} אומרת ${(+a.pct).toFixed(1)}% והדף מחשב ${(+p.dayPct).toFixed(1)}%`});
     if(a.w!=null&&p.w!=null&&!near(a.w,p.w,0.6))F.push({k:'pulseW',sev:'warn',sym:a.sym,a:a.w,b:p.w,t:`ההתראה על ${a.sym} אומרת ${(+a.w).toFixed(1)}% מהתיק והתיק נותן ${(+p.w).toFixed(1)}%`})}
+  // 8.11: the ledger replayed from its last anchor against the holdings
+  for(const L of out.ledger||[])for(const g of L.gaps||[])F.push({k:'ledger',sev:'bad',sym:g.sym,a:g.expected,b:g.actual,t:`${g.sym} בחשבון ${L.acct}: לפי יומן הפעולות ${g.expected} יחידות, בתיק ${g.actual}${L.anchor?` (מאז הדוח של ${dmy(L.anchor)})`:''}`});
   return F;
 }
 

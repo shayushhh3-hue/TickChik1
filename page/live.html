@@ -2467,6 +2467,7 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .pr-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14.5px} .pr-lv{padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--sunk)} .pl2 .pr-lv{background:#FDE7E0;color:#8A2E12} .pl3 .pr-lv{background:#B42318;color:#fff}
 .pr-s{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.45} .pr-s li{display:flex;gap:8px;align-items:baseline} .pr-w{flex:0 0 auto;min-width:26px;text-align:center;font-size:11.5px;font-weight:700;border-radius:6px;background:var(--sunk);padding:1px 4px}
 .pr-rec{margin:0 0 6px;font-size:14px;line-height:1.5;padding:10px 12px;border-radius:10px;background:var(--sunk)}
+.ledger .pill.p-ok{background:var(--ok-bg,var(--sunk));color:var(--ok-ink,var(--gain))} .ledger .pill.p-bad{background:var(--warn-bg);color:var(--warn)} .ledger tr.lg-stmt td{font-weight:700} .ledger tr.lg-edit td{color:var(--warn)} .ledger tr.lg-split td,.ledger tr.lg-manual td{color:var(--ink)}
 .pr-pf{margin:0 0 8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;line-height:1.5} .pr-pf p{margin:0 0 4px} .pr-cal{margin:0;padding:0;list-style:none;font-size:13.5px} .pr-cal li{padding:3px 0;border-top:1px solid var(--line)} .pr-cal .n{display:inline-block;min-width:40px;color:var(--muted)} .pr-sim{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
 /* 8.11: "מה השתנה מול האתר": the statement against the site, before the save */
 .sdiff{border-inline-start:4px solid var(--s1)} .sdiff .sd-t th:first-child{width:22%} .sdiff .sd-t th:nth-child(2),.sdiff .sd-t th:nth-child(3){width:14%} .sdiff .sd-k{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--sunk);font-size:12px;font-weight:700;margin-inline-end:4px}
@@ -19179,6 +19180,11 @@ function renderHistory(){
       <div class="panel scroll"><table>
         <thead><tr><th>תאריך</th><th>אירוע</th><th class="num">סכום ${usd?'$':'₪'}</th><th class="num">מול סך ההפקדות</th></tr></thead><tbody>${rows}</tbody></table>
         <p class="note" style="margin-top:10px">${esc(notes.join(' '))}</p></div>
+      ${(()=>{try{const L=ledgerOf(A.acct).filter(e=>e.k!=='cash'&&e.k!=='trade'), C=ledgerCheck(A.acct); if(!L.length)return '';
+        return `<div class="panel ledger"><div class="row"><h3>יומן הפעולות</h3><span class="sub">${C.anchor?(C.ok?`<span class="pill p-ok">תואם לתיק</span> מאז הדוח של ${dmy(C.anchor.date)}`:`<span class="pill p-bad">${C.gaps.length===1?'פער אחד':C.gaps.length+' פערים'} מול התיק</span>`):'אין עדיין דוח שנשמר כעוגן'}</span></div>
+          ${C.gaps.length?`<p class="note" style="margin:0 0 6px">${C.gaps.map(g=>`${lab(g.sym)}: לפי היומן ${g.expected}, בתיק ${g.actual}`).join(' · ')}. הבדיקה הלילית רושמת את זה; דוח חדש או פעולה שתירשם כאן יסגרו את הפער.</p>`:''}
+          <div class="scroll"><table><thead><tr><th>תאריך</th><th>אירוע</th></tr></thead><tbody>${L.slice(-60).reverse().map(e=>`<tr class="lg-${e.k}"><td><span class="n">${dmy(e.date)}.${String(e.date).slice(2,4)}</span></td><td>${esc(e.t)}</td></tr>`).join('')}</tbody></table></div>
+          <p class="note" style="margin:6px 0 0">עוגן: ההחזקות כפי שדוח השאיר אותן. אחריו: מכירות וקניות שנרשמו כאן, פיצולים שהאתר החיל, ועריכות ידניות. מה שהיומן נותן צריך להיות מה שבתיק.</p></div>`}catch(e){return ''}})()}
       <details class="panel" data-k="${k}"${open.has(k)?' open':''}><summary>עסקאות בתקופה (${A.trades.length})</summary>
         <div class="scroll"><table>
           <thead><tr><th>תאריך</th><th>נייר</th><th>פעולה</th><th class="num">כמות</th><th class="num">מחיר</th><th class="num">מחיר היום</th><th class="num">שינוי מאז</th></tr></thead>
@@ -19857,7 +19863,8 @@ window.__model.consist=function(){try{
   return {ready:true,at:new Date().toISOString(),pricesAt:Q.updatedAt||null,fx:Q.usdIls,
     total:m.total,inv:m.pos.reduce((t,p)=>t+p.val,0),cash:m.cash,hasDay:!!m.hasDay,dayIls:m.hasDay?m.dayIls:null,dayPct:m.hasDay?m.dayPct:null,
     accts,why:{total:W.ils,parts},hero:{total:tx('kTotal'),day:tx('kDay'),dayD:tx('kDayD'),hc:typeof HC==='string'?HC:''},
-    held,noPx:held.filter(s=>(Q.prices||{})[s]==null),potQty,pos:m.pos.map(p=>({sym:p.sym,qty:p.qty,w:p.w,px:p.px,dayPct:p.dayPct})),pulse};
+    held,noPx:held.filter(s=>(Q.prices||{})[s]==null),potQty,pos:m.pos.map(p=>({sym:p.sym,qty:p.qty,w:p.w,px:p.px,dayPct:p.dayPct})),pulse,
+    ledger:ids.map(a=>{try{const C=ledgerCheck(a); return {acct:a,anchor:C.anchor?C.anchor.date:null,gaps:C.gaps}}catch(e){return {acct:a,anchor:null,gaps:[]}}})};
 }catch(e){return {ready:false,err:String(e&&e.message||e)}}};
 // ---- explain:start ----
 // "הסבר את התיק שלי" (stage 7): what is in the portfolio, what stands out, the main exposures, where it is concentrated, and
@@ -23318,6 +23325,49 @@ async function saveHistOnly(st){
   catch(e){st.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); console.error(e)}
   $('btnPfSave').disabled=!canWrite;
 }
+// ---- 8.11: the ledger ("יומן הפעולות"), in its first form: not yet the base the holdings are computed from, but the one
+// chain of events that must explain them. Anchors: the holdings of an account as each statement left them (holdSnaps,
+// written at the save that lands a statement). Events after an anchor: the sales and purchases written here (A.manual),
+// the splits the site applied (P.splits), the units changed by hand (A.edits, written at the save). Replaying the events
+// from the latest anchor gives what the account should hold now; a difference from what it holds is a gap the nightly
+// consistency check reports. The statements' own transactions and the deposits are listed in the journal as history.
+function ledgerRecord(H0,{P0,pos,landed=[],asOf={},now=new Date()}){
+  let H=H0?H0:(HS?JSON.parse(JSON.stringify(HS)):{accounts:[],depIlsNow:0,monthly:[]}); H.accounts=H.accounts||[]; let changed=false;
+  const acctOf=ac=>{let A=H.accounts.find(x=>x.acct===ac); if(!A){A={acct:ac,ccy:acctCcy(ac),trades:[],deposits:[],source:'נרשם בדף'}; H.accounts.push(A)} return A};
+  const at=now.toISOString(), day=ilDay(now), old=new Map(((P0&&P0.positions)||[]).filter(p=>p&&p.sym).map(p=>[`${p.sym}|${p.acct}`,+p.qty]));
+  for(const ac of acctIds()){const rows=pos.filter(p=>p.acct===ac);
+    if(landed.includes(ac)){const A=acctOf(ac); A.holdSnaps=(A.holdSnaps||[]).filter(x=>!(x.asOf&&x.asOf===(asOf[ac]||null)&&x.at.slice(0,10)===day)); A.holdSnaps.push({asOf:asOf[ac]||null,at,rows:rows.map(p=>({sym:p.sym,qty:+p.qty,...(p.px!=null?{px:+p.px}:{})}))}); A.holdSnaps=A.holdSnaps.slice(-24); changed=true; continue}
+    // no statement for this account in this save: a unit that changed is a hand edit
+    const seen=new Set();
+    for(const p of rows){const k=`${p.sym}|${ac}`; seen.add(k); const q0=old.has(k)?old.get(k):0; if(Math.abs(q0-+p.qty)>1e-9){const A=acctOf(ac); (A.edits=A.edits||[]).push({at,date:day,sym:p.sym,q0,q1:+p.qty}); changed=true}}
+    for(const [k,q0] of old){const [sym,a]=k.split('|'); if(a!==ac||seen.has(k)||!(q0>0))continue; const A=acctOf(ac); (A.edits=A.edits||[]).push({at,date:day,sym,q0,q1:0}); changed=true}}
+  for(const A of H.accounts)if(A.edits&&A.edits.length>400)A.edits=A.edits.slice(-400);
+  return changed?H:null;
+}
+// the events of one account, oldest first
+function ledgerOf(ac){
+  const A=((HS&&HS.accounts)||[]).find(x=>x.acct===ac)||{}, E=[];
+  for(const x of A.holdSnaps||[])E.push({at:x.at,date:x.asOf||x.at.slice(0,10),k:'stmt',t:`דוח${x.asOf?' ליום '+dmy(x.asOf):''}: ${x.rows.length===1?'נייר אחד':x.rows.length+' ניירות'}`,rows:x.rows});
+  for(const t of A.trades||[])if(!t.div||+t.qty)E.push({at:t.date,date:t.date,k:'trade',sym:t.sym,qty:+t.qty,px:t.px,t:`${t.div?'קנייה מדיבידנד':+t.qty>0?'קנייה':'מכירה'} ${lab(t.sym)}: ${Math.abs(+t.qty)} ב-${t.px}`});
+  for(const t of A.manual||[])E.push({at:t.at||t.date,date:String(t.date).slice(0,10),k:'manual',sym:t.sym,qty:t.side==='sell'?-(+t.qty):+t.qty,px:t.px,t:`${t.side==='sell'?'מכירה':'קנייה'} שנרשמה כאן: ${lab(t.sym)} ${+t.qty} ב-${t.px}${t.real!=null?` (${t.real>=0?'רווח':'הפסד'} ממומש ${ils(Math.abs(t.real))})`:''}`});
+  for(const [key,v] of Object.entries((P&&P.splits)||{}))for(const r of v.rows||[])if((r.acct||null)===ac&&!v.undone)E.push({at:v.at,date:v.d,k:'split',sym:v.sym,q0:r.q0,q1:r.q1,kept:!!r.kept,t:`פיצול ${lab(v.sym)} 1:${v.r}: ${+(+r.q0).toFixed(4)} → ${+(+r.q1).toFixed(4)}${r.kept?' (הדוח כבר אחרי הפיצול)':''}`});
+  for(const e of A.edits||[])E.push({at:e.at,date:e.date,k:'edit',sym:e.sym,q0:e.q0,q1:e.q1,t:`עריכה ידנית ${lab(e.sym)}: ${+(+e.q0).toFixed(4)} → ${+(+e.q1).toFixed(4)}`});
+  for(const d of A.deposits||[])E.push({at:d.date,date:d.date,k:'cash',t:`${+d.amount>=0?'הפקדה':'משיכה'} ${(d.ccy||A.ccy)==='USD'?'$':'₪'}${Math.abs(+d.amount).toLocaleString('en-US')}`});
+  return E.sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+}
+// from the latest anchor forward: what the account should hold against what it holds
+function ledgerCheck(ac){
+  const E=ledgerOf(ac), anchors=E.filter(e=>e.k==='stmt'); if(!anchors.length)return {anchor:null,gaps:[],ok:null};
+  const A=anchors[anchors.length-1], exp=new Map(A.rows.map(r=>[r.sym,+r.qty]));
+  for(const e of E){if(String(e.at)<=String(A.at))continue;
+    if(e.k==='manual')exp.set(e.sym,(exp.get(e.sym)||0)+e.qty);
+    else if(e.k==='split'&&!e.kept)exp.set(e.sym,+e.q1);
+    else if(e.k==='edit')exp.set(e.sym,+e.q1)}
+  const act=new Map(((P&&P.positions)||[]).filter(p=>p.acct===ac&&+p.qty>0).map(p=>[p.sym,+p.qty])), gaps=[];
+  for(const [sym,q] of exp){const a=act.get(sym)||0; if(Math.abs(a-q)>Math.max(1e-6,Math.abs(q)*0.0005))gaps.push({sym,expected:+q.toFixed(6),actual:+a.toFixed(6)})}
+  for(const [sym,a] of act)if(!exp.has(sym)&&a>0)gaps.push({sym,expected:0,actual:a});
+  return {anchor:{at:A.at,date:A.date},gaps,ok:!gaps.length};
+}
 async function savePf(){
   if(!DRAFT)return; const st=$('pfSaved');
   const qOld=new Map(((P&&P.positions)||[]).map(p=>[`${p.sym}|${p.acct}`,+p.qty])), qDay=ilDay();   // 6.11: units changed by hand carry their day (qAt), for a split after it
@@ -23342,7 +23392,11 @@ async function savePf(){
     const U0={P:cl(P),PL:cl(PLD),S:cl(S),HS:cl(HS),DY:DY&&DY.exists?cl(DY.points):null};
     // what changed while the save was being written (a check of a statement that ended meanwhile, typing) stays unsaved
     const g0=PFS.gen; await pset('portfolio',doc); P=doc; PFS.saves++; const moved=PFS.gen!==g0; if(!moved){dDirty=false; FIXED.clear()} mergeQ();
-    let txNote='', dyMoved=false; try{const hx=historyWithTx(); if(hx){await pset('history',hx.H); HS=hx.H; txNote=histNote(hx); dyMoved=await bumpDaily(hx.bumps).catch(()=>false)} DRAFT.tx=[]; DRAFT.monthly={}; renderTx()}catch(e){txNote=' הפעולות לא נשמרו, נסה שוב.'}
+    let txNote='', dyMoved=false; try{const hx=historyWithTx();
+      // 8.11: the ledger's anchors and events (ledgerOf): the holdings of an account as a statement left them, and every
+      // unit changed by hand with no statement and no sale behind it
+      const H2=ledgerRecord(hx?hx.H:null,{P0:U0.P,pos,landed:Object.keys((DRAFT.sdiff)||{}),asOf:DRAFT.asOf||{}});
+      if(hx||H2){const H=H2||hx.H; await pset('history',H); HS=H; if(hx){txNote=histNote(hx); dyMoved=await bumpDaily(hx.bumps).catch(()=>false)}} DRAFT.tx=[]; DRAFT.monthly={}; renderTx()}catch(e){txNote=' הפעולות לא נשמרו, נסה שוב.'}
     const now=new Set(pos.map(p=>p.sym)), gone=[...before].filter(x=>!now.has(x)), purged=gone.length?await purgeSyms(gone):true;
     const arcHit=gone.length?ARC.filter(e=>{const t=JSON.stringify(e.R||'')+JSON.stringify(e.snap||'');return gone.some(x=>t.includes('"'+x+'"'))}).length:0;
     if(!OWNER&&!LOCAL&&MYID){const syms=[...new Set(pos.filter(p=>(p.ccy==='USD'&&/^[A-Z][A-Z.\-]{0,5}$/.test(p.sym))||/^\d{5,9}$/.test(p.sym)||/^TA(125|90)$/.test(p.sym)).map(p=>p.sym))].slice(0,40);

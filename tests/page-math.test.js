@@ -906,3 +906,31 @@ test('8.11 a statement against the site: the units put in the new ones when the 
   G.DRAFT=G.draftFromP(); const r4=[{sym:'MSFT',name:'Microsoft',qty:4,acct:'exc',ccy:'USD'}]; F.stmtPrep('exc',r4,null,true); G.DRAFT.positions=G.DRAFT.positions.filter(p=>!(p.acct==='exc'&&p.sym==='MSFT')).concat(r4);
   const X4=F.stmtDiff('exc'); assert.ok(X4.rows.length===4&&X4.rows.every(r=>r.kind==='same'),'the rows the screenshot did not show are not missing'); assert.equal(X4.changed,0);
 });
+
+test('8.11 the ledger: a statement\'s holdings are the anchor, the sales written here, the splits applied and the hand edits are the events after it; replayed, they must give the holdings, or the gap is named', ()=>{
+  const now=new Date('2026-11-08T20:00:00Z');
+  const G={P:{positions:[{sym:'SOXX',qty:30,acct:'exc'},{sym:'NVDA',qty:3,acct:'exc'},{sym:'MSFT',qty:4,acct:'exc'}],splits:{'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,at:'2026-11-06T06:00:00Z',rows:[{acct:'exc',q0:10,q1:30}]}}},
+    HS:{accounts:[{acct:'exc',ccy:'USD',trades:[{date:'2026-10-02',sym:'MSFT',qty:4,px:500,ccy:'USD'}],deposits:[{date:'2026-10-01',amount:10000,ccy:'ILS'}],
+      holdSnaps:[{asOf:'2026-10-31',at:'2026-11-01T10:00:00Z',rows:[{sym:'SOXX',qty:10},{sym:'NVDA',qty:5},{sym:'MSFT',qty:4}]}],manual:[{id:'m1',at:'2026-11-07T09:00:00Z',date:'2026-11-07',sym:'NVDA',side:'sell',qty:2,px:180,real:120}]}]},
+    acctIds:()=>['exc'],acctCcy:()=>'USD',lab:s=>s,ils:x=>'₪'+Math.round(x),dmy:iso=>iso?`${+iso.slice(8)}.${+iso.slice(5,7)}`:'',ilDay:()=>'2026-11-08'};
+  const F=load(['ledgerRecord','ledgerOf','ledgerCheck'],G);
+  const E=F.ledgerOf('exc'); assert.deepEqual(E.map(e=>e.k),['cash','trade','stmt','split','manual'],E.map(e=>e.k+':'+e.date).join(' '));
+  assert.match(E[3].t,/פיצול SOXX 1:3: 10 → 30/); assert.match(E[4].t,/מכירה שנרשמה כאן: NVDA 2 ב-180 \(רווח ממומש ₪120\)/);
+  // the anchor (31.10: SOXX 10, NVDA 5, MSFT 4) + the split (SOXX → 30) + the sale (NVDA −2) = what the portfolio holds: no gap
+  let C=F.ledgerCheck('exc'); assert.deepEqual([C.anchor.date,C.ok,C.gaps],['2026-10-31',true,[]]);
+  // a unit changed with nothing behind it: a gap, named with both numbers; a hand edit written for it closes the gap
+  G.P.positions[2].qty=6; C=F.ledgerCheck('exc'); assert.deepEqual(C.gaps,[{sym:'MSFT',expected:4,actual:6}]);
+  G.HS.accounts[0].edits=[{at:'2026-11-08T12:00:00Z',date:'2026-11-08',sym:'MSFT',q0:4,q1:6}]; C=F.ledgerCheck('exc'); assert.equal(C.ok,true); assert.match(F.ledgerOf('exc').pop().t,/עריכה ידנית MSFT: 4 → 6/);
+  // a security the ledger never saw: a gap too
+  G.P.positions.push({sym:'KO',qty:1,acct:'exc'}); assert.deepEqual(F.ledgerCheck('exc').gaps,[{sym:'KO',expected:0,actual:1}]); G.P.positions.pop();
+  // no anchor yet: nothing to judge
+  assert.deepEqual(F.ledgerCheck('blink'),{anchor:null,gaps:[],ok:null});
+  // the save: a landed statement writes the anchor (once per day and statement); a save without one writes the hand edits, removals included
+  const pos=[{sym:'SOXX',qty:30,acct:'exc'},{sym:'NVDA',qty:3,acct:'exc'},{sym:'MSFT',qty:7,acct:'exc'}];
+  let H=F.ledgerRecord(null,{P0:G.P,pos,landed:['exc'],asOf:{exc:'2026-11-07'},now}); const A=H.accounts[0];
+  assert.equal(A.holdSnaps.length,2); assert.deepEqual(A.holdSnaps[1],{asOf:'2026-11-07',at:now.toISOString(),rows:[{sym:'SOXX',qty:30},{sym:'NVDA',qty:3},{sym:'MSFT',qty:7}]}); assert.equal((A.edits||[]).length,1,'no new edit when a statement landed');
+  H=F.ledgerRecord(null,{P0:G.P,pos,landed:['exc'],asOf:{exc:'2026-11-07'},now}); assert.equal(H.accounts[0].holdSnaps.length,2,'the same statement saved twice today: one anchor');
+  H=F.ledgerRecord(null,{P0:G.P,pos:[{sym:'SOXX',qty:30,acct:'exc'},{sym:'MSFT',qty:7,acct:'exc'}],landed:[],asOf:{},now});
+  const ed=H.accounts[0].edits.slice(1); assert.deepEqual(ed.map(e=>[e.sym,e.q0,e.q1]),[['MSFT',6,7],['NVDA',3,0]],'the hand edit and the removal, in units');
+  assert.equal(F.ledgerRecord(null,{P0:G.P,pos:G.P.positions.map(p=>({...p})),landed:[],asOf:{},now}),null,'nothing changed: nothing written');
+});

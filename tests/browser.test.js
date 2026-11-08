@@ -3119,3 +3119,26 @@ test('8.11 the whole portfolio to Excel in one tap: a workbook with the holdings
   assert.deepEqual(r.trades[0].slice(0,4),['תאריך','חשבון','נייר','פעולה']); assert.ok(r.hist.length>=2,'the daily history'); assert.equal(r.btn,'ייצוא לאקסל');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('8.11 the ledger: the save of a statement writes the account\'s holdings as an anchor, a unit changed by hand writes an edit, and the history screen\'s journal lists them and says whether the ledger matches the portfolio',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const u=store.users().find(x=>x.email==='r4@example.com'); assert.ok(u,'r4 exists'); const hp=`data/users/${u.id}/history`;
+  const {ctx,pg}=await open(1280,{who:'r4'}); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+  await R.pick('s.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\n'); await R.done(); await pg.waitForTimeout(300);
+  await pg.evaluate(()=>document.getElementById('btnPfSave').click()); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent),null,{timeout:15000});
+  let H=null; for(let i=0;i<40&&!(H&&H.accounts&&H.accounts.some(a=>a.holdSnaps));i++){await pg.waitForTimeout(150); const d=store.getDoc(hp); H=d.exists?d.data:null}
+  const A=H.accounts.find(a=>a.holdSnaps); assert.ok(A,'an anchor was written: '+JSON.stringify(H&&H.accounts&&H.accounts.map(a=>Object.keys(a))));
+  assert.equal(A.holdSnaps.length,1); assert.deepEqual(A.holdSnaps[0].rows.map(r=>[r.sym,r.qty]),[['MSFT',3]]); assert.ok(!(A.edits||[]).length,'a statement is not a hand edit');
+  // a unit changed by hand and saved: an edit in the ledger
+  await pg.waitForTimeout(400);
+  await pg.evaluate(()=>{const i=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('input[data-pf="sym"]')?.value==='MSFT').querySelector('input[data-pf="qty"]'); i.value='5'; i.dispatchEvent(new Event('input',{bubbles:true}))});
+  await pg.waitForTimeout(200); await pg.evaluate(()=>document.getElementById('btnPfSave').click()); await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('pfSaved').textContent)&&!/לא נשמרו/.test(document.getElementById('pfSaved').textContent),null,{timeout:15000});
+  for(let i=0;i<40;i++){const d=store.getDoc(hp); const a=d.exists&&d.data.accounts.find(a=>a.acct===A.acct); if(a&&a.edits&&a.edits.length)break; await pg.waitForTimeout(150)}
+  const A2=store.getDoc(hp).data.accounts.find(a=>a.acct===A.acct); assert.deepEqual((A2.edits||[]).map(e=>[e.sym,e.q0,e.q1]),[['MSFT',3,5]]);
+  // the history screen: the journal with the anchor and the edit, and the ledger matching the portfolio
+  await tab(pg,'history'); await pg.waitForTimeout(500);
+  const J=await pg.evaluate(()=>{const L=document.querySelector('#backWrap .ledger'); return L?{text:L.innerText.replace(/\s+/g,' '),rows:[...L.querySelectorAll('tbody tr')].map(tr=>tr.className)}:null});
+  assert.ok(J,'the journal is on the screen'); assert.match(J.text,/יומן הפעולות/); assert.match(J.text,/תואם לתיק/); assert.match(J.text,/עריכה ידנית MSFT: 3 → 5/); assert.match(J.text,/דוח.*נייר אחד/);
+  assert.deepEqual(J.rows.slice(0,2),['lg-edit','lg-stmt'],'newest first');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
