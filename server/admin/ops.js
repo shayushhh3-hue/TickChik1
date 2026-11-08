@@ -230,7 +230,10 @@ export function security(store,{env=process.env,persist,dataDir,backup}){
     {k:'backup',l:'גיבוי יומי מהיממה האחרונה',ok:bAge!=null&&bAge<=30,note:lastB?`${lastB.file||''}${B.files?` · ${B.files.length} עותקים בשרת`:''}`:'אין גיבוי',fix:'לבדוק את משימת הגיבוי במסך התקינות'},
     {k:'backupOff',l:'עותק גיבוי מחוץ לשרת (מייל)',ok:!!(env.RESEND_API_KEY||env.MAIL_USER),fix:'להגדיר RESEND_API_KEY ו-MAIL_TO ב-Railway'},
     {k:'secrets',l:'מפתחות ה-API רק בשרת',ok:true,note:'הדף לא מקבל אף מפתח; כל הקריאות לספקים עוברות דרך השרת'},
-    {k:'portfolio',l:'תוכן התיקים לא נגיש למרכז הניהול',ok:true,note:'לפי ההבטחה למשתמשים'}];
+    {k:'portfolio',l:'תוכן התיקים לא נגיש למרכז הניהול',ok:true,note:'לפי ההבטחה למשתמשים'},
+    // 8.11: the headers and the content-security policy (report-only until CSP_ENFORCE=1), with what the browsers reported
+    {k:'headers',l:'כותרות אבטחה בכל תשובה (HSTS, nosniff, בלי מסגור, Referrer, Permissions)',ok:true,note:'מוגדרות בשרת'},
+    (()=>{const L=meta(store,'cspReports')||[], enforce=env.CSP_ENFORCE==='1'; return {k:'csp',l:'מדיניות תוכן (CSP)',ok:enforce||!L.length,note:enforce?`נאכפת${L.length?`; ${L.length} דיווחים`:''}`:L.length?`במצב דיווח בלבד; ${L.length} דברים שהייתה חוסמת: ${L.slice(-3).map(x=>`${x.directive} ← ${x.blocked||'inline'}`).join('; ')}`:'במצב דיווח בלבד; הדפדפנים לא דיווחו על כלום עדיין',fix:enforce?'':'כשאין דיווחים כמה ימים: להגדיר CSP_ENFORCE=1 ב-Railway'}})()];
   const keys=[['ANTHROPIC_API_KEY','צ׳יקו'],['FINNHUB_API_KEY','Finnhub'],['X_BEARER_TOKEN','X'],['RESEND_API_KEY','מייל (Resend)'],['BACKUP_KEY','הצפנת גיבוי'],['VAPID_PRIVATE_KEY','התראות לטלפון (או מפתח שנוצר במסד)']].map(([k,l])=>({k,l,set:!!env[k]||(k==='VAPID_PRIVATE_KEY'&&!!store.getMeta('vapid'))}));
   const sess=store.db.prepare('select uid, count(*) n, max(created_at) last from sessions where expires_at>? group by uid').all(new Date().toISOString());
   return {checks:C,keys,sessions:sess.map(s=>({...s,email:(users.find(u=>u.id===s.uid)||{}).email||'?'})),at:new Date().toISOString()};

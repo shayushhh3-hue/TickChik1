@@ -11,6 +11,8 @@ import {fixture,closes} from './fixture.js';
 const R=new URL('..',import.meta.url).pathname;
 let claude, seen=[], bodies=[], srv, U, store, browser, docs, R5;
 const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
+process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceiling is for the world
+
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens,at:Date.now()});
     if(p.includes('FAILTEST')){res.writeHead(529,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'overloaded_error',message:'Overloaded'}})); return}

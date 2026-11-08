@@ -16,6 +16,8 @@ const mk=()=>{const s=new Store(':memory:'); adminSchema(s); return s};
 const users=s=>{const o=s.addUser({email:'o@x.co',password:'password1',role:'owner'}), a=s.addUser({email:'a@x.co',password:'password1',role:'admin'}), f=s.addUser({email:'f@x.co',password:'password1',role:'friend'}), a2=s.addUser({email:'a2@x.co',password:'password1',role:'admin'});
   return {o:s.userById(o.id),a:s.userById(a.id),f:s.userById(f.id),a2:s.userById(a2.id)}};
 
+process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceiling is for the world
+
 test('permissions: the role gives the defaults; nobody changes the owner or themselves; only the owner gives "users" and "sensitive"',()=>{
   const s=mk(), U=users(s);
   assert.deepEqual([...permsOf(U.o)].sort(),['edit','sensitive','system','users','view']);

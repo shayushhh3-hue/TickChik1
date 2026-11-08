@@ -76,6 +76,17 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   adminSchema(store); setCounterStore(store); meterYahoo(store); if(!store.getMeta('countersSince'))store.setMeta('countersSince',JSON.stringify(new Date().toISOString()));
   app.disable('x-powered-by');
   app.set('trust proxy',1);
+  // 8.11: the security headers on every answer (the plan's security review): HSTS in production, no sniffing, no framing,
+  // a strict referrer, no camera, microphone or location, and a content-security policy. The page is one file with
+  // inline scripts and bundled libraries, so the policy runs in report-only mode first: the browsers send what an
+  // enforced policy would have blocked to /api/csp-report, the security screen shows it, and CSP_ENFORCE=1 enforces it.
+  const PROD=env.NODE_ENV==='production'||!!env.RAILWAY_ENVIRONMENT;
+  const CSP="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; report-uri /api/csp-report";
+  app.use((req,res,next)=>{res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin'); res.setHeader('permissions-policy','camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    if(PROD)res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains'); res.setHeader(env.CSP_ENFORCE==='1'?'content-security-policy':'content-security-policy-report-only',CSP); next()});
+  app.post('/api/csp-report',express.json({type:()=>true,limit:'20kb'}),(req,res)=>{try{const r=(req.body&&(req.body['csp-report']||req.body))||{}; const L=JSON.parse(store.getMeta('cspReports')||'[]');
+    const item={at:new Date().toISOString(),directive:String(r['violated-directive']||r['effective-directive']||r.effectiveDirective||'').slice(0,80),blocked:String(r['blocked-uri']||r.blockedURL||'').slice(0,160),doc:String(r['document-uri']||r.documentURL||'').replace(/^https?:\/\/[^/]+/,'').slice(0,80),ua:String(req.headers['user-agent']||'').slice(0,60)};
+    if(!L.some(x=>x.directive===item.directive&&x.blocked===item.blocked)){L.push(item); store.setMeta('cspReports',JSON.stringify(L.slice(-40)))}}catch(e){} res.status(204).end()});
   app.use(express.json({limit:'14mb'}));
 
   // ---- sessions ----
@@ -90,6 +101,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // state-changing calls must come from the page itself (a custom header no cross-site form can send)
   app.use('/api',(req,res,next)=>{if(req.method!=='GET'&&req.headers['x-tc']!=='1')return res.status(403).json({error:{code:'invalid_argument',message:'missing header'}});next()});
   app.use('/api',(req,res,next)=>{res.setHeader('cache-control','no-store');next()});
+  // 8.11: a ceiling per address on the API (the page itself needs a few dozen requests a minute; the stream is one
+  // connection): 400 a minute, then 429 until the minute passes. The sign-in has its own, tighter brake above.
+  const RPM=+env.API_RPM>0?+env.API_RPM:400, RL=new Map(); setInterval(()=>{const t=Date.now(); for(const [k,v] of RL)if(t-v.t0>60e3)RL.delete(k)},30e3).unref();
+  app.use('/api',(req,res,next)=>{if(req.path==='/db/stream')return next(); const ip=req.ip||'?', t=Date.now(); let v=RL.get(ip); if(!v||t-v.t0>60e3){v={t0:t,n:0}; RL.set(ip,v)} v.n++;
+    if(v.n>RPM){if(v.n===RPM+1)bump('rt_429','api',1); return res.status(429).json({error:{code:'rate_limited',message:'יותר מדי בקשות מהכתובת הזו. נסה שוב בעוד דקה.'}})} next()});
   reqMeter(app);   // 1.11: the time and the server errors of every request, per area (the management center's health)
 
   // ---- sign in / out ----

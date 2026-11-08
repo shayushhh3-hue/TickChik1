@@ -47,6 +47,8 @@ before(async()=>{
 });
 after(()=>claudeSrv.close());
 
+process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceiling is for the world
+
 test('store: documents, merge, collections, prefix',()=>{
   const s=new Store(':memory:'); const ev=[]; s.onChange(e=>ev.push(e));
   s.setDoc('portfolio/main',{positions:[{sym:'MSFT'}],cash:[]});
@@ -2260,4 +2262,22 @@ test('8.11 live US prices: the stream\'s symbols, its trades written as prices w
   assert.equal(d.prices.NVDA,185.9,'twelve minutes old: the source\'s price'); assert.ok(!d.meta.NVDA.rt);
   d=buildQuotesDoc({prev:old,fetched:{quotes:{NVDA:q(185.9,180,'2026-11-10')},index:{},errors:[]},symbols:['NVDA'],now:new Date('2026-11-09T15:30:00Z'),usOpen:true});
   assert.equal(d.prices.NVDA,185.9,'another day: the source\'s price');
+});
+
+test('8.11 the security headers and the API ceiling: every answer carries the headers and a report-only content policy; a report is kept once; an address past the ceiling gets 429 until the minute passes, the stream excepted', async()=>{
+  const {createApp}=await import('../server/index.js'); const store=new Store(':memory:'); store.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  const saved=process.env.API_RPM; process.env.API_RPM='5';
+  const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false}); const srv=http.createServer(app); await new Promise(r=>srv.listen(0,r)); const base='http://127.0.0.1:'+srv.address().port;
+  try{const r=await fetch(base+'/api/version'); assert.equal(r.status,200);
+    assert.equal(r.headers.get('x-content-type-options'),'nosniff'); assert.equal(r.headers.get('x-frame-options'),'DENY'); assert.match(r.headers.get('permissions-policy'),/camera=\(\)/);
+    assert.match(r.headers.get('content-security-policy-report-only'),/default-src 'self'.*frame-ancestors 'none'.*report-uri \/api\/csp-report/); assert.equal(r.headers.get('content-security-policy'),null,'report-only until CSP_ENFORCE=1');
+    assert.equal(r.headers.get('strict-transport-security'),null,'HSTS only in production');
+    // a browser's report, kept once per directive and target, without the host of the page
+    for(let i=0;i<2;i++){const p=await fetch(base+'/api/csp-report',{method:'POST',headers:{'content-type':'application/csp-report','x-tc':'1'},body:JSON.stringify({'csp-report':{'violated-directive':'script-src','blocked-uri':'https://evil.example/x.js','document-uri':'https://tickchik.example/#risk'}})}); assert.equal(p.status,204)}
+    const L=JSON.parse(store.getMeta('cspReports')); assert.equal(L.length,1); assert.equal(L[0].blocked,'https://evil.example/x.js'); assert.equal(L[0].doc,'/#risk');
+    // the ceiling: five a minute here, then 429
+    let last=0; for(let i=0;i<5;i++){last=(await fetch(base+'/api/version')).status} assert.equal(last,429,'the sixth request and on (the reports are not counted: they come from the browser on their own)');
+    const j=await (await fetch(base+'/api/version')).json(); assert.equal(j.error.code,'rate_limited');
+    assert.equal((await fetch(base+'/api/csp-report',{method:'POST',headers:{'content-type':'application/csp-report','x-tc':'1'},body:'{}'})).status,204,'a report still lands past the ceiling')}
+  finally{process.env.API_RPM=saved; srv.closeAllConnections(); srv.close()}
 });
