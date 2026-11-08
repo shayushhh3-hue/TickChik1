@@ -5,6 +5,7 @@ import {sendAllowed, mailAllowed, mailAllowedFor, wrapHtml, esc} from './mail.js
 import {partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {reconcileSplits} from '../shared/splits.js';
+import {pressureSection} from './pressure.js';
 import {confirmSplits} from './fmp.js';
 import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
@@ -173,6 +174,8 @@ async function morningOne(store,{log,docs,user,state,repMail,send=sendAllowed}){
   if(fresh.length||(G&&G.ready)){
     fresh.sort((a,b)=>(MORDER[a.sev]??9)-(MORDER[b.sev]??9));
     const S2=morningSections(G,fresh,{SEV:MSEV,color:MCOLOR});
+    // 8.11: the pressure gauge's section, the owner's alone: the securities in the high levels, and on Sundays the record
+    if(user.owner){try{const ps=pressureSection(store,{esc}); if(ps)S2.push(ps)}catch(e){log('pressure section: '+(e&&e.message||e))}}
     const url=process.env.SITE_URL||''; const when=`מחירים נכון ל-${A.pricesAt?new Date(A.pricesAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}):'?'}`;
     const text=`בוקר טוב.\n\n${S2.map(x=>x.t+'\n'+x.text).join('\n\n')}\n\n${when}${url?'\nלפתיחת הדף: '+url:''}\n\nעובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.`;
     const html=wrapHtml('סיכום הבוקר',`<p>בוקר טוב.</p>${S2.map(x=>`<h3 style="margin:16px 0 6px;font-size:15px">${esc(x.t)}</h3>${x.html}`).join('')}<p style="color:#64748b;font-size:13px">${esc(when)}</p>${url?`<p><a href="${esc(url)}" style="color:#1e344e;font-weight:700">לפתיחת הדף ›</a></p>`:''}<p style="color:#64748b;font-size:12px">עובדות מהתיק שלך ומהידיעות; לא המלצה לקנות או למכור.</p>`);

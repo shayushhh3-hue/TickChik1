@@ -3067,8 +3067,9 @@ test('8.11 the pressure gauge on the control screen: the owner sees the part, th
   if(skip())return t.skip('no browser');
   const now=new Date().toISOString();
   store.setDoc('research/pressure',{at:now,day:now.slice(0,10),n:2,high:1,levels:['רגוע','מוגבר','גבוה','חריג'],syms:{
-    NVDA:{level:2,score:5,held:true,px:182,base:{n:230,hit:46,rate:20},signals:[{k:'move',w:2,v:-6.1,t:'ירידה של −6.1% ביום המסחר הזה (מ-194 ל-182)',src:'המחירים העדכניים',at:now},{k:'news',w:2,v:3,t:'3 ידיעות שליליות ב-48 שעות, מול 0.9 בממוצע',src:'קריאת הכתבות (צ׳יקו)',at:now},{k:'volume',w:1,v:2.2,t:'מחזור של פי 2.2 מהממוצע של 20 הימים',src:'Stooq',at:now}]},
-    MSFT:{level:0,score:0,held:true,px:505,base:{n:230,hit:12,rate:5.2},signals:[]}}});
+    NVDA:{level:2,score:5,held:true,px:182,base:{n:230,hit:46,rate:20},prevLevel:1,changedAt:now.slice(0,10),seriesLevel:1,similar:{rate:31,n:48,base:20,scope:'own'},signals:[{k:'move',w:2,v:-6.1,t:'ירידה של −6.1% ביום המסחר הזה (מ-194 ל-182)',src:'המחירים העדכניים',at:now},{k:'news',w:2,v:3,t:'3 ידיעות שליליות ב-48 שעות, מול 0.9 בממוצע',src:'קריאת הכתבות (צ׳יקו)',at:now},{k:'volume',w:1,v:2.2,t:'מחזור של פי 2.2 מהממוצע של 20 הימים',src:'Stooq',at:now}]},
+    MSFT:{level:0,score:0,held:true,px:505,base:{n:230,hit:12,rate:5.2},prevLevel:0,changedAt:'2026-11-01',seriesLevel:0,similar:null,signals:[]}},
+    portfolio:{wOk:true,wHigh:18.4,high:[{sym:'NVDA',level:2,w:18.4}],wEarn5:9.1,earn5:[{sym:'MSFT',d:now.slice(0,10),w:9.1}],top:{sym:'NVDA',w:18.4},cal:[{d:now.slice(0,10),kind:'earnings',sym:'MSFT',name:'דוח כספי של MSFT',est:false,w:9.1},{d:now.slice(0,10),kind:'macro',name:'מדד המחירים לצרכן (CPI)',region:'us'}]}});
   store.setDoc('research/pressure_track',{since:'2026-11-08',at:now,items:[{id:'NVDA:'+now.slice(0,10),sym:'NVDA',date:now.slice(0,10),level:2,score:5,px0:182,signals:['move','news','volume']}],misses:[],stats:{warned:1,pending:1,hits:0,partial:0,false:0,misses:0}});
   try{
     const {ctx,pg}=await open(1280); await tab(pg,'risk'); await pg.waitForTimeout(400);
@@ -3080,6 +3081,14 @@ test('8.11 the pressure gauge on the control screen: the owner sees the part, th
     assert.equal(v.hidden,false); assert.ok(v.shown); assert.match(v.sub,/2 ניירות · 1 ב"גבוה" או "חריג"/);
     assert.equal(v.rows[0].sym,'NVDA'); assert.equal(v.rows[0].lv,'גבוה'); assert.equal(v.rows[0].n,3,'three lit signals'); assert.equal(v.rows[1].lv,'רגוע');
     assert.match(v.text,/ירידה של −6\.1%/); assert.match(v.text,/שיעור בסיס: 20%/); assert.match(v.text,/לוח הציונים מאז 8\.11/); assert.match(v.text,/1 אזהרות/); assert.match(v.text,/מעט מדי כדי להסיק/);
+    // 8.11 (phase 3): the portfolio line, the calendar ahead, "in similar cases" with the base beside it
+    assert.match(v.text,/18\.4% מהתיק בניירות ב"גבוה" או "חריג": NVDA/); assert.match(v.text,/9\.1% מהתיק תלוי בדוחות של 5 הימים הקרובים: MSFT/); assert.match(v.text,/בעשרת הימים הקרובים/); assert.match(v.text,/מדד המחירים לצרכן/);
+    assert.match(v.text,/במקרים דומים בשנה האחרונה של הנייר 31% נגמרו בירידה של 10%\+ תוך 20 ימי מסחר, מול 20% בסיס \(48 ימים\)/);
+    // the rise today is a card of צ׳יקו's on the home: what, why it touches you, what to check, the record, a way to the gauge
+    await pg.click('#chatFab'); await pg.waitForSelector('#anaOut [data-chicoins] details');
+    const card=await pg.evaluate(()=>{const d=[...document.querySelectorAll('#anaOut details.chico-i')].find(x=>/מד הלחץ עלה/.test(x.textContent)); if(!d)return null; d.open=true; return {k:d.dataset.chicok,t:d.innerText.replace(/\s+/g,' '),nav:d.querySelector('[data-anav]')&&d.querySelector('[data-anav]').dataset.anav}});
+    assert.ok(card,'the rise is a card'); assert.match(card.k,/^press:NVDA:/); assert.match(card.t,/NVDA: מד הלחץ עלה ל"גבוה" \(ציון 5\)/); assert.match(card.t,/אתמול הרמה הייתה "מוגבר"/); assert.match(card.t,/במקרים דומים 31%/); assert.match(card.t,/אין כאן תחזית/); assert.equal(card.nav,'fold:hPress');
+    assert.ok(!/מד הלחץ עלה.*MSFT|MSFT: מד הלחץ/.test(card.t),'the calm one has no card');
     assert.ok(!/תחזית(?!\s*ולא)/.test(v.text.replace(/לא תחזית/g,'')),'no forecast wording');
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // a partner: the part is not offered, and the document is refused by the server

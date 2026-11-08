@@ -2115,7 +2115,7 @@ test('8.11 the nightly consistency check: the same figure by every path, a gap i
 });
 
 test('8.11 the pressure gauge: facts as signals with their numbers, four levels, the base rate, a record kept forward with hits, false alarms and misses; the owner\'s alone', async()=>{
-  const {signalsOf,scoreOf,levelOf,baseRate,pressureBuild,trackUpdate,pressureTask,PRESS_DOC,TRACK_DOC}=await import('../server/pressure.js');
+  const {signalsOf,scoreOf,levelOf,baseRate,backtest,poolBacktests,similarOf,pressureBuild,trackUpdate,pressureTask,pressureSection,PRESS_DOC,TRACK_DOC}=await import('../server/pressure.js');
   const now=new Date('2026-11-06T16:00:00Z'), day=i=>new Date(Date.UTC(2026,0,5)+i*864e5).toISOString().slice(0,10);
   // a year of closes: flat at 100, then a slide to 70 over the last 30 days; volumes flat, the last day triple
   const d=[], c=[], v=[]; for(let i=0;i<300;i++){const dt=new Date(Date.UTC(2026,0,5)+i*864e5); if([0,6].includes(dt.getUTCDay()))continue; d.push(dt.toISOString().slice(0,10)); const k=d.length; c.push(k<=180?100:k<=200?100-(k-180)*1.5:70); v.push(1e6)}
@@ -2145,15 +2145,29 @@ test('8.11 the pressure gauge: facts as signals with their numbers, four levels,
   assert.equal(baseRate({d,c:c.map(()=>100)}).hit,0,'a flat series never fell');
   // the run on a store, and the record: a warning today, its outcomes when the series grow, a miss with no warning
   const s=new Store(':memory:'); const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
-  s.setDoc('portfolio/main',{positions:[{sym:'ACME',qty:10,acct:'exc',ccy:'USD'},{sym:'PEER',qty:1,acct:'exc',ccy:'USD'}]}); s.setDoc('quotes/latest',{...Q,prices:{ACME:66,PEER:95,PEERB:88},prev:{ACME:72,PEER:95,PEERB:93}});   // PEER quiet
+  s.setDoc('portfolio/main',{positions:[{sym:'ACME',qty:10,acct:'exc',ccy:'USD'},{sym:'PEER',qty:1,acct:'exc',ccy:'USD'}]}); s.setDoc('quotes/latest',{...Q,usdIls:3.2,prices:{ACME:66,PEER:95,PEERB:88},prev:{ACME:72,PEER:95,PEERB:93}});   // PEER quiet
   s.setDoc('quotes/c_ACME',series); s.setDoc('quotes/c_PEER',{d,c:c.map(()=>100),source:'x'}); s.setDoc('research/latest',{companies:{ACME:company}}); s.setDoc('research/insiders',{by:{ACME:insiders}});
   s.setDoc('research/news',{items:news}); s.setDoc('research/newsx',{by:readings}); s.setDoc('research/comove',comove); s.setDoc('research/ecocal',ecocal); s.setDoc('watch/'+o.id,{syms:['PEERB']});
-  const log=[]; const Pd=pressureTask(s,{now,log:m=>log.push(m)});
+  // the backtest of the slide series: every day has a level, the falls are counted per level and per signal; pooled; "similar cases"
+  const bt=backtest(series); assert.ok(bt&&bt.n>50,JSON.stringify(bt&&bt.n)); assert.equal(bt.byLevel.reduce((t,b)=>t+b.n,0),bt.n); assert.ok(bt.base>0&&bt.base<100);
+  assert.ok(Object.keys(bt.bySignal).length>=2,'signals lit on some days: '+Object.keys(bt.bySignal)); assert.ok(bt.byLevel[0].n>0,'calm days exist');
+  const pool=poolBacktests([bt,backtest({d,c:c.map(()=>100),v:v.map(()=>1e6)})]); assert.equal(pool.syms,2); assert.equal(pool.n,bt.n+backtest({d,c:c.map(()=>100)}).n); assert.ok(pool.base<bt.base,'the flat series dilutes the base');
+  assert.deepEqual(similarOf(0,bt,pool).scope,'own'); assert.equal(similarOf(3,{byLevel:[{n:1},{n:1},{n:1},{n:3,rate:50}],base:5},pool),pool.byLevel[3].n>=20?similarOf(3,null,pool):null);
+  assert.equal(similarOf(2,null,null),null);
+  const pushes=[]; const log=[]; const Pd=await pressureTask(s,{now,log:m=>log.push(m),push:async(st,uid,msg)=>{pushes.push({uid,msg}); return 1}});
   assert.deepEqual(Object.keys(Pd.syms).sort(),['ACME','PEER','PEERB'],'held and followed'); assert.equal(Pd.syms.ACME.level,3); assert.equal(Pd.syms.PEER.level,1,'its group falls and the Fed is ahead: noted, not a warning'); assert.equal(Pd.high,2,'ACME and the followed PEERB (its own fall and its group)'); assert.ok(Pd.syms.ACME.base.rate>0);
   assert.ok(s.getDoc(PRESS_DOC).exists); let T=s.getDoc(TRACK_DOC).data; assert.equal(T.items.length,2); assert.deepEqual([T.items[0].sym,T.items[0].level,T.items[0].px0,T.items[0].out],['ACME',3,66,undefined]); assert.equal(T.stats.pending,2);
-  assert.match(log[0],/pressure: 3 securities, 2 high: ACME חריג/);
-  // the next day, still high: not written twice; 20 trading days on, the series shows the fall: a hit
-  pressureTask(s,{now:new Date('2026-11-07T16:00:00Z'),log(){}}); assert.equal(s.getDoc(TRACK_DOC).data.items.length,2);
+  assert.match(log[0],/pressure: 3 securities, 2 high: ACME חריג/); assert.match(log[0],/backtest: \d+ days of 2, base/);
+  // the push: once, to the owner, for each rise to high, the two heaviest signals in it, no forecast wording
+  assert.equal(pushes.length,2); assert.ok(pushes.every(p=>p.uid===o.id)); const pm=pushes.find(p=>/ACME/.test(p.msg.title)).msg; assert.match(pm.title,/מד לחץ: ACME עלה ל"חריג"/); assert.match(pm.body,/החמצה של 20%|ידיעה קריטית/); assert.match(pm.body,/לא תחזית/); assert.equal(pm.tag,'press:ACME');
+  assert.equal(Pd.pushed.ACME,'2026-11-06'); assert.ok(Pd.syms.ACME.test,'the backtest rides with the security'); assert.deepEqual([Pd.syms.PEER.similar.scope,Pd.syms.PEER.similar.rate],['own',0],'the flat PEER: its own calm days, none fell'); assert.ok(Pd.syms.ACME.similar===null||Pd.syms.ACME.similar.n>=20,'a rate only on enough similar days'); assert.equal(Pd.syms.ACME.seriesLevel,levelOf(scoreOf(Pd.syms.ACME.signals.filter(x=>['move','volume','drawdown','trend','vol','streak','leap'].includes(x.k)))));
+  // the portfolio as a whole: the weight in the high levels, the heaviest holding, the calendar ahead
+  const PV=Pd.portfolio; assert.ok(PV&&PV.wOk,JSON.stringify(PV)); assert.equal(PV.high.length,1); assert.equal(PV.high[0].sym,'ACME'); assert.ok(PV.wHigh>80,'ACME is most of the portfolio: '+PV.wHigh); assert.equal(PV.top.sym,'ACME'); assert.ok(PV.cal.some(e=>e.kind==='macro'&&/FOMC/.test(e.name)));
+  // the morning section: the high securities with their numbers; the record on a Sunday only
+  const sec=pressureSection(s,{now}); assert.equal(sec.t,'מד לחץ'); assert.match(sec.text,/ACME — חריג \(ציון/); assert.match(sec.text,/לא תחזית/); assert.ok(!/לוח הציונים/.test(sec.text),'Friday: no record line');
+  assert.match(pressureSection(s,{now:new Date('2026-11-08T05:00:00Z')}).text,/לוח הציונים מאז/,'Sunday: the record');
+  // the next day, still high: not written twice, not pushed twice; 20 trading days on, the series shows the fall: a hit
+  const pushes2=[]; await pressureTask(s,{now:new Date('2026-11-07T16:00:00Z'),log(){},push:async()=>{pushes2.push(1); return 1}}); assert.equal(s.getDoc(TRACK_DOC).data.items.length,2); assert.equal(pushes2.length,0,'still high is not a rise');
   const d2=[...d], c2=[...c]; for(let i=1;i<=30;i++){const dt=new Date(Date.parse('2026-11-06T12:00:00Z')+i*864e5); if([0,6].includes(dt.getUTCDay()))continue; d2.push(dt.toISOString().slice(0,10)); c2.push(i<=10?66-i:56)}
   s.setDoc('quotes/c_ACME',{...series,d:d2,c:c2,v:[...v,...d2.slice(d.length).map(()=>1e6)]});
   T=trackUpdate(s,s.getDoc(PRESS_DOC).data,{now:new Date('2026-12-10T16:00:00Z')}); assert.equal(T.items[0].out,'fell10'); assert.ok(T.items[0].d5<0); assert.ok(T.items[0].min20<=-10); assert.equal(T.stats.hits,1); assert.equal(T.stats.pending,T.items.length-1,'the rest (PEERB without a series, the new day\'s warnings) still wait');
