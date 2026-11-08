@@ -1536,7 +1536,7 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 @media (max-width:640px){.ptnav .chip{font-size:13px;padding-inline:9px}}
 #riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
-#riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff}
+#riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} #riskNav .chip[hidden],#riskSub [hidden]{display:none}
 @media (max-width:640px){#riskNav{top:0;margin-inline:0;overflow-x:auto;scrollbar-width:none} #riskNav .chip{flex:1 0 auto;font-size:13px;padding-inline:7px}}
 [data-pane="risk"][data-rgv="now"] > [data-rg]:not([data-rg="now"]),[data-pane="risk"][data-rgv="mix"] > [data-rg]:not([data-rg="mix"]),[data-pane="risk"][data-rgv="risk"] > [data-rg]:not([data-rg="risk"]),[data-pane="risk"][data-rgv="co"] > [data-rg]:not([data-rg="co"]),[data-pane="risk"][data-rgv="vol"] > [data-rg]:not([data-rg="vol"]){display:none!important}
 /* the groups once: the group card (bar or pie) when it is there, not the donut of the same groups again */
@@ -2462,6 +2462,11 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .recon .rc-p{display:flex;flex-wrap:wrap;gap:6px} .recon .rc-p span{padding:4px 10px;border-radius:999px;background:var(--sunk);font-size:13px}
 .recon table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed} .recon th:first-child{width:40%} .recon td{overflow-wrap:anywhere} .recon .n{white-space:nowrap} .recon th,.recon td{padding:6px 4px;border-top:1px solid var(--line);text-align:start;vertical-align:top} .recon td.num,.recon th.num{text-align:end}
 .recon .rc-why{color:var(--muted);font-size:12.5px}
+/* 8.11: the pressure gauge */
+.pr-r{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;border-inline-start-width:4px} .pr-r.pl0{border-inline-start-color:var(--ok-c)} .pr-r.pl1{border-inline-start-color:var(--warn-c)} .pr-r.pl2{border-inline-start-color:#E0532F} .pr-r.pl3{border-inline-start-color:#B42318;background:color-mix(in srgb,#B42318 6%,var(--surface))}
+.pr-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14.5px} .pr-lv{padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--sunk)} .pl2 .pr-lv{background:#FDE7E0;color:#8A2E12} .pl3 .pr-lv{background:#B42318;color:#fff}
+.pr-s{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.45} .pr-s li{display:flex;gap:8px;align-items:baseline} .pr-w{flex:0 0 auto;min-width:26px;text-align:center;font-size:11.5px;font-weight:700;border-radius:6px;background:var(--sunk);padding:1px 4px}
+.pr-rec{margin:0 0 6px;font-size:14px;line-height:1.5;padding:10px 12px;border-radius:10px;background:var(--sunk)}
 /* 8.11: "מה השתנה מול האתר": the statement against the site, before the save */
 .sdiff{border-inline-start:4px solid var(--s1)} .sdiff .sd-t th:first-child{width:22%} .sdiff .sd-t th:nth-child(2),.sdiff .sd-t th:nth-child(3){width:14%} .sdiff .sd-k{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--sunk);font-size:12px;font-weight:700;margin-inline-end:4px}
 .sdiff tr.sd-gone .sd-k,.sdiff tr.sd-less .sd-k{background:var(--warn-bg);color:var(--warn)} .sdiff tr.sd-split .sd-k,.sdiff tr.sd-sell .sd-k{background:var(--sunk);color:var(--ink)} .sdiff tr.sd-new .sd-k,.sdiff tr.sd-more .sd-k{background:var(--ok-bg,var(--sunk));color:var(--ok-ink,var(--gain))}
@@ -3399,6 +3404,11 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           </table>
         </div>
       </details>
+    </section>
+    <section aria-labelledby="hPress" id="pressSec" hidden>
+      <div class="row"><h2 id="hPress">מד לחץ</h2><span class="sub" id="pressSub"></span></div>
+      <p class="note" style="margin:0 0 8px">סימנים מדודים שבעבר הופיעו לפני ירידות — לא תחזית ולא המלצה. כל סימן עם המספר, המקור והשעה. המד נמדד בעצמו: כל עלייה ל"גבוה" או "חריג" נרשמת, ואחרי 5 ו-20 ימי מסחר נרשם מה קרה בפועל. בינתיים לבעל האתר בלבד, עד שהרישום יראה כמה אפשר לסמוך עליו.</p>
+      <div id="pressBody"><div class="empty">המד ייבנה בריצה הבאה של השרת (00:50 ו-18:05).</div></div>
     </section>
     <section aria-labelledby="hPr" data-adv>
       <div class="row"><h2 id="hPr">צמדים שזזים יחד</h2><span class="sub" id="prTogMN"></span></div>
@@ -19295,8 +19305,8 @@ function foldIs(){return true}
 // 5.11: five parts instead of three. "פיזור" was five screens of eight analyses and "סיכון ותרחישים" five more: what moves
 // together (the co-movement and both kinds of pairs, one question) and the risk measures (the snapshot and the securities
 // that shake the portfolio) are parts of their own
-const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk']};
-const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון'};
+const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk'],press:['hPress']};
+const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון',press:'מד לחץ'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
 function rgSet(k){if(!RG[k])k='now'; RGV=k; try{localStorage.setItem('tr_rgv',k)}catch(e){}
@@ -19307,7 +19317,7 @@ function foldSet(id){rgSet(rgOf(id))}
 // 28.10: no folds. The owner does not want parts that open and close: every section of every screen is one card of the
 // same make (the icon of its kind, its title, its line, its content), and the jump row at the top of the control screen
 // scrolls to it
-const SECI={hDesk:'M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9',hHealth:'M3 12h4l2-5 4 10 2-5h6',hMixH:'M12 3a9 9 0 1 0 9 9h-9zM12 3v9h9',hCtl:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',
+const SECI={hPress:'M12 14l4-6M4 16a8 8 0 1 1 16 0M12 14a1 1 0 1 0 0 .01',hDesk:'M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9',hHealth:'M3 12h4l2-5 4 10 2-5h6',hMixH:'M12 3a9 9 0 1 0 9 9h-9zM12 3v9h9',hCtl:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4',
   hKpi:'M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z',hHeat:'M3 12h4l3-7 4 14 3-7h4',hRulesOv:'M4 7h9M17 7h3M4 17h3M11 17h9M15 7a2 2 0 1 0 0 .01M9 17a2 2 0 1 0 0 .01',
   hMix:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1z',hExp:'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',hStress:'M13 2L4 14h7l-1 8 9-12h-7z',
   hPnl:'M4 16l5-5 4 4 7-8M15 7h5v5',hCore:'M12 12a3 3 0 1 0 0 .01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM19 5l1-1M5 19l-1 1',hCo:'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
@@ -19338,7 +19348,24 @@ document.addEventListener('click',ev=>{
 });
 function riskNavSync(){
 }
-try{foldBoot();riskNavSync()}catch(e){}
+// ---- 8.11: "מד לחץ": the server's gauge (research/pressure) and its record (research/pressure_track), the owner's alone.
+// Which signals are lit, with their numbers; the level; the security's own base rate; and the record so far ----
+let PRESS=null, PTRACK=null;
+const PR_LV=[['רגוע','pl0'],['מוגבר','pl1'],['גבוה','pl2'],['חריג','pl3']];
+function renderPress(){
+  const sec=$('pressSec'); if(!sec)return; const own=typeof OWNER==='undefined'?false:!!OWNER, on=!!(own&&PRESS&&PRESS.syms&&Object.keys(PRESS.syms).length);
+  sec.hidden=!on; for(const b of document.querySelectorAll('#riskNav [data-rg="press"],#riskSub [data-rsub="press"]'))b.hidden=!on;
+  if(!on){if(typeof RGV!=='undefined'&&RGV==='press')try{rgSet('now')}catch(e){} return}
+  const L=Object.entries(PRESS.syms).map(([sym,x])=>({sym,...x})).sort((a,b)=>(b.level-a.level)||(b.score-a.score)||String(a.sym).localeCompare(String(b.sym)));
+  const hi=L.filter(x=>x.level>=2).length, at=PRESS.at?hm(PRESS.at):'';
+  $('pressSub').textContent=`${L.length} ניירות · ${hi?`${hi} ב"גבוה" או "חריג"`:'אף אחד לא ב"גבוה"'} · נבדק ${at}`;
+  const row=x=>{const [lv,cls]=PR_LV[x.level]||PR_LV[0], S=(x.signals||[]).slice().sort((a,b)=>(b.w||0)-(a.w||0));
+    return `<div class="pr-r ${cls}"><div class="pr-h"><b class="sym">${esc(lab(x.sym))}</b>${x.held?'':'<span class="nm"> · במעקב</span>'}<span class="pr-lv">${lv}</span><span class="nm n">ציון ${x.score}</span>${x.base&&x.base.n?`<span class="nm">שיעור בסיס: ${x.base.rate}% מהימים בשנה נגמרו בירידה של 10%+ תוך 20 ימי מסחר</span>`:''}</div>
+      ${S.length?`<ul class="pr-s">${S.map(s=>`<li><span class="pr-w" title="משקל">${s.w}</span>${esc(s.t)} <span class="nm">· ${esc(s.src||'')}${s.at?' · '+esc(hm(s.at)):''}</span></li>`).join('')}</ul>`:'<p class="nm" style="margin:4px 0 0">אף סימן לא דולק.</p>'}</div>`};
+  const T=PTRACK&&PTRACK.stats, rec=T?`<p class="pr-rec"><b>לוח הציונים מאז ${dmy(PTRACK.since)}:</b> ${T.warned} אזהרות · <b>${T.hits}</b> פגיעות (ירידה של 10%+ תוך 20 ימי מסחר) · ${T.partial} חלקיות (5%–10%) · ${T.false} שווא · <b>${T.misses}</b> ירידות של 10%+ בלי אזהרה · ${T.pending} ממתינות ל-20 ימי מסחר.${T.warned+T.misses<10?' מעט מדי כדי להסיק; המספרים יצטברו.':''}</p>`:'';
+  setH($('pressBody'),`${rec}${L.map(row).join('')}<p class="note" style="margin:8px 0 0">הציון הוא סכום משקלי הסימנים: עד 1.5 רגוע, 2–3.5 מוגבר, 4–6 גבוה, מעל 6 חריג. "שיעור בסיס" הוא כמה פעמים הנייר עצמו ירד כך בשנה האחרונה, בלי קשר לסימנים — המספר שמולו נמדדות האזהרות.</p>`);
+}
+try{foldBoot();riskNavSync()}catch(e){} try{renderPress()}catch(e){}
 window.__fold={is:foldIs,set:foldSet,sync:riskNavSync};
 let HOLD_LITE=true; try{HOLD_LITE=localStorage.getItem('tr_holdlite')!=='0'}catch(e){}
 function holdApply(){const s=$('holdSec'),b=$('holdCols'); if(!s||!b)return; s.classList.toggle('lite',HOLD_LITE); b.setAttribute('aria-pressed',String(!HOLD_LITE)); b.textContent=HOLD_LITE?'עוד פרטים':'פחות פרטים'}
@@ -20013,6 +20040,9 @@ function anaFactsAI(F,issues,checks){
     // 8.11: what the last statement of each account changed against the site, as the person approved it at the save
     statement_check:(()=>{try{const C=(P&&P.stmtCheck)||{}, L=Object.entries(C).filter(([,x])=>x&&x.at&&Date.now()-Date.parse(x.at)<45*864e5).map(([ac,x])=>({account:acctName(ac),statement_date:x.asOf?dmy(x.asOf):null,checked_at:dmy(x.at),differences:x.changed,
       rows:(x.rows||[]).slice(0,12).map(r=>`${lab(r.sym)}: ${({more:'יותר בדוח',less:'פחות בדוח',new:'חדש בדוח',gone:'חסר בדוח, נשאר באתר',split:'הותאם לפיצול',sell:'מכירה שנרשמה כאן'})[r.kind]||r.kind}${r.q0!=null&&r.q1!=null?` (${+(+r.q0).toFixed(4)} → ${+(+r.q1).toFixed(4)})`:''}`)})); return L.length?L:null}catch(e){return null}})(),
+    // 8.11: the pressure gauge (the owner's alone): which signals are lit, with their numbers, and the record so far
+    pressure:(()=>{try{if(!OWNER||!PRESS||!PRESS.syms)return null; const L=Object.entries(PRESS.syms).filter(([,x])=>x.level>=1).sort((a,b)=>b[1].level-a[1].level).slice(0,12).map(([k,x])=>({security:lab(k),level:PR_LV[x.level][0],score:x.score,held:!!x.held,signals:(x.signals||[]).map(s=>s.t),base_rate_pct:x.base?x.base.rate:null}));
+      const T=PTRACK&&PTRACK.stats; return {checked_at:PRESS.at?dmy(PRESS.at)+' '+hm(PRESS.at):null,elevated:L,calm:Object.values(PRESS.syms).filter(x=>x.level===0).length,record:T?{since:dmy(PTRACK.since),warnings:T.warned,hits_fell_10pct_in_20_days:T.hits,partial_5_to_10:T.partial,false_alarms:T.false,falls_without_warning:T.misses,pending:T.pending}:null}}catch(e){return null}})(),
     share_splits:(()=>{try{const L=spRecent(30).map(x=>({security:lab(x.sym),date:dmy(x.d),ratio:spRatioH(+x.r),your_units:(x.rows||[]).filter(r=>!r.kept).map(r=>`${+(+r.q0).toFixed(4)} ← ${+(+r.q1).toFixed(4)}`).join(', ')})); return L.length?L:null}catch(e){return null}})(),
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
     from_peak:(()=>{try{const cr=crisisInfo(m);return cr&&cr.peak?`${spct(-cr.peak.pct)} מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))})`:null}catch(e){return null}})(),
@@ -20398,7 +20428,8 @@ const ANA_RULES=`כללים מחייבים:
 11. נתון חסר אינו אפס: "אין רישום", null, "—" או "לא ידוע" פירושם שהדף לא יודע, לא שהערך הוא 0. אל תכתוב "הופקדו ₪0" או "אין רווח" כשאין רישום; כתוב שהנתון חסר ואיפה משלימים אותו (התיק שלי ← השלמת נתונים). כשמבקשים "מה הכי חשוב", דרג לכל היותר שלושה דברים, הקונקרטי ביותר קודם, ואל תפנה לרשימות ארוכות ("יש לך 150 התראות").
 12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.
 13. share_splits הם פיצולי מניות שהאתר זיהה והחיל: כל יחידה הפכה לכמה יחידות (או כמה לאחת), והמחיר השתנה ביחס הפוך. ירידת מחיר של נייר ביום הפיצול שלו אינה הפסד: אמור שהשווי לא השתנה בגלל הפיצול, ושהכמות עודכנה.
-14. statement_check הוא מה שהדוח האחרון של כל חשבון שינה מול מה שהאתר החזיק, כפי שאושר בשמירה. כשנשאלים על הבדל בין הדוח לאתר, או "למה הכמות השתנתה", ענה מתוכו: הכמויות לפני ואחרי, והסיבה שנרשמה (קנייה, מכירה, פיצול, נייר שחסר בדוח). אם אין רשומה, אמור שאין השוואה שמורה.`;
+14. statement_check הוא מה שהדוח האחרון של כל חשבון שינה מול מה שהאתר החזיק, כפי שאושר בשמירה. כשנשאלים על הבדל בין הדוח לאתר, או "למה הכמות השתנתה", ענה מתוכו: הכמויות לפני ואחרי, והסיבה שנרשמה (קנייה, מכירה, פיצול, נייר שחסר בדוח). אם אין רשומה, אמור שאין השוואה שמורה.
+15. pressure הוא "מד לחץ": סימנים מדודים (תנועה, מחזור, דוח, אנליסטים, בעלי עניין, ידיעות, הסקטור) שבעבר הופיעו לפני ירידות, עם ציון ורמה. זו לא תחזית. כשנשאלים אם נייר "ייפול" או "בדרך לקרוס": אמור אילו סימנים דולקים ומה המספרים, מה שיעור הבסיס של הנייר, ומה לוח הציונים של המד עד כה (כולל אזעקות שווא וירידות בלי אזהרה). אל תאמר שנייר יירד או יעלה, ואל תציע למכור או לקנות.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -28167,6 +28198,10 @@ try{refreshBack()}catch(e){}
     // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)
     try{if(!LOCAL&&!etfAsked&&P&&(P.positions||[]).some(p=>isF(p.sym)&&!((ETFD&&ETFD.by)||{})[p.sym])){etfAsked=true; fetch('/api/etf/refresh',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:'{}'}).catch(()=>{})}}catch(e){}},()=>{})}catch(e){}
   try{db.doc('research/ecocal').onSnapshot(s=>{ECO=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}},()=>{})}catch(e){}
+  // 8.11: the pressure gauge and its record: the owner's alone (the access matrix refuses everybody else)
+  if(OWNER){try{db.doc('research/pressure').onSnapshot(s=>{PRESS=s.exists?s.data():null; try{renderPress()}catch(e){console.error(e)}},()=>{})}catch(e){}
+    try{db.doc('research/pressure_track').onSnapshot(s=>{PTRACK=s.exists?s.data():null; try{renderPress()}catch(e){}},()=>{})}catch(e){}}
+  else try{renderPress()}catch(e){}   // a partner: the part is not offered
   db.doc('research/newsx').onSnapshot(s=>{NXD=s.exists?s.data():null; try{renderNewsChip()}catch(e){} try{for(const x of Object.values((NXD&&NXD.by)||{}))if(x){x.he=factFix(x.he); x.what=factFix(x.what); if(x.more)x.more=factFix(x.more)}}catch(e){} try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){} try{newsCount()}catch(e){}},fail);
   $('repKind').value=RK;$('repKind').addEventListener('change',e=>{RK=e.target.value;RP='';try{localStorage.setItem('repKind',RK)}catch(x){};fillPeriods()});
   $('repPer').addEventListener('change',e=>{RP=e.target.value});

@@ -116,6 +116,7 @@ export function access(user,p){
   // each person's list of symbols is theirs alone; the price job reads them on the server, not through this matrix
   if(seg[0]==='watch')return seg[1]===user.id?'rw':'';
   if(seg[0]==='research'&&seg[1]==='newsarc')return owner?'rw':'';   // the archive of the readings about everybody's securities: the owner's alone
+  if(seg[0]==='research'&&/^pressure/.test(seg[1]||''))return isOwner(user)?'rw':'';   // 8.11: the pressure gauge and its record: the owner's alone until it is calibrated
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(OWN_DOCS.has(seg[0]))return isOwner(user)?'rw':'';

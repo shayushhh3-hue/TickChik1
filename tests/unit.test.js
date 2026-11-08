@@ -2113,3 +2113,55 @@ test('8.11 the nightly consistency check: the same figure by every path, a gap i
   assert.ok(consistView(s,{role:'admin'}).runs.find(r=>r.owner).items.every(x=>!/GONE/.test(x.t)&&!x.sym),'an admin sees the owner\'s kinds only');
   assert.ok(s.getDoc('system/consist').exists); assert.ok(log.some(m=>/consistency: 2 portfolio/.test(m)),log.join('\n'));
 });
+
+test('8.11 the pressure gauge: facts as signals with their numbers, four levels, the base rate, a record kept forward with hits, false alarms and misses; the owner\'s alone', async()=>{
+  const {signalsOf,scoreOf,levelOf,baseRate,pressureBuild,trackUpdate,pressureTask,PRESS_DOC,TRACK_DOC}=await import('../server/pressure.js');
+  const now=new Date('2026-11-06T16:00:00Z'), day=i=>new Date(Date.UTC(2026,0,5)+i*864e5).toISOString().slice(0,10);
+  // a year of closes: flat at 100, then a slide to 70 over the last 30 days; volumes flat, the last day triple
+  const d=[], c=[], v=[]; for(let i=0;i<300;i++){const dt=new Date(Date.UTC(2026,0,5)+i*864e5); if([0,6].includes(dt.getUTCDay()))continue; d.push(dt.toISOString().slice(0,10)); const k=d.length; c.push(k<=180?100:k<=200?100-(k-180)*1.5:70); v.push(1e6)}
+  v[v.length-1]=3.2e6; c[c.length-1]=66; c[c.length-2]=67; c[c.length-3]=68; c[c.length-4]=69;
+  const series={d,c,v,source:'Stooq',updatedAt:now.toISOString()};
+  const Q={updatedAt:now.toISOString(),usDate:'2026-11-06',prices:{ACME:66,PEER:90,PEERB:88},prev:{ACME:72,PEER:95,PEERB:93},meta:{ACME:{date:'2026-11-06',ccy:'USD'},PEER:{date:'2026-11-06'},PEERB:{date:'2026-11-06'}}};
+  const company={rep:{q:'2026-09-30',label:'Q3 2026',eps:{a:0.8,e:1.0,s:-20},at:'2026-11-03',src:'Finnhub'},next:'2027-02-02',recHist:[{p:'2026-10',sb:5,b:10,h:5,s:0,ss:0},{p:'2026-11',sb:3,b:7,h:6,s:3,ss:1}],gradesL:[{d:'2026-11-04',firm:'A',act:'downgrade'},{d:'2026-10-20',firm:'B',act:'downgrade'}]};
+  const insiders=[{kind:'sell',deliberate:true,plan:false,top:true,value:400000,owner:'CEO',txDate:'2026-10-28',filedAt:'2026-10-30T00:00:00Z'},{kind:'sell',deliberate:true,plan:true,value:9e6,owner:'CFO',txDate:'2026-10-28',filedAt:'2026-10-30T00:00:00Z'}];
+  const news=[{id:'a1',syms:['ACME'],at:'2026-11-06T10:00:00Z',title:'ACME recalls product after probe',pub:'Reuters'},{id:'a2',syms:['ACME'],at:'2026-11-05T20:00:00Z',title:'x'},{id:'a3',syms:['ACME'],at:'2026-11-05T12:00:00Z',title:'y'},{id:'a4',syms:['ACME'],at:'2026-10-31T12:00:00Z',title:'old'}];
+  const readings={a1:{dir:'neg',level:'crit'},a2:{dir:'neg',level:'imp'},a3:{dir:'neg',level:'imp'},a4:{dir:'pos',level:'imp'}};
+  const comove={groups:[{name:'שבבים',syms:['ACME','PEER','PEERB']}]}, ecocal={items:[{cat:'rates',region:'us',d:'2026-11-07',name:'החלטת הריבית של הפד (FOMC)'}]};
+  const S=signalsOf('ACME',{Q,series,company,insiders,news,readings,comove,ecocal,now}), K=S.map(s=>s.k).sort();
+  assert.deepEqual(K,['analysts','downgrades','drawdown','insiders','macro','miss','move','news','newsCrit','sector','streak','trend','volume'].sort(),JSON.stringify(S.map(s=>[s.k,s.t])));
+  // the volatility signal: a calm year, then ten wild days
+  {const cj=c.map(()=>100); for(let i=1;i<=10;i++)cj[cj.length-i]=100+(i%2?6:-6); const Sj=signalsOf('ACME',{Q:{...Q,prices:{ACME:100},prev:{ACME:100}},series:{d,c:cj,source:'x'},company:{},now}); assert.ok(Sj.some(x=>x.k==='vol'),JSON.stringify(Sj.map(x=>x.k)))}
+  const by=Object.fromEntries(S.map(s=>[s.k,s]));
+  assert.match(by.move.t,/−8\.3%/); assert.equal(by.move.w,2); assert.match(by.volume.t,/פי 3\.2/); assert.match(by.drawdown.t,/−34\.0% מהשיא/); assert.match(by.miss.t,/החמצה של 20%/); assert.equal(by.miss.w,3,'a miss in the last ten days weighs most');
+  assert.match(by.insiders.t,/נושא משרה בכיר/); assert.match(by.insiders.t,/\$400,000/,'the plan sale is not counted'); assert.match(by.newsCrit.t,/recalls product/); assert.match(by.news.t,/3 ידיעות שליליות/); assert.match(by.sector.t,/−5\.3%/);
+  assert.match(by.analysts.t,/"מכירה" 0% → 20%/); assert.match(by.downgrades.t,/2 הורדות דירוג/); assert.match(by.streak.t,/4 ימי ירידה/);
+  for(const s of S){assert.ok(s.src,'every signal names its source: '+s.k); assert.ok(!/תחזית|תקרוס|ימכור|למכור|לקנות/.test(s.t),'facts only: '+s.t)}
+  const score=scoreOf(S); assert.ok(score>6,'score '+score); assert.equal(levelOf(score),3);
+  assert.equal(levelOf(0),0); assert.equal(levelOf(2),1); assert.equal(levelOf(4),2); assert.equal(levelOf(6),2); assert.equal(levelOf(6.5),3);
+  // a quiet security: nothing lit
+  const quiet=signalsOf('PEER',{Q:{...Q,prices:{PEER:95},prev:{PEER:95}},series:{d,c:c.map(()=>100),v:v.map(()=>1e6),source:'x'},company:{},now}); assert.deepEqual(quiet,[]);
+  // the base rate of the slide series: some days were followed by a 10% fall within 20 days
+  const b=baseRate(series); assert.ok(b&&b.hit>0&&b.rate>0&&b.rate<100,JSON.stringify(b));
+  assert.equal(baseRate({d,c:c.map(()=>100)}).hit,0,'a flat series never fell');
+  // the run on a store, and the record: a warning today, its outcomes when the series grow, a miss with no warning
+  const s=new Store(':memory:'); const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  s.setDoc('portfolio/main',{positions:[{sym:'ACME',qty:10,acct:'exc',ccy:'USD'},{sym:'PEER',qty:1,acct:'exc',ccy:'USD'}]}); s.setDoc('quotes/latest',{...Q,prices:{ACME:66,PEER:95,PEERB:88},prev:{ACME:72,PEER:95,PEERB:93}});   // PEER quiet
+  s.setDoc('quotes/c_ACME',series); s.setDoc('quotes/c_PEER',{d,c:c.map(()=>100),source:'x'}); s.setDoc('research/latest',{companies:{ACME:company}}); s.setDoc('research/insiders',{by:{ACME:insiders}});
+  s.setDoc('research/news',{items:news}); s.setDoc('research/newsx',{by:readings}); s.setDoc('research/comove',comove); s.setDoc('research/ecocal',ecocal); s.setDoc('watch/'+o.id,{syms:['PEERB']});
+  const log=[]; const Pd=pressureTask(s,{now,log:m=>log.push(m)});
+  assert.deepEqual(Object.keys(Pd.syms).sort(),['ACME','PEER','PEERB'],'held and followed'); assert.equal(Pd.syms.ACME.level,3); assert.equal(Pd.syms.PEER.level,1,'its group falls and the Fed is ahead: noted, not a warning'); assert.equal(Pd.high,2,'ACME and the followed PEERB (its own fall and its group)'); assert.ok(Pd.syms.ACME.base.rate>0);
+  assert.ok(s.getDoc(PRESS_DOC).exists); let T=s.getDoc(TRACK_DOC).data; assert.equal(T.items.length,2); assert.deepEqual([T.items[0].sym,T.items[0].level,T.items[0].px0,T.items[0].out],['ACME',3,66,undefined]); assert.equal(T.stats.pending,2);
+  assert.match(log[0],/pressure: 3 securities, 2 high: ACME חריג/);
+  // the next day, still high: not written twice; 20 trading days on, the series shows the fall: a hit
+  pressureTask(s,{now:new Date('2026-11-07T16:00:00Z'),log(){}}); assert.equal(s.getDoc(TRACK_DOC).data.items.length,2);
+  const d2=[...d], c2=[...c]; for(let i=1;i<=30;i++){const dt=new Date(Date.parse('2026-11-06T12:00:00Z')+i*864e5); if([0,6].includes(dt.getUTCDay()))continue; d2.push(dt.toISOString().slice(0,10)); c2.push(i<=10?66-i:56)}
+  s.setDoc('quotes/c_ACME',{...series,d:d2,c:c2,v:[...v,...d2.slice(d.length).map(()=>1e6)]});
+  T=trackUpdate(s,s.getDoc(PRESS_DOC).data,{now:new Date('2026-12-10T16:00:00Z')}); assert.equal(T.items[0].out,'fell10'); assert.ok(T.items[0].d5<0); assert.ok(T.items[0].min20<=-10); assert.equal(T.stats.hits,1); assert.equal(T.stats.pending,T.items.length-1,'the rest (PEERB without a series, the new day\'s warnings) still wait');
+  // a fall with no warning (PEER slides after the record began): a miss, counted once
+  const c3=c.map(()=>100), d3=[...d]; for(let i=1;i<=45;i++){const dt=new Date(Date.parse('2026-11-06T12:00:00Z')+i*864e5); if([0,6].includes(dt.getUTCDay()))continue; d3.push(dt.toISOString().slice(0,10)); c3.push(i<=3?100:80)}
+  s.setDoc('quotes/c_PEER',{d:d3,c:c3,source:'x'}); T=trackUpdate(s,s.getDoc(PRESS_DOC).data,{now:new Date('2026-12-20T16:00:00Z')});
+  assert.equal(T.misses.length,1); assert.equal(T.misses[0].sym,'PEER'); assert.ok(T.misses[0].date>=T.since); assert.equal(T.stats.misses,1);
+  // the owner's alone
+  const {access}=await import('../server/store.js'); const f=s.users().find(u=>u.role==='friend');
+  assert.equal(access(f,PRESS_DOC),''); assert.equal(access(f,TRACK_DOC),''); assert.equal(access(o,PRESS_DOC),'rw'); assert.equal(access({id:'a',role:'admin'},PRESS_DOC),'');
+});

@@ -1831,7 +1831,7 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   // 28.10: no folds any more: every section is open
   // and the screen in three parts: the exposures under "פיזור", the stress test under "סיכון ותרחישים", one part at a time
   // 5.11: five parts: what moves together and the risk measures have their own
-  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].map(b=>b.textContent)),['מצב','פיזור','מה זז יחד','תרחישים','מדדי סיכון']);
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].filter(b=>!b.hidden).map(b=>b.textContent)),['מצב','פיזור','מה זז יחד','תרחישים','מדדי סיכון'],'the gauge\'s part shows only when the gauge has run (8.11)');
   assert.ok(await pg.evaluate(()=>{const n=document.getElementById('riskNav'); return n.scrollWidth<=n.clientWidth+1}),'the five fit on a phone');
   for(const [k,id] of [['co','hCo'],['vol','hRk']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150); assert.ok(await pg.evaluate(id=>!!document.getElementById(id).offsetParent&&!document.getElementById('hExp').offsetParent,id),'its own part: '+k)}
   for(const [k,id,other] of [['mix','hExp','hStress'],['risk','hStress','hExp']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150);
@@ -3061,4 +3061,33 @@ test('8.11 a statement against the site before the save: the units put in the ne
     assert.equal(await pg.evaluate(()=>document.getElementById('sdBox').hidden),true); assert.equal(await pg.evaluate(()=>document.getElementById('btnPfSave').textContent),'שמור את התיק');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('quotes/latest',Q0)}
+});
+
+test('8.11 the pressure gauge on the control screen: the owner sees the part, the lit signals with their numbers and the record; a partner sees no part and gets no document',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const now=new Date().toISOString();
+  store.setDoc('research/pressure',{at:now,day:now.slice(0,10),n:2,high:1,levels:['רגוע','מוגבר','גבוה','חריג'],syms:{
+    NVDA:{level:2,score:5,held:true,px:182,base:{n:230,hit:46,rate:20},signals:[{k:'move',w:2,v:-6.1,t:'ירידה של −6.1% ביום המסחר הזה (מ-194 ל-182)',src:'המחירים העדכניים',at:now},{k:'news',w:2,v:3,t:'3 ידיעות שליליות ב-48 שעות, מול 0.9 בממוצע',src:'קריאת הכתבות (צ׳יקו)',at:now},{k:'volume',w:1,v:2.2,t:'מחזור של פי 2.2 מהממוצע של 20 הימים',src:'Stooq',at:now}]},
+    MSFT:{level:0,score:0,held:true,px:505,base:{n:230,hit:12,rate:5.2},signals:[]}}});
+  store.setDoc('research/pressure_track',{since:'2026-11-08',at:now,items:[{id:'NVDA:'+now.slice(0,10),sym:'NVDA',date:now.slice(0,10),level:2,score:5,px0:182,signals:['move','news','volume']}],misses:[],stats:{warned:1,pending:1,hits:0,partial:0,false:0,misses:0}});
+  try{
+    const {ctx,pg}=await open(1280); await tab(pg,'risk'); await pg.waitForTimeout(400);
+    const chip=await pg.evaluate(()=>{const b=document.querySelector('#riskNav [data-rg="press"]'); return b?{hidden:b.hidden,text:b.textContent}:null});
+    assert.deepEqual(chip,{hidden:false,text:'מד לחץ'},'the part is offered to the owner');
+    await pg.click('#riskNav [data-rg="press"]'); await pg.waitForTimeout(300);
+    const v=await pg.evaluate(()=>{const s=document.getElementById('pressSec'), rows=[...s.querySelectorAll('.pr-r')]; return {hidden:s.hidden,shown:getComputedStyle(s).display!=='none',sub:document.getElementById('pressSub').textContent,
+      rows:rows.map(r=>({cls:r.className,lv:r.querySelector('.pr-lv').textContent,sym:r.querySelector('.sym').textContent,n:r.querySelectorAll('.pr-s li').length})),text:s.innerText}});
+    assert.equal(v.hidden,false); assert.ok(v.shown); assert.match(v.sub,/2 ניירות · 1 ב"גבוה" או "חריג"/);
+    assert.equal(v.rows[0].sym,'NVDA'); assert.equal(v.rows[0].lv,'גבוה'); assert.equal(v.rows[0].n,3,'three lit signals'); assert.equal(v.rows[1].lv,'רגוע');
+    assert.match(v.text,/ירידה של −6\.1%/); assert.match(v.text,/שיעור בסיס: 20%/); assert.match(v.text,/לוח הציונים מאז 8\.11/); assert.match(v.text,/1 אזהרות/); assert.match(v.text,/מעט מדי כדי להסיק/);
+    assert.ok(!/תחזית(?!\s*ולא)/.test(v.text.replace(/לא תחזית/g,'')),'no forecast wording');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+    // a partner: the part is not offered, and the document is refused by the server
+    const P2=await open(1280,{who:'p2'}); await tab(P2.pg,'risk'); await P2.pg.waitForTimeout(400);
+    const c2=await P2.pg.evaluate(()=>{const b=document.querySelector('#riskNav [data-rg="press"]'); return {chip:b?b.hidden:'none',sec:document.getElementById('pressSec').hidden}});
+    assert.deepEqual(c2,{chip:true,sec:true});
+    const r=await P2.pg.evaluate(async()=>{try{const db=await window.claude.use('db'); const d=await db.doc('research/pressure').get(); return d.exists?'exists':'none'}catch(e){return 'refused'}});
+    assert.notEqual(r,'exists','a partner never gets the gauge');
+    assert.deepEqual(P2.pg.errs,[]); await P2.ctx.close();
+  }finally{store.deleteDoc('research/pressure'); store.deleteDoc('research/pressure_track')}
 });

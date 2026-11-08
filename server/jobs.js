@@ -11,6 +11,7 @@ import {pxWatchTask} from './pxwatch.js';
 import {newsTask} from './newsfeed.js';
 import {newsxTask} from './newsx.js';
 import {consistTask} from './consist.js';
+import {pressureTask} from './pressure.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
 import {pulseTask} from './pulse.js';
@@ -29,6 +30,8 @@ export const SCHEDULE=[
   {name:'morning', when:p=>p.h===7&&p.min===50, run:(s,o)=>morningTask(s,o)},
   // 8.11: the same figures by every path, compared, after the night's daily point and series (server/consist.js)
   {name:'consist', when:p=>p.h===0&&p.min===30, run:(s,o)=>consistTask(s,o)},
+  // 8.11: the pressure gauge: after the night's series (and the record's outcomes), and again in the afternoon with the day's news and the US open
+  {name:'pressure',when:p=>(p.h===0&&p.min===50)||(p.h===18&&p.min===5), run:(s,o)=>pressureTask(s,o)},
   {name:'monthly', when:p=>p.d===1&&p.h===8&&p.min===50, run:async(s,o)=>{await monthlyTask(s,o); await reportTask(s,{...o,kind:'month'})}},
   {name:'weekly',  when:p=>p.wd===5&&p.h===13&&p.min===50, run:(s,o)=>reportTask(s,{...o,kind:'week'})},
   {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
@@ -67,7 +70,7 @@ export const SCHEDULE=[
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={consist:6*60e3,ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
+export const LIMIT={consist:6*60e3,pressure:2*60e3,ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
   const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false});
   const pumpLane=async ln=>{const Q=lane(ln);
