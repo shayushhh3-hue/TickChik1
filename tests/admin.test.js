@@ -544,3 +544,19 @@ test('5.11 the analysts from FMP: the target with its median, high and low, and 
   assert.deepEqual(L.map(x=>x.firm),['Goldman Sachs','Morgan Stanley'],'the last 90 days, newest first'); assert.deepEqual(L[0],{d:'2026-11-01',firm:'Goldman Sachs',from:'Neutral',to:'Buy',act:'upgrade'});
   assert.equal(fmpGradesListParse({}),null);
 });
+
+test('8.11 a split is checked with FMP (confirmed, not found, not in the plan) and listed for the Management Center by counts only',async()=>{
+  const {confirmSplits,fmpSplitsParse}=await import('../server/fmp.js'), {splitsAdmin}=await import('../server/admin/yahoo.js');
+  assert.equal(fmpSplitsParse([{symbol:'SOXX',date:'2026-11-05',numerator:3,denominator:1}],{d:'2026-11-05',r:3}),'fmp');
+  assert.equal(fmpSplitsParse([{symbol:'SOXX',date:'2024-03-07',numerator:3,denominator:1}],{d:'2026-11-05',r:3}),'nofmp');
+  const s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); const f=s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  s.setDoc('quotes/latest',{prices:{SOXX:131.9,ABC:10},splits:{SOXX:{d:'2026-11-05',r:3,src:'prices'},ABC:{d:'2026-11-04',r:0.1,src:'series'}}});
+  const seen=[]; const fetch=async u=>{seen.push(u); return /SOXX/.test(u)?{ok:true,status:200,json:async()=>[{symbol:'SOXX',date:'2026-11-05',numerator:3,denominator:1}]}:{ok:false,status:402,json:async()=>({})}};
+  assert.equal(await confirmSplits(s,{key:'k',fetch,now:new Date('2026-11-06T08:00:00Z')}),2);
+  const Q=s.getDoc('quotes/latest').data.splits; assert.equal(Q.SOXX.conf,'fmp'); assert.equal(Q.ABC.conf,'plan'); assert.ok(seen.every(u=>u.includes('/stable/splits?symbol=')));
+  assert.equal(await confirmSplits(s,{key:'k',fetch,now:new Date('2026-11-06T09:00:00Z')}),0,'once');
+  s.setDoc('portfolio/main',{positions:[{sym:'SOXX',qty:30}],splits:{'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,rows:[{acct:'exc',q0:10,q1:30}]}}});
+  s.setDoc(`data/users/${f.id}/portfolio`,{positions:[{sym:'SOXX',qty:30}],splits:{'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,rows:[{acct:'b',q0:30,q1:30,kept:true}]}}});
+  const L=splitsAdmin(s), x=L.find(z=>z.sym==='SOXX'); assert.deepEqual({applied:x.applied,kept:x.kept,undone:x.undone,conf:x.conf},{applied:1,kept:1,undone:0,conf:'fmp'});
+  assert.ok(!JSON.stringify(L).includes('"q0"')&&!JSON.stringify(L).includes(f.id),'counts only');
+});

@@ -13,7 +13,7 @@ import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
-import {yahooStatus,marketData} from './yahoo.js';
+import {yahooStatus,marketData, splitsAdmin} from './yahoo.js';
 import {keysList,keyTest} from './keys.js';
 import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
   contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
@@ -167,7 +167,7 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
 
   // ---- the global news model ----
   // 4.11: Yahoo as a source (counted by kind and outcome) and the market it brings (public data)
-  app.get('/api/admin/yahoo',need('view'),(req,res)=>res.json({status:yahooStatus(store,{days:Math.max(1,Math.min(30,+req.query.days||7))}),market:marketData(store)}));
+  app.get('/api/admin/yahoo',need('view'),(req,res)=>res.json({status:yahooStatus(store,{days:Math.max(1,Math.min(30,+req.query.days||7))}),market:marketData(store),splits:splitsAdmin(store)}));
   app.get('/api/admin/world',need('view'),(req,res)=>{const M=worldModel(store,{days:+req.query.days||3}); let brief=null; try{brief=JSON.parse(store.getMeta('worldBrief:'+M.days)||'null')}catch(e){} res.json({...M,brief,keyOff:!process.env.ANTHROPIC_API_KEY&&!app.locals.worldAsk})});
   const WB=new Map();
   app.post('/api/admin/world/brief',need('view'),async(req,res)=>{const last=WB.get(req.user.id)||0; if(Date.now()-last<20e3)return res.status(429).json({error:{code:'rate_limited',message:'התקציר הקודם עוד נכתב.'}}); WB.set(req.user.id,Date.now());

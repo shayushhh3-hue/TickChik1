@@ -5,6 +5,7 @@ import {sendAllowed, mailAllowed, mailAllowedFor, wrapHtml, esc} from './mail.js
 import {partnerView} from './store.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {reconcileSplits} from '../shared/splits.js';
+import {confirmSplits} from './fmp.js';
 import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
@@ -17,7 +18,7 @@ export const OWNER_DOCS=['portfolio/main','plan/main','settings/main','history/m
 export function ownerDocs(store){const out={}; for(const p of OWNER_DOCS){const d=store.getDoc(p); if(d.exists)out[p]=d.data} return out}
 const ownerUser=store=>{const o=store.users().find(u=>u.role==='owner'); return {uid:o?o.id:'owner',email:o?o.email:'',owner:true}};
 
-export async function pricesTask(store,{log,reason='שעתי'}={}){return refreshQuotes(store,{log,reason})}
+export async function pricesTask(store,{log,reason='שעתי'}={}){const r=await refreshQuotes(store,{log,reason}); try{await confirmSplits(store,{log})}catch(e){} return r}   // 8.11: a split found is checked with FMP
 
 // 23:50: the day's point (by the page), the close series of held and followed securities, the US snapshot for search
 export async function nightlyTask(store,{log,maxSeries=160}={}){
@@ -58,6 +59,7 @@ export async function nightlyTask(store,{log,maxSeries=160}={}){
   log(`close series: ${ok}/${Math.min(keys.size,maxSeries)}${fails.length?'; failed: '+fails.slice(0,5).join(' | '):''}`);
   // 6.11: a split the live prices did not catch, from the saved daily prices against the fresh series (shared/splits.js)
   try{reconcileSplits(store,{now,log})}catch(e){log('splits: '+(e&&e.message||e))}
+  try{await confirmSplits(store,{now,log})}catch(e){}
   try{await usSnapshot(store,now,log)}catch(e){log('US snapshot failed:',e.message)}
   try{comoveTask(store,{log})}catch(e){log('comove failed:',e.message)}
 }

@@ -3023,3 +3023,14 @@ test('6.11 "מכירה" in התיק שלי: a sale written by hand says the gain
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data)}
 });
+
+test('8.11 the Management Center lists the splits applied: the security, the day, the ratio, how found, the FMP check, counts only',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const Q0=store.getDoc('quotes/latest').data;
+  try{store.setDoc('quotes/latest',{...Q0,splits:{SOXX:{d:'2026-11-05',r:3,src:'prices',conf:'fmp'}}});
+    const {ctx,pg}=await open(1280); await pg.goto(U+'admin'); await pg.waitForSelector('#view .kpi',{timeout:15000});
+    await pg.evaluate(()=>location.hash='#yahoo'); await pg.waitForFunction(()=>/פיצולי מניות/.test(document.getElementById('view').textContent),null,{timeout:10000});
+    const row=await pg.evaluate(()=>{const h=[...document.querySelectorAll('#view h2')].find(x=>x.textContent==='פיצולי מניות'); return h.closest('section').querySelector('tbody tr').innerText.replace(/\s+/g,' ').trim()});
+    assert.match(row,/^SOXX 5\.11\.2026 3 ל-1 מהמחירים, ביום עצמו אומת \d+ הוחל/,row); assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('quotes/latest',Q0)}
+});

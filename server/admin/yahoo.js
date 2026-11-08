@@ -55,3 +55,14 @@ export function marketData(store){
   const fx={usdIls:Q.usdIls||null,label:Q.fxLabel||'',prev:Q.fxPrev?Q.fxPrev.rate:null,chg:Q.fxPrev?pc(Q.usdIls,Q.fxPrev.rate):null,boi:Q.boiUsd||null};
   const rates=Object.entries(Q.rates||{}).map(([c,v])=>({c,rate:v.rate,chg:pc(v.rate,v.prev),date:v.date||null})).sort((a,b)=>a.c<b.c?-1:1);
   return {updatedAt:Q.updatedAt||null,label:Q.priceLabel||'',bench,mkts,fx,rates}}
+
+// 8.11: the splits applied: the fact (the security, the day, the ratio), how it was found and whether FMP confirms it, and in
+// how many portfolios it was applied, kept or undone. Counts only: no one's units or securities beyond the split's own.
+export function splitsAdmin(store){
+  const Q=(store.getDoc('quotes/latest').data)||{}, S=Q.splits||{}; if(!Object.keys(S).length)return [];
+  const ports=[store.getDoc('portfolio/main')]; try{for(const p of store.pathsUnder('data/users'))if(/^data\/users\/[^/]+\/portfolio$/.test(p))ports.push(store.getDoc(p))}catch(e){}
+  const near=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))<=7*864e5;
+  return Object.entries(S).map(([sym,v])=>{const c={applied:0,kept:0,undone:0};
+    for(const P of ports){if(!P.exists||!P.data)continue; for(const r of Object.values(P.data.splits||{})){if(!r||r.sym!==sym||!r.d||!near(r.d,v.d))continue;
+      if(r.undone)c.undone++; else if((r.rows||[]).some(x=>!x.kept))c.applied++; else c.kept++}}
+    return {sym,d:v.d,r:+v.r,src:v.src||'prices',conf:v.conf||null,confAt:v.confAt||null,at:v.at||null,...c}}).sort((a,b)=>a.d<b.d?1:-1)}

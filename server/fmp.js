@@ -79,3 +79,24 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
   }finally{save()}
   if(st.tried||st.stopped)log(`fmp: ${st.filled} filled with ${st.calls} calls (${C.n} today)${st.off.length?', not in the plan: '+st.off.join(', '):''}${st.stopped?', stopped: '+st.stopped:''}`);
   st.today=C.n; return st}
+
+// 8.11: a split found by the prices is checked against FMP's list of the security's splits (one call per split, within the
+// day's budget): confirmed (the same ratio within five days), not found there, not in the plan, or not checked yet. The
+// answer is kept with the split in the quotes (Q.splits[sym].conf) and shown in the Management Center; the split itself is
+// applied either way (the prices are the evidence; FMP's list can lag).
+export function fmpSplitsParse(j,sp){if(!Array.isArray(j))return null;
+  const t=Date.parse(sp.d); for(const x of j){const d=Date.parse(String(x&&(x.date||x.label)||'').slice(0,10)); const n=+(x&&x.numerator), m=+(x&&x.denominator); if(!isFinite(d)||!(n>0)||!(m>0))continue;
+    if(Math.abs(d-t)<=5*864e5&&Math.abs((n/m)/(+sp.r)-1)<0.03)return 'fmp'} return 'nofmp'}
+export async function confirmSplits(store,{key=fmpKey(),fetch:f=globalThis.fetch,now=new Date(),log=()=>{},cap=FMP_DAY_CAP}={}){
+  const Qd=store.getDoc('quotes/latest'); if(!Qd.exists||!Qd.data||!Qd.data.splits)return 0;
+  const todo=Object.entries(Qd.data.splits).filter(([s,v])=>v&&v.d&&(!v.conf||(v.conf==='err'&&!(Date.parse(v.confAt)>now.getTime()-864e5)))); if(!todo.length)return 0;
+  const out={}; if(!key){for(const [s] of todo)out[s]='nokey'}
+  else{const today=now.toISOString().slice(0,10); let C={day:today,n:0}; try{const x=JSON.parse(store.getMeta('fmpCalls')||'null'); if(x&&x.day===today)C=x}catch(e){}
+    for(const [s,v] of todo){if(C.n>=cap)break; C.n++;
+      try{const r=await f(`${FMP_BASE}/splits?symbol=${encodeURIComponent(s.replace(/\./g,'-'))}&apikey=${encodeURIComponent(key)}`,{headers:{accept:'application/json'},signal:AbortSignal.timeout(12000)});
+        out[s]=r.status===402||r.status===403?'plan':r.status===401?'nokey':!r.ok?'err':fmpSplitsParse(await r.json(),v)||'err'}catch(e){out[s]='err'}}
+    try{store.setMeta('fmpCalls',JSON.stringify(C))}catch(e){}}
+  // written onto the current quotes (a price run may have written meanwhile)
+  const cur=store.getDoc('quotes/latest'); if(!cur.exists)return 0; const S={...(cur.data.splits||{})};
+  for(const [s,c] of Object.entries(out))if(S[s])S[s]={...S[s],conf:c,confAt:now.toISOString()};
+  store.setDoc('quotes/latest',{...cur.data,splits:S}); log(`splits checked with FMP: ${Object.entries(out).map(([s,c])=>s+' '+c).join(', ')}`); return Object.keys(out).length}
