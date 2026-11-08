@@ -19802,6 +19802,23 @@ function whyMove(m,Q,P,R){
 }
 // ---- why:end ----
 window.__model.why=()=>{const W=whyMove(mAllNow(),Q,P,S.rules||{}); return {total:W.ils,parts:W.items.reduce((t,x)=>t+x.ils,0)+(W.cashFx||0),W}};
+// 8.11: the figures for the nightly consistency check (server/consist.js): the same numbers by the page's different paths
+// (the whole portfolio, the accounts one by one, "למה זז", what the home screen shows, the server-made alerts), as numbers.
+// The server compares them and words any gap; nothing is judged here.
+window.__model.consist=function(){try{
+  if(!P||!Q||!Q.prices||!Q.usdIls)return {ready:false};
+  const m=model(P,Q,'all',null), ids=acctIds();
+  const accts=ids.map(a=>{const x=model(P,Q,a,null); return {acct:a,total:x.total,dayIls:x.hasDay?x.dayIls:null,syms:x.pos.map(p=>p.sym).sort()}});
+  const W=whyMove(m,Q,P,S.rules||{}), parts=W.items.reduce((t,x)=>t+x.ils,0)+(W.cashFx||0);
+  const tx=id=>{const e=$(id); return e?e.textContent.replace(/‎/g,'').trim():''};
+  const held=[...new Set(P.positions.map(p=>p.sym))], OUT=typeof potOutQ==='function'?potOutQ(P):null;
+  const potQty=OUT?[...OUT.values()].reduce((t,q)=>t+(+q||0),0):0;
+  const pulse=((PULSE&&PULSE.items)||[]).filter(a=>a&&a.kind==='mkt'&&a.mk&&a.mk.t==='move'&&a.holds&&a.holds[0]).map(a=>({k:a.k,sym:a.holds[0].sym,w:a.holds[0].w,pct:a.mk.pct,to:a.mk.to}));
+  return {ready:true,at:new Date().toISOString(),pricesAt:Q.updatedAt||null,fx:Q.usdIls,
+    total:m.total,inv:m.pos.reduce((t,p)=>t+p.val,0),cash:m.cash,hasDay:!!m.hasDay,dayIls:m.hasDay?m.dayIls:null,dayPct:m.hasDay?m.dayPct:null,
+    accts,why:{total:W.ils,parts},hero:{total:tx('kTotal'),day:tx('kDay'),dayD:tx('kDayD'),hc:typeof HC==='string'?HC:''},
+    held,noPx:held.filter(s=>(Q.prices||{})[s]==null),potQty,pos:m.pos.map(p=>({sym:p.sym,qty:p.qty,w:p.w,px:p.px,dayPct:p.dayPct})),pulse};
+}catch(e){return {ready:false,err:String(e&&e.message||e)}}};
 // ---- explain:start ----
 // "הסבר את התיק שלי" (stage 7): what is in the portfolio, what stands out, the main exposures, where it is concentrated, and
 // the questions only the person can answer. Built from the holdings, the prices, exposures() and the user's own settings

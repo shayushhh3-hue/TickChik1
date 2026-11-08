@@ -9,6 +9,7 @@ import {bump} from './counter.js';
 import {healthCheck} from '../health.js';
 import {createHash} from 'node:crypto';
 import {newsOps,aiOps,aiQuality,systemOps,incidents,incidentUpdate,security,checkIncidents,opsSchema} from './ops.js';
+import {consistView} from '../consist.js';
 import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
@@ -66,6 +67,8 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
 
   // ---- the health (the same check the site already runs) and running a job ("system") ----
   app.get('/api/admin/health',need('view'),(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
+  // 8.11: the nightly consistency check's last result (the owner's own gaps in full only to the owner)
+  app.get('/api/admin/consist',need('view'),(req,res)=>res.json(consistView(store,req.user)));
   app.post('/api/admin/jobs/:name',need('system'),(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'המשימות המתוזמנות כבויות בשרת הזה.'}});
     if(!/^[a-z\-]{2,20}$/.test(req.params.name)||!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'אין משימה כזאת.'}});
     audit(store,{user:req.user,action:'system.job',target:req.params.name,ip:req.ip}); res.json({ok:true})});

@@ -11,6 +11,7 @@ import {bump, countersSince} from './counter.js';
 import {healthCheck} from '../health.js';
 import {audit, auditVerify, permsOf, can} from './core.js';
 import {aiPrices} from './metrics.js';
+import {CONSIST_DOC} from '../consist.js';
 
 const meta=(store,k,d=null)=>{try{return JSON.parse(store.getMeta(k)||'null')??d}catch(e){return d}};
 const today=()=>ilParts(new Date()).iso;
@@ -54,7 +55,12 @@ const RULES=[
     const bad=Object.entries(by).filter(([,x])=>x.ok+x.err>=5&&x.err/(x.ok+x.err)>=1/3); return bad.length?{sev:bad.some(([,x])=>x.err/(x.ok+x.err)>=.6)?'bad':'warn',note:bad.map(([f,x])=>`${FEAT_HE[f]||f}: ${x.err} מתוך ${x.ok+x.err} נכשלו`).join(' · ')}:null}},
   // the notifications: half or more of the pushes today failed, at least 5
   {key:'push',kind:'alerts',name:'התראות לטלפון נכשלות',check:s=>{const R=countersSince(s,'push',today(),today()), ok=sum(R.filter(r=>r.key==='sent')), f=sum(R.filter(r=>r.key==='fail'));
-    return ok+f>=5&&f/(ok+f)>=.5?{sev:'warn',note:`${f} מתוך ${ok+f} התראות לא הגיעו`}:null}}];
+    return ok+f>=5&&f/(ok+f)>=.5?{sev:'warn',note:`${f} מתוך ${ok+f} התראות לא הגיעו`}:null}},
+  // 8.11: the nightly consistency check found the same figure differing between two places (counts only; the details are
+  // on the health screen, the owner's own in full, a partner's as kinds)
+  {key:'consist',kind:'data',name:'פערים בין מספרים באתר',check:s=>{const d=s.getDoc(CONSIST_DOC); const D=d.exists&&d.data; if(!D||!D.runs)return null;
+    const bad=D.runs.filter(r=>r.bad>0), who=bad.length?`ב-${bad.length===1?(bad[0].owner?'התיק של בעל האתר':'תיק של שותף'):bad.length+' תיקים'}`:'';
+    return D.bad>0?{sev:'bad',note:`${D.bad} פערים חמורים ${who} (מתוך ${D.n} ממצאים בבדיקה של ${new Date(D.at).toLocaleDateString('he-IL',{timeZone:'Asia/Jerusalem'})})`}:D.n>0?{sev:'warn',note:`${D.n} ממצאים לבדיקה, אף אחד לא חמור`}:null}}];
 export const FEAT_HE={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה של דוחות',newsx:'קריאת כתבות',brief:'תמונת המצב היומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות של חברות',intel:'TikChik Intelligence',world:'התקציר העולמי',chico_q:'צ׳יקו: שאלה חופשית',chico_explain:'צ׳יקו: הסבר התיק',chico_analyze:'צ׳יקו: ניתוח התיק',chico_day:'צ׳יקו: סיכום יומי',chico_focus:'צ׳יקו: שאלה על פריט פתוח'};
 export function checkIncidents(store,{send=null,push=null,users=null,log=()=>{},now=new Date()}={}){
   opsSchema(store); const iso=now.toISOString(), opened=[];

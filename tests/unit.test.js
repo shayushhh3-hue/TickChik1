@@ -2057,3 +2057,59 @@ test('6.11 a big day is one alert, on its own trading day: the US close of 5.11 
   const sent=[]; await liveTask(s,{now:new Date('2026-11-06T07:05:00Z'),send:async(...a)=>{sent.push(a)},push:async()=>{}});
   assert.equal(sent.length,0,'not again'); assert.deepEqual(s.getDoc('alerts/live').data.sent,['move:SOXX:2026-11-05:down']);
 });
+
+test('8.11 the nightly consistency check: the same figure by every path, a gap is a finding; a partner\'s row carries kinds and counts only, and the owner\'s details reach the owner alone', async()=>{
+  const {consistDocs,consistPage,consistTask,consistView,KIND_HE}=await import('../server/consist.js');
+  const Q={updatedAt:'2026-11-06T21:00:00Z',usdIls:3.2,usDate:'2026-11-06',prices:{SOXX:131.9,NVDA:181.5,OLD:10},prev:{SOXX:130,NVDA:200,OLD:10},
+    meta:{SOXX:{ccy:'USD',date:'2026-11-06'},NVDA:{ccy:'USD',date:'2026-11-06'},OLD:{ccy:'USD',date:'2026-10-20'}},splits:{SOXX:{d:'2026-11-05',r:3,conf:'fmp'},NVDA:{d:'2026-11-04',r:10,conf:'nofmp'}}};
+  // the owner: a split applied (units follow the record), a stale price, a security without a price, a negative cash row,
+  // and a saved day whose value jumped with no price to explain it
+  const P={asOf:{exc:'2026-10-31'},positions:[{sym:'SOXX',qty:30,acct:'exc',ccy:'USD'},{sym:'OLD',qty:1,acct:'exc',ccy:'USD'},{sym:'GONE',qty:2,acct:'exc',ccy:'USD'},{sym:'NVDA',qty:5,acct:'exc',ccy:'USD'}],
+    cash:[{acct:'exc',ccy:'ILS',amount:-50}],splits:{'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,at:'2026-11-06T06:00:00Z',rows:[{acct:'exc',q0:10,q1:30}]}}};
+  const DY={points:{'2026-11-03':{v:10000,dep:9000,px:{SOXX:450,NVDA:200}},'2026-11-04':{v:30000,dep:9000,px:{SOXX:450,NVDA:200}},'2026-11-06':{v:12000,dep:9000,px:{SOXX:131.9,NVDA:181.5}}}};
+  const docs={'portfolio/main':P,'quotes/latest':Q,'history/daily':DY};
+  const F=consistDocs(docs,{now:new Date('2026-11-07T00:30:00Z')}), kinds=F.map(x=>x.k).sort();
+  assert.deepEqual(kinds,['dailyJump','negCash','noPrice','splitDaily','stalePrice'],JSON.stringify(F));
+  assert.ok(F.find(x=>x.k==='noPrice').t.includes('GONE')); assert.ok(F.find(x=>x.k==='stalePrice').t.includes('OLD'));
+  assert.ok(F.find(x=>x.k==='dailyJump').t.includes('200%'),'10,000 → 30,000 while the prices stood');
+  assert.ok(!kinds.includes('splitMissing'),'SOXX has its record, NVDA\'s was refused by FMP');
+  // the units drifted from the record with no newer statement or hand edit: a finding; a hand edit after it: none
+  const P2=JSON.parse(JSON.stringify(P)); P2.positions[0].qty=10;
+  assert.ok(consistDocs({...docs,'portfolio/main':P2}).some(x=>x.k==='splitUnits'));
+  P2.positions[0].qAt='2026-11-07'; assert.ok(!consistDocs({...docs,'portfolio/main':P2}).some(x=>x.k==='splitUnits'));
+  // the split's record missing altogether while the prices found it
+  const P3=JSON.parse(JSON.stringify(P)); delete P3.splits; assert.ok(consistDocs({...docs,'portfolio/main':P3}).some(x=>x.k==='splitMissing'));
+  // the server's own holdings against the page's total: the same here (no savings pots), so no finding; a gap when it is not
+  const P4=JSON.parse(JSON.stringify(P)); P4.positions=P4.positions.filter(x=>x.sym!=='GONE'); const docs4={...docs,'portfolio/main':P4};
+  assert.ok(!consistDocs(docs4,{pageTotal:(30*131.9+1*10+5*181.5)*3.2-50}).some(x=>x.k==='pulseTotal'));
+  assert.ok(consistDocs(docs4,{pageTotal:99999}).some(x=>x.k==='pulseTotal'));
+  assert.ok(!consistDocs(docs,{pageTotal:99999}).some(x=>x.k==='pulseTotal'),'with a price missing the server has no total to compare');
+  // the page's figures: all in agreement
+  const ok={ready:true,total:15000,inv:14000,cash:1000,hasDay:true,dayIls:-320.4,dayPct:-2.1,accts:[{acct:'exc',total:9000,dayIls:-200.4,syms:['NVDA','SOXX']},{acct:'blink',total:6000,dayIls:-120,syms:['OLD']}],
+    why:{total:-320.4,parts:-320.1},hero:{total:'₪15,000',day:'▼ ₪320',dayD:'−2.10% היום',hc:'ils'},pos:[{sym:'SOXX',qty:30,w:60,px:131.9,dayPct:1.46},{sym:'NVDA',qty:5,w:30,px:181.5,dayPct:-9.25}],
+    pulse:[{k:'mv:NVDA:2026-11-06:d',sym:'NVDA',w:30.2,pct:-9.25,to:181.5}]};
+  assert.deepEqual(consistPage(ok),[]);
+  // each path disagreeing in turn
+  assert.equal(consistPage({...ok,accts:[{...ok.accts[0],total:9500},ok.accts[1]]}).map(x=>x.k).join(),'totalAccounts');
+  assert.equal(consistPage({...ok,accts:[{...ok.accts[0],dayIls:-150},ok.accts[1]]}).map(x=>x.k).join(),'dayAccounts');
+  assert.ok(consistPage({...ok,accts:[ok.accts[0],{...ok.accts[1],total:9000,dayIls:-200.4}]}).some(x=>x.k==='acctsSame'),'two accounts with different holdings showing one value');
+  assert.equal(consistPage({...ok,why:{total:-320.4,parts:-250}}).map(x=>x.k).join(),'dayWhy');
+  assert.equal(consistPage({...ok,hero:{...ok.hero,total:'₪15,900'}}).map(x=>x.k).join(),'heroTotal');
+  assert.equal(consistPage({...ok,hero:{...ok.hero,day:'▲ ₪1,320'}}).map(x=>x.k).join(),'heroDay');
+  assert.equal(consistPage({...ok,pulse:[{...ok.pulse[0],pct:-12.1}]}).map(x=>x.k).join(),'pulsePct');
+  assert.equal(consistPage({...ok,pulse:[{...ok.pulse[0],w:35}]}).map(x=>x.k).join(),'pulseW');
+  assert.deepEqual(consistPage({...ok,pulse:[{...ok.pulse[0],pct:-12.1,to:170}]}),[],'an alert made on another price is not compared');
+  assert.equal(consistPage({ready:false,err:'x'})[0].k,'page');
+  // the task: the owner in full, the partner stripped; the view strips the owner's too for an admin
+  const s=new Store(':memory:'); const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}), f=s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'}), a=s.addUser({email:'a@example.com',password:'admin-pass-12',role:'admin'});
+  s.setDoc('portfolio/main',P); s.setDoc('quotes/latest',Q); s.setDoc('history/daily',DY);
+  s.setDoc(`data/users/${f.id}/portfolio`,{asOf:{exc:'2026-11-06'},positions:[{sym:'SOXX',qty:3,acct:'exc',ccy:'USD'},{sym:'GONE',qty:1,acct:'exc',ccy:'USD'}]});
+  const log=[]; const D=await consistTask(s,{log:m=>log.push(m),now:new Date('2026-11-07T00:30:00Z'),page:async(docs,user)=>({out:{...ok,total:user.owner?15000:1000,pos:[]},errs:[]})});
+  assert.equal(D.runs.length,2); const own=D.runs.find(r=>r.owner), fr=D.runs.find(r=>!r.owner);
+  assert.ok(own.items.some(x=>x.k==='noPrice'&&x.t.includes('GONE')),'the owner\'s row names the security');
+  assert.ok(fr.items.some(x=>x.k==='noPrice'||x.k==='splitMissing'),JSON.stringify(fr.items)); assert.ok(fr.items.every(x=>!x.sym&&x.t===KIND_HE[x.k]&&!/GONE|SOXX/.test(x.t)),'a partner\'s row: kinds only');
+  assert.equal(fr.total,undefined);
+  assert.ok(consistView(s,{role:'owner'}).runs.find(r=>r.owner).items.some(x=>/GONE/.test(x.t)));
+  assert.ok(consistView(s,{role:'admin'}).runs.find(r=>r.owner).items.every(x=>!/GONE/.test(x.t)&&!x.sym),'an admin sees the owner\'s kinds only');
+  assert.ok(s.getDoc('system/consist').exists); assert.ok(log.some(m=>/consistency: 2 portfolio/.test(m)),log.join('\n'));
+});
