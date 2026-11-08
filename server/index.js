@@ -20,6 +20,7 @@ import {confirmSplits} from './fmp.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
+import {smokeOnStart} from './control.js';
 import {closesFor,longClosesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
@@ -138,7 +139,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // 30.10: the page's version (the built page's hash), so a page left open (a phone's tab, the icon on the home screen)
   // learns that a new one is out and reloads instead of running the old one for days
   let VER={m:0,v:''}; const verOf=()=>{try{const f=path.join(siteDir,'index.html'), st=fs.statSync(f); if(st.mtimeMs!==VER.m)VER={m:st.mtimeMs,v:createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0,12)}}catch(e){} return VER.v};
-  app.get('/api/version',(req,res)=>res.json({v:verOf()}));
+  app.get('/api/version',(req,res)=>res.json({v:verOf()})); app.locals.verOf=verOf;
   // 30.10: notifications to the phone: the public key, this person's devices (how many), switch a device on or off, a test
   // 30.10: a partner's own e-mails: whether sending works for them, the kinds they may have, what happened last
   app.get('/api/mail/me',needUser,(req,res)=>{let last={}; try{last=(JSON.parse(store.getMeta('mail:'+req.user.id)||'{}').last)||{}}catch(e){}
@@ -512,6 +513,7 @@ export function bootstrap(store){
     else{store.addUser({email:OWNER_EMAIL,name:env.OWNER_NAME||'',password:pw,role:'owner'});log('owner created')}
   }
   if(!store.getMeta('instance'))store.setMeta('instance',randomBytes(8).toString('hex'));
+  store.setMeta('serverStart',JSON.stringify(new Date().toISOString()));   // 8.11: the silence of a scheduled job is judged from here (server/health.js)
   adminSchema(store); try{const n=backfillActive(store); if(n)log(`management: ${n} past days of activity taken from the usage, AI and sign-in records`)}catch(e){log('management backfill failed:',e.message)}
   mailNote(store,null);   // system/mail: whether sending is set up (the page shows it next to the consent switches)
 }
@@ -525,6 +527,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
+  // 8.11: the smoke test once per build, 45 seconds after the start (server/control.js)
+  if(env.JOBS!=='0')try{smokeOnStart(store,{port:PORT,version:app.locals.verOf?app.locals.verOf():'',log})}catch(e){log('smoke: '+e.message)}
   // 1.11: the heartbeat, the downtime, the incidents and the alerts to the management
   startOps(store,{log,send:sendMail,push:pushTo});
   startRadar(store,{log,push:pushTo,cat:()=>mcCatalog(path.join(ROOT,'page','live.html'))});

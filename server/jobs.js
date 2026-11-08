@@ -12,6 +12,7 @@ import {newsTask} from './newsfeed.js';
 import {newsxTask} from './newsx.js';
 import {consistTask} from './consist.js';
 import {pressureTask} from './pressure.js';
+import {smokeTask, restoreTest} from './control.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
 import {pulseTask} from './pulse.js';
@@ -35,6 +36,9 @@ export const SCHEDULE=[
   {name:'monthly', when:p=>p.d===1&&p.h===8&&p.min===50, run:async(s,o)=>{await monthlyTask(s,o); await reportTask(s,{...o,kind:'month'})}},
   {name:'weekly',  when:p=>p.wd===5&&p.h===13&&p.min===50, run:(s,o)=>reportTask(s,{...o,kind:'week'})},
   {name:'backup',  when:p=>p.h===2&&p.min===30, run:(s,o)=>backupTask(s,o)},
+  // 8.11: the newest backup copy opened the way a restore would, once a week; the smoke test, by name from the management center
+  {name:'restore', when:p=>p.wd===6&&p.h===3&&p.min===10, run:(s,o)=>restoreTest(s,o)},
+  {name:'smoke',   when:()=>false, run:(s,o)=>smokeTask(s,{...o,port:process.env.PORT||3000,version:o.version||''})},
   // analysts' views and company figures, after the US close: Tuesday to Saturday at 01:15
   {name:'research',when:p=>p.wd>=2&&p.wd<=6&&p.h===1&&p.min===15, run:async(s,o)=>{const r=await researchTask(s,o); try{await ecocalTask(s,o)}catch(e){} return r}},
   // 31.10: the economic calendar (reports, the Fed, the agencies' releases), every morning, from what the research keeps

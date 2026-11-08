@@ -12,6 +12,7 @@ import {healthCheck} from '../health.js';
 import {audit, auditVerify, permsOf, can} from './core.js';
 import {aiPrices} from './metrics.js';
 import {CONSIST_DOC} from '../consist.js';
+import {silentJobs} from '../health.js';
 
 const meta=(store,k,d=null)=>{try{return JSON.parse(store.getMeta(k)||'null')??d}catch(e){return d}};
 const today=()=>ilParts(new Date()).iso;
@@ -60,7 +61,13 @@ const RULES=[
   // on the health screen, the owner's own in full, a partner's as kinds)
   {key:'consist',kind:'data',name:'פערים בין מספרים באתר',check:s=>{const d=s.getDoc(CONSIST_DOC); const D=d.exists&&d.data; if(!D||!D.runs)return null;
     const bad=D.runs.filter(r=>r.bad>0), who=bad.length?`ב-${bad.length===1?(bad[0].owner?'התיק של בעל האתר':'תיק של שותף'):bad.length+' תיקים'}`:'';
-    return D.bad>0?{sev:'bad',note:`${D.bad} פערים חמורים ${who} (מתוך ${D.n} ממצאים בבדיקה של ${new Date(D.at).toLocaleDateString('he-IL',{timeZone:'Asia/Jerusalem'})})`}:D.n>0?{sev:'warn',note:`${D.n} ממצאים לבדיקה, אף אחד לא חמור`}:null}}];
+    return D.bad>0?{sev:'bad',note:`${D.bad} פערים חמורים ${who} (מתוך ${D.n} ממצאים בבדיקה של ${new Date(D.at).toLocaleDateString('he-IL',{timeZone:'Asia/Jerusalem'})})`}:D.n>0?{sev:'warn',note:`${D.n} ממצאים לבדיקה, אף אחד לא חמור`}:null}},
+  // 8.11: the silence: a scheduled job that did not run when it should have
+  {key:'silent',kind:'uptime',name:'משימות מתוזמנות שלא רצו',check:s=>{const L=silentJobs(s); return L.length?{sev:'bad',note:L.map(x=>`${x.name} (${x.last?'לפני '+x.age+' שעות':'מאז שהשרת עלה'}, מותר ${x.hours})`).join('; ')}:null}},
+  // 8.11: the smoke test after a deploy failed
+  {key:'smoke',kind:'uptime',name:'בדיקת העשן אחרי הפריסה נכשלה',check:s=>{let S=null; try{S=JSON.parse(s.getMeta('smoke')||'null')}catch(e){} if(!S||S.ok)return null; return {sev:'bad',note:`גרסה ${S.version||'?'}: ${S.checks.filter(c=>!c.ok).map(c=>`${c.name} — ${c.note}`).join('; ')}`}}},
+  // 8.11: the weekly restore test of the backup copy failed
+  {key:'restore',kind:'uptime',name:'שחזור הגיבוי לבדיקה נכשל',check:s=>{let R=null; try{R=JSON.parse(s.getMeta('restoreTest')||'null')}catch(e){} if(!R||R.ok)return null; return {sev:'bad',note:`${R.file||''}: ${R.note||'נכשל'}`}}}];
 export const FEAT_HE={chat:'צ׳יקו (שיחה)',files:'קריאת דוחות',files_quick:'קריאה מהירה של דוחות',newsx:'קריאת כתבות',brief:'תמונת המצב היומית',story:'הסיפור מאחורי הכותרת',explain:'הסבר דוחות של חברות',intel:'TikChik Intelligence',world:'התקציר העולמי',chico_q:'צ׳יקו: שאלה חופשית',chico_explain:'צ׳יקו: הסבר התיק',chico_analyze:'צ׳יקו: ניתוח התיק',chico_day:'צ׳יקו: סיכום יומי',chico_focus:'צ׳יקו: שאלה על פריט פתוח'};
 export function checkIncidents(store,{send=null,push=null,users=null,log=()=>{},now=new Date()}={}){
   opsSchema(store); const iso=now.toISOString(), opened=[];

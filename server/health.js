@@ -57,6 +57,11 @@ export function sources(store,{env=process.env,now=new Date()}={}){
   // a job that failed the last time it ran (its own words, the first line)
   for(const [name,j] of Object.entries(J)){if(!j||j.ok!==false)continue;
     out.push({key:'job:'+name,name:`משימה מתוזמנת: ${name}`,max:0,ran:j.at,ok:false,note:String(j.err||'נכשלה').split('\n')[0].slice(0,160),job:true})}
+  // 8.11: a job that did not run when it should have (the silence)
+  for(const sj of silentJobs(store,{now}))out.push({key:'silent:'+sj.name,name:`משימה שלא רצה: ${sj.name}`,max:0,ran:sj.last,ok:false,job:true,note:`אמורה לרוץ לפחות כל ${sj.hours} שעות; ${sj.last?`רצה לאחרונה לפני ${sj.age} שעות`:'לא רצה מאז שהשרת עלה'}`});
+  // 8.11: the smoke test after the last deploy, and the weekly restore test of the backup copy (server/control.js)
+  {const S=meta(store,'smoke'); if(S)out.push({key:'smoke',name:'בדיקת עשן אחרי הפריסה',max:24*60,ran:S.at,ok:!!S.ok,job:!S.ok,note:`גרסה ${S.version||'?'}: ${S.checks.filter(c=>c.ok).length} מתוך ${S.checks.length}${S.ok?'':' — '+S.checks.filter(c=>!c.ok).map(c=>`${c.name} (${c.note})`).join('; ')}`})}
+  {const R=meta(store,'restoreTest'); out.push({key:'restore',name:'שחזור הגיבוי לבדיקה (שבועי)',max:8*24,ran:R&&R.at,ok:!!(R&&R.ok),job:!!(R&&!R.ok),note:R?(R.ok?`${R.file}: נפתח, ${R.docs} מסמכים, ${R.users} משתמשים${R.sealed===true?', העותק המוצפן נפתח':''}`:R.note||'נכשל'):'עוד לא רץ'})}
   return out;
 }
 
@@ -90,6 +95,15 @@ export function healthProblems(store,{env=process.env,now=new Date()}={}){
     text:`${i.name}: לא עבד ${i.okAt?'מאז '+hmAgo(i.okAt,now):'מאז שהתחיל'}${i.note?' ('+i.note+')':''}.`}));
 }
 
+// 8.11: a job that did not run at all is the silence nobody reports: how many hours each scheduled job may go between
+// runs (weekends and the night included), judged from its last run or from the server's start, whichever is later
+export const EXPECT={nightly:74,morning:26,consist:26,pressure:19,backup:26,research:80,ecocal:26,insiders:14,etf:26,bench:26,ilsyms:26,live:2,news:10,newsx:10,earnings:7,weekly:170,pxwatch:12};
+export function silentJobs(store,{now=new Date(),start=null}={}){
+  const J=meta(store,'jobs')||{}, ss=meta(store,'serverStart'), since=start||(ss?new Date(ss):null)||new Date(Date.now()-process.uptime()*1000), out=[];
+  for(const [name,hours] of Object.entries(EXPECT)){const last=J[name]&&J[name].at?new Date(J[name].at):null, from=last&&last>since?last:since, age=(now-from)/H;
+    if(age>hours)out.push({name,hours,last:last?last.toISOString():null,age:Math.round(age)})}
+  return out;
+}
 // the scheduled jobs: the last run of each, kept in meta 'jobs' by the scheduler
 export function jobNote(store,name,{ok,ms,err,now=new Date()}){
   try{const J=meta(store,'jobs')||{}; J[name]={at:now.toISOString(),ok,ms:Math.round(ms||0),...(err?{err:String(err).slice(0,300)}:{})}; store.setMeta('jobs',JSON.stringify(J))}catch(e){}

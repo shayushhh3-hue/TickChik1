@@ -2179,3 +2179,47 @@ test('8.11 the pressure gauge: facts as signals with their numbers, four levels,
   const {access}=await import('../server/store.js'); const f=s.users().find(u=>u.role==='friend');
   assert.equal(access(f,PRESS_DOC),''); assert.equal(access(f,TRACK_DOC),''); assert.equal(access(o,PRESS_DOC),'rw'); assert.equal(access({id:'a',role:'admin'},PRESS_DOC),'');
 });
+
+test('8.11 control that speaks first: a scheduled job that did not run is a bad source and an incident; the smoke test after a deploy checks the site, the version, the lock, the prices and the page; the restore test opens the newest backup copy the way a restore would', async()=>{
+  const {silentJobs,sources,healthCheck}=await import('../server/health.js'); const path=await import('node:path'), os=await import('node:os'); const {smokeTask,smokeOnStart,restoreTest,siteVersion}=await import('../server/control.js'); const {backupNow}=await import('../server/backup.js');
+  const now=new Date('2026-11-09T10:00:00Z'), s=new Store(':memory:'); const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); s.addUser({email:'f@example.com',password:'friend-pass-1',role:'friend'});
+  // the silence: a server up for three days; nightly ran yesterday (fine), pressure never (silent), live two hours ago (silent: it runs every ten minutes)
+  const start=new Date(now.getTime()-3*864e5);
+  s.setMeta('jobs',JSON.stringify({nightly:{at:'2026-11-08T21:55:00Z',ok:true},live:{at:'2026-11-09T07:00:00Z',ok:true},morning:{at:'2026-11-09T05:50:00Z',ok:true},consist:{at:'2026-11-08T22:30:00Z',ok:true},backup:{at:'2026-11-09T00:30:00Z',ok:true},research:{at:'2026-11-08T23:15:00Z',ok:true},ecocal:{at:'2026-11-09T04:40:00Z',ok:true},insiders:{at:'2026-11-09T01:40:00Z',ok:true},etf:{at:'2026-11-09T00:50:00Z',ok:true},bench:{at:'2026-11-08T22:35:00Z',ok:true},ilsyms:{at:'2026-11-09T03:10:00Z',ok:true},news:{at:'2026-11-09T09:40:00Z',ok:true},newsx:{at:'2026-11-09T09:45:00Z',ok:true},earnings:{at:'2026-11-09T08:20:00Z',ok:true},weekly:{at:'2026-11-06T11:50:00Z',ok:true},pxwatch:{at:'2026-11-09T09:35:00Z',ok:true}}));
+  const L=silentJobs(s,{now,start}); assert.deepEqual(L.map(x=>x.name).sort(),['live','pressure'],JSON.stringify(L)); assert.equal(L.find(x=>x.name==='pressure').last,null); assert.equal(L.find(x=>x.name==='live').age,3);
+  // a server that just started: nothing is silent yet
+  assert.deepEqual(silentJobs(s,{now,start:new Date(now.getTime()-60e3)}),[]);
+  // the smoke test, with the web answered here: all five pass; then the version differs and the admin API opens: two fail
+  const site='<html><title>תיק צ׳יק</title>'+'x'.repeat(60000);
+  const web=(status,body)=>async(url)=>({status,text:async()=>body,json:async()=>JSON.parse(body)});
+  const fetch1=async url=>url.endsWith('/api/version')?web(200,'{"v":"abc123"}')(url):url.includes('/api/admin/')?web(401,'')(url):web(200,site)(url);
+  s.setDoc('quotes/latest',{updatedAt:'2026-11-09T09:00:00Z',usdIls:3.2,prices:{MSFT:500},prev:{MSFT:490},meta:{MSFT:{date:'2026-11-06'}}}); s.setDoc('portfolio/main',{positions:[{sym:'MSFT',qty:1,acct:'exc',ccy:'USD'}]});
+  const log=[]; const r=await smokeTask(s,{port:1,version:'abc123',now,log:m=>log.push(m),fetch:fetch1,page:async()=>({out:{d:{ready:true,total:1600},a:{ready:true,items:[]}},errs:[]})});
+  assert.equal(r.ok,true,JSON.stringify(r.checks)); assert.deepEqual(r.checks.map(c=>c.k),['site','version','locked','quotes','page']); assert.match(log[0],/smoke: ok/);
+  assert.deepEqual(JSON.parse(s.getMeta('smoke')).version,'abc123');
+  const fetch2=async url=>url.endsWith('/api/version')?web(200,'{"v":"old999"}')(url):url.includes('/api/admin/')?web(200,'{}')(url):web(200,site)(url);
+  const r2=await smokeTask(s,{port:1,version:'abc123',now,fetch:fetch2,page:async()=>({out:{d:{ready:true,total:1600},a:{ready:true,items:[]}},errs:[]})});
+  assert.equal(r2.ok,false); assert.deepEqual(r2.checks.filter(c=>!c.ok).map(c=>c.k),['version','locked']); assert.match(r2.checks[1].note,/השרת עונה old999, הבנייה abc123/); assert.match(r2.checks[2].note,/נפתח בלי כניסה/);
+  // the page not computing a value is a failure too; no portfolio is not
+  const r3=await smokeTask(s,{port:1,version:'abc123',now,fetch:fetch1,page:async()=>({out:{d:{ready:false},a:null},errs:['TypeError x']})}); assert.equal(r3.checks.find(c=>c.k==='page').ok,false);
+  // smokeOnStart: once per build; a failed one is tried again
+  {const t=smokeOnStart(s,{version:'abc123'}); assert.ok(t,'the last run of this build failed: tried again'); clearTimeout(t);
+    s.setMeta('smoke',JSON.stringify({...r,version:'abc123'})); assert.equal(smokeOnStart(s,{version:'abc123'}),null,'this build already passed: not again'); assert.ok(smokeOnStart(s,{version:'new456',delay:1e6}),'a new build: once'); s.setMeta('smoke',JSON.stringify(r3))}
+  // the health: the failed smoke, the silent jobs and the restore test not yet run are sources; the failed ones are bad
+  s.setMeta('serverStart',JSON.stringify(start.toISOString())); const H=healthCheck(s,{now,save:false,env:{}}), by=Object.fromEntries(H.items.map(i=>[i.key,i]));
+  assert.equal(by.smoke.state,'bad'); assert.match(by.smoke.note,/מתוך 5/); assert.ok(by['silent:pressure'],'the silent job is a source'); assert.equal(by['silent:pressure'].state,'bad'); assert.ok(by.restore,'the restore test is a source'); assert.match(by.restore.note,/עוד לא רץ/);
+  // the restore test on a real copy: integrity ok, every key document found, the encrypted copy opened again
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tcrt-')); s.setDoc('settings/main',{name:'x'}); s.setDoc('history/daily',{points:{}}); const f=s.users().find(u=>u.role==='friend'); s.setDoc(`data/users/${f.id}/portfolio`,{positions:[]});
+  backupNow(s,{dataDir:dir,now}); const rt=restoreTest(s,{dataDir:dir,now,pass:'test-pass-phrase',log(){}});
+  assert.equal(rt.ok,true,JSON.stringify(rt)); assert.equal(rt.integrity,'ok'); assert.deepEqual(rt.missing,[]); assert.equal(rt.sealed,true); assert.equal(rt.users,2);
+  // a document written after the copy is missing from it: the test says which (a partner's by its name only)
+  s.setDoc(`data/users/${f.id}/settings`,{a:1}); s.setDoc('quotes/latest',{...s.getDoc('quotes/latest').data,x:1});
+  const rt2=restoreTest(s,{dataDir:dir,now:new Date(now.getTime()+60e3),pass:'',log(){}}); assert.equal(rt2.ok,false); assert.deepEqual(rt2.missing,['מסמך של שותף: settings']); assert.equal(rt2.sealed,null,'no passphrase: not tried');
+  // a damaged copy
+  const files=fs.readdirSync(path.join(dir,'backups')); fs.writeFileSync(path.join(dir,'backups',files[0]),Buffer.from('garbage')); const rt3=restoreTest(s,{dataDir:dir,now,log(){}}); assert.equal(rt3.ok,false); assert.match(rt3.note,/לא נפתח|השלמות/);
+  const H2=healthCheck(s,{now,save:false,env:{}}); assert.equal(H2.items.find(i=>i.key==='restore').state,'bad');
+  // no backup at all
+  const rt4=restoreTest(new Store(':memory:'),{dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'tcrt2-')),now,log(){}}); assert.equal(rt4.ok,false); assert.match(rt4.note,/אין קובץ גיבוי/);
+  assert.equal(typeof siteVersion(),'string');
+  fs.rmSync(dir,{recursive:true,force:true});
+});
