@@ -42,6 +42,9 @@ export function buildSite(root){
   if(window.claude&&window.claude.use)return; // a headless run or a test put its own runtime in place
   var p=null; function rt(){return p||(p=import('./runtime.js').then(function(m){return m.boot()}))}
   window.claude={use:function(n){return rt().then(function(r){return r.use(n)})}};
+  // 8.11: started at once: who the user is and the first documents are asked for while the page's own script is still being
+  // read (on a phone that took a second and more before the first request went out)
+  try{rt()}catch(e){}
 })();
 </script>
 `;

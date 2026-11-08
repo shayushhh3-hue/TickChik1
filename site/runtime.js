@@ -150,13 +150,19 @@ export async function boot(){
   // ---- db ----
   const snap=(id,r)=>({id,exists:!!(r&&r.exists),data:()=>r&&r.exists?JSON.parse(JSON.stringify(r.data)):undefined,metadata:{hasPendingWrites:false,fromCache:false}});
   const enc=encodeURIComponent;
+  // 8.11: the documents the page reads first are asked for as soon as the user is known, while the page's script is still being
+  // read; the page's first read of each takes that answer (if it is under ten seconds old), every later read asks again
+  const PREF=new Map();
+  try{const b=me.owner?null:'data/users/'+me.id+'/', L=b?['portfolio','settings','plan','history','daily','pulse'].map(n=>b+n):['portfolio/main','settings/main','plan/main','history/main','history/daily','alerts/pulse'];
+    for(const p of [...L,'quotes/latest','history/prices'])PREF.set(p,{at:Date.now(),pr:call('GET','/db/doc?path='+enc(p)).catch(()=>null)})}catch(e){}
+  const pref=async p=>{const x=PREF.get(p); if(!x)return null; PREF.delete(p); return Date.now()-x.at<10000?await x.pr:null};
   const docRef=p=>{const id=p.slice(p.lastIndexOf('/')+1); return {
     id, path:p,
-    get:async()=>snap(id,await call('GET','/db/doc?path='+enc(p))),
+    get:async()=>snap(id,(await pref(p))||await call('GET','/db/doc?path='+enc(p))),
     set:async d=>{await call('PUT','/db/doc?path='+enc(p),d)},
     update:async d=>{await call('PATCH','/db/doc?path='+enc(p),d)},
     delete:async()=>{await call('DELETE','/db/doc?path='+enc(p))},
-    onSnapshot:(cb,onErr)=>{let live=true, seq=0, tries=0; const load=async()=>{const n=++seq; try{const r=await call('GET','/db/doc?path='+enc(p)); tries=0; if(live&&n===seq){tell(p,true);cb(snap(id,r))}}catch(e){if(live&&n===seq){tell(p,false,e); if(onErr)onErr(e); retry(e,tries++,load,()=>live)}}};
+    onSnapshot:(cb,onErr)=>{let live=true, seq=0, tries=0; const load=async()=>{const n=++seq; try{const r=(n===1&&await pref(p))||await call('GET','/db/doc?path='+enc(p)); tries=0; if(live&&n===seq){tell(p,true);cb(snap(id,r))}}catch(e){if(live&&n===seq){tell(p,false,e); if(onErr)onErr(e); retry(e,tries++,load,()=>live)}}};
       load(); const off=addL(DOC_L,p,load); return()=>{live=false;off()}},
     collection:c=>colRef(p+'/'+c)
   }};

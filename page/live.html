@@ -2675,6 +2675,14 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .stbub .stc.stc1{width:30px;height:30px;padding:2px;box-shadow:0 3px 8px rgb(20 18 46 / .3)} .stbub .stc1 .in{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:var(--surface)} .stbub .stc1 .stx{font-size:13px;font-weight:800;color:var(--ink);line-height:1}
 /* 6.11: Chiko's card: the source and how sure, one small line under the three parts */
 .chico-i .ci-src{margin:2px 0 8px;font-size:12.5px;color:var(--muted);line-height:1.5}
+/* 8.11: the top bar of the inner screens on a phone: the logo and the price status side by side, without the slogan and the "update now" button (the refresh button beside the accounts does it); the home keeps all */
+@media (max-width:640px){
+  body:not([data-page="overview"]) .hero .brand{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:10px;width:100%;min-width:0}
+  body:not([data-page="overview"]) .hero .brand .wm{font-size:22px;flex:none}
+  body:not([data-page="overview"]) .hero .brand-sub,body:not([data-page="overview"]) .hero #pxNow{display:none!important}
+  body:not([data-page="overview"]) .hero #fresh{flex:1;min-width:0;font-size:11.5px;line-height:1.35}   /* beside the logo, wrapping (nothing cut) */
+  body:not([data-page="overview"]) .hero .top{gap:6px;padding-bottom:2px}
+}
 </style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
@@ -2700,7 +2708,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 <div class="i18np" id="i18nPill" translate="no" dir="rtl" lang="he" hidden><span class="sp" aria-hidden="true"></span><span class="tx"></span><button class="btn sm" type="button" data-i18n="go" hidden>להמשיך · Continue</button><button class="btn sm" type="button" data-i18n="he">עברית</button></div>
 <!-- 29.10: the entry: the TikChik logo animation, once per visit (a new tab or window), skipped with a tap, never with
      "reduce motion"; silent, as phones play only silent video on their own -->
-<div id="introSplash" aria-hidden="true"><video id="introVid" muted playsinline autoplay preload="auto"><source src="intro.mp4" type="video/mp4"><source src="intro.webm" type="video/webm"></video></div>
+<div id="introSplash" aria-hidden="true"><video id="introVid" muted playsinline preload="none"></video></div>
 <style>#introSplash{position:fixed;inset:0;z-index:10000;background:#10173A;display:grid;place-items:center;transition:opacity .45s ease;cursor:pointer}
 #introSplash video{width:min(100vw,900px);max-height:100vh;object-fit:contain;-webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 62% 58% at 50% 50%,#000 60%,transparent 100%)}
 #introSplash.out{opacity:0;pointer-events:none}</style>
@@ -2709,6 +2717,8 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   var seen=false;try{seen=sessionStorage.getItem('tr_intro')==='1';sessionStorage.setItem('tr_intro','1')}catch(e){}
   var calm=false;try{calm=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
   if(seen||calm||/HeadlessChrome|Playwright/.test(navigator.userAgent)||window.__tcNoIntro){el.parentNode.removeChild(el);return}
+  // 8.11: the video is fetched only when it plays (it was 320 KB on every opening, shown or not)
+  v.innerHTML='<source src="intro.webm" type="video/webm"><source src="intro.mp4" type="video/mp4">'; v.autoplay=true; v.preload='auto'; try{v.load()}catch(e){}
   v.addEventListener('ended',function(){setTimeout(end,250)});v.addEventListener('error',end);var srcs=v.querySelectorAll('source');if(srcs.length)srcs[srcs.length-1].addEventListener('error',end);el.addEventListener('click',end);
   var p=v.play&&v.play();if(p&&p.catch)p.catch(end);setTimeout(end,3500)})();</script>
 <div class="wrap" dir="rtl" lang="he">
@@ -24560,7 +24570,15 @@ function logoHtml(k,cls){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),i
   if(!ps)return `<span class="${cl}" aria-hidden="true"><i>${ini}</i></span>`;
   const [sh,c,r,rows,lt,bc]=ps,u=LGOK.get(sh),cl2=cl+(lt?' lt':bc?' br':''),st=bc?` style="background:${bc}"`:'';
   if(u)return `<span class="${cl2} on"${st} aria-hidden="true"><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
-  lgLoad(sh);return `<span class="${cl2}"${st} data-sh="${sh}" data-c="${c}" data-r="${r}" data-rows="${rows}" aria-hidden="true"><i>${ini}</i></span>`}
+  lgSoon();return `<span class="${cl2}"${st} data-sh="${sh}" data-c="${c}" data-r="${r}" data-rows="${rows}" aria-hidden="true"><i>${ini}</i></span>`}
+// 8.11: a sheet of logos (200-400 KB) is fetched when one of its logos comes near the screen, not for every logo drawn in a
+// screen that is not shown (seventeen sheets, about 3 MB, were fetched on opening the site, ahead of the portfolio itself)
+let LGIO=null, LGSCAN=0;
+function lgScan(){LGSCAN=0; const L=document.querySelectorAll('.lg[data-sh]:not(.on):not([data-lgw])'); if(!L.length)return;
+  if(!('IntersectionObserver' in window)){L.forEach(e=>lgLoad(e.dataset.sh)); return}
+  if(!LGIO)LGIO=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){LGIO.unobserve(e.target); lgLoad(e.target.dataset.sh)}},{rootMargin:'300px 0px'});
+  L.forEach(e=>{if(LGOK.has(e.dataset.sh)){lgFillAll(e.dataset.sh); return} e.dataset.lgw='1'; LGIO.observe(e)})}
+const lgSoon=()=>{if(!LGSCAN)LGSCAN=setTimeout(lgScan,60)};
 function srchRender(){
   const box=$('sqRes'),pg=$('secPage'); if(!box)return;
   if(SEC){box.hidden=true;pg.hidden=false;renderSec();return}
