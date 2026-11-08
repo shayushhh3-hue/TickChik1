@@ -2462,6 +2462,10 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .recon .rc-p{display:flex;flex-wrap:wrap;gap:6px} .recon .rc-p span{padding:4px 10px;border-radius:999px;background:var(--sunk);font-size:13px}
 .recon table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed} .recon th:first-child{width:40%} .recon td{overflow-wrap:anywhere} .recon .n{white-space:nowrap} .recon th,.recon td{padding:6px 4px;border-top:1px solid var(--line);text-align:start;vertical-align:top} .recon td.num,.recon th.num{text-align:end}
 .recon .rc-why{color:var(--muted);font-size:12.5px}
+/* 8.11: "מה השתנה מול האתר": the statement against the site, before the save */
+.sdiff{border-inline-start:4px solid var(--s1)} .sdiff .sd-t th:first-child{width:22%} .sdiff .sd-t th:nth-child(2),.sdiff .sd-t th:nth-child(3){width:14%} .sdiff .sd-k{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--sunk);font-size:12px;font-weight:700;margin-inline-end:4px}
+.sdiff tr.sd-gone .sd-k,.sdiff tr.sd-less .sd-k{background:var(--warn-bg);color:var(--warn)} .sdiff tr.sd-split .sd-k,.sdiff tr.sd-sell .sd-k{background:var(--sunk);color:var(--ink)} .sdiff tr.sd-new .sd-k,.sdiff tr.sd-more .sd-k{background:var(--ok-bg,var(--sunk));color:var(--ok-ink,var(--gain))}
+.sdiff .rc-l.ok{color:var(--ok-ink,var(--gain))} .sdiff .btn.sm{margin-inline-start:6px}
 /* 30.10: a new version of the site is out (a page left open learns it) */
 .verbar{position:fixed;z-index:60;top:calc(env(safe-area-inset-top,0px) + 8px);inset-inline:12px;margin:0 auto;max-width:520px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--accent);box-shadow:var(--shadow);font-size:14px;color:var(--ink)}
 .verbar[hidden]{display:none}
@@ -3670,6 +3674,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <div class="panel sellp" id="sellBox" data-mvp="sell"></div>
       <div class="panel wiz" id="fillWiz" data-mvp="hold" hidden></div>
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
+      <div class="panel recon sdiff" id="sdBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
         <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><span><button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">ייצוא CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
         <table class="pf">
@@ -20005,6 +20010,9 @@ function anaFactsAI(F,issues,checks){
     holdings_count:m.pos.length, funds_count:F.funds.length, stocks_count:F.stocks.length,
     last_trading_day:m.hasDay&&m.dayPct!=null?`${sgn(m.dayIls)} (${spct(m.dayPct,2)})`:null,
     last_trading_day_is:dayLive()?'היום, המסחר עדיין פתוח':dayLab()==='היום'?'היום, המסחר נסגר':dayLab(),
+    // 8.11: what the last statement of each account changed against the site, as the person approved it at the save
+    statement_check:(()=>{try{const C=(P&&P.stmtCheck)||{}, L=Object.entries(C).filter(([,x])=>x&&x.at&&Date.now()-Date.parse(x.at)<45*864e5).map(([ac,x])=>({account:acctName(ac),statement_date:x.asOf?dmy(x.asOf):null,checked_at:dmy(x.at),differences:x.changed,
+      rows:(x.rows||[]).slice(0,12).map(r=>`${lab(r.sym)}: ${({more:'יותר בדוח',less:'פחות בדוח',new:'חדש בדוח',gone:'חסר בדוח, נשאר באתר',split:'הותאם לפיצול',sell:'מכירה שנרשמה כאן'})[r.kind]||r.kind}${r.q0!=null&&r.q1!=null?` (${+(+r.q0).toFixed(4)} → ${+(+r.q1).toFixed(4)})`:''}`)})); return L.length?L:null}catch(e){return null}})(),
     share_splits:(()=>{try{const L=spRecent(30).map(x=>({security:lab(x.sym),date:dmy(x.d),ratio:spRatioH(+x.r),your_units:(x.rows||[]).filter(r=>!r.kept).map(r=>`${+(+r.q0).toFixed(4)} ← ${+(+r.q1).toFixed(4)}`).join(', ')})); return L.length?L:null}catch(e){return null}})(),
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
     from_peak:(()=>{try{const cr=crisisInfo(m);return cr&&cr.peak?`${spct(-cr.peak.pct)} מהשיא של ${dmy(cr.peak.date)} (${ils(Math.abs(cr.peak.ils))})`:null}catch(e){return null}})(),
@@ -20389,7 +20397,8 @@ const ANA_RULES=`כללים מחייבים:
 10. about_me הוא מה שהמשתמש כתב על עצמו בפרופיל (גיל, מצב משפחתי, ילדים, תעסוקה, מדינה). השתמש בו רק כשהוא עוזר לקשר הסבר למטרה ולאופק שהמשתמש קבע (למשל ילדים ומטרה של לימודים), ובלי להזכיר אותו כשאין צורך. אל תסיק ממנו כמה כסף יש למשתמש או כמה סיכון הוא יכול לשאת, ואל תמליץ על בסיסו. אם המדינה אינה ישראל, מותר לומר שחישובי המס בדף לפי הכללים בישראל.
 11. נתון חסר אינו אפס: "אין רישום", null, "—" או "לא ידוע" פירושם שהדף לא יודע, לא שהערך הוא 0. אל תכתוב "הופקדו ₪0" או "אין רווח" כשאין רישום; כתוב שהנתון חסר ואיפה משלימים אותו (התיק שלי ← השלמת נתונים). כשמבקשים "מה הכי חשוב", דרג לכל היותר שלושה דברים, הקונקרטי ביותר קודם, ואל תפנה לרשימות ארוכות ("יש לך 150 התראות").
 12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.
-13. share_splits הם פיצולי מניות שהאתר זיהה והחיל: כל יחידה הפכה לכמה יחידות (או כמה לאחת), והמחיר השתנה ביחס הפוך. ירידת מחיר של נייר ביום הפיצול שלו אינה הפסד: אמור שהשווי לא השתנה בגלל הפיצול, ושהכמות עודכנה.`;
+13. share_splits הם פיצולי מניות שהאתר זיהה והחיל: כל יחידה הפכה לכמה יחידות (או כמה לאחת), והמחיר השתנה ביחס הפוך. ירידת מחיר של נייר ביום הפיצול שלו אינה הפסד: אמור שהשווי לא השתנה בגלל הפיצול, ושהכמות עודכנה.
+14. statement_check הוא מה שהדוח האחרון של כל חשבון שינה מול מה שהאתר החזיק, כפי שאושר בשמירה. כשנשאלים על הבדל בין הדוח לאתר, או "למה הכמות השתנתה", ענה מתוכו: הכמויות לפני ואחרי, והסיבה שנרשמה (קנייה, מכירה, פיצול, נייר שחסר בדוח). אם אין רשומה, אמור שאין השוואה שמורה.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -22387,7 +22396,7 @@ function renderMine(force){
   const opt=(v,cur,l)=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`, dis=canWrite?'':' disabled', nv=v=>v==null||v===''?'':esc(v);
   // data-l: on a phone each row is a card, and the label is written above each field (see the .pf rules)
   const fixOf=p=>FIXED.size?FIXED.get(p.acct+'|'+canonSym(p.sym,p.name)):null;
-  try{renderRecon()}catch(e){} try{renderFillWiz()}catch(e){console.error(e)}
+  try{renderRecon()}catch(e){} try{renderSDiff()}catch(e){console.error(e)} try{renderFillWiz()}catch(e){console.error(e)}
   try{const H=groupHints(DRAFT), el=$('grpHint'); if(el){el.hidden=!H.length; el.innerHTML=H.length?`<b>קבוצה לפי הנייר:</b> ${H.map(h=>`${esc(h.sym)} מסומן "טכנולוגיה"; לפי הנייר עצמו: <b>${esc(GROUPS[h.g])}</b>`).join(' · ')}. <button type="button" class="lnk" id="grpApply"${canWrite?'':' disabled'}>לסמן לפי הנייר</button> <span class="nm">(ואז לשמור; הקבוצה היא שלך לשנות)</span>`:''}}catch(e){}
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
@@ -22996,6 +23005,9 @@ async function readStatement0(J){
     const before=new Map(DRAFT.positions.filter(p=>p.acct===ac).sort((a,b)=>(b.extra?1:0)-(a.extra?1:0)).map(p=>[canonSym(p.sym,p.name),{...p}])), cash0={ILS:0,USD:0,...(DRAFT.cash[ac]||{})};
     const asOf0=(DRAFT.asOf||{})[ac]||null, seen0=(DRAFT.seen||{})[ac]||null, tx0=(DRAFT.tx||[]).filter(t=>t.acct===ac).map(t=>({...t}));
     for(const k of [...FIXED.keys()])if(k.startsWith(ac+'|')&&(!merge||have.has(k.slice(ac.length+1))))FIXED.delete(k);
+    // 8.11: against what the site holds in the account: the units put in the new ones after a split, kept after a sale
+    // written here, and the base of "מה השתנה מול האתר" (renderSDiff) kept until the save
+    try{stmtPrep(ac,rows,isoOf(out.asOf)||asOf0||null,merge)}catch(e){console.error(e)}
     DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(canonSym(p.sym,p.name))):p.acct!==ac).concat(rows);
     const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0)), cashRaw=merge?{ILS:cIls||+cash0.ILS||0,USD:cUsd||+cash0.USD||0}:{ILS:cIls,USD:cUsd};
     DRAFT.cash[ac]={...cashRaw};
@@ -23057,7 +23069,7 @@ async function readStatement0(J){
     const nm=v=>numN(v)==null?'לא ידוע':numN(v).toLocaleString('en-US',{maximumFractionDigits:4}), money=v=>numN(v)==null?'לא ידועה':ils(numN(v));
     // what was read from the statement (the group is the model's own guess, so two models may differ on it: not compared)
     const same=(a,b)=>eqQ(+a.qty||0,+b.qty||0)&&ccyOf(a)===ccyOf(b)&&eqN(numN(a.costIls),numN(b.costIls),1)&&eqP(numN(a.px),numN(b.px));
-    const set=b=>({sym:b.sym,name:b.name,qty:b.qty,ccy:b.ccy,costIls:b.costIls,costUsd:b.costUsd,px:b.px,group:b.group});
+    const set=b=>({sym:b.sym,name:b.name,qty:b.qty,ccy:b.ccy,costIls:b.costIls,costUsd:b.costUsd,px:b.px,group:b.group,...(b.spAdj?{spAdj:b.spAdj}:{}),...(b.sdKeep?{sdKeep:b.sdKeep}:{})});
     const what=(a,b)=>{const d=[];
       if(!eqQ(+a.qty||0,+b.qty||0))d.push(`כמות ${nm(b.qty)} (בקריאה המהירה ${nm(a.qty)})`);
       if(!eqN(numN(a.costIls),numN(b.costIls),1))d.push(`עלות ${money(b.costIls)} (בקריאה המהירה ${money(a.costIls)})`);
@@ -23066,6 +23078,8 @@ async function readStatement0(J){
       return d.join(', ')};
     const mark=(sym,t,kind='fix')=>{FIXED.set(ac+'|'+sym,{t,kind}); (kind==='fix'?fx:doubt).push(sym+': '+t)};
     if(!sup){
+    // 8.11: the deep read's rows get the same split and sale adjustments the quick read's got (sdAdjust), so the two are compared alike
+    try{const D=DRAFT.sdiff&&DRAFT.sdiff[ac]; if(D){const {adj}=sdAdjust(ac,M.rows,isoOf(M.out.asOf)||A.asOf||null); Object.assign(D.adj,adj)}}catch(e){}
     const q=new Map(A.rows.map(r=>[r.sym,r])), f=new Map(M.rows.map(r=>[r.sym,{...r,acct:ac}]));
     const at=sym=>DRAFT.positions.findIndex(p=>p.acct===ac&&canonSym(p.sym,p.name)===sym);
     // the same security spelled two ways (GOOG / GOOGL, a TASE number / TA125): paired by name, or by quantity and cost
@@ -23237,7 +23251,7 @@ async function savePf(){
   if(!DRAFT)return; const st=$('pfSaved');
   const qOld=new Map(((P&&P.positions)||[]).map(p=>[`${p.sym}|${p.acct}`,+p.qty])), qDay=ilDay();   // 6.11: units changed by hand carry their day (qAt), for a split after it
   const pos=DRAFT.positions.filter(p=>p.sym&&+p.qty>0).map(p=>{const o={...p,sym:String(p.sym).toUpperCase().replace(/[^A-Z0-9.]/g,'').slice(0,16),name:String(p.name||p.sym).slice(0,60),qty:+p.qty,
-      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; if(qOld.get(`${o.sym}|${o.acct}`)!==o.qty)o.qAt=qDay; o.costUsd=o.ccy==='ILS'?null:numOr(p.costUsd,null); const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; return o}).filter(p=>p.sym);
+      ccy:p.ccy==='ILS'?'ILS':CCYHE[p.ccy]?p.ccy:'USD',acct:acctIds().includes(p.acct)?p.acct:acctPick(),group:GK.includes(p.group)?p.group:'tech',costIls:numOr(p.costIls,null)}; if(qOld.get(`${o.sym}|${o.acct}`)!==o.qty)o.qAt=qDay; o.costUsd=o.ccy==='ILS'?null:numOr(p.costUsd,null); const px=numOr(p.px,null); if(px==null)delete o.px; else o.px=px; delete o.spAdj; delete o.sdKeep; delete o.sdBack; return o}).filter(p=>p.sym);
   if(!pos.length){const had=P&&(P.positions||[]).length;
     // no holdings yet, but deposits, conversions or monthly results to keep: they are saved to the history on their own
     if(!had&&(LOCAL||db)&&((DRAFT.tx||[]).length||Object.values(DRAFT.monthly||{}).some(r=>r&&r.length))){await saveHistOnly(st);return}
@@ -23246,7 +23260,10 @@ async function savePf(){
     if(had&&canWrite){showTab('settings',true);$('wipeAsk').hidden=false;$('wipeState').textContent='הטבלה ב"התיק שלי" ריקה. כדי למחוק את כל מה ששמור, יש לאשר כאן.';try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}
     return}
   const cash=[]; for(const a of Object.keys(DRAFT.cash||{}))for(const c of ['ILS','USD'])if(DRAFT.cash[a]&&+DRAFT.cash[a][c])cash.push({acct:a,amount:+DRAFT.cash[a][c],ccy:c});
-  const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),updatedAt:new Date().toISOString()};
+  // 8.11: what the statement changed against the site, as approved by this save (per account, the last one)
+  const stmtCheck=(()=>{try{const out={...((P&&P.stmtCheck)||{})}; for(const ac of Object.keys((DRAFT.sdiff)||{})){const X=stmtDiff(ac); if(!X)continue;
+    out[ac]={at:new Date().toISOString(),asOf:X.asOf,merge:X.merge,changed:X.changed,flag:X.flag,rows:X.rows.filter(r=>r.kind!=='same').slice(0,40).map(r=>({sym:r.sym,q0:r.q0,q1:r.q1,kind:r.kind}))}} return Object.keys(out).length?out:null}catch(e){return (P&&P.stmtCheck)||null}})();
+  const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),...(stmtCheck?{stmtCheck}:{}),updatedAt:new Date().toISOString()};
   if(!db&&!LOCAL){st.textContent='השינויים לא נשמרים בתצוגה הזו';return}
   st.textContent='שומר…'; $('btnPfSave').disabled=true;
   try{
@@ -24443,6 +24460,80 @@ function reconOf(ac,R,m,fx){
   return {ac,at:R.at,asOf:R.asOf,shot:R.shot,there,here:m.total,gap,listed,cashThere,cashHere:m.cash,cashDiff,sum,bRate,fx,
     other:there!=null&&rows.every(r=>r.there!=null)?there-listed:0,rows:rows.sort((a,b)=>Math.abs(b.diff||0)-Math.abs(a.diff||0))}}
 const RC_WHY={same:'זהה',price:'המחיר',fx:'שער הדולר',qty:'הכמות',rest:'עיגול או מקור',only:'רק אצלם',new:'רק כאן',noval:'אין שווי בדוח'};
+// ---- 8.11: "מה השתנה מול האתר": a statement just read, before it is saved, against what the site holds in that account
+// (the saved portfolio: the units after the splits the site applied and after the sales written here). Holding by
+// holding: the same, more, fewer, only in the statement, only on the site. Two things the site knows and the statement
+// cannot: a split the site applied after the statement's day (the statement's units are the old ones, so they are put in
+// the new units, and said so), and a sale written here after the statement's day (the site's units are the newer ones, so
+// they are kept, and said so; a tap takes the statement's instead). A holding the read did not find is listed with a
+// button that puts it back. The save is the approval; the box stands right above the table until then.
+const sdR6=x=>Math.round(+x*1e6)/1e6;
+const sdNear=(a,b)=>Math.abs((+a||0)-(+b||0))<=Math.max(0.0001,Math.abs(+b||0)*0.001);
+const sdSplitOf=sym=>{let best=null; const take=x=>{if(x&&x.d&&+x.r>0&&x.conf!=='nofmp'&&!x.undone&&(!best||x.d>best.d))best={d:x.d,r:+x.r}};
+  take(Q&&Q.splits&&Q.splits[sym]); for(const v of Object.values((P&&P.splits)||{}))if(v&&v.sym===sym)take(v); return best};
+const sdSells=(ac,sym,after)=>{const A=((HS&&HS.accounts)||[]).find(x=>x.acct===ac); return ((A&&A.manual)||[]).filter(x=>x&&x.side==='sell'&&x.sym===sym&&+x.qty>0&&(!after||String(x.date).slice(0,10)>after))};
+// the site's rows of the account (what is saved), by the canonical symbol
+const sdSite=ac=>new Map(((P&&P.positions)||[]).filter(p=>p&&p.acct===ac&&+p.qty>0).map(p=>[canonSym(p.sym,p.name),{...p}]));
+// the statement's rows put right where the site knows better (rows already adjusted are left); what was adjusted, by symbol
+function sdAdjust(ac,rows,asOf){
+  const site=sdSite(ac), adj={};
+  for(const r of rows||[]){if(!r||r.spAdj||r.sdKeep)continue; const k=canonSym(r.sym,r.name), s=site.get(k), q=+r.qty||0; if(!(q>0))continue;
+    // the statement is from before a split the site applied: its units are the old ones (unless they already equal the site's)
+    const sp=sdSplitOf(r.sym); if(asOf&&sp&&asOf<sp.d&&!(s&&sdNear(q,+s.qty))){const q1=sdR6(q*sp.r); r.spAdj={d:sp.d,r:sp.r,q0:q,q1,px0:+r.px>0?+r.px:null}; r.qty=q1; if(+r.px>0)r.px=sdR6(+r.px/sp.r); adj[k]={kind:'split',d:sp.d,r:sp.r,q0:q,q1}; continue}
+    // a sale written on the site after the statement's day: the site's units are the newer ones
+    if(asOf&&s){const L=sdSells(ac,r.sym,asOf), sold=L.reduce((t,x)=>t+(+x.qty),0); if(sold>0&&q>+s.qty&&sdNear(q-sold,+s.qty)){adj[k]={kind:'sell',sold,qStmt:q,qSite:+s.qty,dates:L.map(x=>String(x.date).slice(0,10))}; r.sdKeep=k; r.qty=+s.qty}}}
+  return {site,adj};
+}
+// at the landing of a read: the rows adjusted and the comparison's base (the site's rows of the account) kept with the draft
+function stmtPrep(ac,rows,asOf,merge){
+  if(!DRAFT)DRAFT=draftFromP(); const {site,adj}=sdAdjust(ac,rows,asOf);
+  DRAFT.sdiff={...(DRAFT.sdiff||{}),[ac]:{at:new Date().toISOString(),asOf:asOf||null,merge:!!merge,adj,site:[...site.values()]}};
+  return DRAFT.sdiff[ac];
+}
+// after another read corrected the rows (the deep read after the quick one): the adjustments hold
+function sdReapply(){for(const [ac,D] of Object.entries((DRAFT&&DRAFT.sdiff)||{}))for(const p of (DRAFT.positions||[]).filter(p=>p.acct===ac)){
+  if(p.spAdj&&sdNear(p.qty,p.spAdj.q0)){p.qty=p.spAdj.q1; if(p.spAdj.px0&&sdNear(+p.px,p.spAdj.px0))p.px=sdR6(p.spAdj.px0/p.spAdj.r)}
+  const a=p.sdKeep&&D.adj[p.sdKeep]; if(a&&(a.kind==='sell'||a.kind==='keep')&&!sdNear(p.qty,a.qSite))p.qty=a.qSite}}
+// the comparison as it stands now: the site's rows against the account's rows in the table
+function stmtDiff(ac){
+  const D=DRAFT&&DRAFT.sdiff&&DRAFT.sdiff[ac]; if(!D)return null; const site=new Map((D.site||[]).map(p=>[canonSym(p.sym,p.name),p])), seen=new Set(), out=[];
+  for(const r of (DRAFT.positions||[]).filter(p=>p.acct===ac&&+p.qty>0)){const k=canonSym(r.sym,r.name); if(seen.has(k))continue; seen.add(k); const s=site.get(k), a=D.adj[k], q1=+r.qty, q0=s?+s.qty:null;
+    if(a&&a.kind==='split'&&r.spAdj)out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'split',t:`הדוח מלפני הפיצול 1:${a.r} של ${dmy(a.d)}: ${+a.q0.toFixed(4)} יחידות ישנות הותאמו ל-${+a.q1.toFixed(4)} חדשות`});
+    else if(a&&a.kind==='sell'&&r.sdKeep)out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'sell',t:`בדוח ${+a.qStmt.toFixed(4)}, אבל ב-${a.dates.map(dmy).join(', ')} רשמת כאן מכירה של ${+a.sold.toFixed(4)}; הכמות של האתר (${+a.qSite.toFixed(4)}) נשארת`,act:'take'});
+    else if(a&&a.kind==='keep'&&r.sdKeep)out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'sell',t:`בדוח ${+a.qStmt.toFixed(4)}; השארת את הכמות של האתר (${+a.qSite.toFixed(4)})`,act:'take'});
+    else if(!s)out.push({k,sym:r.sym,name:r.name,q0:null,q1,kind:'new',t:'נייר חדש: מופיע בדוח ולא היה באתר'});
+    else if(sdNear(q0,q1))out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'same'});
+    else{const sp=sdSplitOf(r.sym), d=q1-q0;
+      if(sp&&sdNear(q0*sp.r,q1))out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'more',t:`הדוח כבר אחרי הפיצול 1:${sp.r} של ${dmy(sp.d)}, ובאתר עוד היחידות הישנות: הדוח צודק`});
+      else if(d>0)out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'more',t:`${+d.toFixed(4)} יחידות יותר מאשר באתר: קנייה מאז הדוח הקודם${D.asOf?'':' או קריאה שגויה'}`});
+      else{const sold=sdSells(ac,r.sym,null).filter(x=>!D.asOf||String(x.date).slice(0,10)<=D.asOf).reduce((t,x)=>t+(+x.qty),0);
+        out.push({k,sym:r.sym,name:r.name,q0,q1,kind:'less',t:sold>0&&sdNear(q0+sold,q1)?`${+(-d).toFixed(4)} יחידות פחות, כמו המכירה שרשמת כאן`:`${+(-d).toFixed(4)} יחידות פחות מאשר באתר: מכירה שלא נרשמה כאן, או קריאה שגויה`,act:'keep'})}}}
+  // the site's rows the read did not bring (a statement describes the whole account; a screenshot shows a part of it)
+  if(!D.merge)for(const [k,s] of site)if(!seen.has(k))out.push({k,sym:s.sym,name:s.name,q0:+s.qty,q1:null,kind:'gone',t:`לא מופיע בדוח, ובאתר ${+(+s.qty).toFixed(4)} יחידות: נמכר הכול, או שהקריאה פספסה אותו`,act:'back'});
+  const order={gone:0,less:1,sell:2,split:3,more:4,new:5,same:9}; out.sort((a,b)=>(order[a.kind]??8)-(order[b.kind]??8)||String(a.sym).localeCompare(String(b.sym)));
+  return {ac,asOf:D.asOf,merge:D.merge,rows:out,changed:out.filter(x=>x.kind!=='same').length,flag:out.filter(x=>x.kind==='gone'||x.kind==='less'||x.kind==='sell').length};
+}
+const SD_KIND={same:'זהה',more:'יותר',less:'פחות',new:'חדש',gone:'חסר בדוח',split:'פיצול',sell:'מכירה כאן'};
+function renderSDiff(){
+  const box=$('sdBox'); if(!box)return; try{sdReapply()}catch(e){}
+  const parts=Object.keys((DRAFT&&DRAFT.sdiff)||{}).map(stmtDiff).filter(Boolean); if(!parts.length||!canWrite){box.hidden=true; box.innerHTML=''; const sb=$('btnPfSave'); if(sb&&sb.textContent!=='שמור את התיק')sb.textContent='שמור את התיק'; return}
+  const q=x=>x==null?'—':`<span class="n">${+(+x).toFixed(4)}</span>`;
+  const one=X=>{const show=X.rows.filter(r=>r.kind!=='same'), same=X.rows.length-show.length;
+    return `<div class="sd-a"><h3>${esc(acctName(X.ac))}: ${X.merge?'הצילום':'הדוח'}${X.asOf?' ליום '+dFull(X.asOf):''} מול האתר</h3>
+      ${show.length?`<p class="rc-l">${X.changed===1?'הבדל אחד':X.changed+' הבדלים'}${X.flag?`, <b>${X.flag===1?'אחד לבדיקה':X.flag+' לבדיקה'}</b>`:''}${same?` · ${same===1?'נייר אחד זהה':same+' ניירות זהים'}`:''}. מה שבטבלה הוא מה שיישמר.</p>
+      <div class="scroll"><table class="sd-t"><thead><tr><th>נייר</th><th class="num">באתר</th><th class="num">${X.merge?'בצילום':'בדוח'}</th><th>מה זה</th></tr></thead><tbody>${show.map(r=>`<tr class="sd-${r.kind}"><td><b class="sym">${esc(lab(r.sym))}</b></td><td class="num">${q(r.q0)}</td><td class="num">${q(r.kind==='sell'?(DRAFT.sdiff[X.ac].adj[r.k]||{}).qStmt:r.q1)}</td>
+        <td><span class="sd-k">${SD_KIND[r.kind]}</span> ${esc(r.t||'')}${r.act==='back'?` <button class="btn sm" type="button" data-sdback="${esc(X.ac)}|${esc(r.k)}">להחזיר לטבלה</button>`:r.act==='keep'?` <button class="btn sm" type="button" data-sdkeep="${esc(X.ac)}|${esc(r.k)}">להשאיר ${+(+r.q0).toFixed(4)} של האתר</button>`:r.act==='take'?` <button class="btn sm" type="button" data-sdtake="${esc(X.ac)}|${esc(r.k)}">לקחת מהדוח בכל זאת</button>`:''}</td></tr>`).join('')}</tbody></table></div>`
+      :`<p class="rc-l ok">כל ${X.rows.length===1?'הנייר':X.rows.length+' הניירות'} באותן כמויות כמו באתר.</p>`}</div>`};
+  box.hidden=false; setH(box,`<h3 style="font-size:16px">מה השתנה מול האתר</h3>${parts.map(one).join('')}<p class="note" style="margin:0">הכמויות באתר הן אחרי הפיצולים שהוחלו ואחרי המכירות שנרשמו כאן. "לבדיקה": נייר שחסר בדוח או שיש בו פחות יחידות בלי מכירה רשומה; אפשר להשאיר את הכמות של האתר, והשמירה מאשרת את מה שבטבלה.</p>`);
+  const sb=$('btnPfSave'); if(sb){const n=parts.reduce((t,X)=>t+X.flag,0); sb.textContent=n?`שמור את התיק (${n===1?'הבדל אחד לבדיקה':n+' הבדלים לבדיקה'})`:'שמור את התיק'}
+}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#sdBox')||!DRAFT)return;
+  const b=t.closest('[data-sdback],[data-sdkeep],[data-sdtake]'); if(!b)return; const [ac,k]=(b.dataset.sdback||b.dataset.sdkeep||b.dataset.sdtake).split('|'), D=DRAFT.sdiff&&DRAFT.sdiff[ac]; if(!D)return;
+  const site=(D.site||[]).find(p=>canonSym(p.sym,p.name)===k), row=DRAFT.positions.find(p=>p.acct===ac&&canonSym(p.sym,p.name)===k);
+  if(b.dataset.sdback&&site&&!row){DRAFT.positions.push({...site,sdBack:true}); rtSay(`${lab(site.sym)} חזר לטבלה`)}
+  else if(b.dataset.sdkeep&&site&&row){D.adj[k]={kind:'keep',qStmt:+row.qty,qSite:+site.qty}; row.qty=+site.qty; row.sdKeep=k; rtSay(`הכמות של האתר נשארת ל-${lab(site.sym)}`)}
+  else if(b.dataset.sdtake&&row){const a=D.adj[k]; if(a&&a.qStmt!=null)row.qty=a.qStmt; delete row.sdKeep; delete D.adj[k]; rtSay(`הכמות מהדוח נלקחה ל-${lab(row.sym)}`)}
+  pfDirty(); renderMine(true)});
 // ---- 1.11: "השלמת נתונים": a portfolio typed by hand has no buying prices and no deposits, and then the profit, "against
 // the deposits", the benchmarks and the monthly returns stay empty. One panel asks for the two things the page cannot
 // know: what each security cost (a price and a month, or "don't remember" = today's price, marked as an estimate) and how

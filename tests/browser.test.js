@@ -3034,3 +3034,31 @@ test('8.11 the Management Center lists the splits applied: the security, the day
     assert.match(row,/^SOXX 5\.11\.2026 3 ל-1 מהמחירים, ביום עצמו אומת \d+ הוחל/,row); assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('quotes/latest',Q0)}
 });
+
+test('8.11 a statement against the site before the save: the units put in the new ones after a split the statement predates, a holding the read did not bring offered back, the save button counts what is to be checked',T,async t=>{
+  if(skip())return t.skip('no browser');
+  // a split the site knows of, from after the statement's day (the mock statement is of today)
+  const Q0=store.getDoc('quotes/latest').data, tomorrow=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  store.setDoc('quotes/latest',{...Q0,splits:{...(Q0.splits||{}),MSFT:{d:tomorrow,r:2,conf:'fmp',src:'test'}}});
+  try{
+    const P0=store.getDoc('portfolio/main').data, exc=P0.positions.filter(p=>p.acct==='exc'), msft=exc.find(p=>p.sym==='MSFT'), others=exc.filter(p=>p.sym!=='MSFT').map(p=>p.sym);
+    assert.ok(msft&&others.length>=2,'the test portfolio holds MSFT and more in exc');
+    const {ctx,pg}=await open(1280); await tab(pg,'mine'); await pg.waitForTimeout(300); const R=reader(pg);
+    await R.pick('statement.csv','Symbol,Name,Qty,Cost ILS\nMSFT,Microsoft,3,4200\n'); await R.done(); await pg.waitForTimeout(400);
+    const box=await pg.evaluate(()=>{const b=document.getElementById('sdBox'); return {hidden:b.hidden,text:b.innerText,gone:b.querySelectorAll('tr.sd-gone').length,split:b.querySelectorAll('tr.sd-split').length,back:b.querySelectorAll('[data-sdback]').length,save:document.getElementById('btnPfSave').textContent}});
+    assert.equal(box.hidden,false,'the comparison shows once the statement landed');
+    assert.match(box.text,/מה השתנה מול האתר/); assert.match(box.text,/הדוח מלפני הפיצול 1:2/,'the statement predates the split: said so');
+    assert.equal(box.split,1); assert.equal(box.gone,others.length,'every exc holding the statement did not bring is listed as missing: '+box.text);
+    assert.equal(box.back,others.length); assert.match(box.save,/לבדיקה/,'the save button counts what is to be checked: '+box.save);
+    const rows=await R.rows(); assert.equal(rows.find(r=>r.sym==='MSFT').qty,6,'3 old units became 6 new ones in the table');
+    // the first missing holding put back: in the table, out of the list
+    const sym=await pg.evaluate(()=>{const b=document.querySelector('#sdBox [data-sdback]'); const s=b.dataset.sdback.split('|')[1]; b.click(); return s});
+    await pg.waitForTimeout(300);
+    const after=await pg.evaluate(()=>({gone:document.querySelectorAll('#sdBox tr.sd-gone').length,syms:[...document.querySelectorAll('#pfRows input[data-pf="sym"]')].map(i=>i.value)}));
+    assert.equal(after.gone,others.length-1); assert.ok(after.syms.includes(sym),sym+' is back in the table');
+    // nothing saved: the changes are dropped and the box goes
+    await pg.click('#btnPfReset'); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(()=>document.getElementById('sdBox').hidden),true); assert.equal(await pg.evaluate(()=>document.getElementById('btnPfSave').textContent),'שמור את התיק');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('quotes/latest',Q0)}
+});

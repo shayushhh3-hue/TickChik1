@@ -874,3 +874,35 @@ test('the fall from the peak: the market\'s move only (deposits are not a rise),
   near(E.cur.pct,(140/150-1)*100,1e-9); assert.equal(E.cur.peak,'2026-10-04');
   assert.equal(W.ddCalc({'2026-10-01':{v:1}},null),null,'too few days');
 });
+
+test('8.11 a statement against the site: the units put in the new ones when the statement predates a split; the site\'s units kept when a sale was written here after the statement\'s day; more, fewer, new and missing told apart', ()=>{
+  const G={P:{positions:[{sym:'SOXX',name:'iShares Semi',qty:30,acct:'exc',ccy:'USD'},{sym:'NVDA',name:'NVIDIA',qty:5,acct:'exc',ccy:'USD'},{sym:'MSFT',name:'Microsoft',qty:4,acct:'exc',ccy:'USD'},{sym:'PG',name:'P&G',qty:2,acct:'exc',ccy:'USD'},{sym:'AAPL',qty:1,acct:'blink',ccy:'USD'}],
+      splits:{'SOXX:2026-11-05':{sym:'SOXX',d:'2026-11-05',r:3,at:'2026-11-06T06:00:00Z',rows:[{acct:'exc',q0:10,q1:30}]}}},
+    Q:{splits:{SOXX:{d:'2026-11-05',r:3,conf:'fmp'}}},
+    HS:{accounts:[{acct:'exc',manual:[{id:'m1',date:'2026-11-06',sym:'NVDA',side:'sell',qty:2,px:180}]}]},
+    DRAFT:null,dmy:iso=>iso?`${+iso.slice(8)}.${+iso.slice(5,7)}`:'',
+    canonSym:(s,n)=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,''),draftFromP(){return {positions:G.P.positions.map(p=>({...p})),cash:{},asOf:{},seen:{}}}};
+  const F=load(['sdR6','sdNear','sdSplitOf','sdSells','sdSite','sdAdjust','stmtPrep','sdReapply','stmtDiff'],G);
+  // a statement of 3.11, before the split of 5.11 and before the sale of 6.11: SOXX 10 old units, NVDA 7 (the sale took 2 since), MSFT 6 (bought 2), PG missing, TSLA new
+  G.DRAFT=G.draftFromP(); const rows=[{sym:'SOXX',name:'iShares Semi',qty:10,px:450,acct:'exc',ccy:'USD'},{sym:'NVDA',name:'NVIDIA',qty:7,acct:'exc',ccy:'USD'},{sym:'MSFT',name:'Microsoft',qty:6,acct:'exc',ccy:'USD'},{sym:'TSLA',name:'Tesla',qty:1,acct:'exc',ccy:'USD'}];
+  F.stmtPrep('exc',rows,'2026-11-03',false);
+  assert.equal(rows[0].qty,30,'10 old units are 30 new ones'); assert.equal(rows[0].px,150); assert.deepEqual(rows[0].spAdj,{d:'2026-11-05',r:3,q0:10,q1:30,px0:450});
+  assert.equal(rows[1].qty,5,'the sale written here after the statement: the site\'s 5 stay'); assert.equal(rows[1].sdKeep,'NVDA');
+  assert.equal(rows[2].qty,6);
+  G.DRAFT.positions=G.DRAFT.positions.filter(p=>p.acct!=='exc').concat(rows);
+  const X=F.stmtDiff('exc'); const by=Object.fromEntries(X.rows.map(r=>[r.sym,r]));
+  assert.deepEqual(X.rows.map(r=>[r.sym,r.kind]),[['PG','gone'],['NVDA','sell'],['SOXX','split'],['MSFT','more'],['TSLA','new']]);
+  assert.equal(X.changed,5); assert.equal(X.flag,2,'missing and the kept sale are to be checked');
+  assert.match(by.SOXX.t,/מלפני הפיצול 1:3 של 5\.11/); assert.match(by.NVDA.t,/6\.11.*מכירה של 2/); assert.match(by.MSFT.t,/2 יחידות יותר/); assert.match(by.PG.t,/לא מופיע בדוח/);
+  assert.equal(by.NVDA.act,'take'); assert.equal(by.PG.act,'back'); assert.equal(by.PG.q1,null); assert.equal(by.TSLA.q0,null);
+  // the deep read put the raw quantities back: the adjustments hold
+  rows[0].qty=10; rows[0].px=450; rows[1].qty=7; F.sdReapply(); assert.equal(rows[0].qty,30); assert.equal(rows[0].px,150); assert.equal(rows[1].qty,5);
+  // a statement already in the new units (its day misread): not adjusted; a statement after the sale: the statement's units stand
+  G.DRAFT=G.draftFromP(); const r2=[{sym:'SOXX',name:'iShares Semi',qty:30,acct:'exc',ccy:'USD'},{sym:'NVDA',name:'NVIDIA',qty:5,acct:'exc',ccy:'USD'}];
+  F.stmtPrep('exc',r2,'2026-11-03',false); assert.equal(r2[0].qty,30); assert.ok(!r2[0].spAdj); assert.ok(!r2[1].sdKeep);
+  G.DRAFT=G.draftFromP(); const r3=[{sym:'NVDA',name:'NVIDIA',qty:3,acct:'exc',ccy:'USD'}]; F.stmtPrep('exc',r3,'2026-11-07',false); assert.equal(r3[0].qty,3,'a statement after the sale: its own units');
+  G.DRAFT.positions=G.DRAFT.positions.filter(p=>p.acct!=='exc').concat(r3); const X3=F.stmtDiff('exc'); assert.equal(X3.rows.find(r=>r.sym==='NVDA').kind,'less'); assert.match(X3.rows.find(r=>r.sym==='NVDA').t,/מכירה שלא נרשמה כאן/);
+  // a screenshot (merge): what it does not show is not "missing"
+  G.DRAFT=G.draftFromP(); const r4=[{sym:'MSFT',name:'Microsoft',qty:4,acct:'exc',ccy:'USD'}]; F.stmtPrep('exc',r4,null,true); G.DRAFT.positions=G.DRAFT.positions.filter(p=>!(p.acct==='exc'&&p.sym==='MSFT')).concat(r4);
+  const X4=F.stmtDiff('exc'); assert.ok(X4.rows.length===4&&X4.rows.every(r=>r.kind==='same'),'the rows the screenshot did not show are not missing'); assert.equal(X4.changed,0);
+});
