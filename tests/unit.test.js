@@ -2297,3 +2297,13 @@ test('8.11 a partner deletes their own account: the password first, then their d
     const ok2=await login('o@example.com','owner-pass-123'); r=await post(ok2,{password:'owner-pass-123'}); assert.equal(r.status,403); assert.ok(store.userById(o.id),'the owner stays');
   }finally{srv.closeAllConnections(); srv.close()}
 });
+
+test('8.11 the morning e-mail\'s control line for the owner: the consistency check, the sources not working, the smoke and restore tests, in counts; "quiet" when all is well', async()=>{
+  const {controlSection}=await import('../server/tasks.js'); const s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'});
+  const now=new Date('2026-11-09T05:50:00Z'); s.setMeta('serverStart',JSON.stringify(now.toISOString()));
+  let c=controlSection(s,{now}); assert.equal(c.t,'בקרה'); assert.match(c.text,/בדיקת העקביות עוד לא רצה/); assert.ok(!/שקט/.test(c.text),'not quiet before the first check');
+  s.setDoc('system/consist',{at:'2026-11-08T22:30:00Z',n:0,bad:0,runs:[]}); s.setMeta('smoke',JSON.stringify({at:now.toISOString(),version:'abc1234567',ok:true,checks:[{k:'site',name:'הדף נטען',ok:true}]})); s.setMeta('restoreTest',JSON.stringify({at:'2026-11-07T01:10:00Z',ok:true}));
+  c=controlSection(s,{now,env:{}}); assert.match(c.text,/אותם מספרים בכל מקום/); assert.match(c.text,/בדיקת העשן אחרי הפריסה \(abc1234\): תקין/); assert.match(c.text,/שחזור הגיבוי לבדיקה: תקין/);
+  s.setDoc('system/consist',{at:'2026-11-08T22:30:00Z',n:3,bad:1,runs:[]}); s.setMeta('smoke',JSON.stringify({at:now.toISOString(),version:'abc1234567',ok:false,checks:[{k:'page',name:'הדף מחשב תיק',ok:false,note:'x'}]}));
+  c=controlSection(s,{now}); assert.match(c.text,/3 ממצאים, 1 חמורים/); assert.match(c.text,/נכשלה: הדף מחשב תיק/); assert.ok(!/שקט/.test(c.text));
+});
