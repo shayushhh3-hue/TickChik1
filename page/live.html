@@ -21097,14 +21097,20 @@ function renderRules(m){
 // ---- since the previous visit: the last saved daily point before today is the record of that visit ----
 // the last visit from this browser (the day before this one), and one line of what changed since: the value and the
 // biggest mover, from the day point the page saved on or before that day
-let VISIT_PREV=null; (function(){try{const t=isoDay(Date.now()), v=localStorage.getItem('tr_visit'); if(v&&v<t)VISIT_PREV=v; localStorage.setItem('tr_visit',t)}catch(e){}})();
+// 8.11: ilDay, not isoDay: isoDay is declared further down and was not yet defined here, so the marker was never written
+// and the line never showed
+let VISIT_PREV=null; (function(){try{const t=ilDay(), v=localStorage.getItem('tr_visit'); if(v&&v<t)VISIT_PREV=v; localStorage.setItem('tr_visit',t)}catch(e){}})();
 function sinceVisit(m){
-  if(!VISIT_PREV||!DY||!DY.points||!Q||!m)return ''; const today=isoDay(Date.now());
+  if(!VISIT_PREV||!DY||!DY.points||!Q||!m)return ''; const today=ilDay();
   const key=Object.keys(DY.points).filter(k=>k<=VISIT_PREV&&DY.points[k]&&DY.points[k].v>0).sort().pop(); if(!key)return '';
   const days=Math.round((new Date(today)-new Date(VISIT_PREV))/864e5); if(days<2)return '';
   const pt=DY.points[key], dv=m.total-pt.v, fx=Q.usdIls, parts=[`לפני ${days} ימים. השווי ${dv>=0?'עלה':'ירד'} ב-${ils(Math.abs(dv))} (${spct(pt.v?dv/pt.v*100:0,1)})`];
   if(pt.px){const ch=m.pos.map(p=>{const a=pt.px[p.sym];return a>0?{p,pc:(p.px/a-1)*100,il:p.qty*(p.px-a)*(p.ccy==='USD'?fx:1)}:null}).filter(x=>x&&Math.abs(x.pc)>=0.05).sort((a,b)=>Math.abs(b.il)-Math.abs(a.il))[0];
     if(ch)parts.push(`הכי זז: ${lab(ch.p.sym)} ${spct(ch.pc,1)}`)}
+  // 8.11: what else happened since: new alerts not read, the gauge rising (the owner's), a statement approved against the site
+  try{const since=VISIT_PREV+'T00:00:00', n=plItems().filter(a=>plUnread(a)&&String(a.at||a.ts||'')>=since).length; if(n)parts.push(`${n===1?'התראה חדשה אחת':n+' התראות חדשות'}`)}catch(e){}
+  try{if(OWNER&&PRESS&&PRESS.syms){const up=Object.entries(PRESS.syms).filter(([,x])=>x.level>=2&&x.changedAt>=VISIT_PREV&&(x.prevLevel==null||x.prevLevel<2)).map(([k,x])=>`${lab(k)} ל"${PR_LV[x.level][0]}"`); if(up.length)parts.push(`מד הלחץ: ${up.slice(0,3).join(', ')} עלה`)}}catch(e){}
+  try{const C=(P&&P.stmtCheck)||{}, L=Object.entries(C).filter(([,x])=>x&&x.at>=VISIT_PREV); if(L.length)parts.push(L.map(([ac,x])=>`דוח ${acctName(ac)}: ${x.changed===0?'בלי הבדלים':x.changed===1?'הבדל אחד אושר':x.changed+' הבדלים אושרו'}`).join(', '))}catch(e){}
   return parts.join(' · ')+'.';
 }
 function renderSince(){

@@ -3142,3 +3142,18 @@ test('8.11 the ledger: the save of a statement writes the account\'s holdings as
   assert.deepEqual(J.rows.slice(0,2),['lg-edit','lg-stmt'],'newest first');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('8.11 "מאז הביקור האחרון": with a visit two days back, the line says what changed in the value, the alerts not read, the gauge rising and a statement approved',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const day=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10), DY0=store.getDoc('history/daily').data, P0=store.getDoc('portfolio/main').data, PR0=store.getDoc('research/pressure');
+  // a daily point from three days back, a statement approved yesterday, the gauge up today
+  store.setDoc('history/daily',{...DY0,points:{...DY0.points,[day(3)]:{v:20000,dep:18000,at:day(3)+'T20:00:00Z',px:{MSFT:400}}}});
+  store.setDoc('portfolio/main',{...P0,stmtCheck:{exc:{at:day(1)+'T10:00:00Z',asOf:day(1),changed:2,flag:0,rows:[]}}});
+  store.setDoc('research/pressure',{at:new Date().toISOString(),day:day(0),n:1,high:1,syms:{NVDA:{level:2,score:4,held:true,prevLevel:1,changedAt:day(0),signals:[],seriesLevel:1,similar:null,base:null}}});
+  try{
+    const {ctx,pg}=await open(1280); await pg.evaluate(d=>{localStorage.setItem('tr_visit',d)},day(2)); await pg.reload({waitUntil:'load'}); await pg.waitForSelector('#kTotal'); await pg.waitForTimeout(800);
+    const line=await pg.evaluate(()=>{const el=[...document.querySelectorAll('[data-pane="overview"] *')].find(x=>x.children.length===0&&/לפני 2 ימים/.test(x.textContent)); return el?el.textContent:document.body.innerText.match(/לפני 2 ימים[^\n]*/)?.[0]||null});
+    assert.ok(line,'the line is on the home'); assert.match(line,/השווי (עלה|ירד) ב-/); assert.match(line,/מד הלחץ: NVDA ל"גבוה" עלה/); assert.match(line,/דוח אקסלנס: 2 הבדלים אושרו/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('history/daily',DY0); store.setDoc('portfolio/main',P0); if(PR0.exists)store.setDoc('research/pressure',PR0.data); else store.deleteDoc('research/pressure')}
+});
