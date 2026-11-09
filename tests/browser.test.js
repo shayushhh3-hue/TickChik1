@@ -286,7 +286,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,3),['quickActs','kindRow','holdSec'],'4.11 (9.11: the tiles under them): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,3),['kindRow','quickActs','holdSec'],'4.11 (9.11, option A: the stocks and the funds, then the four actions): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
       // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above
@@ -1241,9 +1241,9 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
       on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').getAttribute('aria-label'),meta:document.querySelector('meta[name=theme-color]').content}));
     // the page opens at night (the trading look); the day is the blue-on-white one
     let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(7, 7, 26)','the night is the violet-black ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
-    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
+    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); if(t.closest('#hMenu'))document.getElementById('btnMore').click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
     assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 245, 252)','light','light','מצב לילה','#F6F5FC']);
-    await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
+    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); if(t.closest('#hMenu'))document.getElementById('btnMore').click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
     // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
     const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
       const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
@@ -1275,7 +1275,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
   try{
     let {ctx,pg}=await open(390);
     const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
-    assert.deepEqual(top.b,['btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד"'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
+    assert.deepEqual(top.b,['btnMore','btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד" (9.11: night and upload under "⋯" on a phone)'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -3336,16 +3336,16 @@ test('9.11 the home screen: each market by its own day, a lower chart with its s
   try{
     const r=await pg.evaluate(()=>{const q=document.getElementById('quickActs'), k=document.getElementById('kindRow'), svg=document.getElementById('wChS'), W=svg.viewBox.baseVal.width;
       const labs=[...svg.querySelectorAll('text')].filter(x=>/₪/.test(x.textContent)).map(x=>+x.getAttribute('x'));
-      return {order:q.nextElementSibling===k, h:svg.getBoundingClientRect().height, right:labs.length>0&&labs.every(x=>x>W*0.7), ranges:[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr).join(','),
+      return {order:q.previousElementSibling===k, h:svg.getBoundingClientRect().height, right:labs.length>0&&labs.every(x=>x>W*0.7), ranges:[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr).join(','),
         tile:(document.querySelector('#kindRow [data-k="stock"] .kt-d')||{}).textContent||''}});
-    assert.ok(r.order,'the tiles come right after the four actions'); assert.ok(r.h<=180,'a lower chart: '+r.h); assert.ok(r.right,'the scale on the right'); assert.equal(r.ranges,'1,3,6,12,24,0');
+    assert.ok(r.order,'9.11 option A: the stocks and the funds right before the four actions'); assert.ok(r.h<=180,'a lower chart: '+r.h); assert.ok(r.right,'the scale on the right'); assert.equal(r.ranges,'0.25,1,3,6,12,24,0');
     assert.match(r.tile,/^[▲▼]\d+\.\d\d%$/,'the stocks\' tile has the day\'s change');
     // both markets, on different days: each by its own day
     const d=await pg.evaluate(()=>{const H=window.__home, t=H.today(), y=new Date(Date.parse(t+'T12:00:00Z')-864e5).toISOString().slice(0,10); return H.mkt({usDate:y,ilDate:t})});
     assert.ok(d.on&&/^ת״א היום [+−‎\d.%]+ · ארה״ב \d+\.\d+ /.test(d.txt.replace(/‎/g,'')),JSON.stringify(d));
     // all up to date: one small ✓ beside "שווי התיק", its words kept; something late: the chip under the chart again
     const ok=await pg.evaluate(()=>{const n=document.getElementById('kNews'); n.hidden=false; n.className='status trust'; window.__home.trust({ok:true,iss:[],at:new Date().toISOString()}); const t=document.getElementById('kTrust'), b=t.getBoundingClientRect();
-      const a={top:!!t.closest('.wtop'),w:b.width,txt:t.textContent}; window.__home.trust({ok:false,iss:[{k:'late'}],at:new Date().toISOString()}); return {...a,back:!!document.getElementById('kTrust').closest('#wchH')}});
+      const a={top:!!t.closest('.wtop'),w:b.width,txt:t.textContent}; window.__home.trust({ok:false,iss:[{k:'late'}],at:new Date().toISOString()}); return {...a,back:!!document.getElementById('kTrust').closest(document.body.classList.contains('homeA')?'.worth .wv':'#wchH')}});   // 9.11 option A: under the day on a phone
     assert.ok(ok.top&&ok.w<=30&&/המחירים עדכניים/.test(ok.txt)&&ok.back,JSON.stringify(ok));
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
@@ -3380,7 +3380,7 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   const {ctx,pg}=await open(390);
   try{
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
-      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnTheme','btnRefresh','btnUpd'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
+      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('hdrAcct').left],theme:R('btnMore').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnMore','btnRefresh'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
     assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
     assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan!=='none'&&r.ic.every(x=>x<=1),'the accounts a switch in the value card, the slogan under the logo, each icon in the middle of its square: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
