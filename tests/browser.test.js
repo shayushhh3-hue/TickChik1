@@ -3350,3 +3350,18 @@ test('9.11 the home screen: each market by its own day, a lower chart with its s
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });
+
+test('9.11 the control said short: a finding is its subject as a title and one short sentence (a news item: its headline), no pill beside it, no colour legend; the parts row stays under the screens row on a phone',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{parts:true});
+  try{
+    await tab(pg,'risk'); await pg.waitForTimeout(1000); await pg.evaluate(()=>{for(const d of document.querySelectorAll('#alerts details.ag'))d.open=true});
+    const r=await pg.evaluate(()=>{const L=[...document.querySelectorAll('#alerts .agl>li')]; return {n:L.length,titles:L.filter(li=>li.querySelector('.f-t')).length,pills:document.querySelectorAll('#alerts .agl .tag').length,legend:!!document.querySelector('section[aria-labelledby="hCtl"] .legend'),
+      long:L.map(li=>{const b=li.querySelector('.agb').cloneNode(true); for(const x of b.querySelectorAll('.f-t,details,.dk-full,button,.ais'))x.remove(); return b.textContent.replace(/\s+/g,' ').trim()}).filter(x=>x.length>110)}});
+    assert.ok(r.n>0&&r.titles===r.n,'every finding has its title line: '+JSON.stringify(r)); assert.equal(r.pills,0); assert.equal(r.legend,false); assert.deepEqual(r.long,[],'one short sentence each');
+    await pg.evaluate(()=>window.scrollTo(0,1800)); await pg.waitForTimeout(400);
+    const s=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="risk"]'), a=p.querySelector(':scope>.subtabs').getBoundingClientRect(), b=document.getElementById('riskNav').getBoundingClientRect(); return {a:a.bottom,b:b.top,at:a.top}});
+    assert.ok(Math.abs(s.at)<2&&s.b>=s.a-1,'the parts row under the screens row, not over it: '+JSON.stringify(s));
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+});

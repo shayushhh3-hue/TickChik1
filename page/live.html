@@ -317,7 +317,7 @@ tr.sec td{background:var(--sunk);color:var(--ink2);font-size:12px;font-weight:70
 .agn{flex:none;min-width:22px;text-align:center;font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--tx);color:#fff}
 .agp{flex:1;min-width:0;font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .agl{list-style:none;margin:0;padding:0}
-.agl li{display:grid;grid-template-columns:34px 62px minmax(0,1fr);gap:10px;align-items:start;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--ink)}
+.agl li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--ink)}
 .agl li .tag{margin-top:7px}
 .agl li:first-child{border-top:0}
 .ais{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px}
@@ -804,6 +804,8 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .dk-top li{display:grid;grid-template-columns:14px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;line-height:1.55;color:var(--ink)}
 .dk-top li i{display:block;width:10px;height:10px;border-radius:50%;margin-top:7px;background:var(--muted)} .dk-top li.crit i{background:var(--crit-c)} .dk-top li.warn i{background:var(--warn-c)} .dk-top li.info i{background:var(--info-c)}
 .dk-cat{font-size:12px;font-weight:700;padding:0 6px;border-radius:999px;background:var(--sunk);color:var(--ink2);margin-inline-end:4px}
+/* 9.11 (the owner): a finding is a title line and one short sentence; the subject is the title, not a pill beside the text */
+.agb .f-t{display:block;font-size:14px;font-weight:800;color:var(--ink);margin-bottom:1px} .f-tags{font-weight:600;color:var(--ink2)} .agl li{font-size:13.5px}
 /* sub-tabs inside a grouped pane */
 .subtabs{align-self:flex-start} .subtabs .chip{min-height:36px;padding-inline:14px}
 /* accessibility: visible focus, comfortable hit areas, alerts before charts on a phone */
@@ -1573,7 +1575,7 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 #riskNav{position:sticky;top:var(--subH,0px);z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 #riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} #riskNav .chip[hidden],#riskSub [hidden]{display:none}
-@media (max-width:640px){#riskNav{top:0;margin-inline:0;overflow-x:auto;scrollbar-width:none} #riskNav .chip{flex:1 0 auto;font-size:13px;padding-inline:7px}}
+@media (max-width:640px){#riskNav{top:var(--subH,0px);margin-inline:0;overflow-x:auto;scrollbar-width:none} #riskNav .chip{flex:1 0 auto;font-size:13px;padding-inline:7px}}
 [data-pane="risk"][data-rgv="now"] > [data-rg]:not([data-rg="now"]),[data-pane="risk"][data-rgv="mix"] > [data-rg]:not([data-rg="mix"]),[data-pane="risk"][data-rgv="risk"] > [data-rg]:not([data-rg="risk"]),[data-pane="risk"][data-rgv="co"] > [data-rg]:not([data-rg="co"]),[data-pane="risk"][data-rgv="vol"] > [data-rg]:not([data-rg="vol"]){display:none!important}
 /* the groups once: the group card (bar or pie) when it is there, not the donut of the same groups again */
 #mixHome:not([hidden]) ~ section[aria-labelledby="hMix"]{display:none!important}
@@ -2673,6 +2675,10 @@ html[data-theme="dark"] .botbar{background:var(--surface);border-color:rgb(139 9
 .dk-cat{background:var(--accent-soft);color:var(--vio-ink);padding:1px 8px}
 .dk-top li.crit .dk-cat{background:var(--crit-bg);color:var(--crit-ink)} .dk-top li.warn .dk-cat{background:var(--warn-bg);color:var(--warn)}
 .dk-top li.sev-tip .dk-cat{background:rgb(45 212 191 / .18);color:var(--mint-ink)}
+/* 9.11: the subject is the title line of each item; the buttons on a line of their own, small */
+.dk-top li .dk-cat,.dk-top li.crit .dk-cat,.dk-top li.warn .dk-cat,.dk-top li.rep .dk-cat,.dk-top li.sev-tip .dk-cat{display:block;background:none;padding:0;margin:0 0 1px;font-size:14px;font-weight:800;color:var(--ink)}
+.dk-top li{font-size:13.5px;line-height:1.5} .dk-top .dk-btns{display:flex;margin:6px 0 0} .dk-top .dk-btns .dk-go,.dk-top .dk-btns .dk-ack{font-size:12.5px;min-height:30px}
+.dk-trust.one{padding:8px 12px;align-items:center} .dk-trust.one .dt-b b{font-size:14px} .dk-trust.one .dt-s{font-size:12px}
 .dk-go{color:var(--vio-ink)}
 .dk-ack{border-radius:999px;background:var(--surface);color:var(--ink2);border-color:var(--line)} .dk-ack:hover{border-color:#C4B5FD;color:var(--vio-ink)}
 .dk-trust{border-radius:16px}
@@ -3415,7 +3421,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <p class="note mixnote">הקבוצות שקבעת לכל נייר. החלוקה לפי ענף, מטבע ובורסה נמצאת בבקרה. <button type="button" class="term lw" data-term="grpsec" aria-label="מה ההבדל בין קבוצה לענף?" aria-expanded="false">מה ההבדל?</button></p>
     </section>
     <section aria-labelledby="hCtl">
-        <div class="row"><h2 id="hCtl">בקרה</h2><span class="legend" aria-label="משמעות הצבעים"><i class="ok"></i>תקין <i class="warn"></i>לבדיקה <i class="crit"></i>חריגה <i class="info"></i>מידע</span></div>
+        <div class="row"><h2 id="hCtl">בקרה</h2></div>
         <ul class="alerts" id="alerts"><li class="alert info"><span class="tag">ממתין</span><span>ההתראות יופיעו כאן אחרי שנתוני התיק ייטענו.</span></li></ul>
       </section>
     <section aria-labelledby="hKpi">
@@ -18011,7 +18017,7 @@ function render(){
   const line=a=>`${tagFor[a[0]]} · ${a[1]}: ${a[2]}`;
   const grp=[['crit','חריגות'],['warn','לבדיקה'],['info','מידע']].map(([sv,title])=>{const g=AL.filter(a=>a[0]===sv); if(!g.length)return '';
     const pv=[...new Set(g.flatMap(a=>a[3]&&a[3].length?a[3]:[a[1]]))];
-    return `<li class="agw"><details class="ag ${sv}" data-sv="${sv}"${AG_OPEN[sv]?' open':''}><summary>${niH(SEVI[sv],'ag-ic')}<span class="agt">${title}</span><span class="agn">${g.length}</span><span class="agp">${pv.slice(0,6).map(x=>`<bdi>${esc(x)}</bdi>`).join(' · ')}${pv.length>6?` · <bdi>ועוד ${pv.length-6}</bdi>`:''}</span></summary><ul class="agl">${g.map(a=>`<li data-line="${esc(line(a))}" data-sev="${a[0]}">${catIconH(a[1],a[0])}<span class="tag">${esc(a[1])}</span><div class="agb">${ackd(a)?'<span class="ackt">סימנת שבדקת</span>':''}${a[4]?esc(a[4].lead)+'<span class="ais">'+a[4].items.map(x=>`<bdi class="ai">${esc(x)}</bdi>`).join('')+'</span>':esc(a[2])}${whyH(a.why)}${a.why?'':anaNavBtn(alertNav(a),'agnav')}</div></li>`).join('')}</ul></details></li>`}).join('');
+    return `<li class="agw"><details class="ag ${sv}" data-sv="${sv}"${AG_OPEN[sv]?' open':''}><summary>${niH(SEVI[sv],'ag-ic')}<span class="agt">${title}</span><span class="agn">${g.length}</span><span class="agp">${pv.slice(0,6).map(x=>`<bdi>${esc(x)}</bdi>`).join(' · ')}${pv.length>6?` · <bdi>ועוד ${pv.length-6}</bdi>`:''}</span></summary><ul class="agl">${g.map(a=>`<li data-line="${esc(line(a))}" data-sev="${a[0]}">${catIconH(a[1],a[0])}<div class="agb"><b class="f-t">${esc(a[1])}${a[4]?'':fTags(a)}</b>${ackd(a)?'<span class="ackt">סימנת שבדקת</span>':''}${a[4]?esc(a[4].lead)+'<span class="ais">'+a[4].items.slice(0,6).map(x=>`<bdi class="ai">${esc(x)}</bdi>`).join('')+(a[4].items.length>6?`<bdi class="ai">ועוד ${a[4].items.length-6}</bdi>`:'')+'</span>':fShortH(a)}${whyH(a.why)}${a.why?'':anaNavBtn(alertNav(a),'agnav')}</div></li>`).join('')}</ul></details></li>`}).join('');
   const okRow=A.filter(a=>a[0]==='ok').map(a=>`<li class="alert ok" data-line="${esc(line(a))}" data-sev="ok">${niH('ok')}<span><span class="tag">${tagFor.ok}</span> ${esc(a[2])}</span></li>`).join('');
   const alH=okRow+grp; if(alH!==lastAl){lastAl=alH;$('alerts').innerHTML=alH}
   LAST_A=A; try{alertsChime(A)}catch(e){}
@@ -19610,7 +19616,14 @@ window.__pxal={hits:pxAlertHits,set:pxAlertSet,price:pxKeyPrice};
 // 5.11: the home's day and groups, for the page's tests (the day of a given portfolio over given market dates)
 window.__home={mkt:q2=>{const Q0={usDate:Q.usDate,ilDate:Q.ilDate}; Object.assign(Q,q2||{}); try{dayMkt(mAllNow()); const e=$('kDayM'); return {on:!e.hidden,txt:e.textContent}}finally{Object.assign(Q,Q0); try{dayMkt(mAllNow())}catch(e){}}},trust:T=>renderTrustChip(T),day:(P2,q2)=>{const keys=['usDate','ilDate','lastTradeDay'], Q0={}; for(const k of keys)Q0[k]=Q[k]; Object.assign(Q,q2||{}); try{return withP(P2,()=>[dayWord(),dayLab(),dayLive()])}finally{Object.assign(Q,Q0)}},
   grpAuto:P0=>grpAuto(P0),span:()=>WSPAN,today:()=>tzDay('Asia/Jerusalem'),dmy:d=>dmy(d)};
-function whyH(w){if(!w)return'';return `<details class="why"><summary>למה אני רואה את זה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
+// 9.11 (the owner: "a lot of text"): a finding said short
+const fCut=(x,n)=>{x=String(x||''); if(x.length<=n)return {c:x,full:false}; const i=x.lastIndexOf(' ',n-2); return {c:x.slice(0,i>n*0.5?i:n-1)+'…',full:true}};
+function fShortH(a,n=95){const x=fText(a);
+  const c=fCut(x,n); return c.full?`<span class="dk-cut">${tx(c.c)} <button type="button" class="lnk" data-dkmore="1">עוד</button></span><span class="dk-full" hidden>${tx(a[2])} <button type="button" class="lnk" data-dkmore="0">פחות</button></span>`:tx(c.c)}
+const fText=a=>{if(a[1]==='חדשות'){const it=a.pl&&typeof plByK==='function'?plByK(a.pl):null; if(it&&it.title)return it.title} return String(a[2]||'')};
+// the names the sentence does not already say
+const fTags=a=>{const said=fText(a), t=(Array.isArray(a[3])?a[3]:[]).map(x=>String(x).split(' ')[0]).filter(x=>x&&x!==a[1]&&!said.includes(x)); return t.length?` <span class="f-tags">${t.slice(0,3).map(x=>`<bdi>${esc(x)}</bdi>`).join(', ')}${t.length>3?` ועוד ${t.length-3}`:''}</span>`:''};
+function whyH(w){if(!w)return'';return `<details class="why"><summary>למה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
 // 31.10: the day in three short lines, at the top of the home: what the portfolio did and who moved it; the news on the
 // ones that moved (or the most important news of the day) and what it may mean for them; and whether anything needs the
 // person. The facts of the day, never a reason invented for a move, and no advice
@@ -19663,7 +19676,7 @@ function renderDesk(m,A){
   const need=L.filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep'), st=L.some(x=>x.sev==='crit')?'crit':need.length?'warn':'ok';
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${trustH(T)}${(()=>{try{return nwHealthH(nwHealth())}catch(e){return ''}})()}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 const DESK_REP=new Set();
@@ -28270,6 +28283,13 @@ function selfCheck(m){
   return out;
 }
 const trustChip=T=>!T?'':T.ok?`${niH('ok')}<span>המחירים עדכניים</span>`:`${niH('warn')}<span>${T.iss.length===1&&T.iss[0].k==='late'?'המחירים לא התעדכנו':T.iss.some(x=>x.k==='sum')?'נמצא פער בין מסכים':'חלק מהמחירים לא עדכניים'}</span>`;
+// 9.11 (the owner): the prices and the news both up to date: one green line (the details one tap away); a card only for what is late
+function deskStatusH(T){let H=null; try{H=nwHealth()}catch(e){}
+  if(!(T&&T.ok&&H&&H.st==='ok'))return trustH(T)+(H?nwHealthH(H):'');
+  const fund=T.fund?`<li>${niH('ok')}<span>קרנות: מחיר רשמי מ-${nn(dmy(T.fund))}${T.est?', ולצדו הערכה לפי המדד':''} ${whyBtn('fundpx')}</span></li>`:'';
+  const ok=T.chk.ok.length?`<li>${niH('ok')}<span>השווי זהה ב-${T.chk.ok.length} תצוגות.</span></li>`:'';
+  return `<div class="dk-trust ok one" id="dkTrust">${niH('ok','dt-ic')}<div class="dt-b"><b>המחירים והחדשות עדכניים</b><span class="dt-s">מחירים ${esc(ago(T.at))} · חדשות ${esc(H.at?ago(H.at):'—')}</span>
+    <details class="dt-d"><summary>פרטים</summary><ul>${fund}${ok}<li>${niH('ok')}<span>${esc(H.d)}</span></li></ul></details></div></div><span id="dkNews" class="ok" hidden></span>`}
 function trustH(T){
   if(!T)return '';
   const fund=T.fund?` · קרנות: מחיר רשמי מ-${nn(dmy(T.fund))}${T.est?', ולצדו הערכה לפי המדד':''} ${whyBtn('fundpx')}`:'';
@@ -28310,7 +28330,7 @@ function todoOf(m,A,T){
   // are not here: they are in בקרה, with a count on its button
   for(const a of A){if(a[0]==='ok'||ackd(a)||!HOMECAT.has(a[1]))continue; if(pxIss&&(a[1]==='מחיר'||a[1]==='נתונים'))continue; if(a[1]==='דוחות'&&(a.each||[]).some(e=>String(e.key).startsWith('rep:')))continue;
     const n=alertNav(a);
-    L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:cutH(a[2]),b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
+    L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:fShortH(a),b:(n?`<button type="button" class="dk-go" data-anav=""${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
     L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
