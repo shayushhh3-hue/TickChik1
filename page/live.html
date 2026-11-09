@@ -740,7 +740,12 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mypos,.ancard{margin:16px 0 6px} .mypos h3,.ancard h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
-.anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
+.anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.ancard .an-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .ancard .an-h h3{margin:0} .an-sw .chip{min-height:30px;padding:2px 12px;font-size:12.5px}
+.ancard .an-p{display:none} .ancard.an-pie .an-b{display:none} .ancard.an-pie .an-p{display:flex;justify-content:center;margin:8px 0}
+.ancard.an-pie .antr-r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px} .ancard.an-pie .antr-m{display:flex;flex-direction:column;align-items:center;text-align:center} .ancard.an-pie .antr-m .an-p{margin:0 0 4px}
+.andonut .dn-v{font-size:7.5px;font-weight:800;fill:var(--ink);font-family:var(--sans)} .andonut .dn-k{font-size:4.2px;fill:var(--muted);font-family:var(--sans)} .antr-m .andonut .dn-v{font-size:9px}
+.anleg small{color:var(--muted);font-weight:500}
+.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
 .anleg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--ink2)} .anleg span{display:inline-flex;align-items:center;gap:6px} .anleg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .anbar .sb,.anleg .sb i{background:#15803D} .anbar .ss,.anleg .ss i{background:#991B1B} .anbar.sm{height:8px;margin-top:0}
 .antr{margin-top:12px} .antr .k,.angr .k{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px} .antr-r{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
@@ -25395,6 +25400,14 @@ function secEvents(sym,t0,t1){const E=[]; let c=null; try{c=RSX[sym]||((RS&&RS.c
 // many analysts, the average target and how far it is from the price now, and the range of the targets. Their opinion,
 // from the sources with the owner's keys (Finnhub, FMP) and marked so; the page itself does not recommend
 const AN_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'החזקה','Sell':'מכירה','Strong Sell':'מכירה חזקה'};
+// 9.11 (the owner): the votes as a pie too; a switch "פסים | עוגה" on the card, kept in this browser
+const AN_COL={sb:'#15803D',b:'var(--gain)',h:'#A1A1AA',s:'var(--loss)',ss:'#991B1B'};
+let AN_VIEW='bar'; try{if(localStorage.getItem('tr_anview')==='pie')AN_VIEW='pie'}catch(e){}
+function anDonut(parts,size,center,label){const tot=parts.reduce((a,x)=>a+x[2],0); if(!tot)return ''; const r=15.9155, c=2*Math.PI*r; let off=0;
+  const segs=parts.filter(x=>x[2]>0).map(x=>{const len=x[2]/tot*c, el=`<circle r="${r}" cx="21" cy="21" fill="none" stroke="${AN_COL[x[0]]}" stroke-width="${size>80?7:8}" stroke-dasharray="${len.toFixed(3)} ${(c-len).toFixed(3)}" stroke-dashoffset="${(-off).toFixed(3)}"/>`; off+=len; return el}).join('');
+  return `<svg class="andonut" viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 21 21)">${segs}</g>${center?`<text x="21" y="${size>80?20.5:22.5}" text-anchor="middle" class="dn-v">${esc(center)}</text>${size>80?'<text x="21" y="27" text-anchor="middle" class="dn-k">קנייה</text>':''}`:''}</svg>`}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-anview]'); if(!b)return; AN_VIEW=b.dataset.anview==='pie'?'pie':'bar'; try{localStorage.setItem('tr_anview',AN_VIEW)}catch(e){}
+  for(const c of document.querySelectorAll('.ancard'))c.classList.toggle('an-pie',AN_VIEW==='pie'); for(const x of document.querySelectorAll('[data-anview]'))x.setAttribute('aria-pressed',String(x.dataset.anview===AN_VIEW))});
 function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.buy+rs.votes.hold+rs.votes.sell)>0?rs.votes:null, t=+rs.target>0?+rs.target:null;
   const v5=rs.votes5&&(rs.votes5.sb+rs.votes5.b+rs.votes5.h+rs.votes5.s+rs.votes5.ss)>0?rs.votes5:null;
   if(!rs.rating&&!v&&!v5&&!t)return '';
@@ -25406,12 +25419,14 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   // how the votes split: five levels when the source gives them, three otherwise
   const L5=v5?[['sb','קנייה חזקה',v5.sb],['b','קנייה',v5.b],['h','החזקה',v5.h],['s','מכירה',v5.s],['ss','מכירה חזקה',v5.ss]]:v?[['b','קנייה',v.buy],['h','החזקה',v.hold],['s','מכירה',v.sell]]:[];
   const tot=L5.reduce((a,x)=>a+x[2],0), w=x=>tot?Math.round(x/tot*1000)/10:0;
-  const bar=tot?`<div class="anbar" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
-    <div class="anleg">${L5.map(x=>`<span class="${x[0]}"><i></i>${x[1]} ${x[2]}</span>`).join('')}</div>`:'';
+  const buyPct=tot?Math.round(L5.filter(x=>x[0]==='sb'||x[0]==='b').reduce((a,x)=>a+x[2],0)/tot*100):0;
+  const bar=tot?`<div class="anbar an-b" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
+    <div class="an-p">${anDonut(L5,112,buyPct+'%',L5.map(x=>x[2]+' '+x[1]).join(', '))}</div>
+    <div class="anleg">${L5.map(x=>`<span class="${x[0]}"><i></i>${x[1]} ${x[2]}${tot?` <small>(${Math.round(x[2]/tot*100)}%)</small>`:''}</span>`).join('')}</div>`:'';
   // the last months: the share of "buy" (strong and plain) month by month, and the first against the last in words
   const H=Array.isArray(rs.recHist)?rs.recHist.filter(x=>x&&(x.sb+x.b+x.h+x.s+x.ss)>0):[];
   let trend=''; if(H.length>=2){const share=x=>(x.sb+x.b)/(x.sb+x.b+x.h+x.s+x.ss), a=share(H[0]), z=share(H[H.length-1]), mo=p=>HEM[+String(p).slice(5,7)-1]||p;
-    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="antr-r">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), wh=Math.round(x.h/n2*100); return `<div class="antr-m"><div class="anbar sm" role="img" aria-label="${mo(x.p)}: ${wb}% קנייה"><i class="b" style="width:${wb}%"></i><i class="h" style="width:${wh}%"></i><i class="s" style="width:${100-wb-wh}%"></i></div><span>${mo(x.p)} · ${wb}% קנייה</span></div>`}).join('')}</div>
+    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="antr-r">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), wh=Math.round(x.h/n2*100); return `<div class="antr-m"><div class="anbar sm an-b" role="img" aria-label="${mo(x.p)}: ${wb}% קנייה"><i class="b" style="width:${wb}%"></i><i class="h" style="width:${wh}%"></i><i class="s" style="width:${100-wb-wh}%"></i></div><div class="an-p">${anDonut([['sb','קנייה חזקה',x.sb],['b','קנייה',x.b],['h','החזקה',x.h],['s','מכירה',x.s],['ss','מכירה חזקה',x.ss]],54,wb+'%',`${mo(x.p)}: ${wb}% קנייה`)}</div><span>${mo(x.p)} · ${wb}% קנייה</span></div>`}).join('')}</div>
       <p class="s">${Math.abs(z-a)<0.02?'כמעט בלי שינוי':(z>a?'יותר אנליסטים ממליצים לקנות':'פחות אנליסטים ממליצים לקנות')}: ${Math.round(a*100)}% ב${mo(H[0].p)}, ${Math.round(z*100)}% ב${mo(H[H.length-1].p)}.</p></div>`}
   // what is expected of the next report
   const e=rs.est&&rs.est.date&&rs.est.date>=tzDay('Asia/Jerusalem')?rs.est:null;
@@ -25421,7 +25436,8 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   const G=Array.isArray(rs.gradesL)?rs.gradesL.slice(0,5):[];
   const chg=G.length?`<div class="angr"><span class="k">שינויי דירוג אחרונים</span><ul>${G.map(x=>`<li class="${x.act==='upgrade'?'up':x.act==='downgrade'?'down':''}"><span class="d">${dmy(x.d)}</span> <bdi>${esc(x.firm)}</bdi>: ${x.from&&x.from!==x.to?`<bdi>${esc(x.from)}</bdi> ← `:''}<bdi>${esc(x.to)}</bdi>${ACT[x.act]?` <span class="a">(${ACT[x.act]})</span>`:''}</li>`).join('')}</ul></div>`:'';
   const when=rs.recAt?`נכון ל-${dmy(String(rs.recAt).slice(0,10))}`:rs.updatedAt?rsWhen(rs.updatedAt):'';
-  return `<section class="ancard" aria-label="דירוג האנליסטים"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${trend}${est}${chg}
+  const sw=tot||H.length?`<div class="chips an-sw" role="group" aria-label="תצוגה"><button type="button" class="chip" data-anview="bar" aria-pressed="${AN_VIEW!=='pie'}">פסים</button><button type="button" class="chip" data-anview="pie" aria-pressed="${AN_VIEW==='pie'}">עוגה</button></div>`:'';
+  return `<section class="ancard${AN_VIEW==='pie'?' an-pie':''}" aria-label="דירוג האנליסטים"><div class="an-h"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${sw}</div>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${trend}${est}${chg}
     <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${when?' · '+when:''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid

@@ -3257,3 +3257,17 @@ test('9.11 the fit cards: the logo and the name open the security\'s page',T,asy
   assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,open:!document.getElementById('secPage').hidden})),{page:'search',open:true});
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+test('9.11 the analysts as bars or as a pie: a switch on the card, kept in the browser',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const k='research/s_NVDA', D0=store.getDoc(k);
+  store.setDoc(k,{...(D0.exists?D0.data:{}),rating:'Buy',analysts:32,votes:{buy:27,hold:5,sell:0},votes5:{sb:8,b:19,h:5,s:0,ss:0},recHist:[{p:'2026-10',sb:8,b:18,h:7,s:0,ss:0},{p:'2026-11',sb:8,b:19,h:5,s:0,ss:0}],recAt:'2026-11-01'},{silent:true});
+  try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
+    await pg.fill('#sq','NVDA'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="NVDA"]'); await pg.waitForSelector('#secPage .ancard',{timeout:10000});
+    const vis=()=>pg.evaluate(()=>({bar:!!document.querySelector('.ancard .an-b').offsetParent,pie:!!document.querySelector('.ancard .an-p .andonut')&&!!document.querySelector('.ancard .an-p').offsetParent}));
+    assert.deepEqual(await vis(),{bar:true,pie:false},'bars by default');
+    await pg.click('#secPage [data-anview="pie"]'); assert.deepEqual(await vis(),{bar:false,pie:true},'the pie');
+    assert.match(await pg.textContent('.ancard .an-p .dn-v'),/^84%$/,'the share of "buy" in the middle');
+    assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_anview')),'pie','kept');
+    await pg.click('#secPage [data-anview="bar"]'); assert.deepEqual(await vis(),{bar:true,pie:false});
+    assert.deepEqual(pg.errs,[]); await ctx.close()}finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
+});
