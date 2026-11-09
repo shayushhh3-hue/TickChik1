@@ -708,6 +708,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 /* 9.11: "במעקב" is a bookmark at the top-left of the security's page (filled when watched), not a button; "חזרה" is gone:
    the phone's own back goes back (openSec pushes a history entry, popstate closes the page) */
 .secp .top .secmark{margin-inline-start:auto;flex:none;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:inline-grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.secp .top .sub{text-align:start} .secp .top .sub .si{white-space:nowrap} .secp .top .sub .si+.si::before{content:"·";margin-inline-end:5px;color:var(--muted)}   /* 9.11: read right to left, the dot travels with its word (never alone at a line's end) */
 .secp .top .secmark svg{width:22px;height:22px} .secp .top .secmark.on{color:#fff;background:var(--grad,var(--accent));border-color:transparent} .secp .top .secmark:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .secp .big{display:flex;flex-direction:column;gap:0;direction:rtl;text-align:start;unicode-bidi:normal;font-size:inherit;line-height:inherit;letter-spacing:0;font-weight:inherit}
 .secp .pxrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap} .secp .pxrow .v.none{font-size:18px;font-weight:500;color:var(--muted);font-family:var(--sans)}
@@ -722,11 +723,11 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp .rng .rg-sht{display:none} @media (max-width:520px){.secp .rng .rg-lng{display:none} .secp .rng .rg-sht{display:inline} .secp .chips.rng .chip{padding-inline:6px;font-size:13.5px;min-width:0}}
 .sectools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
 .secp canvas:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:10px}
-.secp canvas{width:100%;height:230px;display:block;touch-action:pan-y;cursor:crosshair;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.secp canvas{width:100%;height:290px;display:block;touch-action:pan-y;cursor:crosshair;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .chread{background:var(--sunk);border-radius:14px;padding:10px;font-size:12.5px;line-height:1.5;color:var(--ink2);min-height:48px}
 /* 5.11: the box above the security chart as tiles, the holding's strip, the dollar/shekel switch */
 .chline{margin:2px 0 8px;font-size:13.5px;line-height:1.55;color:var(--ink2);min-height:1.55em} .chline b{font-family:var(--mono);font-weight:700;color:var(--ink);direction:ltr;unicode-bidi:isolate;white-space:nowrap} .chline b.up{color:var(--gain)} .chline b.down{color:var(--loss)} .chline small{color:var(--muted);font-size:12px}
-@media (max-width:520px){.chline{min-height:3.1em}} .pxrow .chg.nd{background:var(--sunk);color:var(--ink2)} .pxrow .chg.nd b{color:var(--ink)}
+@media (max-width:520px){.chline{min-height:3.1em}} .pxrow .chg.nd{background:none;color:var(--ink2)} .pxrow .chg.nd b{background:var(--sunk);color:var(--ink);font-weight:700}   /* 9.11: the day's date as a pill like the change pills, beside the price */
 .crx{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
 .crt{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .crt .k{font-size:12px;color:var(--muted);font-weight:600} .crt .v{font-size:17px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap}
@@ -758,6 +759,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
   .secp .top .secmark{grid-area:mk;align-self:start;margin:0;width:48px;height:48px;border-radius:14px}   /* 9.11: the same row and size as the logo tile, so the two line up */
   .sectools{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch} .sectools .ccsw{display:flex;align-self:stretch;justify-content:stretch} .sectools .ccsw button{flex:1} .sectools>.btn,.sectools>button{width:100%;justify-content:center;min-height:42px}
   .secp .pxrow{justify-content:space-between;flex-wrap:nowrap;gap:10px} .secp .chg{align-items:flex-end;text-align:end}
+  .secp canvas{height:320px}   /* 9.11: the chart has the room on a phone */
 }
 [data-adv] h2{font-size:16px;color:var(--ink2);font-weight:600} [data-adv]>.panel,[data-adv] .panel{box-shadow:none}
 .desk{padding:24px 26px;box-shadow:0 2px 4px rgb(11 18 32 / .06),0 10px 28px rgb(11 18 32 / .08)} .desk .dk-h h2{font-size:22px}
@@ -2725,7 +2727,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   /* 9.11: the home's header on a phone: the logo at the start of the first row and "לעדכן מחירים עכשיו" at its end (the
      top-left corner), the slogan and the price status under them */
   body[data-page="overview"] .hero .brand{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"wm px" "sub sub" "live live";align-items:center;column-gap:10px;row-gap:3px;width:100%;min-width:0}
-  body[data-page="overview"] .hero .brand .wm{grid-area:wm} body[data-page="overview"] .hero .brand-sub{grid-area:sub} body[data-page="overview"] .hero #fresh{grid-area:live} body[data-page="overview"] .hero #pxNow{grid-area:px;justify-self:end;align-self:center;margin:0}
+  body[data-page="overview"] .hero .brand .wm{grid-area:wm;justify-self:start} body[data-page="overview"] .hero .brand-sub{grid-area:sub} body[data-page="overview"] .hero #fresh{grid-area:live} body[data-page="overview"] .hero #pxNow{grid-area:px;justify-self:end;align-self:center;margin:0}
   /* the day's line in one row on a phone (the "למה?" button wrapped to a line of its own under a long day label) */
   .worth .wv .dayline{gap:2px 8px;align-items:center} .worth .wv .dayline .d{font-size:15px} .worth .wv .dayline .v{font-size:13px} .worth .wv .dayline .whybtn{min-height:22px;font-size:11.5px;padding:0 8px}
   body:not([data-page="overview"]) .hero .brand{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:10px;width:100%;min-width:0}
@@ -25290,7 +25292,7 @@ function renderSec(){SECHOV=-1;
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
-  pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(it.t==='S'&&it.sec?it.sec+' · מניה זרה':(TYPEL[it.t]||''))}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
+  pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
     <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     ${secPriceParts(it,pr,on,fx)[0]}
@@ -25487,7 +25489,9 @@ function drawSec(){
     if(false){const dd=new Date(hp[0]), lab=(spanD>400?(dd.getMonth()+1)+'.'+dd.getFullYear():dd.getDate()+'.'+(dd.getMonth()+1))+'  ·  '+fmtN(hp[1]); g.font='bold 13px '+FONT; const tw=g.measureText(lab).width+20, th=26;
       let px=hx-tw/2; px=Math.max(L,Math.min(L+PW-tw,px)); const py=hy-th-12>T?hy-th-12:hy+12;
       g.fillStyle=VB; g.beginPath(); g.roundRect?g.roundRect(px,py,tw,th,13):g.rect(px,py,tw,th); g.fill(); g.fillStyle='#FFFFFF'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(lab,px+tw/2,py+th/2+0.5)}}
-  secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq,{CC,NAT,iHi,iLo,MY,EV,fxNo});
+  // 9.11: with the chart in shekels, the price at the top is in shekels too (at today's rate), so the switch is seen
+  const fxNow=(Q&&Q.usdIls)||(typeof ALLQ!=='undefined'&&ALLQ&&ALLQ.fx)||0, pxNow=CC!==NAT&&pr&&pr.px>0&&fxNow?pr.px*fxNow:null;
+  secReadout(pts,base,last,SECHOV>=0&&SECHOV<pts.length?pts[SECHOV]:null,freq,{CC,NAT,iHi,iLo,MY,EV,fxNo,pxNow});
   // 5.11: the day under the finger (or the arrows) in words, for a screen reader
   {const iv=SECHOV>=0&&SECHOV<pts.length?SECHOV:pts.length-1, q=pts[iv]; cv.setAttribute('aria-valuemax',String(pts.length-1)); cv.setAttribute('aria-valuenow',String(iv)); cv.setAttribute('aria-valuetext',`${fullDate(q[0])}: ${fmtPx(q[1],CC)}, ${(q[1]/base-1)>=0?'עלייה':'ירידה'} של ${pct(Math.abs(q[1]/base-1)*100,1)} מתחילת הטווח`)}
   SECV={pts,x,L,PW};
@@ -25511,11 +25515,11 @@ function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return
   const row=document.querySelector('#secPage .big .pxrow'); if(row&&row.dataset.base==null)row.dataset.base=row.innerHTML;
   let H='';
   if(hp){const ch=hp[1]/base-1, toLast=last[1]/hp[1]-1, isLast=hp===last;
-    if(row){row.innerHTML=`<span class="v">${F(hp[1])}</span><span class="chg nd"><b>${(d=>d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear())(new Date(hp[0]))}</b><small>${isLast?'המחיר האחרון':'מחיר הסגירה'}</small></span>`; row.classList.add('hov')}
+    if(row){row.innerHTML=`<span class="v">${F(hp[1])}</span><span class="chg nd"><b>${(d=>d.getDate()+'.'+(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2))(new Date(hp[0]))}</b><small>${isLast?'המחיר האחרון':'מחיר הסגירה'}</small></span>`; row.classList.add('hov')}
     const near=EV.filter(e=>Math.abs(e.t-hp[0])<=win), tr=(MY.trades||[]).filter(t=>Math.abs(t.t-hp[0])<=win);
     H=[`${B(sg(ch),cls(ch))} מתחילת הטווח`,isLast?'':`${B(sg(toLast),cls(toLast))} עד היום`,MY.avg?`${B(sg(hp[1]/MY.avg-1),cls(hp[1]/MY.avg-1))} מול הממוצע שלך`:'',
       ...tr.map(t=>`${t.side==='buy'?'קנית':'מכרת'} ${nn(Math.abs(t.q))} יח׳ ב-${F(t.px)}`),...near.map(e=>esc(e.l))].filter(Boolean).join(' · ');
-  }else{if(row&&row.dataset.base!=null){row.innerHTML=row.dataset.base; row.classList.remove('hov')}
+  }else{if(row&&row.dataset.base!=null){row.innerHTML=row.dataset.base; row.classList.remove('hov'); if(X.pxNow){const v=row.querySelector('.v'); if(v)v.textContent=fmtPx(X.pxNow,ccy)}}
     const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, top=hi===last, fromHi=last[1]/hi[1]-1;
     H=[`${RNGIN[SECRNG]||''} ${B(sg(chAll),cls(chAll))}`,`שיא ${B(F(hi[1]))} (${D(hi[0])})`,top||Math.abs(fromHi)<0.0005?'':`${B('−'+pa(fromHi),'down')} מהשיא`].filter(Boolean).join(' · ')
       +(X.fxNo?'<br><small>שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.</small>':'')}

@@ -2932,7 +2932,7 @@ test('5.11 the security chart for reading: figures as tiles (the price, the chan
   await pg.evaluate(()=>document.getElementById('secChart').scrollIntoView({block:'center'})); await pg.waitForTimeout(200);
   const cb=await (await pg.$('#secChart')).boundingBox(); await pg.mouse.move(cb.x+cb.width*0.4,cb.y+cb.height/2); await pg.waitForTimeout(250);
   const h=await pg.evaluate(()=>({head:document.querySelector('#secPage .big .pxrow .v').textContent,pill:document.querySelector('#secPage .big .pxrow .chg').textContent,line:document.getElementById('secRead').textContent}));
-  assert.notEqual(h.head,r.head,'the price at the top is the day\'s'); assert.match(h.pill,/\d{1,2}\.\d{1,2}\.\d{4}/); assert.match(h.line,/מתחילת הטווח · [+−][\d.]+% עד היום/);
+  assert.notEqual(h.head,r.head,'the price at the top is the day\'s'); assert.match(h.pill,/^\d{1,2}\.\d{1,2}\.\d{2}מחיר הסגירה$/); assert.match(h.line,/מתחילת הטווח · [+−][\d.]+% עד היום/);
   await pg.focus('#secChart'); await pg.keyboard.press('Escape'); await pg.mouse.move(2,2); await pg.waitForTimeout(200);
   assert.equal(await pg.evaluate(()=>document.querySelector('#secPage .big .pxrow .v').textContent),r.head,'and back');
   // shekels without the rates' history: said, and the chart stays in dollars
