@@ -2354,9 +2354,18 @@ html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw
 .ix-tip .pl-how{padding:8px} .ix-tip .nwi-r>summary{min-height:40px}
 /* 31.10: the day in three lines, in the hero */
 body:not([data-page="overview"]) .hero .ktoday{display:none}
-.ktoday{display:flex;flex-direction:column;gap:5px;margin:10px 0 2px;padding:10px 12px;border-radius:14px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .22)} .ktoday[hidden]{display:none}
-.ktoday .tdl{margin:0;font-size:14px;line-height:1.55;color:var(--ink);text-align:start} .ktoday .tdl b{color:var(--vio-ink);font-weight:800} .ktoday .tdl-ok b{color:var(--gain)} .ktoday .tdl-todo b{color:#D97706}
-.ktoday .tdl .n{display:inline} .ktoday button.kt-go{display:inline;min-height:24px;background:none;border:0;box-shadow:none;padding:0 2px;color:var(--vio-ink);font:inherit;font-weight:700;white-space:nowrap;text-decoration:underline;text-underline-offset:3px;cursor:pointer} .ktoday .ix-dw{font-size:11.5px;padding:0 7px;vertical-align:middle}
+.ktoday{display:flex;flex-direction:column;gap:0;margin:10px 0 2px;padding:10px 12px 4px;border-radius:14px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .22)} .ktoday[hidden]{display:none}
+/* 9.11: a row per line: the label on top, the fact, one action at the end of the line, the details under it */
+.ktoday .tdl{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"k k" "b a" "s s";column-gap:10px;row-gap:3px;align-items:center;margin:0;padding:8px 0;border-top:1px solid rgb(124 58 237 / .14);font-size:14px;line-height:1.45;color:var(--ink);text-align:start}
+.ktoday .chsay-h+.tdl{border-top:0;padding-top:4px} .ktoday .tdl.noact .tdl-b{grid-column:1 / -1}
+.ktoday .tdl-k{grid-area:k;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted)} .ktoday .tdl-k .sym{font-size:12px;font-weight:800;color:var(--vio-ink)}
+.ktoday .tdl-b{grid-area:b;min-width:0;font-weight:600;overflow-wrap:anywhere} .ktoday .tdl-a{grid-area:a;justify-self:end} .ktoday .tdl-s{grid-area:s;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2)}
+.ktoday .tdl-b::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;display:none;margin-inline-end:7px;vertical-align:1px} .ktoday .tdl-todo .tdl-b::before,.ktoday .tdl-ok .tdl-b::before{display:inline-block} .ktoday .tdl-todo .tdl-b::before{background:#D97706} .ktoday .tdl-ok .tdl-b::before{background:var(--gain)}
+.ktoday .tdl-news .tdl-b{font-weight:500} .ktoday .tdl-since .tdl-b{font-weight:500;font-size:13.5px}
+.ktoday .n{display:inline-block;font-weight:800;white-space:nowrap} .ktoday .tdl-ils{white-space:nowrap} .ktoday .tdl-ils .n{font-weight:700}
+.ktoday .tdl-mv{display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px;background:rgb(124 58 237 / .09);border:1px solid rgb(124 58 237 / .16);white-space:nowrap} .ktoday .tdl-mv .sym{font-weight:800;font-size:12.5px} .ktoday .tdl-mv .n{font-size:12.5px;font-weight:700}
+.ktoday button.kt-go{display:inline-flex;align-items:center;min-height:28px;padding:0 11px;border-radius:999px;border:0;box-shadow:none;background:rgb(124 58 237 / .13);color:var(--vio-ink);font:inherit;font-size:12.5px;font-weight:800;white-space:nowrap;text-decoration:none;cursor:pointer} .ktoday button.kt-go:hover{background:rgb(124 58 237 / .2)}
+.ktoday .ix-dw{font-size:11.5px;padding:0 7px;vertical-align:middle}
 .status.trust.bad{border-color:rgb(239 68 68 / .55);color:#B91C1C} html[data-theme="dark"] .status.trust.bad{color:#FCA5A5}
 #dkNews.bad{border-color:rgb(239 68 68 / .45)}
 /* the floating ones step aside while the page scrolls down (a phone) */
@@ -19531,10 +19540,14 @@ function whyH(w){if(!w)return'';return `<details class="why"><summary>למה א�
 // ones that moved (or the most important news of the day) and what it may mean for them; and whether anything needs the
 // person. The facts of the day, never a reason invented for a move, and no advice
 function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
-  const L=[], sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
-  if(sv)L.push(['since','מאז הביקור האחרון',esc(sv)]);
-  if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2);
-    L.push(['day',dayLab(),Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו.':'התיק כמעט לא זז.'):`התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} (${nn(sgn(m.dayIls),up?'up':'down')})${top.length?`, בעיקר בגלל ${top.map(p=>`${symH(p.sym)} (${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')})`).join(' ו-')}`:''}.`])}
+  // 9.11: every line is a row: a small label, the fact in one line, the details under it, and one action at the end.
+  // The prose with bold labels and links in the middle read as a jumble on a phone
+  const L=[], row=(k,t,b,o={})=>L.push({k,t,b,s:o.s||'',a:o.a||''}), sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
+  if(sv)row('since','מאז הביקור האחרון',esc(sv));
+  if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2), lt=pfTradeDay();
+    const t=dayWord()==='היום'?(dayLive()?'היום · המסחר נמשך':'היום'):'יום המסחר האחרון'+(lt?' · '+dmy(lt):'');
+    row('day',t,Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו.':'התיק כמעט לא זז.'):`התיק ${dayVerb(up)} ב-${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')} <span class="tdl-ils">(${nn(sgn(m.dayIls),up?'up':'down')})</span>`,
+      {s:top.length?`בעיקר בגלל ${top.map(p=>`<span class="tdl-mv">${symH(p.sym)} ${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')}</span>`).join(' ')}`:''})}
   // the news: on the ones that moved first, else the most important of the last day and a half
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
@@ -19545,13 +19558,14 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
     if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
     if(!a){a=N.find(z=>z.lv==='crit')||null; sym=null}
     if(a){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear';
-      L.push(['news','בחדשות',`${sym?`על ${symH(sym)}: `:''}"${esc(imCut(a.title,90))}"${d!=='unclear'?' '+chBadge(d,true):''} ${sym&&SECKEY.test(sym)?`<button type="button" class="lnk kt-go" data-ixst="${esc(sym)}">מה זה אומר ›</button>`:`<button type="button" class="lnk kt-go" data-ixopen="${esc(a.k)}">לידיעה ›</button>`}`])}
-    else if(typeof PULSE!=='undefined'&&PULSE)L.push(['news','בחדשות','אין היום ידיעה חשובה על המניות שלך.'])}
+      row('news',`בחדשות${sym?' · '+symH(sym):''}`,`"${esc(imCut(a.title,90))}"${d!=='unclear'?' '+chBadge(d,true):''}`,
+        {a:sym&&SECKEY.test(sym)?`<button type="button" class="lnk kt-go" data-ixst="${esc(sym)}">מה זה אומר ›</button>`:`<button type="button" class="lnk kt-go" data-ixopen="${esc(a.k)}">לידיעה ›</button>`})}
+    else if(typeof PULSE!=='undefined'&&PULSE)row('news','בחדשות','אין היום ידיעה חשובה על המניות שלך.')}
   // what needs the person: the rules' findings (the same count as on "בקרה"), and the alerts not read
   {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
     const P=[c?(c===1?'חריגה אחת מהכללים שלך':c+' חריגות מהכללים שלך'):'',w?(w===1?'נושא אחד לבדיקה':w+' נושאים לבדיקה'):''].filter(Boolean);
-    L.push(P.length?['todo','לטיפול',`${P.join(' ו')} <button type="button" class="lnk kt-go" data-tab="risk">לבקרה ›</button>`]:['ok','לטיפול','אין משהו שדורש ממך פעולה עכשיו.'])}
-  return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(([k,t,h])=>`<p class="tdl tdl-${k}"><b>${t}:</b> ${h}</p>`).join(''):''}
+    if(P.length)row('todo','לטיפול',P.join(' ו'),{a:'<button type="button" class="lnk kt-go" data-tab="risk">לבקרה ›</button>'}); else row('ok','לטיפול','אין משהו שדורש ממך פעולה עכשיו.')}
+  return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(r=>`<div class="tdl tdl-${r.k}${r.a?'':' noact'}"><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span>${r.a?`<span class="tdl-a">${r.a}</span>`:''}${r.s?`<span class="tdl-s">${r.s}</span>`:''}</div>`).join(''):''}
 function renderDesk(m,A){
   try{const el=$('kToday'); if(el){const h=noPf()?'':todayH(m,A); el.hidden=!h; setH(el,h)}}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}

@@ -515,7 +515,10 @@ SCREENS.health=async(arg)=>{head('תקינות המערכת','',{range:true}); v
   if(s.byDay.length)lineChart($('chS'),s.byDay.map(x=>x.day),[{l:'בקשות',v:s.byDay.map(x=>x.n),c:'var(--c1)',area:true},{l:'שגיאות שרת',v:s.byDay.map(x=>x.err),c:'var(--bad)'}],{h:180}); else $('chS').innerHTML='<div class="empty">אין עדיין מדידות.</div>';
   table($('tblH'),{rows:items,search:i=>i.name+' '+(i.note||''),filters:[{k:'state',l:'מצב',get:i=>i.state,opts:Object.entries(STATE).map(([k,v])=>[k,v[1]])}],
     cols:[{k:'name',l:'מקור',cls:'wrap'},{k:'state',l:'מצב',sv:i=>({bad:0,warn:1,ok:2,off:3})[i.state],f:i=>pill(i.state)},{k:'okAt',l:'עבד לאחרונה',f:i=>`<span title="${esc(dt(i.okAt))}">${esc(i.okAt?ago(i.okAt):'—')}</span>`},{k:'note',l:'מה קרה',cls:'wrap',f:i=>`<span style="font-size:12.5px;color:var(--ink2)">${esc(i.note||'')}</span>`}]});
-  for(const b of view.querySelectorAll('[data-job]'))b.onclick=async()=>{b.disabled=true; try{await post('jobs/'+b.dataset.job); $('jM').className='msg ok'; $('jM').textContent=`"${b.textContent}" נכנסה לתור.`}catch(e){$('jM').className='msg bad'; $('jM').textContent=e.message} setTimeout(()=>b.disabled=false,4000)}};
+  for(const b of view.querySelectorAll('[data-job]'))b.onclick=async()=>{b.disabled=true; try{await post('jobs/'+b.dataset.job); $('jM').className='msg ok'; $('jM').textContent=`"${b.textContent}" נכנסה לתור.`}catch(e){$('jM').className='msg bad'; $('jM').textContent=e.message} setTimeout(()=>b.disabled=false,4000)}
+  // 9.11: opened for one card (from a notification or an incident): scroll to it and light it for a moment
+  if(arg){const el=$(arg==='consist'?'csCard':arg); if(el){el.scrollIntoView({block:'start'}); el.classList.add('lit'); setTimeout(()=>el.classList.remove('lit'),2500)}}
+};
 
 // ---- the incidents: opened by themselves, closed by themselves, or handled by a person ----
 SCREENS.incidents=async()=>{head('תקלות ואירועים','נפתחות לבד כשמקור מפסיק לעבוד או כשמדד חוצה את הסף, ונסגרות לבד כשהוא חוזר. מי שמטפל יכול לקחת, לתעד ולסגור.'); view.innerHTML=loading(3);
@@ -535,8 +538,6 @@ SCREENS.incidents=async()=>{head('תקלות ואירועים','נפתחות ל�
   if($('chkGo'))$('chkGo').onclick=async()=>{try{const r=await post('incidents/check'); msg(r.opened?`נפתחו ${r.opened} תקלות.`:'הבדיקה רצה; לא נפתחה תקלה חדשה.',true); setTimeout(route,800)}catch(e){msg(e.message,false)}};
   for(const b of view.querySelectorAll('[data-iact]'))b.onclick=async()=>{const a=b.closest('[data-inc]'), id=a.dataset.inc; b.disabled=true;
     try{await post('incidents/'+id,{status:b.dataset.iact,owner:$('own'+id).value||null,resolution:$('res'+id).value}); route()}catch(e){b.disabled=false; alertBox(a,e.message)}};
-  // 9.11: opened for one card (from a notification or an incident): scroll to it and light it for a moment
-  if(arg){const el=$(arg==='consist'?'csCard':arg); if(el){el.scrollIntoView({block:'start'}); el.classList.add('lit'); setTimeout(()=>el.classList.remove('lit'),2500)}}
 };
 const alertBox=(el,t)=>{let m=el.querySelector('.msg'); if(!m){m=document.createElement('div'); el.append(m)} m.className='msg bad'; m.textContent=t};
 
