@@ -748,6 +748,9 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .anc-c i+i{box-shadow:inset 0 1px 0 rgb(255 255 255 / .55)} .anc-c .sb{background:#15803D} .anc-c .b{background:var(--gain)} .anc-c .h{background:#A1A1AA} .anc-c .s{background:var(--loss)} .anc-c .ss{background:#991B1B}
 .andonut .dn-v{font-size:7.5px;font-weight:800;fill:var(--ink);font-family:var(--sans)} .andonut .dn-k{font-size:4.2px;fill:var(--muted);font-family:var(--sans)} .antr-m .andonut .dn-v{font-size:9px}
 .anleg small{color:var(--muted);font-weight:500}
+.anfan{margin-top:14px} .anfan .k{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px} .anfan-s{width:100%;height:auto;display:block;max-width:520px;margin:0 auto;direction:ltr} .anfan-s text{direction:ltr;unicode-bidi:plaintext}
+.anfan-s text{font-family:var(--sans)} .anfan-s .af-k{font-size:11px;font-weight:800;fill:var(--ink)} .anfan-s .af-v{font-size:12.5px;font-weight:700;fill:var(--ink)} .anfan-s .af-p{font-size:11.5px;font-weight:800}
+.anfan-s .af-ax{font-size:10.5px;fill:var(--muted)} .anfan .s{margin:4px 0 0;font-size:12px;color:var(--muted)}
 .anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
 .anleg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--ink2)} .anleg span{display:inline-flex;align-items:center;gap:6px} .anleg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .anbar .sb,.anleg .sb i{background:#15803D} .anbar .ss,.anleg .ss i{background:#991B1B} .anbar.sm{height:8px;margin-top:0}
@@ -25411,6 +25414,29 @@ function anDonut(parts,size,center,label){const tot=parts.reduce((a,x)=>a+x[2],0
   return `<svg class="andonut" viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 21 21)">${segs}</g>${center?`<text x="21" y="${size>80?20.5:22.5}" text-anchor="middle" class="dn-v">${esc(center)}</text>${size>80?'<text x="21" y="27" text-anchor="middle" class="dn-k">קנייה</text>':''}`:''}</svg>`}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-anview]'); if(!b)return; AN_VIEW=b.dataset.anview==='pie'?'pie':'bar'; try{localStorage.setItem('tr_anview',AN_VIEW)}catch(e){}
   for(const c of document.querySelectorAll('.ancard'))c.classList.toggle('an-pie',AN_VIEW==='pie'); for(const x of document.querySelectorAll('[data-anview]'))x.setAttribute('aria-pressed',String(x.dataset.anview===AN_VIEW))});
+// 9.11 (the owner): the analysts' 12-month targets as a fan: the last 12 months of the price on one side, and from today's
+// price three dotted lines to the lowest, the median and the highest target on the other. Our own drawing over our own
+// sources (Finnhub/FMP targets, the site's closes); the targets are the analysts' opinion, not the page's forecast
+function anFanSvg(key,rs,px,ccy){const hi=+rs.targetHi, lo=+rs.targetLo, med=+rs.targetMed>0?+rs.targetMed:+rs.target; if(!(hi>0&&lo>0&&med>0&&px>0))return '';
+  const S=CLOSES[key], from=Date.now()-366*864e5, P=[]; if(S&&S.d&&S.c)for(let i=0;i<S.d.length;i++){const t=Date.parse(S.d[i]); if(t>=from&&S.c[i]!=null)P.push([t,+S.c[i]])}
+  P.push([Date.now(),px]);
+  const W=340,H=230,X0=8,XM=176,XR=236,T=18,B=34, all=[...P.map(p=>p[1]),hi,lo,med], mn=Math.min(...all), mx=Math.max(...all), pad=(mx-mn)*.06||mx*.05;
+  const y=v=>T+(mx+pad-v)/((mx-mn+2*pad)||1)*(H-T-B), t0=P[0][0], t1=Date.now(), x=t=>X0+(t-t0)/((t1-t0)||1)*(XM-X0);
+  const line=P.length>1?`<polyline points="${P.map(p=>x(p[0]).toFixed(1)+','+y(p[1]).toFixed(1)).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`:'';
+  const ch=v=>(v/px-1)*100, f=v=>fmtPx(v,ccy), cy=y(px);
+  // the labels: never on top of each other
+  let L=[['hi','הגבוה',hi],['med',+rs.targetMed>0?'החציון':'הממוצע',med],['lo','הנמוך',lo]].map(a=>({k:a[0],l:a[1],v:a[2],y:y(a[2])})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<L.length;i++)if(L[i].y-L[i-1].y<44)L[i].y=L[i-1].y+44; const over=L[L.length-1].y-(H-B-6); if(over>0)for(const a of L)a.y-=over; if(L[0].y<T+10){const d=T+10-L[0].y; for(const a of L)a.y+=d}
+  const col={hi:'var(--gain)',med:'var(--ink)',lo:'var(--loss)'};
+  return `<svg class="anfan-s" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`יעדי האנליסטים ל-12 חודשים: הגבוה ${f(hi)}, ${L.find(a=>a.k==='med').l} ${f(med)}, הנמוך ${f(lo)}; המחיר עכשיו ${f(px)}`)}" dir="ltr">
+    <line x1="${XM}" y1="${T-8}" x2="${XM}" y2="${H-B+6}" stroke="var(--muted)" stroke-dasharray="2 3" stroke-width="1"/>${line}
+    ${L.map(a=>`<line x1="${XM}" y1="${cy.toFixed(1)}" x2="${XR}" y2="${y(a.v).toFixed(1)}" stroke="${col[a.k]}" stroke-width="2.4" stroke-dasharray="1 4.5" stroke-linecap="round"/>`).join('')}
+    <circle cx="${XM}" cy="${cy.toFixed(1)}" r="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>
+    ${L.map(a=>`<g class="af-l"><text x="${W-4}" y="${(a.y-12).toFixed(1)}" text-anchor="end" class="af-k">${a.l}</text><text x="${W-4}" y="${(a.y+3).toFixed(1)}" text-anchor="end" class="af-v">${esc(f(a.v))}</text><text x="${W-4}" y="${(a.y+17).toFixed(1)}" text-anchor="end" class="af-p" fill="${ch(a.v)>=0?'var(--gain)':'var(--loss)'}">${ch(a.v)>=0?'▲ +':'▼ '}${Math.abs(ch(a.v)).toFixed(1)}%</text></g>`).join('')}
+    <g class="af-now"><rect x="${XM-86}" y="${(cy-40).toFixed(1)}" width="76" height="32" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="${XM-14}" y="${(cy-27).toFixed(1)}" text-anchor="end" class="af-k">עכשיו</text><text x="${XM-14}" y="${(cy-13).toFixed(1)}" text-anchor="end" class="af-v">${esc(f(px))}</text></g>
+    <text x="${(X0+XM)/2}" y="${H-10}" text-anchor="middle" class="af-ax">השנה שעברה</text><text x="${(XM+W)/2}" y="${H-10}" text-anchor="middle" class="af-ax">השנה הבאה (היעדים)</text></svg>`}
+function anFanRefresh(){const el=document.querySelector('#secPage .anfan[data-k]'); if(!el)return; const rs=(RSX[el.dataset.k]||RSX[SEC]); if(!rs)return; const pr=priceOf(el.dataset.k); if(!pr||!(pr.px>0))return;
+  const h=anFanSvg(el.dataset.k,rs,pr.px,pr.ccy&&pr.ccy!=='PTS'?pr.ccy:'USD'); if(h)el.querySelector('.anfan-b').innerHTML=h}
 function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.buy+rs.votes.hold+rs.votes.sell)>0?rs.votes:null, t=+rs.target>0?+rs.target:null;
   const v5=rs.votes5&&(rs.votes5.sb+rs.votes5.b+rs.votes5.h+rs.votes5.s+rs.votes5.ss)>0?rs.votes5:null;
   if(!rs.rating&&!v&&!v5&&!t)return '';
@@ -25443,7 +25469,10 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   const chg=G.length?`<div class="angr"><span class="k">שינויי דירוג אחרונים</span><ul>${G.map(x=>`<li class="${x.act==='upgrade'?'up':x.act==='downgrade'?'down':''}"><span class="d">${dmy(x.d)}</span> <bdi>${esc(x.firm)}</bdi>: ${x.from&&x.from!==x.to?`<bdi>${esc(x.from)}</bdi> ← `:''}<bdi>${esc(x.to)}</bdi>${ACT[x.act]?` <span class="a">(${ACT[x.act]})</span>`:''}</li>`).join('')}</ul></div>`:'';
   const when=rs.recAt?`נכון ל-${dmy(String(rs.recAt).slice(0,10))}`:rs.updatedAt?rsWhen(rs.updatedAt):'';
   const sw=tot||H.length?`<div class="chips an-sw" role="group" aria-label="תצוגה"><button type="button" class="chip" data-anview="bar" aria-pressed="${AN_VIEW!=='pie'}">פסים</button><button type="button" class="chip" data-anview="pie" aria-pressed="${AN_VIEW==='pie'}">עוגה</button></div>`:'';
-  return `<section class="ancard${AN_VIEW==='pie'?' an-pie':''}" aria-label="דירוג האנליסטים"><div class="an-h"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${sw}</div>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${trend}${est}${chg}
+  // the fan: in the targets' own currency (a Tel Aviv share shown through its US listing is drawn with the US price)
+  const fk=rs.twinOf||k, fp=rs.twinOf?priceOf(rs.twinOf):pr, fc=fp&&fp.ccy&&fp.ccy!=='PTS'?fp.ccy:'USD';
+  const fan=rs.targetHi>0&&rs.targetLo>0&&fp&&fp.px>0&&(!rs.twinOf||fc==='USD')?`<div class="anfan" data-k="${esc(fk)}"><span class="k">יעדי המחיר של האנליסטים ל-12 חודשים</span><div class="anfan-b">${anFanSvg(fk,rs,fp.px,fc)}</div><p class="s">הקווים מחברים את המחיר עכשיו ליעד הנמוך, ל${+rs.targetMed>0?'חציון':'ממוצע'} ולגבוה שהאנליסטים פרסמו${rs.analysts?` (${rs.analysts} אנליסטים)`:''}. זו דעתם, לא תחזית של הדף; יעדים מתעדכנים ומתפספסים.</p></div>`:'';
+  return `<section class="ancard${AN_VIEW==='pie'?' an-pie':''}" aria-label="דירוג האנליסטים"><div class="an-h"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${sw}</div>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${fan}${trend}${est}${chg}
     <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${when?' · '+when:''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid
@@ -25460,6 +25489,7 @@ const HEM=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יונ׳','יול
 function niceStep(span,n){const raw=span/n,p=Math.pow(10,Math.floor(Math.log10(raw)));for(const m of [1,2,2.5,5,10])if(raw<=m*p)return m*p;return 10*p}
 function fmtN(v){return v.toLocaleString('en-US',{maximumFractionDigits:v<10?2:v<1000?1:0,minimumFractionDigits:v<10?2:0})}
 function drawSec(){
+  try{anFanRefresh()}catch(e){}   // the targets' fan draws its past line once the closes are in
   const cv=$('secChart'),note=$('secChartNote'); if(!cv)return;
   const d=CLOSES[SEC]; const days={'1w':7,'1m':31,'3m':92,'6m':183,'1y':366,'5y':1827,'max':Infinity}[SECRNG]||92;
   const from=days===Infinity?0:Date.now()-days*864e5;

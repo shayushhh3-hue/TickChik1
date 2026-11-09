@@ -3271,3 +3271,13 @@ test('9.11 the analysts as bars or as a pie: a switch on the card, kept in the b
     await pg.click('#secPage [data-anview="bar"]'); assert.deepEqual(await vis(),{bar:true,pie:false});
     assert.deepEqual(pg.errs,[]); await ctx.close()}finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
 });
+test('9.11 the analysts\' targets as a fan: the last year\'s price, and from today\'s price lines to the low, the median and the high target',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const k='research/s_NVDA', D0=store.getDoc(k); const px=store.getDoc('quotes/latest').data.prices.NVDA;
+  store.setDoc(k,{...(D0.exists?D0.data:{}),rating:'Buy',analysts:32,votes5:{sb:8,b:19,h:5,s:0,ss:0},target:px*1.25,targetLo:px*0.8,targetMed:px*1.22,targetHi:px*1.6,recAt:'2026-11-01'},{silent:true});
+  try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
+    await pg.fill('#sq','NVDA'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="NVDA"]'); await pg.waitForSelector('#secPage .anfan svg',{timeout:10000}); await pg.waitForTimeout(1200);
+    const v=await pg.evaluate(()=>{const f=document.querySelector('#secPage .anfan'); return {txt:f.textContent.replace(/\s+/g,' '),lines:f.querySelectorAll('line[stroke-dasharray="1 4.5"]').length,past:!!f.querySelector('polyline')}});
+    assert.equal(v.lines,3); assert.ok(v.past,'the last year\'s price'); assert.match(v.txt,/הגבוה.*\+60\.0%/); assert.match(v.txt,/החציון.*\+22\.0%/); assert.match(v.txt,/הנמוך.*20\.0%/); assert.match(v.txt,/לא תחזית של הדף/);
+    assert.deepEqual(pg.errs,[]); await ctx.close()}finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
+});
