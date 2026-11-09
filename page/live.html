@@ -1983,9 +1983,10 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-tpk .acts{padding:4px 14px 12px} .nx-setb{display:flex;flex-direction:column;gap:10px;margin-top:10px} .nx-setb>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px} .nx-setb .check{font-size:13px}
 .nxdot{appearance:none;-webkit-appearance:none;padding:0;border:0;display:inline-block;width:8px;height:8px;border-radius:50%;background:#B91C1C;margin-inline-start:6px;vertical-align:middle;box-shadow:0 0 0 2px rgb(185 28 28 / .2)} .nxdot.imp{background:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .2)}
 /* 9.11: an alert not yet read about a holding: a halo around its logo, in the alert's colour, and the logo opens it */
-.lg.nx-crit,.lg.nx-imp{cursor:pointer;overflow:visible} .lg.nx-crit::after,.lg.nx-imp::after{content:"";position:absolute;inset:-4px;border-radius:inherit;border:2.5px solid #B91C1C;box-shadow:0 0 0 2px rgb(185 28 28 / .18);pointer-events:none;animation:nxhalo 2.4s ease-in-out infinite} .lg.nx-imp::after{border-color:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .18)}
-@keyframes nxhalo{0%,100%{opacity:1}50%{opacity:.45}} @media (prefers-reduced-motion:reduce){.lg.nx-crit::after,.lg.nx-imp::after{animation:none}}
-.lg.nx-crit .sp,.lg.nx-imp .sp{border-radius:inherit}
+/* the halo is the tile's own edge: the grey border becomes the alert's colour, with a glow that breathes outward */
+.lg.nx-crit,.lg.nx-imp{cursor:pointer;--hc:185 28 28;box-shadow:inset 0 0 0 1px rgb(var(--hc) / .9),0 0 0 2px rgb(var(--hc)),0 0 0 4px rgb(var(--hc) / .22),0 0 12px 2px rgb(var(--hc) / .35)!important;animation:nxhalo 2.4s ease-in-out infinite} .lg.nx-imp{--hc:180 83 9}
+@keyframes nxhalo{0%,100%{box-shadow:inset 0 0 0 1px rgb(var(--hc) / .9),0 0 0 2px rgb(var(--hc)),0 0 0 4px rgb(var(--hc) / .22),0 0 12px 2px rgb(var(--hc) / .35)}50%{box-shadow:inset 0 0 0 1px rgb(var(--hc) / .9),0 0 0 2px rgb(var(--hc)),0 0 0 3px rgb(var(--hc) / .08),0 0 4px 0 rgb(var(--hc) / .15)}}
+@media (prefers-reduced-motion:reduce){.lg.nx-crit,.lg.nx-imp{animation:none}}
 .nx-secl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 @media (max-width:640px){.nx{padding:12px 13px} .nx h3{font-size:15px}}
 .hwb{display:none}
