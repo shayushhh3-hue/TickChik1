@@ -3375,14 +3375,14 @@ test('9.11 the control said short: a finding is its subject as a title and one s
   }finally{await ctx.close()}
 });
 
-test('9.11 the home\'s header on a phone: one row, the four buttons at the top-left on the logo\'s row, the accounts a switch in the value card, no slogan or long price-status line, the day said short',T,async t=>{
+test('9.11 the home\'s header on a phone: the four buttons at the top-left on the logo\'s row (icons centred), the slogan under the logo, the accounts a switch in the value card, no long price-status line, the day said short',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
   try{
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
-      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
+      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnTheme','btnRefresh','btnUpd'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
     assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
-    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan==='none','one header row: the accounts a switch in the value card, no slogan: '+JSON.stringify(r));
+    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan!=='none'&&r.ic.every(x=>x<=1),'the accounts a switch in the value card, the slogan under the logo, each icon in the middle of its square: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
     assert.equal(await pg.evaluate(()=>document.querySelector('#acctChips .chip[aria-pressed="true"]')?.dataset.a),a[1],'the switch changes the account');
     await tab(pg,'search'); await pg.waitForTimeout(500);

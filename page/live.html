@@ -89,7 +89,7 @@ body:not([data-page="overview"]) .hero .wch{display:none}
 .dayline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-top:6px}
 .dayline .v{font-weight:700;font-size:17px;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
 .dayline .d{font-size:14px;color:var(--ink2)}
-.acctsel{display:none;margin-inline-start:auto;font:inherit;font-size:13px;font-weight:700;color:var(--vio-ink);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:4px 26px 4px 12px;min-height:32px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 8px center;background-size:13px} .dayline .dm{flex-basis:100%;font-size:12.5px;color:var(--muted);margin-top:-4px} .dayline .dm[hidden]{display:none}
+.acctsel{display:none;margin-inline-start:auto;font:inherit;font-size:13px;font-weight:700;color:var(--vio-ink);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:4px 26px 4px 12px;min-height:32px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 8px center;background-size:13px} .dayline .dm{font-size:12.5px;color:var(--muted)} .dayline .dl-br{flex-basis:100%;height:0;margin:-3px 0} .dayline .dm[hidden]{display:none}
 .worth>.d{font-size:12px;color:var(--muted);margin-top:6px}
 .status{font:inherit;font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;border:0;cursor:pointer;background:var(--ok-bg);color:var(--ok-ink);align-self:flex-start;margin-top:10px}
 .status.warn{background:var(--warn-bg);color:var(--warn)} .status.crit{background:var(--crit-bg);color:var(--crit-ink)}
@@ -2799,12 +2799,15 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
      value and the line under the day's change say it. It shows only while a refresh runs, or when there is no portfolio */
   body[data-page="overview"] .wrap:not(.nopf) .hero #fresh:not(.busy){display:none}
   /* 9.11 (the owner's choice): one header row: no slogan; the accounts beside "שווי התיק"; "למה?" at the end of the line under the change */
-  body[data-page="overview"] .hero .brand-sub,body[data-page="overview"] .hero #acctChips{display:none!important}
+  body[data-page="overview"] .hero #acctChips{display:none!important}
   body[data-page="overview"] .worth .acctsel:not([hidden]){display:inline-block}
   /* the inner screens on a phone: the logo alone, no price-status line (it shows while a refresh runs) */
   body:not([data-page="overview"]) .wrap:not(.nopf) .hero #fresh:not(.busy){display:none}
-  body[data-page="overview"] .worth .wv .dayline .dm{flex:0 1 auto;flex-basis:62%;margin-top:0}
-  body[data-page="overview"] .hero #hdrAcct .tc-acct,body[data-page="overview"] .hero .hbtn{width:38px;height:38px;min-height:38px}
+  /* the header's buttons: the icon in the middle of the square (a fixed width with the content at the start pushed it aside) */
+  body[data-page="overview"] .hero .hbtn{width:38px;height:38px;min-height:38px;min-width:38px;padding:0;justify-content:center;gap:0;position:relative}
+  body[data-page="overview"] .hero .hbtn svg{width:18px;height:18px}
+  body[data-page="overview"] .hero .brand-sub{font-size:13px}
+  body[data-page="overview"] .worth .acctsel{font-size:12.5px;min-height:28px;padding:2px 24px 2px 10px}
   body[data-page="overview"] .hero #acctChips{grid-row:4;grid-column:1/-1;justify-self:start;margin-top:4px} body[data-page="overview"] .hero #pxNow{grid-row:4;grid-column:1/-1;justify-self:end;align-self:center;margin:4px 0 0}
 }
 </style>
@@ -2885,7 +2888,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <div class="wgrid">
           <div class="wv">
             <span class="big" id="kTotal">—</span>
-            <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><span class="dm" id="kDayM" hidden></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
+            <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><i class="dl-br" aria-hidden="true"></i><span class="dm" id="kDayM" hidden></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
             <div class="ktoday" id="kToday" aria-live="polite" hidden></div>
             <div class="pnlline" id="kPnlL" hidden></div><div class="pnlline pnlsub" id="kFxL" hidden></div><div class="pnlline pnlsub" id="kBenchL" hidden></div>
             <div class="d" id="kTotalD"></div>
