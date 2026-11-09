@@ -2358,3 +2358,17 @@ test('9.11 the content-security policy: report-only, enforced after a clean week
   const L=JSON.parse(M.get('cspReports')); assert.equal(L.filter(x=>x.directive==='connect-src').length,1); assert.equal(L.find(x=>x.directive==='connect-src').n,2);
   assert.equal(cspState(store,{env:{CSP_ENFORCE:'1'},now:at(14)}).mode,'enforce'); assert.equal(cspState(store,{env:{CSP_ENFORCE:'0'},now:at(30)}).mode,'report');
 });
+
+// 9.11: the symbol changes from FMP (a renamed or merged ticker): parsed defensively, the last 180 days, once a day
+test('9.11 the symbol changes from FMP: parsed, kept for 180 days, asked once a day, nothing without a key',async()=>{
+  const {fmpSymChgParse,symbolChanges}=await import('../server/fmp.js');
+  const now=new Date('2026-11-09T10:00:00Z');
+  const L=fmpSymChgParse([{date:'2026-10-20',companyName:'Old Co',oldSymbol:'oldx',newSymbol:'NEWX'},{date:'2025-01-01',oldSymbol:'AAA',newSymbol:'BBB'},{date:'2026-10-01',oldSymbol:'SAME',newSymbol:'SAME'},{date:'x',oldSymbol:'C',newSymbol:'D'}],now);
+  assert.deepEqual(L,[{old:'OLDX',new:'NEWX',date:'2026-10-20',name:'Old Co'}]);
+  assert.equal(fmpSymChgParse({error:'x'},now),null);
+  const M=new Map(), D=new Map(), store={getMeta:k=>M.get(k)??null,setMeta:(k,v)=>M.set(k,v),getDoc:p=>D.has(p)?{exists:true,data:D.get(p)}:{exists:false},setDoc:(p,d)=>D.set(p,d)};
+  let n=0; const f=async u=>{n++; assert.match(u,/\/stable\/symbol-change\?apikey=K$/); return {ok:true,status:200,json:async()=>[{date:'2026-11-02',oldSymbol:'ABC',newSymbol:'ABCD'}]}};
+  assert.equal(await symbolChanges(store,{key:'',fetch:f,now}),null); assert.equal(n,0,'no key: no call');
+  assert.equal(await symbolChanges(store,{key:'K',fetch:f,now}),1); assert.equal(await symbolChanges(store,{key:'K',fetch:f,now}),1); assert.equal(n,1,'once a day');
+  assert.equal(D.get('research/symchg').items[0].new,'ABCD');
+});

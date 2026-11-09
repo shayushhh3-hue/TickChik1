@@ -17840,6 +17840,11 @@ function alertsOf(m){
       A[A.length-1].why={src:'px',rows:[['הניירות',syms.join(', ')],['חלקם בתיק',pct(w,1)],['מה זה אומר',`השווי הכולל ו"החודש עד היום" לא כוללים את התנועה שלהם מאז המחיר האחרון`],['מה הלאה',fund?'קרנות נאמנות ישראליות נקראות ממאיה (אתר הבורסה) בעדכון המחירים הבא; אם המחיר לא יגיע גם אז, ספר לבעל האתר':'אפשר להזין "מחיר בדוח" בלשונית "התיק שלי", או לחכות לעדכון הבא']]};
       A[A.length-1].each=[{key:'nosrc:'+syms.join(','),text:A[A.length-1][2]}]; syms.forEach(x=>lagged.add(x))}}
   const old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)&&!lagged.has(k)&&!/^הערכה/.test(Q.stale[k])); if(old.length) A.push(['info','מחיר',`ל-${old.join(', ')} מוצג מחיר ישן יותר משאר הניירות.`,old]);
+  // 9.11 (the plan's item 4): a held ticker that changed (FMP's list of symbol changes): said, with the rename one tap away;
+  // a US security whose price stopped more than a week ago: maybe a merger, a rename or a delisting, said as a question
+  try{const C=symChgOf(m); for(const c of C){const a=['warn','פעולה תאגידית',`${c.old} עבר לסימול ${c.new} ב-${dmy(c.date)}${c.name?` (${c.name})`:''}. בתיק הוא עדיין ${c.old}, ולכן המחיר שלו לא מתעדכן.`,[c.old]]; a.symchg=c; A.push(a)}
+    const today=ilDay(), quiet=m.pos.filter(p=>!C.some(c=>c.old===p.sym)&&/^[A-Z][A-Z.\-]{0,6}$/.test(p.sym)&&Q.meta&&Q.meta[p.sym]&&Q.meta[p.sym].date&&(Date.parse(today)-Date.parse(Q.meta[p.sym].date))/864e5>=8).map(p=>p.sym);
+    if(quiet.length)A.push(['warn','פעולה תאגידית',`ל-${quiet.join(', ')} לא הגיע מחיר חדש יותר משבוע. ייתכן מיזוג, שינוי סימול או הפסקת מסחר; כדאי לבדוק בדוח של בית ההשקעות.`,quiet])}catch(e){}
   if(m.noRate&&m.noRate.length) A.push(['warn','מחיר',`ל-${m.noRate.join(', ')} יש מחיר במטבע שעדיין אין לדף שער שלו מול השקל, ולכן הם לא נכללים בשווי התיק. השער מגיע בעדכון המחירים הבא.`,m.noRate]);
   const noPx=[...new Set((P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).map(p=>p.sym))]; if(noPx.length) A.push(['warn','מחיר',`אין מחיר ל-${noPx.join(', ')}, ולכן הם לא נכללים בשווי התיק. אפשר להזין "מחיר בדוח" בלשונית "התיק שלי".`,noPx]);
   if(PL.items.length){const ps=planState(mAllNow()),can=PL.items.filter(i=>i.status==='todo'&&ps.sch.when[i.sym]===0).map(i=>i.sym);
@@ -19789,6 +19794,8 @@ const anaPromise=x=>ANA_FUTURE.test(x)&&!ANA_FUTURE_OK.test(x);
 const anaReject=(x,set)=>anaBad(x,set).length>0||anaAdvice(x)||anaInvented(x,set)||anaWrongWay(x,set)||anaPromise(x);
 // ---- ana:end ----
 function alertNav(a){const cat=a[1], it=(a[3]||[]).filter(Boolean);
+  if(a.symchg)return {t:'symchg:'+a.symchg.old+':'+a.symchg.new,l:'לעדכן ל-'+a.symchg.new};
+  if(cat==='פעולה תאגידית'&&it.length===1&&SECKEY.test(it[0]))return {t:'sec:'+it[0],l:'לדף של '+it[0]};
   if(cat==='חדשות'&&a.pl)return {t:'pl:'+a.pl,l:'להתראה'};
   if(cat==='חדשות'&&a.nx)return {t:'news:'+a.nx,l:'לידיעה'};
   if((cat==='ירידה'||cat==='דוחות'||cat==='דירוג')&&it.length===1&&SECKEY.test(it[0]))return {t:'sec:'+it[0],l:'לדף של '+it[0]};
@@ -19797,6 +19804,7 @@ const anaNavBtn=(n,cls)=>n?`<button type="button" class="btn sm${cls?' '+cls:''}
 function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));return} if(t==='prof'){try{profOpen()}catch(e){} return}
   if(t.startsWith('news:')){const id=t.slice(5); showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; NWLIM=Math.max(NWLIM,200); try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(id)}"]`); if(el){el.scrollIntoView({block:'center'}); el.querySelector('details.nw-more')?.setAttribute('open','')}},120); return}
   if(t.startsWith('pl:')){try{plOpen(t.slice(3))}catch(e){} return}
+  if(t.startsWith('symchg:')){const [,o,n]=t.split(':'); symChgApply(o,n); return}
   if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el){try{ptReveal(el)}catch(x){} el.scrollIntoView({block:'start'})}},80); return}
   // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
   if(t.startsWith('fold:')){const [,id,stk]=t.split(':'); if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab('risk',true); try{setNav(false)}catch(e){} try{foldSet(id,true)}catch(e){}
@@ -22522,6 +22530,17 @@ function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows(); SL
 // date; the total, and for a sale the gain or loss, before saving. Saving changes the holding (a new one when it is not
 // held), its cost, the account's cash, and keeps the trade in the history, like מכירה וקנייה in התיק שלי. Undo after.
 // A record in the portfolio, not an order: the site does not trade.
+// 9.11: the symbol changes of the portfolio's own securities (an old ticker held, its new one not yet), from FMP's list
+let SYMCHG=null;
+function symChgOf(m){const L=(SYMCHG&&SYMCHG.items)||[]; if(!L.length||!m||!m.pos)return []; const held=new Set(m.pos.map(p=>p.sym)), out=[];
+  for(const p of m.pos){const c=L.find(x=>x.old===p.sym); if(c&&!out.some(o=>o.old===c.old))out.push(c)} return out.filter(c=>held.has(c.old))}
+// the rename: every holding of the old ticker takes the new one (the units, the cost and the account stay); undone in one tap
+async function symChgApply(o,n){if(!canWrite||!P)return; if(dDirty){rtSay('יש שינויים בתיק שלי שלא נשמרו. שמור אותם קודם.'); return}
+  const P0=JSON.parse(JSON.stringify(P)), P2=JSON.parse(JSON.stringify(P)); let k=0;
+  for(const x of P2.positions||[])if(x.sym===o){x.sym=n; x.qAt=ilDay(); k++} if(!k)return;
+  P2.symChanges=[...(P2.symChanges||[]),{old:o,new:n,at:new Date().toISOString(),src:'FMP'}]; P2.updatedAt=new Date().toISOString();
+  try{await pset('portfolio',P2); P=P2; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){}
+    offerUndo(`${o} עודכן ל-${n} בתיק.`,async()=>{await pset('portfolio',P0); P=P0; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){}})}catch(e){}}
 let TRX=null;
 function trHeld(sym,acct){return ((P&&P.positions)||[]).filter(p=>p&&p.sym===sym&&+p.qty>0&&(acct==null||(p.acct||'')===acct))}
 function trOpen(k,side){const it=itemOf(k)||{sym:k}, sym=it.sym||k, pr=(()=>{try{return priceOf(k)}catch(e){return null}})(), held=trHeld(sym);
@@ -28399,6 +28418,7 @@ const CATI={'הפקדה':'M3 8h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z
   'סיור':'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM15 9l-2 5-5 2 2-5z','מיילים':'M3 6h18v12H3zM3 7l9 6 9-6',
   'ריכוז':'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 11.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1z',
   'סטייה':'M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z','ירידה':'M4 8l5 5 4-4 7 8M15 17h5v-5',
+  'פעולה תאגידית':'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16','סימול':'M4 21V8l8-5 8 5v13M9 21v-6h6v6M4 21h16',
   'מטבע':'M12 2v20M17 6.5c-1-1.5-3-2-5-2-3 0-5 1.5-5 3.5s2 3 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5c-2.3 0-4.3-.8-5.3-2.3',
   'נעים יחד':'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1','חפיפה':'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5',
   'נתונים':'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
@@ -28694,6 +28714,7 @@ try{refreshBack()}catch(e){}
   db.doc('research/news').onSnapshot(s=>{NEWSD=s.exists?s.data():null; nxIds((NEWSD&&NEWSD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){} try{newsCount()}catch(e){}})},fail);
   db.doc('research/x').onSnapshot(s=>{XD=s.exists?s.data():null; nxIds((XD&&XD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}})},fail);
   try{db.doc('research/stories').onSnapshot(s=>{STORIES=s.exists?s.data():null},()=>{})}catch(e){}
+  try{db.doc('research/symchg').onSnapshot(s=>{SYMCHG=s.exists?s.data():null; try{render()}catch(e){}},()=>{})}catch(e){}   // 9.11: renamed and merged tickers
   try{db.doc('research/insiders').onSnapshot(s=>{INS=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{})}catch(e){}
   try{db.doc('research/etf').onSnapshot(s=>{ETFD=s.exists?s.data():null; try{if(['risk','state'].includes(document.body.dataset.page))render()}catch(e){}
     // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)

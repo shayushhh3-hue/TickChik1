@@ -100,3 +100,21 @@ export async function confirmSplits(store,{key=fmpKey(),fetch:f=globalThis.fetch
   const cur=store.getDoc('quotes/latest'); if(!cur.exists)return 0; const S={...(cur.data.splits||{})};
   for(const [s,c] of Object.entries(out))if(S[s])S[s]={...S[s],conf:c,confAt:now.toISOString()};
   store.setDoc('quotes/latest',{...cur.data,splits:S}); log(`splits checked with FMP: ${Object.entries(out).map(([s,c])=>s+' '+c).join(', ')}`); return Object.keys(out).length}
+
+// 9.11 (the plan's item 4, the corporate actions beyond a split): the symbol changes FMP lists (a renamed ticker, and the
+// ticker a merged company takes), once a day, the last 180 days. It is market data, not anybody's holdings, so every page
+// reads it and matches its own securities; the page offers the rename (it never renames by itself)
+export function fmpSymChgParse(j,now=new Date()){if(!Array.isArray(j))return null; const from=new Date(now.getTime()-180*864e5).toISOString().slice(0,10), out=[];
+  for(const x of j){const o=String(x&&(x.oldSymbol||x.oldsymbol||x.old)||'').trim().toUpperCase(), n=String(x&&(x.newSymbol||x.newsymbol||x.new)||'').trim().toUpperCase(), d=String(x&&x.date||'').slice(0,10);
+    if(!/^[A-Z][A-Z.\-]{0,9}$/.test(o)||!/^[A-Z][A-Z.\-]{0,9}$/.test(n)||o===n||!/^\d{4}-\d\d-\d\d$/.test(d)||d<from)continue;
+    out.push({old:o,new:n,date:d,name:String(x.companyName||x.name||'').slice(0,80)})}
+  return out.sort((a,b)=>a.date<b.date?1:-1).slice(0,600)}
+export async function symbolChanges(store,{key=fmpKey(),fetch:f=globalThis.fetch,now=new Date(),log=()=>{},cap=FMP_DAY_CAP}={}){
+  if(!key)return null; const today=now.toISOString().slice(0,10), D=store.getDoc('research/symchg');
+  if(D.exists&&D.data&&D.data.day===today)return D.data.items.length;
+  let C={day:today,n:0}; try{const x=JSON.parse(store.getMeta('fmpCalls')||'null'); if(x&&x.day===today)C=x}catch(e){} if(C.n>=cap)return null; C.n++; try{store.setMeta('fmpCalls',JSON.stringify(C))}catch(e){}
+  try{const r=await f(`${FMP_BASE}/symbol-change?apikey=${encodeURIComponent(key)}`,{headers:{accept:'application/json'},signal:AbortSignal.timeout(15000)});
+    if(!r.ok){log('symbol changes: HTTP '+r.status); return null}
+    const items=fmpSymChgParse(await r.json(),now); if(!items){log('symbol changes: no list'); return null}
+    store.setDoc('research/symchg',{day:today,at:now.toISOString(),src:'FMP',items}); log(`symbol changes: ${items.length} in 180 days`); return items.length}
+  catch(e){log('symbol changes failed: '+(e&&e.message||e)); return null}}

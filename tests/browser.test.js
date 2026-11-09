@@ -3411,3 +3411,18 @@ test('9.11 a holding\'s row in התיק שלי: "קנייה / מכירה" opens 
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
 });
+
+test('9.11 a corporate action: a held ticker that changed (FMP\'s list) is said in the control with the rename one tap away, and undone',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, sym=P0.positions.find(p=>/^[A-Z]{2,5}$/.test(p.sym)).sym, nw=sym+'Z';
+  store.setDoc('research/symchg',{day:'2026-11-09',items:[{old:sym,new:nw,date:'2026-11-02',name:'Test Co'}]});
+  try{const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(1200);
+    await pg.evaluate(()=>{for(const d of document.querySelectorAll('#alerts details.ag'))d.open=true});
+    const b=await pg.evaluate(t=>{const x=document.querySelector(`#alerts [data-anav="symchg:${t}"]`); return x?x.textContent:null},sym+':'+nw);
+    assert.match(b||'',new RegExp('לעדכן ל-'+nw),'the rename button');
+    await pg.evaluate(t=>document.querySelector(`#alerts [data-anav="symchg:${t}"]`).click(),sym+':'+nw); await pg.waitForTimeout(1200);
+    const P1=store.getDoc('portfolio/main').data; assert.ok(P1.positions.some(p=>p.sym===nw)&&!P1.positions.some(p=>p.sym===sym),'renamed'); assert.equal(P1.symChanges.at(-1).old,sym);
+    await pg.click('#toastUndo'); await pg.waitForTimeout(1200); assert.ok(store.getDoc('portfolio/main').data.positions.some(p=>p.sym===sym),'undone');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); store.deleteDoc('research/symchg')}
+});
