@@ -3285,31 +3285,26 @@ test('9.11 the analysts\' targets as a fan: the last year\'s price, and from tod
     assert.equal(v.lines,3); assert.ok(v.past,'the last year\'s price'); assert.match(v.txt,/הגבוה.*\+60\.0%/); assert.match(v.txt,/החציון.*\+22\.0%/); assert.match(v.txt,/הנמוך.*20\.0%/); assert.match(v.txt,/לא תחזית של הדף/);
     assert.deepEqual(pg.errs,[]); await ctx.close()}finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
 });
-test('9.11 a security\'s page: "קניתי עוד" and "מכרתי" open מכירה וקנייה with it chosen; a security not held opens a new row for it',T,async t=>{
+test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box on the page; the trade is saved to the holding, the cash and the history, with undo',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
-  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForSelector('#secPage [data-sectrade]',{timeout:10000});
-  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#secPage [data-sectrade]')].map(b=>b.dataset.sectrade)),['buy','sell']);
-  await pg.click('#secPage [data-sectrade="sell"]'); await pg.waitForTimeout(500);
-  const v=await pg.evaluate(()=>({page:document.body.dataset.page,sym:document.getElementById('slSym').selectedOptions[0].textContent,mode:document.querySelector('#sellBox [data-sellm="sell"]').getAttribute('aria-pressed')}));
-  assert.equal(v.page,'mine'); assert.match(v.sym,/^MSFT/); assert.equal(v.mode,'true');
-  // not held: a new row with its symbol
-  await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='TSLA'; document.body.appendChild(b); b.click(); b.remove()});
-  await pg.waitForSelector('#secPage [data-sectrade="add"]',{timeout:10000}); await pg.click('#secPage [data-sectrade="add"]'); await pg.waitForTimeout(500);
-  const w=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], tr=rows[rows.length-1]; return {page:document.body.dataset.page,sym:tr.querySelector('[data-pf="sym"]').value,open:tr.classList.contains('open'),dirty:/שינויים שלא נשמרו/.test(document.getElementById('pfSaved').textContent)}});
-  assert.deepEqual(w,{page:'mine',sym:'TSLA',open:true,dirty:true});
-  assert.deepEqual(pg.errs,[]); await ctx.close();
-});
-test('9.11 a sale or a purchase at the security\'s price now: the amount follows the quantity, a typed amount takes over',T,async t=>{
-  if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
-  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForSelector('#secPage [data-sectrade="sell"]',{timeout:10000});
-  await pg.click('#secPage [data-sectrade="sell"]'); await pg.waitForTimeout(500);
-  const px=store.getDoc('quotes/latest').data.prices.MSFT;
-  assert.match(await pg.textContent('#slNow'),/במחיר הנוכחי/); assert.equal(await pg.getAttribute('#slNow','aria-pressed'),'true','on by default');
-  await pg.fill('#slQty','1'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(px*100)/100,'1 × the price now');
-  await pg.fill('#slQty','2'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(2*px*100)/100,'follows the quantity');
-  await pg.fill('#slAmt','100'); await pg.fill('#slQty','1'); await pg.waitForTimeout(100); assert.equal(await pg.inputValue('#slAmt'),'100','a typed amount takes over'); assert.equal(await pg.getAttribute('#slNow','aria-pressed'),'false');
-  await pg.click('#slNow'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(px*100)/100,'back to the price now');
-  assert.deepEqual(pg.errs,[]); await ctx.close();
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
+  try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
+    await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForSelector('#secPage [data-sectrade]',{timeout:10000});
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#secPage [data-sectrade]')].map(b=>b.textContent)),['לקנייה','למכירה']);
+    const px=store.getDoc('quotes/latest').data.prices.MSFT, q0=P0.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0);
+    await pg.click('#secPage [data-sectrade="sell"]'); await pg.waitForSelector('#trBox:not([hidden]) #trQty');
+    assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','stays on the page');
+    assert.equal(+(await pg.inputValue('#trPx')),Math.round(px*1e4)/1e4,'the price now by default');
+    await pg.fill('#trQty','1'); await pg.waitForTimeout(100); assert.match(await pg.textContent('#trSum'),/סה״כ/);
+    await pg.click('#trSave'); await pg.waitForTimeout(1200);
+    const q1=store.getDoc('portfolio/main').data.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0); assert.equal(Math.round((q0-q1)*1e6)/1e6,1,'one unit sold');
+    // a security not held: one tap, a quantity, saved as a new holding
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='TSLA'; document.body.appendChild(b); b.click(); b.remove()});
+    await pg.waitForSelector('#secPage [data-sectrade="buy"]',{timeout:10000}); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#secPage [data-sectrade]').length),1,'only "לקנייה" when not held');
+    await pg.click('#secPage [data-sectrade="buy"]'); await pg.waitForSelector('#trBox:not([hidden]) #trQty'); await pg.fill('#trQty','2'); if(!(await pg.inputValue('#trPx')))await pg.fill('#trPx','200'); await pg.waitForTimeout(100);
+    assert.match(await pg.textContent('#trSum'),/אחזקה חדשה בתיק/); await pg.click('#trSave'); await pg.waitForTimeout(1200);
+    const ts=store.getDoc('portfolio/main').data.positions.find(p=>p.sym==='TSLA'); assert.ok(ts&&+ts.qty===2,'a new holding: '+JSON.stringify(ts));
+    assert.ok(await pg.evaluate(()=>document.querySelectorAll('#secPage [data-sectrade]').length===2),'now held: both buttons');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
 });

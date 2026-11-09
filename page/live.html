@@ -703,6 +703,10 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 [data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open .seccard>.sec-h,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
 @media (max-width:1199px){body[data-page="search"].sec-open .hero .top .acts{display:none}}   /* 9.11: the accounts row and the header buttons too; the brand and its status line stay */
 .secp{display:flex;flex-direction:column;gap:14px}
+.trbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px} .trbox[hidden]{display:none} .trbox h3{margin:0;font-size:15px}
+.trbox .tr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px} .trbox label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600}
+.trbox input,.trbox select{min-height:42px;font-size:16px} .trbox .tr-q{display:flex;gap:6px} .trbox .tr-q input{flex:1;min-width:0} .trbox .nm{font-weight:500;font-size:12px}
+.trbox .tr-sum{margin:0;font-size:14px;line-height:1.5} .trbox .tr-sum .nm{display:block;color:var(--muted);margin-top:2px}
 #sellBox .slnow{justify-self:start;align-self:end;min-height:36px} #sellBox .slnow.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 .sectrade{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .sectrade .btn{flex:1 1 0;min-height:44px;font-weight:800} .sectrade .nm{flex-basis:100%;font-size:12px;color:var(--muted);text-align:center}
 .sectrade [data-sectrade="buy"],.sectrade [data-sectrade="add"]{color:var(--gain);border-color:color-mix(in srgb,var(--gain) 45%,transparent)} .sectrade [data-sectrade="sell"]{color:var(--loss);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
@@ -22427,16 +22431,70 @@ function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows(); SL
     <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="slSave" type="button" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><span class="saved" id="slState" role="status"></span></div>
     <p class="note" style="margin:0">${sell?'הכמות יורדת מהאחזקה, הסכום נכנס למזומן של החשבון, והרווח או ההפסד נשמרים במכירות של השנה.':'הכמות והעלות עולות, והסכום יורד מהמזומן של החשבון.'} כשיגיע הדוח הבא מהבנק, הוא יחליף את מה שנרשם כאן. לנייר שעוד אין בתיק: "הוספה ידנית".</p>`;
   slPick(); slCalc()}
-// 9.11 (the owner): from a security's page, "קניתי עוד" / "מכרתי" open "מכירה וקנייה" in התיק שלי with this security
-// chosen; a security not held opens a new row in the holdings with its symbol, name, currency and group filled in. Each
-// is a record in the portfolio, not an order: the site does not trade
-document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-sectrade]'); if(!b||!canWrite)return; const k=b.dataset.k, it=itemOf(k)||{sym:k}, sym=it.sym||k, how=b.dataset.sectrade;
-  if(how==='add'){if(!DRAFT||!dDirty)DRAFT=draftFromP(); const usd=!(it.t==='T'||it.t==='F'||k.startsWith('TLV:')||ilIsNum(k)); const g=(()=>{try{return groupOf(sym)}catch(e){return null}})();
-    DRAFT.positions.push({sym,name:it.name||it.he||'',acct:acctPick(),qty:0,ccy:usd?'USD':'ILS',costIls:null,costUsd:null,px:null,group:g||(it.t==='F'||!usd?'il':it.t==='E'?'etf':'tech')}); pfDirty();
-    showTab('mine',true); mvSet('hold','נוספה שורה ל-'+sym+'. מלא כמות ועלות ולחץ על "שמור את התיק".'); renderMine(true);
-    setTimeout(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], tr=rows[rows.length-1]; if(tr){tr.classList.add('open'); tr.scrollIntoView({block:'center'}); const q=tr.querySelector('[data-pf="qty"]'); if(q){q.select&&q.select(); q.focus()}}},120); return}
-  const R=slRows(), r=R.find(x=>x.p.sym===sym)||R.find(x=>x.p.sym===k); if(!r)return; SELLK=r.k; SELLM=how==='sell'?'sell':'buy';
-  showTab('mine',true); mvSet('sell'); setTimeout(()=>{const el=$('sellBox'); if(el)el.scrollIntoView({block:'start'}); const q=$('slQty'); if(q)q.focus()},120)});
+// 9.11 (the owner: "it should be simple"): buying or selling from a security's page happens on the page itself, in a
+// small box: the account (when there is more than one), how many, the price per unit (the price now, or typed), the
+// date; the total, and for a sale the gain or loss, before saving. Saving changes the holding (a new one when it is not
+// held), its cost, the account's cash, and keeps the trade in the history, like מכירה וקנייה in התיק שלי. Undo after.
+// A record in the portfolio, not an order: the site does not trade.
+let TRX=null;
+function trHeld(sym,acct){return ((P&&P.positions)||[]).filter(p=>p&&p.sym===sym&&+p.qty>0&&(acct==null||(p.acct||'')===acct))}
+function trOpen(k,side){const it=itemOf(k)||{sym:k}, sym=it.sym||k, pr=(()=>{try{return priceOf(k)}catch(e){return null}})(), held=trHeld(sym);
+  const ccy=(held[0]&&held[0].ccy)||(pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:(it.t==='T'||it.t==='F'||String(k).startsWith('TLV:')||ilIsNum(k)?'ILS':'USD'));
+  TRX={k,sym,side,name:it.name||it.he||'',t:it.t,acct:(held[0]&&held[0].acct)||acctPick(),ccy,px:pr&&pr.px>0&&(pr.ccy||ccy)===ccy?pr.px:null,q:'',pxIn:'',d:ilDay(),msg:''}; trRender()}
+function trRender(){const el=$('trBox'); if(!el)return; if(!TRX||TRX.k!==SEC){el.hidden=true; el.innerHTML=''; return} const T=TRX, sell=T.side==='sell';
+  const held=trHeld(T.sym), accts=sell?[...new Set(held.map(p=>p.acct||''))]:acctIds(); if(!accts.includes(T.acct))T.acct=accts[0];
+  const h=trHeld(T.sym,T.acct)[0]||null, have=h?+h.qty:0;
+  el.hidden=false; el.innerHTML=`<h3>${sell?'מכירה':'קנייה'} של ${esc(lab(T.sym))}</h3>
+    <div class="tr-g">
+      ${accts.length>1?`<label><span>חשבון</span><select id="trAcct">${accts.map(a=>`<option value="${esc(a)}"${a===T.acct?' selected':''}>${esc(acctName(a))}${sell?` · ${+(+trHeld(T.sym,a)[0].qty).toFixed(4)} יח׳`:''}</option>`).join('')}</select></label>`:''}
+      <label><span>כמה יחידות${sell&&have?` (יש לך ${+have.toFixed(4)})`:''}</span><span class="tr-q"><input id="trQty" type="number" inputmode="decimal" min="0" step="any" value="${esc(T.q)}" autocomplete="off">${sell?'<button type="button" class="btn sm" id="trAll">הכל</button>':''}</span></label>
+      <label><span>מחיר ליחידה (${slCcyS(T.ccy)})</span><input id="trPx" type="number" inputmode="decimal" min="0" step="any" value="${esc(T.pxIn!==''?T.pxIn:T.px!=null?slR(T.px,4):'')}" autocomplete="off">${T.px!=null?`<span class="nm">${T.pxIn!==''&&+T.pxIn!==slR(T.px,4)?`<button type="button" class="lnk" id="trPxNow">במחיר הנוכחי (${slAmt(T.px,T.ccy)})</button>`:'המחיר הנוכחי'}</span>`:''}</label>
+      <label><span>תאריך</span><input id="trDate" type="date" value="${esc(T.d)}" max="${ilDay()}"></label>
+    </div>
+    <p class="tr-sum" id="trSum" aria-live="polite"></p>
+    <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="trSave" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><button type="button" class="btn" id="trX">ביטול</button><span class="saved" id="trMsg" role="status">${esc(T.msg||'')}</span></div>`;
+  trCalc()}
+function trVals(){const T=TRX; if(!T)return null; const q=+(T.q||0), px=+(T.pxIn!==''?T.pxIn:(T.px||0)); const h=trHeld(T.sym,T.acct)[0]||null; return {T,q,px,amt:q*px,h,have:h?+h.qty:0,avg:h?slAvg(h):null}}
+function trCalc(){const v=trVals(), out=$('trSum'), btn=$('trSave'); if(!v||!out)return; const {T,q,px,amt,have,avg}=v, sell=T.side==='sell'; let ok=false, H='';
+  if(q>0&&px>0){if(sell&&q>have+1e-9)H=`יש לך ${+have.toFixed(4)} יחידות בחשבון הזה.`;
+    else{ok=true; H=`<b>סה״כ ${slB(slAmt(amt,T.ccy))}</b>`;
+      if(sell&&avg!=null){const g=amt-q*avg; H+=` · <span class="${g>=0?'up':'down'}">${g>=0?'רווח':'הפסד'} של ${slB(slAmt(Math.abs(g),T.ccy))} (${slB(spct(g/(q*avg)*100,1))})</span>`}
+      else if(!sell){const a2=avg!=null?(avg*have+amt)/(have+q):null; H+=` · ${have?`אחרי הקנייה: ${+(have+q).toFixed(4)} יחידות${a2!=null?`, מחיר ממוצע ${slB(slAmt(a2,T.ccy))}`:''}`:'אחזקה חדשה בתיק'}`}
+      H+=`<span class="nm">המזומן ב${esc(acctName(T.acct))} ${sell?'יעלה':'ירד'} ב-${slB(slAmt(amt,T.ccy))}.</span>`}}
+  out.innerHTML=H; if(btn)btn.disabled=!ok}
+async function trSave(){const v=trVals(); if(!v||!canWrite)return; const {T,q,px,amt}=v, sell=T.side==='sell', m=$('trMsg');
+  if(dDirty){m.textContent='יש שינויים בתיק שלי שלא נשמרו. שמור אותם קודם.'; return} if(!(q>0&&px>0))return;
+  const cl=x=>x==null?null:JSON.parse(JSON.stringify(x)), P0=cl(P), H0=cl(HS), P2=cl(P)||{positions:[],cash:[]}, fx=T.ccy==='USD'?((Q&&Q.usdIls)||null):T.ccy==='ILS'?1:null;
+  P2.positions=Array.isArray(P2.positions)?P2.positions:[]; P2.cash=Array.isArray(P2.cash)?P2.cash:[];
+  let x=P2.positions.find(z=>z.sym===T.sym&&(z.acct||'')===(T.acct||'')&&+z.qty>0);
+  if(sell&&(!x||q>+x.qty+1e-9)){m.textContent='האחזקה השתנתה בינתיים. נסה שוב.'; return}
+  const cc=T.ccy==='ILS'?'ILS':'USD'; let cash=P2.cash.find(z=>z.acct===T.acct&&z.ccy===cc); if(!cash){cash={acct:T.acct,ccy:cc,amount:0}; P2.cash.push(cash)}
+  const avg=x?slAvg(x):null;
+  if(sell){const f=q/(+x.qty); if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
+  else{if(!x){const g=(()=>{try{return groupOf(T.sym)}catch(e){return null}})(); x={sym:T.sym,name:T.name,acct:T.acct,qty:0,ccy:T.ccy,costIls:T.ccy==='ILS'?0:(fx?0:null),costUsd:T.ccy==='ILS'?null:0,px:null,group:g||(T.ccy==='ILS'?'il':T.t==='E'?'etf':'tech')}; P2.positions.push(x)}
+    if(T.ccy==='ILS'){x.costIls=slR((+x.costIls||0)+amt)} else {if(x.costUsd!=null)x.costUsd=slR(+x.costUsd+amt); if(x.costIls!=null&&fx)x.costIls=slR(+x.costIls+amt*fx)}
+    x.qty=slR(+x.qty+q,6); cash.amount=slR(Math.max(0,(+cash.amount||0)-amt))}
+  x.qAt=ilDay(); P2.positions=P2.positions.filter(z=>+z.qty>1e-9); P2.updatedAt=new Date().toISOString();
+  const H=HS?cl(HS):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; let A=H.accounts.find(z=>z.acct===T.acct); if(!A){A={acct:T.acct,ccy:acctCcy(T.acct),deposits:[],trades:[],snapshots:[]}; H.accounts.push(A)}
+  const rec={id:Date.now().toString(36),date:T.d,sym:T.sym,side:sell?'sell':'buy',qty:q,px:slR(px,6),amt:slR(amt),ccy:T.ccy,fx:fx||null,at:new Date().toISOString()};
+  if(sell&&avg!=null){rec.buyPx=slR(avg,6); rec.real=slR(amt-q*avg)}
+  A.manual=[...(A.manual||[]),rec];
+  m.textContent='שומר…'; $('trSave').disabled=true;
+  try{await pset('portfolio',P2); P=P2; await pset('history',H); HS=H; if(!dDirty)DRAFT=draftFromP();
+    const msg=sell?`נרשמה מכירה של ${+q.toFixed(4)} ${lab(T.sym)} ב-${slAmt(amt,T.ccy)}${rec.real!=null?` (${rec.real>=0?'רווח':'הפסד'} של ${slAmt(Math.abs(rec.real),T.ccy)})`:''}.`:`נרשמה קנייה של ${+q.toFixed(4)} ${lab(T.sym)} ב-${slAmt(amt,T.ccy)}.`;
+    TRX=null; try{render()}catch(e){} try{renderSec()}catch(e){}
+    offerUndo(msg,async()=>{await pset('portfolio',P0); P=P0; if(H0)await pset('history',H0); else await pset('history',{accounts:[],depIlsNow:0,monthly:[]}); HS=H0; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){} try{renderSec()}catch(e){}})}
+  catch(e){m.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); $('trSave').disabled=false}}
+document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-sectrade],#trAll,#trPxNow,#trSave,#trX'); if(!t||!canWrite)return;
+  if(t.dataset.sectrade){if(TRX&&TRX.k===t.dataset.k&&TRX.side===t.dataset.sectrade){TRX=null; trRender()} else trOpen(t.dataset.k,t.dataset.sectrade);
+    for(const b of document.querySelectorAll('[data-sectrade]'))b.setAttribute('aria-expanded',String(!!TRX&&TRX.side===b.dataset.sectrade)); const q=$('trQty'); if(q)q.focus(); return}
+  if(t.id==='trAll'){const v=trVals(); if(v){TRX.q=String(v.have); $('trQty').value=TRX.q; trCalc()} return}
+  if(t.id==='trPxNow'){TRX.pxIn=''; trRender(); return}
+  if(t.id==='trX'){TRX=null; trRender(); for(const b of document.querySelectorAll('[data-sectrade]'))b.setAttribute('aria-expanded','false'); return}
+  if(t.id==='trSave')trSave()});
+document.addEventListener('input',ev=>{if(!TRX||!(ev.target.closest&&ev.target.closest('#trBox')))return; const id=ev.target.id;
+  if(id==='trQty')TRX.q=ev.target.value; else if(id==='trPx')TRX.pxIn=ev.target.value; else if(id==='trDate')TRX.d=ev.target.value; trCalc()});
+document.addEventListener('change',ev=>{if(ev.target.id==='trAcct'&&TRX){TRX.acct=ev.target.value; trRender()}});
 function slCur(){const r=slRows().find(x=>x.k===SELLK); return r?r.p:null}
 function slPick(){const p=slCur(); if(!p)return; const c=p.ccy||'USD', avg=slAvg(p);
   for(const id of ['slC1','slC2']){const e=$(id); if(e)e.textContent=slCcyS(c)}
@@ -25360,7 +25418,7 @@ function renderSec(){SECHOV=-1;
   let pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
   // 9.11: a share listed in Tel Aviv and in New York: the report and the analysts are the company's, from its US listing
   const twin=repTwin(k); if(twin&&RSX[twin]&&!(rs&&rs.rep&&!repStale(rs)))rs={...RSX[twin],twinOf:twin};
-  setTimeout(()=>{try{repAuto(k)}catch(e){}},0);
+  setTimeout(()=>{try{repAuto(k)}catch(e){}},0); setTimeout(()=>{try{trRender()}catch(e){}},0);
   const fsc=rs?finScore(rs):null, fx=(Q&&Q.usdIls)||(ALLQ&&ALLQ.fx)||0;
   const qty=pos.reduce((t,p)=>t+(+p.qty||0),0);
   const capTxt=it.cap?(it.t==='T'?'₪':'$')+(it.cap>=1e6?(it.cap/1e6).toFixed(2)+'T':it.cap>=1000?(it.cap/1000).toFixed(it.cap>=1e4?0:1)+'B':it.cap+'M'):'';
@@ -25376,7 +25434,7 @@ function renderSec(){SECHOV=-1;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
     <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
-    ${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק">${pos.length?`<button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}">לקנייה</button><button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}">למכירה</button>`:`<button type="button" class="btn" data-sectrade="add" data-k="${esc(k)}">לקנייה</button>`}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div>`:''}
+    ${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}
     ${secPriceParts(it,pr,on,fx)[0]}
     <p class="chline" id="secRead" aria-live="polite"></p>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
