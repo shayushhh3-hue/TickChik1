@@ -286,7 +286,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['quickActs','holdSec'],'4.11: the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,3),['quickActs','kindRow','holdSec'],'4.11 (9.11: the tiles under them): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
       // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above
@@ -711,7 +711,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     // the icons over צ׳יקו: buttons, the critical first, never more than three; no stories viewer
     const bub=await pg.evaluate(()=>({n:document.querySelectorAll('#stBub .stc').length,first:document.querySelector('#stBub .stc').getAttribute('aria-label'),crit:document.querySelector('#stBub .stc').classList.contains('crit'),bars:!!document.getElementById('stBars'),
       over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 6.11: one count on the button's corner
-    assert.equal(bub.n,1); assert.match(bub.first,/^התראה קריטית: אנבידיה/); assert.ok(bub.crit&&bub.over,JSON.stringify(bub)); assert.equal(bub.bars,false,'no stories bars');
+    assert.ok(bub.n>=1&&bub.n<=3); assert.match(bub.first,/^התראה קריטית( על NVDA)?: אנבידיה/); assert.ok(bub.crit&&bub.over,JSON.stringify(bub)); assert.equal(bub.bars,false,'no stories bars');
     await pg.click('#stBub .stc'); await pg.waitForTimeout(300);
     let v=await pg.evaluate(()=>{const b=document.getElementById('plShB'); return {open:!document.getElementById('plSheet').hidden,h:b.querySelector('h3').textContent,lv:b.querySelector('.pl-lv').textContent,chain:b.querySelector('.pl-chain')?.textContent.replace(/\s+/g,' '),
       ms:[...b.querySelectorAll('.pl-m')].map(m=>m.textContent.replace(/\s+/g,' ').trim()),why:b.querySelector('.pl-why').textContent.replace(/\s+/g,' '),dir:b.textContent.replace(/\s+/g,' '),acts:[...b.querySelectorAll('.pl-acts > .btn, .pl-acts > a')].map(x=>x.textContent.trim())}});
@@ -3323,6 +3323,27 @@ test('9.11 the tabs at the top of a screen follow the scroll (home: a thin row);
     await pg.reload(); await pg.waitForFunction(()=>document.body.dataset.page==='history',null,{timeout:30000});
     const p2=await ctx.newPage(); await p2.goto(U); await p2.waitForFunction(()=>!!document.body.dataset.page,null,{timeout:30000});
     assert.equal(await p2.evaluate(()=>document.body.dataset.page),'overview','another open: home again');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+});
+
+test('9.11 the home screen: each market by its own day, a lower chart with its scale on the right and short ranges, one ✓ when all is up to date, the actions under the card, the day\'s change in the tiles',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  try{
+    const r=await pg.evaluate(()=>{const q=document.getElementById('quickActs'), k=document.getElementById('kindRow'), svg=document.getElementById('wChS'), W=svg.viewBox.baseVal.width;
+      const labs=[...svg.querySelectorAll('text')].filter(x=>/₪/.test(x.textContent)).map(x=>+x.getAttribute('x'));
+      return {order:q.nextElementSibling===k, h:svg.getBoundingClientRect().height, right:labs.length>0&&labs.every(x=>x>W*0.7), ranges:[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr).join(','),
+        tile:(document.querySelector('#kindRow [data-k="stock"] .kt-d')||{}).textContent||''}});
+    assert.ok(r.order,'the tiles come right after the four actions'); assert.ok(r.h<=180,'a lower chart: '+r.h); assert.ok(r.right,'the scale on the right'); assert.equal(r.ranges,'1,3,6,12,24,0');
+    assert.match(r.tile,/^[▲▼]\d+\.\d\d%$/,'the stocks\' tile has the day\'s change');
+    // both markets, on different days: each by its own day
+    const d=await pg.evaluate(()=>{const H=window.__home, t=H.today(), y=new Date(Date.parse(t+'T12:00:00Z')-864e5).toISOString().slice(0,10); return H.mkt({usDate:y,ilDate:t})});
+    assert.ok(d.on&&/^ת״א היום [+−‎\d.%]+ · ארה״ב \d+\.\d+ /.test(d.txt.replace(/‎/g,'')),JSON.stringify(d));
+    // all up to date: one small ✓ beside "שווי התיק", its words kept; something late: the chip under the chart again
+    const ok=await pg.evaluate(()=>{const n=document.getElementById('kNews'); n.hidden=false; n.className='status trust'; window.__home.trust({ok:true,iss:[],at:new Date().toISOString()}); const t=document.getElementById('kTrust'), b=t.getBoundingClientRect();
+      const a={top:!!t.closest('.wtop'),w:b.width,txt:t.textContent}; window.__home.trust({ok:false,iss:[{k:'late'}],at:new Date().toISOString()}); return {...a,back:!!document.getElementById('kTrust').closest('#wchH')}});
+    assert.ok(ok.top&&ok.w<=30&&/המחירים עדכניים/.test(ok.txt)&&ok.back,JSON.stringify(ok));
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });

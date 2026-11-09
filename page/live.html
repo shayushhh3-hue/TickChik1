@@ -88,7 +88,7 @@ body:not([data-page="overview"]) .hero .wch{display:none}
 .big{font-family:var(--display);font-weight:400;font-size:clamp(36px,6vw,48px);line-height:1.1;letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;direction:ltr;unicode-bidi:isolate;display:block;text-align:right}
 .dayline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-top:6px}
 .dayline .v{font-weight:700;font-size:17px;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
-.dayline .d{font-size:14px;color:var(--ink2)}
+.dayline .d{font-size:14px;color:var(--ink2)} .dayline .dm{flex-basis:100%;font-size:12.5px;color:var(--muted);margin-top:-4px} .dayline .dm[hidden]{display:none}
 .worth>.d{font-size:12px;color:var(--muted);margin-top:6px}
 .status{font:inherit;font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;border:0;cursor:pointer;background:var(--ok-bg);color:var(--ok-ink);align-self:flex-start;margin-top:10px}
 .status.warn{background:var(--warn-bg);color:var(--warn)} .status.crit{background:var(--crit-bg);color:var(--crit-ink)}
@@ -1872,6 +1872,8 @@ html[data-theme="dark"] .hero #tcAcctBtn{background:var(--surface);border-color:
 @media (max-width:760px){.worth{margin:4px 0 0}}
 .wtop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .worth .k{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink2)}
+.kchips.okmini{display:inline-flex;margin:0;gap:0} .kchips.okmini #kNews{display:none!important} .kchips.okmini .status.trust{min-height:0;width:26px;height:26px;padding:0;border:0;background:none;box-shadow:none;display:inline-grid;place-items:center;cursor:pointer}
+.kchips.okmini .status.trust>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} .kchips.okmini .status.trust svg{width:16px;height:16px}
 .eye{display:inline-grid;place-items:center;width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;padding:0}
 .eye svg{width:17px;height:17px} .eye:hover{background:var(--sunk);color:var(--ink)}
 body.hidenum .big,body.hidenum .stat .v,body.hidenum .kt-v,body.hidenum #rows .n,body.hidenum .tape,body.hidenum .dayline .v{filter:blur(7px);user-select:none}
@@ -1906,7 +1908,7 @@ button.kt{cursor:pointer} button.kt:hover{border-color:#C4B5FD}
 .kt[aria-pressed="true"]{box-shadow:0 0 0 2px #A78BFA,var(--shadow);border-color:transparent}
 .kt-k{font-size:13px;color:var(--ink2);font-weight:600}
 .kt-v{font-size:15.5px;font-weight:700;direction:ltr;unicode-bidi:isolate;text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kt-p{font-size:12.5px;color:var(--muted)}
+.kt-p{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:4px;align-items:baseline} .kt-d{font-weight:700;direction:ltr;unicode-bidi:isolate;white-space:nowrap} .kt-d.up{color:var(--gain)} .kt-d.down{color:var(--loss)} #kindRow.inpane{margin:12px 0 4px}
 @media (max-width:460px){.ktiles{gap:6px} .kt{padding:9px 7px 8px;gap:2px;border-radius:14px} .kt-k{font-size:11.5px} .kt-v{font-size:12.5px;letter-spacing:-.02em} .kt-p{font-size:11px}}
 @media (max-width:359px){.ktiles,.ktiles.n4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kt-bar{display:block;height:5px;border-radius:999px;background:var(--sunk);margin-top:5px;overflow:hidden} .kt-bar::after{content:"";display:block;height:100%;width:var(--w,0%);border-radius:999px;background:var(--bc,var(--v1))}
@@ -1932,7 +1934,8 @@ html[data-theme="dark"] .insight{background:linear-gradient(90deg,rgb(45 212 191
 /* 9.11 (the owner): the tabs at the top of a screen follow the scroll, so nobody scrolls back up to change screen. On the
    home screen the four actions shrink to a thin row once they reach the top */
 [data-pane]>.subtabs{position:sticky;top:0;z-index:8;margin-inline:-4px;padding:6px 4px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-#quickActs{position:sticky;top:0;z-index:8;padding-block:6px;margin-block:-6px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:padding .15s}
+#quickActs{position:sticky;top:0;z-index:8;padding-block:6px;margin-block:-6px;transition:padding .15s}
+#quickActs.stuck{background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 #quickActs.stuck{gap:6px;grid-template-columns:repeat(4,minmax(0,1fr))} #quickActs.stuck .qa-b{min-height:34px;flex-direction:row;padding:4px 4px;border-radius:999px;font-size:12px;gap:4px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #quickActs.stuck .qa-b svg{width:15px;height:15px;flex:none}
 @media (max-width:420px){#quickActs.stuck .qa-b svg{display:none}}
@@ -2069,7 +2072,7 @@ html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .1
 .stc .lg{width:100%;height:100%;border-radius:50%;font-size:10px} .stc .stx{font-weight:800;font-size:15px;color:var(--accent-ink)}
 .stbub{position:fixed;z-index:45;display:flex;align-items:center;gap:0;padding:0;border:0;background:transparent;cursor:pointer}
 .stbub[hidden]{display:none} body.chat-open .stbub{display:none}
-.stbub .stc{width:40px;height:40px;box-shadow:0 4px 12px rgb(20 18 46 / .25)} .stbub .stc+.stc{margin-inline-start:-14px} .stbub .stc:nth-child(1){z-index:3} .stbub .stc:nth-child(2){z-index:2} .stbub .stc:nth-child(3){z-index:1}
+.stbub{flex-direction:column} .stbub .stc{width:32px;height:32px;box-shadow:0 3px 8px rgb(20 18 46 / .25)} .stbub .stc+.stc{margin-top:-10px} .stbub .stc:nth-child(1){z-index:3} .stbub .stc:nth-child(2){z-index:2} .stbub .stc:nth-child(3){z-index:1}
 .stbub .stn{position:absolute;top:-6px;inset-inline-end:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--crit-c);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface)}
 .stbub:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:999px}
 .stbar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none} .stbar::-webkit-scrollbar{display:none}
@@ -2402,7 +2405,8 @@ body:not([data-page="overview"]) .hero .ktoday{display:none}
 .ktoday .tdl-todo .tdl-b::before,.ktoday .tdl-ok .tdl-b::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:6px;vertical-align:1px;background:#D97706} .ktoday .tdl-ok .tdl-b::before{background:var(--gain)}
 .ktoday .tdl-news .tdl-b,.ktoday .tdl-since .tdl-b{font-weight:500}
 .ktoday .n{display:inline;font-weight:800;white-space:nowrap} .ktoday .tdl-ils{white-space:nowrap} .ktoday .tdl-mv{color:var(--ink2);font-weight:500} .ktoday .tdl-mv .sym{font-weight:700} .ktoday .tdl-mv .n{font-weight:700}
-.ktoday .ix-dw{font-size:10.5px;padding:0 6px;vertical-align:middle;line-height:1.4}
+.ktoday .ix-dw{font-size:10.5px;padding:0;border:0!important;background:none!important;vertical-align:baseline;line-height:1.3;font-weight:700}   /* 9.11: quiet, not a red pill */
+.ktoday .tdl-news .tdl-k{display:inline-flex;align-items:center;gap:5px} .ktoday .tdl-k .lg.s{width:18px;height:18px;font-size:6.5px;border-radius:5px}
 .status.trust.bad{border-color:rgb(239 68 68 / .55);color:#B91C1C} html[data-theme="dark"] .status.trust.bad{color:#FCA5A5}
 #dkNews.bad{border-color:rgb(239 68 68 / .45)}
 /* the floating ones step aside while the page scrolls down (a phone) */
@@ -2448,7 +2452,7 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 @media (max-width:420px){.pl-ms{grid-template-columns:1fr 1fr 1fr} .pl-m{padding:6px 7px} .pl-m b{font-size:13px} .pl h3{font-size:16px} .pl{padding:13px 13px}}
 /* the icons over צ׳יקו: buttons now, each opens its alert; a gentle fade in */
 .stbub{cursor:default} .stbub .stc{border:0;cursor:pointer;animation:plIn .35s ease-out both} .stbub .stc:focus-visible,.stbub .stn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.stbub .stn{position:static;align-self:flex-start;margin-inline-start:-6px;margin-top:-8px;min-width:24px;height:24px;border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:800;padding:0 6px;border-radius:999px;background:var(--crit-c);color:#fff;box-shadow:0 0 0 2px var(--surface)}
+.stbub .stn{position:static;order:-1;align-self:center;margin:0 0 -4px;z-index:4;min-width:22px;height:20px;font-size:11px!important;border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:800;padding:0 6px;border-radius:999px;background:var(--crit-c);color:#fff;box-shadow:0 0 0 2px var(--surface)}
 @keyframes plIn{from{opacity:0;transform:translateY(6px) scale(.9)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.stbub .stc{animation:none}} html.a11y-rm .stbub .stc{animation:none} html.a11y-rm .imv-p{transition:none}
 /* a critical alert: the banner */
@@ -2845,7 +2849,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <div class="wgrid">
           <div class="wv">
             <span class="big" id="kTotal">—</span>
-            <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
+            <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><span class="dm" id="kDayM" hidden></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
             <div class="ktoday" id="kToday" aria-live="polite" hidden></div>
             <div class="pnlline" id="kPnlL" hidden></div><div class="pnlline pnlsub" id="kFxL" hidden></div><div class="pnlline pnlsub" id="kBenchL" hidden></div>
             <div class="d" id="kTotalD"></div>
@@ -2853,7 +2857,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           <div class="wmini" id="kMini" aria-label="בקצרה"></div>
           <div class="wch" id="wChart" hidden><svg id="wChS" tabindex="0" role="img" aria-label="גרף שווי התיק"></svg><div class="wleg2" id="wLeg" hidden></div></div>
         </div>
-        <div class="wch-h" id="wchH"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
+        <div class="wch-h" id="wchH"><span class="wch-r" id="wChR" aria-live="polite"></span><div class="wch-rg" role="group" aria-label="טווח הגרף"><button type="button" data-wr="1">חודש</button><button type="button" data-wr="3">3 חודשים</button><button type="button" data-wr="6">6 חודשים</button><button type="button" data-wr="12">שנה</button><button type="button" data-wr="24">שנתיים</button><button type="button" data-wr="0">הכל</button></div></div>
         <div class="wch-n" id="wChN" hidden></div>
         <div class="kchips"><button class="status" id="kStatus" type="button" hidden></button><button class="status trust" id="kTrust" type="button" hidden title="האם המחירים עדכניים? לפרטים"></button><button class="status trust" id="kNews" type="button" hidden title="האם החדשות עדכניות? לפרטים"></button></div>
       </div>
@@ -17578,6 +17582,15 @@ const dayWord=()=>{const lt=pfTradeDay(); return !lt||lt>=tzDay('Asia/Jerusalem'
 const dayLab=()=>{const w=dayWord(), lt=pfTradeDay(); return w==='היום'?'היום':'ביום המסחר האחרון'+(lt?' ('+dmy(lt)+')':'')};
 const dayLive=()=>{try{const now=new Date(), m=pfMk(); return dayWord()==='היום'&&((m.us&&usOpen(now))||(m.il&&ilOpen(now)))}catch(e){return false}};
 const dayVerb=up=>dayLive()?(up?'עולה':'יורד'):(up?'עלה':'ירד');
+// 9.11 (the owner): under the day's change, each market by its own day when the portfolio holds both and their days differ
+// ("ת״א היום +0.3% · ארה״ב 6.11 −0.7%"); a day that is over says when the next session opens
+function dayMkt(m){const el=$('kDayM'); if(!el)return; el.hidden=true; el.textContent=''; if(!m||!m.hasDay||!Q)return;
+  const mk=pfMk(), today=tzDay('Asia/Jerusalem'), now=new Date(), md=mktDay(today), hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false}).format(now);
+  const dl=d=>!d?'':d>=today?'היום':dmy(d), part=f=>{const L=m.pos.filter(p=>p.dayPct!=null&&f(p)), v=L.reduce((t,p)=>t+p.val,0), d=L.reduce((t,p)=>t+(p.dayIls||0),0); return v-d>0?d/(v-d)*100:null};
+  if(mk.us&&mk.il&&Q.usDate&&Q.ilDate&&Q.usDate!==Q.ilDate){const a=part(ilPos), b=part(p=>!ilPos(p)); if(a!=null&&b!=null){el.textContent=`ת״א ${dl(Q.ilDate)} ${spct(a,1)} · ארה״ב ${dl(Q.usDate)} ${spct(b,1)}`; el.hidden=false; return}}
+  if(dayWord()==='היום')return;
+  const nx=[mk.il&&md.il.st!=='closed'&&md.il.h&&!ilOpen(now)&&hm<md.il.h.split('–')[0]?`ת״א נפתחת היום ב-${md.il.h.split('–')[0]}`:'',mk.us&&md.us.st!=='closed'&&md.us.h&&!usOpen(now)&&hm<md.us.h.split('–')[0]?`ארה״ב נפתחת היום ב-${md.us.h.split('–')[0]}`:''].filter(Boolean);
+  if(nx.length){el.textContent=nx.join(' · '); el.hidden=false}}
 const pxAge=()=>Q&&Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/6e4:Infinity;
 const pxLoad=()=>{try{PXF=JSON.parse(localStorage.getItem('tr_pxfire')||'null')}catch(e){PXF=null} if(PXF&&!(Date.now()-new Date(PXF.at)<PXWAIT*6e4))PXF=null};
 const pxSave=()=>{try{if(PXF)localStorage.setItem('tr_pxfire',JSON.stringify(PXF));else localStorage.removeItem('tr_pxfire')}catch(e){}};
@@ -17953,7 +17966,7 @@ function render(){
   try{renderHealth(m)}catch(e){}
   try{renderIdx()}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(!mH.fund&&!mH.stock&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
-  const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):'';
+  const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):''; try{dayMkt(mH)}catch(e){}
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
   pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
   // 1.11: an empty tile says where to complete the figure, in one tap
@@ -18949,7 +18962,7 @@ let HS=null, HSUM=[], DY=null, TP=[], TPW=[], dyBusy=false;
 const normHS=h=>{if(!h||typeof h!=='object')return h; const o={...h,accounts:Array.isArray(h.accounts)?h.accounts.map(A=>A&&typeof A==='object'?{...A,deposits:Array.isArray(A.deposits)?A.deposits:[],trades:Array.isArray(A.trades)?A.trades:[],snapshots:Array.isArray(A.snapshots)?A.snapshots:[]}:A).filter(Boolean):h.accounts,monthly:Array.isArray(h.monthly)?h.monthly:(h.monthly||[])}; return o};
 // ---- the value over time, on the home screen: the month-ends, the saved days and today (TP, from the trend), for all the
 // accounts or the one chosen; a range (3 / 6 / 12 months, or everything) and a cursor that reads any point
-let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
+let WR=(()=>{try{const v=localStorage.getItem('tr_wr');return v!=null&&/^(0|1|3|6|12|24)$/.test(v)?+v:12}catch(e){return 12}})(), WCP=null, WCI=-1;
 // month by month: the month-ends the page holds (not the single days saved inside a month) and today
 // 5.11: a range the data does not reach is not offered (two years of a portfolio with six weeks of history drew the six
 // weeks under "שנתיים"): the chips longer than the history hide, and the chart says since when it has data
@@ -18960,7 +18973,8 @@ function wPts(){
   let all=mk(TPW&&TPW.length?TPW:(TP||[]).filter(p=>p.now||/^סוף /.test(p.label||'')));
   if(all.length<2)all=mk(TP||[]);
   WSPAN=all.length>1?(all[all.length-1].t-all[0].t)/(30.44*864e5):0;
-  if(!WRE())return all; const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
+  if(!WRE())return all; if(WR<=3){const dd=mk(TP||[]); if(dd.length>=2)all=dd}   // a month or three: the days the page saved, not two month-ends
+  const from=Date.now()-WR*30.44*864e5; let i=all.findIndex(p=>p.t>=from); if(i<0)return all.slice(-2); return all.slice(Math.max(0,i-1));
 }
 let WSIG='';
 // 28.10: the tiles under the value card (the mock-up's row): stocks, funds, cash, and the dollar part when there is one;
@@ -18969,8 +18983,12 @@ function renderKinds(m,both){
   const box=$('kindRow'); if(!box)return; const T=m.total||0, fxV=Q&&Q.usdIls>0?Q.usdIls:null;
   const sv=m.pos.filter(p=>!isF(p.sym)).reduce((t,p)=>t+p.val,0), fv=m.pos.filter(p=>isF(p.sym)).reduce((t,p)=>t+p.val,0), uv=m.usdPct&&T?m.usdPct/100*T:0;   // the dollar part of the view (positions and cash), from the model
   const money=v=>HC==='usd'&&fxV?dlr(v/fxV):ils(v);
-  const tile=(k,lab,v,bc,kv)=>{const w=T?v/T*100:0, press=kv?` aria-pressed="${KV===kv}" data-kv="${kv}" title="${kv==='stock'?'רק המניות':'רק הקרנות'}: השווי, השינוי היומי והרווח שלהן"`:'';
-    return `<${kv?'button type="button"':'div'} class="kt" data-k="${k}"${press}><span class="kt-k">${lab}</span><span class="kt-v">${money(v)}</span><span class="kt-p">${pct(w,1)}</span><i class="kt-bar" style="--w:${Math.min(100,w).toFixed(1)}%;--bc:${bc}" aria-hidden="true"></i></${kv?'button':'div'}>`};
+  // 9.11 (the owner): the day's change of the stocks and of the funds, each in its tile (the funds can move on a day the
+  // shares did not, when Tel Aviv trades and New York is closed)
+  const dch=f=>{if(!m.hasDay)return null; const L=m.pos.filter(p=>p.dayPct!=null&&f(p)); if(!L.length)return null; const v=L.reduce((t,p)=>t+p.val,0), d=L.reduce((t,p)=>t+(p.dayIls||0),0); return v-d>0?d/(v-d)*100:null};
+  const DCH={stock:dch(p=>!isF(p.sym)),fund:dch(p=>isF(p.sym))};
+  const tile=(k,lab,v,bc,kv)=>{const w=T?v/T*100:0, dc=DCH[k], press=kv?` aria-pressed="${KV===kv}" data-kv="${kv}" title="${kv==='stock'?'רק המניות':'רק הקרנות'}: השווי, השינוי היומי והרווח שלהן"`:'';
+    return `<${kv?'button type="button"':'div'} class="kt" data-k="${k}"${press}><span class="kt-k">${lab}</span><span class="kt-v">${money(v)}</span><span class="kt-p"><span>${pct(w,1)}</span>${dc!=null?`<span class="kt-d ${dc>=0?'up':'down'}" title="השינוי ${esc(dayLab())}">${dc>=0?'▲':'▼'}${Math.abs(dc).toFixed(2)}%</span>`:''}</span><i class="kt-bar" style="--w:${Math.min(100,w).toFixed(1)}%;--bc:${bc}" aria-hidden="true"></i></${kv?'button':'div'}>`};
   // 5.11: a tile of nothing (no cash, or a portfolio of shares only) is left out instead of "₪0 · 0.0%"
   const L=[sv>0?tile('stock','מניות',sv,'#2DD4BF',both?'stock':null):'',fv>0?tile('fund','קרנות',fv,'#7C3AED',both?'fund':null):'',(m.cash||0)>=1?tile('cash','מזומן',m.cash,'#A1A1AA',null):''].filter(Boolean);
   if(uv>0&&T&&uv/T>0.02&&uv/T<0.98)L.push(tile('usd','בדולרים',uv,'#6366F1',null));
@@ -19068,7 +19086,9 @@ function eyeOn(){let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}cat
     if(!(ev.target.closest&&ev.target.closest('#kEye')))return; const v=!document.body.classList.contains('hidenum'); try{localStorage.setItem('tr_hidenum',v?'1':'0')}catch(e){} on(); try{uiPush()}catch(e){}});
   if(document.readyState==='loading')addEventListener('DOMContentLoaded',on); else on()})();
 // the account circle moves from the corner into the header, next to the wordmark, when the site's runtime adds it
-(function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h)h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
+// 9.11 (the owner): on the home screen the four actions come right under the value card (the chart), the tiles after them
+(function kindsBoot(){const mv=()=>{const k=$('kindRow'), q=$('quickActs'); if(k&&q&&k.previousElementSibling!==q){q.after(k); k.classList.add('inpane')}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
+(function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h&&!k.classList.contains('okmini'))h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
 (function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('hdrAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
@@ -19080,7 +19100,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:W<560?230:210, L=slim?6:46, R=slim?10:12, T=10, B=slim?18:24;   // 9.11: taller: the chart is the main thing on the home
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:W<560?172:200, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
   // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
@@ -19092,7 +19112,7 @@ function renderWChart(){
   const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
   const lab='font-family="var(--sans)" style="fill:var(--muted)"';
   let g=`<defs><linearGradient id="wgA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2DD4BF"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient><linearGradient id="wgF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C3AED" stop-opacity=".42"/><stop offset="1" stop-color="#2DD4BF" stop-opacity=".04"/></linearGradient></defs>`;
-  if(!slim)for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${L-6}" y="${yy+4}" font-size="11" ${lab} text-anchor="end">${kf(v)}</text>`}
+  if(!slim)for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${W-R+6}" y="${yy+4}" font-size="11" ${lab} text-anchor="start">${kf(v)}</text>`}
   const d=P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
   g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wgF)"/>`;
   // the money put in, dotted, when the whole portfolio is shown and the deposits are known: the gap to the line is the result
@@ -19100,7 +19120,11 @@ function renderWChart(){
   if(IX)g+=`<path d="${P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(IX[i]).toFixed(1)).join(' ')}" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>`;
   g+=`<path d="${d}" fill="none" stroke="url(#wgA)" stroke-width="${slim?2.4:2.8}" stroke-linejoin="round" stroke-linecap="round"/>`;
   // up to four month names under the line, spread over the range
-  const MS=new Set(); const ticks=[]; for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
+  // 9.11: a range shorter than two months is named by days (6.11), not by one month's name under the whole line
+  const short=t1-t0<62*864e5;
+  if(short){const n=Math.min(P0.length,slim?3:4), seen=new Set(); for(let i=0;i<n;i++){const p=P0[Math.round(i*(P0.length-1)/Math.max(1,n-1))]; if(seen.has(p))continue; seen.add(p); const dd=new Date(p.t), xx=Math.min(W-R-14,Math.max(L+14,x(p.t)));
+    g+=`<text x="${xx}" y="${H-5}" font-size="10.5" ${lab} text-anchor="middle">${dd.getDate()}.${dd.getMonth()+1}</text>`}}
+  const MS=new Set(); const ticks=[]; if(!short)for(const p of P0){const dd=new Date(p.t), k=dd.getFullYear()*12+dd.getMonth(); if(!MS.has(k)){MS.add(k);ticks.push(p)}}
   const years=new Set(ticks.map(p=>new Date(p.t).getFullYear())), maxT=slim?3:W<420?5:8, step=Math.max(1,Math.ceil(ticks.length/maxT));
   ticks.filter((_,i)=>i%step===0||i===ticks.length-1).forEach((p,i,arr)=>{const dd=new Date(p.t), xx=Math.min(W-R-14,Math.max(L+14,x(p.t))); if(i&&xx-x(arr[i-1].t)<34)return;
     g+=`<text x="${xx}" y="${H-5}" font-size="10.5" ${lab} text-anchor="middle">${esc(MSHORT[dd.getMonth()])}${years.size>1?' '+String(dd.getFullYear()).slice(2):''}</text>`});
@@ -19115,7 +19139,7 @@ const wLab=p=>p.now?'היום':p.label||dmy(isoDay(p.t));
 function wRead(i){
   const el=$('wChR'); if(!el||!WCP)return; const P0=WCP.P, a=P0[0], z=P0[P0.length-1];
   const c=$('wChC'); if(c)c.style.display=i<0?'none':'';
-  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WRE()?({6:'6 חודשים',12:'שנה',24:'שנתיים'})[WRE()]:'מאז '+wLab(a);
+  if(i<0){const ch=z.v-a.v, pc=a.v>0?ch/a.v*100:null, rg=WRE()?({1:'חודש',3:'3 חודשים',6:'6 חודשים',12:'שנה',24:'שנתיים'})[WRE()]:'מאז '+wLab(a);
     const dep=a.dep!=null&&z.dep!=null?z.dep-a.dep:null;
     el.innerHTML=`${rg}: <b class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'} <span class="n">${ils(Math.abs(ch))}</span>${pc!=null?` (<span class="n">${spct(pc,1)}</span>)`:''}</b>`+(dep!=null&&Math.abs(dep)>=1?` · הפקדות <span class="n">${ils(dep)}</span>`:'');return}
   const p=P0[i], px=WCP.x(p.t), py=WCP.y(p.v); $('wChCl').setAttribute('x1',px); $('wChCl').setAttribute('x2',px); $('wChCd').setAttribute('cx',px); $('wChCd').setAttribute('cy',py);
@@ -19576,7 +19600,7 @@ document.addEventListener('click',ev=>{
 });
 window.__pxal={hits:pxAlertHits,set:pxAlertSet,price:pxKeyPrice};
 // 5.11: the home's day and groups, for the page's tests (the day of a given portfolio over given market dates)
-window.__home={day:(P2,q2)=>{const keys=['usDate','ilDate','lastTradeDay'], Q0={}; for(const k of keys)Q0[k]=Q[k]; Object.assign(Q,q2||{}); try{return withP(P2,()=>[dayWord(),dayLab(),dayLive()])}finally{Object.assign(Q,Q0)}},
+window.__home={mkt:q2=>{const Q0={usDate:Q.usDate,ilDate:Q.ilDate}; Object.assign(Q,q2||{}); try{dayMkt(mAllNow()); const e=$('kDayM'); return {on:!e.hidden,txt:e.textContent}}finally{Object.assign(Q,Q0); try{dayMkt(mAllNow())}catch(e){}}},trust:T=>renderTrustChip(T),day:(P2,q2)=>{const keys=['usDate','ilDate','lastTradeDay'], Q0={}; for(const k of keys)Q0[k]=Q[k]; Object.assign(Q,q2||{}); try{return withP(P2,()=>[dayWord(),dayLab(),dayLive()])}finally{Object.assign(Q,Q0)}},
   grpAuto:P0=>grpAuto(P0),span:()=>WSPAN,today:()=>tzDay('Asia/Jerusalem'),dmy:d=>dmy(d)};
 function whyH(w){if(!w)return'';return `<details class="why"><summary>למה אני רואה את זה?</summary><div class="wy"><span class="wsrc">${{rule:'כלל שקבעת',analysis:'ניתוח של הדף',plan:'התוכנית שלך'}[w.src]||''}</span><dl>${w.rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-tab="${w.tab}">${w.tl}</button></div></details>`}
 // 31.10: the day in three short lines, at the top of the home: what the portfolio did and who moved it; the news on the
@@ -19602,7 +19626,7 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
     if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
     if(!a){a=N.find(z=>z.lv==='crit')||null; sym=null}
     if(a){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear';
-      row('news',sym?symH(sym):'בחדשות',`${d!=='unclear'?chBadge(d,true)+' ':''}${esc(imCut(a.title,120))}`,sym&&SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`)}
+      row('news',sym?(()=>{try{return logoHtml(sym,'s')}catch(e){return ''}})()+symH(sym):'בחדשות',`${d!=='unclear'?chBadge(d,true)+' ':''}${esc(imCut(a.title,120))}`,sym&&SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`)}
     else if(typeof PULSE!=='undefined'&&PULSE)row('news','בחדשות','אין היום ידיעה חשובה על המניות שלך')}
   // what needs the person: the rules' findings (the same count as on "בקרה"), and the alerts not read
   {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
@@ -24697,7 +24721,7 @@ function plRender(m){
 }
 function stPlace(){const b=$('stBub'), f=$('chatFab'); if(!b||b.hidden)return; if(!f||f.hidden){b.style.visibility='hidden';return}
   const r=f.getBoundingClientRect(); if(!r.width){b.style.visibility='hidden';return} b.style.visibility='';
-  const w=b.offsetWidth||30, h=b.offsetHeight||30, x=Math.max(4,Math.min(innerWidth-w-4,r.right-w*0.8)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-h*0.6)+'px'}   // on the button's top corner
+  const w=b.offsetWidth||30, x=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-8)+'px'}   // 9.11: a column straight above the button (resting on its top), over the page's edge only
 addEventListener('resize',()=>{try{stPlace()}catch(e){}});
 setInterval(()=>{const b=$('stBub'); if(b&&!b.hidden)try{stPlace()}catch(e){}},1500);
 // a critical alert: a banner at the top, once per version, not in the quiet hours (unless allowed)
@@ -28327,8 +28351,13 @@ function nwHealth(){const N=typeof NEWSD!=='undefined'?NEWSD:null, X=typeof NXD!
   return {st,t,d,read,waiting,at}}
 const nwChip=H=>`${niH(H.st==='ok'?'ok':'warn')}<span>${esc(H.t)}</span>`;
 function nwHealthH(H){if(!H)return ''; return `<div class="dk-trust ${H.st==='ok'?'ok':'warn'}${H.st==='bad'?' bad':''}" id="dkNews">${niH(H.st==='ok'?'ok':'warn','dt-ic')}<div class="dt-b"><b>${esc(H.t)}</b><span class="dt-s">${esc(H.d)}</span></div></div>`}
-function renderNewsChip(){const el=$('kNews'); if(!el)return; const H=noPf()?null:nwHealth(); if(!H){el.hidden=true; return} el.hidden=false; el.className='status trust'+(H.st==='ok'?'':' warn')+(H.st==='bad'?' bad':''); setH(el,nwChip(H))}
-function renderTrustChip(T){const el=$('kTrust'); if(!el)return; if(!T||noPf()){el.hidden=true;return} el.hidden=false; el.className='status trust'+(T.ok?'':' warn'); setH(el,trustChip(T))}
+function renderNewsChip(){const el=$('kNews'); if(!el)return; const H=noPf()?null:nwHealth(); if(!H){el.hidden=true; try{kOkSync()}catch(e){} return} el.hidden=false; el.className='status trust'+(H.st==='ok'?'':' warn')+(H.st==='bad'?' bad':''); setH(el,nwChip(H)); try{kOkSync()}catch(e){}}
+function renderTrustChip(T){const el=$('kTrust'); if(!el)return; if(!T||noPf()){el.hidden=true; kOkSync(); return} el.hidden=false; el.className='status trust'+(T.ok?'':' warn'); setH(el,trustChip(T)); kOkSync()}
+// 9.11 (the owner): when the prices and the news are both up to date the chips shrink to one ✓ beside "שווי התיק" (the
+// chip keeps its words for a screen reader and still opens the details); anything late is a chip under the chart, as before
+function kOkSync(){const k=document.querySelector('.kchips'), t=$('kTrust'), n=$('kNews'), top=document.querySelector('.worth .wtop .k'), h=$('wchH'); if(!k||!top||!h)return;
+  const vis=[t,n].filter(x=>x&&!x.hidden), ok=vis.length>0&&vis.every(x=>!x.classList.contains('warn')&&!x.classList.contains('bad'))&&(!$('kStatus')||$('kStatus').hidden);
+  k.classList.toggle('okmini',ok); if(t)t.title=ok?'המחירים והחדשות עדכניים. לפרטים':'האם המחירים עדכניים? לפרטים'; const want=ok?top:h; if(k.parentElement!==want)want.appendChild(k)}
 document.addEventListener('click',ev=>{
   const g=ev.target.closest&&ev.target.closest('[data-uxgo]'); if(g){const k=g.dataset.uxgo;
     if(k==='newschip'){showTab('overview',true); setTimeout(()=>{const t=$('dkNews'); if(t){t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60); return}
