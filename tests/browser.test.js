@@ -3393,3 +3393,21 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });
+
+test('9.11 a holding\'s row in התיק שלי: "קנייה / מכירה" opens the small box right under the row (a sale of a held one, a switch to buying), and saves',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
+  try{const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(800);
+    const i=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#pfRows [data-rowtrade]')].find(b=>/MSFT/.test(b.getAttribute('aria-label'))); return b?b.dataset.rowtrade:null}); assert.ok(i!=null,'a button in the row');
+    const q0=P0.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0);
+    await pg.click(`#pfRows [data-rowtrade="${i}"]`); await pg.waitForSelector('#trBoxRow:not([hidden]) #trQty');
+    const r=await pg.evaluate(()=>{const x=document.getElementById('trRowTr'); return {after:x.previousElementSibling&&!!x.previousElementSibling.querySelector('[data-rowtrade]'),side:document.querySelector('#trBoxRow [data-trside][aria-pressed="true"]').dataset.trside,page:document.body.dataset.page}});
+    assert.deepEqual(r,{after:true,side:'sell',page:'mine'},'under its own row, a sale');
+    await pg.click('#trBoxRow [data-trside="buy"]'); await pg.waitForSelector('#trBoxRow #trSave'); assert.match(await pg.textContent('#trBoxRow h3'),/^קנייה/);
+    await pg.fill('#trQty','1'); if(!(await pg.inputValue('#trPx')))await pg.fill('#trPx','400'); await pg.waitForTimeout(100); assert.match(await pg.textContent('#trSum'),/סה״כ/);
+    await pg.click('#trSave'); await pg.waitForTimeout(1200);
+    const q1=store.getDoc('portfolio/main').data.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0); assert.equal(Math.round((q1-q0)*1e6)/1e6,1,'one unit bought');
+    assert.equal(await pg.evaluate(()=>!!document.getElementById('trRowTr')),false,'the box closed');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
+});

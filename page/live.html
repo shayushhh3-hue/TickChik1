@@ -706,7 +706,9 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 [data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open .seccard>.sec-h,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
 @media (max-width:1199px){body[data-page="search"].sec-open .hero .top .acts{display:none}}   /* 9.11: the accounts row and the header buttons too; the brand and its status line stay */
 .secp{display:flex;flex-direction:column;gap:14px}
-.trbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px} .trbox[hidden]{display:none} .trbox h3{margin:0;font-size:15px}
+.trbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.tr-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .tr-hd h3{margin:0} .tr-side{display:inline-flex;gap:4px} .tr-side .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff;border-color:transparent}
+.trrow>td{padding:0 0 10px!important;border:0!important} .trrow .trbox{margin:0} .trbox[hidden]{display:none} .trbox h3{margin:0;font-size:15px}
 .trbox .tr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px} .trbox label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600}
 .trbox input,.trbox select{min-height:42px;font-size:16px} .trbox .tr-q{display:flex;gap:6px} .trbox .tr-q input{flex:1;min-width:0} .trbox .nm{font-weight:500;font-size:12px}
 .trbox .tr-sum{margin:0;font-size:14px;line-height:1.5} .trbox .tr-sum .nm{display:block;color:var(--muted);margin-top:2px}
@@ -22525,10 +22527,12 @@ function trHeld(sym,acct){return ((P&&P.positions)||[]).filter(p=>p&&p.sym===sym
 function trOpen(k,side){const it=itemOf(k)||{sym:k}, sym=it.sym||k, pr=(()=>{try{return priceOf(k)}catch(e){return null}})(), held=trHeld(sym);
   const ccy=(held[0]&&held[0].ccy)||(pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:(it.t==='T'||it.t==='F'||String(k).startsWith('TLV:')||ilIsNum(k)?'ILS':'USD'));
   TRX={k,sym,side,name:it.name||it.he||'',t:it.t,acct:(held[0]&&held[0].acct)||acctPick(),ccy,px:pr&&pr.px>0&&(pr.ccy||ccy)===ccy?pr.px:null,q:'',pxIn:'',d:ilDay(),msg:''}; trRender()}
-function trRender(){const el=$('trBox'); if(!el)return; if(!TRX||TRX.k!==SEC){el.hidden=true; el.innerHTML=''; return} const T=TRX, sell=T.side==='sell';
+// 9.11 (the plan's item 20): the same box opens under a row of the holdings (TRX.host), not only on a security's page
+function trRender(){const box=$('trBox'), row=$('trBoxRow'), show=!!TRX&&(TRX.host?!!$(TRX.host):TRX.k===SEC), el=show?(TRX.host?$(TRX.host):box):null;
+  for(const c of [box,row])if(c&&c!==el){c.hidden=true; c.innerHTML=''} if(!el){const tr=$('trRowTr'); if(tr&&!TRX)tr.remove(); return} const T=TRX, sell=T.side==='sell';
   const held=trHeld(T.sym), accts=sell?[...new Set(held.map(p=>p.acct||''))]:acctIds(); if(!accts.includes(T.acct))T.acct=accts[0];
   const h=trHeld(T.sym,T.acct)[0]||null, have=h?+h.qty:0;
-  el.hidden=false; el.innerHTML=`<h3>${sell?'מכירה':'קנייה'} של ${esc(lab(T.sym))}</h3>
+  el.hidden=false; el.innerHTML=`<div class="tr-hd"><h3>${sell?'מכירה':'קנייה'} של ${esc(lab(T.sym))}</h3><span class="tr-side" role="group" aria-label="קנייה או מכירה"><button type="button" class="chip" data-trside="buy" aria-pressed="${!sell}">קנייה</button>${held.length?`<button type="button" class="chip" data-trside="sell" aria-pressed="${sell}">מכירה</button>`:''}</span></div>
     <div class="tr-g">
       ${accts.length>1?`<label><span>חשבון</span><select id="trAcct">${accts.map(a=>`<option value="${esc(a)}"${a===T.acct?' selected':''}>${esc(acctName(a))}${sell?` · ${+(+trHeld(T.sym,a)[0].qty).toFixed(4)} יח׳`:''}</option>`).join('')}</select></label>`:''}
       <label><span>כמה יחידות${sell&&have?` (יש לך ${+have.toFixed(4)})`:''}</span><span class="tr-q"><input id="trQty" type="number" inputmode="decimal" min="0" step="any" value="${esc(T.q)}" autocomplete="off">${sell?'<button type="button" class="btn sm" id="trAll">הכל</button>':''}</span></label>
@@ -22569,14 +22573,20 @@ async function trSave(){const v=trVals(); if(!v||!canWrite)return; const {T,q,px
     TRX=null; try{render()}catch(e){} try{renderSec()}catch(e){}
     offerUndo(msg,async()=>{await pset('portfolio',P0); P=P0; if(H0)await pset('history',H0); else await pset('history',{accounts:[],depIlsNow:0,monthly:[]}); HS=H0; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){} try{renderSec()}catch(e){}})}
   catch(e){m.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); $('trSave').disabled=false}}
-document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-sectrade],#trAll,#trPxNow,#trSave,#trX'); if(!t||!canWrite)return;
+document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-sectrade],[data-rowtrade],[data-trside],#trAll,#trPxNow,#trSave,#trX'); if(!t||!canWrite)return;
+  if(t.dataset.trside){if(TRX){TRX.side=t.dataset.trside; TRX.q=''; trRender(); const q=$('trQty'); if(q)q.focus()} return}
+  // a holding's row in התיק שלי: the box opens right under the row, on the row's account (a sale when the row is held)
+  if(t.dataset.rowtrade!=null){const p=(DRAFT&&DRAFT.positions||[])[+t.dataset.rowtrade], tr=t.closest('tr'); if(!p||!p.sym||!tr)return;
+    if(TRX&&TRX.host==='trBoxRow'&&TRX.sym===p.sym&&TRX.acct===(p.acct||'')){TRX=null; trRender(); return}
+    let x=$('trRowTr'); if(x)x.remove(); x=document.createElement('tr'); x.id='trRowTr'; x.className='trrow'; x.innerHTML='<td colspan="20"><div id="trBoxRow" class="trbox" hidden></div></td>'; tr.after(x);
+    const held=trHeld(p.sym,p.acct||'').length>0; trOpen(p.sym,held?'sell':'buy'); TRX.host='trBoxRow'; TRX.acct=p.acct||TRX.acct; trRender(); try{x.scrollIntoView({block:'nearest'})}catch(e){} const q=$('trQty'); if(q)q.focus({preventScroll:true}); return}
   if(t.dataset.sectrade){if(TRX&&TRX.k===t.dataset.k&&TRX.side===t.dataset.sectrade){TRX=null; trRender()} else trOpen(t.dataset.k,t.dataset.sectrade);
     for(const b of document.querySelectorAll('[data-sectrade]'))b.setAttribute('aria-expanded',String(!!TRX&&TRX.side===b.dataset.sectrade)); const q=$('trQty'); if(q)q.focus(); return}
   if(t.id==='trAll'){const v=trVals(); if(v){TRX.q=String(v.have); $('trQty').value=TRX.q; trCalc()} return}
   if(t.id==='trPxNow'){TRX.pxIn=''; trRender(); return}
   if(t.id==='trX'){TRX=null; trRender(); for(const b of document.querySelectorAll('[data-sectrade]'))b.setAttribute('aria-expanded','false'); return}
   if(t.id==='trSave')trSave()});
-document.addEventListener('input',ev=>{if(!TRX||!(ev.target.closest&&ev.target.closest('#trBox')))return; const id=ev.target.id;
+document.addEventListener('input',ev=>{if(!TRX||!(ev.target.closest&&ev.target.closest('#trBox,#trBoxRow')))return; const id=ev.target.id;
   if(id==='trQty')TRX.q=ev.target.value; else if(id==='trPx')TRX.pxIn=ev.target.value; else if(id==='trDate')TRX.d=ev.target.value; trCalc()});
 document.addEventListener('change',ev=>{if(ev.target.id==='trAcct'&&TRX){TRX.acct=ev.target.value; trRender()}});
 function slCur(){const r=slRows().find(x=>x.k===SELLK); return r?r.p:null}
@@ -22740,7 +22750,7 @@ function renderMine(force){
     <td data-l="עלות כוללת $"><input type="number" data-pf="costUsd" data-i="${i}" value="${p.ccy==='ILS'?'':nv(p.costUsd)}" min="0" step="0.01" placeholder="${p.ccy==='ILS'?'—':'לא ידוע'}" aria-label="עלות כוללת בדולרים" title="מה הקנייה עלתה בדולרים, לפירוק התוצאה בין מחיר המניה לשער הדולר"${p.ccy==='ILS'?' disabled':dis}></td>
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td class="pfx"><button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfx">${canWrite&&p.sym&&!ilIdx(p.sym)?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" aria-label="קנייה או מכירה של ${nv(p.sym)}">קנייה / מכירה</button>`:''}<button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
