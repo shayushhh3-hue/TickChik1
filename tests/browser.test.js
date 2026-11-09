@@ -3196,6 +3196,10 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1500);
   const v=await pg.evaluate(()=>{const b=document.getElementById('secMark'), r=b.getBoundingClientRect(), top=document.querySelector('#secPage .top').getBoundingClientRect(); return {back:!!document.getElementById('secBack'),mark:{on:b.classList.contains('on'),pressed:b.getAttribute('aria-pressed'),label:b.getAttribute('aria-label'),w:Math.round(r.width),leftish:r.left<top.left+top.width/2,svg:!!b.querySelector('svg')},hash:location.hash,state:history.state&&history.state.sec}});
   assert.equal(v.back,false,'no back button'); assert.ok(v.mark.svg&&v.mark.w>=40,'a bookmark icon'); assert.ok(v.mark.leftish,'at the left of the page'); assert.equal(v.state,'MSFT','a history entry'); assert.equal(v.hash,'#search');
+  // 9.11: the security page is the whole screen: the research heading, the parts row and the search box are not shown over it
+  const vis=id=>pg.evaluate(id=>{const el=document.getElementById(id)||document.querySelector(id); return !!el&&!!el.offsetParent},id);
+  assert.equal(await vis('hSearch'),false,'no heading over the page'); assert.equal(await vis('srchBox'),false,'no search box over the page'); assert.equal(await vis('[data-pane="search"]>.subtabs'),false,'no parts row over the page');
+  assert.ok(await pg.evaluate(()=>document.querySelector('#secPage .top').getBoundingClientRect().top<230),'the security starts right under the site header');
   const was=v.mark.on;
   await pg.click('#secMark'); await pg.waitForTimeout(800);
   const m2=await pg.evaluate(()=>{const b=document.getElementById('secMark'); return {on:b.classList.contains('on'),pressed:b.getAttribute('aria-pressed')}}); assert.equal(m2.on,!was,'the mark toggles'); assert.equal(m2.pressed,String(!was));
@@ -3204,5 +3208,11 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   await pg.goBack(); await pg.waitForTimeout(600);
   const after=await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,res:!document.getElementById('sqRes').hidden,page:document.body.dataset.page}));
   assert.deepEqual(after,{sec:true,res:true,page:'search'});
+  assert.equal(await vis('hSearch'),true,'the heading is back on the landing'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.subtabs'),true);
+  // a tap on the research tab below, from an open security, also returns to the landing (through the history, so back does not reopen it)
+  await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1200); assert.equal(await vis('hSearch'),false);
+  await pg.click('#botbar [data-bb="search"]'); await pg.waitForTimeout(800);
+  assert.deepEqual(await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,hist:history.state&&history.state.sec||null})),{sec:true,hist:null},'the tab tap closed the page and its history entry');
+  assert.equal(await vis('hSearch'),true);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
