@@ -26418,16 +26418,32 @@ function insRowH(f,withSym){const tx=f.kinds&&f.kinds.length>1?f.kinds.map(k=>`$
     ${tx?`<div class="nm">בדיווח: ${esc(tx)}</div>`:''}${f.material?`<div class="ins-why"><b>מהותי:</b> ${esc((f.why||[]).join('; '))}</div>`:''}
     <div class="nm">דווח ל-SEC ${dmy(f.filedAt)} · </div></li>`}
 function secInsiders(it){if(!it||!it.sym||it.t==='I'||it.t==='E'||it.t==='F'||it.t==='T'||/^TLV:|^\d/.test(it.sym))return '';
+  // 9.11 (the owner): the filings themselves moved to "חיבור למציאות" (the news page, "בעלי עניין", with this company in
+  // focus); the security page keeps the count of the last 90 days in one line and the way there
   const L=insOf(it.sym); if(!INS)return ''; const S9=insSum(L), checked=INS.checked&&INS.checked[it.sym];
-  const head=`<div class="row" style="margin-top:12px"><h3>בעלי עניין: מה דיווחו ל-SEC</h3><span class="sub">${esc(INS.source||'SEC EDGAR')}${INS.updatedAt?' · '+rsWhen(INS.updatedAt):''}</span></div>`;
-  if(!L.length)return `${head}<p class="note">${checked?'ב-120 הימים האחרונים לא נמצאו דיווחי טופס 4 של בעלי עניין בחברה.':'הדיווחים של החברה הזו עוד לא נמשכו (נמשכים לניירות בתיק ובמעקב, פעמיים ביום).'}</p>`;
-  const sum=`<p class="ins-sum">ב-${S9.days} הימים: <b>${S9.buy.n}</b> קניות בשוק${S9.buy.n?` (${S9.buy.who.size} אנשים, ${usd0(S9.buy.v)})`:''} · <b>${S9.sell.n}</b> מכירות בשוק${S9.sell.n?` (${S9.sell.who.size} אנשים, ${usd0(S9.sell.v)}${S9.plan?`, ${S9.plan} בתוכנית מתוכננת`:''})`:''} · <b>${S9.pay}</b> דיווחי תגמול, מימוש או מס.</p>`;
-  const Ls=L.slice().sort((a,b)=>(b.deliberate-a.deliberate)||(b.material-a.material)||(a.filedAt<b.filedAt?1:-1));   // the decisions with their own money first, then the pay mechanics
-  return `${head}${sum}<ul class="ins-l">${Ls.slice(0,8).map(f=>insRowH(f,false)).join('')}</ul>${L.length>8?`<p class="nm">${L.length-8} דיווחים נוספים ב-200 הימים האחרונים (תגמול, מימוש ומס בסוף).</p>`:''}
-    <p class="note">קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול, לא החלטה. מכירה בתוכנית מתוכננת נקבעה מראש. דיווח הוא עובדה על העסקה של המדווח, לא על עתיד החברה; המידע מפגר ביחס לעסקה (דיווח תוך יומיים). לא ייעוץ.</p>`}
+  const head=`<div class="row" style="margin-top:12px"><h3>בעלי עניין</h3><span class="sub">${esc(INS.source||'SEC EDGAR')}${INS.updatedAt?' · '+rsWhen(INS.updatedAt):''}</span></div>`;
+  const go=`<button type="button" class="lnk" data-insgo="${esc(it.sym)}">לדיווחים בחיבור למציאות ›</button>`;
+  if(!L.length)return `${head}<p class="ins-sum nm">${checked?'ב-120 הימים האחרונים לא נמצאו דיווחי טופס 4 של בעלי עניין בחברה.':'הדיווחים של החברה הזו עוד לא נמשכו (נמשכים לניירות בתיק ובמעקב, פעמיים ביום).'} ${go}</p>`;
+  return `${head}<p class="ins-sum">ב-${S9.days} הימים: <b>${S9.buy.n}</b> קניות בשוק${S9.buy.n?` (${S9.buy.who.size} אנשים, ${usd0(S9.buy.v)})`:''} · <b>${S9.sell.n}</b> מכירות בשוק${S9.sell.n?` (${S9.sell.who.size} אנשים, ${usd0(S9.sell.v)}${S9.plan?`, ${S9.plan} בתוכנית מתוכננת`:''})`:''} · <b>${S9.pay}</b> דיווחי תגמול, מימוש או מס. ${go}</p>`}
+// the company in focus on the news page's "בעלי עניין" (from a security's page); cleared by its own button
+let INS_SYM='';
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-insgo]'); if(!b)return; INS_SYM=b.dataset.insgo||''; try{if(!$('imView').hidden)imClose()}catch(e){}
+  showTab('news',true); RTT='news'; NWV='ins'; try{renderNewsX()}catch(e){} setTimeout(()=>{try{const el=$('newsFeed')||document.querySelector('#rtNews'); if(el)el.scrollIntoView({block:'start'})}catch(e){}},120)});
+document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('[data-insclr]')){INS_SYM=''; try{renderNewsX()}catch(e){}}});
+// the company in focus: all of its filings of the last 200 days, the decisions with their own money first
+function insFocusH(sym){const it=itemOf(sym), L=insOf(sym), S9=insSum(L), checked=INS.checked&&INS.checked[sym];
+  const Ls=L.slice().sort((a,b)=>(b.deliberate-a.deliberate)||(b.material-a.material)||(a.filedAt<b.filedAt?1:-1));
+  return `<section class="nw-ds ins-focus"><div class="row"><h4>בעלי עניין ב-${esc((it&&(it.he||it.name))||sym)} <bdi dir="ltr">${esc(sym)}</bdi></h4><button type="button" class="btn sm" data-insclr="1">לכל החברות</button></div>
+    ${L.length?`<p class="ins-sum">ב-${S9.days} הימים: <b>${S9.buy.n}</b> קניות בשוק${S9.buy.n?` (${S9.buy.who.size} אנשים, ${usd0(S9.buy.v)})`:''} · <b>${S9.sell.n}</b> מכירות בשוק${S9.sell.n?` (${S9.sell.who.size} אנשים, ${usd0(S9.sell.v)}${S9.plan?`, ${S9.plan} בתוכנית מתוכננת`:''})`:''} · <b>${S9.pay}</b> דיווחי תגמול, מימוש או מס.</p>
+    <ul class="ins-l">${Ls.slice(0,30).map(f=>insRowH(f,false)).join('')}</ul>${L.length>30?`<p class="nm">${L.length-30} דיווחים נוספים ב-200 הימים האחרונים.</p>`:''}`
+    :`<p class="note">${checked?'ב-120 הימים האחרונים לא נמצאו דיווחי טופס 4 של בעלי עניין בחברה.':'הדיווחים של החברה הזו עוד לא נמשכו (נמשכים לניירות בתיק ובמעקב, פעמיים ביום).'}</p>`}
+    <p class="note">קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול, לא החלטה. מכירה בתוכנית מתוכננת נקבעה מראש. דיווח הוא עובדה על העסקה של המדווח, לא על עתיד החברה; המידע מפגר ביחס לעסקה (דיווח תוך יומיים). לא ייעוץ.</p></section>`}
 // the news page: the filings of the last 30 days in the companies held or followed, the material ones first
 function insViewH(){
   if(!INS)return '<div class="empty">דיווחי בעלי העניין עוד לא נמשכו.</div>';
+  if(INS_SYM)return insFocusH(INS_SYM)+insViewAllH();
+  return insViewAllH()}
+function insViewAllH(){
   const held=new Set(((P&&P.positions)||[]).map(p=>p.sym)), W=new Set(wmarks()), from=new Date(Date.now()-30*864e5).toISOString(), L=[];
   for(const [sym,F] of Object.entries(INS.by||{})){if(!held.has(sym)&&!W.has(sym))continue; for(const f of F||[])if(f.filedAt>=from)L.push({...f,held:held.has(sym)})}
   L.sort((a,b)=>(b.material-a.material)||(b.deliberate-a.deliberate)||(b.filedAt<a.filedAt?-1:1));

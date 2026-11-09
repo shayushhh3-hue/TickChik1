@@ -1993,19 +1993,26 @@ test('1.11 the insiders: the security page tells a planned sale from an award, t
   {const {pulseUpdate}=await import('../server/pulse.js'); pulseUpdate(store,null,{})}
   const {ctx,pg}=await open(390);
   try{
-    // the security page: the summary and the rows, each kind told apart
-    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('#secPage .ins-l'),null,{timeout:10000});
-    const sec=await pg.evaluate(()=>({sum:document.querySelector('#secPage .ins-sum').innerText.replace(/\s+/g,' '),rows:[...document.querySelectorAll('#secPage .ins-r')].map(r=>({cls:r.className,txt:r.innerText.replace(/\s+/g,' '),link:r.querySelector('a[href*="sec.gov"]')?.href})),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    // 9.11: the security page keeps one line (the 90 days' count) and the way to the news page; the filings live there
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('#secPage .ins-sum'),null,{timeout:10000});
+    const sec=await pg.evaluate(()=>({sum:document.querySelector('#secPage .ins-sum').innerText.replace(/\s+/g,' '),rows:document.querySelectorAll('#secPage .ins-r').length,go:!!document.querySelector('#secPage [data-insgo="NVDA"]'),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(sec.ox,false); assert.match(sec.sum,/ב-90 הימים: 1 קניות בשוק \(1 אנשים, \$85,000\) · 1 מכירות בשוק \(1 אנשים, \$21,900,000, 1 בתוכנית מתוכננת\) · 1 דיווחי תגמול/);
-    assert.equal(sec.rows.length,3); assert.match(sec.rows[0].cls,/k-sell mat/); assert.match(sec.rows[0].txt,/Huang Jen Hsun.*President and CEO.*מכירה בשוק 120,000 מניות · \$21,900,000.*תוכנית מסחר מתוכננת \(10b5-1\).*מחזיק אחרי: 75,000,000.*מהותי:/); assert.equal(sec.rows[0].link,undefined,'4.11: no link out of the site'); assert.match(sec.rows[0].txt,/דווח ל-SEC/,'the source named');
-    assert.match(sec.rows[1].txt,/קנייה בשוק 500 מניות/,'the trades with their own money first'); assert.match(sec.rows[2].txt,/Kress Colette.*תגמול \/ הענקה 5,000 מניות/); assert.doesNotMatch(sec.rows[2].txt,/מהותי/);
-    assert.match(await pg.evaluate(()=>document.querySelector('#secPage .ins-l').nextElementSibling.textContent),/קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול/);
-    // a company checked with no filings says so
-    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='KO'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForTimeout(800); assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage .ins-l')),false); assert.match(await pg.evaluate(()=>document.getElementById('secPage').innerText),/לא נמצאו דיווחי טופס 4/);
-    // the news view: material first, then plain trades, pay mechanics folded
-    await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('#nxViews [data-nxv="ins"]').click()); await pg.waitForTimeout(400);
-    const nv=await pg.evaluate(()=>({h5:[...document.querySelectorAll('#newsFeed h5')].map(x=>x.textContent),rows:[...document.querySelectorAll('#newsFeed .ins-r')].map(r=>r.innerText.replace(/\s+/g,' ').slice(0,60)),txt:document.getElementById('newsFeed').innerText.replace(/\s+/g,' ')}));
+    assert.equal(sec.rows,0,'no filings on the security page any more'); assert.ok(sec.go,'the way to the news page');
+    // the way there: the news page, "בעלי עניין", this company in focus with its filings, each kind told apart; then all the companies
+    await pg.click('#secPage [data-insgo="NVDA"]'); await pg.waitForTimeout(900);
+    const fo=await pg.evaluate(()=>({page:document.body.dataset.page,view:document.querySelector('#nxViews [data-nxv="ins"]').getAttribute('aria-pressed'),h4:document.querySelector('#newsFeed .ins-focus h4')?.textContent.replace(/\s+/g,' '),
+      rows:[...document.querySelectorAll('#newsFeed .ins-focus .ins-r')].map(r=>({cls:r.className,txt:r.innerText.replace(/\s+/g,' '),link:r.querySelector('a[href*="sec.gov"]')?.href})),note:document.querySelector('#newsFeed .ins-focus .ins-l')?.nextElementSibling?.textContent||''}));
+    assert.equal(fo.page,'news'); assert.equal(fo.view,'true'); assert.match(fo.h4||'',/^בעלי עניין ב-.*NVDA$/,JSON.stringify(fo));
+    assert.equal(fo.rows.length,3); assert.match(fo.rows[0].cls,/k-sell mat/); assert.match(fo.rows[0].txt,/Huang Jen Hsun.*President and CEO.*מכירה בשוק 120,000 מניות · \$21,900,000.*תוכנית מסחר מתוכננת \(10b5-1\).*מחזיק אחרי: 75,000,000.*מהותי:/); assert.equal(fo.rows[0].link,undefined,'4.11: no link out of the site'); assert.match(fo.rows[0].txt,/דווח ל-SEC/,'the source named');
+    assert.match(fo.rows[1].txt,/קנייה בשוק 500 מניות/,'the trades with their own money first'); assert.match(fo.rows[2].txt,/Kress Colette.*תגמול \/ הענקה 5,000 מניות/); assert.doesNotMatch(fo.rows[2].txt,/מהותי/);
+    assert.match(fo.note,/קנייה או מכירה בשוק היא החלטה של בעל העניין בכספו; תגמול, מימוש אופציות וניכוי מס הם מנגנון התגמול/);
+    // all the companies under it; "לכל החברות" drops the focus
+    let nv=await pg.evaluate(()=>({h5:[...document.querySelectorAll('#newsFeed h5')].map(x=>x.textContent),rows:[...document.querySelectorAll('#newsFeed .nw-ds:not(.ins-focus) .ins-r')].map(r=>r.innerText.replace(/\s+/g,' ').slice(0,60)),txt:document.getElementById('newsFeed').innerText.replace(/\s+/g,' ')}));
     assert.deepEqual(nv.h5,['מהותי לפי הספים (1)','קניות ומכירות בשוק, לא מהותיות (1)']); assert.match(nv.rows[0],/NVDA Huang Jen Hsun/); assert.match(nv.rows[1],/MSFT Smith John/); assert.match(nv.txt,/תגמול, מימושים וניכויי מס \(1\)/); assert.match(nv.txt,/חברות אמריקאיות בלבד/); assert.match(nv.txt,/לא תחזית ולא המלצה/);
+    await pg.click('#newsFeed [data-insclr]'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>!!document.querySelector('#newsFeed .ins-focus')),false,'the focus dropped');
+    // a company checked with no filings says so, on its page, with the same way onward
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='KO'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForTimeout(800); assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage .ins-l')),false); assert.match(await pg.evaluate(()=>document.getElementById('secPage').innerText),/לא נמצאו דיווחי טופס 4/); assert.ok(await pg.evaluate(()=>!!document.querySelector('#secPage [data-insgo="KO"]')));
+    await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('#nxViews [data-nxv="ins"]').click()); await pg.waitForTimeout(400);
     // the alert center: the filing as a measured fact, with the link and the way to the security
     await pg.click('[data-rt="al"]'); await pg.waitForTimeout(500); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
     const al=await pg.evaluate(()=>{const c=[...document.querySelectorAll('#ixFull .pl')].find(x=>/בעלי עניין: NVDA/.test(x.textContent)); return c?{txt:c.innerText.replace(/\s+/g,' '),link:c.querySelector('a[href*="sec.gov"]')?.href,go:!!c.querySelector('[data-gosec="NVDA"]')}:null});
