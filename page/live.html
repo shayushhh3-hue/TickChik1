@@ -744,7 +744,15 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp .facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .secp .fact{background:var(--sunk);border-radius:8px;padding:8px 10px} .secp .fact .k{font-size:12px;color:var(--muted)} .secp .fact .v{font-size:14px;font-weight:600;margin-top:2px;font-family:var(--mono)} .secp .fact .v.t{font-family:var(--sans)}
 .up{color:var(--gain)} .down{color:var(--loss)}
-@media (max-width:640px){.secp .pxrow .v{font-size:30px}}
+@media (max-width:640px){.secp .pxrow .v{font-size:30px}
+  /* 9.11: the top of a security's page on a phone, in one grid: the logo and the name; two rows of two equal boxes (follow /
+     back, dollars-shekels / compare); the price at one edge and its change at the other */
+  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"lg t" "acts acts";column-gap:12px;row-gap:12px;align-items:center}
+  .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top .sub{text-wrap:balance}
+  .secp .top .acts{grid-area:acts;display:grid;grid-template-columns:1fr 1fr;gap:8px} .secp .top .acts .btn{width:100%;justify-content:center;min-height:42px}
+  .sectools{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch} .sectools .ccsw{display:flex;align-self:stretch;justify-content:stretch} .sectools .ccsw button{flex:1} .sectools>.btn,.sectools>button{width:100%;justify-content:center;min-height:42px}
+  .secp .pxrow{justify-content:space-between;flex-wrap:nowrap;gap:10px} .secp .chg{align-items:flex-end;text-align:end}
+}
 [data-adv] h2{font-size:16px;color:var(--ink2);font-weight:600} [data-adv]>.panel,[data-adv] .panel{box-shadow:none}
 .desk{padding:24px 26px;box-shadow:0 2px 4px rgb(11 18 32 / .06),0 10px 28px rgb(11 18 32 / .08)} .desk .dk-h h2{font-size:22px}
 @media (max-width:640px){.desk{padding:18px 16px}.desk .dk-h h2{font-size:19px}}
@@ -25246,7 +25254,7 @@ function renderSec(){SECHOV=-1;
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(it.t==='S'&&it.sec?it.sec+' · מניה זרה':(TYPEL[it.t]||''))}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
-    <button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div>
+    <div class="acts"><button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     ${secPriceParts(it,pr,on,fx)[0]}
     <p class="chline" id="secRead" aria-live="polite"></p>
