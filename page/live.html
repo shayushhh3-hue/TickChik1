@@ -703,6 +703,8 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 [data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open .seccard>.sec-h,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
 @media (max-width:1199px){body[data-page="search"].sec-open .hero .top .acts{display:none}}   /* 9.11: the accounts row and the header buttons too; the brand and its status line stay */
 .secp{display:flex;flex-direction:column;gap:14px}
+.sectrade{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .sectrade .btn{flex:1 1 0;min-height:44px;font-weight:800} .sectrade .nm{flex-basis:100%;font-size:12px;color:var(--muted);text-align:center}
+.sectrade [data-sectrade="buy"],.sectrade [data-sectrade="add"]{color:var(--gain);border-color:color-mix(in srgb,var(--gain) 45%,transparent)} .sectrade [data-sectrade="sell"]{color:var(--loss);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
 .secp .top{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .secp .top .t{flex:1 1 220px;min-width:0} .secp .top h2{font-size:18px;text-wrap:balance} .secp .top .sub{margin-top:3px}
 /* 9.11: "במעקב" is a bookmark at the top-left of the security's page (filled when watched), not a button; "חזרה" is gone:
@@ -22423,6 +22425,16 @@ function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows();
     <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="slSave" type="button" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><span class="saved" id="slState" role="status"></span></div>
     <p class="note" style="margin:0">${sell?'הכמות יורדת מהאחזקה, הסכום נכנס למזומן של החשבון, והרווח או ההפסד נשמרים במכירות של השנה.':'הכמות והעלות עולות, והסכום יורד מהמזומן של החשבון.'} כשיגיע הדוח הבא מהבנק, הוא יחליף את מה שנרשם כאן. לנייר שעוד אין בתיק: "הוספה ידנית".</p>`;
   slPick(); slCalc()}
+// 9.11 (the owner): from a security's page, "קניתי עוד" / "מכרתי" open "מכירה וקנייה" in התיק שלי with this security
+// chosen; a security not held opens a new row in the holdings with its symbol, name, currency and group filled in. Each
+// is a record in the portfolio, not an order: the site does not trade
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-sectrade]'); if(!b||!canWrite)return; const k=b.dataset.k, it=itemOf(k)||{sym:k}, sym=it.sym||k, how=b.dataset.sectrade;
+  if(how==='add'){if(!DRAFT||!dDirty)DRAFT=draftFromP(); const usd=!(it.t==='T'||it.t==='F'||k.startsWith('TLV:')||ilIsNum(k)); const g=(()=>{try{return groupOf(sym)}catch(e){return null}})();
+    DRAFT.positions.push({sym,name:it.name||it.he||'',acct:acctPick(),qty:0,ccy:usd?'USD':'ILS',costIls:null,costUsd:null,px:null,group:g||(it.t==='F'||!usd?'il':it.t==='E'?'etf':'tech')}); pfDirty();
+    showTab('mine',true); mvSet('hold','נוספה שורה ל-'+sym+'. מלא כמות ועלות ולחץ על "שמור את התיק".'); renderMine(true);
+    setTimeout(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], tr=rows[rows.length-1]; if(tr){tr.classList.add('open'); tr.scrollIntoView({block:'center'}); const q=tr.querySelector('[data-pf="qty"]'); if(q){q.select&&q.select(); q.focus()}}},120); return}
+  const R=slRows(), r=R.find(x=>x.p.sym===sym)||R.find(x=>x.p.sym===k); if(!r)return; SELLK=r.k; SELLM=how==='sell'?'sell':'buy';
+  showTab('mine',true); mvSet('sell'); setTimeout(()=>{const el=$('sellBox'); if(el)el.scrollIntoView({block:'start'}); const q=$('slQty'); if(q)q.focus()},120)});
 function slCur(){const r=slRows().find(x=>x.k===SELLK); return r?r.p:null}
 function slPick(){const p=slCur(); if(!p)return; const c=p.ccy||'USD', avg=slAvg(p);
   for(const id of ['slC1','slC2']){const e=$(id); if(e)e.textContent=slCcyS(c)}
@@ -25355,6 +25367,7 @@ function renderSec(){SECHOV=-1;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
     <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
+    ${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק">${pos.length?`<button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}">＋ קניתי עוד</button><button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}">− מכרתי</button>`:`<button type="button" class="btn" data-sectrade="add" data-k="${esc(k)}">＋ קניתי את הנייר הזה</button>`}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div>`:''}
     ${secPriceParts(it,pr,on,fx)[0]}
     <p class="chline" id="secRead" aria-live="polite"></p>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
