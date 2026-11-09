@@ -3191,6 +3191,10 @@ test('9.11 the logos beside the holdings, no halo, no alert list on the home; th
     const v=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#rows tr')].filter(r=>r.querySelector('td .sym'));
       return {rows:rows.length,withLogo:rows.filter(r=>r.querySelector('td .lg')).length,halo:document.querySelectorAll('#rows .lg.nx-crit,#rows .lg.nx-imp').length,list:!!document.getElementById('kAlerts')}});
     assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows); assert.equal(v.halo,0,'no halo'); assert.equal(v.list,false,'no alert list on the home');
+    // the round logos over צ׳יקו are back: the alerted company's logo opens its alert
+    const bub=await pg.evaluate(()=>{const b=document.getElementById('stBub'); return {on:!b.hidden,logos:b.querySelectorAll('.stc .lg').length}}); assert.ok(bub.on&&bub.logos>=1,'the logos over צ׳יקו: '+JSON.stringify(bub));
+    await pg.click('#stBub .stc[data-plk="ev:test-halo"]'); await pg.waitForTimeout(400); assert.ok(await pg.evaluate(()=>/בדיקת התראה/.test(document.body.innerText)),'the logo opened its alert');
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
     await pg.goto(U+'admin#news'); await pg.waitForSelector('#view tbody tr',{timeout:15000});
     assert.match(await pg.textContent('#view'),/ההתראות של המודל החדשותי.*בדיקת התראה/s,'the owner\'s alerts in the news screen');
     assert.deepEqual(pg.errs,[]); await ctx.close();

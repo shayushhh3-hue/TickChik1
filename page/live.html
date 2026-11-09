@@ -24581,9 +24581,14 @@ function plCenter(){
 function plRender(m){
   plCount(); const pr=plPrefs(), b=$('stBub'); try{nxNavDot()}catch(e){}
   if(!b)return; const L=plDedup(plItems()).filter(plFloat).sort(plSort);
-  // 6.11: one small count on צ׳יקו's corner (the row of icons and "+6" covered the chart); a tap opens them one by one
-  const show=pr.icons&&L.length>0; b.hidden=!show; if(!show)return; const a0=L[0], n=L.length;
-  setH(b,`<button type="button" class="stc stc1${L.some(a=>a.lv==='crit')?' crit':''}" data-plk="${esc(a0.k)}" aria-label="${esc(PL_LVS[a0.lv])}: ${esc(a0.title)}${n>1?` · ועוד ${n-1} ${n-1===1?'התראה':'התראות'}`:''}"><span class="in"><span class="stx" dir="ltr">${n}</span></span></button>`);
+  // 9.11 (the owner, again): the round logos of the companies the alerts are about (up to three, no duplicates) and "+N"
+  // for the rest, over צ׳יקו; a logo opens its alert, "+N" opens them all
+  const show=pr.icons&&L.length>0; b.hidden=!show; if(!show)return; const n=L.length, seen=new Set(), heads=[];
+  for(const a of L){const h=(a.holds||[]).find(z=>z.link==='direct')||(a.holds||[])[0], sym=h&&h.sym; if(!sym||seen.has(sym))continue; seen.add(sym); heads.push([a,sym]); if(heads.length===3)break}
+  const rest=n-heads.length;
+  setH(b,(heads.length?heads.map(([a,sym])=>`<button type="button" class="stc${a.lv==='crit'?' crit':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])} על ${esc(lab(sym))}: ${esc(a.title)}"><span class="in">${logoHtml(sym)}</span></button>`).join('')
+    :`<button type="button" class="stc stc1${L.some(a=>a.lv==='crit')?' crit':''}" data-plk="${esc(L[0].k)}" aria-label="${esc(PL_LVS[L[0].lv])}: ${esc(L[0].title)}"><span class="in"><span class="stx" dir="ltr">${n}</span></span></button>`)
+    +(heads.length&&rest>0?`<button type="button" class="stn" data-plall="1" aria-label="ועוד ${rest} ${rest===1?'התראה':'התראות'}" dir="ltr">+${rest}</button>`:''));
   b.setAttribute('aria-label',`${L.length===1?'התראה אחת שלא נקראה':L.length+' התראות שלא נקראו'} מעל צ׳יקו`); stPlace();
   try{plBanner()}catch(e){}
 }
