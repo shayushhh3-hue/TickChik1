@@ -368,7 +368,7 @@ test('"האם אני עושה טוב?": the same deposits in S&P 500 and Tel Avi
     // the tax if sold today
     const x=await pg.evaluate(()=>({txt:document.getElementById('taxBox').textContent,cells:[...document.querySelectorAll('#taxBox > .strip .cell .k')].map(k=>k.textContent),ye:[...document.querySelectorAll('#taxBox .yend .cell .k')].map(k=>k.textContent),yeH:(document.querySelector('#taxBox .yend h3')||{}).textContent,sub:document.getElementById('taxSub').textContent}));
     assert.deepEqual(x.cells,['הרווחים','ההפסדים','הרווח אחרי קיזוז','מס משוער']); assert.deepEqual(x.ye,['מימשת השנה','הפסדים פתוחים בתיק','מס שקיזוז יכול לחסוך'],'the end of the tax year'); assert.match(x.yeH,/^סוף שנת המס \d{4}: עוד \d+ ימים$/); assert.match(x.sub,/שיעור 25% · הערכה/);
-    assert.match(x.txt,/הפסדים שמקזזים את הרווחים: .*RKLB/); assert.match(x.txt,/זה חישוב, לא המלצה למכור/);
+    assert.match(x.txt,/הפסדים שמקזזים את הרווחים: .*RKLB/); assert.match(x.txt,/לא המלצה/);
     // צ׳יקו has both
     const f=await pg.evaluate(()=>{const F=window.__ux.facts(); return F.err?F:{b:!!F.benchmark,t:!!F.tax}});
     assert.deepEqual(f,{b:true,t:true});
@@ -1065,7 +1065,7 @@ test('the phone: notifications switched on per device, for the owner and for a p
   if(skip())return t.skip('no browser');
   for(const who of ['owner','n2']){const {ctx,pg}=await open(390,{who}); await ctx.grantPermissions(['notifications'],{origin:new URL(pg.url()).origin}); const perm=await pg.evaluate(()=>Notification.permission); t.diagnostic('permission '+perm); await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForFunction(()=>/^(כבוי|מופעל)/.test(document.getElementById('pushState').textContent),null,{timeout:10000}).catch(()=>{});
     const r=await pg.evaluate(()=>({box:!!document.getElementById('pushBox').offsetParent,st:document.getElementById('pushState').textContent,on:!document.getElementById('pushOn').hidden,la:!!document.getElementById('liveAl').offsetParent,sw:!!document.querySelector('script[src*="sw.js"]')}));
-    assert.ok(r.box,who); if(perm==='denied')assert.match(r.st,/חסומות לאתר הזה/,'a browser that blocks them: said, with what to do'); else{assert.match(r.st,/^כבוי במכשיר הזה/,who); assert.ok(r.on,'a button to switch it on: '+who)} assert.ok(r.la,'the thresholds: '+who);
+    assert.ok(r.box,who); if(perm==='denied')assert.match(r.st,/חסומות בהגדרות הדפדפן/,'a browser that blocks them: said, with what to do'); else{assert.match(r.st,/^כבוי במכשיר הזה/,who); assert.ok(r.on,'a button to switch it on: '+who)} assert.ok(r.la,'the thresholds: '+who);
     assert.equal(await pg.evaluate(async()=>(await fetch('sw.js')).status),200,'the service worker is served');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
@@ -1574,7 +1574,7 @@ test('dividends: the way of a dividend, what came in per security with its tax a
     assert.equal(c.net,'₪81','$22 net at 3.7'); assert.match(c.tax,/^−₪/); assert.match(c.where,/הושקעו.*מזומן/,'part reinvested, part in cash: '+c.where);
     assert.match(c.row,/KO/); assert.match(c.row,/0\.1 יח׳/); assert.match(c.row,/≈/,'the reinvested one had no tax shown: estimated');
     assert.match(c.note,/בשורה "דיבידנדים, נטו" בפירוק התוצאה/); assert.ok(c.th.includes('מס במקור ₪'),'the forecast shows the tax as its own column');
-    assert.match(c.divNote,/מכל תשלום בנפרד/); assert.match(c.cost.replace(/\u200E/g,''),/^−₪/); assert.match(c.costD,/שהמס הזה היה מרוויח/); assert.match(c.flowC,/^מכל ₪100 דיבידנד: ₪25 מס במקור/);
+    assert.match(c.divNote,/יוצאים כמס בכל תשלום/); assert.match(c.cost.replace(/\u200E/g,''),/^−₪/); assert.match(c.costD,/שהמס הזה היה מרוויח/); assert.match(c.flowC,/^מכל ₪100 דיבידנד: ₪25 מס במקור/);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('history/main',H0,{silent:true})}
 });
@@ -2037,11 +2037,11 @@ test('1.11 completions: the X-ray names the common factors and direct against in
     // the health score
     await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(400);
     const H=await pg.evaluate(()=>({parts:[...document.querySelectorAll('#hParts li')].map(l=>l.textContent.replace(/\s+/g,' ')),hist:document.getElementById('hHist').innerText,score:+document.getElementById('hNum').textContent}));
-    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(await pg.evaluate(()=>document.querySelector('#healthHome').innerText),/לא מודד תשואה ולא ממליץ/,'5.11: one sentence about the index');
+    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(await pg.evaluate(()=>document.querySelector('#healthHome').innerText),/לא תשואה ולא המלצה/,'5.11: one sentence about the index');
     await pg.waitForTimeout(1500); const ym=new Date().toISOString().slice(0,7); const mk=(store.getDoc('settings/main').data.hsc||{})[ym]; assert.ok(typeof mk==='number'&&Math.abs(mk-H.score)<=5,'one mark a month, in the account: '+mk+' vs '+H.score);
     // the goals compass: no goal yet, then a goal
     await tab(pg,'forecast'); await pg.waitForTimeout(500);
-    let c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' ')); assert.match(c,/קבע יעד כספי/);
+    let c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' ')); assert.match(c,/קבע יעד למעלה/);
     await pg.fill('#inGoal','300000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600);
     c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' '));
     assert.match(c,/היום \(אחרי מס משוער\): ₪[\d,]+ מתוך ₪300,000, \d+% מהיעד/); assert.match(c,/בעוד 15 שנים, לפי 7\.0% בשנה ו-₪600 בחודש: ₪[\d,]+ אחרי מס/); assert.match(c,/ליעד מגיעים (בעוד|כבר)/); assert.match(c,/הפקדה חודשית שסוגרת את הפער באותן הנחות: ₪[\d,]+/); assert.match(c,/כל ₪100 נוספים בחודש: עוד כ-₪[\d,]+/); assert.match(c,/לא תחזית ולא טווח הסתברויות/);
@@ -3307,4 +3307,22 @@ test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box 
     assert.ok(await pg.evaluate(()=>document.querySelectorAll('#secPage [data-sectrade]').length===2),'now held: both buttons');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
+});
+
+test('9.11 the tabs at the top of a screen follow the scroll (home: a thin row); a new open starts at home, a reload keeps the screen',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  try{
+    assert.equal(await pg.evaluate(()=>document.body.dataset.page),'overview','a new open: home');
+    await pg.evaluate(()=>window.scrollTo(0,1400)); await pg.waitForTimeout(400);
+    const h=await pg.evaluate(()=>{const q=document.getElementById('quickActs').getBoundingClientRect(); return {top:q.top,h:q.height,stuck:document.getElementById('quickActs').classList.contains('stuck')}});
+    assert.ok(Math.abs(h.top)<2&&h.stuck&&h.h<56,'home: the actions at the top, thin: '+JSON.stringify(h));
+    await tab(pg,'history'); await pg.waitForTimeout(600); await pg.evaluate(()=>window.scrollTo(0,2200)); await pg.waitForTimeout(400);
+    const r=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="history"]'), s=p.querySelector(':scope>.subtabs').getBoundingClientRect(), n=p.querySelector(':scope>.ptnav').getBoundingClientRect(); return {s:s.top,sb:s.bottom,n:n.top,y:scrollY}});
+    assert.ok(r.y>1000&&Math.abs(r.s)<2,'the screens row at the top: '+JSON.stringify(r)); assert.ok(r.n>=r.sb-1&&r.n<r.sb+12,'the parts row right under it: '+JSON.stringify(r));
+    await pg.reload(); await pg.waitForFunction(()=>document.body.dataset.page==='history',null,{timeout:30000});
+    const p2=await ctx.newPage(); await p2.goto(U); await p2.waitForFunction(()=>!!document.body.dataset.page,null,{timeout:30000});
+    assert.equal(await p2.evaluate(()=>document.body.dataset.page),'overview','another open: home again');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
 });

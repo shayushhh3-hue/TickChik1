@@ -1308,7 +1308,7 @@ td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .pxl-r .sym{font-family:var(--mono);font-weight:600}
 .pxl-b{margin-inline-start:auto;display:flex;gap:6px}
 /* v135: folds in the control tab */
-.subnav{display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:0;z-index:5;padding:8px 0;background:var(--bg)}
+.subnav{display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:var(--subH,0px);z-index:5;padding:8px 0;background:var(--bg)}
 .subnav .chip[aria-pressed="true"]{background:var(--blue);color:#fff;border-color:var(--blue)}
 [data-pane="risk"] > section{scroll-margin-top:56px}
 @media (max-width:640px){.subnav{position:static;padding:4px 0} [data-pane="risk"] > section{scroll-margin-top:8px}}
@@ -1565,12 +1565,12 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 #anaSec .ae-t .sub{display:none} #anaSec .ana-chips .btn:not([data-ana="explain"]):not([data-ana="open"]){display:none}
 .ladder tr.far{display:none} .ladder tr.lad-more td{text-align:center;padding-top:10px}
 [data-pane="risk"] > section[aria-labelledby="hHeat"]{display:none!important}   /* 5.11: "מה זז היום" is on the home and in "מה קורה בתיק" */
-.ptnav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
+.ptnav{position:sticky;top:var(--subH,0px);z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
 .ptnav .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap;padding-inline:12px}
 .ptnav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} .pt-off{display:none!important}
 /* 5.11: on "מבט לאחור" the day's figures are right below; the header does not repeat them */ body[data-page="history"] #kMini{display:none!important}
 @media (max-width:640px){.ptnav .chip{font-size:13px;padding-inline:9px}}
-#riskNav{position:sticky;top:0;z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
+#riskNav{position:sticky;top:var(--subH,0px);z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow)}
 #riskNav .chip{flex:1 1 0;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 #riskNav .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff} #riskNav .chip[hidden],#riskSub [hidden]{display:none}
 @media (max-width:640px){#riskNav{top:0;margin-inline:0;overflow-x:auto;scrollbar-width:none} #riskNav .chip{flex:1 0 auto;font-size:13px;padding-inline:7px}}
@@ -1929,6 +1929,13 @@ html[data-theme="dark"] .insight{background:linear-gradient(90deg,rgb(45 212 191
 .qa-b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:64px;padding:8px 6px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--vio-ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);text-align:center}
 .qa-b svg{width:24px;height:24px}   /* 5.11: lower (64px), they lead to screens the bar also reaches */
 .qa-b:hover{border-color:#C4B5FD}
+/* 9.11 (the owner): the tabs at the top of a screen follow the scroll, so nobody scrolls back up to change screen. On the
+   home screen the four actions shrink to a thin row once they reach the top */
+[data-pane]>.subtabs{position:sticky;top:0;z-index:8;margin-inline:-4px;padding:6px 4px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#quickActs{position:sticky;top:0;z-index:8;padding-block:6px;margin-block:-6px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:padding .15s}
+#quickActs.stuck{gap:6px;grid-template-columns:repeat(4,minmax(0,1fr))} #quickActs.stuck .qa-b{min-height:34px;flex-direction:row;padding:4px 4px;border-radius:999px;font-size:12px;gap:4px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#quickActs.stuck .qa-b svg{width:15px;height:15px;flex:none}
+@media (max-width:420px){#quickActs.stuck .qa-b svg{display:none}}
 .qa-b.pri{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 10px 24px rgb(124 58 237 / .3)}
 html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
 /* the holdings: the top five, the rest behind "הצג הכל"; a row like the mock-up's on a phone */
@@ -2999,7 +3006,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section aria-labelledby="hFlows">
       <div class="row"><h2 id="hFlows">כסף שתצטרך, או שתוסיף</h2><span class="sub" id="flowsSub"></span></div>
       <div class="panel flows">
-        <p class="note" style="margin:0;max-width:none">משיכה שאתה מתכנן (למשל מקדמה לדירה) או הפקדה חד-פעמית. הדף מראה כמה זמן נשאר, איזה חלק מהתיק של היום זה, וכמה מזומן יש בתיק. זו מסגרת להבנה, לא בדיקה שהתיק מתאים למטרה ולא המלצה. החישוב למטה לא כולל את הסכומים האלה.</p>
+        <p class="note" style="margin:0;max-width:none">משיכה מתוכננת (למשל מקדמה לדירה) או הפקדה חד-פעמית: כמה זמן נשאר ואיזה חלק מהתיק זה. לא נכלל בחישוב למטה. לא המלצה.</p>
         <div id="flowsList"></div>
         <form id="flowForm" class="form fl-form" novalidate>
           <label for="flWhen">מתי (חודש ושנה)<input type="month" id="flWhen" placeholder="2027-06"></label>
@@ -3009,7 +3016,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           <div class="fl-add"><button class="btn" type="submit" id="flAdd">הוסף</button><span class="saved" id="flErr" role="status"></span></div>
         </form>
         <label class="check" for="flAI"><input type="checkbox" id="flAI">לכלול את הסכומים והתאריכים בתשובות של צ׳יקו (בלי מה שכתבת ב"בשביל מה")</label>
-        <p class="note" style="margin:0;max-width:none">נשמר עם ההגדרות שלך, באזור שרק אתה רואה, ונמחק עם "מחק את כל הנתונים שלי". בלי הסימון, זה לא נשלח לצ׳יקו.</p>
+        <p class="note" style="margin:0;max-width:none">גלוי רק לך. בלי הסימון זה לא נשלח לצ׳יקו.</p>
       </div>
     </section>
     <section aria-labelledby="hFwd">
@@ -3039,7 +3046,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <div class="panel">
         <h3 style="margin:0 0 8px">מה מזיז את התוצאה הכי הרבה</h3>
         <ul class="sens" id="sens"></ul>
-        <p class="note" style="margin-top:10px">שלושת התרחישים נבדלים רק בתשואה השנתית: ההנחה שלך, ושלוש נקודות אחוז מתחתיה ומעליה. אלה חישובים ולא תחזית של השוק.</p>
+        <p class="note" style="margin-top:10px">ההנחה שלך, ו-3 נקודות אחוז מתחתיה ומעליה. חישוב, לא תחזית.</p>
       </div>
     </section>
     <section aria-labelledby="hWhatIf">
@@ -3058,9 +3065,9 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section aria-labelledby="hDivGot" id="divGotSec" data-adv>
       <div class="row"><h2 id="hDivGot">הדיבידנדים שקיבלת</h2><span class="sub" id="dgSub"></span></div>
       <ol class="dflow" id="dgFlow" aria-label="הדרך של דיבידנד">
-        <li><b>החברה מחלקת</b><span>סכום לכל מניה, כמה פעמים בשנה (ברוב החברות האמריקאיות פעם ברבעון). זה הדיבידנד ברוטו.</span></li>
-        <li><b>מס במקור, בכל תשלום</b><span>25% מכל דיבידנד מנוכים ברגע התשלום, לפני שהכסף מגיע אליך. גם כשהוא מושקע מחדש.</span></li>
-        <li><b>הנטו נכנס לחשבון</b><span>או שהוא מושקע מחדש באותו נייר (שברי יחידה), או שהוא נשאר במזומן עד שתשקיע אותו.</span></li>
+        <li><b>החברה מחלקת</b><span>סכום לכל מניה, לרוב פעם ברבעון (ברוטו).</span></li>
+        <li><b>מס במקור, בכל תשלום</b><span>25% יורדים בכל תשלום, גם כשמושקע מחדש.</span></li>
+        <li><b>הנטו נכנס לחשבון</b><span>מושקע מחדש או נשאר במזומן.</span></li>
         <li><b>ובתוך שווי התיק</b><span>הנטו כבר בתוך השווי, כיחידות או כמזומן. המס יצא מהתיק ולא חוזר.</span></li>
       </ol>
       <div class="strip" id="dgStrip">
@@ -3141,7 +3148,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           <div class="cell"><div class="k">שער האיזון</div><span class="v" id="fcBe">—</span><div class="d" id="fcBeD">&nbsp;</div></div>
         </div>
         <p class="wi-out" id="fcOut"></p>
-        <p class="note">הסכום בדולרים מוכפל בשער היום ובשער הקנייה; ההפרש בין השניים הוא השפעת השער, והשאר הוא שינוי המחירים. הנתונים ההתחלתיים נלקחים מהתיק כשיש לדף שער קנייה ממוצע מהדוחות, ואפשר לשנות כל מספר. זה ארגז חול: לא נשמר ולא משנה דבר.</p>
+        <p class="note">ההפרש בין שער הקנייה לשער היום הוא השפעת השער; השאר הוא המחיר. ארגז חול: לא נשמר.</p>
       </div>
     </section>
   </div>
@@ -3164,7 +3171,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
       </div>
       <p class="chsay quick-say" id="quickSay" hidden></p>
-      <p class="nm quick-3">שלושה מספרים, שלוש שאלות: <b>מול העלות</b> כמה הניירות שקנית שווים יותר ממה ששילמת עליהם; <b>מול ההפקדות</b> כמה התיק כולו (כולל מזומן ודיבידנדים) שווה יותר מהכסף שהכנסת; <b>לאורך התקופה</b> התשואה מחודש לחודש, בלי ההפקדות עצמן. לכן הם לא שווים זה לזה.</p>
+      <p class="nm quick-3"><b>מול העלות</b>: הניירות מול מה ששילמת. <b>מול ההפקדות</b>: כל התיק מול מה שהכנסת. <b>לאורך התקופה</b>: התשואה בלי ההפקדות.</p>
     </section>
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
@@ -3234,11 +3241,11 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 
   <div class="pane" data-pane="journal" hidden>
     <section aria-labelledby="hJrn" id="jrnSec">
-      <div class="row"><h2 id="hJrn">יומן ההשקעות: מה עשיתי, למה, ומה יצא מזה</h2><span class="sub">קניות, מכירות, החלטות לא לפעול, ציפיות, הערות וטעויות. נשמר בחשבון שלך; נשלח לצ׳יקו רק כשאתה שואל</span></div>
+      <div class="row"><h2 id="hJrn">יומן ההשקעות: מה עשיתי, למה, ומה יצא מזה</h2><span class="sub">פעולות, החלטות וטעויות. נשלח לצ׳יקו רק כשאתה שואל</span></div>
       <div class="panel jrn" id="jrnBox"></div>
     </section>
     <section aria-labelledby="hDna" id="dnaSec">
-      <div class="row"><h2 id="hDna">טביעת האצבע שלי כמשקיע (DNA)</h2><span class="sub">מה התיק, הדוחות, היומן והתזות מראים בפועל: סוגי חברות, ענפים, סיכון, פיזור, אופק, דפוסי קנייה ומכירה, תגובה לירידות, התאמה למטרות, ושינוי לאורך זמן. עובדות ומספרים, לא תוויות</span></div>
+      <div class="row"><h2 id="hDna">טביעת האצבע שלי כמשקיע (DNA)</h2><span class="sub">מה התיק והיומן מראים בפועל. מספרים, לא תוויות</span></div>
       <div class="panel dna" id="dnaBox"></div>
     </section>
   </div>
@@ -3254,7 +3261,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       </div>
       <div class="panel" id="arcPanel" hidden>
         <div class="row"><h3>דוחות שמורים</h3><span class="sub" id="arcSub"></span></div>
-        <p class="note" style="margin:6px 0 10px">דוח שמור נשאר בדיוק כפי שהיה ביום שהופק, גם אם התיק ישתנה אחר כך. דוח שבועי, חודשי ורבעוני נשמרים כאן לבד כשהם מופקים.</p>
+        <p class="note" style="margin:6px 0 10px">דוח נשמר כפי שהיה ביום שהופק. שבועי, חודשי ורבעוני נשמרים כאן לבד.</p>
         <ul class="arc" id="arcList"></ul>
       </div>
     </section>
@@ -3359,7 +3366,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   </div>
   <div class="pane" data-pane="compare" hidden>
     <section aria-labelledby="hCmp" id="cmpSec">
-      <div class="row"><h2 id="hCmp">השוואת ניירות: אותם מספרים, זה מול זה</h2><span class="sub">2 עד 4 ניירות. מספרים מהדוחות ומהשוק, עם המקור והתאריך; "חזק ב" ו"חלש ב" הם יחסית לניירות שבהשוואה בלבד, לא ציון</span></div>
+      <div class="row"><h2 id="hCmp">השוואת ניירות: אותם מספרים, זה מול זה</h2><span class="sub">2 עד 4 ניירות, עם מקור ותאריך לכל מספר</span></div>
       <div class="panel cmp" id="cmpBox"></div>
     </section>
   </div>
@@ -3388,7 +3395,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section id="healthHome" aria-labelledby="hHealth" hidden>
       <div class="row"><h2 id="hHealth">מדד בריאות התיק</h2><span class="sub" id="healthSub"></span></div>
       <div class="panel health"><div class="hscore"><div class="hring" id="hRing" role="img"><span class="hnum" id="hNum">—</span></div><div class="hlab"><b id="hLab"></b><span id="hWhy"></span></div></div><ul class="hparts" id="hParts"></ul><div id="hHist"></div>
-        <p class="note">המדד בודק אם התיק עומד בכללים שקבעת. 100 = הכול בסדר. הוא לא מודד תשואה ולא ממליץ. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
+        <p class="note">עמידה בכללים שלך; 100 = הכול בסדר. לא תשואה ולא המלצה. <button type="button" class="term lw" data-term="health" aria-label="איך מחושב מדד הבריאות?" aria-expanded="false">איך זה מחושב?</button></p></div>
     </section>
     <section aria-labelledby="hMixH" id="mixHome" hidden>
       <div class="row"><h2 id="hMixH">פיזור לפי הקבוצות שלך</h2><div class="hsub"><span class="sub" id="mixHomeSub"></span><div class="chips mixsw" role="group" aria-label="צורת התצוגה"><button type="button" class="chip" data-mixv="bar" aria-pressed="true">פס</button><button type="button" class="chip" data-mixv="pie" aria-pressed="false">עוגה</button></div></div></div>
@@ -3512,7 +3519,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   <div class="pane" data-pane="state" hidden>
     <section aria-labelledby="hState" class="state">
       <div class="row"><h2 id="hState">מה קורה בתיק</h2><span class="sub" id="stateWhen"></span></div>
-      <p class="note" style="margin:0 0 10px">עובדות מהמספרים שבדף, בלי תחזית ובלי המלצה. <span class="stl"><span class="tag mkt">נתון</span> מהדוחות ומהבורסה · <span class="tag fin">חישוב</span> של הדף מהנתונים · <span class="tag an">סימולציה</span> תרחיש שבוחרים · <span class="tag gen">הסבר</span> ניסוח במילים</span></p>
+      <p class="note" style="margin:0 0 10px">בלי תחזית ובלי המלצה. <span class="stl"><span class="tag mkt">נתון</span> מהדוחות ומהבורסה · <span class="tag fin">חישוב</span> של הדף מהנתונים · <span class="tag an">סימולציה</span> תרחיש שבוחרים · <span class="tag gen">הסבר</span> ניסוח במילים</span></p>
       <div class="chips" role="group" aria-label="התקופה" id="statePer"></div>
       <div id="stateBody" aria-live="polite"><div class="empty">תמונת המצב תופיע כאן אחרי שהתיק והמחירים ייטענו.</div></div>
     </section>
@@ -3556,13 +3563,13 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <dl class="medl" id="meList" hidden></dl>
         <p class="note" id="meNote" style="max-width:none"></p>
         <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
-        <p class="note" style="margin:0;max-width:none">פשוטה: בסקירה רק שווי התיק, מה לעשות, האחזקות והפיזור, ובשאר המסכים בלי החלקים המתקדמים. מלאה: הכול.</p>
+        <p class="note" style="margin:0;max-width:none">פשוטה: בלי החלקים המתקדמים. מלאה: הכול.</p>
         <div class="viewwrap" role="group" aria-label="מצב יום או לילה"><span class="sub">מצב תצוגה</span><div class="chips"><button class="chip" type="button" data-themeset="light" aria-pressed="true">☀️ יום</button><button class="chip" type="button" data-themeset="dark" aria-pressed="false">🌙 לילה</button><button class="chip" type="button" data-themeset="auto" aria-pressed="false">לפי הטלפון</button></div></div>
         <div class="viewwrap" role="group" aria-label="גודל הטקסט"><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
         <div class="viewwrap" role="group" aria-label="ניגודיות"><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
         <div class="viewwrap" role="group" aria-label="תנועה"><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
         <div class="viewwrap" role="group" aria-label="הסכומים במסך"><span class="sub">הסכומים במסך</span><div class="chips"><button class="chip" type="button" data-hidenum="0" aria-pressed="true">מוצגים</button><button class="chip" type="button" data-hidenum="1" aria-pressed="false">מוסתרים</button></div></div>
-        <p class="note" style="margin:0;max-width:none">כל הבחירות האלה, וגם איך בחרת לראות את הדף (שקלים או דולרים, החלקים הפתוחים, פס המניות, הסינון והמיון בחדשות, התקופה והמפה ב-Impact, החיפושים האחרונים ועוד), נשמרות בחשבון שלך, ויופיעו כך בכל מכשיר ודפדפן שתיכנס ממנו.</p>
+        <p class="note" style="margin:0;max-width:none">הבחירות נשמרות בחשבון ומופיעות בכל מכשיר.</p>
       </div>
     </section>
 
@@ -3576,14 +3583,14 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <div class="panel" style="display:flex;flex-direction:column;gap:10px">
         <div class="acctchips" id="acctChipsSet"></div>
         <div class="acctpick" id="acctPick" hidden></div>
-        <p class="note" style="margin:0;max-width:none">אפשר לבחור כמה חשבונות במקביל. כל חשבון מופיע בסינון בראש הדף, בטבלת התיק, במזומן, בהיסטוריה ובדוחות, וצ׳יקו קורא דוחות וצילומים ממנו. חשבון שיש בו ניירות אי אפשר להסיר עד שמוחקים אותם מהטבלה.</p>
+        <p class="note" style="margin:0;max-width:none">אפשר כמה חשבונות. חשבון עם ניירות לא מוסר עד שמוחקים אותם.</p>
       </div>
     </section>
 
     <section aria-labelledby="hNotif" id="notifSec">
       <div class="row"><h2 id="hNotif">ההתראות והצלילים שלי</h2><span class="sub" id="notifSub"></span></div>
       <div class="panel" style="display:flex;flex-direction:column;gap:12px">
-        <p class="note" style="margin:0;max-width:none">מה יתריע לך ומה לא. קטגוריה כבויה לא מופיעה בבקרה, בשולחן העבודה, בדוחות ובהודעת הבוקר. ההגדרה היא שלך בלבד.</p>
+        <p class="note" style="margin:0;max-width:none">קטגוריה כבויה לא תופיע בשום מקום.</p>
         <div class="ntgrid" id="notifList"></div>
         <h3 style="margin:8px 0 0">התראות המחיר שלי</h3>
         <div id="pxAlList"></div>
@@ -3599,10 +3606,10 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
             <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
             <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
             <label class="check"><input type="checkbox" id="laNews" checked><span>התראות אישיות מ"חיבור למציאות" (קריטיות, וגם חשובות אם בחרת)</span></label>
-            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת לה בדף שלה. נבדק כל 10 דקות, כל דבר פעם אחת ביום, ולכל היותר הודעה אחת ב-20 דקות (או בשעה), במייל (אם הופעל) ובטלפון (אם הופעל כאן). השעות השקטות, התדירות והרמות נקבעות ב<button type="button" class="lnk" data-anav="set:nwSetSec">חדשות והתראות</button>.</p></div>
+            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת. עד הודעה אחת ב-20 דקות. שעות שקטות ורמות ב<button type="button" class="lnk" data-anav="set:nwSetSec">חדשות והתראות</button>.</p></div>
         <div class="mailbox" id="mailBox" hidden>
           <h3 style="margin:8px 0 0">מיילים</h3>
-          <p class="note" style="margin:0;max-width:none">שום מייל אוטומטי לא נשלח בלי שתבחר: כל סוג כבוי עד שתפעיל אותו כאן. המייל כולל מספרים מהתיק שלך. הדוחות נשמרים בארכיון בדף גם בלי מייל.</p>
+          <p class="note" style="margin:0;max-width:none">כל סוג כבוי עד שתפעיל אותו. הדוחות נשמרים בדף גם בלי מייל.</p>
           <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
           <div id="mailList"></div>
 
@@ -3668,16 +3675,16 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       <div class="panel" id="princPanel" style="display:flex;flex-direction:column;gap:10px">
         <h3>העקרונות של תיק צ׳יק</h3>
         <ul class="princ">
-          <li><b>מידע וניתוח, לא ייעוץ.</b> תיק צ׳יק מסביר מספרים ולא ממליץ לקנות או למכור. ייעוץ השקעות אישי ניתן רק על ידי בעל רישיון.</li>
-          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> חישוב לעתיד הוא לפי הנחה שלך, לא נבואה, וליד כל הערכה כתוב כמה היא בטוחה.</li>
-          <li><b>בלי לחץ לפעול.</b> מעט התראות, ורק כשכלל שקבעת לעצמך נחצה. הדף לא מודד הצלחה בכמה פעמים נכנסת, אלא במה שהבנת.</li>
+          <li><b>מידע וניתוח, לא ייעוץ.</b> הדף מסביר מספרים ולא ממליץ. ייעוץ אישי ניתן רק בידי בעל רישיון.</li>
+          <li><b>בלי הבטחות תשואה ובלי הפחדות.</b> חישוב לעתיד הוא הנחה שלך, לא נבואה.</li>
+          <li><b>בלי לחץ לפעול.</b> מעט התראות, רק כשכלל שלך נחצה.</li>
           <li><b>שקיפות.</b> ליד כל מספר כתוב מאיפה הוא ומתי עודכן, מה נתון, מה פרשנות ומה הדף לא יודע.</li>
           <li><b>מותאם לך.</b> ההסברים לפי כמה אתה מכיר את השוק, והמספרים מקושרים למטרה ולאופק שקבעת.</li>
         </ul>
       </div>
       <div class="panel" id="wipePanel" style="display:flex;flex-direction:column;gap:10px">
         <h3>מחיקת נתונים</h3>
-        <p class="note" style="margin:0">הדף לא שומר את הקבצים שהעלית, רק את מה שמופיע בטבלה אחרי "שמור את התיק". כשמסירים נייר מהטבלה ושומרים, הוא נמחק גם מהתוכנית, מההיסטוריה ומההתראות. כאן אפשר למחוק את הכול בבת אחת.</p>
+        <p class="note" style="margin:0">קבצים שהעלית לא נשמרים, רק הטבלה. כאן מוחקים הכול בבת אחת.</p>
         <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipe" type="button">מחק את כל הנתונים שלי</button><span class="saved" id="wipeState" role="status" style="font-size:13px"></span></div>
         <div class="wipeask" id="wipeAsk" hidden role="alertdialog" aria-labelledby="wipeQ">
           <p id="wipeQ"><b>למחוק הכול לצמיתות?</b> יימחקו: <span id="wipeList"></span>. אי אפשר לשחזר.</p>
@@ -3764,7 +3771,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <p class="sub" id="pfTot" style="margin-top:8px"></p>
         <div class="dup" id="grpHint" hidden></div>
         <div class="dup" id="dupBox" hidden></div>
-        <p class="note" style="margin-top:10px">סימול: הטיקר האמריקאי (למשל MSFT). לקרנות המדד הישראליות: TA125 או TA90. עלות שלא ידועה אפשר להשאיר ריקה. "עלות כוללת $": מה הקנייה עלתה בדולרים (בבלינק: השווי פחות "שינוי ממועד הקנייה"), כדי שפירוק התוצאה יפריד בין מחיר המניה לשער הדולר; בלי זה ההפרדה מוערכת. "מחיר בדוח" משמש רק עד שמגיע מחיר חי לנייר.</p>
+        <p class="note" style="margin-top:10px">סימול: למשל MSFT, או TA125 / TA90. עלות לא ידועה אפשר להשאיר ריקה. "עלות כוללת $" מפרידה בין המחיר לשער הדולר.</p>
       </div>
       <div class="panel" data-mvp="hold">
         <h3>מזומן בחשבונות</h3>
@@ -18234,7 +18241,7 @@ function renderPlan(mAll){
   if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
   try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
-  $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה נרשמת לפי מחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק של אותו רגע, ואפשר לעדכן אותה לכמות ולמחיר ששילמת בפועל.';
+  $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.';
 
   $('thCost').textContent=st.fixed?'סכום בחודש ₪':st.rot?'סכום קנייה ₪':'עלות יחידה ₪';
   // securities in the plan
@@ -18323,7 +18330,7 @@ function renderProfile(m){
     const ok=rows.filter(r=>r.d[k]!=null), w=ok.reduce((t,r)=>t+r.p.val,0), sc=w?ok.reduce((t,r)=>t+r.d[k]*r.p.val,0)/w:0;
     const srt=ok.slice().sort((a,b)=>b.d[k]-a.d[k]), hi=srt.slice(0,2).map(r=>r.p.sym).join(', '), lo=srt.slice(-2).reverse().map(r=>r.p.sym).join(', ');
     return `<div><div class="prow"><div>${lab}</div><div class="track"><div class="bar" style="width:${sc.toFixed(0)}%"></div></div><span class="n">${sc.toFixed(0)}</span></div><div class="nm">גבוהים: <bdi>${esc(hi)}</bdi> · נמוכים: <bdi>${esc(lo)}</bdi></div></div>`}).join('');
-  $('profNote').textContent='כל ממד בין 0 ל-100. שווי: לפי מכפיל הרווח הצפוי (12 ומטה מקבל 100, 40 ומעלה או חברה מפסידה מקבלים 0). צמיחה צפויה: הפער בין המכפיל הנוכחי לצפוי, שמשקף את צמיחת הרווח שהאנליסטים מצפים לה. ביצועי עבר: צמיחת הכנסות ושיעור רווח. חוסן: מינוף, יחס שוטף ואיכות הדוחות. דיבידנד: תשואה של 4% ומעלה מקבלת 100. זה אותו סרגל לכל הענפים, ולכן חברות צעירות ומפסידות יוצאות נמוך בשווי ובחוסן גם כשהן צומחות מהר.';
+  $('profNote').textContent='0–100. שווי: מכפיל צפוי (12 ומטה = 100, 40 ומעלה או הפסד = 0). צמיחה: מכפיל נוכחי מול צפוי. עבר: הכנסות ושיעור רווח. חוסן: מינוף ויחס שוטף. דיבידנד: 4% ומעלה = 100. סרגל אחד לכל הענפים.';
 }
 function renderDivGot(m){
   const sec=$('divGotSec'); if(!sec)return; if(!HS||!Q){return}
@@ -18340,7 +18347,7 @@ function renderDivGot(m){
     +`<tr class="sec"><td>סך הכול</td><td class="num"><span class="n">${T.n||'—'}</span></td><td class="num"><span class="n">${ils(T.gross,2)}</span></td><td class="num"><span class="n down">${LRM}−${ils(T.tax,2)}</span></td><td class="num"><span class="n">${ils(T.net,2)}</span></td><td></td></tr>`
     :'<tr><td colspan="6" class="empty">בדוחות ובצילומים שנקראו עד היום לא רשומים דיבידנדים שהתקבלו.</td></tr>';
   $('dgNote').textContent=has?`הנטו, ${ils(T.net)}, הוא חלק מהתוצאה שלך: הוא נמצא בשווי התיק (${T.re>0?'כיחידות נוספות':''}${T.re>0&&T.cash>0?' וגם ':''}${T.cash>0?'כמזומן':''}) ובשורה "דיבידנדים, נטו" בפירוק התוצאה. המס, ${ils(T.tax)}, יצא מהתיק.`+(T.est?' בתשלומים שבהם הדוח או הצילום לא הראו את המס, הוא מוערך כ-25% מהברוטו (מסומן ≈), שזה הניכוי הרגיל במקור על דיבידנד של חברה אמריקאית.':'')+' כל תשלום נספר פעם אחת, גם אם אותו דוח נקרא שוב. הסכומים בדולרים מומרים לפי שער החודש שבו שולמו כשהוא שמור, ואחרת לפי השער היום.'
-    :'כדי לראות כאן דיבידנדים, העלה ב"התיק שלי" צילום של "תנועות בחשבון" או דוח תנועות שבו מופיעות שורות דיבידנד. כל שורה נשמרת עם הסכום, המס שנוכה ממנה (כשהוא מופיע) ואם הסכום הושקע מחדש.';
+    :'כדי לראות כאן דיבידנדים, העלה ב"התיק שלי" דוח תנועות שיש בו שורות דיבידנד.';
   HSUM.push(has?`דיבידנדים שהתקבלו: ברוטו ${ils(T.gross)}, מס ${ils(T.tax)}, נטו ${ils(T.net)} (הושקע מחדש ${ils(T.re)}, במזומן ${ils(T.cash)}).`:'דיבידנדים שהתקבלו: אין בדוחות שנקראו.');
 }
 function renderDividends(m){
@@ -18353,8 +18360,8 @@ function renderDividends(m){
   $('dvYld').textContent=pct(m.total?g/m.total*100:0,2); $('dvYldD').textContent=`על תיק של ${ils(m.total)}`;
   $('divRows').innerHTML=rows.map(r=>`<tr><td><span class="sym">${esc(lab(r.p.sym))}</span><div class="nm">${esc(r.p.name)}</div></td><td class="num"><span class="n">${pct(r.dy,2)}</span></td><td class="num"><span class="n">${ils(r.p.val)}</span></td><td class="num"><span class="n">${ils(r.g,1)}</span></td><td class="num"><span class="n down">${LRM}−${ils(r.g*WH,1)}</span></td><td class="num"><span class="n">${ils(r.g*(1-WH),1)}</span></td></tr>`).join('')
     +(rows.length?`<tr class="sec"><td colspan="3">סך הכול בשנה</td><td class="num"><span class="n">${ils(g)}</span></td><td class="num"><span class="n down">${LRM}−${ils(g*WH)}</span></td><td class="num"><span class="n">${ils(g*(1-WH))}</span></td></tr>`:'')||'<tr><td colspan="6" class="empty">אין בתיק ניירות שמחלקים דיבידנד.</td></tr>';
-  {const d=divReinvest(g); $('divRe').innerHTML=g>0?`אם הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש בתיק: בעוד ${nn(d.Y)} שנים, בתשואה של ${nn(pct(d.R))} בשנה (ההנחה שלך במסך היעד), הוא מצטבר לכ-${nn(ils(d.fv))}, לעומת ${nn(ils(d.flat))} אם הוא נשאר במזומן. זה אפקט הריבית דריבית, לא תחזית.`:''}
-  $('divNote').textContent=`המס מנוכה מכל תשלום בנפרד, ברגע שהוא משולם, גם כשהדיבידנד מושקע מחדש. זה ההבדל ממניה שעלתה: על עלייה במחיר משלמים מס רווחי הון רק כשמוכרים, ועד אז כל הסכום ממשיך לעבוד בתיק. בדיבידנד, ${pct(WH*100,0)} יוצאים מהתיק בכל חלוקה ולא מצטברים, ולאורך שנים ההפרש גדל (המחשבון למטה מראה כמה). הצפי מניח שכל חברה תמשיך לחלק באותו שיעור ושהמחיר והכמות לא ישתנו. חברה יכולה להגדיל, לקצץ או לבטל דיבידנד. מועדי החלוקה לא מוצגים, כי אין לי להם מקור נתונים. קרנות המדד לא נכללות.`;
+  {const d=divReinvest(g); $('divRe').innerHTML=g>0?`הדיבידנד נטו, ${nn(ils(d.net))} בשנה, מושקע מחדש: בעוד ${nn(d.Y)} שנים, ב-${nn(pct(d.R))} בשנה, כ-${nn(ils(d.fv))}, מול ${nn(ils(d.flat))} במזומן. ריבית דריבית, לא תחזית.`:''}
+  $('divNote').textContent=`בדיבידנד ${pct(WH*100,0)} יוצאים כמס בכל תשלום; על עליית מחיר משלמים רק כשמוכרים. הצפי מניח שהחלוקה, המחיר והכמות לא ישתנו. בלי קרנות המדד.`;
 }
 // ---- 1.11 (10): the dividends ahead and behind, per holding: the last amount per share and its rhythm, a raise or a cut
 // against the one before, a stop (nothing for well over the rhythm), the declared ones (an ex-dividend day and a payment
@@ -18378,7 +18385,7 @@ function renderDivAhead(m){
   $('divAheadSub').textContent=`${D.rows.length} ניירות עם לוח · ${ils(D.year)} ברוטו בשנה הקרובה לפי הלוח${D.noPlan.length?' · '+D.noPlan.length+' בלי לוח עדיין':''}`;
   const ms=[]; {const d=new Date(); d.setUTCDate(1); for(let i=0;i<12;i++){const ym=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+i,1)).toISOString().slice(0,7); ms.push({ym,...(D.months[ym]||{sure:0,est:0,n:0})})}}
   const mx=Math.max(1,...ms.map(x=>x.sure+x.est)), MN=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
-  const bars=`<div class="dva-m" role="img" aria-label="הכנסה מדיבידנדים לפי חודש, שנה קדימה">${ms.map(x=>`<div class="dva-c"><div class="dva-b"><i class="s" style="height:${(x.sure/mx*100).toFixed(1)}%"></i><i class="e" style="height:${(x.est/mx*100).toFixed(1)}%"></i></div><span class="nm">${MN[+x.ym.slice(5)-1]}</span><span class="n">${x.sure+x.est>0?ils(x.sure+x.est):''}</span></div>`).join('')}</div><p class="nm" style="margin:2px 0 8px">לפי חודש התשלום (או האקס כשאין מועד תשלום). <i class="dva-k s"></i> הוכרז <i class="dva-k e"></i> צפוי לפי הקצב (משוער). ברוטו; המס במקור (25%) יורד מכל תשלום.</p>`;
+  const bars=`<div class="dva-m" role="img" aria-label="הכנסה מדיבידנדים לפי חודש, שנה קדימה">${ms.map(x=>`<div class="dva-c"><div class="dva-b"><i class="s" style="height:${(x.sure/mx*100).toFixed(1)}%"></i><i class="e" style="height:${(x.est/mx*100).toFixed(1)}%"></i></div><span class="nm">${MN[+x.ym.slice(5)-1]}</span><span class="n">${x.sure+x.est>0?ils(x.sure+x.est):''}</span></div>`).join('')}</div><p class="nm" style="margin:2px 0 8px"><i class="dva-k s"></i> הוכרז <i class="dva-k e"></i> צפוי (משוער). ברוטו, לפני 25% מס.</p>`;
   const row=r=>{const d=r.declared[0], e=r.expected[0], gotH=r.got?`שולם לחשבון: ${r.got.n||'?'} תשלומים, ברוטו ${ils(r.got.gross)}, נטו ${ils(r.got.net)}${r.got.last?' (אחרון '+dmy(r.got.last)+')':''}`:'בדוחות שנקראו: עוד לא נרשם תשלום';
     const chgH=r.stopped?'<span class="nx-tag lv-crit">הפסקה: לא חולק זמן רב מהקצב הרגיל</span>':r.chg==null?'':Math.abs(r.chg)<0.5?'<span class="nx-tag">ללא שינוי מול הקודם</span>':r.chg>0?`<span class="nx-tag lv-imp">הועלה ${spct(r.chg,1)} מול הקודם</span>`:`<span class="nx-tag lv-crit">הופחת ${spct(r.chg,1)} מול הקודם</span>`;
     return `<li class="dva-r"><div class="dva-h"><span class="sym">${esc(lab(r.sym))}</span><span class="nm">${esc(r.name||'')}</span>${r.freq?`<span class="nx-tag">${FREQ[r.freq]||r.freq}</span>`:''}${chgH}</div>
@@ -18387,7 +18394,7 @@ function renderDivAhead(m){
       ${!d&&e?`<span><b>צפוי (משוער לפי הקצב):</b> אקס ~${dmy(e.ex)}${e.pay?', תשלום ~'+dmy(e.pay):''}, <span class="n">${r.ccy}${e.amt!=null?e.amt:'?'}</span> למניה → <span class="n">${e.inc!=null?ils(e.inc):'—'}</span> ברוטו</span>`:''}
       <span>בשנה הקרובה לפי הלוח: <span class="n">${ils(r.yearInc)}</span> ברוטו (${r.declared.length} הוכרזו, ${r.expected.length} משוערים)</span><span class="nm">${gotH}</span></div></li>`};
   box.innerHTML=bars+`<ul class="dva-l">${D.rows.map(row).join('')}</ul>${D.noPlan.length?`<p class="note">בלי לוח עדיין (יש תשואה, הלוח נמשך בריצת המחקר הבאה): ${esc(D.noPlan.map(lab).join(', '))}.</p>`:''}
-    <p class="note" style="margin-top:8px">הבחנה: <b>הוכרז</b> = החברה פרסמה את יום האקס ואת יום התשלום; <b>צפוי</b> = לפי הקצב של התשלומים הקודמים, משוער; <b>שולם</b> = מופיע בדוחות החשבון שקראת. המטבע כמטבע הנייר (דולר או שקל); ברוטו לפני מס, נטו אחרי 25% במקור. המקורות: ${esc([...new Set(D.rows.map(r=>r.src).filter(Boolean))].join(', ')||'ריצת המחקר')}. לא תחזית ולא ייעוץ.</p>`;
+    <p class="note" style="margin-top:8px"><b>הוכרז</b>: פורסם. <b>צפוי</b>: לפי הקצב, משוער. <b>שולם</b>: מהדוחות שלך. ברוטו; נטו אחרי 25%. מקורות: ${esc([...new Set(D.rows.map(r=>r.src).filter(Boolean))].join(', ')||'ריצת המחקר')}. לא תחזית ולא ייעוץ.</p>`;
 }
 // dividend calculator: a sandbox on the viewer's numbers (value, yield, monthly deposit) or any numbers typed in
 const DC={set:false};
@@ -18420,7 +18427,7 @@ function renderDivCalc(m){
   {const z=divCalcRun({...a,tax:0}), zl=z[z.length-1], paid=rows.reduce((s,r)=>s+r.tx,0), cost=a.re?(zl.V-l.V):paid;
    $('dcTaxCost').textContent=a.tax>0?LRM+'−'+ils(cost):'—'; $('dcTaxCostD').textContent=a.tax>0?(a.re?`מס ששולם ${ils(paid)}, ועוד ${ils(Math.max(0,cost-paid))} שהמס הזה היה מרוויח אילו נשאר בתיק`:`המס ששולם על כל התשלומים`):'בלי מס על הדיבידנד';
    const t=Math.min(100,Math.max(0,a.tax));
-   $('dcFlow').textContent=`מכל ₪100 דיבידנד: ₪${+t.toFixed(1)} מס במקור, ו-₪${+(100-t).toFixed(1)} נכנסים לחשבון ${a.re?'ומושקעים מחדש, כך שהם מקבלים דיבידנד בעצמם בשנים הבאות':'ונשארים במזומן, בלי להמשיך לגדול'}. המס מנוכה בכל תשלום בנפרד, ולכן הוא לא נדחה לסוף התקופה.`}
+   $('dcFlow').textContent=`מכל ₪100 דיבידנד: ₪${+t.toFixed(1)} מס במקור, ו-₪${+(100-t).toFixed(1)} ${a.re?'מושקעים מחדש וממשיכים לגדול':'נשארים במזומן'}.`}
   $('dcRows').innerHTML=rows.map(r=>`<tr><td class="num"><span class="n">${r.k}</span></td><td class="num"><span class="n">${ils(r.V)}</span></td><td class="num"><span class="n">${ils(r.g)}</span></td><td class="num"><span class="n">${ils(r.tx)}</span></td><td class="num"><span class="n">${ils(r.net)}</span></td><td class="num"><span class="n">${ils(r.cum)}</span></td></tr>`).join('');
   // what the statements say was actually received
   let got=''; try{if(HS&&HS.accounts&&Q){const T=divHistory().tot; got=T.gross>0?`לפי הדוחות והצילומים שלך התקבלו עד היום דיבידנדים של ${ils(T.gross)} ברוטו, נוכה מהם מס של ${ils(T.tax)}, ונטו ${ils(T.net)}. הפירוט לפי נייר ב"הדיבידנדים שקיבלת".`:'בדוחות שנקראו עד היום לא רשומים דיבידנדים שהתקבלו.'}}catch(e){}
@@ -18462,11 +18469,11 @@ function renderDecomp(){
   $('decRows').innerHTML=rows.map(r=>`<div class="drow" title="${esc(r[2])}"><div>${r[0]}<div class="nm">${esc(r[2])}</div></div>${bar(r[1],mx)}<span class="n ${r[1]>=0?'up':'down'}">${sgn(r[1])}</span></div>`).join('')+`<div class="drow tot"><div>התוצאה מול ההפקדות</div>${bar(total,mx)}<span class="n ${total>=0?'up':'down'}">${sgn(total)}</span></div>`;
   const few=a=>a.length<=4?a.map(lab).join(', '):a.slice(0,3).map(lab).join(', ')+' ועוד '+(a.length-3), n=a=>a.length===1?'לנייר אחד':`ל-${a.length} ניירות`;
   const bigOther=Math.abs(other)>500&&Math.abs(other)>0.2*Math.max(Math.abs(total),1);
-  $('decNote').textContent='הפירוק מחושב על אותו בסיס כמו "מול ההפקדות" למעלה: שווי התיק היום, כולל סימוני תוכנית ההגדלה, מול סך ההפקדות. ההפרדה בין מחיר המניה לשער הדולר לפי העלות בדולרים מהדוח כשיש, ואחרת לפי העסקאות שבהיסטוריה.'
+  $('decNote').textContent='אותו בסיס כמו "מול ההפקדות": שווי התיק היום מול סך ההפקדות.'
     +(D.est.length?` ${n(D.est)} (${few(D.est)}) היא מוערכת לפי שער הקנייה הממוצע של הדולרים${D.avg?`, ${D.avg.toFixed(3)} ₪`:''}.`:'')
     +(D.allPx.length?` ${n(D.allPx)} (${few(D.allPx)}) אין עלות בדולרים ולא שער קנייה, ולכן הם נספרים כולם תחת מחירי המניות.`:'')
     +(D.none.length?` ${n(D.none)} (${few(D.none)}) אין עלות בכלל, בשווי ${ils(D.noneVal)}, ולכן הרווח או ההפסד שלהם נמצא ב"הפרשי המרה ואחר".`:'')
-    +(bigOther?' חלק גדול מהתוצאה נמצא ב"אחר": בדרך כלל זה אומר שחסרות הפקדות בהיסטוריה, או שלניירות חסרה עלות. אפשר להשלים אותן בעמוד "התיק שלי".':'');
+    +(bigOther?' הרבה ב"אחר": כנראה חסרות הפקדות או עלויות, אפשר להשלים ב"התיק שלי".':'');
   HSUM.push(`פירוק התוצאה: מחירי המניות ${sgn(price)}, שער הדולר ${sgn(fxEff)}, מכירות ${sgn(real)}, דיבידנדים ${sgn(div)}, עמלות ${sgn(fees)}, אחר ${sgn(other)}.`);
 }
 // ---- 13.10.2026: the calculations of deposits, fees and the plan were corrected. Once, the numbers before and after,
@@ -18800,7 +18807,7 @@ function anomH(m){const L=anomaliesOf(m), KH={px:'תנועת מחיר',volm:'מ�
   return stSec('calc','חריגות: מה יצא מהטווח הרגיל',`<ul class="anom">${L.slice(0,12).map(a=>`<li class="an-${a.k}"><div class="an-h"><span class="nx-tag">${KH[a.k]}</span> <b>${esc(a.what)}</b>${a.sym?` <button type="button" class="lnk" data-gosec="${esc(a.sym)}">לנייר ›</button>`:''}</div>
       <div class="an-b"><span><b>ביחס למה:</b> ${esc(a.vs)}</span>${a.when?`<span><b>מתי:</b> ${esc(a.when)}</span>`:''}<span><b>למה זה עשוי להיות חשוב:</b> ${esc(a.why)}</span>
       <span><b>סיבה מאומתת:</b> ${a.cause?`${esc(a.cause.text)} <span class="nx-tag">${esc(a.cause.cert)}</span>${a.cause.ev?` <button type="button" class="lnk" data-story="${esc(a.cause.ev)}">הסיפור ›</button>`:''}`:'לא נמצאה בחדשות של הדף; הדף לא ממציא סיבה'}</span>
-      <span><b>ביטחון:</b> ${a.conf==='high'?'גבוה':'בינוני'} (${esc(a.confWhy)})</span></div></li>`).join('')}</ul><p class="note">${L.length>12?`${L.length-12} חריגות נוספות לא מוצגות. `:''}הספים: תנועת יום פי 2.5 מסטיית התקן של הנייר (ולפחות 2%); תנודתיות פי 2; שינוי אנליסטים/נתונים בין ריצות המחקר; אירוע קריטי ביומיים; 5 נקודות בקבוצה; קשר שונה ב-0.4 מהרב-שנתי. תנודה רגילה לא נחשבת חריגה, וסיבה לא מומצאת.</p>`)}
+      <span><b>ביטחון:</b> ${a.conf==='high'?'גבוה':'בינוני'} (${esc(a.confWhy)})</span></div></li>`).join('')}</ul><p class="note">${L.length>12?`${L.length-12} חריגות נוספות לא מוצגות. `:''}חריגה: תנועה פי 2.5 מהרגיל (ולפחות 2%), שינוי אנליסטים, אירוע קריטי. סיבה לא מומצאת.</p>`)}
 function renderState(){
   const body=$('stateBody'), per=$('statePer'); if(!body)return;
   if(!P||!Q||!Q.prices||!Q.usdIls){body.innerHTML='<div class="empty">התיק והמחירים עוד נטענים.</div>';return}
@@ -18817,7 +18824,7 @@ function renderState(){
   const money=v=>`<span class="n ${v>=0?'up':'down'}">${sgn(v)}</span>`;
   // 1. the snapshot
   const snap=stTry(()=>{let b=`<p>שווי התיק עכשיו: <b class="n">${ils(m.total)}</b>.</p>`;
-    if(SPER==='day')b+=W.has?`<p>${esc(dayWord())} השווי זז ב-${money(W.ils)} (${tx(spct(W.pct,2))}), מהמחירים בלבד: כל נייר מול מחיר הסגירה הקודם שלו, בכמויות של היום.</p>`:'<p>אין שינוי יומי: חסרים מחירי סגירה קודמים.</p>';
+    if(SPER==='day')b+=W.has?`<p>${esc(dayWord())} השווי זז ב-${money(W.ils)} (${tx(spct(W.pct,2))}), מהמחירים בלבד.</p>`:'<p>אין שינוי יומי: חסרים מחירי סגירה קודמים.</p>';
     else if(!PM)b+='<p>אין נתון שמור לתחילת התקופה הזו.</p>';
     else{b+=PM.change!=null?`<p>מ-${dmy(PM.key)}: ${ils(PM.vThen)} ← ${ils(PM.vNow)}, שינוי של ${money(PM.change)} (${tx(spct(PM.change/PM.vThen*100))}).</p>`:'<p>אין שווי שמור לתחילת התקופה בחשבון הזה.</p>';
       b+=PM.dep!=null?`<p>מתוך זה הפקדות ומשיכות: ${money(PM.dep)}${PM.change!=null?`; כל השאר, ${money(PM.change-PM.dep)}, הוא תנועת השוק והקניות והמכירות`:''}.</p>`:'<p class="note">ההפקדות בתקופה לא ידועות לחשבון הזה, ולכן השינוי כולל אותן.</p>'}
@@ -18844,7 +18851,7 @@ function renderState(){
     const row=(x,lbl)=>x?`<li>${esc(x.name)}: ${tx(spct(x.pct,2))}${x.date?` <span class="nm">(${dmy(x.date)})</span>`:''}</li>`:`<li>${lbl}: אין נתון.</li>`;
     return stSec('fact','השוק באותו יום',`<ul class="why-l">${row(B.us,'S&P 500')}${row(B.il,'ת״א 125')}
       ${B.blend!=null?`<li>${STAG.calc} שקלול לפי התיק שלך (${tx(pct(B.wUS*100,0))} נסחרים בארה״ב, ${tx(pct(B.wIL*100,0))} בתל אביב): ${tx(spct(B.blend,2))}. התיק: ${tx(spct(B.pf,2))}.</li>`:''}</ul>
-      <p class="note">למה המדדים האלה: הם המדדים הרחבים של שתי הבורסות שבהן הניירות שלך נסחרים. מה המגבלות: שינוי מחיר בלבד, כל מדד במטבע שלו, ליום המסחר האחרון של כל בורסה${B.dates.length===2&&B.dates[0]!==B.dates[1]?' (ימים שונים)':''}. התיק מרוכז יותר מהמדדים, ולכן זו תמונת רקע ולא ציון.</p>`)},'השוק באותו יום');
+      <p class="note">המדדים של שתי הבורסות שלך, מחיר בלבד, כל אחד במטבע שלו${B.dates.length===2&&B.dates[0]!==B.dates[1]?' (ימים שונים)':''}. תמונת רקע, לא ציון.</p>`)},'השוק באותו יום');
   // 5. stress
   // 5.11: one line here; the three drops, by group and by security, are the stress test in "בקרה › תרחישים"
   const sim=stTry(()=>{const R=stressRun(m,P,Q,{kind:'all',pct:-20}); if(!R)return '';
@@ -18857,7 +18864,7 @@ function renderState(){
     L.push(+S.goal>0?`יעד כספי: ${ils(+S.goal)}.`:'לא קבעת יעד כספי.');
     {const up=flowsView(S.flows,mAllNow(),+S.years||0).rows.filter(r=>!r.past);
       L.push(up.length?`משיכות והפקדות שתכננת: ${up.slice(0,3).map(r=>`${r.kind==='out'?'משיכה':'הפקדה'} של ${ils(r.amount)} ${moIn(r.months)} (${r.share!=null?pct(r.share):'—'} מהתיק היום)`).join('; ')}${up.length>3?`, ועוד ${up.length-3}`:''}.`:'לא הזנת משיכות או הפקדות צפויות.')}
-    return stSec('fact','מה שהגדרת',`<ul class="why-l">${L.map(x=>`<li>${tx(x)}</li>`).join('')}</ul><p class="note">הדף לא יודע מה המצב הכלכלי שלך או כמה הפסד אתה יכול לשאת, ולא מניח. הוא לא משנה את הפרופיל או את התיק.</p>
+    return stSec('fact','מה שהגדרת',`<ul class="why-l">${L.map(x=>`<li>${tx(x)}</li>`).join('')}</ul><p class="note">הדף לא מניח דבר על המצב הכלכלי שלך.</p>
       <div class="ana-navs"><button type="button" class="btn sm" data-prof="edit">לעדכן אופק ומטרה</button><button type="button" class="btn sm" data-tab="forecast">למשיכות ולהפקדות המתוכננות</button></div>`)},'מה שהגדרת');
   // 7. the calm checklist
   const chk=stTry(()=>{const E=exposures(m,P,Q,()=>''), C=E&&E.conc, cap=+R.maxPos||0, gcap=+R.maxGroup||0, gmax=E?E.group.filter(r=>r.k!=='cash')[0]:null;
@@ -19148,8 +19155,8 @@ function renderMonths(){
   const h=R.map(r=>{const t=tag(r); return `<tr${r.miss?' class="part"':''}><td><b>${mon(r.ym)}</b>${t?`<span class="nm">${esc(t)}</span>`:''}</td><td class="num"><span class="n">${ils(r.val)}</span></td><td class="num"><span class="n">${r.flow==null?'—':Math.abs(r.flow)<0.5?ils(0):sgn(r.flow)}</span></td><td class="num"><span class="n ${r.ret>0?'up':r.ret<0?'down':''}">${r.ret==null?'—':spct(r.ret,2)}</span>${r.gain!=null?`<span class="nm"><span class="n">${sgn(r.gain)}</span></span>`:''}</td></tr>`}).join('');
   if(body.innerHTML!==h)body.innerHTML=h;
   const first=R[R.length-1];
-  note.textContent=['הופקד / נמשך: הכסף שנכנס לתיק או יצא ממנו באותו חודש. תשואה: הרווח או ההפסד של החודש (השינוי בשווי, בלי מה שהופקד), באחוזים ובשקלים.',
-    R.some(r=>!r.own&&r.ret!=null)?'באחוז שהדף חישב, מה שהופקד באמצע החודש נספר לחצי חודש, כי היום של כל הפקדה לא ידוע.':'',
+  note.textContent=['תשואה: השינוי בשווי בחודש, בלי מה שהופקד.',
+    R.some(r=>!r.own&&r.ret!=null)?'הפקדה באמצע חודש נספרת לחצי חודש.':'',
     (()=>{const own=R.filter(r=>r.own).reverse(); if(!own.length)return ''; const run=own.every((r,i)=>!i||r.ym===ymAdd(own[i-1].ym,1));
       return `${own.length===1?'האחוז של '+ymFull(own[0].ym)+' הוא':'האחוזים של '+(run?monSpan(own):own.length+' חודשים')+' הם'} של בית ההשקעות, כפי שהופיעו בטבלה שהעלית מהאפליקציה.`})(),
     R.some(r=>r.miss)?'"רק": לחשבון אחר אין נתונים לחודש הזה, ולכן השורה חלקית, והיא לא נכנסת לגרף ולדוחות.':'',
@@ -19228,11 +19235,11 @@ function renderHistory(){
       return `<tr><td><span class="n">${dmy(e.date)}.${e.date.slice(2,4)}</span></td><td>${esc(e.t)}</td><td class="num"><span class="n">${e.k==='d'?(e.amt<0?LRM+'−'+f(-e.amt):'+'+f(e.amt)):f(e.amt)}</span></td><td class="num">${d==null?'<span class="nm">נטו עד כאן '+(cum<0?LRM+'−':'')+f(Math.abs(cum))+'</span>':`<span class="n ${d>=0?'up':'down'}">${sg(d)}${cum>0?` (${spct(d/cum*100)})`:''}</span>`}</td></tr>`}).join('');
     const avg=A.fxUsd?A.fxIls/A.fxUsd:null, notes=[];
     if(wdr>depIn&&wdr>0)notes.push(`נרשמו משיכות של ${f(wdr)}, יותר ממה שהופקד (${f(depIn)}), בזמן שבחשבון יש היום ${f(now)}. כנראה הפקדות נקראו כמשיכות, או שחסרות הפקדות. בדוק את התנועות ב"התיק שלי" או העלה שוב את צילום ההפקדות.`);
-    if(avg)notes.push(`הדולרים נקנו בשער ממוצע של ${avg.toFixed(3)} ₪, והשער היום ${fx.toFixed(3)}. ירידת הדולר לבדה גרעה כ-${pct((1-fx/avg)*100)} מהשווי בשקלים.`);
-    if(A.divGrossUsd!=null)notes.push(`דיבידנדים בתקופה: $${A.divGrossUsd.toFixed(2)}, מתוכם נוכה מס של $${A.divTaxUsd.toFixed(2)}, נטו $${(A.divGrossUsd-A.divTaxUsd).toFixed(2)}.`);
-    if(A.realizedUsd!=null)notes.push(`מכירות שבוצעו: ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש של $${Math.abs(A.realizedUsd).toFixed(2)} לפני עמלות (${A.realizedNote||''}).`);
+    if(avg)notes.push(`הדולרים נקנו בשער ממוצע של ${avg.toFixed(3)} ₪, והשער היום ${fx.toFixed(3)}. השער לבדו ${fx<avg?'גרע':'הוסיף'} כ-${pct(Math.abs(1-fx/avg)*100)}.`);
+    if(A.divGrossUsd!=null&&A.divGrossUsd>0.004)notes.push(`דיבידנדים בתקופה: $${A.divGrossUsd.toFixed(2)}, מתוכם נוכה מס של $${A.divTaxUsd.toFixed(2)}, נטו $${(A.divGrossUsd-A.divTaxUsd).toFixed(2)}.`);
+    if(A.realizedUsd!=null&&Math.abs(A.realizedUsd)>0.004)notes.push(`מכירות: ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש של $${Math.abs(A.realizedUsd).toFixed(2)} לפני עמלות${A.realizedNote?` (${A.realizedNote})`:''}.`);
     if(mx.pos.some(p=>p.noCost===false)&&P.positions.some(p=>p.acct===A.acct&&p.costEst))notes.push('העלות בשקלים של הניירות בחשבון הזה מוערכת לפי שער דולר משוער ביום הקנייה.');
-    notes.push(`ההפקדות ידועות עד ${dmy(A.through)}. אם הופקד כסף נוסף אחרי התאריך הזה, התוצאה מול ההפקדות נמוכה יותר ממה שמוצג.`);
+    notes.push(`ההפקדות ידועות עד ${dmy(A.through)}.`);
     const fz=feesOf(A,fx), depIls=usd?depIn*fx:depIn, fee=fz.ils>0?`<div class="cell"><div class="k">עמלות קנייה ומכירה</div><span class="v">${ils(fz.ils)}</span><div class="d">${fz.trades.length} עסקאות${fz.per&&fz.own<fz.trades.length?`, $${fz.per} לעסקה בנייר אמריקאי כשהדוח לא מציין עמלה`:''}${A.feesNote?' '+esc(A.feesNote):''} · ${pct(depIls>0?fz.ils/depIls*100:0)} מההפקדות</div></div>`
       :`<div class="cell"><div class="k">${A.realizedUsd!=null?'תוצאת המכירות':'עסקאות'}</div><span class="v ${A.realizedUsd!=null?(A.realizedUsd>=0?'up':'down'):''}">${A.realizedUsd!=null?LRM+(A.realizedUsd>=0?'+':'−')+'$'+Math.abs(A.realizedUsd).toFixed(2):A.tradesCount}</span><div class="d">${A.tradesCount} תנועות בתקופה</div></div>`;
     HSUM.push(`${name}: הופקדו ${f(depIn)}${wdr?`, נמשכו ${f(wdr)}`:''}, שווי היום ${f(now)}, תוצאה מול ההפקדות ${sg(res)}${dep>0?` (${spct(res/dep*100)})`:''}.`+(fz.ils>0?` עמלות ${ils(fz.ils)}.`:'')+(A.realizedUsd!=null?` ${A.realizedUsd>=0?'רווח':'הפסד'} ממומש $${Math.abs(A.realizedUsd).toFixed(2)}.`:''));
@@ -19472,7 +19479,7 @@ const defMaxPos=n=>n<=3?40:n<=5?30:n<=8?20:n<=12?15:10;
 const rulesDefault=()=>!!S&&!S.rulesAt&&Object.keys(DEF.rules).every(k=>(k==='maxPos'&&S.rulesAuto)||+((S.rules||{})[k])===+DEF.rules[k]);
 function rulesAutoApply(){try{if(!S||S.rulesAt||!P)return; const n=new Set(((P.positions)||[]).map(p=>p.sym).filter(Boolean)).size; if(!n)return; const was=+(S.rules||{}).maxPos; if(S.rulesAuto||was===+DEF.rules.maxPos){const sug=defMaxPos(n); if(S.rules.maxPos!==sug||S.rulesAuto!==n){S.rules.maxPos=sug; S.rulesAuto=n}}}catch(e){}}
 function rulesNote(){if(!rulesDefault())return ''; const R=S.rules;
-  return `<div class="rl-def"><p>הכללים עדיין ברירת המחדל של הדף${S.rulesAuto?` (לפי ${S.rulesAuto} ניירות בתיק)`:''}: עד ${pct(R.maxPos,0)} לנייר בודד, עד ${pct(R.maxGroup,0)} לקבוצה, ובדיקה בירידה של ${pct(R.stopLoss,0)} מהעלות. החריגות נבדקות מולם, אז כדאי לבדוק שהם מתאימים לך.</p><div class="ana-navs"><button type="button" class="btn sm" data-rules="go">לכללים בהגדרות</button>${canWrite?'<button type="button" class="btn sm" data-rules="mine">אלה הכללים שלי</button>':''}</div></div>`}
+  return `<div class="rl-def"><p>הכללים עדיין ברירת המחדל של הדף${S.rulesAuto?` (לפי ${S.rulesAuto} ניירות בתיק)`:''}: עד ${pct(R.maxPos,0)} לנייר, עד ${pct(R.maxGroup,0)} לקבוצה, ירידה של ${pct(R.stopLoss,0)} מהעלות. מתאים לך?</p><div class="ana-navs"><button type="button" class="btn sm" data-rules="go">לכללים בהגדרות</button>${canWrite?'<button type="button" class="btn sm" data-rules="mine">אלה הכללים שלי</button>':''}</div></div>`}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-rules]'); if(!b)return;
   if(b.dataset.rules==='mine'){if(!canWrite)return; S.rulesAt=new Date().toISOString(); delete S.rulesAuto; changed(); for(const n of document.querySelectorAll('.rl-def'))n.remove(); try{for(const f of Object.values(ANA_REDRAW))f()}catch(e){} return}
   if(b.closest('#anaBox')&&!anaDock())anaClose(true); showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const h=$('hRules'); if(h)h.scrollIntoView({block:'start'})},60)});
@@ -21264,7 +21271,7 @@ function renderGoal(mAll){
     if($('hGoalOv'))$('hGoalOv').textContent='היעד שלי'+(pu?': '+PURPOSE[pu]:'');
     const core=`<div class="gl-h">${pu?`<span class="gl-p">${esc(PURPOSE[pu])}</span>`:''}<span class="gl-v">${ils(goal)}</span><span class="sub">היום, אחרי מס: ${ils(netNow)} · ${pct(p,0)} מהיעד</span></div><div class="gbar" role="img" aria-label="${pct(p,0)} מהיעד"><i style="width:${p.toFixed(1)}%"></i></div><p class="gl-eta">${k===0?'הגעת ליעד.':k==null?'בקצב הנוכחי היעד לא מושג בתוך 60 שנה.':`בקצב הנוכחי תגיע ליעד ${whenH(k)}.`}${esc(fitH)}</p>`;
     gh=core+`<p class="note">${basis}</p>`; ov=core+`<button class="btn sm" type="button" data-tab="forecast">ליעד ולתרחישים</button>`}
-  else gh=`<p class="gl-eta">עוד לא קבעת יעד. הקלד סכום בשדה "היעד שלי" למטה, והדף יראה כמה מהדרך כבר עברת ומתי תגיע אליו בקצב הנוכחי.</p>`;
+  else gh=`<p class="gl-eta">עוד לא קבעת יעד. הקלד סכום ב"היעד שלי" למטה.</p>`;
   setH($('goalBox'),gh);
   $('goalOvSec').hidden=!ov; if(ov)setH($('goalOv'),ov);
   // three scenarios: the viewer's own rate, and three points under and over it
@@ -22147,7 +22154,7 @@ function drawChart(pts){
   g+=`<line id="cross" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><rect id="hit" x="${L}" y="${T}" width="${W-L-Rm}" height="${H-T-Bm}" fill="transparent"/>`;
   $('svg').setAttribute('viewBox','0 0 '+W+' '+H); $('svg').innerHTML=g; $('svg').dataset.geo=JSON.stringify({L,Rm,W,n});
   const a=act[act.length-1];
-  $('projNote').textContent=(a?`עד היום: הופקדו ${ils(a.ad)}, ${ils(a.ai)} במניות לפי העלות, ${ils(Math.max(0,a.ad-a.ai))} לא הושקעו. ההפקדות מהדוחות, מצילומי ההפקדות ומטבלאות התשואה, כמו "מול ההפקדות" בסקירה. `:'')+(e&&!e.act?`בסוף הלוח, ${ymShort(e.ym)}: ${ils(e.pd)} הפקדות, ${ils(e.pi)} במניות.`:'');
+  $('projNote').textContent=(a?`עד היום: הופקדו ${ils(a.ad)}, ${ils(a.ai)} במניות לפי העלות, ${ils(Math.max(0,a.ad-a.ai))} לא הושקעו. `:'')+(e&&!e.act?`בסוף הלוח, ${ymShort(e.ym)}: ${ils(e.pd)} הפקדות, ${ils(e.pi)} במניות.`:'');
 }
 function hover(ev){
   const svg=$('svg'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo||!PTS.length)return;
@@ -22169,7 +22176,7 @@ function renderCompass(pts,e,unreal){
   const box=$('goalCompass'); if(!box)return; const goal=Math.max(0,+S.goal||0), yrs=+S.years||0, rate=+S.ratePct||0, mo=MTOT(), start=pts[0].val, tr=Math.max(0,+S.taxPct||0)/100;
   const L=pots(), potH=L.length?`<div class="cmp-pots"><h4>חסכונות לפי מטרה</h4><ul>${L.map(pt=>{let V=null; try{V=potValue(pt)}catch(x){} if(!V)return ''; const gap=V.tgt?Math.max(0,V.tgt-V.total):null;
     return `<li><b>${esc(pt.name||'חיסכון')}</b>: ${ils(V.total)}${V.tgt?` מתוך ${ils(V.tgt)} (${pct(V.pctT||0,0)})${gap?`, חסר ${ils(gap)}`:', ביעד'}`:' (בלי יעד)'}${pt.date?` · עד ${dmy(pt.date)}`:''}${V.atDate!=null?` · לפי ההנחות: ${ils(V.atDate)} במועד`:''} <button type="button" class="lnk" data-tab="pots" data-pot="${esc(pt.id)}">לפתוח</button></li>`}).join('')}</ul></div>`:'';
-  if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note" style="margin:0">קבע יעד כספי למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש, מה הפער, ואיזו הפקדה חודשית סוגרת אותו לפי ההנחות שלך.</p>${potH}`; return}
+  if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note" style="margin:0">קבע יעד למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש ומה הפער.</p>${potH}`; return}
   const netNow=start-Math.max(0,+(EXPM&&EXPM.pnl)||0)*tr, pNow=Math.max(0,Math.min(100,netNow/goal*100)), end=e.net, gap=goal-end, k=goalMonths(start,mo,rate,unreal,goal), need=needMonthly(start,yrs,rate,unreal,goal);
   const plus=(d)=>{const r=Math.pow(1+rate/100,1/12)-1; let v=0; for(let i=1;i<=yrs*12;i++)v=v*(1+r)+d; return v*(1-tr)};
   box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3>
@@ -22205,7 +22212,7 @@ function drawFwd(raw,planEndY,unreal,missing){
   $('fTax').textContent=ils(e.tax); $('fTaxD').textContent=`${pct(tr*100,0)} מהרווח, בעת מכירה`;
   const np=$('fNet'); np.textContent=sgn(e.gain-e.tax); np.className='v '+(e.gain-e.tax>=0?'up':'down'); $('fNetD').textContent=e.dep>0?`${spct((e.gain-e.tax)/e.dep*100)} על מה שהשקעת`:'';
   $('fVal').textContent=ils(e.net); $('fValD').textContent=`לפני מס: ${ils(e.val)}`;
-  $('fwdNote').textContent=`מתחילים משווי התיק היום, ${ils(pts[0].val)}, ומפקידים ${ils(MTOT())} בחודש. התשואה היא הנחה שלך ולא תחזית, והמס מחושב כאילו מוכרים הכול בסוף התקופה.`+(missing?` ל-${missing} ניירות חסרה עלות, והרווח שכבר נצבר בהם לא נספר.`:'');
+  $('fwdNote').textContent=`מתחילים משווי התיק היום, ${ils(pts[0].val)}, ומפקידים ${ils(MTOT())} בחודש. התשואה היא הנחה שלך, לא תחזית; המס כאילו מוכרים הכול בסוף.`+(missing?` ל-${missing} ניירות חסרה עלות, והרווח שכבר נצבר בהם לא נספר.`:'');
   try{renderCompass(pts,e,unreal)}catch(x){console.error(x)}
 }
 $('chart2').addEventListener('pointermove',ev=>{
@@ -23871,7 +23878,7 @@ function profMaybe(){
 function renderMe(){
   const el=$('meList'); if(!el)return; const p=S.profile;
   $('meEdit').hidden=!canWrite; $('meEdit').textContent=p?'לעריכה':'למלא עכשיו';
-  $('meNote').innerHTML=p?'הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם. הדירוג ב"מה מתאים לתיק" ובמניות במעקב מותאם לסוג המשקיע שבחרת. זה דירוג התאמה, לא המלצה לקנות. <button class="btn sm" type="button" data-anav="fit">למה שמתאים לתיק ›</button>'
+  $('meNote').innerHTML=p?'הפרטים נשמרים רק בחשבון שלך ואף משתמש אחר לא רואה אותם. סוג המשקיע משנה את דירוג ההתאמה (לא המלצה). <button class="btn sm" type="button" data-anav="fit">למה שמתאים לתיק ›</button>'
     :'עוד לא מילאת פרופיל. בו קובעים את השם, שפת הדף, סוג המשקיע (שמשנה את דירוג ההתאמה), כמה אתה מכיר את השוק (שקובע את עומק ההסברים של צ׳יקו), בשביל מה אתה משקיע ויום ההפקדה (שממנו מגיעה התזכורת).';
   const span=(t,ltr)=>`<span class="notr"${ltr?' dir="ltr"':''}>${esc(t)}</span>`;
   const h=p?[['שם',span((p.first||'')+(p.last?' '+p.last:''))],['מייל',p.email?span(p.email,1):'—'],['טלפון',p.phone?span(p.phone,1):'—'],
@@ -24344,12 +24351,12 @@ function renderCandsP(m,pool,mine=''){
   $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
   const hi=pool.pick.filter(r=>r.f.score>=80).length;
   // the big number is what matters to the reader: how many fit very well (80 and up); the rest fit partly
-  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${hi||pool.pick.length}</div><div><b>${hi?`מניות שמתאימות מאוד לתיק שלך${pool.pick.length>hi?`, ועוד ${pool.pick.length-hi} שמתאימות חלקית`:''}`:'מניות שיכולות להתאים לתיק שלך'}.</b><p>הדירוג לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לכל משתמש רשימה משלו. זה לא המלצת קנייה.</p></div>`:'';
+  $('candHero').innerHTML=pool.pick.length?`<div class="bn">${hi||pool.pick.length}</div><div><b>${hi?`מניות שמתאימות מאוד לתיק שלך${pool.pick.length>hi?`, ועוד ${pool.pick.length-hi} שמתאימות חלקית`:''}`:'מניות שיכולות להתאים לתיק שלך'}.</b><p>הדירוג לפי הכללים שלך${hasRisk()?`, סוג המשקיע ("${esc(RISK[riskOf()])}")`:''}${Object.values(S.targets||{}).some(x=>+x>0)?' והיעדים שלך':''}: ${andJ(fitParts(FITLW))}. לא המלצת קנייה.</p></div>`:'';
   const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
   const markH=mine+(mine?'<div class="wsec"><h3>מה עוד יכול להתאים לתיק</h3></div>':'');
   const rows=pool.pick.filter(r=>!candFilter||GROUPS[r.f.g]===candFilter);
   box.innerHTML=markH+(rows.map(r=>wcCardH(r,m,pv,mg)).join('')||'<div class="empty">אין ניירות בסינון הזה.</div>');
-  $('candNote').textContent='הדירוג מחושב בדפדפן שלך מהתיק, הכללים והיעדים שלך. '+(FIT&&FIT.updatedAt?`נתוני החברות ${rsStale(FIT.updatedAt)?'נכונים ל-'+dmy(FIT.updatedAt)+' ולא מתעדכנים כרגע':'עודכנו '+dmy(FIT.updatedAt)}; `:'')+'מחירים: סגירה יומית, ונייר שסימנת מקבל מחיר כל כמה דקות בשעות המסחר.';
+  $('candNote').textContent=''+(FIT&&FIT.updatedAt?`נתוני החברות ${rsStale(FIT.updatedAt)?'נכונים ל-'+dmy(FIT.updatedAt)+' ולא מתעדכנים כרגע':'עודכנו '+dmy(FIT.updatedAt)}; `:'')+'נייר במעקב מתעדכן כל כמה דקות.';
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-wmark]'); if(!b)return; toggleMark(b.dataset.wmark).then(()=>{try{renderCands(mAllNow())}catch(e){}})});
 
@@ -24463,7 +24470,7 @@ function loadSymDb(){
     SYMWHY=SYMDB.length?'':(why||'הרשימה ריקה');
     try{ilAugment(); ilLoad()}catch(e){}
     if(!SYMDB.length){SYMTRIES++;if(SYMTRIES<4){SYMLOAD=null;SYMDB=null;setTimeout(()=>{loadSymDb().then(srchRender)},1500);return []}}
-    try{const n=$('sqNote');if(n&&(SYMDB.length||SYMTRIES>=3)){n.textContent=SYMDB.length?`${SYMDB.length.toLocaleString('en-US')} ניירות ברשימה: מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.`:`רשימת הניירות לא נטענה (${SYMWHY}). סגור את הדף ופתח אותו מחדש; בינתיים אפשר לחפש רק ניירות שבתיק.`;lgNote()}}catch(e){}
+    try{const n=$('sqNote');if(n&&(SYMDB.length||SYMTRIES>=3)){n.textContent=SYMDB.length?`${SYMDB.length.toLocaleString('en-US')} ניירות מארה״ב ומתל אביב. נייר במעקב מתעדכן כל שעה.`:`רשימת הניירות לא נטענה (${SYMWHY}). סגור את הדף ופתח אותו מחדש; בינתיים אפשר לחפש רק ניירות שבתיק.`;lgNote()}}catch(e){}
     return SYMDB;
   })();
   return SYMLOAD;
@@ -24539,7 +24546,7 @@ async function pushUI(msg){
   const box=$('pushBox'); if(!box)return; const st=$('pushState'), on=$('pushOn'), off=$('pushOff'), tst=$('pushTest');
   if(!window.__tc||LOCAL){box.hidden=true;return} box.hidden=false; for(const b of [on,off,tst])b.hidden=true;
   if(!pushOk()){st.textContent=/iPhone|iPad/.test(navigator.userAgent)?'באייפון זה עובד מהאייקון במסך הבית: בספארי, שיתוף ← "הוספה למסך הבית", ואז לפתוח את האתר משם ולהפעיל כאן.':'הדפדפן הזה לא תומך בהתראות לטלפון.';return}
-  if(Notification.permission==='denied'){st.textContent='ההתראות חסומות לאתר הזה בהגדרות הדפדפן. כדי להפעיל, צריך לאשר אותן שם (בהגדרות האתר בדפדפן).';return}
+  if(Notification.permission==='denied'){st.textContent='ההתראות חסומות בהגדרות הדפדפן; אשר אותן שם.';return}
   const reg=await pushReg(), sub=reg&&reg.pushManager?await reg.pushManager.getSubscription().catch(()=>null):null;
   let n=null; try{const r=await fetch('/api/push',{credentials:'same-origin'}); if(r.ok)n=(await r.json()).n}catch(e){}
   if(sub){st.textContent=msg||`מופעל במכשיר הזה${n>1?` (ועוד ${n-1} מכשירים)`:''}. ההתראות מגיעות גם כשהאתר סגור, לפי ההגדרות של "התראות בזמן אמת".`; off.hidden=false; tst.hidden=false}
@@ -24906,7 +24913,7 @@ async function sysFill(force){
   const ord={bad:0,warn:1,ok:2,off:3}, items=D.items.slice().sort((a,b)=>ord[a.state]-ord[b.state]);
   $('sysSub').textContent=D.bad?`${D.bad} לא עובדים`:D.warn?`${D.warn} ממתינים`:'הכול תקין';
   const mailOff=!(S&&S.mail&&S.mail.pxalert===true);
-  setH(box,`<p class="note" style="margin:0">כל מקור שהאתר נשען עליו, ומתי עבד לאחרונה. "לא עובד" רק כשעבר יותר זמן ממה שמותר לו (יום למקורות הליליים, כמה שעות לחדשות), לא בגלל ריצה אחת שנכשלה. ${mailOff?'<b>מייל כשמקור נופל:</b> להפעיל בהגדרות ← מיילים ← "משהו לא מתעדכן".':'כשמקור לא עובד, יישלח אליך מייל (פעם ב-12 שעות לכל מקור).'}</p>
+  setH(box,`<p class="note" style="margin:0">המקורות ומתי עבדו לאחרונה. ${mailOff?'<b>מייל כשמקור נופל:</b> להפעיל בהגדרות ← מיילים ← "משהו לא מתעדכן".':'כשמקור לא עובד, יישלח אליך מייל (פעם ב-12 שעות לכל מקור).'}</p>
     <ul class="hl">${items.map(i=>{const job=SYSH_RUN[i.key]||(i.key.startsWith('job:')?i.key.slice(4):null);
       return `<li class="${i.state}"><span class="hd" aria-hidden="true"></span><span><b>${esc(i.name)}</b></span><span class="hs">${SYSH_ST[i.state]||i.state}</span>
         <span class="hn">${i.state==='off'?'':`עבד לאחרונה: ${agoH(i.okAt)}${i.ran&&i.ran!==i.okAt?` · ריצה אחרונה: ${agoH(i.ran)}`:''} · `}${esc(i.note||'')}${job&&D.jobs&&i.state!=='ok'&&i.state!=='off'?`<button type="button" class="btn sm" data-rsrun="${esc(job)}">להריץ עכשיו</button>`:''}</span></li>`}).join('')}</ul>
@@ -25288,7 +25295,7 @@ function dnaH(){
     (G.drift||G.plan)?`${G.drift?(Math.abs(G.drift.d)<=5?'התיק קרוב ליעדים':'התיק רחוק מהיעד ב'+esc(G.drift.label)):''}${G.plan&&G.depKnown?(G.drift?'; ':'')+(G.dep6>=G.plan*6*0.9?'ההפקדות עומדות בתוכנית':G.dep6>=G.plan*3?'ההפקדות מתחת לתוכנית':'ההפקדות רחוקות מהתוכנית'):''}${G.thHeld===0?'; אין תזה כתובה על אף נייר':G.thHeld<G.n/2?'; לרוב הניירות אין תזה כתובה':''}.`:null);
   const c8=card('שינויים לאורך זמן',Z?[`המחצית הראשונה (${dmy(Z.from)}–${dmy(Z.mid)}) מול השנייה (עד ${dmy(Z.to)})`,`עסקה ממוצעת: <b>${ils(Z.sizeA)}</b> ← <b>${ils(Z.sizeB)}</b>`,`מכירות: <b>${Z.sellsA}</b> ← <b>${Z.sellsB}</b>`,`לאן הלכו הקניות: ${Z.mixA.map(([k,v])=>`${esc(k)} ${p0(v)}`).join(', ')||'—'} ← ${Z.mixB.map(([k,v])=>`${esc(k)} ${p0(v)}`).join(', ')||'—'}`,`רשומות ביומן: <b>${Z.jrnA}</b> ← <b>${Z.jrnB}</b>`]:[],
     Z?`${Z.sizeB>Z.sizeA*1.3?'העסקאות גדלו':Z.sizeB<Z.sizeA*0.7?'העסקאות קטנו':'גודל העסקאות דומה'}${Z.mixA[0]&&Z.mixB[0]&&Z.mixA[0][0]!==Z.mixB[0][0]?'; הקניות עברו מ'+esc(Z.mixA[0][0])+' ל'+esc(Z.mixB[0][0]):''}${Z.jrnB>Z.jrnA?'; כותב ביומן יותר':''}.`:null,Z?null:'צריך לפחות שש עסקאות בדוחות כדי להשוות תקופות.');
-  return `<div class="dna-g">${c1}${c2}${c3}${c4}${c5}${c6}${c7}${c8}</div><div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="dna">שאל את צ׳יקו על הטביעה שלי</button></div><p class="note" style="margin:6px 0 0">מחושב מהתיק של היום, מהדוחות שנקראו (עסקאות, הפקדות, חודשים), מהיומן ומהתזות. מתעדכן לבד כשהנתונים מתעדכנים. אין כאן תווית על אופי; יש מספרים, ומה שהם מראים. צ׳יקו מקבל תמצית של זה עם כל שאלה, כדי להסביר דרך מה שאתה עושה בפועל.</p>`}
+  return `<div class="dna-g">${c1}${c2}${c3}${c4}${c5}${c6}${c7}${c8}</div><div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="dna">שאל את צ׳יקו על הטביעה שלי</button></div><p class="note" style="margin:6px 0 0">מהתיק, הדוחות, היומן והתזות. מתעדכן לבד.</p>`}
 function renderDna(){const b=$('dnaBox'); if(!b||document.body.dataset.page!=='journal')return; try{setH(b,dnaH())}catch(e){console.error(e)}}
 // the security's screen: its last entries, and a way to a new one
 function secJournal(it){if(!it||!it.sym||it.t==='I')return ''; const L=jrnBySym(it.sym); if(!L.length&&!canWrite)return '';
@@ -25381,7 +25388,7 @@ function cmpH(){
   const pick=`<div class="cmp-pick"><div class="chips">${F.map(f=>`<span class="chip on">${logoHtml(f.k,'sm')}<bdi>${esc(f.name)}</bdi> <button type="button" class="x" data-cmprm="${esc(f.k)}" aria-label="להסיר ${esc(f.k)}">×</button></span>`).join('')}
       ${CMP.syms.length<4?`<form class="cmp-add" id="cmpAdd"><input list="cmpSyms" id="cmpIn" placeholder="סימול להוספה" maxlength="14" autocomplete="off" aria-label="סימול להוספה" style="text-transform:uppercase"><datalist id="cmpSyms">${[...held,...W].map(k=>`<option value="${esc(k)}">${esc(lab(k))}</option>`).join('')}</datalist><button type="submit" class="btn sm">להוסיף</button></form>`:''}</div>
     ${quick.length&&CMP.syms.length<4?`<p class="nm" style="margin:4px 0 0">מהתיק והמעקב: ${quick.map(k=>`<button type="button" class="lnk" data-cmpadd="${esc(k)}">${esc(k)}</button>`).join(' · ')}</p>`:''}</div>`;
-  if(F.length<2)return `${pick}<p class="note" style="margin:8px 0 0">בחר לפחות שני ניירות. ההשוואה מראה אותם מספרים זה מול זה, עם המקור של כל מספר; היא לא אומרת מה עדיף.</p>`;
+  if(F.length<2)return `${pick}<p class="note" style="margin:8px 0 0">בחר לפחות שני ניירות. ההשוואה לא אומרת מה עדיף.</p>`;
   const rng=`<div class="chips rng" role="group" aria-label="תקופת המחיר">${CMP_RNG.map(([k,l])=>`<button type="button" class="chip" data-cmprng="${k}" aria-pressed="${CMP.rng===k}">${l}</button>`).join('')}</div>`;
   const funds=F.filter(f=>f.isFund); const rows=CMP_ROWS.filter(([id])=>!(funds.length===F.length&&['pe','fpe','revg','epsg','gm','om','pm','roe','de','cr','fcfm','rating','up','next','rep'].includes(id)));
   const groups=[]; for(const r of rows){const g=r[5]; let G=groups[groups.length-1]; if(!G||G.g!==g){G={g,R:[]}; groups.push(G)} G.R.push(r)}
@@ -25933,6 +25940,11 @@ try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoVie
 function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 function closeSec(){const st=(()=>{try{return history.state||{}}catch(e){return {}}})(); if(st.sec&&st.sec===SEC){try{history.back(); return}catch(e){}} SEC=null; srchRender(); try{window.scrollTo({top:0})}catch(e){}}
+function stickH(){const p=document.querySelector('[data-pane]:not([hidden])'); if(!p)return; const r=p.querySelector(':scope>.subtabs'); p.style.setProperty('--subH',(r?r.offsetHeight:0)+'px')}
+addEventListener('resize',()=>{try{stickH()}catch(e){}},{passive:true});
+{let qaRaf=0; addEventListener('scroll',()=>{if(qaRaf)return; qaRaf=requestAnimationFrame(()=>{qaRaf=0; const q=document.getElementById('quickActs'); if(!q||q.offsetParent===null)return;
+  let m=document.getElementById('qaMark'); if(!m){m=document.createElement('div'); m.id='qaMark'; m.setAttribute('aria-hidden','true'); q.before(m)}
+  q.classList.toggle('stuck',m.getBoundingClientRect().top<-8)})},{passive:true})}
 function showTab(t,user){
   if(t==='search'&&user&&SEC&&document.body.dataset.page==='search'){closeSec(); return}   // 9.11: the tab's own tap, from the security page, is the way back to the landing
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
@@ -25945,6 +25957,7 @@ function showTab(t,user){
   try{bbSync(t)}catch(e){}
   for(const s of document.querySelectorAll('[data-pane]'))s.hidden=s.dataset.pane!==t;
   try{subTabs(t)}catch(e){} try{if(PARTS[t])ptSet(t,PTV[t])}catch(e){}
+  try{stickH()}catch(e){}
   try{localStorage.setItem('tab',t)}catch(e){}
   if(t==='plan'||t==='forecast'||t==='history'){try{render()}catch(e){} try{if(PARTS[t])ptSet(t,PTV[t])}catch(e){}}   // 5.11: a part filled by the render (the accounts' look back) is offered once it has content
   if(t==='state'){try{renderState()}catch(e){}}
@@ -27573,7 +27586,7 @@ function nwSetFill(){const box=$('nwSetBox'); if(!box)return; const F=nwPrefs(),
         return `<div class="nws-r"><b>נושאים שאתה עוקב אחריהם</b><div class="nws-c">${on.length?on.map(([k,v,l])=>`<button type="button" class="chip sm" data-nwfol="${k}:${esc(v)}" aria-pressed="true"${dis}>${esc(l)} ×</button>`).join(''):'<span class="nm">אין עדיין. בכל כתבה, ב"לעקוב אחרי", אפשר להוסיף ענף, אזור או נושא.</span>'}</div></div>`})()}
       <div class="nws-r"><b>חברות ומניות במעקב</b><div class="nws-c">${F.syms.map(k=>`<button type="button" class="chip sm" data-nwfol="syms:${esc(k)}" aria-pressed="true"${dis}>${esc(k)} ×</button>`).join('')}<form class="nws-add" data-nwsadd="news"><label class="vh" for="nwsSym">סימול להוספה</label><input id="nwsSym" placeholder="סימול, למשל NVDA" maxlength="8"${dis}><button class="btn sm" type="submit"${dis}>להוסיף</button></form></div></div>
       <div class="nws-r"><b>מיון ברירת מחדל</b><select id="nwsSort"${dis}><option value="time"${F.sort==='time'?' selected':''}>לפי מועד פרסום</option><option value="imp"${F.sort==='imp'?' selected':''}>לפי חשיבות</option></select></div>
-      <p class="note">החדשות באתר הן של הניירות שבתיק ובמעקב שלך. מה שבמעקב מקבל עדיפות במיון לפי חשיבות ומופיע בתצוגה "במעקב".</p></div>
+      <p class="note">חדשות על הניירות שבתיק ובמעקב שלך.</p></div>
     <div class="nws-g"><h3>התראות אישיות</h3>
       <label class="check"><input type="checkbox" id="plsOn"${pr.on?' checked':''}${dis}><span>התראות אישיות פעילות</span></label>
       <div class="nws-r"><b>רמות</b><div class="nws-c"><label class="check"><input type="checkbox" data-plslv="crit"${pr.lv.crit?' checked':''}${dis}><span>קריטית</span></label><label class="check"><input type="checkbox" data-plslv="imp"${pr.lv.imp?' checked':''}${dis}><span>חשובה</span></label><label class="check"><input type="checkbox" data-plslv="upd"${pr.lv.upd?' checked':''}${dis}><span>עדכון תיק</span></label></div></div>
@@ -27587,7 +27600,7 @@ function nwSetFill(){const box=$('nwSetBox'); if(!box)return; const F=nwPrefs(),
       <label class="check"><input type="checkbox" id="plsIcons"${pr.icons?' checked':''}${dis}><span>אייקונים של התראות מעל צ׳יקו</span></label>
       <details class="nx-tpk" id="nxTypesBox"><summary><b>סוגי אירועים</b><span class="nx-tps" id="nxTypesSum"></span></summary><div class="nx-tpl" id="nxTypesAl" role="group" aria-label="סוגי האירועים להתראה">${Object.entries(NX_TYPE).filter(([k])=>k!=='other').map(([k,v])=>`<label class="check"><input type="checkbox" data-nxat="${k}"${((S.newsAl||{}).types||{})[k]===false?'':' checked'}${dis}><span>${esc(v)}</span></label>`).join('')}</div>
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-nxatall="1"${dis}>לבחור הכול</button><button type="button" class="btn sm" data-nxatall="0"${dis}>לנקות הכול</button></div></details>
-      <p class="note">ההגדרות נשמרות בחשבון שלך ומשנות את מה שהשרת יוצר ושולח: רמה כבויה לא נוצרת, רגישות משנה את הספים, ושעות שקטות עוצרות הודעות לטלפון ולמייל. התראות לטלפון מגיעות גם כשהאתר סגור, אחרי שהופעלו במכשיר.</p></div>`);
+      <p class="note">רמה כבויה לא נשלחת; שעות שקטות עוצרות הודעות. לטלפון מגיע גם כשהאתר סגור.</p></div>`);
   {const bs=[...box.querySelectorAll('[data-nxat]')], on=bs.filter(b=>b.checked).length, sm=$('nxTypesSum'); if(sm)sm.textContent=on===bs.length?`כולם (${bs.length})`:on?`${on} מתוך ${bs.length}`:'אף סוג'}}
 const plSetPr=patch=>{if(!canWrite)return; S.pulse={...(S.pulse||{}),...patch}; changed(); try{plRender(mAllNow())}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}};
 document.addEventListener('change',ev=>{const el=ev.target; if(!el||!el.closest||!el.closest('#nwSetBox'))return; const pr=plPrefs();
@@ -27655,9 +27668,9 @@ function renderCal(){
     <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span><span><i class="ev div" style="background:transparent!important;box-shadow:inset 0 0 0 1.6px #10B981"></i> עיגול ריק: מועד משוער</span></div>
     ${selTxt}
     <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}<div class="rsStatus"></div>
-    <p class="note">מועדי הדוחות הבאים מלוח הדוחות של Finnhub ו-Yahoo Finance, והימים שבהם דוחות פורסמו מהדיווחים של החברות לרשות ניירות הערך האמריקאית (SEC). דוח שהיום שבו פורסם לא ידוע לא מסומן ביום כלשהו. דיבידנדים: מה שהחברה הכריזה (Nasdaq), ואחריו הדיבידנדים הבאים לפי הקצב של הקודמים, מסומנים כמשוערים עד שהחברה מכריזה. דיבידנד שהתקבל הוא מהדוחות שהעלית.</p>
+    <p class="note">דוחות: Finnhub, Yahoo Finance ו-SEC. דיבידנדים: הכרזות (Nasdaq), והבאים לפי הקצב, משוערים.</p>
     <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
-    <p class="note">ארה״ב: לפי לוח החגים של הבורסה בניו יורק, והשעות מומרות לשעון ישראל לפי שני השעונים (רוב השנה 16:30–23:00, ובשבועות שבהם רק אחת מהמדינות בשעון קיץ 15:30–22:00). תל אביב: שני עד חמישי 10:00–17:30, שישי 10:00–14:00; ימי החג מחושבים מלוח השנה העברי לפי כללי הבורסה (אין מסחר בחג ובערבו, בפורים, ביום הזיכרון וביום העצמאות ובתשעה באב; בחול המועד עד 14:30). הלוח הרשמי הוא של הבורסה בתל אביב, והיא יכולה לשנות מועדים.</p>`;
+    <p class="note">ארה״ב: 16:30–23:00 שעון ישראל (15:30–22:00 כשרק מדינה אחת בשעון קיץ). תל אביב: ב׳–ה׳ 10:00–17:30, ו׳ 10:00–14:00; חגים לפי כללי הבורסה, והלוח הרשמי שלה קובע.</p>`;
   try{rsStatusFill()}catch(e){}
 }
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-calday],[data-calmv]'); if(!t||!t.closest('#calBox'))return;
@@ -27931,12 +27944,12 @@ function renderTax(){
   if(T.none){setH(box,'<div class="empty">אין מחירי קנייה, ולכן אי אפשר לחשב רווח ומס. אפשר להשלים אותם בלשונית "התיק שלי".</div>');return}
   $('taxSub').textContent=`שיעור ${pct(T.rate*100,0)} · הערכה`;
   const cell=(k,v,d,cls)=>`<div class="cell"><div class="k">${k}</div><span class="v${cls?' '+cls:''}">${v}</span><div class="d">${d||'&nbsp;'}</div></div>`;
-  const loss=T.dn.length?`<p class="tx-l"><b>הפסדים שמקזזים את הרווחים:</b> ${T.dn.slice(0,8).map(r=>`${symH(r.sym)} ${nn(sgn(r.g),'down')}`).join(' · ')}${T.dn.length>8?` ועוד ${T.dn.length-8}`:''}. כשמוכרים נייר בהפסד באותה שנה שבה מוכרים נייר ברווח, ההפסד מקטין את הרווח שעליו משלמים מס${T.saved>0.5?`; כאן זה ${nn(ils(T.saved))} פחות מס`:''}.</p>`:'<p class="tx-l">אין עכשיו ניירות בהפסד שיכולים לקזז את הרווחים.</p>';
-  const fxl=T.fxN?`<p class="tx-l"><b>השפעת הדולר:</b> ${nn(sgn(T.fxTot),T.fxTot>=0?'up':'down')} מהרווח בשקלים של ${T.fxN===1?'נייר אחד':T.fxN+' ניירות'} בדולרים הם שינוי השער מאז הקנייה, ולא שינוי המחיר. המס הוא על הרווח בשקלים, כך שגם החלק הזה נכלל.</p>`:'';
+  const loss=T.dn.length?`<p class="tx-l"><b>הפסדים שמקזזים את הרווחים:</b> ${T.dn.slice(0,8).map(r=>`${symH(r.sym)} ${nn(sgn(r.g),'down')}`).join(' · ')}${T.dn.length>8?` ועוד ${T.dn.length-8}`:''}. הפסד שמומש באותה שנה מקטין את המס על הרווח${T.saved>0.5?` (כאן ${nn(ils(T.saved))})`:''}.</p>`:'<p class="tx-l">אין עכשיו ניירות בהפסד שיכולים לקזז את הרווחים.</p>';
+  const fxl=T.fxN?`<p class="tx-l"><b>השפעת הדולר:</b> ${nn(sgn(T.fxTot),T.fxTot>=0?'up':'down')} מהרווח בשקלים של ${T.fxN===1?'נייר אחד':T.fxN+' ניירות'} בדולרים הם שינוי השער, וגם עליהם יש מס.</p>`:'';
   const dv=T.div&&T.div.gross>0?`<p class="tx-l"><b>דיבידנדים:</b> התקבלו ${nn(ils(T.div.gross))} לפני מס, ונוכו ${nn(ils(T.div.tax))} מס במקור${T.div.est?' (בחלק מהתשלומים מוערך)':''}. המס הזה כבר שולם, ולא נכלל למעלה.</p>`:'';
   setH(box,`<div class="strip">${cell('הרווחים',nn(sgn(T.gains),'up'),`${T.up.length} ניירות ברווח`)}${cell('ההפסדים',nn(sgn(-T.losses),'down'),`${T.dn.length} ניירות בהפסד`)}${cell('הרווח אחרי קיזוז',nn(sgn(T.net),T.net>=0?'up':'down'),'רווח פחות הפסד')}${cell('מס משוער',nn(ils(T.tax)),T.net>0?`${pct(T.rate*100,0)} מהרווח אחרי קיזוז`:'אין רווח, אין מס')}</div>
     ${loss}${fxl}${dv}${(()=>{try{return yearEndH(T,mAllNow())}catch(e){return ''}})()}
-    <p class="note">${T.noCost.length?`בלי ${T.noCost.map(lab).join(', ')}, שאין להם מחיר קנייה. `:''}הערכה בלבד: בית ההשקעות מחשב את המס לפי כל קנייה בנפרד ויכול להפחית את חלק האינפלציה, ולכן הדוח השנתי שלו הוא הקובע. זה חישוב, לא המלצה למכור. ${whyBtn('taxhow','איך זה מחושב?')}</p>`);
+    <p class="note">${T.noCost.length?`בלי ${T.noCost.map(lab).join(', ')}, שאין להם מחיר קנייה. `:''}הערכה; הדוח השנתי של בית ההשקעות הוא הקובע. לא המלצה. ${whyBtn('taxhow','איך זה מחושב?')}</p>`);
 }
 // ---- 30.10: the fall from the peak (drawdown). The whole portfolio's value each saved day (history/daily) and today's,
 // without the money put in or taken out: each day's change is (value − the day's deposits) / the day before's value, and
@@ -27991,7 +28004,7 @@ function yearEndH(T,m){
   const cell=(k,v,d,cls)=>`<div class="cell"><div class="k">${k}</div><span class="v${cls?' '+cls:''}">${v}</span><div class="d">${d||'&nbsp;'}</div></div>`;
   const losers=T.dn.slice(0,5).map(r=>`${symH(r.sym)} ${nn(sgn(r.g),'down')}`).join(' · ');
   let lead;
-  if(!R.any)lead=`לא מצאתי מכירות ב-${Y.y} בתנועות שהועלו לאתר. אם מכרת השנה, כדאי להעלות את דוח התנועות של החשבון, כדי שהחישוב יכלול אותן.${Y.L>0?` בתיק יש עכשיו ניירות בהפסד של ${nn(ils(Y.L))}: הפסד שמומש מקזז רווחים שמומשו באותה שנה, ומה שלא קוזז עובר לשנים הבאות כנגד רווחי הון, בתנאי שמגישים דוח שנתי על השנה שבה הוא נוצר.`:''}`;
+  if(!R.any)lead=`אין מכירות ב-${Y.y} בתנועות שהועלו. מכרת? העלה דוח תנועות.${Y.L>0?` ניירות בהפסד עכשיו: ${nn(ils(Y.L))}.`:''}`;
   else if(R.net>0&&Y.L>0)lead=`מימשת השנה רווח נטו של ${nn(ils(R.net),'up')}. בתיק יש עכשיו ניירות בהפסד של ${nn(ils(Y.L),'down')}: ${losers}. הפסד שמומש עד סוף השנה מקזז את הרווח שמומש, ובשיעור ${rate} המס על המימושים של השנה יורד בעד ${nn(ils(Y.save))}.`;
   else if(R.net>0)lead=`מימשת השנה רווח נטו של ${nn(ils(R.net),'up')}, ואין כרגע בתיק ניירות בהפסד שאפשר לקזז מולו.`;
   else lead=`המימושים של השנה ${R.net<0?`בהפסד נטו של ${nn(ils(-R.net),'down')}`:'מאוזנים'}, ולכן אין רווח ממומש שצריך לקזז.${R.net<0?' הפסד ממומש יכול לקזז גם דיבידנדים של אותה שנה (ואת המס שנוכה מהם אפשר לבקש בחזרה בדוח שנתי), ומה שנשאר עובר לשנים הבאות כנגד רווחי הון, כשמגישים דוח שנתי על השנה הזאת.':''}`;
@@ -28001,7 +28014,7 @@ function yearEndH(T,m){
   return `<div class="yend"><h3>סוף שנת המס ${Y.y}: עוד ${Y.days} ימים</h3>
     <div class="strip">${cell('מימשת השנה',R.any?nn(sgn(R.net),R.net>=0?'up':'down'):'—',R.any?`${R.sales.length} מכירות`:'אין מכירות בתנועות')}${cell('הפסדים פתוחים בתיק',Y.L>0?nn(sgn(-Y.L),'down'):'—',`${T.dn.length} ניירות`)}${cell('מס שקיזוז יכול לחסוך',Y.save>=1?nn(ils(Y.save)):'—',`בשיעור ${rate}`)}</div>
     <p class="tx-l">${lead}</p>${notes.map(n=>`<p class="tx-l">${n}</p>`).join('')}
-    <p class="note">חישוב לפי הקניות והמכירות שהועלו לאתר, והדולר לפי השער של היום. בית ההשקעות מחשב לפי השער של כל עסקה ומתאם לאינפלציה, ולכן הדוח השנתי שלו הוא הקובע. זה חישוב ולא המלצה: מכירה משנה את התיק, ולפני מכירה וקנייה חוזרת לצורך קיזוז כדאי לבדוק עם רואה חשבון. המכירה צריכה להתבצע עד יום המסחר האחרון של השנה.</p></div>`}
+    <p class="note">הערכה בשער של היום; הדוח השנתי של בית ההשקעות הוא הקובע. חישוב, לא המלצה; לפני קיזוז כדאי לבדוק עם רואה חשבון.</p></div>`}
 function taxFacts(){let T=null; try{T=taxNow(mAllNow())}catch(e){} if(!T||T.none)return null;
   return {note:'הערכה: אם הכול נמכר היום; שיעור מההגדרות; הפסדים מקזזים רווחים; לא המלצה למכור',rate:pct(T.rate*100,0),gains:ils(T.gains),losses:ils(T.losses),net:sgn(T.net),tax_estimate:ils(T.tax),
     dollar_part:T.fxN?sgn(T.fxTot):null,losing:T.dn.map(r=>lab(r.sym)),dividends_tax_withheld:T.div?ils(T.div.tax):null}}
@@ -28052,7 +28065,7 @@ function renderUse(){
   const never=dd>=7?(all.length?`<h3 style="margin:0">לא נראו ב-30 הימים האחרונים</h3><p class="tx-l">${all.map(id=>esc(useName('s:'+id))).join(' · ')}</p><p class="note" style="margin:0">אלה המועמדים להסתרה או לאיחוד עם מסך אחר.</p>`:'<p class="tx-l">כל החלקים נראו לפחות פעם אחת.</p>'):`<p class="note" style="margin:0">אחרי שבוע של שימוש (עוד ${7-dd} ימים) יופיע כאן גם מה שלא נפתח בכלל.</p>`;
   $('useSub').textContent=dd?`מ-${dmy(USE.since)} · ${Object.values(T).reduce((a,b)=>a+b,0)} פתיחות ב-30 ימים`:'';
   setH(box,`${tbl(rows('tab:'),'מסכים')}${tbl(rows('s:').slice(0,15),'חלקים שנראו על המסך')}${tbl(Object.keys(T).filter(k=>!/^(tab|s):/.test(k)).sort((a,b)=>T[b]-T[a]),'פעולות')}${never}
-    <p class="note" style="margin:0">הפירוט נשמר רק בחשבון שלך: אף אחד אחר, גם לא בעל האתר, לא רואה מה אתה פתחת. הנהלת האתר רואה רק סיכום של כל המשתמשים יחד, בלי שמות, וגם זה רק כשיש לפחות שלושה משתמשים פעילים. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
+    <p class="note" style="margin:0">רק אתה רואה את זה. ההנהלה רואה סיכום כללי בלי שמות. ${canWrite?'<button type="button" class="btn sm" data-usereset>לאפס את המונה</button>':''}</p>`);
 }
 document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('[data-usereset]')))return; USE={days:{},since:ilDay()}; USE_SEEN.clear(); USE_DIRTY=true; useSave(); renderUse()});
 // ---- 21.10 (4) how the page looks travels with the account, not only with this browser: a phone's browser, the icon on
@@ -28523,7 +28536,10 @@ window.__ux={use:()=>({days:USE&&USE.days,ready:USE_READY}),useSave:()=>{USE_DIR
 try{navBoot()}catch(e){}
 try{srchBoot()}catch(e){}
 try{newsDot();sideMore()}catch(e){}
-{let t=(location.hash||'').slice(1); if(!TABS.includes(t)){try{t=localStorage.getItem('tab')}catch(e){t=''}} showTab(t||'overview')}
+// 9.11 (the owner): a new open of the site starts at home; a reload, or the phone bringing back a tab it had put to sleep,
+// keeps the screen (sessionStorage lives as long as the tab). A link to a screen (#news from a notification) still opens it
+{let t=(location.hash||'').slice(1), fresh=true; try{fresh=!sessionStorage.getItem('tc_open'); sessionStorage.setItem('tc_open','1')}catch(e){}
+  if(!TABS.includes(t)){t=''; if(!fresh){try{t=localStorage.getItem('tab')||''}catch(e){}}} showTab(t||'overview')}
 try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('settings');$('wipeState').textContent=wipeMsg(w==='ok');try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}}catch(e){}
 try{i18nBoot()}catch(e){}
 try{termsBoot()}catch(e){}
