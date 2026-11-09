@@ -1315,7 +1315,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     // another device: the same view, with the account; an account's chip leaves it
     ({ctx,pg}=await open(390,{keepUi:true})); await pg.waitForTimeout(800);
     assert.equal(await pg.evaluate(()=>document.getElementById('kTotK').textContent),'שווי הקרנות','the choice came with the account');
-    await pg.click('#acctChips [data-a="all"]'); await pg.waitForTimeout(300);
+    await pg.selectOption('#acctSel','all'); await pg.waitForTimeout(300);   // 9.11: on a phone's home the accounts are a switch in the value card
     assert.deepEqual(await pg.evaluate(()=>[document.getElementById('kTotK').textContent,document.getElementById('kTotal').textContent,[...document.querySelectorAll('#acctChips .chip')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.textContent)]),['שווי התיק',all,['הכל']]);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
@@ -3226,7 +3226,7 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   await pg.goBack(); await pg.waitForTimeout(600);
   const after=await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,res:!document.getElementById('sqRes').hidden,page:document.body.dataset.page}));
   assert.deepEqual(after,{sec:true,res:true,page:'search'});
-  assert.equal(await vis('hSearch'),true,'the heading is back on the landing'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.subtabs'),true); assert.equal(await vis('.hero .top .acts'),true,'the accounts row is back');
+  assert.equal(await vis('hSearch'),true,'the heading is back on the landing'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.subtabs'),true); assert.equal(await vis('.hero .top .acts'),false,'9.11: the header buttons and the accounts are on the home only');
   // a tap on the research tab below, from an open security, also returns to the landing (through the history, so back does not reopen it)
   await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1200); assert.equal(await vis('hSearch'),false);
   await pg.click('#botbar [data-bb="search"]'); await pg.waitForTimeout(800);
@@ -3375,14 +3375,20 @@ test('9.11 the control said short: a finding is its subject as a title and one s
   }finally{await ctx.close()}
 });
 
-test('9.11 the home\'s header on a phone: the four buttons at the top-left on the logo\'s row, the accounts switch at the start of the row under it, no long price-status line',T,async t=>{
+test('9.11 the home\'s header on a phone: one row, the four buttons at the top-left on the logo\'s row, the accounts a switch in the value card, no slogan or long price-status line, the day said short',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
   try{
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
-      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctChips').top,R('acctChips').right],fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
+      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
     assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
-    assert.ok(r.acct[0]>r.ref[0]+30&&r.acct[1]>r.W-40,'the accounts switch under them, at the right: '+JSON.stringify(r));
+    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan==='none','one header row: the accounts a switch in the value card, no slogan: '+JSON.stringify(r));
+    const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
+    assert.equal(await pg.evaluate(()=>document.querySelector('#acctChips .chip[aria-pressed="true"]')?.dataset.a),a[1],'the switch changes the account');
+    await tab(pg,'search'); await pg.waitForTimeout(500);
+    assert.equal(await pg.evaluate(()=>getComputedStyle(document.querySelector('.hero .top .acts')).display),'none','the buttons and the accounts only on the home');
+    await tab(pg,'overview'); await pg.waitForTimeout(300);
+    assert.match(await pg.textContent('#kDayD'),/^\S+% (היום|(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת) \d+\.\d+)/,'the day said short');
     assert.ok(r.busy||r.fresh==='none','no status line: '+JSON.stringify(r));
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}

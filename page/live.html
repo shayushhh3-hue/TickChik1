@@ -88,7 +88,8 @@ body:not([data-page="overview"]) .hero .wch{display:none}
 .big{font-family:var(--display);font-weight:400;font-size:clamp(36px,6vw,48px);line-height:1.1;letter-spacing:0;font-variant-numeric:lining-nums tabular-nums;direction:ltr;unicode-bidi:isolate;display:block;text-align:right}
 .dayline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-top:6px}
 .dayline .v{font-weight:700;font-size:17px;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
-.dayline .d{font-size:14px;color:var(--ink2)} .dayline .dm{flex-basis:100%;font-size:12.5px;color:var(--muted);margin-top:-4px} .dayline .dm[hidden]{display:none}
+.dayline .d{font-size:14px;color:var(--ink2)}
+.acctsel{display:none;margin-inline-start:auto;font:inherit;font-size:13px;font-weight:700;color:var(--vio-ink);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:4px 26px 4px 12px;min-height:32px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 8px center;background-size:13px} .dayline .dm{flex-basis:100%;font-size:12.5px;color:var(--muted);margin-top:-4px} .dayline .dm[hidden]{display:none}
 .worth>.d{font-size:12px;color:var(--muted);margin-top:6px}
 .status{font:inherit;font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;border:0;cursor:pointer;background:var(--ok-bg);color:var(--ok-ink);align-self:flex-start;margin-top:10px}
 .status.warn{background:var(--warn-bg);color:var(--warn)} .status.crit{background:var(--crit-bg);color:var(--crit-ink)}
@@ -148,6 +149,8 @@ html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 .tabs .tsub button.on{color:#fff;font-weight:600;background:rgb(255 255 255 / .09)}
 .tabs button:focus-visible,.sbclose:focus-visible{outline:2px solid #fff;outline-offset:-2px}
 .hero .top{padding-inline-start:54px}
+/* 9.11 (the owner): the header's buttons and the accounts switch only on the home; the other screens and tabs without them */
+body:not([data-page="overview"]) .hero .top .acts{display:none!important}
 @media (prefers-reduced-motion:reduce){.tabsbar,.navtab{transition:none}}
 .pane{display:flex;flex-direction:column;gap:30px;padding-top:6px}
 /* the trading calendar: a month, each day with a round flag for Tel Aviv and one for New York; open = the flag, short = a
@@ -2795,6 +2798,13 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   /* 9.11 (the owner: "too long, don't fight for it"): the price status line is gone from the phone's home; the ✓ beside the
      value and the line under the day's change say it. It shows only while a refresh runs, or when there is no portfolio */
   body[data-page="overview"] .wrap:not(.nopf) .hero #fresh:not(.busy){display:none}
+  /* 9.11 (the owner's choice): one header row: no slogan; the accounts beside "שווי התיק"; "למה?" at the end of the line under the change */
+  body[data-page="overview"] .hero .brand-sub,body[data-page="overview"] .hero #acctChips{display:none!important}
+  body[data-page="overview"] .worth .acctsel:not([hidden]){display:inline-block}
+  /* the inner screens on a phone: the logo alone, no price-status line (it shows while a refresh runs) */
+  body:not([data-page="overview"]) .wrap:not(.nopf) .hero #fresh:not(.busy){display:none}
+  body[data-page="overview"] .worth .wv .dayline .dm{flex:0 1 auto;flex-basis:62%;margin-top:0}
+  body[data-page="overview"] .hero #hdrAcct .tc-acct,body[data-page="overview"] .hero .hbtn{width:38px;height:38px;min-height:38px}
   body[data-page="overview"] .hero #acctChips{grid-row:4;grid-column:1/-1;justify-self:start;margin-top:4px} body[data-page="overview"] .hero #pxNow{grid-row:4;grid-column:1/-1;justify-self:end;align-self:center;margin:4px 0 0}
 }
 </style>
@@ -17605,6 +17615,8 @@ const pfTradeDay=()=>{if(!Q)return ''; const m=pfMk(), d=[m.us?Q.usDate:'',m.il?
 const dayWord=()=>{const lt=pfTradeDay(); return !lt||lt>=tzDay('Asia/Jerusalem')?'היום':'ביום המסחר האחרון ('+dmy(lt)+')'};
 // 4.11: the tense follows the clock. While a market is open the day is still moving ("יורד"); after the close it is done
 // ("ירד"); a day that is not today is named by its date
+// 9.11: the hero's day said short: "היום", or the trading day by its weekday and date ("שישי 6.11")
+const dayShortW=()=>{const w=dayWord(); if(w==='היום')return w; const lt=pfTradeDay(); return lt?['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][wdOf(lt)]+' '+dmy(lt).slice(0,5).replace(/\.$/,''):w};
 const dayLab=()=>{const w=dayWord(), lt=pfTradeDay(); return w==='היום'?'היום':'ביום המסחר האחרון'+(lt?' ('+dmy(lt)+')':'')};
 const dayLive=()=>{try{const now=new Date(), m=pfMk(); return dayWord()==='היום'&&((m.us&&usOpen(now))||(m.il&&ilOpen(now)))}catch(e){return false}};
 const dayVerb=up=>dayLive()?(up?'עולה':'יורד'):(up?'עלה':'ירד');
@@ -17973,6 +17985,9 @@ function render(){
     const empty=acct!=='all'&&!!P&&!has(acct), w=document.querySelector('.wrap'); if(w)w.classList.toggle('noacct',empty);
     if(empty){const n=acctName(acct); $('hAcctEmpty').textContent=`עוד אין תיק ב${n}`; $('acctEmptyP').textContent=`בתצוגה של ${n} מופיעים רק הנתונים של ${n}. כשתעלה צילום מסך או דוח של ${n}, יופיעו כאן השווי, האחזקות והתשואה שלו.`; $('acctEmptyUp').textContent=`להעלות את התיק של ${n}`}}
   $('acctChips').innerHTML=Object.keys(ACCTS).map(k=>`<button class="chip" type="button" data-a="${k}" aria-pressed="${KV==='all'&&k===acct}">${ACCTS[k]}</button>`).join('');
+  // 9.11 (the owner): on a phone's home the accounts are a small switch beside "שווי התיק" (one header row less)
+  try{let sel=$('acctSel'); const top=document.querySelector('.worth .wtop'); if(!sel&&top){sel=document.createElement('select'); sel.id='acctSel'; sel.className='acctsel'; sel.setAttribute('aria-label','חשבון'); top.appendChild(sel)}
+    if(sel){const want=Object.keys(ACCTS).map(k=>`<option value="${k}">${ACCTS[k]}</option>`).join(''); if(sel.innerHTML!==want)sel.innerHTML=want; sel.value=KV==='all'?acct:'all'; sel.hidden=Object.keys(ACCTS).length<2}}catch(e){}
   try{document.querySelector('.wrap').classList.toggle('kvf',KV!=='all')}catch(e){}
   try{fillInputs()}catch(e){console.error(e)} try{renderMine()}catch(e){console.error(e)} try{renderMonths()}catch(e){}
   if(!P||!Q){return}
@@ -17992,7 +18007,7 @@ function render(){
   try{renderHealth(m)}catch(e){}
   try{renderIdx()}catch(e){}
   {const w=$('kWhy'); if(w)w.hidden=!(!mH.fund&&!mH.stock&&m.hasDay&&m.dayPct!=null&&Math.abs(m.dayPct)>=WHY_FLAT)}
-  const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayWord()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):''; try{dayMkt(mH)}catch(e){}
+  const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayShortW()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):''; try{dayMkt(mH)}catch(e){}
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
   pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
   // 1.11: an empty tile says where to complete the figure, in one tap
@@ -19113,6 +19128,7 @@ function eyeOn(){let v=false; try{v=localStorage.getItem('tr_hidenum')==='1'}cat
   if(document.readyState==='loading')addEventListener('DOMContentLoaded',on); else on()})();
 // the account circle moves from the corner into the header, next to the wordmark, when the site's runtime adds it
 // 9.11 (the owner): on the home screen the four actions come right under the value card (the chart), the tiles after them
+document.addEventListener('change',ev=>{if(ev.target&&ev.target.id==='acctSel'){const b=document.querySelector(`#acctChips .chip[data-a="${CSS.escape(ev.target.value)}"]`); if(b)b.click()}});
 (function kindsBoot(){const mv=()=>{const k=$('kindRow'), q=$('quickActs'); if(k&&q&&k.previousElementSibling!==q){q.after(k); k.classList.add('inpane')}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
 (function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h&&!k.classList.contains('okmini'))h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
 (function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('hdrAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
