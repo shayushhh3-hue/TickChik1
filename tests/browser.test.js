@@ -3183,18 +3183,16 @@ test('8.11 the wipe dialog offers a partner to delete the account itself, with t
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
-test('9.11 the logos beside the holdings, no halo; the alerts not read are a list above צ׳יקו\'s card, each with its company\'s logo, and a tap opens it',T,async t=>{
+test('9.11 the logos beside the holdings, no halo, no alert list on the home; the alerts are in the management center\'s news screen',T,async t=>{
   if(skip())return t.skip('no browser');
   const P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym, k='ev:test-halo';
   store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k,kind:'news',lv:'crit',title:'בדיקת התראה: ידיעה על '+sym,at:new Date().toISOString(),holds:[{sym,link:'direct',w:10}],dir:'neg',relWhy:'x'}]});
   try{const {ctx,pg}=await open(390); await pg.waitForTimeout(1500);
-    const v=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#rows tr')].filter(r=>r.querySelector('td .sym')); const ka=document.getElementById('kAlerts'), kt=document.getElementById('kToday'), r=ka.querySelector('.ka-r');
-      return {rows:rows.length,withLogo:rows.filter(r=>r.querySelector('td .lg')).length,halo:document.querySelectorAll('#rows .lg.nx-crit,#rows .lg.nx-imp').length,dots:document.querySelectorAll('#rows .nxdot').length,
-        on:!ka.hidden,above:!kt.hidden?ka.getBoundingClientRect().bottom<=kt.getBoundingClientRect().top+1:true,row:r?{logo:!!r.querySelector('.lg'),txt:r.textContent}:null}});
-    assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows,'every holding has its logo'); assert.equal(v.halo,0,'no halo'); assert.equal(v.dots,0);
-    assert.ok(v.on,'the list is shown'); assert.ok(v.above,'above צ׳יקו'); assert.ok(v.row&&v.row.logo,'with the company\'s logo'); assert.match(v.row.txt,/קריטית.*בדיקת התראה/);
-    await pg.click('#kAlerts .ka-r[data-plopen="ev:test-halo"]'); await pg.waitForTimeout(400);
-    assert.ok(await pg.evaluate(()=>/בדיקת התראה/.test(document.body.innerText)&&!!document.querySelector('.plsheet, #plSheet, [data-pldone]')),'the alert opened');
+    const v=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#rows tr')].filter(r=>r.querySelector('td .sym'));
+      return {rows:rows.length,withLogo:rows.filter(r=>r.querySelector('td .lg')).length,halo:document.querySelectorAll('#rows .lg.nx-crit,#rows .lg.nx-imp').length,list:!!document.getElementById('kAlerts')}});
+    assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows); assert.equal(v.halo,0,'no halo'); assert.equal(v.list,false,'no alert list on the home');
+    await pg.goto(U+'admin#news'); await pg.waitForSelector('#view tbody tr',{timeout:15000});
+    assert.match(await pg.textContent('#view'),/ההתראות של המודל החדשותי.*בדיקת התראה/s,'the owner\'s alerts in the news screen');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
 });

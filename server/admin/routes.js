@@ -91,7 +91,14 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
     res.json({items:L.slice(0,500),odd:odd.slice(0,50)})});
 
   // ---- stage C: the operations ----
-  app.get('/api/admin/news',need('view'),(req,res)=>res.json(newsOps(store)));
+  // 9.11: the personal alerts in the news system's screen: the owner's own list (title, level, the holding, when, read);
+  // for everyone else's, the counts only (a partner's alerts would tell their holdings)
+  app.get('/api/admin/news',need('view'),(req,res)=>{const out=newsOps(store), since=new Date(Date.now()-7*864e5).toISOString(), lvl=a=>a&&(a.lv==='crit'||a.lv==='imp');
+    const items=d=>((d&&d.items)||[]).filter(a=>lvl(a)&&String(a.up||a.at||'')>=since);
+    if(req.user.role==='owner'){const P=store.getDoc('alerts/pulse').data;
+      out.myAlerts=items(P).sort((a,b)=>String(b.up||b.at)<String(a.up||a.at)?-1:1).slice(0,40).map(a=>({k:a.k,lv:a.lv,title:String(a.title||'').slice(0,200),sym:((a.holds||[]).find(h=>h.link==='direct')||(a.holds||[])[0]||{}).sym||null,at:a.up||a.at||null,kind:a.kind||null}))}
+    let n=0, crit=0, people=0; for(const p of store.pathsUnder('data/users'))if(/\/pulse$/.test(p)){const L=items(store.getDoc(p).data); if(L.length)people++; n+=L.length; crit+=L.filter(a=>a.lv==='crit').length}
+    out.partnerAlerts={n,crit,people}; res.json(out)});
   app.get('/api/admin/aiops',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json({range:R,...aiOps(store,R),quality:aiQuality(store)})});
   app.get('/api/admin/system',need('view'),(req,res)=>{const R=rangeOf(req.query); res.json({...systemOps(store,{from:R.from,to:R.to,dataDir,dbFile}),range:R})});
   app.get('/api/admin/incidents',need('view'),(req,res)=>{const L=incidents(store,{days:+req.query.days||30}), U=Object.fromEntries(store.users().map(u=>[u.id,u.email]));

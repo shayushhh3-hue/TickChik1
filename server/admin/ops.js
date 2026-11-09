@@ -11,6 +11,7 @@ import {bump, countersSince} from './counter.js';
 import {healthCheck} from '../health.js';
 import {audit, auditVerify, permsOf, can} from './core.js';
 import {aiPrices} from './metrics.js';
+import {runLog} from './runs.js';
 import {CONSIST_DOC} from '../consist.js';
 import {silentJobs} from '../health.js';
 
@@ -75,12 +76,19 @@ export function checkIncidents(store,{send=null,push=null,users=null,log=()=>{},
   const open=(key,kind,name,sev,note)=>{const o=openOf(key);
     if(o){if(o.sev!==sev||o.note!==note)store.db.prepare('update incidents set sev=?, note=?, updated_at=? where id=?').run(o.sev==='bad'?'bad':sev,note,iso,o.id); return}
     const r=store.db.prepare('insert into incidents(key,kind,name,sev,opened_at,status,note,auto,updated_at) values(?,?,?,?,?,?,?,1,?)').run(key,kind,name,sev,iso,'open',note,iso); opened.push({id:r.lastInsertRowid,key,name,sev,note})};
-  const close=(key,res)=>{const o=openOf(key); if(o&&o.auto)store.db.prepare("update incidents set status='closed', closed_at=?, resolution=coalesce(resolution,?), updated_at=? where id=?").run(iso,res,iso,o.id)};
+  const closed=[];
+  const close=(key,res)=>{const o=openOf(key); if(o&&o.auto){store.db.prepare("update incidents set status='closed', closed_at=?, resolution=coalesce(resolution,?), updated_at=? where id=?").run(iso,res,iso,o.id); closed.push({...o,resolution:o.resolution||res,closed_at:iso})}};
   // the data sources: the same check that mails the owner (server/health.js): bad = an incident, ok again = closed
   const H=healthCheck(store,{now});
   for(const i of H.items){if(i.state==='bad')open('src:'+i.key,'source',i.name,'bad',i.note||''); else if(i.state==='ok')close('src:'+i.key,'חזר לעבוד')}
   for(const R of RULES){const r=R.check(store); if(r)open(R.key,R.kind,R.name,r.sev,r.note); else close(R.key,'חזר לטווח התקין')}
   if(opened.length)notify(store,opened,{send,push,users,log});
+  // 9.11 (the owner: the technical alerts, faults and their solutions): every incident opened and every one solved goes to
+  // "יומן ביצועים"; a solved one that was alerted (a serious one) tells the same phones that it is over, and how long it took
+  for(const o of opened)try{runLog(store,{kind:'incident',state:o.sev==='bad'?'failed':'late',name:o.key,he:o.name,note:o.note||'',inc:o.id,link:incLink(o.key)},{now})}catch(e){}
+  for(const o of closed){const min=Math.max(1,Math.round((now-new Date(o.opened_at))/6e4)), took=min<60?`${min} דקות`:min<1440?`${Math.round(min/60)} שעות`:`${Math.round(min/1440)} ימים`;
+    try{runLog(store,{kind:'incident',state:'done',name:o.key,he:o.name,note:`נפתרה: ${o.resolution||'חזר לעבוד'} · אחרי ${took}`,inc:o.id,link:incLink(o.key)},{now})}catch(e){}
+    if(o.sev==='bad')resolvedNotify(store,o,took,{push,users,log})}
   return opened;
 }
 // the alert to the management: a notification to the phones of everyone with "system" (and an e-mail to the owner when
@@ -100,6 +108,10 @@ function notify(store,list,{send,push,users,log}){
   if(cfg.mail&&send)send({subject:'TikChik – '+title,text:body+'\n\nלפרטים: מרכז הניהול, תקלות.',html:`<p dir="rtl"><b>${title.replace(/</g,'&lt;')}</b></p><p dir="rtl">${body.replace(/</g,'&lt;')}</p><p dir="rtl">לפרטים: מרכז הניהול, תקלות.</p>`}).catch(()=>{});
   log(`ops: management alerted (${due.map(x=>x.key).join(', ')})`);
 }
+function resolvedNotify(store,o,took,{push,users,log}){const cfg=meta(store,'mcAlerts',{push:true,mail:false}); if(!cfg.push||!push)return;
+  const who=(users?users():store.users().map(u=>store.userById(u.id))).filter(u=>u&&can(u,'system'));
+  for(const u of who)push(store,u.id,{title:'נפתרה: '+o.name,body:`${o.resolution||'חזר לעבוד'} · אחרי ${took}`,url:'/admin#incidents',tag:'mc-incident'},{log}).catch(()=>{});
+  log(`ops: solved (${o.key})`)}
 // 9.11: where an incident's details live in the management center (the notification opens it, the list offers it)
 export function incLink(key,kind){key=String(key||''); if(key==='consist')return '#health/consist'; if(key==='smoke'||key==='restore'||key==='silent'||key.startsWith('src:'))return '#health';
   if(kind==='ai')return '#ai'; if(kind==='errors')return '#system'; if(kind==='alerts')return '#health'; return '#incidents'}

@@ -62,5 +62,7 @@ export function runsView(store,schedule,{now=new Date(),jobs=null}={}){
   const P0=ilParts(now), today=L.filter(x=>ilParts(new Date(x.at)).iso===P0.iso);
   return {at:now.toISOString(),since:L.length?L[L.length-1].at:null,running:st.running||[],queued:st.queued||[],plan,
     today:{done:today.filter(x=>x.kind==='job'&&x.state==='done').length,failed:today.filter(x=>x.kind==='job'&&x.state==='failed').length,
-      missing:plan.reduce((a,x)=>a+x.missing,0),deploys:today.filter(x=>x.kind==='deploy').length,manual:today.filter(x=>x.by).length},
+      missing:plan.reduce((a,x)=>a+x.missing,0),deploys:today.filter(x=>x.kind==='deploy').length,manual:today.filter(x=>x.by).length,
+      incOpened:today.filter(x=>x.kind==='incident'&&x.state!=='done').length,incSolved:today.filter(x=>x.kind==='incident'&&x.state==='done').length},
+    open:(()=>{try{return store.db.prepare("select id,key,name,sev,opened_at,note from incidents where status in ('open','ack') order by sev='bad' desc, opened_at desc limit 20").all()}catch(e){return []}})(),
     feed:L.slice(0,200),alerts:runAlerts(store)}}

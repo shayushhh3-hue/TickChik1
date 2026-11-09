@@ -2359,14 +2359,6 @@ html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw
 .ix-tip .pl-how{padding:8px} .ix-tip .nwi-r>summary{min-height:40px}
 /* 31.10: the day in three lines, in the hero */
 body:not([data-page="overview"]) .hero .ktoday{display:none}
-.kalerts{display:flex;flex-direction:column;gap:0;margin:8px 0 0;border-radius:12px;border:1px solid rgb(220 38 38 / .22);background:rgb(220 38 38 / .05);padding:4px 10px} .kalerts[hidden]{display:none}
-.kalerts .ka-h{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--muted);padding:4px 0 2px} .kalerts .ka-h .lnk{font:inherit;font-weight:700;color:var(--vio-ink);background:none;border:0;padding:0;cursor:pointer}
-.kalerts .ka-r{display:flex;align-items:center;gap:9px;width:100%;padding:7px 0;border:0;border-top:1px solid rgb(220 38 38 / .12);background:none;font:inherit;text-align:start;color:var(--ink);cursor:pointer;min-height:44px}
-.kalerts .ka-h+.ka-r{border-top:0} .kalerts .ka-r .lg{flex:none} .kalerts .ka-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px;font-size:13px;line-height:1.3}
-.kalerts .ka-t b{font-size:11.5px;font-weight:800} .kalerts .ka-crit .ka-t b{color:var(--loss)} .kalerts .ka-imp .ka-t b{color:#B45309}
-.kalerts .ka-t span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden} .kalerts .ka-w{flex:none;font-size:11px;color:var(--muted);white-space:nowrap}
-.kalerts .ka-more{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:var(--vio-ink);padding:4px 0 6px;text-align:start;cursor:pointer}
-body:not([data-page="overview"]) .hero .kalerts{display:none}
 .ktoday{display:flex;flex-direction:column;gap:0;margin:6px 0 0;padding:6px 10px 4px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .18)} .ktoday[hidden]{display:none}
 /* 9.11: a small card under the value, the chart stays the main thing: a line per fact, a short label at its start, the
    text cut with an ellipsis, the whole line a button with a chevron at its end when it leads somewhere */
@@ -2824,7 +2816,6 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           <div class="wv">
             <span class="big" id="kTotal">—</span>
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
-            <div class="kalerts" id="kAlerts" hidden></div>
             <div class="ktoday" id="kToday" aria-live="polite" hidden></div>
             <div class="pnlline" id="kPnlL" hidden></div><div class="pnlline pnlsub" id="kFxL" hidden></div><div class="pnlline pnlsub" id="kBenchL" hidden></div>
             <div class="d" id="kTotalD"></div>
@@ -19580,28 +19571,15 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
     // market's news, without a holding and without a direction, and the rest wait in "מה נוגע לתיק"
     if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
     if(!a){a=N.find(z=>z.lv==='crit')||null; sym=null}
-    // 9.11: an alert already in the list above (critical or important, not read) is not told twice
-    const listed=z=>z&&(z.lv==='crit'||z.lv==='imp')&&plUnread(z)&&z.kind!=='mkt';
-    if(listed(a)){a=null; sym=null}
     if(a){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear';
       row('news',sym?symH(sym):'בחדשות',`${d!=='unclear'?chBadge(d,true)+' ':''}${esc(imCut(a.title,120))}`,sym&&SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`)}
-    else if(typeof PULSE!=='undefined'&&PULSE&&!N.some(listed))row('news','בחדשות','אין היום ידיעה חשובה על המניות שלך')}
+    else if(typeof PULSE!=='undefined'&&PULSE)row('news','בחדשות','אין היום ידיעה חשובה על המניות שלך')}
   // what needs the person: the rules' findings (the same count as on "בקרה"), and the alerts not read
   {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
     const P=[c?(c===1?'חריגה אחת מהכללים שלך':c+' חריגות מהכללים שלך'):'',w?(w===1?'נושא אחד לבדיקה':w+' נושאים לבדיקה'):''].filter(Boolean);
     if(P.length)row('todo','לטיפול',P.join(' ו'),' data-tab="risk"'); else row('ok','לטיפול','אין משהו שדורש ממך פעולה עכשיו')}
   return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(r=>r.go?`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a${r.act==='›'?'':' w'}"${r.act==='›'?' aria-hidden="true"':''}>${r.act}</span></button>`:`<div class="tdl tdl-${r.k}"><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span></div>`).join(''):''}
-// 9.11 (the owner): the alerts not read, as a list above צ׳יקו's card, each with its company's logo (the halo around the
-// holdings' logos is gone): the critical and important ones about a holding, the newest first; a tap opens the alert
-function kAlertsRender(){const el=$('kAlerts'); if(!el)return; let L=[];
-  try{L=plItems().filter(a=>a&&(a.lv==='crit'||a.lv==='imp')&&plUnread(a)&&a.kind!=='mkt').sort(plSort)}catch(e){L=[]}
-  if(!L.length||noPf()){el.hidden=true; el.innerHTML=''; return}
-  const symOf=a=>{const d=(a.holds||[]).find(h=>h.link==='direct')||(a.holds||[])[0]; return d?d.sym:null};
-  el.hidden=false; setH(el,`<div class="ka-h"><span>התראות שלא קראת</span><button type="button" class="lnk" data-tab="news">לכל ההתראות ›</button></div>`+L.slice(0,4).map(a=>{const sym=symOf(a);
-    return `<button type="button" class="ka-r ka-${a.lv}" data-plopen="${esc(a.k)}">${sym?logoHtml(sym,'s'):'<span class="lg s"><i>·</i></span>'}<span class="ka-t"><b>${sym?esc(lab(sym))+' · ':''}${esc(PL_LV[a.lv]||'')}</b><span>${esc(imCut(a.title||'',110))}</span></span><span class="ka-w">${a.up||a.at?(Date.now()-new Date(a.up||a.at)<6e4?'עכשיו':esc(ago(a.up||a.at))):''}</span></button>`}).join('')
-    +(L.length>4?`<button type="button" class="ka-more" data-tab="news">ועוד ${L.length-4} ›</button>`:''))}
 function renderDesk(m,A){
-  try{kAlertsRender()}catch(e){console.error(e)}
   try{const el=$('kToday'); if(el){const h=noPf()?'':todayH(m,A); el.hidden=!h; setH(el,h)}}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
   const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length;
@@ -24600,7 +24578,7 @@ function plCenter(){
 }
 // the icons over צ׳יקו: the critical and the important alerts not yet seen, a round icon per holding they touch (no
 // duplicates), at most three and "+N" for the rest. Gentle: they fade in once; "fewer movements" turns that off
-function plRender(m){try{kAlertsRender()}catch(e){}
+function plRender(m){
   plCount(); const pr=plPrefs(), b=$('stBub'); try{nxNavDot()}catch(e){}
   if(!b)return; const L=plDedup(plItems()).filter(plFloat).sort(plSort);
   // 6.11: one small count on צ׳יקו's corner (the row of icons and "+6" covered the chart); a tap opens them one by one

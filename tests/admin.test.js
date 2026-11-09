@@ -595,3 +595,16 @@ test('9.11 יומן ביצועים: every run step from the scheduler, the manua
   s.setMeta('runLogSince',JSON.stringify(new Date(Date.now()-10*60e3).toISOString()));
   const P=dayPlan(s,[{name:'pxwatch',when:()=>true,run:async()=>{}}]); assert.ok(P[0].missing>=5&&P[0].missing<=7,'missing: '+P[0].missing); assert.equal(P[0].he,'בדיקת זרימת מחירים');
 });
+
+test('9.11 the technical alerts: an incident opened and the same incident solved reach יומן ביצועים, and a serious one solved tells the phones it is over',()=>{
+  const s=mk(); users(s); const pushed=[]; const push=async(st,uid,m)=>{pushed.push(m.title)};
+  const t0=new Date('2026-11-09T08:00:00Z');
+  s.setMeta('smoke',JSON.stringify({at:t0.toISOString(),version:'v',ok:false,checks:[{k:'site',name:'הדף נטען',ok:false,note:'x'}]}));
+  checkIncidents(s,{push,now:t0});
+  const L1=JSON.parse(s.getMeta('runLog')||'[]').filter(x=>x.kind==='incident'); assert.ok(L1.some(x=>x.state!=='done'),'opened: '+JSON.stringify(L1.map(x=>x.name)));
+  const name=L1.find(x=>x.name==='smoke'); assert.ok(name,'the smoke test is an incident');
+  s.setMeta('smoke',JSON.stringify({at:t0.toISOString(),version:'v',ok:true,checks:[]}));
+  checkIncidents(s,{push,now:new Date(t0.getTime()+40*60e3)});
+  const L2=JSON.parse(s.getMeta('runLog')||'[]').filter(x=>x.kind==='incident'&&x.name==='smoke'&&x.state==='done'); assert.equal(L2.length,1); assert.match(L2[0].note,/נפתרה: .* · אחרי 40 דקות/);
+  assert.ok(pushed.some(t=>/^נפתרה: /.test(t)),'the phones hear it is over: '+JSON.stringify(pushed));
+});
