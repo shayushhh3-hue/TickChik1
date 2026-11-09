@@ -75,9 +75,11 @@ export function consistPage(out){
   for(let i=0;i<A.length;i++)for(let j=i+1;j<A.length;j++){const a=A[i], b=A[j]; if(!a.syms.length||!b.syms.length||a.syms.join()===b.syms.join())continue;
     if(+a.total>0&&near(a.total,b.total,0.01)&&(a.dayIls==null||b.dayIls==null||near(a.dayIls,b.dayIls,0.01)))F.push({k:'acctsSame',sev:'bad',t:`החשבונות ${a.acct} ו-${b.acct} מציגים אותם מספרים (${ils(a.total)}) אף שההחזקות בהם שונות`})}
   if(out.why&&out.hasDay&&out.why.total!=null&&!near(out.why.parts,out.why.total,1))F.push({k:'dayWhy',sev:'bad',a:out.why.parts,b:out.why.total,t:`חלקי "למה זז" מסתכמים ל-${ils(out.why.parts)} והשינוי היומי הוא ${ils(out.why.total)}`});
-  // what the home screen prints, when it prints shekels
-  const H=out.hero||{}; if(H.total&&H.total!=='—'&&(!H.hc||H.hc==='ils'||H.hc==='both')){const v=num(H.total); if(v!=null&&!near(v,Math.round(T),1))F.push({k:'heroTotal',sev:'bad',a:v,b:T,t:`המסך הראשי מציג ${ils(v)} והחישוב נותן ${ils(T)}`});
-    if(out.hasDay&&out.dayIls!=null&&H.day&&H.day!=='—'){const d=num(H.day); if(d!=null&&!near(Math.abs(d),Math.abs(Math.round(out.dayIls)),1))F.push({k:'heroDay',sev:'bad',a:d,b:out.dayIls,t:`המסך הראשי מציג שינוי של ${ils(Math.abs(d))} והחישוב נותן ${ils(Math.abs(out.dayIls))}`})}}
+  // what the home screen prints, when it prints shekels: against the model it shows (with the plan's ticked items on top,
+  // when there are any), not against the statement data alone
+  const SH=out.shown||{}, TS=SH.total!=null?SH.total:T, DS=SH.dayIls!=null?SH.dayIls:out.dayIls;
+  const H=out.hero||{}; if(H.total&&H.total!=='—'&&(!H.hc||H.hc==='ils'||H.hc==='both')){const v=num(H.total); if(v!=null&&!near(v,Math.round(TS),1))F.push({k:'heroTotal',sev:'bad',a:v,b:TS,t:`המסך הראשי מציג ${ils(v)} והחישוב נותן ${ils(TS)}${SH.plan?' (כולל מה שסומן בתוכנית)':''}`});
+    if(out.hasDay&&DS!=null&&H.day&&H.day!=='—'){const d=num(H.day); if(d!=null&&!near(Math.abs(d),Math.abs(Math.round(DS)),1))F.push({k:'heroDay',sev:'bad',a:d,b:DS,t:`המסך הראשי מציג שינוי של ${ils(Math.abs(d))} והחישוב נותן ${ils(Math.abs(DS))}`})}}
   // the server's move alerts (Pulse), when they were made on the price the page has now
   const pos=new Map((out.pos||[]).map(p=>[p.sym,p]));
   for(const a of out.pulse||[]){const p=pos.get(a.sym); if(!p||!near(a.to,p.px,1e-9))continue;
@@ -119,6 +121,6 @@ export async function consistTask(store,{log=()=>{},now=new Date(),page=null}={}
 // carries more than kinds and counts (it was stripped when written)
 export function consistView(store,viewer){
   const d=store.getDoc(CONSIST_DOC); if(!d.exists||!d.data)return {at:null,runs:[],n:0,bad:0};
-  const D=d.data, own=viewer&&viewer.role==='owner';
-  return {...D,runs:(D.runs||[]).map(r=>r.owner&&!own?{...r,items:strip(r.items),total:undefined}:r)};
+  const D=d.data, own=r=>!!viewer&&(viewer.role==='owner'||(viewer.id&&r.uid===viewer.id));
+  return {...D,runs:(D.runs||[]).map(r=>r.owner&&!own(r)?{...r,items:strip(r.items),total:undefined}:r)};
 }

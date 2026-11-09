@@ -3213,10 +3213,10 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 
   <div class="pane" data-pane="search" hidden>
     <section aria-labelledby="hSearch" style="display:flex;flex-direction:column;gap:12px">
-      <h2 id="hSearch" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">חיפוש ניירות</h2>
+      <h2 id="hSearch">מחקר</h2>
       <div class="chips" id="srchView" role="group" aria-label="תצוגה"><button type="button" class="chip" data-sv="search" aria-pressed="true">חיפוש נייר</button><button type="button" class="chip" data-tab="fit">מה מתאים לתיק שלי ›</button></div>
 
-      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35, 5129283" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
       <div class="sres" id="sqRes"></div>
       <div class="secp panel" id="secPage" hidden></div>
       <p class="note" id="sqNote">מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה בימי מסחר, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.</p>
@@ -19872,15 +19872,18 @@ window.__model.why=()=>{const W=whyMove(mAllNow(),Q,P,S.rules||{}); return {tota
 // The server compares them and words any gap; nothing is judged here.
 window.__model.consist=function(){try{
   if(!P||!Q||!Q.prices||!Q.usdIls)return {ready:false};
-  const m=model(P,Q,'all',null), ids=acctIds();
+  // the statement data alone (what the accounts and the server see) and, apart, what the home shows: the same with the
+  // plan's ticked deposits and purchases on top (mAllNow); each is compared with its like
+  const m=model(P,Q,'all',null), mS=mAllNow(), adj=planAdj(), ids=acctIds();
   const accts=ids.map(a=>{const x=model(P,Q,a,null); return {acct:a,total:x.total,dayIls:x.hasDay?x.dayIls:null,syms:x.pos.map(p=>p.sym).sort()}});
-  const W=whyMove(m,Q,P,S.rules||{}), parts=W.items.reduce((t,x)=>t+x.ils,0)+(W.cashFx||0);
+  const W=whyMove(mS,Q,P,S.rules||{}), parts=W.items.reduce((t,x)=>t+x.ils,0)+(W.cashFx||0);
   const tx=id=>{const e=$(id); return e?e.textContent.replace(/‎/g,'').trim():''};
   const held=[...new Set(P.positions.map(p=>p.sym))], OUT=typeof potOutQ==='function'?potOutQ(P):null;
   const potQty=OUT?[...OUT.values()].reduce((t,q)=>t+(+q||0),0):0;
   const pulse=((PULSE&&PULSE.items)||[]).filter(a=>a&&a.kind==='mkt'&&a.mk&&a.mk.t==='move'&&a.holds&&a.holds[0]).map(a=>({k:a.k,sym:a.holds[0].sym,w:a.holds[0].w,pct:a.mk.pct,to:a.mk.to}));
   return {ready:true,at:new Date().toISOString(),pricesAt:Q.updatedAt||null,fx:Q.usdIls,
     total:m.total,inv:m.pos.reduce((t,p)=>t+p.val,0),cash:m.cash,hasDay:!!m.hasDay,dayIls:m.hasDay?m.dayIls:null,dayPct:m.hasDay?m.dayPct:null,
+    shown:{total:mS.total,dayIls:mS.hasDay?mS.dayIls:null,plan:!!(adj.dep||(adj.buys&&adj.buys.length))},
     accts,why:{total:W.ils,parts},hero:{total:tx('kTotal'),day:tx('kDay'),dayD:tx('kDayD'),hc:typeof HC==='string'?HC:''},
     held,noPx:held.filter(s=>(Q.prices||{})[s]==null),potQty,pos:m.pos.map(p=>({sym:p.sym,qty:p.qty,w:p.w,px:p.px,dayPct:p.dayPct})),pulse,
     ledger:ids.map(a=>{try{const C=ledgerCheck(a); return {acct:a,anchor:C.anchor?C.anchor.date:null,gaps:C.gaps}}catch(e){return {acct:a,anchor:null,gaps:[]}}})};
