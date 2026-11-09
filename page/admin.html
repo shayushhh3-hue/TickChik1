@@ -100,6 +100,7 @@ input[type=number],input[type=text],input[type=date],select{background:var(--pan
 .kpi .src svg{width:13px;height:13px;flex:none;margin-top:3px;stroke:currentColor;fill:none;stroke-width:2}
 .kpi.st-bad{border-color:color-mix(in srgb,var(--bad) 55%,transparent);background:linear-gradient(0deg,var(--panel),var(--panel)),var(--bad-bg)}
 .kpi.st-bad::before,.kpi.st-warn::before{content:"";position:absolute;inset-inline-start:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--bad)} .kpi.st-warn::before{background:var(--warn)}
+.card.lit{outline:3px solid var(--accent,#7C3AED);outline-offset:2px;transition:outline-color 1.2s}
 ul.plain{margin:0;padding:0;list-style:none}ul.plain li{padding:5px 0;border-top:1px solid var(--line,#e5e7eb);font-size:13.5px;line-height:1.45}ul.plain li .pill{margin-inline-end:6px}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
@@ -491,7 +492,7 @@ SCREENS.yahoo=async()=>{head('Yahoo ונתוני שוק','המקור הראשי 
 
 // ---- the system's health: availability, requests, resources, the sources, running a job ----
 const bytes=v=>v==null?'—':v>=1e9?(v/1e9).toFixed(1)+' GB':(v/1e6).toFixed(0)+' MB';
-SCREENS.health=async()=>{head('תקינות המערכת','',{range:true}); view.innerHTML=loading(8);
+SCREENS.health=async(arg)=>{head('תקינות המערכת','',{range:true}); view.innerHTML=loading(8);
   const [d,s,inc,cs]=await Promise.all([api('health'),api('system?'+rq()),api('incidents'),api('consist').catch(()=>({runs:[],n:0,bad:0,at:null}))]); $('sub').textContent='טווח: '+rangeText(s.range)+(s.hbSince?` · הדופק נמדד מ-${dmy(s.hbSince)}`:'');
   const items=d.items||[], c=x=>items.filter(i=>i.state===x).length, open=inc.items.filter(i=>i.status!=='closed'); HEALTH_BAD=c('bad')>0||open.some(i=>i.sev==='bad'); navRender('health');
   const R=s.res, err=s.areas.reduce((a,x)=>a+x.err,0), n=s.areas.reduce((a,x)=>a+x.n,0);
@@ -521,7 +522,7 @@ SCREENS.incidents=async()=>{head('תקלות ואירועים','נפתחות ל�
   const d=await api('incidents'), open=d.items.filter(i=>i.status!=='closed'), closed=d.items.filter(i=>i.status==='closed');
   const ST={open:['p-bad','פתוחה'],ack:['p-warn','בטיפול'],closed:['p-ok','נסגרה']}, KIND={source:'מקור נתונים',errors:'שגיאות שרת',ai:'AI',alerts:'התראות',uptime:'זמינות',data:'עקביות נתונים'};
   const card=i=>`<article class="card" style="margin-bottom:12px" data-inc="${i.id}"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="pill ${i.sev==='bad'?'p-bad':'p-warn'}">${i.sev==='bad'?'חמורה':'אזהרה'}</span><b style="font-size:15px">${esc(i.name)}</b><span class="pill ${ST[i.status][0]}">${ST[i.status][1]}</span><span style="color:var(--muted);font-size:12.5px;margin-inline-start:auto">${esc(KIND[i.kind]||i.kind)} · נפתחה ${esc(dt(i.opened_at))}${i.closed_at?' · נסגרה '+esc(dt(i.closed_at)):''}</span></div>
-      ${i.note?`<p style="margin:8px 0 0;font-size:13.5px">${esc(i.note)}</p>`:''}${i.resolution?`<p class="hint" style="margin:6px 0 0">פתרון: ${esc(i.resolution)}</p>`:''}${i.ownerEmail?`<p class="hint" style="margin:4px 0 0">אחראי: <span class="mono">${esc(i.ownerEmail)}</span></p>`:''}
+      ${i.note?`<p style="margin:8px 0 0;font-size:13.5px">${esc(i.note)}</p>`:''}${i.link&&i.link!=='#incidents'?`<p style="margin:6px 0 0"><button class="btn sm" type="button" data-go="${esc(i.link.slice(1))}">לפרטים ›</button></p>`:''}${i.resolution?`<p class="hint" style="margin:6px 0 0">פתרון: ${esc(i.resolution)}</p>`:''}${i.ownerEmail?`<p class="hint" style="margin:4px 0 0">אחראי: <span class="mono">${esc(i.ownerEmail)}</span></p>`:''}
       ${can('system')&&i.status!=='closed'?`<div class="inline"><label class="vh" for="own${i.id}">אחראי</label><select id="own${i.id}" class="btn sm"><option value="">בלי אחראי</option>${d.managers.map(m=>`<option value="${esc(m.id)}" ${m.id===i.owner?'selected':''}>${esc(m.name||m.email)}</option>`).join('')}</select>
         <input type="text" id="res${i.id}" placeholder="מה נעשה / הפתרון" maxlength="500" value="${esc(i.resolution||'')}"><button class="btn sm" data-iact="ack">לקחתי</button><button class="btn sm pri" data-iact="closed">לסגור</button></div>`:''}</article>`;
   view.innerHTML=`${can('system')?`<section class="card" style="margin-bottom:14px"><h2>התראות להנהלה</h2><p class="hint">כשנפתחת תקלה חמורה: התראה לטלפון לכל מי שיש לו הרשאת "מערכת" (אם הפעיל התראות בטלפון), ומייל לבעל המערכת אם המייל מוגדר. פעם בשש שעות לכל סוג.</p>
@@ -534,6 +535,8 @@ SCREENS.incidents=async()=>{head('תקלות ואירועים','נפתחות ל�
   if($('chkGo'))$('chkGo').onclick=async()=>{try{const r=await post('incidents/check'); msg(r.opened?`נפתחו ${r.opened} תקלות.`:'הבדיקה רצה; לא נפתחה תקלה חדשה.',true); setTimeout(route,800)}catch(e){msg(e.message,false)}};
   for(const b of view.querySelectorAll('[data-iact]'))b.onclick=async()=>{const a=b.closest('[data-inc]'), id=a.dataset.inc; b.disabled=true;
     try{await post('incidents/'+id,{status:b.dataset.iact,owner:$('own'+id).value||null,resolution:$('res'+id).value}); route()}catch(e){b.disabled=false; alertBox(a,e.message)}};
+  // 9.11: opened for one card (from a notification or an incident): scroll to it and light it for a moment
+  if(arg){const el=$(arg==='consist'?'csCard':arg); if(el){el.scrollIntoView({block:'start'}); el.classList.add('lit'); setTimeout(()=>el.classList.remove('lit'),2500)}}
 };
 const alertBox=(el,t)=>{let m=el.querySelector('.msg'); if(!m){m=document.createElement('div'); el.append(m)} m.className='msg bad'; m.textContent=t};
 

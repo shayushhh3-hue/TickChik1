@@ -2307,3 +2307,17 @@ test('8.11 the morning e-mail\'s control line for the owner: the consistency che
   s.setDoc('system/consist',{at:'2026-11-08T22:30:00Z',n:3,bad:1,runs:[]}); s.setMeta('smoke',JSON.stringify({at:now.toISOString(),version:'abc1234567',ok:false,checks:[{k:'page',name:'הדף מחשב תיק',ok:false,note:'x'}]}));
   c=controlSection(s,{now}); assert.match(c.text,/3 ממצאים, 1 חמורים/); assert.match(c.text,/נכשלה: הדף מחשב תיק/); assert.ok(!/שקט/.test(c.text));
 });
+
+test('9.11 an incident knows where its details live: the notification opens them (the owner\'s body names the owner\'s own gaps), and the list carries the link', async()=>{
+  const {checkIncidents,incidents,incLink}=await import('../server/admin/ops.js'); const {adminSchema}=await import('../server/admin/core.js'); const {ensureCounters}=await import('../server/admin/counter.js');
+  assert.equal(incLink('consist','data'),'#health/consist'); assert.equal(incLink('src:prices','source'),'#health'); assert.equal(incLink('smoke','uptime'),'#health'); assert.equal(incLink('push','alerts'),'#health'); assert.equal(incLink('x','other'),'#incidents');
+  const s=new Store(':memory:'); const o=s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); const a=s.addUser({email:'a@example.com',password:'admin-pass-12',role:'admin'});
+  adminSchema(s); ensureCounters(s); s.setMeta('serverStart',JSON.stringify(new Date().toISOString()));
+  s.setDoc('system/consist',{at:new Date().toISOString(),n:4,bad:4,runs:[{uid:o.id,owner:true,n:3,bad:3,items:[{k:'noPrice',sev:'bad',sym:'GONE',t:'אין מחיר ל-GONE: הנייר לא נספר בשווי התיק'},{k:'acctsSame',sev:'bad',t:'החשבונות exc ו-blink מציגים אותם מספרים'},{k:'dayWhy',sev:'bad',t:'x'}]},{uid:'p',owner:false,n:1,bad:1,items:[{k:'noPrice',sev:'bad',t:'נייר בלי מחיר, לא נספר בשווי'}]}]});
+  const pushes=[]; const opened=checkIncidents(s,{push:async(st,uid,msg)=>{pushes.push({uid,msg}); return 1},now:new Date()});
+  const inc=opened.find(x=>x.key==='consist'); assert.ok(inc,'the consistency incident opened: '+opened.map(x=>x.key));
+  const po=pushes.find(p=>p.uid===o.id), pa=pushes.find(p=>p.uid===a.id); assert.ok(po&&pa,'both notified');
+  assert.match(po.msg.body,/אצלך: אין מחיר ל-GONE/,'the owner sees their own gaps'); assert.ok(!/GONE/.test(pa.msg.body),'the admin sees counts only');
+  assert.equal(po.msg.url,pushes.length&&opened.filter(x=>x.sev==='bad').length===1?'/admin#health/consist':'/admin#incidents');
+  const L=incidents(s); assert.equal(L.find(i=>i.key==='consist').link,'#health/consist');
+});

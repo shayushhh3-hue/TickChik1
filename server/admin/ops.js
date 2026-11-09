@@ -91,12 +91,20 @@ function notify(store,list,{send,push,users,log}){
   for(const x of due)sent[x.key]=new Date(now).toISOString(); store.setMeta('mcAlertSent',JSON.stringify(sent));
   const title='מרכז הניהול: '+(due.length===1?due[0].name:`${due.length} תקלות חדשות`), body=due.map(x=>`${x.name}${x.note?': '+x.note:''}`).join(' · ').slice(0,280);
   const who=(users?users():store.users().map(u=>store.userById(u.id))).filter(u=>u&&can(u,'system'));
-  if(cfg.push&&push)for(const u of who)push(store,u.id,{title,body,url:'/admin#incidents',tag:'mc-incident'},{log}).catch(()=>{});
+  // 9.11: the notification opens the incident's own details (one incident) or the list; the owner's body names the
+  // owner's own gaps of the consistency check (their portfolio, their eyes only)
+  const url='/admin'+(due.length===1?incLink(due[0].key,due[0].kind):'#incidents');
+  const bodyFor=u=>{if(!(u.role==='owner'&&due.some(x=>x.key==='consist')))return body; try{const d=store.getDoc('system/consist'); const own=d.exists&&d.data&&(d.data.runs||[]).find(r=>r.owner); const L=own?own.items.filter(x=>x.sev==='bad').slice(0,2).map(x=>x.t):[];
+    return L.length?(body+'\nאצלך: '+L.join(' · ')).slice(0,400):body}catch(e){return body}};
+  if(cfg.push&&push)for(const u of who)push(store,u.id,{title,body:bodyFor(u),url,tag:'mc-incident'},{log}).catch(()=>{});
   if(cfg.mail&&send)send({subject:'TikChik – '+title,text:body+'\n\nלפרטים: מרכז הניהול, תקלות.',html:`<p dir="rtl"><b>${title.replace(/</g,'&lt;')}</b></p><p dir="rtl">${body.replace(/</g,'&lt;')}</p><p dir="rtl">לפרטים: מרכז הניהול, תקלות.</p>`}).catch(()=>{});
   log(`ops: management alerted (${due.map(x=>x.key).join(', ')})`);
 }
+// 9.11: where an incident's details live in the management center (the notification opens it, the list offers it)
+export function incLink(key,kind){key=String(key||''); if(key==='consist')return '#health/consist'; if(key==='smoke'||key==='restore'||key==='silent'||key.startsWith('src:'))return '#health';
+  if(kind==='ai')return '#ai'; if(kind==='errors')return '#system'; if(kind==='alerts')return '#health'; return '#incidents'}
 export function incidents(store,{days=30}={}){opsSchema(store); const from=new Date(Date.now()-days*864e5).toISOString();
-  return store.db.prepare("select * from incidents where status!='closed' or opened_at>=? order by (status='closed'), opened_at desc limit 300").all(from)}
+  return store.db.prepare("select * from incidents where status!='closed' or opened_at>=? order by (status='closed'), opened_at desc limit 300").all(from).map(i=>({...i,link:incLink(i.key,i.kind)}))}
 export function incidentUpdate(store,user,id,{status,owner,note,resolution},ip){opsSchema(store);
   const o=store.db.prepare('select * from incidents where id=?').get(+id); if(!o)throw new Error('not_found');
   const next={status:['open','ack','closed'].includes(status)?status:o.status,owner:owner===undefined?o.owner:(owner||null),note:note===undefined?o.note:String(note).slice(0,500),resolution:resolution===undefined?o.resolution:String(resolution).slice(0,500)};
