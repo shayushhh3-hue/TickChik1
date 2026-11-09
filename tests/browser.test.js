@@ -1331,7 +1331,7 @@ test('my portfolio: cards on a phone, a table on a wide screen; privacy and dele
   if(skip())return t.skip('no browser');
   for(const W of [390,1280]){const {ctx,pg}=await open(W); await tab(pg,'mine'); await pg.waitForTimeout(400);
     const e=await pg.evaluate(()=>{const tr=document.querySelector('#pfRows tr'), r=tr.getBoundingClientRect();
-      return {disp:getComputedStyle(tr).display,inside:[...tr.children].every(td=>{const c=td.getBoundingClientRect();return c.left>=r.left-1&&c.right<=r.right+1}),
+      return {disp:getComputedStyle(tr).display,inside:[...tr.children].filter(td=>td.offsetParent).every(td=>{const c=td.getBoundingClientRect();return c.left>=r.left-1&&c.right<=r.right+1}),
         qty:document.querySelector('#pfRows [data-pf="qty"]').getBoundingClientRect().width,ox:document.documentElement.scrollWidth>innerWidth+1}});
     if(W===390){assert.equal(e.disp,'grid'); assert.ok(e.qty>=90,'quantity is wide enough to read')} else assert.equal(e.disp,'table-row');
     assert.ok(e.inside&&!e.ox);
@@ -1785,6 +1785,9 @@ test('the holdings in shekels, in dollars, or both: the chips, the rows, the her
 test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(400);
+  // 9.11: on a phone the card is short; "עוד" opens the costs
+  const shut=await pg.evaluate(()=>{const tr=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('[data-pf="sym"]').value==='NVDA'); return !tr.querySelector('[data-pf="costUsd"]').offsetParent});
+  assert.ok(shut,'the costs wait behind "עוד"'); await pg.evaluate(()=>{const tr=[...document.querySelectorAll('#pfRows tr')].find(tr=>tr.querySelector('[data-pf="sym"]').value==='NVDA'); tr.querySelector('[data-pfmore]').click()});
   const f=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#pfRows tr')], of=(tr,k)=>tr.querySelector(`[data-pf="${k}"]`);
     const us=rows.find(tr=>of(tr,'sym').value==='NVDA'), il=rows.find(tr=>of(tr,'ccy').value==='ILS'), r=us.getBoundingClientRect(), c=of(us,'costUsd').getBoundingClientRect();
     return {sym:of(us,'sym').value,usOff:of(us,'costUsd').disabled,ilOff:of(il,'costUsd').disabled,ilPh:of(il,'costUsd').placeholder,inside:c.left>=r.left-1&&c.right<=r.right+1,
@@ -3262,8 +3265,9 @@ test('9.11 the analysts as bars or as a pie: a switch on the card, kept in the b
   const k='research/s_NVDA', D0=store.getDoc(k);
   store.setDoc(k,{...(D0.exists?D0.data:{}),rating:'Buy',analysts:32,votes:{buy:27,hold:5,sell:0},votes5:{sb:8,b:19,h:5,s:0,ss:0},recHist:[{p:'2026-10',sb:8,b:18,h:7,s:0,ss:0},{p:'2026-11',sb:8,b:19,h:5,s:0,ss:0}],recAt:'2026-11-01'},{silent:true});
   try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
-    await pg.fill('#sq','NVDA'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="NVDA"]'); await pg.waitForSelector('#secPage .ancard .an-b',{state:'attached',timeout:10000});
-    const vis=()=>pg.evaluate(()=>({bar:!!document.querySelector('.ancard .an-b').offsetParent,pie:!!document.querySelector('.ancard .an-p .andonut')&&!!document.querySelector('.ancard .an-p').offsetParent}));
+    await pg.fill('#sq','NVDA'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="NVDA"]'); await pg.waitForSelector('#secPage .ancard .an-bv',{state:'attached',timeout:10000});
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('.ancard .anbar.an-bv i')].every(i=>i.getBoundingClientRect().height>=10)),'the bar\'s segments have their height');
+    const vis=()=>pg.evaluate(()=>({bar:!!document.querySelector('.ancard .an-bv').offsetParent,pie:!!document.querySelector('.ancard .an-p .andonut')&&!!document.querySelector('.ancard .an-p').offsetParent}));
     assert.deepEqual(await vis(),{bar:true,pie:false},'bars by default');
     await pg.click('#secPage [data-anview="pie"]'); assert.deepEqual(await vis(),{bar:false,pie:true},'the pie');
     assert.match(await pg.textContent('.ancard .an-p .dn-v'),/^84%$/,'the share of "buy" in the middle');

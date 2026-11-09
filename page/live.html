@@ -619,7 +619,7 @@ details.mp[open]>summary{margin-bottom:8px}
 .repk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .repk select{font:inherit;font-size:12.5px;font-weight:500;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
 label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
-.pf td{padding:4px 5px;white-space:nowrap}
+.pf td{padding:4px 5px;white-space:nowrap} .pf .pf-more{display:none} @media (max-width:640px){.pf .pf-more{display:inline-flex}}
 .pf tr.fixed td{background:var(--warn-bg)}
 .pf input{font-family:var(--mono);direction:ltr;width:86px}
 .pf input.t{font-family:var(--sans);direction:rtl;width:150px}
@@ -740,20 +740,21 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mypos,.ancard{margin:16px 0 6px} .mypos h3,.ancard h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
-.anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.ancard .an-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .ancard .an-h h3{margin:0} .an-sw .chip{min-height:30px;padding:2px 12px;font-size:12.5px}
-.ancard .an-p{display:none} .ancard.an-pie .an-b{display:none} .ancard.an-pie .an-p{display:flex;justify-content:center;margin:8px 0}
+.anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .ancard .an-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .ancard .an-h h3{margin:0} .an-sw .chip{min-height:30px;padding:2px 12px;font-size:12.5px}
+.ancard .an-p{display:none} .ancard.an-pie .an-bv{display:none} .ancard.an-pie .an-p{display:flex;justify-content:center;margin:8px 0}
 .ancols{display:flex;align-items:flex-end;justify-content:space-around;gap:10px;margin:8px 0 4px;padding:0 4px}
 .anc{flex:1 1 0;max-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px} .anc b{font-size:13px;font-weight:800;color:var(--ink)} .anc span{font-size:12px;color:var(--muted)}
 .anc-c{width:100%;max-width:40px;height:96px;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;background:var(--sunk)} .anc-c i{display:block;width:100%}
-.anc-c i+i{box-shadow:inset 0 1px 0 rgb(255 255 255 / .55)} .anc-c .sb{background:#15803D} .anc-c .b{background:var(--gain)} .anc-c .h{background:#A1A1AA} .anc-c .s{background:var(--loss)} .anc-c .ss{background:#991B1B}
+.anc-c i+i{box-shadow:inset 0 1px 0 rgb(255 255 255 / .55)} .anc-c .sb{background:var(--an-sb)} .anc-c .b{background:var(--an-b)} .anc-c .h{background:var(--an-h)} .anc-c .s{background:var(--an-s)} .anc-c .ss{background:var(--an-ss)}
 .andonut .dn-v{font-size:7.5px;font-weight:800;fill:var(--ink);font-family:var(--sans)} .andonut .dn-k{font-size:4.2px;fill:var(--muted);font-family:var(--sans)} .antr-m .andonut .dn-v{font-size:9px}
 .anleg small{color:var(--muted);font-weight:500}
 .anfan{margin-top:14px} .anfan .k{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px} .anfan-s{width:100%;height:auto;display:block;max-width:520px;margin:0 auto;direction:ltr} .anfan-s text{direction:ltr;unicode-bidi:plaintext}
 .anfan-s text{font-family:var(--sans)} .anfan-s .af-k{font-size:11px;font-weight:800;fill:var(--ink)} .anfan-s .af-v{font-size:12.5px;font-weight:700;fill:var(--ink)} .anfan-s .af-p{font-size:11.5px;font-weight:800}
 .anfan-s .af-ax{font-size:10.5px;fill:var(--muted)} .anfan .s{margin:4px 0 0;font-size:12px;color:var(--muted)}
-.anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
+:root{--an-sb:#0E5A2B;--an-b:#4CC27A;--an-h:#A1A1AA;--an-s:#F07C7C;--an-ss:#9B1C1C}   /* 9.11: strong and plain told apart (two greens that looked the same) */
+.anbar .b,.anleg .b i{background:var(--an-b)} .anbar .h,.anleg .h i{background:var(--an-h)} .anbar .s,.anleg .s i{background:var(--an-s)}
 .anleg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--ink2)} .anleg span{display:inline-flex;align-items:center;gap:6px} .anleg i{width:10px;height:10px;border-radius:3px;display:inline-block}
-.anbar .sb,.anleg .sb i{background:#15803D} .anbar .ss,.anleg .ss i{background:#991B1B} .anbar.sm{height:8px;margin-top:0}
+.anbar .sb,.anleg .sb i{background:var(--an-sb)} .anbar .ss,.anleg .ss i{background:var(--an-ss)} .anbar.sm{height:8px;margin-top:0}
 .antr{margin-top:12px} .antr .k,.angr .k{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px} .antr-r{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
 .antr-m span{display:block;font-size:12px;color:var(--ink2);margin-top:4px} .antr .s{margin:6px 0 0;font-size:13px;color:var(--ink2)} .anx{margin:12px 0 0;font-size:13.5px;color:var(--ink2)} .anx b{color:var(--ink)}
 .angr{margin-top:12px} .angr ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .angr .d{font-family:var(--mono);color:var(--muted)} .angr .a{color:var(--muted)} .angr li.up .a{color:var(--gain)} .angr li.down .a{color:var(--loss)}
@@ -1406,8 +1407,8 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 /* v129: prices on demand */
 .pxnow{font:inherit;font-size:12px;font-weight:700;color:var(--vio-ink);background:rgb(124 58 237 / .1);border:1px solid rgb(124 58 237 / .35);border-radius:999px;padding:2px 11px;min-height:26px;cursor:pointer;line-height:1.5;white-space:nowrap}
 .pxnow:hover{background:rgb(124 58 237 / .18)}
-.live.busy{color:#fff}
-.live.busy::before{content:"";display:inline-block;width:10px;height:10px;margin-inline-end:7px;border:2px solid rgb(255 255 255 / .35);border-top-color:#fff;border-radius:50%;animation:i18nspin .8s linear infinite;vertical-align:-1px}
+.live.busy{color:var(--ink2)}   /* 9.11: white on the light header was unreadable */
+.live.busy::before{content:"";display:inline-block;width:10px;height:10px;margin-inline-end:7px;border:2px solid rgb(124 58 237 / .25);border-top-color:var(--accent);border-radius:50%;animation:i18nspin .8s linear infinite;vertical-align:-1px}
 /* v126: status icons in the network style (nodes joined by lines): success, failure, alert, information, messages */
 .ni{display:inline-block;flex:none;width:22px;height:22px;vertical-align:middle;overflow:visible;border-radius:6px}
 .ni-ok{color:#2f9e5b} .ni-err{color:#dc4f45} .ni-warn{color:#d29b1e} .ni-info{color:#2464a8} .ni-msg{color:#23a9bd}
@@ -1652,7 +1653,11 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
   table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
   table.pf td:nth-child(7){grid-area:costu} table.pf td:nth-child(8){grid-area:px} table.pf td:nth-child(9){grid-area:grp} table.pf td:nth-child(10){grid-area:del}
-  table.pf td.pfx{justify-content:flex-end;align-items:flex-end}
+  table.pf td.pfx{justify-content:flex-end;align-items:flex-end;flex-direction:row;gap:6px}
+  /* 9.11: a phone shows a holding as a short card (the symbol, the quantity, the account, the name); the currency, the
+     costs, the report's price and the group open with "עוד" (the screen was 4,300px for 12 holdings) */
+  table.pf tr:not(.open) td:nth-child(n+5):nth-child(-n+9){display:none} table.pf tr:not(.open){grid-template-areas:"sym sym qty qty acct acct" "name name name name del del"}
+  table.pf tr.fixed td:nth-child(n+5):nth-child(-n+9){display:flex}
   table.pf td.pfx .btn{min-height:40px}
   table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:38px;padding-block:4px}
   table.pf tr:has(>td.empty){display:block;padding:0;border:0;background:none}
@@ -2250,7 +2255,7 @@ html[data-theme="dark"] .ix-kv.rel-high{color:#4ADE80} html[data-theme="dark"] .
 .ix-col{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-width:0}
 .ix-ch{display:flex;align-items:center;justify-content:space-between;gap:8px} .ix-ch h3{margin:0;font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:8px}
 .ix-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#DC2626;color:#fff;font-size:12px;font-weight:800} .ix-n[hidden]{display:none}
-.ix-ch .lnk{min-height:24px;display:inline-flex;align-items:center}
+.ix-ch .lnk{min-height:24px;display:inline-flex;align-items:center;background:none;border:0;padding:0;-webkit-appearance:none;appearance:none;font-size:13px}
 .ix-alist{display:flex;flex-direction:column;gap:10px}
 .ix-a{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:16px;border:1px solid var(--line);background:var(--bg,var(--sunk));cursor:pointer;border-inline-start:4px solid #6366F1}
 .ix-a.lv-crit{border-inline-start-color:#DC2626;background:linear-gradient(90deg,transparent,rgb(239 68 68 / .06))} .ix-a.lv-imp{border-inline-start-color:#D97706;background:linear-gradient(90deg,transparent,rgb(245 158 11 / .06))} .ix-a:not(.un){opacity:.8}
@@ -2745,7 +2750,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   body:not([data-page="overview"]) .hero .brand{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:10px;width:100%;min-width:0}
   body:not([data-page="overview"]) .hero .brand .wm{font-size:22px;flex:none}
   body:not([data-page="overview"]) .hero .brand-sub,body:not([data-page="overview"]) .hero #pxNow{display:none!important}
-  body:not([data-page="overview"]) .hero #fresh{flex:1;min-width:0;font-size:11.5px;line-height:1.35}   /* beside the logo, wrapping (nothing cut) */
+  body:not([data-page="overview"]) .hero #fresh{flex:1;min-width:0;font-size:11.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* beside the logo, wrapping (nothing cut) */
   body:not([data-page="overview"]) .hero .top{gap:6px;padding-bottom:2px}
 }
 </style>
@@ -19164,7 +19169,7 @@ function renderTrend(){
   const x=t=>L+(W-L-Rm)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>H-Bm-(H-T-Bm)*(v-minV)/(maxV-minV), kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';
   let g='';
   for(const v of tk3){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="2 5"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`}
-  pts.forEach((p,i)=>{if(p.ym&&i%2===0)g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${+p.ym.slice(5)}/${p.ym.slice(2,4)}</text>`});
+  pts.forEach((p,i)=>{if(p.ym&&i%2===0)g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--sans)">${['ינו׳','פבר׳','מרץ','אפר׳','מאי','יונ׳','יול׳','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'][+p.ym.slice(5)-1]||''} ${p.ym.slice(2,4)}</text>`});   // 9.11: "מאי 26", not "5/26" (read as a date)
   const stepD=pts.map((p,i)=>(i?`L${x(p.t).toFixed(1)} ${y(pts[i-1].dep).toFixed(1)}L`:'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join('');
   const lineV=pts.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.val).toFixed(1)).join(' ');
   g+=`<path d="${stepD}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/><path d="${lineV}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -22551,6 +22556,7 @@ function draftFromP(){
   if(P){d.positions=(P.positions||[]).map(p=>({...p})); for(const c of P.cash||[])if(c&&c.acct&&(c.ccy==='ILS'||c.ccy==='USD'))(d.cash[c.acct]=d.cash[c.acct]||{ILS:0,USD:0})[c.ccy]+=+c.amount||0}
   return d;
 }
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-pfmore]'); if(!b)return; const tr=b.closest('tr'); const on=!tr.classList.contains('open'); tr.classList.toggle('open',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'פחות':'עוד'});
 function renderMine(force){
   if(!dDirty)DRAFT=draftFromP();
   const pane=document.querySelector('[data-pane="mine"]');
@@ -22571,7 +22577,7 @@ function renderMine(force){
     <td data-l="עלות כוללת $"><input type="number" data-pf="costUsd" data-i="${i}" value="${p.ccy==='ILS'?'':nv(p.costUsd)}" min="0" step="0.01" placeholder="${p.ccy==='ILS'?'—':'לא ידוע'}" aria-label="עלות כוללת בדולרים" title="מה הקנייה עלתה בדולרים, לפירוק התוצאה בין מחיר המניה לשער הדולר"${p.ccy==='ILS'?' disabled':dis}></td>
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td class="pfx"><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfx"><button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
@@ -25407,7 +25413,7 @@ function secEvents(sym,t0,t1){const E=[]; let c=null; try{c=RSX[sym]||((RS&&RS.c
 // from the sources with the owner's keys (Finnhub, FMP) and marked so; the page itself does not recommend
 const AN_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'החזקה','Sell':'מכירה','Strong Sell':'מכירה חזקה'};
 // 9.11 (the owner): the votes as a pie too; a switch "פסים | עוגה" on the card, kept in this browser
-const AN_COL={sb:'#15803D',b:'var(--gain)',h:'#A1A1AA',s:'var(--loss)',ss:'#991B1B'};
+const AN_COL={sb:'var(--an-sb)',b:'var(--an-b)',h:'var(--an-h)',s:'var(--an-s)',ss:'var(--an-ss)'};
 let AN_VIEW='bar'; try{if(localStorage.getItem('tr_anview')==='pie')AN_VIEW='pie'}catch(e){}
 function anDonut(parts,size,center,label){const tot=parts.reduce((a,x)=>a+x[2],0); if(!tot)return ''; const r=15.9155, c=2*Math.PI*r; let off=0;
   const segs=parts.filter(x=>x[2]>0).map(x=>{const len=x[2]/tot*c, el=`<circle r="${r}" cx="21" cy="21" fill="none" stroke="${AN_COL[x[0]]}" stroke-width="${size>80?7:8}" stroke-dasharray="${len.toFixed(3)} ${(c-len).toFixed(3)}" stroke-dashoffset="${(-off).toFixed(3)}"/>`; off+=len; return el}).join('');
@@ -25449,7 +25455,7 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   const L5=v5?[['sb','קנייה חזקה',v5.sb],['b','קנייה',v5.b],['h','החזקה',v5.h],['s','מכירה',v5.s],['ss','מכירה חזקה',v5.ss]]:v?[['b','קנייה',v.buy],['h','החזקה',v.hold],['s','מכירה',v.sell]]:[];
   const tot=L5.reduce((a,x)=>a+x[2],0), w=x=>tot?Math.round(x/tot*1000)/10:0;
   const buyPct=tot?Math.round(L5.filter(x=>x[0]==='sb'||x[0]==='b').reduce((a,x)=>a+x[2],0)/tot*100):0;
-  const bar=tot?`<div class="anbar an-b" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
+  const bar=tot?`<div class="anbar an-bv" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
     <div class="an-p">${anDonut(L5,112,buyPct+'%',L5.map(x=>x[2]+' '+x[1]).join(', '))}</div>
     <div class="anleg">${L5.map(x=>`<span class="${x[0]}"><i></i>${x[1]} ${x[2]}${tot?` <small>(${Math.round(x[2]/tot*100)}%)</small>`:''}</span>`).join('')}</div>`:'';
   // the last months: the share of "buy" (strong and plain) month by month, and the first against the last in words
