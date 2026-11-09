@@ -71,10 +71,13 @@ test('the figures: each with its source; retention as "of"; AI cost only with pr
   for(const m of E.metrics){assert.ok(m.src,'a source for '+m.k); assert.ok('at' in m)}
   assert.equal(by.users.value,4); assert.equal(by.dau.value,3); assert.equal(by.portfolios.value,1); assert.equal(by.portfolios.of,4);
   assert.equal(by.retention.value,1); assert.equal(by.retention.of,1); assert.match(by.retention.note,/מעט משתמשים/);
-  assert.equal(by.aicost.value,null,'no prices, no cost'); assert.match(by.aicost.note,/חסרים מחירים/);
+  // 9.11: a known model is priced by the published list by default, and says so; an unknown one has no price
+  assert.equal(by.aicost.value,0.2,'1M × $0.10 + 0.2M × $0.50 by the published list'); assert.match(by.aicost.note,/מחירון מפורסם/);
+  s.aiModelAdd(t.to,'claude-unknown-9',{calls:1,input:1e6,output:1e5}); const c0=aiCost(s,t.from,t.to); assert.equal(c0.total,null,'an unknown model: no total'); assert.match(c0.note,/חסרים מחירים ל: claude-unknown-9/);
+  s.db.prepare("delete from ai_models where model='claude-unknown-9'").run();
   assert.equal(by.infra.value,null); assert.match(by.infra.note,/לא מחובר/);
   s.setMeta('aiPrices',JSON.stringify({'claude-haiku-5-5':{in:1,out:5}}));
-  assert.equal(aiCost(s,t.from,t.to).total,2,'1M × $1 + 0.2M × $5');
+  assert.equal(aiCost(s,t.from,t.to).total,2,'1M × $1 + 0.2M × $5: the owner\'s price replaces the default'); assert.equal(aiCost(s,t.from,t.to).note,null);
   assert.equal(E.series.days.length,7); assert.equal(E.series.active[6],3);
 });
 
@@ -91,6 +94,9 @@ test('product intelligence: a summary of everybody needs three active people, el
   assert.equal(P.own,false); const nw=P.rows.find(r=>r.k==='tab:news'); assert.equal(nw.n,7); assert.equal(nw.people,2); assert.equal(nw.repeat,1,'the partner used it on two days');
   assert.equal(nw.kind,'screen'); assert.ok(nw.name&&nw.name!=='news','the screen\'s name from the page: '+nw.name);
   const C=catalog(PAGE); assert.ok(Object.keys(C.tabs).length>=5,'tabs: '+Object.keys(C.tabs).length); assert.ok(Object.keys(C.secs).length>=20,'sections: '+Object.keys(C.secs).length);
+  // 9.11: a screen is named by its tab, not by the first button of the copy that leads to it
+  assert.equal(C.tabs.search,'מחקר'); assert.equal(C.tabs.state,'מה קורה בתיק'); assert.equal(C.tabs.pots,'חסכונות לפי מטרה'); assert.equal(C.tabs.overview,'סקירה');
+  for(const [k,v] of Object.entries(C.tabs))assert.ok(v.length<=40&&!/[.!?]$/.test(v),k+': a name, not a sentence: '+v);
   assert.ok(P.never.length>0&&!P.never.some(x=>x.k==='tab:news'));
   // the funnel of the account's steps
   s.setDoc('settings/main',{targets:{tech:50},goal:1e6,years:10}); s.setDoc('portfolio/main',{positions:[{sym:'MSFT',qty:1,costIls:10}]});
@@ -177,7 +183,7 @@ test('the AI meter: every call per feature and model, the background ones also i
   aiMeter({feature:'newsx',model:'claude-haiku-5-5',ms:3000,ok:false,code:'HTTP 529'});
   aiMeter({feature:'chat',model:'claude-sonnet-5-5',usage:{input_tokens:500,output_tokens:50},ms:800,ok:true});
   const O=aiOps(s,d), nx=O.features.find(f=>f.feature==='newsx');
-  assert.equal(nx.calls,2); assert.equal(nx.ok,1); assert.equal(nx.err,1); assert.equal(nx.errPct,50); assert.equal(nx.avg,2250); assert.equal(nx.input,1000); assert.equal(nx.cost,null,'no prices');
+  assert.equal(nx.calls,2); assert.equal(nx.ok,1); assert.equal(nx.err,1); assert.equal(nx.errPct,50); assert.equal(nx.avg,2250); assert.equal(nx.input,1000); assert.equal(nx.cost,0,'1000 × $0.10 + 200 × $0.50 per million, by the published list: $0.0002, shown as 0');
   assert.deepEqual(O.errors,[{code:'HTTP 529',n:1}]); assert.equal(O.fails[0].feature,'newsx'); assert.ok(!('prompt' in O.fails[0]));
   assert.equal(s.aiModelsSince(d.from).find(r=>r.model==='claude-haiku-5-5').input,1000,'the background call reaches the cost table');
   assert.equal(s.aiModelsSince(d.from).find(r=>r.model==='claude-sonnet-5-5'),undefined,'the chat is counted there by the chat route, not twice');
@@ -441,17 +447,21 @@ test('the global news model: articles of one event are one event; regions, topic
   }finally{Date.now=realNow}
 });
 
-import {meterYahoo,yahooStatus,marketData} from '../server/admin/yahoo.js';
-test('4.11 Yahoo: every request counted by kind and outcome, never its address; the prices counted by source, never named; the market itself',async()=>{
-  const s=mk(); setCounterStore(s);
-  const T={fetch:async u=>{u=String(u); if(u.includes('fail'))throw Object.assign(new Error('x'),{name:'TimeoutError'}); return {ok:!u.includes('429'),status:u.includes('429')?429:200}}};
+import {meterYahoo,yahooStatus,marketData,gateReset,gateState,GATE} from '../server/admin/yahoo.js';
+test('4.11 Yahoo: every request counted by kind and outcome, never its address; the prices counted by source, never named; the market itself; 9.11 the gate after a 429',async()=>{
+  const s=mk(); setCounterStore(s); gateReset(); GATE.gap=0;
+  const T={fetch:async u=>{u=String(u); if(u.includes('fail'))throw Object.assign(new Error('x'),{name:'TimeoutError'}); if(u.includes('fc.yahoo.com'))return {ok:false,status:302}; return {ok:!u.includes('429'),status:u.includes('429')?429:200}}};
   meterYahoo(s,{target:T}); meterYahoo(s,{target:T});   // once only
   await T.fetch('https://query1.finance.yahoo.com/v8/finance/chart/SECRETSYM?range=10d'); await T.fetch('https://query2.finance.yahoo.com/v8/finance/chart/X?429');
+  // the gate: after the 429 every Yahoo call fails at once for a minute (counted as skipped, not as a request); the other site is untouched
+  assert.equal(gateState().paused,true); await assert.rejects(()=>T.fetch('https://query1.finance.yahoo.com/v10/finance/quoteSummary/BBB'),/paused/); assert.equal(gateState().skipped,1); assert.equal(GATE.pauseMs,120e3,'the next pause doubles');
+  await T.fetch('https://example.com/not-yahoo'); gateReset(); GATE.gap=0;
   await T.fetch('https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAA'); await T.fetch('https://example.com/not-yahoo');
+  await T.fetch('https://fc.yahoo.com/');   // the cookie step answers with a redirect: that is a success
   await assert.rejects(()=>T.fetch('https://query1.finance.yahoo.com/v1/finance/search?q=fail'));
   s.setDoc('quotes/latest',{prices:{SECRETSYM:1,B:2,C:3},meta:{SECRETSYM:{src:'yahoo'},B:{src:'nasdaq'},C:{src:'yahoo'}},stale:{C:'מחיר קודם'},usdIls:3.7,fxPrev:{rate:3.6},bench:{SPX:{px:5900,prev:5800,date:'2026-11-03'}},mkts:{GOLD:{px:2500,prev:2550,date:'2026-11-03'}},rates:{EUR:{rate:4,prev:4.1}},updatedAt:new Date().toISOString()},{silent:true});
   const S=yahooStatus(s,{days:7}); const J=JSON.stringify(S);
-  assert.equal(S.total,4,'the other site is not counted'); assert.equal(S.ok,2); assert.equal(S.limited,1); assert.equal(S.state,'warn');
+  assert.equal(S.total,5,'the other site is not counted, nor the skipped call'); assert.equal(S.ok,3); assert.equal(S.limited,1); assert.equal(S.skipped,1); assert.equal(S.state,'warn'); assert.equal(S.kinds.find(k=>k.kind==='session').ok,1,'the redirect of the cookie step counts as ok');
   assert.deepEqual(S.kinds.find(k=>k.kind==='chart').codes,[{c:'429',n:1}]); assert.deepEqual(S.kinds.find(k=>k.kind==='search').codes,[{c:'timeout',n:1}]);
   assert.ok(!J.includes('SECRETSYM')&&!J.includes('AAA'),'no ticker anywhere'); assert.deepEqual(S.prices.bySource.map(x=>[x.s,x.n]),[['yahoo',2],['nasdaq',1]]); assert.equal(S.prices.stale,1);
   assert.ok(S.last.ok&&S.last.fail&&S.last.fail.code==='timeout');

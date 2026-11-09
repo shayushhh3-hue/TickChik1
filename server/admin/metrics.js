@@ -77,13 +77,24 @@ export function executive(store,q={}){
 }
 
 // ---- AI cost: the prices are the owner's input (per million tokens), kept in meta; without them there is no cost ----
-export function aiPrices(store){return meta(store,'aiPrices')||{}}
+// 9.11: a published price list as the default (dollars per million tokens, the published API prices as collected on
+// aipricecompare.org, updated 2.11.2026; Haiku 5.5 is priced higher above 100K tokens a prompt, which the site's calls never
+// reach). A price the owner enters in the management center replaces the default for that model. A default carries def:true
+// and the list's date, so every figure built on it says so; the list is not fetched from the provider.
+export const AI_PRICE_DEFAULTS={asOf:'2026-11-02',src:'מחירון מפורסם (aipricecompare.org, 2.11.26)',
+  models:{'claude-haiku-5-5':{in:0.10,out:0.50},'claude-sonnet-5-5':{in:2,out:10},'claude-opus-5-5':{in:4,out:20},'claude-fable-5-1':{in:10,out:50}}};
+export function aiPrices(store){const own=meta(store,'aiPrices')||{}, out={};
+  for(const [m,v] of Object.entries(AI_PRICE_DEFAULTS.models))out[m]={...v,def:true,asOf:AI_PRICE_DEFAULTS.asOf};
+  for(const [m,v] of Object.entries(own))if(v&&v.in!=null&&v.out!=null)out[m]={in:+v.in,out:+v.out};
+  return out}
+export const aiPricesOwn=store=>meta(store,'aiPrices')||{};
 export function aiCost(store,from,to){
   const P=aiPrices(store), rows=store.db.prepare('select model, sum(calls) calls, sum(input) input, sum(output) output from ai_models where day>=? and day<=? group by model').all(from,to);
   const by=rows.map(r=>{const p=P[r.model]; const cost=p&&p.in!=null&&p.out!=null?(r.input*p.in+r.output*p.out)/1e6:null; return {...r,cost}});
   const missing=by.filter(r=>r.cost==null&&(r.input||r.output)).map(r=>r.model);
   const total=by.length&&!missing.length?by.reduce((a,r)=>a+(r.cost||0),0):null;
-  return {by,total,missing,note:!by.length?'אין שימוש בטווח':missing.length?`חסרים מחירים ל: ${missing.join(', ')} (מזינים במסך "מנועי AI ועלויות")`:null};
+  const def=by.filter(r=>r.cost!=null&&P[r.model]&&P[r.model].def).map(r=>r.model);
+  return {by,total,missing,def,note:!by.length?'אין שימוש בטווח':missing.length?`חסרים מחירים ל: ${missing.join(', ')} (מזינים במסך "מנועי AI ועלויות")`:def.length?`לפי ${AI_PRICE_DEFAULTS.src}; אפשר להזין מחיר משלך במסך "מנועי AI"`:null};
 }
 
 // ---- the users ----
@@ -103,8 +114,19 @@ export function catalog(file){
   if(CAT&&CAT.file===file)return CAT; const out={tabs:{},secs:{}}; let h='';
   try{h=fs.readFileSync(file,'utf8')}catch(e){return CAT={file,...out}}
   const txt=s=>s.replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ').trim();
-  for(const m of h.matchAll(/<button[^>]*\bdata-tab="([a-z0-9_-]+)"[^>]*>([\s\S]{0,300}?)<\/button>/g)){const t=txt(m[2]); if(t&&!out.tabs[m[1]])out.tabs[m[1]]=t.slice(0,40)}
-  for(const m of h.matchAll(/<section[^>]*aria-labelledby="([A-Za-z0-9_-]+)"/g)){const id=m[1], hm=h.match(new RegExp(`id="${id}"[^>]*>([\\s\\S]{0,200}?)</h[1-4]>`)); out.secs[id]=hm?txt(hm[1]).slice(0,60)||id:id}
+  // 9.11: a screen's name is its tab's label (role="tab"), not the first button in the page that leads to it (a sentence
+  // of the home's copy, "למרכז המצב", "לפתוח", was named as a screen); a plain button names a screen only when no tab does
+  const short=t=>t&&t.length<=24&&!/[.!?]/.test(t);
+  // the names the page gives its areas at boot (HEADL), then the tabs' own labels, then the sub-screens (SUBL)
+  const fromMap=re=>{const mm=h.match(re); if(mm)for(const kv of mm[1].matchAll(/([a-z0-9_]+):'([^']+)'/g))if(!out.tabs[kv[1]])out.tabs[kv[1]]=kv[2].slice(0,40)};
+  fromMap(/const HEADL=\{([^}]*)\}/);
+  for(const m of h.matchAll(/<button[^>]*\brole="tab"[^>]*\bdata-tab="([a-z0-9_-]+)"[^>]*>([\s\S]{0,700}?)<\/button>/g)){const t=txt(m[2]); if(short(t)&&!out.tabs[m[1]])out.tabs[m[1]]=t.slice(0,40)}
+  fromMap(/const SUBL=\{([^}]*)\}/);
+  for(const m of h.matchAll(/<button[^>]*\bdata-tab="([a-z0-9_-]+)"[^>]*>([\s\S]{0,300}?)<\/button>/g)){const t=txt(m[2]).replace(/\s*[›‹]$/,''); if(short(t)&&!out.tabs[m[1]])out.tabs[m[1]]=t.slice(0,40)}
+  // a heading the page fills at run time (a template) or that has no text gets a name from here; the sections that
+  // show only in a state (the welcome, the crisis mode, the first steps) are not parts a person "never opened"
+  const SEC_NAME={hDesk:'השולחן של היום',ixSvE:'האירועים שנוגעים במניה',ixSvQ:'לשאול את צ׳יקו על המניה',hRepV:'הדוח שנבחר'}, SEC_SKIP=new Set(['hWelcome','hCrisis','hOb']);
+  for(const m of h.matchAll(/<section[^>]*aria-labelledby="([A-Za-z0-9_-]+)"/g)){const id=m[1]; if(SEC_SKIP.has(id))continue; const hm=h.match(new RegExp(`id="${id}"[^>]*>([\\s\\S]{0,200}?)</h[1-4]>`)); const t=hm?txt(hm[1]).slice(0,60):''; out.secs[id]=SEC_NAME[id]||(t&&!/\$\{/.test(t)?t:id)}
   return CAT={file,...out};
 }
 const USE_NAME={chiko:'צ׳יקו',sec:'דף של נייר',news:'מה חדש',tour:'סיור באתר','export:pdf':'הורדת דוח PDF','export:xlsx':'הורדת אקסל','view:calm':'מעבר לתצוגה פשוטה','view:full':'מעבר לתצוגה מלאה'};

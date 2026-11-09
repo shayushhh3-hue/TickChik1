@@ -221,7 +221,12 @@ const NAV=[
 let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
 const can=p=>PERMS.includes(p);
 // ---- the server ----
-async function api(path,opt={}){const r=await fetch('/api/admin/'+path,{credentials:'same-origin',...opt,headers:{'content-type':'application/json','x-tc':'1',...(opt.headers||{})}});
+// 9.11: a call that gets no answer in 25 seconds (the server restarting after a deploy, a long job) ends with a message and
+// "לנסות שוב" instead of a screen that stays a skeleton
+async function api(path,opt={}){const c=new AbortController(), to=setTimeout(()=>c.abort(),opt.timeout||25000); let r;
+  try{r=await fetch('/api/admin/'+path,{credentials:'same-origin',...opt,signal:c.signal,headers:{'content-type':'application/json','x-tc':'1',...(opt.headers||{})}})}
+  catch(e){if(e&&e.name==='AbortError'){const t=new Error('השרת לא ענה בזמן (אולי הוא עולה מחדש אחרי עדכון). עוד רגע ולנסות שוב.'); t.status=0; throw t} throw e}
+  finally{clearTimeout(to)}
   let j=null; try{j=await r.json()}catch(e){} if(!r.ok){const e=new Error((j&&j.error&&j.error.message)||('HTTP '+r.status)); e.status=r.status; throw e} return j}
 const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b||{})});
 // ---- the range ----
@@ -296,7 +301,7 @@ function head(t,s,{range=false}={}){$('h1').textContent=t; $('sub').textContent=
 
 // ---- the executive dashboard ----
 SCREENS.exec=async()=>{head('תמונת מצב','',{range:true}); view.innerHTML=loading(12);
-  const d=await api('exec?'+rq()); $('sub').textContent=`טווח: ${rangeText(d.range)} · ההשוואה: מול ${d.range.len} הימים שלפניו`;
+  const d=await api('exec?'+rq()); $('sub').textContent=`טווח: ${rangeText(d.range)} · ההשוואה: מול ${d.range.len===1?'היום שלפניו':d.range.len===2?'היומיים שלפניו':d.range.len+' הימים שלפניו'}`;
   HEALTH_BAD=d.metrics.some(m=>m.k==='health'&&m.state==='bad'); navRender('exec');
   const top=['users','dau','wau','mau','new','returning','retention','portfolios'], ops=['radar','analyses','alerts','news','health','issues','aicost','infra'];
   const by=Object.fromEntries(d.metrics.map(m=>[m.k,m]));
@@ -403,7 +408,7 @@ SCREENS.ai=async()=>{head('מנועי AI','',{range:true}); view.innerHTML=loadi
       ${Q.crit.map(c=>`<div class="bar" style="margin-bottom:8px"><span class="t wrap" style="white-space:normal">${esc(c.l)}</span><span class="tr"><span class="fl" style="width:${c.pct==null?0:Math.max(2,c.pct)}%;display:block"></span></span><span class="nv num">${c.pct==null?'—':c.pct+'%'}</span></div>`).join('')}
       ${banner('<b>מה הבדיקה לא יודעת:</b> '+esc(Q.limits),'warn')}
       ${Q.flags.length?`<h3>קריאות שכדאי לבדוק</h3><div class="tw"><table><thead><tr><th>הכותרת של צ׳יקו</th><th>מה נמצא</th><th>מקור</th></tr></thead><tbody>${Q.flags.map(f=>`<tr><td class="wrap">${esc(f.he)}</td><td class="wrap">${f.why.map(w=>`<span class="pill p-warn" style="margin:2px">${esc(w)}</span>`).join(' ')}</td><td>${f.link&&/^https?:/.test(f.link)?`<a href="${esc(f.link)}" target="_blank" rel="noopener noreferrer">${esc(f.pub||'לכתבה')} ↗</a>`:esc(f.pub||'—')}</td></tr>`).join('')}</tbody></table></div>`:Q.n?'<div class="empty">אף קריאה לא סומנה.</div>':''}</section>
-    <section class="card" style="margin-top:14px"><h2>מחירים</h2><p class="hint">דולר למיליון טוקנים, לפי מחירון החשבון. המחירים לא נמשכים מהספק; בלי מחיר למודל, העלות מוצגת "לא זמין".</p>${models.length?`<form id="prF"><div class="tw"><table><thead><tr><th>מודל</th><th>קלט</th><th>פלט</th></tr></thead><tbody>${models.map(m=>`<tr><td class="mono">${esc(m)}</td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="in" value="${d.prices[m]?d.prices[m].in:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} קלט"></td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="out" value="${d.prices[m]?d.prices[m].out:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} פלט"></td></tr>`).join('')}</tbody></table></div>
+    <section class="card" style="margin-top:14px"><h2>מחירים</h2><p class="hint">דולר למיליון טוקנים. בלי הזנה, המודלים המוכרים מחושבים לפי מחירון מפורסם (מסומן "ברירת מחדל", עם התאריך שלו); מחיר שמוזן כאן מחליף אותו. המחירים לא נמשכים מהספק; מודל בלי שום מחיר מוצג "לא זמין".</p>${models.length?`<form id="prF"><div class="tw"><table><thead><tr><th>מודל</th><th>קלט</th><th>פלט</th><th>מקור</th></tr></thead><tbody>${models.map(m=>`<tr><td class="mono">${esc(m)}</td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="in" value="${d.prices[m]&&!d.prices[m].def?d.prices[m].in:''}" placeholder="${d.prices[m]&&d.prices[m].def?d.prices[m].in:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} קלט"></td><td><input class="num" style="width:90px" type="number" min="0" step="0.01" data-m="${esc(m)}" data-io="out" value="${d.prices[m]&&!d.prices[m].def?d.prices[m].out:''}" placeholder="${d.prices[m]&&d.prices[m].def?d.prices[m].out:''}" ${can('edit')?'':'disabled'} aria-label="${esc(m)} פלט"></td><td>${d.prices[m]?d.prices[m].def?`<span class="pill p-warn">ברירת מחדל · מחירון ${esc(dmy(d.prices[m].asOf))}</span>`:'<span class="pill p-ok">הוזן</span>':'<span class="pill p-bad">חסר</span>'}</td></tr>`).join('')}</tbody></table></div>
       ${can('edit')?'<button class="btn pri" style="margin-top:10px">לשמור מחירים</button>':'<p class="hint">צריך הרשאת עריכה.</p>'}<div class="msg" id="prM" role="status"></div></form>`:'<div class="empty">אין עדיין מודלים בשימוש.</div>'}</section>`;
   table($('tblF'),{rows:o.features,empty:'אין עדיין קריאות שנספרו בטווח (הספירה לפי פיצ׳ר התחילה בגרסה הזאת).',
     cols:[{k:'name',l:'פיצ׳ר',cls:'wrap',f:f=>`<b>${esc(f.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(FEAT_NOTE[f.feature]||'')}</div>`},{k:'calls',l:'קריאות',f:f=>`<span class="num">${nf(f.calls)}</span>`},
@@ -439,7 +444,7 @@ SCREENS.news=async()=>{head('מערכת החדשות','האיסוף, הקריא�
       ${kpi({k:'pu',label:'משתמשים עם התראות',value:P.users,of:P.of,src:'מסמכי ההתראות'})}${kpi({k:'pf',label:'חדשות או שהתעדכנו ב-24 שעות',value:P.fresh24,src:'מסמכי ההתראות'})}${kpi({k:'ps',label:'התראות לטלפון היום',value:P.pushSent,src:'מונה השליחות'})}</div>
     ${P.load?`<section class="card" style="margin-top:14px"><h2>מדד העומס החדשותי</h2><p class="hint">${esc(P.load.note)}.</p>
       ${P.load.flood?banner('<b>הצפה:</b> יותר מ-8 התראות חשובות למשתמש היום. כדאי לבדוק את ספי החשיבות.','warn'):''}
-      <div class="grid kpis">${kpi({k:'lv',label:'העומס היום',value:{calm:'רגוע',normal:'רגיל',busy:'ער',storm:'סוער'}[P.load.level],src:'מול ממוצע 13 הימים שלפני',state:P.load.level==='storm'?'bad':P.load.level==='busy'?'warn':null,note:`פי ${String(P.load.ratio)} מהממוצע`})}
+      <div class="grid kpis">${kpi({k:'lv',label:'העומס היום',value:{calm:'רגוע',normal:'רגיל',busy:'עמוס',storm:'סוער'}[P.load.level],src:'מול ממוצע 13 הימים שלפני',state:P.load.level==='storm'?'bad':P.load.level==='busy'?'warn':null,note:`פי ${String(P.load.ratio)} מהממוצע`})}
         ${kpi({k:'lt',label:'התראות למשתמש היום',value:P.load.todayPerUser,src:'מסמכי ההתראות',note:`ממוצע: ${P.load.avgPerUser} ביום`})}
         ${kpi({k:'li',label:'חשובות למשתמש היום',value:P.load.days[13].impPerUser,src:'קריטיות וחשובות',state:P.load.flood?'warn':null})}</div>
       <div class="chart" id="chLoad"></div></section>`:''}`;
@@ -466,7 +471,7 @@ SCREENS.yahoo=async()=>{head('Yahoo ונתוני שוק','המקור הראשי 
   view.innerHTML=loading(3); let d; try{d=await api('yahoo?days=7')}catch(e){view.innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
   const S=d.status, M=d.market, chg=v=>v==null?'—':`<span class="d ${v>0?'up':v<0?'down':'same'}" dir="ltr">${v>0?'+':''}${v.toFixed(2)}%</span>`, px=v=>v==null?'—':nf(Math.round(v*100)/100);
   const lastH=x=>x?`${dt(x.at)} · ${esc(({chart:'מחירים',summary:'נתוני חברות',search:'חיפוש',news:'כתבות',options:'אופציות',other:'אחר'})[x.kind]||x.kind)}${x.code?' · '+esc(x.code):''}`:'—';
-  view.innerHTML=`${S.state==='bad'?banner('<b>Yahoo לא עונה לרוב הבקשות.</b> המחירים מגיעים מהגיבויים (Nasdaq, Stooq) או נשארים מהריצה הקודמת.','bad'):S.limited?banner(`<b>Yahoo הגביל את הקצב ${nf(S.limited)} פעמים בשבוע</b> (HTTP 429). חלק מהבקשות נדחו ונוסו שוב או עברו לגיבוי.`,'warn'):''}
+  view.innerHTML=`${S.state==='bad'?banner('<b>Yahoo לא עונה לרוב הבקשות.</b> המחירים מגיעים מהגיבויים (Nasdaq, Stooq) או נשארים מהריצה הקודמת.','bad'):S.limited?banner(`<b>Yahoo הגביל את הקצב ${nf(S.limited)} פעמים בשבוע</b> (HTTP 429). ${S.gate&&S.gate.paused?`כרגע הפסקה לכל הבקשות עד ${esc(dt(S.gate.until))}.`:''} ${S.skipped?`${nf(S.skipped)} בקשות דולגו בזמן הפסקות ועברו לגיבוי.`:'חלק מהבקשות נדחו ונוסו שוב או עברו לגיבוי.'}`,'warn'):''}
     <div class="grid kpis">${kpi({k:'st',label:'מצב Yahoo',value:{ok:'תקין',warn:'חלקי',bad:'תקלה',none:'אין בקשות'}[S.state],state:S.state==='bad'?'bad':S.state==='warn'?'warn':null,src:`${S.days} ימים אחרונים`})}
       ${kpi({k:'n',label:'בקשות',value:S.total,src:'מונה הבקשות',note:S.rate!=null?`${S.rate}% הצליחו`:null})}
       ${kpi({k:'ok',label:'הצלחה אחרונה',value:S.last.ok?dt(S.last.ok.at):null,src:'מונה הבקשות'})}

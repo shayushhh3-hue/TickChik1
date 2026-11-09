@@ -4,7 +4,7 @@
 // questions and answers), and the money: the costs entered by hand or computed (the AI), the revenue when there is any.
 // Nothing here is made up: a figure with no entry is "not available".
 import {audit} from './core.js';
-import {aiCost} from './metrics.js';
+import {aiCost, aiPrices, AI_PRICE_DEFAULTS} from './metrics.js';
 import {ilParts} from '../../shared/market.js';
 
 const now=()=>new Date().toISOString();
@@ -163,9 +163,10 @@ export function business(store,{months=12,fx=null}={}){
   const withCost=rows.filter(r=>r.cost!=null&&r.month<cur).slice(-6);
   let forecast=null; if(withCost.length>=3){const n=withCost.length, xs=withCost.map((_,i)=>i), ys=withCost.map(r=>r.cost), mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
     const b=xs.reduce((a,x,i)=>a+(x-mx)*(ys[i]-my),0)/Math.max(1e-9,xs.reduce((a,x)=>a+(x-mx)**2,0)), a=my-b*mx; forecast={next:Math.max(0,Math.round((a+b*n)*100)/100),slope:Math.round(b*100)/100,from:n}}
-  const featCost=(()=>{const P=JSON.parse(store.getMeta('aiPrices')||'{}'), by={}; const from=M[M.length-3]+'-01';
+  const featCost=(()=>{const P=aiPrices(store), by={}; const from=M[M.length-3]+'-01';
     for(const k of ['ai_in','ai_out'])for(const r of store.db.prepare('select key, sum(n) n from counters where kind=? and day>=? group by key').all(k,from)){const [f,m]=r.key.split('|'), p=P[m]; const o=by[f]||(by[f]={feature:f,cost:0,missing:false}); if(!p){o.missing=true;continue} o.cost+=r.n*(k==='ai_in'?p.in:p.out)/1e6}
     return Object.values(by).map(o=>({...o,cost:o.missing?null:Math.round(o.cost*100)/100}))})();
   return {months:rows,ledger:L.slice(0,200),forecast,featCost,hasRevenue:L.some(r=>r.kind==='revenue'),fx,cur,
-    notes:['עלות ה-AI מחושבת מהטוקנים ומהמחירים שהוזנו, אלא אם הוזן לחודש חשבון AI ידני (אז רק הוא נספר).','עלות שרתים וספקים: רק מה שהוזן ידנית. אין חיבור לחיוב של Railway או של הספקים.','עלות לפיצ׳ר: רק ל-AI (שאר העלויות לא מתחלקות לפי פיצ׳ר).','רווחיות לפי סוג חשבון: לא זמינה. אין מנויים ואין הכנסות לפי סוג חשבון.']}
+    priceDefaults:Object.values(aiPrices(store)).some(p=>p.def)?AI_PRICE_DEFAULTS.src:null,
+    notes:['עלות ה-AI מחושבת מהטוקנים ומהמחירים: מה שהוזן במסך "מנועי AI", ובלי הזנה לפי '+AI_PRICE_DEFAULTS.src+'; אלא אם הוזן לחודש חשבון AI ידני (אז רק הוא נספר).','עלות שרתים וספקים: רק מה שהוזן ידנית. אין חיבור לחיוב של Railway או של הספקים.','עלות לפיצ׳ר: רק ל-AI (שאר העלויות לא מתחלקות לפי פיצ׳ר).','רווחיות לפי סוג חשבון: לא זמינה. אין מנויים ואין הכנסות לפי סוג חשבון.']}
 }

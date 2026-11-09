@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import {PERMS,PERM_HE,permsOf,can,need,setPerms,resetPerms,audit,auditList,auditVerify,authSince,setStatus,PORTFOLIO_ACCESS} from './core.js';
-import {executive,usersList,product,aiCost,aiPrices,rangeOf,K_ANON} from './metrics.js';
+import {executive,usersList,product,aiCost,aiPrices,aiPricesOwn,rangeOf,K_ANON} from './metrics.js';
 import {bump} from './counter.js';
 import {healthCheck} from '../health.js';
 import {createHash} from 'node:crypto';
@@ -63,7 +63,7 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
     byDay:store.db.prepare('select day, sum(calls) calls, sum(quick) quick, sum(input) input, sum(output) output from ai_usage where day>=? and day<=? group by day order by day').all(R.from,R.to)})});
   app.post('/api/admin/ai/prices',need('edit'),(req,res)=>{const P={}, b=(req.body||{}).prices||{};
     for(const [m,v] of Object.entries(b)){if(!/^[a-z0-9.\-]{2,60}$/.test(m)||!v)continue; const i=+v.in, o=+v.out; if(!(i>=0&&o>=0&&i<1e4&&o<1e4))continue; P[m]={in:i,out:o}}
-    const before=aiPrices(store); store.setMeta('aiPrices',JSON.stringify(P)); audit(store,{user:req.user,action:'settings.aiPrices',target:'ai',detail:{before,after:P},ip:req.ip}); res.json({ok:true,prices:P})});
+    const before=aiPricesOwn(store); store.setMeta('aiPrices',JSON.stringify(P)); audit(store,{user:req.user,action:'settings.aiPrices',target:'ai',detail:{before,after:P},ip:req.ip}); res.json({ok:true,prices:P})});
 
   // ---- the health (the same check the site already runs) and running a job ("system") ----
   app.get('/api/admin/health',need('view'),(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));

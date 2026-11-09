@@ -40,9 +40,10 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
   for(const host of YH){
     try{
       const r=await f(`${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=1d&includePrePost=false`,{headers:{'user-agent':UA,accept:'application/json'}});
-      if(!r.ok){last=new Error('HTTP '+r.status);continue}
+      // 9.11: a definite answer (404, "no data found", 429) is not asked again of the second host: that doubled the failures
+      if(!r.ok){last=new Error('HTTP '+r.status); if(r.status===404||r.status===429||r.status===400)break; continue}
       const j=await r.json(); const res=j&&j.chart&&j.chart.result&&j.chart.result[0];
-      if(!res){last=new Error((j&&j.chart&&j.chart.error&&j.chart.error.description)||'no result');continue}
+      if(!res){const d=(j&&j.chart&&j.chart.error&&j.chart.error.description)||'no result'; last=new Error(d); if(/no data|delisted|not found/i.test(d))break; continue}
       const m=res.meta||{}, off=+m.gmtoffset||0, ts=res.timestamp||[], cl=((res.indicators||{}).quote||[{}])[0].close||[];
       const bars=ts.map((t,i)=>({t,c:cl[i]})).filter(b=>b.c!=null&&b.c>0);
       let px=+m.regularMarketPrice; const ptime=+m.regularMarketTime||(bars.length?bars[bars.length-1].t:0);
@@ -143,7 +144,7 @@ export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
 
 // a ticker's daily closes for the last month, [{d:'YYYY-MM-DD',c}], from Yahoo's chart
 export async function yahooBars(ticker,{fetch:f=timedFetch,range='1mo'}={}){
-  for(const host of YH){try{const r=await f(`${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=1d`,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok)continue;
+  for(const host of YH){try{const r=await f(`${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=1d`,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok){if(r.status===404||r.status===429)break; continue}
     const j=await r.json(), res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)continue; const off=+(res.meta||{}).gmtoffset||0, ts=res.timestamp||[], cl=((res.indicators||{}).quote||[{}])[0].close||[];
     return ts.map((t,i)=>({d:dayOf(t,off),c:cl[i]})).filter(b=>b.c>0)}catch(e){}}
   return [];

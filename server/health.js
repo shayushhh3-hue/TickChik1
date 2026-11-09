@@ -56,7 +56,8 @@ export function sources(store,{env=process.env,now=new Date()}={}){
   // 30.10: partners and admins who chose e-mails (or admins who get the site's alerts), while the sender is Resend's test
   // address (it sends to the account's owner only)
   {const P=(()=>{try{return store.users().filter(u=>u.role!=='owner'&&kindsOf(u).some(k=>mailAllowedFor(store,u,k)))}catch(e){return []}})();
-    if(P.length)out.push({key:'mailp',name:'מיילים למנהלים ולשותפים',max:24,ran:null,ok:mailReady()&&mailFromOwnDomain(),okAt:mailReady()&&mailFromOwnDomain()?now.toISOString():null,
+    // 9.11: with no mail set up at all the source above already says so; this one is then "off", not a second incident
+    if(P.length)out.push({key:'mailp',name:'מיילים למנהלים ולשותפים',max:24,off:!mailReady(),ran:null,ok:mailReady()&&mailFromOwnDomain(),okAt:mailReady()&&mailFromOwnDomain()?now.toISOString():null,
       note:!mailReady()?'המיילים לא מוגדרים':!mailFromOwnDomain()?`${P.length===1?'משתמש אחד אמור לקבל':P.length+' משתמשים אמורים לקבל'} מיילים, אבל הם לא יגיעו: Resend שולח מ-onboarding@resend.dev רק לך. צריך דומיין משלך ו-MAIL_FROM (SETUP.md)`:`${P.length} משתמשים מקבלים מיילים`})}
   // a job that failed the last time it ran (its own words, the first line)
   for(const [name,j] of Object.entries(J)){if(!j||j.ok!==false)continue;

@@ -57,6 +57,12 @@ export function recheckOnStart(store,{run,version='',log=()=>{},delay=90e3}={}){
     log(`consist: run again after a deploy (the last run found ${c.bad} gaps)`); try{run('consist')}catch(e){log('consist re-run: '+(e&&e.message||e))}},delay); if(t.unref)t.unref(); return t;
 }
 
+// 9.11: the weekly restore test, once right after a start when it never ran (the health screen said "עוד לא רץ" for days)
+export function restoreOnStart(store,{dataDir,log=()=>{},delay=180e3}={}){
+  if(meta(store,'restoreTest'))return null;
+  const t=setTimeout(()=>{try{restoreTest(store,{dataDir,log})}catch(e){log('restore test: '+(e&&e.message||e))}},delay); if(t.unref)t.unref(); return t;
+}
+
 // ---- the restore test ----
 export function restoreTest(store,{dataDir,now=new Date(),log=()=>{},pass=process.env.BACKUP_KEY||'',maxSeal=60e6}={}){
   const t0=Date.now(), st=backupStatus(store,{dataDir}), f=st.files&&st.files[0], out={at:now.toISOString(),file:f?f.name:null,size:f?f.size:null,ok:false,integrity:null,docs:null,users:null,missing:[],sealed:null,note:''};

@@ -8,19 +8,36 @@ import {bump, countersSince} from './counter.js';
 import {BENCH, MKTS} from '../../shared/quotes.js';
 import {ilParts} from '../../shared/market.js';
 
-export const YH_KIND={chart:'מחירים וסגירות',summary:'נתוני החברות',search:'חיפוש ניירות',news:'כתבות',options:'נתוני אופציות',other:'אחר'};
-const kindOf=u=>{const p=(()=>{try{return new URL(u).pathname}catch(e){return ''}})(); return /\/finance\/chart\//.test(p)?'chart':/quoteSummary|\/v7\/finance\/quote/.test(p)?'summary':/\/finance\/search/.test(p)?'search':/news|rss/.test(p)?'news':/options/.test(p)?'options':'other'};
+export const YH_KIND={chart:'מחירים וסגירות',summary:'נתוני החברות',search:'חיפוש ניירות',news:'כתבות',options:'נתוני אופציות',session:'פתיחת חיבור (עוגייה ו-crumb)',other:'אחר'};
+const kindOf=u=>{const {p,h}=(()=>{try{const x=new URL(u); return {p:x.pathname,h:x.hostname}}catch(e){return {p:'',h:''}}})();
+  return /\/finance\/chart\//.test(p)?'chart':/quoteSummary|\/v7\/finance\/quote/.test(p)?'summary':/\/finance\/search/.test(p)?'search':/news|rss/.test(p)?'news':/options/.test(p)?'options':/getcrumb/.test(p)||h==='fc.yahoo.com'||(h==='finance.yahoo.com'&&(p==='/'||p===''))?'session':'other'};
 const isYahoo=u=>{try{return /(^|\.)yahoo\.com$|(^|\.)yahooapis\.com$|(^|\.)yimg\.com$/.test(new URL(u).hostname)}catch(e){return false}};
 
-export function meterYahoo(store,{target=globalThis}={}){
+// 9.11: the gate. Yahoo answered 429 to one request in six (116 times a week): the server asked in bursts (the indices, the
+// markets and the currencies all at once, six securities in parallel, each failure tried again on the second host).
+// Now at most three requests at a time, a short gap between them, and after a 429 a pause for every Yahoo call (a minute,
+// doubling up to a quarter of an hour, back to a minute after an answer): a call in the pause fails at once, counted as
+// "skipped", and the price run falls back to its other sources (Nasdaq, Stooq) as it does on any failure
+export const GATE={active:0,max:3,last:0,gap:150,pausedUntil:0,pauseMs:60e3,skipped:0,pauses:0};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function slot(now=Date.now){while(GATE.active>=GATE.max)await sleep(40); const wait=GATE.last+GATE.gap-now(); if(wait>0)await sleep(wait); GATE.last=now(); GATE.active++}
+export const gateState=(now=Date.now())=>({paused:GATE.pausedUntil>now,until:GATE.pausedUntil>now?new Date(GATE.pausedUntil).toISOString():null,pauseMs:GATE.pauseMs,max:GATE.max,gap:GATE.gap,skipped:GATE.skipped,pauses:GATE.pauses});
+export function gateReset(){Object.assign(GATE,{active:0,last:0,pausedUntil:0,pauseMs:60e3,skipped:0,pauses:0})}
+
+export function meterYahoo(store,{target=globalThis,now=Date.now,gate=true}={}){
   if(!target||typeof target.fetch!=='function'||target.fetch.__yh)return;
   const real=target.fetch;
   const note=(k,ok,code,ms)=>{bump('yh',`${k}|${ok?'ok':'err:'+String(code).slice(0,24)}`,1,{store}); if(ms>0)bump('yh_ms',k,Math.round(ms),{store});
-    try{const L=JSON.parse(store.getMeta('yhLast')||'{}'); L[ok?'ok':'fail']={at:new Date().toISOString(),kind:k,code:ok?null:String(code).slice(0,40)}; store.setMeta('yhLast',JSON.stringify(L))}catch(e){}};
+    try{const L=JSON.parse(store.getMeta('yhLast')||'{}'); L[ok?'ok':'fail']={at:new Date(now()).toISOString(),kind:k,code:ok?null:String(code).slice(0,40)}; store.setMeta('yhLast',JSON.stringify(L))}catch(e){}};
   const wrapped=async(u,o)=>{const url=typeof u==='string'?u:u&&u.url||String(u); if(!isYahoo(url))return real(u,o);
-    const k=kindOf(url), t0=Date.now();
-    try{const r=await real(u,o); note(k,r.ok,r.status,Date.now()-t0); return r}
-    catch(e){note(k,false,e&&e.name==='TimeoutError'?'timeout':'network',Date.now()-t0); throw e}};
+    const k=kindOf(url);
+    if(gate&&now()<GATE.pausedUntil){GATE.skipped++; bump('yh',`${k}|skip:paused`,1,{store}); throw Object.assign(new Error('Yahoo paused after 429 (until '+new Date(GATE.pausedUntil).toISOString().slice(11,16)+'Z)'),{paused:true,slow:true})}
+    if(gate)await slot(now); const t0=now();
+    try{const r=await real(u,o); const ok=r.ok||(k==='session'&&r.status>=300&&r.status<400);   // a redirect is the cookie step's answer
+      if(r.status===429&&gate){GATE.pausedUntil=now()+GATE.pauseMs; GATE.pauses++; GATE.pauseMs=Math.min(GATE.pauseMs*2,15*60e3)} else if(ok&&gate)GATE.pauseMs=Math.max(60e3,Math.round(GATE.pauseMs/2));
+      note(k,ok,r.status,now()-t0); return r}
+    catch(e){note(k,false,e&&e.name==='TimeoutError'?'timeout':'network',now()-t0); throw e}
+    finally{if(gate)GATE.active=Math.max(0,GATE.active-1)}};
   wrapped.__yh=true; target.fetch=wrapped}
 
 const day=t=>ilParts(t).iso;
@@ -28,7 +45,9 @@ export function yahooStatus(store,{days=7}={}){
   const to=day(new Date()), from=day(new Date(Date.now()-(days-1)*864e5)), C=countersSince(store,'yh',from,to), T=countersSince(store,'yh_ms',from,to);
   const by={}, daysL=[]; for(let i=days-1;i>=0;i--)daysL.push(day(new Date(Date.now()-i*864e5)));
   const series=Object.fromEntries(daysL.map(d=>[d,{ok:0,err:0}]));
-  for(const r of C){const [k,res]=r.key.split('|'), o=by[k]||(by[k]={kind:k,name:YH_KIND[k]||k,calls:0,ok:0,err:0,codes:{},ms:0});
+  let skipped=0;
+  for(const r of C){const [k,res]=r.key.split('|'); if(res==='skip:paused'){skipped+=r.n; continue}   // not a request: nothing was asked of Yahoo
+    const o=by[k]||(by[k]={kind:k,name:YH_KIND[k]||k,calls:0,ok:0,err:0,codes:{},ms:0});
     o.calls+=r.n; if(res==='ok')o.ok+=r.n; else{o.err+=r.n; const c=res.replace(/^err:/,''); o.codes[c]=(o.codes[c]||0)+r.n}
     const s=series[r.day]; if(s){if(res==='ok')s.ok+=r.n; else s.err+=r.n}}
   for(const r of T){const o=by[r.key]; if(o)o.ms+=r.n}
@@ -44,8 +63,8 @@ export function yahooStatus(store,{days=7}={}){
     usDate:Q.usDate||null,ilDate:Q.ilDate||null,label:Q.priceLabel||'',updatedAt:Q.updatedAt||null,errors:Array.isArray(Q.errors)?Q.errors.length:null};
   let research=null; try{const R=JSON.parse(store.getMeta('researchStatus')||'null'); if(R)research={at:R.at||null,ok:R.ok||0,of:R.of||0,fail:R.fail||0}}catch(e){}
   const state=!tot?'none':ok/tot<0.5?'bad':ok/tot<0.9||limited>0?'warn':'ok';
-  return {days,from,to,state,total:tot,ok,rate:tot?Math.round(ok/tot*1000)/10:null,limited,kinds,series:daysL.map(d=>({d,...series[d]})),last,prices,research,
-    note:'נספר מ-4.11.2026, כשהמונה נוסף. כתובת הבקשה לא נשמרת (סימול בתוכה יכול לגלות של מי התיק).'}}
+  return {days,from,to,state,total:tot,ok,rate:tot?Math.round(ok/tot*1000)/10:null,limited,skipped,gate:gateState(),kinds,series:daysL.map(d=>({d,...series[d]})),last,prices,research,
+    note:'נספר מ-4.11.2026, כשהמונה נוסף. כתובת הבקשה לא נשמרת (סימול בתוכה יכול לגלות של מי התיק). מ-9.11 השער: עד 3 בקשות במקביל, ואחרי 429 הפסקה לכל הבקשות (דקה, ומכפילה את עצמה עד רבע שעה); בקשה בזמן ההפסקה נספרת כדילוג, לא כבקשה.'}}
 
 const pc=(a,b)=>a>0&&b>0?Math.round((a/b-1)*10000)/100:null;
 export function marketData(store){
