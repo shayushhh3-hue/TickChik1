@@ -2072,7 +2072,7 @@ html[data-theme="dark"] .trk[aria-pressed="true"]{background:rgb(139 92 246 / .1
 .stc .lg{width:100%;height:100%;border-radius:50%;font-size:10px} .stc .stx{font-weight:800;font-size:15px;color:var(--accent-ink)}
 .stbub{position:fixed;z-index:45;display:flex;align-items:center;gap:0;padding:0;border:0;background:transparent;cursor:pointer}
 .stbub[hidden]{display:none} body.chat-open .stbub{display:none}
-.stbub{flex-direction:column} .stbub .stc{width:32px;height:32px;box-shadow:0 3px 8px rgb(20 18 46 / .25)} .stbub .stc+.stc{margin-top:-10px} .stbub .stc:nth-child(1){z-index:3} .stbub .stc:nth-child(2){z-index:2} .stbub .stc:nth-child(3){z-index:1}
+.stbub{flex-direction:row;align-items:center} .stbub .stc{width:26px;height:26px;box-shadow:0 2px 6px rgb(20 18 46 / .3)} .stbub .stc+.stc{margin-inline-start:-10px} .stbub .stc:nth-child(1){z-index:3} .stbub .stc:nth-child(2){z-index:2} .stbub .stc:nth-child(3){z-index:1}
 .stbub .stn{position:absolute;top:-6px;inset-inline-end:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--crit-c);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface)}
 .stbub:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:999px}
 .stbar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none} .stbar::-webkit-scrollbar{display:none}
@@ -2398,7 +2398,15 @@ body:not([data-page="overview"]) .hero .ktoday{display:none}
 .ktoday .chsay-h{margin:0 0 2px;font-size:11.5px} .ktoday .chsay-h .av.chiko{width:18px;height:18px}
 .ktoday .tdl{display:flex;align-items:center;gap:8px;width:100%;min-height:30px;margin:0;padding:3px 0;border:0;border-top:1px solid rgb(124 58 237 / .1);border-radius:0;background:none;box-shadow:none;font:inherit;font-size:13px;line-height:1.3;color:var(--ink);text-align:start;cursor:default}
 .ktoday .chsay-h+.tdl{border-top:0} .ktoday button.tdl{cursor:pointer} .ktoday button.tdl:hover .tdl-b{color:var(--vio-ink)}
-.ktoday .tdl-k{flex:none;min-width:46px;font-size:11.5px;font-weight:800;color:var(--muted)} .ktoday .tdl-k .sym{font-size:11.5px;font-weight:800;color:var(--vio-ink)}
+.ktoday .tdl-k{flex:none;min-width:46px;font-size:11.5px;font-weight:800;color:var(--muted)}
+/* 9.11 (the owner): short lines without צ׳יקו, larger type, an icon at the start of each */
+.ktoday{padding:2px 10px} .ktoday .tdl{min-height:40px;font-size:14px;gap:9px} .ktoday .tdl:first-child{border-top:0} .ktoday .tdl-k{min-width:0;font-size:12.5px;font-weight:700} .ktoday .tdl-b{font-weight:600} .ktoday .tdl-s{color:var(--muted);font-weight:500}
+.ktoday .tdl>.lg.s{flex:none;width:24px;height:24px;font-size:7.5px;border-radius:7px} .ktoday .tdl-ic{flex:none;width:24px;height:24px;border-radius:7px;background:rgb(124 58 237 / .12) center/15px no-repeat}
+.ktoday .tdl-ic.clock{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+.ktoday .tdl-ic.cal{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237C3AED' stroke-width='2.2' stroke-linecap='round'%3E%3Crect x='4' y='5' width='16' height='15' rx='2'/%3E%3Cpath d='M4 10h16M9 3v4M15 3v4'/%3E%3C/svg%3E")}
+.ktoday .tdl-ic.dot{background:rgb(217 119 6 / .14);position:relative} .ktoday .tdl-ic.dot::after{content:"";position:absolute;inset:8px;border-radius:50%;background:#D97706}
+.ktoday .tdl-dir{font-size:12px;font-weight:800;margin-inline-start:4px} .ktoday .tdl-dir.pos{color:var(--gain)} .ktoday .tdl-dir.neg{color:var(--loss)} .ktoday .tdl-dir.mix{color:#B45309}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} .ktoday .tdl-k .sym{font-size:11.5px;font-weight:800;color:var(--vio-ink)}
 .ktoday .tdl-b{flex:1 1 auto;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600} .ktoday .tdl-a{flex:none;font-size:16px;line-height:1;font-weight:800;color:var(--vio-ink);opacity:.8}
 .ktoday .tdl-a.w{font-size:11.5px;font-weight:700;opacity:1;padding:2px 8px;border-radius:999px;border:1px solid rgb(124 58 237 / .35);background:rgb(124 58 237 / .1)}   /* "למה?" at the end of the day's row */
 .wv:has(.ktoday:not([hidden]) .tdl-day) .dayline .whybtn{display:none}
@@ -2452,7 +2460,7 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 @media (max-width:420px){.pl-ms{grid-template-columns:1fr 1fr 1fr} .pl-m{padding:6px 7px} .pl-m b{font-size:13px} .pl h3{font-size:16px} .pl{padding:13px 13px}}
 /* the icons over צ׳יקו: buttons now, each opens its alert; a gentle fade in */
 .stbub{cursor:default} .stbub .stc{border:0;cursor:pointer;animation:plIn .35s ease-out both} .stbub .stc:focus-visible,.stbub .stn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.stbub .stn{position:static;order:-1;align-self:center;margin:0 0 -4px;z-index:4;min-width:22px;height:20px;font-size:11px!important;border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:800;padding:0 6px;border-radius:999px;background:var(--crit-c);color:#fff;box-shadow:0 0 0 2px var(--surface)}
+.stbub .stn{position:static;align-self:center;margin:0 0 0 -4px;z-index:4;min-width:22px;height:18px;font-size:10.5px!important;border:0;cursor:pointer;font:inherit;font-size:12px;font-weight:800;padding:0 6px;border-radius:999px;background:var(--crit-c);color:#fff;box-shadow:0 0 0 2px var(--surface)}
 @keyframes plIn{from{opacity:0;transform:translateY(6px) scale(.9)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.stbub .stc{animation:none}} html.a11y-rm .stbub .stc{animation:none} html.a11y-rm .imv-p{transition:none}
 /* a critical alert: the banner */
@@ -19607,32 +19615,33 @@ function whyH(w){if(!w)return'';return `<details class="why"><summary>למה א�
 // ones that moved (or the most important news of the day) and what it may mean for them; and whether anything needs the
 // person. The facts of the day, never a reason invented for a move, and no advice
 function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
-  // 9.11: a small card, the chart stays the main thing: one line per fact, a short label at the start, the text cut with
-  // an ellipsis when long, and the whole line is the way onward (a chevron at its end) when there is somewhere to go
-  const L=[], row=(k,t,b,go,act)=>L.push({k,t,b,go:go||'',act:act||'›'}), sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
-  if(sv)row('since','מאז הביקור',esc(sv),' data-tab="history"');
-  if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2), lt=pfTradeDay();
-    // the change itself is on the line above (kDay); this line says who moved it, and "למה?" at its end asks Chiko (the
-    // day line's own "למה?" button is hidden while this row is here: on a phone it wrapped to a line of its own)
-    const flat=Math.abs(m.dayPct)<(typeof WHY_FLAT==='number'?WHY_FLAT:0.05);
-    row('day',dayWord()==='היום'?'היום':lt?dmy(lt):'אתמול',flat?(dayLive()?'התיק כמעט לא זז עד עכשיו':'התיק כמעט לא זז'):top.length?`${dayVerb(up)} בעיקר בגלל <span class="tdl-mv">${top.map(p=>`${symH(p.sym)} ${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')}`).join(' · ')}</span>`:`התיק ${dayVerb(up)} ${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')}`,flat?'':' data-ana="why"','למה?')}
-  // the news: on the ones that moved first, else the most important of the last day and a half
+  // 9.11 (the owner: "this summary is pointless"): only what the screen does not already say, a few words a line, no
+  // header and no צ׳יקו. What changed since the last visit, what is coming in the portfolio this week, the one news item
+  // about a holding, and what to check, by name. The day's change is the line above (with its own "למה?"); nothing new: no card
+  const L=[], row=(k,t,b,go,ic)=>L.push({k,t,b,go:go||'',ic:ic||''});
+  // since the last visit (two days or more): the change of the value, no more words
+  try{if(VISIT_PREV&&DY&&DY.points){const today=ilDay(), days=Math.round((new Date(today)-new Date(VISIT_PREV))/864e5), key=Object.keys(DY.points).filter(k=>k<=VISIT_PREV&&DY.points[k]&&DY.points[k].v>0).sort().pop();
+    if(days>=2&&key){const v0=DY.points[key].v, dv=m.total-v0; if(Math.abs(dv)>=1)row('since',`מאז ${dmy(key).slice(0,5)}`,`${nn(sgn(dv),dv>=0?'up':'down')} <span class="tdl-s">(${spct(v0?dv/v0*100:0,1)})</span>`,' data-tab="history"','clock')}}}catch(e){}
+  // the coming week: the first day with a report, a dividend or a closed market in the portfolio's securities
+  try{const today=ilDay(), D=soonEvents(new Date()).find(x=>x.d>=today&&x.d<=isoAdd(today,7));
+    if(D){const dw=D.d===today?'היום':D.d===isoAdd(today,1)?'מחר':`יום ${HDAY[wdOf(D.d)]}`, E=D.E.slice(0,2);
+      row('soon',dw,E.map(e=>`${esc(e.t)}${e.sym?' '+symH(e.sym):''}`).join(' · ')+(D.E.length>2?` <span class="tdl-s">ועוד ${D.E.length-2}</span>`:''),' data-tab="calendar"','cal')}}catch(e){}
+  // the news: on the ones that moved first, else the most important of the last day and a half about a holding itself
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
     let a=null, sym=null; for(const k of movers){a=N.find(z=>(z.holds||[]).some(h=>h.sym===k&&h.link==='direct')); if(a){sym=k; break}}
-    // 5.11: otherwise an important item about a holding itself; an item that reaches the portfolio only through a fund or a
-    // sector (a headline on Musk put under VOO, "עשויה ליהנות") is not pinned on a holding: a critical one is told as the
-    // market's news, without a holding and without a direction, and the rest wait in "מה נוגע לתיק"
     if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
-    if(!a){a=N.find(z=>z.lv==='crit')||null; sym=null}
-    if(a){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear';
-      row('news',sym?(()=>{try{return logoHtml(sym,'s')}catch(e){return ''}})()+symH(sym):'בחדשות',`${d!=='unclear'?chBadge(d,true)+' ':''}${esc(imCut(a.title,120))}`,sym&&SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`)}
-    else if(typeof PULSE!=='undefined'&&PULSE)row('news','בחדשות','אין היום ידיעה חשובה על המניות שלך')}
-  // what needs the person: the rules' findings (the same count as on "בקרה"), and the alerts not read
-  {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
-    const P=[c?(c===1?'חריגה אחת מהכללים שלך':c+' חריגות מהכללים שלך'):'',w?(w===1?'נושא אחד לבדיקה':w+' נושאים לבדיקה'):''].filter(Boolean);
-    if(P.length)row('todo','לטיפול',P.join(' ו'),' data-tab="risk"'); else row('ok','לטיפול','אין משהו שדורש ממך פעולה עכשיו')}
-  return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(r=>r.go?`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a${r.act==='›'?'':' w'}"${r.act==='›'?' aria-hidden="true"':''}>${r.act}</span></button>`:`<div class="tdl tdl-${r.k}"><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span></div>`).join(''):''}
+    if(a&&sym){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear', w=CH_DIR[d]||CH_DIR.unclear;
+      // the headline whole up to a word (two short lines at most); the direction an arrow, its words for a screen reader
+      const t=String(a.title||''), cut=t.length>78?t.slice(0,t.lastIndexOf(' ',76)>40?t.lastIndexOf(' ',76):76)+'…':t;
+      row('news',symH(sym)+(d!=='unclear'?`<span class="tdl-dir ${w[0]}" title="${esc(w[2])}"><span aria-hidden="true">${w[1]}</span><span class="vh">${esc(w[2])}</span></span>`:''),esc(cut),SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`,'logo:'+sym)}}
+  // what to check: the first finding by its subject and names ("ריכוז: NVDA"), the rest counted
+  {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)).sort((a,b)=>(b[0]==='crit')-(a[0]==='crit'));
+    if(n.length){const f=n[0], tags=Array.isArray(f[3])?f[3].slice(0,2).map(x=>String(x).split(' ')[0]):[];
+      row('todo','לבדוק',`${esc(f[1])}${tags.length?': '+tags.map(x=>`<b>${esc(x)}</b>`).join(', '):''}${n.length>1?` <span class="tdl-s">ועוד ${n.length-1}</span>`:''}`,' data-tab="risk"','dot')}}
+  if(L.length>3)L.splice(L.findIndex(r=>r.k==='since'),1);
+  const icon=ic=>ic.startsWith('logo:')?(()=>{try{return logoHtml(ic.slice(5),'s')}catch(e){return ''}})():`<i class="tdl-ic ${ic}" aria-hidden="true"></i>`;
+  return L.map(r=>`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}>${icon(r.ic)}<span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a" aria-hidden="true">›</span></button>`).join('')}
 function renderDesk(m,A){
   try{const el=$('kToday'); if(el){const h=noPf()?'':todayH(m,A); el.hidden=!h; setH(el,h)}}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
@@ -24721,7 +24730,7 @@ function plRender(m){
 }
 function stPlace(){const b=$('stBub'), f=$('chatFab'); if(!b||b.hidden)return; if(!f||f.hidden){b.style.visibility='hidden';return}
   const r=f.getBoundingClientRect(); if(!r.width){b.style.visibility='hidden';return} b.style.visibility='';
-  const w=b.offsetWidth||30, x=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-8)+'px'}   // 9.11: a column straight above the button (resting on its top), over the page's edge only
+  const w=b.offsetWidth||30, x=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-14)+'px'}   // 9.11: a small row sitting on the button's top edge, so it covers next to nothing of the page
 addEventListener('resize',()=>{try{stPlace()}catch(e){}});
 setInterval(()=>{const b=$('stBub'); if(b&&!b.hidden)try{stPlace()}catch(e){}},1500);
 // a critical alert: a banner at the top, once per version, not in the quiet hours (unless allowed)

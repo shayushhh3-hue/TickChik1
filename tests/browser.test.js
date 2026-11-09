@@ -293,9 +293,12 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const document_why_dup=td=>td.whyVis;
       const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,h:document.getElementById('kToday').getBoundingClientRect().height,whyVis:!!document.getElementById('kWhy').offsetParent,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>({k:p.className.match(/tdl-(\w+)/)[1],btn:p.tagName==='BUTTON',go:p.dataset.tab||p.dataset.ixst||p.dataset.ixopen||p.dataset.ana||'',t:p.querySelector('.tdl-k').textContent.trim(),b:p.querySelector('.tdl-b').textContent.replace(/\s+/g,' ').trim(),a:(p.querySelector('.tdl-a')||{}).textContent||''})),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
         news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
-      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.ok(td.h<170,'a small card: '+td.h); const dayR=td.L.find(x=>x.k==='day')||{}; assert.equal(dayR.t,'היום');   // 4.11: present while a market is open
-      assert.match(dayR.b,/^((עלה|ירד|עולה|יורד) בעיקר בגלל \S+ [‎+−₪\d,]+( · \S+ [‎+−₪\d,]+)?|התיק (עלה|ירד|עולה|יורד) [\d.]+%|התיק כמעט לא זז.*)$/,JSON.stringify(td.L)); assert.ok(dayR.btn&&dayR.a==='למה?'&&!document_why_dup(td),'the day\'s line ends with "למה?" (asks Chiko), and the day line\'s own "למה?" button is hidden: '+JSON.stringify(dayR));
-      const todoR=td.L.find(x=>x.k==='todo')||{}; assert.equal(todoR.t,'לטיפול'); assert.equal(todoR.b,'2 חריגות מהכללים שלך ונושא אחד לבדיקה'); assert.ok(todoR.btn&&todoR.go==='risk'&&todoR.a==='›',JSON.stringify(td.L));
+      // 9.11 (the owner): only what the screen does not already say: no header, no צ׳יקו, no line of the day (the line above
+      // says it, with its own "למה?"), at most three short lines; what to check by its subject and names
+      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.ok(td.h<150,'a small card: '+td.h); assert.ok(!td.L.some(x=>x.k==='day')&&td.L.length<=3,JSON.stringify(td.L));
+      assert.equal(await pg.evaluate(()=>!!document.querySelector('#kToday .chsay-h')),false,'no "צ׳יקו מסכם בשבילך"'); assert.ok(document_why_dup(td),'the day line\'s "למה?" is back');
+      const todoR=td.L.find(x=>x.k==='todo')||{}; assert.equal(todoR.t,'לבדוק'); assert.match(todoR.b,/^\S+: \S+.*ועוד \d+$/); assert.ok(todoR.btn&&todoR.go==='risk',JSON.stringify(td.L));
+      for(const x of td.L)assert.ok(x.b.length<=90,'a short line: '+x.b);
       assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
@@ -710,7 +713,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
     // the icons over צ׳יקו: buttons, the critical first, never more than three; no stories viewer
     const bub=await pg.evaluate(()=>({n:document.querySelectorAll('#stBub .stc').length,first:document.querySelector('#stBub .stc').getAttribute('aria-label'),crit:document.querySelector('#stBub .stc').classList.contains('crit'),bars:!!document.getElementById('stBars'),
-      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 6.11: one count on the button's corner
+      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=90&&a.height<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 9.11: a small row of logos sitting on the button's top edge
     assert.ok(bub.n>=1&&bub.n<=3); assert.match(bub.first,/^התראה קריטית( על NVDA)?: אנבידיה/); assert.ok(bub.crit&&bub.over,JSON.stringify(bub)); assert.equal(bub.bars,false,'no stories bars');
     await pg.click('#stBub .stc'); await pg.waitForTimeout(300);
     let v=await pg.evaluate(()=>{const b=document.getElementById('plShB'); return {open:!document.getElementById('plSheet').hidden,h:b.querySelector('h3').textContent,lv:b.querySelector('.pl-lv').textContent,chain:b.querySelector('.pl-chain')?.textContent.replace(/\s+/g,' '),
