@@ -3226,3 +3226,23 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   assert.equal(await vis('hSearch'),true);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+test('9.11 a fund without a logo of its own carries its issuer: a listed issuer\'s logo, else a monogram in the house\'s colour; a page with no report pulls it by itself',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(800);
+  const r=await pg.evaluate(()=>{const L=window.__logo, mk=(k,name)=>L.html(k,'s',name);
+    const div=document.createElement('div'); document.body.appendChild(div);
+    const out={};
+    for(const [k,n,he] of [['ZZIVV','iShares Core S&P 500 ETF'],['ZZVOO','Vanguard S&P 500 ETF'],['ZZQQQ','Invesco QQQ Trust'],['ZZSPLG','SPDR Portfolio S&P 500 ETF'],['ZZNONE','Some Unknown Fund'],['ZZIDX','Unnamed Nasdaq 100 tracker']]){div.innerHTML=mk(k,n); const el=div.firstChild; out[k]={mono:el.classList.contains('mono'),txt:el.textContent,sheet:!!el.dataset.sh||el.classList.contains('on')}}
+    // an Israeli fund (a number) with a house in its Hebrew name
+    div.innerHTML=L.html('5999991','s','Harel fund הראל מחקה S&P 500'); out.il={mono:div.firstChild.classList.contains('mono'),txt:div.firstChild.textContent,bg:div.firstChild.style.getPropertyValue('--mbg')};
+    div.remove(); return out});
+  assert.ok(r.ZZIVV.sheet&&!r.ZZIVV.mono,'iShares: BlackRock\'s logo '+JSON.stringify(r.ZZIVV)); assert.ok(r.ZZQQQ.sheet,'Invesco'); assert.ok(r.ZZSPLG.sheet,'SPDR: State Street');
+  assert.deepEqual([r.ZZVOO.mono,r.ZZVOO.txt],[true,'V'],'Vanguard: a monogram'); assert.deepEqual([r.il.mono,r.il.txt],[true,'הראל']); assert.ok(r.il.bg);
+  assert.deepEqual([r.ZZIDX.mono,r.ZZIDX.txt],[true,'100'],'an index fund with no house: the index'); assert.equal(r.ZZNONE.mono,false,'nothing known: the initials, nothing made up');
+  // a security page with no report asks the server by itself, once
+  const calls=[]; await pg.route('**/api/research/one',async route=>{calls.push(route.request().postDataJSON().sym); await route.fulfill({json:{ok:false,reports:0}})});
+  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(900); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(2500);
+  const txt=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?b.innerText:''});
+  if(!/ניתוח הדוח האחרון ·/.test(txt)){assert.deepEqual(calls,['MSFT'],'asked once: '+JSON.stringify(calls)); assert.doesNotMatch(txt,/עוד אין לנייר הזה דוח רבעוני/,'no "there are no reports"')}
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});

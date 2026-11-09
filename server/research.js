@@ -196,7 +196,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   }
   const yh=new Set(Object.keys(got));   // 5.11: what Yahoo itself gave (taken before the other sources add theirs)
   // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
-  let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
+  let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only,force:new Set(only||[])})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
   // 5.11: Financial Modeling Prep (with the owner's key) for what Yahoo and Finnhub did not give, within its daily budget
   let fms=null; if(fm&&fmpKey()){try{fms=await fm(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?6:60})}catch(e){log('fmp failed: '+(e&&e.message||e))}}
   // 5.11: Nasdaq's own figures for what is still missing (all of it when Yahoo refuses the server)
@@ -361,7 +361,11 @@ export async function secDatesPass(store,order,got,{fetch:f=globalThis.fetch,tic
 // analysts' counts when Yahoo left them out, and for what is held or followed the last quarters' earnings (a report the
 // page had none of starts from them: not an event) and the price target. Refreshed every three days per security.
 const FHN=['pm','roe','de','revg','pe','dy','beta','chg52'];
-export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=12*60e3,cal=true,gap}={}){
+// 9.11 (the owner: every company's latest report, always): a report is asked again when the stored one is old (its
+// quarter ended more than 110 days ago, or the company's report day passed after it), not only when there is none; the
+// analysts when their counts are older than a week; and a security asked for by name (a page opened) counts as followed
+const repOld=(r,next,today,now)=>{if(!r||!r.q)return true; if(next&&next<today&&!(r.at&&r.at>=next))return true; const end=Date.parse(String(r.q).slice(0,10)+'T00:00:00Z'); return end>0&&now-end>110*864e5};
+export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick:tk=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),budgetMs=12*60e3,cal=true,gap,force=new Set()}={}){
   const t0=Date.now(), iso=now.toISOString(), today=iso.slice(0,10), o={fetch:f}; if(gap!=null)o.gap=gap;
   const st={filled:0,figs:0,recs:0,eps:0,cal:0,target:0,fail:0,first:null,stopped:null}, had=new Set(Object.keys(got));   // the keys Yahoo answered this run
   const us=k=>!k.startsWith('TLV:')&&/^[A-Z][A-Z.\-]{0,6}$/.test(tk(k));
@@ -381,16 +385,17 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
     catch(e){st.first=st.first||'past calendar: '+e.message}}
   for(const k of order){
     if(Date.now()-t0>budgetMs){st.stopped='time';break}
-    if(!us(k))continue; const g=got[k]||{}, mine=held.has(k)||watched.has(k), t=tk(k);
+    if(!us(k))continue; const g=got[k]||{}, mine=held.has(k)||watched.has(k)||force.has(k), t=tk(k);
     const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{};
-    const have=x=>had.has(k)&&g[x]!=null, needF=FHN.some(x=>!have(x)), needR=!have('rating')||(mine&&!doc.recHist&&!g.recHist), needE=mine&&!g.rep&&!doc.rep, needT=mine&&g.target==null&&doc.target==null;
+    const recOld=!doc.recAt||Date.parse(iso)-Date.parse(doc.recAt)>7*864e5;
+    const have=x=>had.has(k)&&g[x]!=null, needF=FHN.some(x=>!have(x)), needR=!have('rating')||(mine&&((!doc.recHist&&!g.recHist)||recOld)), needE=mine&&!g.rep&&repOld(doc.rep,g.next||doc.next,today,now.getTime()), needT=mine&&g.target==null&&(doc.target==null||recOld);
     if(!needF&&!needR&&!needE&&!needT)continue;
-    if(!had.has(k)&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
+    if(!force.has(k)&&!had.has(k)&&doc.fhAt&&Date.parse(iso)-Date.parse(doc.fhAt)<3*864e5&&!needE)continue;
     const x={}; let any=false;
     try{
       if(needF){const m=await fhMetrics(t,o); for(const n of [...FHN,'gm','om','cr','epsg'])if(g[n]==null&&m[n]!=null){x[n]=m[n]; any=true} if(any)st.figs++}
       if(needR){const r=await fhRecs(t,o); if(r){if(!have('rating')){x.rating=r.rating; x.analysts=r.analysts; x.votes=r.votes} x.votes5=r.votes5; x.recHist=r.recHist; x.recAt=r.recAt; any=true; st.recs++}}
-      if(needE){const h=await fhEarnings(t,o); const L=h.at(-1); if(L){x.rep={q:L.q,label:`Q${Math.ceil(+L.q.slice(5,7)/3)} ${L.q.slice(0,4)}`,ccy:'USD',eps:{a:L.a,e:L.e,s:L.s},hist:h,fin:[],init:true,src:'Finnhub'}; any=true; st.eps++}}
+      if(needE){const h=await fhEarnings(t,o); const L=h.at(-1); if(L&&(!doc.rep||!doc.rep.q||String(L.q)>String(doc.rep.q))){x.rep={q:L.q,label:`Q${Math.ceil(+L.q.slice(5,7)/3)} ${L.q.slice(0,4)}`,ccy:'USD',eps:{a:L.a,e:L.e,s:L.s},hist:h,fin:[],init:!doc.rep,src:'Finnhub'}; any=true; st.eps++}}
       if(needT){try{const tg=await fhTarget(t,o); if(tg){x.target=tg; any=true; st.target++}}catch(e){if(!e.plan)throw e}}
     }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(e.auth){st.stopped='key';break} if(st.fail>=12&&!st.filled){st.stopped='errors';break}}
     if(any){got[k]={...g,...x,fhAt:iso}; st.filled++}

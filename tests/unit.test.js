@@ -1108,6 +1108,14 @@ test('finnhub: parsing, the paced client, and the pass that fills what Yahoo did
   assert.equal(st.filled,1); assert.equal(got.ACME.pe,25); assert.equal(got.ACME.rating,'Buy'); assert.equal(got.ACME.next,'2026-11-05'); assert.equal(got.ACME.rep.eps.a,1.2); assert.ok(got.ACME.rep.init);
   assert.ok(!seen.some(u=>u.includes('ABC')),'Tel Aviv is not asked');
   assert.ok(!got.ACME.target,'a call the plan does not include is skipped');
+  // 9.11: an old stored report (its quarter ended 150 days ago) is asked again, and replaced by the newer quarter, not as a
+  // first sight (init false); a security asked for by name (force) counts as followed; a newer stored one is kept
+  s.setDoc('research/s_OLDCO',{rep:{q:'2026-03-31',label:'Q1 2026'},fhAt:'2026-10-24T00:00:00Z',recAt:'2026-10-20T00:00:00Z'});
+  const got2={}; await finnhubPass(s,['OLDCO'],got2,{fetch:f,now:new Date('2026-10-25T01:00:00Z'),force:new Set(['OLDCO']),gap:0,cal:false});
+  assert.equal(got2.OLDCO.rep.q,'2026-06-30'); assert.equal(got2.OLDCO.rep.init,false,'a newer quarter: an event');
+  s.setDoc('research/s_NEWCO',{rep:{q:'2026-09-30',label:'Q3 2026',at:'2026-10-20'},recAt:new Date('2026-10-24T00:00:00Z').toISOString()});
+  const got3={}; await finnhubPass(s,['NEWCO'],got3,{fetch:f,now:new Date('2026-10-25T01:00:00Z'),force:new Set(['NEWCO']),gap:0,cal:false});
+  assert.ok(!(got3.NEWCO&&got3.NEWCO.rep),'a fresh report is not replaced by an older one');
   const items=await newsFor('ACME',{fetch:f,now:new Date('2026-10-25T01:00:00Z')}); assert.equal(items[0].title,'Acme wins');
   delete process.env.FINNHUB_API_KEY;
 });

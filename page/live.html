@@ -897,7 +897,8 @@ body:not([data-page="overview"]) .hero .dayline{margin-top:0}
 body:not([data-page="overview"]) .hero .status{margin-top:0;align-self:center}
 .lg{position:relative;width:30px;height:30px;border-radius:27%;background:linear-gradient(150deg,#2B2E35 0%,#17191E 60%,#0E0F12 100%);box-shadow:inset 0 0 0 1px rgb(255 255 255 / .08),0 1px 2px rgb(0 0 0 / .18);display:inline-grid;place-items:center;overflow:hidden;flex:none;vertical-align:middle;font-family:var(--mono);font-weight:700;font-size:9px;letter-spacing:.02em;color:#EAF0F6;line-height:1}
 .lg.lt{background:#FFFFFF;box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgb(46 74 102 / .08)} .lg.br{box-shadow:inset 0 0 0 1px rgb(255 255 255 / .12),0 1px 2px rgb(0 0 0 / .15)}
-.lg i{font-style:normal;display:block} .lg.on i{display:none} .lg .sp{position:absolute;inset:12%;background-repeat:no-repeat;background-size:2000% auto} .lg.lt .sp{inset:9%}
+.lg i{font-style:normal;display:block}
+.lg.mono{background:var(--mbg)!important;color:#fff} .lg.mono i{font-weight:800;letter-spacing:-.02em;line-height:1} .lg.mono.m3 i{font-size:.85em} .lg.mono.m4 i{font-size:.7em} .lg.on i{display:none} .lg .sp{position:absolute;inset:12%;background-repeat:no-repeat;background-size:2000% auto} .lg.lt .sp{inset:9%}
 .lg.s{width:22px;height:22px;font-size:7.5px} .lg.l{width:48px;height:48px;font-size:13px}
 td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .secl{cursor:pointer} tr.secl:hover td,.mrow.secl:hover{background:var(--sunk)} .secl:hover .sym{text-decoration:underline;text-underline-offset:3px}
@@ -20648,12 +20649,13 @@ function repBlock(k,rs){
   const chk=site?`<button type="button" class="btn sm" data-repchk="${esc(k)}"${REPCHK[k]==='busy'?' disabled':''}>${REPCHK[k]==='busy'?'בודק…':'בדוק אם יצא דוח חדש'}</button>`:'';
   const msg=REPCHK[k]&&REPCHK[k]!=='busy'?`<p class="note" role="status">${esc(REPCHK[k])}</p>`:'';
   const dueTxt=due?`החברה אמורה הייתה לפרסם דוח ב-${dmy(rs.next)}, והוא עוד לא נקלט. בימי הדוחות הדף בודק כל 20 דקות, והניתוח יופיע כאן.`:'';
-  if(!r)return `<section class="repbox" aria-labelledby="${hid}"><h3 id="${hid}">ניתוח הדוח האחרון</h3><p class="note">${dueTxt||(rs&&rs.next?`עוד אין לנייר הזה דוח שנקלט. הדוח הבא צפוי ב-${dmy(rs.next)}.`:'עוד אין לנייר הזה דוח רבעוני שנקלט.')}</p><div class="acts" style="justify-content:flex-start">${chk}</div>${msg}</section>`;
+  if(!r)return `<section class="repbox" aria-labelledby="${hid}"><h3 id="${hid}">ניתוח הדוח האחרון</h3><p class="note">${REPCHK[k]==='busy'?'מושך עכשיו את הדוח האחרון ונתוני האנליסטים מהמקורות (Finnhub, FMP, SEC)…':dueTxt||(REPCHK[k]&&REPCHK[k]!=='busy'?'המקורות לא החזירו דוח לנייר הזה'+(rs&&rs.next?`; הדוח הבא צפוי ב-${dmy(rs.next)}`:'')+'.':rs&&rs.next?`הדוח הבא צפוי ב-${dmy(rs.next)}.`:'הדוח נמשך…')}</p><div class="acts" style="justify-content:flex-start">${chk}</div>${msg}</section>`;
   const S=repSumOf(r), ai=r.ai&&((r.ai.findings||[]).length||r.ai.explain)?r.ai:null, F=ai&&ai.findings&&ai.findings.length?ai.findings:(r.find||[]), X=repXLines(S);
   const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><span class="srcref"><bdi>${esc(a.title)}</bdi></span><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
   const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
   return `<section class="repbox" aria-labelledby="${hid}">
     <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at&&!r.atEst?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
+    ${rs&&rs.twinOf?`<p class="note">החברה נסחרת גם בניו יורק (<bdi dir="ltr">${esc(rs.twinOf)}</bdi>): הדוח ונתוני האנליסטים הם של החברה עצמה, משם, בדולרים.</p>`:''}
     ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
     ${due?`<p class="note">${dueTxt}</p>`:''}
     ${repCardsH(S)}
@@ -20676,6 +20678,18 @@ async function repCheck(k){if(!window.__tc)return; REPCHK[k]='busy'; try{renderS
       REPCHK[k]=j.cached?'נבדק בדקות האחרונות; הנתונים כאן הם העדכניים.':now&&now!==was?'נקלט דוח חדש.':'אין דוח חדש מעבר למה שמוצג.'}}
   catch(e){REPCHK[k]='הבדיקה לא הצליחה'}
   if(SEC===k)try{renderSec()}catch(e){}}
+// 9.11 (the owner: "אין דבר כזה אין דוחות"): a security's page with no report, or an old one (its quarter ended more than
+// 110 days ago, or its report day passed), pulls the latest report and the analysts by itself, once per visit; the server
+// keeps them fresh for everything held, followed or opened (server/research.js, finnhubPass)
+const REPAUTO=new Set();
+function repTwin(k){if(!String(k).startsWith('TLV:'))return null; const u=k.slice(4); try{const it=SYMDB&&SYMDB.find(x=>x.sym===u&&x.t==='S'); return it?u:null}catch(e){return null}}
+function repStale(rs){const r=rs&&rs.rep; if(!r)return true; const today=tzDay('Asia/Jerusalem'); if(rs.next&&rs.next<today&&!(r.at&&r.at>=rs.next))return true;
+  const end=Date.parse(String(r.q||'').slice(0,10)+'T00:00:00Z'); return end>0&&Date.now()-end>110*864e5}
+async function repAuto(k){if(!window.__tc||REPAUTO.has(k)||SEC!==k)return; const it=itemOf(k); if(!it||it.t==='E'||it.t==='F'||it.t==='I'||ilIsNum(k))return;
+  const tw=repTwin(k), key=tw||k; if(tw)try{noteSeen(tw)}catch(e){}   // the nightly run then keeps the twin's report fresh too
+  if(RSX[key]===undefined){await loadResearch(key); if(SEC===k)renderSec(); return}
+  const rs=RSX[key]; if(rs&&rs.rep&&!repStale(rs)&&rs.rating)return;
+  REPAUTO.add(k); await repCheck(key); if(SEC===k&&key!==k)try{renderSec()}catch(e){}}
 document.addEventListener('click',ev=>{const a=ev.target.closest&&ev.target.closest('#secPage [data-repnews]'); if(a){repNews(a.dataset.repnews);return}
   const c=ev.target.closest&&ev.target.closest('#secPage [data-repchk]'); if(c){repCheck(c.dataset.repchk);return}});
 // "צ׳יקו, הסבר לי את הנייר הזה": what it is (general knowledge, marked as such), what its figures say at the person's level, its place in the portfolio
@@ -24867,8 +24881,29 @@ function lgFillAll(sh){const u=LGOK.get(sh);if(!u)return;document.querySelectorA
 // 9.11: a third argument, from nxHalo(sym): an alert about the security not yet read rings its logo (a halo in the alert's
 // colour) and makes the logo a button that opens the alert; the dot that stood beside the name is gone (on a phone it drew
 // as a smear: an unstyled button)
-function logoHtml(k,cls,nx){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:'')+(nx?' nx-'+nx.lv:''),ps=lgPos(k);
+// 9.11: a fund or an ETF with no logo of its own carries its issuer's: the issuer's logo from the same set when it is a
+// listed company (iShares → BlackRock, Invesco, Schwab, SPDR → State Street…), else a monogram tile in the house's colour
+// (Vanguard, the Israeli fund houses). A tile is a mark of who manages the fund, not the house's logo
+const ISSUERS=[[/ishares|blackrock|בלקרוק/i,{t:'BLK'}],[/invesco|powershares|אינבסקו/i,{t:'IVZ'}],[/schwab|שוואב/i,{t:'SCHW'}],[/spdr|state street|ספיידר/i,{t:'STT'}],
+  [/j\.?\s?p\.?\s?morgan/i,{t:'JPM'}],[/goldman/i,{t:'GS'}],[/t\.?\s?rowe/i,{t:'TROW'}],[/franklin/i,{t:'BEN'}],[/morgan stanley/i,{t:'MS'}],[/ameriprise|columbia/i,{t:'AMP'}],
+  [/vanguard|ואנגארד|ונגארד/i,{m:'V',bg:'#96151D'}],[/fidelity|פידליטי/i,{m:'F',bg:'#3B8526'}],[/\bark\b/i,{m:'ARK',bg:'#1A1A1A'}],[/global x/i,{m:'GX',bg:'#0B2A4A'}],[/wisdomtree/i,{m:'WT',bg:'#0A3B6B'}],
+  [/vaneck/i,{m:'VE',bg:'#1F3A93'}],[/direxion/i,{m:'DX',bg:'#222'}],[/proshares/i,{m:'PS',bg:'#00539B'}],[/first trust/i,{m:'FT',bg:'#004B87'}],[/pimco/i,{m:'P',bg:'#002D5C'}],[/xtrackers|dws/i,{m:'X',bg:'#0018A8'}],[/amundi/i,{m:'A',bg:'#00205B'}],
+  [/הראל/,{m:'הראל',bg:'#0058A8'}],[/מגדל/,{m:'מגדל',bg:'#0B3D91'}],[/פסגות/,{m:'פסגות',bg:'#D0101B'}],[/מיטב/,{m:'מיטב',bg:'#00477F'}],[/אלטשולר/,{m:'א״ש',bg:'#0F6E5E'}],
+  [/אי\.?\s?בי\.?\s?אי|\bibi\b/i,{m:'IBI',bg:'#003B71'}],[/(^|\s)מור(\s|$)/,{m:'מור',bg:'#1C2E5A'}],[/קסם/,{m:'קסם',bg:'#6A1B9A'}],[/תכלית/,{m:'תכלית',bg:'#008C96'}],[/פניקס|אקסלנס/,{m:'פניקס',bg:'#E07A00'}],
+  [/ילין/,{m:'ילין',bg:'#1B3F8B'}],[/אנליסט/,{m:'אנליסט',bg:'#0E4C92'}],[/מנורה/,{m:'מנורה',bg:'#1E5AA8'}],[/(^|\s)כלל(\s|$)/,{m:'כלל',bg:'#00609C'}],[/איילון/,{m:'איילון',bg:'#163F7A'}],[/סיגמא/,{m:'סיגמא',bg:'#2E3192'}],[/אינפיניטי/,{m:'∞',bg:'#1A1A1A'}],[/גלובל|blackstone/i,{m:'G',bg:'#333'}]];
+const ISS_C=new Map();
+function issuerOf(k){if(ISS_C.has(k))return ISS_C.get(k); let nm='';
+  try{const it=typeof itemOf==='function'?itemOf(k):null; nm=[it&&it.name,it&&it.he].filter(Boolean).join(' ')}catch(e){}
+  try{const p=((P&&P.positions)||[]).find(x=>x.sym===k); if(p)nm+=' '+(p.name||'')}catch(e){}
+  if(!nm.trim())return null; const out=issuerByName(nm); if(SYMDB||nm)ISS_C.set(k,out); return out}
+function issuerByName(nm){let out=null; for(const [re,v] of ISSUERS)if(re.test(nm)){out=v.t?(lgPos(v.t)?{ps:v.t}:null):v; if(out)break}
+  // an index fund with no house found: the index it follows
+  if(!out){const ix=/nasdaq|נאסד/i.test(nm)&&/100/.test(nm)?'100':/s&p|אס.?אנד.?פי/i.test(nm)&&/500/.test(nm)?'500':/ת"?א|תל.?אביב|ta-?\d/i.test(nm)&&/(35|90|125|בנקים)/.test(nm)?(nm.match(/35|90|125|בנקים/)||[''])[0]:''; if(ix)out={m:ix,bg:'#4C1D95'}}
+  return out}
+window.__logo={html:(k,c,name)=>{if(name!=null)ISS_C.set(k,issuerByName(name)); return logoHtml(k,c)}};   // for the page's tests
+function logoHtml(k,cls,nx){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:'')+(nx?' nx-'+nx.lv:'');let ps=lgPos(k); if(!ps&&k.startsWith('TLV:'))ps=lgPos(sym);   // a dual-listed share: its US logo
   const a=nx?` role="button" tabindex="0" data-plopen="${esc(nx.k)}" aria-label="${nx.lv==='crit'?'התראה קריטית':'התראה חשובה'}: ${esc(nx.title)}" title="${esc(nx.title)}"`:' aria-hidden="true"';
+  if(!ps){const is=issuerOf(k); if(is&&is.ps)ps=lgPos(is.ps); else if(is&&is.m)return `<span class="${cl} mono${is.m.length>3?' m4':is.m.length>2?' m3':''}" style="--mbg:${is.bg}"${a}><i>${esc(is.m)}</i></span>`}
   if(!ps)return `<span class="${cl}"${a}><i>${ini}</i></span>`;
   const [sh,c,r,rows,lt,bc]=ps,u=LGOK.get(sh),cl2=cl+(lt?' lt':bc?' br':''),st=bc?` style="background:${bc}"`:'';
   if(u)return `<span class="${cl2} on"${st}${a}><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
@@ -25279,7 +25314,10 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   if(t.closest('[data-cmpclr]')){CMP.syms=[]; cmpKeep(); renderCmp(); return}});
 function renderSec(){SECHOV=-1;
   const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
-  const pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
+  let pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
+  // 9.11: a share listed in Tel Aviv and in New York: the report and the analysts are the company's, from its US listing
+  const twin=repTwin(k); if(twin&&RSX[twin]&&!(rs&&rs.rep&&!repStale(rs)))rs={...RSX[twin],twinOf:twin};
+  setTimeout(()=>{try{repAuto(k)}catch(e){}},0);
   const fsc=rs?finScore(rs):null, fx=(Q&&Q.usdIls)||(ALLQ&&ALLQ.fx)||0;
   const qty=pos.reduce((t,p)=>t+(+p.qty||0),0);
   const capTxt=it.cap?(it.t==='T'?'₪':'$')+(it.cap>=1e6?(it.cap/1e6).toFixed(2)+'T':it.cap>=1000?(it.cap/1000).toFixed(it.cap>=1e4?0:1)+'B':it.cap+'M'):'';
@@ -25303,7 +25341,7 @@ function renderSec(){SECHOV=-1;
     ${secPxAlert(k,pr)}
     ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
     ${(()=>{try{return secAnalysts(it,k,rs,pr)}catch(e){return ''}})()}
-    ${it.t!=='E'&&!ilm?repBlock(k,rs):''}
+    ${it.t!=='E'&&!ilm?repBlock(rs&&rs.twinOf||k,rs):''}
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
     ${(()=>{try{return secThesis(it)}catch(e){return ''}})()}
