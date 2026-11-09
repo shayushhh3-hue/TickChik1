@@ -703,6 +703,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 [data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open .seccard>.sec-h,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
 @media (max-width:1199px){body[data-page="search"].sec-open .hero .top .acts{display:none}}   /* 9.11: the accounts row and the header buttons too; the brand and its status line stay */
 .secp{display:flex;flex-direction:column;gap:14px}
+#sellBox .slnow{justify-self:start;align-self:end;min-height:36px} #sellBox .slnow.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 .sectrade{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .sectrade .btn{flex:1 1 0;min-height:44px;font-weight:800} .sectrade .nm{flex-basis:100%;font-size:12px;color:var(--muted);text-align:center}
 .sectrade [data-sectrade="buy"],.sectrade [data-sectrade="add"]{color:var(--gain);border-color:color-mix(in srgb,var(--gain) 45%,transparent)} .sectrade [data-sectrade="sell"]{color:var(--loss);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
 .secp .top{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
@@ -22409,7 +22410,7 @@ const slAmt=(x,c)=>c==='ILS'?ils(x,x%1?2:0):c==='USD'?dlr(x,Math.abs(x)<1000?2:0
 const slB=t=>`<bdi class="n">${t}</bdi>`;
 function slRows(){return ((P&&P.positions)||[]).filter(p=>p&&p.sym&&+p.qty>0).map(p=>({k:`${p.sym}|${p.acct||''}`,p})).sort((a,b)=>a.p.sym<b.p.sym?-1:1)}
 function slAvg(p){const c=p.ccy==='ILS'?p.costIls:p.costUsd; return c!=null&&+c>0&&+p.qty>0?+c/+p.qty:null}
-function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows();
+function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows(); SLNOW=true;   // the price now by default; an amount typed by hand turns it off
   if(!R.length){el.innerHTML='<h3>מכירה או קנייה של נייר שבתיק</h3><p class="note" style="margin:0">עוד אין אחזקות בתיק. אחרי שתוסיף אותן, אפשר יהיה לרשום כאן מכירה או קנייה.</p>'; return}
   if(!R.some(r=>r.k===SELLK))SELLK=R[0].k; const multi=new Set(R.map(r=>r.p.acct)).size>1, sell=SELLM==='sell';
   el.innerHTML=`<h3>מכירה או קנייה של נייר שבתיק</h3>
@@ -22418,6 +22419,7 @@ function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows();
     <div class="slg">
       <label for="slQty"><span>${sell?'כמה יחידות מכרת':'כמה יחידות קנית'}</span><span class="slq"><input id="slQty" type="number" inputmode="decimal" min="0" step="any" autocomplete="off">${sell?'<button type="button" class="btn sm" id="slAll">הכל</button>':''}</span></label>
       <label for="slAmt"><span>${sell?'סכום המכירה':'סכום ששילמת'} (<span id="slC1"></span>)</span><input id="slAmt" type="number" inputmode="decimal" min="0" step="any" autocomplete="off"><span class="nm" id="slAmtH"></span></label>
+      <button type="button" class="btn sm slnow" id="slNow" aria-pressed="false" hidden>במחיר הנוכחי</button>
       ${sell?`<label for="slBuy"><span>מחיר הקנייה ליחידה (<span id="slC2"></span>)</span><input id="slBuy" type="number" inputmode="decimal" min="0" step="any" autocomplete="off"><span class="nm" id="slBuyH"></span></label>`:''}
       <label for="slDate"><span>${sell?'תאריך המכירה':'תאריך הקנייה'}</span><input id="slDate" type="date" value="${ilDay()}" max="${ilDay()}"></label>
     </div>
@@ -22442,7 +22444,13 @@ function slPick(){const p=slCur(); if(!p)return; const c=p.ccy||'USD', avg=slAvg
   const q=$('slQty'); if(q)q.max=SELLM==='sell'?String(+p.qty):''}
 function slVals(){const p=slCur(); if(!p)return null; const c=p.ccy||'USD', q=+(($('slQty')||{}).value||0), amt=+(($('slAmt')||{}).value||0), bp=+(($('slBuy')||{}).value||0), d=(($('slDate')||{}).value||ilDay());
   return {p,c,q,amt,bp,d,sell:SELLM==='sell'}}
-function slCalc(){const v=slVals(), out=$('slRes'), btn=$('slSave'), ah=$('slAmtH'); if(!v||!out)return; const {p,c,q,amt,bp,sell}=v; let ok=false, H='';
+// 9.11 (the owner): "במחיר הנוכחי": the amount is the quantity times the security's price now, and follows the quantity
+// while the button is on (typing an amount by hand turns it off)
+let SLNOW=false;
+const slNowPx=p=>{try{const pr=priceOf(p.sym); return pr&&pr.px>0&&pr.ccy===(p.ccy||'USD')?pr.px:null}catch(e){return null}};
+function slCalc(){const v0=slVals(), nb=$('slNow'); if(v0&&nb){const px=slNowPx(v0.p); nb.hidden=!px; nb.setAttribute('aria-pressed',String(SLNOW&&!!px)); nb.classList.toggle('on',SLNOW&&!!px);
+    if(px)nb.textContent=`במחיר הנוכחי: ${slAmt(px,v0.p.ccy||'USD')} ליחידה`; if(SLNOW&&px&&v0.q>0){const a=$('slAmt'); a.value=String(slR(v0.q*px,2))}}
+  const v=slVals(), out=$('slRes'), btn=$('slSave'), ah=$('slAmtH'); if(!v||!out)return; const {p,c,q,amt,bp,sell}=v; let ok=false, H='';
   const pr=(()=>{try{return priceOf(p.sym)}catch(e){return null}})(), now=pr&&pr.px>0&&pr.ccy===c?pr.px:null;
   if(ah)ah.textContent=q>0&&amt>0?`= ${slAmt(amt/q,c)} ליחידה`:q>0&&now?`לפי המחיר עכשיו: כ-${slAmt(q*now,c)}`:'';
   const fx=c==='USD'?((Q&&Q.usdIls)||0):c==='ILS'?1:null;
@@ -22476,7 +22484,8 @@ async function slSave(){const v=slVals(); if(!v||!canWrite)return; const st=$('s
     st.textContent=msg; try{render()}catch(e){} renderSell(); $('slState').textContent=msg;
     offerUndo(sell?'המכירה נרשמה':'הקנייה נרשמה',async()=>{await pset('portfolio',P0); P=P0; if(H0)await pset('history',H0); else await pset('history',{accounts:[],depIlsNow:0,monthly:[]}); HS=H0; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){} renderSell()})}
   catch(e){st.textContent='השמירה נכשלה, נסה שוב'+(e&&e.message?' ('+String(e.message).slice(0,80)+')':''); $('slSave').disabled=false}}
-document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#sellBox'))slCalc()});
+document.addEventListener('input',e=>{if(e.target.closest&&e.target.closest('#sellBox')){if(e.target.id==='slAmt')SLNOW=false; slCalc()}});
+document.addEventListener('click',e=>{if(!(e.target.closest&&e.target.closest('#slNow')))return; SLNOW=!SLNOW; const v=slVals(); if(SLNOW&&v&&!(v.q>0)){const q=$('slQty'); if(q)q.focus()} slCalc()});
 document.addEventListener('change',e=>{if(e.target.id==='slSym'){SELLK=e.target.value; const q=$('slQty'), a=$('slAmt'); if(q)q.value=''; if(a)a.value=''; slPick(); slCalc()}});
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('#sellBox [data-sellm],#slAll,#slSave'); if(!t)return;
   if(t.dataset.sellm){SELLM=t.dataset.sellm; renderSell(); return}

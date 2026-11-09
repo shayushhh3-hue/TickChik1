@@ -3300,3 +3300,16 @@ test('9.11 a security\'s page: "קניתי עוד" and "מכרתי" open מכי�
   assert.deepEqual(w,{page:'mine',sym:'TSLA',open:true,dirty:true});
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+test('9.11 a sale or a purchase at the security\'s price now: the amount follows the quantity, a typed amount takes over',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
+  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForSelector('#secPage [data-sectrade="sell"]',{timeout:10000});
+  await pg.click('#secPage [data-sectrade="sell"]'); await pg.waitForTimeout(500);
+  const px=store.getDoc('quotes/latest').data.prices.MSFT;
+  assert.match(await pg.textContent('#slNow'),/במחיר הנוכחי/); assert.equal(await pg.getAttribute('#slNow','aria-pressed'),'true','on by default');
+  await pg.fill('#slQty','1'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(px*100)/100,'1 × the price now');
+  await pg.fill('#slQty','2'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(2*px*100)/100,'follows the quantity');
+  await pg.fill('#slAmt','100'); await pg.fill('#slQty','1'); await pg.waitForTimeout(100); assert.equal(await pg.inputValue('#slAmt'),'100','a typed amount takes over'); assert.equal(await pg.getAttribute('#slNow','aria-pressed'),'false');
+  await pg.click('#slNow'); await pg.waitForTimeout(100); assert.equal(+(await pg.inputValue('#slAmt')),Math.round(px*100)/100,'back to the price now');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
