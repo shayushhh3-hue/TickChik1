@@ -753,9 +753,9 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 @media (max-width:640px){.secp .pxrow .v{font-size:30px}
   /* 9.11: the top of a security's page on a phone, in one grid: the logo and the name; two rows of two equal boxes (follow /
      back, dollars-shekels / compare); the price at one edge and its change at the other */
-  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"lg t";column-gap:12px;align-items:start;position:relative}
-  .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top h2{padding-inline-end:52px} .secp .top .sub{text-wrap:balance}
-  .secp .top .secmark{position:absolute;top:0;left:0;margin:0}
+  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"lg t mk";column-gap:12px;align-items:start;position:relative}
+  .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top .sub{text-wrap:balance}
+  .secp .top .secmark{grid-area:mk;align-self:start;margin:0;width:48px;height:48px;border-radius:14px}   /* 9.11: the same row and size as the logo tile, so the two line up */
   .sectools{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch} .sectools .ccsw{display:flex;align-self:stretch;justify-content:stretch} .sectools .ccsw button{flex:1} .sectools>.btn,.sectools>button{width:100%;justify-content:center;min-height:42px}
   .secp .pxrow{justify-content:space-between;flex-wrap:nowrap;gap:10px} .secp .chg{align-items:flex-end;text-align:end}
 }
@@ -1390,8 +1390,8 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .princ{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:7px;font-size:13.5px;line-height:1.55;color:var(--ink2)}
 .princ b{color:var(--ink)}
 /* v129: prices on demand */
-.pxnow{font:inherit;font-size:12px;font-weight:600;color:#fff;background:rgb(255 255 255 / .14);border:1px solid rgb(255 255 255 / .4);border-radius:999px;padding:2px 11px;min-height:26px;cursor:pointer;line-height:1.5}
-.pxnow:hover{background:rgb(255 255 255 / .22)}
+.pxnow{font:inherit;font-size:12px;font-weight:700;color:var(--vio-ink);background:rgb(124 58 237 / .1);border:1px solid rgb(124 58 237 / .35);border-radius:999px;padding:2px 11px;min-height:26px;cursor:pointer;line-height:1.5;white-space:nowrap}
+.pxnow:hover{background:rgb(124 58 237 / .18)}
 .live.busy{color:#fff}
 .live.busy::before{content:"";display:inline-block;width:10px;height:10px;margin-inline-end:7px;border:2px solid rgb(255 255 255 / .35);border-top-color:#fff;border-radius:50%;animation:i18nspin .8s linear infinite;vertical-align:-1px}
 /* v126: status icons in the network style (nodes joined by lines): success, failure, alert, information, messages */
@@ -1603,8 +1603,8 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 .st-bar .n{font-family:var(--mono);font-size:13px}
 .st-d{margin:4px 0 10px;font-size:14px}
 #stOut h4{margin:12px 0 6px;font-size:13.5px}
-.whybtn{font:inherit;font-size:12.5px;font-weight:600;min-height:28px;padding:2px 10px;border-radius:999px;border:1px solid rgb(255 255 255 / .35);background:rgb(255 255 255 / .08);color:#fff;cursor:pointer;align-self:center}
-.whybtn:hover{background:rgb(255 255 255 / .16)} .whybtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.whybtn{font:inherit;font-size:12px;font-weight:700;min-height:24px;padding:1px 9px;border-radius:999px;border:1px solid rgb(124 58 237 / .35);background:rgb(124 58 237 / .1);color:var(--vio-ink);cursor:pointer;align-self:center;line-height:1.4}   /* 9.11: the page's violet, not white (invisible on the light card) */
+.whybtn:hover{background:rgb(124 58 237 / .18)} .whybtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .why-l{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6}
 /* nothing that matters is cut off with "…" on a phone: these wrap to a second line instead (the one-line previews of the
    alert groups stay, their full list is right under them) */
@@ -2356,7 +2356,7 @@ html[data-theme="dark"] .ix-dw.pos{color:#86EFAC} html[data-theme="dark"] .ix-dw
 .ix-tip .pl-how{padding:8px} .ix-tip .nwi-r>summary{min-height:40px}
 /* 31.10: the day in three lines, in the hero */
 body:not([data-page="overview"]) .hero .ktoday{display:none}
-.ktoday{display:flex;flex-direction:column;gap:0;margin:8px 0 2px;padding:6px 10px 4px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .18)} .ktoday[hidden]{display:none}
+.ktoday{display:flex;flex-direction:column;gap:0;margin:6px 0 0;padding:6px 10px 4px;border-radius:12px;background:rgb(124 58 237 / .07);border:1px solid rgb(124 58 237 / .18)} .ktoday[hidden]{display:none}
 /* 9.11: a small card under the value, the chart stays the main thing: a line per fact, a short label at its start, the
    text cut with an ellipsis, the whole line a button with a chevron at its end when it leads somewhere */
 .ktoday .chsay-h{margin:0 0 2px;font-size:11.5px} .ktoday .chsay-h .av.chiko{width:18px;height:18px}
@@ -2364,6 +2364,8 @@ body:not([data-page="overview"]) .hero .ktoday{display:none}
 .ktoday .chsay-h+.tdl{border-top:0} .ktoday button.tdl{cursor:pointer} .ktoday button.tdl:hover .tdl-b{color:var(--vio-ink)}
 .ktoday .tdl-k{flex:none;min-width:46px;font-size:11.5px;font-weight:800;color:var(--muted)} .ktoday .tdl-k .sym{font-size:11.5px;font-weight:800;color:var(--vio-ink)}
 .ktoday .tdl-b{flex:1 1 auto;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600} .ktoday .tdl-a{flex:none;font-size:16px;line-height:1;font-weight:800;color:var(--vio-ink);opacity:.8}
+.ktoday .tdl-a.w{font-size:11.5px;font-weight:700;opacity:1;padding:2px 8px;border-radius:999px;border:1px solid rgb(124 58 237 / .35);background:rgb(124 58 237 / .1)}   /* "למה?" at the end of the day's row */
+.wv:has(.ktoday:not([hidden]) .tdl-day) .dayline .whybtn{display:none}
 .ktoday .tdl-todo .tdl-b::before,.ktoday .tdl-ok .tdl-b::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:6px;vertical-align:1px;background:#D97706} .ktoday .tdl-ok .tdl-b::before{background:var(--gain)}
 .ktoday .tdl-news .tdl-b,.ktoday .tdl-since .tdl-b{font-weight:500}
 .ktoday .n{display:inline;font-weight:800;white-space:nowrap} .ktoday .tdl-ils{white-space:nowrap} .ktoday .tdl-mv{color:var(--ink2);font-weight:500} .ktoday .tdl-mv .sym{font-weight:700} .ktoday .tdl-mv .n{font-weight:700}
@@ -2649,8 +2651,8 @@ html[data-theme="dark"] .pane:not([data-pane="overview"]) > section.seccard{box-
 .worth .big{text-align:right}
 .worth .wv>.d,#kTotalD,#wChN,#wChR{display:none!important}
 .worth .wch-h{justify-content:flex-start}
-.worth .wch svg{height:150px}
-@media (min-width:761px){.worth .wch svg{height:190px}}
+.worth .wch svg{height:230px}   /* 9.11: the chart is the main thing on the home: taller (renderWChart sets the same) */
+@media (min-width:761px){.worth .wch svg{height:210px}}
 .wmini{display:none}
 body:not([data-page="overview"]) .hero .kchips{display:none}   /* the compact card: no chips (the prices' state is on the home and in the day's card) */
 body:not([data-page="overview"]) .hero .worth .wgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:center;gap:8px 16px}
@@ -2720,6 +2722,12 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .chico-i .ci-src{margin:2px 0 8px;font-size:12.5px;color:var(--muted);line-height:1.5}
 /* 8.11: the top bar of the inner screens on a phone: the logo and the price status side by side, without the slogan and the "update now" button (the refresh button beside the accounts does it); the home keeps all */
 @media (max-width:640px){
+  /* 9.11: the home's header on a phone: the logo at the start of the first row and "לעדכן מחירים עכשיו" at its end (the
+     top-left corner), the slogan and the price status under them */
+  body[data-page="overview"] .hero .brand{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"wm px" "sub sub" "live live";align-items:center;column-gap:10px;row-gap:3px;width:100%;min-width:0}
+  body[data-page="overview"] .hero .brand .wm{grid-area:wm} body[data-page="overview"] .hero .brand-sub{grid-area:sub} body[data-page="overview"] .hero #fresh{grid-area:live} body[data-page="overview"] .hero #pxNow{grid-area:px;justify-self:end;align-self:center;margin:0}
+  /* the day's line in one row on a phone (the "למה?" button wrapped to a line of its own under a long day label) */
+  .worth .wv .dayline{gap:2px 8px;align-items:center} .worth .wv .dayline .d{font-size:15px} .worth .wv .dayline .v{font-size:13px} .worth .wv .dayline .whybtn{min-height:22px;font-size:11.5px;padding:0 8px}
   body:not([data-page="overview"]) .hero .brand{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:10px;width:100%;min-width:0}
   body:not([data-page="overview"]) .hero .brand .wm{font-size:22px;flex:none}
   body:not([data-page="overview"]) .hero .brand-sub,body:not([data-page="overview"]) .hero #pxNow{display:none!important}
@@ -19039,7 +19047,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:170, L=slim?6:46, R=slim?10:12, T=10, B=slim?18:24;
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?120:W<560?230:210, L=slim?6:46, R=slim?10:12, T=10, B=slim?18:24;   // 9.11: taller: the chart is the main thing on the home
   // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
@@ -19544,11 +19552,13 @@ function whyH(w){if(!w)return'';return `<details class="why"><summary>למה א�
 function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   // 9.11: a small card, the chart stays the main thing: one line per fact, a short label at the start, the text cut with
   // an ellipsis when long, and the whole line is the way onward (a chevron at its end) when there is somewhere to go
-  const L=[], row=(k,t,b,go)=>L.push({k,t,b,go:go||''}), sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
+  const L=[], row=(k,t,b,go,act)=>L.push({k,t,b,go:go||'',act:act||'›'}), sv=(()=>{try{return sinceVisit(m)}catch(e){return ''}})();
   if(sv)row('since','מאז הביקור',esc(sv),' data-tab="history"');
   if(m.hasDay&&m.dayPct!=null){const up=m.dayIls>=0, top=m.pos.filter(p=>p.dayPct!=null&&(up?p.dayIls>0:p.dayIls<0)).sort((a,b)=>up?b.dayIls-a.dayIls:a.dayIls-b.dayIls).slice(0,2), lt=pfTradeDay();
-    // the change itself is on the line above (kDay); this line says who moved it
-    row('day',dayWord()==='היום'?'היום':lt?dmy(lt):'אתמול',Math.abs(m.dayPct)<0.05?(dayLive()?'התיק כמעט לא זז עד עכשיו':'התיק כמעט לא זז'):top.length?`${dayVerb(up)} בעיקר בגלל <span class="tdl-mv">${top.map(p=>`${symH(p.sym)} ${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')}`).join(' · ')}</span>`:`התיק ${dayVerb(up)} ${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')}`,' data-tab="state"')}
+    // the change itself is on the line above (kDay); this line says who moved it, and "למה?" at its end asks Chiko (the
+    // day line's own "למה?" button is hidden while this row is here: on a phone it wrapped to a line of its own)
+    const flat=Math.abs(m.dayPct)<(typeof WHY_FLAT==='number'?WHY_FLAT:0.05);
+    row('day',dayWord()==='היום'?'היום':lt?dmy(lt):'אתמול',flat?(dayLive()?'התיק כמעט לא זז עד עכשיו':'התיק כמעט לא זז'):top.length?`${dayVerb(up)} בעיקר בגלל <span class="tdl-mv">${top.map(p=>`${symH(p.sym)} ${nn(sgn(p.dayIls),p.dayIls>=0?'up':'down')}`).join(' · ')}</span>`:`התיק ${dayVerb(up)} ${nn(Math.abs(m.dayPct).toFixed(2)+'%',up?'up':'down')}`,flat?'':' data-ana="why"','למה?')}
   // the news: on the ones that moved first, else the most important of the last day and a half
   {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
@@ -19565,7 +19575,7 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)), c=n.filter(a=>a[0]==='crit').length, w=n.length-c;
     const P=[c?(c===1?'חריגה אחת מהכללים שלך':c+' חריגות מהכללים שלך'):'',w?(w===1?'נושא אחד לבדיקה':w+' נושאים לבדיקה'):''].filter(Boolean);
     if(P.length)row('todo','לטיפול',P.join(' ו'),' data-tab="risk"'); else row('ok','לטיפול','אין משהו שדורש ממך פעולה עכשיו')}
-  return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(r=>r.go?`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a" aria-hidden="true">›</span></button>`:`<div class="tdl tdl-${r.k}"><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span></div>`).join(''):''}
+  return L.length?`<p class="chsay-h"><span class="av chiko" aria-hidden="true"></span>צ׳יקו מסכם בשבילך</p>`+L.map(r=>r.go?`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a${r.act==='›'?'':' w'}"${r.act==='›'?' aria-hidden="true"':''}>${r.act}</span></button>`:`<div class="tdl tdl-${r.k}"><span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span></div>`).join(''):''}
 function renderDesk(m,A){
   try{const el=$('kToday'); if(el){const h=noPf()?'':todayH(m,A); el.hidden=!h; setH(el,h)}}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
@@ -25408,15 +25418,19 @@ function drawSec(){
   // the person's average price joins the scale when it is near the range (a far one is said in the box above, not drawn)
   const MY=secMy(SEC,CC,NAT,t0,t1); if(MY.avg){const sp=(hi-lo)||hi*0.05; if(MY.avg>=lo-sp*0.6&&MY.avg<=hi+sp*0.6){lo=Math.min(lo,MY.avg); hi=Math.max(hi,MY.avg)} else MY.off=true}
   const span=hi-lo,step=niceStep(span,4); const glo=Math.floor(lo/step)*step,ghi=Math.ceil(hi/step)*step;
-  const L=10,R=66,T=22,B=30,PW=W-L-R,PH=H-T-B;
+  // 9.11: on a phone the line takes the whole width: the scale's figures sit inside the plot above their lines, at the
+  // right edge, and the last price's tag inside too, left of the point (the axis gutter took a sixth of the screen)
+  const NARROW=W<520, L=10,R=NARROW?8:66,T=22,B=30,PW=W-L-R,PH=H-T-B;
   const x=t=>L+(t-t0)/((t1-t0)||1)*PW, y=v=>T+(ghi-v)/((ghi-glo)||1)*PH;
   // the site's own colors: the line in ink, the area in the accent, gain and loss only where a number is read
   const DK=themeDark(), CS=getComputedStyle(document.documentElement), tok=(n,f)=>(CS.getPropertyValue(n)||'').trim()||f;
-  const INK=tok('--ink','#14122E'), ACC=DK?tok('--mark','#A78BFA'):tok('--v1','#7C3AED'), GAIN=tok('--gain','#188A55'), LOSS=tok('--loss','#D13B3B'), LAB=tok('--muted','#6B7A90'), GRID=DK?'rgba(255,255,255,.09)':'rgba(11,18,32,.08)', FONT=tok('--sans','Assistant, sans-serif');
+  const INK=tok('--ink','#14122E'), ACC=DK?tok('--mark','#A78BFA'):tok('--v1','#7C3AED'), GAIN=tok('--gain','#188A55'), LOSS=tok('--loss','#D13B3B'), LAB=tok('--muted','#6B7A90'), GRID=DK?'rgba(255,255,255,.09)':'rgba(11,18,32,.08)', FONT=tok('--sans','Assistant, sans-serif'), SURF=DK?'#111233':'#FFFFFF';
   const last=pts[pts.length-1],up=last[1]>=base,col=up?GAIN:LOSS;
   g.font='12px '+FONT;g.textAlign='left';g.textBaseline='middle';
   const lastY=y(pts[pts.length-1][1]);   // the axis label the last price's tag would cover is left out
-  for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle=GRID;g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();if(Math.abs(yy-lastY)>14){g.fillStyle=LAB;g.fillText(fmtN(v),L+PW+10,yy)}}
+  for(let v=glo;v<=ghi+1e-9;v+=step){const yy=y(v);g.strokeStyle=GRID;g.lineWidth=1;g.beginPath();g.moveTo(L,yy);g.lineTo(L+PW,yy);g.stroke();
+    if(NARROW){if(Math.abs(yy-lastY)>18&&yy-9>T-4){g.font='11px '+FONT;g.textAlign='right';g.lineJoin='round';g.lineWidth=3;g.strokeStyle=SURF;g.strokeText(fmtN(v),L+PW-3,yy-8);g.fillStyle=LAB;g.fillText(fmtN(v),L+PW-3,yy-8);g.textAlign='left';g.font='12px '+FONT}}
+    else if(Math.abs(yy-lastY)>14){g.fillStyle=LAB;g.fillText(fmtN(v),L+PW+10,yy)}}
   // the range's first price, dotted in the muted ink (the violet is the line's): the line is read against it
   const yb=y(base);g.setLineDash([2,5]);g.lineWidth=1.3;g.strokeStyle=LAB;g.globalAlpha=.7;g.beginPath();g.moveTo(L,yb);g.lineTo(L+PW,yb);g.stroke();g.globalAlpha=1;g.setLineDash([]);
   // a stretch with no data (longer than a holiday for this kind of series) is hatched and named in the note; the line there only joins the two ends
@@ -25433,7 +25447,7 @@ function drawSec(){
   // 5.11: what the line is read with: the range's high and low, the person's buys and sales and their average price, and
   // the days that may explain a move (a report, an ex-dividend day, an important event in "מה נוגע לתיק")
   let iHi=0,iLo=0; pts.forEach((q,i)=>{if(q[1]>pts[iHi][1])iHi=i; if(q[1]<pts[iLo][1])iLo=i});
-  const EV=secEvents(SEC,t0,t1), TEAL='#0D9488', ROSE='#E11D48', AMB='#F59E0B', SURF=DK?'#111233':'#FFFFFF';
+  const EV=secEvents(SEC,t0,t1), TEAL='#0D9488', ROSE='#E11D48', AMB='#F59E0B';
   const heb=(txt,xx,yy,c,al,halo)=>{g.direction='rtl'; g.font='bold 11px '+FONT; g.textAlign=al||'center'; g.textBaseline='middle'; if(halo){g.lineJoin='round'; g.lineWidth=4; g.strokeStyle=SURF; g.strokeText(txt,xx,yy)} g.fillStyle=c; g.fillText(txt,xx,yy); g.direction='ltr'};
   if(MY.avg&&!MY.off){const ya=y(MY.avg); g.setLineDash([6,4]); g.lineWidth=1.6; g.strokeStyle=TEAL; g.beginPath(); g.moveTo(L,ya); g.lineTo(L+PW,ya); g.stroke(); g.setLineDash([]);
     const lb='הממוצע שלך '+fmtN(MY.avg); g.font='bold 11px '+FONT; const w=g.measureText(lb).width+14, yy=Math.max(T,Math.min(T+PH-20,ya-9));
@@ -25458,7 +25472,7 @@ function drawSec(){
   g.fillStyle=LAB;g.textAlign='center';g.textBaseline='alphabetic';g.font='12px '+FONT;let lastX=-1e9;
   for(const [t,lab] of ticks){const xx=x(t);if(xx-lastX<44||xx<L+14||xx>L+PW-14)continue;lastX=xx;g.fillText(lab,xx,H-9)}
   // the last price: a halo on the point and a tag on the axis, in the color of the range's result
-  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px '+FONT;const tw=g.measureText(txt).width+14,yy=Math.max(T+9,Math.min(T+PH-9,y(v)));g.fillStyle=fill;const rx=L+PW+5,ry=yy-10;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,20,10):g.rect(rx,ry,tw,20);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+7,yy)};
+  const tag=(v,c,fill)=>{const txt=fmtN(v);g.font='bold 12px '+FONT;const tw=g.measureText(txt).width+14,yy=Math.max(T+9,Math.min(T+PH-9,y(v)));g.fillStyle=fill;const rx=NARROW?Math.max(L,L+PW-tw-13):L+PW+5,ry=yy-10;g.beginPath();g.roundRect?g.roundRect(rx,ry,tw,20,10):g.rect(rx,ry,tw,20);g.fill();g.fillStyle=c;g.textAlign='left';g.textBaseline='middle';g.fillText(txt,rx+7,yy)};
   // the tag in the violet of the line (the range's gain or loss is in the line above the chart, in its color)
   tag(last[1],'#FFFFFF',VB);
   g.fillStyle='rgba(139,92,246,.22)';g.beginPath();g.arc(x(last[0]),y(last[1]),9,0,7);g.fill();
