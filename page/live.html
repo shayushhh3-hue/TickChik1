@@ -754,7 +754,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 @media (max-width:640px){.secp .pxrow .v{font-size:30px}
   /* 9.11: the top of a security's page on a phone, in one grid: the logo and the name; two rows of two equal boxes (follow /
      back, dollars-shekels / compare); the price at one edge and its change at the other */
-  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"lg t mk";column-gap:12px;align-items:start;position:relative}
+  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"lg t mk";column-gap:12px;align-items:start;position:relative;padding-inline:0}   /* 9.11: the logo at the right edge and the bookmark at the left edge, like the rows under them */
   .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top .sub{text-wrap:balance}
   .secp .top .secmark{grid-area:mk;align-self:start;margin:0;width:48px;height:48px;border-radius:14px}   /* 9.11: the same row and size as the logo tile, so the two line up */
   .sectools{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch} .sectools .ccsw{display:flex;align-self:stretch;justify-content:stretch} .sectools .ccsw button{flex:1} .sectools>.btn,.sectools>button{width:100%;justify-content:center;min-height:42px}
