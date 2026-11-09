@@ -3171,3 +3171,19 @@ test('8.11 the wipe dialog offers a partner to delete the account itself, with t
       assert.match(await pg.evaluate(()=>document.getElementById('wipeState').textContent),/הזן את הסיסמה/); assert.ok(store.users().some(u=>u.email==='p2@example.com'),'nothing deleted')}
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
+
+test('9.11 the logos are back beside the holdings, and an alert not yet read is a halo around the logo that opens it, not a dot beside the name',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym, k='ev:test-halo';
+  store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k,kind:'news',lv:'crit',title:'בדיקת הילה: ידיעה על '+sym,at:new Date().toISOString(),holds:[{sym,link:'direct',w:10}],dir:'neg',relWhy:'x'}]});
+  try{const {ctx,pg}=await open(390); await pg.waitForTimeout(1200);
+    const v=await pg.evaluate(s=>{const rows=[...document.querySelectorAll('#rows tr')].filter(r=>r.querySelector('td .sym')); const withLogo=rows.filter(r=>r.querySelector('td .lg')).length; const h=document.querySelector('#rows .lg.nx-crit[data-plopen]');
+      return {rows:rows.length,withLogo,dots:document.querySelectorAll('#rows .nxdot').length,halo:h?{sym:h.closest('td').querySelector('.sym').textContent,label:h.getAttribute('aria-label'),role:h.getAttribute('role'),ring:getComputedStyle(h,'::after').borderTopWidth}:null}},sym);
+    assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows,'every holding has its logo back'); assert.equal(v.dots,0,'no dot beside the name');
+    assert.ok(v.halo,'the alerted holding has a halo'); assert.equal(v.halo.sym,sym); assert.match(v.halo.label,/התראה קריטית: בדיקת הילה/); assert.equal(v.halo.role,'button'); assert.match(v.halo.ring,/^2(\.5)?px$/,'the ring is drawn');
+    // the logo opens the alert
+    await pg.click('#rows .lg.nx-crit[data-plopen]'); await pg.waitForTimeout(400);
+    assert.ok(await pg.evaluate(()=>/בדיקת הילה/.test(document.body.innerText)&&!!document.querySelector('.plsheet, #plSheet, [data-pldone]')),'the alert opened');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
+});

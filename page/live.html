@@ -1981,7 +1981,11 @@ html[data-theme="dark"] .nx-tag.lv-crit{color:#FCA5A5} html[data-theme="dark"] .
 .nx-tpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:2px 12px;padding:4px 14px 6px;border-top:1px solid var(--line)}
 .nx-tpl .check{font-size:14px;padding:6px 0;min-height:36px;align-items:center}
 .nx-tpk .acts{padding:4px 14px 12px} .nx-setb{display:flex;flex-direction:column;gap:10px;margin-top:10px} .nx-setb>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px} .nx-setb .check{font-size:13px}
-.nxdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#B91C1C;margin-inline-start:6px;vertical-align:middle;box-shadow:0 0 0 2px rgb(185 28 28 / .2)} .nxdot.imp{background:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .2)}
+.nxdot{appearance:none;-webkit-appearance:none;padding:0;border:0;display:inline-block;width:8px;height:8px;border-radius:50%;background:#B91C1C;margin-inline-start:6px;vertical-align:middle;box-shadow:0 0 0 2px rgb(185 28 28 / .2)} .nxdot.imp{background:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .2)}
+/* 9.11: an alert not yet read about a holding: a halo around its logo, in the alert's colour, and the logo opens it */
+.lg.nx-crit,.lg.nx-imp{cursor:pointer;overflow:visible} .lg.nx-crit::after,.lg.nx-imp::after{content:"";position:absolute;inset:-4px;border-radius:inherit;border:2.5px solid #B91C1C;box-shadow:0 0 0 2px rgb(185 28 28 / .18);pointer-events:none;animation:nxhalo 2.4s ease-in-out infinite} .lg.nx-imp::after{border-color:#B45309;box-shadow:0 0 0 2px rgb(180 83 9 / .18)}
+@keyframes nxhalo{0%,100%{opacity:1}50%{opacity:.45}} @media (prefers-reduced-motion:reduce){.lg.nx-crit::after,.lg.nx-imp::after{animation:none}}
+.lg.nx-crit .sp,.lg.nx-imp .sp{border-radius:inherit}
 .nx-secl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 @media (max-width:640px){.nx{padding:12px 13px} .nx h3{font-size:15px}}
 .hwb{display:none}
@@ -17964,7 +17968,7 @@ function render(){
     const fl=(p.w>R.maxPos?'<span class="flag crit">ריכוז</span>':'')+(dp!=null&&dp<=-R.stopLoss?'<span class="flag">ירידה</span>':'');
     const pxs=fmtPx(p.px,p.ccy), old=(Q.stale||{})[p.sym];
     const lk=SECKEY.test(p.sym);
-    return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td><span class="sym">${esc(lab(p.sym))}</span>${nxDotH(p.sym)}${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
+    return `<tr${lk?` class="secl" data-sec="${esc(p.sym)}" title="פתח את דף הנייר: גרף, מחיר ושינוי יומי"`:''}><td>${logoHtml(p.sym,'s',nxHalo(p.sym))}<span class="sym">${esc(lab(p.sym))}</span>${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name)} · ${GROUPS[p.group]||''}</div></td>
     <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(/^מחיר קודם/.test(old)&&((Q.meta||{})[p.sym]||{}).date?'מחיר מ-'+dmy(Q.meta[p.sym].date).slice(0,5):/^מחיר קודם/.test(old)?'מחיר לא עדכני':old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
@@ -19263,7 +19267,7 @@ function renderCands(m){
     const was=wp&&wp.px[c.sym]>0&&c.price>0?(c.price/wp.px[c.sym]-1)*100:null;
     const tags=(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(wp.at)}): <bdi>${spct(was)}</bdi></span>`:'')+(r.isNew?`<span class="tag new">אין בתיק בכלל</span>`:'')+(r.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(warn?`<span class="tag warn">${esc(warn)}</span>`:'');
     return `<article class="wc" style="--gc:${r.color}">
-      <div class="wh"><div class="wt secl" data-sec="${esc(c.sym)}" title="פתח את דף הנייר"><span class="sym">${esc(lab(c.sym))}</span><span class="wn">${esc(c.name||'')}</span><span class="ws"><b>${esc(r.lab)}</b></span></div>
+      <div class="wh"><div class="wt secl" data-sec="${esc(c.sym)}" title="פתח את דף הנייר">${logoHtml(c.sym,'s',nxHalo(c.sym))}<span class="sym">${esc(lab(c.sym))}</span><span class="wn">${esc(c.name||'')}</span><span class="ws"><b>${esc(r.lab)}</b></span></div>
         <div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,r.score))}" role="img" aria-label="התאמה ${r.score} מתוך 100"><b>${r.score}</b></div><span>התאמה</span></div></div>
       <div class="wfacts">${f('מחיר',c.price!=null?'<span class="n">$'+(+c.price).toFixed(2)+'</span>':'—')}${f('מול לפני שנה',c.chg52!=null?'<span class="n">'+spct(c.chg52,0)+'</span>':'—',c.chg52!=null?(c.chg52>=0?'up':'down'):'')}${f('דיבידנד',c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}${f('ביטא',c.beta!=null?'<span class="n">'+(+c.beta).toFixed(2)+'</span>':'—')}${f(c.fpe!=null?'מכפיל קדימה':'מכפיל',r.pe!=null?'<span class="n">'+(+r.pe).toFixed(1)+'</span>':'—')}${f('איכות פיננסית',gr?`<span class="gr ${gr}">${gr}</span>`:'—')}</div>
       <div class="wfit"><div class="wl"><span>${esc(r.lab)} בתיק</span><b class="n">${mon?pct(r.w)+' ← '+pct(r.after):pct(r.w)}</b></div>
@@ -24814,13 +24818,20 @@ const LGDBG={};
 function lgNote(){const n=$('sqNote');if(n&&LGERR.size&&!/הלוגואים/.test(n.textContent)){n.textContent+=' חלק מהלוגואים לא נטענו, ובמקומם מוצגות אותיות.';try{console.warn('logos failed',[...LGERR].map(x=>x+': '+(LGDBG[x]||'-')).join(' · '))}catch(e){}}}
 function lgPosCss(c,r,rows){return `${(c/(LGCOLS-1)*100).toFixed(3)}% ${(r/(rows-1)*100).toFixed(3)}%`}
 function lgFillAll(sh){const u=LGOK.get(sh);if(!u)return;document.querySelectorAll('.lg[data-sh="'+sh+'"]:not(.on)').forEach(el=>{el.classList.add('on');const b=document.createElement('b');b.className='sp';b.style.backgroundImage=`url("${u}")`;b.style.backgroundPosition=lgPosCss(+el.dataset.c,+el.dataset.r,+el.dataset.rows);el.appendChild(b)})}
-function logoHtml(k,cls){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:''),ps=lgPos(k);
-  if(!ps)return `<span class="${cl}" aria-hidden="true"><i>${ini}</i></span>`;
+// 9.11: a third argument, from nxHalo(sym): an alert about the security not yet read rings its logo (a halo in the alert's
+// colour) and makes the logo a button that opens the alert; the dot that stood beside the name is gone (on a phone it drew
+// as a smear: an unstyled button)
+function logoHtml(k,cls,nx){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:'')+(nx?' nx-'+nx.lv:''),ps=lgPos(k);
+  const a=nx?` role="button" tabindex="0" data-plopen="${esc(nx.k)}" aria-label="${nx.lv==='crit'?'התראה קריטית':'התראה חשובה'}: ${esc(nx.title)}" title="${esc(nx.title)}"`:' aria-hidden="true"';
+  if(!ps)return `<span class="${cl}"${a}><i>${ini}</i></span>`;
   const [sh,c,r,rows,lt,bc]=ps,u=LGOK.get(sh),cl2=cl+(lt?' lt':bc?' br':''),st=bc?` style="background:${bc}"`:'';
-  if(u)return `<span class="${cl2} on"${st} aria-hidden="true"><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
-  lgSoon();return `<span class="${cl2}"${st} data-sh="${sh}" data-c="${c}" data-r="${r}" data-rows="${rows}" aria-hidden="true"><i>${ini}</i></span>`}
-// 8.11 (evening): no logo in the holdings' rows and cards (the owner's request: the small picture beside a holding was a
-// smear, not a mark of anything); logos stay in the search, the news and the security's own page.
+  if(u)return `<span class="${cl2} on"${st}${a}><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
+  lgSoon();return `<span class="${cl2}"${st} data-sh="${sh}" data-c="${c}" data-r="${r}" data-rows="${rows}"${a}><i>${ini}</i></span>`}
+// the alert, critical or important and not yet read, about this security (direct): what the halo stands for
+document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.matches&&ev.target.matches('.lg[data-plopen]')){ev.preventDefault(); try{plOpen(ev.target.dataset.plopen)}catch(e){}}});
+function nxHalo(sym){try{const L=plItems().filter(a=>(a.lv==='crit'||a.lv==='imp')&&plUnread(a)&&(a.holds||[]).some(h=>h.sym===sym&&h.link==='direct')).sort(plSort); if(!L.length)return null; return {lv:L[0].lv,k:L[0].k,title:L[0].title}}catch(e){return null}}
+// 9.11: the logos are back in the holdings' rows and cards (8.11 evening took them out by mistake: the smear the owner
+// pointed at was the alert dot beside the name, an unstyled button on a phone; the alert is a halo around the logo now).
 // 8.11: a sheet of logos (200-400 KB) is fetched when one of its logos comes near the screen, not for every logo drawn in a
 // screen that is not shown (seventeen sheets, about 3 MB, were fetched on opening the site, ahead of the portfolio itself)
 let LGIO=null, LGSCAN=0;
