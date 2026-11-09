@@ -199,7 +199,7 @@ const dt=s=>{if(!s)return '—'; const d=new Date(s); return d.toLocaleString('h
 const ago=s=>{if(!s)return 'לא ידוע'; const m=Math.round((Date.now()-Date.parse(s))/6e4); if(m<1)return 'עכשיו'; if(m<60)return `לפני ${m} דק׳`; const h=Math.round(m/60); if(h<48)return `לפני ${h} שע׳`; return `לפני ${Math.round(h/24)} ימים`};
 const ini=s=>esc(String(s||'?').trim().charAt(0).toUpperCase()||'?');
 const ROLE={owner:'בעלים',admin:'מנהל',friend:'שותף'}, STATE={ok:['p-ok','תקין'],warn:['p-warn','אזהרה'],bad:['p-bad','תקלה'],off:['p-off','לא מחובר']};
-const IC={
+const IC={runs:'<path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 15l2 2 3-4"/>',
   yahoo:'<path d="M3 17l5-6 4 4 8-9"/><path d="M15 6h5v5"/>',
   keys:'<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M17 5l2 2M15 7l2 2"/>',
   exec:'<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v6h8V3zM3 21h8v-4H3z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.9.7 3.1 2.6 3.5 5.4"/>',
@@ -215,7 +215,7 @@ const NAV=[
   {h:'הנהלה',items:[{id:'exec',l:'תמונת מצב'}]},
   {h:'משתמשים ולקוחות',items:[{id:'users',l:'משתמשים'},{id:'support',l:'שירות ותמיכה'},{id:'voice',l:'קול המשתמשים'}]},
   {h:'מודיעין ומוצר',items:[{id:'world',l:'חדר החדשות העולמי'},{id:'product',l:'מודיעין מוצר'},{id:'roadmap',l:'ניהול מוצר ופיתוח'},{id:'radar',l:'TikChik Radar'},{id:'intel',l:'TikChik Intelligence'}]},
-  {h:'תשתיות ואבטחה',items:[{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'yahoo',l:'Yahoo ונתוני שוק'},{id:'keys',l:'מפתחות ו-API'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
+  {h:'תשתיות ואבטחה',items:[{id:'runs',l:'יומן ביצועים'},{id:'health',l:'תקינות המערכת'},{id:'incidents',l:'תקלות ואירועים'},{id:'ai',l:'מנועי AI'},{id:'news',l:'מערכת החדשות'},{id:'yahoo',l:'Yahoo ונתוני שוק'},{id:'keys',l:'מפתחות ו-API'},{id:'security',l:'מרכז אבטחה'},{id:'access',l:'תפקידים והרשאות'}]},
   {h:'תוכן ותקשורת',items:[{id:'content',l:'מרכז תוכן'}]},
   {h:'עסקי וכספי',items:[{id:'biz',l:'Business Intelligence'}]}];
 let ME=null, PERMS=[], K=3, HEALTH_BAD=false;
@@ -494,6 +494,35 @@ SCREENS.yahoo=async()=>{head('Yahoo ונתוני שוק','המקור הראשי 
     <section class="card" style="margin-top:14px"><h2>המדדים והשווקים</h2><p class="hint">מ-Yahoo, כפי שנשמרו בעדכון המחירים האחרון (${dt(M.updatedAt)}). שינוי מהסגירה הקודמת.</p>
       <div class="tw"><table><thead><tr><th>מה</th><th>שער</th><th>שינוי</th><th>סגירה</th><th>חוזה עתידי</th></tr></thead><tbody>${M.bench.concat(M.mkts).map(b=>`<tr><td>${esc(b.name)}</td><td class="num">${px(b.px)}</td><td class="num">${chg(b.chg)}</td><td class="num">${esc(b.date||'—')}</td><td class="num">${b.fut?`${px(b.fut.px)} ${chg(b.fut.chg)}`:'—'}</td></tr>`).join('')}</tbody></table></div></section>`;
   lineChart($('chY'),S.series.map(x=>x.d),[{l:'הצליחו',v:S.series.map(x=>x.ok),c:'var(--c1)',area:true},{l:'נכשלו',v:S.series.map(x=>x.err),c:'var(--c2)'}],{h:180})};
+
+// ---- 9.11 "יומן ביצועים": what the system did today and what it did not, live (every 10 seconds while open) ----
+const RUN_ST={done:['p-ok','בוצע'],failed:['p-bad','נכשל'],late:['p-warn','עדיין רץ'],started:['p-acc','רץ עכשיו'],queued:['p-acc','בתור'],skipped:['p-warn','דולג']};
+const RUN_FREQ=new Set(['prices','live','pxwatch','newsx','news','earnings']);
+let RUN_T=null, RUN_ALL=false;
+SCREENS.runs=async()=>{head('יומן ביצועים','מה המערכת ביצעה היום, מה נכשל, מה רץ עכשיו ומה לא בוצע בכלל. כל משימה מתוזמנת, כל הרצה ידנית וכל גרסה חדשה שעלתה, בזמן אמת.'); view.innerHTML=loading(6);
+  clearInterval(RUN_T); const draw=async()=>{if(!/^#runs/.test(location.hash||'')){clearInterval(RUN_T);return}
+    const d=await api('runs'), A=d.alerts, P=d.plan, T=d.today;
+    const rp=s=>{const [c,l]=RUN_ST[s]||['p-off',s]; return `<span class="pill ${c}">${l}</span>`};
+    const feed=d.feed.filter(x=>RUN_ALL||x.kind!=='job'||!RUN_FREQ.has(x.name)||x.state==='failed'||x.state==='late'||x.by).slice(0,120);
+    const open=$('runFeed')?$('runFeed').scrollTop:0;
+    view.innerHTML=`${T.failed||T.missing?banner(`<b>${[T.failed?`${nf(T.failed)} ${T.failed===1?'ריצה נכשלה':'ריצות נכשלו'}`:'',T.missing?`${nf(T.missing)} ${T.missing===1?'ריצה מתוזמנת לא בוצעה':'ריצות מתוזמנות לא בוצעו'}`:''].filter(Boolean).join(' ו')} היום.</b> הפירוט בטבלה למטה.`,'warn'):''}
+      <div class="grid kpis">${kpi({k:'d',label:'בוצעו היום',value:T.done,src:'יומן הביצועים'})}${kpi({k:'f',label:'נכשלו היום',value:T.failed,state:T.failed?'bad':null,src:'יומן הביצועים'})}
+        ${kpi({k:'m',label:'לא בוצעו',value:T.missing,state:T.missing?'warn':null,src:'מול לוח הזמנים',note:'ריצות שהיו אמורות לרוץ מאז חצות'})}${kpi({k:'r',label:'רץ עכשיו',value:d.running.length?d.running.map(n=>(P.find(x=>x.name===n)||{he:n}).he).join(', '):'כלום',src:'התור בשרת',note:d.queued.length?`בתור: ${d.queued.length}`:null})}
+        ${kpi({k:'v',label:'גרסאות שעלו היום',value:T.deploys,src:'Railway (הקומיט שנבנה)'})}</div>
+      <section class="card" style="margin-top:14px"><h2>התוכנית של היום</h2><p class="hint">לכל משימה: כמה פעמים הייתה אמורה לרוץ מאז חצות (שעון ישראל, לפי לוח הזמנים עצמו) מול כמה רצה בפועל. ״לא בוצע״ = ריצה שהגיע זמנה ולא התחילה (השרת היה למטה, או שהמשימה כבר חיכתה בתור).</p>
+        <div class="tw"><table><thead><tr><th>משימה</th><th>מתוכנן</th><th>בוצע</th><th>נכשל</th><th>לא בוצע</th><th>אחרונה</th><th>הבאה</th></tr></thead><tbody>${P.map(x=>`<tr><td><b>${esc(x.he)}</b>${x.running?' '+rp('started'):''}</td><td class="num">${nf(x.due)}</td><td class="num">${nf(x.done)}</td><td class="num">${x.failed?`<span class="pill p-bad">${nf(x.failed)}</span>`:'0'}</td><td class="num">${x.missing?`<span class="pill p-warn">${nf(x.missing)}</span>`:'0'}</td>
+          <td>${x.last?`${rp(x.last.state)} <span class="num">${esc(dt(x.last.at))}</span>${x.last.ms?` · ${ms(x.last.ms)}`:''}${x.last.note&&x.last.state!=='done'?`<div style="font-size:12px;color:var(--muted)">${esc(x.last.note)}</div>`:''}`:'—'}</td><td class="num">${x.next?esc(dt(x.next)):'—'}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="card" style="margin-top:14px"><div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>היומן, בזמן אמת</h2><label style="font-size:13px"><input type="checkbox" id="runAll" ${RUN_ALL?'checked':''}> להציג גם משימות תכופות (מחירים, חדשות)</label></div>
+        <p class="hint">מתעדכן כל 10 שניות כשהמסך פתוח. גרסה חדשה מופיעה עם מה שהשתנה בה (מהודעת הקומיט). נשמרות 500 הרשומות האחרונות${d.since?`, מ-${esc(dt(d.since))}`:''}.</p>
+        <div class="tw" id="runFeed" style="max-height:520px"><table><thead><tr><th>מתי</th><th>מה</th><th>מצב</th><th>פרטים</th></tr></thead><tbody>${feed.map(x=>x.kind==='deploy'?`<tr><td class="num">${esc(dt(x.at))}</td><td><b>גרסה חדשה</b> <span class="mono">${esc(x.name)}</span></td><td>${rp('done')}</td><td class="wrap"><b>${esc(x.title||'')}</b>${x.lines&&x.lines.length?`<ul style="margin:4px 0 0;padding-inline-start:18px">${x.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:''}</td></tr>`
+          :`<tr><td class="num">${esc(dt(x.at))}</td><td>${esc(x.he||x.name)}${x.by?` <span style="font-size:12px;color:var(--muted)">· הורץ ידנית ע״י ${esc(x.by)}</span>`:''}</td><td>${rp(x.state)}</td><td class="wrap">${x.ms?ms(x.ms):''}${x.note?`${x.ms?' · ':''}${esc(x.note)}`:''}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">עוד אין רשומות. הן מתחילות להיאסף מעכשיו.</div></td></tr>'}</tbody></table></div></section>
+      <section class="card" style="margin-top:14px"><h2>התראות לטלפון</h2><p class="hint">לכל מי שיש לו הרשאת ״מערכת״ והפעיל התראות בטלפון. לחיצה על ההתראה פותחת את המסך הזה.</p>
+        <form id="runAl" style="display:grid;gap:8px">${[['deploy','גרסה חדשה עלתה (ומה השתנה בה)'],['fail','משימה נכשלה או נתקעה'],['done','משימה גדולה הסתיימה (ריצת הלילה, נתוני חברות, גיבוי, מייל הבוקר, בדיקות)']].map(([k,l])=>`<label><input type="checkbox" name="${k}" ${A[k]?'checked':''} ${can('system')?'':'disabled'}> ${l}</label>`).join('')}
+        <div class="msg" id="runAlM" role="status"></div></form></section>`;
+    const fd=$('runFeed'); if(fd)fd.scrollTop=open;
+    $('runAll').addEventListener('change',e=>{RUN_ALL=e.target.checked; draw()});
+    $('runAl').addEventListener('change',async()=>{const f=$('runAl'), b={}; for(const i of f.querySelectorAll('input'))b[i.name]=i.checked; try{await post('runs/alerts',b); $('runAlM').className='msg ok'; $('runAlM').textContent='נשמר.'}catch(err){$('runAlM').className='msg bad'; $('runAlM').textContent=err.message}})};
+  await draw(); RUN_T=setInterval(()=>{draw().catch(()=>{})},10000)};
 
 // ---- the system's health: availability, requests, resources, the sources, running a job ----
 const bytes=v=>v==null?'—':v>=1e9?(v/1e9).toFixed(1)+' GB':(v/1e6).toFixed(0)+' MB';

@@ -572,3 +572,26 @@ test('8.11 a split is checked with FMP (confirmed, not found, not in the plan) a
   const L=splitsAdmin(s), x=L.find(z=>z.sym==='SOXX'); assert.deepEqual({applied:x.applied,kept:x.kept,undone:x.undone,conf:x.conf},{applied:1,kept:1,undone:0,conf:'fmp'});
   assert.ok(!JSON.stringify(L).includes('"q0"')&&!JSON.stringify(L).includes(f.id),'counts only');
 });
+
+import {runLog,runsView,deployOnStart,runsSetup,dayPlan} from '../server/admin/runs.js';
+import {startJobs} from '../server/jobs.js';
+test('9.11 יומן ביצועים: every run step from the scheduler, the manual run with its runner, a new version with what changed, the plan of the day, the alerts',async()=>{
+  const s=mk(); users(s); const pushed=[]; runsSetup({push:async(st,uid,m)=>{pushed.push(m.title)},canSystem:u=>u.role==='owner'});
+  s.setMeta('runLogSince',JSON.stringify(new Date(Date.now()-60e3).toISOString()));
+  const sched=[{name:'backup',when:()=>false,run:async()=>({ok:3})},{name:'consist',when:()=>false,run:async()=>{throw new Error('boom')}},{name:'restore',when:()=>false,run:()=>({ok:true})}];
+  const J=startJobs(s,{log:()=>{},every:1e9,schedule:sched,onRun:e=>runLog(s,e)});
+  try{J.run('backup','שי'); J.run('consist'); J.run('restore'); await new Promise(r=>setTimeout(r,150))}finally{J.stop()}
+  const V=runsView(s,sched,{jobs:J}), F=V.feed;
+  const b=F.find(x=>x.name==='backup'&&x.state==='done'); assert.ok(b,'done: '+JSON.stringify(F)); assert.equal(b.by,'שי'); assert.match(b.note,/ok: 3/); assert.equal(b.he,'גיבוי');
+  assert.ok(!F.some(x=>x.name==='backup'&&x.state==='started'),'the end replaces its start');
+  const c=F.find(x=>x.name==='consist'); assert.equal(c.state,'failed'); assert.equal(c.note,'boom');
+  assert.equal(F.find(x=>x.name==='restore').state,'done','a job that answers at once is a run, not a failure');
+  assert.ok(pushed.includes('נכשל: בדיקת עקביות'),'a failure alerts: '+JSON.stringify(pushed)); assert.ok(!pushed.some(t=>/בוצע/.test(t)),'the end of a run alerts only when asked');
+  // a new version: once per commit, its title and its bullets, without the attribution lines
+  const env={RAILWAY_GIT_COMMIT_SHA:'abc1234def',RAILWAY_GIT_COMMIT_MESSAGE:'9.11 the home, smaller\n\n- the card is small\n- the chart taller\n\nCo-Authored-By: X <x@y>'};
+  const d=deployOnStart(s,{env}); assert.equal(d.title,'9.11 the home, smaller'); assert.deepEqual(d.lines,['the card is small','the chart taller']); assert.equal(deployOnStart(s,{env}),null,'once');
+  assert.ok(pushed.includes('גרסה חדשה עלתה'));
+  // the plan: a job due every minute since the log began, that never ran, shows as missing; the last 3 minutes are pending
+  s.setMeta('runLogSince',JSON.stringify(new Date(Date.now()-10*60e3).toISOString()));
+  const P=dayPlan(s,[{name:'pxwatch',when:()=>true,run:async()=>{}}]); assert.ok(P[0].missing>=5&&P[0].missing<=7,'missing: '+P[0].missing); assert.equal(P[0].he,'בדיקת זרימת מחירים');
+});

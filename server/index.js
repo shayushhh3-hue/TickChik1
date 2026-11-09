@@ -20,6 +20,7 @@ import {confirmSplits} from './fmp.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
+import {runsSetup, runLog, deployOnStart} from './admin/runs.js';
 import {smokeOnStart, recheckOnStart, restoreOnStart} from './control.js';
 import {startRt} from './rt.js';
 import {closesFor,longClosesFor} from './tasks.js';
@@ -552,7 +553,10 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   const app=createApp({store,siteDir}); app.locals.squeezeSite();
   if(!PERSIST)log('WARNING: no Railway Volume is attached to this service: the data is lost at every deploy');
   app.listen(PORT,()=>log(`תיק צ׳יק listening on ${PORT}, data in ${dbFile}, ${store.users().length} user(s)`));
-  if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR});
+  // 9.11 "יומן ביצועים": every run, every manual run and every new version, with alerts (server/admin/runs.js)
+  runsSetup({push:pushTo,canSystem:u=>canMc(u,'system')});
+  try{deployOnStart(store,{version:app.locals.verOf?app.locals.verOf():''})}catch(e){log('deploy log: '+e.message)}
+  if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR,onRun:e=>runLog(store,e)});
   // 8.11: live US prices from Finnhub's trade stream during the New York session (server/rt.js)
   if(env.JOBS!=='0'&&env.RT!=='0')try{app.locals.rt=startRt(store,{log})}catch(e){log('rt: '+e.message)}
   // 8.11: the smoke test once per build, 45 seconds after the start (server/control.js)

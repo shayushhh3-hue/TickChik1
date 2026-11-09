@@ -75,15 +75,24 @@ export const SCHEDULE=[
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
 export const LIMIT={consist:6*60e3,pressure:2*60e3,ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
-export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE}={}){
-  const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false});
+// 9.11: onRun(entry) hears every step of every run (server/admin/runs.js, "יומן ביצועים"): queued by hand, started, done,
+// failed, still running past its limit (and its end after that), and a due run dropped because the same job already waited
+export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE,onRun=()=>{}}={}){
+  const done=new Set(), L={}, lane=n=>L[n]||(L[n]={queue:[],busy:false,cur:null}); let RID=0;
+  const note=e=>{try{onRun({kind:'job',...e})}catch(x){}};
+  const brief=v=>{if(!v||typeof v!=='object')return null; const k=Object.entries(v).filter(([,x])=>typeof x==='number'||typeof x==='string'&&x.length<40).slice(0,4).map(([a,b])=>`${a}: ${b}`); return k.length?k.join(' · '):null};
   const pumpLane=async ln=>{const Q=lane(ln);
-    if(Q.busy||!Q.queue.length)return; Q.busy=true; const j=Q.queue.shift(); const t0=Date.now(), ms=limits[j.name]||fallback; let to;
+    if(Q.busy||!Q.queue.length)return; Q.busy=true; const j=Q.queue.shift(); const t0=Date.now(), ms=limits[j.name]||fallback; let to; const run=(++RID).toString(36)+t0.toString(36);
+    Q.cur=j.name; note({name:j.name,state:'started',run,by:j.by||null});
     try{log(`job ${j.name} started`);
-      const r=await Promise.race([j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}).then(()=>'done'),new Promise(ok=>{to=setTimeout(()=>ok('late'),ms)})]);
+      const p=Promise.resolve().then(()=>j.run(store,{dataDir,log:(...a)=>log(`[${j.name}]`,...a)}));   // a job that answers at once (the restore test) is a run like any
+      const r=await Promise.race([p.then(v=>({v})),new Promise(ok=>{to=setTimeout(()=>ok('late'),ms)})]);
       log(r==='late'?`job ${j.name} still running after ${Math.round(ms/60e3)} minutes; the queue goes on`:`job ${j.name} done in ${Math.round((Date.now()-t0)/1000)}s`);
-      if(r==='done')jobNote(store,j.name,{ok:true,ms:Date.now()-t0})}
-    catch(e){log(`job ${j.name} failed:`,e&&e.stack||e); jobNote(store,j.name,{ok:false,ms:Date.now()-t0,err:e&&e.message||e})}
+      if(r!=='late'){jobNote(store,j.name,{ok:true,ms:Date.now()-t0}); note({name:j.name,state:'done',run,ms:Date.now()-t0,note:brief(r.v),by:j.by||null})}
+      else{note({name:j.name,state:'late',run,ms:Date.now()-t0,note:`רץ יותר מ-${Math.round(ms/60e3)} דקות; התור ממשיך`,by:j.by||null});
+        p.then(v=>note({name:j.name,state:'done',run,ms:Date.now()-t0,note:'הסתיים באיחור'+(brief(v)?' · '+brief(v):''),by:j.by||null}),e=>note({name:j.name,state:'failed',run,ms:Date.now()-t0,note:String(e&&e.message||e).slice(0,200),by:j.by||null}))}}
+    catch(e){log(`job ${j.name} failed:`,e&&e.stack||e); jobNote(store,j.name,{ok:false,ms:Date.now()-t0,err:e&&e.message||e}); note({name:j.name,state:'failed',run,ms:Date.now()-t0,note:String(e&&e.message||e).slice(0,200),by:j.by||null})}
+    Q.cur=null;
     // 30.10: what each source last did, read right after the job wrote it (the health of the data, server/health.js)
     try{healthCheck(store)}catch(e){}
     clearTimeout(to); Q.busy=false; setTimeout(()=>pumpLane(ln),0);
@@ -91,12 +100,13 @@ export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMI
   const pump=()=>{for(const ln of Object.keys(L))pumpLane(ln)};
   const queue=lane('main').queue;
   // a job already waiting is not queued twice (prices every 5 minutes behind a slow job)
-  const enqueue=j=>{const q=lane(j.lane||'main').queue; if(!q.some(x=>x.name===j.name))q.push(j)};
+  const enqueue=(j,by)=>{const q=lane(j.lane||'main').queue; if(q.some(x=>x.name===j.name)){if(!by)note({name:j.name,state:'skipped',note:'המשימה כבר חיכתה בתור מהפעם הקודמת'}); return false} q.push(by?{...j,by}:j); if(by)note({name:j.name,state:'queued',by}); return true};
   const tick=()=>{const now=new Date(), p=ilParts(now); const slot=`${p.iso} ${p.h}:${p.min}`;
     for(const j of schedule){const k=j.name+'@'+slot; if(!done.has(k)&&j.when(p,now)){done.add(k);enqueue(j)}}
     if(done.size>500)for(const k of [...done].slice(0,250))done.delete(k);
     pump()};
   const iv=setInterval(tick,every); tick();
   log('scheduler on: '+schedule.map(j=>j.name).join(', ')+' (Israel time)');
-  return {stop:()=>clearInterval(iv),run:name=>{const j=schedule.find(x=>x.name===name);if(!j)return false;enqueue(j);pump();return true},queue};
+  return {stop:()=>clearInterval(iv),run:(name,by)=>{const j=schedule.find(x=>x.name===name);if(!j)return false;enqueue(j,by);pump();return true},queue,
+    state:()=>({running:Object.values(L).map(q=>q.cur).filter(Boolean),queued:Object.values(L).flatMap(q=>q.queue.map(x=>x.name))})};
 }

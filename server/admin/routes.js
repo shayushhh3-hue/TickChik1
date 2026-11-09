@@ -16,6 +16,8 @@ import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
 import {yahooStatus,marketData, splitsAdmin} from './yahoo.js';
 import {keysList,keyTest} from './keys.js';
+import {runsView} from './runs.js';
+import {SCHEDULE} from '../jobs.js';
 import {bizSchema,ticketCreate,ticketsOfUser,ticketUserView,ticketUserReply,ticketStaff,ticketGet,ticketsList,supportStats,TOPIC_HE,roadmapSave,roadmapList,roadmapDelete,launchImpact,
   contentSave,contentStatus,contentList,contentFor,ledgerAdd,ledgerDelete,business,CAT_HE} from './biz.js';
 
@@ -66,11 +68,15 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
     const before=aiPricesOwn(store); store.setMeta('aiPrices',JSON.stringify(P)); audit(store,{user:req.user,action:'settings.aiPrices',target:'ai',detail:{before,after:P},ip:req.ip}); res.json({ok:true,prices:P})});
 
   // ---- the health (the same check the site already runs) and running a job ("system") ----
+  // 9.11 "יומן ביצועים": what ran, what failed, what is running and what never ran today; the alerts' switches
+  app.get('/api/admin/runs',need('view'),(req,res)=>res.json(runsView(store,SCHEDULE,{jobs:app.locals.jobs})));
+  app.post('/api/admin/runs/alerts',need('system'),(req,res)=>{const b=req.body||{}, A={deploy:b.deploy!==false,fail:b.fail!==false,done:!!b.done};
+    store.setMeta('runAlerts',JSON.stringify(A)); audit(store,{user:req.user,action:'settings.runAlerts',target:'runs',detail:A,ip:req.ip}); res.json({ok:true,alerts:A})});
   app.get('/api/admin/health',need('view'),(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
   // 8.11: the nightly consistency check's last result (the owner's own gaps in full only to the owner)
   app.get('/api/admin/consist',need('view'),(req,res)=>res.json(consistView(store,req.user)));
   app.post('/api/admin/jobs/:name',need('system'),(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'המשימות המתוזמנות כבויות בשרת הזה.'}});
-    if(!/^[a-z\-]{2,20}$/.test(req.params.name)||!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'אין משימה כזאת.'}});
+    if(!/^[a-z\-]{2,20}$/.test(req.params.name)||!j.run(req.params.name,req.user.name||req.user.email||'מנהל'))return res.status(404).json({error:{code:'not_found',message:'אין משימה כזאת.'}});
     audit(store,{user:req.user,action:'system.job',target:req.params.name,ip:req.ip}); res.json({ok:true})});
 
   // ---- the logs: management actions ("view"), sign-ins ("sensitive") ----
