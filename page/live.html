@@ -700,7 +700,8 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .sit .px{text-align:end;font-family:var(--mono);font-size:13px;white-space:nowrap} .sit .px small{display:block;font-size:12px}
 .sit .mk{flex:none;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer}
 .sit .mk svg{width:15px;height:15px} .sit .mk[aria-pressed="true"]{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft)}
-[data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open #hSearch,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
+[data-pane="search"].sec-open>.subtabs,[data-pane="search"].sec-open .seccard>.sec-h,[data-pane="search"].sec-open #srchView,[data-pane="search"].sec-open #srchBox,[data-pane="search"].sec-open #sqNote{display:none}
+@media (max-width:1199px){body[data-page="search"].sec-open .hero .top .acts{display:none}}   /* 9.11: the accounts row and the header buttons too; the brand and its status line stay */
 .secp{display:flex;flex-direction:column;gap:14px}
 .secp .top{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .secp .top .t{flex:1 1 220px;min-width:0} .secp .top h2{font-size:18px;text-wrap:balance} .secp .top .sub{margin-top:3px}
@@ -24879,7 +24880,7 @@ function srchRender(){
   const box=$('sqRes'),pg=$('secPage'); if(!box)return;
   // 9.11: with a security open, the page is the whole screen: the research heading, the parts row and the search box wait
   // on the research landing (the phone's back, the bookmark page's back, or a tap on "מחקר" below return there)
-  try{box.closest('[data-pane]').classList.toggle('sec-open',!!SEC)}catch(e){}
+  try{box.closest('[data-pane]').classList.toggle('sec-open',!!SEC); document.body.classList.toggle('sec-open',!!SEC)}catch(e){}
   if(SEC){box.hidden=true;pg.hidden=false;renderSec();return}
   pg.hidden=true;box.hidden=false;
   const row=(it,extra)=>{const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
