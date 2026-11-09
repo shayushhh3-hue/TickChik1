@@ -1433,6 +1433,7 @@ section.fold > .fold-h > :not(.fold-t):not(h2){margin-inline-start:6px}
 .msg.sys::before{content:"";display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-3px;background-position:center;background-size:contain;background-repeat:no-repeat}
 .i18np.err .sp{border:0;width:18px;height:18px;background-position:center;background-size:contain;background-repeat:no-repeat;animation:none}
 .dk-h .dk-ic{width:40px;height:40px}
+.dk-tod{display:grid;place-items:center;border-radius:12px;background:var(--accent-soft,rgb(124 58 237 / .12));color:var(--vio-ink,#6D28D9)} .dk-tod svg{width:22px;height:22px}
 .dk-top li{grid-template-columns:22px minmax(0,1fr)}
 .dk-top li .ni{width:20px;height:20px;margin-top:2px}
 .dk-top.ok b{display:inline-flex;align-items:center;gap:8px}
@@ -19676,7 +19677,7 @@ function renderDesk(m,A){
   const need=L.filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep'), st=L.some(x=>x.sev==='crit')?'crit':need.length?'warn':'ok';
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<div class="dk-h">${niH(SEVI[st],'dk-ic',true)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
 }
 const DESK_REP=new Set();
@@ -28284,6 +28285,12 @@ function selfCheck(m){
 }
 const trustChip=T=>!T?'':T.ok?`${niH('ok')}<span>המחירים עדכניים</span>`:`${niH('warn')}<span>${T.iss.length===1&&T.iss[0].k==='late'?'המחירים לא התעדכנו':T.iss.some(x=>x.k==='sum')?'נמצא פער בין מסכים':'חלק מהמחירים לא עדכניים'}</span>`;
 // 9.11 (the owner): the prices and the news both up to date: one green line (the details one tap away); a card only for what is late
+// 9.11 (the owner: "why an X?"): the greeting's icon is the time of day (a sun, a sun going down, a moon), not the state:
+// what needs doing is said in the list under it
+function todIconH(hr){const P=hr>=5&&hr<17?'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+    :hr>=17&&hr<21?'<path d="M17 18a5 5 0 0 0-10 0"/><path d="M12 9V3M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1M16 6l-4-4-4 4"/>'
+    :'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  return `<span class="dk-ic dk-tod" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P}</svg></span>`}
 function deskStatusH(T){let H=null; try{H=nwHealth()}catch(e){}
   if(!(T&&T.ok&&H&&H.st==='ok'))return trustH(T)+(H?nwHealthH(H):'');
   const fund=T.fund?`<li>${niH('ok')}<span>קרנות: מחיר רשמי מ-${nn(dmy(T.fund))}${T.est?', ולצדו הערכה לפי המדד':''} ${whyBtn('fundpx')}</span></li>`:'';
@@ -28330,7 +28337,7 @@ function todoOf(m,A,T){
   // are not here: they are in בקרה, with a count on its button
   for(const a of A){if(a[0]==='ok'||ackd(a)||!HOMECAT.has(a[1]))continue; if(pxIss&&(a[1]==='מחיר'||a[1]==='נתונים'))continue; if(a[1]==='דוחות'&&(a.each||[]).some(e=>String(e.key).startsWith('rep:')))continue;
     const n=alertNav(a);
-    L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:fShortH(a),b:(n?`<button type="button" class="dk-go" data-anav=""${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
+    L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:fShortH(a),b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
     L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}

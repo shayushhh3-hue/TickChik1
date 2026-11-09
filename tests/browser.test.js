@@ -3359,9 +3359,18 @@ test('9.11 the control said short: a finding is its subject as a title and one s
     const r=await pg.evaluate(()=>{const L=[...document.querySelectorAll('#alerts .agl>li')]; return {n:L.length,titles:L.filter(li=>li.querySelector('.f-t')).length,pills:document.querySelectorAll('#alerts .agl .tag').length,legend:!!document.querySelector('section[aria-labelledby="hCtl"] .legend'),
       long:L.map(li=>{const b=li.querySelector('.agb').cloneNode(true); for(const x of b.querySelectorAll('.f-t,details,.dk-full,button,.ais'))x.remove(); return b.textContent.replace(/\s+/g,' ').trim()}).filter(x=>x.length>110)}});
     assert.ok(r.n>0&&r.titles===r.n,'every finding has its title line: '+JSON.stringify(r)); assert.equal(r.pills,0); assert.equal(r.legend,false); assert.deepEqual(r.long,[],'one short sentence each');
+    // the to-do's buttons lead somewhere (an empty data-anav did nothing); the greeting's icon is the time of day, not an X
+    const d=await pg.evaluate(()=>({empty:[...document.querySelectorAll('#desk [data-anav]')].filter(x=>!x.dataset.anav).length,all:document.querySelectorAll('#desk [data-anav]').length,tod:!!document.querySelector('#desk .dk-h .dk-tod'),x:!!document.querySelector('#desk .dk-h .ni-err')}));
+    assert.ok(d.all>0&&d.empty===0&&d.tod&&!d.x,JSON.stringify(d));
     await pg.evaluate(()=>window.scrollTo(0,1800)); await pg.waitForTimeout(400);
     const s=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="risk"]'), a=p.querySelector(':scope>.subtabs').getBoundingClientRect(), b=document.getElementById('riskNav').getBoundingClientRect(); return {a:a.bottom,b:b.top,at:a.top}});
     assert.ok(Math.abs(s.at)<2&&s.b>=s.a-1,'the parts row under the screens row, not over it: '+JSON.stringify(s));
+    const P0=store.getDoc('alerts/pulse'); const sym=store.getDoc('portfolio/main').data.positions[0].sym;
+    store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k:'ev:zz-ctl',kind:'news',lv:'crit',title:'ידיעת בדיקה לבקרה',at:new Date().toISOString(),holds:[{sym,link:'direct',w:10,dir:'neg'}],dir:'neg',relWhy:'x'}]});
+    try{await pg.reload(); await pg.waitForFunction(()=>!!document.querySelector('#desk [data-anav="pl:ev:zz-ctl"]'),null,{timeout:30000});
+      await pg.evaluate(()=>document.querySelector('#desk [data-anav="pl:ev:zz-ctl"]').click()); await pg.waitForTimeout(500);
+      assert.ok(await pg.evaluate(()=>!document.getElementById('plSheet').hidden&&/ידיעת בדיקה לבקרה/.test(document.getElementById('plShB').textContent)),'"להתראה" opens the alert')}
+    finally{store.setDoc('alerts/pulse',P0.exists?P0.data:{items:[]})}
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });
