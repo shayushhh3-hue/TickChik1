@@ -2956,8 +2956,8 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
     recAt:'2026-11-01',target:220,targetHi:260,targetLo:150,targetMed:225,est:{date:d,eps:1.05,rev:6.5e10},gradesL:[{d:'2026-11-02',firm:'Goldman Sachs',from:'Neutral',to:'Buy',act:'upgrade'},{d:'2026-10-20',firm:'Morgan Stanley',from:'Overweight',to:'Overweight',act:'maintain'}],source:'Finnhub + FMP'};
   store.setDoc('research/latest',{...R0,companies:{...R0.companies,NVDA:N}},{silent:true});
   try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500);
-    const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.antr-m').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
-    assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 קנייה 18 החזקה 8 מכירה 2 מכירה חזקה 0/);
+    const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.ancols .anc').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
+    assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 \(30%\) קנייה 18 \(45%\) החזקה 8 \(20%\) מכירה 2 \(5%\) מכירה חזקה 0 \(0%\)/);
     assert.match(a.txt,/יעד המחיר הממוצע \(12 חודשים\) \$220\.00 גבוה ב-[\d.]+% מהמחיר עכשיו/); assert.match(a.txt,/טווח היעדים \$150 – \$260 חציון \$225\.00/);
     assert.equal(a.months,4); assert.match(a.txt,/יותר אנליסטים ממליצים לקנות: 60% באוג׳, 75% בנוב׳/);
     assert.match(a.txt,/הצפי לדוח הבא \([\d.]+\): רווח למניה \$1\.05 · הכנסות 65\.00 מיליארד דולר/);

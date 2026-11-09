@@ -742,7 +742,10 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
 .anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .anbar .b,.ancard .an-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .ancard .an-h h3{margin:0} .an-sw .chip{min-height:30px;padding:2px 12px;font-size:12.5px}
 .ancard .an-p{display:none} .ancard.an-pie .an-b{display:none} .ancard.an-pie .an-p{display:flex;justify-content:center;margin:8px 0}
-.ancard.an-pie .antr-r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px} .ancard.an-pie .antr-m{display:flex;flex-direction:column;align-items:center;text-align:center} .ancard.an-pie .antr-m .an-p{margin:0 0 4px}
+.ancols{display:flex;align-items:flex-end;justify-content:space-around;gap:10px;margin:8px 0 4px;padding:0 4px}
+.anc{flex:1 1 0;max-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px} .anc b{font-size:13px;font-weight:800;color:var(--ink)} .anc span{font-size:12px;color:var(--muted)}
+.anc-c{width:100%;max-width:40px;height:96px;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;background:var(--sunk)} .anc-c i{display:block;width:100%}
+.anc-c i+i{box-shadow:inset 0 1px 0 rgb(255 255 255 / .55)} .anc-c .sb{background:#15803D} .anc-c .b{background:var(--gain)} .anc-c .h{background:#A1A1AA} .anc-c .s{background:var(--loss)} .anc-c .ss{background:#991B1B}
 .andonut .dn-v{font-size:7.5px;font-weight:800;fill:var(--ink);font-family:var(--sans)} .andonut .dn-k{font-size:4.2px;fill:var(--muted);font-family:var(--sans)} .antr-m .andonut .dn-v{font-size:9px}
 .anleg small{color:var(--muted);font-weight:500}
 .anleg .b i{background:var(--gain)} .anbar .h,.anleg .h i{background:#A1A1AA} .anbar .s,.anleg .s i{background:var(--loss)}
@@ -25426,7 +25429,10 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   // the last months: the share of "buy" (strong and plain) month by month, and the first against the last in words
   const H=Array.isArray(rs.recHist)?rs.recHist.filter(x=>x&&(x.sb+x.b+x.h+x.s+x.ss)>0):[];
   let trend=''; if(H.length>=2){const share=x=>(x.sb+x.b)/(x.sb+x.b+x.h+x.s+x.ss), a=share(H[0]), z=share(H[H.length-1]), mo=p=>HEM[+String(p).slice(5,7)-1]||p;
-    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="antr-r">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), wh=Math.round(x.h/n2*100); return `<div class="antr-m"><div class="anbar sm an-b" role="img" aria-label="${mo(x.p)}: ${wb}% קנייה"><i class="b" style="width:${wb}%"></i><i class="h" style="width:${wh}%"></i><i class="s" style="width:${100-wb-wh}%"></i></div><div class="an-p">${anDonut([['sb','קנייה חזקה',x.sb],['b','קנייה',x.b],['h','החזקה',x.h],['s','מכירה',x.s],['ss','מכירה חזקה',x.ss]],54,wb+'%',`${mo(x.p)}: ${wb}% קנייה`)}</div><span>${mo(x.p)} · ${wb}% קנייה</span></div>`}).join('')}</div>
+    // 9.11: the months as columns side by side, each the whole 100% split (strong buy, buy, hold, sell, strong sell
+    // from the top down), the share of "buy" over it: one picture in both views (small pies side by side did not compare)
+    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="ancols" role="img" aria-label="${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss; return `${mo(x.p)}: ${Math.round((x.sb+x.b)/n2*100)}% קנייה`}).join(', ')}">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), seg=(c,v)=>v?`<i class="${c}" style="height:${(v/n2*100).toFixed(1)}%"></i>`:'';
+      return `<div class="anc"><b>${wb}%</b><div class="anc-c">${seg('sb',x.sb)}${seg('b',x.b)}${seg('h',x.h)}${seg('s',x.s)}${seg('ss',x.ss)}</div><span>${mo(x.p)}</span></div>`}).join('')}</div>
       <p class="s">${Math.abs(z-a)<0.02?'כמעט בלי שינוי':(z>a?'יותר אנליסטים ממליצים לקנות':'פחות אנליסטים ממליצים לקנות')}: ${Math.round(a*100)}% ב${mo(H[0].p)}, ${Math.round(z*100)}% ב${mo(H[H.length-1].p)}.</p></div>`}
   // what is expected of the next report
   const e=rs.est&&rs.est.date&&rs.est.date>=tzDay('Asia/Jerusalem')?rs.est:null;
