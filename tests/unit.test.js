@@ -2207,6 +2207,13 @@ test('8.11 control that speaks first: a scheduled job that did not run is a bad 
   // smokeOnStart: once per build; a failed one is tried again
   {const t=smokeOnStart(s,{version:'abc123'}); assert.ok(t,'the last run of this build failed: tried again'); clearTimeout(t);
     s.setMeta('smoke',JSON.stringify({...r,version:'abc123'})); assert.equal(smokeOnStart(s,{version:'abc123'}),null,'this build already passed: not again'); assert.ok(smokeOnStart(s,{version:'new456',delay:1e6}),'a new build: once'); s.setMeta('smoke',JSON.stringify(r3))}
+  // 9.11 recheckOnStart: a consistency result with gaps is run again after a deploy, once per build; a clean one is not
+  {const {recheckOnStart}=await import('../server/control.js'); const ran=[], run=n=>ran.push(n);
+    assert.equal(recheckOnStart(s,{run,version:'v1'}),null,'no result yet: nothing to run again');
+    s.setDoc('system/consist',{at:now.toISOString(),bad:2,n:3,runs:[]});
+    const t=recheckOnStart(s,{run,version:'v1',delay:1}); assert.ok(t,'gaps: run again'); await new Promise(ok=>setTimeout(ok,30)); assert.deepEqual(ran,['consist']);
+    assert.equal(recheckOnStart(s,{run,version:'v1'}),null,'the same build: not twice'); assert.ok(recheckOnStart(s,{run,version:'v2',delay:1e6}),'a new build: once more');
+    s.setDoc('system/consist',{at:now.toISOString(),bad:0,n:3,runs:[]}); assert.equal(recheckOnStart(s,{run,version:'v3'}),null,'clean: nothing to run again'); s.deleteDoc('system/consist')}
   // the health: the failed smoke, the silent jobs and the restore test not yet run are sources; the failed ones are bad
   s.setMeta('serverStart',JSON.stringify(start.toISOString())); const H=healthCheck(s,{now,save:false,env:{}}), by=Object.fromEntries(H.items.map(i=>[i.key,i]));
   assert.equal(by.smoke.state,'bad'); assert.match(by.smoke.note,/מתוך 5/); assert.ok(by['silent:pressure'],'the silent job is a source'); assert.equal(by['silent:pressure'].state,'bad'); assert.ok(by.restore,'the restore test is a source'); assert.match(by.restore.note,/עוד לא רץ/);

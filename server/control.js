@@ -48,6 +48,15 @@ export function smokeOnStart(store,{port,version,log=()=>{},delay=45e3}={}){
   const t=setTimeout(()=>{smokeTask(store,{port,version,log}).catch(e=>log('smoke failed: '+(e&&e.message||e)))},delay); if(t.unref)t.unref(); return t;
 }
 
+// 9.11: after a deploy, a consistency check that found gaps runs again: a fix just deployed is judged by a fresh result,
+// not by the next night's run (the stored result kept showing the old gaps for a day). Once per build, 90 seconds in
+export function recheckOnStart(store,{run,version='',log=()=>{},delay=90e3}={}){
+  const c=doc(store,'system/consist'); if(!c||!(c.bad>0)||typeof run!=='function')return null;
+  const last=meta(store,'recheck'); if(last&&last.version===version)return null;
+  const t=setTimeout(()=>{try{store.setMeta('recheck',JSON.stringify({version,at:new Date().toISOString(),bad:c.bad}))}catch(e){}
+    log(`consist: run again after a deploy (the last run found ${c.bad} gaps)`); try{run('consist')}catch(e){log('consist re-run: '+(e&&e.message||e))}},delay); if(t.unref)t.unref(); return t;
+}
+
 // ---- the restore test ----
 export function restoreTest(store,{dataDir,now=new Date(),log=()=>{},pass=process.env.BACKUP_KEY||'',maxSeal=60e6}={}){
   const t0=Date.now(), st=backupStatus(store,{dataDir}), f=st.files&&st.files[0], out={at:now.toISOString(),file:f?f.name:null,size:f?f.size:null,ok:false,integrity:null,docs:null,users:null,missing:[],sealed:null,note:''};

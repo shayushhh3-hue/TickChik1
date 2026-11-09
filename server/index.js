@@ -20,7 +20,7 @@ import {confirmSplits} from './fmp.js';
 import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
-import {smokeOnStart} from './control.js';
+import {smokeOnStart, recheckOnStart} from './control.js';
 import {startRt} from './rt.js';
 import {closesFor,longClosesFor} from './tasks.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
@@ -557,6 +557,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(env.JOBS!=='0'&&env.RT!=='0')try{app.locals.rt=startRt(store,{log})}catch(e){log('rt: '+e.message)}
   // 8.11: the smoke test once per build, 45 seconds after the start (server/control.js)
   if(env.JOBS!=='0')try{smokeOnStart(store,{port:PORT,version:app.locals.verOf?app.locals.verOf():'',log})}catch(e){log('smoke: '+e.message)}
+  // 9.11: a consistency check that found gaps is run again after a deploy (server/control.js)
+  if(env.JOBS!=='0')try{recheckOnStart(store,{run:app.locals.jobs&&app.locals.jobs.run,version:app.locals.verOf?app.locals.verOf():'',log})}catch(e){log('recheck: '+e.message)}
   // 1.11: the heartbeat, the downtime, the incidents and the alerts to the management
   startOps(store,{log,send:sendMail,push:pushTo});
   startRadar(store,{log,push:pushTo,cat:()=>mcCatalog(path.join(ROOT,'page','live.html'))});
