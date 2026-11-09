@@ -3187,3 +3187,20 @@ test('9.11 the logos are back beside the holdings, and an alert not yet read is 
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
 });
+
+test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (filled when watched), there is no back button, and the phone\'s own back closes the page',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
+  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1500);
+  const v=await pg.evaluate(()=>{const b=document.getElementById('secMark'), r=b.getBoundingClientRect(), top=document.querySelector('#secPage .top').getBoundingClientRect(); return {back:!!document.getElementById('secBack'),mark:{on:b.classList.contains('on'),pressed:b.getAttribute('aria-pressed'),label:b.getAttribute('aria-label'),w:Math.round(r.width),leftish:r.left<top.left+top.width/2,svg:!!b.querySelector('svg')},hash:location.hash,state:history.state&&history.state.sec}});
+  assert.equal(v.back,false,'no back button'); assert.ok(v.mark.svg&&v.mark.w>=40,'a bookmark icon'); assert.ok(v.mark.leftish,'at the left of the page'); assert.equal(v.state,'MSFT','a history entry'); assert.equal(v.hash,'#search');
+  const was=v.mark.on;
+  await pg.click('#secMark'); await pg.waitForTimeout(800);
+  const m2=await pg.evaluate(()=>{const b=document.getElementById('secMark'); return {on:b.classList.contains('on'),pressed:b.getAttribute('aria-pressed')}}); assert.equal(m2.on,!was,'the mark toggles'); assert.equal(m2.pressed,String(!was));
+  await pg.click('#secMark'); await pg.waitForTimeout(600);   // back as it was
+  // the phone's back: the page closes, the search stays
+  await pg.goBack(); await pg.waitForTimeout(600);
+  const after=await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,res:!document.getElementById('sqRes').hidden,page:document.body.dataset.page}));
+  assert.deepEqual(after,{sec:true,res:true,page:'search'});
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});

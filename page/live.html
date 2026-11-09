@@ -703,6 +703,10 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .secp{display:flex;flex-direction:column;gap:14px}
 .secp .top{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .secp .top .t{flex:1 1 220px;min-width:0} .secp .top h2{font-size:18px;text-wrap:balance} .secp .top .sub{margin-top:3px}
+/* 9.11: "במעקב" is a bookmark at the top-left of the security's page (filled when watched), not a button; "חזרה" is gone:
+   the phone's own back goes back (openSec pushes a history entry, popstate closes the page) */
+.secp .top .secmark{margin-inline-start:auto;flex:none;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:inline-grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.secp .top .secmark svg{width:22px;height:22px} .secp .top .secmark.on{color:#fff;background:var(--grad,var(--accent));border-color:transparent} .secp .top .secmark:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .secp .big{display:flex;flex-direction:column;gap:0;direction:rtl;text-align:start;unicode-bidi:normal;font-size:inherit;line-height:inherit;letter-spacing:0;font-weight:inherit}
 .secp .pxrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap} .secp .pxrow .v.none{font-size:18px;font-weight:500;color:var(--muted);font-family:var(--sans)}
 .secp .chg{display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;line-height:1.1} .secp .chg b{font-family:var(--mono);font-size:15px;font-weight:600;padding:4px 10px;border-radius:999px;unicode-bidi:plaintext} .secp .chg.up b{background:var(--ok-bg);color:var(--ok-ink)} .secp .chg.down b{background:var(--crit-bg);color:var(--crit-ink)} .secp .chg small{font-size:12px;color:var(--muted)}
@@ -747,9 +751,9 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 @media (max-width:640px){.secp .pxrow .v{font-size:30px}
   /* 9.11: the top of a security's page on a phone, in one grid: the logo and the name; two rows of two equal boxes (follow /
      back, dollars-shekels / compare); the price at one edge and its change at the other */
-  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"lg t" "acts acts";column-gap:12px;row-gap:12px;align-items:center}
-  .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top .sub{text-wrap:balance}
-  .secp .top .acts{grid-area:acts;display:grid;grid-template-columns:1fr 1fr;gap:8px} .secp .top .acts .btn{width:100%;justify-content:center;min-height:42px}
+  .secp .top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"lg t";column-gap:12px;align-items:start;position:relative}
+  .secp .top .lg.l{grid-area:lg} .secp .top .t{grid-area:t;flex:none} .secp .top h2{padding-inline-end:52px} .secp .top .sub{text-wrap:balance}
+  .secp .top .secmark{position:absolute;top:0;left:0;margin:0}
   .sectools{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch} .sectools .ccsw{display:flex;align-self:stretch;justify-content:stretch} .sectools .ccsw button{flex:1} .sectools>.btn,.sectools>button{width:100%;justify-content:center;min-height:42px}
   .secp .pxrow{justify-content:space-between;flex-wrap:nowrap;gap:10px} .secp .chg{align-items:flex-end;text-align:end}
 }
@@ -24879,7 +24883,10 @@ function srchRender(){
 const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k)}
-function openSec(k){try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
+function openSec(k,o){try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');
+  // 9.11: the phone's own back closes the page: each security opened is one history entry (none when coming back through one)
+  if(!(o&&o.fromHistory)){try{const st=history.state||{}; if(st.sec!==k)history.pushState({sec:k,from:SEC||null},'',location.pathname+'#search')}catch(e){}}
+  SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
   if(RSX[k]===undefined)loadResearch(k).then(()=>{if(SEC===k)renderSec()});try{window.scrollTo({top:0})}catch(e){}}
 function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||[];if(seen.includes(k)||(WATCH.marks||[]).includes(k)||(WATCH.held||[]).includes(k)||((P&&P.positions)||[]).some(p=>p.sym===k))return;
   if(!/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(k))return;watchSave({seen:seen.concat([k]).slice(-60)}).catch(()=>{})}
@@ -25257,7 +25264,7 @@ function renderSec(){SECHOV=-1;
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
   pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub">${it.he?esc(it.he)+' · ':''}<span style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</span> · ${esc(it.t==='S'&&it.sec?it.sec+' · מניה זרה':(TYPEL[it.t]||''))}${it.ex?' · '+esc(EXL[it.ex]||it.ex):''}</p></div>
-    <div class="acts"><button type="button" class="btn${on?' pri':''}" id="secMark">${on?'במעקב ✓':'הוסף למעקב'}</button><button type="button" class="btn" id="secBack">חזרה</button></div></div>
+    <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     ${secPriceParts(it,pr,on,fx)[0]}
     <p class="chline" id="secRead" aria-live="polite"></p>
@@ -25652,6 +25659,7 @@ function srchBoot(){
     if(e.target.closest('#fitMore')){FITN+=60;renderFit();return}
     const o=e.target.closest('[data-open]');if(o){showTab('search',true);setSV('search');openSec(o.dataset.open)}});
   SV='search';
+  window.addEventListener('popstate',e=>{const st=e.state||{}; if(st.sec&&st.sec!==SEC){openSec(st.sec,{fromHistory:true}); return} if(SEC&&!st.sec){SEC=null; try{if(document.body.dataset.page!=='search')showTab('search')}catch(x){} srchRender(); try{window.scrollTo({top:0})}catch(x){}}});
   $('secPage').addEventListener('click',e=>{if(e.target.closest('#secBack')){SEC=null;srchRender();return}
     if(e.target.closest('#secMark')){toggleMark(SEC);return}
     const r=e.target.closest('[data-rng]');if(r){SECRNG=r.dataset.rng;try{localStorage.setItem('tr_rng',SECRNG)}catch(x){}renderSec()}});
