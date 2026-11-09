@@ -288,12 +288,13 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
       assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['quickActs','holdSec'],'4.11: the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
-      // 9.11: rows, each with a label, the fact, one action at the end and the details under it (no more prose with links inside)
-      const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>({k:p.className.match(/tdl-(\w+)/)[1],t:p.querySelector('.tdl-k').textContent.trim(),b:p.querySelector('.tdl-b').textContent.replace(/\s+/g,' ').trim(),a:(p.querySelector('.tdl-a')||{}).textContent||'',s:(p.querySelector('.tdl-s')||{}).textContent||'',grid:getComputedStyle(p).display})),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
+      // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
+      // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above
+      const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,h:document.getElementById('kToday').getBoundingClientRect().height,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>({k:p.className.match(/tdl-(\w+)/)[1],btn:p.tagName==='BUTTON',go:p.dataset.tab||p.dataset.ixst||p.dataset.ixopen||'',t:p.querySelector('.tdl-k').textContent.trim(),b:p.querySelector('.tdl-b').textContent.replace(/\s+/g,' ').trim(),a:(p.querySelector('.tdl-a')||{}).textContent||''})),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
         news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
-      assert.ok(td.on&&td.top,'on the first screen of a phone'); const dayR=td.L.find(x=>x.k==='day')||{}; assert.match(dayR.t,/^היום/); assert.match(dayR.b,/^התיק (עלה|ירד|עולה|יורד) ב-[\d.]+% \(.*\)$/,JSON.stringify(td.L));   // 4.11: present while a market is open
-      assert.ok(!dayR.s||/^בעיקר בגלל /.test(dayR.s.trim()),'the movers under the fact: '+dayR.s); assert.equal(dayR.grid,'grid');
-      const todoR=td.L.find(x=>x.k==='todo')||{}; assert.equal(todoR.t,'לטיפול'); assert.equal(todoR.b,'2 חריגות מהכללים שלך ונושא אחד לבדיקה'); assert.equal(todoR.a.trim(),'לבקרה ›',JSON.stringify(td.L));
+      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.ok(td.h<170,'a small card: '+td.h); const dayR=td.L.find(x=>x.k==='day')||{}; assert.equal(dayR.t,'היום');   // 4.11: present while a market is open
+      assert.match(dayR.b,/^((עלה|ירד|עולה|יורד) בעיקר בגלל \S+ [‎+−₪\d,]+( · \S+ [‎+−₪\d,]+)?|התיק (עלה|ירד|עולה|יורד) [\d.]+%|התיק כמעט לא זז.*)$/,JSON.stringify(td.L)); assert.ok(dayR.btn&&dayR.go==='state','the line leads to מה קורה בתיק');
+      const todoR=td.L.find(x=>x.k==='todo')||{}; assert.equal(todoR.t,'לטיפול'); assert.equal(todoR.b,'2 חריגות מהכללים שלך ונושא אחד לבדיקה'); assert.ok(todoR.btn&&todoR.go==='risk'&&todoR.a==='›',JSON.stringify(td.L));
       assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
