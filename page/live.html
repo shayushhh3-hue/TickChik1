@@ -1896,8 +1896,12 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
 .hold-all{font:inherit;font-size:13.5px;font-weight:700;color:var(--vio-ink);background:none;border:0;padding:4px 6px;border-radius:8px;cursor:pointer} .hold-all:hover{background:var(--accent-soft)}
 .hold.top tbody tr.xtra{display:none}
 @media (max-width:640px){
-  .hold .panel.scroll{padding:2px 12px}
-  .hold tbody tr{grid-template-columns:minmax(0,1fr) auto auto 12px;grid-template-areas:"name val w go" "name day w go" "qty px w go" "cost pnl w go";column-gap:10px;row-gap:2px;padding:11px 0;align-items:center}
+  /* 9.11: each holding's rectangle a little wider (the card runs closer to the screen's edge) and shorter (tighter rows,
+     the company on one line, smaller pills) */
+  [data-pane="overview"] .hold{margin-inline:-8px;padding-inline:10px}
+  .hold .panel.scroll{padding:2px 8px}
+  .hold tbody tr{grid-template-columns:minmax(0,1fr) auto auto 12px;grid-template-areas:"name val w go" "name day w go" "qty px w go" "cost pnl w go";column-gap:10px;row-gap:0;padding:7px 0;align-items:center}
+  .hold tbody td:nth-child(1) .pill,.hold tbody td:nth-child(1) .flag{padding:1px 7px;font-size:11px;line-height:1.5}
   .hold tbody tr.secl{position:relative}
   .hold tbody tr.secl::after{content:"‹";grid-area:go;align-self:center;font-size:20px;line-height:1;color:var(--muted)}
   .hold tbody td:nth-child(2){grid-area:day;text-align:end}
@@ -1914,7 +1918,7 @@ html[data-theme="dark"] .qa-b{border-color:rgb(139 92 246 / .35)}
   /* the lean list: no account pills and no "גרף ›" hint (the chevron says it); the flags stay */
   .hold.lite tbody td:nth-child(1) .pill:not([style]),.hold.lite tbody td:nth-child(1) .golink{display:none}
   .hold.lite tbody td:nth-child(1) .sym{font-size:15px;font-weight:700}
-  .hold tbody td:nth-child(1) .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .hold tbody td:nth-child(1) .nm{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.35}
   /* 28.10: the lean list as one compact row per holding: the logo and the symbol with the company in one short line, the
      value and the day's move on the other side, and a thin bar of its share of the portfolio (in its group's colour)
      under it; the account pills, the amounts of the day and the long names stay in the full list */
