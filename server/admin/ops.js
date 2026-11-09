@@ -1,4 +1,5 @@
 // 1.11 TikChik Management Center, stage C: the operations. What the server measures about itself (the time and the
+import {cspState, cspOwn} from '../csp.js';
 // errors of its own requests, a heartbeat a minute, the downtime between two heartbeats, the memory, the disk), the
 // incidents (opened when something stops, closed when it works again, with an owner and a resolution), the alerts to
 // the management, and the figures of the news system, the AI engines and the security posture. Facts about the site,
@@ -253,7 +254,9 @@ export function security(store,{env=process.env,persist,dataDir,backup}){
     {k:'portfolio',l:'תוכן התיקים לא נגיש למרכז הניהול',ok:true,note:'לפי ההבטחה למשתמשים'},
     // 8.11: the headers and the content-security policy (report-only until CSP_ENFORCE=1), with what the browsers reported
     {k:'headers',l:'כותרות אבטחה בכל תשובה (HSTS, nosniff, בלי מסגור, Referrer, Permissions)',ok:true,note:'מוגדרות בשרת'},
-    (()=>{const L=meta(store,'cspReports')||[], enforce=env.CSP_ENFORCE==='1'; return {k:'csp',l:'מדיניות תוכן (CSP)',ok:enforce||!L.length,note:enforce?`נאכפת${L.length?`; ${L.length} דיווחים`:''}`:L.length?`במצב דיווח בלבד; ${L.length} דברים שהייתה חוסמת: ${L.slice(-3).map(x=>`${x.directive} ← ${x.blocked||'inline'}`).join('; ')}`:'במצב דיווח בלבד; הדפדפנים לא דיווחו על כלום עדיין',fix:enforce?'':'כשאין דיווחים כמה ימים: להגדיר CSP_ENFORCE=1 ב-Railway'}})()];
+    // 9.11: the policy decides by itself (server/csp.js): a clean week of reports enforces it, a block while enforced reverts it
+    (()=>{const L=(meta(store,'cspReports')||[]).filter(cspOwn), st=cspState(store,{env}), enforce=st.mode==='enforce', last=L.slice(-3).map(x=>`${x.directive} ← ${x.blocked||'inline'}`).join('; ');
+      return {k:'csp',l:'מדיניות תוכן (CSP)',ok:true,note:(enforce?`נאכפת${st.by==='env'?' (CSP_ENFORCE=1)':` מאז ${String(st.since||'').slice(0,10)}`}`:`במצב דיווח בלבד${st.by==='env'?' (CSP_ENFORCE=0)':`; תיאכף לבד בעוד ${st.left} ימים בלי דיווח מהדפים שלנו`}`)+(L.length?`; דיווחים: ${last}`:''),fix:''}})()];
   const keys=[['ANTHROPIC_API_KEY','צ׳יקו'],['FINNHUB_API_KEY','Finnhub'],['X_BEARER_TOKEN','X'],['RESEND_API_KEY','מייל (Resend)'],['BACKUP_KEY','הצפנת גיבוי'],['VAPID_PRIVATE_KEY','התראות לטלפון (או מפתח שנוצר במסד)']].map(([k,l])=>({k,l,set:!!env[k]||(k==='VAPID_PRIVATE_KEY'&&!!store.getMeta('vapid'))}));
   const sess=store.db.prepare('select uid, count(*) n, max(created_at) last from sessions where expires_at>? group by uid').all(new Date().toISOString());
   return {checks:C,keys,sessions:sess.map(s=>({...s,email:(users.find(u=>u.id===s.uid)||{}).email||'?'})),at:new Date().toISOString()};

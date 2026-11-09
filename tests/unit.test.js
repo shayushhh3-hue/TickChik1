@@ -2336,3 +2336,25 @@ test('9.11 an incident knows where its details live: the notification opens them
   assert.equal(po.msg.url,pushes.length&&opened.filter(x=>x.sev==='bad').length===1?'/admin#health/consist':'/admin#incidents');
   const L=incidents(s); assert.equal(L.find(i=>i.key==='consist').link,'#health/consist');
 });
+
+// 9.11: the content-security policy decides by itself: a clean week enforces it, a block on our pages while enforced
+// reverts it (and says so), an extension's own script does not count, and the environment overrides both ways
+test('9.11 the content-security policy: report-only, enforced after a clean week, back to report-only on a block',async()=>{
+  const {cspState,cspReport,CSP_CLEAN_DAYS}=await import('../server/csp.js');
+  const M=new Map(), store={getMeta:k=>M.get(k)??null,setMeta:(k,v)=>M.set(k,v)}, env={}, D=864e5, t0=Date.parse('2026-11-09T10:00:00Z'), at=d=>new Date(t0+d*D);
+  assert.equal(cspState(store,{env,now:at(0)}).mode,'report');
+  assert.equal(cspState(store,{env,now:at(3)}).left,CSP_CLEAN_DAYS-3);
+  // an extension's block does not count; our own page's block restarts the week
+  cspReport(store,{directive:'script-src',blocked:'chrome-extension://abc/x.js',doc:'/'},{env,now:at(4)});
+  assert.equal(cspState(store,{env,now:at(7.1)}).mode,'enforce','a clean week (the extension ignored)');
+  M.delete('cspAuto'); cspState(store,{env,now:at(0)});
+  cspReport(store,{directive:'img-src',blocked:'https://x.example/a.png',doc:'/'},{env,now:at(5)});
+  assert.equal(cspState(store,{env,now:at(8)}).mode,'report','a block of ours on day 5: the week starts again');
+  assert.equal(cspState(store,{env,now:at(12.1)}).mode,'enforce');
+  let told=null; const rev=cspReport(store,{directive:'connect-src',blocked:'https://api.example',doc:'/admin'},{env,now:at(13),onRevert:it=>{told=it}});
+  assert.ok(rev&&told&&told.directive==='connect-src'); assert.equal(cspState(store,{env,now:at(13.5)}).mode,'report','reverted, and said');
+  // the same report twice: one line with a count
+  cspReport(store,{directive:'connect-src',blocked:'https://api.example',doc:'/admin'},{env,now:at(14)});
+  const L=JSON.parse(M.get('cspReports')); assert.equal(L.filter(x=>x.directive==='connect-src').length,1); assert.equal(L.find(x=>x.directive==='connect-src').n,2);
+  assert.equal(cspState(store,{env:{CSP_ENFORCE:'1'},now:at(14)}).mode,'enforce'); assert.equal(cspState(store,{env:{CSP_ENFORCE:'0'},now:at(30)}).mode,'report');
+});

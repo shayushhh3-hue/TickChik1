@@ -21,6 +21,7 @@ import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {runsSetup, runLog, deployOnStart} from './admin/runs.js';
+import {cspState, cspReport} from './csp.js';
 import {smokeOnStart, recheckOnStart, restoreOnStart} from './control.js';
 import {startRt} from './rt.js';
 import {closesFor,longClosesFor} from './tasks.js';
@@ -83,11 +84,13 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // enforced policy would have blocked to /api/csp-report, the security screen shows it, and CSP_ENFORCE=1 enforces it.
   const PROD=env.NODE_ENV==='production'||!!env.RAILWAY_ENVIRONMENT;
   const CSP="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; report-uri /api/csp-report";
+  // 9.11: enforced or report-only by itself (server/csp.js), looked at once a minute
+  let CSPM={mode:'report',at:0}; const cspMode=()=>{const t=Date.now(); if(t-CSPM.at>60e3){try{CSPM={mode:cspState(store,{env}).mode,at:t}}catch(e){CSPM.at=t}} return CSPM.mode};
   app.use((req,res,next)=>{res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin'); res.setHeader('permissions-policy','camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    if(PROD)res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains'); res.setHeader(env.CSP_ENFORCE==='1'?'content-security-policy':'content-security-policy-report-only',CSP); next()});
+    if(PROD)res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains'); res.setHeader(cspMode()==='enforce'?'content-security-policy':'content-security-policy-report-only',CSP); next()});
   app.post('/api/csp-report',express.json({type:()=>true,limit:'20kb'}),(req,res)=>{try{const r=(req.body&&(req.body['csp-report']||req.body))||{}; const L=JSON.parse(store.getMeta('cspReports')||'[]');
     const item={at:new Date().toISOString(),directive:String(r['violated-directive']||r['effective-directive']||r.effectiveDirective||'').slice(0,80),blocked:String(r['blocked-uri']||r.blockedURL||'').slice(0,160),doc:String(r['document-uri']||r.documentURL||'').replace(/^https?:\/\/[^/]+/,'').slice(0,80),ua:String(req.headers['user-agent']||'').slice(0,60)};
-    if(!L.some(x=>x.directive===item.directive&&x.blocked===item.blocked)){L.push(item); store.setMeta('cspReports',JSON.stringify(L.slice(-40)))}}catch(e){} res.status(204).end()});
+    void L; if(cspReport(store,item,{env,onRevert:it=>{CSPM.at=0; runLog(store,{kind:'incident',state:'failed',name:'csp',he:'מדיניות תוכן (CSP)',note:`הדפדפן חסם ${it.directive} ← ${it.blocked||'inline'} בדף ${it.doc||'/'}; המדיניות חזרה למצב דיווח בלבד ל-7 ימים`,link:'/admin#security'})}}))CSPM.at=0}catch(e){} res.status(204).end()});
   app.use(express.json({limit:'14mb'}));
 
   // ---- sessions ----
