@@ -3374,3 +3374,16 @@ test('9.11 the control said short: a finding is its subject as a title and one s
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });
+
+test('9.11 the home\'s header on a phone: the four buttons at the top-left on the logo\'s row, the accounts switch at the start of the row under it, no long price-status line',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  try{
+    const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
+      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('btnRefresh').left],theme:R('btnTheme').top,acct:[R('acctChips').top,R('acctChips').right],fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
+    assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
+    assert.ok(r.acct[0]>r.ref[0]+30&&r.acct[1]>r.W-40,'the accounts switch under them, at the right: '+JSON.stringify(r));
+    assert.ok(r.busy||r.fresh==='none','no status line: '+JSON.stringify(r));
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+});
