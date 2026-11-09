@@ -3246,3 +3246,12 @@ test('9.11 a fund without a logo of its own carries its issuer: a listed issuer\
   if(!/ניתוח הדוח האחרון ·/.test(txt)){assert.deepEqual(calls,['MSFT'],'asked once: '+JSON.stringify(calls)); assert.doesNotMatch(txt,/עוד אין לנייר הזה דוח רבעוני/,'no "there are no reports"')}
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+test('9.11 the fit cards: the logo and the name open the security\'s page',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'watch'); await pg.waitForTimeout(2500);
+  const k=await pg.evaluate(()=>{const el=document.querySelector('.wc .wt.secl[data-sec]'); return el?el.dataset.sec:null});
+  if(!k){await ctx.close(); return t.skip('no fit rows in the fixture')}
+  await pg.click(`.wc .wt.secl[data-sec="${k}"] .sym`); await pg.waitForTimeout(1500);
+  assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,open:!document.getElementById('secPage').hidden})),{page:'search',open:true});
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
