@@ -46,7 +46,8 @@ export function deployOnStart(store,{env=process.env,version='',now=new Date()}=
 export function dayPlan(store,schedule,{now=new Date(),running=[]}={}){
   const P0=ilParts(now), L=meta(store,'runLog',[]), today=L.filter(x=>x.kind==='job'&&ilParts(new Date(x.at)).iso===P0.iso);
   const mid=now.getTime()-((P0.h*60+P0.min)*60e3)-now.getUTCSeconds()*1e3, since=Date.parse(meta(store,'runLogSince',''))||0;
-  const start=new Date(since?Math.max(mid,since+60e3):now.getTime()+60e3),   // before the log began nothing is counted as due pend=now.getTime()-3*60e3, out=[];   // a slot of the last 3 minutes may still be in the queue
+  // before the log began nothing is counted as due; a slot of the last 3 minutes may still be in the queue
+  const start=new Date(since?Math.max(mid,since+60e3):now.getTime()+60e3), pend=now.getTime()-3*60e3, out=[];
   for(const j of schedule){if(j.when.toString().includes('=>false'))continue;
     let due=0, pending=0, next=null; for(let t=start.getTime();t<=now.getTime()+24*36e5;t+=60e3){const d=new Date(t), p=ilParts(d); let ok=false; try{ok=!!j.when(p,d)}catch(e){} if(!ok)continue; if(t<=now.getTime()){due++; if(t>pend)pending++} else{next=d.toISOString(); break}}
     const mine=today.filter(x=>x.name===j.name&&x.kind==='job'&&!x.by), cnt=s=>mine.filter(x=>x.state===s).length, done=cnt('done'), failed=cnt('failed'), late=cnt('late'), skipped=cnt('skipped');
