@@ -286,7 +286,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,3),['kindRow','quickActs','holdSec'],'4.11 (9.11, option A: the stocks and the funds, then the four actions): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['kindRow','holdSec'],'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
       // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above
@@ -710,7 +710,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const A=Object.fromEntries(R.owner.doc.items.map(a=>[a.k,a]));
     assert.equal(A['ev:nvda-q3-report'].lv,'crit'); assert.equal(A['ev:nvda-q3-report'].n,2,'two articles, one alert'); assert.ok(A['ev:msft-eu-probe']&&['imp','crit'].includes(A['ev:msft-eu-probe'].lv));
     assert.ok(!A['ev:aapl-op']||A['ev:aapl-op'].lv==='upd','an opinion (AAPL is held): a portfolio update at most'); assert.ok(!A['ev:acme-widget'],'a deal of companies not held: nothing');
-    const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
+    const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(300); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
     // the icons over צ׳יקו: buttons, the critical first, never more than three; no stories viewer
     const bub=await pg.evaluate(()=>({n:document.querySelectorAll('#stBub .stc').length,first:document.querySelector('#stBub .stc').getAttribute('aria-label'),crit:document.querySelector('#stBub .stc').classList.contains('crit'),bars:!!document.getElementById('stBars'),
       over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=90&&a.height<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 9.11: a small row of logos sitting on the button's top edge
@@ -1275,7 +1275,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
   try{
     let {ctx,pg}=await open(390);
     const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
-    assert.deepEqual(top.b,['btnMore','btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד" (9.11: night and upload under "⋯" on a phone)'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
+    assert.deepEqual(top.b,['btnMore','btnTape','btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד" (9.11: night and upload under "⋯" on a phone)'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -3198,6 +3198,7 @@ test('9.11 the logos beside the holdings, no halo, no alert list on the home; th
       return {rows:rows.length,withLogo:rows.filter(r=>r.querySelector('td .lg')).length,halo:document.querySelectorAll('#rows .lg.nx-crit,#rows .lg.nx-imp').length,list:!!document.getElementById('kAlerts')}});
     assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows); assert.equal(v.halo,0,'no halo'); assert.equal(v.list,false,'no alert list on the home');
     // the round logos over צ׳יקו are back: the alerted company's logo opens its alert
+    await tab(pg,'mine'); await pg.waitForTimeout(300);   // 9.11: on the phone's home the alert is a card; the logos over צ׳יקו show on the other screens
     const bub=await pg.evaluate(()=>{const b=document.getElementById('stBub'); return {on:!b.hidden,logos:b.querySelectorAll('.stc .lg').length}}); assert.ok(bub.on&&bub.logos>=1,'the logos over צ׳יקו: '+JSON.stringify(bub));
     await pg.click('#stBub .stc[data-plk="ev:test-halo"]'); await pg.waitForTimeout(400); assert.ok(await pg.evaluate(()=>/בדיקת התראה/.test(document.body.innerText)),'the logo opened its alert');
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
@@ -3319,7 +3320,7 @@ test('9.11 the tabs at the top of a screen follow the scroll (home: a thin row);
     assert.equal(await pg.evaluate(()=>document.body.dataset.page),'overview','a new open: home');
     await pg.evaluate(()=>window.scrollTo(0,1400)); await pg.waitForTimeout(400);
     const h=await pg.evaluate(()=>{const q=document.getElementById('quickActs').getBoundingClientRect(); return {top:q.top,h:q.height,stuck:document.getElementById('quickActs').classList.contains('stuck')}});
-    assert.ok(Math.abs(h.top)<2&&h.stuck&&h.h<56,'home: the actions at the top, thin: '+JSON.stringify(h));
+    assert.ok(h.h===0,'9.11: on the phone\'s home the four actions are gone (the bar below leads to the screens): '+JSON.stringify(h));
     await tab(pg,'history'); await pg.waitForTimeout(600); await pg.evaluate(()=>window.scrollTo(0,2200)); await pg.waitForTimeout(400);
     const r=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="history"]'), s=p.querySelector(':scope>.subtabs').getBoundingClientRect(), n=p.querySelector(':scope>.ptnav').getBoundingClientRect(); return {s:s.top,sb:s.bottom,n:n.top,y:scrollY}});
     assert.ok(r.y>1000&&Math.abs(r.s)<2,'the screens row at the top: '+JSON.stringify(r)); assert.ok(r.n>=r.sb-1&&r.n<r.sb+12,'the parts row right under it: '+JSON.stringify(r));
@@ -3425,4 +3426,16 @@ test('9.11 a corporate action: a held ticker that changed (FMP\'s list) is said 
     await pg.click('#toastUndo'); await pg.waitForTimeout(1200); assert.ok(store.getDoc('portfolio/main').data.positions.some(p=>p.sym===sym),'undone');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); store.deleteDoc('research/symchg')}
+});
+
+test('9.11 the phone\'s home without clutter: the range\'s change in the chart\'s card, a critical alert as a card under the chart, no four actions, no logos over צ׳יקו, the holdings as they were',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym;
+  store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k:'ev:zz-home',kind:'news',lv:'crit',title:'ידיעת בדיקה לבית',at:new Date().toISOString(),holds:[{sym,link:'direct',w:10,dir:'neg'}],dir:'neg',relWhy:'x'}]});
+  try{const {ctx,pg}=await open(390); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>{const vis=id=>{const e=document.getElementById(id); return !!e&&!!(e.offsetWidth||e.offsetHeight)}, b=document.getElementById('plBan');
+      return {range:vis('wChR')&&/\S/.test(document.getElementById('wChR').textContent),acts:vis('quickActs'),bub:vis('stBub'),ban:!b.hidden&&!!b.closest('.worth')&&getComputedStyle(b).position==='static',lite:document.getElementById('holdSec').classList.contains('lite')===(localStorage.getItem('tr_holdlite')!=='0'),hx:!!document.querySelector('#rows td.hx')}});
+    assert.deepEqual(r,{range:true,acts:false,bub:false,ban:true,lite:true,hx:false},JSON.stringify(r));
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('alerts/pulse',P0.exists?P0.data:{items:[]})}
 });
