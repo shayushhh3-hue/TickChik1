@@ -7,8 +7,9 @@ import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {fixture,closes} from './fixture.js';
+import {fileURLToPath} from 'node:url';
 
-const R=new URL('..',import.meta.url).pathname;
+const R=fileURLToPath(new URL('..',import.meta.url));   // a path on Windows too (".pathname" gave "/C:/…" with the Hebrew letters escaped)
 let claude, seen=[], bodies=[], srv, U, store, browser, docs, R5;
 const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
 process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceiling is for the world
@@ -92,7 +93,7 @@ before(async()=>{
   const app=createApp({store,siteDir:R+'site',jobs:false});
   srv=await new Promise(r=>{const s=http.createServer((req,res)=>{if(req.method==='POST'&&req.url.startsWith('/api/prices')){res.writeHead(200,{'content-type':'application/json'}); res.end('{"ok":true,"cached":true}'); return} app(req,res)}); s.listen(0,'127.0.0.1',()=>r(s))});
   U='http://127.0.0.1:'+srv.address().port+'/';
-  try{browser=await (await import('playwright')).chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage']})}catch(e){browser=null}
+  try{browser=await (await import('playwright')).chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage'],...(process.env.PW_CHANNEL?{channel:process.env.PW_CHANNEL}:{})})}catch(e){browser=null}   // PW_CHANNEL=msedge: a machine's own Edge, no download
 });
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 
@@ -286,18 +287,18 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#tab_risk');   /* 10.11: בקרה left the bottom bar for התראות; its count is on its item in the menu */ return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['holdSec','kindRow'],'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,1),['holdSec'],'10.11: the stocks/funds tiles left the home (each group heading has its sum). '+'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       {const o=await pg.evaluate(()=>{const C=[...document.querySelector('[data-pane="overview"]').children].map(x=>x.id); return [C.indexOf('holdSec'),C.indexOf('soonSec')]}); assert.ok(o[0]>=0&&o[1]>o[0],'10.11 (the owner): the coming two weeks under the holdings, at the bottom: '+JSON.stringify(o))}
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
       // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above
       const document_why_dup=td=>td.whyVis;
-      const td=await pg.evaluate(()=>({on:!document.getElementById('kToday').hidden,h:document.getElementById('kToday').getBoundingClientRect().height,whyVis:!!document.getElementById('kWhy').offsetParent,L:[...document.querySelectorAll('#kToday .tdl')].map(p=>({k:p.className.match(/tdl-(\w+)/)[1],btn:p.tagName==='BUTTON',go:p.dataset.tab||p.dataset.ixst||p.dataset.ixopen||p.dataset.ana||'',t:p.querySelector('.tdl-k').textContent.trim(),b:p.querySelector('.tdl-b').textContent.replace(/\s+/g,' ').trim(),a:(p.querySelector('.tdl-a')||{}).textContent||''})),top:document.getElementById('kToday').getBoundingClientRect().top<innerHeight,
+      const td=await pg.evaluate(()=>({on:!document.getElementById('alToday').hidden,home:!document.getElementById('kToday').hidden,h:0,whyVis:!!document.getElementById('kWhy').offsetParent,L:[...document.querySelectorAll('#alToday .tdl')].map(p=>({k:p.className.match(/tdl-(\w+)/)[1],btn:p.tagName==='BUTTON',go:p.dataset.tab||p.dataset.ixst||p.dataset.ixopen||p.dataset.ana||'',t:p.querySelector('.tdl-k').textContent.trim(),b:p.querySelector('.tdl-b').textContent.replace(/\s+/g,' ').trim(),a:(p.querySelector('.tdl-a')||{}).textContent||''})),top:true,
         news:document.getElementById('kNews').hidden?null:document.getElementById('kNews').textContent}));
       // 9.11 (the owner): only what the screen does not already say: no header, no צ׳יקו, no line of the day (the line above
       // says it, with its own "למה?"), at most three short lines; what to check by its subject and names
-      assert.ok(td.on&&td.top,'on the first screen of a phone'); assert.ok(td.h<150,'a small card: '+td.h); assert.ok(!td.L.some(x=>x.k==='day')&&td.L.length<=3,JSON.stringify(td.L));
-      assert.equal(await pg.evaluate(()=>!!document.querySelector('#kToday .chsay-h')),false,'no "צ׳יקו מסכם בשבילך"'); assert.ok(document_why_dup(td),'the day line\'s "למה?" is back');
+      assert.ok(td.on&&!td.home,'10.11 (the owner): the updates of the day are in התראות, not on the home'); assert.ok(td.h<150,'a small card: '+td.h); assert.ok(!td.L.some(x=>x.k==='day')&&td.L.length<=3,JSON.stringify(td.L));
+      assert.equal(await pg.evaluate(()=>!!document.querySelector('#alToday .chsay-h')),false,'no "צ׳יקו מסכם בשבילך"'); assert.ok(document_why_dup(td),'the day line\'s "למה?" is back');
       const todoR=td.L.find(x=>x.k==='todo')||{}; assert.equal(todoR.t,'לבדוק'); assert.match(todoR.b,/^\S+: \S+.*ועוד \d+$/); assert.ok(todoR.btn&&todoR.go==='risk',JSON.stringify(td.L));
       for(const x of td.L)assert.ok(x.b.length<=90,'a short line: '+x.b);
       assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
@@ -404,7 +405,7 @@ test('what is used: screens and the parts seen on the screen, per day, in the vi
     assert.ok(D['tab:plan']>=1&&D['tab:risk']>=1&&D['tab:overview']>=1,JSON.stringify(D)); assert.ok(D['s:hDesk']>=1,'a part seen on the screen counts: '+JSON.stringify(D));
     await tab(pg,'settings'); await pg.waitForTimeout(600);
     const u=await pg.evaluate(()=>({txt:document.getElementById('useBox').textContent,rows:document.querySelectorAll('#useBox table.use tbody tr').length}));
-    assert.ok(u.rows>=3); assert.match(u.txt,/מה לעשות בהפקדה הבאה/); assert.match(u.txt,/אחרי שבוע של שימוש/); assert.match(u.txt,/נשמר רק בחשבון שלך/);
+    assert.ok(u.rows>=3); assert.match(u.txt,/מה לעשות בהפקדה הבאה/); assert.match(u.txt,/אחרי שבוע של שימוש/); assert.match(u.txt,/רק אתה רואה את זה/);
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)); assert.deepEqual(pg.errs,[]); await ctx.close();
     // a partner's count is in the partner's own data, and the owner cannot read it
     const p=await open(390,{who:'p2'}); await tab(p.pg,'plan'); await p.pg.waitForTimeout(400); await p.pg.evaluate(()=>window.__ux.useSave()); await p.pg.waitForTimeout(500); await p.ctx.close();

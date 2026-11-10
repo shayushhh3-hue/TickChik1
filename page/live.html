@@ -3003,6 +3003,10 @@ body[data-page="overview"] .worth .dayline{display:none!important}
 .kpi .whybtn{position:absolute;top:3px;inset-inline-start:4px;margin:0;font-size:11.5px;min-height:20px;padding:0 7px;line-height:20px}
 #holdAll{display:none!important}
 body[data-page="overview"] #hHold{font-size:19px}
+/* 10.11 (the owner): the holdings' two switches as one balanced line across the width: the kinds at one edge, the currency at the other, of the same height */
+#holdSec .hsub{display:flex;align-items:center;flex-wrap:nowrap;width:100%;gap:8px}
+#holdSec .hsub .hkind{margin:0;flex:none} #holdSec .hsub .hccy{margin-inline-start:auto}
+#holdSec .hsub .hkind .chip{min-height:38px;min-width:56px;justify-content:center;font-size:14px}
 body[data-page="overview"] #kindRow{display:none!important}
 @media (min-width:641px){body[data-page="overview"] .hero #fresh{display:none!important}}   /* the ✓ by the value says the prices are fresh */
 .hold tbody tr.sec td .sec-v{float:inline-end;font-weight:700;color:var(--ink2)}
