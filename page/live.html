@@ -2981,6 +2981,14 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .al-sec .ktoday .tdl{min-height:48px;font-size:14.5px;gap:10px} .al-sec .ktoday .tdl-b{font-size:14.5px}
 .al-sec .ix-alist{display:flex;flex-direction:column;gap:10px}
 .al-empty,.al-more{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+/* 10.11 (the owner): the home quieter. The value a size smaller (it was 46px on a phone, 52px wide); no small lines
+   that are not a figure: the line over the holdings (the count, the cash, where the prices come from), the slogan under
+   the logo on a phone and a tablet; the group beside a company and "למה התאריך של אתמול?" left the holdings' rows (the
+   group is in a holding's details). The small lines of figures and measures stay */
+body[data-page="overview"] .worth #kTotal{font-size:34px;letter-spacing:-.5px;font-weight:700}
+@media (min-width:761px){body[data-page="overview"] .worth #kTotal{font-size:40px}}
+#holdSub{display:none!important}
+@media (max-width:1199px){body[data-page="overview"] .hero .brand-sub{display:none!important}}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -18309,7 +18317,7 @@ function render(){
       +`</dl>${fl?`<p class="hd-fl">${fl}</p>`:''}</td></tr>`;
     // 10.11 (the owner): the symbol is the way to the security's page (its chart, buying and selling); the rest of the row
     // opens the numbers
-    return `<tr class="hrow${op?' open':''}" tabindex="0" aria-expanded="${op}" aria-controls="${hid}" title="לחיצה: כל הנתונים של ${esc(lab(p.sym))}"><td>${logoHtml(p.sym,'s')}${lk?`<button type="button" class="sym hsym" data-gosec="${esc(p.sym)}" aria-label="${esc(lab(p.sym))}: לדף המניה">${esc(lab(p.sym))}</button>`:`<span class="sym">${esc(lab(p.sym))}</span>`}${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${[NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name||''),GROUPS[p.group]||''].filter(Boolean).join(' · ')}</div></td>
+    return `<tr class="hrow${op?' open':''}" tabindex="0" aria-expanded="${op}" aria-controls="${hid}" title="לחיצה: כל הנתונים של ${esc(lab(p.sym))}"><td>${logoHtml(p.sym,'s')}${lk?`<button type="button" class="sym hsym" data-gosec="${esc(p.sym)}" aria-label="${esc(lab(p.sym))}: לדף המניה">${esc(lab(p.sym))}</button>`:`<span class="sym">${esc(lab(p.sym))}</span>`}${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name||'')}</div></td>
     <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(/^מחיר קודם/.test(old)&&((Q.meta||{})[p.sym]||{}).date?'מחיר מ-'+dmy(Q.meta[p.sym].date).slice(0,5):/^מחיר קודם/.test(old)?'מחיר לא עדכני':old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
@@ -18331,7 +18339,7 @@ function render(){
         // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
         if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
-  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,' '+whyBtn('fundpx','למה התאריך של אתמול?'))+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
+  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   // the home shows the five largest holdings; "הצג הכל" opens the rest (the section's rows stay in the page, hidden)

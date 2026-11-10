@@ -322,9 +322,8 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.equal(K.length,6); assert.deepEqual(K.slice(0,2),['רווח מול עלות','מול ההפקדות']); assert.match(K[2],/^עלתה הכי הרבה (היום|ב-[\d.]+)$/); assert.match(K[3],/^ירדה הכי הרבה (היום|ב-[\d.]+)$/);   // 6.11: the day the figures are of
       await tab(pg,'overview'); await pg.waitForTimeout(300);
       // the funds' date, in plain words behind "למה?"
-      await pg.evaluate(()=>document.querySelector('#rows [data-term="fundpx"]').click()); await pg.waitForTimeout(200);
-      assert.match(await pg.evaluate(()=>document.getElementById('termPop').textContent),/מחיר אחד ביום, אחרי סגירת הבורסה/);
-      await pg.evaluate(()=>document.querySelector('[data-termx]').click());
+      // 10.11 (the owner): no small "למה?" lines in the holdings' table
+      assert.equal(await pg.evaluate(()=>!!document.querySelector('#rows [data-term="fundpx"]')),false);
       await tab(pg,'risk'); await pg.waitForTimeout(300);   // the groups' mix lives on the control screen now
       assert.equal(await pg.evaluate(()=>document.getElementById('hMixH').textContent),'פיזור לפי הקבוצות שלך');
       await pg.evaluate(()=>document.querySelector('.mixnote [data-term="grpsec"]').click()); await pg.waitForTimeout(200);
@@ -3387,7 +3386,7 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
       return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('hdrAcct').left],theme:R('btnMore').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnMore','btnRefresh'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
     assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
-    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan!=='none'&&r.ic.every(x=>x<=1),'the accounts a switch in the value card, the slogan under the logo, each icon in the middle of its square: '+JSON.stringify(r));
+    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan==='none'&&r.ic.every(x=>x<=1),'the accounts a switch in the value card, no slogan on a phone (10.11, the owner), each icon in the middle of its square: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
     assert.equal(await pg.evaluate(()=>document.querySelector('#acctChips .chip[aria-pressed="true"]')?.dataset.a),a[1],'the switch changes the account');
     await tab(pg,'search'); await pg.waitForTimeout(500);
