@@ -35,6 +35,10 @@ export function buildSite(root){
   {const sm=body.match(/<script type="text\/plain" id="symdb">\n?([\s\S]*?)<\/script>\s*/); if(sm){const txt=sm[1], dir=path.join(root,'site','lib'); fs.mkdirSync(dir,{recursive:true});
     fs.writeFileSync(path.join(dir,'symdb.txt'),txt); const u='lib/symdb.txt?v='+createHash('sha1').update(txt).digest('hex').slice(0,10);
     body=body.slice(0,sm.index)+body.slice(sm.index+sm[0].length); libs.loader+=`<script>window.__tcSymdb=${JSON.stringify(u)};</script>\n`}}
+  // 10.11: the logos' sheets with their version too (a hash of each file): the page asks for logos/A.webp?v=…, which the
+  // server lets the browser keep for good; a sheet that changes gets a new address
+  {const dir=path.join(root,'site','logos'), V={}; try{for(const f of fs.readdirSync(dir))if(f.endsWith('.webp'))V[f.slice(0,-5)]=createHash('sha1').update(fs.readFileSync(path.join(dir,f))).digest('hex').slice(0,10)}catch(e){}
+    if(Object.keys(V).length)libs.loader+=`<script>window.__tcLogoV=${JSON.stringify(V)};</script>\n`}
   if(t)body=body.slice(0,t.index)+body.slice(t.index+t[0].length);
   const boot=libs.loader+`<script>
 // The page asks for window.claude.use(name); on this site it is served by runtime.js from the site's own server.

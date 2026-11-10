@@ -23092,7 +23092,6 @@ function pickTile([sym,name]){const hs=(P&&P.positions||[]).filter(p=>p.sym===sy
 function pickInit(){
   const g=$('pickGrid'), gf=$('pickGridF'); if(!g||g.dataset.ok)return; g.dataset.ok='1';
   g.innerHTML=PICKS.map(pickTile).join(''); gf.innerHTML=PICKF.map(pickTile).join('');
-  for(const sh of new Set([...PICKS,...PICKF].map(x=>(lgPos(x[0])||[])[0]).filter(Boolean)))lgLoad(sh);
   const a=$('pickAcct'); a.innerHTML=acctOpts(); 
   $('pickIdx').innerHTML=Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${benchSel().includes(k)}">${BENCHK[k]}</button>`).join('');
   const box=$('pickBox'), has=!!(P&&(P.positions||[]).length); box.open=!has; pickSub();
@@ -25234,7 +25233,9 @@ const LGS={"A":"A* AA* AAA AAC AACG* AACI* AAL* AAME* AAOI* AAON* AAP* AAPL AAT*
 const LGCOLS=20; let LGPOS=null; const LGOK=new Map(),LGTRY=new Set(),LGERR=new Set();
 function lgPos(k){if(!LGPOS){LGPOS=new Map();for(const sh in LGS){const a=LGS[sh].split(' ');const rows=Math.max(2,Math.ceil(a.length/LGCOLS));a.forEach((raw,i)=>{const m=raw.match(/^([^*#]+)(\*|#[0-9A-F]{6})?$/)||[raw,raw,''];const t=m[1],lt=m[2]==='*',bc=m[2]&&m[2][0]==='#'?m[2]:'';LGPOS.set(sh==='TLV'?'TLV:'+t:t,[sh,i%LGCOLS,Math.floor(i/LGCOLS),rows,lt,bc])})}}return LGPOS.get(k)||null}
 // a sheet is fetched once (as a blob, which the viewer allows for images), then every tile of that sheet on the page is filled in
-function lgLoad(sh){if(LGTRY.has(sh))return;LGTRY.add(sh);let rel='logos/'+sh+'.webp';try{if(location.search)rel+=location.search}catch(e){}let tried=0;
+// 10.11: a sheet's address carries its version (the build's hash of it, window.__tcLogoV): the browser keeps it for good
+// and fetches it again only when the sheet changes (each deploy fetched all of them again, about 2.5 MB)
+function lgLoad(sh){if(LGTRY.has(sh))return;LGTRY.add(sh);let rel='logos/'+sh+'.webp';try{const v=window.__tcLogoV&&window.__tcLogoV[sh]; if(v)rel+='?v='+v; else if(location.search)rel+=location.search}catch(e){}let tried=0;
   const use=u=>{const im=new Image();im.onload=()=>{LGOK.set(sh,u);lgFillAll(sh)};im.onerror=()=>{if(u!==rel&&!tried){tried=1;use(rel)}else{LGERR.add(sh);lgNote()}};im.src=u};
   try{fetch(rel).then(r=>{LGDBG[sh]=r.status+' '+(r.headers.get('content-type')||'?');if(!r.ok)throw 0;return r.blob()}).then(bl=>{LGDBG[sh]+=' '+bl.type+' '+bl.size;use(URL.createObjectURL(bl))}).catch(e=>{LGDBG[sh]=(LGDBG[sh]||'')+' err:'+(e&&e.message||e);tried=1;use(rel)})}catch(e){LGDBG[sh]='throw:'+(e&&e.message||e);tried=1;use(rel)}}
 const LGDBG={};

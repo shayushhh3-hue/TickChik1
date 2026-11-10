@@ -531,7 +531,8 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(req.method==='HEAD')return res.end(); res.end(z.body);
   });
   app.locals.squeezeSite=()=>{const f=path.join(siteDir,'index.html'); try{const st=fs.statSync(f); for(const e of ['br','gzip'])squeeze(f,st,e).catch(()=>{})}catch(e){}};
-  app.use(express.static(siteDir,{index:'index.html',etag:true,setHeaders:(res,p)=>{if(/\.html$/.test(p)||/config\.js$/.test(p))res.setHeader('cache-control','no-cache'); res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin')}}));
+  // 10.11: a logos' sheet asked for with its version (logos/A.webp?v=…, from the build) is kept by the browser for good
+  app.use(express.static(siteDir,{index:'index.html',etag:true,setHeaders:(res,p)=>{if(/\.html$/.test(p)||/config\.js$/.test(p))res.setHeader('cache-control','no-cache'); else if(/[\\/]logos[\\/][^\\/]+\.webp$/.test(p)&&res.req&&res.req.query&&res.req.query.v)res.setHeader('cache-control','public, max-age=31536000, immutable'); res.setHeader('x-content-type-options','nosniff'); res.setHeader('x-frame-options','DENY'); res.setHeader('referrer-policy','strict-origin-when-cross-origin')}}));
   app.use((req,res)=>res.status(404).send('לא נמצא'));
   return app;
 }
