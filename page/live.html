@@ -19955,7 +19955,8 @@ function renderDesk(m,A){
 // what to check) and what to do; not the stream of news, which stays in חיבור למציאות. The count on its button is the
 // day's updates only
 function renderAlerts(L,nAck,nDay){
-  {const el=$('alTodo'); if(el)setH(el,todoH(L||[],nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
+  // what to do, without the news items (they are in חיבור למציאות and the day's one is above)
+  {const el=$('alTodo'); if(el)setH(el,todoH((L||[]).filter(x=>x.cat!=='חדשות'),nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
   const n=nDay||0, crit=(L||[]).some(x=>x.sev==='crit');
   for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
     if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); b.appendChild(g)}
