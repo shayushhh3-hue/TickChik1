@@ -287,6 +287,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
       assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['kindRow','holdSec'],'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      {const o=await pg.evaluate(()=>{const C=[...document.querySelector('[data-pane="overview"]').children].map(x=>x.id); return [C.indexOf('holdSec'),C.indexOf('soonSec')]}); assert.ok(o[0]>=0&&o[1]>o[0],'10.11 (the owner): the coming two weeks under the holdings, at the bottom: '+JSON.stringify(o))}
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
       // start, the whole line a button with a chevron when it leads somewhere; the change itself is on the line above

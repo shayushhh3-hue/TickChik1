@@ -3051,7 +3051,6 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
         <button type="button" class="qa-b" data-tab="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10M7 17h10"/><path d="M15 9h2"/></svg><span>חדשות ונתונים</span></button>
         <button type="button" class="qa-b" data-tab="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>הוסף נכסים</span></button>
       </div>
-      <section class="soon" id="soonSec" aria-labelledby="hSoon" hidden><div class="row soon-h"><h2 id="hSoon">השבועיים הקרובים בתיק שלך</h2><button type="button" class="lnk hold-all" data-tab="calendar">ללוח המלא ‹</button></div><div class="soon-s" id="soonList"></div><p class="soon-dv" id="soonDiv" hidden></p></section>
       <section aria-labelledby="hHold" id="holdSec" class="hold lite top">
       <div class="row"><h2 id="hHold">האחזקות שלי</h2><button type="button" class="lnk hold-all" id="holdAll" aria-expanded="false">הצג הכל ‹</button><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button><button type="button" class="chip" data-hc="both" aria-pressed="false" title="שקלים, ומתחת בדולרים">₪+$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
       <div class="panel scroll">
@@ -3068,6 +3067,8 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <div id="taxBanner" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
     <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
+    <!-- 10.11 (the owner): the coming two weeks at the bottom of the home, after the holdings; less relevant at the top -->
+    <section class="soon" id="soonSec" aria-labelledby="hSoon" hidden><div class="row soon-h"><h2 id="hSoon">השבועיים הקרובים בתיק שלך</h2><button type="button" class="lnk hold-all" data-tab="calendar">ללוח המלא ‹</button></div><div class="soon-s" id="soonList"></div><p class="soon-dv" id="soonDiv" hidden></p></section>
     
     
     
