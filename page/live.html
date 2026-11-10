@@ -2985,22 +2985,22 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
    that are not a figure: the line over the holdings (the count, the cash, where the prices come from), the slogan under
    the logo on a phone and a tablet; the group beside a company and "למה התאריך של אתמול?" left the holdings' rows (the
    group is in a holding's details). The small lines of figures and measures stay */
-body[data-page="overview"] .worth #kTotal{font-size:30px;letter-spacing:-.5px;font-weight:700}
-@media (min-width:761px){body[data-page="overview"] .worth #kTotal{font-size:36px}}
+body[data-page="overview"] .worth #kTotal{font-size:26px;letter-spacing:-.4px;font-weight:700;line-height:1.15}
+@media (min-width:761px){body[data-page="overview"] .worth #kTotal{font-size:32px}}
 #holdSub{display:none!important}
 @media (max-width:1199px){body[data-page="overview"] .hero .brand-sub{display:none!important}}
 /* 10.11 (the owner): the home as the brokers' apps have it. Under the value one row of three figures of one make (היום,
    30 יום, רווח כולל or מזומן) in place of the day's pill; the indices a thin strip over the card; every holding shown,
    each group's heading with its sum and share, so the stocks/funds tiles under the table go */
 body[data-page="overview"] .worth .dayline{display:none!important}
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 4px;width:100%}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 2px;width:100%}
 .kpis[hidden]{display:none}
-.kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:8px 6px;border-radius:14px;background:var(--sunk);text-align:center;min-width:0}
-.kpi-k{font-size:12.5px;color:var(--muted);font-weight:600}
-.kpi-v{font-size:15px;font-weight:800;color:var(--ink);white-space:nowrap;direction:ltr;unicode-bidi:isolate}
-.kpi-s{font-size:12.5px;font-weight:700;direction:ltr;unicode-bidi:isolate}
+.kpi{position:relative;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;column-gap:4px;row-gap:0;padding:6px 4px;border-radius:14px;background:var(--sunk);text-align:center;min-width:0}
+.kpi-k{flex:0 0 100%;font-size:12px;color:var(--muted);font-weight:600;line-height:1.4}
+.kpi-v{flex:0 0 100%;font-size:14px;font-weight:800;color:var(--ink);white-space:nowrap;direction:ltr;unicode-bidi:isolate}
+.kpi-s{flex:0 0 100%;font-size:12px;font-weight:700;direction:ltr;unicode-bidi:isolate}
 .kpi .up{color:var(--gain)} .kpi .down{color:var(--loss)}
-.kpi .whybtn{margin-top:4px;font-size:12px;min-height:28px}
+.kpi .whybtn{position:absolute;top:3px;inset-inline-start:4px;margin:0;font-size:11.5px;min-height:20px;padding:0 7px;line-height:20px}
 #holdAll{display:none!important}
 body[data-page="overview"] #hHold{font-size:19px}
 body[data-page="overview"] #kindRow{display:none!important}
@@ -3024,10 +3024,11 @@ body[data-page="overview"] .hero #acctChips{display:none!important}
 .ovtabs .acctsel:not([hidden]){display:inline-block;margin:0;min-height:38px;font-size:13.5px;padding:6px 30px 6px 14px;background-color:var(--surface);flex:none}
 .mix-head{margin:0 0 14px} .mix-head h2{margin:0;font-size:22px;font-weight:800} .mix-head .sub{display:block;margin-top:2px;font-size:14px}
 @media (max-width:640px){
-  .ovtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;gap:6px} .ovtabs button{flex:none;padding:6px 11px;font-size:13px} .ovtabs button svg{display:none}
-  .ovtabs .acctsel:not([hidden]){font-size:13px;padding:6px 26px 6px 10px}
-  body.homeA[data-page="overview"] .hero .worth{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:24px;padding:16px 14px 10px}
-  body.homeA[data-page="overview"] .worth #wChart{margin-top:14px;padding:12px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;background:none}
+  .ovtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;gap:5px} .ovtabs button{flex:none;gap:4px;padding:5px 8px;font-size:12.5px;min-height:36px} .ovtabs button svg{width:14px;height:14px}
+  .ovtabs .acctsel:not([hidden]){font-size:12.5px;min-height:36px;padding:5px 22px 5px 8px;background-position:left 6px center}
+  body.homeA[data-page="overview"] .hero .worth{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:22px;padding:10px 12px 8px}
+  body.homeA[data-page="overview"] .worth .wtop{margin:0;min-height:0}
+  body.homeA[data-page="overview"] .worth #wChart{margin-top:8px;padding:6px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;background:none}
 }
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
