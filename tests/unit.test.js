@@ -1296,7 +1296,11 @@ test('31.10 the story behind the headline: one per event from its readings, ever
   const pv=partnerView(s,{id:f.id,role:'friend'},'research/stories',s.getDoc('research/stories').data); assert.deepEqual(Object.keys(pv.by),[],'the kept stories: none of theirs yet');
   await storyOf(s,'ko-cfo',{now,visible:vis}); assert.deepEqual(Object.keys(partnerView(s,{id:f.id,role:'friend'},'research/stories',s.getDoc('research/stories').data).by),['ko-cfo']);
   // the endpoint: the event's story, a bad key refused
-  const {srv,req,store:st2}=await startApp(); try{st2.setDoc('research/news',s.getDoc('research/news').data); st2.setDoc('research/newsx',s.getDoc('research/newsx').data);
+  const {srv,req,store:st2}=await startApp(); try{
+    // 10.11: the endpoint reads the articles of the last days by the real clock; the test's articles are dated "now" (they
+    // were dated 31.10, and the test failed once that was more than the window ago)
+    const fresh=new Date().toISOString(), N0=s.getDoc('research/news').data, X0=s.getDoc('research/newsx').data;
+    st2.setDoc('research/news',{...N0,items:N0.items.map(i=>({...i,at:fresh,seen:fresh}))}); st2.setDoc('research/newsx',{...X0,by:Object.fromEntries(Object.entries(X0.by).map(([k,v])=>[k,{...v,at:fresh}])),updatedAt:fresh});
     await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); const k1b=process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
     try{const r2=await req('o','POST','/api/newsx/story',{ev:'ko-cfo'}); assert.equal(r2.status,200); assert.equal(r2.j.ev,'ko-cfo'); assert.ok(r2.j.what.length);
       assert.equal((await req('o','POST','/api/newsx/story',{ev:'bad key!'})).status,400)}finally{if(k1b!=null)process.env.ANTHROPIC_API_KEY=k1b}}finally{srv.close()}
