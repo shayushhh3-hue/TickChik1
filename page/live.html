@@ -2903,7 +2903,21 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   body[data-page="overview"] .worth .acctsel{font-size:12.5px;min-height:28px;padding:2px 24px 2px 10px}
   body[data-page="overview"] .hero #acctChips{grid-row:4;grid-column:1/-1;justify-self:start;margin-top:4px} body[data-page="overview"] .hero #pxNow{grid-row:4;grid-column:1/-1;justify-self:end;align-self:center;margin:4px 0 0}
 }
-</style>
+/* 10.11 (a walk through the site): text that is read is 12px at the least (it went down to 10.5px and 11px: labels,
+   tags, notes, the bottom bar). Counters, logos' letters and the charts' own labels keep their size */
+.potit .pi-v .k,.calgrid .wd,.pick .nm,.idx small,table.pf td[data-l]::before,.nwp,.hero .live,.kt-k,.kt-p,.nx-tag,.nw-k,.nw-cat,.nw-e .how,
+.mk-n,.mk-i small,.dva-c .nm,.tm-t thead th,.cmp-t thead th small,.cmp-t tbody th small,.cmp-t td.n small,.jrn-l.sm .jrn-t,.sim-r .n small,.eco-imp,
+.nw-stp li .nx-tag,.nw-srefs,.ix-ks,.ix-leg,.ix-tl small,.ktoday .chsay-h,.ktoday .tdl-k,.ktoday .tdl-a.w,.ktoday .ix-dw,.nw-tr,.pl-nw,.pl-m i,
+.srcref.nw-sref,.pr-w,.soon-e small,.worth .wv .dayline .whybtn,body:not([data-page="overview"]) .hero #fresh,body.homeA #kindRow .kt-p,
+.hold tbody td:nth-child(1) .pill,.hold tbody td:nth-child(1) .flag{font-size:12px}
+@media (max-width:640px){
+  .botbar button{font-size:12px}
+  .hold.lite tbody td:nth-child(6){font-size:12px}
+}
+/* the direction pills: the colour in the word and its arrow only; three filled pills of three colours on every card were most of the noise */
+.ix-dw.pos,.ix-dw.neg,.ix-dw.mix{background:none;border-color:var(--line)}
+/* a target is 44px high where it is tapped on its own */
+.hold-all{min-height:44px;padding-inline:10px}</style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
 <div class="plban" id="plBan" role="alert" hidden><span id="plBanT"></span><button type="button" class="btn sm" id="plBanGo">לפרטים</button><button type="button" class="plban-x" id="plBanX" aria-label="סגירה (ההתראה נשארת במרכז ההתראות)">×</button></div>
@@ -3420,7 +3434,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section aria-labelledby="hNewsT" class="nxsec">
       <div class="row"><h2 id="hNewsT">חיבור למציאות</h2><span class="sub" id="newsFresh"></span></div>
       <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
-        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">TikChik Impact <span class="rt-n" id="rtAlN" hidden></span></button>
+        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">השפעה על התיק <span class="rt-n" id="rtAlN" hidden></span></button>
         <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">החדשות שלי</button>
       </div>
       <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews" hidden>
@@ -3448,7 +3462,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
       </div>
       <div id="rtAl" class="rt-p ix" role="tabpanel" aria-labelledby="rtTabAl" hidden>
         <div class="ix-head">
-          <div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><b>TikChik Impact</b><span>הדופק של תיק ההשקעות שלך</span></div></div>
+          <div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><b>ההשפעה על התיק</b><span>הדופק של תיק ההשקעות שלך</span></div></div>
           <div class="ix-range" id="ixRange" role="group" aria-label="תקופה"><button type="button" data-ixr="1" aria-pressed="false">24 שעות</button><button type="button" data-ixr="7" aria-pressed="true">7 ימים</button><button type="button" data-ixr="30" aria-pressed="false">30 ימים</button><button type="button" data-ixr="90" aria-pressed="false">90 ימים</button><button type="button" data-ixr="all" aria-pressed="false">כל התקופה</button></div>
         </div>
         <div class="ix-note" id="ixNote" hidden></div>
@@ -19312,7 +19326,8 @@ function renderWChart(){
   g+=`<g id="wChC" style="display:none"><line id="wChCl" y1="${T}" y2="${H-B}" style="stroke:var(--muted)" stroke-opacity=".6" stroke-width="1"/><circle id="wChCd" r="5.5" fill="#8B5CF6" style="stroke:var(--surface)" stroke-width="2"/><rect id="wChTb" rx="11" height="22" style="fill:var(--ink)"/><text id="wChTt" font-size="12" font-weight="700" style="fill:var(--surface)" text-anchor="middle" dominant-baseline="central" font-family="var(--sans)"></text></g>`;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('direction','ltr'); svg.style.direction='ltr'; svg.style.height=H+'px'; svg.innerHTML=g;
   const keep=WCI>=0&&WCI<P0.length; WCP={P:P0,x,y,W,L,R,T,lo,hi}; if(!keep)WCI=-1; wRead(WCI);
-  const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}, חודש אחר חודש: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל חודש.`);
+  // 10.11: a week or a month is drawn day by day; the label said "חודש אחר חודש" for every range
+  const a=P0[0], ch=Lp.v-a.v; svg.setAttribute('aria-label',`גרף שווי ${acct==='all'?'התיק':acctName(acct)}, ${short?'יום אחר יום':'חודש אחר חודש'}: מ-${ils(a.v)} ב-${wLab(a)} ל-${ils(Lp.v)} ${Lp.now?'היום':'ב-'+wLab(Lp)}. חצים ימינה ושמאלה לקריאת כל ${short?'יום':'נקודה'}.`);
 }
 const wLab=p=>p.now?'היום':p.label||dmy(isoDay(p.t));
 // the line above the chart: the range's change (and, for all the accounts, how much of it is deposits), or the point under the cursor
@@ -21167,7 +21182,7 @@ window.__ana={facts:anaFacts,issues:anaIssues,factsAI:anaFactsAI,numSet:anaNumSe
 // comparison, the security named), he brings what he found without being asked (ranked, once, at most one nudge a day,
 // silenced on request), shows what he remembers and where it comes from, keeps the conversations in this browser only,
 // and changes nothing without an explicit "yes" (and never trades). No second chat, no second character.
-const CHICO_SCR={overview:'סקירה',mine:'התיק שלי',search:'חיפוש',sec:'דף הנייר',news:'החדשות שלי',impact:'TikChik Impact',risk:'בקרה וסיכון',plan:'תוכנית ודיבידנדים',forecast:'יעד ותרחישים',history:'מבט לאחור',state:'מה קורה בתיק',journal:'היומן שלי',compare:'השוואת ניירות',watch:'מעקב',ratings:'דירוג החברות',pots:'חסכונות',settings:'כללים ויעדים',calendar:'לוח מסחר',reports:'דוחות'};
+const CHICO_SCR={overview:'סקירה',mine:'התיק שלי',search:'חיפוש',sec:'דף הנייר',news:'החדשות שלי',impact:'השפעה על התיק',risk:'בקרה וסיכון',plan:'תוכנית ודיבידנדים',forecast:'יעד ותרחישים',history:'מבט לאחור',state:'מה קורה בתיק',journal:'היומן שלי',compare:'השוואת ניירות',watch:'מעקב',ratings:'דירוג החברות',pots:'חסכונות',settings:'כללים ויעדים',calendar:'לוח מסחר',reports:'דוחות'};
 function chicoScreen(){const pg=(document.body&&document.body.dataset.page)||'overview';
   if(pg==='search'&&SEC)return {k:'sec',sym:SEC,he:`${CHICO_SCR.sec} ${lab(SEC)}`};
   if(pg==='news'&&RTT==='al')return {k:'impact',he:CHICO_SCR.impact};
@@ -25274,13 +25289,14 @@ function srchRender(){
   if(SEC){box.hidden=true;pg.hidden=false;renderSec();return}
   pg.hidden=true;box.hidden=false;
   const row=(it,extra)=>{const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
-    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${esc(it.t==='S'&&it.sec?it.sec:(TYPEL[it.t]||''))}${extra||''}</span></div>`+
+    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${esc(it.t==='S'&&it.sec?(SEC_HE[it.sec]||it.sec):(TYPEL[it.t]||''))}${extra||''}</span></div>`+
       (pr?`<div class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</div>`:'')+
       `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`};
   if(!SYMDB){box.innerHTML='<div class="empty">טוען את רשימת הניירות…</div>';loadSymDb().then(()=>{if(SYMDB)srchRender()});return}
   if(SQ.trim()){const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
     box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'));return}
-  const marks=wmarks().map(itemOf).filter(Boolean), rec=recent().map(itemOf).filter(Boolean);
+  // 10.11: a security already in "במעקב שלי" is not listed again under "חיפושים אחרונים"
+  const marks=wmarks().map(itemOf).filter(Boolean), rec=recent().map(itemOf).filter(it=>it&&!wmarks().includes(skey(it)));
   let h='';
   if(marks.length)h+=`<div class="hd"><span>במעקב שלי</span><span>${marks.length}</span></div>`+marks.map(it=>row(it)).join('');
   const cds=(CD&&Array.isArray(CD.items)?CD.items:[]).map(c=>c&&c.sym&&itemOf(c.sym)).filter(it=>it&&!wmarks().includes(skey(it)));
@@ -25675,7 +25691,7 @@ function renderSec(){SECHOV=-1;
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
-  pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
+  pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
     <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
     ${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}
@@ -27386,7 +27402,7 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   if(IXST){ixStRender(); return} if(IXFULL){plCenter(); return}
   const F=ixFigures(m), note=$('ixNote');
   if(note){let t=''; if(!pr.on)t=`ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>`;
-    else if(!hp)t=`<b>TikChik Impact נבנה מהתיק שלך.</b> הוסף את האחזקות, וכל אירוע שנוגע להן יופיע כאן עם ההסבר. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button></span>`;
+    else if(!hp)t=`<b>ההשפעה על התיק נבנית מהתיק שלך.</b> הוסף את האחזקות, וכל אירוע שנוגע להן יופיע כאן עם ההסבר. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button></span>`;
     else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
     note.hidden=!t; setH(note,t)}
   {const k=$('ixKpis'); if(k)k.hidden=true}   // 1.11: the figure cards repeated the list below them: gone

@@ -602,7 +602,7 @@ test('חיבור למציאות, the news: the portfolio\'s news with search, fi
     const r=await pg.evaluate(()=>({h:document.getElementById('hNewsT').textContent,tabs:[...document.querySelectorAll('[data-rt]')].filter(b=>b.getAttribute('role')==='tab').map(b=>b.textContent.replace(/\s+/g,' ').trim()),
       heads:[...document.querySelectorAll('.nw-heads article')].map(a=>a.querySelector('h3, .nw-cs b').textContent),hero:!!document.querySelector('.nw-heads .nwc.hero'),cats:document.querySelectorAll('#nxCats .chip').length,
       catSecs:[...document.querySelectorAll('.nw-cg .nw-h')].map(h=>h.textContent),al:(document.querySelector('.nw-al b')||{}).textContent||'',ox:document.documentElement.scrollWidth>innerWidth+1}));
-    assert.equal(r.h,'חיבור למציאות'); assert.match(r.tabs[0],/^TikChik Impact \d+$/,'the count of the unread: '+r.tabs[0]); assert.equal(r.tabs[1],'החדשות שלי');
+    assert.equal(r.h,'חיבור למציאות'); assert.match(r.tabs[0],/^השפעה על התיק \d+$/,'the count of the unread: '+r.tabs[0]); assert.equal(r.tabs[1],'החדשות שלי');
     assert.equal(r.heads[0],'אנבידיה היכתה את התחזיות והעלתה את התחזית','the most important first'); assert.ok(r.hero);
     assert.ok(!r.heads.includes('מניית אנבידיה קפצה אחרי הדוח'),'one card per event'); assert.equal(await pg.evaluate(()=>document.getElementById('nxCats').hidden),true,'no categories'); assert.deepEqual(r.catSecs,[],'no sections of the world\'s news'); assert.match(r.al,/התראות? אישי/); assert.equal(r.ox,false,'no sideways scroll');
     assert.ok(!r.heads.includes('אופ״ק קיצצה תפוקה והנפט עלה'),'the oil news touches nothing in this portfolio: not here'); assert.ok(r.heads.includes('הפד הותיר את הריבית'),'the Fed touches a held sector: here');
@@ -696,7 +696,7 @@ test('חיבור למציאות without a portfolio: the news to read and search
     assert.equal(r.cards,0,'no general news without a portfolio'); assert.equal(r.n,true,'no count of alerts'); assert.equal(r.ox,false);
     await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300);
     const al=await pg.evaluate(()=>({t:document.getElementById('ixNote').textContent,cards:document.querySelectorAll('#ixAlList .ix-a').length,btn:!!document.querySelector('#ixNote [data-tab="mine"]'),kpis:document.getElementById('ixKpis').hidden,world:!!document.querySelector('#ixViews [data-ixv="world"]')}));
-    assert.equal(al.cards,0); assert.match(al.t,/TikChik Impact נבנה מהתיק שלך/); assert.ok(al.btn,'a way to add a portfolio'); assert.equal(al.kpis,true,'no figures');
+    assert.equal(al.cards,0); assert.match(al.t,/ההשפעה על התיק נבנית מהתיק שלך/); assert.ok(al.btn,'a way to add a portfolio'); assert.equal(al.kpis,true,'no figures');
     assert.equal(al.world,false,'no world view on the site');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{rtRestore(N0,X0,ST0,PU0)}
