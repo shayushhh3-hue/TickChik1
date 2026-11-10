@@ -3095,9 +3095,10 @@ test('8.11 the pressure gauge on the control screen: the owner sees the part, th
   store.setDoc('research/pressure_track',{since:'2026-11-08',at:now,items:[{id:'NVDA:'+now.slice(0,10),sym:'NVDA',date:now.slice(0,10),level:2,score:5,px0:182,signals:['move','news','volume']}],misses:[],stats:{warned:1,pending:1,hits:0,partial:0,false:0,misses:0}});
   try{
     const {ctx,pg}=await open(1280); await tab(pg,'risk'); await pg.waitForTimeout(400);
-    const chip=await pg.evaluate(()=>{const b=document.querySelector('#riskNav [data-rg="press"]'); return b?{hidden:b.hidden,text:b.textContent}:null});
-    assert.deepEqual(chip,{hidden:false,text:'מד לחץ'},'the part is offered to the owner');
-    await pg.click('#riskNav [data-rg="press"]'); await pg.waitForTimeout(300);
+    // 10.11 (the owner): the gauge is in "מדדי סיכון", not a part of its own (that chip hid nothing and showed the whole control)
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#riskNav [data-rg="press"]')),false,'no part of its own');
+    await pg.click('#riskNav [data-rg="vol"]'); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(()=>getComputedStyle(document.querySelector('[data-pane="risk"] > [data-rg="now"]')).display),'none','only the risk measures, not the whole control');
     const v=await pg.evaluate(()=>{const s=document.getElementById('pressSec'), rows=[...s.querySelectorAll('.pr-r')]; return {hidden:s.hidden,shown:getComputedStyle(s).display!=='none',sub:document.getElementById('pressSub').textContent,
       rows:rows.map(r=>({cls:r.className,lv:r.querySelector('.pr-lv').textContent,sym:r.querySelector('.sym').textContent,n:r.querySelectorAll('.pr-s li').length})),text:s.innerText}});
     assert.equal(v.hidden,false); assert.ok(v.shown); assert.match(v.sub,/2 ניירות · 1 ב"גבוה" או "חריג"/);
@@ -3115,8 +3116,8 @@ test('8.11 the pressure gauge on the control screen: the owner sees the part, th
     assert.deepEqual(pg.errs,[]); await ctx.close();
     // a partner: the part is not offered, and the document is refused by the server
     const P2=await open(1280,{who:'p2'}); await tab(P2.pg,'risk'); await P2.pg.waitForTimeout(400);
-    const c2=await P2.pg.evaluate(()=>{const b=document.querySelector('#riskNav [data-rg="press"]'); return {chip:b?b.hidden:'none',sec:document.getElementById('pressSec').hidden}});
-    assert.deepEqual(c2,{chip:true,sec:true});
+    const c2=await P2.pg.evaluate(()=>({sec:document.getElementById('pressSec').hidden}));
+    assert.deepEqual(c2,{sec:true});
     const r=await P2.pg.evaluate(async()=>{try{const db=await window.claude.use('db'); const d=await db.doc('research/pressure').get(); return d.exists?'exists':'none'}catch(e){return 'refused'}});
     assert.notEqual(r,'exists','a partner never gets the gauge');
     assert.deepEqual(P2.pg.errs,[]); await P2.ctx.close();

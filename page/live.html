@@ -19695,8 +19695,8 @@ function foldIs(){return true}
 // 5.11: five parts instead of three. "פיזור" was five screens of eight analyses and "סיכון ותרחישים" five more: what moves
 // together (the co-movement and both kinds of pairs, one question) and the risk measures (the snapshot and the securities
 // that shake the portfolio) are parts of their own
-const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk'],press:['hPress']};
-const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון',press:'מד לחץ'};
+const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk','hPress']};   // 10.11 (the owner): the pressure gauge is one of the risk measures (as a part of its own, its chip hid nothing and opened the whole control)
+const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
 function rgSet(k){if(!RG[k])k='now'; RGV=k; try{localStorage.setItem('tr_rgv',k)}catch(e){}
