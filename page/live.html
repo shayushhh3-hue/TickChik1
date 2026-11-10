@@ -2989,6 +2989,24 @@ body[data-page="overview"] .worth #kTotal{font-size:34px;letter-spacing:-.5px;fo
 @media (min-width:761px){body[data-page="overview"] .worth #kTotal{font-size:40px}}
 #holdSub{display:none!important}
 @media (max-width:1199px){body[data-page="overview"] .hero .brand-sub{display:none!important}}
+/* 10.11 (the owner): the home as the brokers' apps have it. Under the value one row of three figures of one make (היום,
+   30 יום, רווח כולל or מזומן) in place of the day's pill; the indices a thin strip over the card; every holding shown,
+   each group's heading with its sum and share, so the stocks/funds tiles under the table go */
+body[data-page="overview"] .worth .dayline{display:none!important}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 4px;width:100%}
+.kpis[hidden]{display:none}
+.kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 6px;border-radius:14px;background:var(--sunk);text-align:center;min-width:0}
+.kpi-k{font-size:12.5px;color:var(--muted);font-weight:600}
+.kpi-v{font-size:16px;font-weight:800;color:var(--ink);white-space:nowrap;direction:ltr;unicode-bidi:isolate}
+.kpi-s{font-size:12.5px;font-weight:700;direction:ltr;unicode-bidi:isolate}
+.kpi .up{color:var(--gain)} .kpi .down{color:var(--loss)}
+.kpi .whybtn{margin-top:4px;font-size:12px;min-height:28px}
+#holdAll{display:none!important}
+body[data-page="overview"] #kindRow{display:none!important}
+.hold tbody tr.sec td .sec-v{float:inline-end;font-weight:700;color:var(--ink2)}
+body[data-page="overview"] .hero #idxRow:not([hidden]){display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px;padding:2px 0}
+body[data-page="overview"] .hero #idxRow .idx,body[data-page="overview"] .hero #idxRow .chip{flex:none;white-space:nowrap}
+body:not([data-page="overview"]) #idxRow{display:none!important}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -3070,6 +3088,7 @@ body[data-page="overview"] .worth #kTotal{font-size:34px;letter-spacing:-.5px;fo
           <div class="wv">
             <span class="big" id="kTotal">—</span>
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><span class="dpill" id="kDayPill"></span><span class="dw" id="kDayW"></span><i class="dl-br" aria-hidden="true"></i><span class="dm" id="kDayM" hidden></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
+            <div class="kpis" id="kKpis" role="group" aria-label="השינוי בתיק" hidden></div>
             <div class="ktoday" id="kToday" aria-live="polite" hidden></div>
             <div class="pnlline" id="kPnlL" hidden></div><div class="pnlline pnlsub" id="kFxL" hidden></div><div class="pnlline pnlsub" id="kBenchL" hidden></div>
             <div class="d" id="kTotalD"></div>
@@ -18207,7 +18226,7 @@ function render(){
   const mH=KV!=='all'?kindView(m,KV):m;   // the top of the page: the whole view, the funds only ("קרנות") or the stocks only ("מניות")
   const stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
   FRESH=freshTxt(); if(!PXF&&!noPf())$('fresh').textContent=FRESH; LATE=pxLate();
-  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kLineFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
+  try{renderKinds(m,hasF&&hasS)}catch(e){} try{renderMonChip(mH)}catch(e){} try{renderKpis(mH)}catch(e){console.error(e)} setTimeout(()=>{try{kMiniFill()}catch(e){} try{kLineFill()}catch(e){} try{kPnlLine()}catch(e){} try{kFxLine(m)}catch(e){} try{kBenchLine()}catch(e){} try{renderSoon(m)}catch(e){}},0);
   $('kTotal').textContent=HC==='usd'?dlr(mH.total/fxV):ils(mH.total); $('kTotK').textContent=mH.fund?'שווי הקרנות':mH.stock?'שווי המניות':'שווי התיק';
   $('kTotalD').textContent=(HC==='usd'?ils(mH.total)+' · ':HC==='both'?dlr(mH.total/fxV)+' · ':'')+(mH.fund?`${mH.pos.length===1?'קרן אחת':mH.pos.length+' קרנות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:mH.stock?`${mH.pos.length===1?'מניה אחת':mH.pos.length+' מניות'} · ${pct(m.total?mH.total/m.total*100:0)} מהתיק · כל התיק ${ils(m.total)}`:`מזומן ${ils(m.cash)} · ${m.pos.length} ניירות`);
   try{renderMixHome(m)}catch(e){}
@@ -18328,7 +18347,7 @@ function render(){
   // line above says where to add the costs
   {const sec=$('holdSec'), nc=!(m.pos||[]).some(p=>p.cost>0); if(sec)sec.classList.toggle('nocost',nc);
     const hs=$('holdSub'); if(hs&&nc&&m.pos.length&&!/בלי עלויות קנייה/.test(hs.textContent))hs.textContent+=' · בלי עלויות קנייה, ולכן בלי רווח והפסד (אפשר להוסיף ב"התיק שלי")'}
-  const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x)=>`<tr class="sec"><td colspan="8">${t} · ${n}${x||''}</td></tr>`;
+  const fP=m.pos.filter(p=>isF(p.sym)), sP=m.pos.filter(p=>!isF(p.sym)), secH=(t,n,x,R)=>{const v=R?R.reduce((s,p)=>s+(+p.val||0),0):0; return `<tr class="sec"><td colspan="8"><span class="sec-t">${t} · ${n}</span>${R&&m.total?`<span class="sec-v"><span class="n">${HC==='usd'?dlr(v/fxV):ils(v)}</span> · <span class="n">${pct(v/m.total*100)}</span></span>`:''}${x||''}</td></tr>`};   // 10.11: each group with its sum and its share
   // stocks, funds, or both: the chips above the table. With one kind chosen, only its rows and its totals
   for(const b of document.querySelectorAll('.hkind:not(.hccy) .chip'))b.setAttribute('aria-pressed',String(b.dataset.hv===HV));
   for(const b of document.querySelectorAll('.hccy .chip'))b.setAttribute('aria-pressed',String(b.dataset.hc===HC));
@@ -18339,7 +18358,7 @@ function render(){
         // a fund put in another group than "ישראל (קרנות ומדדים)" is a fund here and in that group in "פיזור התיק": said, so the two add up
         if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
-  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length)+fP.map(rowH).join('')+secH('מניות',sP.length)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
+  else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,'',fP)+fP.map(rowH).join('')+secH('מניות',sP.length,'',sP)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
     +`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
 
   // the home shows the five largest holdings; "הצג הכל" opens the rest (the section's rows stay in the page, hidden)
@@ -18829,7 +18848,7 @@ let HV='all'; try{const v=localStorage.getItem('tr_holdv'); if(['all','stock','f
 // 22.10: "קרנות" next to the accounts at the top: the portfolio's value, its day, its profit and the holdings of the
 // funds only (all the accounts together). The rules, the plan and the reports stay on the whole portfolio
 let KV='all'; try{const v=localStorage.getItem('tr_kv'); if(v==='fund'||v==='stock')KV=v}catch(e){}
-let HOLDALL=false;
+let HOLDALL=true;   // 10.11 (the owner): every holding shows; no "הצג הכל" / "להציג פחות"
 // 10.11: the holdings opened to their details (stay open when the prices refresh and the rows are drawn again)
 const HOPEN=new Set();
 document.addEventListener('click',ev=>{const tr=ev.target.closest&&ev.target.closest('#rows tr.hrow'); if(!tr||ev.target.closest('button,a,input,select,label'))return; if(window.getSelection&&String(window.getSelection()))return; holdToggle(tr)});
@@ -19343,6 +19362,16 @@ function monChipCalc(m){
     const rate=x.ccy==='ILS'?1:x.ccy==='USD'?fxT:x.pxIls/x.px; then+=x.qty*t*rate; now+=x.qty*x.pxIls; cov+=v}
   if(!(then>0)||cov<tot*0.8)return null;
   return {ret:(now/then-1)*100,key,since,days:Math.round((Date.parse(today)-Date.parse(key))/864e5)}}
+// 10.11 (the owner): the value card as the brokers' apps have it: under the value one row of three figures of one make,
+// היום (with its "למה?"), the last 30 days, and the profit against the cost (the cash when no cost is known)
+function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos.length){el.hidden=true; return}
+  const cell=(k,v,s,c)=>`<div class="kpi"><span class="kpi-k">${k}</span><span class="kpi-v n ${c||''}">${v}</span>${s?`<span class="kpi-s n ${c||''}">${s}</span>`:''}</div>`, C=[];
+  C.push(m.dayPct!=null?cell('היום',sgn(m.dayIls),spct(m.dayPct),m.dayIls>=0?'up':'down'):cell('היום','—'));
+  let r=null; try{r=monChipCalc(m)}catch(e){} C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):cell('30 יום','—'));
+  C.push(m.cost>0?cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):cell('מזומן',ils(m.cash||0)));
+  // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
+  const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
+  el.hidden=false; setH(el,C.join('')); const c0=el.querySelector('.kpi'); if(w&&c0)c0.appendChild(w)}
 function renderMonChip(m){
   const el=$('kMon'); if(!el)return; let r=null; try{r=monChipCalc(m)}catch(e){}
   if(!r||!isFinite(r.ret)){el.hidden=true;return} const v=r.ret;
@@ -19372,6 +19401,8 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   const pb=$('plBan');
   if(ph){if(wh.parentElement!==wc)wc.prepend(wh); if(kt.nextElementSibling!==wc)wc.before(kt); if(pb&&pb.nextElementSibling!==kt){if(!pb._home)pb._home={p:pb.parentElement,n:pb.nextSibling}; kt.before(pb)} if(kr&&qa&&kr.nextElementSibling!==qa)qa.before(kr); if(mn&&th&&up&&th.parentElement!==mn){mn.append(th,up)}}
   else{const wg=wc.closest('.wgrid'); if(wh.parentElement===wc&&wg)wg.after(wh); if(pb&&pb._home&&pb.parentElement!==pb._home.p){pb._home.p.insertBefore(pb,pb._home.n)} if(pl&&kt.nextElementSibling!==pl)pl.before(kt); if(kr&&qa&&kr.previousElementSibling!==qa)qa.after(kr); if(rf&&th&&up&&th.parentElement!==rf.parentElement){rf.before(th,up)} if(mn){mn.hidden=true}}
+  // 10.11 (the owner): the indices a thin strip over the value card, as in the brokers' apps
+  {const ix=$('idxRow'), wo=document.querySelector('.hero .worth'); if(ix&&wo&&ix.nextElementSibling!==wo)wo.before(ix)}
   try{WSIG=''; renderWChart()}catch(e){}}
 (function(){const go=()=>{try{homeLayout()}catch(e){}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',go); else go(); try{PHONE.addEventListener('change',go)}catch(e){}})();
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#btnTape')){const t=$('tapeTg'); if(t)t.click()}});
