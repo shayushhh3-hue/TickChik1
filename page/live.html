@@ -3004,6 +3004,8 @@ body[data-page="overview"] .worth .dayline{display:none!important}
 #holdAll{display:none!important}
 body[data-page="overview"] #kindRow{display:none!important}
 .hold tbody tr.sec td .sec-v{float:inline-end;font-weight:700;color:var(--ink2)}
+.hold tbody tr.sec td .sec-t{font-weight:800}
+@media (max-width:640px){.hold.hold tbody tr.sec td{display:flex!important;align-items:baseline;justify-content:space-between;gap:10px;font-size:13px} .hold tbody tr.sec td .sec-v{float:none;white-space:nowrap}}
 body[data-page="overview"] .hero #idxRow:not([hidden]){display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px;padding:2px 0}
 body[data-page="overview"] .hero #idxRow .idx,body[data-page="overview"] .hero #idxRow .chip{flex:none;white-space:nowrap}
 body:not([data-page="overview"]) #idxRow{display:none!important}
@@ -18359,7 +18361,7 @@ function render(){
         if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,'',fP)+fP.map(rowH).join('')+secH('מניות',sP.length,'',sP)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
-    +`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`;
+    +(Math.abs(+m.cash||0)>=1?`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`:'');   // 10.11: no "מזומן ₪0" row
 
   // the home shows the five largest holdings; "הצג הכל" opens the rest (the section's rows stay in the page, hidden)
   {const sec=$('holdSec'), trs=[...$('rows').querySelectorAll('tr:not(.sec):not(.hdet)')]; let n=0; for(const tr of trs){tr.classList.toggle('xtra',n>=5); const dt=tr.nextElementSibling; if(dt&&dt.classList.contains('hdet'))dt.classList.toggle('xtra',n>=5); n++}
@@ -19367,7 +19369,11 @@ function monChipCalc(m){
 function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos.length){el.hidden=true; return}
   const cell=(k,v,s,c)=>`<div class="kpi"><span class="kpi-k">${k}</span><span class="kpi-v n ${c||''}">${v}</span>${s?`<span class="kpi-s n ${c||''}">${s}</span>`:''}</div>`, C=[];
   C.push(m.dayPct!=null?cell('היום',sgn(m.dayIls),spct(m.dayPct),m.dayIls>=0?'up':'down'):cell('היום','—'));
-  let r=null; try{r=monChipCalc(m)}catch(e){} C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):cell('30 יום','—'));
+  let r=null; try{r=monChipCalc(m)}catch(e){}
+  // no 30 days yet: the week, from the values the chart draws (the whole portfolio only); a dash only when neither is known
+  const wk=(()=>{try{const all=mAllNow(); if(!all||Math.abs((all.total||0)-(m.total||0))>1)return null; const pts=(DY&&DY.points)||{}, ks=Object.keys(pts).filter(k=>pts[k]&&+pts[k].v>0).sort(); if(!ks.length)return null;
+    const k0=ks.filter(k=>k<=isoDay(Date.now()-7*864e5)).pop()||ks[0]; if(k0>=isoDay(Date.now()-2*864e5))return null; const v0=+pts[k0].v; return {d:all.total-v0,p:(all.total/v0-1)*100}}catch(e){return null}})();
+  C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):cell('30 יום','—'));
   C.push(m.cost>0?cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):cell('מזומן',ils(m.cash||0)));
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
   const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
