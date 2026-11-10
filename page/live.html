@@ -19371,8 +19371,10 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
   C.push(m.dayPct!=null?cell('היום',sgn(m.dayIls),spct(m.dayPct),m.dayIls>=0?'up':'down'):cell('היום','—'));
   let r=null; try{r=monChipCalc(m)}catch(e){}
   // no 30 days yet: the week, from the values the chart draws (the whole portfolio only); a dash only when neither is known
-  const wk=(()=>{try{const all=mAllNow(); if(!all||Math.abs((all.total||0)-(m.total||0))>1)return null; const pts=(DY&&DY.points)||{}, ks=Object.keys(pts).filter(k=>pts[k]&&+pts[k].v>0).sort(); if(!ks.length)return null;
-    const k0=ks.filter(k=>k<=isoDay(Date.now()-7*864e5)).pop()||ks[0]; if(k0>=isoDay(Date.now()-2*864e5))return null; const v0=+pts[k0].v; return {d:all.total-v0,p:(all.total/v0-1)*100}}catch(e){return null}})();
+  // the same rule as the chart's "שבוע" (wPts): the saved days, from the one just before a quarter of a month ago, to now
+  const wk=(()=>{try{if(acct!=='all')return null; const all=mAllNow(); if(!all||Math.abs((all.total||0)-(m.total||0))>1)return null;
+    const L=(TP||[]).filter(p=>+p.val>0&&isFinite(+p.val)); if(L.length<2)return null; const from=Date.now()-0.25*30.44*864e5, i=L.findIndex(p=>p.t>=from); if(i<0)return null;
+    const a=L[Math.max(0,i-1)], z=L[L.length-1]; if(!(+a.val>0)||a===z)return null; return {d:+z.val-+a.val,p:(+z.val/+a.val-1)*100}}catch(e){return null}})();
   C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):cell('30 יום','—'));
   C.push(m.cost>0?cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):cell('מזומן',ils(m.cash||0)));
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
