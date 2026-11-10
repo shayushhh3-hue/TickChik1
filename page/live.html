@@ -18045,7 +18045,9 @@ function healthOf(m){
   try{const yrs=+S.years||0, figs=fitFigs(), bw=m.pos.filter(p=>figs[p.sym]&&figs[p.sym].beta!=null), beta=bw.length?bw.reduce((t,p)=>t+figs[p.sym].beta*p.w,0)/bw.reduce((t,p)=>t+p.w,0):null;
     if(yrs&&beta!=null){const want=yrs<3?0.9:yrs<7?1.2:1.6; parts.push({k:'fit',t:'התאמה לאופק',w:6,s:lin(beta,want,want+0.6),d:levelOf()==='new'?`כשהשוק זז ב-1%, התיק זז בממוצע ב-${beta.toFixed(1)}%; לאופק של ${yrs} שנים זה ${beta<=want?'בטווח':'מעל מה'} שמתאים${beta<=want?'':' (עד '+want+')'}`:`בטא ${beta.toFixed(2)} מול אופק של ${yrs} שנים${yrs<3?' (קצר: מתאים נמוך מ-0.9)':yrs<7?' (בינוני: עד 1.2)':' (ארוך: עד 1.6)'}`})}}catch(e){}
   {const noPx=(P.positions||[]).filter(p=>(Q.prices||{})[p.sym]==null).length, old=Object.keys(Q.stale||{}).filter(k=>m.pos.some(p=>p.sym===k)).length, late=(()=>{try{return !!pxLate()}catch(e){return false}})();
-    const bad=noPx*2+old+(late?1:0)+(m.missingCost||0); parts.push({k:'data',t:'איכות הנתונים',w:4,s:Math.max(0,1-bad*0.2),d:bad?[noPx?noPx+' בלי מחיר':'',old?old+' עם מחיר ישן':'',m.missingCost?m.missingCost+' בלי עלות':'',late?'המחירים לא עודכנו':''].filter(Boolean).join(' · '):'מחירים ועלויות מלאים'})}
+    // 10.11: a missing buying price is a step not done yet, not a risk in the portfolio: it is said here, and it does not
+    // lower the score (8 holdings without a cost made this part 0 and the score red)
+    const bad=noPx*2+old+(late?1:0); parts.push({k:'data',t:'איכות הנתונים',w:4,s:Math.max(0,1-bad*0.2),d:[noPx?noPx+' בלי מחיר':'',old?old+' עם מחיר ישן':'',late?'המחירים לא עודכנו':'',m.missingCost?m.missingCost+' בלי עלות (לא מוריד את המדד; להשלמה ב"התיק שלי")':''].filter(Boolean).join(' · ')||'מחירים ועלויות מלאים'})}
   const W=parts.reduce((t,x)=>t+x.w,0), score=Math.round(parts.reduce((t,x)=>t+x.w*x.s,0)/W*100);
   for(const x of parts){x.pts=Math.round(x.s*100); x.lvl=x.s>=0.75?'ok':x.s>=0.4?'warn':'crit'}
   return {score,parts,label:score>=80?'בריא לפי הכללים שלך':score>=60?'יש מה לבדוק':'חורג מהכללים שלך',lvl:score>=80?'ok':score>=60?'warn':'crit'};
@@ -18156,7 +18158,9 @@ function render(){
   // alerts: the same engine the assistant uses (alertsOf)
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   // 5.11: a price that did not come is said once, in the morning card above with its buttons; the list keeps the portfolio's own matters
-  const A=alertsOf(m), AL=A.filter(a=>!(a[1]==='מחיר'&&$('deskSec')&&!$('deskSec').hidden&&/מחיר/.test(($('desk')||{}).textContent||'')));
+  // 10.11: the news is not repeated in בקרה (it is in "מה לעשות" and in the news' own screen): the list is the rules' own,
+  // and its count is the one on בקרה's button
+  const A=alertsOf(m), AL=A.filter(a=>a[1]!=='חדשות'&&!(a[1]==='מחיר'&&$('deskSec')&&!$('deskSec').hidden&&/מחיר/.test(($('desk')||{}).textContent||'')));
   const tagFor={crit:'חריגה',warn:'לבדיקה',ok:'תקין',info:'מידע'};
   const line=a=>`${tagFor[a[0]]} · ${a[1]}: ${a[2]}`;
   const grp=[['crit','חריגות'],['warn','לבדיקה'],['info','מידע']].map(([sv,title])=>{const g=AL.filter(a=>a[0]===sv); if(!g.length)return '';
