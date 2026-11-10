@@ -283,7 +283,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.ok(r.todo.findIndex(x=>x.cat==='הפקדה')<r.todo.findIndex(x=>x.cat==='מיילים'),'what needs doing comes before the suggestion');
       // the rules' alerts are not on the home page: they are in בקרה, with their count on its button
       assert.ok(!r.cats.some(c=>['ריכוז','סטייה','ירידה','מטבע','נעים יחד','חפיפה'].includes(c)),'no rule alerts on the home page: '+JSON.stringify(r.cats));
-      const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
+      const ctl=await pg.evaluate(()=>{const b=document.querySelector('#tab_risk');   /* 10.11: בקרה left the bottom bar for התראות; its count is on its item in the menu */ return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
       assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['holdSec','kindRow'],'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
@@ -603,7 +603,7 @@ test('חיבור למציאות, the news: the portfolio\'s news with search, fi
     const r=await pg.evaluate(()=>({h:document.getElementById('hNewsT').textContent,tabs:[...document.querySelectorAll('[data-rt]')].filter(b=>b.getAttribute('role')==='tab').map(b=>b.textContent.replace(/\s+/g,' ').trim()),
       heads:[...document.querySelectorAll('.nw-heads article')].map(a=>a.querySelector('h3, .nw-cs b').textContent),hero:!!document.querySelector('.nw-heads .nwc.hero'),cats:document.querySelectorAll('#nxCats .chip').length,
       catSecs:[...document.querySelectorAll('.nw-cg .nw-h')].map(h=>h.textContent),al:(document.querySelector('.nw-al b')||{}).textContent||'',ox:document.documentElement.scrollWidth>innerWidth+1}));
-    assert.equal(r.h,'חיבור למציאות'); assert.match(r.tabs[0],/^השפעה על התיק \d+$/,'the count of the unread: '+r.tabs[0]); assert.equal(r.tabs[1],'החדשות שלי');
+    assert.equal(r.h,'ההשפעה על התיק','10.11 (the owner): the head of the screen is the impact one, over both tabs'); assert.match(r.tabs[0],/^השפעה על התיק \d+$/,'the count of the unread: '+r.tabs[0]); assert.equal(r.tabs[1],'החדשות שלי');
     assert.equal(r.heads[0],'אנבידיה היכתה את התחזיות והעלתה את התחזית','the most important first'); assert.ok(r.hero);
     assert.ok(!r.heads.includes('מניית אנבידיה קפצה אחרי הדוח'),'one card per event'); assert.equal(await pg.evaluate(()=>document.getElementById('nxCats').hidden),true,'no categories'); assert.deepEqual(r.catSecs,[],'no sections of the world\'s news'); assert.match(r.al,/התראות? אישי/); assert.equal(r.ox,false,'no sideways scroll');
     assert.ok(!r.heads.includes('אופ״ק קיצצה תפוקה והנפט עלה'),'the oil news touches nothing in this portfolio: not here'); assert.ok(r.heads.includes('הפד הותיר את הריבית'),'the Fed touches a held sector: here');
@@ -736,13 +736,13 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.equal(await pg.evaluate(()=>document.getElementById('ixKpis').hidden),true,'1.11: no figure cards'); assert.equal(await pg.evaluate(()=>/רלוונטיות לתיק/.test(document.getElementById('ixAlList').textContent)),false,'no doubled text on the cards');
     assert.ok(ix.a.length>=1&&ix.a.length<=3,'three short on a phone'); assert.match(ix.aff,/^משפיע על: /); assert.equal(ix.center,'pf'); assert.ok(ix.nodes.includes('pf')&&ix.nodes.includes('h:NVDA')&&ix.nodes.includes('ev:ev:nvda-q3-report'),JSON.stringify(ix.nodes));
     // 31.10: the holdings first, the events and צ׳יקו next; the round map behind its button
-    assert.equal(ix.mapOpen,false,'the map is a tap away, not first'); assert.deepEqual(ix.first.slice(0,2),['ixStx','ix-grid'],JSON.stringify(ix.first)); assert.deepEqual(ix.qs,['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']); assert.equal(ix.ox,false);
+    assert.equal(ix.mapOpen,true,'10.11 (the owner): the map at the top of the screen, open'); assert.deepEqual(ix.first.slice(0,2),['ixStx','ix-grid'],JSON.stringify(ix.first)); assert.deepEqual(ix.qs,['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']); assert.equal(ix.ox,false);
     // צ׳יקו beside the map: the period's alerts as his context
     seen.length=0; await pg.click('#ixQs .ix-q'); await pg.waitForFunction(()=>/על ההשפעה על התיק בתקופה/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
     assert.match(await pg.evaluate(()=>document.getElementById('anaOut').textContent.replace(/\s+/g,' ')),/אנבידיה היכתה/,'the answer from the period\'s alerts');
     assert.ok(seen.some(x=>x.includes('alerts_not_read')&&x.includes('אנבידיה')),'the alerts reach צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
     // the map, a tap away: it opens, drawn for its room
-    await pg.click('#ixMapD > summary'); await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100),'the map opens');
+    await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100),'the map opens');
     // a point on the map: its short card; the period changes the figures
     await pg.evaluate(()=>window.__ix.sel('h:NVDA')); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('ixTip').textContent),/NVDA · [\d.]+% מהתיק/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#ixTip [data-ixst="NVDA"]')),'the holding\'s card on the map leads to its story');

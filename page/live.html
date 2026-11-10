@@ -215,7 +215,7 @@ body:not([data-page="overview"]) .hero .top .acts{display:none!important}
 .calgrid .dc .fl .flg{width:16px;height:16px}
 .calleg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);align-items:center}
 /* 22.10: the count of the rules' alerts on the button of בקרה */
-#botbar [data-bb="risk"],#tab_risk{position:relative}
+#botbar [data-bb="risk"],#tab_risk,#botbar [data-bb="alerts"],#tab_alerts{position:relative}
 .bbadge{position:absolute;top:2px;inset-inline-end:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warn-c);color:#151B2E;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--navy)}
 .bbadge.crit{background:#D13B3B;color:#fff} #tab_risk .bbadge{position:static;margin-inline-start:auto;box-shadow:none}
 /* 22.10: the days of the held securities: a report (purple) and a dividend (green) under the two flags */
@@ -2971,6 +2971,16 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   body.homeA[data-page="overview"] .ktoday .tdl-a{display:inline;flex:none}
   html[data-theme="dark"] body.homeA[data-page="overview"] .ktoday{background:rgb(139 92 246 / .12);border-color:rgb(139 92 246 / .3)}
 }
+/* 10.11 התראות: three sections, each a heading and its list; the day's rows as on the home (a row each, 46px) */
+.al-scr{display:flex;flex-direction:column;gap:18px}
+.al-head h2{margin:0;font-size:22px;font-weight:800} .al-head .sub{display:block;margin-top:2px;font-size:14px}
+.al-sec{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.al-sec h3{margin:0 0 8px;font-size:17px;font-weight:800}
+.al-sh{display:flex;align-items:center;justify-content:space-between;gap:10px} .al-sh .lnk,.al-more .lnk{min-height:44px;font:inherit;font-weight:700;color:var(--vio-ink);background:none;border:0;padding:0 4px;cursor:pointer}
+.al-sec .ktoday.al-today{margin:0;padding:0 2px;background:none;border:0}
+.al-sec .ktoday .tdl{min-height:48px;font-size:14.5px;gap:10px} .al-sec .ktoday .tdl-b{font-size:14.5px}
+.al-sec .ix-alist{display:flex;flex-direction:column;gap:10px}
+.al-empty,.al-more{margin:4px 0 0;font-size:14px;color:var(--ink2)}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -3015,6 +3025,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
   <div class="scrim" id="scrim" hidden></div>
   <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Chik</span></span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="gobox" role="search"><label for="goQ">לאן להגיע?</label><div class="goin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="goQ" placeholder="למשל: עמלות, לוח מסחר" autocomplete="off" enterkeyhint="go"></div><ul class="gores" id="goRes" hidden></ul></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
+    <button type="button" role="tab" id="tab_alerts" data-tab="alerts" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>התראות</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
     <button type="button" role="tab" id="tab_news" data-tab="news" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span>חיבור למציאות</span><span class="sbdot" id="sbNxDot" hidden></span></button>
     <button type="button" role="tab" id="tab_plan" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span>תוכנית</span></button>
@@ -3035,7 +3046,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="bbl">בית</span></button>
     <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9"/></svg><span class="bbl">תיק</span></button>
     <button type="button" data-bb="search" class="bb-fab" aria-label="מחקר"><span class="fab-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-3.8-3.8"/></svg></span><span class="bbl">מחקר</span></button>
-    <button type="button" data-bb="risk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span class="bbl">בקרה</span></button>
+    <button type="button" data-bb="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bbl">התראות</span></button>
     <button type="button" data-bb="more" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="bbl">עוד</span></button>
   </nav>
   <header class="hero" id="hero">
@@ -3487,12 +3498,39 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     </section>
   </div>
 
+  <!-- 10.11 (the owner): התראות, in the bottom bar instead of בקרה: the day's updates (from the home), the news about
+       the holdings not yet read (a tap opens the item and what it may mean for the stock), and what to do -->
+  <div class="pane" data-pane="alerts" hidden>
+    <section class="al-scr" aria-labelledby="hAlT">
+      <div class="al-head"><h2 id="hAlT">התראות</h2><span class="sub">מה קרה בתיק ומה מחכה לך, במקום אחד</span></div>
+      <section class="al-sec" aria-labelledby="hAlDay"><h3 id="hAlDay">היום</h3><div class="ktoday al-today" id="alToday"></div><p class="al-empty" id="alTodayE" hidden>אין עדכון מיוחד היום.</p></section>
+      <section class="al-sec" aria-labelledby="hAlNews"><div class="al-sh"><h3 id="hAlNews">ידיעות על המניות שלך</h3><button type="button" class="lnk" data-tab="news">לכל ההתראות ›</button></div><div class="ix-alist" id="alNews"></div></section>
+      <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
+    </section>
+  </div>
   <div class="pane" data-pane="fit" hidden></div>
   <div class="pane" data-pane="news" hidden>
     <section aria-labelledby="hNewsT" class="nxsec">
       <!-- 10.11 (the owner): the screen's head is the impact's: the mark, "ההשפעה על התיק", "הדופק של תיק ההשקעות שלך", over
            both tabs; under it how right the page's guesses of direction were (#ixTrust) -->
       <div class="ix-top-head"><div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><h2 id="hNewsT">ההשפעה על התיק</h2><span>הדופק של תיק ההשקעות שלך</span></div></div><span class="sub" id="newsFresh"></span></div>
+      <!-- 10.11 (the owner): the impact map at the top, under the head; then how right we were; then the news -->
+<details class="ix-mapd" id="ixMapD"><summary class="ix-ms"><span class="ix-msi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></span><span class="ix-mst"><b>מפת השפעה</b><small>איך האירועים מתחברים למניות שלך, בציור</small></span><span class="ix-msc" aria-hidden="true"></span></summary>
+            <section class="ix-map" id="ixMap" aria-labelledby="ixMapH">
+              <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><span class="ix-mh"><button type="button" class="ix-tb" id="ixTxtB" aria-pressed="false" aria-controls="ixTxt">המפה במילים</button></span></div>
+              <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button></div>
+              <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
+                <div class="ix-leg" aria-hidden="true"><span><i style="background:#EF4444"></i>אירוע</span><span><i style="background:#22C55E"></i>גורם כלכלי</span><span><i style="background:#3B82F6"></i>ענף</span><span><i style="background:#F59E0B"></i>חברה</span><span><i style="background:#8B5CF6"></i>החזקה בתיק</span></div>
+                <div class="ix-z" role="group" aria-label="הגדלה והקטנה"><button type="button" id="ixZin" aria-label="הגדלה">+</button><button type="button" id="ixZout" aria-label="הקטנה">−</button><button type="button" id="ixFit" aria-label="חזרה לגודל המקורי">⤢</button></div>
+                <div class="ix-empty" id="ixEmpty" hidden></div></div>
+              <div class="ix-txt" id="ixTxt" hidden></div>
+              <details class="ix-key"><summary>איך לקרוא את המפה</summary>
+                <ul class="ix-keyl"><li><i class="kd" style="background:#7C3AED"></i><b>במרכז:</b> התיק שלך (או האירוע, החברה או העולם, לפי התצוגה)</li><li><i class="kd" style="background:#EF4444"></i><b>אירוע:</b> ידיעה שנקראה. הילה גדולה: אירוע קריטי</li><li><i class="kd" style="background:#22C55E"></i><b>גורם כלכלי:</b> מחיר, שער או ריבית שהאירוע עשוי להזיז (השערה: ↑ עלייה, ↓ ירידה)</li><li><i class="kd" style="background:#3B82F6"></i><b>ענף:</b> הענף שהאירוע נוגע בו</li><li><i class="kd" style="background:#F59E0B"></i><b>חברה</b></li><li><i class="kd" style="background:#8B5CF6"></i><b>החזקה בתיק:</b> עם האחוז שלה מהתיק</li></ul>
+                <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שהאירוע עשוי להזיז (השערה)</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
+                <p class="nm" style="margin:0">לגעת בנקודה או בשם שלה מציג פרטים. הכיוון הוא השערה מהקריאה של החדשות, לא מדידה ולא תחזית.</p></details>
+              <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
+            </section>
+          </details>
       <div class="ix-trust" id="ixTrust" hidden></div>
       <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
         <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">השפעה על התיק <span class="rt-n" id="rtAlN" hidden></span></button>
@@ -3540,22 +3578,6 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
               <p class="note" style="margin:0">צ׳יקו מסביר מהנתונים שבדף. לא ייעוץ השקעות.</p>
             </section>
           </div>
-          <details class="ix-mapd" id="ixMapD"><summary class="ix-ms"><span class="ix-msi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></span><span class="ix-mst"><b>מפת השפעה</b><small>איך האירועים מתחברים למניות שלך, בציור</small></span><span class="ix-msc" aria-hidden="true"></span></summary>
-            <section class="ix-map" id="ixMap" aria-labelledby="ixMapH">
-              <div class="ix-ch"><h3 id="ixMapH">מפת השפעה אישית</h3><span class="ix-mh"><button type="button" class="ix-tb" id="ixTxtB" aria-pressed="false" aria-controls="ixTxt">המפה במילים</button></span></div>
-              <div class="ix-views" id="ixViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-ixv="pf" aria-selected="true">תיק שלי</button><button type="button" role="tab" data-ixv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-ixv="co" aria-selected="false">חברה</button></div>
-              <div class="ix-cv" id="ixCv"><svg id="ixSvg" viewBox="0 0 760 540" role="group" aria-labelledby="ixMapH"><g id="ixG"></g></svg>
-                <div class="ix-leg" aria-hidden="true"><span><i style="background:#EF4444"></i>אירוע</span><span><i style="background:#22C55E"></i>גורם כלכלי</span><span><i style="background:#3B82F6"></i>ענף</span><span><i style="background:#F59E0B"></i>חברה</span><span><i style="background:#8B5CF6"></i>החזקה בתיק</span></div>
-                <div class="ix-z" role="group" aria-label="הגדלה והקטנה"><button type="button" id="ixZin" aria-label="הגדלה">+</button><button type="button" id="ixZout" aria-label="הקטנה">−</button><button type="button" id="ixFit" aria-label="חזרה לגודל המקורי">⤢</button></div>
-                <div class="ix-empty" id="ixEmpty" hidden></div></div>
-              <div class="ix-txt" id="ixTxt" hidden></div>
-              <details class="ix-key"><summary>איך לקרוא את המפה</summary>
-                <ul class="ix-keyl"><li><i class="kd" style="background:#7C3AED"></i><b>במרכז:</b> התיק שלך (או האירוע, החברה או העולם, לפי התצוגה)</li><li><i class="kd" style="background:#EF4444"></i><b>אירוע:</b> ידיעה שנקראה. הילה גדולה: אירוע קריטי</li><li><i class="kd" style="background:#22C55E"></i><b>גורם כלכלי:</b> מחיר, שער או ריבית שהאירוע עשוי להזיז (השערה: ↑ עלייה, ↓ ירידה)</li><li><i class="kd" style="background:#3B82F6"></i><b>ענף:</b> הענף שהאירוע נוגע בו</li><li><i class="kd" style="background:#F59E0B"></i><b>חברה</b></li><li><i class="kd" style="background:#8B5CF6"></i><b>החזקה בתיק:</b> עם האחוז שלה מהתיק</li></ul>
-                <ul class="ix-keyl"><li><i class="kl" style="border-color:var(--gain)"></i>קו ירוק: השפעה חיובית אפשרית</li><li><i class="kl" style="border-color:var(--loss)"></i>קו אדום: השפעה שלילית אפשרית</li><li><i class="kl" style="border-color:#D97706"></i>קו כתום: השפעה מעורבת</li><li><i class="kl" style="border-color:#8B5CF6"></i>קו סגול: גורם כלכלי שהאירוע עשוי להזיז (השערה)</li><li><i class="kl" style="border-color:#64748B"></i>קו אפור: כיוון לא ברור</li><li><i class="kl"></i>קו מלא: קשר ישיר (החברה עצמה בחדשות)</li><li><i class="kl ds"></i>קו מקווקו: קשר עקיף (ספקית, לקוחה, מתחרה, ענף)</li><li><i class="kl dt"></i>קו מנוקד: קשר חלש</li></ul>
-                <p class="nm" style="margin:0">לגעת בנקודה או בשם שלה מציג פרטים. הכיוון הוא השערה מהקריאה של החדשות, לא מדידה ולא תחזית.</p></details>
-              <div class="ix-tip" id="ixTip" aria-live="polite" hidden></div>
-            </section>
-          </details>
         </div>
         <div id="ixSv" hidden>
           <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה</button></div>
@@ -19895,7 +19917,8 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
     if(a&&sym){const h=(a.holds||[]).find(z=>z.sym===sym), d=h&&IX_DW[h.dir]?h.dir:'unclear', w=CH_DIR[d]||CH_DIR.unclear;
       // the headline whole up to a word (two short lines at most); the direction an arrow, its words for a screen reader
       const t=String(a.title||''), cut=t.length>78?t.slice(0,t.lastIndexOf(' ',76)>40?t.lastIndexOf(' ',76):76)+'…':t;
-      row('news',symH(sym)+(d!=='unclear'?`<span class="tdl-dir ${w[0]}" title="${esc(w[2])}"><span aria-hidden="true">${w[1]}</span><span class="vh">${esc(w[2])}</span></span>`:''),esc(cut),SECKEY.test(sym)?` data-ixst="${esc(sym)}"`:` data-ixopen="${esc(a.k)}"`,'logo:'+sym)}}
+      // 10.11 (the owner): a tap opens the news item itself, its reading and what it may mean for the stock (not the stock's page)
+      row('news',symH(sym)+(d!=='unclear'?`<span class="tdl-dir ${w[0]}" title="${esc(w[2])}"><span aria-hidden="true">${w[1]}</span><span class="vh">${esc(w[2])}</span></span>`:''),esc(cut),` data-ixopen="${esc(a.k)}"`,'logo:'+sym)}}
   // what to check: the first finding by its subject and names ("ריכוז: NVDA"), the rest counted
   {const n=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)).sort((a,b)=>(b[0]==='crit')-(a[0]==='crit'));
     if(n.length){const f=n[0], tags=Array.isArray(f[3])?f[3].slice(0,2).map(x=>String(x).split(' ')[0]):[];
@@ -19904,7 +19927,8 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   const icon=ic=>ic.startsWith('logo:')?(()=>{try{return logoHtml(ic.slice(5),'s')}catch(e){return ''}})():`<i class="tdl-ic ${ic}" aria-hidden="true"></i>`;
   return L.map(r=>`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}>${icon(r.ic)}<span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a" aria-hidden="true">›</span></button>`).join('')}
 function renderDesk(m,A){
-  try{const el=$('kToday'); if(el){const h=noPf()?'':todayH(m,A); el.hidden=!h; setH(el,h)}}catch(e){console.error(e)}
+  // 10.11 (the owner): the day's updates moved from the home to התראות (#alToday); the home's #kToday stays empty
+  try{const el=$('kToday'), al=$('alToday'), ae=$('alTodayE'); const h=noPf()?'':todayH(m,A); if(el){el.hidden=true; setH(el,'')} if(al){al.hidden=!h; setH(al,h)} if(ae)ae.hidden=!!h}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
   const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length;
   let s;
@@ -19917,7 +19941,7 @@ function renderDesk(m,A){
     const n=nC+nW; if(n)plain+=` ${n===1?'נושא אחד לבדיקה':n+' נושאים לבדיקה'}.`;
     // 28.10: a visitor who was away two days or more first reads what changed since (the value, the biggest mover)
     const sv=sinceVisit(m); ib.querySelector('.in-t b').textContent=sv?`מה השתנה מאז הביקור האחרון?`:'מה קרה היום בתיק?';
-    sb.textContent=sv?sv+(n?` ${n===1?'נושא אחד לבדיקה':n+' נושאים לבדיקה'}.`:''):plain; ib.hidden=!!($('kToday')&&!$('kToday').hidden); try{newsCount()}catch(e){}}}catch(e){}
+    sb.textContent=sv?sv+(n?` ${n===1?'נושא אחד לבדיקה':n+' נושאים לבדיקה'}.`:''):plain; ib.hidden=true; /* 10.11: the day's updates are in התראות; no line about them on the home */ try{newsCount()}catch(e){}}}catch(e){}
   const nAck=A.filter(a=>a[0]!=='ok'&&ackd(a)).length;
   let T=null; try{T=pxTrust(m)}catch(e){} try{renderTrustChip(T)}catch(e){} try{renderNewsChip()}catch(e){} try{mailBoot()}catch(e){}
   let L=[]; try{L=todoOf(m,A,T)}catch(e){} try{ctlBadge(A)}catch(e){}
@@ -19926,7 +19950,18 @@ function renderDesk(m,A){
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
   const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
+  try{renderAlerts(L,nAck)}catch(e){console.error(e)}
 }
+// 10.11 (the owner): התראות: the news about the holdings not yet read (critical and important first, a tap opens the item
+// and what it may mean for the stock), what to do, and the count on its button in the bar and in the menu
+function renderAlerts(L,nAck){
+  const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&plUnread(a)&&(a.lv==='crit'||a.lv==='imp')).sort(plSort);
+  {const el=$('alNews'); if(el)setH(el,N.length?N.slice(0,6).map(ixCard).join('')+(N.length>6?`<p class="al-more">ועוד ${N.length-6} ידיעות חשובות שלא נקראו. <button type="button" class="lnk" data-tab="news">לכולן ›</button></p>`:''):'<p class="al-empty">אין ידיעה חשובה שלא נקראה. מה שנוגע לתיק נמצא ב"חיבור למציאות".</p>')}
+  {const el=$('alTodo'); if(el)setH(el,todoH(L||[],nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
+  const need=(L||[]).filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep').length, n=N.length+need, crit=N.some(a=>a.lv==='crit')||(L||[]).some(x=>x.sev==='crit');
+  for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
+    if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); b.appendChild(g)}
+    g.textContent=n>99?'99+':String(n); g.classList.toggle('crit',crit); b.setAttribute('aria-description',`${N.length?N.length+' ידיעות חשובות שלא נקראו':''}${N.length&&need?' ו':''}${need?need+' דברים לעשות':''}`)}}
 const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
@@ -26218,10 +26253,10 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
-const NAVG={overview:['overview'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
+const TABS=['overview','alerts','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
+const NAVG={overview:['overview'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
 const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מעקב ומה מתאים',ratings:'דירוג',watch:'מעקב ומה מתאים',history:'היסטוריה',reports:'דוחות'};
-const HEADL={news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
+const HEADL={alerts:'התראות',news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
@@ -27051,6 +27086,7 @@ document.addEventListener('toggle',ev=>{const d=ev.target; if(!d||d.id!=='nwDail
 function renderNewsX(){
   rtTabsSync(); try{plCount()}catch(e){} try{rtMarkets()}catch(e){}
   if(RTT==='al'){try{renderImpact()}catch(e){console.error(e)} return}
+  try{ixMapTop()}catch(e){console.error(e)}   // 10.11: the map is over both tabs
   const box=$('newsFeed'), fr=$('newsFresh'); if(!box)return;
   const raw=((NEWSD&&NEWSD.items)||[]).concat((XD&&XD.items)||[]); if(raw.some(it=>it&&it.link&&!NXID.has(it.link))){nxIds(raw).then(ok=>{if(ok)try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}})}
   const m=(()=>{try{return mAllNow()}catch(e){return null}})(), F=nwPrefs(), st=nxState();
@@ -27493,6 +27529,10 @@ function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm"
   return `<ol class="ix-txl">${evs.map(n=>{const R=[]; walk(n.id,new Set([n.id]),[],R); const a=n.a||null;
     return `<li>${a?`<span class="pl-lv lv-${a.lv}">${PL_LV[a.lv]}</span> `:''}<b>${esc(a?a.title:n.label)}</b>${R.length?`<ul>${R.map(P=>`<li>${P.map(s=>`<span class="ar" aria-hidden="true">←</span> ${nl(s.n)}${IX_EDIR[s.e.dir]?` <span class="nm">(${IX_EDIR[s.e.dir]}${s.e.weak||s.e.kind==='exposure'?', קשר חלש':s.e.direct===false?', עקיף':''})</span>`:''}`).join(' ')}</li>`).join('')}</ul>`:'<div class="nm">בלי מסלול לאחזקות בתצוגה הזאת.</div>'}</li>`}).join('')}</ol>
     <p class="nm" style="margin:0">כל שורה היא מסלול מהאירוע אל החברה או ההחזקה: דרך גורם כלכלי, ענף או חברה. הכיוון הוא השערה מהקריאה, לא מדידה.</p>`}
+// 10.11 (the owner): the impact map at the top of the screen, over both tabs: open unless the person closed it, drawn
+// from whichever tab is open, and how right the guesses were under it
+function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v!=='0'}
+  try{ixDraw()}catch(e){console.error(e)} try{ixTrustRender()}catch(e){}}
 function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(), m=(()=>{try{return mAllNow()}catch(e){return null}})(), hp=hasPf();
   for(const b of document.querySelectorAll('#ixRange [data-ixr]'))b.setAttribute('aria-pressed',String(b.dataset.ixr===IXR));
   const full=$('ixFull'), sv=$('ixSv'); if(full)full.hidden=!IXFULL||!!IXST; if(sv)sv.hidden=!IXST; box.hidden=IXFULL||!!IXST;
@@ -27518,8 +27558,7 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
     if(S.length){IX_HL=new Set(); setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
   if(IXV==='world')IXV='pf';   // 1.11: the world view moved to the management's global news model
-  {const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v==='1'||(v==null&&!hp)}}
-  try{ixDraw()}catch(e){console.error(e)}
+  ixMapTop()
   {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
   ixChiko(); try{ixTrustRender()}catch(e){}}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
@@ -28181,7 +28220,7 @@ function setNav(o){const bar=$('tabsbar'),more=document.querySelector('#botbar [
   if(o){$('navtab').classList.remove('away');const sel=bar.querySelector('[aria-selected="true"]')||bar.querySelector('[data-tab]');try{sel.focus({preventScroll:true})}catch(e){}}
   else if(document.activeElement&&bar.contains(document.activeElement)){const nt=$('navtab'),back=getComputedStyle(nt).display!=='none'?nt:more&&getComputedStyle(more).display!=='none'?more:null;if(back){try{back.focus({preventScroll:true})}catch(e){}}}}
 // the phone's bottom bar: the current place is marked; "עוד" is marked for the places that live in the drawer
-const BB_ON=['overview','mine','search','risk'];
+const BB_ON=['overview','mine','search','alerts'];   // 10.11 (the owner): התראות in the bar; בקרה is in the drawer
 function bbSync(t){const g=navGroup(t),on=BB_ON.includes(g)?g:'more';
   for(const b of document.querySelectorAll('#botbar [data-bb]')){const x=b.dataset.bb;if(x===on&&x!=='more')b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');b.classList.toggle('on',x==='more'&&on==='more')}}
 document.addEventListener('click',e=>{if(!(e.target.closest&&e.target.closest('#insightBar')))return; showTab('risk',true); setTimeout(()=>{const d=$('desk'); if(d&&d.offsetParent){d.scrollIntoView({behavior:'smooth',block:'start'}); try{d.focus({preventScroll:true})}catch(x){}}},80)});
