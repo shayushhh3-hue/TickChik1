@@ -3504,8 +3504,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
     <section class="al-scr" aria-labelledby="hAlT">
       <div class="al-head"><h2 id="hAlT">התראות</h2><span class="sub">מה קרה בתיק ומה מחכה לך, במקום אחד</span></div>
       <section class="al-sec" aria-labelledby="hAlDay"><h3 id="hAlDay">היום</h3><div class="ktoday al-today" id="alToday"></div><p class="al-empty" id="alTodayE" hidden>אין עדכון מיוחד היום.</p></section>
-      <section class="al-sec" aria-labelledby="hAlNews"><div class="al-sh"><h3 id="hAlNews">ידיעות על המניות שלך</h3><button type="button" class="lnk" data-tab="news">לכל ההתראות ›</button></div><div class="ix-alist" id="alNews"></div></section>
-      <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
+     <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
     </section>
   </div>
   <div class="pane" data-pane="fit" hidden></div>
@@ -19950,18 +19949,17 @@ function renderDesk(m,A){
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
   const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
-  try{renderAlerts(L,nAck)}catch(e){console.error(e)}
+  try{renderAlerts(L,nAck,($('alToday')&&!$('alToday').hidden)?$('alToday').querySelectorAll('.tdl').length:0)}catch(e){console.error(e)}
 }
-// 10.11 (the owner): התראות: the news about the holdings not yet read (critical and important first, a tap opens the item
-// and what it may mean for the stock), what to do, and the count on its button in the bar and in the menu
-function renderAlerts(L,nAck){
-  const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&plUnread(a)&&(a.lv==='crit'||a.lv==='imp')).sort(plSort);
-  {const el=$('alNews'); if(el)setH(el,N.length?N.slice(0,6).map(ixCard).join('')+(N.length>6?`<p class="al-more">ועוד ${N.length-6} ידיעות חשובות שלא נקראו. <button type="button" class="lnk" data-tab="news">לכולן ›</button></p>`:''):'<p class="al-empty">אין ידיעה חשובה שלא נקראה. מה שנוגע לתיק נמצא ב"חיבור למציאות".</p>')}
+// 10.11 (the owner): התראות is the day's few important updates (the coming dividend, the one news item about a holding,
+// what to check) and what to do; not the stream of news, which stays in חיבור למציאות. The count on its button is the
+// day's updates only
+function renderAlerts(L,nAck,nDay){
   {const el=$('alTodo'); if(el)setH(el,todoH(L||[],nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
-  const need=(L||[]).filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep').length, n=N.length+need, crit=N.some(a=>a.lv==='crit')||(L||[]).some(x=>x.sev==='crit');
+  const n=nDay||0, crit=(L||[]).some(x=>x.sev==='crit');
   for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
     if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); b.appendChild(g)}
-    g.textContent=n>99?'99+':String(n); g.classList.toggle('crit',crit); b.setAttribute('aria-description',`${N.length?N.length+' ידיעות חשובות שלא נקראו':''}${N.length&&need?' ו':''}${need?need+' דברים לעשות':''}`)}}
+    g.textContent=String(n); g.classList.toggle('crit',crit); b.setAttribute('aria-description',n===1?'עדכון אחד להיום':n+' עדכונים להיום')}}
 const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
