@@ -45,7 +45,7 @@ const ilHM=now=>{const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusal
 export function inQuiet(pr,now=new Date()){if(!pr||!pr.quiet||!pr.quiet.on)return false; const t=ilHM(now), {from,to}=pr.quiet; if(from===to)return false; return from<to?t>=from&&t<to:t>=from||t<to}
 
 // ---- the holdings: weights only when they can be computed reliably ----
-let SECMAP=null;
+let SECMAP=null, KINDMAP=null;
 // the sector of each security, from the page's list of securities (site/lib/symdb.txt, written by the build)
 export function sectorMap(){
   if(SECMAP)return SECMAP; SECMAP=new Map();
@@ -54,13 +54,24 @@ export function sectorMap(){
   return SECMAP;
 }
 export const _setSectors=m=>{SECMAP=m instanceof Map?m:new Map(Object.entries(m||{}))};
+// 10.11: the kind of each security from the same list (S = a stock, E = a fund...)
+function kindMap(){
+  if(KINDMAP)return KINDMAP; KINDMAP=new Map();
+  try{const f=path.join(path.dirname(fileURLToPath(import.meta.url)),'..','site','lib','symdb.txt');
+    for(const l of fs.readFileSync(f,'utf8').split('\n')){const p=l.split('\t'); if(p.length<4||!p[2])continue; KINDMAP.set(p[3]==='TLV'?'TLV:'+p[0]:p[0],p[2])}}catch(e){}
+  return KINDMAP;
+}
+export const _setKinds=m=>{KINDMAP=m instanceof Map?m:new Map(Object.entries(m||{}))};
+// a fund: by the list, else as the page tells one (live.html isFundLike: a number is a fund in Tel Aviv, the broad index funds)
+const FUND_RE=/^(TA\d+|SPY|VOO|IVV|VTI|VT|QQQ|CSPX|VUSA|VWRA|SXR8|IWDA|SWRD|ACWI|ITOT|SCHB|VXUS|VEA|VWO|SPLG|SPYG|IWM|DIA)$/;
+export const isFund=k=>{const t=kindMap().get(k); if(t)return t!=='S'; return /^(TLV:)?\d+$/.test(k)||FUND_RE.test(k)};
 // the page's sector names onto the readings' (the same as the page's NX_SEC_MAP)
 const SEC_ALIAS={'Information Technology':'Technology',Financials:'Finance',Materials:'Basic Materials',REITs:'Real Estate','Consumer Services':'Consumer Discretionary',Healthcare:'Health Care'};
 const secOf=k=>{const g=sectorMap().get(k)||''; return SEC_ALIAS[g]||g};
 export function holdingsOf(P,Q){
   const fx=+(Q&&Q.usdIls)||0, prices=(Q&&Q.prices)||{}, by=new Map(); let total=0, miss=0, usd=0;
   const rate=p=>{const c=(Q&&Q.meta&&Q.meta[p.sym]&&Q.meta[p.sym].ccy)||(p.ccy==='ILS'?'ILS':p.ccy||'USD'); if(c==='ILS')return 1; if(c==='USD')return fx||null; const r=Q&&Q.rates&&Q.rates[c]; return r&&r.rate>0?r.rate:null};
-  for(const p of ((P&&P.positions)||[])){if(!p||!p.sym)continue; const h=by.get(p.sym)||{sym:p.sym,val:0,sec:secOf(p.sym),usd:false,known:true}; by.set(p.sym,h);
+  for(const p of ((P&&P.positions)||[])){if(!p||!p.sym)continue; const h=by.get(p.sym)||{sym:p.sym,val:0,sec:secOf(p.sym),usd:false,known:true,fund:isFund(p.sym)}; by.set(p.sym,h);
     const px=+prices[p.sym], rt=rate(p), q=+p.qty; if(!(px>0)||!rt||!(q>0)){h.known=false; miss++; continue}
     const v=q*px*rt; h.val+=v; total+=v; if(rt!==1){h.usd=true; usd+=v}}
   // 8.11: every cash row, a negative one too, as the page's model counts it (the consistency check compares the two totals)
@@ -92,17 +103,23 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null}={}){
 }
 
 // ---- the links of one event to one portfolio ----
-const INDIRECT=new Set(['supplier','customer','competitor','sector']);
-const HOW_HE={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'חברה באותו ענף'};
+// 10.11: a broad fund is never "the holding itself is named" in market news (inflation, a chip maker's CEO): an index
+// fund holds the whole market, so every such event named VOO/SPY directly and came out critical. A fund is linked
+// through what it holds, an indirect link, unless the news is about the fund itself (its symbol in the headline)
+const INDIRECT=new Set(['supplier','customer','competitor','sector','fund']);
+const HOW_HE={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'חברה באותו ענף',fund:'קרן רחבה שמחזיקה גם במניות'};
 export function linksFor(e,HD,{followed=[]}={}){
   const H=new Map(HD.pos.map(h=>[h.sym,h])), direct=[], indirect=[], seen=new Set(), F=new Set(followed), fol=[];
+  const named=(k,a,x)=>{const t=`${(a&&a.title)||''} ${(x&&x.he)||''}`, s=String(k).replace(/^TLV:/,''); return new RegExp(`(^|[^A-Za-z0-9])${s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9]|$)`).test(t)};
+  // a direct link to a held fund, when the news is not about the fund itself, is the fund's indirect link
+  const put=(L,h,a,x)=>{if(L.how==='direct'&&h.fund&&!named(L.sym,a,x)){L.how='fund'; indirect.push(L)} else if(L.how==='direct')direct.push(L); else indirect.push(L)};
   for(const {a,x} of e.arts){if(e.ai&&x.rules)continue;   // when Claude has read the event, the rules' guesses are not used
     for(const z of (x.aff||[])){if(!z||seen.has(z.sym))continue; const h=H.get(z.sym);
       if(h){seen.add(z.sym); const L={sym:z.sym,w:h.w,how:z.how,dir:z.dir||x.dir,why:z.why||'',via:z.via||null,rules:!!x.rules,cert:x.cert||'interp'};
-        if(z.how==='direct')direct.push(L); else if(INDIRECT.has(z.how))indirect.push(L); else seen.delete(z.sym)}
+        if(z.how==='direct'||INDIRECT.has(z.how))put(L,h,a,x); else seen.delete(z.sym)}
       else if(F.has(z.sym)&&z.how==='direct'&&!fol.some(f=>f.sym===z.sym))fol.push({sym:z.sym,dir:z.dir||x.dir,why:z.why||''})}
     // the securities the article was gathered for are the companies it is about
-    for(const k of (a.syms||[])){if(seen.has(k))continue; const h=H.get(k); if(h){seen.add(k); direct.push({sym:k,w:h.w,how:'direct',dir:x.dir,why:'',via:null,rules:!!x.rules,cert:x.cert||'interp',listed:true})}
+    for(const k of (a.syms||[])){if(seen.has(k))continue; const h=H.get(k); if(h){seen.add(k); put({sym:k,w:h.w,how:'direct',dir:x.dir,why:'',via:null,rules:!!x.rules,cert:x.cert||'interp',listed:true},h,a,x)}
       else if(F.has(k)&&!fol.some(f=>f.sym===k))fol.push({sym:k,dir:x.dir,why:''})}}
   // the sectors: the share of the portfolio in the sectors the event touches, apart from the holdings already linked
   const x=e.x, secs=[];
@@ -123,7 +140,7 @@ export function measuresOf(e,L,sens='mid'){
   if(L.direct.length){const big=!dW||dW.w>=T.dHigh, D=L.direct.filter(d=>d.w!=null).sort((a,b)=>b.w-a.w).filter((d,i,A)=>A.findIndex(z=>z.sym===d.sym)===i); rel=big?'high':'mid';
     // 6.11: every held company the event names (the biggest first), not only the biggest one
     why=D.length>1?`ההחזקות עצמן מוזכרות: ${D.slice(0,3).map(d=>`${d.sym}, ${d.w}% מהתיק`).join(' · ')}${D.length>3?` ועוד ${D.length-3}`:''}`:dW?`ההחזקה עצמה מוזכרת: ${dW.sym}, ${dW.w}% מהתיק`:`ההחזקה עצמה מוזכרת: ${L.direct[0].sym} (המשקל בתיק לא ידוע כרגע)`}
-  else if(L.indirect.length){const big=!iW||iW.w>=T.iMid; rel=big?'mid':'low'; const z=iW||L.indirect[0]; why=`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''}, ${HOW_HE[z.how]||'קשורה'}${z.how==='sector'?' לזו':''} של החברה שבידיעה`}
+  else if(L.indirect.length){const big=!iW||iW.w>=T.iMid; rel=big?'mid':'low'; const z=iW||L.indirect[0]; why=z.how==='fund'?`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''} היא קרן רחבה; הידיעה נוגעת לשוק או לחברות שהיא מחזיקה, לא לקרן עצמה`:`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''}, ${HOW_HE[z.how]||'קשורה'}${z.how==='sector'?' לזו':''} של החברה שבידיעה`}
   else if(sW>=T.sMid){rel='mid'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
   else if(sW>=T.sLow){rel='low'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
   else if(L.usd!=null&&L.usd>=30&&x.macro){rel='low'; why=`${L.usd}% מהתיק בדולרים, והאירוע נוגע לשער`}
@@ -286,7 +303,9 @@ export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
     for(const o of (D.items||[]))if(o&&o.rules&&(o.arts||[]).some(z=>artK.has(z.id)&&artK.get(z.id)!==o.k))byK.delete(o.k)}
   for(const c of C.alerts){const o=byK.get(c.k);
     if(!o){const a={...c,at:iso,up:iso,ver:1,hist:[{at:iso,lv:c.lv,dir:c.dir,why:'new',t:WHY_HE.new}]}; byK.set(c.k,a); fresh.push(a); continue}
-    const why=material(o,c), a={...o,...c,lv:LV3[c.lv]>=LV3[o.lv]?c.lv:o.lv,lvWhy:LV3[c.lv]>=LV3[o.lv]?c.lvWhy:o.lvWhy,at:o.at,up:o.up,ver:o.ver||1,hist:o.hist||[]};
+    // 10.11: the level is what the rules say now (it used to keep the highest ever, so a level made by an old rule or
+    // an old link stayed critical for 30 days); a rise is still a development (material), a fall is quiet
+    const why=material(o,c), a={...o,...c,lv:c.lv,lvWhy:c.lvWhy,at:o.at,up:o.up,ver:o.ver||1,hist:o.hist||[]};
     // the holdings once named stay named (an alert does not forget whom it touched)
     {const seen=new Set(a.holds.map(h=>h.sym)); for(const h of (o.holds||[]))if(!seen.has(h.sym))a.holds.push(h)}
     if(why.length){a.ver++; a.up=iso; a.hist=[...a.hist,{at:iso,lv:a.lv,dir:c.dir,why:why[0],t:why.map(w=>WHY_HE[w]).join('; ')}].slice(-12); fresh.push(a)}

@@ -2372,3 +2372,27 @@ test('9.11 the symbol changes from FMP: parsed, kept for 180 days, asked once a 
   assert.equal(await symbolChanges(store,{key:'K',fetch:f,now}),1); assert.equal(await symbolChanges(store,{key:'K',fetch:f,now}),1); assert.equal(n,1,'once a day');
   assert.equal(D.get('research/symchg').items[0].new,'ABCD');
 });
+
+test('pulse 10.11: market news through a broad fund is an indirect link, not critical; a level made by an old rule comes down',async()=>{
+  const {pulseUpdate,_setSectors,_setKinds,isFund}=await import('../server/pulse.js'); const {newsId}=await import('../server/newsx.js');
+  _setSectors({NVDA:'Technology'}); _setKinds({VOO:'E',NVDA:'S'});
+  assert.ok(isFund('VOO')&&!isFund('NVDA')&&isFund('TLV:5130919'),'funds by the list and by the page\'s rule');
+  const s=new Store(':memory:'), now=new Date('2026-11-10T12:00:00Z'), h1=new Date(now-36e5).toISOString();
+  s.setDoc('portfolio/main',{positions:[{sym:'VOO',qty:6,ccy:'USD'},{sym:'NVDA',qty:4,ccy:'USD'}]});   // VOO 60%, NVDA 40%
+  s.setDoc('quotes/latest',{prices:{VOO:100,NVDA:100},prev:{},usdIls:3.7,updatedAt:now.toISOString()});
+  const art=(link,syms)=>({title:link,pub:'Reuters',link:'https://x/'+link,at:h1,syms,seen:h1});
+  s.setDoc('research/news',{items:[art('cpi',['VOO']),art('nv',['NVDA']),art('voo',['VOO'])]});
+  const R=o=>({he:'h',what:'w',type:'company',level:'crit',dir:'neg',cert:'fact',kind:'news',aff:[],sectors:[],themes:[],macro:false,...o});
+  const by={[newsId('https://x/cpi')]:R({he:'אינפלציה בארה״ב גבוהה מהצפוי',type:'inflation',macro:true,aff:[{sym:'VOO',how:'direct',dir:'neg'}],ev:'cpi'}),
+    [newsId('https://x/nv')]:R({he:'אנבידיה הורידה תחזית',type:'guidance',aff:[{sym:'NVDA',how:'direct',dir:'neg'}],ev:'nv'}),
+    [newsId('https://x/voo')]:R({he:'VOO: ואנגארד משנה את דמי הניהול',type:'other',aff:[{sym:'VOO',how:'direct',dir:'neg'}],ev:'voo'})};
+  s.setDoc('research/newsx',{by,gen:[]});
+  // an old alert kept at "critical" by the earlier rules
+  s.setDoc('alerts/pulse',{items:[{k:'ev:cpi',lv:'crit',lvWhy:'old',at:h1,up:h1,ver:1,hist:[],holds:[{sym:'VOO',link:'direct'}],dir:'neg',cert:'fact'}]});
+  const A=Object.fromEntries(pulseUpdate(s,null,{now}).doc.items.map(a=>[a.k,a]));
+  assert.notEqual(A['ev:cpi'].lv,'crit','inflation is not critical because an index fund holds the market'); assert.equal(A['ev:cpi'].rel,'mid');
+  assert.ok(A['ev:cpi'].holds.some(h=>h.sym==='VOO'&&h.link==='indirect'&&h.how==='fund')); assert.match(A['ev:cpi'].relWhy,/קרן רחבה/);
+  assert.equal(A['ev:nv'].lv,'crit','news about a held company itself stays critical');
+  assert.equal(A['ev:voo'].lv,'crit','news about the fund itself (its symbol in the headline) is direct');
+  _setKinds(null); _setSectors({});
+});
