@@ -2916,6 +2916,19 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 }
 /* the direction pills: the colour in the word and its arrow only; three filled pills of three colours on every card were most of the noise */
 .ix-dw.pos,.ix-dw.neg,.ix-dw.mix{background:none;border-color:var(--line)}
+/* 10.11 השפעה על התיק: one sentence on top, and a switch "פשוט | מלא" beside it (the site's own view setting). The simple
+   view keeps the sentence, three alerts and the stocks as short cards; the map, the news-load line, the direction pills,
+   "על המפה" and the panel of צ׳יקו (its round button stays) wait for the full view. In the news, a card keeps its
+   headline, what it says and what it means for the portfolio; the chips and most of the buttons wait too */
+.ix-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 12px}
+.ix-sum{margin:0;flex:1;min-width:0;font-size:15px;line-height:1.55;color:var(--ink2)} .ix-sum b{color:var(--ink)}
+.ix-sum .lnk{font:inherit;font-weight:600;padding:0;text-align:start}
+.ix-vsw{flex:none} .ix-vsw .chip{min-height:36px}
+.wrap.calm #ixLoad,.wrap.calm #ixMapD,.wrap.calm #rtAl .ix-ch2,.wrap.calm #rtAl .ix-ab,.wrap.calm #rtAl .ix-s4 .ix-dw,.wrap.calm #rtAl .ix-chs{display:none!important}
+.wrap.calm #rtAl .ix-grid{grid-template-columns:minmax(0,1fr)}
+.wrap.calm #ixAlList .ix-a:nth-of-type(n+4){display:none}
+.wrap.calm #rtNews .nw-ents,.wrap.calm #rtNews .nx-more,.wrap.calm #rtNews .nw-acts>:not([data-chiko]):not(.nw-sv){display:none!important}
+@media (max-width:640px){.ix-top{flex-direction:column;gap:8px}}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -3466,6 +3479,7 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           <div class="ix-range" id="ixRange" role="group" aria-label="תקופה"><button type="button" data-ixr="1" aria-pressed="false">24 שעות</button><button type="button" data-ixr="7" aria-pressed="true">7 ימים</button><button type="button" data-ixr="30" aria-pressed="false">30 ימים</button><button type="button" data-ixr="90" aria-pressed="false">90 ימים</button><button type="button" data-ixr="all" aria-pressed="false">כל התקופה</button></div>
         </div>
         <div class="ix-note" id="ixNote" hidden></div>
+        <div class="ix-top"><p class="ix-sum" id="ixSum" role="status" hidden></p><div class="chips viewsw ix-vsw" role="group" aria-label="כמה פרטים להציג"><button class="chip" type="button" data-view="calm" aria-pressed="false">פשוט</button><button class="chip" type="button" data-view="full" aria-pressed="true">מלא</button></div></div>
         <div id="ixBody">
           <div class="ix-kpis" id="ixKpis" hidden></div>
           <section class="ix-col ix-stx" id="ixStx" aria-labelledby="ixStH" hidden><div class="ix-ch"><h3 id="ixStH">מה קורה למניות שלך</h3><span class="ix-chs">לחיצה: לדף המניה</span></div>
@@ -3497,11 +3511,11 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
           </details>
         </div>
         <div id="ixSv" hidden>
-          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה ל-Impact</button></div>
+          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה</button></div>
           <article class="ixs" id="ixSvB"></article>
         </div>
         <div id="ixFull" hidden>
-          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה ל-Impact</button></div>
+          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-ixback="1">‹ חזרה</button></div>
           <div class="pl-head" id="plHead"></div>
         <div class="chips" id="plLv" role="group" aria-label="סינון ההתראות"><button type="button" class="chip" data-plf="all" aria-pressed="true">הכל</button><button type="button" class="chip lv-crit" data-plf="crit" aria-pressed="false">קריטיות</button><button type="button" class="chip lv-imp" data-plf="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-plf="upd" aria-pressed="false">עדכוני תיק</button><button type="button" class="chip" data-plf="unread" aria-pressed="false">לא נקראו</button><button type="button" class="chip" data-plf="saved" aria-pressed="false">שמורות</button></div>
         <div class="pl-list" id="plList"><div class="empty">ההתראות נטענות…</div></div>
@@ -27411,6 +27425,12 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
     else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
     note.hidden=!t; setH(note,t)}
   {const k=$('ixKpis'); if(k)k.hidden=true}   // 1.11: the figure cards repeated the list below them: gone
+  // 10.11: one sentence over everything: how many events touched the portfolio in the period, how many important, and the
+  // one that stands out (a tap opens it). In the simple view it is most of what the screen says
+  {const el=$('ixSum'); if(el){const E=F.L.filter(a=>a.kind!=='mkt'), I=E.filter(a=>a.lv==='crit'||a.lv==='imp'), top=E.slice().sort(plSort)[0];
+    if(!hp||!pr.on||!PULSE||!E.length)el.hidden=true;
+    else{const per=IXR==='all'?'בכל התקופה':IXR==='1'?'ב-24 השעות האחרונות':`ב-${IXR} הימים האחרונים`, who=top?[...new Set((top.holds||[]).filter(h=>h.link==='direct').map(h=>h.sym))].slice(0,3):[];
+      el.hidden=false; setH(el,`<b>${per}: ${E.length===1?'אירוע אחד נגע':E.length+' אירועים נגעו'} בתיק${I.length?`, ${I.length===1?'אחד מהם חשוב':I.length+' מהם חשובים'}`:''}.</b>${top?` הבולט: <button type="button" class="lnk" data-ixopen="${esc(top.k)}">${esc(top.title)}</button>${who.length?` (${esc(who.join(', '))})`:''}.`:''}`)}}}
   {const el=$('ixLoad'); if(el){const NL=hp&&pr.on&&PULSE?newsLoad():null; el.hidden=!NL; if(NL)setH(el,`<span class="av chiko" aria-hidden="true" style="width:22px;height:22px;vertical-align:middle;margin-inline-end:6px"></span><span class="nl nl-${NL.k}">עומס חדשותי בתיק: <b>${NL.he}</b></span> <span class="nm">${NL.n===1?'אירוע אחד':NL.n+' אירועים'} היום${NL.imp?` (${NL.imp} חשובים)`:''}, מול ${String(NL.avg).replace('.',',')} ביום בממוצע בשבוע שלפני</span>`)}}
   {const n=$('ixAlN'); if(n){n.textContent=F.un.length?`${F.un.length} חדשות`:''; n.hidden=!F.un.length; n.setAttribute('aria-label',`${F.un.length} שלא נקראו מתוך ${F.L.length}`)}
     const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">לכל ${F.L.length} ההתראות${F.un.length?` (${F.un.length} חדשות)`:''} ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
