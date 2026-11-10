@@ -1768,21 +1768,18 @@ test('the holdings in shekels, in dollars, or both: the chips, the rows, the her
   assert.ok(/[▲▼] \$/.test(s.day),'the day in dollars: '+s.day); assert.ok(/^\$/.test(s.val)&&/\$940\b/.test(s.cost)&&/\+\$70 \(\+7\.4%\)/.test(s.row),'MSFT: value, cost and profit in dollars: '+JSON.stringify([s.val,s.cost,s.row]));
   assert.ok(/^≈?[+−]\$/.test(s.pnl)&&/בלי שינוי השער/.test(s.pnlD),'the profit in dollars says what it leaves out (≈ when part of it is estimated): '+s.pnl+' / '+s.pnlD);
   assert.deepEqual(s.th,['שווי $','עלות $']); assert.match(s.sub,/בדולרים/); assert.ok(!s.ox);
-  // both: shekels first, the dollars on the line beneath, in every money cell
-  await pg.click('.hccy [data-hc="both"]'); await pg.waitForTimeout(300); s=await read();
-  assert.deepEqual(s.on,['both']); assert.ok(/^₪/.test(s.total)&&/^\$/.test(s.totalD),'both: '+s.total+' / '+s.totalD);
-  assert.ok(/₪.*\$/s.test(s.val)&&/₪.*\$940/s.test(s.cost)&&/₪.*\+\$70/s.test(s.row)&&/₪.*\$/s.test(s.dayRow),'each cell shows both: '+JSON.stringify([s.val,s.cost,s.row,s.dayRow]));
-  assert.deepEqual(s.th,['שווי ₪ / $','עלות ₪ / $']); assert.match(s.pnlD,/בדולרים/); assert.ok(!s.ox,'nothing pushes the phone sideways');
+  // 10.11 (the owner): no "₪+$" view any more: shekels or dollars
+  assert.equal(await pg.evaluate(()=>!!document.querySelector('.hccy [data-hc="both"]')),false,'no both view');
   assert.equal(store.getDoc('portfolio/main').data.positions.length,docs['portfolio/main'].positions.length,'a view, not a change');
   // the stocks / funds chips still work beside them
   await pg.click('.hkind:not(.hccy) [data-hv="fund"]'); await pg.waitForTimeout(300);
   const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec):not(.hdet)').length}));
-  assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'both'); assert.equal(hv.rows,2,'the two index funds');
-  await pg.waitForFunction(()=>true); for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_holdccy!=='both');i++)await pg.waitForTimeout(250);
+  assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'usd'); assert.equal(hv.rows,2,'the two index funds');
+  await pg.waitForFunction(()=>true); for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_holdccy!=='usd');i++)await pg.waitForTimeout(250);
   assert.deepEqual(pg.errs,[]); await ctx.close();
   // a wide screen, another browser: the choice came along with the account, and the dollars sit in the table too
   const w=await open(1280,{keepUi:true}); const ws=await w.pg.evaluate(()=>({hc:[...document.querySelectorAll('.hccy .chip')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.hc),total:document.getElementById('kTotal').textContent}));
-  assert.deepEqual(ws.hc,['both'],'another browser opens with the choice made'); assert.ok(/^₪/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
+  assert.deepEqual(ws.hc,['usd'],'another browser opens with the choice made'); assert.ok(/^\$/.test(ws.total)); assert.deepEqual(w.pg.errs,[]); await w.ctx.close();
 });
 
 test('the dollar cost of a holding: typed in "התיק שלי" on a phone, off for a shekel holding, saved, and the breakdown uses it',T,async t=>{
