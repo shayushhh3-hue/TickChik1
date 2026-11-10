@@ -1776,7 +1776,7 @@ test('the holdings in shekels, in dollars, or both: the chips, the rows, the her
   assert.equal(store.getDoc('portfolio/main').data.positions.length,docs['portfolio/main'].positions.length,'a view, not a change');
   // the stocks / funds chips still work beside them
   await pg.click('.hkind:not(.hccy) [data-hv="fund"]'); await pg.waitForTimeout(300);
-  const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec)').length}));
+  const hv=await pg.evaluate(()=>({hv:localStorage.getItem('tr_holdv'),hc:localStorage.getItem('tr_holdccy'),rows:document.querySelectorAll('#rows tr:not(.sec):not(.hdet)').length}));
   assert.equal(hv.hv,'fund'); assert.equal(hv.hc,'both'); assert.equal(hv.rows,2,'the two index funds');
   await pg.waitForFunction(()=>true); for(let i=0;i<30&&((store.getDoc('settings/main').data.ui||{}).tr_holdccy!=='both');i++)await pg.waitForTimeout(250);
   assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -2917,7 +2917,7 @@ test('5.11 the home from the recording: "today" by the markets the portfolio hol
     const out={us:H.day(us,q),mix:H.day(mix,q).slice(0,2),y:H.dmy(y)};
     const G={positions:[{sym:'XOM',group:'tech'},{sym:'VOO',group:'tech'},{sym:'MSFT',group:'tech'},{sym:'CVX',group:'tech',_g:'user'},{sym:'JPM',group:'fin'}]};
     out.n=H.grpAuto(G); out.g=G.positions.map(p=>p.group+(p._g?':'+p._g:'')).join(',');
-    const rows=[...document.querySelectorAll('#rows tr:not(.sec):not(.cashrow)')].length; out.all=[document.getElementById('holdAll').textContent,rows];
+    const rows=[...document.querySelectorAll('#rows tr:not(.sec):not(.cashrow):not(.hdet)')].length; out.all=[document.getElementById('holdAll').textContent,rows];
     out.span=H.span(); out.chips=[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr+':'+(b.hidden?'h':'v')).join(',');
     return out});
   assert.deepEqual(r.us.slice(0,2),[`ביום המסחר האחרון (${r.y})`,`ביום המסחר האחרון (${r.y})`],'US shares only: the last New York day, while Tel Aviv trades');
