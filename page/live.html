@@ -2944,8 +2944,8 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .ix-s .ix-s2{font-size:13.5px}
 .ix-s .ix-hl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:600;text-align:start}
 .ix-s .ix-tone{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
-.ix-s .ix-tb{display:flex;flex:0 0 72px;height:6px;border-radius:99px;overflow:hidden;background:var(--sunk)}
-.ix-s .ix-tb i{display:block} .ix-s .ix-tb .p{background:var(--gain)} .ix-s .ix-tb .n{background:var(--loss)} .ix-s .ix-tb .m{background:#D97706}
+.ix-s .ix-tbar{display:flex;flex:0 0 72px;height:6px;border-radius:99px;overflow:hidden;background:var(--sunk)}
+.ix-s .ix-tbar i{display:block} .ix-s .ix-tbar .p{background:var(--gain)} .ix-s .ix-tbar .n{background:var(--loss)} .ix-s .ix-tbar .m{background:#D97706}
 /* an alert: the headline first */
 .ix-a h4{font-size:16px;line-height:1.45}
 .ix-a .ix-at{font-size:13px}
@@ -27193,6 +27193,7 @@ const IX_RL={'1':'24 שעות','7':'7 ימים','30':'30 ימים','90':'90 ימ
 // before the event's day against the close of the next trading day after it (the daily closes the page keeps). A move of
 // less than 0.3% says nothing and is not counted; the market's own move is not taken out (said so)
 const TR_MIN=0.3;
+let IX_HL=new Set();   // 10.11: the headlines the stocks' cards already show (one headline is not repeated on every card)
 function ixTrustOf(){const pts=(DY&&DY.points)||{}, days=Object.keys(pts).sort(); if(days.length<3)return null;
   const from=isoDay(Date.now()-30*864e5), seen=new Set(); let n=0, hit=0, flat=0;
   for(const a of plItems()){if(a.kind==='mkt'||a.rules)continue; const t=a.first||a.at; if(!t)continue; const d0=isoDay(Date.parse(t)); if(d0<from)continue;
@@ -27370,9 +27371,10 @@ const ixDayH=p=>p&&p.dayPct!=null?`<span class="ix-sd ${p.dayPct>=0?'up':'down'}
 // one holding in the list: a button, the whole card
 function ixStRow(o){const p=o.p, ev=o.L.filter(z=>z.a.kind!=='mkt').length, nm=p&&p.name&&p.name!==o.sym?p.name:'', d=o.dirs;
   // 10.11: the tone of the stock's news in one bar and one phrase, and its leading headline, instead of three counted pills
-  const tot=(d.pos||0)+(d.neg||0)+(d.mixed||0), bar=tot?`<span class="ix-tb" aria-hidden="true">${[['p',d.pos],['n',d.neg],['m',d.mixed]].filter(x=>x[1]).map(([c,v])=>`<i class="${c}" style="width:${(v/tot*100).toFixed(1)}%"></i>`).join('')}</span>`:'';
+  const tot=(d.pos||0)+(d.neg||0)+(d.mixed||0), bar=tot?`<span class="ix-tbar" aria-hidden="true">${[['p',d.pos],['n',d.neg],['m',d.mixed]].filter(x=>x[1]).map(([c,v])=>`<i class="${c}" style="width:${(v/tot*100).toFixed(1)}%"></i>`).join('')}</span>`:'';
   const what=ev?(ev===1?'ידיעה אחת':`${ev} ידיעות`):o.quiet?'לא נמצאה ידיעה':'עובדות מהשוק';
-  const hl=o.top&&o.top.kind!=='mkt'?o.top.title:'';
+  // the stock's own leading headline: a reading that names it directly first, and not one another card already shows
+  const cand=o.L.filter(z=>z.a.kind!=='mkt'), pick=cand.find(z=>z.k&&z.k.t==='direct'&&!IX_HL.has(z.a.title))||cand.find(z=>!IX_HL.has(z.a.title))||null, hl=pick?pick.a.title:''; if(hl)IX_HL.add(hl);
   return `<li><button type="button" class="ix-s lv-${o.top?o.top.lv:'q'}${o.quiet?' q':''}" data-ixst="${esc(o.sym)}">
     <span class="ix-s1">${logoHtml(o.sym,'xs')}<b><bdi>${esc(o.sym)}</bdi></b><span class="ix-sn">${esc(nm)}</span>${p?`<span class="ix-sw">${pct(p.w,1)} מהתיק</span>`:'<span class="ix-sw nm">לא בתיק · במעקב</span>'}</span>
     <span class="ix-s2">${ixDayH(p)}<span class="ix-se">${what}</span></span>
@@ -27514,7 +27516,7 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
     const el=$('ixAlList'); if(el){const nn=(($('rtAl')||{}).clientWidth||0)>=760?5:3, L=F.L.slice().sort(plSort).slice(0,nn); setH(el,L.length?L.map(ixCard).join('')+(F.L.length>nn?`<button type="button" class="btn sm ix-more" data-ixall="1">לכל ${F.L.length} ההתראות${F.un.length?` (${F.un.length} חדשות)`:''} ›</button>`:''):`<div class="empty">${hp&&pr.on?(PULSE?`אין התראות ב${IX_RL[IXR]==='כל התקופה'?'תקופה':IX_RL[IXR]+' האחרונים'}. זה טוב: התראה מופיעה רק כשיש קשר מבוסס לתיק.`:'ההתראות עוד לא חושבו.'):'אין התראות אישיות בלי תיק.'}</div>`)}}
   // the holdings the period touches: each a way into "מה קורה למניה"
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
-    if(S.length){setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
+    if(S.length){IX_HL=new Set(); setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
   if(IXV==='world')IXV='pf';   // 1.11: the world view moved to the management's global news model
   {const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v==='1'||(v==null&&!hp)}}
   try{ixDraw()}catch(e){console.error(e)}
