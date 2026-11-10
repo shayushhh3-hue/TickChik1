@@ -294,6 +294,8 @@ export function material(old,c){
   return why;
 }
 const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוון ההשפעה האפשרי השתנה',hold:'אחזקה נוספת שלך נוגעת לאירוע',fact:'מה שהיה הערכה או פרשנות דווח כעובדה',stage:'מצב האירוע השתנה',dev:'כתבה חדשה על אירוע שאתה עוקב אחריו'};
+const NOT_NEWS=new Set(['mkt','cal','thesis','insider']);
+const asFund=h=>h&&h.link==='direct'&&h.how!=='fund'&&isFund(h.sym)&&!h.measured?{...h,link:'indirect',how:'fund'}:h;
 export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   const pa=pathsOf(u), iso=now.toISOString(), old=store.getDoc(pa.pulse), D=old.exists&&old.data?old.data:{items:[]};
   const C=pulseCompute(store,u,{now}), byK=new Map((D.items||[]).map(a=>[a.k,a])), fresh=[];
@@ -306,10 +308,19 @@ export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
     // 10.11: the level is what the rules say now (it used to keep the highest ever, so a level made by an old rule or
     // an old link stayed critical for 30 days); a rise is still a development (material), a fall is quiet
     const why=material(o,c), a={...o,...c,lv:c.lv,lvWhy:c.lvWhy,at:o.at,up:o.up,ver:o.ver||1,hist:o.hist||[]};
-    // the holdings once named stay named (an alert does not forget whom it touched)
-    {const seen=new Set(a.holds.map(h=>h.sym)); for(const h of (o.holds||[]))if(!seen.has(h.sym))a.holds.push(h)}
+    // the holdings once named stay named (an alert does not forget whom it touched); a fund kept from before 10.11 as
+    // "direct" is kept as what it is now, the fund's indirect link
+    {const seen=new Set(a.holds.map(h=>h.sym)); for(const h of (o.holds||[]))if(!seen.has(h.sym))a.holds.push(asFund(h))}
     if(why.length){a.ver++; a.up=iso; a.hist=[...a.hist,{at:iso,lv:a.lv,dir:c.dir,why:why[0],t:why.map(w=>WHY_HE[w]).join('; ')}].slice(-12); fresh.push(a)}
     byK.set(c.k,a)}
+  // 10.11: a kept alert the rules did not make again this time (its articles are older) is held to the rules of now: its
+  // level can come down, never up. A news item kept "critical" by an old rule (an opinion, or a fund linked directly)
+  // stayed so for 30 days
+  {const now_=new Set(C.alerts.map(c=>c.k));
+    for(const [k,o] of byK){if(now_.has(k)||!o||!o.imp||!o.rel||!o.conf||NOT_NEWS.has(o.kind))continue;
+      const holds=(o.holds||[]).map(asFund), dir=holds.filter(h=>h.link==='direct'), rel=o.rel==='high'&&!dir.length?'mid':o.rel;
+      const r=levelOf({imp:o.imp,rel,conf:o.conf},o.kind||'news'), lv=r?r.lv:'upd';
+      if(LV3[lv]<LV3[o.lv])byK.set(k,{...o,holds,rel,lv,lvWhy:r?r.why:o.lvWhy})}}
   // kept for 30 days from the last development; at most 150
   const from=new Date(now.getTime()-30*DAY).toISOString();
   const items=[...byK.values()].filter(a=>(a.up||a.at)>=from).sort((a,b)=>(b.up||b.at)<(a.up||a.at)?-1:1).slice(0,150);

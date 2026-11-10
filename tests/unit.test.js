@@ -2388,11 +2388,16 @@ test('pulse 10.11: market news through a broad fund is an indirect link, not cri
     [newsId('https://x/voo')]:R({he:'VOO: ואנגארד משנה את דמי הניהול',type:'other',aff:[{sym:'VOO',how:'direct',dir:'neg'}],ev:'voo'})};
   s.setDoc('research/newsx',{by,gen:[]});
   // an old alert kept at "critical" by the earlier rules
-  s.setDoc('alerts/pulse',{items:[{k:'ev:cpi',lv:'crit',lvWhy:'old',at:h1,up:h1,ver:1,hist:[],holds:[{sym:'VOO',link:'direct'}],dir:'neg',cert:'fact'}]});
+  s.setDoc('alerts/pulse',{items:[{k:'ev:cpi',lv:'crit',lvWhy:'old',at:h1,up:h1,ver:1,hist:[],holds:[{sym:'VOO',link:'direct'}],dir:'neg',cert:'fact'},
+    {k:'ev:nv',lv:'crit',lvWhy:'old',at:h1,up:h1,ver:1,hist:[],holds:[{sym:'NVDA',link:'direct',how:'direct'},{sym:'VOO',link:'direct',how:'direct'}],dir:'neg',cert:'fact'},
+    // an opinion kept critical by an old rule, its articles gone: the rules of now bring it down
+    {k:'ev:old-op',kind:'opinion',lv:'crit',lvWhy:'old',imp:'high',rel:'high',conf:'mid',at:h1,up:h1,ver:1,hist:[],holds:[{sym:'VOO',link:'direct',how:'direct'}],dir:'neg',cert:'interp'}]});
   const A=Object.fromEntries(pulseUpdate(s,null,{now}).doc.items.map(a=>[a.k,a]));
   assert.notEqual(A['ev:cpi'].lv,'crit','inflation is not critical because an index fund holds the market'); assert.equal(A['ev:cpi'].rel,'mid');
   assert.ok(A['ev:cpi'].holds.some(h=>h.sym==='VOO'&&h.link==='indirect'&&h.how==='fund')); assert.match(A['ev:cpi'].relWhy,/קרן רחבה/);
   assert.equal(A['ev:nv'].lv,'crit','news about a held company itself stays critical');
   assert.equal(A['ev:voo'].lv,'crit','news about the fund itself (its symbol in the headline) is direct');
+  assert.ok(A['ev:nv'].holds.some(h=>h.sym==='VOO'&&h.link==='indirect'&&h.how==='fund'),'a fund kept from before as direct is the fund\'s link now');
+  assert.equal(A['ev:old-op'].lv,'upd','a kept opinion is not critical'); assert.equal(A['ev:old-op'].rel,'mid'); assert.ok(A['ev:old-op'].holds.every(h=>h.link==='indirect'));
   _setKinds(null); _setSectors({});
 });
