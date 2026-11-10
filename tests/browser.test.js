@@ -312,7 +312,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // 28.10: the lean home ends with the holdings; the detail switch lives in the settings only
       const vs=await pg.evaluate(()=>({n:document.querySelectorAll('.viewsw').length,home:!!document.querySelector('[data-pane="overview"] .viewsw'),last:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).pop()}));
       // 1.11: the steps of a new account (when some are left) come after the indices row, at the very end
-      assert.equal(vs.n,1); assert.equal(vs.home,false); assert.ok(vs.last==='idxRow'||vs.last==='obNext','the holdings, then the indices row (then the steps left): '+vs.last);
+      assert.equal(vs.n,1); assert.equal(vs.home,false); assert.ok(['idxRow','obNext','soonSec'].includes(vs.last),'10.11: the home ends with the coming two weeks (the indices are a line in the value card): '+vs.last);
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'),'simple: no ticker');
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="full"]').click()); await pg.waitForTimeout(300);

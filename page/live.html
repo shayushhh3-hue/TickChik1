@@ -3030,6 +3030,29 @@ body[data-page="overview"] .hero #acctChips{display:none!important}
   body.homeA[data-page="overview"] .worth .wtop{margin:0;min-height:0}
   body.homeA[data-page="overview"] .worth #wChart{margin-top:8px;padding:6px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;background:none}
 }
+/* 10.11 (the owner): the markets' running line and the row of views inside the value card, at its top; the header on a
+   phone lower, so the card starts higher */
+.mtick{overflow:hidden;margin:0 0 8px;padding:2px 0 7px;border-bottom:1px solid var(--line);direction:rtl;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.mtick[hidden]{display:none}
+.mkt-in{display:inline-flex;white-space:nowrap;animation:mtick var(--mt-dur,40s) linear infinite;will-change:transform}
+.mkt-g{display:inline-flex;gap:18px;padding-inline-end:18px}
+.mkt-i{display:inline-flex!important;align-items:baseline;gap:5px;font-size:12.5px;line-height:1.5;color:var(--ink2);white-space:nowrap} .mtick .mkt-i>*{display:inline!important;margin:0;font-size:inherit;line-height:inherit} .mkt-i b{font-weight:700;color:var(--ink)} .mkt-i .up{color:var(--gain);font-weight:700} .mkt-i .down{color:var(--loss);font-weight:700}
+@keyframes mtick{from{transform:translateX(0)}to{transform:translateX(50%)}}
+.mtick:hover .mkt-in,.mtick:focus-within .mkt-in,.mtick:active .mkt-in{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.mkt-in{animation:none} .mtick{overflow-x:auto;-webkit-mask-image:none;mask-image:none} .mkt-g[aria-hidden]{display:none}}
+html.a11y-rm .mkt-in{animation:none} html.a11y-rm .mtick{overflow-x:auto;-webkit-mask-image:none;mask-image:none} html.a11y-rm .mkt-g[aria-hidden]{display:none}
+body[data-page="overview"] #idxRow{display:none!important}
+.worth .ovtabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:0 auto 10px;max-width:560px;overflow:visible}
+.worth .ovtabs button{flex-direction:column;justify-content:center;gap:3px;min-height:50px;padding:6px 2px;border-radius:14px;border:0;background:var(--sunk);font-size:12px;line-height:1.2;white-space:normal;text-align:center}
+.worth .ovtabs button svg{display:block;width:18px;height:18px}
+.worth .ovtabs .acctsel:not([hidden]){display:block;width:100%;min-height:50px;margin:0;border:0;border-radius:14px;background-color:var(--sunk);font-size:12.5px;text-align:center;text-align-last:center;padding:4px 18px 4px 6px;background-position:left 6px center}
+@media (max-width:640px){
+  body.homeA[data-page="overview"] .hero .top{min-height:0;margin-bottom:4px;padding-block:0}
+  body.homeA[data-page="overview"] .hero .hbtn,body.homeA[data-page="overview"] .hero #hdrAcct>button,body.homeA[data-page="overview"] .hero #hdrAcct{width:32px;height:32px;min-width:32px;min-height:32px;padding:0}
+  body.homeA[data-page="overview"] .hero .hbtn svg{width:16px;height:16px}
+  body.homeA[data-page="overview"] .hero .wm{font-size:22px}
+  body.homeA[data-page="overview"] #tcAcctBtn{width:32px;height:32px;min-width:32px;min-height:32px;padding:0} body.homeA[data-page="overview"] #tcAcctBtn svg{width:16px;height:16px}
+}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -3112,6 +3135,7 @@ body[data-page="overview"] .hero #acctChips{display:none!important}
         <button type="button" data-tab="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/></svg><span>מה קורה בתיק</span></button>
       </nav>
       <div class="worth">
+        <div class="mtick" id="mktTick" role="region" aria-label="השווקים עכשיו" hidden></div>
         <div class="wtop"><div class="k"><span id="kTotK">שווי התיק</span><button type="button" class="eye" id="kEye" aria-pressed="false" aria-label="להסתיר את הסכומים" title="להסתיר את הסכומים"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div><span class="mchip" id="kMon" hidden></span></div>
         <div class="wgrid">
           <div class="wv">
@@ -19443,7 +19467,8 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   if(ph){if(wh.parentElement!==wc)wc.prepend(wh); if(kt.nextElementSibling!==wc)wc.before(kt); if(pb&&pb.nextElementSibling!==kt){if(!pb._home)pb._home={p:pb.parentElement,n:pb.nextSibling}; kt.before(pb)} if(kr&&qa&&kr.nextElementSibling!==qa)qa.before(kr); if(mn&&th&&up&&th.parentElement!==mn){mn.append(th,up)}}
   else{const wg=wc.closest('.wgrid'); if(wh.parentElement===wc&&wg)wg.after(wh); if(pb&&pb._home&&pb.parentElement!==pb._home.p){pb._home.p.insertBefore(pb,pb._home.n)} if(pl&&kt.nextElementSibling!==pl)pl.before(kt); if(kr&&qa&&kr.previousElementSibling!==qa)qa.after(kr); if(rf&&th&&up&&th.parentElement!==rf.parentElement){rf.before(th,up)} if(mn){mn.hidden=true}}
   // 10.11 (the owner): the indices a thin strip over the value card, as in the brokers' apps
-  {const ix=$('idxRow'), wo=$('ovTabs')||document.querySelector('.hero .worth'); if(ix&&wo&&ix.nextElementSibling!==wo)wo.before(ix)}
+  // 10.11 (the owner): the markets' ticker and the row of views inside the value card, at its top
+  {const ot=$('ovTabs'), mt=$('mktTick'); if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot)}
   // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
   {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
   try{WSIG=''; renderWChart()}catch(e){}}
@@ -23320,12 +23345,25 @@ function pickAdd(){
 }
 // the indices the person follows, on the home page: today's change, and for a US index also its future
 let IDX_EDIT=false;
-function renderIdx(){
-  const el=$('idxRow'); if(!el)return; const B=(Q&&Q.bench)||{}, sel=benchSel(), live=!!(Q&&Q.live);
+// 10.11 (the owner): the markets as a running line at the top of the value card: the indices the server keeps (S&P 500,
+// נאסד״ק 100, דאו ג׳ונס, ראסל 2000, ת״א 125), the dollar and the euro, gold, oil, the 10-year bond, VIX and bitcoin;
+// the day's change of each. It stops under the finger or the mouse, and stands still with "less motion"
+function renderTicker(){const el=$('mktTick'); if(!el)return; const B=(Q&&Q.bench)||{}, M=(Q&&Q.mkts)||{}, L=[];
+  const num=(x,dg)=>x.toLocaleString('en-US',{maximumFractionDigits:dg,minimumFractionDigits:dg});
+  const add=(name,px,prev,fmt,pts)=>{if(!(px>0)||!(prev>0))return; const d=pts?px-prev:(px/prev-1)*100, up=d>=0;
+    L.push(`<span class="mkt-i"><b>${esc(name)}</b> <span class="n">${fmt(px)}</span> <span class="n ${up?'up':'down'}"><span aria-hidden="true">${up?'▲':'▼'}</span><span class="vh">${up?'עלה':'ירד'}</span> ${pts?Math.abs(d).toFixed(2):Math.abs(d).toFixed(2)+'%'}</span></span>`)};
+  for(const k of ['SPX','NDX','DJI','RUT','TA125'])if(B[k])add(B[k].name||BENCHK[k]||k,+B[k].px,+B[k].prev,x=>num(x,0));
+  if(Q&&Q.usdIls&&Q.fxPrev&&Q.fxPrev.rate)add('דולר/שקל',+Q.usdIls,+Q.fxPrev.rate,x=>num(x,3));
+  for(const [k,dg,pts] of [['EUR',3],['GOLD',0],['BRENT',2],['TNX',2,true],['VIX',2],['BTC',0]])if(M[k])add(M[k].name||k,+M[k].px,+M[k].prev,k==='TNX'?x=>num(x,2)+'%':x=>num(x,dg),pts);
+  if(!L.length){el.hidden=true; return} el.hidden=false; const g=L.join(''); if(el.dataset.sig===g)return; el.dataset.sig=g;
+  el.style.setProperty('--mt-dur',Math.max(24,L.length*4)+'s');
+  el.innerHTML=`<div class="mkt-in"><span class="mkt-g">${g}</span><span class="mkt-g" aria-hidden="true">${g}</span></div>`}
+function renderIdx(){  const el=$('idxRow'); if(!el)return; const B=(Q&&Q.bench)||{}, sel=benchSel(), live=!!(Q&&Q.live);
   const items=sel.map(k=>{const b=B[k]; if(!b||!(b.prev>0))return `<span class="idx" title="אין עדיין נתון"><b>${esc(BENCHK[k]||k)}</b><small>—</small></span>`;
     const pc=(b.px/b.prev-1)*100, f=b.fut&&b.fut.prev>0?(b.fut.px/b.fut.prev-1)*100:null, fresh=b.date&&(Date.now()-new Date(b.date))/864e5<1.5;
     return `<span class="idx"><b>${esc(b.name||BENCHK[k]||k)}</b><span class="n ${pc>=0?'up':'down'}">${pc>=0?'▲':'▼'} ${Math.abs(pc).toFixed(2)}%</span>${!fresh&&b.date?`<small>סגירה ${dmy(b.date)}</small>`:''}${f!=null?`<small title="החוזה העתידי על המדד: מה שהשוק מצפה לפתיחה הבאה">חוזים <span class="n ${f>=0?'up':'down'}">${f>=0?'+':'−'}${Math.abs(f).toFixed(2)}%</span></small>`:''}</span>`});
   const edit=IDX_EDIT?`<span class="chips" role="group" aria-label="בחירת מדדים">${Object.keys(BENCHK).map(k=>`<button type="button" class="chip" data-bench="${k}" aria-pressed="${sel.includes(k)}"${canWrite?'':' disabled'}>${BENCHK[k]}</button>`).join('')}</span>`:'';
+  try{renderTicker()}catch(e){console.error(e)}
   el.hidden=!(P&&(P.positions||[]).length)&&!IDX_EDIT; el.innerHTML=items.join('')+(canWrite?`<button type="button" class="chip" id="idxEdit" aria-expanded="${IDX_EDIT}" title="אילו מדדים להציג">${IDX_EDIT?'סגור':'מדדים'}</button>`:'')+edit;
 }
 // the world search: names and symbols from every market, through the server; a row goes into the table with its exchange
