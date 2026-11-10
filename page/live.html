@@ -3010,6 +3010,24 @@ body[data-page="overview"] #kindRow{display:none!important}
 body[data-page="overview"] .hero #idxRow:not([hidden]){display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px;padding:2px 0}
 body[data-page="overview"] .hero #idxRow .idx,body[data-page="overview"] .hero #idxRow .chip{flex:none;white-space:nowrap}
 body:not([data-page="overview"]) #idxRow{display:none!important}
+/* 10.11 (the owner): one card for the value, its three figures and its chart (on a phone the chart was a card of its own
+   under a value that stood on the page: they looked apart); a small row of the portfolio's views over it (פיזור, מבט
+   לאחור, מה קורה בתיק) in place of the four big buttons */
+.ovtabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 12px}
+.ovtabs button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ovtabs button svg{width:16px;height:16px;flex:none;color:var(--vio-ink)}
+.ovtabs button:hover{background:var(--accent-soft)} .ovtabs button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+body:not([data-page="overview"]) #ovTabs{display:none!important}
+body[data-page="overview"] #quickActs{display:none!important}
+body[data-page="overview"] .hero #acctChips{display:none!important}
+.ovtabs .acctsel:not([hidden]){display:inline-block;margin:0;min-height:38px;font-size:13.5px;padding:6px 30px 6px 14px;background-color:var(--surface);flex:none}
+.mix-head{margin:0 0 14px} .mix-head h2{margin:0;font-size:22px;font-weight:800} .mix-head .sub{display:block;margin-top:2px;font-size:14px}
+@media (max-width:640px){
+  .ovtabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;gap:6px} .ovtabs button{flex:none;padding:6px 11px;font-size:13px} .ovtabs button svg{display:none}
+  .ovtabs .acctsel:not([hidden]){font-size:13px;padding:6px 26px 6px 10px}
+  body.homeA[data-page="overview"] .hero .worth{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:24px;padding:16px 14px 10px}
+  body.homeA[data-page="overview"] .worth #wChart{margin-top:14px;padding:12px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;background:none}
+}
 /* a target is 44px high where it is tapped on its own */
 .hold-all{min-height:44px;padding-inline:10px}</style>
 
@@ -3085,6 +3103,12 @@ body:not([data-page="overview"]) #idxRow{display:none!important}
     </div>
     <div class="dup" id="loadErr" role="status" hidden style="margin:10px 0 0"></div>
     <div class="main">
+      <!-- 10.11 (the owner): a small row of the portfolio's own views over the value, in place of the four big buttons -->
+      <nav class="ovtabs" id="ovTabs" aria-label="תצוגות התיק">
+        <button type="button" data-tab="mix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9"/></svg><span>פיזור</span></button>
+        <button type="button" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
+        <button type="button" data-tab="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/></svg><span>מה קורה בתיק</span></button>
+      </nav>
       <div class="worth">
         <div class="wtop"><div class="k"><span id="kTotK">שווי התיק</span><button type="button" class="eye" id="kEye" aria-pressed="false" aria-label="להסתיר את הסכומים" title="להסתיר את הסכומים"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div><span class="mchip" id="kMon" hidden></span></div>
         <div class="wgrid">
@@ -3536,6 +3560,12 @@ body:not([data-page="overview"]) #idxRow{display:none!important}
       <section class="al-sec" aria-labelledby="hAlDay"><h3 id="hAlDay">היום</h3><div class="ktoday al-today" id="alToday"></div><p class="al-empty" id="alTodayE" hidden>אין עדכון מיוחד היום.</p></section>
      <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
     </section>
+  </div>
+  <!-- 10.11 (the owner): פיזור, a screen of its own reached from the row over the home's value; its sections (the groups,
+       the allocation against the targets, the exposures, profit by security, core and satellites) move here from בקרה
+       when the page starts (foldBoot) -->
+  <div class="pane" data-pane="mix" hidden>
+    <div class="mix-head"><h2 id="hMixT">פיזור</h2><span class="sub">איך התיק מחולק: קבוצות, יעדים, חשיפות ורווח לפי נייר</span></div>
   </div>
   <div class="pane" data-pane="fit" hidden></div>
   <div class="pane" data-pane="news" hidden>
@@ -19411,7 +19441,9 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   if(ph){if(wh.parentElement!==wc)wc.prepend(wh); if(kt.nextElementSibling!==wc)wc.before(kt); if(pb&&pb.nextElementSibling!==kt){if(!pb._home)pb._home={p:pb.parentElement,n:pb.nextSibling}; kt.before(pb)} if(kr&&qa&&kr.nextElementSibling!==qa)qa.before(kr); if(mn&&th&&up&&th.parentElement!==mn){mn.append(th,up)}}
   else{const wg=wc.closest('.wgrid'); if(wh.parentElement===wc&&wg)wg.after(wh); if(pb&&pb._home&&pb.parentElement!==pb._home.p){pb._home.p.insertBefore(pb,pb._home.n)} if(pl&&kt.nextElementSibling!==pl)pl.before(kt); if(kr&&qa&&kr.previousElementSibling!==qa)qa.after(kr); if(rf&&th&&up&&th.parentElement!==rf.parentElement){rf.before(th,up)} if(mn){mn.hidden=true}}
   // 10.11 (the owner): the indices a thin strip over the value card, as in the brokers' apps
-  {const ix=$('idxRow'), wo=document.querySelector('.hero .worth'); if(ix&&wo&&ix.nextElementSibling!==wo)wo.before(ix)}
+  {const ix=$('idxRow'), wo=$('ovTabs')||document.querySelector('.hero .worth'); if(ix&&wo&&ix.nextElementSibling!==wo)wo.before(ix)}
+  // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
+  {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
   try{WSIG=''; renderWChart()}catch(e){}}
 (function(){const go=()=>{try{homeLayout()}catch(e){}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',go); else go(); try{PHONE.addEventListener('change',go)}catch(e){}})();
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#btnTape')){const t=$('tapeTg'); if(t)t.click()}});
@@ -19742,8 +19774,8 @@ function foldIs(){return true}
 // 5.11: five parts instead of three. "פיזור" was five screens of eight analyses and "סיכון ותרחישים" five more: what moves
 // together (the co-movement and both kinds of pairs, one question) and the risk measures (the snapshot and the securities
 // that shake the portfolio) are parts of their own
-const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],mix:['hMixH','hMix','hExp','hPnl','hCore'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk','hPress']};   // 10.11 (the owner): the pressure gauge is one of the risk measures (as a part of its own, its chip hid nothing and opened the whole control)
-const RGL={now:'מצב',mix:'פיזור',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון'};
+const RG={now:['hDesk','hHealth','hCtl','hRulesOv','hAnaE','hBrief'],co:['hCo','hPr','hOp'],risk:['hStress','hSim','hTm'],vol:['hKpi','hRk','hPress']};   // 10.11 (the owner): the pressure gauge is one of the risk measures (as a part of its own, its chip hid nothing and opened the whole control)
+const RGL={now:'מצב',co:'מה זז יחד',risk:'תרחישים',vol:'מדדי סיכון'};
 const rgOf=id=>{for(const k in RG)if(RG[k].includes(id))return k;return 'now'};
 let RGV='now'; try{const v=localStorage.getItem('tr_rgv'); if(RG[v])RGV=v}catch(e){}
 function rgSet(k){if(!RG[k])k='now'; RGV=k; try{localStorage.setItem('tr_rgv',k)}catch(e){}
@@ -19766,7 +19798,10 @@ const SECI={hPress:'M12 14l4-6M4 16a8 8 0 1 1 16 0M12 14a1 1 0 1 0 0 .01',hDesk:
   hFxCalc:'M12 2v20M17 6.5c-1-1.5-3-2-5-2-3 0-5 1.5-5 3.5s2 3 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5c-2.3 0-4.3-.8-5.3-2.3',hPots:'M5 12a7 5 0 0 1 14 0v4a7 5 0 0 1-14 0zM9 7l1-3h4l1 3',hSearch:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.5-3.5',hFit:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z',
   hWatch:'M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',hNewsT:'M3 4h18v16H3zM7 9h6M7 13h10M7 17h10',hCal:'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',hSet:'M4 7h9M17 7h3M4 17h3M11 17h9M15 7a2 2 0 1 0 0 .01M9 17a2 2 0 1 0 0 .01',hState:'M4 5h16v10H9l-5 4z',hCalendar:'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4'};
 function secIconH(id){const d=SECI[id]; return d?`<span class="sec-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>`:''}
+// 10.11 (the owner): פיזור is a screen of its own (reached from the row over the home's value); its sections leave בקרה
+const MIXIDS=['hMixH','hMix','hExp','hPnl','hCore'];
 function foldBoot(){
+  {const mp=document.querySelector('[data-pane="mix"]'), rp=document.querySelector('[data-pane="risk"]'); if(mp&&rp)for(const id of MIXIDS){const s=rp.querySelector(`:scope > section[aria-labelledby="${id}"]`); if(s)mp.appendChild(s)}}
   for(const pane of document.querySelectorAll('.pane')){ if(pane.dataset.pane==='overview')continue;
     for(const s of pane.querySelectorAll(':scope > section')){const id=s.getAttribute('aria-labelledby'); if(!id||s.classList.contains('seccard'))continue;
       let head=s.querySelector(':scope > .row'); if(!head){const h2=s.querySelector(':scope > h2'); if(h2){head=document.createElement('div'); head.className='row'; s.insertBefore(head,h2); head.appendChild(h2)}}
@@ -20099,8 +20134,8 @@ function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));re
   if(t.startsWith('symchg:')){const [,o,n]=t.split(':'); symChgApply(o,n); return}
   if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el){try{ptReveal(el)}catch(x){} el.scrollIntoView({block:'start'})}},80); return}
   // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
-  if(t.startsWith('fold:')){const [,id,stk]=t.split(':'); if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab('risk',true); try{setNav(false)}catch(e){} try{foldSet(id,true)}catch(e){}
-    setTimeout(()=>{const s=document.querySelector(`[data-pane="risk"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60); return}
+  if(t.startsWith('fold:')){const [,id,stk]=t.split(':'), pn=MIXIDS.includes(id)?'mix':'risk'; if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab(pn,true); try{setNav(false)}catch(e){} if(pn==='risk')try{foldSet(id,true)}catch(e){}
+    setTimeout(()=>{const s=document.querySelector(`[data-pane="${pn}"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60); return}
   if(t==='fit'){showTab('search',true);try{setSV('fit')}catch(e){}return}
   if(TABS.includes(t)){showTab(t,true);try{setNav(false)}catch(e){}}}
 const anaStrip=h=>String(h==null?'':h).replace(/<[^>]*>/g,'').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
@@ -26300,10 +26335,10 @@ function srchDb(){
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
-const TABS=['overview','alerts','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
-const NAVG={overview:['overview'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
+const TABS=['overview','alerts','mix','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
+const NAVG={overview:['overview','mix'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
 const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מעקב ומה מתאים',ratings:'דירוג',watch:'מעקב ומה מתאים',history:'היסטוריה',reports:'דוחות'};
-const HEADL={alerts:'התראות',news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
+const HEADL={alerts:'התראות',mix:'פיזור',news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}

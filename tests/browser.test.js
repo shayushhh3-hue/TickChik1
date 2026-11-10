@@ -1584,7 +1584,7 @@ test('dividends: the way of a dividend, what came in per security with its tax a
 
 test('the spread of the portfolio: a bar or a pie at a click, the same shares, kept for next time',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.click('#riskNav [data-rg="mix"]'); await pg.waitForSelector('#mixHome:not([hidden])');   // 28.10: on the control screen, in its "פיזור" part
+  const {ctx,pg}=await open(390); await tab(pg,'mix'); await pg.waitForSelector('#mixHome:not([hidden])');   // 10.11 (the owner): פיזור is a screen of its own, from the row over the home's value
   const st=()=>pg.evaluate(()=>{const v=e=>!!e.offsetParent||e.getBoundingClientRect().width>0, pie=document.getElementById('mixPie');
     return {bar:v(document.getElementById('mixBar')),pie:!pie.hasAttribute('hidden')&&pie.getBoundingClientRect().width>0,slices:pie.querySelectorAll('path,circle').length,label:pie.getAttribute('aria-label'),
       list:document.querySelectorAll('#mixList li').length,on:[...document.querySelectorAll('[data-mixv]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.mixv),
@@ -2034,7 +2034,7 @@ test('1.11 completions: the X-ray names the common factors and direct against in
   const S0=store.getDoc('settings/main').data; const {ctx,pg}=await open(390);
   try{
     // the X-ray
-    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="mix"]'); await pg.waitForTimeout(400);
+    await tab(pg,'mix'); await pg.waitForTimeout(500);   // 10.11: פיזור is a screen of its own
     const xr=await pg.evaluate(()=>({txt:document.getElementById('expBox').innerText.replace(/\s+/g,' '),fac:[...document.querySelectorAll('#expBox .xr-fac li b')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(xr.ox,false); assert.ok(xr.fac.includes('שער הדולר')&&xr.fac.includes('טכנולוגיה ושבבים (AI)')&&xr.fac.includes('ישראל'),JSON.stringify(xr.fac)); assert.match(xr.txt,/שער הדולר \d+% \(\d+ ניירות/); assert.match(xr.txt,/ישיר מול עקיף: \d+% מהתיק בניירות בודדים.*\d+% דרך קרנות/); assert.match(xr.txt,/מדינת הפעילות של כל חברה אינה בנתונים/);
     // the health score
@@ -3384,9 +3384,9 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   const {ctx,pg}=await open(390);
   try{
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh');
-      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('hdrAcct').left],theme:R('btnMore').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnMore','btnRefresh'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('.worth .wtop #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
+      return {wm:[w.top,w.right],ref:[R('btnRefresh').top,R('hdrAcct').left],theme:R('btnMore').top,acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:getComputedStyle(document.querySelector('.hero .brand-sub')).display,ic:['btnMore','btnRefresh'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth}});
     assert.ok(Math.abs(r.ref[0]-r.wm[0])<24&&Math.abs(r.theme-r.ref[0])<4&&r.ref[1]<60,'the buttons on the logo\'s row, at the left: '+JSON.stringify(r));
-    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.acct[1]<r.W/2&&r.chips==='none'&&r.slogan==='none'&&r.ic.every(x=>x<=1),'the accounts a switch in the value card, no slogan on a phone (10.11, the owner), each icon in the middle of its square: '+JSON.stringify(r));
+    assert.ok(r.inCard&&r.acct[0]>r.ref[0]+30&&r.chips==='none'&&r.slogan==='none'&&r.ic.every(x=>x<=1),'10.11 (the owner): the accounts a switch first in the row of views over the card, no slogan on a phone (10.11, the owner), each icon in the middle of its square: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
     assert.equal(await pg.evaluate(()=>document.querySelector('#acctChips .chip[aria-pressed="true"]')?.dataset.a),a[1],'the switch changes the account');
     await tab(pg,'search'); await pg.waitForTimeout(500);
