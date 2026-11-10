@@ -286,7 +286,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#botbar [data-bb="risk"]'); return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['kindRow','holdSec'],'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['holdSec','kindRow'],'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       {const o=await pg.evaluate(()=>{const C=[...document.querySelector('[data-pane="overview"]').children].map(x=>x.id); return [C.indexOf('holdSec'),C.indexOf('soonSec')]}); assert.ok(o[0]>=0&&o[1]>o[0],'10.11 (the owner): the coming two weeks under the holdings, at the bottom: '+JSON.stringify(o))}
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
@@ -768,8 +768,8 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     await pg.click('#ixTxtB'); await pg.waitForTimeout(150); const tx=await pg.evaluate(()=>({cv:document.getElementById('ixCv').hidden,t:document.getElementById('ixTxt').innerText.replace(/\s+/g,' ')}));
     assert.ok(tx.cv); assert.match(tx.t,/אנבידיה היכתה/); assert.match(tx.t,/NVDA \(ההחזקה שלך/); await pg.click('#ixTxtB'); await pg.waitForTimeout(150); assert.equal(await pg.evaluate(()=>document.getElementById('ixCv').hidden),false);
     await pg.click('#ixRange [data-ixr="1"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('#ixRange [aria-pressed="true"]').dataset.ixr),'1');
-    // "פתח מפת השפעה" on a short card: the round map on that event
-    await pg.click('#ixAlList [data-ixmap]'); await pg.waitForTimeout(250); assert.equal(await pg.evaluate(()=>document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv),'ev');
+    // 10.11: a short card says what happened in a line, not "על המפה" (the map is below it); no map button on the cards
+    assert.equal(await pg.evaluate(()=>document.querySelectorAll('#ixAlList [data-ixmap]').length),0); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#ixAlList .ix-aw').length>0),'what happened, in a line');
     await pg.click('#ixRange [data-ixr="7"]'); await pg.click('[data-ixall]'); await pg.waitForTimeout(250);
     const c=await pg.evaluate(()=>({cards:[...document.querySelectorAll('#plList .pl')].map(a=>({k:a.dataset.plk,lv:a.querySelector('.pl-lv').textContent,un:a.classList.contains('un')})),grp:[...document.querySelectorAll('#plList .nx-grp')].map(h=>h.textContent.replace(/\s+/g,' ').trim())}));
     assert.ok(c.cards.some(x=>x.k==='ev:nvda-q3-report'&&!x.un),'still in the center, read'); assert.ok(c.grp.some(g=>/^קודמות/.test(g)));
