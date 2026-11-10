@@ -1660,7 +1660,7 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
 @media (max-width:759px){
   table.pf,table.pf tbody{display:block;width:100%}
   table.pf thead{display:none}
-  table.pf tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-areas:"sym sym qty qty acct acct" "name name name name del del" "ccy ccy cost cost costu costu" "px px grp grp grp grp";gap:6px 8px;padding:10px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  table.pf tr{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-areas:"sym sym qty qty acct acct" "name name name name name name" "ccy ccy cost cost costu costu" "px px grp grp grp grp" "del del del del del del";gap:6px 8px;padding:10px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
   table.pf td{display:flex;flex-direction:column;gap:4px;padding:0;white-space:normal;min-width:0}
   table.pf tr.fixed{background:var(--warn-bg);border-color:var(--warn-c)}
   table.pf td .flag{align-self:flex-start;margin:0}
@@ -1668,12 +1668,12 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf td:nth-child(1){grid-area:sym} table.pf td:nth-child(2){grid-area:name} table.pf td:nth-child(3){grid-area:acct}
   table.pf td:nth-child(4){grid-area:qty} table.pf td:nth-child(5){grid-area:ccy} table.pf td:nth-child(6){grid-area:cost}
   table.pf td:nth-child(7){grid-area:costu} table.pf td:nth-child(8){grid-area:px} table.pf td:nth-child(9){grid-area:grp} table.pf td:nth-child(10){grid-area:del}
-  table.pf td.pfx{justify-content:flex-end;align-items:flex-end;flex-direction:row;gap:6px}
+  table.pf td.pfx{justify-content:flex-start;align-items:center;flex-direction:row;flex-wrap:wrap;gap:8px;padding-top:2px} table.pf td.pfx .btn{white-space:nowrap} table.pf td.pfx .pf-trade{order:-1} table.pf td .flag{font-size:11.5px;line-height:1.4;padding:1px 8px;max-width:100%;white-space:normal}
   /* 9.11: a phone shows a holding as a short card (the symbol, the quantity, the account, the name); the currency, the
      costs, the report's price and the group open with "עוד" (the screen was 4,300px for 12 holdings) */
-  table.pf tr:not(.open) td:nth-child(n+5):nth-child(-n+9){display:none} table.pf tr:not(.open){grid-template-areas:"sym sym qty qty acct acct" "name name name name del del"}
+  table.pf tr:not(.open) td:nth-child(n+5):nth-child(-n+9){display:none} table.pf tr:not(.open){grid-template-areas:"sym sym qty qty acct acct" "name name name name name name" "del del del del del del"}
   table.pf tr.fixed td:nth-child(n+5):nth-child(-n+9){display:flex}
-  table.pf td.pfx .btn{min-height:40px}
+  table.pf td.pfx .btn{min-height:40px;align-self:center;margin:0}
   table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:38px;padding-block:4px}
   table.pf tr:has(>td.empty){display:block;padding:0;border:0;background:none}
   table.pf td.empty{display:block;grid-area:auto}
@@ -2206,7 +2206,7 @@ html[data-theme="dark"] .nw-k.k-opinion{color:#FDBA74} html[data-theme="dark"] .
 .nw-brief{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:18px;border:1px solid rgb(124 58 237 / .3);background:linear-gradient(135deg,rgb(124 58 237 / .09),rgb(45 212 191 / .06))}
 .nw-bh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px} .nw-bh b{font-size:16px;color:var(--vio-ink)}
 /* 1.11: the data-completion panel */
-.wiz{display:flex;flex-direction:column;gap:6px} .wz-l{display:flex;flex-direction:column;gap:6px} .wz-r{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;align-items:end} .wz-r>b,.wz-r>.nm{grid-column:1/-1} .wz-r label,.wz-dep label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .wz-r input[type=number],.wz-r input[type=month],.wz-dep input[type=number],.wz-dep input[type=month]{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%} .wz-chk{grid-column:1/-1;flex-direction:row!important;align-items:center;gap:6px!important;font-size:13px!important;color:var(--ink)!important} .wz-dep{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;align-items:end} .wz-dep p{grid-column:1/-1}
+.wiz{display:flex;flex-direction:column;gap:6px} .wz-d>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;min-height:44px} .wz-d>summary::-webkit-details-marker{display:none} .wz-s{display:flex;flex-direction:column;gap:2px;min-width:0} .wz-s b{font-size:15px} .wz-go{flex:none;font-weight:700;color:var(--vio-ink);padding:8px 14px;border-radius:999px;background:var(--accent-soft)} .wz-go::after{content:" ›"} .wz-d[open] .wz-go{display:none} .wz-d[open]>summary{margin-bottom:10px} .wz-l{display:flex;flex-direction:column;gap:6px} .wz-r{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px;align-items:end} .wz-r>b,.wz-r>.nm{grid-column:1/-1} .wz-r label,.wz-dep label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .wz-r input[type=number],.wz-r input[type=month],.wz-dep input[type=number],.wz-dep input[type=month]{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%} .wz-chk{grid-column:1/-1;flex-direction:row!important;align-items:center;gap:6px!important;font-size:13px!important;color:var(--ink)!important} .wz-dep{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;align-items:end} .wz-dep p{grid-column:1/-1}
 /* 1.11 (11): the criteria over the ranking, and why / what contradicts */
 .fitc{margin:6px 0} .fitc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 8px} .fitc-g label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink2)} .fitc-g input,.fitc-g select{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
 .fw-con{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2);line-height:1.45} .fw-con b{color:var(--ink)}
@@ -22889,7 +22889,7 @@ function renderMine(force){
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
   $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
     <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
-    <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" maxlength="60"${dis}></td>
+    <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" placeholder="שם החברה (לא חובה)" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
     <td data-l="כמות"><input type="number" data-pf="qty" data-i="${i}" value="${nv(p.qty)}" min="0" step="0.0001" aria-label="כמות"${dis}></td>
     <td data-l="מטבע"><select data-pf="ccy" data-i="${i}" aria-label="מטבע"${dis}>${opt('USD',p.ccy,'דולר')}${opt('ILS',p.ccy,'שקל')}${Object.keys(CCYHE).filter(c=>c!=='USD'&&c!=='ILS').map(c=>opt(c,p.ccy,CCYHE[c])).join('')}</select></td>
@@ -25094,12 +25094,15 @@ function fillWizH(){
     return `<div class="wz-r" data-wzi="${i}" data-sym="${esc(p.sym)}"><b>${esc(lab(p.sym))}</b> <span class="nm">${p.qty} יח׳${pr?' · היום '+fmtPx(pr.px,pr.ccy):''}</span>
       <label>מחיר קנייה ליחידה (${cc})<input type="number" data-wz="px" min="0" step="0.01" inputmode="decimal" placeholder="${pr?pr.px:''}"></label><label>מתי (חודש)<input type="month" data-wz="at" max="${ym}"></label>
       <label class="wz-chk"><input type="checkbox" data-wz="est"> לא זוכר: לפי המחיר של היום, מסומן כמשוער</label></div>`};
-  return `<div class="row"><h3>השלמת נתונים: ${costs.length&&dep?'עלויות והפקדות':costs.length?'מחירי הקנייה':'ההפקדות'}</h3><span class="sub">בלי זה הרווח, "מול ההפקדות", ההשוואה למדדים והתשואה החודשית נשארים ריקים</span></div>
+  // 10.11: one line until opened (it was eight cards above the holdings on a phone); "להשלים ›" elsewhere opens it
+  const what=[costs.length?`חסרים מחירי קנייה ל-${costs.length===1?'נייר אחד':costs.length+' ניירות'}`:'',dep?(costs.length?'וההפקדות':'חסרות ההפקדות'):''].filter(Boolean).join(' ');
+  return `<details class="wz-d" id="wizD"><summary><span class="wz-s"><b>${what}</b><span class="sub">בלי זה אין רווח, "מול ההפקדות" והשוואה למדדים</span></span><span class="wz-go">להשלמה</span></summary>
     <form id="wizForm">${costs.length?`<p class="nm" style="margin:0 0 6px">ל-${costs.length} ניירות אין מחיר קנייה. מחיר ליחידה במטבע הנייר, או "לא זוכר".</p><div class="wz-l">${costs.map(row).join('')}</div>`:''}
       ${dep?`<div class="wz-dep"><p class="nm" style="margin:8px 0 4px">כמה כסף הכנסת לחשבון עד היום, בסך הכול?</p><label>סכום (₪)<input type="number" data-wz="dep" min="0" step="100" inputmode="numeric" placeholder="למשל 25000"></label><label>מאיזה חודש התחלת<input type="month" data-wz="depAt" max="${ym}" value="${ym}"></label>
         <label class="wz-chk"><input type="checkbox" data-wz="depVal"> לפי שווי התיק היום (${ils((mAllNow()||{total:0}).total)}), מסומן כמשוער</label></div>`:''}
       <div class="acts" style="justify-content:flex-start"><button type="submit" class="btn pri sm"${canWrite?'':' disabled'}>לשמור</button><button type="button" class="btn sm" data-wzlater="1">אחר כך</button><span class="saved" id="wizState" role="status"></span></div>
-      <p class="note" style="margin:6px 0 0">מה שתכתוב כאן נשמר כמו שורה מדוח; דוח או צילום שתעלה אחר כך מחליפים אותו. אומדן נשאר מסומן "משוער" בכל המסכים.</p></form>`}
+      <p class="note" style="margin:6px 0 0">מה שתכתוב כאן נשמר כמו שורה מדוח; דוח או צילום שתעלה אחר כך מחליפים אותו. אומדן נשאר מסומן "משוער" בכל המסכים.</p></form></details>`}
+document.addEventListener('click',ev=>{if(!ev.target.closest||!ev.target.closest('[data-goid="fillWiz"]'))return; setTimeout(()=>{const d=$('wizD'); if(d)d.open=true},0)});
 let WIZ_MSG='';
 function renderFillWiz(){const b=$('fillWiz'); if(!b)return; const later=(()=>{try{return +localStorage.getItem('tr_wiz_later')||0}catch(e){return 0}})(); const need=fillNeeded()&&canWrite&&Date.now()-later>7*864e5;
   if(!need&&WIZ_MSG){b.hidden=false; setH(b,`<p class="saved" id="wizState" role="status" style="margin:0">${esc(WIZ_MSG)}</p>`); return} b.hidden=!need; if(need&&(!b.innerHTML||b.dataset.msg!==WIZ_MSG)){b.dataset.msg=WIZ_MSG; setH(b,fillWizH()); if(WIZ_MSG){const st=$('wizState'); if(st)st.textContent=WIZ_MSG}}}

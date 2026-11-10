@@ -2176,6 +2176,8 @@ test('1.11 the data-completion panel: a hand-typed portfolio (no costs, no depos
     // the overview says what to complete; the panel sits in "התיק שלי"
     await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(300); const todo=await pg.evaluate(()=>document.querySelector('[data-pane="risk"]').innerText.replace(/\s+/g,' ')); assert.match(todo,/אין מחיר קנייה/);
     await tab(pg,'mine'); await pg.waitForTimeout(600);
+    // 10.11: one line until opened, saying what is missing
+    const sum=await pg.evaluate(()=>{const d=document.getElementById('wizD'), s=d.querySelector('summary').textContent.replace(/\s+/g,' '), was=d.open; d.open=true; return s+(was?' (open)':'')}); assert.match(sum,/חסרים מחירי קנייה ל-3 ניירות וההפקדות/); assert.doesNotMatch(sum,/\(open\)/,'closed at first');
     const w=await pg.evaluate(()=>({hidden:document.getElementById('fillWiz').hidden,txt:document.getElementById('fillWiz').innerText.replace(/\s+/g,' '),rows:[...document.querySelectorAll('#fillWiz .wz-r')].map(r=>r.dataset.sym),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(w.hidden,false); assert.equal(w.ox,false); assert.deepEqual(w.rows,['MSFT','NVDA','AAPL']); assert.match(w.txt,/ל-3 ניירות אין מחיר קנייה/); assert.match(w.txt,/כמה כסף הכנסת לחשבון עד היום/);
     // MSFT: a price and a month; NVDA: "don't remember"; AAPL left empty; the deposits: ₪20,000 from this month
@@ -2188,7 +2190,7 @@ test('1.11 the data-completion panel: a hand-typed portfolio (no costs, no depos
     // the panel asks again only for what is still missing (AAPL), and the look-back has the deposits
     await pg.waitForTimeout(800); const w2=await pg.evaluate(()=>({hidden:document.getElementById('fillWiz').hidden,rows:[...document.querySelectorAll('#fillWiz .wz-r')].map(r=>r.dataset.sym),dep:!!document.querySelector('#fillWiz [data-wz="dep"]')}));
     assert.equal(w2.hidden,false); assert.deepEqual(w2.rows,['AAPL']); assert.equal(w2.dep,false,'the deposits are no longer asked');
-    await pg.click('#fillWiz [data-wzlater]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('fillWiz').hidden),true,'"later" hides it for a week');
+    await pg.evaluate(()=>{document.getElementById('wizD').open=true}); await pg.click('#fillWiz [data-wzlater]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('fillWiz').hidden),true,'"later" hides it for a week');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('portfolio/main',P0,{silent:true}); store.setDoc('history/main',H0,{silent:true})}
 });
