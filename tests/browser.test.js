@@ -3518,3 +3518,17 @@ test('11.11 the phone\'s home as the owner\'s mock-up ("כרטיס נקי", chos
     assert.deepEqual(r,{clean:false,bento:false,tabsInCard:true,add:'none'},'a wide screen keeps its home');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
+
+test('11.11 "כרטיס נקי" chosen on another device: the style that arrives with the account arranges the page too (before, only its classes changed: the views stayed in the card, the split outside it)',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const S0=store.getDoc('settings/main').data;
+  try{store.setDoc('settings/main',{...S0,ui:{...((S0&&S0.ui)||{}),tr_home:'clean'}},{silent:true});
+    const {ctx,pg}=await open(390,{keepUi:true}); await pg.waitForFunction(()=>document.body.classList.contains('home-clean'),null,{timeout:15000}); await pg.waitForTimeout(400);
+    const r=await pg.evaluate(()=>{const w=document.querySelector('.worth'), ot=document.getElementById('ovTabs'), kr=document.getElementById('kindRow');
+      return {saved:localStorage.getItem('tr_home'),tabsInPane:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.previousElementSibling===document.getElementById('insightBar'),
+        kindInCard:kr.parentElement===w&&kr.offsetHeight>0,acctInHead:!!document.querySelector('.worth .wtop #acctSel'),after:document.getElementById('bento').previousElementSibling===document.getElementById('holdSec'),
+        pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed')}});
+    assert.deepEqual(r,{saved:'clean',tabsInPane:true,kindInCard:true,acctInHead:true,after:true,pressed:'true'},'the whole clean card, not half of it');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
+});

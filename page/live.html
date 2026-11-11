@@ -19631,8 +19631,19 @@ function homeStyle(){try{return localStorage.getItem('tr_home')==='clean'?'clean
 function homeSetSync(){const v=homeStyle(); for(const b of document.querySelectorAll('[data-homeset]'))b.setAttribute('aria-pressed',String(b.dataset.homeset===v))}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-homeset]'); if(!b)return;
   try{localStorage.setItem('tr_home',b.dataset.homeset==='clean'?'clean':'bento')}catch(e){} homeSetSync(); try{useAdd('home:'+b.dataset.homeset)}catch(e){} try{uiPush()}catch(e){} try{homeLayout()}catch(e){}});
+// where the home's parts stand in the chosen style. "כרטיס נקי": the accounts' switch in the card's head, the views a row
+// of four tiles under "מה קרה היום בתיק?", the stocks/funds split at the card's foot, the tiles after the holdings. The
+// bento (and a wide screen): the views back in the card after the markets' line, the switch first among them, the split
+// back by the quick actions, the tiles before the holdings. Called by homeLayout and by every renderBento, so a style
+// that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
+// changed the classes: the views stayed in the card, the split outside it)
+function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), mt=$('mktTick'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec'), kr=$('kindRow'), qa=$('quickActs');
+  if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.previousElementSibling!==ib)ib.after(ot); if(kr&&w&&kr.parentElement!==w)w.append(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
+  if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot); if(as&&ot&&as.parentElement!==ot)ot.prepend(as);
+  if(kr&&qa&&w&&kr.parentElement===w){if(ph)qa.before(kr); else qa.after(kr)}
+  if(bx&&hs&&bx.nextElementSibling!==hs)hs.before(bx)}
 function renderBento(m,A){
-  const box=$('bento'); if(!box)return; BENTO={m,A}; homeSetSync();
+  const box=$('bento'); if(!box)return; BENTO={m,A}; homeSetSync(); try{homeArrange()}catch(e){}
   const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length), clean=homeStyle()==='clean'; box.hidden=!on;
   document.body.classList.toggle('bento-on',on&&!clean); document.body.classList.toggle('home-clean',on&&clean);
   {const ib=$('insightBar'); if(ib)ib.hidden=!(on&&clean)}   // "מה קרה היום בתיק?" (renderDesk fills it and hides it): in the clean card only
@@ -19688,12 +19699,7 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   {const ot=$('ovTabs'), mt=$('mktTick'); if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot)}
   // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
   {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
-  // 11.11 (the owner's mock-up, "כרטיס נקי"): the accounts' switch in the card's head, the views a row of four tiles under
-  // "מה קרה היום בתיק?", the stocks/funds split at the card's foot, the tiles after the holdings. In the bento, the lines
-  // above put the views and the switch back in the card and the split before the actions; the tiles go back before the holdings
-  {const cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec');
-    if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.previousElementSibling!==ib)ib.after(ot); if(kr&&w&&kr.parentElement!==w)w.append(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx)}
-    else if(bx&&hs&&bx.nextElementSibling!==hs)hs.before(bx)}
+  homeArrange();   // 11.11: the parts of the chosen home style (renderBento calls it too)
   // 11.11 (the owner): the day, the week and the profit against the cost right under the value, in the card
   try{if(BENTO)renderBento(BENTO.m,BENTO.A)}catch(e){}
   try{WSIG=''; renderWChart()}catch(e){}}
