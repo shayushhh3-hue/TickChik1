@@ -1012,27 +1012,41 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
   try{
     const {ctx,pg}=await open(390); const total0=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
     await tab(pg,'plan'); await pg.waitForTimeout(400);
-    await pg.evaluate(()=>document.querySelector('.subtabs [data-pot="new"]').click()); await pg.waitForTimeout(400);
+    // 11.11 (the owner): the goals are one tab of the plan, opening on "החסכונות שלי" (the new goal's form when there is none)
+    await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]').click()); await pg.waitForTimeout(400);
     assert.match(await pg.evaluate(()=>document.querySelector('#potBox h3').textContent),/בוא נפתח חיסכון לפי מטרה/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#potBox [data-potsepnew="1"]')&&/חיסכון נפרד/.test(document.getElementById('potBox').textContent)),'4.11: the "חיסכון נפרד" the note names is in the form');
-    await pg.fill('#pf_name','חיסכון לנועה'); await pg.fill('#pf_target','100000'); await pg.fill('#pf_date','2036-09'); await pg.fill('#pf_monthly','500');
+    // "עד מתי" is a day; the goal is in a fund or a stock
+    assert.equal(await pg.evaluate(()=>document.getElementById('pf_date').type),'date');
+    await pg.fill('#pf_name','חיסכון לנועה'); await pg.fill('#pf_target','100000'); await pg.fill('#pf_date','2036-09-30'); await pg.fill('#pf_monthly','500');
     await pg.evaluate(()=>document.querySelector('#potBox [data-potkind="child"]').click()); await pg.waitForTimeout(200);
+    await pg.evaluate(()=>document.querySelector('#potBox [data-potinst="fund"]').click()); await pg.waitForTimeout(200);
     assert.equal(await pg.inputValue('#pf_name'),'חיסכון לנועה','what was typed stays after choosing the kind');
+    assert.equal(await pg.inputValue('#pf_date'),'2036-09-30','and the day');
     await pg.click('#potCreate'); await pg.waitForTimeout(500);
-    let r=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="pots"] .subtabs .chip')].map(c=>c.textContent),on:(document.querySelector('[data-pane="pots"] .subtabs .chip[aria-pressed="true"]')||{}).textContent,h:document.querySelector('#potBox .pothead h3').textContent}));
-    assert.ok(r.chips.includes('חיסכון לנועה')&&r.chips.includes('+ חיסכון חדש'),'the goal is a sub-tab of its own: '+r.chips); assert.equal(r.on,'חיסכון לנועה'); assert.match(r.h,/חיסכון לנועה/);
+    let r=await pg.evaluate(()=>({chips:[...document.querySelectorAll('#potTabs .chip')].map(c=>c.textContent.replace(/\s*\d+$/,'')),on:(document.querySelector('#potTabs .chip[aria-pressed="true"]')||{}).textContent,h:document.querySelector('#potBox .pothead h3').textContent,group:[...document.querySelectorAll('[data-pane="pots"] .subtabs .chip')].map(c=>c.textContent)}));
+    assert.deepEqual(r.chips,['החסכונות שלי','חיסכון לנועה','+ חיסכון חדש'],'the page\'s own tabs'); assert.equal(r.on,'חיסכון לנועה'); assert.match(r.h,/חיסכון לנועה/); assert.match(r.h,/ילד או ילדה · קרן/);
+    assert.ok(r.group.includes('חסכונות לפי מטרה')&&!r.group.includes('חיסכון לנועה'),'one tab for the goals in the plan\'s row: '+r.group);
+    for(let i=0;i<30&&!(store.getDoc('settings/main').data.pots||[]).length;i++)await pg.waitForTimeout(100);   // the settings are saved a moment after a change
+    {const sv=store.getDoc('settings/main').data.pots[0]; assert.equal(sv.date,'2036-09-30'); assert.equal(sv.inst,'fund')}
+    // "החסכונות שלי": a card per goal with its kind, its day and its share of the target; the card opens the goal
+    await pg.click('#potTabs [data-potgo="all"]'); await pg.waitForTimeout(300);
+    r=await pg.evaluate(()=>({cards:[...document.querySelectorAll('#potBox .potcard')].map(c=>c.textContent.replace(/\s+/g,' ').trim()),ox:document.documentElement.scrollWidth<=innerWidth+1}));
+    assert.equal(r.cards.length,1); assert.match(r.cards[0],/חיסכון לנועה\s*ילד או ילדה · קרן/); assert.match(r.cards[0],/עד 30\.9\.2036/); assert.ok(r.ox);
+    await pg.click('#potBox .potcard'); await pg.waitForTimeout(300);
+    assert.equal(await pg.evaluate(()=>(document.querySelector('#potTabs .chip[aria-pressed="true"]')||{}).textContent),'חיסכון לנועה');
     // copy 1 MSFT from the portfolio, and add VOO by its symbol
     await pg.selectOption('#potCopy','MSFT'); await pg.fill('#potCopyQ','1'); await pg.click('#potCopyGo'); await pg.waitForTimeout(400);
     await pg.fill('#potSym','VOO'); await pg.fill('#potSymQ','2'); await pg.click('#potAddGo'); await pg.waitForTimeout(1500);
     r=await pg.evaluate(()=>({rows:[...document.querySelectorAll('#potBox .potit')].map(x=>x.querySelector('.sym').textContent),txt:document.getElementById('potBox').textContent,ox:document.documentElement.scrollWidth<=innerWidth+1}));
     await pg.evaluate(()=>window.scrollTo(0,0)); await pg.screenshot({path:'/tmp/claude-0/-home-claude/b22281cb-4d7c-579a-92b3-f89ef1145114/scratchpad/pots.png',fullPage:true});
-    assert.deepEqual(r.rows,['MSFT','VOO']); assert.ok(r.ox,'no sideways scroll on a phone'); assert.match(r.txt,/שווי החיסכון/); assert.match(r.txt,/הועתק מהתיק/); assert.match(r.txt,/לא נספרים בשווי התיק/);
+    assert.deepEqual(r.rows,['MSFT מניה','VOO קרן'],'11.11: each security says if it is a stock or a fund'); assert.ok(r.ox,'no sideways scroll on a phone'); assert.match(r.txt,/שווי החיסכון/); assert.match(r.txt,/הועתק מהתיק/); assert.match(r.txt,/לא נספרים בשווי התיק/);
     const sv=store.getDoc('settings/main').data.pots; assert.equal(sv.length,1); assert.equal(sv[0].name,'חיסכון לנועה'); assert.equal(sv[0].target,100000); assert.equal(sv[0].items[0].qty,1); assert.ok(sv[0].items[0].costIls>0,'a share of the cost goes with the copy');
     const me=(store.users().find(u=>u.role==='owner')||{}).id, w=store.getDoc('watch/'+me).data; assert.ok(w&&w.pots.includes('VOO'),'the server will price it');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'the portfolio\'s value is untouched');
     // kept apart from the portfolio: the MSFT moved to the goal leaves the portfolio's value, and the move is saved as money out
-    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]:not([data-pot="new"])').click()); await pg.waitForTimeout(300);
+    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]').click()); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#potBox .potcard').click()); await pg.waitForTimeout(300);
     await pg.click('#potBox [data-potsep="1"]'); await pg.waitForTimeout(1500);
     let st=store.getDoc('settings/main').data; assert.equal(st.pots[0].sep,true);
     assert.equal((st.potFlows||[]).length,1,'one move saved'); assert.ok(st.potFlows[0].amt<0&&st.potFlows[0].sym==='MSFT','the move is money out, with its value');
@@ -1041,7 +1055,7 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.notEqual(await pg.evaluate(()=>document.getElementById('kTotal').textContent),total0,'the moved units are not in the portfolio\'s value');
     // deleting asks twice; the units go back to the portfolio, and so does the money
-    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]:not([data-pot="new"])').click()); await pg.waitForTimeout(300);
+    await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]').click()); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('#potBox .potcard').click()); await pg.waitForTimeout(300);
     await pg.click('#potDel'); await pg.waitForTimeout(200); assert.match(await pg.textContent('#potDel'),/בטוח/); await pg.click('#potDel'); await pg.waitForTimeout(1500);
     assert.equal((store.getDoc('settings/main').data.pots||[]).length,0);
     st=store.getDoc('settings/main').data; assert.equal(st.potFlows.length,2); assert.ok(Math.abs(st.potFlows[0].amt+st.potFlows[1].amt)<0.01,'out and back');

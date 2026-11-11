@@ -175,6 +175,25 @@ body:not([data-page="overview"]) .hero .top .acts{display:none!important}
 .potsep{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .potkinds .chip{border:1px solid var(--line);border-radius:999px}
 .potkinds .chip[aria-pressed="true"]{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* 11.11 (the owner): "החסכונות שלי", a goal's fund or stock, and a day for "עד מתי" */
+.pottabs{margin:0}
+.potkg{display:flex;flex-direction:column;gap:6px}
+.potkg .pk-l{font-size:13px;font-weight:600;color:var(--ink2)}
+.pk-t{display:inline-block;margin-inline-start:6px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;vertical-align:2px;background:var(--sunk);color:var(--ink2)}
+.pk-t.fund{background:rgb(124 58 237 / .12);color:var(--vio-ink,var(--accent-ink))} .pk-t.stock{background:var(--info-bg);color:var(--info-ink)}
+.potcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.potcard{position:relative;display:flex;flex-direction:column;gap:8px;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;padding-inline-end:34px;cursor:pointer;min-height:44px;transition:border-color .15s,box-shadow .15s}
+.potcard:hover{border-color:var(--accent);box-shadow:0 6px 18px rgb(124 58 237 / .12)}
+.potcard:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.potcard .pc-h{display:flex;flex-direction:column;gap:2px} .potcard .pc-h b{font-size:16px} .potcard .pc-k{font-size:12.5px;color:var(--muted)}
+.potcard .pc-v{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap} .potcard .pc-v b{font-size:20px} .potcard .pc-v .nm{font-size:13px;color:var(--muted)}
+.potcard .potprog{display:block}
+.potcard .pc-f{font-size:13px;color:var(--ink2);line-height:1.5}
+.potcard .pc-go{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--accent);line-height:1}
+@media (prefers-reduced-motion:reduce){.potcard{transition:none}}
+#potBox .form input,#potBox .form select{font:inherit;font-size:16px;min-height:44px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);width:100%;box-sizing:border-box}
+#potBox .form label{display:flex;flex-direction:column;gap:5px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+#potBox .form input:focus-visible,#potBox .form select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .potadd{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:end}
 @media (max-width:520px){.potadd{grid-template-columns:minmax(0,1fr) 90px}.potadd .btn{grid-column:1/-1}}
 .potadd label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink2)}
@@ -22884,7 +22903,7 @@ function needMonthly(start,years,rate,unreal,goal){if(!(goal>0)||!(years>0))retu
 function renderCompass(pts,e,unreal){
   const box=$('goalCompass'); if(!box)return; const goal=Math.max(0,+S.goal||0), yrs=+S.years||0, rate=+S.ratePct||0, mo=MTOT(), start=pts[0].val, tr=Math.max(0,+S.taxPct||0)/100;
   const L=pots(), potH=L.length?`<div class="cmp-pots"><h4>חסכונות לפי מטרה</h4><ul>${L.map(pt=>{let V=null; try{V=potValue(pt)}catch(x){} if(!V)return ''; const gap=V.tgt?Math.max(0,V.tgt-V.total):null;
-    return `<li><b>${esc(pt.name||'חיסכון')}</b>: ${ils(V.total)}${V.tgt?` מתוך ${ils(V.tgt)} (${pct(V.pctT||0,0)})${gap?`, חסר ${ils(gap)}`:', ביעד'}`:' (בלי יעד)'}${pt.date?` · עד ${dmy(pt.date)}`:''}${V.atDate!=null?` · לפי ההנחות: ${ils(V.atDate)} במועד`:''} <button type="button" class="lnk" data-tab="pots" data-pot="${esc(pt.id)}">לפתוח</button></li>`}).join('')}</ul></div>`:'';
+    return `<li><b>${esc(pt.name||'חיסכון')}</b>: ${ils(V.total)}${V.tgt?` מתוך ${ils(V.tgt)} (${pct(V.pctT||0,0)})${gap?`, חסר ${ils(gap)}`:', ביעד'}`:' (בלי יעד)'}${pt.date?` · עד ${potDayTxt(pt.date)}`:''}${V.atDate!=null?` · לפי ההנחות: ${ils(V.atDate)} במועד`:''} <button type="button" class="lnk" data-tab="pots" data-pot="${esc(pt.id)}">לפתוח</button></li>`}).join('')}</ul></div>`:'';
   if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note" style="margin:0">קבע יעד למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש ומה הפער.</p>${potH}`; return}
   const netNow=start-Math.max(0,+(EXPM&&EXPM.pnl)||0)*tr, pNow=Math.max(0,Math.min(100,netNow/goal*100)), end=e.net, gap=goal-end, k=goalMonths(start,mo,rate,unreal,goal), need=needMonthly(start,yrs,rate,unreal,goal);
   const plus=(d)=>{const r=Math.pow(1+rate/100,1/12)-1; let v=0; for(let i=1;i<=yrs*12;i++)v=v*(1+r)+d; return v*(1-tr)};
@@ -26705,8 +26724,13 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
   if(list.length<2){if(row)row.remove();return}
   if(!row){row=document.createElement('div');row.className='chips subtabs';row.setAttribute('role','tablist');row.setAttribute('aria-label','חלקי '+(HEADL[g]||g));pane.prepend(row)}
   const chip=(x,l,pot)=>{const on=x===t&&(pot==null||potSel()===pot); return `<button type="button" class="chip${pot==='new'?' potnew':''}" role="tab" data-tab="${x}"${pot!=null?` data-pot="${esc(pot)}"`:''} aria-selected="${on}" aria-pressed="${on}">${l}</button>`};
-  const want=list.map(x=>x==='pots'?pots().map(pt=>chip('pots',esc(pt.name||'חיסכון'),pt.id)).join('')+chip('pots',pots().length?'+ חיסכון חדש':'+ חיסכון לפי מטרה','new'):chip(x,SUBL[x]||x)).join('');
-  setH(row,want)}
+  // 11.11 (the owner): the savings goals are one tab here ("חסכונות לפי מטרה", opening on "החסכונות שלי"); a goal of its
+  // own is a tab inside that page (#potTabs)
+  const want=list.map(x=>x==='pots'?`<button type="button" class="chip" role="tab" data-tab="pots" data-pot="all" aria-selected="${t==='pots'}" aria-pressed="${t==='pots'}">${SUBL.pots}</button>`:chip(x,SUBL[x]||x)).join('');
+  setH(row,want); chipIntoView(row)}
+// 11.11: a row of tabs wider than the screen scrolls its chosen tab into sight (it was cut at the edge: "חסכונות לפי מטר")
+function chipIntoView(row){try{if(!row||row.scrollWidth<=row.clientWidth+2)return; const on=row.querySelector('[aria-pressed="true"],[aria-selected="true"]'); if(!on)return;
+  const r=on.getBoundingClientRect(), rr=row.getBoundingClientRect(); if(r.left>=rr.left+4&&r.right<=rr.right-4)return; row.scrollLeft+=(r.left+r.width/2)-(rr.left+rr.width/2)}catch(e){}}
 
 // 4.11: the long screens in parts, like the control screen (no folds: a row at the top shows one part at a time, the
 // choice kept for next time). A link to a section inside (set:..., a scroll) opens the part that holds it
@@ -28586,16 +28610,27 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
 // a separate account of its own: nothing in it is counted in the portfolio's value, its mix, the alerts or the reports.
 // Saved in the person's settings (S.pots); its securities go into the watch list's "pots", so the server prices them.
 const POTK={child:'ילד או ילדה',mortgage:'משכנתא',home:'דירה',car:'רכב',study:'לימודים',trip:'חופשה',other:'אחר'};
+// 11.11 (the owner): what a goal's money is in, a fund or a stock (pt.inst); "החסכונות שלי" is the page's first tab
+// (POT 'all': every goal on one screen), and "עד מתי" is a day (a goal saved with a month stands for its last day)
+const POTI={fund:'קרן',stock:'מניה'};
 let POT=null, POTDEL=null, POTDRAFT={kind:'child'}; try{POT=localStorage.getItem('tr_pot')}catch(e){}
 const pots=()=>Array.isArray(S&&S.pots)?S.pots:[];
-const potSel=()=>{const L=pots(); if(POT==='new')return 'new'; return L.some(p=>p.id===POT)?POT:(L[0]?L[0].id:'new')};
+const potSel=()=>{const L=pots(); if(POT==='new')return 'new'; if(L.some(p=>p.id===POT))return POT; return L.length?'all':'new'};
 const potCcy=it=>it.ccy==='ILS'||NUMSYM.test(it.sym)||/^TA\d+$/.test(it.sym)?'ILS':it.ccy||'USD';
+function potDay(d){if(!d)return null; if(/^\d{4}-\d\d-\d\d$/.test(d))return d; if(/^\d{4}-\d\d$/.test(d)){const y=+d.slice(0,4), m=+d.slice(5); return d+'-'+String(new Date(y,m,0).getDate()).padStart(2,'0')} return null}
+const potDayTxt=d=>{const x=potDay(d); return x?(+x.slice(8))+'.'+(+x.slice(5,7))+'.'+x.slice(0,4):''};
+// a security in a goal: a fund or a stock, by the page's list of securities (an Israeli fund's number is a fund)
+function potItemKind(sym){let it=null; try{it=itemOf(sym)}catch(e){} const t=it&&it.t; if(t==='S'||(t==='T'&&!NUMSYM.test(sym)))return 'stock'; if(t==='E'||t==='F'||NUMSYM.test(sym))return 'fund'; return ''}
+// the goal's "קרן / מניה": the one chosen, else what its securities are (both, when it holds both)
+function potInstTxt(pt){if(pt&&POTI[pt.inst])return POTI[pt.inst]; const K=new Set(((pt&&pt.items)||[]).map(i=>potItemKind(i.sym)).filter(Boolean)); return K.size===2?'קרן ומניות':K.has('fund')?'קרן':K.has('stock')?'מניות':''}
 function potValue(pt){
   let val=0, cost=0, costVal=0, noPx=[]; const rows=(pt.items||[]).map(it=>{const px=(Q&&Q.prices&&Q.prices[it.sym]!=null)?+Q.prices[it.sym]:(+it.px||null), cc=(Q&&Q.meta&&Q.meta[it.sym]&&Q.meta[it.sym].ccy)||potCcy(it), rt=Q?rateOf(cc,Q):null;
     const v=px!=null&&rt!=null?(+it.qty||0)*px*rt:null; if(v==null)noPx.push(it.sym); else{val+=v; if(it.costIls!=null&&+it.costIls>0){cost+=+it.costIls;costVal+=v}}
     return {...it,px,cc,val:v,stale:Q&&Q.stale&&Q.stale[it.sym]||''}});
-  const cash=+pt.cash||0, total=val+cash, tgt=+pt.target||0, left=pt.date?ymDiff(pt.date,ymNow()):null;
-  return {rows,val,cash,total,cost,costVal,noPx,tgt,left,pctT:tgt>0?Math.min(100,total/tgt*100):null,need:tgt>0&&left>0?Math.max(0,(tgt-total)/left):null,atDate:left>0&&+pt.monthly>0?total+(+pt.monthly)*left:null};
+  // the months left count the monthly deposits (from this month to the goal's), the days say how near it is
+  const cash=+pt.cash||0, total=val+cash, tgt=+pt.target||0, day=potDay(pt.date), left=day?Math.max(0,ymDiff(day.slice(0,7),ymNow())):null;
+  const past=!!day&&day<ilDay(), days=day?Math.max(0,Math.round((Date.parse(day+'T12:00:00Z')-Date.parse(ilDay()+'T12:00:00Z'))/864e5)):null;
+  return {rows,val,cash,total,cost,costVal,noPx,tgt,left,day,days,past,pctT:tgt>0?Math.min(100,total/tgt*100):null,need:tgt>0&&left>0?Math.max(0,(tgt-total)/left):null,atDate:left>0&&+pt.monthly>0?total+(+pt.monthly)*left:null};
 }
 // a savings goal kept apart from the portfolio (pt.sep): the units of each security copied from the portfolio into it leave
 // the portfolio. {position: units} from the holdings in their order, never more than an account holds; null when none
@@ -28620,10 +28655,11 @@ function potForm(pt){const dis=canWrite?'':' disabled', v=x=>x==null?'':esc(x), 
   return `<div class="form" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
     <label for="pf_name">שם החיסכון<input id="pf_name" data-potf="name" maxlength="40" placeholder="למשל: חיסכון לנועה" value="${v(pt.name)}"${dis}></label>
     <label for="pf_target">סכום היעד (₪)<input id="pf_target" data-potf="target" type="number" min="0" step="100" inputmode="decimal" value="${v(pt.target)}" placeholder="למשל 100000"${dis}></label>
-    <label for="pf_date">עד מתי<input id="pf_date" data-potf="date" type="month" value="${v(pt.date)}"${dis}></label>
+    <label for="pf_date">עד מתי (תאריך)<input id="pf_date" data-potf="date" type="date" value="${v(potDay(pt.date))}"${isNew?` min="${ilDay()}"`:''}${dis}></label>
     <label for="pf_monthly">הפקדה חודשית (₪)<input id="pf_monthly" data-potf="monthly" type="number" min="0" step="10" inputmode="decimal" value="${v(pt.monthly)}" placeholder="לא חובה"${dis}></label>
     ${isNew?'':`<label for="pf_cash">מזומן בחיסכון (₪)<input id="pf_cash" data-potf="cash" type="number" min="0" step="1" inputmode="decimal" value="${v(pt.cash)}"${dis}></label>`}</div>
-    <div class="potkinds" role="group" aria-label="סוג החיסכון">${Object.entries(POTK).map(([k,l])=>`<button type="button" class="chip" data-potkind="${k}" aria-pressed="${pt.kind===k}"${dis}>${l}</button>`).join('')}</div>`}
+    <div class="potkg"><span class="pk-l" id="pkL1">המטרה</span><div class="potkinds" role="group" aria-labelledby="pkL1">${Object.entries(POTK).map(([k,l])=>`<button type="button" class="chip" data-potkind="${k}" aria-pressed="${pt.kind===k}"${dis}>${l}</button>`).join('')}</div></div>
+    <div class="potkg"><span class="pk-l" id="pkL2">במה החיסכון מושקע</span><div class="potkinds" role="group" aria-labelledby="pkL2">${Object.entries(POTI).map(([k,l])=>`<button type="button" class="chip" data-potinst="${k}" aria-pressed="${pt.inst===k}"${dis}>${l}</button>`).join('')}</div></div>`}
 function renderPots(){
   const box=$('potBox'); if(!box)return; const L=pots(), sel=potSel(), dis=canWrite?'':' disabled';
   try{subTabs('pots')}catch(e){}
@@ -28632,14 +28668,26 @@ function renderPots(){
   $('potsSub').textContent=L.length?`${L.length===1?'חיסכון אחד':L.length+' חסכונות'} · מחוץ לשווי התיק`:'';
   const cur0=L.find(p=>p.id===sel);
   const note=`<p class="potnote">${cur0&&cur0.sep?'החיסכון הזה נפרד מהתיק: ניירות שהועברו אליו מהתיק יוצאים משווי התיק, מהפיזור, מהבקרה ומהדוחות. היציאה נרשמת כמו משיכה, ולא כהפסד. הסרת נייר מהחיסכון, או מעבר ל"נספר גם בתיק", מחזירה אותו לתיק.':'נייר שהועתק מהתיק לחיסכון הזה נשאר גם בשווי התיק, ורק נרשם גם כאן. נייר או מזומן שהוספת ישירות לחיסכון לא נספרים בשווי התיק. כדי להוציא מהתיק את מה שהועתק, בחר למעלה "חיסכון נפרד".'}</p>`;
-  if(sel==='new'){box.innerHTML=`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
+  // 11.11 (the owner): the page's own tabs: "החסכונות שלי" (all the goals), a tab per goal, and a new one
+  const tabsH=L.length?`<div class="dvtabs pottabs" id="potTabs" role="tablist" aria-label="החסכונות">${[['all','החסכונות שלי',L.length],...L.map(p=>[p.id,p.name||'חיסכון']),['new','+ חיסכון חדש']].map(([k,l,n])=>`<button type="button" class="chip${k==='new'?' potnew':''}" role="tab" data-potgo="${esc(k)}" aria-selected="${sel===k}" aria-pressed="${sel===k}">${esc(l)}${n?` <span class="dv-n">${n}</span>`:''}</button>`).join('')}</div>`:'';
+  if(tabsH)requestAnimationFrame(()=>chipIntoView($('potTabs')));
+  const leftTxt=V=>V.past?'התאריך עבר':V.left>1?'עוד '+V.left+' חודשים':V.days!=null?(V.days===0?'היום':V.days===1?'מחר':'עוד '+V.days+' ימים'):'';
+  if(sel==='all'){const VV=L.map(pt=>({pt,V:potValue(pt)})), tot=VV.reduce((t,x)=>t+x.V.total,0), tgt=VV.reduce((t,x)=>t+(x.V.tgt||0),0), mon=L.reduce((t,p)=>t+(+p.monthly||0),0);
+    const tiles=`<div class="mine3 pott">${anaTile('בכל החסכונות',ils(tot),L.length===1?'חיסכון אחד':L.length+' חסכונות')}${tgt?anaTile('סך היעדים',ils(tgt),pct(Math.min(100,tot/tgt*100),0)+' מהדרך'):''}${mon?anaTile('הפקדות בחודש',ils(mon),'בכל החסכונות יחד'):''}</div>`;
+    const cards=VV.map(({pt,V})=>{const kind=[POTK[pt.kind],potInstTxt(pt),pt.sep?'נפרד מהתיק':''].filter(Boolean);
+      return `<button type="button" class="potcard" data-potgo="${esc(pt.id)}"><span class="pc-h"><b>${esc(pt.name||'חיסכון')}</b>${kind.length?`<span class="pc-k">${kind.map(esc).join(' · ')}</span>`:''}</span>
+        <span class="pc-v"><b class="n">${ils(V.total)}</b>${V.tgt?`<span class="nm">מתוך ${ils(V.tgt)}</span>`:''}</span>
+        ${V.pctT!=null?`<span class="potprog" role="img" aria-label="${pct(V.pctT,0)} מהיעד"><i style="width:${V.pctT.toFixed(1)}%"></i></span>`:''}
+        <span class="pc-f">${[V.pctT!=null?pct(V.pctT,0)+' מהיעד':'בלי סכום יעד',pt.date?'עד '+potDayTxt(pt.date):'',pt.date?leftTxt(V):'',+pt.monthly>0?ils(+pt.monthly)+' בחודש':''].filter(Boolean).join(' · ')}</span><span class="pc-go" aria-hidden="true">›</span></button>`}).join('');
+    box.innerHTML=tabsH+`<div class="panel"><div class="pothead"><h3>החסכונות שלי</h3><button type="button" class="btn sm" data-potgo="new">+ חיסכון חדש</button></div>${tiles}<div class="potcards">${cards}</div><p class="note" style="margin:0">לחיצה על חיסכון פותחת אותו: הניירות שבו, ההתקדמות, ומה צריך כדי להגיע ליעד. החסכונות לא נספרים בשווי התיק, חוץ מניירות שהועתקו אליהם מהתיק.</p></div>`; return}
+  if(sel==='new'){box.innerHTML=tabsH+`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
     <div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsepnew="0" aria-pressed="${!POTDRAFT.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsepnew="1" aria-pressed="${!!POTDRAFT.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div></div>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="potCreate"${dis}>צור חיסכון</button><span class="saved" id="potState" role="status"></span></div></div>${note}`; return}
   const pt=L.find(p=>p.id===sel); if(!pt){POT='new';renderPots();return}
   const V=potValue(pt), m=(()=>{try{return P&&Q?mAllNow():null}catch(e){return null}})();
-  const tiles=`<div class="mine3 pott">${anaTile('שווי החיסכון',ils(V.total),`${V.rows.length} ניירות${V.cash?' · מזומן '+ils(V.cash):''}`)}${V.tgt?anaTile('היעד',ils(V.tgt),pt.date?`עד ${MONTHS[+pt.date.slice(5)-1]} ${pt.date.slice(0,4)}${V.left!=null?` · ${V.left>0?'עוד '+V.left+' חודשים':'התאריך עבר'}`:''}`:'בלי תאריך'):''}${V.cost?anaTile('מול העלות',sgn(V.costVal-V.cost),spct((V.costVal-V.cost)/V.cost*100),V.costVal>=V.cost?'up':'down'):''}${V.need!=null?anaTile('כדי להגיע ליעד',ils(V.need)+' בחודש','בלי תשואה, רק הפקדות'):''}</div>`;
+  const tiles=`<div class="mine3 pott">${anaTile('שווי החיסכון',ils(V.total),`${V.rows.length} ניירות${V.cash?' · מזומן '+ils(V.cash):''}`)}${V.tgt?anaTile('היעד',ils(V.tgt),pt.date?`עד ${potDayTxt(pt.date)}${leftTxt(V)?' · '+leftTxt(V):''}`:'בלי תאריך'):''}${V.cost?anaTile('מול העלות',sgn(V.costVal-V.cost),spct((V.costVal-V.cost)/V.cost*100),V.costVal>=V.cost?'up':'down'):''}${V.need!=null?anaTile('כדי להגיע ליעד',ils(V.need)+' בחודש','בלי תשואה, רק הפקדות'):''}</div>`;
   const prog=V.pctT!=null?`<div><div class="potprog" role="img" aria-label="${pct(V.pctT,0)} מהיעד"><i style="width:${V.pctT.toFixed(1)}%"></i></div><p class="note" style="margin:6px 0 0">${pct(V.pctT,0)} מהיעד${V.atDate!=null?` · בקצב של ${ils(+pt.monthly)} בחודש, בתאריך היעד יהיו כ-${ils(V.atDate)} בלי תשואה${V.tgt?(V.atDate>=V.tgt?', מעל היעד':`, ${ils(V.tgt-V.atDate)} מתחת ליעד`):''}`:''}.</p></div>`:'';
-  const rows=V.rows.length?`<div class="potitems">${V.rows.map((r,i)=>`<div class="potit"><div class="pi-h"><span class="sym">${esc(lab(r.sym))}</span><span class="nm">${esc(r.name||'')}${r.from?(pt.sep?' · הועבר מהתיק':' · הועתק מהתיק'):''}</span></div>
+  const rows=V.rows.length?`<div class="potitems">${V.rows.map((r,i)=>`<div class="potit"><div class="pi-h"><span class="sym">${esc(lab(r.sym))}${potItemKind(r.sym)?` <span class="pk-t ${potItemKind(r.sym)}">${POTI[potItemKind(r.sym)]}</span>`:''}</span><span class="nm">${esc(r.name||'')}${r.from?(pt.sep?' · הועבר מהתיק':' · הועתק מהתיק'):''}</span></div>
       <div class="pi-v"><span class="k">שווי</span><b class="n">${r.val!=null?ils(r.val):'—'}</b><span class="nm">${r.px!=null?(r.cc==='USD'?'$':'₪')+fmtN(r.px)+' ליחידה':'עוד אין מחיר'}${r.stale?' · '+esc(r.stale):''}</span></div>
       <label class="pi-f">כמות<input type="number" min="0" step="0.0001" inputmode="decimal" data-poti="${i}" data-potk="qty" value="${+r.qty}"${dis}></label>
       <label class="pi-f">עלות כוללת ₪<input type="number" min="0" step="0.01" inputmode="decimal" data-poti="${i}" data-potk="costIls" value="${r.costIls!=null?+r.costIls:''}" placeholder="לא ידוע"${dis}></label>
@@ -28649,19 +28697,24 @@ function renderPots(){
   const sepH=`<div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsep="0" aria-pressed="${!pt.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsep="1" aria-pressed="${!!pt.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div><p class="note" style="margin:6px 0 0">${pt.sep?(nOut?`${ils(outIls)} מהחיסכון הזה לא נספרים עכשיו בשווי התיק.`:'ניירות שתעביר לכאן מהתיק ייצאו משווי התיק.'):'הניירות שהועתקו מהתיק נשארים גם בשווי התיק. אפשר לבחור להוציא אותם.'}</p></div>`;
   const copy=held.length?`<div class="potadd"><label for="potCopy">${pt.sep?'להעביר נייר מהתיק':'להעתיק נייר מהתיק'}<select id="potCopy"${dis}>${held.map(p=>`<option value="${esc(p.sym)}" data-q="${+(+p.qty).toFixed(4)}">${esc(lab(p.sym))} · בתיק ${+(+p.qty).toFixed(4)}</option>`).join('')}</select></label><label for="potCopyQ">כמות<input id="potCopyQ" type="number" min="0" step="0.0001" inputmode="decimal" value="${+(+held[0].qty).toFixed(4)}"${dis}></label><button type="button" class="btn" id="potCopyGo"${dis}>${pt.sep?'העבר לחיסכון':'העתק לחיסכון'}</button></div>`:'';
   const add=`<div class="potadd"><label for="potSym">או להוסיף נייר לפי סימול<input id="potSym" maxlength="12" placeholder="למשל VOO או 5129283" autocomplete="off" dir="ltr"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div>`;
-  box.innerHTML=`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc(POTK[pt.kind]||'')}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}${sepH}</div>
+  box.innerHTML=tabsH+`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc([POTK[pt.kind],potInstTxt(pt)].filter(Boolean).join(' · '))}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}${sepH}</div>
     <div class="panel"><h3>הניירות בחיסכון</h3>${rows}${copy}${add}<span class="saved" id="potState" role="status"></span></div>
     <details class="panel"><summary><h3 style="display:inline">פרטי החיסכון</h3></summary>${potForm(pt)}</details>${note}`;
 }
 const potCur=()=>pots().find(p=>p.id===potSel());
+// the page's tabs and the goals' cards (a viewer may move between them too)
+document.addEventListener('click',ev=>{const g=ev.target.closest&&ev.target.closest('#potBox [data-potgo]'); if(!g)return; POT=g.dataset.potgo; POTDEL=null; try{localStorage.setItem('tr_pot',POT)}catch(x){} renderPots();
+  try{const tb=$('potTabs'); if(tb&&tb.getBoundingClientRect().top<0)tb.scrollIntoView({block:'start'}); const on=tb&&tb.querySelector('[aria-pressed="true"]'); if(on)on.focus({preventScroll:true})}catch(x){}});
 function potChanged(s0,why){try{potFlowRec(s0,why)}catch(e){} potSyncWatch(); changed()}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox'))return; if(!canWrite)return; const s0=potOutSnap();
   const sp=t.closest('[data-potsep]'); if(sp){const pt=potCur(); if(!pt)return; const on=sp.dataset.potsep==='1'; if(!!pt.sep===on)return; pt.sep=on; potChanged(s0,on?'sep':'join'); return}
   const k=t.closest('[data-potkind]'); if(k){const pt=potSel()==='new'?null:potCur(); if(pt){pt.kind=k.dataset.potkind;potChanged(s0)} else{POTDRAFT.kind=k.dataset.potkind; renderPots()} return}
+  // 11.11: a fund or a stock; a second tap on the chosen one takes the choice off
+  const ins=t.closest('[data-potinst]'); if(ins){const v=ins.dataset.potinst, pt=potSel()==='new'?null:potCur(); if(pt){if(pt.inst===v)delete pt.inst; else pt.inst=v; potChanged(s0)} else{POTDRAFT.inst=POTDRAFT.inst===v?null:v; renderPots()} return}
   {const sn=t.closest('[data-potsepnew]'); if(sn){POTDRAFT={...POTDRAFT,sep:sn.dataset.potsepnew==='1'}; for(const b of document.querySelectorAll('[data-potsepnew]'))b.setAttribute('aria-pressed',String(b.dataset.potsepnew===(POTDRAFT.sep?'1':'0'))); return}}
   if(t.closest('#potCreate')){const nm=$('pf_name').value.trim(); if(!nm){$('potState').textContent='כתוב שם לחיסכון.';$('pf_name').focus();return}
     const kind=POTDRAFT.kind||'other', id='p'+Date.now().toString(36);
-    S.pots=pots().concat([{id,name:nm.slice(0,40),kind,...(POTDRAFT.sep?{sep:true}:{}),target:+$('pf_target').value||null,date:$('pf_date').value||null,monthly:+$('pf_monthly').value||null,cash:0,items:[],createdAt:new Date().toISOString()}]);
+    S.pots=pots().concat([{id,name:nm.slice(0,40),kind,...(POTDRAFT.sep?{sep:true}:{}),...(POTI[POTDRAFT.inst]?{inst:POTDRAFT.inst}:{}),target:+$('pf_target').value||null,date:potDay($('pf_date').value)||null,monthly:+$('pf_monthly').value||null,cash:0,items:[],createdAt:new Date().toISOString()}]);
     POT=id; POTDRAFT={kind:'child'}; try{localStorage.setItem('tr_pot',id)}catch(x){} potChanged(s0); return}
   if(t.closest('#potDel')){const pt=potCur(); if(!pt)return; if(POTDEL!==pt.id){POTDEL=pt.id; renderPots(); setTimeout(()=>{if(POTDEL===pt.id){POTDEL=null;try{renderPots()}catch(x){}}},5000); return}
     S.pots=pots().filter(p=>p.id!==pt.id); POTDEL=null; POT=null; potChanged(s0); offerUndo(`החיסכון "${pt.name}" נמחק`,()=>{const u0=potOutSnap(); S.pots=pots().concat([pt]); POT=pt.id; potChanged(u0)}); return}
@@ -29249,7 +29302,7 @@ const GO=[
   {id:'div',l:'דיבידנדים',k:'דיבידנד דיבידנדים הכנסה',tab:'forecast',el:'hDivGot'},
   {id:'divcalc',l:'מחשבון דיבידנדים',k:'מחשבון דיבידנד',tab:'forecast',el:'hDivCalc'},
   {id:'fx',l:'מחשבון מט״ח',k:'דולר שער מטח מט"ח מטבע',tab:'forecast',el:'hFxCalc'},
-  {id:'pots',l:'חסכונות לפי מטרה',k:'חיסכון חסכונות מטרה ילד משכנתא',tab:'pots'},
+  {id:'pots',l:'חסכונות לפי מטרה: החסכונות שלי',k:'חיסכון חסכונות החסכונות שלי מטרה ילד משכנתא קרן מניה',tab:'pots'},
   {id:'hist',l:'מבט לאחור',k:'היסטוריה עבר',tab:'history'},
   {id:'trend',l:'שווי מול הפקדות',k:'הפקדות רווח עובד',tab:'history',el:'hTrend'},
   {id:'mon',l:'תשואה חודשית',k:'תשואה חודש חודשי',tab:'history',el:'hMon'},
@@ -29319,6 +29372,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-11.5',at:'2026-11-11',t:'חסכונות לפי מטרה: "החסכונות שלי"',d:'לשונית חדשה עם כל החסכונות במסך אחד: כמה יש בכל אחד, כמה מהיעד, ועד מתי. בכל חיסכון בוחרים אם הוא בקרן או במניה, ו"עד מתי" הוא תאריך מדויק ולא רק חודש ושנה.',go:'pots'},
   {v:'2026-11-11.4',at:'2026-11-11',t:'הכפתור "חזרה" של הדפדפן עובד',d:'בספארי, בכרום ובכפתור החזרה של הטלפון: חוזרים לדף הקודם באתר, ולאותו מקום בדף. הכתובת אומרת באיזה דף אתם, ורענון נשאר באותו דף.'},
   {v:'2026-11-11.3',at:'2026-11-11',t:'"התיק שלי": האחזקות וההוספה הידנית יחד',d:'ההוספה הידנית נפתחת בתוך לשונית האחזקות, מעל הטבלה. "עדכון מדוח" נקרא עכשיו "העלאת דוחות", ו"מכירה" נקרא "ביצוע פעולות": שם רושמים קנייה או מכירה.',go:'pick'},
   {v:'2026-11-11.2',at:'2026-11-11',t:'מעקב: לחיצה על מניה פותחת את הדף שלה',d:'בכל כרטיס ב"מעקב ומה מתאים", לחיצה בכל מקום בכרטיס פותחת את דף הנייר. הכפתורים שבכרטיס ממשיכים לעשות את מה שהם עושים.',go:'watch'},
