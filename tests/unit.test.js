@@ -1743,8 +1743,20 @@ test('an admin: runs the site as the owner does (users, roles, health, every sec
     r=await req('f','GET','/api/db/export'); const ks=Object.keys(r.j.docs); assert.ok(ks.includes(`data/users/${f.id}/portfolio`)&&ks.includes('quotes/latest'),'his and the site\'s: '+ks.join(', '));
     assert.ok(!ks.some(p=>p==='portfolio/main'||p==='settings/main'||(p.startsWith('data/users/')&&!p.startsWith(`data/users/${f.id}/`))),'not the owner\'s nor another user\'s: '+ks.join(', '));
     assert.equal((await req('f','GET','/api/users')).status,200,'the users page'); assert.equal((await req('f','GET','/api/health')).status,200,'the system\'s health');
+    // 11.11 (the owners): an admin is not an owner: no one's password, no admins made, never the owner's account
+    const oid=store.users().find(u=>u.role==='owner').id;
+    assert.equal((await req('f','POST',`/api/users/${oid}/password`,{password:'taken-over-1'})).status,403,'an admin never resets the owner\'s password');
+    assert.equal((await req('f','POST',`/api/users/${g.id}/password`,{password:'taken-over-2'})).status,403,'nor a partner\'s');
+    assert.equal((await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'})).status,403,'nor makes an admin');
+    assert.equal((await req('f','GET','/api/ai/usage')).status,403,'the users\' usage is "sensitive"');
+    // a co-owner: the owner gives him "sensitive" (the owner alone gives it); then he runs the users as the owner does
+    store.db.prepare('update users set perms=? where id=?').run(JSON.stringify(['view','edit','users','system','sensitive']),f.id);
+    assert.equal((await req('f','POST',`/api/users/${g.id}/password`,{password:'reset-by-ori-1'})).status,200,'a co-owner resets a partner\'s password');
+    assert.equal((await req('f','POST',`/api/users/${oid}/password`,{password:'taken-over-3'})).status,403,'never the owner\'s, a co-owner neither');
+    assert.equal((await req('o','POST',`/api/users/${oid}/password`,{password:'owner-pass-123'})).status,200,'the owner, his own');
+    await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
     // 31.10: roles too, as the owner: he makes an admin and removes one; never the owner, never himself
-    r=await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal(r.j.role,'admin','an admin makes an admin');
+    r=await req('f','POST',`/api/users/${g.id}/role`,{role:'admin'}); assert.equal(r.j.role,'admin','a co-owner makes an admin');
     assert.equal((await req('f','POST',`/api/users/${(store.users().find(u=>u.role==='owner')).id}/role`,{role:'friend'})).status,400,'the owner stays the owner');
     assert.equal((await req('f','DELETE',`/api/users/${(store.users().find(u=>u.role==='owner')).id}`)).status,400,'nobody removes the owner');
     assert.equal((await req('f','DELETE',`/api/users/${f.id}`)).status,400,'nor himself');

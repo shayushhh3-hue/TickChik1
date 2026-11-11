@@ -102,6 +102,14 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.use((req,res,next)=>{req.sid=parseCookies(req)[COOKIE]||null; req.user=req.sid?store.session(req.sid):null; if(req.user&&req.user.status==='suspended'&&req.user.role!=='owner')req.user=null; if(req.user)touch(store,req.user); next()});
   const needUser=(req,res,next)=>req.user?next():res.status(401).json({error:{code:'not_granted',message:'not signed in'}});
   const needOwner=(req,res,next)=>ownerLike(req.user)?next():res.status(403).json({error:{code:'not_granted',message:'owner only'}});
+  // 11.11 (the owners, Shay and Ori): the old routes check the management center's permissions (before, any admin had
+  // them all, even with them taken away), and an account is touched only by whom it may be: the owner's by the owner
+  // alone; an admin's, and a partner's password, by an owner (the owner, or a co-owner: an admin the owner gave
+  // "sensitive", which only the owner gives). Before, any admin could reset the owner's password and sign in as the owner
+  const needP=p=>(req,res,next)=>canMc(req.user,p)?next():res.status(403).json({error:{code:'permission_denied',message:'אין הרשאה לפעולה הזו.'}});
+  const coOwner=u=>!!u&&(u.role==='owner'||(u.role==='admin'&&canMc(u,'sensitive')));
+  const mayTouch=(actor,t,{password=false}={})=>!!actor&&!!t&&(t.role==='owner'?actor.role==='owner'&&actor.id===t.id:t.role==='admin'||password?coOwner(actor):canMc(actor,'users'));
+  const noTouch=res=>res.status(403).json({error:{code:'permission_denied',message:'רק הבעלים יכולים לשנות את החשבון הזה.'}});
   // state-changing calls must come from the page itself (a custom header no cross-site form can send)
   app.use('/api',(req,res,next)=>{if(req.method!=='GET'&&req.headers['x-tc']!=='1')return res.status(403).json({error:{code:'invalid_argument',message:'missing header'}});next()});
   app.use('/api',(req,res,next)=>{res.setHeader('cache-control','no-store');next()});
@@ -149,10 +157,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // the owner sets, replaces or closes the invite code
   const CODE_ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const newCode=()=>[...randomBytes(8)].map(x=>CODE_ABC[x%CODE_ABC.length]).join('');
-  app.get('/api/invite',needOwner,(req,res)=>{const v=invite(); res.json({code:v?v.code:null,setAt:v?v.setAt:null})});
-  app.post('/api/invite',needOwner,(req,res)=>{let c=norm((req.body||{}).code); if(c&&!/^[A-Z0-9]{6,24}$/.test(c))return res.status(400).json({error:{code:'invalid_argument',message:'קוד של 6 עד 24 אותיות באנגלית וספרות.'}});
+  app.get('/api/invite',needP('users'),(req,res)=>{const v=invite(); res.json({code:v?v.code:null,setAt:v?v.setAt:null})});
+  app.post('/api/invite',needP('users'),(req,res)=>{let c=norm((req.body||{}).code); if(c&&!/^[A-Z0-9]{6,24}$/.test(c))return res.status(400).json({error:{code:'invalid_argument',message:'קוד של 6 עד 24 אותיות באנגלית וספרות.'}});
     if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); audit(store,{user:req.user,action:'invite.set',target:'invite',ip:req.ip}); res.json(v)});
-  app.delete('/api/invite',needOwner,(req,res)=>{store.setMeta('invite','null'); audit(store,{user:req.user,action:'invite.close',target:'invite',ip:req.ip}); res.json({ok:true})});
+  app.delete('/api/invite',needP('users'),(req,res)=>{store.setMeta('invite','null'); audit(store,{user:req.user,action:'invite.close',target:'invite',ip:req.ip}); res.json({ok:true})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
   // 8.11: a partner or an admin deletes their own account: their documents, their watch list, their devices, their
   // sessions and the user row, after their password; the owner cannot (the site is theirs). Audited by e-mail only.
@@ -201,13 +209,15 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const codes=newBackupCodes(); store.totpEnable(req.user.id,codes.map(codeHash),k); res.json({ok:true,codes})});
 
   // ---- users (the owner opens the door) ----
-  app.get('/api/users',needOwner,(req,res)=>res.json({users:store.users()}));
-  app.post('/api/users',needOwner,(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true}); audit(store,{user:req.user,action:'user.add',target:u.id,detail:{email:u.email},ip:req.ip}); res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
-  app.post('/api/users/:id/password',needOwner,(req,res)=>{try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id); audit(store,{user:req.user,action:'user.password',target:req.params.id,ip:req.ip}); res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
+  app.get('/api/users',needP('users'),(req,res)=>res.json({users:store.users()}));
+  app.post('/api/users',needP('users'),(req,res)=>{try{const u=store.addUser({...req.body,role:'friend',mustChange:true}); audit(store,{user:req.user,action:'user.add',target:u.id,detail:{email:u.email},ip:req.ip}); res.json({user:me(u)})}catch(e){res.status(400).json({error:{code:e.message,message:{bad_email:'כתובת מייל לא תקינה.',short_password:'סיסמה של 8 תווים לפחות.',exists:'הכתובת כבר רשומה.'}[e.message]||e.message}})}});
+  app.post('/api/users/:id/password',needP('users'),(req,res)=>{if(!mayTouch(req.user,store.userById(req.params.id),{password:true}))return noTouch(res); try{store.setPassword(req.params.id,(req.body||{}).password,{mustChange:true});store.endSessions(req.params.id); audit(store,{user:req.user,action:'user.password',target:req.params.id,ip:req.ip}); res.json({ok:true})}catch(e){res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}});
   // 31.10: an admin runs the site as the owner does: roles too. There is still one owner, whose role nobody changes
-  app.post('/api/users/:id/role',needOwner,(req,res)=>{
+  app.post('/api/users/:id/role',needP('users'),(req,res)=>{
+    {const t=store.userById(req.params.id); if(t&&t.role!=='owner'&&(!mayTouch(req.user,t)||((req.body||{}).role==='admin'&&!coOwner(req.user))))return noTouch(res)}   // 11.11: an admin is made by an owner
     try{const before=(store.userById(req.params.id)||{}).role, u=store.setRole(req.params.id,(req.body||{}).role); store.endSessions(u.id); audit(store,{user:req.user,action:'user.role',target:u.id,detail:{before,after:u.role},ip:req.ip}); res.json({ok:true,role:u.role})}catch(e){res.status(400).json({error:{code:e.message,message:e.message}})}});
-  app.delete('/api/users/:id',needOwner,(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.id===req.user.id)return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את עצמך.'}});
+  app.delete('/api/users/:id',needP('users'),(req,res)=>{const u=store.userById(req.params.id); if(!u)return res.status(404).json({error:{code:'not_found'}}); if(u.role==='owner')return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את בעל הדף.'}}); if(u.id===req.user.id)return res.status(400).json({error:{code:'invalid_argument',message:'אי אפשר להסיר את עצמך.'}});
+    if(!mayTouch(req.user,u))return noTouch(res);
     store.removeUser(u.id); for(const p of store.pathsUnder('data/users/'+u.id))store.deleteDoc(p); store.deleteDoc('watch/'+u.id); audit(store,{user:req.user,action:'user.remove',target:u.id,detail:{email:u.email,role:u.role},ip:req.ip}); res.json({ok:true})});
 
   // 1.11: the moves between the screens and the time on each, sent by the page every minute or so: counted per day and
@@ -410,27 +420,27 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     res.status(out.status).json(forUser(u,out.json));
   });
   // the owner sees who used Claude how much (calls and tokens, today and the last 30 days)
-  app.get('/api/ai/usage',needOwner,(req,res)=>{
+  app.get('/api/ai/usage',needP('sensitive'),(req,res)=>{
     const today=ilParts(new Date()).iso, from=ilParts(new Date(Date.now()-29*864e5)).iso;
     const users=store.users(), byId=Object.fromEntries(users.map(x=>[x.id,x])), month=store.aiSince(from), day=store.aiSince(today);
     const rows=users.map(x=>{const m=month.find(r=>r.uid===x.id)||{}, d=day.find(r=>r.uid===x.id)||{}; return {email:x.email,owner:x.role==='owner',today:d.calls||0,quickToday:d.quick||0,calls30:m.calls||0,quick30:m.quick||0,input30:m.input||0,output30:m.output||0}});
     for(const m of month)if(!byId[m.uid])rows.push({email:'(משתמש שהוסר)',owner:false,today:0,quickToday:0,calls30:m.calls,quick30:m.quick||0,input30:m.input,output30:m.output});
     res.json({limit:AI_DAILY,models:ALLOWED_MODELS,fileModels:FILE_MODELS,fileQuick:FILE_QUICK_MODELS,rows,byModel:store.aiModelsSince(from)});
   });
-  app.get('/api/backup/status',needOwner,(req,res)=>res.json(backupStatus(store,{dataDir})));
+  app.get('/api/backup/status',needP('system'),(req,res)=>res.json(backupStatus(store,{dataDir})));
   // 1.11: what a daily copy holds of the asker's own documents, and a restore of them (the settings and the plans, or the
   // portfolio with its history) from that copy. The asker's own documents only: the owner's, or an admin's own area
-  app.get('/api/backup/peek',needOwner,(req,res)=>{try{res.json({file:String(req.query.file||''),docs:backupPeek(req.user,{dataDir,file:req.query.file})})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
-  app.post('/api/backup/restore',needOwner,(req,res)=>{try{const done=backupRestore(store,req.user,{dataDir,file:(req.body||{}).file,set:(req.body||{}).set}); log(`restore from ${(req.body||{}).file} (${(req.body||{}).set}) by ${req.user.id}: ${done.join(', ')||'nothing'}`); res.json({ok:true,restored:done})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
+  app.get('/api/backup/peek',needP('system'),(req,res)=>{try{res.json({file:String(req.query.file||''),docs:backupPeek(req.user,{dataDir,file:req.query.file})})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
+  app.post('/api/backup/restore',needP('system'),(req,res)=>{try{const done=backupRestore(store,req.user,{dataDir,file:(req.body||{}).file,set:(req.body||{}).set}); log(`restore from ${(req.body||{}).file} (${(req.body||{}).set}) by ${req.user.id}: ${done.join(', ')||'nothing'}`); res.json({ok:true,restored:done})}catch(e){res.status(400).json({error:{code:'invalid_argument',message:String(e&&e.message||e)}})}});
   // 30.10: the health of the data: every source, the last time it worked (server/health.js)
-  app.get('/api/health',needOwner,(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
+  app.get('/api/health',needP('system'),(req,res)=>res.json({...healthCheck(store),jobs:!!app.locals.jobs}));
   // the analysts' data: when it last ran and how it went, and how old each document is
-  app.get('/api/research/status',needOwner,(req,res)=>{let last=null; try{last=JSON.parse(store.getMeta('researchStatus')||'null')}catch(e){}
+  app.get('/api/research/status',needP('system'),(req,res)=>{let last=null; try{last=JSON.parse(store.getMeta('researchStatus')||'null')}catch(e){}
     const at=p=>{const d=store.getDoc(p); return d.exists?{updatedAt:d.data.updatedAt||null,source:d.data.source||null}:null};
     let news=null, newsx=null, x=null; try{news=JSON.parse(store.getMeta('newsStatus')||'null'); newsx=JSON.parse(store.getMeta('newsxStatus')||'null'); x=JSON.parse(store.getMeta('xStatus')||'null')}catch(e){}
     res.json({last,latest:at('research/latest'),fit:at('research/fit'),candidates:at('research/candidates'),news,newsx,x})});
   // the owner checks the connection to Claude with one tiny question
-  app.post('/api/ask/check',needOwner,async(req,res)=>{
+  app.post('/api/ask/check',needP('system'),async(req,res)=>{
     const t0=Date.now(); const out=await askClaude({model:ALLOWED_MODELS.find(m=>/haiku/.test(m))||ALLOWED_MODELS[0],max_tokens:16,messages:[{role:'user',content:'Reply with the single word: ok'}]});
     if(out.text!=null)return res.json({ok:true,ms:Date.now()-t0});
     res.json({ok:false,message:out.json.error.message});
@@ -457,7 +467,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // 20 minutes per security (one at a time); the articles are cached 30 minutes. Data to show, never instructions
   const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;
   // the owner's page found a gap between two of its views: kept, and the price watch tells the owner (with consent)
-  app.post('/api/selfcheck',needOwner,(req,res)=>res.json(selfCheckNote(store,req.body||{})));
+  app.post('/api/selfcheck',needP('system'),(req,res)=>res.json(selfCheckNote(store,req.body||{})));
   // 4.11: what is inside the held funds, now (the page asks when a fund it shows has no holdings yet); once in ten minutes
   let etfLast=0, etfBusy=null;
   app.post('/api/etf/refresh',needUser,async(req,res)=>{if(etfBusy||Date.now()-etfLast<10*60e3)return res.json({ok:true,cached:true}); etfLast=Date.now();
@@ -501,7 +511,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   });
 
   // the owner can run a scheduled job now (setup checks, or after a missed run)
-  app.post('/api/jobs/:name',needOwner,(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'jobs are off'}}); if(!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'no such job'}}); res.json({ok:true,queued:req.params.name})});
+  app.post('/api/jobs/:name',needP('system'),(req,res)=>{const j=app.locals.jobs; if(!j)return res.status(503).json({error:{code:'upstream_error',message:'jobs are off'}}); if(!j.run(req.params.name))return res.status(404).json({error:{code:'not_found',message:'no such job'}}); res.json({ok:true,queued:req.params.name})});
 
   // 1.11: TikChik Management Center (/admin and /api/admin/*), its permissions checked on the server
   adminRoutes(app,{store,pageFile:path.join(ROOT,'page','live.html'),adminFile:path.join(ROOT,'page','admin.html'),setRole:(id,role)=>store.setRole(id,role),dataDir,dbFile:env.DB_FILE||path.join(dataDir,'tikchik.sqlite'),persist:PERSIST,push:pushTo,log});
