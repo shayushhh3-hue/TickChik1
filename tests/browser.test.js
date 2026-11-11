@@ -257,7 +257,14 @@ test('the coming two weeks on the home screen: reports and dividends by day, sai
   d.companies.KO={...(d.companies.KO||{}),dy:3,div:{ex:day(5),pay:day(30),last:{amt:0.51,date:day(-80)}}};
   store.setDoc('research/latest',d,{silent:true});
   try{
-    const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('soonSec').hidden,null,{timeout:15000});
+    // 11.11 (the owner, "לוח פסיפס"): on a phone the coming weeks are a tile (the first two, the dividends' year); the whole
+    // list is the wide screen's (and the calendar's, one tap from the tile)
+    {const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000});
+      const b=await pg.evaluate(()=>({t:document.getElementById('bSoon').textContent.replace(/\s+/g,' '),list:getComputedStyle(document.getElementById('soonSec')).display}));
+      assert.match(b.t,/בשבועיים הקרובים.*(דוח|דיבידנד|הפקדה|מסחר).*ועוד \d+.*בשנה מדיבידנדים/,'the tile: '+b.t); assert.equal(b.list,'none','not twice');
+      await pg.click('#bSoon'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar','the tile opens the calendar');
+      assert.deepEqual(pg.errs,[]); await ctx.close()}
+    const {ctx,pg}=await open(1280); await pg.waitForFunction(()=>!document.getElementById('soonSec').hidden,null,{timeout:15000});
     const r=await pg.evaluate(()=>({days:[...document.querySelectorAll('#soonList .soon-d')].map(x=>x.textContent),dv:document.getElementById('soonDiv').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.ok(r.days.some(x=>/דוח NVDA/.test(x)),'the report: '+JSON.stringify(r.days)); assert.ok(r.days.some(x=>/דוח MSFT \(משוער\)/.test(x)),'an estimated day says so');
     assert.ok(r.days.some(x=>/אקס דיבידנד KO/.test(x)),'the ex-dividend day'); assert.ok(!r.days.some(x=>/תשלום דיבידנד KO/.test(x)),'not past two weeks');
@@ -287,7 +294,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       const ctl=await pg.evaluate(()=>{const b=document.querySelector('#tab_risk');   /* 10.11: בקרה left the bottom bar for התראות; its count is on its item in the menu */ return {n:b.querySelector('.bbadge')?.textContent,lbl:b.getAttribute('aria-description'),chip:!document.getElementById('kStatus').hidden,
         order:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).slice(0,4)}});
       assert.equal(ctl.n,'3'); assert.equal(ctl.lbl,'בבקרה: 2 חריגות ונושא אחד לבדיקה'); assert.equal(ctl.chip,false,'no chip of them at the top');
-      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,1),['holdSec'],'10.11: the stocks/funds tiles left the home (each group heading has its sum). '+'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
+      assert.deepEqual(ctl.order.filter(x=>x!=='soonSec').slice(0,2),['bento','holdSec'],'11.11 (the owner, "לוח פסיפס"): the tiles, then the holdings in a tile of their own. '+'10.11: the stocks/funds tiles left the home (each group heading has its sum). '+'10.11 (the owner): the holdings right under the chart, then the stocks and the funds. Before: '+'4.11 (9.11: the stocks and the funds, then the holdings; the four actions are gone on a phone): the four actions, the coming two weeks when something is coming, then the holdings (what happened today is in the value card since 31.10): '+JSON.stringify(ctl.order));
       {const o=await pg.evaluate(()=>{const C=[...document.querySelector('[data-pane="overview"]').children].map(x=>x.id); return [C.indexOf('holdSec'),C.indexOf('soonSec')]}); assert.ok(o[0]>=0&&o[1]>o[0],'10.11 (the owner): the coming two weeks under the holdings, at the bottom: '+JSON.stringify(o))}
       // 31.10: the day in three lines at the top: what the portfolio did and who moved it, the news, what needs doing
       // 9.11: a small card under the value (the chart stays the main thing): a line per fact with a short label at its
@@ -313,7 +320,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // 28.10: the lean home ends with the holdings; the detail switch lives in the settings only
       const vs=await pg.evaluate(()=>({n:document.querySelectorAll('.viewsw').length,home:!!document.querySelector('[data-pane="overview"] .viewsw'),last:[...document.querySelector('[data-pane="overview"]').children].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id).filter(Boolean).pop()}));
       // 1.11: the steps of a new account (when some are left) come after the indices row, at the very end
-      assert.equal(vs.n,1); assert.equal(vs.home,false); assert.ok(['idxRow','obNext','soonSec'].includes(vs.last),'10.11: the home ends with the coming two weeks (the indices are a line in the value card): '+vs.last);
+      assert.equal(vs.n,1); assert.equal(vs.home,false); assert.ok(['idxRow','obNext','soonSec','holdSec'].includes(vs.last),'10.11: the home ends with the coming two weeks (the indices are a line in the value card; 11.11: on a phone they are a tile, and the holdings end it): '+vs.last);
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="calm"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>getComputedStyle(document.getElementById('tapeRow')).display==='none'),'simple: no ticker');
       await pg.evaluate(()=>document.querySelector('[data-pane="settings"] [data-view="full"]').click()); await pg.waitForTimeout(300);
@@ -3445,4 +3452,24 @@ test('9.11 the phone\'s home without clutter: the range\'s change in the chart\'
     assert.deepEqual(r,{range:true,acts:false,bub:false,ban:true,lite:true,hx:false},JSON.stringify(r));
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('alerts/pulse',P0.exists?P0.data:{items:[]})}
+});
+
+test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choice of three): the value card violet with the chart in white, the day and the period, the split, the coming weeks, what to check; a wide screen as before',T,async t=>{
+  if(skip())return t.skip('no browser');
+  {const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(300);
+    const r=await pg.evaluate(()=>{const cs=e=>getComputedStyle(e), w=document.querySelector('.worth'), line=document.querySelector('#wChS path[stroke="url(#wgA)"]'), mix=document.querySelector('#bMix svg'), ck=document.getElementById('bChk');
+      return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:document.querySelectorAll('#bKpis .kpi').length,
+        mix:mix?mix.getAttribute('aria-label'):'',ck:ck.hidden?'':ck.textContent.replace(/\s+/g,' ').trim(),go:(ck.querySelector('.bc-go')||{}).dataset||null,
+        small:[...document.querySelectorAll('#bento .bc-go,#bento .bt[data-tab]')].filter(b=>b.getBoundingClientRect().height<44).length,
+        gap:Math.round(document.getElementById('bento').getBoundingClientRect().top-w.getBoundingClientRect().bottom),ox:document.documentElement.scrollWidth>innerWidth+1}});
+    assert.ok(r.on&&r.bg==='rgb(91, 33, 182)','the violet card: '+JSON.stringify(r)); assert.ok(r.line===null||r.line==='rgb(255, 255, 255)','the chart\'s line white on it');
+    assert.ok(r.kpis>=2,'the day and the period as tiles: '+r.kpis); assert.match(r.mix,/(מניות|קרנות) [\d.]+%/,'the ring says its parts');
+    assert.match(r.ck,/^(לבדוק · .+|אין מה לבדוק\..*)/,'one thing to check, or none: '+r.ck); assert.ok(r.go&&r.go.anav,'it leads somewhere');
+    assert.equal(r.small,0,'every tile and button at least 44px tall'); assert.equal(r.gap,12,'12px under the card'); assert.equal(r.ox,false);
+    await pg.click('#bMix'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mix','the split opens פיזור');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+  {const {ctx,pg}=await open(1280); await pg.waitForTimeout(800);
+    const r=await pg.evaluate(()=>({bento:!document.getElementById('bento').hidden,on:document.body.classList.contains('bento-on'),kpisIn:!!document.getElementById('kKpis').closest('.worth'),bg:getComputedStyle(document.querySelector('.worth')).backgroundColor}));
+    assert.deepEqual([r.bento,r.on,r.kpisIn],[false,false,true],'a wide screen keeps its home: '+JSON.stringify(r)); assert.notEqual(r.bg,'rgb(91, 33, 182)');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
 });

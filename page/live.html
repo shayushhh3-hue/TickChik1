@@ -3016,6 +3016,55 @@ body[data-page="overview"] .worth .dayline{display:none!important}
 .kpi-s{flex:0 0 100%;font-size:12px;font-weight:700;direction:ltr;unicode-bidi:isolate}
 .kpi .up{color:var(--gain)} .kpi .down{color:var(--loss)}
 .kpi .whybtn{position:absolute;top:3px;inset-inline-start:4px;margin:0;font-size:11.5px;min-height:20px;padding:0 7px;line-height:20px}
+.kpis:has(>.kpi:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+/* 11.11 (the owner's choice of three: "לוח פסיפס"): the home on a phone as tiles (body.bento-on, set by renderBento);
+   12px between every two tiles, the value card's too (the page's 18 + 6 above the pane, less 12) */
+.bento{display:none}
+body.bento-on[data-page="overview"] .bento:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:-12px 0 0}
+body.bento-on[data-page="overview"] [data-pane="overview"]{row-gap:12px}
+body.bento-on[data-page="overview"] .worth .acctsel{color:#FFFFFF}
+body.bento-on[data-page="overview"] #holdSec{padding:14px 12px 8px}
+body.bento-on[data-page="overview"] #holdSec>.panel{border:0;box-shadow:none;background:transparent;margin:0;padding:0}
+body.bento-on[data-page="overview"] #soonSec{display:none!important}
+/* the value card: violet, its words and the chart in white (the chart's own colours are var()s, overridden here) */
+body.bento-on[data-page="overview"] .hero .worth{--ink:#FFFFFF;--ink2:#EDE7FF;--muted:#E2D9FF;--line:rgb(255 255 255 / .22);--surface:#5B21B6;--sunk:rgb(255 255 255 / .14);--gain:#BBF7D0;--loss:#FECDD3;--ok-bg:rgb(255 255 255 / .16);--ok-ink:#FFFFFF;
+  background:#5B21B6!important;color:#FFFFFF;border:0!important;border-radius:26px!important;box-shadow:0 12px 28px rgb(91 33 182 / .26)!important;padding:14px 16px 12px!important}
+body.bento-on[data-page="overview"] .worth #wChS path[stroke="url(#wgA)"]{stroke:#FFFFFF}
+body.bento-on[data-page="overview"] .worth #wChS path[fill="url(#wgF)"]{fill:rgb(255 255 255 / .13)}
+body.bento-on[data-page="overview"] .worth #wChS circle{fill:#FFFFFF}
+body.bento-on[data-page="overview"] .worth .wch-rg button{color:#EDE7FF}
+body.bento-on[data-page="overview"] .worth .wch-rg button[aria-pressed="true"]{background:#FFFFFF;color:#4C1D95}
+body.bento-on[data-page="overview"] .worth .acctsel option{color:#14122E;background:#FFFFFF}
+body.bento-on[data-page="overview"] .worth :focus-visible{outline-color:#FFFFFF}
+/* the day and the period: tiles of their own, the figure large */
+body.bento-on[data-page="overview"] #bKpis{grid-column:1/-1;min-width:0}
+body.bento-on[data-page="overview"] #bKpis .kpis{gap:12px;margin:0}
+body.bento-on[data-page="overview"] #bKpis .kpi{justify-content:flex-start;align-items:flex-start;text-align:start;padding:14px 14px 12px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+body.bento-on[data-page="overview"] #bKpis .kpi-k{font-size:14px}
+body.bento-on[data-page="overview"] #bKpis .kpi-v{font-family:var(--display);font-size:clamp(18px,5.6vw,24px);line-height:1.25;text-align:right}
+body.bento-on[data-page="overview"] #bKpis .kpi-s{font-size:14px;text-align:right}
+body.bento-on[data-page="overview"] #bKpis .kpi .whybtn{top:12px;inset-inline-start:auto;inset-inline-end:10px}
+/* the other tiles */
+body.bento-on[data-page="overview"] .bt{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;margin:0;padding:14px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:14px;line-height:1.4;text-align:start;cursor:pointer}
+body.bento-on[data-page="overview"] .bt[hidden]{display:none}
+.bt-k{font-size:14px;font-weight:700;color:var(--muted)}
+.b-mix svg{width:104px;height:104px;align-self:center;display:block}
+.bm-l{display:flex;flex-direction:column;gap:2px;font-size:13.5px} .bm-l>span{display:flex;align-items:center;gap:6px} .bm-l i{width:10px;height:10px;border-radius:3px;flex:none}
+body.bento-on[data-page="overview"] .b-soon{background:#E6FAF7;border-color:#BCEDE5}
+.b-soon .bt-k,.b-soon .bs-e b,.b-soon .bs-m,.b-soon .bs-dv{color:#0F5F57}
+.bs-e{display:flex;flex-direction:column;font-size:14px;line-height:1.35;font-weight:600} .bs-e b{font-size:13px}
+.bs-m,.bs-dv{font-size:13px} .bs-dv{margin-top:auto;padding-top:4px}
+body.bento-on[data-page="overview"] .b-chk{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#FFF4DB;border-color:#F3D9A4;color:#4A2E00;cursor:default}
+body.bento-on[data-page="overview"] .b-chk.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok-ink)}
+.bc-ic{flex:none;width:40px;height:40px;border-radius:12px;background:#FFFFFF;display:grid;place-items:center} .bc-ic svg{width:20px;height:20px}
+.bc-t{flex:1;min-width:0;margin:0;font-size:14.5px;line-height:1.45} .bc-m{font-size:13px;opacity:.85;white-space:nowrap}
+.bc-go{flex:none;width:44px;height:44px;border-radius:12px;border:0;background:#FFFFFF;color:inherit;display:grid;place-items:center;cursor:pointer} .bc-go svg{width:18px;height:18px}
+/* the holdings stay as they were, in a tile */
+body.bento-on[data-page="overview"] #holdSec{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+html[data-theme="dark"] body.bento-on[data-page="overview"] .b-soon{background:rgb(45 212 191 / .12);border-color:rgb(45 212 191 / .3)}
+html[data-theme="dark"] .b-soon .bt-k,html[data-theme="dark"] .b-soon .bs-e b,html[data-theme="dark"] .b-soon .bs-m,html[data-theme="dark"] .b-soon .bs-dv{color:#99F6E4}
+html[data-theme="dark"] body.bento-on[data-page="overview"] .b-chk{background:rgb(245 158 11 / .14);border-color:rgb(245 158 11 / .35);color:#FDE68A}
+html[data-theme="dark"] .bc-ic,html[data-theme="dark"] .bc-go{background:rgb(255 255 255 / .08)}
 #holdAll{display:none!important}
 body[data-page="overview"] #hHold{font-size:19px}
 /* 10.11 (the owner): the holdings' two switches as one balanced line across the width: the kinds at one edge, the currency at the other, of the same height */
@@ -3197,6 +3246,9 @@ body[data-page="overview"] #idxRow{display:none!important}
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
       <button type="button" class="insight" id="insightBar" hidden><span class="in-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1.1.9 1.8V16h5.2v-.3c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3z"/></svg></span><span class="in-t"><b>מה קרה היום בתיק?</b><span id="insightSub"></span></span><span class="in-go" aria-hidden="true">‹</span></button>
+      <!-- 11.11 (the owner's choice, "לוח פסיפס"): on a phone the tiles under the violet value card: the day and the period
+           (#kKpis moves in), how the portfolio is split, what is coming, and the one thing to check -->
+      <div class="bento" id="bento" hidden><div class="b-kpis" id="bKpis"></div><button type="button" class="bt b-mix" id="bMix" data-tab="mix"></button><button type="button" class="bt b-soon" id="bSoon" data-tab="calendar"></button><div class="bt b-chk" id="bChk" hidden></div></div>
       <!-- 10.11 (the owner): the holdings right under the chart, before the quick actions and the stocks/funds tiles -->
       <section aria-labelledby="hHold" id="holdSec" class="hold lite top">
       <div class="row"><h2 id="hHold">ההחזקות שלי</h2><button type="button" class="lnk hold-all" id="holdAll" aria-expanded="false">הצג הכל ‹</button><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
@@ -18356,7 +18408,7 @@ function render(){
   const okRow=A.filter(a=>a[0]==='ok').map(a=>`<li class="alert ok" data-line="${esc(line(a))}" data-sev="ok">${niH('ok')}<span><span class="tag">${tagFor.ok}</span> ${esc(a[2])}</span></li>`).join('');
   const alH=okRow+grp; if(alH!==lastAl){lastAl=alH;$('alerts').innerHTML=alH}
   LAST_A=A; try{alertsChime(A)}catch(e){}
-  try{renderDesk(m,A)}catch(e){console.error(e)} try{renderRules(m)}catch(e){console.error(e)} try{renderBrief(m,A)}catch(e){console.error(e)} try{renderCore(m)}catch(e){console.error(e)} try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
+  try{renderDesk(m,A)}catch(e){console.error(e)} try{renderBento(m,A)}catch(e){console.error(e)} try{renderRules(m)}catch(e){console.error(e)} try{renderBrief(m,A)}catch(e){console.error(e)} try{renderCore(m)}catch(e){console.error(e)} try{renderSince()}catch(e){} try{renderSources()}catch(e){} try{renderCrisis(m,A)}catch(e){} try{renderTaxBanner()}catch(e){}
   // hero status, movers, ticker tape and heat board
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
   ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
@@ -19452,10 +19504,39 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
     const L=(TP||[]).filter(p=>+p.val>0&&isFinite(+p.val)); if(L.length<2)return null; const from=Date.now()-0.25*30.44*864e5, i=L.findIndex(p=>p.t>=from); if(i<0)return null;
     const a=L[Math.max(0,i-1)], z=L[L.length-1]; if(!(+a.val>0)||a===z)return null; return {d:+z.val-+a.val,p:(+z.val/+a.val-1)*100}}catch(e){return null}})();
   C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):cell('30 יום','—'));
-  C.push(m.cost>0?cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):cell('מזומן',ils(m.cash||0)));
+  // 11.11 (the owner): no "מזומן ₪0" (the cash only when there is some)
+  if(m.cost>0)C.push(cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down')); else if((m.cash||0)>=1)C.push(cell('מזומן',ils(m.cash)));
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
   const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
   el.hidden=false; setH(el,C.join('')); const c0=el.querySelector('.kpi'); if(w&&c0)c0.appendChild(w)}
+// 11.11 (the owner's choice of three, "לוח פסיפס"): on a phone the home is tiles. The value card is violet with the chart
+// in white; the day and the period are tiles of their own (#kKpis, moved by homeLayout); then how the portfolio is split
+// (a ring), the coming two weeks (the first two events and the dividends' year), and the one thing to check by the person's
+// rules, or that nothing is. The holdings stay as they were, in a tile. Facts the page already computes, nothing new
+let BENTO=null;
+function renderBento(m,A){
+  const box=$('bento'); if(!box)return; BENTO={m,A};
+  const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length); box.hidden=!on; document.body.classList.toggle('bento-on',on); if(!on)return;
+  const T=m.total||0, sh=v=>pct(T?v/T*100:0,1);
+  // the split: stocks, funds, and the cash when there is some, as a ring drawn clockwise from the top
+  const parts=[['מניות',m.pos.filter(p=>!isF(p.sym)).reduce((t,p)=>t+p.val,0),'#7C3AED'],['קרנות',m.pos.filter(p=>isF(p.sym)).reduce((t,p)=>t+p.val,0),'#14B8A6'],['מזומן',Math.max(0,m.cash||0),'#A1A1AA']].filter(x=>x[1]>=1);
+  const C=2*Math.PI*40; let off=0;
+  const ring=parts.map(([,v,c])=>{const l=T?v/T*C:0, s=`<circle cx="56" cy="56" r="40" fill="none" stroke="${c}" stroke-width="16" stroke-dasharray="${l.toFixed(1)} ${(C-l).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 56 56)"/>`; off+=l; return s}).join('');
+  setH($('bMix'),`<span class="bt-k">חלוקת התיק</span><svg viewBox="0 0 112 112" role="img" aria-label="${esc(parts.map(([k,v])=>k+' '+sh(v)).join(', '))}">${ring}<text x="56" y="61" text-anchor="middle" font-size="15" font-weight="800" style="fill:var(--ink)" font-family="var(--display)">${m.pos.length} ניירות</text></svg><span class="bm-l">${parts.map(([k,v,c])=>`<span><i style="background:${c}" aria-hidden="true"></i>${k} <b class="n">${sh(v)}</b></span>`).join('')}</span>`);
+  // the coming two weeks: the first two events, how many more, and the dividends the portfolio pays in a year
+  let S=[]; try{S=soonEvents(new Date())}catch(e){} const today=ilDay(), dayW=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
+  const ev=[]; for(const x of S)for(const e of x.E)if(ev.length<2)ev.push({d:x.d,e}); const nE=S.reduce((t,x)=>t+x.E.length,0);
+  let dv=null; try{if(RS&&RS.companies){const g=m.pos.reduce((t,p)=>{const y=(RS.companies[p.sym]||{}).dy; return t+(y>0?p.val*y/100:0)},0); if(g>0)dv=g}}catch(e){}
+  setH($('bSoon'),`<span class="bt-k">בשבועיים הקרובים</span>${ev.length?ev.map(({d,e})=>`<span class="bs-e"><b>${esc(dayW(d))}</b><span>${esc(e.t)}${e.sym?' <bdi>'+esc(lab(e.sym))+'</bdi>':''}</span></span>`).join(''):'<span class="bs-e"><span>אין דוחות, דיבידנדים או חגים בניירות שלך</span></span>'}${nE>2?`<span class="bs-m">ועוד ${nE-2}</span>`:''}${dv?`<span class="bs-dv">כ-<b class="n">${ils(dv)}</b> בשנה מדיבידנדים</span>`:''}`);
+  // the one thing to check: the first finding by the person's rules (the same as the control's count), or that there is none
+  const N=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)).sort((a,b)=>(b[0]==='crit')-(a[0]==='crit')), ck=$('bChk');
+  const ic=p=>`<span class="bc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${p}</svg></span>`;
+  const go=(t,l)=>`<button type="button" class="bc-go" data-anav="${esc(t)}" aria-label="${esc(l)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>`;
+  ck.hidden=false;
+  if(!N.length){ck.className='bt b-chk ok'; setH(ck,`${ic('<path d="M5 13l4 4L19 7"/>')}<p class="bc-t"><b>אין מה לבדוק.</b> התיק עומד בכללים שקבעת.</p>${go('risk','לבקרה')}`); return}
+  const f=N[0], nv=alertNav(f)||{t:'risk',l:'לבקרה'};
+  ck.className='bt b-chk';
+  setH(ck,`${ic('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/>')}<p class="bc-t"><b>לבדוק · ${esc(f[1])}:</b> ${esc(fCut(fText(f),110).c)}${N.length>1?` <span class="bc-m">ועוד ${N.length-1}</span>`:''}</p>${go(nv.t,nv.l)}`)}
 function renderMonChip(m){
   const el=$('kMon'); if(!el)return; let r=null; try{r=monChipCalc(m)}catch(e){}
   if(!r||!isFinite(r.ret)){el.hidden=true;return} const v=r.ret;
@@ -19491,6 +19572,9 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   {const ot=$('ovTabs'), mt=$('mktTick'); if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot)}
   // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
   {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
+  // 11.11 (the owner, "לוח פסיפס"): on a phone the day and the period are tiles under the card; on a wide screen back in it
+  {const kp=$('kKpis'), bk=$('bKpis'), wv=kt.parentElement; if(kp&&bk&&ph&&kp.parentElement!==bk)bk.appendChild(kp); else if(kp&&wv&&!ph&&kp.parentElement!==wv)wv.insertBefore(kp,kt)}
+  try{if(BENTO)renderBento(BENTO.m,BENTO.A)}catch(e){}
   try{WSIG=''; renderWChart()}catch(e){}}
 (function(){const go=()=>{try{homeLayout()}catch(e){}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',go); else go(); try{PHONE.addEventListener('change',go)}catch(e){}})();
 document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#btnTape')){const t=$('tapeTg'); if(t)t.click()}});
