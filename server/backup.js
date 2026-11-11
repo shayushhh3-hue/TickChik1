@@ -16,6 +16,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import {sendAllowed, mailReady, mailAllowed, mailAllowedFor} from './mail.js';
 import {canWrite} from './store.js';
+import {offsiteBackup, offsiteStatus} from './offsite.js';   // 11.11 (it imports sealBackup from here: called at run time only)
 
 const NAME=/^tikchik-(\d{4}-\d\d-\d\d)\.sqlite$/;
 const dirOf=dataDir=>path.join(dataDir,'backups');
@@ -77,6 +78,8 @@ async function adminBackups(store,{log,now}){
 }
 export async function backupTask(store,{log=()=>{},dataDir,now=new Date()}={}){
   const r=backupNow(store,{dataDir,now}); log(`backup: ${path.basename(r.file)} ${(r.size/1e6).toFixed(1)}MB, ${r.removed} old removed`);
+  // 11.11: the full copy, encrypted, to a bucket outside the volume (offsite.js), whatever the mail's settings
+  try{r.offsite=await offsiteBackup(store,{file:r.file,now,log})}catch(e){log('offsite: '+(e&&e.message||e))}
   await adminBackups(store,{log,now});
   // the copy by e-mail, only when the owner switched it on in the settings (sendAllowed notes "off" or "not set up" otherwise)
   if(!mailReady()||!mailAllowed(store,'backup')){await sendAllowed(store,'backup',{},log); return {...r,mailed:false}}
@@ -123,5 +126,5 @@ export function backupStatus(store,{dataDir}={}){
   try{files=fs.readdirSync(dir).filter(f=>NAME.test(f)).sort().reverse().map(f=>({name:f,size:fs.statSync(path.join(dir,f)).size}))}catch(e){}
   let last=null; try{last=JSON.parse(store.getMeta('lastBackup')||'null')}catch(e){}
   let info=null; try{info=JSON.parse(store.getMeta('lastBackupMailInfo')||'null')}catch(e){}
-  return {last,files,mail:mailReady(),mailOn:mailAllowed(store,'backup'),lastMail:store.getMeta('lastBackupMail'),lastMailInfo:info,fullKey:!!process.env.BACKUP_KEY};
+  return {last,files,mail:mailReady(),mailOn:mailAllowed(store,'backup'),lastMail:store.getMeta('lastBackupMail'),lastMailInfo:info,fullKey:!!process.env.BACKUP_KEY,offsite:offsiteStatus(store)};
 }

@@ -1310,6 +1310,40 @@ test('31.10 the story behind the headline: one per event from its readings, ever
       assert.equal((await req('o','POST','/api/newsx/story',{ev:'bad key!'})).status,400)}finally{if(k1b!=null)process.env.ANTHROPIC_API_KEY=k1b}}finally{srv.close()}
 });
 
+test('11.11 the off-site copy: AWS Signature V4 (AWS\'s own example), the full copy sealed and uploaded to the bucket, checked, the old ones pruned; never in the clear',async()=>{
+  const {s3Sign,offsiteBackup,keepOf,offsiteConf}=await import('../server/offsite.js'); const {backupNow,openBackup}=await import('../server/backup.js');
+  const fs=await import('node:fs'); const os=await import('node:os'); const path=await import('node:path');
+  // AWS's example "GET Bucket (List Objects)", in the Signature V4 documentation
+  const ex=s3Sign({endpoint:'https://s3.amazonaws.com',bucket:'examplebucket',region:'us-east-1',key:'AKIAIOSFODNN7EXAMPLE',secret:'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',style:'virtual'},'GET','',{query:'max-keys=2&prefix=J',now:new Date('2013-05-24T00:00:00Z')});
+  assert.equal(ex.url,'https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J');
+  assert.match(ex.headers.authorization,/Signature=34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7$/,'the signature AWS publishes');
+  // a Railway bucket's settings: the endpoint, virtual-hosted, region auto
+  const env={S3_ENDPOINT:'https://t3.storageapi.dev',S3_BUCKET:'tc-backups',S3_ACCESS_KEY_ID:'k',S3_SECRET_ACCESS_KEY:'s',BACKUP_KEY:'a long pass phrase'};
+  assert.deepEqual([offsiteConf(env).ready,offsiteConf(env).region,offsiteConf({}).ready],[true,'auto',false]);
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tcoff-')), s=new Store(':memory:'); s.addUser({email:'o@example.com',password:'owner-pass-123',role:'owner'}); s.setDoc('portfolio/main',{positions:[{sym:'KO',qty:1}]});
+  const now=new Date('2026-11-11T00:30:00Z'), file=backupNow(s,{dataDir:dir,now}).file;
+  const calls=[], store={}; const old=['tikchik/full-2026-01-01.sqlite.gz.enc','tikchik/full-2026-01-09.sqlite.gz.enc','tikchik/full-2026-09-02.sqlite.gz.enc','tikchik/full-2026-10-20.sqlite.gz.enc','tikchik/full-2025-08-01.sqlite.gz.enc'];
+  const fake=async(url,o)=>{const u=new URL(url), key=decodeURIComponent(u.pathname.slice(1)); calls.push([o.method,u.host,key,u.search]);
+    if(o.method==='PUT'){store[key]=Buffer.from(o.body); return new Response('',{status:200})}
+    if(o.method==='HEAD')return new Response(null,{status:200,headers:{'content-length':String(store[key].length)}});
+    if(o.method==='GET')return new Response(`<ListBucketResult>${[...old,...Object.keys(store)].map(k=>`<Contents><Key>${k}</Key></Contents>`).join('')}</ListBucketResult>`,{status:200});
+    if(o.method==='DELETE')return new Response(null,{status:204}); return new Response('',{status:400})};
+  const r=await offsiteBackup(s,{file,now,env,fetch:fake});
+  assert.ok(r.ok,JSON.stringify(r)); assert.equal(r.key,'tikchik/full-2026-11-11.sqlite.gz.enc');
+  assert.equal(calls[0][1],'tc-backups.t3.storageapi.dev','virtual-hosted: the bucket in the host');
+  assert.ok(openBackup(store[r.key],'a long pass phrase').equals(fs.readFileSync(file)),'the bucket holds the sealed database, opened by the passphrase only');
+  assert.ok(!store[r.key].includes(Buffer.from('SQLite format')),'never in the clear');
+  // kept: the last 30 days (10-20, today) and the first of each month for a year (01-01, 09-02); gone: 01-09 and 2025-08
+  assert.deepEqual(calls.filter(c=>c[0]==='DELETE').map(c=>c[2]).sort(),['tikchik/full-2025-08-01.sqlite.gz.enc','tikchik/full-2026-01-09.sqlite.gz.enc']);
+  assert.equal(r.removed,2); assert.equal(JSON.parse(s.getMeta('lastOffsite')).ok,true);
+  // without the passphrase nothing leaves; without the bucket's settings neither
+  calls.length=0; assert.equal((await offsiteBackup(s,{file,now,env:{...env,BACKUP_KEY:''},fetch:fake})).why,'no_key'); assert.equal((await offsiteBackup(s,{file,now,env:{},fetch:fake})).why,'not_set'); assert.equal(calls.length,0);
+  // a bucket that keeps a different size: not counted as a copy
+  const short=async(url,o)=>o.method==='HEAD'?new Response(null,{status:200,headers:{'content-length':'5'}}):fake(url,o);
+  const bad=await offsiteBackup(s,{file,now,env,fetch:short}); assert.equal(bad.ok,false); assert.match(bad.err,/not \d+/);
+  assert.ok(keepOf(['tikchik/full-2026-11-10.sqlite.gz.enc'],{now}).has('tikchik/full-2026-11-10.sqlite.gz.enc'));
+});
+
 test('1.11 a daily copy: what it holds of my documents, and a restore of the settings and the plans (or the portfolio) from it; an admin only their own',async()=>{
   const {backupNow,backupPeek,backupRestore}=await import('../server/backup.js'); const fs=await import('node:fs'); const os=await import('node:os'); const path=await import('node:path');
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'tcbk-')), s=new Store(':memory:');
