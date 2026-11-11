@@ -2728,6 +2728,33 @@ button.soon-e{cursor:pointer} button.soon-e:hover .sym{text-decoration:underline
 .news-syms{display:flex;flex-wrap:wrap;gap:4px} .news-syms .pill{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--vio-ink);font-weight:700}
 .news-syms .lg.xs{width:16px;height:16px;font-size:8px;border-radius:4px}
 .subtabs{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none} .subtabs::-webkit-scrollbar{display:none} .subtabs .chip{white-space:nowrap;flex:none}
+/* 11.11 (the owner): a screen opens with one card: its name, what it is and the value line (.pghead), and at its foot the
+   group's screens and the screen's parts (.pgrows, an element of its own so it stays at the top while scrolling; the two
+   read as one card). Before: the value, the screens and the parts were three boxes over the first card */
+.pane>.pghead{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;padding:16px 16px 8px;box-shadow:var(--shadow)}
+.pane>.pghead.solo{border-bottom:1px solid var(--line);border-radius:20px;padding-bottom:16px}
+html[data-theme="dark"] .pane>.pghead{box-shadow:0 0 0 1px rgb(139 92 246 / .14),var(--shadow)}
+.pane>.pghead+.pgrows{margin-top:-30px}
+.pane>.pgrows{position:sticky;top:0;z-index:8;display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 20px 20px;padding:6px 12px 10px;box-shadow:0 12px 18px -14px rgb(20 18 46 / .35)}
+.pane>.pgrows[hidden]{display:none}
+.pg-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px}
+.pg-tx{flex:1 1 180px;min-width:0}
+.pg-t{margin:0;font-size:22px;font-weight:800;line-height:1.2}
+.pg-s{margin:3px 0 0;font-size:14px;color:var(--muted);line-height:1.45;max-width:none}
+.pghead .kline,[data-pane="mine"] section>.row .kline{margin:0;background:var(--sunk);border-color:transparent}
+.pgrows>.subtabs{display:flex;gap:2px;padding:4px;margin:0;background:var(--sunk);border:0;border-radius:999px;align-self:stretch;max-width:none}
+.pgrows>.subtabs .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:40px;padding-inline:14px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
+.pgrows>.subtabs .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff;box-shadow:0 2px 8px rgb(124 58 237 / .25)}
+.pgrows>.ptnav,.pgrows>#riskNav{position:static;display:flex;flex-wrap:nowrap;gap:0;margin:0;padding:0;background:none;border:0;border-radius:0;box-shadow:none;overflow-x:auto;scrollbar-width:none}
+.pgrows>.ptnav::-webkit-scrollbar,.pgrows>#riskNav::-webkit-scrollbar{display:none}
+.pgrows>.ptnav .chip,.pgrows>#riskNav .chip{flex:1 0 auto;justify-content:center;border:0;border-radius:10px 10px 0 0;background:transparent;min-height:42px;padding-inline:8px;font-size:14px;font-weight:600;color:var(--ink2);white-space:nowrap;box-shadow:inset 0 -2px 0 var(--line)}
+.pgrows>.ptnav .chip[aria-pressed="true"],.pgrows>#riskNav .chip[aria-pressed="true"]{background:transparent;color:var(--vio-ink,var(--accent-ink));font-weight:800;box-shadow:inset 0 -3px 0 var(--accent)}
+.pgrows .chip:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+@media (max-width:640px){.pgrows>.ptnav .chip,.pgrows>#riskNav .chip{font-size:13.5px;padding-inline:7px} .pg-t{font-size:20px} .pane>.pghead{padding:14px 14px 6px}}
+[data-pane="search"] .pg-dup,[data-pane="search"]>.pgrows~section #srchView{display:none!important}
+[data-pane="search"].sec-open>.pghead,[data-pane="search"].sec-open>.pgrows{display:none}
+[data-pane="mix"]>.pghead~.mix-head{display:none}
+.pane section,.pane details,.pane [data-ptid],.pane [id]{scroll-margin-top:calc(var(--pgH,0px) + 10px)!important}
 #newsChips{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none} #newsChips::-webkit-scrollbar{display:none} #newsChips .chip{white-space:nowrap;flex:none}
 #newsChips .chip small{font-weight:500;color:inherit;opacity:.75;margin-inline-start:3px}
 /* the bottom bar: four tabs and the raised centre button */
@@ -3348,7 +3375,7 @@ body[data-page="overview"] #idxRow{display:none!important}
     <button type="button" role="tab" id="tab_calendar" data-tab="calendar" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="15" r="1.3"/><circle cx="15.5" cy="15" r="1.3"/></svg><span>לוח מסחר</span></button>
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
-  </nav><div class="sbx"><button type="button" id="navRefresh" title="מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>רענון מחירים</button><button type="button" id="btnUpd" title="עדכון התיק מצילום מסך או מקובץ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg>עדכון התיק</button><button type="button" id="btnTheme"><svg class="th-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="th-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span id="themeLbl">מצב לילה</span></button><button type="button" id="btnTape"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>פס המניות</button><div id="sbAcct"></div><button type="button" data-uxgo="news">מה חדש באתר<span class="sbdot" id="sbNewsDot" hidden></span></button><button type="button" data-uxgo="tour">סיור באתר</button></div></div>
+  </nav><div class="sbx"><button type="button" id="navRefresh" title="מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>רענון מחירים</button><button type="button" id="btnUpd" title="העלאת דוח, קובץ או צילום מסך: האחזקות והפעולות מתעדכנות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 20h16"/></svg>העלאת דוחות</button><button type="button" id="btnTheme"><svg class="th-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="th-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span id="themeLbl">מצב לילה</span></button><button type="button" id="btnTape"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>פס המניות</button><div id="sbAcct"></div><button type="button" data-uxgo="news">מה חדש באתר<span class="sbdot" id="sbNewsDot" hidden></span></button><button type="button" data-uxgo="tour">סיור באתר</button></div></div>
   <nav class="botbar" id="botbar" aria-label="ניווט מהיר">
     <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="bbl">בית</span></button>
     <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9"/></svg><span class="bbl">תיק</span></button>
@@ -20137,7 +20164,7 @@ const SECI={hPress:'M12 14l4-6M4 16a8 8 0 1 1 16 0M12 14a1 1 0 1 0 0 .01',hDesk:
   hDec:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v4l3 2',hFees:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',hTax:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3',hRep:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
   hPlan:'M9 6h11M9 12h11M9 18h11M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2',hGoal:'M5 21V4M5 4h11l-2 4 2 4H5',hGoalOv:'M5 21V4M5 4h11l-2 4 2 4H5',hFlows:'M4 7h13l-3-3M20 17H7l3 3',hFwd:'M4 16l5-5 4 4 7-8M15 7h5v5',hScen:'M4 12h5l3-6 3 12 3-6h2',hWhatIf:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17v.5',
   hDivGot:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.5 2.5 1.5-1 1.5-2.5 1.5-2.5.5-2.5 1.5 1 1.5 2.5 1.5 2.5-.5 2.5-1.5',hDiv:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.5 2.5 1.5-1 1.5-2.5 1.5-2.5.5-2.5 1.5 1 1.5 2.5 1.5 2.5-.5 2.5-1.5',hDivCalc:'M4 4h16v16H4zM8 8h8M8 12h8M8 16h5',
-  hFxCalc:'M12 2v20M17 6.5c-1-1.5-3-2-5-2-3 0-5 1.5-5 3.5s2 3 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5c-2.3 0-4.3-.8-5.3-2.3',hPots:'M5 12a7 5 0 0 1 14 0v4a7 5 0 0 1-14 0zM9 7l1-3h4l1 3',hSearch:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.5-3.5',hFit:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z',
+  hFxCalc:'M12 2v20M17 6.5c-1-1.5-3-2-5-2-3 0-5 1.5-5 3.5s2 3 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5c-2.3 0-4.3-.8-5.3-2.3',hPots:'M5 12a7 5 0 0 1 14 0v4a7 5 0 0 1-14 0zM9 7l1-3h4l1 3',hMine:'M3 7h18v13H3zM9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18',hSearch:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.5-3.5',hFit:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z',
   hWatch:'M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',hNewsT:'M3 4h18v16H3zM7 9h6M7 13h10M7 17h10',hCal:'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',hSet:'M4 7h9M17 7h3M4 17h3M11 17h9M15 7a2 2 0 1 0 0 .01M9 17a2 2 0 1 0 0 .01',hState:'M4 5h16v10H9l-5 4z',hCalendar:'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4'};
 function secIconH(id){const d=SECI[id]; return d?`<span class="sec-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>`:''}
 // 10.11 (the owner): פיזור is a screen of its own (reached from the row over the home's value); its sections leave בקרה
@@ -26758,15 +26785,41 @@ function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){co
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
   try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','news','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
 function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.querySelector('[data-pane="'+t+'"]');if(!pane)return;
-  if(g==='overview'){const r0=pane.querySelector(':scope>.subtabs'); if(r0)r0.remove(); return}   // 10.11: the home has its own row of views (#ovTabs)
-  let row=pane.querySelector(':scope>.subtabs');
-  if(list.length<2){if(row)row.remove();return}
+  if(g==='overview'){const r0=pane.querySelector(':scope>.subtabs'); if(r0)r0.remove(); pageHead(t); return}   // 10.11: the home has its own row of views (#ovTabs)
+  let row=pane.querySelector(':scope>.subtabs,:scope>.pgrows>.subtabs');
+  if(list.length<2){if(row)row.remove(); pageHead(t); return}
   if(!row){row=document.createElement('div');row.className='chips subtabs';row.setAttribute('role','tablist');row.setAttribute('aria-label','חלקי '+(HEADL[g]||g));pane.prepend(row)}
+  pageHead(t);
   const chip=(x,l,pot)=>{const on=x===t&&(pot==null||potSel()===pot); return `<button type="button" class="chip${pot==='new'?' potnew':''}" role="tab" data-tab="${x}"${pot!=null?` data-pot="${esc(pot)}"`:''} aria-selected="${on}" aria-pressed="${on}">${l}</button>`};
   // 11.11 (the owner): the savings goals are one tab here ("חסכונות לפי מטרה", opening on "החסכונות שלי"); a goal of its
   // own is a tab inside that page (#potTabs)
   const want=list.map(x=>x==='pots'?`<button type="button" class="chip" role="tab" data-tab="pots" data-pot="all" aria-selected="${t==='pots'}" aria-pressed="${t==='pots'}">${SUBL.pots}</button>`:chip(x,SUBL[x]||x)).join('');
   setH(row,want); chipIntoView(row)}
+// 11.11 (the owner: "everything in the rectangle that opens the page, no more squares at the top"): a screen opens with one
+// card. Its top (.pghead) says the group's name and what it is, with the portfolio's value line on the screens that rest on
+// it; its foot (.pgrows) holds the group's screens (a segmented row) and the screen's parts (tabs). Before, the value, the
+// screens and the parts were three boxes over the first card. The foot is an element of its own so it still stays at the
+// top while scrolling (9.11); the two read as one card. The holdings' card takes the value line into its own heading
+const PGH={search:['מחקר','חיפוש ניירות, דירוג, מעקב והשוואה','hSearch'],plan:['תוכנית ויעד','מה לעשות בהפקדה הבאה, לאן התיק מגיע, והחסכונות לפי מטרה','hPlan'],
+  risk:['בקרה וסיכון','האם התיק עומד בכללים שלך, ומה קורה בו עכשיו','hCtl'],history:['מבט לאחור','איך התיק התקדם לאורך זמן, הדוחות ויומן ההשקעות','hHist'],
+  settings:['הגדרות','הפרופיל, הפרטיות, החדשות, החשבונות והכללים','hSet'],overview:['פיזור','איך התיק מחולק: קבוצות, יעדים, חשיפות ורווח לפי נייר','hMix']};
+const PGI={hPlan:'M9 6h11M9 12h11M9 18h11M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2',hCtl:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM12 8v5M12 16v.5',hHist:'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2',hMix:'M12 3a9 9 0 1 0 9 9h-9zM12 3v9h9'};
+const KLINE_P=['risk','state','plan','forecast','pots'];   // the screens whose base is the portfolio's value (the holdings: in their card)
+function pageHead(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane||t==='overview')return;
+  if(t==='mine'){const k=$('kLine'), row=pane.querySelector(':scope>section>.row'); if(k&&row&&k.parentElement!==row)row.appendChild(k); return}
+  const P=PGH[navGroup(t)]; if(!P)return;
+  const sub=pane.querySelector(':scope>.subtabs,:scope>.pgrows>.subtabs'), pt=pane.querySelector(':scope>.ptnav,:scope>.pgrows>.ptnav'), rn=t==='risk'?$('riskNav'):null;
+  let h=pane.querySelector(':scope>.pghead'), r=pane.querySelector(':scope>.pgrows');
+  if(!h&&!sub&&!pt&&!rn&&!KLINE_P.includes(t)&&t!=='mix')return;
+  if(!h){const d=SECI[P[2]]||PGI[P[2]]||''; h=document.createElement('div'); h.className='pghead';
+    h.innerHTML=`<div class="pg-top"><span class="sec-ic pg-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span><div class="pg-tx"><h2 class="pg-t">${P[0]}</h2><p class="pg-s">${P[1]}</p></div></div>`; pane.prepend(h)}
+  if(!r){r=document.createElement('div'); r.className='pgrows'; h.after(r)}
+  if(KLINE_P.includes(t)){const k=$('kLine'), top=h.querySelector('.pg-top'); if(k&&top&&k.parentElement!==top)top.appendChild(k)}
+  for(const x of [sub,pt,rn])if(x&&x.parentElement!==r)r.appendChild(x);
+  if(sub&&r.firstElementChild!==sub)r.prepend(sub);
+  const has=!!(sub||pt||rn); r.hidden=!has; h.classList.toggle('solo',!has); pgH(pane);
+  // the research card's own name ("מחקר") and its row of two views are said by the opening card now
+  if(t==='search'){const hs=$('hSearch'), sh=hs&&hs.closest('.sec-h,.row'); if(sh)sh.classList.add('pg-dup')}}
 // 11.11: a row of tabs wider than the screen scrolls its chosen tab into sight (it was cut at the edge: "חסכונות לפי מטר")
 function chipIntoView(row){try{if(!row||row.scrollWidth<=row.clientWidth+2)return; const on=row.querySelector('[aria-pressed="true"],[aria-selected="true"]'); if(!on)return;
   const r=on.getBoundingClientRect(), rr=row.getBoundingClientRect(); if(r.left>=rr.left+4&&r.right<=rr.right-4)return; row.scrollLeft+=(r.left+r.width/2)-(rr.left+rr.width/2)}catch(e){}}
@@ -26789,7 +26842,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   // a part whose every section is hidden by its own logic (the system's health for a viewer) is not offered
   const live=Object.keys(P).filter(x=>ptSecs(t).some(sec=>ptOf(t,sec)===x&&!sec.hidden&&!(sec.dataset.ptid&&!sec.children.length))); if(!live.length)return; if(!live.includes(k))k=live.includes(PTV[t])?PTV[t]:live[0];
   PTV[t]=k; try{localStorage.setItem('tr_ptv',JSON.stringify(PTV))}catch(e){}
-  let nav=pane.querySelector(':scope>.ptnav'); if(!nav){nav=document.createElement('div'); nav.className='ptnav'; nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של המסך'); const sub=pane.querySelector(':scope>.subtabs'); sub?sub.after(nav):pane.prepend(nav)}
+  let nav=pane.querySelector(':scope>.ptnav,:scope>.pgrows>.ptnav'); if(!nav){nav=document.createElement('div'); nav.className='ptnav'; nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של המסך'); const sub=pane.querySelector(':scope>.subtabs,:scope>.pgrows>.subtabs'); sub?sub.after(nav):pane.prepend(nav); try{pageHead(t)}catch(e){}}
   nav.innerHTML=live.map(x=>`<button type="button" class="chip" role="tab" data-pt="${t}:${x}" aria-pressed="${x===k}" aria-selected="${x===k}">${P[x][0]}</button>`).join('');
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}   // every part at once (the page's own tests of each screen)
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
@@ -26811,21 +26864,26 @@ function navFlush(){const q=NAVQ; NAVQ=null; if(!q||!NAV_ON)return; try{const cu
   if((cur.tab||'overview')===st.tab&&(cur.sec||null)===st.sec)return;   // the same screen (opened again, a render)
   history.replaceState({...cur,y:q.y0},'',location.href);   // where the screen being left was scrolled
   st.prev={tab:cur.tab||'overview',sec:cur.sec||null}; if(!st.sec)delete st.sec;
-  history.pushState(st,'',navUrl(st))}catch(e){}}
+  history.pushState(st,'',navUrl(st)); navTitle()}catch(e){}}
+// 11.11: the browser tab says the screen ("התראות · תיק צ׳יק", a security by its symbol), so the history's entries have names
+const NAV_T0=document.title||'תיק צ׳יק';
+function navTitle(){try{const t=document.body.dataset.page||'overview'; let l=''; if(t==='search'&&SEC){let it=null; try{it=itemOf(SEC)}catch(e){} l=(it&&(it.sym||it.name))||SEC} else if(t!=='overview')l=SUBL[t]||HEADL[t]||(((document.getElementById('tab_'+t)||{}).textContent)||'').trim(); document.title=l?l+' · תיק צ׳יק':NAV_T0}catch(e){}}
 function navHashTab(){const t=(location.hash||'').slice(1); return TABS.includes(t)?t:''}
 window.addEventListener('popstate',e=>{const st=e.state||{}, t=st.sec?'search':(st.tab||navHashTab()||'overview'); NAVQ=null;
   try{setNav(false)}catch(x){}
   NAV_ON=false;
   try{if(st.sec){if(document.body.dataset.page!=='search')showTab('search'); if(st.sec!==SEC)openSec(st.sec,{fromHistory:true}); else try{srchRender()}catch(x){}}
     else{if(SEC){SEC=null; try{srchRender()}catch(x){}} if(document.body.dataset.page!==t)showTab(t)}}catch(x){console.error(x)}
-  finally{NAV_ON=true}
+  finally{NAV_ON=true} navTitle();
   const y=+st.y||0; requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(x){}}); if(y)setTimeout(()=>{try{if(Math.abs(window.scrollY-y)>40)window.scrollTo(0,y)}catch(x){}},400)});
 // the security page's way out to the research landing (the research tab's own tap, the page's "back" when it has one): back
 // through the history when the landing is the entry under it, else a new entry for the landing
 function closeSec(){const y0=window.scrollY, st=(()=>{try{return history.state||{}}catch(e){return {}}})();
   if(st.sec&&st.sec===SEC&&st.prev&&st.prev.tab==='search'&&!st.prev.sec){try{history.back(); return}catch(e){}}
   SEC=null; srchRender(); navWant({tab:'search',sec:null},y0); try{window.scrollTo({top:0})}catch(e){}}
-function stickH(){const p=document.querySelector('[data-pane]:not([hidden])'); if(!p)return; const r=p.querySelector(':scope>.subtabs'); p.style.setProperty('--subH',(r?r.offsetHeight:0)+'px')}
+function stickH(){const p=document.querySelector('[data-pane]:not([hidden])'); if(!p)return; const r=p.querySelector(':scope>.subtabs'); p.style.setProperty('--subH',(r?r.offsetHeight:0)+'px'); pgH(p)}
+// 11.11: a place scrolled to (a link, a part) lands under the opening card's foot that stays at the top, not behind it
+function pgH(p){try{const r=p&&p.querySelector(':scope>.pgrows'); if(p)p.style.setProperty('--pgH',(r&&!r.hidden?r.offsetHeight:0)+'px')}catch(e){}}
 addEventListener('resize',()=>{try{stickH()}catch(e){}},{passive:true});
 {let qaRaf=0; addEventListener('scroll',()=>{if(qaRaf)return; qaRaf=requestAnimationFrame(()=>{qaRaf=0; const q=document.getElementById('quickActs'); if(!q||q.offsetParent===null)return;
   let m=document.getElementById('qaMark'); if(!m){m=document.createElement('div'); m.id='qaMark'; m.setAttribute('aria-hidden','true'); q.before(m)}
@@ -29419,6 +29477,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-11.7',at:'2026-11-11',t:'כל דף נפתח בכרטיס אחד',d:'במקום כמה ריבועים בראש הדף: כרטיס פתיחה אחד עם שם הדף ומה יש בו, שווי התיק בדפים שנשענים עליו, הלשוניות של הקבוצה, ושורת החלקים של הדף. השורות התחתונות נשארות למעלה כשגוללים.'},
   {v:'2026-11-11.6',at:'2026-11-11',t:'כל מה שקשור להתראות, בדף "התראות"',d:'בנוסף להתראות עצמן: החריגות מהכללים שלך עם "בדקתי", התראות המחיר שקבעת, מה מחכה בשבועיים הקרובים (דוחות, דיבידנדים, יום ההפקדה וחגים), ובסוף הדף ההגדרות: טלפון, מיילים, צלילים ומה מופיע.',go:'alrules'},
   {v:'2026-11-11.5',at:'2026-11-11',t:'חסכונות לפי מטרה: "החסכונות שלי"',d:'לשונית חדשה עם כל החסכונות במסך אחד: כמה יש בכל אחד, כמה מהיעד, ועד מתי. בכל חיסכון בוחרים אם הוא בקרן או במניה, ו"עד מתי" הוא תאריך מדויק ולא רק חודש ושנה.',go:'pots'},
   {v:'2026-11-11.4',at:'2026-11-11',t:'הכפתור "חזרה" של הדפדפן עובד',d:'בספארי, בכרום ובכפתור החזרה של הטלפון: חוזרים לדף הקודם באתר, ולאותו מקום בדף. הכתובת אומרת באיזה דף אתם, ורענון נשאר באותו דף.'},
@@ -29532,7 +29591,7 @@ try{newsDot();sideMore()}catch(e){}
 // 11.11: the first screen is the history's current entry, and its address says which (a reload keeps it); from here on
 // every screen opened is an entry (navWant)
 try{const p=document.body.dataset.page||'overview'; history.replaceState({tab:p},'',navUrl({tab:p}))}catch(e){}
-NAV_ON=true;
+NAV_ON=true; navTitle();
 try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('settings');$('wipeState').textContent=wipeMsg(w==='ok');try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}}catch(e){}
 try{i18nBoot()}catch(e){}
 try{termsBoot()}catch(e){}

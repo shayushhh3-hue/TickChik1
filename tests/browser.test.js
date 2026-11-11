@@ -3255,7 +3255,7 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   assert.equal(v.back,false,'no back button'); assert.ok(v.mark.svg&&v.mark.w>=40,'a bookmark icon'); assert.ok(v.mark.leftish,'at the left of the page'); assert.equal(v.state,'MSFT','a history entry'); assert.equal(v.hash,'#search');
   // 9.11: the security page is the whole screen: the research heading, the parts row and the search box are not shown over it
   const vis=id=>pg.evaluate(id=>{const el=document.getElementById(id)||document.querySelector(id); return !!el&&!!el.offsetParent},id);
-  assert.equal(await vis('hSearch'),false,'no heading over the page'); assert.equal(await vis('srchBox'),false,'no search box over the page'); assert.equal(await vis('[data-pane="search"]>.subtabs'),false,'no parts row over the page');
+  assert.equal(await vis('hSearch'),false,'no heading over the page'); assert.equal(await vis('srchBox'),false,'no search box over the page'); assert.equal(await vis('[data-pane="search"]>.pgrows'),false,'no parts row over the page'); assert.equal(await vis('[data-pane="search"]>.pghead'),false,'11.11: nor the opening card');
   assert.equal(await vis('[data-pane="search"] .seccard>.sec-h'),false,'not the heading row with its icon either'); assert.equal(await vis('.hero .top .acts'),false,'nor the accounts row and the header buttons on a phone');
   assert.ok(await pg.evaluate(()=>document.querySelector('#secPage .top').getBoundingClientRect().top<150),'the security starts right under the brand line');
   const was=v.mark.on;
@@ -3266,12 +3266,12 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   await pg.goBack(); await pg.waitForTimeout(600);
   const after=await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,res:!document.getElementById('sqRes').hidden,page:document.body.dataset.page}));
   assert.deepEqual(after,{sec:true,res:true,page:'search'});
-  assert.equal(await vis('hSearch'),true,'the heading is back on the landing'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.subtabs'),true); assert.equal(await vis('.hero .top .acts'),false,'9.11: the header buttons and the accounts are on the home only');
+  assert.equal(await vis('[data-pane="search"]>.pghead .pg-t'),true,'the heading is back on the landing (11.11: in the opening card)'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.pgrows>.subtabs'),true); assert.equal(await vis('.hero .top .acts'),false,'9.11: the header buttons and the accounts are on the home only');
   // a tap on the research tab below, from an open security, also returns to the landing (through the history, so back does not reopen it)
   await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1200); assert.equal(await vis('hSearch'),false);
   await pg.click('#botbar [data-bb="search"]'); await pg.waitForTimeout(800);
   assert.deepEqual(await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,hist:history.state&&history.state.sec||null})),{sec:true,hist:null},'the tab tap closed the page and its history entry');
-  assert.equal(await vis('hSearch'),true);
+  assert.equal(await vis('[data-pane="search"]>.pghead .pg-t'),true);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 test('9.11 a fund without a logo of its own carries its issuer: a listed issuer\'s logo, else a monogram in the house\'s colour; a page with no report pulls it by itself',T,async t=>{
@@ -3361,8 +3361,8 @@ test('9.11 the tabs at the top of a screen follow the scroll (home: a thin row);
     const h=await pg.evaluate(()=>{const q=document.getElementById('quickActs').getBoundingClientRect(); return {top:q.top,h:q.height,stuck:document.getElementById('quickActs').classList.contains('stuck')}});
     assert.ok(h.h===0,'9.11: on the phone\'s home the four actions are gone (the bar below leads to the screens): '+JSON.stringify(h));
     await tab(pg,'history'); await pg.waitForTimeout(600); await pg.evaluate(()=>window.scrollTo(0,2200)); await pg.waitForTimeout(400);
-    const r=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="history"]'), s=p.querySelector(':scope>.subtabs').getBoundingClientRect(), n=p.querySelector(':scope>.ptnav').getBoundingClientRect(); return {s:s.top,sb:s.bottom,n:n.top,y:scrollY}});
-    assert.ok(r.y>1000&&Math.abs(r.s)<2,'the screens row at the top: '+JSON.stringify(r)); assert.ok(r.n>=r.sb-1&&r.n<r.sb+12,'the parts row right under it: '+JSON.stringify(r));
+    const r=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="history"]'), g=p.querySelector(':scope>.pgrows').getBoundingClientRect(), s=p.querySelector(':scope>.pgrows>.subtabs').getBoundingClientRect(), n=p.querySelector(':scope>.pgrows>.ptnav').getBoundingClientRect(); return {g:g.top,s:s.top,sb:s.bottom,n:n.top,y:scrollY}});
+    assert.ok(r.y>1000&&Math.abs(r.g)<2&&r.s>=0&&r.s<12,'the screens row at the top (11.11: the opening card\'s foot stays): '+JSON.stringify(r)); assert.ok(r.n>=r.sb-1&&r.n<r.sb+12,'the parts row right under it: '+JSON.stringify(r));
     await pg.reload(); await pg.waitForFunction(()=>document.body.dataset.page==='history',null,{timeout:30000});
     const p2=await ctx.newPage(); await p2.goto(U); await p2.waitForFunction(()=>!!document.body.dataset.page,null,{timeout:30000});
     assert.equal(await p2.evaluate(()=>document.body.dataset.page),'overview','another open: home again');
@@ -3403,8 +3403,8 @@ test('9.11 the control said short: a finding is its subject as a title and one s
     const d=await pg.evaluate(()=>({empty:[...document.querySelectorAll('#desk [data-anav]')].filter(x=>!x.dataset.anav).length,all:document.querySelectorAll('#desk [data-anav]').length,tod:!!document.querySelector('#desk .dk-h .dk-tod'),x:!!document.querySelector('#desk .dk-h .ni-err')}));
     assert.ok(d.all>0&&d.empty===0&&d.tod&&!d.x,JSON.stringify(d));
     await pg.evaluate(()=>window.scrollTo(0,1800)); await pg.waitForTimeout(400);
-    const s=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="risk"]'), a=p.querySelector(':scope>.subtabs').getBoundingClientRect(), b=document.getElementById('riskNav').getBoundingClientRect(); return {a:a.bottom,b:b.top,at:a.top}});
-    assert.ok(Math.abs(s.at)<2&&s.b>=s.a-1,'the parts row under the screens row, not over it: '+JSON.stringify(s));
+    const s=await pg.evaluate(()=>{const p=document.querySelector('[data-pane="risk"]'), g=p.querySelector(':scope>.pgrows').getBoundingClientRect(), a=p.querySelector(':scope>.pgrows>.subtabs').getBoundingClientRect(), b=document.getElementById('riskNav').getBoundingClientRect(); return {a:a.bottom,b:b.top,at:a.top,g:g.top}});
+    assert.ok(Math.abs(s.g)<2&&s.at<12&&s.b>=s.a-1,'the parts row under the screens row, not over it: '+JSON.stringify(s));
     const P0=store.getDoc('alerts/pulse'); const sym=store.getDoc('portfolio/main').data.positions[0].sym;
     store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k:'ev:zz-ctl',kind:'news',lv:'crit',title:'ידיעת בדיקה לבקרה',at:new Date().toISOString(),holds:[{sym,link:'direct',w:10,dir:'neg'}],dir:'neg',relWhy:'x'}]});
     try{await pg.reload(); await pg.waitForFunction(()=>!!document.querySelector('#desk [data-anav="pl:ev:zz-ctl"]'),null,{timeout:30000});
