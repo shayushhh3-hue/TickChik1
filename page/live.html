@@ -20,9 +20,9 @@
   --blue:#7C3AED; --blue-ink:#6D28D9; --blue-soft:#F1EBFF; --blue-deep:#6D28D9;
   --navy:#15123A; --navy2:#2A2660; --navy3:#4B4690; --navy-t:#15123A;
   --gold:#7C3AED; --gold-ink:#FFFFFF; --gold-soft:#F1EBFF; --pink:#F1EBFF; --tile:#F1EBFF; --tile-ink:#6D28D9;
-  --bg:#F6F5FC; --surface:#FFFFFF; --sunk:#F2F0FA; --ink:#14122E; --ink2:#44425F; --muted:#6E6C8A;
+  --bg:#F6F5FC; --surface:#FFFFFF; --sunk:#F2F0FA; --ink:#14122E; --ink2:#44425F; --muted:#6A6886;
   --line:#E7E5F3; --accent:#7C3AED; --accent-ink:#6D28D9; --accent-soft:#F1EBFF; --on-accent:#FFFFFF; --focus:#7C3AED;
-  --gain:#15803D; --loss:#DC2626;
+  --gain:#13773A; --loss:#C81E1E;   /* 12.11: a shade deeper, 4.5:1 also on the tinted tiles (the green was 4.3–4.45 there, the red 4.3) */
   --ok-c:#16A34A; --ok-bg:#E7F8EE; --ok-ink:#166534;
   --warn-c:#F59E0B; --warn-bg:#FFF4DB; --warn:#7A4A00;
   --crit-c:#DC2626; --crit-bg:#FDEAEA; --crit-ink:#991B1B;
@@ -189,7 +189,7 @@ body:not([data-page="overview"]) .hero .top .acts{display:none!important}
 .potcard .pc-v{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap} .potcard .pc-v b{font-size:20px} .potcard .pc-v .nm{font-size:13px;color:var(--muted)}
 .potcard .potprog{display:block}
 .potcard .pc-f{font-size:13px;color:var(--ink2);line-height:1.5}
-.potcard .pc-go{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--accent);line-height:1}
+.potcard .pc-go{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--vio-ink,var(--accent));line-height:1}
 @media (prefers-reduced-motion:reduce){.potcard{transition:none}}
 #potBox .form input,#potBox .form select{font:inherit;font-size:16px;min-height:44px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);width:100%;box-sizing:border-box}
 #potBox .form label{display:flex;flex-direction:column;gap:5px;font-size:13.5px;font-weight:600;color:var(--ink2)}
@@ -336,7 +336,7 @@ tr.sec td{background:var(--sunk);color:var(--ink2);font-size:12px;font-weight:70
 .ag>summary::after{content:"";flex:none;width:7px;height:7px;border:solid var(--tx);border-width:0 2px 2px 0;transform:rotate(45deg);margin-inline-start:4px;transition:transform .15s ease}
 .ag[open]>summary::after{transform:rotate(-135deg)}
 .agt{font-weight:700;font-size:13.5px;white-space:nowrap}
-.agn{flex:none;min-width:22px;text-align:center;font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--tx);color:#fff}
+.agn{flex:none;min-width:22px;text-align:center;font-size:12px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--tx,var(--accent));color:#fff}   /* 12.11: --tx is an alert's own; elsewhere (the inbox's "לא נקראו", "במעקב שלי") the badge was white on white */
 .agp{flex:1;min-width:0;font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .agl{list-style:none;margin:0;padding:0}
 .agl li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--ink)}
@@ -951,7 +951,7 @@ td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .secl{cursor:pointer} tr.secl:hover td,.mrow.secl:hover{background:var(--sunk)} .secl:hover .sym{text-decoration:underline;text-underline-offset:3px}
 .golink{font-size:12px;color:var(--navy-t);background:var(--sunk);border-radius:6px;padding:1px 6px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
 .mine3{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:4px}
-.mtile{background:var(--sunk);border-radius:10px;padding:10px 12px;min-width:0} .mtile .k{font-size:12px;color:var(--muted);line-height:1.3} .mtile .v{font-family:var(--mono);font-size:18px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .mtile .v.up{color:var(--gain)} .mtile .v.down{color:var(--loss)} .mtile .s{font-size:12px;color:var(--ink2);margin-top:3px;line-height:1.4}
+.mtile{background:var(--sunk);border-radius:10px;padding:10px 12px;min-width:0} .mtile .k{font-size:12px;color:var(--ink2);line-height:1.3} .mtile .v{font-family:var(--mono);font-size:18px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .mtile .v.up{color:var(--gain)} .mtile .v.down{color:var(--loss)} .mtile .s{font-size:12px;color:var(--ink2);margin-top:3px;line-height:1.4}
 .rules{display:flex;flex-direction:column;gap:8px;margin-top:10px} .rule{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)} .rule .rs{flex:none;margin-top:1px} .rule p{margin:0;font-size:13px;line-height:1.5;color:var(--ink2)} .rule p b{color:var(--ink);font-weight:600}
 /* ---- the portfolio assistant: one panel on the desk, answers stack newest first ---- */
 .ana{display:flex;flex-direction:column;gap:12px}
@@ -2681,7 +2681,7 @@ section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]):not([data-mvp="type"]
 .addman-t .am-i svg{width:18px;height:18px}
 .addman-t .am-x{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;min-width:0}
 .addman-t .am-x b{font-size:15px;font-weight:700}
-.addman-t .am-x span{font-size:13px;color:var(--muted);line-height:1.4}
+.addman-t .am-x span{font-size:13px;color:var(--ink2);line-height:1.4}
 .addman-t .am-c{flex:none;color:var(--ink2);transition:transform .2s}
 .addman-t .am-c svg{width:20px;height:20px;display:block}
 .addman-t[aria-expanded="true"]{border-style:solid;background:rgb(124 58 237 / .08)}
@@ -2741,7 +2741,7 @@ html[data-theme="dark"] .pane>.pghead{box-shadow:0 0 0 1px rgb(139 92 246 / .14)
 .pg-tx{flex:1 1 180px;min-width:0}
 .pg-t{margin:0;font-size:22px;font-weight:800;line-height:1.2}
 .pg-s{margin:3px 0 0;font-size:14px;color:var(--muted);line-height:1.45;max-width:none}
-.pghead .kline,[data-pane="mine"] section>.row .kline{margin:0;background:var(--sunk);border-color:transparent}
+.pghead .kline,[data-pane="mine"] section>.row .kline{margin:0;background:var(--surface);border-color:var(--line)}
 .pgrows>.subtabs{display:flex;gap:2px;padding:4px;margin:0;background:var(--sunk);border:0;border-radius:999px;align-self:stretch;max-width:none}
 .pgrows>.subtabs .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:40px;padding-inline:14px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap}
 .pgrows>.subtabs .chip[aria-pressed="true"]{background:var(--grad,var(--accent));color:#fff;box-shadow:0 2px 8px rgb(124 58 237 / .25)}
@@ -2864,7 +2864,7 @@ html[data-theme="dark"] .hero .tapewrap{background:var(--surface);border:1px sol
 /* boxes that had a fixed light border or background */
 html[data-theme="dark"] .repbox,html[data-theme="dark"] .brief,html[data-theme="dark"] .ob,html[data-theme="dark"] .depban{border-color:var(--line);border-inline-start-color:var(--accent)}
 html[data-theme="dark"] .rhero,html[data-theme="dark"] .callout{border-color:var(--line)}
-html[data-theme="dark"] .alert .tag{background:var(--surface)} html[data-theme="dark"] .agn{color:#1D1321} html[data-theme="dark"] .btn.danger:hover:not(:disabled){background:var(--crit-bg)}
+html[data-theme="dark"] .alert .tag{background:var(--surface)} html[data-theme="dark"] .agn{color:#1D1321;background:var(--tx,#C4B5FD)} html[data-theme="dark"] .btn.danger:hover:not(:disabled){background:var(--crit-bg)}
 html[data-theme="dark"] .cbar i.k3{background:#5A4A60}
 html[data-theme="dark"] .cat .ci.week{--ic:#8CC3E3;--ib:#17293A} html[data-theme="dark"] .cat .ci.month{--ic:#86D3AE;--ib:#132A21} html[data-theme="dark"] .cat .ci.quarter{--ic:#E7B880;--ib:#33251A}
 html[data-theme="dark"] .cat .ci.half{--ic:#C3AEEA;--ib:#241D36} html[data-theme="dark"] .cat .ci.year{--ic:#A9C0D9;--ib:#1B2430} html[data-theme="dark"] .cat .ci.months{--ic:#E8C46F;--ib:#2E2512}
