@@ -3037,6 +3037,22 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .al-sec .ktoday .tdl{min-height:48px;font-size:14.5px;gap:10px} .al-sec .ktoday .tdl-b{font-size:14.5px}
 .al-sec .ix-alist{display:flex;flex-direction:column;gap:10px}
 .al-empty,.al-more{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+/* 11.11 (the owner): התראות holds what is about alerts from all over the site: the rules' findings, the price alerts, the
+   coming two weeks, and the alerts' settings in a fold at the foot */
+.al-sec .al-in-h{margin-bottom:8px}
+.al-sec .dk-top{margin:0}
+#alSoon.soon-s{padding-bottom:4px}
+.al-set{padding:0}
+.al-set>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:12px 16px;cursor:pointer;border-radius:18px}
+.al-set>summary::-webkit-details-marker{display:none}
+.al-set>summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.al-set-t{display:flex;flex-direction:column;gap:2px} .al-set-t b{font-size:17px;font-weight:800} .al-set-t small{font-size:13px;color:var(--muted)}
+.al-set-c{width:22px;height:22px;flex:none;color:var(--ink2);transition:transform .2s}
+.al-set[open] .al-set-c{transform:rotate(180deg)}
+.al-set>section{padding:0 16px 16px}
+.al-set>section>.row h3{margin:0;font-size:15px}
+@media (prefers-reduced-motion:reduce){.al-set-c{transition:none}}
+#alPxSec .pxl{display:flex;flex-direction:column;gap:8px}
 /* 11.11 (the owner: every alert in התראות, and not as stories): the inbox. A row: the company's mark (square, no halo),
    the title (two lines at most), the level in words and what it touches, when, and a dot while unread; 60px at least */
 .al-in-h{display:flex;align-items:center;justify-content:space-between;gap:10px} .al-in-h h3{margin:0}
@@ -3813,7 +3829,41 @@ body[data-page="overview"] #idxRow{display:none!important}
         <div class="chips al-in-f" role="group" aria-label="סינון ההתראות"><button type="button" class="chip" data-alf="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-alf="unread" aria-pressed="false">לא נקראו<span class="agn" id="alUnN" hidden></span></button><button type="button" class="chip" data-alf="crit" aria-pressed="false">קריטיות</button><button type="button" class="chip" data-alf="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-alf="saved" aria-pressed="false">שמורות</button></div>
         <div id="alInbox"></div></section>
       <section class="al-sec" aria-labelledby="hAlDay"><h3 id="hAlDay">היום</h3><div class="ktoday al-today" id="alToday"></div><p class="al-empty" id="alTodayE" hidden>אין עדכון מיוחד היום.</p></section>
+      <!-- 11.11 (the owner): everything about alerts in one place: the rules' findings (from בקרה), the price alerts (from the
+           settings), the coming two weeks (from the home and the calendar), and the alerts' settings at the foot -->
+      <section class="al-sec" aria-labelledby="hAlRules" id="alRulesSec"><div class="al-in-h"><h3 id="hAlRules">חריגות מהכללים שלך</h3><button type="button" class="lnk" data-tab="risk">לבקרה המלאה ›</button></div><div id="alRules"></div></section>
+      <section class="al-sec" aria-labelledby="hAlPx" id="alPxSec"><div class="al-in-h"><h3 id="hAlPx">התראות המחיר שלי</h3></div><div id="pxAlList"></div></section>
+      <section class="al-sec" aria-labelledby="hAlSoon" id="alSoonSec"><div class="al-in-h"><h3 id="hAlSoon">בשבועיים הקרובים</h3><button type="button" class="lnk" data-tab="calendar">ללוח המלא ›</button></div><div class="soon-s" id="alSoon"></div></section>
      <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
+      <details class="al-sec al-set" id="alSetD"><summary class="al-set-s"><span class="al-set-t"><b>איך ההתראות מגיעות אליך</b><small>טלפון, מייל, צלילים, מתי לשלוח ומה מופיע</small></span><svg class="al-set-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <section aria-labelledby="hNotif" id="notifSec">
+          <div class="row"><h3 id="hNotif">ההתראות והצלילים שלי</h3><span class="sub" id="notifSub"></span></div>
+          <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+            <p class="note" style="margin:0;max-width:none">קטגוריה כבויה לא תופיע בשום מקום.</p>
+            <div class="ntgrid" id="notifList"></div>
+            <h3 style="margin:8px 0 0">צלילים</h3>
+            <div class="sndrow"><label class="check" for="sndMsg"><input type="checkbox" id="sndMsg">צליל כשצ׳יקו עונה</label><button type="button" class="btn sm" data-sndtry="msg">לנסות</button></div>
+            <div class="sndrow"><label class="check" for="sndSys"><input type="checkbox" id="sndSys">צליל להתראת מערכת: חריגה חדשה, מחירים שהתעדכנו, תזכורת הפקדה</label><button type="button" class="btn sm" data-sndtry="sys">לנסות</button></div>
+            <p class="note" style="margin:0;max-width:none">צלילים קצרים ושקטים, רק כשהדף פתוח. הדפדפן משמיע אותם אחרי שנגעת בדף.</p>
+            <h3 style="margin:8px 0 0">התראות לטלפון</h3>
+            <div class="pushbox" id="pushBox"><p class="note" id="pushState" role="status" style="margin:0;max-width:none">בודק…</p>
+              <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri sm" id="pushOn" hidden>להפעיל במכשיר הזה</button><button type="button" class="btn sm" id="pushTest" hidden>לשלוח בדיקה</button><button type="button" class="btn sm" id="pushOff" hidden>לכבות במכשיר הזה</button></div></div>
+            <div class="liveal" id="liveAl"><b>התראות בזמן אמת: מתי לשלוח (למייל ולטלפון)</b>
+                <label for="laMove">מניה בתיק זזה ביום יותר מ-(%)<input type="number" id="laMove" min="1" max="50" step="0.5" placeholder="5"></label>
+                <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
+                <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
+                <label class="check"><input type="checkbox" id="laNews" checked><span>התראות אישיות מ"חיבור למציאות" (קריטיות, וגם חשובות אם בחרת)</span></label>
+                <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת. עד הודעה אחת ב-20 דקות. שעות שקטות ורמות ב<button type="button" class="lnk" data-anav="set:nwSetSec">חדשות והתראות</button>.</p></div>
+            <div class="mailbox" id="mailBox" hidden>
+              <h3 style="margin:8px 0 0">מיילים</h3>
+              <p class="note" style="margin:0;max-width:none">כל סוג כבוי עד שתפעיל אותו. הדוחות נשמרים בדף גם בלי מייל.</p>
+              <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
+              <div id="mailList"></div>
+
+            </div>
+          </div>
+        </section>
+      </details>
     </section>
   </div>
   <!-- 10.11 (the owner): פיזור, a screen of its own reached from the row over the home's value; its sections (the groups,
@@ -4135,34 +4185,10 @@ body[data-page="overview"] #idxRow{display:none!important}
       </div>
     </section>
 
-    <section aria-labelledby="hNotif" id="notifSec">
-      <div class="row"><h2 id="hNotif">ההתראות והצלילים שלי</h2><span class="sub" id="notifSub"></span></div>
-      <div class="panel" style="display:flex;flex-direction:column;gap:12px">
-        <p class="note" style="margin:0;max-width:none">קטגוריה כבויה לא תופיע בשום מקום.</p>
-        <div class="ntgrid" id="notifList"></div>
-        <h3 style="margin:8px 0 0">התראות המחיר שלי</h3>
-        <div id="pxAlList"></div>
-        <h3 style="margin:8px 0 0">צלילים</h3>
-        <div class="sndrow"><label class="check" for="sndMsg"><input type="checkbox" id="sndMsg">צליל כשצ׳יקו עונה</label><button type="button" class="btn sm" data-sndtry="msg">לנסות</button></div>
-        <div class="sndrow"><label class="check" for="sndSys"><input type="checkbox" id="sndSys">צליל להתראת מערכת: חריגה חדשה, מחירים שהתעדכנו, תזכורת הפקדה</label><button type="button" class="btn sm" data-sndtry="sys">לנסות</button></div>
-        <p class="note" style="margin:0;max-width:none">צלילים קצרים ושקטים, רק כשהדף פתוח. הדפדפן משמיע אותם אחרי שנגעת בדף.</p>
-        <h3 style="margin:8px 0 0">התראות לטלפון</h3>
-        <div class="pushbox" id="pushBox"><p class="note" id="pushState" role="status" style="margin:0;max-width:none">בודק…</p>
-          <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri sm" id="pushOn" hidden>להפעיל במכשיר הזה</button><button type="button" class="btn sm" id="pushTest" hidden>לשלוח בדיקה</button><button type="button" class="btn sm" id="pushOff" hidden>לכבות במכשיר הזה</button></div></div>
-        <div class="liveal" id="liveAl"><b>התראות בזמן אמת: מתי לשלוח (למייל ולטלפון)</b>
-            <label for="laMove">מניה בתיק זזה ביום יותר מ-(%)<input type="number" id="laMove" min="1" max="50" step="0.5" placeholder="5"></label>
-            <label for="laUsdUp">הדולר עובר את (₪)<input type="number" id="laUsdUp" min="1" step="0.01" placeholder="למשל 3.80"></label>
-            <label for="laUsdDn">הדולר יורד אל (₪)<input type="number" id="laUsdDn" min="1" step="0.01" placeholder="למשל 3.50"></label>
-            <label class="check"><input type="checkbox" id="laNews" checked><span>התראות אישיות מ"חיבור למציאות" (קריטיות, וגם חשובות אם בחרת)</span></label>
-            <p class="note" style="margin:0">וגם כשמניה עוברת מחיר שקבעת. עד הודעה אחת ב-20 דקות. שעות שקטות ורמות ב<button type="button" class="lnk" data-anav="set:nwSetSec">חדשות והתראות</button>.</p></div>
-        <div class="mailbox" id="mailBox" hidden>
-          <h3 style="margin:8px 0 0">מיילים</h3>
-          <p class="note" style="margin:0;max-width:none">כל סוג כבוי עד שתפעיל אותו. הדוחות נשמרים בדף גם בלי מייל.</p>
-          <p class="note" id="mailState" role="status" style="margin:0;max-width:none"></p>
-          <div id="mailList"></div>
-
-        </div>
-      </div>
+    <!-- 11.11 (the owner): the alerts' settings live in התראות, with the alerts; here a way to them -->
+    <section aria-labelledby="hNotifGo" id="notifGoSec">
+      <div class="row"><h2 id="hNotifGo">ההתראות והצלילים שלי</h2></div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:10px"><p class="note" style="margin:0;max-width:none">ההגדרות של ההתראות עברו לדף "התראות", יחד עם ההתראות עצמן: התראות לטלפון, מיילים, צלילים, מתי לשלוח, ואילו קטגוריות מופיעות. התראות המחיר שקבעת נמצאות שם גם הן.</p><div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri sm" data-anav="set:notifSec">להגדרות ההתראות ›</button><button type="button" class="btn sm" data-anav="set:pxAlList">להתראות המחיר ›</button></div></div>
     </section>
 
     <section aria-labelledby="hAlloc">
@@ -20349,15 +20375,28 @@ function renderDesk(m,A){
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
   const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
-  try{renderAlerts(L,nAck,($('alToday')&&!$('alToday').hidden)?$('alToday').querySelectorAll('.tdl').length:0)}catch(e){console.error(e)}
+  try{renderAlerts(L,nAck,($('alToday')&&!$('alToday').hidden)?$('alToday').querySelectorAll('.tdl').length:0,A,m)}catch(e){console.error(e)}
 }
 // 10.11 (the owner): התראות is the day's few important updates (the coming dividend, the one news item about a holding,
 // what to check) and what to do. 11.11: and, first, every alert about the portfolio as an inbox (renderAlertInbox); the
 // count on its button is the unread alerts that need attention (alBadge)
-function renderAlerts(L,nAck,nDay){
+function renderAlerts(L,nAck,nDay,A,m){
   // what to do, without the news items (they are in the inbox above)
   {const el=$('alTodo'); if(el)setH(el,todoH((L||[]).filter(x=>x.cat!=='חדשות'),nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
+  // 11.11 (the owner): what is about alerts, from all over the site, is here too: the rules' findings (in בקרה with a count
+  // on its button; here each with its words, its way there and "בדקתי"), the price alerts (renderPxAlerts) and the coming
+  // two weeks (the home's and the calendar's)
+  try{alRules(A)}catch(e){console.error(e)} try{renderPxAlerts()}catch(e){} try{alSoon()}catch(e){console.error(e)}
   try{alBadge()}catch(e){}}
+function alRules(A){const el=$('alRules'); if(!el)return;
+  const R=(A||[]).filter(a=>(a[0]==='crit'||a[0]==='warn')&&!HOMECAT.has(a[1])&&!ackd(a)).sort((a,b)=>(b[0]==='crit')-(a[0]==='crit'));
+  if(!R.length){setH(el,noPf()?'<p class="al-empty">החריגות יופיעו כאן אחרי שתוסיף את התיק.</p>':`<div class="dk-top ok"><b>${niH('ok')}התיק עומד בכל הכללים שקבעת.</b></div>`); return}
+  const li=a=>{const n=alertNav(a); return `<li class="${a[0]}">${catIconH(a[1],a[0])}<span><span class="dk-cat">${esc(a[1])}</span> ${fShortH(a)}<span class="dk-btns">${n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:''}${canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:''}</span></span></li>`};
+  setH(el,`<div class="dk-top"><b>${R.length===1?'חריגה אחת':R.length+' חריגות'}${R.some(a=>a[0]==='crit')?`, מהן ${R.filter(a=>a[0]==='crit').length} קריטיות`:''}</b><ol>${R.map(li).join('')}</ol></div>`)}
+function alSoon(){const el=$('alSoon'); if(!el)return; let L=[]; try{L=soonEvents(new Date())}catch(e){}
+  if(!L.length){setH(el,'<p class="al-empty">אין דוחות, דיבידנדים, ימי הפקדה או חגים בשבועיים הקרובים בניירות שלך.</p>'); return}
+  const today=ilDay(), IC={rep:'rep',ex:'div',pay:'div',dep:'dep',mkt:'mkt'}, day=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
+  setH(el,L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${esc(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${esc(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join(''))}
 const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
@@ -20446,7 +20485,7 @@ function anaGo(t){t=String(t||''); if(t.startsWith('sec:')){goSec(t.slice(4));re
   if(t.startsWith('news:')){const id=t.slice(5); showTab('news',true); RTT='news'; NWF={...NWF0}; NWV='latest'; NWLIM=Math.max(NWLIM,200); try{renderNewsX()}catch(e){} setTimeout(()=>{const el=document.querySelector(`#newsFeed [data-nid="${CSS.escape(id)}"]`); if(el){el.scrollIntoView({block:'center'}); el.querySelector('details.nw-more')?.setAttribute('open','')}},120); return}
   if(t.startsWith('pl:')){try{plOpen(t.slice(3))}catch(e){} return}
   if(t.startsWith('symchg:')){const [,o,n]=t.split(':'); symChgApply(o,n); return}
-  if(t.startsWith('set:')){showTab('settings',true); try{setNav(false)}catch(e){} setTimeout(()=>{const el=$(t.slice(4)); if(el){try{ptReveal(el)}catch(x){} el.scrollIntoView({block:'start'})}},80); return}
+  if(t.startsWith('set:')){goPlace(t.slice(4),'settings'); return}   // 11.11: on the screen that holds it (the alerts' settings are in התראות)
   // a part of the risk screen ("fold:hExp"), and for the stress test a scenario to open with ("fold:hStress:usd")
   if(t.startsWith('fold:')){const [,id,stk]=t.split(':'), pn=MIXIDS.includes(id)?'mix':'risk'; if(stk){ST.kind=stk; stSave(); try{renderStress(EXPM||mAllNow())}catch(e){}} showTab(pn,true); try{setNav(false)}catch(e){} if(pn==='risk')try{foldSet(id,true)}catch(e){}
     setTimeout(()=>{const s=document.querySelector(`[data-pane="${pn}"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60); return}
@@ -23001,7 +23040,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.closest('[data-depban]')){try{localStorage.setItem('tr_depban',ymNow())}catch(e){} renderDepBan(); return}
   const i18b=ev.target.closest('[data-i18n]'); if(i18b){if(i18b.dataset.i18n==='go'){I18N.stop='';i18nPump();i18nPill()} else {if(S.profile&&S.profile.lang&&S.profile.lang!=='he'&&canWrite){S.profile={...S.profile,lang:'he'};changed()} i18nSet('he')} return}
   const vw=ev.target.closest('[data-view]'); if(vw){try{useAdd('view:'+vw.dataset.view)}catch(e){} setView(vw.dataset.view);return}
-  const tb=ev.target.closest('[data-tab]'); if(tb){if(tb.dataset.pot){POT=tb.dataset.pot; try{localStorage.setItem('tr_pot',POT)}catch(x){}} showTab(tb.dataset.tab,true);setNav(false);
+  const tb=ev.target.closest('[data-tab]'); if(tb){if(tb.dataset.pot){POT=tb.dataset.pot; try{localStorage.setItem('tr_pot',POT)}catch(x){}} if(tb.dataset.goid&&tb.dataset.goid!=='fillWiz'&&$(tb.dataset.goid)){goPlace(tb.dataset.goid,tb.dataset.tab); return} showTab(tb.dataset.tab,true);setNav(false);
     if(tb.dataset.goid)setTimeout(()=>{const el=document.getElementById(tb.dataset.goid); if(el&&!el.hidden){try{el.scrollIntoView({block:'start',behavior:'smooth'})}catch(e){} if(/INPUT|SELECT/.test(el.tagName))try{el.focus({preventScroll:true})}catch(e){}}},250); return}
   if(ev.target.closest&&ev.target.closest('#kStatus')){showTab('overview');$('desk').scrollIntoView({behavior:'smooth',block:'center'});return}
   if(ev.target.id==='calmMore'){setMore(!MORE);return}
@@ -26737,7 +26776,7 @@ function chipIntoView(row){try{if(!row||row.scrollWidth<=row.clientWidth+2)retur
 const PARTS={
   // 5.11: the profile (6 screens with the usage tables and the privacy text) and the news and alerts (5 screens, 107
   // controls) each in two
-  settings:{me:['פרופיל',['hMe']],priv:['פרטיות',['hUse','hData']],news:['חדשות',['hNwSet']],notif:['התראות',['hNotif']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
+  settings:{me:['פרופיל',['hMe']],priv:['פרטיות',['hUse','hData']],news:['חדשות',['hNwSet']],notif:['התראות',['hNotifGo']],money:['חשבונות וכללים',['hAccts','hAlloc','hRules']],sys:['המערכת',['hSys']]},
   forecast:{goal:['היעד שלי',['hGoal','hFlows','hFwd']],scen:['תרחישים',['hScen','hWhatIf']],div:['דיבידנדים',['hDivGot','hDiv','hDivAhead']],calc:['מחשבונים',['hDivCalc','hFxCalc']]},
   history:{quick:['מבט מהיר',['hQuick','hSince','hTrend','hBench']],time:['לאורך זמן',['hDD','hMon','hTl','hDec']],cost:['עמלות ומס',['hFees','hTax']],acct:['לפי חשבון',['backWrap']]},
   journal:{jrn:['היומן שלי',['hJrn']],dna:['טביעת האצבע שלי (DNA)',['hDna']]}};
@@ -29328,8 +29367,10 @@ const GO=[
   {id:'cal',l:'לוח מסחר',k:'לוח שנה חג חגים פתוח סגור שעות מסחר בורסה דיבידנד דיבידנדים אקס מועד דוח דוחות',tab:'calendar'},
   {id:'rules',l:'הכללים שלי',k:'כלל כללים סף ריכוז ירידה',tab:'settings',el:'hRules'},
   {id:'alloc',l:'יעדי הקצאה',k:'הקצאה יעד אחוזים',tab:'settings',el:'hAlloc'},
-  {id:'notif',l:'התראות וצלילים',k:'התראה התראות צליל צלילים',tab:'settings',el:'hNotif'},
-  {id:'mail',l:'מיילים',k:'מייל מיילים אימייל דואר',tab:'settings',el:'mailBox'},
+  {id:'notif',l:'הגדרות ההתראות: טלפון, צלילים ומה מופיע',k:'התראה התראות צליל צלילים טלפון פוש הגדרות התראות',tab:'alerts',el:'notifSec'},
+  {id:'mail',l:'מיילים',k:'מייל מיילים אימייל דואר',tab:'alerts',el:'mailBox'},
+  {id:'pxal',l:'התראות המחיר שלי',k:'התראת מחיר התראות מחיר יעד מחיר',tab:'alerts',el:'alPxSec'},
+  {id:'alrules',l:'התראות: חריגות מהכללים ומה מחכה לי',k:'חריגות חריגה כללים בשבועיים הקרובים דוח דיבידנד אקס',tab:'alerts',el:'alRulesSec'},
   {id:'accts',l:'חשבונות המסחר שלי',k:'חשבון אקסלנס בלינק ברוקר',tab:'settings',el:'hAccts'},
   {id:'me',l:'הפרופיל שלי',k:'פרופיל שם שפה',tab:'settings',el:'hMe'},
   {id:'sys',l:'בריאות המערכת (לבעל האתר)',k:'בריאות מערכת מקורות נתונים תקלה עובד',tab:'settings',el:'hSys',own:true},
@@ -29350,12 +29391,18 @@ function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)re
   const one=(x,L,K)=>L.startsWith(x)?4:L.includes(x)?3:K.split(' ').some(k=>k.startsWith(x))?2:K.includes(x)?1:0;
   const sc=d=>{const L=goNorm(d.l), K=goNorm(d.k); let s=0; for(const x of w){const y=x.slice(1), v=one(x,L,K)||(/^[להבומשכ]/.test(x)&&y.length>=3&&(L+' '+K).split(' ').some(k=>k.startsWith(y))?2:0); if(!v)return 0; s+=v} return s};
   return GO.filter(d=>!d.own||(MGR()&&window.__tc&&!LOCAL)).map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
+// 11.11 (the owner): what belongs to the alerts lives in התראות (their settings moved there from the settings): a link to a
+// place opens the screen that holds it and the folds around it, and scrolls to it
+function goPlace(id,tab){const el=$(id), pn=el&&el.closest('[data-pane]'), t=pn?pn.dataset.pane:tab; if(t)showTab(t,true); try{setNav(false)}catch(e){}
+  setTimeout(()=>{const e2=$(id); if(!e2||e2.hidden)return; for(let p=e2.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true; if(e2.tagName==='DETAILS')e2.open=true;
+    try{ptReveal(e2)}catch(x){} try{e2.scrollIntoView({block:'start'})}catch(x){} if(/INPUT|SELECT/.test(e2.tagName))try{e2.focus({preventScroll:true})}catch(x){}},90)}
 function goTo(d){
   if(!d)return; try{useAdd('go:'+d.id)}catch(e){} try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
   if(d.fn){d.fn();return}
   showTab(d.tab,true);
   if(!d.el)return;
   setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
+    {const pn=el.closest('[data-pane]'); if(pn&&pn.dataset.pane!==document.body.dataset.page)showTab(pn.dataset.pane,true)}   // 11.11: a place that moved to another screen
     {const dp=el.closest('[data-dvp]'); if(dp&&dp.classList.contains('dv-off'))try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}}
     {const mp=el.closest('[data-mvp]'); if(mp)try{mvSet(mp.dataset.mvp)}catch(e){}}
     const fs=el.closest('[data-pane="risk"] > [data-rg]'); if(fs){try{rgSet(fs.dataset.rg)}catch(e){}}
@@ -29372,6 +29419,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-11.6',at:'2026-11-11',t:'כל מה שקשור להתראות, בדף "התראות"',d:'בנוסף להתראות עצמן: החריגות מהכללים שלך עם "בדקתי", התראות המחיר שקבעת, מה מחכה בשבועיים הקרובים (דוחות, דיבידנדים, יום ההפקדה וחגים), ובסוף הדף ההגדרות: טלפון, מיילים, צלילים ומה מופיע.',go:'alrules'},
   {v:'2026-11-11.5',at:'2026-11-11',t:'חסכונות לפי מטרה: "החסכונות שלי"',d:'לשונית חדשה עם כל החסכונות במסך אחד: כמה יש בכל אחד, כמה מהיעד, ועד מתי. בכל חיסכון בוחרים אם הוא בקרן או במניה, ו"עד מתי" הוא תאריך מדויק ולא רק חודש ושנה.',go:'pots'},
   {v:'2026-11-11.4',at:'2026-11-11',t:'הכפתור "חזרה" של הדפדפן עובד',d:'בספארי, בכרום ובכפתור החזרה של הטלפון: חוזרים לדף הקודם באתר, ולאותו מקום בדף. הכתובת אומרת באיזה דף אתם, ורענון נשאר באותו דף.'},
   {v:'2026-11-11.3',at:'2026-11-11',t:'"התיק שלי": האחזקות וההוספה הידנית יחד',d:'ההוספה הידנית נפתחת בתוך לשונית האחזקות, מעל הטבלה. "עדכון מדוח" נקרא עכשיו "העלאת דוחות", ו"מכירה" נקרא "ביצוע פעולות": שם רושמים קנייה או מכירה.',go:'pick'},

@@ -1097,7 +1097,7 @@ test('the check against the house: the last screenshot of an account against the
 
 test('the phone: notifications switched on per device, for the owner and for a partner; the live alerts\' thresholds for both',T,async t=>{
   if(skip())return t.skip('no browser');
-  for(const who of ['owner','n2']){const {ctx,pg}=await open(390,{who}); await ctx.grantPermissions(['notifications'],{origin:new URL(pg.url()).origin}); const perm=await pg.evaluate(()=>Notification.permission); t.diagnostic('permission '+perm); await tab(pg,'overview'); await tab(pg,'settings'); await pg.waitForFunction(()=>/^(כבוי|מופעל)/.test(document.getElementById('pushState').textContent),null,{timeout:10000}).catch(()=>{});
+  for(const who of ['owner','n2']){const {ctx,pg}=await open(390,{who}); await ctx.grantPermissions(['notifications'],{origin:new URL(pg.url()).origin}); const perm=await pg.evaluate(()=>Notification.permission); t.diagnostic('permission '+perm); await tab(pg,'overview'); await tab(pg,'alerts'); await pg.evaluate(()=>{document.getElementById('alSetD').open=true});   /* 11.11: the alerts' settings are in התראות */ await pg.waitForFunction(()=>/^(כבוי|מופעל)/.test(document.getElementById('pushState').textContent),null,{timeout:10000}).catch(()=>{});
     const r=await pg.evaluate(()=>({box:!!document.getElementById('pushBox').offsetParent,st:document.getElementById('pushState').textContent,on:!document.getElementById('pushOn').hidden,la:!!document.getElementById('liveAl').offsetParent,sw:!!document.querySelector('script[src*="sw.js"]')}));
     assert.ok(r.box,who); if(perm==='denied')assert.match(r.st,/חסומות בהגדרות הדפדפן/,'a browser that blocks them: said, with what to do'); else{assert.match(r.st,/^כבוי במכשיר הזה/,who); assert.ok(r.on,'a button to switch it on: '+who)} assert.ok(r.la,'the thresholds: '+who);
     assert.equal(await pg.evaluate(async()=>(await fetch('sw.js')).status),200,'the service worker is served');
@@ -1106,7 +1106,7 @@ test('the phone: notifications switched on per device, for the owner and for a p
 
 test('a partner\'s e-mails: their own three kinds in their settings, said plainly when sending is not ready for them',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390,{who:'n2'}); await tab(pg,'settings'); await pg.waitForFunction(()=>document.querySelectorAll('#mailList [data-mail]').length>0&&document.getElementById('mailState').textContent,null,{timeout:10000});
+  const {ctx,pg}=await open(390,{who:'n2'}); await tab(pg,'alerts'); await pg.evaluate(()=>{document.getElementById('alSetD').open=true});   /* 11.11: the alerts' settings are in התראות */ await pg.waitForFunction(()=>document.querySelectorAll('#mailList [data-mail]').length>0&&document.getElementById('mailState').textContent,null,{timeout:10000});
   const r=await pg.evaluate(()=>({vis:!!document.getElementById('mailBox').offsetParent,kinds:[...document.querySelectorAll('#mailList [data-mail]')].map(i=>i.dataset.mail),st:document.getElementById('mailState').textContent}));
   assert.ok(r.vis,'a partner has the e-mails box'); assert.deepEqual(r.kinds,['morning','earnings','live'],'only their own kinds'); assert.match(r.st,/שליחת מיילים עוד לא מוגדרת באתר/);
   await pg.click('#mail_morning'); await pg.waitForTimeout(1500);
@@ -2342,7 +2342,7 @@ test('the weekly summary: how the exposures moved (only from saved prices), what
     assert.match(w,/ניירות שנסחרים בדולר: \d+\.\d% ← \d+\.\d%/); assert.match(w,/מהשווי של 11 הניירות שנשמר להם מחיר/); assert.match(w,/לא נשמר מחיר לתחילת השבוע ל-TA90/);
     assert.doesNotMatch(w,/השער בשני הצדדים/,'the rate of that day was saved and used'); assert.match(w,/NVDA זז ‎\+13\.7% השבוע/);
     // the e-mail switches: the owner's, all off until chosen, saved per kind
-    await tab(pg,'settings'); await pg.waitForTimeout(600);
+    await tab(pg,'alerts'); await pg.evaluate(()=>{document.getElementById('alSetD').open=true});   /* 11.11: the alerts' settings are in התראות */ await pg.waitForTimeout(600);
     const m0=await pg.evaluate(()=>({hidden:document.getElementById('mailBox').hidden,on:[...document.querySelectorAll('[data-mail]')].map(i=>i.checked)}));
     assert.deepEqual(m0,{hidden:false,on:[false,false,false,false,false,false]});
     await pg.evaluate(()=>document.getElementById('mail_reports').scrollIntoView({block:'center'})); await pg.click('#mail_reports'); await pg.waitForTimeout(1500);
