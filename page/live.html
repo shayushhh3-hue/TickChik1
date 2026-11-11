@@ -3018,7 +3018,7 @@ details.al-rd>summary::after{content:"‹";margin-inline-start:auto;color:var(--
 .al-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .al-t{font-size:15px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .al-row:not(.un) .al-t{font-weight:600;color:var(--ink2)}
-.al-m{font-size:13px;color:var(--muted);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-m{font-size:13px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .al-lv{font-weight:800}
 .al-row.lv-crit .al-lv{color:var(--crit-ink)} .al-row.lv-imp .al-lv{color:var(--warn)} .al-row.lv-upd .al-lv{color:var(--info-ink)}
 .al-tm{font-size:12.5px;color:var(--muted);white-space:nowrap;align-self:start;padding-top:2px}
@@ -25386,14 +25386,14 @@ function plRender(m){
 let ALF='all', ALRD=false;
 function alWho(a){const H=a.holds||[], d=H.filter(h=>h.link==='direct'), L=d.length?d:H, W=new Map(); for(const h of L)if(!W.has(h.sym))W.set(h.sym,+h.w||0);
   const syms=[...W.keys()], w=[...W.values()].reduce((t,x)=>t+x,0);
-  if(syms.length)return `${d.length?'':'דרך '}${syms.slice(0,2).map(s=>esc(lab(s))).join(', ')}${syms.length>2?` ועוד ${syms.length-2}`:''}${w>0?` · ${pct(w,0)} מהתיק`:''}`;   // an indirect link: "דרך VOO, SPY"
+  if(syms.length)return `${d.length?'':'דרך '}<bdi>${syms.slice(0,2).map(s=>esc(lab(s))).join(', ')}</bdi>${syms.length>2?` ועוד ${syms.length-2}`:''}${w>0?` · ${pct(w,0)} מהתיק`:''}`;   // an indirect link: "דרך VOO, SPY" (the symbols kept in their order)
   if((a.secs||[]).length){const s=a.secs[0]; return `${esc(NX_SEC_HE[s.g]||s.g)} · ${pct(s.w,0)} מהתיק`}
   if(a.usd!=null)return `${pct(a.usd,0)} מהתיק בדולרים`;
   if((a.fol||[]).length)return `${esc(lab(a.fol[0].sym))} · במעקב, לא בתיק`;
   return ''}
 function alRow(a){const un=plUnread(a), h=(a.holds||[]).find(z=>z.link==='direct')||(a.holds||[])[0], sym=h&&h.sym, who=alWho(a);
   const mark=sym?`<span class="al-lg">${logoHtml(sym,'s')}</span>`:`<span class="al-lg al-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${a.kind==='cal'?'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4':'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4'}"/></svg></span>`;
-  return `<button type="button" class="al-row lv-${a.lv}${un?' un':''}" data-alopen="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}${un?', לא נקראה':''}: ${esc(a.title)}${who?'. '+who:''}">${mark}<span class="al-tx"><b class="al-t">${esc(a.title)}</b><span class="al-m"><span class="al-lv">${PL_LV[a.lv]}</span>${who?` · ${who}`:''}</span></span><span class="al-tm">${agoH(a.up||a.at)}</span>${un?'<i class="al-dot" aria-hidden="true"></i>':''}</button>`}
+  return `<button type="button" class="al-row lv-${a.lv}${un?' un':''}" data-alopen="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}${un?', לא נקראה':''}: ${esc(a.title)}${who?'. '+who.replace(/<[^>]+>/g,''):''}">${mark}<span class="al-tx"><b class="al-t">${esc(a.title)}</b><span class="al-m"><span class="al-lv">${PL_LV[a.lv]}</span>${who?` · ${who}`:''}</span></span><span class="al-tm">${agoH(a.up||a.at)}</span>${un?'<i class="al-dot" aria-hidden="true"></i>':''}</button>`}
 // the count on התראות (the bottom bar and the menu): the unread alerts that need attention, the same as the inbox's first group
 function alBadge(){const L=plDedup(plItems()).filter(a=>plUnread(a)&&(a.lv==='crit'||a.lv==='imp')), n=L.length, crit=L.some(a=>a.lv==='crit');
   for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
