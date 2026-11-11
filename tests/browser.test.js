@@ -718,12 +718,16 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const A=Object.fromEntries(R.owner.doc.items.map(a=>[a.k,a]));
     assert.equal(A['ev:nvda-q3-report'].lv,'crit'); assert.equal(A['ev:nvda-q3-report'].n,2,'two articles, one alert'); assert.ok(A['ev:msft-eu-probe']&&['imp','crit'].includes(A['ev:msft-eu-probe'].lv));
     assert.ok(!A['ev:aapl-op']||A['ev:aapl-op'].lv==='upd','an opinion (AAPL is held): a portfolio update at most'); assert.ok(!A['ev:acme-widget'],'a deal of companies not held: nothing');
-    const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(300); await pg.waitForFunction(()=>!document.getElementById('stBub').hidden,null,{timeout:15000});
-    // the icons over צ׳יקו: buttons, the critical first, never more than three; no stories viewer
-    const bub=await pg.evaluate(()=>({n:document.querySelectorAll('#stBub .stc').length,first:document.querySelector('#stBub .stc').getAttribute('aria-label'),crit:document.querySelector('#stBub .stc').classList.contains('crit'),bars:!!document.getElementById('stBars'),
-      over:(()=>{const a=document.getElementById('stBub').getBoundingClientRect(), f=document.getElementById('chatFab').getBoundingClientRect(); return a.width<=90&&a.height<=34&&a.bottom>f.top&&a.top<f.top+4&&a.right>f.left&&a.left<f.right})()}));   // 9.11: a small row of logos sitting on the button's top edge
-    assert.ok(bub.n>=1&&bub.n<=3); assert.match(bub.first,/^התראה קריטית( על NVDA)?: אנבידיה/); assert.ok(bub.crit&&bub.over,JSON.stringify(bub)); assert.equal(bub.bars,false,'no stories bars');
-    await pg.click('#stBub .stc'); await pg.waitForTimeout(300);
+    const {ctx,pg}=await open(390); await tab(pg,'alerts'); await pg.waitForTimeout(300); await pg.waitForFunction(()=>!!document.querySelector('#alInbox .al-row'),null,{timeout:15000});
+    // 11.11 (the owner): every alert in התראות, an inbox by urgency; no icons over צ׳יקו, no stories viewer. The count on
+    // התראות is the unread alerts that need attention
+    const bub=await pg.evaluate(()=>({icons:!document.getElementById('stBub').hidden,bars:!!document.getElementById('stBars'),first:(document.querySelector('#alInbox .al-gh')||{}).textContent||'',
+      rows:[...document.querySelectorAll('#alInbox .al-row')].map(r=>({k:r.dataset.alopen,lv:r.querySelector('.al-lv').textContent,un:r.classList.contains('un'),t:r.querySelector('.al-t').textContent,h:r.getBoundingClientRect().height})),
+      badge:(document.querySelector('#botbar [data-bb="alerts"] .bbadge')||{}).textContent||''}));
+    assert.equal(bub.icons,false,'no icons over צ׳יקו'); assert.equal(bub.bars,false,'no stories bars'); assert.match(bub.first,/^דורש תשומת לב/);
+    assert.equal(bub.rows[0].lv,'קריטית'); assert.ok(bub.rows[0].un); assert.match(bub.rows[0].t,/אנבידיה/); assert.ok(bub.rows.every(r=>r.h>=44),'rows of 44px at least');
+    assert.equal(bub.badge,String(bub.rows.filter(r=>r.un&&r.lv!=='עדכון תיק').length),'the count: '+JSON.stringify(bub));
+    await pg.click('#alInbox .al-row'); await pg.waitForTimeout(300);
     let v=await pg.evaluate(()=>{const b=document.getElementById('plShB'); return {open:!document.getElementById('plSheet').hidden,h:b.querySelector('h3').textContent,lv:b.querySelector('.pl-lv').textContent,chain:b.querySelector('.pl-chain')?.textContent.replace(/\s+/g,' '),
       ms:[...b.querySelectorAll('.pl-m')].map(m=>m.textContent.replace(/\s+/g,' ').trim()),why:b.querySelector('.pl-why').textContent.replace(/\s+/g,' '),dir:b.textContent.replace(/\s+/g,' '),acts:[...b.querySelectorAll('.pl-acts > .btn, .pl-acts > a')].map(x=>x.textContent.trim())}});
     assert.ok(v.open); assert.equal(v.h,'אנבידיה היכתה את התחזיות והעלתה את התחזית'); assert.equal(v.lv,'התראה קריטית'); assert.match(v.chain,/האירוע ← NVDA ← ההחזקה שלך/);
@@ -733,9 +737,9 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     // 6.11: "נקראה" in the window is done with it: the next alert, or the window closes (it was a toggle: a tap made it unread)
     {const h0=v.h; await pg.click('#plShB [data-pldone]'); await pg.waitForTimeout(300);
       const w=await pg.evaluate(()=>({open:!document.getElementById('plSheet').hidden,h:(document.querySelector('#plShB h3')||{}).textContent||''})); assert.ok(!w.open||w.h!==h0,'closed, or the next alert: '+JSON.stringify(w))}
-    // closing the sheet: the icon goes, the alert stays in the center (and is read)
+    // closing the sheet: the alert stays in the inbox, read (under "נקראו")
     if(await pg.evaluate(()=>!document.getElementById('plSheet').hidden)){await pg.click('#plShX'); await pg.waitForTimeout(300)}
-    {const lb=await pg.evaluate(()=>[...document.querySelectorAll('#stBub .stc')].map(b=>b.getAttribute('aria-label')).join('|')+' hidden:'+document.getElementById('stBub').hidden+' st:'+JSON.stringify(window.__nx.state().pl||null)); assert.ok(!/אנבידיה/.test(lb.split(' hidden:')[0])||/hidden:true/.test(lb),'off the icons: '+lb)}
+    {const r=await pg.evaluate(()=>{const row=document.querySelector('#alInbox [data-alopen="ev:nvda-q3-report"]'); return row?{un:row.classList.contains('un'),read:!!row.closest('.al-rd')}:null}); assert.ok(r&&!r.un&&r.read,'read, under "נקראו": '+JSON.stringify(r))}
     await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300);
     // TikChik Impact: the four figures, the alerts short, the round map with the portfolio in the middle, the line of time, צ׳יקו
     const ix=await pg.evaluate(()=>({k:[...document.querySelectorAll('#ixKpis .ix-k')].map(x=>x.innerText.replace(/\s+/g,' ').trim()),a:[...document.querySelectorAll('#ixAlList .ix-a h4')].map(h=>h.textContent),aff:(document.querySelector('#ixAlList .ix-a .ix-af')||{}).textContent||'',
@@ -906,13 +910,15 @@ test('the settings "חדשות והתראות": the news\' topics and the alerts
     assert.ok(await pg.evaluate(()=>document.querySelectorAll('#nwSetBox [data-nwfol]').length<10),'not the 66 topics');
     await pg.click('#nwSetBox [data-nwfol="regions:israel"]'); await pg.waitForTimeout(150);
     await pg.click('#nwSetBox [data-plslv="upd"]'); await pg.selectOption('#plsSens','high'); await pg.selectOption('#plsFreq','hour');
-    await pg.fill('#plsQf','22:00'); await pg.dispatchEvent('#plsQf','change'); await pg.click('#plsCq'); await pg.click('#plsIcons'); await pg.click('#nwSetBox [data-plspu="imp"]');
+    // 11.11 (the owner): no choice of icons over צ׳יקו any more (the alerts are an inbox in התראות)
+    assert.equal(await pg.evaluate(()=>!!document.getElementById('plsIcons')),false,'no icons choice');
+    await pg.fill('#plsQf','22:00'); await pg.dispatchEvent('#plsQf','change'); await pg.click('#plsCq'); await pg.click('#nwSetBox [data-plspu="imp"]');
     await pg.fill('#plsSym','TSLA'); await pg.click('#nwSetBox [data-nwsadd="pulse"] button'); await pg.waitForTimeout(1500);
     const S1=store.getDoc('settings/main').data;
     assert.deepEqual(S1.news.regions,[],'removed with ×'); assert.equal(S1.pulse.lv.upd,false); assert.equal(S1.pulse.sens,'high'); assert.equal(S1.pulse.freq,'hour'); assert.equal(S1.pulse.quiet.from,'22:00'); assert.equal(S1.pulse.critQuiet,true);
-    assert.equal(S1.pulse.icons,false); assert.equal(S1.pulse.push.imp,true); assert.deepEqual(S1.pulse.syms,['TSLA']);
-    // on the page: the icons gone; the portfolio updates not shown
-    assert.equal(await pg.evaluate(()=>document.getElementById('stBub').hidden),true,'the icons switched off');
+    assert.equal(S1.pulse.push.imp,true); assert.deepEqual(S1.pulse.syms,['TSLA']);
+    // on the page: no icons over צ׳יקו; the portfolio updates not shown
+    assert.equal(await pg.evaluate(()=>document.getElementById('stBub').hidden),true,'no icons over צ׳יקו');
     const {pulsePrefs,pulseCompute}=await import('../server/pulse.js'); const pr=pulsePrefs(S1); assert.equal(pr.sens,'high'); assert.ok(!pulseCompute(store,null,{}).alerts.some(a=>a.lv==='upd'),'the server makes no portfolio updates now');
     assert.equal(await pg.evaluate(()=>window.__nx.plItems().some(a=>a.lv==='upd')),false);
     assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -3207,10 +3213,11 @@ test('9.11 the logos beside the holdings, no halo, no alert list on the home; th
     const v=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#rows tr')].filter(r=>r.querySelector('td .sym'));
       return {rows:rows.length,withLogo:rows.filter(r=>r.querySelector('td .lg')).length,halo:document.querySelectorAll('#rows .lg.nx-crit,#rows .lg.nx-imp').length,list:!!document.getElementById('kAlerts')}});
     assert.ok(v.rows>=5); assert.equal(v.withLogo,v.rows); assert.equal(v.halo,0,'no halo'); assert.equal(v.list,false,'no alert list on the home');
-    // the round logos over צ׳יקו are back: the alerted company's logo opens its alert
-    await tab(pg,'mine'); await pg.waitForTimeout(300);   // 9.11: on the phone's home the alert is a card; the logos over צ׳יקו show on the other screens
-    const bub=await pg.evaluate(()=>{const b=document.getElementById('stBub'); return {on:!b.hidden,logos:b.querySelectorAll('.stc .lg').length}}); assert.ok(bub.on&&bub.logos>=1,'the logos over צ׳יקו: '+JSON.stringify(bub));
-    await pg.click('#stBub .stc[data-plk="ev:test-halo"]'); await pg.waitForTimeout(400); assert.ok(await pg.evaluate(()=>/בדיקת התראה/.test(document.body.innerText)),'the logo opened its alert');
+    // 11.11 (the owner): no logos over צ׳יקו on any screen; the alert is a row in התראות, with its company's mark, and opens it
+    await tab(pg,'mine'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.getElementById('stBub').hidden),true,'no icons over צ׳יקו');
+    await tab(pg,'alerts'); await pg.waitForTimeout(300);
+    assert.ok(await pg.evaluate(()=>!!document.querySelector('#alInbox [data-alopen="ev:test-halo"] .al-lg .lg')),'the row has the company\'s mark');
+    await pg.click('#alInbox [data-alopen="ev:test-halo"]'); await pg.waitForTimeout(400); assert.ok(await pg.evaluate(()=>/בדיקת התראה/.test(document.getElementById('plShB').textContent)),'the row opened its alert');
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
     await pg.goto(U+'admin#news'); await pg.waitForSelector('#view tbody tr',{timeout:15000});
     assert.match(await pg.textContent('#view'),/ההתראות של המודל החדשותי.*בדיקת התראה/s,'the owner\'s alerts in the news screen');

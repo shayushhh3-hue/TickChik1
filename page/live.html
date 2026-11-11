@@ -2996,6 +2996,33 @@ body.hidenum .kline .kl-v{filter:blur(7px);user-select:none}
 .al-sec .ktoday .tdl{min-height:48px;font-size:14.5px;gap:10px} .al-sec .ktoday .tdl-b{font-size:14.5px}
 .al-sec .ix-alist{display:flex;flex-direction:column;gap:10px}
 .al-empty,.al-more{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+/* 11.11 (the owner: every alert in התראות, and not as stories): the inbox. A row: the company's mark (square, no halo),
+   the title (two lines at most), the level in words and what it touches, when, and a dot while unread; 60px at least */
+.al-in-h{display:flex;align-items:center;justify-content:space-between;gap:10px} .al-in-h h3{margin:0}
+.al-in-h .lnk{min-height:44px;font:inherit;font-size:14px;font-weight:700;color:var(--vio-ink);background:none;border:0;padding:0 4px;cursor:pointer}
+.chips.al-in-f{display:flex;flex-wrap:nowrap;gap:6px;margin:6px -2px 8px;padding:2px;border:0;border-radius:0;background:none;overflow-x:auto;scrollbar-width:none}
+.chips.al-in-f .chip{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;font-weight:600;white-space:nowrap}
+.chips.al-in-f .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.al-in-f .agn{margin-inline-start:6px}
+.al-g{margin-top:6px} .al-g+.al-g{margin-top:12px}
+.al-gh{margin:0 0 2px;font-size:14px;font-weight:800;color:var(--ink2);display:flex;align-items:center;gap:6px}
+details.al-rd>summary{cursor:pointer;min-height:44px;list-style:none} details.al-rd>summary::-webkit-details-marker{display:none}
+details.al-rd>summary::after{content:"‹";margin-inline-start:auto;color:var(--muted);transform:rotate(-90deg)} details.al-rd[open]>summary::after{transform:rotate(90deg)}
+.al-list{display:flex;flex-direction:column}
+.al-row{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:4px 12px;width:100%;min-height:60px;padding:9px 2px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:start;cursor:pointer}
+.al-list .al-row:first-child{border-top:0}
+.al-row:hover{background:var(--sunk)} .al-row:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:12px}
+.al-lg{width:40px;height:40px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:var(--sunk)}
+.al-lg .lg{width:40px!important;height:40px!important;margin:0!important;border-radius:12px!important;box-shadow:none!important;outline:0!important}
+.al-ic{color:var(--vio-ink)} .al-ic svg{width:20px;height:20px}
+.al-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.al-t{font-size:15px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.al-row:not(.un) .al-t{font-weight:600;color:var(--ink2)}
+.al-m{font-size:13px;color:var(--muted);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-lv{font-weight:800}
+.al-row.lv-crit .al-lv{color:var(--crit-ink)} .al-row.lv-imp .al-lv{color:var(--warn)} .al-row.lv-upd .al-lv{color:var(--info-ink)}
+.al-tm{font-size:12.5px;color:var(--muted);white-space:nowrap;align-self:start;padding-top:2px}
+.al-dot{position:absolute;top:6px;inset-inline-start:34px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface)}
 /* 10.11 (the owner): the home quieter. The value a size smaller (it was 46px on a phone, 52px wide); no small lines
    that are not a figure: the line over the holdings (the count, the cash, where the prices come from), the slogan under
    the logo on a phone and a tablet; the group beside a company and "למה התאריך של אתמול?" left the holdings' rows (the
@@ -3728,6 +3755,10 @@ body[data-page="overview"] #idxRow{display:none!important}
   <div class="pane" data-pane="alerts" hidden>
     <section class="al-scr" aria-labelledby="hAlT">
       <div class="al-head"><h2 id="hAlT">התראות</h2><span class="sub">מה קרה בתיק ומה מחכה לך, במקום אחד</span></div>
+      <!-- 11.11 (the owner): every alert here, as an inbox by urgency (no icons over צ׳יקו, no stories): a row opens the alert -->
+      <section class="al-sec al-in" aria-labelledby="hAlIn"><div class="al-in-h"><h3 id="hAlIn">התראות על התיק</h3><button type="button" class="lnk" id="alReadAll" hidden>סמן הכול כנקרא</button></div>
+        <div class="chips al-in-f" role="group" aria-label="סינון ההתראות"><button type="button" class="chip" data-alf="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-alf="unread" aria-pressed="false">לא נקראו<span class="agn" id="alUnN" hidden></span></button><button type="button" class="chip" data-alf="crit" aria-pressed="false">קריטיות</button><button type="button" class="chip" data-alf="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-alf="saved" aria-pressed="false">שמורות</button></div>
+        <div id="alInbox"></div></section>
       <section class="al-sec" aria-labelledby="hAlDay"><h3 id="hAlDay">היום</h3><div class="ktoday al-today" id="alToday"></div><p class="al-empty" id="alTodayE" hidden>אין עדכון מיוחד היום.</p></section>
      <section class="al-sec" aria-labelledby="hAlTodo"><h3 id="hAlTodo">מה לעשות</h3><div id="alTodo"></div></section>
     </section>
@@ -20197,7 +20228,7 @@ function whyH(w){if(!w)return'';return `<details class="why"><summary>למה?</s
 // 31.10: the day in three short lines, at the top of the home: what the portfolio did and who moved it; the news on the
 // ones that moved (or the most important news of the day) and what it may mean for them; and whether anything needs the
 // person. The facts of the day, never a reason invented for a move, and no advice
-function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
+function todayH(m,A,o={}){if(!m||!m.pos||!m.pos.length)return '';
   // 9.11 (the owner: "this summary is pointless"): only what the screen does not already say, a few words a line, no
   // header and no צ׳יקו. What changed since the last visit, what is coming in the portfolio this week, the one news item
   // about a holding, and what to check, by name. The day's change is the line above (with its own "למה?"); nothing new: no card
@@ -20210,7 +20241,8 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
     if(D){const dw=D.d===today?'היום':D.d===isoAdd(today,1)?'מחר':`יום ${HDAY[wdOf(D.d)]}`, E=D.E.slice(0,2);
       row('soon',dw,E.map(e=>`${esc(e.t)}${e.sym?' '+symH(e.sym):''}`).join(' · ')+(D.E.length>2?` <span class="tdl-s">ועוד ${D.E.length-2}</span>`:''),' data-tab="calendar"','cal')}}catch(e){}
   // the news: on the ones that moved first, else the most important of the last day and a half about a holding itself
-  {const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
+  // (11.11: not in התראות, whose inbox lists every alert above "היום": o.noNews)
+  if(!o.noNews){const from=new Date(Date.now()-36*36e5).toISOString(), movers=m.pos.filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=1).sort((a,b)=>Math.abs(b.dayIls)-Math.abs(a.dayIls)).map(p=>p.sym);
     const N=(typeof plItems==='function'?plItems():[]).filter(a=>a&&a.kind!=='mkt'&&!a.rules&&(a.up||a.at)>=from).sort((a,b)=>(PL_LVR[b.lv]-PL_LVR[a.lv])||(String(b.up||b.at)>String(a.up||a.at)?1:-1));
     let a=null, sym=null; for(const k of movers){a=N.find(z=>(z.holds||[]).some(h=>h.sym===k&&h.link==='direct')); if(a){sym=k; break}}
     if(!a){a=N.find(z=>(z.lv==='crit'||z.lv==='imp')&&(z.holds||[]).some(h=>h.link==='direct'))||null; sym=a&&((a.holds||[]).find(h=>h.link==='direct')||{}).sym||null}
@@ -20228,7 +20260,7 @@ function todayH(m,A){if(!m||!m.pos||!m.pos.length)return '';
   return L.map(r=>`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}>${icon(r.ic)}<span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a" aria-hidden="true">›</span></button>`).join('')}
 function renderDesk(m,A){
   // 10.11 (the owner): the day's updates moved from the home to התראות (#alToday); the home's #kToday stays empty
-  try{const el=$('kToday'), al=$('alToday'), ae=$('alTodayE'); const h=noPf()?'':todayH(m,A); if(el){el.hidden=true; setH(el,'')} if(al){al.hidden=!h; setH(al,h)} if(ae)ae.hidden=!!h}catch(e){console.error(e)}
+  try{const el=$('kToday'), al=$('alToday'), ae=$('alTodayE'); const h=noPf()?'':todayH(m,A,{noNews:true}); if(el){el.hidden=true; setH(el,'')} if(al){al.hidden=!h; setH(al,h)} if(ae)ae.hidden=!!h}catch(e){console.error(e)}
   const sec=$('deskSec'); if(!sec)return; sec.hidden=false; {const a=$('anaSec'); if(a)a.hidden=false}
   const nC=A.filter(a=>a[0]==='crit').length, nW=A.filter(a=>a[0]==='warn').length;
   let s;
@@ -20253,15 +20285,12 @@ function renderDesk(m,A){
   try{renderAlerts(L,nAck,($('alToday')&&!$('alToday').hidden)?$('alToday').querySelectorAll('.tdl').length:0)}catch(e){console.error(e)}
 }
 // 10.11 (the owner): התראות is the day's few important updates (the coming dividend, the one news item about a holding,
-// what to check) and what to do; not the stream of news, which stays in חיבור למציאות. The count on its button is the
-// day's updates only
+// what to check) and what to do. 11.11: and, first, every alert about the portfolio as an inbox (renderAlertInbox); the
+// count on its button is the unread alerts that need attention (alBadge)
 function renderAlerts(L,nAck,nDay){
-  // what to do, without the news items (they are in חיבור למציאות and the day's one is above)
+  // what to do, without the news items (they are in the inbox above)
   {const el=$('alTodo'); if(el)setH(el,todoH((L||[]).filter(x=>x.cat!=='חדשות'),nAck||0).replace('id="dkTodo"','id="alTodoL"'))}
-  const n=nDay||0, crit=(L||[]).some(x=>x.sev==='crit');
-  for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
-    if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); b.appendChild(g)}
-    g.textContent=String(n); g.classList.toggle('crit',crit); b.setAttribute('aria-description',n===1?'עדכון אחד להיום':n+' עדכונים להיום')}}
+  try{alBadge()}catch(e){}}
 const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
@@ -25342,27 +25371,56 @@ function plCenter(){
   const nu=L.filter(plUnread), rd=L.filter(a=>!plUnread(a));
   setH(box,(L.length?'':'<div class="empty">אין התראות בסינון הזה.</div>')+(nu.length?`<h3 class="nx-grp">חדשות ועדכונים <span class="agn">${nu.length}</span></h3>`+nu.map(a=>plCard(a)).join(''):'')+(rd.length?`<h3 class="nx-grp">קודמות <span class="agn">${rd.length}</span></h3>`+rd.map(a=>plCard(a)).join(''):''));
 }
-// the icons over צ׳יקו: the critical and the important alerts not yet seen, a round icon per holding they touch (no
-// duplicates), at most three and "+N" for the rest. Gentle: they fade in once; "fewer movements" turns that off
+// 11.11 (the owner: "all the alerts in התראות, and not as Instagram stories"): no icons over צ׳יקו any more (the round
+// logos with their halo); the alerts are an inbox in התראות, by urgency. The critical banner stays
 function plRender(m){
-  plCount(); const pr=plPrefs(), b=$('stBub'); try{nxNavDot()}catch(e){}
-  if(!b)return; const L=plDedup(plItems()).filter(plFloat).sort(plSort);
-  // 9.11 (the owner, again): the round logos of the companies the alerts are about (up to three, no duplicates) and "+N"
-  // for the rest, over צ׳יקו; a logo opens its alert, "+N" opens them all
-  const show=pr.icons&&L.length>0; b.hidden=!show; if(!show)return; const n=L.length, seen=new Set(), heads=[];
-  for(const a of L){const h=(a.holds||[]).find(z=>z.link==='direct')||(a.holds||[])[0], sym=h&&h.sym; if(!sym||seen.has(sym))continue; seen.add(sym); heads.push([a,sym]); if(heads.length===3)break}
-  const rest=n-heads.length;
-  setH(b,(heads.length?heads.map(([a,sym])=>`<button type="button" class="stc${a.lv==='crit'?' crit':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])} על ${esc(lab(sym))}: ${esc(a.title)}"><span class="in">${logoHtml(sym)}</span></button>`).join('')
-    :`<button type="button" class="stc stc1${L.some(a=>a.lv==='crit')?' crit':''}" data-plk="${esc(L[0].k)}" aria-label="${esc(PL_LVS[L[0].lv])}: ${esc(L[0].title)}"><span class="in"><span class="stx" dir="ltr">${n}</span></span></button>`)
-    +(heads.length&&rest>0?`<button type="button" class="stn" data-plall="1" aria-label="ועוד ${rest} ${rest===1?'התראה':'התראות'}" dir="ltr">+${rest}</button>`:''));
-  b.setAttribute('aria-label',`${L.length===1?'התראה אחת שלא נקראה':L.length+' התראות שלא נקראו'} מעל צ׳יקו`); stPlace();
+  plCount(); const b=$('stBub'); try{nxNavDot()}catch(e){}
+  if(b&&!b.hidden){b.hidden=true; setH(b,'')}
+  try{renderAlertInbox()}catch(e){console.error(e)}
   try{plBanner()}catch(e){}
 }
-function stPlace(){const b=$('stBub'), f=$('chatFab'); if(!b||b.hidden)return; if(!f||f.hidden){b.style.visibility='hidden';return}
-  const r=f.getBoundingClientRect(); if(!r.width){b.style.visibility='hidden';return} b.style.visibility='';
-  const w=b.offsetWidth||30, x=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2)); b.style.left=x+'px'; b.style.right='auto'; b.style.bottom=Math.max(4,innerHeight-r.top-14)+'px'}   // 9.11: a small row sitting on the button's top edge, so it covers next to nothing of the page
-addEventListener('resize',()=>{try{stPlace()}catch(e){}});
-setInterval(()=>{const b=$('stBub'); if(b&&!b.hidden)try{stPlace()}catch(e){}},1500);
+// the inbox: a row per alert, the company's mark (square, no halo), the title on one line, the level in words (not a
+// colour alone), how much of the portfolio it touches, when, and a dot while unread. A tap opens the alert's own window
+// (plOpen, as before), which marks it read; "הבא" there goes down the same list. First what needs attention (critical and
+// important, unread), then the updates, then what was read (folded)
+let ALF='all', ALRD=false;
+function alWho(a){const H=a.holds||[], d=H.filter(h=>h.link==='direct'), L=d.length?d:H, W=new Map(); for(const h of L)if(!W.has(h.sym))W.set(h.sym,+h.w||0);
+  const syms=[...W.keys()], w=[...W.values()].reduce((t,x)=>t+x,0);
+  if(syms.length)return `${d.length?'':'דרך '}${syms.slice(0,2).map(s=>esc(lab(s))).join(', ')}${syms.length>2?` ועוד ${syms.length-2}`:''}${w>0?` · ${pct(w,0)} מהתיק`:''}`;   // an indirect link: "דרך VOO, SPY"
+  if((a.secs||[]).length){const s=a.secs[0]; return `${esc(NX_SEC_HE[s.g]||s.g)} · ${pct(s.w,0)} מהתיק`}
+  if(a.usd!=null)return `${pct(a.usd,0)} מהתיק בדולרים`;
+  if((a.fol||[]).length)return `${esc(lab(a.fol[0].sym))} · במעקב, לא בתיק`;
+  return ''}
+function alRow(a){const un=plUnread(a), h=(a.holds||[]).find(z=>z.link==='direct')||(a.holds||[])[0], sym=h&&h.sym, who=alWho(a);
+  const mark=sym?`<span class="al-lg">${logoHtml(sym,'s')}</span>`:`<span class="al-lg al-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${a.kind==='cal'?'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4':'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4'}"/></svg></span>`;
+  return `<button type="button" class="al-row lv-${a.lv}${un?' un':''}" data-alopen="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}${un?', לא נקראה':''}: ${esc(a.title)}${who?'. '+who:''}">${mark}<span class="al-tx"><b class="al-t">${esc(a.title)}</b><span class="al-m"><span class="al-lv">${PL_LV[a.lv]}</span>${who?` · ${who}`:''}</span></span><span class="al-tm">${agoH(a.up||a.at)}</span>${un?'<i class="al-dot" aria-hidden="true"></i>':''}</button>`}
+// the count on התראות (the bottom bar and the menu): the unread alerts that need attention, the same as the inbox's first group
+function alBadge(){const L=plDedup(plItems()).filter(a=>plUnread(a)&&(a.lv==='crit'||a.lv==='imp')), n=L.length, crit=L.some(a=>a.lv==='crit');
+  for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
+    if(!g){g=document.createElement('span'); g.className='bbadge'; g.setAttribute('aria-hidden','true'); b.appendChild(g)}
+    g.textContent=n>99?'99+':String(n); g.classList.toggle('crit',crit); b.setAttribute('aria-description',n===1?'התראה אחת שלא נקראה':n+' התראות שלא נקראו')}}
+function renderAlertInbox(){
+  const box=$('alInbox'); alBadge(); if(!box)return; const pr=plPrefs(), L0=plDedup(plItems()).sort(plSort), un0=L0.filter(plUnread), ra=$('alReadAll');
+  for(const b of document.querySelectorAll('[data-alf]'))b.setAttribute('aria-pressed',String(b.dataset.alf===ALF));
+  {const n=$('alUnN'); if(n){n.hidden=!un0.length; n.textContent=String(un0.length)}} if(ra)ra.hidden=!un0.length;
+  let msg='';
+  if(!pr.on)msg='ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>';
+  else if(!hasPf()&&!L0.length)msg='התראות נבנות מהתיק שלך: כשתוסיף אחזקות, כל אירוע בחדשות יחובר למניות שבידיך, ותקבל התראה רק כשיש קשר מבוסס. <button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button>';
+  else if(!PULSE)msg=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות.';
+  else if(!L0.length)msg='אין כרגע התראות. התראה מופיעה רק כשיש קשר מבוסס בין אירוע לבין התיק שלך.';
+  let L=L0; if(ALF==='crit'||ALF==='imp')L=L.filter(a=>a.lv===ALF); else if(ALF==='unread')L=L.filter(plUnread); else if(ALF==='saved')L=L.filter(a=>(plSt()[a.k]||{}).s);
+  const att=L.filter(a=>plUnread(a)&&a.lv!=='upd'), upd=L.filter(a=>plUnread(a)&&a.lv==='upd'), rd=L.filter(a=>!plUnread(a));
+  const grp=(t,A)=>A.length?`<div class="al-g"><h4 class="al-gh">${t} <span class="agn">${A.length}</span></h4><div class="al-list">${A.map(alRow).join('')}</div></div>`:'';
+  const h=msg?`<p class="al-empty">${msg}</p>`:(L.length?'':'<p class="al-empty">אין התראות בסינון הזה.</p>')+grp('דורש תשומת לב',att)+grp('עדכונים',upd)
+    +(rd.length?`<details class="al-g al-rd"${ALRD||ALF==='saved'||(!att.length&&!upd.length)?' open':''}><summary class="al-gh">נקראו <span class="agn">${rd.length}</span></summary><div class="al-list">${rd.map(alRow).join('')}</div></details>`:'');
+  if(box._h!==h){box._h=h; setH(box,h)}   // drawn again only when something changed (a focused row keeps its focus)
+}
+document.addEventListener('toggle',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('al-rd'))ALRD=e.target.open},true);
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  const f=t.closest('[data-alf]'); if(f){ALF=f.dataset.alf; renderAlertInbox(); return}
+  const r=t.closest('[data-alopen]'); if(r){plOpen(r.dataset.alopen,[...document.querySelectorAll('#alInbox [data-alopen]')].map(x=>x.dataset.alopen)); return}
+  if(t.closest('#alReadAll')){for(const a of plItems())if(plUnread(a))plSet(a.k,'r',a.ver||1); try{plRender(mAllNow())}catch(e){} return}});
+function stPlace(){}   // 11.11: no icons over צ׳יקו to place
 // a critical alert: a banner at the top, once per version, not in the quiet hours (unless allowed)
 function plBanner(){const el=$('plBan'); if(!el)return; const pr=plPrefs(), a=plItems().filter(x=>x.lv==='crit'&&plFloat(x)&&!(plSt()[x.k]||{}).b).sort(plSort)[0];
   if(!a||(plQuiet(pr)&&!pr.critQuiet)||!$('plSheet').hidden){el.hidden=true; return}
@@ -25379,12 +25437,12 @@ function plClose(){const sh=$('plSheet'); if(sh.hidden)return; for(const k of PL
 // a tap on a notification opens the alerts that wait
 let ST_GO=false; try{ST_GO=new URLSearchParams(location.search).has('st')}catch(e){}
 function stGoOnce(){if(!ST_GO||!PULSE)return; ST_GO=false; try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
-  setTimeout(()=>{try{const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); if(L.length)plOpen(L[0],L); else{showTab('news',true); IXFULL=true; rtGo('al')}}catch(e){}},400)}
+  setTimeout(()=>{try{const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); if(L.length)plOpen(L[0],L); else showTab('alerts',true)}catch(e){}},400)}   // 11.11: else the inbox in התראות
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const ic=t.closest('#stBub [data-plk]'); if(ic){const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); plOpen(ic.dataset.plk,L); return}
   if(t.closest('#stBub [data-plall]')){showTab('news',true); PLF='unread'; IXFULL=true; rtGo('al'); return}
   if(t.closest('#plShX')){plClose();return} if(t.closest('#plShNext')){PLV.i=Math.min(PLV.L.length-1,PLV.i+1); plShow(); return}
-  if(t.closest('#plShAll')){plClose(); showTab('news',true); IXFULL=true; rtGo('al'); return}
+  if(t.closest('#plShAll')){plClose(); showTab('alerts',true); return}   // 11.11: all the alerts are in התראות
   if(t.id==='plSheet'){plClose();return}
   if(t.closest('#plSheet [data-gosec], #plSheet [data-imopen], #plSheet [data-chiko]')){const sh=$('plSheet'); sh.hidden=true; document.body.classList.remove('st-open')}
   if(t.closest('#plBanGo')){const k=$('plBan').dataset.plk; plSet(k,'b',1); plOpen(k); return} if(t.closest('#plBanX')){const k=$('plBan').dataset.plk, a=plByK(k); plSet(k,'b',1); if(a)plSet(k,'d',a.ver||1); plBanner(); try{plRender()}catch(e){} return}
@@ -28308,7 +28366,6 @@ function nwSetFill(){const box=$('nwSetBox'); if(!box)return; const F=nwPrefs(),
       <div class="nws-r"><b>שעות שקטות</b><div class="nws-c"><label class="check"><input type="checkbox" id="plsQ"${pr.quiet.on?' checked':''}${dis}><span>פעילות</span></label><label>מ-<input type="time" id="plsQf" value="${pr.quiet.from}"${dis}></label><label>עד <input type="time" id="plsQt" value="${pr.quiet.to}"${dis}></label></div>
         <label class="check"><input type="checkbox" id="plsCq"${pr.critQuiet?' checked':''}${dis}><span>התראה קריטית מותרת גם בשעות השקטות</span></label></div>
       <div class="nws-r"><b>לטלפון</b><div class="nws-c"><label class="check"><input type="checkbox" data-plspu="crit"${pr.push.crit?' checked':''}${dis}><span>קריטיות</span></label><label class="check"><input type="checkbox" data-plspu="imp"${pr.push.imp?' checked':''}${dis}><span>גם חשובות</span></label></div><span class="nm">עדכוני תיק לא נשלחים לטלפון. חיבור המכשיר: <button type="button" class="lnk" data-anav="set:pushBox">התראות לטלפון ›</button></span></div>
-      <label class="check"><input type="checkbox" id="plsIcons"${pr.icons?' checked':''}${dis}><span>אייקונים של התראות מעל צ׳יקו</span></label>
       <details class="nx-tpk" id="nxTypesBox"><summary><b>סוגי אירועים</b><span class="nx-tps" id="nxTypesSum"></span></summary><div class="nx-tpl" id="nxTypesAl" role="group" aria-label="סוגי האירועים להתראה">${Object.entries(NX_TYPE).filter(([k])=>k!=='other').map(([k,v])=>`<label class="check"><input type="checkbox" data-nxat="${k}"${((S.newsAl||{}).types||{})[k]===false?'':' checked'}${dis}><span>${esc(v)}</span></label>`).join('')}</div>
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-nxatall="1"${dis}>לבחור הכול</button><button type="button" class="btn sm" data-nxatall="0"${dis}>לנקות הכול</button></div></details>
       <p class="note">רמה כבויה לא נשלחת; שעות שקטות עוצרות הודעות. לטלפון מגיע גם כשהאתר סגור.</p></div>`);
