@@ -539,6 +539,9 @@ test('privacy: a partner sees only their own securities in the shared documents'
   const a=partnerView(s,A,'quotes/latest',Q);
   assert.deepEqual(Object.keys(a.prices).sort(),['1159250','629014','KO','V']); assert.deepEqual(Object.keys(a.prev),['KO']); assert.deepEqual(a.stale,{});
   assert.equal(a.errors,undefined,'the failures name everybody\'s symbols'); assert.equal(a.usdIls,3.1); assert.equal(a.priceLabel,'x');
+  // 11.11: the splits name everybody's securities too
+  assert.deepEqual(Object.keys(partnerView(s,A,'quotes/latest',{...Q,splits:{MSFT:{r:2,d:'2026-10-01'},KO:{r:3,d:'2026-09-01'}}}).splits),['KO'],'the splits: only their own');
+  assert.equal(partnerView(s,A,'quotes/latest',Q).splits,undefined,'no splits field where there was none');
   assert.equal(partnerView(s,O,'quotes/latest',Q),Q,'the owner sees everything');
   assert.deepEqual(Object.keys(partnerView(s,A,'history/prices',{months:['2026-09'],px:{MSFT:[1],KO:[2]}}).px),['KO']);
   assert.deepEqual(Object.keys(partnerView(s,A,'research/latest',{companies:{MSFT:{},KO:{}},events:[]}).companies),['KO']);
@@ -569,8 +572,9 @@ test('privacy: over the API, partners and the owner do not see each other\'s sym
     // the live stream does not tell a partner which charts the server refreshes
     const ctl=new AbortController(), got=[]; const sr=await fetch(base+'/api/db/stream',{headers:{cookie:jar.a},signal:ctl.signal});
     const rd=sr.body.getReader(); const pump=(async()=>{try{for(;;){const {value,done}=await rd.read(); if(done)break; got.push(new TextDecoder().decode(value))}}catch(e){}})();
-    await new Promise(r=>setTimeout(r,100)); store.setDoc('quotes/c_MSFT',{closes:[]}); store.setDoc('quotes/latest',{prices:{}}); await new Promise(r=>setTimeout(r,200)); ctl.abort(); await pump;
-    assert.deepEqual(got.join('').split('\n').filter(l=>l.startsWith('data: ')).map(l=>JSON.parse(l.slice(6)).path),['quotes/latest']);
+    // 11.11: nor which securities' research it refreshes (research/s_<SYM> named the owner's and B's); their own, yes
+    await new Promise(r=>setTimeout(r,100)); store.setDoc('quotes/c_MSFT',{closes:[]}); store.setDoc('research/s_MSFT',{x:1}); store.setDoc('research/s_PEP',{x:1}); store.setDoc('research/s_KO',{x:1}); store.setDoc('quotes/latest',{prices:{}}); await new Promise(r=>setTimeout(r,200)); ctl.abort(); await pump;
+    assert.deepEqual(got.join('').split('\n').filter(l=>l.startsWith('data: ')).map(l=>JSON.parse(l.slice(6)).path),['research/s_KO','quotes/latest']);
   }finally{srv.close()}
 });
 

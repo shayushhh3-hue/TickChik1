@@ -140,7 +140,8 @@ export function partnerView(store,user,p,data){
   if(!user||ownerLike(user)||!SHARED_BY_SYM.has(p)||!isMap(data))return data;
   const ok=symsOfUser(store,user.id), has=s=>ok.has(s), pick=m=>isMap(m)?Object.fromEntries(Object.entries(m).filter(([k])=>has(k))):m;
   const both=a=>Array.isArray(a)?a.filter(o=>o&&has(o.a)&&has(o.b)):a, only=a=>Array.isArray(a)?a.filter(has):a;
-  if(p==='quotes/latest'){const {errors,...rest}=data; return {...rest,prices:pick(data.prices),prev:pick(data.prev),stale:pick(data.stale),meta:pick(data.meta)}}
+  // 11.11: the splits too (they name everybody's securities)
+  if(p==='quotes/latest'){const {errors,...rest}=data; return {...rest,prices:pick(data.prices),prev:pick(data.prev),stale:pick(data.stale),meta:pick(data.meta),...(data.splits?{splits:pick(data.splits)}:{})}}
   if(p==='history/prices')return {...data,px:pick(data.px)};
   if(p==='research/latest')return {...data,companies:pick(data.companies),events:Array.isArray(data.events)?data.events.filter(e=>!e||!e.sym||has(e.sym)):data.events};
   if(p==='research/longterm')return {...data,pairs:both(data.pairs)};

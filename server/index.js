@@ -275,7 +275,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   // live changes: an event per written path the viewer may read
   app.get('/api/db/stream',needUser,(req,res)=>{
     res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-store',connection:'keep-alive','x-accel-buffering':'no'}); res.write(':ok\n\n');
-    const user=req.user; const off=store.onChange(ev=>{if(canRead(user,ev.path)&&(ownerLike(user)||!ev.path.startsWith('quotes/c_')))res.write(`data: ${JSON.stringify(ev)}\n\n`)});
+    // 11.11: a partner hears of a security's own documents (its research, its closes) only for their own securities: the
+    // path alone says that someone holds or follows it (before, research/s_<SYM> reached everybody)
+    const user=req.user, mgr=ownerLike(user), symOf=p=>{const m=/^(?:research\/s_|quotes\/[ch]_)(.+)$/.exec(p); return m?m[1]:null}, keyOf=s=>String(s).replace(':','_').replace(/[^A-Za-z0-9_.\-]/g,'_');
+    let mine=null, mineAt=0; const isMine=k=>{if(!mine||Date.now()-mineAt>60e3){mine=new Set([...symsOfUser(store,user.id)].flatMap(s=>[keyOf(s),keyOf('TLV:'+s)])); mineAt=Date.now()} return mine.has(k)};
+    const off=store.onChange(ev=>{if(!canRead(user,ev.path))return; const k=mgr?null:symOf(ev.path); if(k&&!isMine(k))return; res.write(`data: ${JSON.stringify(ev)}\n\n`)});
     const ping=setInterval(()=>{try{res.write(':ping\n\n')}catch(e){}},25000);
     req.on('close',()=>{off();clearInterval(ping)});
   });
