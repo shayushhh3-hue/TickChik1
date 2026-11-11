@@ -1771,7 +1771,16 @@ body:not([data-page="overview"]) .hero .sidemore{display:none!important}
 .sbx button{font:inherit;font-size:14px;text-align:start;min-height:40px;padding:8px 12px;border:0;border-radius:10px;background:none;color:#D5DEE9;cursor:pointer;display:flex;align-items:center;gap:8px}
 .sbx button:hover{background:rgb(255 255 255 / .07);color:#fff}
 .sbdot{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block}
-@media (min-width:1200px){.sbx{padding-bottom:58px}}   /* the account button sits at the corner */
+/* 11.11 (the owner): the wordmark, refresh and the account leave the top of the home; refresh and the account are here,
+   in the menu (the wordmark is already at its top) */
+.sbx svg{width:18px;height:18px;flex:none}
+#tabsbar .sbx #tcAcct{position:static;font-family:inherit}
+#tabsbar .sbx #tcAcctBtn{width:100%;height:auto;border:0;border-radius:10px;background:none;box-shadow:none;color:inherit;display:flex;justify-content:flex-start}
+#tabsbar .sbx #tcAcctBtn::after{content:"החשבון שלי וניהול"}
+#tabsbar .sbx #tcAcctBtn svg{width:18px;height:18px}
+#tabsbar .sbx #tcAcctMenu{position:static;min-width:0;margin:2px 0 4px;box-shadow:none}
+.hero #btnRefresh,.hero #hdrAcct{display:none!important}
+body[data-page="overview"] .hero .brand .wm,body[data-page="overview"] .hero .brand-sub{position:absolute!important;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0}
 /* "מה חדש" */
 .newsdlg .prof-h{align-items:center}
 .nwx{font:inherit;font-size:22px;line-height:1;width:40px;height:40px;border-radius:10px;border:0;background:rgb(255 255 255 / .12);color:#fff;cursor:pointer;flex:none}
@@ -3117,7 +3126,7 @@ body[data-page="overview"] #idxRow{display:none!important}
     <button type="button" role="tab" id="tab_calendar" data-tab="calendar" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8.5" cy="15" r="1.3"/><circle cx="15.5" cy="15" r="1.3"/></svg><span>לוח מסחר</span></button>
     <button type="button" role="tab" id="tab_settings" data-tab="settings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>הקצאה וכללים</span></button>
     <button type="button" role="tab" id="tab_mine" data-tab="mine" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg><span>התיק שלי</span></button>
-  </nav><div class="sbx"><button type="button" data-uxgo="news">מה חדש באתר<span class="sbdot" id="sbNewsDot" hidden></span></button><button type="button" data-uxgo="tour">סיור באתר</button></div></div>
+  </nav><div class="sbx"><button type="button" id="navRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>רענון מחירים</button><div id="sbAcct"></div><button type="button" data-uxgo="news">מה חדש באתר<span class="sbdot" id="sbNewsDot" hidden></span></button><button type="button" data-uxgo="tour">סיור באתר</button></div></div>
   <nav class="botbar" id="botbar" aria-label="ניווט מהיר">
     <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="bbl">בית</span></button>
     <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9"/></svg><span class="bbl">תיק</span></button>
@@ -19482,7 +19491,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
   if(b){const on=m.hidden; m.hidden=!on; b.setAttribute('aria-expanded',String(on)); return}
   if(!m.hidden&&(!ev.target.closest('#hMenu')||ev.target.closest('.hbtn'))){setTimeout(()=>{m.hidden=true; const x=$('btnMore'); if(x)x.setAttribute('aria-expanded','false')},0)}});
 (function chipsBoot(){const mv=()=>{const k=document.querySelector('.worth .kchips'), h=$('wchH'); if(k&&h&&k.parentElement!==h&&!k.classList.contains('okmini'))h.appendChild(k)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv()})();
-(function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('hdrAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
+(function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('sbAcct'); if(a&&h&&a.parentElement!==h)h.appendChild(a)}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
   const P0=wPts(); box.hidden=false;
@@ -22711,7 +22720,7 @@ document.addEventListener('input',ev=>{
 $('alerts').addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('ag'))AG_OPEN[d.dataset.sv]=d.open},true);
 document.addEventListener('click',ev=>{
   if(ev.target.id==='toastUndo'){doUndo();return}
-  if(ev.target.closest('#btnRefresh')){refreshPage();return}
+  if(ev.target.closest('#btnRefresh, #navRefresh')){try{setNav(false)}catch(e){} refreshPage();return}
   if(ev.target.closest('#btnUpd')){goUpload();return}
   const btp=ev.target.closest('[data-bottip]'); if(btp){botTipClose(); if(btp.dataset.bottip==='go'){const k=$('botTipGo').dataset.ana||'analyze'; anaRun(k,null,{src:$('chatFab')})} else {try{$('chatFab').focus({preventScroll:true})}catch(e){}} return}
   const pfb=ev.target.closest('[data-prof]'); if(pfb){if(pfb.dataset.prof==='edit'){if(pfb.closest('#anaBox')&&!anaDock())anaClose(true); profOpen(pfb)} else profClose(true); return}
