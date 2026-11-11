@@ -3460,13 +3460,17 @@ test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choi
     const r=await pg.evaluate(()=>{const cs=e=>getComputedStyle(e), w=document.querySelector('.worth'), line=document.querySelector('#wChS path[stroke="url(#wgA)"]'), mix=document.querySelector('#bMix svg'), ck=document.getElementById('bChk');
       const W=w.getBoundingClientRect(), V=document.getElementById('kTotal').getBoundingClientRect(), K=document.getElementById('kKpis').getBoundingClientRect(), C=document.getElementById('wChart').getBoundingClientRect();
       return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:[...document.querySelectorAll('.worth #kKpis .kpi-k')].map(x=>x.textContent),
-        top:Math.round(V.top-W.top),right:Math.round(W.right-V.right),under:K.top>=V.bottom-1&&(!C.height||K.bottom<=C.top+1),
+        top:Math.round(V.top-document.getElementById('ovTabs').getBoundingClientRect().bottom),tabsTop:Math.round(document.getElementById('ovTabs').getBoundingClientRect().top-W.top),
+        tabBg:cs(document.querySelector('#ovTabs button')).backgroundColor,tabInk:cs(document.querySelector('#ovTabs button')).color,
+        right:Math.round(W.right-V.right),under:K.top>=V.bottom-1&&(!C.height||K.bottom<=C.top+1),
         mix:!!mix||!!document.getElementById('bMix'),mon:!!document.getElementById('kMon').offsetParent,ck:ck.hidden?'':ck.textContent.replace(/\s+/g,' ').trim(),go:(ck.querySelector('.bc-go')||{}).dataset||null,
         small:[...document.querySelectorAll('#bento .bc-go,#bento .bt[data-tab]')].filter(b=>b.getBoundingClientRect().height<44).length,
         gap:Math.round(document.getElementById('bento').getBoundingClientRect().top-w.getBoundingClientRect().bottom),ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.on&&r.bg==='rgb(91, 33, 182)','the violet card: '+JSON.stringify(r)); assert.ok(r.line===null||r.line==='rgb(255, 255, 255)','the chart\'s line white on it');
     // 11.11 (the owner): the value at the top right of the violet card; under it today, the week and the profit against the cost
-    assert.ok(r.top<70&&r.right<40,'the value at the top right of the card: '+JSON.stringify(r)); assert.ok(r.under,'the figures under the value, over the chart');
+    // 11.11 (the owner): the views' row first in the card, white with violet words; the value under it, at the right
+    assert.ok(r.tabsTop<24&&r.tabBg==='rgb(255, 255, 255)'&&r.tabInk==='rgb(91, 33, 182)','the views at the top, white: '+JSON.stringify(r));
+    assert.ok(r.top>=0&&r.top<70&&r.right<40,'the value under them, at the right: '+JSON.stringify(r)); assert.ok(r.under,'the figures under the value, over the chart');
     assert.equal(r.kpis[0],'היום'); assert.match(r.kpis[1],/^(שבוע|30 יום|ב-\d+ ימים)$/); assert.equal(r.kpis[2],'רווח מול עלות');
     assert.deepEqual([r.mix,r.mon],[false,false],'11.11 (the owner): no ring of the split ("פיזור" in the card goes there) and no chip of the days beside "שווי התיק"');
     assert.match(r.ck,/^(לבדוק · .+|אין מה לבדוק\..*)/,'one thing to check, or none: '+r.ck); assert.ok(r.go&&r.go.anav,'it leads somewhere');

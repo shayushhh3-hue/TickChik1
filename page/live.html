@@ -3022,7 +3022,12 @@ body[data-page="overview"] .worth .dayline{display:none!important}
 .bento{display:none}
 body.bento-on[data-page="overview"] .bento:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:-12px 0 0}
 body.bento-on[data-page="overview"] [data-pane="overview"]{row-gap:12px}
-body.bento-on[data-page="overview"] .worth .acctsel{color:#FFFFFF}
+/* 11.11 (the owner): the views' row (the accounts, פיזור, מבט לאחור, מה קורה בתיק) white with violet words and icons,
+   at the top of the card, over "שווי התיק" */
+body.bento-on[data-page="overview"] .worth .ovtabs button,body.bento-on[data-page="overview"] .worth .ovtabs .acctsel:not([hidden]){background-color:#FFFFFF;color:#5B21B6;font-weight:700}
+body.bento-on[data-page="overview"] .worth .ovtabs button:hover{background-color:#F1EBFF}
+body.bento-on[data-page="overview"] .worth .ovtabs button svg{color:#5B21B6}
+body.bento-on[data-page="overview"] .worth .ovtabs button:focus-visible,body.bento-on[data-page="overview"] .worth .ovtabs .acctsel:focus-visible{outline:3px solid #FFFFFF;outline-offset:2px}
 body.bento-on[data-page="overview"] #holdSec{padding:14px 12px 8px}
 body.bento-on[data-page="overview"] #holdSec>.panel{border:0;box-shadow:none;background:transparent;margin:0;padding:0}
 body.bento-on[data-page="overview"] #soonSec{display:none!important}
@@ -3036,12 +3041,12 @@ body.bento-on[data-page="overview"] .worth .wch-rg button{color:#EDE7FF}
 body.bento-on[data-page="overview"] .worth .wch-rg button[aria-pressed="true"]{background:#FFFFFF;color:#4C1D95}
 body.bento-on[data-page="overview"] .worth .acctsel option{color:#14122E;background:#FFFFFF}
 body.bento-on[data-page="overview"] .worth :focus-visible{outline-color:#FFFFFF}
-/* 11.11 (the owner): the value at the top of the card, at its right; under it the day, the week and the profit against
-   the cost; then the chart, the views and the markets' line at the bottom */
+/* 11.11 (the owner): the views' row at the top of the card; under it the value, at its right, then the day, the week and
+   the profit against the cost; then the chart, and the markets' line at the bottom */
 body.bento-on[data-page="overview"] .worth>*{order:2}
 body.bento-on[data-page="overview"] .worth>.wtop{order:0;justify-content:flex-start!important}
 body.bento-on[data-page="overview"] .worth>.wgrid{order:1}
-body.bento-on[data-page="overview"] .worth>#ovTabs{order:3;margin:12px 0 0}
+body.bento-on[data-page="overview"] .worth>#ovTabs{order:-1;margin:0 0 12px}
 body.bento-on[data-page="overview"] .worth>#mktTick{order:4;margin:10px 0 0;padding:8px 0 0;border-bottom:0;border-top:1px solid var(--line)}
 body.bento-on[data-page="overview"] .worth .wv{align-items:stretch!important;text-align:right!important}
 body.bento-on[data-page="overview"] .worth .big{text-align:right!important}
@@ -18425,7 +18430,8 @@ function render(){
   // hero status, movers, ticker tape and heat board
   const nCrit=A.filter(a=>a[0]==='crit').length, nWarn=A.filter(a=>a[0]==='warn').length, ks=$('kStatus');
   ks.hidden=true; ks.className='status'+(nCrit?' crit':nWarn?' warn':''); ks.innerHTML=niH(nCrit?'err':nWarn?'warn':'ok')+'<span>'+esc(nCrit?cntH(nCrit,'חריגה אחת','חריגות')+(nWarn?' · '+nWarn+' לבדיקה':''):nWarn?cntH(nWarn,'נושא אחד','נושאים')+' לבדיקה':'הכול תקין · אין פעולה נדרשת')+'</span>';
-  const chg=p=>`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
+  // 11.11 (the owner): a change that rounds to 0.00% has no arrow and no colour (it was "▼ 0.00%" in red)
+  const chg=p=>Math.abs(p.dayPct)<0.005?`<span class="n">0.00%</span>`:`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span>`;
   const mv=mH.pos.filter(p=>p.dayPct!=null).sort((a,b)=>b.dayPct-a.dayPct), best=mv[0]&&mv[0].dayPct>0?mv[0]:null, worst=mv.length&&mv[mv.length-1].dayPct<0?mv[mv.length-1]:null;
   const mvNo=(up)=>mv.length?(mH.fund?(up?'אף קרן לא עלתה היום':'אף קרן לא ירדה היום'):mH.stock?(up?'אף מניה לא עלתה היום':'אף מניה לא ירדה היום'):(up?'אף נייר לא עלה היום':'אף נייר לא ירד היום')):'אין עדיין שינוי יומי';
   // 6.11: the tiles say the day their figures are of ("היום" read in the morning about the US close of the day before)
@@ -18480,7 +18486,7 @@ function render(){
     // 10.11 (the owner): the symbol is the way to the security's page (its chart, buying and selling); the rest of the row
     // opens the numbers
     return `<tr class="hrow${op?' open':''}" tabindex="0" aria-expanded="${op}" aria-controls="${hid}" title="לחיצה: כל הנתונים של ${esc(lab(p.sym))}"><td>${logoHtml(p.sym,'s')}${lk?`<button type="button" class="sym hsym" data-gosec="${esc(p.sym)}" aria-label="${esc(lab(p.sym))}: לדף המניה">${esc(lab(p.sym))}</button>`:`<span class="sym">${esc(lab(p.sym))}</span>`}${lk?'<span class="golink" aria-hidden="true">גרף ›</span>':''}${p.accts.map(a=>`<span class="pill">${ACCTS[a]||a}</span>`).join('')}${p.planQty?`<span class="pill" style="background:var(--accent-soft);color:var(--accent-ink)">תוכנית +${p.planQty}</span>`:''}${pxAlertPill(p.sym)}${fl}<div class="nm">${NUMSYM.test(p.sym)?'מספר נייר '+esc(p.sym):esc(p.name||'')}</div></td>
-    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`<span class="n ${p.dayPct>=0?'up':'down'}">${p.dayPct>=0?'▲':'▼'} ${Math.abs(p.dayPct).toFixed(2)}%</span><div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
+    <td class="num">${p.dayPct==null?'<span class="n">—</span>':`${chg(p)}<div class="nm"><span class="n">${HC==='usd'?sgnDlr(p.dayIls/fxV):HC==='both'?sgn(p.dayIls)+' · '+sgnDlr(p.dayIls/fxV):sgn(p.dayIls)}</span></div>`}${spark(p.sym)}</td>
     <td class="num"><span class="n">${+p.qty.toFixed(3)}</span></td><td class="num"><span class="n">${pxs}</span></td>
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(/^מחיר קודם/.test(old)&&((Q.meta||{})[p.sym]||{}).date?'מחיר מ-'+dmy(Q.meta[p.sym].date).slice(0,5):/^מחיר קודם/.test(old)?'מחיר לא עדכני':old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
