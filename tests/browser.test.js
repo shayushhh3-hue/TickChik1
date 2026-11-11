@@ -1239,12 +1239,12 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
   try{
     let {ctx,pg}=await open(390);
     const st=()=>pg.evaluate(()=>({th:document.documentElement.dataset.theme,bg:getComputedStyle(document.body).backgroundColor,saved:localStorage.getItem('tr_theme'),
-      on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').getAttribute('aria-label'),meta:document.querySelector('meta[name=theme-color]').content}));
+      on:[...document.querySelectorAll('[data-themeset]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.themeset),lbl:document.getElementById('btnTheme').textContent.trim(),meta:document.querySelector('meta[name=theme-color]').content}));
     // the page opens at night (the trading look); the day is the blue-on-white one
     let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(7, 7, 26)','the night is the violet-black ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
-    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); if(t.closest('#hMenu'))document.getElementById('btnMore').click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
+    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); const bb=document.querySelector('#botbar [data-bb="more"]'); if(bb&&bb.offsetParent&&!document.getElementById('tabsbar').classList.contains('open'))bb.click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
     assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 245, 252)','light','light','מצב לילה','#F6F5FC']);
-    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); if(t.closest('#hMenu'))document.getElementById('btnMore').click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
+    await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); const bb=document.querySelector('#botbar [data-bb="more"]'); if(bb&&bb.offsetParent&&!document.getElementById('tabsbar').classList.contains('open'))bb.click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
     // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
     const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
       const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
@@ -1275,8 +1275,10 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
   const S0=store.getDoc('settings/main').data;
   try{
     let {ctx,pg}=await open(390);
-    const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
-    assert.deepEqual(top.b,['btnMore','btnTape','btnTheme','btnUpd','btnRefresh'],'no calendar and no search at the top: both are in "עוד" (9.11: night and upload under "⋯" on a phone)'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
+    const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].filter(x=>x.getBoundingClientRect().width>0).map(x=>x.id),side:[...document.querySelectorAll('#tabsbar .sbx button[id]')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
+    // 11.11 (the owner): nothing at the top of the home; refresh, the upload, night mode and the tape are in the side menu
+    assert.deepEqual(top.b,[],'no buttons at the top of the home');
+    assert.deepEqual(top.side,['navRefresh','btnUpd','btnTheme','btnTape','tcAcctBtn','tcOutBtn'],'the side menu has them, the account (and its sign-out) last'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -3381,13 +3383,14 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
   try{
-    const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), w=document.querySelector('.hero .wm').getBoundingClientRect(), f=document.getElementById('fresh'), vis=id=>{const e=document.getElementById(id); return !!e&&e.getBoundingClientRect().width>1};
-      return {wm:w.width,refTop:vis('btnRefresh'),acctTop:vis('hdrAcct'),more:[R('btnMore').top,R('btnMore').left],acct:[R('acctSel').top,R('acctSel').left],chips:getComputedStyle(document.getElementById('acctChips')).display,slogan:R('btnMore').width&&document.querySelector('.hero .brand-sub').getBoundingClientRect().width,ic:['btnMore'].map(id=>{const b=document.getElementById(id).getBoundingClientRect(), v=[...document.getElementById(id).querySelectorAll('svg')].find(x=>getComputedStyle(x).display!=='none').getBoundingClientRect(); return Math.round(Math.abs((b.left+b.width/2)-(v.left+v.width/2)))}),inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(f).display,busy:f.classList.contains('busy'),W:innerWidth,
-        side:{ref:!!document.querySelector('#tabsbar .sbx #navRefresh'),acct:!!document.querySelector('#tabsbar .sbx #sbAcct #tcAcct'),mc:!!document.querySelector('#tabsbar #tcAcctMenu a[href="/admin"]')}}});
-    // 11.11 (the owner): no wordmark, no refresh and no account at the top of the home; refresh and the account are in the side menu
-    assert.ok(r.wm<=1&&!r.refTop&&!r.acctTop&&r.slogan<=1&&r.more[1]<60,'only "⋯" at the top-left: '+JSON.stringify(r));
-    assert.ok(r.side.ref&&r.side.acct&&r.side.mc,'refresh and the account (with the management center) in the side menu: '+JSON.stringify(r));
-    assert.ok(r.inCard&&r.acct[0]>r.more[0]+30&&r.chips==='none'&&r.ic.every(x=>x<=1),'10.11 (the owner): the accounts a switch first in the row of views over the card, each icon in the middle of its square: '+JSON.stringify(r));
+    await pg.evaluate(()=>window.scrollTo(0,0));
+    const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), top=document.querySelector('.hero .top');
+      return {top:top.getBoundingClientRect().height,tick:R('mktTick').top,acct:R('acctSel').width,chips:getComputedStyle(document.getElementById('acctChips')).display,inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(document.getElementById('fresh')).display,busy:document.getElementById('fresh').classList.contains('busy'),W:innerWidth,
+        side:{ref:!!document.querySelector('#tabsbar .sbx #navRefresh'),upd:!!document.querySelector('#tabsbar .sbx #btnUpd'),th:!!document.querySelector('#tabsbar .sbx #btnTheme'),tape:!!document.querySelector('#tabsbar .sbx #btnTape'),acct:!!document.querySelector('#tabsbar .sbx #sbAcct #tcAcct'),mc:!!document.querySelector('#tabsbar #tcAcctMenu a[href="/admin"]')}}});
+    // 11.11 (the owner): nothing above the value card: no wordmark, no "⋯", no refresh and no account; all of them are in the side menu
+    assert.ok(r.top===0&&r.tick<40,'the value card at the top of the home: '+JSON.stringify(r));
+    assert.ok(Object.values(r.side).every(Boolean),'refresh, the upload, night mode, the tape and the account (with the management center) in the side menu: '+JSON.stringify(r));
+    assert.ok(r.inCard&&r.acct>0&&r.chips==='none','10.11 (the owner): the accounts a switch first in the row of views over the card: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
     assert.equal(await pg.evaluate(()=>document.querySelector('#acctChips .chip[aria-pressed="true"]')?.dataset.a),a[1],'the switch changes the account');
     await tab(pg,'search'); await pg.waitForTimeout(500);
