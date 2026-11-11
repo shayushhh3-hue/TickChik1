@@ -3020,17 +3020,17 @@ body[data-page="overview"] .worth .dayline{display:none!important}
 /* 11.11 (the owner's choice of three: "לוח פסיפס"): the home on a phone as tiles (body.bento-on, set by renderBento);
    12px between every two tiles, the value card's too (the page's 18 + 6 above the pane, less 12) */
 .bento{display:none}
-body.bento-on[data-page="overview"] .bento:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:-12px 0 0}
-body.bento-on[data-page="overview"] [data-pane="overview"]{row-gap:12px}
+body:is(.bento-on,.home-clean)[data-page="overview"] .bento:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:-12px 0 0}
+body:is(.bento-on,.home-clean)[data-page="overview"] [data-pane="overview"]{row-gap:12px}
 /* 11.11 (the owner): the views' row (the accounts, פיזור, מבט לאחור, מה קורה בתיק) white with violet words and icons,
    at the top of the card, over "שווי התיק" */
 body.bento-on[data-page="overview"] .worth .ovtabs button,body.bento-on[data-page="overview"] .worth .ovtabs .acctsel:not([hidden]){background-color:#FFFFFF;color:#5B21B6;font-weight:700}
 body.bento-on[data-page="overview"] .worth .ovtabs button:hover{background-color:#F1EBFF}
 body.bento-on[data-page="overview"] .worth .ovtabs button svg{color:#5B21B6}
 body.bento-on[data-page="overview"] .worth .ovtabs button:focus-visible,body.bento-on[data-page="overview"] .worth .ovtabs .acctsel:focus-visible{outline:3px solid #FFFFFF;outline-offset:2px}
-body.bento-on[data-page="overview"] #holdSec{padding:14px 12px 8px}
-body.bento-on[data-page="overview"] #holdSec>.panel{border:0;box-shadow:none;background:transparent;margin:0;padding:0}
-body.bento-on[data-page="overview"] #soonSec{display:none!important}
+body:is(.bento-on,.home-clean)[data-page="overview"] #holdSec{padding:14px 12px 8px}
+body:is(.bento-on,.home-clean)[data-page="overview"] #holdSec>.panel{border:0;box-shadow:none;background:transparent;margin:0;padding:0}
+body:is(.bento-on,.home-clean)[data-page="overview"] #soonSec{display:none!important}
 /* the value card: violet, its words and the chart in white (the chart's own colours are var()s, overridden here) */
 body.bento-on[data-page="overview"] .hero .worth{--ink:#FFFFFF;--ink2:#EDE7FF;--muted:#E2D9FF;--line:rgb(255 255 255 / .22);--surface:#5B21B6;--sunk:rgb(255 255 255 / .14);--gain:#BBF7D0;--loss:#FECDD3;--ok-bg:rgb(255 255 255 / .16);--ok-ink:#FFFFFF;--vio-ink:#FFFFFF;
   background:#5B21B6!important;color:#FFFFFF;border:0!important;border-radius:26px!important;box-shadow:0 12px 28px rgb(91 33 182 / .26)!important;padding:14px 16px 12px!important}
@@ -3060,28 +3060,82 @@ body.bento-on[data-page="overview"] .worth .whybtn{border-color:rgb(255 255 255 
 body.bento-on[data-page="overview"] .worth .kpi .whybtn{top:6px;inset-inline-start:auto;inset-inline-end:6px}
 .kpi-add{flex:0 0 100%;font:inherit;font-size:12.5px;font-weight:700;min-height:24px;padding:2px 0;border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:start}
 /* the other tiles */
-body.bento-on[data-page="overview"] .bt{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;margin:0;padding:14px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:14px;line-height:1.4;text-align:start;cursor:pointer}
-body.bento-on[data-page="overview"] .bt[hidden]{display:none}
+body:is(.bento-on,.home-clean)[data-page="overview"] .bt{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;margin:0;padding:14px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:14px;line-height:1.4;text-align:start;cursor:pointer}
+body:is(.bento-on,.home-clean)[data-page="overview"] .bt[hidden]{display:none}
 .bt-k{font-size:14px;font-weight:700;color:var(--muted)}
 /* the coming two weeks across the width (11.11: the split's ring left), its two first events side by side */
-body.bento-on[data-page="overview"] .b-soon{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;background:#E6FAF7;border-color:#BCEDE5}
+body:is(.bento-on,.home-clean)[data-page="overview"] .b-soon{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;background:#E6FAF7;border-color:#BCEDE5}
 .b-soon .bt-k,.b-soon .bs-m,.b-soon .bs-dv{grid-column:1/-1}
 .b-soon .bt-k,.b-soon .bs-e b,.b-soon .bs-m,.b-soon .bs-dv{color:#0F5F57}
 .bs-e{display:flex;flex-direction:column;font-size:14px;line-height:1.35;font-weight:600} .bs-e b{font-size:13px}
 .bs-m,.bs-dv{font-size:13px}
 /* the chart's legend in the violet card: "התיק" is the white line */
 body.bento-on[data-page="overview"] .worth .wleg2 i.me{background:#FFFFFF}
-body.bento-on[data-page="overview"] .b-chk{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#FFF4DB;border-color:#F3D9A4;color:#4A2E00;cursor:default}
-body.bento-on[data-page="overview"] .b-chk.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok-ink)}
+body:is(.bento-on,.home-clean)[data-page="overview"] .b-chk{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#FFF4DB;border-color:#F3D9A4;color:#4A2E00;cursor:default}
+body:is(.bento-on,.home-clean)[data-page="overview"] .b-chk.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok-ink)}
 .bc-ic{flex:none;width:40px;height:40px;border-radius:12px;background:#FFFFFF;display:grid;place-items:center} .bc-ic svg{width:20px;height:20px}
 .bc-t{flex:1;min-width:0;margin:0;font-size:14.5px;line-height:1.45} .bc-m{font-size:13px;opacity:.85;white-space:nowrap}
 .bc-go{flex:none;width:44px;height:44px;border-radius:12px;border:0;background:#FFFFFF;color:inherit;display:grid;place-items:center;cursor:pointer} .bc-go svg{width:18px;height:18px}
 /* the holdings stay as they were, in a tile */
-body.bento-on[data-page="overview"] #holdSec{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
-html[data-theme="dark"] body.bento-on[data-page="overview"] .b-soon{background:rgb(45 212 191 / .12);border-color:rgb(45 212 191 / .3)}
+body:is(.bento-on,.home-clean)[data-page="overview"] #holdSec{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+html[data-theme="dark"] body:is(.bento-on,.home-clean)[data-page="overview"] .b-soon{background:rgb(45 212 191 / .12);border-color:rgb(45 212 191 / .3)}
 html[data-theme="dark"] .b-soon .bt-k,html[data-theme="dark"] .b-soon .bs-e b,html[data-theme="dark"] .b-soon .bs-m,html[data-theme="dark"] .b-soon .bs-dv{color:#99F6E4}
-html[data-theme="dark"] body.bento-on[data-page="overview"] .b-chk{background:rgb(245 158 11 / .14);border-color:rgb(245 158 11 / .35);color:#FDE68A}
+html[data-theme="dark"] body:is(.bento-on,.home-clean)[data-page="overview"] .b-chk{background:rgb(245 158 11 / .14);border-color:rgb(245 158 11 / .35);color:#FDE68A}
 html[data-theme="dark"] .bc-ic,html[data-theme="dark"] .bc-go{background:rgb(255 255 255 / .08)}
+/* 11.11 (the owner's mock-up: "כרטיס נקי", a choice in the settings; the bento stays the default): a plain card with
+   the accounts' switch in its head, the value at the right and the chart beside it, the day under the value and the
+   stocks/funds split at its foot; under it "מה קרה היום בתיק?" and the views as four tiles; the holdings with a pill of
+   their share; the tiles after them */
+body.home-clean[data-page="overview"] .bento:not([hidden]){margin:0}
+body.home-clean[data-page="overview"] .hero .worth{padding:16px 16px 14px!important;border-radius:24px!important}
+body.home-clean[data-page="overview"] .worth>#mktTick{display:none!important}
+body.home-clean[data-page="overview"] .worth .wtop{justify-content:space-between!important;align-items:center;gap:8px;margin:0 0 2px}
+body.home-clean[data-page="overview"] .worth .wtop .acctsel:not([hidden]){display:inline-block;width:auto;min-height:36px;margin:0;padding:0 28px 0 12px;border:0;border-radius:999px;background-color:var(--sunk);color:var(--vio-ink);font-size:13px;font-weight:700;text-align:start;text-align-last:auto}
+body.home-clean[data-page="overview"] .worth .wgrid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)!important;align-items:end;gap:4px 12px!important;margin-top:2px}
+body.home-clean[data-page="overview"] .worth .wgrid>.wv{grid-column:1;grid-row:1}
+body.home-clean[data-page="overview"] .worth .wgrid>#wChart{grid-column:2;grid-row:1;margin:0;align-self:end}
+body.home-clean[data-page="overview"] .worth .wgrid>:not(.wv):not(#wChart){grid-column:1/-1}
+body.home-clean[data-page="overview"] .worth .wgrid>#wChart.wch-empty{display:none!important}
+body.home-clean[data-page="overview"] .worth .wgrid:has(>#wChart.wch-empty)>.wv{grid-column:1/-1}
+body.home-clean[data-page="overview"] .worth .wv{align-items:stretch!important;text-align:right!important}
+body.home-clean[data-page="overview"] .worth .big{text-align:right!important}
+body.home-clean[data-page="overview"] .worth #kTotal{font-size:34px;font-weight:800;letter-spacing:-.6px;line-height:1.15}
+body.home-clean[data-page="overview"] .worth .wch-h,body.home-clean[data-page="overview"] .worth #wLeg,body.home-clean[data-page="overview"] .worth #wLegD,body.home-clean[data-page="overview"] .worth #wChN{display:none!important}
+body.home-clean[data-page="overview"] .worth .wch svg{height:110px}
+/* the day first and large, the week and the profit small after it: the figure, its percent, its name */
+body.home-clean[data-page="overview"] .worth .kpis{display:flex!important;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin:4px 0 0}
+body.home-clean[data-page="overview"] .worth .kpi{display:inline-flex;flex-wrap:nowrap;align-items:baseline;justify-content:flex-start;gap:5px;padding:0;background:none;border-radius:0;min-width:0}
+body.home-clean[data-page="overview"] .worth .kpi>*{flex:none}
+body.home-clean[data-page="overview"] .worth .kpi-v{order:0;font-size:13px}
+body.home-clean[data-page="overview"] .worth .kpi-s{order:1;font-size:13px}
+body.home-clean[data-page="overview"] .worth .kpi-k{order:2;font-size:13px;color:var(--muted);font-weight:600}
+body.home-clean[data-page="overview"] .worth .kpi .kpi-add{order:3}
+body.home-clean[data-page="overview"] .worth .kpi:first-child{flex-basis:100%}
+body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-v,body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-s{font-size:20px;font-weight:800}
+body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-k{font-size:15px}
+body.home-clean[data-page="overview"] .worth .kpi .whybtn{position:static;order:4}
+/* the stocks/funds split at the card's foot (the home hides #kindRow otherwise), each with its bar */
+body.home-clean[data-page="overview"] .worth #kindRow{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none!important;gap:0!important;margin:12px 0 0!important;padding-top:10px;border-top:1px solid var(--line)}
+body.home-clean[data-page="overview"] .worth #kindRow .kt{display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:2px 10px!important;border:0;border-inline-start:1px solid var(--line);border-radius:0;background:none;box-shadow:none}
+body.home-clean[data-page="overview"] .worth #kindRow .kt:first-child{border-inline-start:0;padding-inline-start:0!important}
+body.home-clean[data-page="overview"] .worth #kindRow .kt-k{font-size:13px}
+body.home-clean[data-page="overview"] .worth #kindRow .kt-v{font-size:16px;text-align:start}
+body.home-clean[data-page="overview"] .worth #kindRow .kt-p{font-size:12.5px}
+body.home-clean[data-page="overview"] .worth #kindRow .kt-d{display:none!important}
+body.home-clean[data-page="overview"] .worth #kindRow .kt-bar{display:block!important;margin-top:4px}
+/* the views as four tiles under "מה קרה היום בתיק?" (its own style); the first one full, a dark violet under white words */
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin:0;max-width:none;overflow:visible}
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:76px;padding:8px 4px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:12.5px;font-weight:700;line-height:1.25;text-align:center;white-space:normal;cursor:pointer}
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs button svg{display:block;width:24px;height:24px;color:var(--vio-ink)}
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs button:first-of-type{background:linear-gradient(135deg,#6D28D9 0%,#5B21B6 100%);border-color:transparent;color:#FFFFFF}
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs button:first-of-type svg{color:#FFFFFF}
+.ovtabs .ov-add{display:none!important}
+body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs .ov-add{display:flex!important}
+/* the holdings: each row's share of the portfolio as a pill beside its value (the thin bar under the row goes) */
+body.home-clean[data-page="overview"] .hold.lite tbody tr:not(.sec){grid-template-columns:minmax(0,1fr) auto auto 12px!important;grid-template-areas:"name val pill go" "name day pill go"!important}
+body.home-clean[data-page="overview"] .hold.lite tbody td:nth-child(6){grid-area:pill!important;display:flex!important;align-items:center;padding:0!important;min-width:0}
+body.home-clean[data-page="overview"] .hold.lite tbody td:nth-child(6) .n{order:0;min-width:0;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--vio-ink);font-size:12.5px;font-weight:700}
+body.home-clean[data-page="overview"] .hold.lite .hwb{display:none!important}
 #holdAll{display:none!important}
 body[data-page="overview"] #hHold{font-size:19px}
 /* 10.11 (the owner): the holdings' two switches as one balanced line across the width: the kinds at one edge, the currency at the other, of the same height */
@@ -19538,9 +19592,20 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
 // is. The holdings stay as they were, in a tile. Facts the page already computes, nothing new. (The split's ring left the
 // same day: "פיזור" in the card leads to the same screen.)
 let BENTO=null;
+// 11.11 (the owner's mock-up, "כרטיס נקי"): a second style of the phone's home, chosen in the settings (the bento stays the
+// default): a plain card with the chart beside the value and the stocks/funds split at its foot, "מה קרה היום בתיק?"
+// under it, the views as a row of four tiles, the holdings with their share as a pill, the tiles after them.
+// Kept in this browser and with the account (tr_home, one of UI_KEYS)
+function homeStyle(){try{return localStorage.getItem('tr_home')==='clean'?'clean':'bento'}catch(e){return 'bento'}}
+function homeSetSync(){const v=homeStyle(); for(const b of document.querySelectorAll('[data-homeset]'))b.setAttribute('aria-pressed',String(b.dataset.homeset===v))}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-homeset]'); if(!b)return;
+  try{localStorage.setItem('tr_home',b.dataset.homeset==='clean'?'clean':'bento')}catch(e){} homeSetSync(); try{useAdd('home:'+b.dataset.homeset)}catch(e){} try{uiPush()}catch(e){} try{homeLayout()}catch(e){}});
 function renderBento(m,A){
-  const box=$('bento'); if(!box)return; BENTO={m,A};
-  const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length); box.hidden=!on; document.body.classList.toggle('bento-on',on); if(!on)return;
+  const box=$('bento'); if(!box)return; BENTO={m,A}; homeSetSync();
+  const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length), clean=homeStyle()==='clean'; box.hidden=!on;
+  document.body.classList.toggle('bento-on',on&&!clean); document.body.classList.toggle('home-clean',on&&clean);
+  {const ib=$('insightBar'); if(ib)ib.hidden=!(on&&clean)}   // "מה קרה היום בתיק?" (renderDesk fills it and hides it): in the clean card only
+  if(!on)return;
   // the coming two weeks: the first two events, how many more, and the dividends the portfolio pays in a year
   let S=[]; try{S=soonEvents(new Date())}catch(e){} const today=ilDay(), dayW=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
   const ev=[]; for(const x of S)for(const e of x.E)if(ev.length<2)ev.push({d:x.d,e}); const nE=S.reduce((t,x)=>t+x.E.length,0);
@@ -19592,6 +19657,12 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   {const ot=$('ovTabs'), mt=$('mktTick'); if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot)}
   // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
   {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
+  // 11.11 (the owner's mock-up, "כרטיס נקי"): the accounts' switch in the card's head, the views a row of four tiles under
+  // "מה קרה היום בתיק?", the stocks/funds split at the card's foot, the tiles after the holdings. In the bento, the lines
+  // above put the views and the switch back in the card and the split before the actions; the tiles go back before the holdings
+  {const cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec');
+    if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.previousElementSibling!==ib)ib.after(ot); if(kr&&w&&kr.parentElement!==w)w.append(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx)}
+    else if(bx&&hs&&bx.nextElementSibling!==hs)hs.before(bx)}
   // 11.11 (the owner): the day, the week and the profit against the cost right under the value, in the card
   try{if(BENTO)renderBento(BENTO.m,BENTO.A)}catch(e){}
   try{WSIG=''; renderWChart()}catch(e){}}
@@ -19601,7 +19672,7 @@ document.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('
 (function acctBoot(){const mv=()=>{const a=$('tcAcct'), h=$('sbAcct'); if(a&&h&&a.parentElement!==h){h.appendChild(a); const b=$('tcAcctBtn'); if(b)b.setAttribute('aria-label','החשבון שלי וניהול')}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',mv); else mv(); setTimeout(mv,600); setTimeout(mv,2500)})();
 function renderWChart(){
   const box=$('wChart'), svg=$('wChS'); if(!box||!svg)return;
-  const P0=wPts(); box.hidden=false;
+  const P0=wPts(); box.hidden=false; box.classList.toggle('wch-empty',P0.length<2);   // 11.11: the clean card leaves the value the width while there is no line yet
   {let any=false; for(const b of document.querySelectorAll('[data-wr]')){const r=+b.dataset.wr; b.hidden=r>0&&WSPAN<=r; if(r>0&&!b.hidden)any=true; b.setAttribute('aria-pressed',String(r===WRE()))}
     const g=document.querySelector('#wchH .wch-rg'); if(g)g.hidden=!any}
   {const n=$('wChN'); if(n){n.textContent=KV!=='all'?'הגרף מציג את שווי כל התיק: עוד אין היסטוריה חודשית נפרדת ל'+(KV==='fund'?'קרנות':'מניות')+'.':''; n.hidden=KV==='all'}}

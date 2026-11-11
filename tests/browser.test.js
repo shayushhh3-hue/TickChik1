@@ -3482,3 +3482,32 @@ test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choi
     assert.deepEqual([r.bento,r.on,r.kpisIn],[false,false,true],'a wide screen keeps its home: '+JSON.stringify(r)); assert.notEqual(r.bg,'rgb(91, 33, 182)');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
+
+test('11.11 the phone\'s home as the owner\'s mock-up ("כרטיס נקי", chosen in the settings; the bento stays the default): a plain card with the chart beside the value and the stocks/funds split at its foot, "מה קרה היום בתיק?", the views as four tiles, the holdings with their share, the tiles after them',T,async t=>{
+  if(skip())return t.skip('no browser');
+  {const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000});
+    assert.equal(await pg.evaluate(()=>document.body.classList.contains('bento-on')&&document.querySelector('[data-homeset="bento"]').getAttribute('aria-pressed')),'true','the bento by default');
+    await pg.evaluate(()=>document.querySelector('[data-homeset="clean"]').click()); await pg.waitForTimeout(600);
+    const r=await pg.evaluate(()=>{const R=e=>e.getBoundingClientRect(), w=document.querySelector('.worth'), v=R(document.getElementById('kTotal')), c=R(document.getElementById('wChart')), kr=document.getElementById('kindRow'), ot=document.getElementById('ovTabs'), ib=document.getElementById('insightBar'), bx=document.getElementById('bento');
+      return {clean:document.body.classList.contains('home-clean'),bento:document.body.classList.contains('bento-on'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),saved:localStorage.getItem('tr_home'),
+        violet:getComputedStyle(w).backgroundColor==='rgb(91, 33, 182)',beside:c.width>0&&c.right<=v.left+2&&c.bottom>v.top&&c.top<v.bottom+120,right:Math.round(R(w).right-v.right),
+        kind:kr.parentElement===w&&kr.offsetHeight>0&&kr.querySelectorAll('.kt').length>=2,insight:!ib.hidden&&ib.offsetHeight>0&&/מה (קרה היום|השתנה מאז)/.test(ib.textContent),
+        tabs:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.previousElementSibling===ib?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=44).map(x=>x.dataset.tab):[],
+        head:!!document.querySelector('.worth .wtop #acctSel'),after:bx.previousElementSibling===document.getElementById('holdSec')&&!bx.hidden,pills:[...document.querySelectorAll('#rows tr.hrow td:nth-child(6) .n')].filter(x=>x.offsetHeight>0).length,
+        ox:document.documentElement.scrollWidth>innerWidth+1}});
+    assert.ok(r.clean&&!r.bento&&r.pressed==='true'&&r.saved==='clean','the choice: '+JSON.stringify(r));
+    assert.ok(!r.violet&&r.beside&&r.right<40,'a plain card, the value at its right and the chart beside it: '+JSON.stringify(r));
+    assert.ok(r.kind&&r.insight&&r.head,'the split at the card\'s foot, "מה קרה היום בתיק?", the accounts in the card\'s head: '+JSON.stringify(r));
+    assert.deepEqual(r.tabs,['mix','history','state','mine'],'the views as four tiles under it, "הוסף נכסים" the fourth');
+    assert.ok(r.after&&r.pills>0&&!r.ox,'the tiles after the holdings, each holding\'s share a pill, no sideways scroll: '+JSON.stringify(r));
+    // and back: everything in its place again
+    await pg.evaluate(()=>document.querySelector('[data-homeset="bento"]').click()); await pg.waitForTimeout(600);
+    const b=await pg.evaluate(()=>({bento:document.body.classList.contains('bento-on'),clean:document.body.classList.contains('home-clean'),tabsInCard:!!document.querySelector('.worth #ovTabs'),acctInTabs:!!document.querySelector('#ovTabs #acctSel'),
+      before:document.getElementById('bento').nextElementSibling===document.getElementById('holdSec'),kindOut:!document.getElementById('kindRow').closest('.worth'),add:getComputedStyle(document.querySelector('#ovTabs .ov-add')).display,insight:document.getElementById('insightBar').hidden}));
+    assert.deepEqual(b,{bento:true,clean:false,tabsInCard:true,acctInTabs:true,before:true,kindOut:true,add:'none',insight:true});
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+  {const {ctx,pg}=await open(1280); await pg.waitForTimeout(800); await pg.evaluate(()=>document.querySelector('[data-homeset="clean"]').click()); await pg.waitForTimeout(500);
+    const r=await pg.evaluate(()=>({clean:document.body.classList.contains('home-clean'),bento:!document.getElementById('bento').hidden,tabsInCard:!!document.querySelector('.worth #ovTabs'),add:getComputedStyle(document.querySelector('#ovTabs .ov-add')).display}));
+    assert.deepEqual(r,{clean:false,bento:false,tabsInCard:true,add:'none'},'a wide screen keeps its home');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+});
