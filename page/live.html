@@ -3114,6 +3114,18 @@ html[data-theme="dark"] .bc-ic,html[data-theme="dark"] .bc-go{background:rgb(255
    stocks/funds split at its foot; under it "מה קרה היום בתיק?" and the views as four tiles; the holdings with a pill of
    their share; the tiles after them */
 body.home-clean[data-page="overview"] .bento:not([hidden]){margin:0}
+/* 11.11 (the owner): the head as the mock-up: the wordmark and its line at the right, a round profile button at the left
+   (it opens the side menu at "החשבון שלי וניהול"); the bento keeps nothing above its card */
+.hero #hdrProf{display:none}
+html body.home-clean[data-page="overview"] #hero.hero .top.top{display:flex!important;flex-direction:row;flex-wrap:nowrap!important;align-items:center;justify-content:space-between;gap:10px;padding:2px 2px 12px!important;margin:0;min-height:0}
+body.home-clean[data-page="overview"] #hero .top .brand{display:flex!important;flex-direction:column;align-items:flex-start;gap:2px;width:auto!important;flex:1 1 auto;min-width:0}
+body.home-clean[data-page="overview"] #hero .top .acts{flex:0 0 auto;width:auto!important;margin:0!important}
+body.home-clean[data-page="overview"] #hero .top .brand .wm,body.home-clean[data-page="overview"] #hero .top .brand .brand-sub{position:static!important;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:nowrap}
+body.home-clean[data-page="overview"] #hero .top .brand .wm{font-size:32px;line-height:1.05}
+body.home-clean[data-page="overview"] #hero .top .brand .brand-sub{display:block!important;font-size:14px;color:var(--muted);font-weight:600}
+body.home-clean[data-page="overview"] #hero .top .acts{display:flex!important;align-items:center;gap:8px}
+body.home-clean[data-page="overview"] #hero #hdrProf{display:inline-grid!important;place-items:center;width:48px;height:48px;min-width:48px;min-height:48px;padding:0;border-radius:50%;border:2px solid var(--vio-ink);background:var(--surface);color:var(--vio-ink);box-shadow:var(--shadow);cursor:pointer}
+body.home-clean[data-page="overview"] #hero #hdrProf svg{width:24px;height:24px}
 body.home-clean[data-page="overview"] .hero .worth{padding:16px 16px 14px!important;border-radius:24px!important}
 body.home-clean[data-page="overview"] .worth>#mktTick{display:none!important}
 body.home-clean[data-page="overview"] .worth .wtop{justify-content:space-between!important;align-items:center;gap:8px;margin:0 0 2px}
@@ -3290,7 +3302,7 @@ body[data-page="overview"] #idxRow{display:none!important}
   <header class="hero" id="hero">
     <div class="top">
       <div class="brand"><h1 class="wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Ch<span class="wm-i">ı<svg class="wm-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M14 7h7v7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>k</span></h1><span class="brand-sub">התיק שלך. הסיפור שלך.</span><span class="live" id="fresh">טוען נתוני תיק…</span><button type="button" class="pxnow" id="pxNow" hidden>לעדכן מחירים עכשיו</button></div>
-      <div class="acts"><span id="hdrAcct" class="hdr-acct"></span><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
+      <div class="acts"><span id="hdrAcct" class="hdr-acct"></span><button class="hbtn hprof" type="button" id="hdrProf" aria-label="החשבון שלי וניהול" title="החשבון שלי וניהול"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
     </div>
     <div class="dup" id="loadErr" role="status" hidden style="margin:10px 0 0"></div>
     <div class="main">
@@ -4059,7 +4071,7 @@ body[data-page="overview"] #idxRow{display:none!important}
         <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
         <p class="note" style="margin:0;max-width:none">פשוטה: בלי החלקים המתקדמים. מלאה: הכול.</p>
         <div class="viewwrap" role="group" aria-label="מצב יום או לילה"><span class="sub">מצב תצוגה</span><div class="chips"><button class="chip" type="button" data-themeset="light" aria-pressed="true">☀️ יום</button><button class="chip" type="button" data-themeset="dark" aria-pressed="false">🌙 לילה</button><button class="chip" type="button" data-themeset="auto" aria-pressed="false">לפי הטלפון</button></div></div>
-        <div class="viewwrap" role="group" aria-label="סגנון דף הבית בטלפון"><span class="sub">דף הבית בטלפון</span><div class="chips"><button class="chip" type="button" data-homeset="bento" aria-pressed="true">פסיפס</button><button class="chip" type="button" data-homeset="clean" aria-pressed="false">כרטיס נקי</button></div></div>
+        <div class="viewwrap" role="group" aria-label="סגנון דף הבית בטלפון"><span class="sub">דף הבית בטלפון</span><div class="chips"><button class="chip" type="button" data-homeset="clean" aria-pressed="true">כרטיס נקי</button><button class="chip" type="button" data-homeset="bento" aria-pressed="false">פסיפס</button></div></div>
         <div class="viewwrap" role="group" aria-label="גודל הטקסט"><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
         <div class="viewwrap" role="group" aria-label="ניגודיות"><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
         <div class="viewwrap" role="group" aria-label="תנועה"><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
@@ -19623,12 +19635,17 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
 // is. The holdings stay as they were, in a tile. Facts the page already computes, nothing new. (The split's ring left the
 // same day: "פיזור" in the card leads to the same screen.)
 let BENTO=null;
-// 11.11 (the owner's mock-up, "כרטיס נקי"): a second style of the phone's home, chosen in the settings (the bento stays the
-// default): a plain card with the chart beside the value and the stocks/funds split at its foot, "מה קרה היום בתיק?"
-// under it, the views as a row of four tiles, the holdings with their share as a pill, the tiles after them.
+// 11.11 (the owner's mock-up, "כרטיס נקי"): the phone's home as the owner's mock-up: the wordmark and its line with a
+// profile button over a plain card with the chart beside the value and the stocks/funds split at its foot, "מה קרה היום
+// בתיק?" under it, the views as a row of four tiles, the holdings with their share as a pill, the tiles after them.
+// The default since the evening of 11.11 (the owner); the bento ("פסיפס") is a choice in the settings.
 // Kept in this browser and with the account (tr_home, one of UI_KEYS)
-function homeStyle(){try{return localStorage.getItem('tr_home')==='clean'?'clean':'bento'}catch(e){return 'bento'}}
+function homeStyle(){try{return localStorage.getItem('tr_home')==='bento'?'bento':'clean'}catch(e){return 'clean'}}
 function homeSetSync(){const v=homeStyle(); for(const b of document.querySelectorAll('[data-homeset]'))b.setAttribute('aria-pressed',String(b.dataset.homeset===v))}
+// 11.11 (the owner): the clean card's profile button opens the side menu at "החשבון שלי וניהול" (the account stays there,
+// within reach from every screen)
+document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('#hdrProf')))return; try{setNav(true)}catch(e){}
+  setTimeout(()=>{const b=$('tcAcctBtn'), m=$('tcAcctMenu'); if(b&&m&&m.hidden)b.click(); try{(m&&!m.hidden?m:b).scrollIntoView({block:'nearest'})}catch(e){} try{b&&b.focus({preventScroll:true})}catch(e){}},80)});
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-homeset]'); if(!b)return;
   try{localStorage.setItem('tr_home',b.dataset.homeset==='clean'?'clean':'bento')}catch(e){} homeSetSync(); try{useAdd('home:'+b.dataset.homeset)}catch(e){} try{uiPush()}catch(e){} try{homeLayout()}catch(e){}});
 // where the home's parts stand in the chosen style. "כרטיס נקי": the accounts' switch in the card's head, the views a row

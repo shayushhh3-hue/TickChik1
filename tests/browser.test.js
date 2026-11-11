@@ -98,7 +98,7 @@ before(async()=>{
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 
 // a signed-in page; prices are not fetched (the page's "update now" answers at once), the profile and tip prompts wait
-async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,parts=false}={}){
+async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,parts=false,home='bento'}={}){
   // the choices of how the page looks follow the account (S.ui); each test starts without the ones an earlier test made,
   // unless it is checking that they come along (another device: keepUi)
   if(!keepUi)for(const p of ['settings/main',...store.users().filter(u=>u.role!=='owner').map(u=>`data/users/${u.id}/settings`)]){const d=store.getDoc(p); if(d.exists&&d.data&&d.data.ui){const x={...d.data}; delete x.ui; store.setDoc(p,x,{silent:true})}}
@@ -106,6 +106,9 @@ async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,par
   if(!prompts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
   // 4.11: the long screens show one part at a time; the tests of their sections see every part (the parts have a test of their own)
   if(!parts)await ctx.addInitScript(()=>{try{localStorage.setItem('tr_pt_all','1')}catch(e){}});
+  // 11.11: the phone's home is the clean card by default; the tests of the home's parts were written on the bento and
+  // keep it (home:'bento', a choice the page keeps), the tests of the clean card ask for it, or for the default (home:null)
+  if(home)await ctx.addInitScript(h=>{try{if(localStorage.getItem('tr_home')==null)localStorage.setItem('tr_home',h)}catch(e){}},home);
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='nw'?['nw@example.com','friend-pass-7']:who==='p2'?['p2@example.com','friend-pass-2']:who==='adm'?['adm@example.com','admin-pass-1']:['owner@example.com','owner-pass-123'];
@@ -3531,4 +3534,28 @@ test('11.11 "כרטיס נקי" chosen on another device: the style that arrives
     assert.deepEqual(r,{saved:'clean',tabsInPane:true,kindInCard:true,acctInHead:true,after:true,pressed:'true'},'the whole clean card, not half of it');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
+});
+
+test('11.11 the clean card is the phone\'s default (the owner): the wordmark and its line at the top with a round profile button that opens "החשבון שלי וניהול"; every text readable at night',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390,{home:null}); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(400);
+  const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), wm=document.querySelector('#hero .wm').getBoundingClientRect(), sub=document.querySelector('#hero .brand-sub').getBoundingClientRect(), pf=R('hdrProf'), w=document.querySelector('.worth').getBoundingClientRect();
+    return {clean:document.body.classList.contains('home-clean'),saved:localStorage.getItem('tr_home'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),
+      wm:wm.width>60&&wm.bottom<=w.top,sub:sub.width>60&&sub.bottom<=w.top,prof:pf.width>=44&&pf.height>=44&&pf.left<80&&pf.bottom<=w.top+2,ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.deepEqual(r,{clean:true,saved:null,pressed:'true',wm:true,sub:true,prof:true,ox:false},'the clean card by default, its head as the mock-up: '+JSON.stringify(r));
+  await pg.click('#hdrProf'); await pg.waitForTimeout(500);
+  const a=await pg.evaluate(()=>({nav:document.getElementById('tabsbar').classList.contains('open'),menu:!document.getElementById('tcAcctMenu').hidden,mc:!!document.querySelector('#tcAcctMenu a[href="/admin"]:not([hidden])')}));
+  assert.deepEqual(a,{nav:true,menu:true,mc:true},'the profile button opens the side menu at the account (the management center in it)');
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
+  // at night: no visible text on the home below 4.5:1 against what is behind it (as the night test checks the bento)
+  await pg.evaluate(()=>{document.documentElement.dataset.theme='dark'}); await pg.waitForTimeout(300);
+  const low=await pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
+    const L=({r,g,b})=>{const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b)}, B=(t,b)=>({r:t.r*t.a+b.r*(1-t.a),g:t.g*t.a+b.g*(1-t.a),b:t.b*t.a+b.b*(1-t.a),a:1});
+    const bg=el=>{const k=[]; let e=el; while(e&&e.nodeType===1){const cs=getComputedStyle(e); if(cs.backgroundImage!=='none'&&!/url\(/.test(cs.backgroundImage))return null; const c=P(cs.backgroundColor); if(c&&c.a>0){k.push(c); if(c.a>=1)break} e=e.parentElement}
+      let c=k.length&&k[k.length-1].a>=1?k.pop():P(getComputedStyle(document.body).backgroundColor); while(k.length)c=B(k.pop(),c); return c};
+    const out=[]; for(const el of document.querySelectorAll('[data-pane="overview"] *, .hero *')){if(!el.offsetParent)continue; const t=[...el.childNodes].some(n=>n.nodeType===3&&n.data.trim()); if(!t||el.closest('.tapetg,.lg'))continue;
+      const cs=getComputedStyle(el); if(+cs.opacity<0.5)continue; const b=bg(el), f0=P(cs.color); if(!b||!f0)continue; const f=f0.a<1?B(f0,b):f0, x=L(f), y=L(b), cr=(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);
+      if(cr<4.5)out.push(el.className+' '+cr.toFixed(2)+' '+el.textContent.trim().slice(0,20))} return out});
+  assert.deepEqual(low,[],'readable at night');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
 });
