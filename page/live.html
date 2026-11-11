@@ -3027,7 +3027,7 @@ body.bento-on[data-page="overview"] #holdSec{padding:14px 12px 8px}
 body.bento-on[data-page="overview"] #holdSec>.panel{border:0;box-shadow:none;background:transparent;margin:0;padding:0}
 body.bento-on[data-page="overview"] #soonSec{display:none!important}
 /* the value card: violet, its words and the chart in white (the chart's own colours are var()s, overridden here) */
-body.bento-on[data-page="overview"] .hero .worth{--ink:#FFFFFF;--ink2:#EDE7FF;--muted:#E2D9FF;--line:rgb(255 255 255 / .22);--surface:#5B21B6;--sunk:rgb(255 255 255 / .14);--gain:#BBF7D0;--loss:#FECDD3;--ok-bg:rgb(255 255 255 / .16);--ok-ink:#FFFFFF;
+body.bento-on[data-page="overview"] .hero .worth{--ink:#FFFFFF;--ink2:#EDE7FF;--muted:#E2D9FF;--line:rgb(255 255 255 / .22);--surface:#5B21B6;--sunk:rgb(255 255 255 / .14);--gain:#BBF7D0;--loss:#FECDD3;--ok-bg:rgb(255 255 255 / .16);--ok-ink:#FFFFFF;--vio-ink:#FFFFFF;
   background:#5B21B6!important;color:#FFFFFF;border:0!important;border-radius:26px!important;box-shadow:0 12px 28px rgb(91 33 182 / .26)!important;padding:14px 16px 12px!important}
 body.bento-on[data-page="overview"] .worth #wChS path[stroke="url(#wgA)"]{stroke:#FFFFFF}
 body.bento-on[data-page="overview"] .worth #wChS path[fill="url(#wgF)"]{fill:rgb(255 255 255 / .13)}
@@ -3036,24 +3036,35 @@ body.bento-on[data-page="overview"] .worth .wch-rg button{color:#EDE7FF}
 body.bento-on[data-page="overview"] .worth .wch-rg button[aria-pressed="true"]{background:#FFFFFF;color:#4C1D95}
 body.bento-on[data-page="overview"] .worth .acctsel option{color:#14122E;background:#FFFFFF}
 body.bento-on[data-page="overview"] .worth :focus-visible{outline-color:#FFFFFF}
-/* the day and the period: tiles of their own, the figure large */
-body.bento-on[data-page="overview"] #bKpis{grid-column:1/-1;min-width:0}
-body.bento-on[data-page="overview"] #bKpis .kpis{gap:12px;margin:0}
-body.bento-on[data-page="overview"] #bKpis .kpi{justify-content:flex-start;align-items:flex-start;text-align:start;padding:14px 14px 12px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
-body.bento-on[data-page="overview"] #bKpis .kpi-k{font-size:14px}
-body.bento-on[data-page="overview"] #bKpis .kpi-v{font-family:var(--display);font-size:clamp(18px,5.6vw,24px);line-height:1.25;text-align:right}
-body.bento-on[data-page="overview"] #bKpis .kpi-s{font-size:14px;text-align:right}
-body.bento-on[data-page="overview"] #bKpis .kpi .whybtn{top:12px;inset-inline-start:auto;inset-inline-end:10px}
+/* 11.11 (the owner): the value at the top of the card, at its right; under it the day, the week and the profit against
+   the cost; then the chart, the views and the markets' line at the bottom */
+body.bento-on[data-page="overview"] .worth>*{order:2}
+body.bento-on[data-page="overview"] .worth>.wtop{order:0;justify-content:flex-start!important}
+body.bento-on[data-page="overview"] .worth>.wgrid{order:1}
+body.bento-on[data-page="overview"] .worth>#ovTabs{order:3;margin:12px 0 0}
+body.bento-on[data-page="overview"] .worth>#mktTick{order:4;margin:10px 0 0;padding:8px 0 0;border-bottom:0;border-top:1px solid var(--line)}
+body.bento-on[data-page="overview"] .worth .wv{align-items:stretch!important;text-align:right!important}
+body.bento-on[data-page="overview"] .worth .big{text-align:right!important;font-size:52px;line-height:1.1;letter-spacing:-1.5px}
+body.bento-on[data-page="overview"] .worth .kpis{gap:8px;margin:10px 0 2px}
+body.bento-on[data-page="overview"] .worth .kpi{justify-content:flex-start;align-items:flex-start;text-align:start;padding:8px 10px;border-radius:14px}
+body.bento-on[data-page="overview"] .worth .kpi-k{font-size:13px;color:var(--ink2)}
+body.bento-on[data-page="overview"] .worth .kpi-v{font-size:16px;text-align:right}
+body.bento-on[data-page="overview"] .worth .kpi-s{font-size:13px;text-align:right}
+body.bento-on[data-page="overview"] .worth .whybtn{border-color:rgb(255 255 255 / .45);background:rgb(255 255 255 / .12)}
+body.bento-on[data-page="overview"] .worth .kpi .whybtn{top:6px;inset-inline-start:auto;inset-inline-end:6px}
+.kpi-add{flex:0 0 100%;font:inherit;font-size:12.5px;font-weight:700;min-height:24px;padding:2px 0;border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:start}
 /* the other tiles */
 body.bento-on[data-page="overview"] .bt{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;margin:0;padding:14px;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:14px;line-height:1.4;text-align:start;cursor:pointer}
 body.bento-on[data-page="overview"] .bt[hidden]{display:none}
 .bt-k{font-size:14px;font-weight:700;color:var(--muted)}
-.b-mix svg{width:104px;height:104px;align-self:center;display:block}
-.bm-l{display:flex;flex-direction:column;gap:2px;font-size:13.5px} .bm-l>span{display:flex;align-items:center;gap:6px} .bm-l i{width:10px;height:10px;border-radius:3px;flex:none}
-body.bento-on[data-page="overview"] .b-soon{background:#E6FAF7;border-color:#BCEDE5}
+/* the coming two weeks across the width (11.11: the split's ring left), its two first events side by side */
+body.bento-on[data-page="overview"] .b-soon{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;background:#E6FAF7;border-color:#BCEDE5}
+.b-soon .bt-k,.b-soon .bs-m,.b-soon .bs-dv{grid-column:1/-1}
 .b-soon .bt-k,.b-soon .bs-e b,.b-soon .bs-m,.b-soon .bs-dv{color:#0F5F57}
 .bs-e{display:flex;flex-direction:column;font-size:14px;line-height:1.35;font-weight:600} .bs-e b{font-size:13px}
-.bs-m,.bs-dv{font-size:13px} .bs-dv{margin-top:auto;padding-top:4px}
+.bs-m,.bs-dv{font-size:13px}
+/* the chart's legend in the violet card: "התיק" is the white line */
+body.bento-on[data-page="overview"] .worth .wleg2 i.me{background:#FFFFFF}
 body.bento-on[data-page="overview"] .b-chk{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#FFF4DB;border-color:#F3D9A4;color:#4A2E00;cursor:default}
 body.bento-on[data-page="overview"] .b-chk.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok-ink)}
 .bc-ic{flex:none;width:40px;height:40px;border-radius:12px;background:#FFFFFF;display:grid;place-items:center} .bc-ic svg{width:20px;height:20px}
@@ -3246,9 +3257,9 @@ body[data-page="overview"] #idxRow{display:none!important}
       <p class="note">התיק שלך גלוי רק לך. מה נשמר ומה נשלח מפורט בהגדרות, בחלק "פרטיות ונתונים".</p>
     </section>
       <button type="button" class="insight" id="insightBar" hidden><span class="in-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1.1.9 1.8V16h5.2v-.3c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3z"/></svg></span><span class="in-t"><b>מה קרה היום בתיק?</b><span id="insightSub"></span></span><span class="in-go" aria-hidden="true">‹</span></button>
-      <!-- 11.11 (the owner's choice, "לוח פסיפס"): on a phone the tiles under the violet value card: the day and the period
-           (#kKpis moves in), how the portfolio is split, what is coming, and the one thing to check -->
-      <div class="bento" id="bento" hidden><div class="b-kpis" id="bKpis"></div><button type="button" class="bt b-mix" id="bMix" data-tab="mix"></button><button type="button" class="bt b-soon" id="bSoon" data-tab="calendar"></button><div class="bt b-chk" id="bChk" hidden></div></div>
+      <!-- 11.11 (the owner's choice, "לוח פסיפס"): on a phone the tiles under the violet value card: what is coming and the
+           one thing to check (the day, the week and the profit are in the card; the split is "פיזור", in the card too) -->
+      <div class="bento" id="bento" hidden><button type="button" class="bt b-soon" id="bSoon" data-tab="calendar"></button><div class="bt b-chk" id="bChk" hidden></div></div>
       <!-- 10.11 (the owner): the holdings right under the chart, before the quick actions and the stocks/funds tiles -->
       <section aria-labelledby="hHold" id="holdSec" class="hold lite top">
       <div class="row"><h2 id="hHold">ההחזקות שלי</h2><button type="button" class="lnk hold-all" id="holdAll" aria-expanded="false">הצג הכל ‹</button><div class="hsub"><span class="sub" id="holdSub"></span><div class="chips hkind" role="group" aria-label="מה להציג"><button type="button" class="chip" data-hv="all" aria-pressed="true">הכל</button><button type="button" class="chip" data-hv="stock" aria-pressed="false">מניות</button><button type="button" class="chip" data-hv="fund" aria-pressed="false">קרנות</button></div><div class="chips hkind hccy" role="group" aria-label="מטבע התצוגה"><button type="button" class="chip" data-hc="ils" aria-pressed="true" title="שווי, שינוי יומי, עלות ורווח בשקלים">₪</button><button type="button" class="chip" data-hc="usd" aria-pressed="false" title="בדולרים: הרווח מול העלות בלי שינוי השער">$</button></div><button class="btn sm" type="button" id="holdCols" aria-pressed="false">עוד פרטים</button></div></div>
@@ -3530,6 +3541,21 @@ body[data-page="overview"] #idxRow{display:none!important}
     </section>
   </div>
   <div class="pane" data-pane="history" hidden>
+    <!-- 11.11 (the owner): the value against the deposits first on מבט לאחור -->
+    <section aria-labelledby="hTrend">
+      <div class="row"><h2 id="hTrend">האם הכסף שלי עובד? שווי מול הפקדות</h2><div class="legend"><span><i class="lg-l1"></i>שווי התיק</span><span><i class="lg-l2"></i>סך ההפקדות</span></div></div>
+      <div class="panel">
+        <div class="chart" id="chart3"><svg id="svg3" viewBox="0 0 640 260" role="img" aria-label="שווי התיק מול סך ההפקדות, חודש אחר חודש"></svg><div class="tip" id="tip3" hidden></div></div>
+        <div class="note" id="trendNote"></div>
+        <div class="dup tx" id="calcFix" hidden></div>
+      </div>
+      <details class="panel"><summary>הנתונים בטבלה</summary>
+        <div class="scroll"><table>
+          <thead><tr id="trendHead"><th>מועד</th><th class="num">אקסלנס ₪</th><th class="num">בלינק ₪</th><th class="num">סך הכול ₪</th><th class="num">הפקדות ₪</th><th class="num">הפרש</th></tr></thead>
+          <tbody id="trendRows"></tbody>
+        </table></div>
+      </details>
+    </section>
     <section aria-labelledby="hQuick" id="quickSec">
       <div class="row"><h2 id="hQuick">המספרים של היום</h2></div>
       <div class="side">
@@ -3546,20 +3572,6 @@ body[data-page="overview"] #idxRow{display:none!important}
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
       <div class="panel since" id="since"></div>
-    </section>
-    <section aria-labelledby="hTrend">
-      <div class="row"><h2 id="hTrend">האם הכסף שלי עובד? שווי מול הפקדות</h2><div class="legend"><span><i class="lg-l1"></i>שווי התיק</span><span><i class="lg-l2"></i>סך ההפקדות</span></div></div>
-      <div class="panel">
-        <div class="chart" id="chart3"><svg id="svg3" viewBox="0 0 640 260" role="img" aria-label="שווי התיק מול סך ההפקדות, חודש אחר חודש"></svg><div class="tip" id="tip3" hidden></div></div>
-        <div class="note" id="trendNote"></div>
-        <div class="dup tx" id="calcFix" hidden></div>
-      </div>
-      <details class="panel"><summary>הנתונים בטבלה</summary>
-        <div class="scroll"><table>
-          <thead><tr id="trendHead"><th>מועד</th><th class="num">אקסלנס ₪</th><th class="num">בלינק ₪</th><th class="num">סך הכול ₪</th><th class="num">הפקדות ₪</th><th class="num">הפרש</th></tr></thead>
-          <tbody id="trendRows"></tbody>
-        </table></div>
-      </details>
     </section>
     <section aria-labelledby="hBench" id="benchSec">
       <div class="row"><h2 id="hBench">האם אני עושה טוב? התיק מול המדדים</h2><span class="sub" id="benchSub"></span></div>
@@ -19493,7 +19505,7 @@ function monChipCalc(m){
   if(!(then>0)||cov<tot*0.8)return null;
   return {ret:(now/then-1)*100,key,since,days:Math.round((Date.parse(today)-Date.parse(key))/864e5)}}
 // 10.11 (the owner): the value card as the brokers' apps have it: under the value one row of three figures of one make,
-// היום (with its "למה?"), the last 30 days, and the profit against the cost (the cash when no cost is known)
+// היום (with its "למה?"), the week (11.11; it was the last 30 days), and the profit against the cost
 function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos.length){el.hidden=true; return}
   const cell=(k,v,s,c)=>`<div class="kpi"><span class="kpi-k">${k}</span><span class="kpi-v n ${c||''}">${v}</span>${s?`<span class="kpi-s n ${c||''}">${s}</span>`:''}</div>`, C=[];
   C.push(m.dayPct!=null?cell('היום',sgn(m.dayIls),spct(m.dayPct),m.dayIls>=0?'up':'down'):cell('היום','—'));
@@ -19503,26 +19515,22 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
   const wk=(()=>{try{if(acct!=='all')return null; const all=mAllNow(); if(!all||Math.abs((all.total||0)-(m.total||0))>1)return null;
     const L=(TP||[]).filter(p=>+p.val>0&&isFinite(+p.val)); if(L.length<2)return null; const from=Date.now()-0.25*30.44*864e5, i=L.findIndex(p=>p.t>=from); if(i<0)return null;
     const a=L[Math.max(0,i-1)], z=L[L.length-1]; if(!(+a.val>0)||a===z)return null; return {d:+z.val-+a.val,p:(+z.val/+a.val-1)*100}}catch(e){return null}})();
-  C.push(r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):cell('30 יום','—'));
-  // 11.11 (the owner): no "מזומן ₪0" (the cash only when there is some)
-  if(m.cost>0)C.push(cell('רווח כולל',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down')); else if((m.cash||0)>=1)C.push(cell('מזומן',ils(m.cash)));
+  // 11.11 (the owner): today and the week under the value (the 30 days only when the week is not known, as for one account)
+  C.push(wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):cell('שבוע','—'));
+  // 11.11 (the owner): the profit against the cost always there; with no cost known, one tap to the form that fills it in
+  C.push(m.cost>0?cell('רווח מול עלות',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):`<div class="kpi"><span class="kpi-k">רווח מול עלות</span><button type="button" class="kpi-add" data-tab="mine">להוסיף עלויות</button></div>`);
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
   const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
   el.hidden=false; setH(el,C.join('')); const c0=el.querySelector('.kpi'); if(w&&c0)c0.appendChild(w)}
 // 11.11 (the owner's choice of three, "לוח פסיפס"): on a phone the home is tiles. The value card is violet with the chart
-// in white; the day and the period are tiles of their own (#kKpis, moved by homeLayout); then how the portfolio is split
-// (a ring), the coming two weeks (the first two events and the dividends' year), and the one thing to check by the person's
-// rules, or that nothing is. The holdings stay as they were, in a tile. Facts the page already computes, nothing new
+// in white, the value at its top right and under it today, the week and the profit against the cost; then the coming two
+// weeks (the first two events and the dividends' year) and the one thing to check by the person's rules, or that nothing
+// is. The holdings stay as they were, in a tile. Facts the page already computes, nothing new. (The split's ring left the
+// same day: "פיזור" in the card leads to the same screen.)
 let BENTO=null;
 function renderBento(m,A){
   const box=$('bento'); if(!box)return; BENTO={m,A};
   const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length); box.hidden=!on; document.body.classList.toggle('bento-on',on); if(!on)return;
-  const T=m.total||0, sh=v=>pct(T?v/T*100:0,1);
-  // the split: stocks, funds, and the cash when there is some, as a ring drawn clockwise from the top
-  const parts=[['מניות',m.pos.filter(p=>!isF(p.sym)).reduce((t,p)=>t+p.val,0),'#7C3AED'],['קרנות',m.pos.filter(p=>isF(p.sym)).reduce((t,p)=>t+p.val,0),'#14B8A6'],['מזומן',Math.max(0,m.cash||0),'#A1A1AA']].filter(x=>x[1]>=1);
-  const C=2*Math.PI*40; let off=0;
-  const ring=parts.map(([,v,c])=>{const l=T?v/T*C:0, s=`<circle cx="56" cy="56" r="40" fill="none" stroke="${c}" stroke-width="16" stroke-dasharray="${l.toFixed(1)} ${(C-l).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 56 56)"/>`; off+=l; return s}).join('');
-  setH($('bMix'),`<span class="bt-k">חלוקת התיק</span><svg viewBox="0 0 112 112" role="img" aria-label="${esc(parts.map(([k,v])=>k+' '+sh(v)).join(', '))}">${ring}<text x="56" y="61" text-anchor="middle" font-size="15" font-weight="800" style="fill:var(--ink)" font-family="var(--display)">${m.pos.length} ניירות</text></svg><span class="bm-l">${parts.map(([k,v,c])=>`<span><i style="background:${c}" aria-hidden="true"></i>${k} <b class="n">${sh(v)}</b></span>`).join('')}</span>`);
   // the coming two weeks: the first two events, how many more, and the dividends the portfolio pays in a year
   let S=[]; try{S=soonEvents(new Date())}catch(e){} const today=ilDay(), dayW=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
   const ev=[]; for(const x of S)for(const e of x.E)if(ev.length<2)ev.push({d:x.d,e}); const nE=S.reduce((t,x)=>t+x.E.length,0);
@@ -19538,7 +19546,9 @@ function renderBento(m,A){
   ck.className='bt b-chk';
   setH(ck,`${ic('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/>')}<p class="bc-t"><b>לבדוק · ${esc(f[1])}:</b> ${esc(fCut(fText(f),110).c)}${N.length>1?` <span class="bc-m">ועוד ${N.length-1}</span>`:''}</p>${go(nv.t,nv.l)}`)}
 function renderMonChip(m){
-  const el=$('kMon'); if(!el)return; let r=null; try{r=monChipCalc(m)}catch(e){}
+  // 11.11 (the owner): no chip beside "שווי התיק"; the period is said once, in the row of figures under the value
+  const el=$('kMon'); if(el)el.hidden=true; return;
+  let r=null; try{r=monChipCalc(m)}catch(e){}
   if(!r||!isFinite(r.ret)){el.hidden=true;return} const v=r.ret;
   el.hidden=false; el.className='mchip'+(v<0?' down':''); el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${v>=0?'M4 16l5-5 4 4 7-8M15 7h5v5':'M4 8l5 5 4-4 7 8M15 17h5v-5'}"/></svg><span class="n">${spct(v,1)}</span> ${r.since?`ב-${r.days} הימים האחרונים`:'בחודש האחרון'}`;
   el.setAttribute('aria-label',`הניירות ${v>=0?'עלו':'ירדו'} ${Math.abs(v).toFixed(1)}% ${r.since?`ב-${r.days} הימים האחרונים (מ-${dmy(r.key)}, היום הראשון שנשמר)`:'בחודש האחרון'}, בלי הפקדות ומזומן`);
@@ -19572,8 +19582,7 @@ function homeLayout(){const ph=PHONE.matches, wc=$('wChart'), wh=$('wchH'), kt=$
   {const ot=$('ovTabs'), mt=$('mktTick'); if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot)}
   // 10.11 (the owner): the accounts' switch first in the row of views (it stood squeezed beside "שווי התיק")
   {const as=$('acctSel'), ot=$('ovTabs'); if(as&&ot&&as.parentElement!==ot)ot.prepend(as)}
-  // 11.11 (the owner, "לוח פסיפס"): on a phone the day and the period are tiles under the card; on a wide screen back in it
-  {const kp=$('kKpis'), bk=$('bKpis'), wv=kt.parentElement; if(kp&&bk&&ph&&kp.parentElement!==bk)bk.appendChild(kp); else if(kp&&wv&&!ph&&kp.parentElement!==wv)wv.insertBefore(kp,kt)}
+  // 11.11 (the owner): the day, the week and the profit against the cost right under the value, in the card
   try{if(BENTO)renderBento(BENTO.m,BENTO.A)}catch(e){}
   try{WSIG=''; renderWChart()}catch(e){}}
 (function(){const go=()=>{try{homeLayout()}catch(e){}}; if(document.readyState==='loading')addEventListener('DOMContentLoaded',go); else go(); try{PHONE.addEventListener('change',go)}catch(e){}})();

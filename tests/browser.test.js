@@ -311,7 +311,7 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       assert.ok(td.news===null||/החדשות|צ׳יקו/.test(td.news),'the news chip: '+td.news);
       // a mail kind switched on from the list: the owner's consent, by a click
       await pg.evaluate(()=>document.querySelector('[data-uxmail="earnings"]').click()); await pg.waitForTimeout(1600);
-      assert.equal(store.getDoc('settings/main').data.mail.earnings,true,'saved');
+      assert.equal((store.getDoc('settings/main').data.mail||{}).earnings,true,'saved '+JSON.stringify(pg.errs));
       assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail="earnings"]')&&!!document.querySelector('[data-uxmail="backup"]')),'only the one still off is offered');
       await pg.evaluate(()=>document.querySelector('[data-uxx="tr_tipmail"]').click()); await pg.waitForTimeout(300);
       assert.ok(await pg.evaluate(()=>!document.querySelector('[data-uxmail]')),'"לא עכשיו" hides it');
@@ -3392,7 +3392,7 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   try{
     await pg.evaluate(()=>window.scrollTo(0,0));
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), top=document.querySelector('.hero .top');
-      return {top:top.getBoundingClientRect().height,tick:R('mktTick').top,acct:R('acctSel').width,chips:getComputedStyle(document.getElementById('acctChips')).display,inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(document.getElementById('fresh')).display,busy:document.getElementById('fresh').classList.contains('busy'),W:innerWidth,
+      return {top:top.getBoundingClientRect().height,tick:document.querySelector('.worth').getBoundingClientRect().top,acct:R('acctSel').width,chips:getComputedStyle(document.getElementById('acctChips')).display,inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(document.getElementById('fresh')).display,busy:document.getElementById('fresh').classList.contains('busy'),W:innerWidth,
         side:{ref:!!document.querySelector('#tabsbar .sbx #navRefresh'),upd:!!document.querySelector('#tabsbar .sbx #btnUpd'),th:!!document.querySelector('#tabsbar .sbx #btnTheme'),tape:!!document.querySelector('#tabsbar .sbx #btnTape'),acct:!!document.querySelector('#tabsbar .sbx #sbAcct #tcAcct'),mc:!!document.querySelector('#tabsbar #tcAcctMenu a[href="/admin"]')}}});
     // 11.11 (the owner): nothing above the value card: no wordmark, no "⋯", no refresh and no account; all of them are in the side menu
     assert.ok(r.top===0&&r.tick<40,'the value card at the top of the home: '+JSON.stringify(r));
@@ -3458,15 +3458,20 @@ test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choi
   if(skip())return t.skip('no browser');
   {const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(300);
     const r=await pg.evaluate(()=>{const cs=e=>getComputedStyle(e), w=document.querySelector('.worth'), line=document.querySelector('#wChS path[stroke="url(#wgA)"]'), mix=document.querySelector('#bMix svg'), ck=document.getElementById('bChk');
-      return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:document.querySelectorAll('#bKpis .kpi').length,
-        mix:mix?mix.getAttribute('aria-label'):'',ck:ck.hidden?'':ck.textContent.replace(/\s+/g,' ').trim(),go:(ck.querySelector('.bc-go')||{}).dataset||null,
+      const W=w.getBoundingClientRect(), V=document.getElementById('kTotal').getBoundingClientRect(), K=document.getElementById('kKpis').getBoundingClientRect(), C=document.getElementById('wChart').getBoundingClientRect();
+      return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:[...document.querySelectorAll('.worth #kKpis .kpi-k')].map(x=>x.textContent),
+        top:Math.round(V.top-W.top),right:Math.round(W.right-V.right),under:K.top>=V.bottom-1&&(!C.height||K.bottom<=C.top+1),
+        mix:!!mix||!!document.getElementById('bMix'),mon:!!document.getElementById('kMon').offsetParent,ck:ck.hidden?'':ck.textContent.replace(/\s+/g,' ').trim(),go:(ck.querySelector('.bc-go')||{}).dataset||null,
         small:[...document.querySelectorAll('#bento .bc-go,#bento .bt[data-tab]')].filter(b=>b.getBoundingClientRect().height<44).length,
         gap:Math.round(document.getElementById('bento').getBoundingClientRect().top-w.getBoundingClientRect().bottom),ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.on&&r.bg==='rgb(91, 33, 182)','the violet card: '+JSON.stringify(r)); assert.ok(r.line===null||r.line==='rgb(255, 255, 255)','the chart\'s line white on it');
-    assert.ok(r.kpis>=2,'the day and the period as tiles: '+r.kpis); assert.match(r.mix,/(מניות|קרנות) [\d.]+%/,'the ring says its parts');
+    // 11.11 (the owner): the value at the top right of the violet card; under it today, the week and the profit against the cost
+    assert.ok(r.top<70&&r.right<40,'the value at the top right of the card: '+JSON.stringify(r)); assert.ok(r.under,'the figures under the value, over the chart');
+    assert.equal(r.kpis[0],'היום'); assert.match(r.kpis[1],/^(שבוע|30 יום|ב-\d+ ימים)$/); assert.equal(r.kpis[2],'רווח מול עלות');
+    assert.deepEqual([r.mix,r.mon],[false,false],'11.11 (the owner): no ring of the split ("פיזור" in the card goes there) and no chip of the days beside "שווי התיק"');
     assert.match(r.ck,/^(לבדוק · .+|אין מה לבדוק\..*)/,'one thing to check, or none: '+r.ck); assert.ok(r.go&&r.go.anav,'it leads somewhere');
     assert.equal(r.small,0,'every tile and button at least 44px tall'); assert.equal(r.gap,12,'12px under the card'); assert.equal(r.ox,false);
-    await pg.click('#bMix'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'mix','the split opens פיזור');
+    await pg.click('#bSoon'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'calendar','the coming weeks open the calendar');
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(1280); await pg.waitForTimeout(800);
     const r=await pg.evaluate(()=>({bento:!document.getElementById('bento').hidden,on:document.body.classList.contains('bento-on'),kpisIn:!!document.getElementById('kKpis').closest('.worth'),bg:getComputedStyle(document.querySelector('.worth')).backgroundColor}));
