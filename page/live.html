@@ -746,7 +746,9 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crt.main .v{font-size:20px} .crt .v.up,.mp .v.up{color:var(--gain)} .crt .v.down,.mp .v.down{color:var(--loss)} .crt .s{font-size:12px;color:var(--ink2)}
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
-.crev .buy i,.cll.buy i{background:#0D9488;border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)} .crev .sell i,.cll.sell i{background:#E11D48;border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)}
+.crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+/* 11.11: the chart's buys and sales are round marks with a letter (ק, מ); the key under the chart */
+.trkey{color:var(--ink2)} .trm{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;line-height:1;vertical-align:-3px} .trm.b{background:#0F766E} .trm.s{background:#BE123C}
 .crev .rep i,.cll.rep i{background:#7C3AED} .crev .ex i,.cll.ex i{background:#0D9488} .crev .al i,.cll.al i{background:#F59E0B} .cll.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
 .chread p.hint{margin:8px 2px 0} .clls{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:4px} .cll{display:inline-flex;align-items:center;gap:5px;color:var(--ink2);font-size:12px}
 .mypos,.ancard{margin:16px 0 6px} .mypos h3,.ancard h3{margin:0 0 8px;font-size:15px} .mps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
@@ -1534,6 +1536,11 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 .wtags{display:flex;flex-wrap:wrap;gap:6px}
 .wsec{grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;margin-top:4px} .wsec h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px} .wsec .sub{font-size:12.5px;color:var(--muted)}
 .wc.mine{border-color:var(--accent-soft)}
+/* 11.11: the whole card opens the security's page (the click on it, not on its buttons) */
+.wc[data-card]{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.wc[data-card]:hover{border-color:var(--accent);box-shadow:0 6px 18px rgb(124 58 237 / .14)}
+.wc[data-card]:active{transform:scale(.995)}
+@media (prefers-reduced-motion:reduce){.wc[data-card]{transition:none}.wc[data-card]:active{transform:none}}
 .fitwhy{grid-column:1 / -1;font-size:12.5px} .fitwhy summary{cursor:pointer;color:var(--accent-ink);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:28px} .fitwhy summary::before{content:"◂";font-size:11px;transition:transform .15s} .fitwhy[open] summary::before{transform:rotate(-90deg)}
 .fitwhy ul{margin:8px 0 0;padding:0 18px 0 0;display:grid;gap:8px;line-height:1.55;color:var(--ink2)} .fitwhy li>span{display:block} .fitwhy li.nodata>span{color:var(--muted)} .fitwhy .fw-lead{margin:6px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink);font-weight:500} .fitwhy li b{color:var(--ink);font-weight:600} .fitwhy .note{margin:8px 0 0} .ring.part{opacity:.75} .ring.part::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px dashed var(--muted)} .wc.mine .ws b{color:var(--accent-ink)}
 /* 28.10: the watch list as wide rows, one security a line: who it is and the match on top, the facts in one row beside
@@ -2629,8 +2636,10 @@ html[data-theme="dark"] .pl-nw.up{color:#7DD3FC}
 .hl b{font-weight:700} .hl .hs{font-size:12.5px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap;background:var(--sunk);color:var(--ink2)}
 .hl .bad .hs{background:var(--crit-bg);color:var(--crit-ink)} .hl .warn .hs{background:var(--warn-bg);color:var(--warn)} .hl .ok .hs{background:var(--ok-bg);color:var(--ok-ink)}
 .hl .hn{grid-column:2/4;font-size:13.5px;color:var(--muted)} .hl .hn .btn{margin-inline-start:6px}
-/* 30.10: "התיק שלי" in three tabs: the holdings, an update from a statement, and adding by hand */
-section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]),section[data-mvv="sell"] [data-mvp]:not([data-mvp="sell"]){display:none!important}
+/* 30.10: "התיק שלי" in three tabs: the holdings, an update from a statement, and adding by hand
+   11.11 (the owner): adding by hand is inside the holdings ("הוספה ידנית" opens it there, data-add); the tabs are the
+   holdings, "העלאת דוחות" and "ביצוע פעולות" */
+section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]):not([data-mvp="type"]),section[data-mvv="hold"]:not([data-add="1"]) [data-mvp="type"],section[data-mvv="up"] [data-mvp]:not([data-mvp="up"]),section[data-mvv="type"] [data-mvp]:not([data-mvp="type"]),section[data-mvv="sell"] [data-mvp]:not([data-mvp="sell"]){display:none!important}
 /* 6.11: a sale or a purchase written by hand */
 .sellp{display:flex;flex-direction:column;gap:12px}
 .sellp h3{margin:0}
@@ -2646,6 +2655,19 @@ section[data-mvv="hold"] [data-mvp]:not([data-mvp="hold"]),section[data-mvv="up"
 .sellp .slres .up{color:var(--gain);font-weight:700} .sellp .slres .down{color:var(--loss);font-weight:700}
 .sellp .slres .nm{display:block;font-size:13px;color:var(--muted);margin-top:4px}
 .mvtabs{margin-top:4px}
+.addman-t{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:0 0 12px;padding:12px 14px;min-height:56px;border:1.5px dashed rgb(124 58 237 / .45);border-radius:14px;background:rgb(124 58 237 / .05);color:var(--ink);font:inherit;text-align:start;cursor:pointer}
+.addman-t:hover{background:rgb(124 58 237 / .09)}
+.addman-t:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.addman-t .am-i{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--grad,var(--accent));color:#fff}
+.addman-t .am-i svg{width:18px;height:18px}
+.addman-t .am-x{flex:1 1 auto;display:flex;flex-direction:column;gap:2px;min-width:0}
+.addman-t .am-x b{font-size:15px;font-weight:700}
+.addman-t .am-x span{font-size:13px;color:var(--muted);line-height:1.4}
+.addman-t .am-c{flex:none;color:var(--ink2);transition:transform .2s}
+.addman-t .am-c svg{width:20px;height:20px;display:block}
+.addman-t[aria-expanded="true"]{border-style:solid;background:rgb(124 58 237 / .08)}
+.addman-t[aria-expanded="true"] .am-c{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.addman-t .am-c{transition:none}}
 .mvmsg{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgb(124 58 237 / .08);border:1px solid rgb(124 58 237 / .25);font-size:14px;color:var(--ink)}
 @media (max-width:420px){.mvtabs .chip{font-size:13px;padding-inline:6px}}
 /* 28.10: the calendar's marks as the owner asked: a violet dot for a company's report, a green one for a dividend; a
@@ -4208,8 +4230,11 @@ body[data-page="overview"] #idxRow{display:none!important}
     <section aria-labelledby="hMine" data-mvv="hold">
       <div class="row"><h2 id="hMine">התיק שלי</h2><span class="saved" id="pfSaved"></span></div>
       <p class="note" id="pfWho"></p>
-      <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">עדכון מדוח</button><button type="button" class="chip" role="tab" data-mv="type" aria-pressed="false" aria-selected="false">הוספה ידנית</button><button type="button" class="chip" role="tab" data-mv="sell" aria-pressed="false" aria-selected="false">מכירה</button></div>
+      <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">העלאת דוחות</button><button type="button" class="chip" role="tab" data-mv="sell" aria-pressed="false" aria-selected="false">ביצוע פעולות</button></div>
       <p class="mvmsg" id="mvMsg" role="status" hidden></p>
+      <!-- 11.11 (the owner): adding by hand is part of the holdings, no longer a tab of its own: one bar that opens the
+           three ways (a pick from a list, quick typing, a search of the world's exchanges) right above the table -->
+      <button type="button" class="addman-t" id="addManT" data-mvp="hold" aria-expanded="false" aria-controls="pickBox typeBox"><span class="am-i" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="am-x"><b>הוספה ידנית</b><span>בחירה מרשימה, הקלדה מהירה או חיפוש נייר בכל העולם</span></span><span class="am-c" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
       <div class="panel up" id="upPanel" data-mvp="up">
         <h3>העלאה: דוח או צילומי מסך</h3>
         <p class="note" id="upPriv" style="margin:0">הקבצים נשלחים לקריאה לשירות הבינה המלאכותית שמפעיל את צ׳יקו. לפני השליחה נמחקים מהטקסט ת״ז, מספרי חשבון, כתובת, מייל וטלפון. מצילום מסך או מעמוד סרוק אי אפשר למחוק, אז כדאי לחתוך ממנו קודם את השם ומספר החשבון. שום דבר לא נשמר עד "שמור את התיק".</p>
@@ -4255,7 +4280,7 @@ body[data-page="overview"] #idxRow{display:none!important}
         <div class="acts" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" id="btnPickAdd" type="button">המשך עם הבחירה שלי</button><button class="btn" id="btnPickSkip" type="button">דלג, אעלה קובץ בהמשך</button><span class="saved" id="pickState" role="status" style="font-size:13px"></span></div>
         <p class="sub" id="pickCnt" style="margin:8px 0 0">המניות שבחרת: 0</p>
       </details>
-      <div class="panel" data-mvp="type" style="display:flex;flex-direction:column;gap:10px">
+      <div class="panel" id="typeBox" data-mvp="type" style="display:flex;flex-direction:column;gap:10px">
         <h3>הקלדה מהירה, בלי קבצים</h3>
         <p class="note" style="margin:0">כתוב שורה לכל נייר: סימול, כמות, ועלות כוללת בשקלים אם אתה יודע. אפשר גם להעתיק מהאפליקציה של הבנק. שורה עם המילה "מזומן" נקלטת כיתרת מזומן.</p>
         <textarea id="listText" dir="ltr" placeholder="MSFT 3 4200&#10;NVDA 1.5 900&#10;TA125 10 6245 ILS&#10;מזומן 500 ILS" style="min-height:96px;font-size:16px"></textarea>
@@ -19994,8 +20019,8 @@ function renderCands(m){
     const warn=c.chg52!=null&&c.chg52>=40?`עלתה ${Math.round(c.chg52)}% בשנה האחרונה`:'';
     const was=wp&&wp.px[c.sym]>0&&c.price>0?(c.price/wp.px[c.sym]-1)*100:null;
     const tags=(was!=null&&Math.abs(was)>=0.5?`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">מאז הביקור הקודם (${dmy(wp.at)}): <bdi>${spct(was)}</bdi></span>`:'')+(r.isNew?`<span class="tag new">אין בתיק בכלל</span>`:'')+(r.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(warn?`<span class="tag warn">${esc(warn)}</span>`:'');
-    return `<article class="wc" style="--gc:${r.color}">
-      <div class="wh"><div class="wt secl" data-sec="${esc(c.sym)}" title="פתח את דף הנייר">${logoHtml(c.sym,'s')}<span class="sym">${esc(lab(c.sym))}</span><span class="wn">${esc(c.name||'')}</span><span class="ws"><b>${esc(r.lab)}</b></span></div>
+    return `<article class="wc"${SECKEY.test(c.sym)?` data-card="${esc(c.sym)}"`:''} style="--gc:${r.color}">
+      <div class="wh"><div class="wt secl" data-sec="${esc(c.sym)}" role="link" tabindex="0" title="פתח את דף הנייר">${logoHtml(c.sym,'s')}<span class="sym">${esc(lab(c.sym))}</span><span class="wn">${esc(c.name||'')}</span><span class="ws"><b>${esc(r.lab)}</b></span></div>
         <div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,r.score))}" role="img" aria-label="התאמה ${r.score} מתוך 100"><b>${r.score}</b></div><span>התאמה</span></div></div>
       <div class="wfacts">${f('מחיר',c.price!=null?'<span class="n">$'+(+c.price).toFixed(2)+'</span>':'—')}${f('מול לפני שנה',c.chg52!=null?'<span class="n">'+spct(c.chg52,0)+'</span>':'—',c.chg52!=null?(c.chg52>=0?'up':'down'):'')}${f('דיבידנד',c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}${f('ביטא',c.beta!=null?'<span class="n">'+(+c.beta).toFixed(2)+'</span>':'—')}${f(c.fpe!=null?'מכפיל קדימה':'מכפיל',r.pe!=null?'<span class="n">'+(+r.pe).toFixed(1)+'</span>':'—')}${f('איכות פיננסית',gr?`<span class="gr ${gr}">${gr}</span>`:'—')}</div>
       <div class="wfit"><div class="wl"><span>${esc(r.lab)} בתיק</span><b class="n">${mon?pct(r.w)+' ← '+pct(r.after):pct(r.w)}</b></div>
@@ -23120,7 +23145,7 @@ function renderSell(){const el=$('sellBox'); if(!el)return; const R=slRows(); SL
     </div>
     <p class="slres" id="slRes" aria-live="polite"></p>
     <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="slSave" type="button" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><span class="saved" id="slState" role="status"></span></div>
-    <p class="note" style="margin:0">${sell?'הכמות יורדת מהאחזקה, הסכום נכנס למזומן של החשבון, והרווח או ההפסד נשמרים במכירות של השנה.':'הכמות והעלות עולות, והסכום יורד מהמזומן של החשבון.'} כשיגיע הדוח הבא מהבנק, הוא יחליף את מה שנרשם כאן. לנייר שעוד אין בתיק: "הוספה ידנית".</p>`;
+    <p class="note" style="margin:0">${sell?'הכמות יורדת מהאחזקה, הסכום נכנס למזומן של החשבון, והרווח או ההפסד נשמרים במכירות של השנה.':'הכמות והעלות עולות, והסכום יורד מהמזומן של החשבון.'} כשיגיע הדוח הבא מהבנק, הוא יחליף את מה שנרשם כאן. לנייר שעוד אין בתיק: "הוספה ידנית" בלשונית "האחזקות".</p>`;
   slPick(); slCalc()}
 // 9.11 (the owner: "it should be simple"): buying or selling from a security's page happens on the page itself, in a
 // small box: the account (when there is more than one), how many, the price per unit (the price now, or typed), the
@@ -23259,7 +23284,14 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
   if(t.dataset.sellm){SELLM=t.dataset.sellm; renderSell(); return}
   if(t.id==='slAll'){const p=slCur(); if(p){$('slQty').value=+(+p.qty).toFixed(6); slCalc()} return}
   if(t.id==='slSave')slSave()});
-function mvSet(v,msg,auto){if(!auto)MV_SET=true; MVV=['hold','up','type','sell'].includes(v)?v:'hold'; if(MVV==='sell')try{renderSell()}catch(e){console.error(e)} const sec=document.querySelector('[data-pane="mine"] section'); if(sec)sec.dataset.mvv=MVV;
+// 11.11 (the owner): adding by hand opens inside the holdings ('type' is the holdings with the adding open); the
+// holdings' own tab, another tab, and an add that ends in the table close it; with no holdings it stands open (the
+// automatic choice, until the person picks a view, follows the holdings as they load)
+let ADDMAN=false;
+function addManSet(on){ADDMAN=!!on; const sec=document.querySelector('[data-pane="mine"] section'); if(sec){if(ADDMAN)sec.dataset.add='1'; else delete sec.dataset.add}
+  const t=$('addManT'); if(t)t.setAttribute('aria-expanded',String(ADDMAN)); if(ADDMAN){const pb=$('pickBox'); if(pb&&!pb.open)pb.open=true}}
+document.addEventListener('click',ev=>{if(!(ev.target.closest&&ev.target.closest('#addManT')))return; MV_SET=true; addManSet(!ADDMAN)});
+function mvSet(v,msg,auto){if(!auto)MV_SET=true; if(v==='type'){v='hold'; addManSet(true)} else addManSet(false); MVV=['hold','up','sell'].includes(v)?v:'hold'; if(MVV==='sell')try{renderSell()}catch(e){console.error(e)} const sec=document.querySelector('[data-pane="mine"] section'); if(sec)sec.dataset.mvv=MVV;
   for(const b of document.querySelectorAll('#mvTabs [data-mv]')){const on=b.dataset.mv===MVV; b.setAttribute('aria-pressed',on); b.setAttribute('aria-selected',on)}
   const m=$('mvMsg'); if(m){m.textContent=msg||''; m.hidden=!msg}}
 function mvGo(v,msg,el){mvSet(v,msg); try{(el||document.querySelector('[data-pane="mine"] section')).scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}}
@@ -25044,7 +25076,7 @@ function wcCardH(r,m,pv,mg){const pc=x=>x==null?'':`<small class="${x>=0?'up':'d
       +(f.w>=mg?`<span class="tag crit">הקבוצה כבר מעל הסף</span>`:'')+(dn!=null&&dn>=0&&dn<=21?`<span class="tag" style="background:var(--sunk);color:var(--ink2)">דוח בעוד ${dn===0?'היום':dn===1?'יום':dn+' ימים'}</span>`:'')
       +(wmarks().includes(r.k)?'<span class="tag an">סימנת</span>':'');
     const sk=SECKEY.test(r.k);
-    return `<article class="wc" style="--gc:${GCOL[f.g]||'#64748B'}">
+    return `<article class="wc"${sk?` data-card="${esc(r.k)}"`:''} style="--gc:${GCOL[f.g]||'#64748B'}">
       <div class="wh"><div class="wt${sk?' secl':''}"${sk?` data-sec="${esc(r.k)}" role="link" tabindex="0" title="לדף הנייר"`:''}>${logoHtml(r.k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?'':(it.name||c.name||''))}</span><span class="ws"><b>${esc(GROUPS[f.g]||'')}</b></span></div>
         <div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${f.score} מתוך 100"><b>${f.score}</b></div><span>התאמה</span></div></div>
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מול לפני שנה',c.chg52!=null?'<span class="n">'+spct(c.chg52,0)+'</span>':'—',c.chg52!=null?(c.chg52>=0?'up':'down'):'')}${fc('דיבידנד',c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}${fc('ביטא',c.beta!=null?'<span class="n">'+(+c.beta).toFixed(2)+'</span>':'—')}${fc(c.fpe!=null?'מכפיל קדימה':'מכפיל',f.pe!=null?'<span class="n">'+(+f.pe).toFixed(1)+'</span>':'—')}${fc('איכות פיננסית',gr?`<span class="gr ${gr}">${gr}</span>`:'—')}</div>
@@ -25054,7 +25086,8 @@ function wcCardH(r,m,pv,mg){const pc=x=>x==null?'':`<small class="${x>=0?'up':'d
       ${fitWhy(f,c,m)}
     </article>`}
 function wcFundH(r){const f=r.f, tier=f.score>=70?'hi':f.score>=50?'mid':'lo', p=priceOf(r.k), fc=(l,x)=>`<span class="fc"><i>${l}</i><b>${x}</b></span>`;
-  return `<article class="wc" style="--gc:${GCOL[r.g]||'#64748B'}"><div class="wh"><div class="wt">${logoHtml(r.k,'s')}<span class="sym">${esc(r.sym)}</span><span class="wn">${esc(r.name)}</span><span class="ws"><b>${esc(r.g?GROUPS[r.g]||'':'')}</b></span></div>
+  const sk=SECKEY.test(r.k);
+  return `<article class="wc"${sk?` data-card="${esc(r.k)}"`:''} style="--gc:${GCOL[r.g]||'#64748B'}"><div class="wh"><div class="wt${sk?' secl':''}"${sk?` data-sec="${esc(r.k)}" role="link" tabindex="0" title="לדף הנייר"`:''}>${logoHtml(r.k,'s')}<span class="sym">${esc(r.sym)}</span><span class="wn">${esc(r.name)}</span><span class="ws"><b>${esc(r.g?GROUPS[r.g]||'':'')}</b></span></div>
     <div class="rg"><div class="ring ${tier}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${f.score} מתוך 100"><b>${f.score}</b></div><span>התאמה</span></div></div>
     <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>`:'—')}${fc('סוג',esc(FUNDK[r.kind]||''))}</div>
     ${f.held||f.why.length?`<div class="wtags">${f.held?'<span class="tag">בתיק</span>':''}${f.why.slice(0,2).map(w=>`<span class="tag" style="background:var(--info-bg);color:var(--info-ink)">${esc(w)}</span>`).join('')}</div>`:''}
@@ -25074,6 +25107,10 @@ function renderCandsP(m,pool,mine=''){
   $('candNote').textContent=''+(FIT&&FIT.updatedAt?`נתוני החברות ${rsStale(FIT.updatedAt)?'נכונים ל-'+dmy(FIT.updatedAt)+' ולא מתעדכנים כרגע':'עודכנו '+dmy(FIT.updatedAt)}; `:'')+'נייר במעקב מתעדכן כל כמה דקות.';
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-wmark]'); if(!b)return; toggleMark(b.dataset.wmark).then(()=>{try{renderCands(mAllNow())}catch(e){}})});
+// 11.11 (the owner): a security's card in "מעקב ומה מתאים" opens its page from anywhere on it; its buttons, its "למה?"
+// box and a text being selected keep their own job, and the name is the link for the keyboard (.secl, Enter)
+document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest('article.wc[data-card]'); if(!c||e.target.closest('button,a,input,select,textarea,label,summary,details,.secl[data-sec]'))return;
+  if(window.getSelection&&String(window.getSelection()))return; e.preventDefault(); goSec(c.dataset.card)});
 
 // ---- dividends put back into the portfolio: what they add up to over the horizon of the forecast ----
 function divReinvest(g){const net=g*0.75, Y=Math.max(1,Math.min(40,+S.years||10)), R=+S.ratePct||0, r=Math.pow(1+R/100,1/12)-1, n=Y*12, m=net/12;
@@ -25242,8 +25279,8 @@ function myWatchHtml(m){
     // weight against the rule and the target) with the other parts at their neutral middle, and said to be partial
     const rs=(RS&&RS.companies&&RS.companies[it.sym])||RSX[k]||null, c=figs[k]||null, f=(()=>{try{return fitScore(k,c||{},m)}catch(e){return null}})(), dn=rs&&rs.next?daysTo(rs.next):null, part=!c;
     const tier=f?(f.score>=80?'hi':f.score>=65?'mid':'lo'):'', sk=SECKEY.test(k);
-    return `<article class="wc mine" style="--gc:${f?(GCOL[f.g]||'#64748B'):'var(--accent)'}">
-      <div class="wh"><div class="wt">${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}</b></span></div>
+    return `<article class="wc mine"${sk?` data-card="${esc(k)}"`:''} style="--gc:${f?(GCOL[f.g]||'#64748B'):'var(--accent)'}">
+      <div class="wh"><div class="wt${sk?' secl':''}"${sk?` data-sec="${esc(k)}" role="link" tabindex="0" title="לדף הנייר"`:''}>${logoHtml(k,'s')}<span class="sym">${esc(it.t==='T'?(it.name||it.sym):it.sym)}</span><span class="wn">${esc(it.t==='T'?(it.he||''):(it.name||''))}</span><span class="ws"><b>${h?'בתיק שלך':'במעקב'}</b></span></div>
         ${f?`<div class="rg"><div class="ring ${tier}${part?' part':''}" style="--p:${Math.max(0,Math.min(100,f.score))}" role="img" aria-label="התאמה ${part?'חלקית ':''}${f.score} מתוך 100"><b>${f.score}</b></div><span>${part?'התאמה חלקית':'התאמה'}</span></div>`:''}</div>
       <div class="wfacts">${fc('מחיר',p?`<span class="n">${fmtPx(p.px,p.ccy)}</span>${pc(p.chg)}`:'—')}${fc('מאז שסימנת',since!=null?'<span class="n">'+spct(since)+'</span>':'—',since!=null?(since>=0?'up':'down'):'')}${fc('הדוח הבא',rs&&rs.next?'<span class="n">'+dmy(rs.next)+'</span>'+(dn!=null&&dn>=0&&dn<=7?' <small>בקרוב</small>':''):'—')}${fc('דיבידנד',rs&&rs.div&&rs.div.ex?'<span class="n">אקס '+dmy(rs.div.ex)+'</span>':c&&c.dy>0?'<span class="n">'+pct(c.dy)+'</span>':'—')}</div>
       <div class="wfit"><span class="sub">${f&&!part?`פיזור ${f.div} · איכות ${f.q} · תמחור ${f.val}`:f?`פיזור ${f.div} מתוך ${f.W.div} לפי הקבוצה "${GROUPS[f.g]||f.g}" (${pct(f.w,0)} מהתיק${f.over?', מעל הסף':''}). איכות, תמחור וצמיחה באמצע הסולם עד שיגיעו נתוני החברה.`:''}</span><div class="acts" style="justify-content:flex-start">${sk?`<button type="button" class="btn sm" data-anav="sec:${esc(k)}">לדף הנייר ›</button>`:''}<button type="button" class="btn sm" data-wmark="${esc(k)}" aria-label="להסיר מהמעקב">הסרה מהמעקב</button></div></div>
@@ -25459,7 +25496,7 @@ function plClose(){const sh=$('plSheet'); if(sh.hidden)return; for(const k of PL
   sh.hidden=true; document.body.classList.remove('st-open'); try{render()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{PLV.from&&PLV.from.focus&&PLV.from.focus()}catch(e){}}
 // a tap on a notification opens the alerts that wait
 let ST_GO=false; try{ST_GO=new URLSearchParams(location.search).has('st')}catch(e){}
-function stGoOnce(){if(!ST_GO||!PULSE)return; ST_GO=false; try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
+function stGoOnce(){if(!ST_GO||!PULSE)return; ST_GO=false; try{history.replaceState(history.state,'',location.pathname+location.hash)}catch(e){}
   setTimeout(()=>{try{const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); if(L.length)plOpen(L[0],L); else showTab('alerts',true)}catch(e){}},400)}   // 11.11: else the inbox in התראות
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const ic=t.closest('#stBub [data-plk]'); if(ic){const L=plItems().filter(plFloat).sort(plSort).map(a=>a.k); plOpen(ic.dataset.plk,L); return}
@@ -25805,9 +25842,10 @@ function srchRender(){
 const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k)}
-function openSec(k,o){try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');
+function openSec(k,o){const y0=window.scrollY; try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');
   // 9.11: the phone's own back closes the page: each security opened is one history entry (none when coming back through one)
-  if(!(o&&o.fromHistory)){try{const st=history.state||{}; if(st.sec!==k)history.pushState({sec:k,from:SEC||null},'',location.pathname+'#search')}catch(e){}}
+  // 11.11: through navWant, with the screen it was opened from (one entry with the research tab when that came in the same tap)
+  if(!(o&&o.fromHistory))navWant({tab:'search',sec:k},y0);
   SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
   if(RSX[k]===undefined)loadResearch(k).then(()=>{if(SEC===k)renderSec()});try{window.scrollTo({top:0})}catch(e){}}
 function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||[];if(seen.includes(k)||(WATCH.marks||[]).includes(k)||(WATCH.held||[]).includes(k)||((P&&P.positions)||[]).some(p=>p.sym===k))return;
@@ -26399,8 +26437,13 @@ function drawSec(){
     // when the point is at the foot of the chart
     if(iLo!==pts.length-1&&iLo!==iHi){const lx=x(pts[iLo][0]),ly=y(pts[iLo][1]), t=fmtN(pts[iLo][1]); g.font='bold 11px '+FONT; const w=g.measureText(t).width; ring(lx,ly,LOSS);
       heb(t,Math.max(L+w/2+2,Math.min(L+PW-w/2-2,lx)),ly+15<=T+PH-2?ly+15:ly-14,LOSS,'center',1)}}
-  for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+8,Math.min(T+PH-8,y(tr.px))), up=tr.side==='buy', tri=(r,o)=>{g.beginPath(); if(up){g.moveTo(xx,yy-r);g.lineTo(xx+r*0.95,yy+r*0.65);g.lineTo(xx-r*0.95,yy+r*0.65)}else{g.moveTo(xx,yy+r);g.lineTo(xx+r*0.95,yy-r*0.65);g.lineTo(xx-r*0.95,yy-r*0.65)} g.closePath(); g.fill()};
-    g.fillStyle=SURF; tri(9.5); g.fillStyle=up?TEAL:ROSE; tri(6.5)}
+  // 11.11 (the owner): a buy or a sale is a round mark with its letter, ק or מ, in place of the triangle (on this site a
+  // triangle also says a price went up or down); the line under the chart says what the letters are. The letter in white
+  // on a deep teal or rose, at 4.5:1 or more
+  for(const tr of MY.trades){const xx=x(tr.t), yy=Math.max(T+10,Math.min(T+PH-10,y(tr.px))), up=tr.side==='buy';
+    g.fillStyle=SURF; g.beginPath(); g.arc(xx,yy,10.5,0,7); g.fill();
+    g.fillStyle=up?'#0F766E':'#BE123C'; g.beginPath(); g.arc(xx,yy,8.5,0,7); g.fill();
+    g.direction='rtl'; g.font='bold 11px '+FONT; g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#FFFFFF'; g.fillText(up?'ק':'מ',xx,yy+0.5); g.direction='ltr'}
   // 5.11: no marks for the reports and the events at the foot of the chart (the owner took them off); touching a day still
   // lists what happened on it
   // x labels: days, weeks, months or years depending on the span
@@ -26460,6 +26503,7 @@ function secReadout(pts,base,last,hp,freq,X){const el=$('secRead');if(!el)return
   }else{if(row&&row.dataset.base!=null){row.innerHTML=row.dataset.base; row.classList.remove('hov'); if(X.pxNow){const v=row.querySelector('.v'); if(v)v.textContent=fmtPx(X.pxNow,ccy)}}
     const chAll=last[1]/base-1, hi=pts[X.iHi||0]||last, top=hi===last, fromHi=last[1]/hi[1]-1;
     H=[`${RNGIN[SECRNG]||''} ${B(sg(chAll),cls(chAll))}`,`שיא ${B(F(hi[1]))} (${D(hi[0])})`,top||Math.abs(fromHi)<0.0005?'':`${B('−'+pa(fromHi),'down')} מהשיא`].filter(Boolean).join(' · ')
+      +((MY.trades||[]).length?`<br><small class="trkey">${MY.trades.some(t=>t.side==='buy')?'<span class="trm b" aria-hidden="true">ק</span> קנית':''}${MY.trades.some(t=>t.side==='buy')&&MY.trades.some(t=>t.side!=='buy')?' · ':''}${MY.trades.some(t=>t.side!=='buy')?'<span class="trm s" aria-hidden="true">מ</span> מכרת':''} · לחיצה על יום בגרף מראה את הפעולה</small>`:'')
       +(X.fxNo?'<br><small>שער הדולר לפי ימים עוד לא נטען, ולכן הגרף בדולרים.</small>':'')}
   el.innerHTML=H}
 const RNGL={'1w':'שבוע','1m':'חודש','3m':'3 חודשים','6m':'חצי שנה','1y':'שנה','5y':'5 שנים','max':'מההנפקה'};
@@ -26632,8 +26676,8 @@ function srchBoot(){
     if(e.target.closest('#fitMore')){FITN+=60;renderFit();return}
     const o=e.target.closest('[data-open]');if(o){showTab('search',true);setSV('search');openSec(o.dataset.open)}});
   SV='search';
-  window.addEventListener('popstate',e=>{const st=e.state||{}; if(st.sec&&st.sec!==SEC){openSec(st.sec,{fromHistory:true}); return} if(SEC&&!st.sec){SEC=null; try{if(document.body.dataset.page!=='search')showTab('search')}catch(x){} srchRender(); try{window.scrollTo({top:0})}catch(x){}}});
-  $('secPage').addEventListener('click',e=>{if(e.target.closest('#secBack')){SEC=null;srchRender();return}
+  // 11.11: the history's popstate is handled by navPop (with the screens)
+  $('secPage').addEventListener('click',e=>{if(e.target.closest('#secBack')){closeSec();return}
     if(e.target.closest('#secMark')){toggleMark(SEC);return}
     const r=e.target.closest('[data-rng]');if(r){SECRNG=r.dataset.rng;try{localStorage.setItem('tr_rng',SECRNG)}catch(x){}renderSec()}});
   try{SECRNG=localStorage.getItem('tr_rng')||'3m'}catch(e){}
@@ -26690,17 +26734,45 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
 try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
 function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
-function closeSec(){const st=(()=>{try{return history.state||{}}catch(e){return {}}})(); if(st.sec&&st.sec===SEC){try{history.back(); return}catch(e){}} SEC=null; srchRender(); try{window.scrollTo({top:0})}catch(e){}}
+// 11.11 (the owner): the browser's back and forward (Safari, Chrome, a phone's own back) move between the site's screens.
+// Every screen opened is an entry of its own (#mine, #watch…; the home is the bare address), a security's page is one too
+// (#search, with the security in the entry), and what one tap does (the research tab and a security in it) is a single
+// entry: it is written a moment after the tap, once the screen is decided. Going back shows that screen, scrolled where
+// it was left; the open menu closes. Nothing is written while going back, or before the page has chosen its first screen
+let NAVQ=null, NAV_ON=false;
+try{history.scrollRestoration='manual'}catch(e){}
+function navUrl(st){const t=st&&st.sec?'search':(st&&st.tab)||'overview'; return location.pathname+location.search+(t==='overview'?'':'#'+t)}
+function navWant(x,y0){if(!NAV_ON)return; if(!NAVQ){NAVQ={y0:y0!=null?y0:window.scrollY}; Promise.resolve().then(navFlush)} Object.assign(NAVQ,x)}
+function navFlush(){const q=NAVQ; NAVQ=null; if(!q||!NAV_ON)return; try{const cur=history.state||{}, page=document.body.dataset.page||'overview';
+  const st={tab:page, sec:page==='search'&&SEC?SEC:null};
+  if((cur.tab||'overview')===st.tab&&(cur.sec||null)===st.sec)return;   // the same screen (opened again, a render)
+  history.replaceState({...cur,y:q.y0},'',location.href);   // where the screen being left was scrolled
+  st.prev={tab:cur.tab||'overview',sec:cur.sec||null}; if(!st.sec)delete st.sec;
+  history.pushState(st,'',navUrl(st))}catch(e){}}
+function navHashTab(){const t=(location.hash||'').slice(1); return TABS.includes(t)?t:''}
+window.addEventListener('popstate',e=>{const st=e.state||{}, t=st.sec?'search':(st.tab||navHashTab()||'overview'); NAVQ=null;
+  try{setNav(false)}catch(x){}
+  NAV_ON=false;
+  try{if(st.sec){if(document.body.dataset.page!=='search')showTab('search'); if(st.sec!==SEC)openSec(st.sec,{fromHistory:true}); else try{srchRender()}catch(x){}}
+    else{if(SEC){SEC=null; try{srchRender()}catch(x){}} if(document.body.dataset.page!==t)showTab(t)}}catch(x){console.error(x)}
+  finally{NAV_ON=true}
+  const y=+st.y||0; requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(x){}}); if(y)setTimeout(()=>{try{if(Math.abs(window.scrollY-y)>40)window.scrollTo(0,y)}catch(x){}},400)});
+// the security page's way out to the research landing (the research tab's own tap, the page's "back" when it has one): back
+// through the history when the landing is the entry under it, else a new entry for the landing
+function closeSec(){const y0=window.scrollY, st=(()=>{try{return history.state||{}}catch(e){return {}}})();
+  if(st.sec&&st.sec===SEC&&st.prev&&st.prev.tab==='search'&&!st.prev.sec){try{history.back(); return}catch(e){}}
+  SEC=null; srchRender(); navWant({tab:'search',sec:null},y0); try{window.scrollTo({top:0})}catch(e){}}
 function stickH(){const p=document.querySelector('[data-pane]:not([hidden])'); if(!p)return; const r=p.querySelector(':scope>.subtabs'); p.style.setProperty('--subH',(r?r.offsetHeight:0)+'px')}
 addEventListener('resize',()=>{try{stickH()}catch(e){}},{passive:true});
 {let qaRaf=0; addEventListener('scroll',()=>{if(qaRaf)return; qaRaf=requestAnimationFrame(()=>{qaRaf=0; const q=document.getElementById('quickActs'); if(!q||q.offsetParent===null)return;
   let m=document.getElementById('qaMark'); if(!m){m=document.createElement('div'); m.id='qaMark'; m.setAttribute('aria-hidden','true'); q.before(m)}
   q.classList.toggle('stuck',m.getBoundingClientRect().top<-8)})},{passive:true})}
-function showTab(t,user){
+function showTab(t,user){const y0=window.scrollY;
   if(t==='search'&&user&&SEC&&document.body.dataset.page==='search'){closeSec(); return}   // 9.11: the tab's own tap, from the security page, is the way back to the landing
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
   if(!TABS.includes(t))t='overview';
   try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t); evNav(document.body.dataset.page,t)}}catch(e){}
+  if(document.body.dataset.page!==t)navWant({tab:t},y0);   // 11.11: an entry in the browser's history (navFlush)
   document.body.dataset.page=t;   // not data-tab: a click anywhere would then count as a click on a tab button
   // aria-selected belongs to tabs only; the buttons in the text that lead to a tab are plain buttons
   for(const b of document.querySelectorAll('[role="tab"][data-tab]'))b.setAttribute('aria-selected',b.dataset.tab===t);
@@ -29167,9 +29239,10 @@ const GO=[
   {id:'mix',l:'פיזור לפי הקבוצות שלך',k:'פיזור קבוצות חלוקה עוגה',tab:'overview',el:'mixHome'},
   {id:'health',l:'מדד בריאות התיק',k:'בריאות ציון מדד',tab:'overview',el:'healthHome'},
   {id:'chiko',l:'צ׳יקו: לשאול שאלה',k:'צ׳יקו ציקו עוזר שאלה צ\'אט שיחה',fn:()=>{const b=$('chatFab'); if(b)b.click()}},
-  {id:'mine',l:'התיק שלי: להעלות דוח',k:'העלאה דוח קובץ צילום מסך אקסל pdf עדכון תיק כמות',tab:'mine',el:'upPanel'},
+  {id:'mine',l:'התיק שלי: העלאת דוחות',k:'העלאה העלאת דוחות דוח קובץ צילום מסך אקסל pdf עדכון תיק כמות',tab:'mine',el:'upPanel'},
   {id:'pfedit',l:'התיק שלי: עריכת האחזקות',k:'אחזקות טבלה כמות עלות מזומן תיקון',tab:'mine',el:'pfRows'},
   {id:'pick',l:'להוסיף מניה ידנית',k:'הוספה ידנית לוגו בחירה מניה',tab:'mine',el:'pickBox'},
+  {id:'trade',l:'התיק שלי: ביצוע פעולות (לרשום קנייה או מכירה)',k:'ביצוע פעולות פעולה מכירה מכרתי קנייה קניתי רישום',tab:'mine',el:'sellBox'},
   {id:'plan',l:'תוכנית ההגדלה: ההפקדה הבאה',k:'תוכנית הפקדה חודשית קנייה הבא בתור מעקב',tab:'plan'},
   {id:'once',l:'הפקדה חד פעמית',k:'חד פעמית בונוס הפקדה נוספת',tab:'plan',el:'hOnce'},
   {id:'goal',l:'יעד ותרחישים',k:'יעד תחזית תרחיש עתיד כמה יהיה',tab:'forecast'},
@@ -29246,6 +29319,10 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-11.4',at:'2026-11-11',t:'הכפתור "חזרה" של הדפדפן עובד',d:'בספארי, בכרום ובכפתור החזרה של הטלפון: חוזרים לדף הקודם באתר, ולאותו מקום בדף. הכתובת אומרת באיזה דף אתם, ורענון נשאר באותו דף.'},
+  {v:'2026-11-11.3',at:'2026-11-11',t:'"התיק שלי": האחזקות וההוספה הידנית יחד',d:'ההוספה הידנית נפתחת בתוך לשונית האחזקות, מעל הטבלה. "עדכון מדוח" נקרא עכשיו "העלאת דוחות", ו"מכירה" נקרא "ביצוע פעולות": שם רושמים קנייה או מכירה.',go:'pick'},
+  {v:'2026-11-11.2',at:'2026-11-11',t:'מעקב: לחיצה על מניה פותחת את הדף שלה',d:'בכל כרטיס ב"מעקב ומה מתאים", לחיצה בכל מקום בכרטיס פותחת את דף הנייר. הכפתורים שבכרטיס ממשיכים לעשות את מה שהם עושים.',go:'watch'},
+  {v:'2026-11-11.1',at:'2026-11-11',t:'בגרף של נייר: ק׳ ומ׳ במקום משולשים',d:'קנייה ומכירה שלך מסומנות בגרף בעיגול עם האות ק או מ, כדי שלא יתבלבלו עם המשולשים של עלייה וירידה. מעל הגרף כתוב מה כל אות.',go:'srch'},
   {v:'2026-10-31.2',at:'2026-10-31',t:'לכל מנהל תיק משלו',d:'מנהל מנהל את האתר כמו בעל הדף, לכל דבר: משתמשים ותפקידים, גיבויים, בריאות המערכת, ובהגדרות את כל האפשרויות, גם את כל ששת סוגי המיילים. כמשקיע כל אחד נפרד: תיק, תוכנית, היסטוריה, הגדרות, דוחות, גיבוי ומיילים משלו, ואף אחד לא רואה את התיק של השני.',go:'pfedit'},
   {v:'2026-10-31.1',at:'2026-10-31',t:'הפרופיל שלי',d:'בפרופיל אפשר לשמור עכשיו גם תאריך לידה, מדינה ועיר, מצב משפחתי וילדים ותעסוקה, הכול לא חובה. ביום ההולדת יש ברכה בדף הבית. גם הסתרת הסכומים, הסינון בחדשות והתקופה ב-Impact נשמרים בחשבון ועוברים איתך לכל מכשיר.',go:'theme'},
   {v:'2026-10-30.9i',at:'2026-10-30',t:'TikChik Impact: הדופק של התיק',d:'חיבור למציאות נפתח עכשיו במסך Impact: ארבעה מדדים לתקופה שבוחרים (רלוונטיות כללית, החזקות מושפעות, התראות חדשות, אירועים), ההתראות בקצרה, מפת השפעה עגולה עם התיק במרכז, ציר זמן, וצ׳יקו בצד עם שאלות מוכנות. בחדשות נוסף פס השווקים וסיכום היום של צ׳יקו.',go:'pulse'},
@@ -29350,6 +29427,10 @@ try{newsDot();sideMore()}catch(e){}
 // keeps the screen (sessionStorage lives as long as the tab). A link to a screen (#news from a notification) still opens it
 {let t=(location.hash||'').slice(1), fresh=true; try{fresh=!sessionStorage.getItem('tc_open'); sessionStorage.setItem('tc_open','1')}catch(e){}
   if(!TABS.includes(t)){t=''; if(!fresh){try{t=localStorage.getItem('tab')||''}catch(e){}}} showTab(t||'overview')}
+// 11.11: the first screen is the history's current entry, and its address says which (a reload keeps it); from here on
+// every screen opened is an entry (navWant)
+try{const p=document.body.dataset.page||'overview'; history.replaceState({tab:p},'',navUrl({tab:p}))}catch(e){}
+NAV_ON=true;
 try{const w=sessionStorage.getItem('wiped');if(w){sessionStorage.removeItem('wiped');showTab('settings');$('wipeState').textContent=wipeMsg(w==='ok');try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}}catch(e){}
 try{i18nBoot()}catch(e){}
 try{termsBoot()}catch(e){}

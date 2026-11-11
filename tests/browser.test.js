@@ -1642,7 +1642,11 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   await pg.evaluate(()=>{const b=document.getElementById('pickBox'); b.open=true; const a=document.getElementById('pickAcct'); a.value='exc'; a.dispatchEvent(new Event('change',{bubbles:true}))});
   // "התיק שלי" opens on the holdings when there are any; adding by hand is its own tab, and an add shows the table
   assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold');
-  await pg.click('#mvTabs [data-mv="type"]');
+  // 11.11: adding by hand is inside the holdings: three tabs, and the bar that opens the adding in place
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#mvTabs [data-mv]')].map(b=>b.textContent.replace(/\d+/g,'').trim())),['האחזקות','העלאת דוחות','ביצוע פעולות']);
+  assert.equal(await pg.evaluate(()=>document.getElementById('addManT').getAttribute('aria-expanded')),'false');
+  await pg.click('#addManT');
+  assert.ok(await pg.evaluate(()=>{const b=document.getElementById('pickBox'), w=document.getElementById('typeBox'); return b.open&&b.offsetHeight>0&&w.offsetHeight>0}),'the three ways open in place');
   await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','3'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   const rows=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].filter(tr=>tr.querySelector('[data-pf="sym"]')?.value==='MSFT').map(tr=>({acct:tr.querySelector('[data-pf="acct"]').value,qty:+tr.querySelector('[data-pf="qty"]').value,flag:(tr.querySelector('.flag.pick')||{}).textContent||'',del:+tr.querySelector('[data-pfdel]').dataset.pfdel})));
   let r=await rows();
@@ -1652,7 +1656,8 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold','the add shows the table');
   assert.match(await pg.evaluate(()=>document.getElementById('mvMsg').textContent),/בדוק את הטבלה/);
   // typed again: the hand row is replaced, never doubled
-  await pg.click('#mvTabs [data-mv="type"]'); await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
+  assert.equal(await pg.evaluate(()=>document.getElementById('addManT').getAttribute('aria-expanded')),'false','the add closed to show the table');
+  await pg.click('#addManT'); await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   r=await rows(); assert.deepEqual(r.map(x=>x.qty),[2,4]);
   // removing the hand row: the statement's 2 stay
   await pg.click(`#pfRows [data-pfdel="${r[1].del}"]`); await pg.waitForTimeout(300);
@@ -3034,7 +3039,7 @@ test('6.11 "מכירה" in התיק שלי: a sale written by hand says the gain
     const Pt=JSON.parse(JSON.stringify(P0)), i=Pt.positions.findIndex(x=>x.ccy==='USD'); Pt.positions[i].qty=5; Pt.positions[i].costUsd=500; store.setDoc('portfolio/main',Pt);
     const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(300);
     await pg.click('#mvTabs [data-mv="sell"]'); await pg.waitForTimeout(300);
-    assert.ok(await pg.evaluate(()=>{const r=document.getElementById('mvTabs'); return r.scrollWidth<=r.clientWidth+1}),'four tabs fit on a phone');
+    assert.ok(await pg.evaluate(()=>{const r=document.getElementById('mvTabs'); return r.scrollWidth<=r.clientWidth+1}),'the three tabs fit on a phone');
     const p=Pt.positions[i], key=`${p.sym}|${p.acct}`, avg=100;
     await pg.selectOption('#slSym',key); await pg.waitForTimeout(150);
     assert.equal(Math.round(+(await pg.inputValue('#slBuy'))*100)/100,Math.round(avg*100)/100,'the purchase price from the holding');
@@ -3557,5 +3562,48 @@ test('11.11 the clean card is the phone\'s default (the owner): the wordmark and
       const cs=getComputedStyle(el); if(+cs.opacity<0.5)continue; const b=bg(el), f0=P(cs.color); if(!b||!f0)continue; const f=f0.a<1?B(f0,b):f0, x=L(f), y=L(b), cr=(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);
       if(cr<4.5)out.push(el.className+' '+cr.toFixed(2)+' '+el.textContent.trim().slice(0,20))} return out});
   assert.deepEqual(low,[],'readable at night');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+test('11.11 the browser\'s back and forward (the owner): every screen is an entry, a security opened from the watch list goes back to it, the scroll comes back, the menu closes, and a reload keeps the screen',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  const at=()=>pg.evaluate(()=>({page:document.body.dataset.page,hash:location.hash,sec:document.getElementById('secPage').hidden?null:(history.state||{}).sec||null,y:Math.round(scrollY)}));
+  assert.deepEqual(await at(),{page:'overview',hash:'',sec:null,y:0});
+  await pg.click('#botbar [data-bb="mine"]'); await pg.waitForTimeout(400);
+  assert.equal((await at()).hash,'#mine','the screen is in the address');
+  await pg.evaluate(()=>window.scrollTo(0,400)); await pg.waitForTimeout(100);
+  await tab(pg,'watch'); await pg.waitForTimeout(800);
+  // a security from the watch list: its card opens the page, and one back returns to the list
+  await pg.evaluate(()=>{const a=document.createElement('div'); a.className='secl'; a.dataset.sec='NVDA'; document.querySelector('[data-pane="watch"]').appendChild(a); a.click(); a.remove()}); await pg.waitForTimeout(900);
+  let r=await at(); assert.equal(r.page,'search'); assert.equal(r.sec,'NVDA');
+  await pg.goBack(); await pg.waitForTimeout(700);
+  assert.equal((await at()).page,'watch','back from the security to the watch list');
+  await pg.goBack(); await pg.waitForTimeout(700);
+  r=await at(); assert.equal(r.page,'mine'); assert.ok(Math.abs(r.y-400)<60,'scrolled where it was left: '+r.y);
+  await pg.goBack(); await pg.waitForTimeout(700); assert.equal((await at()).page,'overview');
+  await pg.goForward(); await pg.waitForTimeout(700); assert.equal((await at()).page,'mine','and forward');
+  // the menu open, then back: it closes over the screen before
+  await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300);
+  await pg.goBack(); await pg.waitForTimeout(700);
+  assert.equal(await pg.evaluate(()=>document.getElementById('tabsbar').classList.contains('open')),false,'the menu closed');
+  assert.equal((await at()).page,'overview');
+  // a reload keeps the screen
+  await pg.click('#botbar [data-bb="alerts"]'); await pg.waitForTimeout(400); await pg.reload(); await pg.waitForTimeout(2500);
+  assert.equal((await at()).page,'alerts');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});
+
+test('11.11 a security\'s card in "מעקב ומה מתאים" opens its page from anywhere on it (the owner); its buttons keep their own job',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'watch'); await pg.waitForTimeout(600);
+  // a card as the list draws one (the list's own cards need the night's research data)
+  await pg.evaluate(()=>{const box=document.getElementById('candList'); box.insertAdjacentHTML('afterbegin','<article class="wc" data-card="MSFT" id="tcCard"><div class="wh"><div class="wt secl" data-sec="MSFT" role="link" tabindex="0"><span class="sym">MSFT</span></div></div><div class="wfacts"><span class="fc"><i>מחיר</i><b>1</b></span></div><div class="wfit"><button type="button" class="btn sm" id="tcBtn">כפתור</button></div></article>')});
+  assert.equal(await pg.evaluate(()=>getComputedStyle(document.getElementById('tcCard')).cursor),'pointer');
+  await pg.click('#tcBtn'); await pg.waitForTimeout(300);
+  assert.equal(await pg.evaluate(()=>document.body.dataset.page),'watch','a button inside the card does not open the page');
+  await pg.click('#tcCard .wfacts'); await pg.waitForTimeout(900);
+  assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,sec:(history.state||{}).sec,open:!document.getElementById('secPage').hidden})),{page:'search',sec:'MSFT',open:true});
+  await pg.goBack(); await pg.waitForTimeout(700);
+  assert.equal(await pg.evaluate(()=>document.body.dataset.page),'watch','back returns to the list');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
