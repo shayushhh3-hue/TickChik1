@@ -3519,13 +3519,13 @@ test('11.11 the phone\'s home as the owner\'s mock-up ("כרטיס נקי", chos
     await pg.evaluate(()=>document.querySelector('[data-homeset="clean"]').click()); await pg.waitForTimeout(600);
     const r=await pg.evaluate(()=>{const R=e=>e.getBoundingClientRect(), w=document.querySelector('.worth'), v=R(document.getElementById('kTotal')), c=R(document.getElementById('wChart')), kr=document.getElementById('kindRow'), ot=document.getElementById('ovTabs'), ib=document.getElementById('insightBar'), bx=document.getElementById('bento');
       return {clean:document.body.classList.contains('home-clean'),bento:document.body.classList.contains('bento-on'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),saved:localStorage.getItem('tr_home'),
-        violet:getComputedStyle(w).backgroundColor==='rgb(91, 33, 182)',beside:c.width>0&&c.right<=v.left+2&&c.bottom>v.top&&c.top<v.bottom+120,right:Math.round(R(w).right-v.right),
+        violet:getComputedStyle(w).backgroundColor==='rgb(91, 33, 182)',beside:c.width>R(w).width*0.8&&c.top>=v.bottom-2,right:Math.round(R(w).right-v.right),
         kind:kr===document.getElementById('holdSec').firstElementChild&&kr.offsetHeight>0&&kr.querySelectorAll('.kt').length>=2,soon:document.getElementById('bSoon').previousElementSibling===ib&&document.getElementById('bSoon').offsetHeight>0,insight:!ib.hidden&&ib.offsetHeight>0&&/מה (קרה היום|השתנה מאז)/.test(ib.textContent),
         tabs:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.nextElementSibling===ib?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=44).map(x=>x.dataset.tab):[],
         head:!!document.querySelector('.worth .wtop #acctSel'),after:bx.previousElementSibling===document.getElementById('holdSec')&&!bx.hidden,pills:[...document.querySelectorAll('#rows tr.hrow td:nth-child(6) .n')].filter(x=>x.offsetHeight>0).length,
         ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.clean&&!r.bento&&r.pressed==='true'&&r.saved==='clean','the choice: '+JSON.stringify(r));
-    assert.ok(!r.violet&&r.beside&&r.right<40,'a plain card, the value at its right and the chart beside it: '+JSON.stringify(r));
+    assert.ok(!r.violet&&r.beside&&r.right<40,'12.11: a plain card, the value at its right and the chart under it, the card\'s width: '+JSON.stringify(r));
     assert.ok(r.kind&&r.soon&&r.insight&&r.head,'12.11: the split at the holdings\' head, the coming two weeks under "מה קרה היום בתיק?", the accounts in the card\'s head: '+JSON.stringify(r));
     assert.deepEqual(r.tabs,['mix','history','state','mine'],'the views as four tiles under it, "הוסף נכסים" the fourth');
     assert.ok(r.after&&r.pills>0&&!r.ox,'the tiles after the holdings, each holding\'s share a pill, no sideways scroll: '+JSON.stringify(r));
@@ -3560,11 +3560,11 @@ test('11.11 the clean card is the phone\'s default (the owner): the wordmark and
   const {ctx,pg}=await open(390,{home:null}); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(400);
   const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), wm=document.querySelector('#hero .wm').getBoundingClientRect(), sub=document.querySelector('#hero .brand-sub').getBoundingClientRect(), pf=R('hdrProf'), w=document.querySelector('.worth').getBoundingClientRect();
     return {clean:document.body.classList.contains('home-clean'),saved:localStorage.getItem('tr_home'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),
-      wm:wm.width>60&&wm.bottom<=w.top,sub:sub.width>60&&sub.bottom<=w.top,prof:pf.width>=44&&pf.height>=44&&pf.left<80&&pf.bottom<=w.top+2,ox:document.documentElement.scrollWidth>innerWidth+1}});
-  assert.deepEqual(r,{clean:true,saved:null,pressed:'true',wm:true,sub:true,prof:true,ox:false},'the clean card by default, its head as the mock-up: '+JSON.stringify(r));
-  await pg.click('#hdrProf'); await pg.waitForTimeout(500);
-  const a=await pg.evaluate(()=>({nav:document.getElementById('tabsbar').classList.contains('open'),menu:!document.getElementById('tcAcctMenu').hidden,mc:!!document.querySelector('#tcAcctMenu a[href="/admin"]:not([hidden])')}));
-  assert.deepEqual(a,{nav:true,menu:true,mc:true},'the profile button opens the side menu at the account (the management center in it)');
+      wm:wm.width===0,sub:sub.width===0,prof:pf.width===0&&w.top<40,ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.deepEqual(r,{clean:true,saved:null,pressed:'true',wm:true,sub:true,prof:true,ox:false},'12.11: the clean card by default, from the top of the screen (no wordmark, no profile button): '+JSON.stringify(r));
+  await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(500);
+  const a=await pg.evaluate(()=>({nav:document.getElementById('tabsbar').classList.contains('open'),acct:!!document.querySelector('#sbAcct #tcAcctBtn')&&document.getElementById('tcAcctBtn').offsetHeight>0}));
+  assert.deepEqual(a,{nav:true,acct:true},'the account is in "עוד"');
   await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
   // at night: no visible text on the home below 4.5:1 against what is behind it (as the night test checks the bento)
   await pg.evaluate(()=>{document.documentElement.dataset.theme='dark'}); await pg.waitForTimeout(300);

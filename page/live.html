@@ -3237,6 +3237,23 @@ body.home-clean[data-page="overview"] .worth .kpi:first-child{flex-basis:100%}
 body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-v,body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-s{font-size:20px;font-weight:800}
 body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-k{font-size:15px}
 body.home-clean[data-page="overview"] .worth .kpi .whybtn{position:static;order:4}
+/* 12.11 (the owner): the clean card from the top of the screen (no wordmark, no profile button: the account is in "עוד"), the chart the card's width under the figures, its ranges under it; a late price a small mark at the card's head */
+html body.home-clean[data-page="overview"] #hero.hero .top.top.top{display:none!important}
+body.home-clean[data-page="overview"] .hero .worth{margin-top:6px}
+body.home-clean[data-page="overview"] .worth .wgrid{grid-template-columns:minmax(0,1fr)!important}
+body.home-clean[data-page="overview"] .worth .wgrid>#wChart{position:relative;border-top:0!important;padding-top:0!important;grid-column:1/-1!important;grid-row:auto!important;margin:4px 0 0!important;width:auto!important;max-width:none!important;justify-self:stretch!important}
+body.home-clean[data-page="overview"] .worth .wch svg{height:104px!important;width:100%}
+body.home-clean[data-page="overview"] .worth #wchH{display:flex!important;position:absolute;top:0;left:0;right:auto!important;width:auto!important;z-index:1;margin:0!important;padding:0!important;border:0;background:none}
+body.home-clean[data-page="overview"] .worth #wchH #wChR{display:none!important}
+body.home-clean[data-page="overview"] .worth #wchH .wch-rg{padding:2px;gap:0}
+body.home-clean[data-page="overview"] .worth #wchH .wch-rg button{min-height:32px;padding:2px 9px;font-size:13px}
+body.home-clean[data-page="overview"] .worth .wtop .kchips:not(.okmini){display:inline-flex;gap:6px;margin:0}
+body.home-clean[data-page="overview"] .worth .wtop .kchips:not(.okmini) .status:not([hidden]){font-size:0!important;width:30px;height:30px;min-height:30px;padding:0!important;border-radius:50%;display:inline-grid!important;place-items:center}
+body.home-clean[data-page="overview"] .worth .wtop .kchips:not(.okmini) .status>*{display:none!important}
+body.home-clean[data-page="overview"] .worth .wtop .kchips:not(.okmini) .status::after{content:"✓";font-size:15px;font-weight:800}
+body.home-clean[data-page="overview"] .worth .wtop .kchips:not(.okmini) .status:is(.warn,.bad)::after{content:"!";font-size:17px}
+body.home-clean[data-page="overview"] #ovTabs button{min-height:60px!important;height:auto!important;padding:8px 4px!important;gap:3px!important;font-size:13.5px;line-height:1.2}
+body.home-clean[data-page="overview"] #ovTabs button svg{width:18px!important;height:18px!important}
 /* the stocks/funds split at the card's foot (the home hides #kindRow otherwise), each with its bar */
 body.home-clean[data-page="overview"] #holdSec>#kindRow#kindRow{margin:0 0 14px!important;padding:0 0 12px;border-top:0;border-bottom:1px solid var(--line)}
 body.home-clean[data-page="overview"] #bSoon:not([hidden]){display:grid}
@@ -19756,6 +19773,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), mt=$('mktTick'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec'), kr=$('kindRow'), qa=$('quickActs');
   /* 12.11 (the owner): the clean card's order: the value, the row of views, "מה קרה היום בתיק?", the coming two weeks, then the holdings with the stocks/funds split at their head */
   const so=$('bSoon');
+  try{kOkSync()}catch(e){}
   if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.nextElementSibling!==ib)ib.before(ot); if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);
     if(kr&&hs&&kr.parentElement!==hs)hs.prepend(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
   if(so&&bx&&so.parentElement!==bx)bx.prepend(so);
@@ -19837,7 +19855,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim?110:W<560?150:180, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim||(PHONE.matches&&document.body.classList.contains('home-clean'))?104:W<560?150:180, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
   // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
@@ -29366,7 +29384,7 @@ function renderTrustChip(T){const el=$('kTrust'); if(!el)return; if(!T||noPf()){
 // chip keeps its words for a screen reader and still opens the details); anything late is a chip under the chart, as before
 function kOkSync(){const k=document.querySelector('.kchips'), t=$('kTrust'), n=$('kNews'), top=document.querySelector('.worth .wtop .k'), h=$('wchH'); if(!k||!top||!h)return;
   const vis=[t,n].filter(x=>x&&!x.hidden), ok=vis.length>0&&vis.every(x=>!x.classList.contains('warn')&&!x.classList.contains('bad'))&&(!$('kStatus')||$('kStatus').hidden);
-  k.classList.toggle('okmini',ok); if(t)t.title=ok?'המחירים והחדשות עדכניים. לפרטים':'האם המחירים עדכניים? לפרטים'; const wv=document.querySelector('.worth .wv'), want=ok?top:(document.body.classList.contains('homeA')&&wv?wv:h);   /* 9.11: on the phone's home a late price is said under the day, not inside the chart's card */ if(k.parentElement!==want)want.appendChild(k)}
+  k.classList.toggle('okmini',ok); if(t)t.title=ok?'המחירים והחדשות עדכניים. לפרטים':'האם המחירים עדכניים? לפרטים'; const wv=document.querySelector('.worth .wv'), want=ok||(document.body.classList.contains('home-clean')&&PHONE.matches)?top:(document.body.classList.contains('homeA')&&wv?wv:h);   /* 12.11 (the owner): in the clean card a late price is a small mark at the card's head */   /* 9.11: on the phone's home a late price is said under the day, not inside the chart's card */ if(k.parentElement!==want)want.appendChild(k)}
 document.addEventListener('click',ev=>{
   const g=ev.target.closest&&ev.target.closest('[data-uxgo]'); if(g){const k=g.dataset.uxgo;
     if(k==='newschip'){showTab('overview',true); setTimeout(()=>{const t=$('dkNews'); if(t){t.scrollIntoView({behavior:'smooth',block:'center'}); uxLit(t)}},60); return}
