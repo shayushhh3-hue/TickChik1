@@ -3234,16 +3234,16 @@ body.home-clean[data-page="overview"] .worth .kpi-s{order:1;font-size:13px}
 body.home-clean[data-page="overview"] .worth .kpi-k{order:2;font-size:13px;color:var(--muted);font-weight:600}
 body.home-clean[data-page="overview"] .worth .kpi .kpi-add{order:3}
 body.home-clean[data-page="overview"] .worth .kpi:first-child{flex-basis:100%}
-body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-v,body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-s{font-size:20px;font-weight:800}
-body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-k{font-size:15px}
+body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-v,body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-s{font-size:16px;font-weight:800}   /* 12.11 (the owner): smaller */
+body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-k{font-size:14px}
 body.home-clean[data-page="overview"] .worth .kpi .whybtn{position:static;order:4}
 /* 12.11 (the owner): the clean card from the top of the screen (no wordmark, no profile button: the account is in "עוד"), the chart the card's width under the figures, its ranges under it; a late price a small mark at the card's head */
 html body.home-clean[data-page="overview"] #hero.hero .top.top.top{display:none!important}
 body.home-clean[data-page="overview"] .hero .worth{margin-top:6px}
 body.home-clean[data-page="overview"] .worth .wgrid{grid-template-columns:minmax(0,1fr)!important}
 body.home-clean[data-page="overview"] .worth .wgrid>#wChart{position:relative;border-top:0!important;padding-top:0!important;grid-column:1/-1!important;grid-row:auto!important;margin:4px 0 0!important;width:auto!important;max-width:none!important;justify-self:stretch!important}
-body.home-clean[data-page="overview"] .worth .wch svg{height:132px!important;width:100%}
-body.home-clean[data-page="overview"] .worth #wchH{display:flex!important;position:absolute;top:0;left:0;right:auto!important;width:auto!important;z-index:1;margin:0!important;padding:0!important;border:0;background:none}
+body.home-clean[data-page="overview"] .worth .wch svg{height:172px!important;width:100%}
+body.home-clean[data-page="overview"] .worth #wchH{display:flex!important;justify-content:center;margin:4px 0 0!important;padding:0!important;border:0;background:none}
 body.home-clean[data-page="overview"] .worth #wchH #wChR{display:none!important}
 body.home-clean[data-page="overview"] .worth #wchH .wch-rg{padding:2px;gap:0}
 body.home-clean[data-page="overview"] .worth #wchH .wch-rg button{min-height:32px;padding:2px 9px;font-size:13px}
@@ -19774,7 +19774,7 @@ function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=
   /* 12.11 (the owner): the clean card's order: the value, the row of views, "מה קרה היום בתיק?", the coming two weeks, then the holdings with the stocks/funds split at their head */
   const so=$('bSoon');
   try{kOkSync()}catch(e){}
-  if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.nextElementSibling!==ib)ib.before(ot); if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);
+  if(cl){{const wc=$('wChart'), wh=$('wchH'); if(wc&&wh&&wc.nextElementSibling!==wh)wc.after(wh)} if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.nextElementSibling!==ib)ib.before(ot); if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);
     if(kr&&hs&&kr.parentElement!==hs)hs.prepend(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
   if(so&&bx&&so.parentElement!==bx)bx.prepend(so);
   if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot); if(as&&ot&&as.parentElement!==ot)ot.prepend(as);
@@ -19855,7 +19855,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim||(PHONE.matches&&document.body.classList.contains('home-clean'))?132:W<560?150:180, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, cp=!slim&&PHONE.matches&&document.body.classList.contains('home-clean'), H=slim?110:cp?172:W<560?150:180, L=slim?6:cp?50:8, R=slim||cp?10:48,   /* 12.11 (the owner): in the clean card the scale on the left */ T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
   // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
@@ -19867,7 +19867,7 @@ function renderWChart(){
   const kf=v=>'₪'+(Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':(v/1000).toFixed(v>=1e5?0:1)+'K');
   const lab='font-family="var(--sans)" style="fill:var(--muted)"';
   let g=`<defs><linearGradient id="wgA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2DD4BF"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient><linearGradient id="wgF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C3AED" stop-opacity=".42"/><stop offset="1" stop-color="#2DD4BF" stop-opacity=".04"/></linearGradient></defs>`;
-  if(!slim)for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${W-R+6}" y="${yy+4}" font-size="11" ${lab} text-anchor="start">${kf(v)}</text>`}
+  if(!slim)for(let i=0;i<3;i++){const v=lo0+(hi0-lo0)*i/2, yy=y(v); g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" style="stroke:var(--line)" stroke-width="1"${i?'':' stroke-dasharray="3 4"'}/><text x="${cp?L-6:W-R+6}" y="${yy+4}" font-size="11" ${lab} text-anchor="${cp?'end':'start'}">${kf(v)}</text>`}
   const d=P0.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
   g+=`<path d="${d} L${x(t1).toFixed(1)} ${H-B} L${x(t0).toFixed(1)} ${H-B} Z" fill="url(#wgF)"/>`;
   // the money put in, dotted, when the whole portfolio is shown and the deposits are known: the gap to the line is the result
