@@ -3242,7 +3242,7 @@ html body.home-clean[data-page="overview"] #hero.hero .top.top.top{display:none!
 body.home-clean[data-page="overview"] .hero .worth{margin-top:6px}
 body.home-clean[data-page="overview"] .worth .wgrid{grid-template-columns:minmax(0,1fr)!important}
 body.home-clean[data-page="overview"] .worth .wgrid>#wChart{position:relative;border-top:0!important;padding-top:0!important;grid-column:1/-1!important;grid-row:auto!important;margin:4px 0 0!important;width:auto!important;max-width:none!important;justify-self:stretch!important}
-body.home-clean[data-page="overview"] .worth .wch svg{height:104px!important;width:100%}
+body.home-clean[data-page="overview"] .worth .wch svg{height:132px!important;width:100%}
 body.home-clean[data-page="overview"] .worth #wchH{display:flex!important;position:absolute;top:0;left:0;right:auto!important;width:auto!important;z-index:1;margin:0!important;padding:0!important;border:0;background:none}
 body.home-clean[data-page="overview"] .worth #wchH #wChR{display:none!important}
 body.home-clean[data-page="overview"] .worth #wchH .wch-rg{padding:2px;gap:0}
@@ -19855,7 +19855,7 @@ function renderWChart(){
   if(document.body.dataset.page&&document.body.dataset.page!=='overview')return;   // drawn when the home screen shows
   // 28.10: the mock-up's chart: a mint-to-violet area under a violet line, the labels in the page's muted ink; narrow
   // (beside the figure on a phone) it is a clean sparkline without the price scale
-  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim||(PHONE.matches&&document.body.classList.contains('home-clean'))?104:W<560?150:180, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
+  const W=Math.max(140,svg.clientWidth||box.clientWidth||320), slim=W<300, H=slim||(PHONE.matches&&document.body.classList.contains('home-clean'))?132:W<560?150:180, L=slim?6:8, R=slim?10:48, T=10, B=slim?18:24;   // 9.11: lower, the scale on the right   // 9.11: taller: the chart is the main thing on the home
   // 28.10: beside the portfolio, the same deposits put into the S&P 500 on the same days (the whole portfolio only, when
   // the deposits have days and the index has a price for every point): the gap between the lines is how the choices did
   try{benchLoad()}catch(e){}
