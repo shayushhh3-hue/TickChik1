@@ -3238,14 +3238,16 @@ body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-v,body.home-c
 body.home-clean[data-page="overview"] .worth .kpi:first-child .kpi-k{font-size:15px}
 body.home-clean[data-page="overview"] .worth .kpi .whybtn{position:static;order:4}
 /* the stocks/funds split at the card's foot (the home hides #kindRow otherwise), each with its bar */
-body.home-clean[data-page="overview"] .worth #kindRow{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none!important;gap:0!important;margin:12px 0 0!important;padding-top:10px;border-top:1px solid var(--line)}
-body.home-clean[data-page="overview"] .worth #kindRow .kt{display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:2px 10px!important;border:0;border-inline-start:1px solid var(--line);border-radius:0;background:none;box-shadow:none}
-body.home-clean[data-page="overview"] .worth #kindRow .kt:first-child{border-inline-start:0;padding-inline-start:0!important}
-body.home-clean[data-page="overview"] .worth #kindRow .kt-k{font-size:13px}
-body.home-clean[data-page="overview"] .worth #kindRow .kt-v{font-size:16px;text-align:start}
-body.home-clean[data-page="overview"] .worth #kindRow .kt-p{font-size:12.5px}
-body.home-clean[data-page="overview"] .worth #kindRow .kt-d{display:none!important}
-body.home-clean[data-page="overview"] .worth #kindRow .kt-bar{display:block!important;margin-top:4px}
+body.home-clean[data-page="overview"] #holdSec>#kindRow#kindRow{margin:0 0 14px!important;padding:0 0 12px;border-top:0;border-bottom:1px solid var(--line)}
+body.home-clean[data-page="overview"] #bSoon:not([hidden]){display:grid}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none!important;gap:0!important;margin:12px 0 0!important;padding-top:10px;border-top:1px solid var(--line)}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt{display:flex!important;flex-direction:column;align-items:stretch;gap:2px;padding:2px 10px!important;border:0;border-inline-start:1px solid var(--line);border-radius:0;background:none;box-shadow:none}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt:first-child{border-inline-start:0;padding-inline-start:0!important}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt-k{font-size:13px}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt-v{font-size:16px;text-align:start}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt-p{font-size:12.5px}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt-d{display:none!important}
+body.home-clean[data-page="overview"] :is(.worth,#holdSec) #kindRow .kt-bar{display:block!important;margin-top:4px}
 /* the views as four tiles under "מה קרה היום בתיק?" (its own style); the first one full, a dark violet under white words */
 body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin:0;max-width:none;overflow:visible}
 body.home-clean[data-page="overview"] [data-pane="overview"]>#ovTabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:76px;padding:8px 4px;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);color:var(--ink);font:inherit;font-size:12.5px;font-weight:700;line-height:1.25;text-align:center;white-space:normal;cursor:pointer}
@@ -19752,13 +19754,17 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
 // changed the classes: the views stayed in the card, the split outside it)
 function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), mt=$('mktTick'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec'), kr=$('kindRow'), qa=$('quickActs');
-  if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.previousElementSibling!==ib)ib.after(ot); if(kr&&w&&kr.parentElement!==w)w.append(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
+  /* 12.11 (the owner): the clean card's order: the value, the row of views, "מה קרה היום בתיק?", the coming two weeks, then the holdings with the stocks/funds split at their head */
+  const so=$('bSoon');
+  if(cl){if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&ib&&ot.nextElementSibling!==ib)ib.before(ot); if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);
+    if(kr&&hs&&kr.parentElement!==hs)hs.prepend(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
+  if(so&&bx&&so.parentElement!==bx)bx.prepend(so);
   if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot); if(as&&ot&&as.parentElement!==ot)ot.prepend(as);
-  if(kr&&qa&&w&&kr.parentElement===w){if(ph)qa.before(kr); else qa.after(kr)}
+  if(kr&&qa&&(kr.parentElement===w||kr.parentElement===hs)){if(ph)qa.before(kr); else qa.after(kr)}
   if(bx&&hs&&bx.nextElementSibling!==hs)hs.before(bx)}
 function renderBento(m,A){
   const box=$('bento'); if(!box)return; BENTO={m,A}; homeSetSync(); try{homeArrange()}catch(e){}
-  const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length), clean=homeStyle()==='clean'; box.hidden=!on;
+  const on=PHONE.matches&&!noPf()&&!!(m&&m.pos&&m.pos.length), clean=homeStyle()==='clean'; box.hidden=!on; {const so=$('bSoon'); if(so)so.hidden=!on}
   document.body.classList.toggle('bento-on',on&&!clean); document.body.classList.toggle('home-clean',on&&clean);
   {const ib=$('insightBar'); if(ib)ib.hidden=!(on&&clean)}   // "מה קרה היום בתיק?" (renderDesk fills it and hides it): in the clean card only
   if(!on)return;

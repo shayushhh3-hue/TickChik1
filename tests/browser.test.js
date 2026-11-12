@@ -3520,20 +3520,20 @@ test('11.11 the phone\'s home as the owner\'s mock-up ("כרטיס נקי", chos
     const r=await pg.evaluate(()=>{const R=e=>e.getBoundingClientRect(), w=document.querySelector('.worth'), v=R(document.getElementById('kTotal')), c=R(document.getElementById('wChart')), kr=document.getElementById('kindRow'), ot=document.getElementById('ovTabs'), ib=document.getElementById('insightBar'), bx=document.getElementById('bento');
       return {clean:document.body.classList.contains('home-clean'),bento:document.body.classList.contains('bento-on'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),saved:localStorage.getItem('tr_home'),
         violet:getComputedStyle(w).backgroundColor==='rgb(91, 33, 182)',beside:c.width>0&&c.right<=v.left+2&&c.bottom>v.top&&c.top<v.bottom+120,right:Math.round(R(w).right-v.right),
-        kind:kr.parentElement===w&&kr.offsetHeight>0&&kr.querySelectorAll('.kt').length>=2,insight:!ib.hidden&&ib.offsetHeight>0&&/מה (קרה היום|השתנה מאז)/.test(ib.textContent),
-        tabs:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.previousElementSibling===ib?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=44).map(x=>x.dataset.tab):[],
+        kind:kr===document.getElementById('holdSec').firstElementChild&&kr.offsetHeight>0&&kr.querySelectorAll('.kt').length>=2,soon:document.getElementById('bSoon').previousElementSibling===ib&&document.getElementById('bSoon').offsetHeight>0,insight:!ib.hidden&&ib.offsetHeight>0&&/מה (קרה היום|השתנה מאז)/.test(ib.textContent),
+        tabs:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.nextElementSibling===ib?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=44).map(x=>x.dataset.tab):[],
         head:!!document.querySelector('.worth .wtop #acctSel'),after:bx.previousElementSibling===document.getElementById('holdSec')&&!bx.hidden,pills:[...document.querySelectorAll('#rows tr.hrow td:nth-child(6) .n')].filter(x=>x.offsetHeight>0).length,
         ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.clean&&!r.bento&&r.pressed==='true'&&r.saved==='clean','the choice: '+JSON.stringify(r));
     assert.ok(!r.violet&&r.beside&&r.right<40,'a plain card, the value at its right and the chart beside it: '+JSON.stringify(r));
-    assert.ok(r.kind&&r.insight&&r.head,'the split at the card\'s foot, "מה קרה היום בתיק?", the accounts in the card\'s head: '+JSON.stringify(r));
+    assert.ok(r.kind&&r.soon&&r.insight&&r.head,'12.11: the split at the holdings\' head, the coming two weeks under "מה קרה היום בתיק?", the accounts in the card\'s head: '+JSON.stringify(r));
     assert.deepEqual(r.tabs,['mix','history','state','mine'],'the views as four tiles under it, "הוסף נכסים" the fourth');
     assert.ok(r.after&&r.pills>0&&!r.ox,'the tiles after the holdings, each holding\'s share a pill, no sideways scroll: '+JSON.stringify(r));
     // and back: everything in its place again
     await pg.evaluate(()=>document.querySelector('[data-homeset="bento"]').click()); await pg.waitForTimeout(600);
     const b=await pg.evaluate(()=>({bento:document.body.classList.contains('bento-on'),clean:document.body.classList.contains('home-clean'),tabsInCard:!!document.querySelector('.worth #ovTabs'),acctInTabs:!!document.querySelector('#ovTabs #acctSel'),
-      before:document.getElementById('bento').nextElementSibling===document.getElementById('holdSec'),kindOut:!document.getElementById('kindRow').closest('.worth'),add:getComputedStyle(document.querySelector('#ovTabs .ov-add')).display,insight:document.getElementById('insightBar').hidden}));
-    assert.deepEqual(b,{bento:true,clean:false,tabsInCard:true,acctInTabs:true,before:true,kindOut:true,add:'none',insight:true});
+      before:document.getElementById('bento').nextElementSibling===document.getElementById('holdSec'),kindOut:!document.getElementById('kindRow').closest('.worth,#holdSec'),soonBack:document.getElementById('bSoon').parentElement===document.getElementById('bento'),add:getComputedStyle(document.querySelector('#ovTabs .ov-add')).display,insight:document.getElementById('insightBar').hidden}));
+    assert.deepEqual(b,{bento:true,clean:false,tabsInCard:true,acctInTabs:true,before:true,kindOut:true,soonBack:true,add:'none',insight:true});
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(1280); await pg.waitForTimeout(800); await pg.evaluate(()=>document.querySelector('[data-homeset="clean"]').click()); await pg.waitForTimeout(500);
     const r=await pg.evaluate(()=>({clean:document.body.classList.contains('home-clean'),bento:!document.getElementById('bento').hidden,tabsInCard:!!document.querySelector('.worth #ovTabs'),add:getComputedStyle(document.querySelector('#ovTabs .ov-add')).display}));
@@ -3547,8 +3547,8 @@ test('11.11 "כרטיס נקי" chosen on another device: the style that arrives
   try{store.setDoc('settings/main',{...S0,ui:{...((S0&&S0.ui)||{}),tr_home:'clean'}},{silent:true});
     const {ctx,pg}=await open(390,{keepUi:true}); await pg.waitForFunction(()=>document.body.classList.contains('home-clean'),null,{timeout:15000}); await pg.waitForTimeout(400);
     const r=await pg.evaluate(()=>{const w=document.querySelector('.worth'), ot=document.getElementById('ovTabs'), kr=document.getElementById('kindRow');
-      return {saved:localStorage.getItem('tr_home'),tabsInPane:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.previousElementSibling===document.getElementById('insightBar'),
-        kindInCard:kr.parentElement===w&&kr.offsetHeight>0,acctInHead:!!document.querySelector('.worth .wtop #acctSel'),after:document.getElementById('bento').previousElementSibling===document.getElementById('holdSec'),
+      return {saved:localStorage.getItem('tr_home'),tabsInPane:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.nextElementSibling===document.getElementById('insightBar'),
+        kindInCard:kr.parentElement===document.getElementById('holdSec')&&kr.offsetHeight>0,acctInHead:!!document.querySelector('.worth .wtop #acctSel'),after:document.getElementById('bento').previousElementSibling===document.getElementById('holdSec'),
         pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed')}});
     assert.deepEqual(r,{saved:'clean',tabsInPane:true,kindInCard:true,acctInHead:true,after:true,pressed:'true'},'the whole clean card, not half of it');
     assert.deepEqual(pg.errs,[]); await ctx.close();
