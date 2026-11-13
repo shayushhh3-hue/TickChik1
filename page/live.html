@@ -1701,21 +1701,32 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf tr.fixed td:nth-child(n+5):nth-child(-n+9){display:flex}
   table.pf td.pfx .btn{min-height:40px;align-self:center;margin:0}
   /* 13.11 (the owner): closed, a holding is a coloured card: its logo, "MSFT · 1 · אקסלנס", its name, and קנייה | מכירה | עוד | הסר; "עוד" opens the fields */
-  table.pf tr[style*="--pc"]{border:1px solid color-mix(in srgb,var(--pc) 30%,var(--line));border-inline-start:6px solid var(--pc);background:color-mix(in srgb,var(--pc) 7%,var(--surface));border-radius:16px;padding:12px}
-  table.pf td.pfsum{display:flex;flex-direction:row;align-items:center;gap:12px;grid-area:sum}
+  /* 13.11 (the owner): the card in TikChik's purple; open for editing it is a plain card with a purple edge */
+  table.pf tr[style*="--pc"]{border:2px solid var(--accent);background:var(--surface);border-radius:16px;padding:12px}
+  table.pf tr[style*="--pc"]:not(.open){border:0;background:var(--grad);color:#fff;box-shadow:0 8px 20px rgb(124 58 237 / .25)}
+  table.pf tr[style*="--pc"]:not(.open) .ps-h b,table.pf tr[style*="--pc"]:not(.open) .ps-h,table.pf tr[style*="--pc"]:not(.open) .ps-h .ps-d{color:#fff}
+  table.pf tr[style*="--pc"]:not(.open) .ps-n{color:rgb(255 255 255 / .85)}
+  table.pf tr[style*="--pc"]:not(.open) td.pfx{border-top-color:rgb(255 255 255 / .25)!important}
+  table.pf tr[style*="--pc"]:not(.open) td.pfx .btn:not(.pf-trade){background:rgb(255 255 255 / .16);color:#fff;border-color:rgb(255 255 255 / .35)}
+  table.pf tr[style*="--pc"]:not(.open) td.pfx .pf-trade[data-rside="buy"]{background:#DCFCE7;color:#14532D}
+  table.pf tr[style*="--pc"]:not(.open) td.pfx .pf-trade[data-rside="sell"]{background:#FEE2E2;color:#7F1D1D}
+  table.pf tr[style*="--pc"]:not(.open) .flag{background:#fff;color:#92400E}
+  table.pf tr[style*="--pc"]:not(.open)>td{background:transparent!important;border:0!important}
+  table.pf tr[style*="--pc"]{padding:9px 10px!important;gap:6px 8px!important;margin-bottom:8px!important}
+  table.pf td.pfsum{display:flex;flex-direction:row;align-items:center;gap:10px;grid-area:sum}
   table.pf td.pfsum:empty{display:none}
-  table.pf td.pfsum .lg{width:42px;height:42px;flex:none}
+  table.pf td.pfsum .lg{width:32px;height:32px;flex:none}
   table.pf .ps-t{display:flex;flex-direction:column;min-width:0;gap:1px}
-  table.pf .ps-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 7px;font-size:17px;font-weight:700}
-  table.pf .ps-h b{font-size:19px;font-weight:800;color:var(--pc,var(--ink));direction:ltr}
+  table.pf .ps-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 6px;font-size:15px;font-weight:700}
+  table.pf .ps-h b{font-size:17px;font-weight:800;color:var(--accent-ink);direction:ltr}
   table.pf .ps-h .ps-d{color:var(--muted)}
-  table.pf .ps-n{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  table.pf .ps-n{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   table.pf tr:not(.open):not(.trrow) td:nth-child(-n+4){display:none}
   table.pf tr:not(.open):not(.trrow){grid-template-areas:"sum sum sum sum sum sum" "del del del del del del"!important}
   table.pf tr.open{grid-template-areas:"sum sum sum sum sum sum" "sym sym qty qty acct acct" "name name name name name name" "ccy ccy cost cost costu costu" "px px grp grp grp grp" "del del del del del del"}
   table.pf tr.blank{grid-template-areas:"sym sym qty qty acct acct" "name name name name name name" "ccy ccy cost cost costu costu" "px px grp grp grp grp" "del del del del del del"}
-  table.pf td.pfx{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;border-top:1px solid color-mix(in srgb,var(--pc,var(--line)) 25%,var(--line));padding-top:10px!important;margin-top:2px}
-  table.pf td.pfx .btn{min-height:44px;width:100%;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;font-size:15px;font-weight:700}
+  table.pf td.pfx{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;border-top:1px solid var(--line);padding-top:8px!important;margin-top:0;gap:6px!important}
+  table.pf td.pfx .btn{min-height:36px!important;height:36px;padding:0 6px!important;width:100%;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;font-size:14px;font-weight:700}
   table.pf td.pfx .pf-trade[data-rside="buy"]{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}
   table.pf td.pfx .pf-trade[data-rside="sell"]{background:var(--crit-bg);color:var(--crit-ink);border-color:transparent}
   table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:38px;padding-block:4px}
