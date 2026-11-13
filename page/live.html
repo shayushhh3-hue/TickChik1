@@ -641,7 +641,7 @@ details.mp[open]>summary{margin-bottom:8px}
 .repk{flex-direction:row;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .repk select{font:inherit;font-size:12.5px;font-weight:500;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
 label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
-.pf td{padding:4px 5px;white-space:nowrap} .pf .pf-more{display:none} @media (max-width:640px){.pf .pf-more{display:inline-flex}}
+.pf td{padding:4px 5px;white-space:nowrap} .pf .pf-more{display:none} .pf td.pfsum{display:none} @media (max-width:640px){.pf .pf-more{display:inline-flex}}
 .pf tr.fixed td{background:var(--warn-bg)}
 .pf input{font-family:var(--mono);direction:ltr;width:86px}
 .pf input.t{font-family:var(--sans);direction:rtl;width:150px}
@@ -1700,6 +1700,24 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf tr:not(.open) td:nth-child(n+5):nth-child(-n+9){display:none} table.pf tr:not(.open){grid-template-areas:"sym sym qty qty acct acct" "name name name name name name" "del del del del del del"}
   table.pf tr.fixed td:nth-child(n+5):nth-child(-n+9){display:flex}
   table.pf td.pfx .btn{min-height:40px;align-self:center;margin:0}
+  /* 13.11 (the owner): closed, a holding is a coloured card: its logo, "MSFT · 1 · אקסלנס", its name, and קנייה | מכירה | עוד | הסר; "עוד" opens the fields */
+  table.pf tr[style*="--pc"]{border:1px solid color-mix(in srgb,var(--pc) 30%,var(--line));border-inline-start:6px solid var(--pc);background:color-mix(in srgb,var(--pc) 7%,var(--surface));border-radius:16px;padding:12px}
+  table.pf td.pfsum{display:flex;flex-direction:row;align-items:center;gap:12px;grid-area:sum}
+  table.pf td.pfsum:empty{display:none}
+  table.pf td.pfsum .lg{width:42px;height:42px;flex:none}
+  table.pf .ps-t{display:flex;flex-direction:column;min-width:0;gap:1px}
+  table.pf .ps-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 7px;font-size:17px;font-weight:700}
+  table.pf .ps-h b{font-size:19px;font-weight:800;color:var(--pc,var(--ink));direction:ltr}
+  table.pf .ps-h .ps-d{color:var(--muted)}
+  table.pf .ps-n{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  table.pf tr:not(.open):not(.trrow) td:nth-child(-n+4){display:none}
+  table.pf tr:not(.open):not(.trrow){grid-template-areas:"sum sum sum sum sum sum" "del del del del del del"!important}
+  table.pf tr.open{grid-template-areas:"sum sum sum sum sum sum" "sym sym qty qty acct acct" "name name name name name name" "ccy ccy cost cost costu costu" "px px grp grp grp grp" "del del del del del del"}
+  table.pf tr.blank{grid-template-areas:"sym sym qty qty acct acct" "name name name name name name" "ccy ccy cost cost costu costu" "px px grp grp grp grp" "del del del del del del"}
+  table.pf td.pfx{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;border-top:1px solid color-mix(in srgb,var(--pc,var(--line)) 25%,var(--line));padding-top:10px!important;margin-top:2px}
+  table.pf td.pfx .btn{min-height:44px;width:100%;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;font-size:15px;font-weight:700}
+  table.pf td.pfx .pf-trade[data-rside="buy"]{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}
+  table.pf td.pfx .pf-trade[data-rside="sell"]{background:var(--crit-bg);color:var(--crit-ink);border-color:transparent}
   table.pf input,table.pf input.t,table.pf input.s,table.pf select{width:100%;min-height:38px;padding-block:4px}
   table.pf tr:has(>td.empty){display:block;padding:0;border:0;background:none}
   table.pf td.empty{display:block;grid-area:auto}
@@ -23327,9 +23345,9 @@ document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.clos
   if(t.dataset.trside){if(TRX){TRX.side=t.dataset.trside; TRX.q=''; trRender(); const q=$('trQty'); if(q)q.focus()} return}
   // a holding's row in התיק שלי: the box opens right under the row, on the row's account (a sale when the row is held)
   if(t.dataset.rowtrade!=null){const p=(DRAFT&&DRAFT.positions||[])[+t.dataset.rowtrade], tr=t.closest('tr'); if(!p||!p.sym||!tr)return;
-    if(TRX&&TRX.host==='trBoxRow'&&TRX.sym===p.sym&&TRX.acct===(p.acct||'')){TRX=null; trRender(); return}
+    if(TRX&&TRX.host==='trBoxRow'&&TRX.sym===p.sym&&TRX.acct===(p.acct||'')&&(!t.dataset.rside||TRX.side===t.dataset.rside)){TRX=null; trRender(); return}
     let x=$('trRowTr'); if(x)x.remove(); x=document.createElement('tr'); x.id='trRowTr'; x.className='trrow'; x.innerHTML='<td colspan="20"><div id="trBoxRow" class="trbox" hidden></div></td>'; tr.after(x);
-    const held=trHeld(p.sym,p.acct||'').length>0; trOpen(p.sym,held?'sell':'buy'); TRX.host='trBoxRow'; TRX.acct=p.acct||TRX.acct; trRender(); try{x.scrollIntoView({block:'nearest'})}catch(e){} const q=$('trQty'); if(q)q.focus({preventScroll:true}); return}
+    const held=trHeld(p.sym,p.acct||'').length>0; trOpen(p.sym,t.dataset.rside||(held?'sell':'buy')); TRX.host='trBoxRow'; TRX.acct=p.acct||TRX.acct; trRender(); try{x.scrollIntoView({block:'nearest'})}catch(e){} const q=$('trQty'); if(q)q.focus({preventScroll:true}); return}
   if(t.dataset.sectrade){if(TRX&&TRX.k===t.dataset.k&&TRX.side===t.dataset.sectrade){TRX=null; trRender()} else trOpen(t.dataset.k,t.dataset.sectrade);
     for(const b of document.querySelectorAll('[data-sectrade]'))b.setAttribute('aria-expanded',String(!!TRX&&TRX.side===b.dataset.sectrade)); const q=$('trQty'); if(q)q.focus(); return}
   if(t.id==='trAll'){const v=trVals(); if(v){TRX.q=String(v.have); $('trQty').value=TRX.q; trCalc()} return}
@@ -23487,6 +23505,10 @@ function draftFromP(){
   return d;
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-pfmore]'); if(!b)return; const tr=b.closest('tr'); const on=!tr.classList.contains('open'); tr.classList.toggle('open',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'פחות':'עוד'});
+/* 13.11 (the owner): each holding's card in its own colour, the same one every time */
+const PFHUES=['#7C3AED','#0D9488','#2563EB','#DB2777','#D97706','#16A34A','#0891B2','#9333EA','#DC2626','#4F46E5'];
+function pfHue(sym){let h=0; for(const c of String(sym||'').toUpperCase())h=(h*31+c.charCodeAt(0))>>>0; return PFHUES[h%PFHUES.length]}
+const fmtQ=q=>Number.isInteger(q)?q.toLocaleString('en-US'):String(+q.toFixed(4));
 function renderMine(force){
   if(!dDirty)DRAFT=draftFromP();
   const pane=document.querySelector('[data-pane="mine"]');
@@ -23497,7 +23519,7 @@ function renderMine(force){
   try{renderRecon()}catch(e){} try{renderSDiff()}catch(e){console.error(e)} try{renderFillWiz()}catch(e){console.error(e)}
   try{const H=groupHints(DRAFT), el=$('grpHint'); if(el){el.hidden=!H.length; el.innerHTML=H.length?`<b>קבוצה לפי הנייר:</b> ${H.map(h=>`${esc(h.sym)} מסומן "טכנולוגיה"; לפי הנייר עצמו: <b>${esc(GROUPS[h.g])}</b>`).join(' · ')}. <button type="button" class="lnk" id="grpApply"${canWrite?'':' disabled'}>לסמן לפי הנייר</button> <span class="nm">(ואז לשמור; הקבוצה היא שלך לשנות)</span>`:''}}catch(e){}
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
-  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; return `<tr${fx?` class="fixed" title="${esc(fl+': '+fx.t)}"`:''}>
+  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; const pc=pfHue(p.sym), cls=[fx?'fixed':'',p.sym?'':'open blank'].filter(Boolean).join(' '); return `<tr${cls?` class="${cls}"`:''}${fx?` title="${esc(fl+': '+fx.t)}"`:''}${p.sym?` style="--pc:${pc}"`:''}>
     <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" placeholder="שם החברה (לא חובה)" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
@@ -23507,7 +23529,8 @@ function renderMine(force){
     <td data-l="עלות כוללת $"><input type="number" data-pf="costUsd" data-i="${i}" value="${p.ccy==='ILS'?'':nv(p.costUsd)}" min="0" step="0.01" placeholder="${p.ccy==='ILS'?'—':'לא ידוע'}" aria-label="עלות כוללת בדולרים" title="מה הקנייה עלתה בדולרים, לפירוק התוצאה בין מחיר המניה לשער הדולר"${p.ccy==='ILS'?' disabled':dis}></td>
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
-    <td class="pfx">${canWrite&&p.sym&&!ilIdx(p.sym)?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" aria-label="קנייה או מכירה של ${nv(p.sym)}">קנייה / מכירה</button>`:''}<button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfx">${canWrite&&p.sym&&!ilIdx(p.sym)?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="buy" aria-label="קנייה של ${nv(p.sym)}">קנייה</button>${+p.qty>0?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="sell" aria-label="מכירה של ${nv(p.sym)}">מכירה</button>`:''}`:''}<button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td>
+    <td class="pfsum">${p.sym?`${logoHtml(p.sym)}<span class="ps-t"><span class="ps-h"><b>${nv(p.sym)}</b><span class="ps-d" aria-hidden="true">·</span><span>${+p.qty?fmtQ(+p.qty):'0'}</span><span class="ps-d" aria-hidden="true">·</span><span>${esc(acctName(p.acct))}</span>${fl?`<span class="flag">${fl}</span>`:''}</span>${p.name?`<span class="ps-n">${nv(p.name)}</span>`:''}</span>`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}

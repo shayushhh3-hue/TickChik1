@@ -3438,13 +3438,20 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   }finally{await ctx.close()}
 });
 
-test('9.11 a holding\'s row in התיק שלי: "קנייה / מכירה" opens the small box right under the row (a sale of a held one, a switch to buying), and saves',T,async t=>{
+test('9.11 a holding\'s row in התיק שלי (13.11: a coloured card, "מכירה" and "קנייה" apart): the button opens the small box right under the row (a sale of a held one, a switch to buying), and saves',T,async t=>{
   if(skip())return t.skip('no browser');
   const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
   try{const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(800);
-    const i=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#pfRows [data-rowtrade]')].find(b=>/MSFT/.test(b.getAttribute('aria-label'))); return b?b.dataset.rowtrade:null}); assert.ok(i!=null,'a button in the row');
+    const i=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#pfRows [data-rowtrade][data-rside="sell"]')].find(b=>/MSFT/.test(b.getAttribute('aria-label'))); return b?b.dataset.rowtrade:null}); assert.ok(i!=null,'a button in the row');
+    // 13.11: closed, the row is a coloured card ("MSFT · qty · account", its name, and קנייה | מכירה | עוד | הסר), the fields under "עוד"
+    const c=await pg.evaluate(i=>{const tr=document.querySelector(`#pfRows [data-rowtrade="${i}"]`).closest('tr'), sm=tr.querySelector('td.pfsum'), sym=tr.querySelector('input[data-pf="sym"]');
+      const out={sum:sm.offsetHeight>0&&/MSFT\s*·\s*[\d.,]+\s*·\s*\S/.test(sm.innerText.replace(/\n/g,' ')),field:sym.offsetHeight,colour:getComputedStyle(tr).borderInlineStartWidth,
+        btns:[...tr.querySelectorAll('td.pfx .btn')].filter(b=>b.offsetHeight>=44).map(b=>b.textContent.trim()),ox:document.documentElement.scrollWidth>innerWidth+1};
+      tr.querySelector('[data-pfmore]').click(); out.open=sym.offsetHeight>0&&sm.offsetHeight>0; tr.querySelector('[data-pfmore]').click(); return out},i);
+    assert.deepEqual(c,{sum:true,field:0,colour:'6px',btns:['קנייה','מכירה','עוד','הסר'],ox:false,open:true},'the holding as a card: '+JSON.stringify(c));
+    await pg.screenshot({path:(process.env.SHOT||'/tmp')+'/pf-cards.png'});
     const q0=P0.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0);
-    await pg.click(`#pfRows [data-rowtrade="${i}"]`); await pg.waitForSelector('#trBoxRow:not([hidden]) #trQty');
+    await pg.click(`#pfRows [data-rowtrade="${i}"][data-rside="sell"]`); await pg.waitForSelector('#trBoxRow:not([hidden]) #trQty');
     const r=await pg.evaluate(()=>{const x=document.getElementById('trRowTr'); return {after:x.previousElementSibling&&!!x.previousElementSibling.querySelector('[data-rowtrade]'),side:document.querySelector('#trBoxRow [data-trside][aria-pressed="true"]').dataset.trside,page:document.body.dataset.page}});
     assert.deepEqual(r,{after:true,side:'sell',page:'mine'},'under its own row, a sale');
     await pg.click('#trBoxRow [data-trside="buy"]'); await pg.waitForSelector('#trBoxRow #trSave'); assert.match(await pg.textContent('#trBoxRow h3'),/^קנייה/);
