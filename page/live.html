@@ -1701,17 +1701,14 @@ label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:
   table.pf tr.fixed td:nth-child(n+5):nth-child(-n+9){display:flex}
   table.pf td.pfx .btn{min-height:40px;align-self:center;margin:0}
   /* 13.11 (the owner): closed, a holding is a coloured card: its logo, "MSFT · 1 · אקסלנס", its name, and קנייה | מכירה | עוד | הסר; "עוד" opens the fields */
-  /* 13.11 (the owner): the card in TikChik's purple; open for editing it is a plain card with a purple edge */
-  table.pf tr[style*="--pc"]{border:2px solid var(--accent);background:var(--surface);border-radius:16px;padding:12px}
-  table.pf tr[style*="--pc"]:not(.open){border:0;background:var(--grad);color:#fff;box-shadow:0 8px 20px rgb(124 58 237 / .25)}
-  table.pf tr[style*="--pc"]:not(.open) .ps-h b,table.pf tr[style*="--pc"]:not(.open) .ps-h,table.pf tr[style*="--pc"]:not(.open) .ps-h .ps-d{color:#fff}
-  table.pf tr[style*="--pc"]:not(.open) .ps-n{color:rgb(255 255 255 / .85)}
-  table.pf tr[style*="--pc"]:not(.open) td.pfx{border-top-color:rgb(255 255 255 / .25)!important}
-  table.pf tr[style*="--pc"]:not(.open) td.pfx .btn:not(.pf-trade){background:rgb(255 255 255 / .16);color:#fff;border-color:rgb(255 255 255 / .35)}
-  table.pf tr[style*="--pc"]:not(.open) td.pfx .pf-trade[data-rside="buy"]{background:#DCFCE7;color:#14532D}
-  table.pf tr[style*="--pc"]:not(.open) td.pfx .pf-trade[data-rside="sell"]{background:#FEE2E2;color:#7F1D1D}
-  table.pf tr[style*="--pc"]:not(.open) .flag{background:#fff;color:#92400E}
+  /* 13.11 (the owner): every holding's card on a light sky-blue, the same for all; open for editing a plain card with a blue edge */
+  table.pf tr[style*="--pc"]{border:1px solid color-mix(in srgb,#38BDF8 40%,var(--line));background:color-mix(in srgb,#38BDF8 11%,var(--surface));border-radius:16px;padding:12px}
+  table.pf tr[style*="--pc"].open{border:2px solid #38BDF8;background:var(--surface)}
   table.pf tr[style*="--pc"]:not(.open)>td{background:transparent!important;border:0!important}
+  table.pf td.pfx .btn:not(.pf-trade){background:var(--surface)}
+  table.pf .ps-v{margin-inline-start:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex:none}
+  table.pf .ps-v b{font-family:var(--mono);font-size:14px;color:var(--ink);direction:ltr}
+  table.pf .ps-v .up{color:var(--gain);font-weight:700} table.pf .ps-v .dn{color:var(--loss);font-weight:700}
   table.pf tr[style*="--pc"]{padding:9px 10px!important;gap:6px 8px!important;margin-bottom:8px!important}
   table.pf td.pfsum{display:flex;flex-direction:row;align-items:center;gap:10px;grid-area:sum}
   table.pf td.pfsum:empty{display:none}
@@ -23519,6 +23516,10 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 /* 13.11 (the owner): each holding's card in its own colour, the same one every time */
 const PFHUES=['#7C3AED','#0D9488','#2563EB','#DB2777','#D97706','#16A34A','#0891B2','#9333EA','#DC2626','#4F46E5'];
 function pfHue(sym){let h=0; for(const c of String(sym||'').toUpperCase())h=(h*31+c.charCodeAt(0))>>>0; return PFHUES[h%PFHUES.length]}
+/* 13.11 (the owner): a small line on the card: what the holding is worth and how it moved today (only from prices we have) */
+function pfLine(p){try{if(!Q||!(+p.qty>0))return ''; const px=Q.prices&&Q.prices[p.sym]; if(!(px>0))return ''; const v=rowVal(p), pv=(Q.prev||{})[p.sym];
+  const ch=pv>0?(px/pv-1)*100:null, c=ch==null?'':`<span class="${ch>=0.005?'up':ch<=-0.005?'dn':''}">${ch>=0.005?'▲':ch<=-0.005?'▼':''} ${Math.abs(ch).toFixed(2)}% היום</span>`;
+  return `<span class="ps-v"><b>₪${Math.round(v).toLocaleString('en-US')}</b>${c}</span>`}catch(e){return ''}}
 const fmtQ=q=>Number.isInteger(q)?q.toLocaleString('en-US'):String(+q.toFixed(4));
 function renderMine(force){
   if(!dDirty)DRAFT=draftFromP();
@@ -23541,7 +23542,7 @@ function renderMine(force){
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
     <td class="pfx">${canWrite&&p.sym&&!ilIdx(p.sym)?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="buy" aria-label="קנייה של ${nv(p.sym)}">קנייה</button>${+p.qty>0?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="sell" aria-label="מכירה של ${nv(p.sym)}">מכירה</button>`:''}`:''}<button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td>
-    <td class="pfsum">${p.sym?`${logoHtml(p.sym)}<span class="ps-t"><span class="ps-h"><b>${nv(p.sym)}</b><span class="ps-d" aria-hidden="true">·</span><span>${+p.qty?fmtQ(+p.qty):'0'}</span><span class="ps-d" aria-hidden="true">·</span><span>${esc(acctName(p.acct))}</span>${fl?`<span class="flag">${fl}</span>`:''}</span>${p.name?`<span class="ps-n">${nv(p.name)}</span>`:''}</span>`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfsum">${p.sym?`${logoHtml(p.sym)}<span class="ps-t"><span class="ps-h"><b>${nv(p.sym)}</b><span class="ps-d" aria-hidden="true">·</span><span>${+p.qty?fmtQ(+p.qty):'0'}</span><span class="ps-d" aria-hidden="true">·</span><span>${esc(acctName(p.acct))}</span>${fl?`<span class="flag">${fl}</span>`:''}</span>${p.name?`<span class="ps-n">${nv(p.name)}</span>`:''}</span>${pfLine(p)}`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}

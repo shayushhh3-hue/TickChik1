@@ -3445,7 +3445,7 @@ test('9.11 a holding\'s row in התיק שלי (13.11: a coloured card, "מכי�
     const i=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#pfRows [data-rowtrade][data-rside="sell"]')].find(b=>/MSFT/.test(b.getAttribute('aria-label'))); return b?b.dataset.rowtrade:null}); assert.ok(i!=null,'a button in the row');
     // 13.11: closed, the row is a coloured card ("MSFT · qty · account", its name, and קנייה | מכירה | עוד | הסר), the fields under "עוד"
     const c=await pg.evaluate(i=>{const tr=document.querySelector(`#pfRows [data-rowtrade="${i}"]`).closest('tr'), sm=tr.querySelector('td.pfsum'), sym=tr.querySelector('input[data-pf="sym"]');
-      const out={sum:sm.offsetHeight>0&&/MSFT\s*·\s*[\d.,]+\s*·\s*\S/.test(sm.innerText.replace(/\n/g,' ')),field:sym.offsetHeight,colour:getComputedStyle(tr).backgroundImage.includes('gradient'),
+      const out={sum:sm.offsetHeight>0&&/MSFT\s*·\s*[\d.,]+\s*·\s*\S/.test(sm.innerText.replace(/\n/g,' ')),field:sym.offsetHeight,colour:getComputedStyle(tr).backgroundColor!=='rgba(0, 0, 0, 0)'&&!!tr.querySelector('.ps-v b'),
         btns:[...tr.querySelectorAll('td.pfx .btn')].filter(b=>b.offsetHeight>=34).map(b=>b.textContent.trim()),ox:document.documentElement.scrollWidth>innerWidth+1};
       tr.querySelector('[data-pfmore]').click(); out.open=sym.offsetHeight>0&&sm.offsetHeight>0; tr.querySelector('[data-pfmore]').click(); return out},i);
     assert.deepEqual(c,{sum:true,field:0,colour:true,btns:['קנייה','מכירה','עוד','הסר'],ox:false,open:true},'the holding as a card: '+JSON.stringify(c));
