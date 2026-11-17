@@ -1994,7 +1994,10 @@ test('1.11 the comparison: two to four securities side by side, the same figures
   await tab(pg,'search'); await pg.waitForTimeout(300); await pg.evaluate(()=>document.querySelector('[data-pane="search"] .subtabs [data-tab="compare"]').click()); await pg.waitForTimeout(500);
   const read=()=>pg.evaluate(()=>{const T=document.querySelector('#cmpBox .cmp-t'); const rows={}; if(T)for(const tr of T.querySelectorAll('tbody tr:not(.g)')){const th=tr.querySelector('th span'); if(th)rows[th.textContent]=[...tr.querySelectorAll('td')].map(td=>({t:td.textContent.trim(),best:td.classList.contains('best'),worst:td.classList.contains('worst')}))}
     return {page:document.body.dataset.page,txt:document.getElementById('cmpBox').innerText.replace(/\s+/g,' '),heads:T?[...T.querySelectorAll('thead th')].slice(1).map(x=>x.textContent.trim()):[],rows,ox:document.documentElement.scrollWidth>innerWidth+1,sw:[...document.querySelectorAll('#cmpBox .cmp-sw')].map(x=>x.innerText.replace(/\s+/g,' '))}});
-  let r=await read(); assert.equal(r.page,'compare'); assert.match(r.txt,/בחר לפחות שני ניירות/); assert.match(r.txt,/מהתיק והמעקב: MSFT/);
+  // 17.11 (proposal 10): it opens ready on the two largest holdings; removed, it says how to pick
+  let r=await read(); assert.match(r.heads[0]||'',/^NVDA/,JSON.stringify(r.heads)); assert.match(r.heads[1]||'',/^MSFT/);
+  for(const k of ['NVDA','MSFT']){await pg.click(`#cmpBox [data-cmprm="${k}"]`); await pg.waitForTimeout(200)}
+  r=await read(); assert.equal(r.page,'compare'); assert.match(r.txt,/בחר לפחות שני ניירות/); assert.match(r.txt,/מהתיק והמעקב: MSFT/);
   await pg.click('#cmpBox [data-cmpadd="MSFT"]'); await pg.waitForTimeout(200); await pg.fill('#cmpIn','nvda'); await pg.click('#cmpAdd button'); await pg.waitForTimeout(1500);
   r=await read(); assert.equal(r.ox,false,'no sideways scroll'); assert.match(r.heads[0],/^MSFT.*Microsoft/); assert.match(r.heads[1],/^NVDA.*NVIDIA/);
   // the figures from the research, with "more" marked only among those compared, and the way to read each
@@ -2005,7 +2008,8 @@ test('1.11 the comparison: two to four securities side by side, the same figures
   assert.match(r.rows['הדוח הבא'][0].t,/בעוד 20 ימים/); assert.match(r.rows['בתיק שלי'][0].t,/%/);
   // strong and weak, only relative, and what to watch
   assert.equal(r.sw.length,2); assert.match(r.sw[1],/חזק ב \(מול האחרים כאן\): .*צמיחת הכנסות/); assert.match(r.sw[1],/מה לשים לב אליו: .*זזה פי 1\.9 מהשוק/); assert.match(r.sw[0],/חלש ב: .*צמיחת הכנסות/);
-  assert.match(r.txt,/ההשוואה לא אומרת מה כדאי/); assert.match(r.txt,/אין בדף: מתחרים/);
+  {const all=await pg.evaluate(()=>document.getElementById('cmpBox').textContent.replace(/\s+/g,' '));   // the notes are hidden on the phone since 17.11; they are still there
+   assert.match(all,/ההשוואה לא אומרת מה כדאי/); assert.match(all,/אין בדף: מתחרים/)}
   if(process.env.SHOT)await pg.locator('#cmpSec').screenshot({path:process.env.SHOT});
   // the period changes the price row
   const before=r.rows['מחיר בתקופה'][1].t; await pg.click('#cmpBox [data-cmprng="1m"]'); await pg.waitForTimeout(300); r=await read(); assert.equal(await pg.evaluate(()=>document.querySelector('#cmpBox [data-cmprng="1m"]').getAttribute('aria-pressed')),'true'); assert.notEqual(r.rows['מחיר בתקופה'][1].t,before,'a shorter period, another change');

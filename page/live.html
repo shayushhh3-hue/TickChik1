@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3887,6 +3887,17 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body [data-pane="ratings"] .panel.scroll table{width:100%!important;min-width:0!important}
   html body [data-pane="ratings"] .panel.scroll table :is(th,td:not([colspan])):nth-child(n+3){display:none!important}
   html body [data-pane="ratings"] .panel:has(#evList>li:only-child>span.sub){display:none!important}
+  /* 17.11 proposal 10, "השוואה": the quick picks from the portfolio as pills */
+  html body .cmp-pick p.nm{font-size:0!important;display:flex!important;flex-wrap:wrap;gap:8px!important;margin:10px 0 0!important}
+  html body .cmp-pick p.nm::before{content:"להוסיף מהתיק";font-size:13px;color:var(--ink2);width:100%}
+  html body .cmp-pick p.nm [data-cmpadd]{font-size:14px!important;min-height:36px!important;padding:0 12px!important;border-radius:18px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;border:0!important;text-decoration:none!important;display:inline-flex!important;align-items:center}
+  html body [data-pane="compare"] .row .sub{display:none!important}
+  html body #cmpBox{display:flex!important;flex-direction:column}
+  html body #cmpBox>.cmp-pick{order:-3}
+  html body #cmpBox>.cmp-sws{order:-2;margin-bottom:12px}
+  html body .cmp-t:not(.all) tr.cmp-more{display:none!important}
+  html body .cmp-more-b{display:block;margin:6px auto 12px;min-height:44px;font-size:15px;background:none!important;border:0!important;color:var(--accent-ink)!important}
+  html body .cmp-more-b[hidden]{display:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -27149,7 +27160,7 @@ function cmpH(){
   const pick=`<div class="cmp-pick"><div class="chips">${F.map(f=>`<span class="chip on">${logoHtml(f.k,'sm')}<bdi>${esc(f.name)}</bdi> <button type="button" class="x" data-cmprm="${esc(f.k)}" aria-label="להסיר ${esc(f.k)}">×</button></span>`).join('')}
       ${CMP.syms.length<4?`<form class="cmp-add" id="cmpAdd"><input list="cmpSyms" id="cmpIn" placeholder="סימול להוספה" maxlength="14" autocomplete="off" aria-label="סימול להוספה" style="text-transform:uppercase"><datalist id="cmpSyms">${[...held,...W].map(k=>`<option value="${esc(k)}">${esc(lab(k))}</option>`).join('')}</datalist><button type="submit" class="btn sm">להוסיף</button></form>`:''}</div>
     ${quick.length&&CMP.syms.length<4?`<p class="nm" style="margin:4px 0 0">מהתיק והמעקב: ${quick.map(k=>`<button type="button" class="lnk" data-cmpadd="${esc(k)}">${esc(k)}</button>`).join(' · ')}</p>`:''}</div>`;
-  if(F.length<2)return `${pick}<p class="note" style="margin:8px 0 0">בחר לפחות שני ניירות. ההשוואה לא אומרת מה עדיף.</p>`;
+  if(F.length<2)return `${pick}<p class="note keep" style="margin:8px 0 0">בחר לפחות שני ניירות. ההשוואה לא אומרת מה עדיף.</p>`;
   const rng=`<div class="chips rng" role="group" aria-label="תקופת המחיר">${CMP_RNG.map(([k,l])=>`<button type="button" class="chip" data-cmprng="${k}" aria-pressed="${CMP.rng===k}">${l}</button>`).join('')}</div>`;
   const funds=F.filter(f=>f.isFund); const rows=CMP_ROWS.filter(([id])=>!(funds.length===F.length&&['pe','fpe','revg','epsg','gm','om','pm','roe','de','cr','fcfm','rating','up','next','rep'].includes(id)));
   const groups=[]; for(const r of rows){const g=r[5]; let G=groups[groups.length-1]; if(!G||G.g!==g){G={g,R:[]}; groups.push(G)} G.R.push(r)}
@@ -27169,7 +27180,13 @@ function cmpH(){
   return `${pick}${rng}${table}<div class="cmp-sws">${sw}</div>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="cmp">שאל את צ׳יקו על ההשוואה</button><button type="button" class="btn sm" data-cmpclr="1">לנקות</button></div>
     <p class="note" style="margin:6px 0 0">מקורות: ${esc(srcs.join('; ')||'ריצת המחקר של הדף')}${ats.length?' · עודכן '+dmy(ats[ats.length-1]):''}; המחירים כמו בדף. "מחיר בתקופה", "הנפילה" ו"תנודתיות" מחושבים כאן מהסגירות. אין בדף: מתחרים ונתח שוק, הערכות שווי של אנליסטים מעבר ליעד הממוצע, והיסטוריה של מכפילים. ההשוואה לא אומרת מה כדאי.</p>`}
-function renderCmp(){const b=$('cmpBox'); if(!b||document.body.dataset.page!=='compare')return; setH(b,cmpH());
+document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('[data-cmpmore]'); if(!x)return; const T=document.querySelector('#cmpBox .cmp-t'); if(T)T.classList.add('all'); x.setAttribute('aria-expanded','true'); x.hidden=true});
+function renderCmp(){const b=$('cmpBox'); if(!b||document.body.dataset.page!=='compare')return;
+  // 17.11 (proposal 10): ready on the two largest holdings, once a session, when nothing is chosen
+  if(!CMP.syms.length&&!renderCmp.auto){renderCmp.auto=true; try{const m=mAllNow(), top=((m&&m.pos)||[]).filter(p=>p.sym&&SECKEY.test(p.sym)&&!ilIdx(p.sym)).sort((a,c)=>(c.val||0)-(a.val||0)).slice(0,2).map(p=>p.sym); if(top.length===2)CMP.syms=top}catch(e){}}
+  setH(b,cmpH());
+  // 17.11 (proposal 10): on the phone the first four groups of figures, the rest behind "עוד מדדים"
+  try{const T=b.querySelector('.cmp-t'); if(T){let g=0; for(const tr of T.querySelectorAll('tbody tr')){if(tr.classList.contains('g'))g++; if(g>4)tr.classList.add('cmp-more')} if(g>4)T.insertAdjacentHTML('afterend','<button type="button" class="lnk cmp-more-b" data-cmpmore="1" aria-expanded="false">עוד מדדים ›</button>')}}catch(e){}
   // what is still to come: the figures and the closes of each security, then once more
   const need=CMP.syms.filter(k=>RSX[k]===undefined||!CLOSES[k]); if(need.length&&!renderCmp.busy){renderCmp.busy=true; Promise.all([loadFit(),loadAllQ(),...need.map(k=>loadResearch(k).catch(()=>null)),...need.map(k=>loadCloses(k).catch(()=>null))]).then(()=>{renderCmp.busy=false; for(const k of need)if(RSX[k]===undefined)RSX[k]=null; renderCmp()})}}
 function cmpAdd(k){k=String(k||'').trim().toUpperCase(); if(!k||!SECKEY.test(k)||CMP.syms.includes(k)||CMP.syms.length>=4)return false; CMP.syms.push(k); cmpKeep(); try{useAdd('cmp')}catch(e){} return true}
@@ -30529,6 +30546,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.28',at:'2026-11-17',t:'השוואה: נפתחת מוכנה',d:'ההשוואה נפתחת עם שתי האחזקות הגדולות, ואפשר להחליף או להוסיף עד ארבעה ניירות. בטלפון הבחירה מהתיק היא בכפתורים גדולים.',go:'srch'},
   {v:'2026-11-17.27',at:'2026-11-17',t:'דירוג: במה התיק חזק, ושורה לכל נייר',d:'בטלפון: הדירוג נפתח בכרטיס שאומר במה התיק חזק ובמה הוא חלש. הטבלה היא שתי עמודות, הנייר והציון שלו, בלי גלילה הצידה.',go:'rate'},
   {v:'2026-11-17.26',at:'2026-11-17',t:'מניות במעקב: כרטיסים קצרים',d:'בטלפון: "מה חשוב לי בהתאמה" מאחורי כפתור אחד. כל כרטיס מראה רק את המספרים שיש להם ערך, וסיבה אחת.',go:'watch'},
   {v:'2026-11-17.25',at:'2026-11-17',t:'דף מניה: מחיר בכרטיס, כפתורים קטנים',d:'בטלפון: המחיר בכרטיס סגול כמו שווי התיק בבית. מטבע הגרף הוא מתג קטן, "להשוות" הוא קישור, וקנייה ומכירה זה לצד זה. הם נשארו מעל המחיר והגרף, כמו שביקשת.',go:'srch'},
