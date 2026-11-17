@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3804,6 +3804,15 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body section.al-scr[data-alv="need"]>.al-sec:not(#alRulesSec):not(#alTodoSec),html body section.al-scr[data-alv="px"]>.al-sec:not(#alPxSec),html body section.al-scr[data-alv="soon"]>.al-sec:not(#alSoonSec){display:none!important}
   html body .px-empty{display:flex;align-items:center;gap:12px;justify-content:space-between;font-size:14px;color:var(--muted)}
   html body .px-empty .btn{flex:none}
+  /* 17.11 proposal 4, "חדשות": one name, the map as a tab of its own, the period in three, what touches the portfolio first */
+  html body .ix-top-head{display:flex!important;align-items:center;justify-content:space-between;gap:8px}
+  html body .ix-top-head .ix-logo,html body .ix-top-head .ix-title>div>span{display:none!important}
+  html body #ixSum,html body #ixNote.nx-minor,html body .ix-col.ix-ch2{display:none!important}
+  html body #ixRange [data-ixr="90"]:not([aria-pressed="true"]),html body #ixRange [data-ixr="all"]:not([aria-pressed="true"]){display:none!important}
+  html body section.nxsec:not(.map-on) #ixMapD{display:none!important}
+  html body section.nxsec.map-on .rt-p{display:none!important}
+  html body .rt-tabs{display:flex!important;gap:8px!important;overflow-x:auto;scrollbar-width:none}
+  html body .rt-tabs [role="tab"]{flex:none!important;white-space:nowrap}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -3876,7 +3885,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
     <button type="button" role="tab" id="tab_alerts" data-tab="alerts" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>התראות</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
-    <button type="button" role="tab" id="tab_news" data-tab="news" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span>חיבור למציאות</span><span class="sbdot" id="sbNxDot" hidden></span></button>
+    <button type="button" role="tab" id="tab_news" data-tab="news" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span>חדשות</span><span class="sbdot" id="sbNxDot" hidden></span></button>
     <button type="button" role="tab" id="tab_plan" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg><span>תוכנית</span></button>
     <button type="button" role="tab" id="tab_forecast" data-tab="forecast" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>יעד ותרחישים</span></button>
     <button type="button" role="tab" id="tab_history" data-tab="history" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".16" stroke="none"/><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
@@ -4431,7 +4440,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     <section aria-labelledby="hNewsT" class="nxsec">
       <!-- 10.11 (the owner): the screen's head is the impact's: the mark, "ההשפעה על התיק", "הדופק של תיק ההשקעות שלך", over
            both tabs; under it how right the page's guesses of direction were (#ixTrust) -->
-      <div class="ix-top-head"><div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><h2 id="hNewsT">ההשפעה על התיק</h2><span>הדופק של תיק ההשקעות שלך</span></div></div><span class="sub" id="newsFresh"></span></div>
+      <div class="ix-top-head"><div class="ix-title"><span class="ix-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 12l7-7M16 5h3v3"/></svg></span><div><h2 id="hNewsT">חדשות</h2><span>הדופק של תיק ההשקעות שלך</span></div></div><span class="sub" id="newsFresh"></span><button type="button" class="ib-set" id="nxSetB" data-anav="set:nwSetSec" aria-label="הגדרות החדשות"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button></div>
       <!-- 10.11 (the owner): the impact map at the top, under the head; then how right we were; then the news -->
 <details class="ix-mapd" id="ixMapD"><summary class="ix-ms"><span class="ix-msi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg></span><span class="ix-mst"><b>מפת השפעה</b><small>איך האירועים מתחברים למניות שלך, בציור</small></span><span class="ix-msc" aria-hidden="true"></span></summary>
             <section class="ix-map" id="ixMap" aria-labelledby="ixMapH">
@@ -4450,9 +4459,10 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
             </section>
           </details>
       <div class="ix-trust" id="ixTrust" hidden></div>
-      <div class="rt-tabs" role="tablist" aria-label="חיבור למציאות">
-        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">השפעה על התיק <span class="rt-n" id="rtAlN" hidden></span></button>
-        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">החדשות שלי</button>
+      <div class="rt-tabs" role="tablist" aria-label="חדשות">
+        <button type="button" role="tab" id="rtTabAl" data-rt="al" aria-selected="true" aria-controls="rtAl">נוגע לתיק <span class="rt-n" id="rtAlN" hidden></span></button>
+        <button type="button" role="tab" id="rtTabNews" data-rt="news" aria-selected="false" aria-controls="rtNews" tabindex="-1">כל החדשות</button>
+        <button type="button" role="tab" id="rtTabMap" data-rtmap="1" aria-selected="false" aria-controls="ixMapD" tabindex="-1">מפת השפעה</button>
       </div>
       <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews" hidden>
         
@@ -4481,6 +4491,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
         <div class="ix-head">
           <div class="ix-range" id="ixRange" role="group" aria-label="תקופה"><button type="button" data-ixr="1" aria-pressed="false">24 שעות</button><button type="button" data-ixr="7" aria-pressed="true">7 ימים</button><button type="button" data-ixr="30" aria-pressed="false">30 ימים</button><button type="button" data-ixr="90" aria-pressed="false">90 ימים</button><button type="button" data-ixr="all" aria-pressed="false">כל התקופה</button></div>
         </div>
+        <div class="m-ans" id="nxAns" role="group" aria-label="הכי נוגע לתיק עכשיו" hidden></div>
         <div class="ix-note" id="ixNote" hidden></div>
         <p class="ix-sum" id="ixSum" role="status" hidden></p>
         <div id="ixBody">
@@ -27685,7 +27696,7 @@ window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 const TABS=['overview','alerts','mix','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
 const NAVG={overview:['overview','mix'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','compare'],watch:['watch'],history:['history','reports','journal'],settings:['settings']};
 const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'מחקר שוק',fit:'מניות במעקב',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
-const HEADL={alerts:'התראות',mix:'פיזור',news:'חיבור למציאות',search:'מחקר שוק',watch:'מניות במעקב',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
+const HEADL={alerts:'התראות',mix:'פיזור',news:'חדשות',search:'מחקר שוק',watch:'מניות במעקב',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
@@ -29052,6 +29063,20 @@ function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm"
 // from whichever tab is open, and how right the guesses were under it
 function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v!=='0'}
   try{ixDraw()}catch(e){console.error(e)} try{ixTrustRender()}catch(e){}}
+// 17.11 (the owner's proposal 4, "חדשות"): the phone's answer card, what in the news touches the portfolio now: the
+// holdings that moved 3% or more today and whether a news item explains it, else the important items of the period,
+// else that it is quiet. The map is a tab of its own ("מפת השפעה") instead of the first half screen
+function nxAnsFill(m,S,F){const box=$('nxAns'); if(!box)return; if(!hasPf()){box.hidden=true; return}
+  const mv=((m&&m.pos)||[]).filter(p=>p.dayPct!=null&&Math.abs(p.dayPct)>=3).sort((a,b)=>Math.abs(b.dayPct)-Math.abs(a.dayPct)).slice(0,3);
+  const E=((F&&F.L)||[]).filter(a=>a.kind!=='mkt'), I=E.filter(a=>a.lv==='crit'||a.lv==='imp'), top=E.slice().sort(plSort)[0], hd='<div class="ma-k"><span>הכי נוגע לתיק עכשיו</span></div>';
+  if(mv.length){const dn=mv.every(p=>p.dayPct<0), up=mv.every(p=>p.dayPct>0), ex=mv.filter(p=>{const o=(S||[]).find(x=>x.sym===p.sym); return o&&!o.quiet&&o.L.some(z=>z.a.kind!=='mkt')}).length;
+    box.innerHTML=hd+`<div class="ma-v sm">${esc((L=>L.length>1?L.slice(0,-1).join(', ')+' ו-'+L[L.length-1]:L[0])(mv.map(p=>lab(p.sym))))} ${mv.length===1?(dn?'ירדה':'עלתה'):(dn?'ירדו':up?'עלו':'זזו')} היום</div><div class="ma-l">${mv.map(p=>`<span class="n" dir="ltr">${esc(lab(p.sym))} <span class="${p.dayPct<0?'down':'up'}">${p.dayPct<0?'▼ −':'▲ +'}${Math.abs(p.dayPct).toFixed(1)}%</span></span>`).join(' · ')}</div><div class="ma-l">${ex?(ex===mv.length?'יש ידיעות שנוגעות לתנועה.':'יש ידיעה על חלק מהן.'):'לא נמצאה ידיעה שמסבירה את התנועה.'}</div>`}
+  else if(top)box.innerHTML=hd+`<div class="ma-v sm">${I.length?(I.length===1?'ידיעה חשובה אחת':I.length+' ידיעות חשובות'):(E.length===1?'ידיעה אחת':E.length+' ידיעות')} על המניות שלך</div><div class="ma-l"><button type="button" class="lnk" data-ixopen="${esc(top.k)}">${esc(top.title)}</button></div>`;
+  else box.innerHTML=hd+'<div class="ma-v sm">שקט בחדשות על התיק</div><div class="ma-l">אין תנועה חריגה ואין ידיעה חשובה על המניות שלך.</div>';
+  box.hidden=false}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return; const s=document.querySelector('section.nxsec'); if(!s)return;
+  if(t.closest('[data-rtmap]')){s.classList.add('map-on'); const d=$('ixMapD'); if(d)d.open=true; for(const b of s.querySelectorAll('.rt-tabs [role="tab"]')){const on=b.hasAttribute('data-rtmap'); b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1} try{ixMapTop()}catch(e){} return}
+  if(t.closest('.rt-tabs [data-rt]')){s.classList.remove('map-on'); const mt=$('rtTabMap'); if(mt){mt.setAttribute('aria-selected','false'); mt.tabIndex=-1}}});
 function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(), m=(()=>{try{return mAllNow()}catch(e){return null}})(), hp=hasPf();
   for(const b of document.querySelectorAll('#ixRange [data-ixr]'))b.setAttribute('aria-pressed',String(b.dataset.ixr===IXR));
   const full=$('ixFull'), sv=$('ixSv'); if(full)full.hidden=!IXFULL||!!IXST; if(sv)sv.hidden=!IXST; box.hidden=IXFULL||!!IXST;
@@ -29060,7 +29085,7 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   if(note){let t=''; if(!pr.on)t=`ההתראות האישיות כבויות. <button type="button" class="btn sm" data-anav="set:nwSetSec">להפעלה בהגדרות</button>`;
     else if(!hp)t=`<b>ההשפעה על התיק נבנית מהתיק שלך.</b> הוסף את האחזקות, וכל אירוע שנוגע להן יופיע כאן עם ההסבר. <span class="acts" style="justify-content:flex-start;display:inline-flex"><button type="button" class="btn sm pri" data-tab="mine">להוספת תיק</button></span>`;
     else if(!PULSE)t=LOCAL?'התראות אישיות נבנות בשרת האתר; בעותק הזה אין שרת.':'עוד אין חישוב של התראות. הוא רץ בשרת אחרי כל איסוף של חדשות (כל חצי שעה ביום) וכל 10 דקות לתנועות המחיר.';
-    note.hidden=!t; setH(note,t)}
+    note.hidden=!t; setH(note,t); note.classList.toggle('nx-minor',!!(pr.on&&hp&&!PULSE))}
   {const k=$('ixKpis'); if(k)k.hidden=true}   // 1.11: the figure cards repeated the list below them: gone
   // 10.11: one sentence over everything: how many events touched the portfolio in the period, how many important, and the
   // one that stands out (a tap opens it). In the simple view it is most of what the screen says
@@ -29076,6 +29101,7 @@ function renderImpact(){const box=$('ixBody'); if(!box)return; const pr=plPrefs(
   // the holdings the period touches: each a way into "מה קורה למניה"
   {const sx=$('ixStx'); if(sx){const S=hp&&pr.on?ixStocks(m):[], wide=(($('rtAl')||{}).clientWidth||0)>=760, n0=wide?6:4, nn=IXSTALL?S.length:n0; sx.hidden=!S.length;
     if(S.length){IX_HL=new Set(); setH($('ixStList'),S.slice(0,nn).map(ixStRow).join('')); const mo=$('ixStMore'); if(mo){mo.hidden=S.length<=n0; mo.textContent=IXSTALL?'להציג פחות':`עוד ${S.length-nn} מניות ›`; mo.setAttribute('aria-expanded',String(IXSTALL))}}}}
+  try{nxAnsFill(m,hp&&pr.on?ixStocks(m):[],F)}catch(e){console.error(e)}
   if(IXV==='world')IXV='pf';   // 1.11: the world view moved to the management's global news model
   ixMapTop()
   {const t=$('ixTl'); if(t)setH(t,ixTimeline(F.L))}
@@ -30407,6 +30433,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.21',at:'2026-11-17',t:'חדשות: שם אחד, ומה נוגע לתיק קודם',d:'לדף יש עכשיו שם אחד, "חדשות", ושתי הלשוניות הן "נוגע לתיק" ו"כל החדשות". בטלפון הדף נפתח בכרטיס שאומר מה זז בתיק היום ואם יש ידיעה שמסבירה את זה. מפת ההשפעה עברה ללשונית משלה, והתקופה היא 24 שעות, 7 ימים או 30 ימים.',go:'nx'},
   {v:'2026-11-17.20',at:'2026-11-17',t:'התראות: קודם מה דורש טיפול',d:'בטלפון: "התראות" נפתח בכרטיס שאומר כמה חריגות יש ואיזו הראשונה, עם "לטפל עכשיו". מתחת לכותרת סינון: הכל, דורש טיפול, מחירים ובקרוב. ההגדרות (טלפון, מייל, צלילים) מאחורי כפתור אחד ליד הכותרת, והתראות המחיר בשורה אחת עם "+ הוספה".',go:'alrules'},
   {v:'2026-11-17.19',at:'2026-11-17',t:'פיזור: התשובה קודם',d:'בטלפון: "פיזור" נפתח בכרטיס שאומר מה הכי מרוכז בתיק ואם זה מעבר לגבול שלך. ארבעת אריחי הריכוז מסודרים 2 על 2, ורשימה אחת נפתחת על הקבוצות שלך (אפשר לעבור לענף, מטבע או בורסה). גורמי הסיכון המשותפים הם שורות קצרות שנפתחות בלחיצה.',go:'mix'},
   {v:'2026-11-17.18',at:'2026-11-17',t:'התיק שלי: כרטיס אחד למעלה',d:'בטלפון: בראש "התיק שלי" כרטיס עם שווי האחזקות, השינוי היום והסכום בכל חשבון. מתחתיו סינון לפי חשבון ושמונה האחזקות הראשונות, עם "להציג את כל". הייצוא מאחורי ⋯, המזומן בשורה אחת, וכפתור "+ הוספה" אחד פותח את כל דרכי ההוספה.',go:'pfedit'},
