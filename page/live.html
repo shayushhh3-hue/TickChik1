@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3872,6 +3872,15 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #secPage .sec-jrn .acts{margin-top:6px!important}
   html body #secPage .secask .sub{display:none!important}
   html body #secPage .secask .btn{width:100%!important;justify-content:flex-start!important;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;min-height:44px!important;color:var(--ink)!important;font-weight:500!important}
+  /* 17.11 proposal 8, "מניות במעקב": a one-line hero, the preferences behind a button, short cards */
+  html body #candHero p{display:none!important}
+  html body #candPrefs:not(.open){display:none!important}
+  html body .cand-pb{display:inline-flex;min-height:44px;align-items:center;background:none!important;border:0!important;color:var(--accent-ink)!important;font-weight:500!important;padding:0!important;margin:-4px 0 4px}
+  html body [data-pane="watch"] .wleg,html body #candChips.few{display:none!important}
+  html body .wc .wfacts .fc.none{display:none!important}
+  html body .wc .wtags .tag:nth-child(n+2){display:none!important}
+  html body .wc .wfit>.sub{display:none!important}
+  html body .wgrid .wc.wc{border-inline-start:1px solid var(--line)!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4597,6 +4606,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       <div class="chips" id="wView" role="group" aria-label="תצוגה" style="align-self:flex-start"><button type="button" class="chip" data-wv="mine" aria-pressed="true">המעקב שלי והמומלצים</button><button type="button" class="chip" data-wv="all" aria-pressed="false">כל הדירוג</button></div>
       <div id="wMine">
       <div class="rhero" id="candHero"></div>
+      <button type="button" class="lnk cand-pb" id="candPrefsB" aria-expanded="false" aria-controls="candPrefs">מה חשוב לי בהתאמה ›</button>
       <div class="wprefs" id="candPrefs"></div>
       <div class="wleg" aria-hidden="true"><span><i class="d hi"></i>התאמה גבוהה, 80 ומעלה</span><span><i class="d mid"></i>בינונית, 65 עד 79</span><span><i class="d lo"></i>נמוכה, מתחת ל-65</span></div>
       <div class="chips" id="candChips" role="group" aria-label="סינון לפי קבוצה" style="align-self:flex-start"></div>
@@ -25307,6 +25317,7 @@ const FITW={safe:{div:30,q:30,val:10,st:20,dv:10},mid:{div:40,q:30,val:20,st:10}
 const FITALL=['div','q','val','st','gr','dv'];
 function fitW(){const base=FITW[riskOf()], fo=((S&&S.wpref&&S.wpref.focus)||[]).filter(k=>FITALL.includes(k)); if(!fo.length)return base;
   const o={...base}; for(const k of fo)o[k]=(o[k]||0)>0?o[k]*1.8:18; let t=0; for(const k in o)t+=o[k]; for(const k in o)o[k]=Math.round(o[k]/t*100); return o}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#candPrefsB'); if(!b)return; const p=$('candPrefs'), on=!p.classList.contains('open'); p.classList.toggle('open',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'סגירת ההעדפות':'מה חשוב לי בהתאמה ›'});
 function renderWPrefs(){const el=$('candPrefs'); if(!el)return; const wp=(S&&S.wpref)||{}, fo=wp.focus||[], ex=wp.excl||[];
   setH(el,`<div class="wp-r"><b>מה חשוב לי בהתאמה</b><div class="chips" role="group" aria-label="מה חשוב לי">${FITALL.map(k=>`<button type="button" class="chip" data-wpf="${k}" aria-pressed="${fo.includes(k)}">${esc(FITL[k])}</button>`).join('')}</div></div>
     <div class="wp-r"><b>בלי</b><div class="chips" role="group" aria-label="קבוצות שלא להציע">${Object.keys(GROUPS).filter(g=>g!=='cash').map(g=>`<button type="button" class="chip" data-wpx="${g}" aria-pressed="${ex.includes(g)}">${esc(GROUPS[g])}</button>`).join('')}</div></div>
@@ -25886,7 +25897,7 @@ function candPool(m){
 // and "כל הדירוג")
 function wcCardH(r,m,pv,mg){const pc=x=>x==null?'':`<small class="${x>=0?'up':'down'}">${spct(x*100)}</small>`;
     const c=r.c, f=r.f, tier=f.score>=80?'hi':f.score>=65?'mid':'lo', gr=f.fs?f.fs.grade:null, p=priceOf(r.k), it=r.it;
-    const fc=(l,x,cls)=>`<span class="fc"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
+    const fc=(l,x,cls)=>`<span class="fc${x==='—'?' none':''}"><i>${l}</i><b class="${cls||''}">${x}</b></span>`;
     const was=pv&&pv.px[r.k]>0&&p&&p.px>0?(p.px/pv.px[r.k]-1)*100:null, dn=c.next?daysTo(c.next):null;
     // what it is strong in, of the parts that weigh in the match (the viewer's choices among them)
     const strong=Object.keys(f.W||{}).filter(x=>f.W[x]>0&&f[x]!=null).map(x=>[x,f[x]/f.W[x]]).filter(x=>x[1]>=0.7).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>FITL[x[0]]);
@@ -25914,7 +25925,7 @@ function wcFundH(r){const f=r.f, tier=f.score>=70?'hi':f.score>=50?'mid':'lo', p
 function renderCandsP(m,pool,mine=''){
   const box=$('candList'), mg=+(S.rules||{}).maxGroup||40, its=pool.pick.map(r=>{const p=priceOf(r.k);return {sym:r.k,price:p?p.px:null}}), pv=its.some(x=>x.price>0)?watchPrev(its):null;
   $('candFresh').textContent=FIT&&FIT.updatedAt?'נתונים מ-'+dmy(FIT.updatedAt)+(rsStale(FIT.updatedAt)?' · לא מתעדכן':''):'';
-  const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter='';
+  const labs=[...new Set(pool.pick.map(r=>GROUPS[r.f.g]||''))].filter(Boolean); if(candFilter&&!labs.includes(candFilter))candFilter=''; $('candChips').classList.toggle('few',pool.pick.length<=3);
   $('candChips').innerHTML=['',...labs].map(l=>`<button class="chip" type="button" data-cf="${esc(l)}" aria-pressed="${candFilter===l}">${l?esc(l):'הכל'}</button>`).join('');
   const hi=pool.pick.filter(r=>r.f.score>=80).length;
   // the big number is what matters to the reader: how many fit very well (80 and up); the rest fit partly
@@ -30508,6 +30519,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.26',at:'2026-11-17',t:'מניות במעקב: כרטיסים קצרים',d:'בטלפון: "מה חשוב לי בהתאמה" מאחורי כפתור אחד. כל כרטיס מראה רק את המספרים שיש להם ערך, וסיבה אחת.',go:'watch'},
   {v:'2026-11-17.25',at:'2026-11-17',t:'דף מניה: מחיר בכרטיס, כפתורים קטנים',d:'בטלפון: המחיר בכרטיס סגול כמו שווי התיק בבית. מטבע הגרף הוא מתג קטן, "להשוות" הוא קישור, וקנייה ומכירה זה לצד זה. הם נשארו מעל המחיר והגרף, כמו שביקשת.',go:'srch'},
   {v:'2026-11-17.24',at:'2026-11-17',t:'מחקר שוק: מה חסר לתיק, קודם',d:'בטלפון: "מה חסר לך" הוא הכרטיס הראשון במחקר שוק, עם כפתור לכל ענף שחסר. הקטגוריות הן שישה אריחים קטנים, ו"כל הקטגוריות" פותח את השאר.',go:'srch'},
   {v:'2026-11-17.23',at:'2026-11-17',t:'שורת ניווט אחת בכל דף',d:'בטלפון: במקום שתי שורות (המסכים של הקבוצה, ומתחתם החלקים של הדף) יש שורת גלולות אחת שנגללת הצידה. קודם החלקים של הדף, ואחריהם שאר המסכים.',go:'hist'},
