@@ -3678,8 +3678,9 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #hParts .hp-all .lnk{background:none!important;border:0!important;padding:0!important;min-height:0!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important}
   /* 17.11: the history's צ׳יקו line: one line, "יותר" opens it */
   html body .quick-say:not(.open)>span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  html body .quick-say{display:flex!important;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-  html body .quick-say .qs-more{font-size:13px!important;background:none!important;border:0!important;padding:0!important;min-height:0!important;width:auto!important;color:var(--accent-ink)!important;box-shadow:none!important}
+  html body .quick-say{display:flex!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:8px!important}
+  html body .quick-say>span{flex:1 1 auto!important;min-width:0!important}
+  html body .quick-say .qs-more{flex:none!important;margin-top:2px!important;white-space:nowrap!important;font-size:13px!important;background:none!important;border:0!important;padding:0!important;min-height:0!important;width:auto!important;color:var(--accent-ink)!important;box-shadow:none!important}
   /* 17.11: the profile shows what is filled */
   html body .me-fill{grid-column:1/-1;padding-top:6px}
   /* 17.11: a holding's actions behind its "⋯"; the row opens the security */
