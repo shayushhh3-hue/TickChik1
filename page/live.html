@@ -3667,6 +3667,15 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .hbset>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;font-size:14px;font-weight:500;color:var(--accent-ink)}
   html body .hbset>summary::-webkit-details-marker{display:none} html body .hbset>summary::after{content:"⌄";font-size:18px;line-height:1;color:var(--muted)} html body .hbset[open]>summary::after{content:"⌃"}
   html body .hbset[open]{display:flex;flex-direction:column;gap:10px}
+  /* 17.11: a to-do item: a sentence and an arrow (the item opens it), its "checked" a small word */
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) li:has(.dk-go){cursor:pointer;position:relative;padding-inline-end:22px!important}
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) li:has(.dk-go)::after{content:"‹";position:absolute;inset-inline-end:2px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--muted)}
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-btns .dk-go{display:none!important}
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-btns{display:inline!important;margin:0!important}
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-ack{border:0!important;background:none!important;padding:0 4px!important;min-height:0!important;font-size:12.5px!important;color:var(--muted)!important;text-decoration:underline;box-shadow:none!important}
+  html body #hParts:not(.all) li:nth-child(n+4):not(.hp-all){display:none!important}
+  html body #hParts .hp-all{display:block;border:0;padding-top:4px}
+  html body #hParts .hp-all .lnk{background:none!important;border:0!important;padding:0!important;min-height:0!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -18905,7 +18914,8 @@ function renderHealth(m){
   // 1.11 (18): the score over time: one mark a month, kept in the account; and said what it is not
   try{const ym=new Date().toISOString().slice(0,7); S.hsc=S.hsc||{}; if(canWrite&&SETK&&!LOCAL&&SYMDB&&S.hsc[ym]==null){S.hsc[ym]=H.score; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)} const hist=Object.entries(S.hsc).sort().slice(-7), el=$('hHist');
     if(el)el.innerHTML=(hist.length>1?`<p class="nm">לאורך זמן: ${hist.map(([k,v])=>`${k.slice(5)}/${k.slice(2,4)} <b>${v}</b>`).join(' · ')}</p>`:'')}catch(e){}
-  $('hParts').innerHTML=H.parts.map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('');
+  // 17.11 (the owner): the three weakest first; the rest behind "כל המדדים"
+  $('hParts').innerHTML=H.parts.slice().sort((a,b)=>a.pts-b.pts).map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('')+(H.parts.length>3?'<li class="hp-all"><button type="button" class="lnk" data-hpall>כל המדדים ('+H.parts.length+')</button></li>':'');
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mixv]'); if(!b)return; try{localStorage.setItem('tr_mixview',b.dataset.mixv)}catch(x){} try{render()}catch(x){}});
 function renderMixHome(m){
@@ -20138,6 +20148,9 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // back by the quick actions, the tiles before the holdings. Called by homeLayout and by every renderBento, so a style
 // that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
 // changed the classes: the views stayed in the card, the split outside it)
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-hpall]'); if(!b)return; const u=$('hParts'); if(u){u.classList.toggle('all'); b.textContent=u.classList.contains('all')?'להציג רק את החלשים':'כל המדדים ('+(u.children.length-1)+')'}});
+// 17.11 (the owner): a to-do item opens by itself (its link is the arrow); its "checked" stays a small word at its end
+document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest||t.closest('.dk-btns,a,button,input,select'))return; const li=t.closest('li'); if(!li||!li.closest('#dkTodo,#alTodoL,#alRules,.dk-top'))return; const g=li.querySelector('.dk-go'); if(g)g.click()});
 document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest)return; if(t.closest('#dHdMenu')){const b=document.querySelector('#botbar [data-bb="more"]'); if(b)b.click(); return} if(t.closest('#dHdProf')){const p=$('hdrProf'); if(p)p.click()}});
 function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=$('acctSel'), ot=$('ovTabs'), mt=$('mktTick'), wt=document.querySelector('.worth .wtop'), w=document.querySelector('.worth'), ib=$('insightBar'), bx=$('bento'), hs=$('holdSec'), kr=$('kindRow'), qa=$('quickActs');
   /* 12.11 (the owner): the clean card's order: the value, the row of views, "מה קרה היום בתיק?", the coming two weeks, then the holdings with the stocks/funds split at their head */
@@ -30184,6 +30197,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.12',at:'2026-11-17',t:'בקרה: פחות כפתורים',d:'בפריטים של "מה לעשות" ושל החריגות, לחיצה על הפריט פותחת אותו (במקום כפתור נפרד). במדד הבריאות מופיעים שלושת החלשים, והשאר ב"כל המדדים".',go:'srch'},
   {v:'2026-11-17.11',at:'2026-11-17',t:'תוכנית: ההגדרות מאחורי כפתור אחד',d:'בתוכנית ההפקדה, "איך קונים" ו"סדר הקנייה" נמצאים עכשיו מאחורי כפתור "הגדרות הקנייה", והמסך מתחיל בתוכנית עצמה.',go:'srch'},
   {v:'2026-11-17.10',at:'2026-11-17',t:'פחות טקסט בכל מסך',d:'בטלפון: כל מסך מתחיל בכותרת שלו בלבד, בלי שורת הסבר ואייקון; ההערות הקטנות מתחת לכל חלק הוסרו; שורת המסכים של כל קבוצה היא לשוניות פשוטות, והחלקים בגלולות.',go:'srch'},
   {v:'2026-11-17.9',at:'2026-11-17',t:'כל האתר בעיצוב החדש',d:'בכל המסכים בטלפון: כותרת אחת למעלה (תפריט, השם, פרופיל), בלי כרטיס בתוך כרטיס, כרטיסים לבנים באותו רוחב ובאותן פינות, ושורות לשוניות בצורת גלולות. בבית כל המלבנים באותו רוחב ובאותם מרווחים.',go:'srch'},
