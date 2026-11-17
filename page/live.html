@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>תיק צ׳יק – חדר המסחר שלי</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Assistant:wght@400;600;700&display=swap">
 <style>
 /* Layout: a broker's daily sheet. Palette: deep steel blue (hero, nav, text) ~60%, cool slate page with white cards ~30%,
    bronze ~10% (actions, goal progress, active marks), sage green for gains, muted brick for losses. Soft shadows, small radius, no gradients or glow.
@@ -3497,7 +3497,21 @@ body[data-page="overview"] #idxRow{display:none!important}
   body.homeA[data-page="overview"] #tcAcctBtn{width:32px;height:32px;min-width:32px;min-height:32px;padding:0} body.homeA[data-page="overview"] #tcAcctBtn svg{width:16px;height:16px}
 }
 /* a target is 44px high where it is tapped on its own */
-.hold-all{min-height:44px;padding-inline:10px}</style>
+.hold-all{min-height:44px;padding-inline:10px}
+/* 17.11 (the owner: "keep the colours and the words; change the font, the icons and the rest"): the design language of the
+   Figma board "שפת עיצוב · תיק צ׳יק". Every colour token stays as it was. The typeface is IBM Plex Sans Hebrew (Assistant
+   behind it while it loads); the purple is one flat colour, never a gradient; a card is lifted by a thin neutral shade, not a
+   purple glow; the corners are one size */
+:root{--sans:"IBM Plex Sans Hebrew","Assistant","Heebo","Arial Hebrew",system-ui,sans-serif;--display:var(--sans);--mono:var(--sans);
+  --grad:var(--accent);--grad-mint:var(--accent);--r:16px;--shadow:0 1px 2px rgb(20 18 46 / .05);--worth-sh:rgb(20 18 46 / .06)}
+html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:0 1px 2px rgb(0 0 0 / .35)}
+.nw-daily{background:var(--accent-soft)!important}
+#ovTabs button:first-of-type[aria-selected="true"],#ovTabs button:first-of-type[aria-pressed="true"]{background:var(--accent)!important}
+/* the market research page: the duotone icons on their soft tiles */
+.scr-cat .scr-ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;margin-bottom:8px}
+.scr-cat .scr-ic svg{width:22px;height:22px;margin:0;color:inherit}
+#srchBox>svg.duo{width:22px;height:22px;color:var(--accent);flex:none}
+</style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
 <div class="plban" id="plBan" role="alert" hidden><span id="plBanT"></span><button type="button" class="btn sm" id="plBanGo">לפרטים</button><button type="button" class="plban-x" id="plBanX" aria-label="סגירה (ההתראה נשארת במרכז ההתראות)">×</button></div>
@@ -4020,7 +4034,7 @@ body[data-page="overview"] #idxRow{display:none!important}
       <h2 id="hSearch">מחקר שוק</h2>
       <div class="chips" id="srchView" role="group" aria-label="תצוגה"><button type="button" class="chip" data-sv="search" aria-pressed="true">חיפוש נייר</button><button type="button" class="chip" data-tab="fit">מה מתאים לתיק שלי ›</button></div>
 
-      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" aria-controls="sqHist" aria-expanded="false" type="text" name="tc-search" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="srch" id="srchBox"><svg class="duo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="currentColor" fill-opacity=".15"/><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><input id="sq" aria-controls="sqHist" aria-expanded="false" type="text" name="tc-search" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
       <div class="sres sqhist" id="sqHist" role="region" aria-label="נצפו לאחרונה" hidden></div>
       <div class="sres" id="sqRes"></div>
       <div class="secp panel" id="secPage" hidden></div>
@@ -26192,6 +26206,20 @@ const SCR_ETF=[['pop','רחבות ומוכרות'],['all','הכל'],['dev','שו
   ['reit','נדל״ן',['REITs','Commercial Real Estate']],['com','סחורות',['Commodities','Commodities Broad Basket']],['lev','ממונפות ומסחר',['Trading','Derivatives','Alternative','Alternatives','Currencies']]];
 const SCR_POP=['VOO','SPY','IVV','VTI','ITOT','SCHB','QQQ','VT','ACWI','VXUS','VEA','IEFA','VWO','IEMG','IWM','DIA','SCHD','VIG','AGG','BND'];
 const SCR_MAIN=['tech','health','fin','cons','ind','energy','re','util'];
+const SCR_DUO={
+  tech:'<rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" fill-opacity=".25"/><rect x="9" y="9" width="6" height="6" rx="1.2" fill="currentColor"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  health:'<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z" fill="currentColor" fill-opacity=".25"/><path d="M4.5 12h3.2l1.8-3.2 2.8 6 1.8-2.8h5.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  fin:'<path d="M12 3l9 5H3z" fill="currentColor"/><rect x="4" y="10" width="16" height="9" rx="1" fill="currentColor" fill-opacity=".25"/><path d="M7.5 11v7M12 11v7M16.5 11v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="3" y="19" width="18" height="2" rx="1" fill="currentColor"/>',
+  cons:'<path d="M5 8h14l-1 12H6z" fill="currentColor" fill-opacity=".25"/><path d="M9 9V7a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 8h14l-1 12H6z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>',
+  ind:'<path d="M3 20V10l6 3v-3l6 3V5h5v15z" fill="currentColor" fill-opacity=".25"/><path d="M3 20V10l6 3v-3l6 3V5h5v15zM2 20h20" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>',
+  energy:'<path d="M12 2.5c1.2 4 6 5.6 6 11a6 6 0 0 1-12 0c0-3 1.7-4.6 2.4-7 1.2 1.4 2.3 2.3 3.6 2.6 0-2.6-1-4.7 0-6.6z" fill="currentColor" fill-opacity=".25"/><path d="M12 21a3 3 0 0 0 3-3c0-2-1.6-2.8-2-4.5-.9 1-1.6 1.6-2.6 1.9A3 3 0 0 0 12 21z" fill="currentColor"/>',
+  re:'<path d="M4 10.5L12 4l8 6.5V20H4z" fill="currentColor" fill-opacity=".25"/><path d="M4 10.5L12 4l8 6.5V20H4z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><rect x="10" y="14" width="4" height="6" rx="1" fill="currentColor"/>',
+  util:'<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".2"/><path d="M13 3.5L6 13.5h5.2l-.8 7 7-10h-5.2z" fill="currentColor"/>',
+  mat:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="currentColor" fill-opacity=".25"/><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linejoin="round"/>',
+  tel:'<circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M7.6 7.6a6.2 6.2 0 0 0 0 8.8M16.4 7.6a6.2 6.2 0 0 1 0 8.8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M4.7 4.7a10.3 10.3 0 0 0 0 14.6M19.3 4.7a10.3 10.3 0 0 1 0 14.6" stroke="currentColor" stroke-opacity=".45" stroke-width="2" fill="none" stroke-linecap="round"/>',
+  il:'<path d="M12 3l8 13.5H4zM12 21L4 7.5h16z" fill="currentColor" fill-opacity=".2"/><path d="M12 3l8 13.5H4zM12 21L4 7.5h16z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/>',
+  etf:'<path d="M12 3l9 5-9 5-9-5z" fill="currentColor"/><path d="M3 12.5l9 5 9-5" stroke="currentColor" stroke-opacity=".55" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 16.5l9 5 9-5" stroke="currentColor" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'};
+const scrDuo=k=>`<span class="scr-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">${SCR_DUO[k]||''}</svg></span>`;
 const scrIc=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 function scrFx(){return (typeof Q!=='undefined'&&Q&&Q.usdIls)||(ALLQ&&ALLQ.fx)||3.6}
 function scrCapUsd(it){return it.t==='T'?(it.cap>0?it.cap/scrFx():0):(+it.cap||0)}
@@ -26242,7 +26270,7 @@ function scrHome(row){
       <button type="button" class="lnk scr-all" data-scr="${SCRMV}">לכל הרשימה ›</button>`)}
   // the categories: how many in each (the very small hidden), and how many of them are held
   const cnt=k=>k==='etf'?D.filter(it=>it.t==='E'&&!SCR_ETF.find(x=>x[0]==='lev')[2].includes(it.sec)).length:scrItems({...scrNew(k),sub:'all'}).length;
-  out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrIc(c[3])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div>`);
+  out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrDuo(c[0])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div>`);
   // the companies like the ones held: their peers that are neither held nor watched
   const H=new Set(held.map(skey)), W=new Set(wmarks()), pe=[];
   for(const it of held){if(it.t!=='S')continue; const r=(RS&&RS.companies&&RS.companies[it.sym])||RSX[it.sym]||null; for(const s of ((r&&r.peers)||[])){if(pe.length>=8)break; if(H.has(s)||W.has(s)||pe.some(x=>x.sym===s))continue; let x=null; try{x=itemOf(s)}catch(e){} if(x&&x.t==='S'&&x.sym===s)pe.push(x)}}
@@ -29964,6 +29992,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.7',at:'2026-11-17',t:'מראה חדש, אותם צבעים',d:'גופן חדש (IBM Plex Sans Hebrew), בלי מעברי צבע ובלי צל סגול מתחת לכרטיסים, פינות אחידות, ואייקונים דו-גוניים במחקר השוק. הצבעים והניסוחים לא השתנו.',go:'srch'},
   {v:'2026-11-17.6',at:'2026-11-17',t:'מחקר שוק, ולשונית למניות במעקב',d:'המחקר נקרא עכשיו מחקר שוק: רשימות מוכנות (עלו, ירדו, הגדולות), מה חסר לך בתיק, תנועות היום, קטגוריות לפי ענף, ותעודות סל, עם סינון לפי גודל ומיון. לחיצה על תיבת החיפוש מראה את הניירות שהסתכלת עליהם לאחרונה. המניות שסימנת למעקב עברו ללשונית משלהן: מניות במעקב.',go:'srch'},
   {v:'2026-11-17.5',at:'2026-11-17',t:'דף נייר קצר, עם לשוניות',d:'בטלפון, הדף של נייר מחולק ללשוניות מעל השם: סקירה, החברה, דוח, אנליסטים וחדשות. בסקירה יש משפט מסכם לכל לשונית, ונקודה על לשונית אומרת שיש בה משהו חדש. במחשב הדף נשאר דף אחד, והלשוניות קופצות לחלק. התראת מחיר עברה לכפתור הפעמון שליד שם הנייר.',go:'srch'},
   {v:'2026-11-17.4',at:'2026-11-17',t:'מה קרה לאחרונה, בשורה אחת לכל דבר',d:'בדף של נייר: משפט שמסכם מה קרה, שורה לכל אירוע (כמה ידיעות על אותו דבר הן שורה אחת), ותג שאומר אם זה עשוי להיות טוב או רע לנייר. לחיצה פותחת מה זה אומר ואת הידיעות עצמן. כל השאר ב"חיבור למציאות".',go:'srch'},
