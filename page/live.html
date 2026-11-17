@@ -3693,6 +3693,29 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #obNext .obh{cursor:pointer;position:relative;padding-inline-end:26px}
   html body #obNext .obh::after{content:"⌄";position:absolute;inset-inline-end:0;top:0;font-size:20px;color:var(--muted)}
   html body #obNext.open .obh::after{content:"⌃"}
+  /* 17.11 (the owner: "fix the table"): the plan's monthly table, a card for each month; its four columns ran past the screen's edge */
+  html body table.ladder.ladder,  html body table.ladder.ladder>tbody{display:block!important;width:100%!important;min-width:0!important}
+  html body table.ladder.ladder>thead{display:none!important}
+  html body table.ladder.ladder>tbody>tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m b" "d d" "x x";gap:10px 12px;padding:12px 10px;border-bottom:1px solid var(--line);background:none}
+  html body table.ladder.ladder>tbody>tr.far{display:none!important}
+  html body table.ladder.ladder>tbody>tr:last-child{border-bottom:0}
+  html body table.ladder.ladder>tbody>tr.cur{background:var(--accent-soft);border-radius:8px;border-bottom-color:transparent}
+  html body table.ladder.ladder>tbody>tr>td{display:block!important;padding:0!important;border:0!important;background:none!important;white-space:normal!important;text-align:start!important;min-width:0}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(1){grid-area:m}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(2){grid-area:d}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3){grid-area:x}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(4){grid-area:b;text-align:end!important;white-space:nowrap!important}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(4)::before{content:"יתרה";margin-inline-end:6px;font-size:12px;color:var(--muted)}
+  html body table.ladder.ladder>tbody>tr>td:is(:nth-child(2),:nth-child(3)){display:flex!important;flex-wrap:wrap;align-items:center;gap:6px 10px}
+  html body table.ladder.ladder>tbody>tr>td:is(:nth-child(2),:nth-child(3))::before{flex:0 0 44px;font-size:12px;color:var(--muted)}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(2)::before{content:"הפקדה"}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3)::before{content:"קנייה"}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(2) .ck{margin:0}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(2) .once1{flex-basis:100%;padding-inline-start:54px}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3)>.buys{flex:1 1 0;min-width:0}
+  html body table.ladder.ladder>tbody>tr.lad-more,  html body table.ladder.ladder>tbody>tr:has(>td[colspan]){display:block!important;border-bottom:0}
+  html body table.ladder.ladder>tbody>tr>td[colspan]{text-align:center!important}
+  html body table.ladder.ladder>tbody>tr>td[colspan]::before{content:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -30221,6 +30244,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.17',at:'2026-11-17',t:'תוכנית: המעקב החודשי נכנס למסך',d:'בטלפון, כל חודש במעקב החודשי הוא כרטיס: החודש והיתרה למעלה, ההפקדה והקניות מתחת. שום עמודה לא נחתכת.',go:'plan'},
   {v:'2026-11-17.16',at:'2026-11-17',t:'הבית: הצעדים הבאים בשורה אחת',d:'בבית, "עוד צעדים כדי שהבקרה תעבוד בשבילך" הוא שורה אחת שנפתחת בלחיצה.',go:'srch'},
   {v:'2026-11-17.15',at:'2026-11-17',t:'התיק: שורה נקייה לכל אחזקה',d:'בהתיק שלי, לחיצה על אחזקה פותחת את דף המניה, וקנייה, מכירה, עוד והסרה נמצאות מאחורי הכפתור ⋯.',go:'srch'},
   {v:'2026-11-17.14',at:'2026-11-17',t:'הפרופיל: רק מה שמילאת',d:'בהגדרות, הפרופיל מציג רק את הפרטים שמילאת, וכפתור "להשלמת פרטים" לשאר.',go:'srch'},
