@@ -3005,8 +3005,9 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
     assert.ok(!/הקונסנזוס/.test(a.txt),'the consensus tile gave way to the sentence');
     assert.ok(await pg.evaluate(()=>{const r=document.querySelector('.ancard .an-rng'), p=r&&r.querySelector('.rg-p'), d=r&&r.querySelector('.rg-a'); return !!p&&!!d&&parseFloat(d.style.left)>parseFloat(p.style.left)}),'the range drawn: today\'s price left of the average target');
     assert.ok(await pg.evaluate(()=>{const c=[...document.querySelectorAll('.ancard .ancols .anc')], x=c.map(e=>e.getBoundingClientRect().left); return c[c.length-1].classList.contains('now')&&x.every((v,i)=>!i||v>x[i-1])}),'the months from the oldest at the left, the newest marked');
-    assert.match(a.txt,/יעד המחיר הממוצע \(12 חודשים\) \$220\.00 גבוה ב-[\d.]+% מהמחיר עכשיו/); assert.match(a.txt,/טווח היעדים \$150 – \$260 חציון \$225\.00/);
-    assert.equal(a.months,4); assert.match(a.txt,/יותר אנליסטים ממליצים לקנות: 60% באוג׳, 75% בנוב׳/);
+    assert.match(a.txt,/יעד המחיר הממוצע \(12 חודשים\) \$220\.00 גבוה ב-[\d.]+% מהמחיר עכשיו/); assert.match(a.txt,/היום \$[\d.]+ הנמוך \$150 ממוצע \$220 הגבוה \$260/,'17.11: the range in the target tile, each point with its price: '+a.txt.slice(0,500));
+    assert.equal(a.months,4); assert.match(a.txt,/המגמה: כמה ממליצים לקנות ▲ עלה מ-60% ל-75% בשלושה חודשים/,'17.11: the trend tile says what happened');
+    assert.ok(await pg.evaluate(()=>{const b=[...document.querySelectorAll('.ancard .an-trt .anc i')].map(e=>e.getBoundingClientRect().height); return b.length===4&&b[3]>b[0]}),'one plain column a month, its height the share that says buy');
     assert.match(a.txt,/הצפי לדוח הבא \([\d.]+\): רווח למניה \$1\.05 · הכנסות 65\.00 מיליארד דולר/);
     assert.equal(a.changes,2); assert.match(a.txt,/Goldman Sachs: Neutral ← Buy \(שדרוג\)/); assert.match(a.txt,/Finnhub \+ FMP · נכון ל-1\.11/); assert.ok(a.ox);
     if(process.env.SHOT)await (await pg.$('.ancard')).screenshot({path:process.env.SHOT});
