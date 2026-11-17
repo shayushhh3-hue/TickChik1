@@ -14,6 +14,7 @@ import {fillFundamentals,secCiks,secSubmissions,secRepDates} from './fundamental
 import {fhKey,fhMetrics,fhRecs,fhEarnings,fhTarget,fhEarningsCal,fhEarningsCalSym,fhPastEarnings,fhCompanyNews} from './finnhub.js';
 import {nasdaqDivs,yahooDivs,divPlan} from './divs.js';
 import {findingsOf, factsOf, explainReport, reportsMail, repSum} from './explain.js';
+import {aboutPass} from './about.js';
 
 const UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MODS='financialData,defaultKeyStatistics,summaryDetail,calendarEvents,recommendationTrend,price,earnings,earningsHistory,earningsTrend';
@@ -174,7 +175,7 @@ const repShort=o=>({q:o.q,label:o.label||null,at:o.at||null,atSrc:o.atSrc||null,
 
 // the night's update: the holdings first (everybody's), then the watch lists and the research candidates, then the
 // ranking list; at a calm pace, within a time budget, and stopping early when Yahoo refuses
-export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false,secDates=secDatesPass,divs=divsPass,nq=nasdaqPass,fm=fmpPass}={}){
+export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=20*60e3,pause=600,only=null,explain=explainReport,mail=reportsMail,fill=fillFundamentals,noFh=false,secDates=secDatesPass,divs=divsPass,nq=nasdaqPass,fm=fmpPass,about=aboutPass}={}){
   const srcOf=(k,v)=>[yh.has(k)?SOURCE:null,v&&v.fhAt?'Finnhub':null,v&&v.fmpAt?'FMP':null,v&&v.nqAt?'Nasdaq':null,v&&v.src2&&v.src2.includes('SEC')?'דוחות החברה (SEC)':null].filter(Boolean).join(' + ')||SOURCE;
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   const held=new Set(((store.getDoc('portfolio/main').data||{}).positions||[]).map(p=>p.sym)), watched=new Set(), W=store.listDocs('watch');
@@ -215,6 +216,9 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   // SEC, Finnhub with a key, and the beta from the daily closes (server/fundamentals.js)
   let fund=null;
   try{fund=await fill(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,budgetMs:only?3*60e3:Math.max(6*60e3,budgetMs-(Date.now()-t0))})}catch(e){log('fundamentals failed: '+(e&&e.message||e))}
+  // 17.11: "מה החברה עושה": צ׳יקו's plain wording of the company's own description, for the shares held, watched or asked
+  // about that have none yet (a few per run)
+  let abs=null; if(about){try{abs=await about(store,order,got,{fetch:f,log,now,held,watched,force:new Set(only||[]),max:only?2:6})}catch(e){log('about failed: '+(e&&e.message||e))}}
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
   let revN=0; const fresh=[], words=[], posName={}, redated=new Map(); for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;

@@ -3649,3 +3649,28 @@ test('17.11 a browser\'s password manager has nothing to fill (the owner: "why i
   await pg.fill('#sq','MSFT'); await pg.waitForTimeout(600); assert.ok(await pg.evaluate(()=>!!document.querySelector('#sqRes [data-open="MSFT"]')),'the search works as before');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('17.11 "מה החברה עושה" at the foot of a security\'s page (the owner): the line, what it sells, to whom, where the money comes from with its shares, what moves it, the facts, and the peers as links; no wording, no card',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const k='research/s_NFLX', D0=store.getDoc(k);
+  store.setDoc(k,{sym:'NFLX',name:'Netflix',source:'FMP',rating:'Buy',rep:{q:'2026-09-30',label:'Q3 2026',at:new Date(Date.now()-20*864e5).toISOString().slice(0,10),eps:{a:5.4,e:5.1,s:5.9}},next:'2027-01-20',
+    prof:{desc:'Netflix provides entertainment services.',country:'US',emp:14000,sector:'Communication Services',industry:'Entertainment'},peers:['DIS','NFLX','MSFT','not a symbol'],
+    about:{line:'מוכרת מנוי לצפייה בסדרות ובסרטים בכל העולם',sells:['מנוי חודשי לצפייה','סדרות וסרטים משלה'],buyers:['משפחות ואנשים פרטיים'],money:[{name:'מנויים',pct:92},{name:'פרסומות',pct:8}],moves:['כמה מנויים מצטרפים','מחיר המנוי'],at:new Date().toISOString(),v:1}},{silent:true});
+  try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(500); await pg.evaluate(()=>window.__srch.open('NFLX')); await pg.waitForSelector('#secPage .abx',{timeout:10000});
+    const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .abx'), T=x=>x.replace(/\s+/g,' ').trim(); return {h:b.querySelector('h3').textContent,hd:T(b.querySelector('.abx-hd').textContent),tiles:[...b.querySelectorAll('.abx-t')].map(x=>T(x.innerText)),bars:[...b.querySelectorAll('.abx-bt i')].map(i=>i.style.width),
+      chips:[...b.querySelectorAll('.abx-ch span')].map(x=>x.textContent),facts:[...b.querySelectorAll('.abx-fc')].map(x=>T(x.innerText)),peers:[...b.querySelectorAll('.abx-fc .secl')].map(x=>x.dataset.sec),note:b.querySelector('.note').textContent,
+      last:(()=>{const a=document.querySelector('#secPage .secask'); return !!a&&!!(b.compareDocumentPosition(a)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(document.querySelector('#secPage .repbox').compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)})(),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    assert.equal(r.h,'מה החברה עושה'); assert.match(r.hd,/ מוכרת מנוי לצפייה בסדרות ובסרטים בכל העולם$/,'the company\'s name, then the line: '+r.hd);
+    assert.deepEqual(r.tiles,['מה היא מוכרת מנוי חודשי לצפייה סדרות וסרטים משלה','למי היא מוכרת משפחות ואנשים פרטיים','מאיפה הכסף מגיע מנויים 92% פרסומות 8%']); assert.deepEqual(r.bars,['92%','8%']);
+    assert.deepEqual(r.chips,['כמה מנויים מצטרפים','מחיר המנוי']); assert.deepEqual(r.facts.slice(0,3),['ענף תקשורת','מדינה ארה״ב','עובדים כ-14 אלף']); assert.deepEqual(r.peers,['DIS','MSFT'],'the peers as links, never itself');
+    assert.match(r.note,/נכתב על ידי צ׳יקו מתיאור החברה/); assert.match(r.note,/הסבר, לא המלצה/); assert.ok(r.last,'at the foot of the page, after the report'); assert.ok(r.ox,'nothing sideways');
+    if(process.env.SHOT_DIR)for(const [w,th] of [[390,'light'],[390,'dark'],[1280,'light']]){await pg.setViewportSize({width:w,height:900}); await pg.evaluate(t=>{document.documentElement.dataset.theme=t},th); await pg.waitForTimeout(300); await (await pg.$('#secPage .abx')).screenshot({path:process.env.SHOT_DIR+'/abx-'+w+'-'+th+'.png'})}
+    await pg.setViewportSize({width:390,height:844});
+    // a peer opens its page
+    await pg.evaluate(()=>document.querySelector('#secPage .abx-fc .secl[data-sec="MSFT"]').click()); await pg.waitForTimeout(900);
+    assert.equal(await pg.evaluate(()=>(history.state||{}).sec),'MSFT');
+    // a security with no wording: no card
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage .abx')),false,'no wording, no card');
+    assert.deepEqual(pg.errs,[]); await ctx.close()}
+  finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
+});

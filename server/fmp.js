@@ -27,6 +27,7 @@ export function fmpRatiosParse(j){const o=one(j); if(!o)return null;
     roe:pc(pick(o,'returnOnEquityTTM','returnOnEquity')),fcfm:fcfps!=null&&rps>0?r2(fcfps/rps*100):null};
   if(out.pe!=null&&out.pe<=0)out.pe=null;   // a loss gives no multiple
   return some(out)?out:null}
+import {profAbout, peersParse, segsParse} from './about.js';
 export function fmpProfileParse(j){const o=one(j); if(!o)return null;
   const out={beta:r2(pick(o,'beta')),sector:o.sector||null,industry:o.industry||null,name:o.companyName||o.name||null,cap:pick(o,'marketCap','mktCap')};
   return some(out)?out:null}
@@ -63,21 +64,26 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
   // was asked only for a held one, so the range's line on the analysts' card was missing for the rest. Asked once: a share
   // whose range the source does not have is marked (rngAt) and left for a week
   const near=k=>held.has(k)||watched.has(k)||force.has(k), rngDue=(k,v)=>near(k)&&v.targetHi==null&&!(Date.parse(v.rngAt)>now.getTime()-7*864e5);
-  const want=k=>{const v=got[k]; return held.has(k)||miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)||rngDue(k,v)};   // 5.11: a held share every night (its analysts' latest changes)
+  // 17.11: "מה החברה עושה": the profile's description, the peers and the revenue by product, once, for a share that is
+  // held, watched or asked about (a profile with no description is marked, profAt, and left for two weeks)
+  const DOCS=new Map(), docOf=k=>{if(!DOCS.has(k)){let d={}; try{d=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{}}catch(e){} DOCS.set(k,d)} return DOCS.get(k)};
+  const abDue=k=>{if(!near(k))return false; const v=got[k]||{}, d=docOf(k); return !(v.prof||d.prof)&&!(Date.parse(v.profAt||d.profAt)>now.getTime()-14*864e5)};
+  const want=k=>{const v=got[k]; return held.has(k)||miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)||rngDue(k,v||{})||abDue(k)};   // 5.11: a held share every night (its analysts' latest changes)
   const list=[...new Set([...order.filter(k=>held.has(k)),...order.filter(k=>watched.has(k)),...order])].filter(k=>US(k)&&want(k)).slice(0,max);
   try{
     for(const k of list){if(st.stopped)break; if(Date.now()-t0>budgetMs){st.stopped='time';break}
       const t=encodeURIComponent(String(tick(k)).replace(/\./g,'-')), v=got[k]||{}, add={}; st.tried++;
       try{
         if(miss(v,['gm','om','pm','cr','de','pe','dy'])){const x=fmpRatiosParse(await ask('ratios-ttm','symbol='+t)); if(x)Object.assign(add,x)}
-        if(!st.stopped&&miss(v,['beta','sector'])){const x=fmpProfileParse(await ask('profile','symbol='+t)); if(x)Object.assign(add,x)}
+        {const ab=abDue(k); if(!st.stopped&&(miss(v,['beta','sector'])||ab)){const pj=await ask('profile','symbol='+t); if(miss(v,['beta','sector'])){const x=fmpProfileParse(pj); if(x)Object.assign(add,x)}
+          if(ab&&!st.stopped){const pa=profAbout(pj,now); if(!pa)add.profAt=now.toISOString(); else{add.prof=pa; const pe=peersParse(await ask('stock-peers','symbol='+t),tick(k)); if(pe.length)add.peers=pe; const sg=segsParse(await ask('revenue-product-segmentation','symbol='+t)); if(sg)add.segs=sg}}}}
         if(!st.stopped&&(v.target==null||rngDue(k,v))){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x); if(!st.stopped&&!(x&&x.targetHi>0)&&!held.has(k))add.rngAt=now.toISOString()}
         if(!st.stopped&&!(v.votes&&v.votes5)){const x=fmpGradesParse(await ask('grades-consensus','symbol='+t)); if(x)Object.assign(add,x)}
         if(!st.stopped&&held.has(k)){const x=fmpGradesListParse(await ask('grades','symbol='+t),now); if(x)add.gradesL=x}
         if(!st.stopped&&!v.next){const x=fmpEarningsParse(await ask('earnings','symbol='+t+'&limit=8'),now); if(x)Object.assign(add,x)}
       }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=8&&!st.filled){st.stopped='errors'}}
       // only what is missing: a figure Yahoo, Finnhub or the reports already gave is never replaced
-      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes)||a==='gradesL'||a==='rngAt')){g[a]=b; n++}
+      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes)||a==='gradesL'||a==='rngAt'||a==='profAt')){g[a]=b; n++}
       if(n){g.fmpAt=now.toISOString(); st.filled++}
       if(pause)await new Promise(r=>setTimeout(r,pause))}
   }finally{save()}

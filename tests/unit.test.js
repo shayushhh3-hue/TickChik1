@@ -2462,3 +2462,46 @@ test('pulse 10.11: market news through a broad fund is an indirect link, not cri
   assert.equal(A['ev:old-op'].lv,'upd','a kept opinion is not critical'); assert.equal(A['ev:old-op'].rel,'mid'); assert.ok(A['ev:old-op'].holds.every(h=>h.link==='indirect'));
   _setKinds(null); _setSectors({});
 });
+
+// 17.11 (the owner): "מה החברה עושה": the facts from FMP's profile, peers and revenue by product; צ׳יקו only words them
+test('17.11 what the company does: the profile\'s description, the peers and the revenue\'s shares parsed; צ׳יקו\'s wording held to the facts; written once for a share held, watched or asked about',async()=>{
+  const A=await import('../server/about.js'); const {fmpPass}=await import('../server/fmp.js');
+  const DESC='Exxon Mobil Corporation engages in the exploration and production of crude oil and natural gas in the United States and internationally. It operates through Upstream, Energy Products, Chemical Products, and Specialty Products segments.';
+  const now=new Date('2026-11-17T08:00:00Z');
+  assert.deepEqual(A.profAbout([{description:DESC,country:'us',fullTimeEmployees:'61,000',industry:'Oil & Gas Integrated',sector:'Energy'}],now),{desc:DESC,country:'US',emp:61000,industry:'Oil & Gas Integrated',sector:'Energy',at:now.toISOString()});
+  assert.equal(A.profAbout([{description:'short'}]),null,'no description to read: nothing'); assert.equal(A.profAbout(null),null);
+  assert.deepEqual(A.peersParse([{symbol:'CVX',mktCap:3e11},{symbol:'XOM',mktCap:5e11},{symbol:'SHEL',mktCap:2e11},{symbol:'bad sym'}],'XOM'),['CVX','SHEL'],'the largest first, never itself');
+  assert.deepEqual(A.peersParse([{symbol:'XOM',peersList:['CVX','BP','COP']}],'XOM'),['CVX','BP','COP'],'the older shape');
+  assert.deepEqual(A.segsParse([{date:'2024-12-31',data:{A:1}},{date:'2025-12-31',data:{'Energy Products':550,'Upstream':300,'Chemical Products':100,'Specialty Products':50}}]),[{k:'Energy Products',pct:55},{k:'Upstream',pct:30},{k:'Chemical Products',pct:10},{k:'Specialty Products',pct:5}],'the latest year, as shares');
+  assert.equal(A.segsParse([{date:'2025-12-31',data:{Only:5}}]),null,'one line is not a split');
+  // the wording: short lines; advice, a number that is not in the facts, and a made-up share are dropped
+  const facts={company:'Exxon Mobil',sector:'Energy',industry:'Oil & Gas Integrated',description:DESC,segments:[{key:'Energy Products',pct:55},{key:'Upstream',pct:45}]};
+  const c=A.cleanAbout({line:'מוציאה נפט וגז מהאדמה, הופכת אותם לדלק, ומוכרת בכל העולם.',sells:['נפט וגז','דלקים','כדאי לקנות את המניה','פועלת ב-70 מדינות'],buyers:['נהגים, דרך תחנות דלק'],
+    money:[{key:'Energy Products',name:'דלקים',pct:99},{key:'Made up',name:'המצאה'}],moves:['מחיר הנפט בעולם']},facts);
+  assert.equal(c.line,'מוציאה נפט וגז מהאדמה, הופכת אותם לדלק, ומוכרת בכל העולם'); assert.deepEqual(c.sells,['נפט וגז','דלקים'],'advice and a number of its own are out');
+  assert.deepEqual(c.money,[{name:'דלקים',pct:55},{name:'Upstream',pct:45}],'the shares are the computed ones; a segment he did not name keeps its own name; a made-up one is out');
+  assert.equal(A.cleanAbout({line:'',sells:['x y']},facts),null); assert.equal(A.cleanAbout({line:'עושה דברים',sells:[]},facts),null,'nothing sold: nothing written');
+  assert.deepEqual(A.cleanAbout({line:'מוכרת תוכנה',sells:['תוכנה לעסקים'],money:[{key:'',name:'מנויים'}]},{description:'software'}).money,[{name:'מנויים'}],'without the shares: names only');
+  assert.match(A.aboutPrompt(facts),/רק מה שכתוב בתיאור/); assert.match(A.aboutPrompt(facts),/"segments":\[\{"key":"Energy Products","pct":55\}/);
+  // FMP: a watched share with no description yet is asked for its profile, its peers and its revenue by product, once
+  const st=new Store(':memory:');
+  const full=()=>({pe:30,pm:35,de:0.4,beta:0.9,target:500,targetHi:600,next:'2027-01-27',votes:{buy:1,hold:0,sell:0},votes5:{sb:1,b:0,h:0,s:0,ss:0}}), seen=[];
+  const f=async u=>{u=String(u); const ep=u.split('/stable/')[1].split('?')[0]; seen.push(ep+':'+new URL(u).searchParams.get('symbol'));
+    return {ok:true,status:200,json:async()=>ep==='profile'?[{description:DESC,country:'US',fullTimeEmployees:61000,sector:'Energy',industry:'Oil & Gas Integrated',beta:0.8}]:ep==='stock-peers'?[{symbol:'CVX',mktCap:3e11}]:ep==='revenue-product-segmentation'?[{date:'2025-12-31',data:{Fuel:60,Oil:40}}]:[]}};
+  const got={XOM:full(),FAR:full()};
+  await fmpPass(st,['XOM','FAR'],got,{key:'k',fetch:f,now,watched:new Set(['XOM']),pause:0});
+  assert.equal(got.XOM.prof.desc,DESC); assert.deepEqual(got.XOM.peers,['CVX']); assert.deepEqual(got.XOM.segs,[{k:'Fuel',pct:60},{k:'Oil',pct:40}]); assert.equal(got.XOM.beta,0.9,'its own figure stays');
+  assert.ok(!seen.some(x=>x.endsWith(':FAR')),'a share nobody looks at is not asked: '+seen.join(' '));
+  const n0=seen.length; await fmpPass(st,['XOM'],got,{key:'k',fetch:f,now,watched:new Set(['XOM']),pause:0}); assert.equal(seen.length,n0,'asked once');
+  // the pass: צ׳יקו is asked for the shares that have a description and no wording; what he gives is kept with the share
+  const asked=[], ask=async F=>{asked.push(F.company); return F.company==='BAD'?null:{line:'מוכרת דלק',sells:['דלק'],buyers:[],money:F.segments?F.segments.map(s=>({name:s.key,pct:s.pct})):[],moves:[],at:now.toISOString(),v:1}};
+  st.setDoc('research/s_OLD',{sym:'OLD',name:'OLD',prof:{desc:DESC}},{silent:true}); st.setDoc('research/s_DONE',{sym:'DONE',prof:{desc:DESC},about:{line:'x',sells:['y']}},{silent:true}); st.setDoc('research/s_BAD',{sym:'BAD',name:'BAD',prof:{desc:DESC}},{silent:true});
+  got.XOM.name='Exxon Mobil';
+  const r=await A.aboutPass(st,['XOM','OLD','DONE','BAD','FAR'],got,{now,held:new Set(['XOM']),watched:new Set(['OLD','DONE','BAD']),ask});
+  assert.deepEqual(asked,['Exxon Mobil','OLD','BAD'],'only the ones with a description and no wording, held or watched'); assert.deepEqual(r,{tried:3,written:2});
+  assert.equal(got.XOM.about.line,'מוכרת דלק'); assert.deepEqual(got.XOM.about.money,[{name:'Fuel',pct:60},{name:'Oil',pct:40}],'the shares went with the facts');
+  assert.equal(st.getDoc('research/s_OLD').data.about.line,'מוכרת דלק','a share this run did not touch: written straight into its document');
+  assert.ok(st.getDoc('research/s_BAD').data.aboutTry,'no answer: marked'); const n1=asked.length;
+  await A.aboutPass(st,['BAD'],{},{now:new Date(now.getTime()+864e5),watched:new Set(['BAD']),ask}); assert.equal(asked.length,n1,'and left for three days');
+  await A.aboutPass(st,['BAD'],{},{now:new Date(now.getTime()+864e5),force:new Set(['BAD']),ask}); assert.equal(asked.length,n1+1,'asked about by name: tried again');
+});
