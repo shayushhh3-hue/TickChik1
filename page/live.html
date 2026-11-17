@@ -4022,6 +4022,13 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #arcPanel.open>.row[role="button"]::after{content:"⌃"}
   html body #arcPanel:not(.open):has(>.row[role="button"])>:not(.row){display:none!important}
   html body #repMoreH:has(+ #arcPanel[hidden]){display:none!important}
+  /* 17.11 proposal 18, "יומן": what waits to be written up first; the form opens when wanted */
+  html body #jrnBox #jrnAns{margin:0 0 12px}
+  html body #jrnBox #jrnAns .ma-ac .btn{width:100%;min-height:44px;justify-content:center}
+  html body #jrnBox details.jrn-new:not([open])>summary{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-weight:600;color:var(--accent-ink);list-style:none;cursor:pointer}
+  html body #jrnBox details.jrn-new:not([open])>summary::-webkit-details-marker{display:none}
+  html body #jrnBox details.jrn-new:not([open])>summary::before{content:"+";font-size:18px;line-height:1}
+  html body #jrnBox .jrn-mine{margin:16px 0 4px;font-size:15px;font-weight:600}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -27172,14 +27179,20 @@ function jrnH(){
   const form=JRN_EDIT?jrnFormH(all.find(e=>e.id===JRN_EDIT)||null):jrnFormH(JRN_PRE);
   const stats=all.length?`<div class="jrn-st"><span><b>${st.n}</b> רשומות${st.first?` מ-${dmy(st.first)}`:''}</span>${Object.entries(st.by).map(([k,n])=>`<span>${JRN_K[k]||k}: <b>${n}</b></span>`).join('')}
       <span>תוצאות: <b>${st.out.right}</b> התממשו · <b>${st.out.wrong}</b> לא · <b>${st.out.mixed}</b> חלקית · <b>${st.out.open}</b> פתוחות</span>${st.holdN?`<span>זמן החזקה ממוצע ביומן: <b>${Math.round(st.holdDays)}</b> ימים (${st.holdN})</span>`:''}${st.top.length?`<span>הכי הרבה: ${st.top.slice(0,3).map(([k,n])=>`${esc(k)} (${n})`).join(', ')}</span>`:''}</div>`:'';
-  const openH=open.length&&canWrite?`<details class="nx-more" open><summary>תנועות מהדוחות שעוד לא ביומן (${open.length})</summary><ul class="jrn-open">${open.map(t=>`<li><span class="nm">${dmy(t.at)}</span> ${JRN_K[t.t]} <b>${esc(t.sym)}</b> ${t.qty} יח׳${t.px?' ב-'+t.px:''} <button type="button" class="btn sm" data-jrnfrom="${esc(t.tk)}">לתעד: למה?</button></li>`).join('')}</ul><p class="nm">מהדוחות שקראת. היומן לא כותב אותן לבד: הסיבה היא שלך.</p></details>`:'';
+  const PH=(()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}})();
+  const openH=open.length&&canWrite?`<details class="nx-more jrn-openw"${PH?'':' open'}><summary>תנועות מהדוחות שעוד לא ביומן (${open.length})</summary><ul class="jrn-open">${open.map(t=>`<li><span class="nm">${dmy(t.at)}</span> ${JRN_K[t.t]} <b>${esc(t.sym)}</b> ${t.qty} יח׳${t.px?' ב-'+t.px:''} <button type="button" class="btn sm" data-jrnfrom="${esc(t.tk)}">לתעד: למה?</button></li>`).join('')}</ul><p class="nm">מהדוחות שקראת. היומן לא כותב אותן לבד: הסיבה היא שלך.</p></details>`:'';
+  // 17.11 (the owner's proposal 18, "יומן"): on the phone what waits to be written up comes first, with a full-size button
+  // that fills the form from the trade; the form itself opens only when wanted ("+ רשומה חדשה")
+  const ansH=PH&&canWrite&&open.length?(()=>{const t0=open[0], kinds=[...new Set(open.map(t=>t.t))], n=open.length;
+    const what=kinds.length===1&&kinds[0]==='sell'?(n===1?'מכירה אחת':n+' מכירות'):kinds.length===1&&kinds[0]==='buy'?(n===1?'קנייה אחת':n+' קניות'):(n===1?'תנועה אחת':n+' תנועות');
+    return `<div class="m-ans" id="jrnAns" role="group" aria-label="מחכה לתיעוד"><div class="ma-k"><span>מחכה לתיעוד</span><span class="ma-tag2">${n}</span></div><div class="ma-v sm">${what} בלי סיבה</div><div class="ma-l">${dmy(t0.at)} · ${JRN_K[t0.t]||''} <b>${esc(t0.sym)}</b> ${t0.qty} יח׳${t0.px?' ב-'+t0.px:''}${n>1?` · ועוד ${n-1}`:''}</div><div class="ma-ac"><button type="button" class="btn pri" data-jrnfrom="${esc(t0.tk)}">${t0.t==='sell'?'לתעד: למה מכרתי?':'לתעד: למה קניתי?'}</button></div></div>`})():'';
   const months=[]; for(const e of L){const m=String(e.at||'').slice(0,7); let g=months[months.length-1]; if(!g||g.m!==m){g={m,L:[]}; months.push(g)} g.L.push(e)}
   const mName=m=>{const [y,mm]=m.split('-'); return ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'][+mm-1]+' '+y};
   const filt=`<div class="jrn-filt"><select data-jf="sym" aria-label="נייר"><option value="">כל הניירות</option>${syms.map(k=>`<option value="${esc(k)}"${JF.sym===k?' selected':''}>${esc(k)}</option>`).join('')}</select><select data-jf="t" aria-label="סוג"><option value="">כל הסוגים</option>${Object.entries(JRN_K).map(([k,v])=>`<option value="${k}"${JF.t===k?' selected':''}>${v}</option>`).join('')}</select>
       <input type="date" data-jf="from" value="${esc(JF.from)}" aria-label="מתאריך"><input type="date" data-jf="to" value="${esc(JF.to)}" aria-label="עד תאריך"><input type="search" data-jf="q" value="${esc(JF.q)}" placeholder="חיפוש במילים" aria-label="חיפוש"></div>`;
-  return `${canWrite?`<details class="nx-more jrn-new"${JRN_EDIT||JRN_PRE||!all.length?' open':''}><summary>${JRN_EDIT?'עריכת רשומה':'רשומה חדשה'}</summary>${form}</details>`:''}${openH}${stats}
+  return `${ansH}${canWrite?`<details class="nx-more jrn-new"${JRN_EDIT||JRN_PRE||(!all.length&&!PH)?' open':''}><summary>${JRN_EDIT?'עריכת רשומה':'רשומה חדשה'}</summary>${form}</details>`:''}${openH}${PH?'<h3 class="jrn-mine">הרשומות שלי</h3>':''}${stats}
     ${all.length?filt:''}
-    ${L.length?months.map(g=>`<h3 class="jrn-m">${mName(g.m)} <span class="nm">(${g.L.length})</span></h3><ul class="jrn-l">${g.L.map(jrnEntryH).join('')}</ul>`).join(''):all.length?'<p class="note">אין רשומות שמתאימות לסינון.</p>':'<p class="note" style="margin:0">היומן ריק. הרשומה הראשונה: למה קנית את מה שקנית לאחרונה? בעוד חצי שנה תשמח שכתבת.</p>'}
+    ${L.length?months.map(g=>`<h3 class="jrn-m">${mName(g.m)} <span class="nm">(${g.L.length})</span></h3><ul class="jrn-l">${g.L.map(jrnEntryH).join('')}</ul>`).join(''):all.length?'<p class="note">אין רשומות שמתאימות לסינון.</p>':'<p class="note keep" style="margin:0">היומן ריק. הרשומה הראשונה: למה קנית את מה שקנית לאחרונה? בעוד חצי שנה תשמח שכתבת.</p>'}
     ${all.length?`<div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-chiko="jrn${JF.sym?':'+esc(JF.sym):''}">שאל את צ׳יקו על היומן</button></div>`:''}`}
 function renderJrn(){try{renderDna()}catch(e){} const b=$('jrnBox'); if(!b||document.body.dataset.page!=='journal')return; const a=document.activeElement, keep=a&&b.contains(a)&&a.dataset&&(a.dataset.jf||a.dataset.j)?{k:a.dataset.jf||a.dataset.j,f:a.dataset.jf?'jf':'j',s:a.selectionStart}:null; setH(b,jrnH());
   if(keep){const el=b.querySelector(`[data-${keep.f}="${keep.k}"]`); if(el){el.focus({preventScroll:true}); try{el.setSelectionRange(keep.s,keep.s)}catch(e){}}}}
@@ -30800,6 +30813,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.36',at:'2026-11-17',t:'יומן: קודם מה שמחכה לתיעוד',d:'בטלפון: היומן נפתח במה שעוד לא תועד, למשל קנייה מהדוח בלי סיבה, עם כפתור גדול "לתעד: למה קניתי?" שממלא את הטופס מהתנועה. הטופס עצמו (שמונה שדות) נפתח רק כשרוצים, מ"+ רשומה חדשה", ומעל הרשימה כתוב "הרשומות שלי".',go:'journal'},
   {v:'2026-11-17.35',at:'2026-11-17',t:'דוחות: הדוח של עכשיו למעלה, ורשימה לפי סוג',d:'בטלפון: "דוחות" נפתח בדוח החודשי עד היום, עם "לצפייה" והורדה. מתחתיו בוחרים סוג (שבועי, חודשי, רבעוני, שנתי) ורואים רק אותו. לחיצה על שורה פותחת את הדוח, ולכל שורה אייקון הורדה אחד, בלי כפתור סגול בכל שורה. הדוחות השמורים מקופלים תחת "עוד בדף הזה".',go:'reports'},
   {v:'2026-11-17.34',at:'2026-11-17',t:'מבט לאחור: האם הכסף שלי עובד?',d:'בטלפון: "מבט לאחור" נפתח בכרטיס שעונה על השאלה: כמה התיק שווה יותר (או פחות) ממה שהפקדת, ובכמה אחוזים. מתחת לגרף ארבעה אריחים, שניים בשורה (ההפקדות בכרטיס, הדולר בבית). קו ההפקדות בגרף מקווקו, כך שהוא נבדל גם בצורה ולא רק בצבע, וכשהמדדים עוד נטענים כתוב "נטען…" ליד כל מדד.',go:'history'},
   {v:'2026-11-17.33',at:'2026-11-17',t:'מה קורה בתיק: התשובה בשורה אחת, ומי הזיז בפסים',d:'בטלפון: "מה קורה בתיק" נפתח בכרטיס שאומר כמה התיק זז בתקופה ולמה, ולידו מה עשה השוק. מי הזיז את התיק מוצג בפסים לפי הגודל, עם הסכום והשינוי ליד כל פס, והקבוצות כאריחים. התוויות "נתון/חישוב/סימולציה" ירדו מהכותרות, והחלקים האחרים (חריגות, חשיפות, מה אם, מה שהגדרת, שאלות, במילים) הם שורות שנפתחות.',go:'state'},
