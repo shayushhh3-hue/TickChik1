@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3813,6 +3813,27 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body section.nxsec.map-on .rt-p{display:none!important}
   html body .rt-tabs{display:flex!important;gap:8px!important;overflow-x:auto;scrollbar-width:none}
   html body .rt-tabs [role="tab"]{flex:none!important;white-space:nowrap}
+  /* 17.11 proposal 5, "לוח מסחר": the markets now as the answer, the coming two weeks first, one dot a special day */
+  html body #calSub{display:none!important}
+  html body .calnow{display:flex!important;flex-direction:column!important;gap:10px!important;background:var(--accent-soft)!important;border-radius:8px!important;padding:16px!important;margin:0 0 16px!important;border:0!important;box-shadow:none!important}
+  html body .calnow .cn-k{font-size:14px;color:var(--ink2)}
+  html body #calBox .calnow .mk.mk,html body #calBox .calnow .mk.mk>div{background:none!important;border:0!important;padding:0!important;box-shadow:none!important;min-height:0!important}
+  html body .tcalv{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px;margin:0 0 16px}
+  html body .tcalv button{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:500 14px var(--sans)}
+  html body .tcalv button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgb(20 18 46 / .14)}
+  html body #calBox[data-tview="soon"] :is(.calhead,.calgrid,.calleg,.calleg2,.calday){display:none!important}
+  html body #calBox[data-tview="month"] .cal-soon{display:none!important}
+  html body .cal-spec{display:none!important}
+  html body .cal-hours{margin:0 0 12px;font-size:14px;color:var(--ink2);line-height:1.6}
+  html body .calgrid .dc .fl{display:none!important}
+  html body .calgrid .dc.sp-c::after,html body .calgrid .dc.sp-s::after{content:"";display:block;width:7px;height:7px;border-radius:50%;margin:2px auto 0;background:#B45309}
+  html body .calgrid .dc.sp-s::after{background:transparent;border:1.5px solid #B45309}
+  html body .calgrid .dc.we{opacity:.55}
+  html body .calleg>span:nth-child(-n+4){display:none!important}
+  html body .calleg2{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);margin:4px 0 0}
+  html body .calleg2 span{display:inline-flex;align-items:center;gap:6px}
+  html body .calleg2 i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#B45309}
+  html body .calleg2 i.lg-s{background:transparent;border:1.5px solid #B45309}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -21016,7 +21037,7 @@ function alRules(A){const el=$('alRules'); if(!el)return;
 function alSoon(){const el=$('alSoon'); if(!el)return; let L=[]; try{L=soonEvents(new Date())}catch(e){}
   if(!L.length){setH(el,'<p class="al-empty">אין דוחות, דיבידנדים, ימי הפקדה או חגים בשבועיים הקרובים בניירות שלך.</p>'); return}
   const today=ilDay(), IC={rep:'rep',ex:'div',pay:'div',dep:'dep',mkt:'mkt'}, day=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
-  setH(el,L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${esc(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${esc(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join(''))}
+  setH(el,L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${esc(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${bdiT(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join(''))}
 const DESK_REP=new Set();
 // ---- the portfolio assistant ("צ׳יקו", עוזר התיק): "נתח לי את התיק", the day summary and short questions ----
 // The page computes every figure (anaFacts) from the same data, model and alert engine the rest of the page uses.
@@ -27843,7 +27864,7 @@ const MKN={il:'תל אביב',us:'ארה״ב'}, STN={open:'פתוחה',short:'י
 const flagH=(k,st)=>`<span class="flg ${st}" role="img" aria-label="${MKN[k]}: ${STN[st]}">${FLAG[k]}</span>`;
 const HMON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let CALM=null, CALSEL=null;
-const mkLine=(k,x)=>x.st==='closed'?`<b>${MKN[k]}: אין מסחר</b>${x.why?' · '+esc(x.why):''}`:`<b>${MKN[k]}: ${x.h}</b>${x.st==='short'?' · יום מקוצר':''}${x.why?' · '+esc(x.why):''}`;
+const mkLine=(k,x)=>x.st==='closed'?`<b>${MKN[k]}: אין מסחר</b>${x.why?' · '+esc(x.why):''}`:`<b>${MKN[k]}: <bdi dir="ltr">${x.h}</bdi></b>${x.st==='short'?' · יום מקוצר':''}${x.why?' · '+esc(x.why):''}`;
 // the days of the securities held: the reports (the next one, from the analysts' calendar, and the ones that came out) and
 // the dividends (the ex-dividend day, the payment day, and the ones that came in, from the statements)
 function calEvents(){
@@ -29575,6 +29596,17 @@ function anaFocusHtml(f,q,ans,st){const head=`<p class="ana-foc-h">על ${esc(FO
   if(ans&&ans.text)return head+`<div class="ana-a"><p>${tx(ans.text)}</p>${fbH('focus')}<p class="note ana-basis"><span class="tag an">פרשנות</span> ניסוח של צ׳יקו, רק מתוך הפריט והתיק שבדף. המספרים נבדקו מול הנתונים${ans.replaced?`; ${ans.replaced===1?'משפט אחד הוסר':ans.replaced+' משפטים הוסרו'} כי לא עמדו בכללים`:''}.</p></div>`;
   return head+`<div class="ana-a">${focusAnswerH(q,f)}<p class="note ana-basis"><span class="tag">מחושב</span> תשובה של הדף מאותם נתונים${st.note==='noai'?'':' (צ׳יקו לא ענה)'}: עובדה, קשר שהקריאה ציינה, מה שנמדד ומה שאפשרי מסומנים בנפרד.</p></div>`}
 document.addEventListener('click',e=>{const t=e.target; if(!t.closest)return; if(t.closest('[data-anafoc]')||t.closest('#anaBox [data-ana="new"]')){ANA_FOCUS=null; setTimeout(()=>{try{anaSugg()}catch(x){}},0)}});
+// 17.11 (the owner's proposal 5, "לוח מסחר"): on the phone the screen opens on the coming two weeks as a list (today's
+// hours, then each day with something: a report, a dividend, a holiday or a short day); the month is the second view.
+// A time range is said left to right inside the Hebrew ("10:00–17:30", it read "17:30–10:00")
+var TCALV='soon';
+function bdiT(s){return esc(s).replace(/(\d{1,2}:\d\d[–-]\d{1,2}:\d\d)/g,'<bdi dir="ltr">$1</bdi>')}
+function calSoonH(today){let L=[]; try{L=soonEvents(new Date())}catch(e){}
+  const T=mktDay(today), IC={rep:'rep',ex:'div',pay:'div',dep:'dep',mkt:'mkt'}, day=d=>d===today?'היום':d===isoAdd(today,1)?'מחר':`${HDAY[wdOf(d)]} ${dmy(d).slice(0,5)}`;
+  const hours=`<p class="cal-hours"><b>היום:</b> ${mkLine('il',T.il)} · ${mkLine('us',T.us)}</p>`;
+  if(!L.length)return hours+'<p class="al-empty">אין דוחות, דיבידנדים, חגים או ימים מקוצרים בשבועיים הקרובים.</p>';
+  return hours+L.map(x=>`<div class="soon-d${x.d===today?' now':''}"><b class="soon-day">${day(x.d)}</b><ul>${x.E.map(e=>`<li class="sk-${IC[e.k]}">${e.sym?`<button type="button" class="soon-e" data-gosec="${esc(e.sym)}">`:'<span class="soon-e">'}<i aria-hidden="true"></i><span>${bdiT(e.t)}${e.sym?` <b class="sym">${esc(lab(e.sym))}</b>`:''}${e.est?' <small>(משוער)</small>':''}${e.x?` <small>${bdiT(e.x)}</small>`:''}</span>${e.sym?'</button>':'</span>'}</li>`).join('')}</ul></div>`).join('')}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-tcalv]'); if(!b||!b.closest('#calBox'))return; TCALV=b.dataset.tcalv==='month'?'month':'soon'; try{renderCal()}catch(x){console.error(x)}});
 function renderCal(){
   const box=$('calBox'); if(!box)return; const today=tzDay('Asia/Jerusalem');
   if(!CALM)CALM=today.slice(0,7); if(!CALSEL)CALSEL=today;
@@ -29594,24 +29626,28 @@ function renderCal(){
   const KN={rep:'דוח',repd:'דוח',ex:'יום אקס דיבידנד',pay:'תשלום דיבידנד',got:'דיבידנד שהתקבל'};
   for(let d=1;d<=n;d++){const iso=`${CALM}-${String(d).padStart(2,'0')}`, D=mktDay(iso), we=wdOf(iso)===0||wdOf(iso)===6, ev=evOn(iso), kinds=[...new Set(ev.map(e=>CALEVK[e.k]))];
     if(!we)for(const k of ['il','us'])if(D[k].st!=='open')special.push({iso,k,x:D[k]});
-    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}${ev.filter(e=>CALEVK[e.k]===k).every(e=>e.est)?' est':''}"></i>`).join('')}</span></button>`}
+    cells+=`<button type="button" class="dc${we?' we':''}${iso===today?' today':''}${we?'':(D.il.st==='closed'||D.us.st==='closed')?' sp-c':(D.il.st==='short'||D.us.st==='short')?' sp-s':''}" data-calday="${iso}" aria-pressed="${iso===CALSEL}" aria-label="${d} ב${HMON[M-1]}: ${MKN.il} ${STN[D.il.st]}, ${MKN.us} ${STN[D.us.st]}${ev.length?'; '+ev.map(e=>KN[e.k]+' '+lab(e.sym)).join(', '):''}"><span class="dn">${d}</span><span class="fl">${flagH('il',D.il.st)}${flagH('us',D.us.st)}</span><span class="evs">${kinds.map(k=>`<i class="${k}${ev.filter(e=>CALEVK[e.k]===k).every(e=>e.est)?' est':''}"></i>`).join('')}</span></button>`}
   const S0=mktDay(CALSEL), evSel=evOn(CALSEL), evLi=L=>`<ul class="calev">${L.map(e=>calEvRow(e,today,false)).join('')}</ul>`;
   const selTxt=`<div class="calday"><b>${HDAY[wdOf(CALSEL)]} ${dmy(CALSEL)}</b><br>${mkLine('il',S0.il)}<br>${mkLine('us',S0.us)}${evSel.length?evLi(evSel):''}</div>`;
   const held=((P&&P.positions)||[]).length;
   const mineList=mine.length?`<ul class="calev">${mine.map(e=>calEvRow(e,today,true)).join('')}</ul>`
     :`<p class="note">${held?(RS&&RS.companies&&Object.keys(RS.companies).length?`ב${HMON[M-1]} אין דוחות או דיבידנדים ידועים למניות שבתיק.`:`מועדי הדוחות והדיבידנדים של המניות שבתיק עוד לא נמשכו: הם מגיעים מהריצה הלילית של נתוני החברות (ג׳ עד ש׳, 01:15), שעדיין לא הביאה נתונים.`):'כשיהיו מניות בתיק, יופיעו כאן מועדי הדוחות והדיבידנדים שלהן.'}</p>`;
-  const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר '+r.x.h}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
+  const list=special.length?`<ul class="callist">${special.map(r=>`<li>${flagH(r.k,r.x.st)}<span><b>${dmy(r.iso)}</b> · ${MKN[r.k]}: ${r.x.st==='closed'?'אין מסחר':'מסחר <bdi dir="ltr">'+r.x.h+'</bdi>'}${r.x.why?' · '+esc(r.x.why):''}</span></li>`).join('')}</ul>`:'<p class="note">החודש שתי הבורסות פועלות בשעות הרגילות בכל ימי חול.</p>';
   $('calSub').textContent='השעות לפי שעון ישראל';
-  box.innerHTML=`<div class="calnow">${card('il')}${card('us')}</div>
+  const CV=TCALV==='month'?'month':'soon'; box.dataset.tview=CV;
+  box.innerHTML=`<div class="calnow"><div class="cn-k">עכשיו, לפי שעון ישראל</div>${card('il')}${card('us')}</div>
+    <div class="tcalv" role="group" aria-label="תצוגה"><button type="button" data-tcalv="soon" aria-pressed="${CV==='soon'}">השבועיים הקרובים</button><button type="button" data-tcalv="month" aria-pressed="${CV==='month'}">החודש</button></div>
+    <div class="cal-soon">${calSoonH(today)}</div>
     <div class="calhead"><button type="button" data-calmv="1" aria-label="החודש הבא">‹</button><h3>${HMON[M-1]} ${Y}</h3><button type="button" data-calmv="-1" aria-label="החודש הקודם">›</button></div>
     <div class="calgrid">${cells}</div>
+    <div class="calleg2" aria-hidden="true"><span><i class="lg-c"></i>בורסה סגורה</span><span><i class="lg-s"></i>יום מקוצר</span><span>אפור: סוף שבוע</span></div>
     <div class="calleg"><span>${flagH('il','open')} פתוחה</span><span>${flagH('il','short')} יום מקוצר</span><span>${flagH('il','closed')} סגורה</span><span>הדגל השמאלי: ארה״ב</span><span><i class="ev rep"></i> דוח כספי של מניה שלך</span><span><i class="ev div"></i> דיבידנד של מניה שלך</span><span><i class="ev div" style="background:transparent!important;box-shadow:inset 0 0 0 1.6px #10B981"></i> עיגול ריק: מועד משוער</span></div>
     ${selTxt}
-    <h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3>${mineList}<div class="rsStatus"></div>
-    <p class="note">דוחות: Finnhub, Yahoo Finance ו-SEC. דיבידנדים: הכרזות (Nasdaq), והבאים לפי הקצב, משוערים.</p>
-    <h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
-    <p class="note">ארה״ב: 16:30–23:00 שעון ישראל (15:30–22:00 כשרק מדינה אחת בשעון קיץ). תל אביב: ב׳–ה׳ 10:00–17:30, ו׳ 10:00–14:00; חגים לפי כללי הבורסה, והלוח הרשמי שלה קובע.</p>`;
-  try{rsStatusFill()}catch(e){}
+    <section class="cal-mine"><div class="row"><h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3></div>${mineList}<div class="rsStatus"></div>
+    <p class="note">דוחות: Finnhub, Yahoo Finance ו-SEC. דיבידנדים: הכרזות (Nasdaq), והבאים לפי הקצב, משוערים.</p></section>
+    <div class="cal-spec"><h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
+    <p class="note">ארה״ב: <bdi dir="ltr">16:30–23:00</bdi> שעון ישראל (<bdi dir="ltr">15:30–22:00</bdi> כשרק מדינה אחת בשעון קיץ). תל אביב: ב׳–ה׳ <bdi dir="ltr">10:00–17:30</bdi>, ו׳ <bdi dir="ltr">10:00–14:00</bdi>; חגים לפי כללי הבורסה, והלוח הרשמי שלה קובע.</p></div>`;
+  try{rsStatusFill()}catch(e){} try{foldSec(box.querySelector('.cal-mine'))}catch(e){}
 }
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-calday],[data-calmv]'); if(!t||!t.closest('#calBox'))return;
   if(t.dataset.calday){CALSEL=t.dataset.calday}
@@ -30433,6 +30469,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.22',at:'2026-11-17',t:'לוח מסחר: מה פתוח עכשיו, ואז השבועיים הקרובים',d:'בטלפון: "לוח מסחר" נפתח בכרטיס שאומר אם ארה״ב ותל אביב פתוחות עכשיו, ומתחתיו רשימה של השבועיים הקרובים. החודש הוא תצוגה שנייה, עם נקודה אחת ביום סגור או מקוצר במקום שני דגלים בכל יום. וגם: טווחי השעות מוצגים בכיוון הנכון (10:00–17:30, לא 17:30–10:00).',go:'cal'},
   {v:'2026-11-17.21',at:'2026-11-17',t:'חדשות: שם אחד, ומה נוגע לתיק קודם',d:'לדף יש עכשיו שם אחד, "חדשות", ושתי הלשוניות הן "נוגע לתיק" ו"כל החדשות". בטלפון הדף נפתח בכרטיס שאומר מה זז בתיק היום ואם יש ידיעה שמסבירה את זה. מפת ההשפעה עברה ללשונית משלה, והתקופה היא 24 שעות, 7 ימים או 30 ימים.',go:'nx'},
   {v:'2026-11-17.20',at:'2026-11-17',t:'התראות: קודם מה דורש טיפול',d:'בטלפון: "התראות" נפתח בכרטיס שאומר כמה חריגות יש ואיזו הראשונה, עם "לטפל עכשיו". מתחת לכותרת סינון: הכל, דורש טיפול, מחירים ובקרוב. ההגדרות (טלפון, מייל, צלילים) מאחורי כפתור אחד ליד הכותרת, והתראות המחיר בשורה אחת עם "+ הוספה".',go:'alrules'},
   {v:'2026-11-17.19',at:'2026-11-17',t:'פיזור: התשובה קודם',d:'בטלפון: "פיזור" נפתח בכרטיס שאומר מה הכי מרוכז בתיק ואם זה מעבר לגבול שלך. ארבעת אריחי הריכוז מסודרים 2 על 2, ורשימה אחת נפתחת על הקבוצות שלך (אפשר לעבור לענף, מטבע או בורסה). גורמי הסיכון המשותפים הם שורות קצרות שנפתחות בלחיצה.',go:'mix'},

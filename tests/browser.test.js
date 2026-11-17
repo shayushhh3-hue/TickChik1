@@ -244,6 +244,7 @@ test('the trading calendar: a violet dot on a report day, a green one on a divid
   store.setDoc('research/latest',d,{silent:true});
   try{
     const {ctx,pg}=await open(390); await tab(pg,'calendar'); await pg.waitForTimeout(500);
+    await pg.click('#calBox [data-tcalv="month"]'); await pg.waitForTimeout(200);   // 17.11 (proposal 5): the month is the second view on the phone
     await pg.click('#calBox [data-calmv="1"]'); await pg.waitForTimeout(300);
     const r=await pg.evaluate(([d1,d2,d3,dread])=>{const dots=iso=>[...document.querySelectorAll(`#calBox [data-calday="${iso}"] .evs i`)].map(i=>({c:i.className,bg:getComputedStyle(i).backgroundColor}));
       return {rep:dots(d1),ex:dots(d2),pay:dots(d3),list:document.querySelector('#calBox .calev')?.textContent||''}},[d1,d2,d3]);
@@ -1223,7 +1224,7 @@ test('the trading calendar: both markets per day, the month\'s special days, the
   const {ctx,pg}=await open(390);
   // from the menu ("עוד"); no button for it at the top
   assert.ok(await pg.evaluate(()=>!document.getElementById('btnCal')));
-  await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300);
+  await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300); await pg.click('#calBox [data-tcalv="month"]'); await pg.waitForTimeout(200);   // 17.11 (proposal 5): the month is the second view on the phone
   const r=await pg.evaluate(()=>({days:document.querySelectorAll('#calBox [data-calday]').length,flags:document.querySelectorAll('#calBox .calgrid .flg').length,now:document.querySelectorAll('#calBox .calnow .mk').length,ox:document.documentElement.scrollWidth<=innerWidth+1}));
   assert.ok(r.days>=28&&r.flags===r.days*2,'every day has a flag per market'); assert.equal(r.now,2); assert.ok(r.ox,'no sideways scroll on a phone');
   // to September 2026: Yom Kippur closes Tel Aviv, Labor Day New York; Chol HaMoed is a short day
@@ -1245,6 +1246,7 @@ test('the trading calendar with the held securities\' days: reports (the next on
   store.setDoc('research/latest',{...L0,companies:C}); store.setDoc('history/main',H);
   try{
     const {ctx,pg}=await open(390); await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(500);
+    await pg.click('#calBox [data-tcalv="month"]'); await pg.waitForTimeout(200);   // 17.11 (proposal 5): the month is the second view on the phone
     const cell=n=>pg.evaluate(x=>[...document.querySelectorAll(`#calBox [data-calday="${x}"] .evs i`)].map(i=>i.className),d(n));
     assert.deepEqual(await cell(28),['rep est'],'a report day, estimated: a ring'); assert.deepEqual(await cell(20),['div'],'an ex-dividend day'); assert.deepEqual(await cell(14),['rep']); assert.deepEqual(await cell(3),['div'],'a dividend that came in'); assert.deepEqual(await cell(10),[]);
     // the month's list: one short line each, the rest behind "לקריאה נוספת"
