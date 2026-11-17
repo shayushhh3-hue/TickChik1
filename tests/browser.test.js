@@ -1570,6 +1570,7 @@ test('the funds track: a fixed amount for each fund every month, the sum is the 
     const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForTimeout(300);
     // build the funds' plan from the funds held (TA125, TA90), then a fixed amount for each
     if(await pg.isVisible('#planOb'))await pg.click('#obGo'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>{const d=document.querySelector('[data-pane="plan"] details.hbset'); if(d)d.open=true});   // 17.11: the buying choices are behind one button
     assert.ok(await pg.isVisible('#kindFix'),'the choice is there in the funds track'); await pg.click('#kindFix'); await pg.waitForTimeout(300);
     const amts=await pg.$$('[data-amt]'); assert.equal(amts.length,2);
     // on a phone the actions sit in a row right under each fund, on the right, and the table fits the screen
@@ -1578,7 +1579,8 @@ test('the funds track: a fixed amount for each fund every month, the sum is the 
         right:a?Math.abs(a.querySelector('[data-pa="skip"]').getBoundingClientRect().right-rows[i].querySelector('.sym').getBoundingClientRect().right)<16:false,fits:p.scrollWidth<=p.clientWidth+1}});
     assert.deepEqual(lay,{head:['נייר','סכום בחודש ₪','מתי'],under:true,right:true,fits:true});
     await amts[0].fill('200'); await amts[0].dispatchEvent('change'); await pg.waitForTimeout(200);
-    await (await pg.$$('[data-amt]'))[1].fill('150'); await (await pg.$$('[data-amt]'))[1].dispatchEvent('change'); await pg.waitForTimeout(300);
+    await pg.waitForTimeout(800);   // 17.11: the first amount's save draws the plan again a moment later; the second goes after it
+    {const a1=(await pg.$$('[data-amt]'))[1]; await a1.fill('150'); await a1.dispatchEvent('change')} await pg.waitForTimeout(300);
     let s=await pg.evaluate(()=>({trk:document.getElementById('trkI').textContent,tot:document.getElementById('trkTot').textContent,note:document.getElementById('kindNote').textContent,
       inp:document.getElementById('inMonthlyIdx').value,off:document.getElementById('inMonthlyIdx').disabled,end:document.getElementById('pEnd').textContent,
       row:[...document.querySelectorAll('#ladRows tr')][1].textContent,dep:[...document.querySelectorAll('#ladRows tr')][1].querySelector('[data-dep]').nextElementSibling.textContent}));

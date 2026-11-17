@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3898,6 +3898,12 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .cmp-t:not(.all) tr.cmp-more{display:none!important}
   html body .cmp-more-b{display:block;margin:6px auto 12px;min-height:44px;font-size:15px;background:none!important;border:0!important;color:var(--accent-ink)!important}
   html body .cmp-more-b[hidden]{display:none!important}
+  /* 17.11 proposal 11, "תוכנית": the next deposit as the answer card, a compact pair of tracks, one line under each tile */
+  html body .m-ans .ma-tag2{font-size:12px;font-weight:600;padding:2px 9px;border-radius:12px;background:var(--surface);color:var(--ink2);white-space:nowrap}
+  html body [data-pane="plan"] .tracks{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0 0 12px!important}
+  html body [data-pane="plan"] .trk.trk{padding:8px 12px!important;min-height:0!important;gap:0!important}
+  html body [data-pane="plan"] .trk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  html body [data-pane="plan"] .strip .cell .d{display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4107,6 +4113,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     </section>
     <section aria-labelledby="hPlan">
       <div class="row"><h2 id="hPlan">תוכנית ההגדלה</h2><span class="saved" id="planSaved"></span></div>
+      <div class="m-ans" id="planAns" role="group" aria-label="ההפקדה הבאה" hidden></div>
       <div class="tracks" role="group" aria-label="מסלול">
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
@@ -19528,6 +19535,7 @@ function renderPlan(mAll){
   // 5.11: three months ahead, the rest a tap away (the plan ran 17 rows to its end)
   {const far=Math.max(0,nRows-(st.cur+4)); if(far>0)h+=`<tr class="lad-more"><td colspan="4"><button type="button" class="btn sm" data-ladall="1">${LADALL?'להציג רק 3 חודשים קדימה':`להציג את כל הלוח (עוד ${far} חודשים, עד ${ymShort(ymAdd(st.start,nRows-1))})`}</button></td></tr>`}
   if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
+  try{planAnsFill(st,depBy,B)}catch(e){console.error(e)}
   try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.';
@@ -29739,6 +29747,16 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
 // (tr_pt_all: the month shows every monthly part)
 const DVK=['month','rows','chart','once','set'];
 let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))DVV=v}catch(e){}
+// 17.11 (the owner's proposal 11, "תוכנית: ההפקדה הבאה"): the phone's answer card: this month's deposit, whether it was
+// marked, what is bought after it and for how much, and one button to mark that the money came (it ticks the month's
+// own box in the monthly table, so everything after it is the table's own)
+function planAnsFill(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start){box.hidden=true; return}
+  const ym=ymAdd(st.start,st.cur), d=depBy[ym], amt=d?(+d.amount||0):B, buys=(st.lad&&st.lad.rows&&st.lad.rows[st.cur])||[], cost=buys.reduce((t,s)=>t+(st.cost[s]||0),0);
+  const trk=document.querySelector('.trk[aria-pressed="true"] b'), dep=$('dep_'+ym), can=!!(dep&&!dep.disabled);
+  const J=L=>L.length>1?L.slice(0,-1).join(', ')+' ו-'+L[L.length-1]:(L[0]||'');
+  box.hidden=false;
+  box.innerHTML=`<div class="ma-k"><span>ההפקדה הבאה · ${esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div><div class="ma-v n">${ils(amt)}</div><div class="ma-l">${d?'סימנת שהכסף הגיע.':'עוד לא סימנת שהכסף הגיע.'}</div><div class="ma-l">${buys.length?`${d?'לקנות עכשיו':'אחריה קונים'}: ${esc(J(buys.map(lab)))} (<span class="n" dir="ltr">${ils(cost,2)}</span>)`:'החודש צבירה, בלי קנייה.'}</div>${!d&&can?`<div class="ma-ac"><button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הכסף הגיע</button></div>`:''}`}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep]'); if(!b)return; const c=$('dep_'+b.dataset.plandep); if(c&&!c.checked&&!c.disabled)c.click()});
 function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
@@ -30546,6 +30564,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.29',at:'2026-11-17',t:'תוכנית: ההפקדה הבאה בכרטיס אחד',d:'בטלפון: התוכנית נפתחת בכרטיס של ההפקדה הבאה: הסכום, האם סימנת שהכסף הגיע, ומה קונים אחריה. הכפתור "הכסף הגיע" מסמן את החודש במעקב החודשי.',go:'plan'},
   {v:'2026-11-17.28',at:'2026-11-17',t:'השוואה: נפתחת מוכנה',d:'ההשוואה נפתחת עם שתי האחזקות הגדולות, ואפשר להחליף או להוסיף עד ארבעה ניירות. בטלפון הבחירה מהתיק היא בכפתורים גדולים.',go:'srch'},
   {v:'2026-11-17.27',at:'2026-11-17',t:'דירוג: במה התיק חזק, ושורה לכל נייר',d:'בטלפון: הדירוג נפתח בכרטיס שאומר במה התיק חזק ובמה הוא חלש. הטבלה היא שתי עמודות, הנייר והציון שלו, בלי גלילה הצידה.',go:'rate'},
   {v:'2026-11-17.26',at:'2026-11-17',t:'מניות במעקב: כרטיסים קצרים',d:'בטלפון: "מה חשוב לי בהתאמה" מאחורי כפתור אחד. כל כרטיס מראה רק את המספרים שיש להם ערך, וסיבה אחת.',go:'watch'},
