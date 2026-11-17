@@ -3525,7 +3525,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3685,7 +3685,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-ack{border:0!important;background:none!important;padding:0 4px!important;min-height:0!important;font-size:12.5px!important;color:var(--muted)!important;text-decoration:underline;box-shadow:none!important}
   html body #hParts:not(.all) li:nth-child(n+4):not(.hp-all){display:none!important}
   html body #hParts .hp-all{display:block;border:0;padding-top:4px}
-  html body #hParts .hp-all .lnk{background:none!important;border:0!important;padding:0!important;min-height:0!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important}
+  html body #hParts .hp-all .lnk{background:none!important;border:0!important;padding:0!important;min-height:24px!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important}
   /* 17.11: the history's צ׳יקו line: one line, "יותר" opens it */
   html body .quick-say:not(.open)>span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   html body .quick-say{display:flex!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:8px!important}
@@ -3910,7 +3910,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .m-ans .ma-tag2{font-size:12px;font-weight:600;padding:2px 9px;border-radius:12px;background:var(--surface);color:var(--ink2);white-space:nowrap}
   html body [data-pane="plan"] .tracks{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0 0 12px!important}
   html body [data-pane="plan"] .trk.trk{padding:8px 12px!important;min-height:0!important;gap:0!important}
-  html body [data-pane="plan"] .trk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  html body [data-pane="plan"] .trk span{white-space:normal;max-width:100%}   /* 17.11: on a 320px phone it wraps, not cut */
   html body [data-pane="plan"] .strip .cell .d{display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   /* 17.11 proposal 12, "יעד ותרחישים": the forecast first as the answer, the assumptions in one line, the flows folded */
   html body .pane[data-pane="forecast"]:not([hidden]){display:flex!important;flex-direction:column!important}
@@ -3923,6 +3923,36 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body [data-pane="forecast"] .panel:has(#fwdAsm):not(.asm-open)>.form{display:none!important}
   html body #goalBox{overflow:hidden}
   html body #goalBox .gl-eta{white-space:normal!important;margin:0!important}
+  /* 17.11 proposal 14, "בקרה וסיכון": the score first; the prices a thin bar; the to-do's own; the breaches before the index's bars */
+  html body [data-pane="risk"][data-rgv="now"]>#healthHome{order:1}
+  html body [data-pane="risk"][data-rgv="now"]>:is(#riskMoreH,#anaSec,#briefSec){order:2}
+  html body [data-pane="risk"][data-rgv="now"]>aside.callout{display:none!important}
+  html body #riskMoreH:has(+ #anaSec[hidden]){display:none!important}
+  html body #riskAns{margin-bottom:0}
+  html body table.pf .ps-n{white-space:normal;overflow:visible;text-overflow:clip}   /* 17.11: a holding's long name wraps on a 320px phone, not cut */
+  html body #riskAns .ma-v{display:flex;align-items:baseline;gap:8px}
+  html body #riskAns .ra-sc{font-size:34px;font-weight:700}
+  html body #riskAns .ra-sc.warn{color:var(--warn-c)} html body #riskAns .ra-sc.crit{color:var(--loss)}
+  html body #riskAns .ra-of{font-size:15px;font-weight:500;color:var(--ink2)}
+  html body #desk>:is(.dk-h,.dk-more){display:none!important}
+  html body #desk .dk-trust.warn{padding:8px 12px!important}
+  html body #desk .dk-trust.warn .dt-b{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+  html body #desk .dk-trust.warn .dt-b>b{font-size:14px;font-weight:600}
+  html body #desk .dk-trust.warn .dt-b>:is(.dt-s,.dt-d,.dt-a){flex-basis:100%}
+  html body #desk .dk-trust.warn:not(.open):not(:has(details[open])) .dt-b>:is(.dt-s,.dt-d,.dt-a){display:none!important}
+  html body #desk .dt-why{background:none;border:0;padding:0;min-height:24px;font:inherit;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
+  html body #desk #dkTodo:not(.dk-all) :is(ol>li.info,ol>li.sev-tip,details.dk-rest){display:none!important}
+  html body #desk .dk-more2{background:none;border:0;padding:4px 0;min-height:32px;font:inherit;font-size:14px;font-weight:500;color:var(--accent);cursor:pointer}
+  html body #healthHome .hscore{display:none!important}
+  html body #alerts details.ag{scroll-margin-top:72px}
+  html body #alerts .ag.crit .agl>li .f-t::after{content:"קריטי";display:inline-block;margin-inline-start:8px;padding:1px 8px;border-radius:12px;background:var(--crit-bg);color:var(--crit-ink);font-size:12px;font-weight:600;vertical-align:middle}
+  html body #anaSec>.ana-fold h3{font-size:15px;font-weight:500;margin:0}
+  html body #anaSec.fold1 .ana-entry{border:0!important;background:none!important;padding:0 0 12px!important}
+  /* 17.11: no control under 24px on the phone (the small-screens check): the inline links, "בדקתי", "יותר", a short ticker */
+  html body .pane button.lnk.lnk{min-height:24px!important}
+  html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-ack.dk-ack{min-height:24px!important}
+  html body #quickSay .qs-more.qs-more{min-height:24px!important;min-width:24px!important}
+  html body .pane button.sym.hsym{min-width:24px!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4668,6 +4698,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
 
   <div class="pane" data-pane="risk" hidden>
     <div class="subnav" id="riskNav" role="navigation" aria-label="קפיצה לחלק בבקרה"></div>
+    <div class="m-ans" id="riskAns" data-rg="now" role="group" aria-label="בריאות התיק" hidden></div>
     <section aria-labelledby="hDesk" id="deskSec" hidden>
       <div class="panel desk" id="desk" tabindex="-1"></div>
     </section>
@@ -4775,7 +4806,9 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       <div class="gg" id="prOpp"><div class="empty" data-night>הצמדים יופיעו כאן אחרי הריצה הלילית.</div></div>
     </section>
     <aside class="callout"><b>חשוב לדעת.</b> <span id="ltLead">הבדיקה ארוכת הטווח תופיע כאן אחרי טעינת הנתונים.</span></aside>
+    <h3 class="more-h" id="riskMoreH" data-rg="now">עוד בדף הזה</h3>
     <section aria-labelledby="hAnaE" id="anaSec" hidden>
+      <div class="row ana-fold"><h3>צ׳יקו: לשאול על התיק</h3></div>
       <div class="panel ana-entry" id="anaEntry" aria-labelledby="hAnaE">
         <div class="ae-h"><span class="av av-l chiko" aria-hidden="true"></span><div class="ae-t"><h2 id="hAnaE">צ׳יקו</h2><p class="sub">צ׳יקו הוא עוזר התיק שלך. שואלים אותו במילים פשוטות, והוא מסביר את המספרים שהדף חישב מהתיק שלך ומראה איפה לבדוק אותם. לא ייעוץ השקעות.</p></div></div>
         <p class="ae-now" id="aeNow" role="status" hidden></p>
@@ -19170,7 +19203,7 @@ function renderHealth(m){
   // 1.11: the sector part needs the list of securities (loaded lazily): drawn again once it is there, so the score never
   // comes out without its sector part just because the list was late
   if(!SYMDB&&!renderHealth.asked){renderHealth.asked=true; try{loadSymDb().then(()=>{try{renderHealth(mAllNow())}catch(e){}})}catch(e){}}
-  const H=healthOf(m); if(!H){sec.hidden=true;return}
+  const H=healthOf(m); renderHealth.H=H; if(!H){sec.hidden=true;return}
   sec.hidden=false; const ring=$('hRing'); ring.style.setProperty('--p',H.score); ring.style.setProperty('--c',H.lvl==='ok'?'var(--gain)':H.lvl==='warn'?'var(--warn-c)':'var(--loss)'); ring.setAttribute('aria-label',`${H.score} מתוך 100`);
   $('hNum').textContent=H.score; $('hLab').textContent=H.label; const low=H.parts.filter(x=>x.lvl!=='ok').sort((a,b)=>(1-b.s)*b.w-(1-a.s)*a.w);   // the parts that cost the most points first
   $('hWhy').textContent=low.length?`מוריד את המדד: ${low.slice(0,2).map(x=>x.t).join(', ')}`:'כל הבדיקות בטווח שקבעת';
@@ -19180,6 +19213,7 @@ function renderHealth(m){
     if(el)el.innerHTML=(hist.length>1?`<p class="nm">לאורך זמן: ${hist.map(([k,v])=>`${k.slice(5)}/${k.slice(2,4)} <b>${v}</b>`).join(' · ')}</p>`:'')}catch(e){}
   // 17.11 (the owner): the three weakest first; the rest behind "כל המדדים"
   $('hParts').innerHTML=H.parts.slice().sort((a,b)=>a.pts-b.pts).map(x=>`<li class="${x.lvl}"><span>${esc(x.t)}<span class="nm">${esc(x.d)}</span></span><div class="tr" role="img" aria-label="${x.pts} מתוך 100"><i style="width:${x.pts}%"></i></div><span class="pt">${x.pts}</span></li>`).join('')+(H.parts.length>3?'<li class="hp-all"><button type="button" class="lnk" data-hpall>כל המדדים ('+H.parts.length+')</button></li>':'');
+  try{riskAnsFill()}catch(e){}
 }
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mixv]'); if(!b)return; try{localStorage.setItem('tr_mixview',b.dataset.mixv)}catch(x){} try{render()}catch(x){}});
 function renderMixHome(m){
@@ -20803,7 +20837,7 @@ const RATE_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'ה�
 const cl01=x=>Math.max(0,Math.min(1,x));
 
 // ---- plain-language brief and core/satellite split ----
-let AG_OPEN={crit:true,warn:true}, lastAl='';
+let AG_OPEN={crit:true,warn:!(window.matchMedia&&matchMedia('(max-width:759px)').matches)}, lastAl='';   // 17.11 (proposal 14): on the phone "לבדיקה" starts folded
 const CORE_AUTO=new Set(['TA125','TA90','TA35','SPY','VOO','IVV','VTI','VT','QQQ','CSPX','VUSA','VWRA','SXR8','IWDA','SWRD','ACWI','ITOT','SCHB','VXUS','VEA','VWO','SPLG','SPYG','IWM']);
 const IDXNAME=/מדד|S&P|ת"א|תל אביב|MSCI|נאסד"ק|נאסדק|NASDAQ/i;
 const isCore=p=>S.coreOv&&S.coreOv[p.sym]!=null?!!S.coreOv[p.sym]:CORE_AUTO.has(p.sym)||(NUMSYM.test(p.sym)&&IDXNAME.test(p.name||''));
@@ -20880,6 +20914,7 @@ function foldBoot(){
   for(const s of pane.querySelectorAll(':scope > section,:scope > details')){const h=s.querySelector('h2'); s.dataset.rg=rgOf(s.getAttribute('aria-labelledby')||(h&&h.id)||'')}
   const sub=$('riskSub'); if(sub&&!sub.children.length)sub.innerHTML=Object.keys(RG).map(k=>`<button type="button" data-rsub="${k}">${RGL[k]}</button>`).join('');
   const nav=$('riskNav'); if(nav&&!nav.children.length){nav.innerHTML=Object.keys(RG).map(k=>`<button type="button" class="chip" data-rg="${k}" role="tab" aria-pressed="false">${RGL[k]}</button>`).join(''); nav.setAttribute('role','tablist'); nav.setAttribute('aria-label','החלקים של בקרה וסיכון')}
+  try{foldSec($('anaSec'))}catch(e){}   // 17.11 (proposal 14): on the phone צ׳יקו is one row under "עוד בדף הזה"
   rgSet(RGV);
 }
 document.addEventListener('click',ev=>{
@@ -21078,6 +21113,22 @@ function todayH(m,A,o={}){if(!m||!m.pos||!m.pos.length)return '';
   if(L.length>3)L.splice(L.findIndex(r=>r.k==='since'),1);
   const icon=ic=>ic.startsWith('logo:')?(()=>{try{return logoHtml(ic.slice(5),'s')}catch(e){return ''}})():`<i class="tdl-ic ${ic}" aria-hidden="true"></i>`;
   return L.map(r=>`<button type="button" class="tdl tdl-${r.k} kt-go"${r.go}>${icon(r.ic)}<span class="tdl-k">${r.t}</span><span class="tdl-b">${r.b}</span><span class="tdl-a" aria-hidden="true">›</span></button>`).join('')}
+// 17.11 (the owner's proposal 14, "בקרה וסיכון"): the phone's answer card: the health index as a number ("74 מתוך 100"),
+// what lowers it most, and one button to the rules' breaches (their group opened). Its figures are the index's own and the
+// list's own, read after both were drawn. DTOPEN: the prices' thin bar opened by its "למה?"; DKALL: the to-do's tips shown
+var DTOPEN=false, DKALL=false;
+function riskAnsFill(){const box=$('riskAns'); if(!box)return; const H=renderHealth.H;
+  if(!H||noPf()){box.hidden=true; return}
+  const low=H.parts.filter(x=>x.lvl!=='ok').sort((a,b)=>(1-b.s)*b.w-(1-a.s)*a.w).slice(0,2).map(x=>x.t);
+  const J=L=>L.length>1?L.slice(0,-1).join(', ')+(/^[A-Za-z0-9]/.test(L[L.length-1])?' ו-':' ו')+L[L.length-1]:(L[0]||'');
+  const nC=document.querySelectorAll('#alerts .ag.crit .agl>li').length, nW=document.querySelectorAll('#alerts .ag.warn .agl>li').length;
+  const bt=nC?(nC===1?'לטפל בחריגה':`לטפל ב-${nC} החריגות`):nW?(nW===1?'לבדוק את הנושא':`לבדוק את ${nW} הנושאים`):'';
+  box.hidden=false;
+  box.innerHTML=`<div class="ma-k"><span>בריאות התיק</span><span class="ma-tag2">${H.parts.length} בדיקות</span></div><div class="ma-v"><b class="ra-sc ${H.lvl}">${H.score}</b><span class="ra-of">מתוך 100</span></div><div class="ma-l">${low.length?'מה מוריד את הציון: '+esc(J(low)):'כל הבדיקות בטווח שקבעת.'}</div>${bt?`<div class="ma-ac"><button type="button" class="btn sm pri" data-rafix="${nC?'crit':'warn'}">${bt}</button></div>`:''}`}
+document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest)return;
+  const f=t.closest('[data-rafix]'); if(f){const sv=f.dataset.rafix, d=document.querySelector(`#alerts details.ag.${sv}`); if(d){d.open=true; AG_OPEN[sv]=true; try{d.scrollIntoView({block:'start',behavior:'smooth'})}catch(x){}} return}
+  const w=t.closest('[data-dtwhy]'); if(w){DTOPEN=!DTOPEN; const b=w.closest('.dk-trust'); if(b)b.classList.toggle('open',DTOPEN); w.setAttribute('aria-expanded',String(DTOPEN)); return}
+  const k=t.closest('[data-dkall]'); if(k){DKALL=!DKALL; const d=k.closest('.dk-top'); if(d)d.classList.toggle('dk-all',DKALL); k.setAttribute('aria-expanded',String(DKALL)); k.textContent=DKALL?'פחות':(k.dataset.lab||'עוד'); return}});
 function renderDesk(m,A){
   // 10.11 (the owner): the day's updates moved from the home to התראות (#alToday); the home's #kToday stays empty
   try{const el=$('kToday'), al=$('alToday'), ae=$('alTodayE'); const h=noPf()?'':todayH(m,A,{noNews:true}); if(el){el.hidden=true; setH(el,'')} if(al){al.hidden=!h; setH(al,h)} if(ae)ae.hidden=!!h}catch(e){console.error(e)}
@@ -21100,9 +21151,10 @@ function renderDesk(m,A){
   const need=L.filter(x=>x.sev==='crit'||x.sev==='warn'||x.sev==='rep'), st=L.some(x=>x.sev==='crit')?'crit':need.length?'warn':'ok';
   {const nr=L.filter(x=>x.key&&!DESK_REP.has(x.key)); nr.forEach(x=>DESK_REP.add(x.key)); if(nr.length)try{chime('sys')}catch(e){}}   // a new company report: the sound the banner had
   const hr=new Date().getHours(), gw=hr<5?'לילה טוב':hr<12?'בוקר טוב':hr<17?'צהריים טובים':hr<21?'ערב טוב':'לילה טוב', nm=(S.name||'').trim();
-  const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck)}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
+  const h=`<div class="dk-h">${todIconH(hr)}<h2 id="hDesk">${gw}${nm?', '+esc(nm):''}${(()=>{try{return bdayToday(S.profile&&S.profile.birth)?(nm?', ויום הולדת שמח!':' ויום הולדת שמח!'):''}catch(e){return ''}})()}</h2><span class="sub">${esc(Q.priceLabel||'')}${Q.updatedAt?(Q.priceLabel?' · ':'')+'עודכן '+ago(Q.updatedAt):''}</span></div>${depLineH()}${benchLineH()}${deskStatusH(T)}${todoH(L,nAck,{fold:true})}<p class="dk-more"><button class="btn sm" type="button" data-tab="risk">לבקרה המלאה, לכללים ולגרפים ›</button></p>`;
   const el=$('desk'); el.className='panel desk '+st; setH(el,h);
   try{renderAlerts(L,nAck,($('alToday')&&!$('alToday').hidden)?$('alToday').querySelectorAll('.tdl').length:0,A,m)}catch(e){console.error(e)}
+  try{riskAnsFill()}catch(e){console.error(e)}
 }
 // 10.11 (the owner): התראות is the day's few important updates (the coming dividend, the one news item about a holding,
 // what to check) and what to do. 11.11: and, first, every alert about the portfolio as an inbox (renderAlertInbox); the
@@ -30403,7 +30455,7 @@ function trustH(T){
   if(T.ok)return `<div class="dk-trust ok" id="dkTrust">${niH('ok','dt-ic')}<div class="dt-b"><b>המחירים עדכניים</b><span class="dt-s">עודכנו ${esc(ago(T.at))}${fund}</span>
     <details class="dt-d"><summary>איך זה נבדק?</summary><ul>${ok}<li>${niH('ok')}<span>${esc(pxLabelTxt()||'')}${pxLabelTxt()?'. ':''}כל מחיר מושווה ליום המסחר האחרון בבורסה שלו, לפי לוח המסחר.</span></li></ul></details></div></div>`;
   const pxBtn=(()=>{const b=$('pxNow'); return b&&!b.hidden?'<button type="button" class="btn sm pri" data-uxgo="pxnow">לעדכן מחירים עכשיו</button>':''})();
-  return `<div class="dk-trust warn" id="dkTrust">${niH('warn','dt-ic')}<div class="dt-b"><b>${T.iss.length===1?esc(T.iss[0].t):'חלק מהמחירים לא עדכניים'}</b><span class="dt-s">${T.iss.length===1?esc(T.iss[0].d):T.iss.map(x=>esc(x.t)).join(' · ')}${fund}</span>
+  return `<div class="dk-trust warn${DTOPEN?' open':''}" id="dkTrust" role="status">${niH('warn','dt-ic')}<div class="dt-b"><b>${T.iss.length===1?esc(T.iss[0].t):'חלק מהמחירים לא עדכניים'}</b><button type="button" class="dt-why" data-dtwhy aria-expanded="${DTOPEN}">למה?</button><span class="dt-s">${T.iss.length===1?esc(T.iss[0].d):T.iss.map(x=>esc(x.t)).join(' · ')}${fund}</span>
     ${T.iss.length>1?`<details class="dt-d"><summary>מה בדיוק?</summary><ul>${T.iss.map(x=>`<li>${niH('warn')}<span><b>${esc(x.t)}.</b> ${esc(x.d)}</span></li>`).join('')}${ok}</ul></details>`:ok?`<details class="dt-d"><summary>מה נבדק?</summary><ul>${ok}</ul></details>`:''}
     <div class="dt-a">${pxBtn}<button type="button" class="btn sm" data-uxgo="src">למקורות המחירים</button></div></div></div>`;
 }
@@ -30466,12 +30518,13 @@ const CATI={'הפקדה':'M3 8h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z
   'מדיניות':'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z','חיסכון':'M5 21V4M5 4h11l-2 4 2 4H5','יעד':'M5 21V4M5 4h11l-2 4 2 4H5',
   'מידע':'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8v.5','תקין':'M5 13l4 4L19 7','חריגה':'M12 4l9 16H3zM12 10v4M12 17v.5','לבדיקה':'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16v.5'};
 const catIconH=(cat,sev)=>`<span class="ci-w ${sev==='tip'?'sev-tip':(sev||'info')}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${CATI[cat]||CATI['מידע']}"/></svg></span>`;
-function todoH(L,nAck){
+function todoH(L,nAck,o){
   const li=x=>`<li class="${x.sev==='tip'?'sev-tip':x.sev}">${catIconH(x.cat,x.sev==='tip'||x.sev==='setup'||x.sev==='info'||x.sev==='rep'?(x.sev==='tip'?'tip':'info'):x.sev)}<span><span class="dk-cat">${esc(x.cat)}</span> ${x.h}<span class="dk-btns">${x.b}</span></span></li>`;
   const ackLine=nAck?`<p class="dk-ackd">${nAck===1?'סימנת שבדקת נושא אחד. הוא יחזור לרשימה אם משהו בו ישתנה, או בעוד שבוע.':`סימנת שבדקת ${nAck} נושאים. הם יחזרו לרשימה אם משהו בהם ישתנה, או בעוד שבוע.`}${canWrite?' <button type="button" class="dk-go" data-ackclear>להחזיר עכשיו</button>':''}</p>`:'';
   const need=L.filter(x=>x.sev!=='tip'&&x.sev!=='info'), first=L.slice(0,4), rest=L.slice(4);
   if(!L.length)return `<div class="dk-top ok"><b>${niH('ok')}${nAck?'אין דבר חדש שצריך לעשות.':'אין משהו שצריך לעשות עכשיו.'}</b>${ackLine}</div>`;
-  return `<div class="dk-top" id="dkTodo"><b>${need.length?(need.length===1?'דבר אחד לעשות':need.length+' דברים לעשות'):'מה אפשר לעשות'}</b><ol>${first.map(li).join('')}</ol>${rest.length?`<details class="dk-rest"><summary>עוד ${rest.length}</summary><ol>${rest.map(li).join('')}</ol></details>`:''}${ackLine}</div>`;
+  const k=o&&o.fold&&need.length?first.filter(x=>x.sev==='tip'||x.sev==='info').length+rest.length:0, kl='עוד '+k;   // 17.11 (proposal 14): the phone's control shows what is to do; the tips behind "עוד"
+  return `<div class="dk-top${k&&DKALL?' dk-all':''}" id="dkTodo"><b>${need.length?(need.length===1?'דבר אחד לעשות':need.length+' דברים לעשות'):'מה אפשר לעשות'}</b><ol>${first.map(li).join('')}</ol>${k?`<button type="button" class="dk-more2" data-dkall data-lab="${kl}" aria-expanded="${DKALL}">${DKALL?'פחות':kl}</button>`:''}${rest.length?`<details class="dk-rest"><summary>עוד ${rest.length}</summary><ol>${rest.map(li).join('')}</ol></details>`:''}${ackLine}</div>`;
 }
 // 31.10: the news, said as plainly as the prices: when they were gathered, how many צ׳יקו read today, how many wait, and
 // whether the reader runs at all. Gathered every half hour and read every ten minutes from 07:00 to 23:00 (Israel)
@@ -30616,6 +30669,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.32',at:'2026-11-17',t:'בקרה וסיכון: הציון והחריגות קודם',d:'בטלפון: "בקרה וסיכון" נפתח בכרטיס עם מדד הבריאות כמספר (למשל 74 מתוך 100), מה מוריד אותו, וכפתור שמוביל ישר לחריגות. הברכה והשעה ירדו (הן בבית), אזהרת המחירים היא פס של שורה עם "למה?", ב"מה לעשות" רק מה שצריך לעשות (הטיפים ב"עוד"), כל חריגה כתובה "קריטי" במילה, ו-צ׳יקו מקופל תחת "עוד בדף הזה".',go:'risk'},
   {v:'2026-11-17.31',at:'2026-11-17',t:'חסכונות לפי מטרה: מתחילים ממטרה',d:'כשעוד אין חיסכון, הדף נפתח בכרטיס שמסביר מה זה ובארבע מטרות מוכנות (ילד או ילדה, דירה, חופשה, לימודים). לחיצה פותחת את הטופס עם המטרה כבר מסומנת.',go:'pots'},
   {v:'2026-11-17.30',at:'2026-11-17',t:'יעד ותרחישים: התשובה קודם',d:'בטלפון: הדף נפתח בכרטיס שאומר לאן התיק מגיע אחרי מס, עם ההפקדה החודשית שלך, ומה הרווח הנקי. ההנחות (שנים, תשואה, מס) בשורה אחת עם "עריכה".',go:'goal'},
   {v:'2026-11-17.29',at:'2026-11-17',t:'תוכנית: ההפקדה הבאה בכרטיס אחד',d:'בטלפון: התוכנית נפתחת בכרטיס של ההפקדה הבאה: הסכום, האם סימנת שהכסף הגיע, ומה קונים אחריה. הכפתור "הכסף הגיע" מסמן את החודש במעקב החודשי.',go:'plan'},
