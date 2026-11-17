@@ -336,7 +336,9 @@ test('the simple home: one to-do list, the prices\' trust mark, the same total i
       // 28.10: the lean home: the six figures of the day are on "מבט לאחור", the day's movers after the two results
       await tab(pg,'history'); await pg.waitForTimeout(300);
       const K=await pg.evaluate(()=>[...document.querySelectorAll('#quickSec .side>.stat')].filter(x=>x.offsetParent).map(x=>x.querySelector('.k').textContent));
-      assert.equal(K.length,6); assert.deepEqual(K.slice(0,2),['רווח מול עלות','מול ההפקדות']); assert.match(K[2],/^עלתה הכי הרבה (היום|ב-[\d.]+)$/); assert.match(K[3],/^ירדה הכי הרבה (היום|ב-[\d.]+)$/);   // 6.11: the day the figures are of
+      // 17.11 (the owner's proposal 16): four on the phone; the deposits are in the answer card above them, the dollar on the home
+      assert.equal(K.length,4); assert.equal(K[0],'רווח מול עלות'); assert.match(K[1],/^עלתה הכי הרבה (היום|ב-[\d.]+)$/); assert.match(K[2],/^ירדה הכי הרבה (היום|ב-[\d.]+)$/);   // 6.11: the day the figures are of
+      assert.match(await pg.evaluate(()=>document.getElementById('histAns').textContent),/האם הכסף שלי עובד\?.*מול מה שהפקדת/);
       await tab(pg,'overview'); await pg.waitForTimeout(300);
       // the funds' date, in plain words behind "למה?"
       // 10.11 (the owner): no small "למה?" lines in the holdings' table
@@ -1328,8 +1330,9 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     // 28.10: the six figures of the day live on "מבט לאחור" (the lean home has none of them), two by two on a phone
     assert.ok(await pg.evaluate(()=>!document.getElementById('kPnl').offsetParent),'not on the home');
     await tab(pg,'history'); await pg.waitForTimeout(300);
-    assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=R('kPnl'), b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox');
-      return p.height>0&&b.top>p.bottom-1&&Math.abs(b.top-w.top)<2&&y.top>=b.bottom-1&&Math.abs(y.top-f.top)<2}),'the six cards two by two on "מבט לאחור"');
+    // 17.11 (the owner's proposal 16): on a phone four, two by two: the profit and the year, then the day's rise and fall
+    assert.ok(await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), p=document.getElementById('kPnl').closest('.stat').getBoundingClientRect(), b=R('kBestBox'), w=R('kWorstBox'), y=R('kYtdBox'), f=R('kFxBox');
+      return p.height>0&&Math.abs(p.top-y.top)<2&&b.top>p.bottom-1&&Math.abs(b.top-w.top)<2&&f.height===0}),'the four cards two by two on "מבט לאחור"');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     // a mover opens its page
     const lk=await pg.evaluate(()=>{const r=document.querySelector('.hero .side .stat.secl'); return r&&r.dataset.sec});

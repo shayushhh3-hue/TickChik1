@@ -3516,6 +3516,13 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+/* 17.11 proposal 16: the deposits' line dashed in the legend too; the comparison while the indices load */
+section[aria-labelledby="hTrend"] .legend i.lg-l2{background:repeating-linear-gradient(90deg,var(--s2) 0 5px,transparent 5px 8px)}
+section[aria-labelledby="hTrend"] .legend i.lg-l2::after{background:var(--s2)}
+.bn-load{list-style:none;margin:0;padding:0 14px;display:flex;flex-direction:column}
+.bn-load li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.bn-load li:last-child{border-bottom:0}
+.bn-load b{font-weight:600}
 /* 17.11 proposal 15: who moved the portfolio, as bars; the groups as tiles */
 .st-mv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .st-mv li{display:grid;grid-template-columns:24px minmax(44px,auto) 64px minmax(40px,1fr) auto;align-items:center;gap:8px}
@@ -3541,7 +3548,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3987,6 +3994,12 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #stateBody .st-fh::after{content:"‹";position:absolute;inset-inline-end:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}
   html body #stateBody .st-f.open .st-fh::after{content:"⌃"}
   html body #stateBody .st-fs{font-size:13px;color:var(--ink2);font-weight:400}
+  /* 17.11 proposal 16, "היסטוריה": the answer first; four tiles 2 by 2; the three kinds of result behind "מה ההבדל?" */
+  html body section[aria-labelledby="hTrend"]>.row h2{display:none!important}
+  html body #quickSec .side>:is(#kDepBox,#kFxBox){display:none!important}
+  html body #quickSec .side>#kYtdBox{order:1} html body #quickSec .side>#kBestBox{order:2} html body #quickSec .side>#kWorstBox{order:3}
+  html body #quickSec .quick-3{display:none!important}
+  html body #quickSec>.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4438,6 +4451,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   </div>
   <div class="pane" data-pane="history" hidden>
     <!-- 11.11 (the owner): the value against the deposits first on מבט לאחור -->
+    <div class="m-ans" id="histAns" data-ptid="hQuick" role="group" aria-label="האם הכסף שלי עובד?" hidden></div>
     <section aria-labelledby="hTrend">
       <div class="row"><h2 id="hTrend">האם הכסף שלי עובד? שווי מול הפקדות</h2><div class="legend"><span><i class="lg-l1"></i>שווי התיק</span><span><i class="lg-l2"></i>סך ההפקדות</span></div></div>
       <div class="panel">
@@ -4453,7 +4467,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       </details>
     </section>
     <section aria-labelledby="hQuick" id="quickSec">
-      <div class="row"><h2 id="hQuick">המספרים של היום</h2></div>
+      <div class="row"><h2 id="hQuick">המספרים של היום</h2><button type="button" class="term lw qk-why" data-term="pnlk" aria-label="מה ההבדל בין מול העלות, מול ההפקדות ולאורך התקופה?" aria-expanded="false">מה ההבדל?</button></div>
       <div class="side">
         <div class="stat"><div class="k">רווח מול עלות</div><span class="v" id="kPnl">—</span><div class="d" id="kPnlD"></div></div>
         <div class="stat" id="kDepBox"><div class="k">מול ההפקדות</div><span class="v" id="kDep">—</span><div class="d" id="kDepD"></div></div>
@@ -19342,7 +19356,8 @@ function render(){
     if(y){yk.textContent=y.cut||y.fromZero?'מ'+ymFull(y.first):'מתחילת השנה'; ye.textContent=spct(y.pct,1); ye.className='v '+(y.pct>=0?'up':'down'); yd.textContent=sgn(y.gain)}
     else{yk.textContent='מתחילת השנה'; ye.textContent='—'; ye.className='v'; yd.textContent=kvf?'של כל התיק, בתצוגת "הכל"':HS?'אין מספיק חודשים שמורים':'אין היסטוריה שמורה'}
     if(dp){de.textContent=sgn(dp.diff); de.className='v '+(dp.diff>=0?'up':'down'); dd.textContent=spct(dp.pct,1)+' · הופקדו '+ils(dp.dep)}
-    else{de.textContent='—'; de.className='v'; if(kvf||one)dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"'; else dd.innerHTML='אין רישום הפקדות'+fillB}}
+    else{de.textContent='—'; de.className='v'; if(kvf||one)dd.textContent=kvf?'ההפקדות נספרות לכל התיק; בתצוגת "הכל"':'ההפקדות נשמרות לכל החשבונות יחד; בתצוגת "הכל"'; else dd.innerHTML='אין רישום הפקדות'+fillB}
+    try{histAnsFill(m,mH,dp)}catch(e){console.error(e)}}
   $('kFx').textContent=Q.usdIls.toFixed(3); $('kFxD').textContent=Q.fxLabel||'';
   // 4.11: צ׳יקו says in one sentence what the numbers above add up to (from the same numbers; nothing new, no advice)
   try{const el=$('quickSay'); if(el){const L=[]; let dp=null, y=null; if(acct==='all'&&!(mH.fund||mH.stock)){try{const dt=HS?depTotal():0; if(dt>0)dp=m.total-dt}catch(e){} try{if(HS){const r=resultOf(seriesMap(),monthsOf('year',ilDay().slice(0,4))); if(r.ok&&r.pct!=null&&r.have.length)y=r.pct}}catch(e){}}
@@ -20735,7 +20750,7 @@ function renderTrend(){
   pts.forEach((p,i)=>{if(p.ym&&i%2===0)g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--sans)">${['ינו׳','פבר׳','מרץ','אפר׳','מאי','יונ׳','יול׳','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'][+p.ym.slice(5)-1]||''} ${p.ym.slice(2,4)}</text>`});   // 9.11: "מאי 26", not "5/26" (read as a date)
   const stepD=pts.map((p,i)=>(i?`L${x(p.t).toFixed(1)} ${y(pts[i-1].dep).toFixed(1)}L`:'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join('');
   const lineV=pts.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.val).toFixed(1)).join(' ');
-  g+=`<path d="${stepD}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/><path d="${lineV}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=`<path d="${stepD}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 4"/><path d="${lineV}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
   // a month whose value was reconstructed, not read from a statement, is a hollow dot on the line (and "משוחזר" in the table)
   for(const p of pts.filter(p=>p.est))g+=`<circle cx="${x(p.t)}" cy="${y(p.val)}" r="4" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>`;
   // shapes as well as colors (WCAG 1.4.1): the value ends in a circle, the deposits in a square, as in the legend
@@ -20744,6 +20759,7 @@ function renderTrend(){
   g+=`<text x="${x(e.t)+8}" y="${y1+4}" font-size="12" font-weight="600" fill="var(--ink)" font-family="var(--mono)">${kf(e.val)}</text><text x="${x(e.t)+8}" y="${y2+4}" font-size="12" fill="var(--ink2)" font-family="var(--mono)">${kf(e.dep)}</text>`;
   g+=`<line id="cross3" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
   $('svg3').setAttribute('viewBox','0 0 '+W+' '+H); $('svg3').innerHTML=g; $('svg3').dataset.geo=JSON.stringify({L,Rm,W,t0,t1});
+  try{$('svg3').setAttribute('aria-label',`שווי התיק מול סך ההפקדות, חודש אחר חודש. היום: שווי ${ils(e.val)}, הפקדות ${ils(e.dep)}`)}catch(x){}   // 17.11 (proposal 16): the chart in words
   const worst=pts.reduce((a,b)=>(b.val-b.dep)<(a.val-a.dep)?b:a), diff=e.val-e.dep;
   $('trendNote').innerHTML=`<b class="n ${diff>=0?'up':'down'}">${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)})</b> מול מה שהופקד: התיק שווה היום ${ils(e.val)} ומה שהופקד הוא ${ils(e.dep)}.${pts.some(p=>p.est)?' עיגול ריק על הקו: שווי משוחזר, לא מדוח.':''}<details class="more"><summary>פרטים על הגרף</summary>הנקודה הנמוכה ביותר הייתה ${esc(worst.label)}, ${sgn(worst.val-worst.dep)}. שווי אקסלנס לפי דוח הברוקר, ובחודשים בלי דוח הוא משוחזר. ${esc(HS.monthlyNote||'')} מהיום נשמרת נקודה אחת לכל יום שבו הדף נפתח.</details>`;
   {const ids=acctIds(), th=$('trendHead'); if(th)setH(th,'<th>מועד</th>'+ids.map(a=>`<th class="num">${esc(acctName(a))} ₪</th>`).join('')+'<th class="num">סך הכול ₪</th><th class="num">הפקדות ₪</th><th class="num">הפרש</th>');
@@ -26002,6 +26018,7 @@ function upTick(on,from){clearInterval(UPTT); UPTT=0; if(!on)return; UPT0=from||
 
 // ---- a short explanation behind the terms of the page ----
 const TERMS={
+  pnlk:['מול העלות, מול ההפקדות, לאורך התקופה','מול העלות: הניירות מול מה ששילמת עליהם. מול ההפקדות: כל התיק מול הכסף שהכנסת אליו. לאורך התקופה: התשואה עצמה, בלי ההשפעה של ההפקדות.'],
   rate:['תשואה שנתית מונחת','האחוז שהתיק אמור לגדול בו בשנה בממוצע, לפי ההנחה שלך. זו לא תחזית: שנה אחת יכולה להיות הרבה מעל או מתחת לה.'],
   tax:['מס רווחי הון','מס על הרווח ממכירת ניירות ערך, לרוב 25% על הרווח הריאלי. הדף מחשב אותו כאילו מוכרים הכול בסוף התקופה.'],
   vol:['תנודתיות חודשית','כמה המחיר נוטה לזוז בחודש טיפוסי, באחוזים. מספר גבוה הוא נסיעה רועדת יותר, לא בהכרח השקעה גרועה.'],
@@ -30162,12 +30179,23 @@ function benchLineH(){
   const s=B.rows.find(r=>r.k==='spx'), me=B.rows[0]; if(!s)return '';
   const d=me.val-s.val;
   return `<p class="dk-dep dk-bench">מול המדד: אותן הפקדות ב-S&P 500 היו שוות היום ${nn(ils(s.val))}, ${nn(ils(Math.abs(d)))} ${d>=0?'פחות':'יותר'} מהתיק שלך. <button type="button" class="dk-go" data-goto="bench">להשוואה ›</button></p>`}
+// 17.11 (the owner's proposal 16, "היסטוריה"): the phone's answer card: is my money working? The value against the money
+// put in (the tile "מול ההפקדות", which leaves the phone's tiles), or, with no deposits kept, the holdings against their cost
+function histAnsFill(m,mH,dp){const box=$('histAns'); if(!box)return; if(noPf()){box.hidden=true; return}
+  const ar=v=>v>0?'▲ ':v<0?'▼ ':''; let v, l1, l2;
+  if(dp){v=`<span class="n ${dp.diff>=0?'up':'down'}">${ar(dp.diff)}${sgn(dp.diff)}</span>`; l1=`<span class="n">${esc(spct(dp.pct,1))}</span> מול מה שהפקדת (<span class="n">${esc(ils(dp.dep))}</span>)`; l2=`התיק שווה היום <span class="n">${esc(ils(m.total))}</span>`}
+  else if(mH&&mH.cost){v=`<span class="n ${mH.pnl>=0?'up':'down'}">${ar(mH.pnl)}${sgn(mH.pnl)}</span>`; l1=`<span class="n">${esc(spct(mH.pnlPct))}</span> מול מה ששילמת על הניירות`; l2='אין רישום הפקדות, ולכן ההשוואה היא לעלות.'}
+  else{box.hidden=true; return}
+  box.hidden=false; box.innerHTML=`<div class="ma-k"><span>האם הכסף שלי עובד?</span></div><div class="ma-v">${v}</div><div class="ma-l">${l1}</div><div class="ma-l">${l2}</div>`}
 function renderBench(){
   const box=$('benchBox'); if(!box)return; benchLoad();
   let B=null; try{B=benchCompare(mAllNow())}catch(e){}
   if(!B){setH(box,'<div class="empty">ההשוואה תופיע כאן אחרי שהתיק וההפקדות ייטענו.</div>');return}
   if(B.none){setH(box,'<div class="empty">עוד אין רישום של הפקדות עם תאריכים. אחרי שתעלה דוח או צילום של התנועות בחשבון, ההשוואה תופיע כאן.</div>');return}
-  if(!B.ready){setH(box,`<div class="empty">${BENCH_D?'אין עדיין נתוני מדדים לימים של ההפקדות.':'נתוני המדדים נטענים. ההשוואה תופיע כאן בעוד רגע.'}</div>`);return}
+  if(!B.ready){if(BENCH_D){setH(box,'<div class="empty">אין עדיין נתוני מדדים לימים של ההפקדות.</div>');return}
+    // 17.11 (proposal 16): while the indices load, the portfolio's own row and "נטען…" beside each index, not an empty card
+    const me=B.rows&&B.rows[0], rr=me&&me.ret?(me.ret.yr!=null?me.ret.yr:me.ret.per):null;
+    setH(box,`<ul class="bn-load" aria-busy="true" aria-label="נתוני המדדים נטענים"><li><b>התיק שלך</b>${me?`<span><span class="n ${me.gain>=0?'up':'down'}">${sgn(me.gain)}</span>${rr!=null?` · <span class="n">${esc(spct(rr,1))}</span> ${me.ret.yr!=null?'בשנה':'בתקופה'}`:''}</span>`:''}</li><li><b>S&P 500</b><span class="nm">נטען…</span></li><li><b>ת״א 125</b><span class="nm">נטען…</span></li></ul>`);return}
   const mx=Math.max(...B.rows.map(r=>r.val)), me=B.rows[0];
   const card=r=>`<div class="bn-r${r.k==='me'?' me':''}"><div class="bn-h"><b>${esc(r.name)}</b>${r.k!=='me'?`<span class="sub">אותן הפקדות, באותם ימים</span>`:''}</div>
     <div class="bn-bar" role="img" aria-label="${esc(r.name)}: ${ils(r.val)}"><i style="width:${(r.val/mx*100).toFixed(1)}%"></i></div>
@@ -30731,6 +30759,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.34',at:'2026-11-17',t:'מבט לאחור: האם הכסף שלי עובד?',d:'בטלפון: "מבט לאחור" נפתח בכרטיס שעונה על השאלה: כמה התיק שווה יותר (או פחות) ממה שהפקדת, ובכמה אחוזים. מתחת לגרף ארבעה אריחים, שניים בשורה (ההפקדות בכרטיס, הדולר בבית). קו ההפקדות בגרף מקווקו, כך שהוא נבדל גם בצורה ולא רק בצבע, וכשהמדדים עוד נטענים כתוב "נטען…" ליד כל מדד.',go:'history'},
   {v:'2026-11-17.33',at:'2026-11-17',t:'מה קורה בתיק: התשובה בשורה אחת, ומי הזיז בפסים',d:'בטלפון: "מה קורה בתיק" נפתח בכרטיס שאומר כמה התיק זז בתקופה ולמה, ולידו מה עשה השוק. מי הזיז את התיק מוצג בפסים לפי הגודל, עם הסכום והשינוי ליד כל פס, והקבוצות כאריחים. התוויות "נתון/חישוב/סימולציה" ירדו מהכותרות, והחלקים האחרים (חריגות, חשיפות, מה אם, מה שהגדרת, שאלות, במילים) הם שורות שנפתחות.',go:'state'},
   {v:'2026-11-17.32',at:'2026-11-17',t:'בקרה וסיכון: הציון והחריגות קודם',d:'בטלפון: "בקרה וסיכון" נפתח בכרטיס עם מדד הבריאות כמספר (למשל 74 מתוך 100), מה מוריד אותו, וכפתור שמוביל ישר לחריגות. הברכה והשעה ירדו (הן בבית), אזהרת המחירים היא פס של שורה עם "למה?", ב"מה לעשות" רק מה שצריך לעשות (הטיפים ב"עוד"), כל חריגה כתובה "קריטי" במילה, ו-צ׳יקו מקופל תחת "עוד בדף הזה".',go:'risk'},
   {v:'2026-11-17.31',at:'2026-11-17',t:'חסכונות לפי מטרה: מתחילים ממטרה',d:'כשעוד אין חיסכון, הדף נפתח בכרטיס שמסביר מה זה ובארבע מטרות מוכנות (ילד או ילדה, דירה, חופשה, לימודים). לחיצה פותחת את הטופס עם המטרה כבר מסומנת.',go:'pots'},
