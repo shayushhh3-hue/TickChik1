@@ -3000,7 +3000,11 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
   store.setDoc('research/latest',{...R0,companies:{...R0.companies,NVDA:N}},{silent:true});
   try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500);
     const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.ancols .anc').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
-    assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 \(30%\) קנייה 18 \(45%\) החזקה 8 \(20%\) מכירה 2 \(5%\) מכירה חזקה 0 \(0%\)/);
+    assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 30% קנייה 18 45% החזקה 8 20% מכירה 2 5%/,'17.11: the key as rows, a level with no votes left out: '+a.txt.slice(0,300));
+    assert.match(a.txt,/30 מתוך 40 אנליסטים ממליצים לקנות 8 ממליצים להחזיק, 2 ממליצים למכור\. ממוצע הדירוגים: קנייה\./,'17.11: the split said in a sentence');
+    assert.ok(!/הקונסנזוס/.test(a.txt),'the consensus tile gave way to the sentence');
+    assert.ok(await pg.evaluate(()=>{const r=document.querySelector('.ancard .an-rng'), p=r&&r.querySelector('.rg-p'), d=r&&r.querySelector('.rg-a'); return !!p&&!!d&&parseFloat(d.style.left)>parseFloat(p.style.left)}),'the range drawn: today\'s price left of the average target');
+    assert.ok(await pg.evaluate(()=>{const c=[...document.querySelectorAll('.ancard .ancols .anc')], x=c.map(e=>e.getBoundingClientRect().left); return c[c.length-1].classList.contains('now')&&x.every((v,i)=>!i||v>x[i-1])}),'the months from the oldest at the left, the newest marked');
     assert.match(a.txt,/יעד המחיר הממוצע \(12 חודשים\) \$220\.00 גבוה ב-[\d.]+% מהמחיר עכשיו/); assert.match(a.txt,/טווח היעדים \$150 – \$260 חציון \$225\.00/);
     assert.equal(a.months,4); assert.match(a.txt,/יותר אנליסטים ממליצים לקנות: 60% באוג׳, 75% בנוב׳/);
     assert.match(a.txt,/הצפי לדוח הבא \([\d.]+\): רווח למניה \$1\.05 · הכנסות 65\.00 מיליארד דולר/);
@@ -3309,13 +3313,15 @@ test('9.11 the analysts as bars or as a pie: a switch on the card, kept in the b
   store.setDoc(k,{...(D0.exists?D0.data:{}),rating:'Buy',analysts:32,votes:{buy:27,hold:5,sell:0},votes5:{sb:8,b:19,h:5,s:0,ss:0},recHist:[{p:'2026-10',sb:8,b:18,h:7,s:0,ss:0},{p:'2026-11',sb:8,b:19,h:5,s:0,ss:0}],recAt:'2026-11-01'},{silent:true});
   try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(600);
     await pg.fill('#sq','NVDA'); await pg.waitForTimeout(700); await pg.click('#sqRes [data-open="NVDA"]'); await pg.waitForSelector('#secPage .ancard .an-bv',{state:'attached',timeout:10000});
-    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('.ancard .anbar.an-bv i')].every(i=>i.getBoundingClientRect().height>=10)),'the bar\'s segments have their height');
     const vis=()=>pg.evaluate(()=>({bar:!!document.querySelector('.ancard .an-bv').offsetParent,pie:!!document.querySelector('.ancard .an-p .andonut')&&!!document.querySelector('.ancard .an-p').offsetParent}));
-    assert.deepEqual(await vis(),{bar:true,pie:false},'bars by default');
-    await pg.click('#secPage [data-anview="pie"]'); assert.deepEqual(await vis(),{bar:false,pie:true},'the pie');
-    assert.match(await pg.textContent('.ancard .an-p .dn-v'),/^84%$/,'the share of "buy" in the middle');
-    assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_anview')),'pie','kept');
-    await pg.click('#secPage [data-anview="bar"]'); assert.deepEqual(await vis(),{bar:true,pie:false});
+    assert.deepEqual(await vis(),{bar:false,pie:true},'17.11 (the owner): the pie by default');
+    assert.match(await pg.textContent('.ancard .an-p .dn-v'),/^27 \/ 32$/,'how many say buy, in the middle'); assert.match(await pg.textContent('.ancard .an-p .dn-k'),/ממליצים לקנות/);
+    assert.match(await pg.evaluate(()=>document.querySelector('.ancard .anleg2').innerText.replace(/\s+/g,' ')),/קנייה חזקה 8 25% קנייה 19 59% החזקה 5 16% אין המלצות מכירה 0 0%/,'no sales: one row');
+    assert.ok(await pg.evaluate(()=>{const d=document.querySelector('.ancard .an-p').getBoundingClientRect(), k=document.querySelector('.ancard .anleg2').getBoundingClientRect(); return k.top>=d.bottom-2&&k.top-d.bottom<40}),'on a phone the key right under the pie');
+    await pg.click('#secPage [data-anview="bar"]'); assert.deepEqual(await vis(),{bar:true,pie:false},'the bar');
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('.ancard .anbar.an-bv i')].every(i=>i.getBoundingClientRect().height>=10)),'the bar\'s segments have their height');
+    assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_anview')),'bar','kept');
+    await pg.click('#secPage [data-anview="pie"]'); assert.deepEqual(await vis(),{bar:false,pie:true});
     assert.deepEqual(pg.errs,[]); await ctx.close()}finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
 });
 test('9.11 the analysts\' targets as a fan: the last year\'s price, and from today\'s price lines to the low, the median and the high target',T,async t=>{

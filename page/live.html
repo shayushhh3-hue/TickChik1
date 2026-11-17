@@ -774,7 +774,25 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .mp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow);min-width:0}
 .mp .k{font-size:12px;color:var(--muted);font-weight:600} .mp .v{font-size:19px;font-weight:700;color:var(--ink);direction:ltr;text-align:right;unicode-bidi:isolate;white-space:nowrap} .mp .s{font-size:12px;color:var(--ink2)}
 .anbar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin-top:10px;background:var(--sunk)} .anbar i{display:block;height:100%} .ancard .an-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap} .ancard .an-h h3{margin:0} .an-sw .chip{min-height:30px;padding:2px 12px;font-size:12.5px}
-.ancard .an-p{display:none} .ancard.an-pie .an-bv{display:none} .ancard.an-pie .an-p{display:flex;justify-content:center;margin:8px 0}
+.ancard .an-p{display:none} .ancard.an-pie .an-bv{display:none} .ancard.an-pie .an-p{display:block;flex:none;margin:0}
+/* 17.11 (the owner's choice): the split said in a sentence, the pie with its key beside it as a small table, the range drawn,
+   the trend's conclusion before its columns */
+.an-sum{margin:10px 0 0;display:flex;flex-direction:column;gap:2px;max-width:none} .an-sum b{font-size:19px;font-weight:800;color:var(--ink);line-height:1.35} .an-sum span{font-size:14px;color:var(--ink2);line-height:1.5}
+.an-split{display:flex;align-items:center;gap:10px 28px;flex-wrap:wrap;margin:12px 0}
+.an-lgw{flex:1 1 240px;min-width:0;max-width:460px} .an-lgw .anbar{margin:0 0 6px}
+.anleg2{list-style:none;margin:0;padding:0;font-size:14px}
+.anleg2 li{display:flex;align-items:center;gap:10px;min-height:38px;padding:4px 0;border-bottom:1px solid var(--line);color:var(--ink)} .anleg2 li:last-child{border-bottom:0}
+.anleg2 i{width:14px;height:14px;border-radius:4px;flex:none} .anleg2 .sb i{background:var(--an-sb)} .anleg2 .b i{background:var(--an-b)} .anleg2 .h i{background:var(--an-h)} .anleg2 .s i{background:var(--an-s)} .anleg2 .ss i{background:var(--an-ss)}
+.anleg2 span{flex:1 1 auto} .anleg2 b{font-weight:700} .anleg2 small{flex:none;width:46px;text-align:end;font-size:13px;color:var(--ink2)}
+.anleg2 .none{color:var(--ink2)} .anleg2 .none i{display:grid;place-items:center;background:none} .anleg2 .none i::before{content:"✓";font-style:normal;font-size:13px;font-weight:700;color:var(--gain)}
+.andonut .dn-v.dn-f{font-size:5.6px} .andonut .dn-k.dn-s{font-size:3px;fill:var(--ink2)}
+@media (max-width:640px){.ancard.an-pie .an-p{flex:1 1 100%;display:flex;justify-content:center}}
+.an-rng{position:relative;margin-top:8px;padding-top:18px} .an-rng .rg-t{position:relative;height:6px;border-radius:3px;background:var(--line)}
+.an-rng .rg-p{position:absolute;top:-5px;width:2px;height:16px;margin-left:-1px;background:var(--ink);border-radius:1px} .an-rng .rg-a{position:absolute;top:-4px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--gain);border:2px solid var(--surface);box-sizing:border-box}
+.an-rng .rg-l{position:absolute;top:0;transform:translateX(-50%);font-size:11.5px;font-weight:700;color:var(--ink);white-space:nowrap;line-height:1.2}
+.an-rng .rg-e{margin-top:8px;font-size:11.5px;color:var(--ink2)} .an-rng .rg-e .rk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap} .an-rng .rg-e .rk i{width:9px;height:9px;border-radius:50%;background:var(--gain);flex:none}
+.antr-h{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--ink);line-height:1.45;max-width:none} .antr-h .ar{font-size:12px} .antr-h.tr-up .ar{color:var(--gain)} .antr-h.tr-down .ar{color:var(--loss)}
+.ancard .ancols{direction:ltr;justify-content:center;gap:18px} .anc.now b{color:var(--vio-ink,var(--accent-ink))} .anc.now span{color:var(--ink);font-weight:700} .anc:not(.now) .anc-c{opacity:.6}
 .ancols{display:flex;align-items:flex-end;justify-content:space-around;gap:10px;margin:8px 0 4px;padding:0 4px}
 .anc{flex:1 1 0;max-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px} .anc b{font-size:13px;font-weight:800;color:var(--ink)} .anc span{font-size:12px;color:var(--muted)}
 .anc-c{width:100%;max-width:40px;height:96px;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;background:var(--sunk)} .anc-c i{display:block;width:100%}
@@ -26433,10 +26451,10 @@ function secEvents(sym,t0,t1){const E=[]; let c=null; try{c=RSX[sym]||((RS&&RS.c
 const AN_HE={'Strong Buy':'קנייה חזקה','Buy':'קנייה','Hold':'החזקה','Sell':'מכירה','Strong Sell':'מכירה חזקה'};
 // 9.11 (the owner): the votes as a pie too; a switch "פסים | עוגה" on the card, kept in this browser
 const AN_COL={sb:'var(--an-sb)',b:'var(--an-b)',h:'var(--an-h)',s:'var(--an-s)',ss:'var(--an-ss)'};
-let AN_VIEW='bar'; try{if(localStorage.getItem('tr_anview')==='pie')AN_VIEW='pie'}catch(e){}
-function anDonut(parts,size,center,label){const tot=parts.reduce((a,x)=>a+x[2],0); if(!tot)return ''; const r=15.9155, c=2*Math.PI*r; let off=0;
+let AN_VIEW='pie'; try{if(localStorage.getItem('tr_anview')==='bar')AN_VIEW='bar'}catch(e){}   // 17.11 (the owner): the pie first
+function anDonut(parts,size,center,label,sub){const tot=parts.reduce((a,x)=>a+x[2],0); if(!tot)return ''; const r=15.9155, c=2*Math.PI*r; let off=0;
   const segs=parts.filter(x=>x[2]>0).map(x=>{const len=x[2]/tot*c, el=`<circle r="${r}" cx="21" cy="21" fill="none" stroke="${AN_COL[x[0]]}" stroke-width="${size>80?7:8}" stroke-dasharray="${len.toFixed(3)} ${(c-len).toFixed(3)}" stroke-dashoffset="${(-off).toFixed(3)}"/>`; off+=len; return el}).join('');
-  return `<svg class="andonut" viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 21 21)">${segs}</g>${center?`<text x="21" y="${size>80?20.5:22.5}" text-anchor="middle" class="dn-v">${esc(center)}</text>${size>80?'<text x="21" y="27" text-anchor="middle" class="dn-k">קנייה</text>':''}`:''}</svg>`}
+  return `<svg class="andonut" viewBox="0 0 42 42" width="${size}" height="${size}" role="img" aria-label="${esc(label)}"><g transform="rotate(-90 21 21)">${segs}</g>${center&&sub?`<text x="21" y="20.6" text-anchor="middle" class="dn-v dn-f" style="direction:ltr">${esc(center)}</text><text x="21" y="25.8" text-anchor="middle" class="dn-k dn-s">${esc(sub)}</text>`:center?`<text x="21" y="${size>80?20.5:22.5}" text-anchor="middle" class="dn-v">${esc(center)}</text>${size>80?'<text x="21" y="27" text-anchor="middle" class="dn-k">קנייה</text>':''}`:''}</svg>`}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-anview]'); if(!b)return; AN_VIEW=b.dataset.anview==='pie'?'pie':'bar'; try{localStorage.setItem('tr_anview',AN_VIEW)}catch(e){}
   for(const c of document.querySelectorAll('.ancard'))c.classList.toggle('an-pie',AN_VIEW==='pie'); for(const x of document.querySelectorAll('[data-anview]'))x.setAttribute('aria-pressed',String(x.dataset.anview===AN_VIEW))});
 // 9.11 (the owner): the analysts' 12-month targets as a fan: the last 12 months of the price on one side, and from today's
@@ -26467,24 +26485,32 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   if(!rs.rating&&!v&&!v5&&!t)return '';
   const n=rs.analysts||(v5?v5.sb+v5.b+v5.h+v5.s+v5.ss:v?v.buy+v.hold+v.sell:0), ccy=pr&&pr.ccy&&pr.ccy!=='PTS'?pr.ccy:'USD', px=pr&&pr.px>0?pr.px:null, up=t&&px?t/px-1:null;
   const T=(lab,val,sub,c)=>`<div class="mp"><span class="k">${lab}</span><b class="v ${c||''}">${val}</b>${sub?`<span class="s">${sub}</span>`:''}</div>`;
-  const tiles=[rs.rating?T('הקונסנזוס',AN_HE[rs.rating]||esc(rs.rating),n?`${n} אנליסטים`:'',/Buy/.test(rs.rating)?'up':/Sell/.test(rs.rating)?'down':''):'',
+  const tiles=[rs.rating&&!(v5||v)?T('הקונסנזוס',AN_HE[rs.rating]||esc(rs.rating),n?`${n} אנליסטים`:'',/Buy/.test(rs.rating)?'up':/Sell/.test(rs.rating)?'down':''):'',
     t?T('יעד המחיר הממוצע (12 חודשים)',`<span class="n">${fmtPx(t,ccy)}</span>`,up!=null?`${up>=0?'גבוה':'נמוך'} ב-${pct(Math.abs(up)*100,1)} מהמחיר עכשיו`:'',up==null?'':up>=0?'up':'down'):'',
-    rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetLo)} – ${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetHi)}</span>`,rs.targetMed>0?`חציון ${fmtPx(+rs.targetMed,ccy)}`:'הנמוך והגבוה'):''].filter(Boolean).join('');
+    rs.targetLo>0&&rs.targetHi>0?T('טווח היעדים',`<span class="n">${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetLo)} – ${(v=>v>=100?fmtPx(v,ccy).replace(/\.\d\d$/,''):fmtPx(v,ccy))(+rs.targetHi)}</span>`,rs.targetMed>0?`חציון ${fmtPx(+rs.targetMed,ccy)}`:'הנמוך והגבוה').replace(/<\/div>$/,anRange(+rs.targetLo,+rs.targetHi,px,t,ccy)+'</div>'):''].filter(Boolean).join('');
   // how the votes split: five levels when the source gives them, three otherwise
   const L5=v5?[['sb','קנייה חזקה',v5.sb],['b','קנייה',v5.b],['h','החזקה',v5.h],['s','מכירה',v5.s],['ss','מכירה חזקה',v5.ss]]:v?[['b','קנייה',v.buy],['h','החזקה',v.hold],['s','מכירה',v.sell]]:[];
   const tot=L5.reduce((a,x)=>a+x[2],0), w=x=>tot?Math.round(x/tot*1000)/10:0;
   const buyPct=tot?Math.round(L5.filter(x=>x[0]==='sb'||x[0]==='b').reduce((a,x)=>a+x[2],0)/tot*100):0;
-  const bar=tot?`<div class="anbar an-bv" role="img" aria-label="${L5.map(x=>x[2]+' '+x[1]).join(', ')}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div>
-    <div class="an-p">${anDonut(L5,112,buyPct+'%',L5.map(x=>x[2]+' '+x[1]).join(', '))}</div>
-    <div class="anleg">${L5.map(x=>`<span class="${x[0]}"><i></i>${x[1]} ${x[2]}${tot?` <small>(${Math.round(x[2]/tot*100)}%)</small>`:''}</span>`).join('')}</div>`:'';
+  // 17.11 (the owner's choice): first a sentence that says the split ("13 מתוך 32 אנליסטים ממליצים לקנות"; the consensus
+  // word alone read as if most said buy), then the pie with its key beside it: a row per level, its count and its share;
+  // no sales at all is one row. The pie's middle is the same count
+  const buyN=L5.filter(x=>x[0]==='sb'||x[0]==='b').reduce((a,x)=>a+x[2],0), holdN=L5.filter(x=>x[0]==='h').reduce((a,x)=>a+x[2],0), sellN=tot-buyN-holdN;
+  const sum=tot?`<p class="an-sum"><b>${buyN===tot?`כל ${tot} האנליסטים ממליצים לקנות`:buyN===0?`אף אחד מ-${tot} האנליסטים לא ממליץ לקנות`:buyN===1?`אחד מתוך ${tot} אנליסטים ממליץ לקנות`:`${buyN} מתוך ${tot} אנליסטים ממליצים לקנות`}</b><span>${[holdN===1?'אחד ממליץ להחזיק':holdN?`${holdN} ממליצים להחזיק`:'',sellN===1?'אחד ממליץ למכור':sellN?`${sellN} ממליצים למכור`:'אף אחד לא ממליץ למכור'].filter(Boolean).join(', ')}.${rs.rating?` ממוצע הדירוגים: ${AN_HE[rs.rating]||esc(rs.rating)}.`:''}</span></p>`:'';
+  const pc=x=>tot?Math.round(x/tot*100):0, lab5=L5.map(x=>x[2]+' '+x[1]).join(', ');
+  const rows=L5.filter(x=>x[2]>0||x[0]==='sb'||x[0]==='b'||x[0]==='h').map(x=>`<li class="${x[0]}"><i></i><span>${x[1]}</span><b class="n">${x[2]}</b><small class="n">${pc(x[2])}%</small></li>`).join('')+(sellN?'':'<li class="none"><i></i><span>אין המלצות מכירה</span><b class="n">0</b><small class="n">0%</small></li>');
+  const bar=tot?`<div class="an-split"><div class="an-p">${anDonut(L5,150,buyN+' / '+tot,lab5,'ממליצים לקנות')}</div>
+    <div class="an-lgw"><div class="anbar an-bv" role="img" aria-label="${lab5}">${L5.map(x=>x[2]?`<i class="${x[0]}" style="width:${w(x[2])}%"></i>`:'').join('')}</div><ul class="anleg2">${rows}</ul></div></div>`:'';
   // the last months: the share of "buy" (strong and plain) month by month, and the first against the last in words
   const H=Array.isArray(rs.recHist)?rs.recHist.filter(x=>x&&(x.sb+x.b+x.h+x.s+x.ss)>0):[];
   let trend=''; if(H.length>=2){const share=x=>(x.sb+x.b)/(x.sb+x.b+x.h+x.s+x.ss), a=share(H[0]), z=share(H[H.length-1]), mo=p=>HEM[+String(p).slice(5,7)-1]||p;
     // 9.11: the months as columns side by side, each the whole 100% split (strong buy, buy, hold, sell, strong sell
     // from the top down), the share of "buy" over it: one picture in both views (small pies side by side did not compare)
-    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><div class="ancols" role="img" aria-label="${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss; return `${mo(x.p)}: ${Math.round((x.sb+x.b)/n2*100)}% קנייה`}).join(', ')}">${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), seg=(c,v)=>v?`<i class="${c}" style="height:${(v/n2*100).toFixed(1)}%"></i>`:'';
-      return `<div class="anc"><b>${wb}%</b><div class="anc-c">${seg('sb',x.sb)}${seg('b',x.b)}${seg('h',x.h)}${seg('s',x.s)}${seg('ss',x.ss)}</div><span>${mo(x.p)}</span></div>`}).join('')}</div>
-      <p class="s">${Math.abs(z-a)<0.02?'כמעט בלי שינוי':(z>a?'יותר אנליסטים ממליצים לקנות':'פחות אנליסטים ממליצים לקנות')}: ${Math.round(a*100)}% ב${mo(H[0].p)}, ${Math.round(z*100)}% ב${mo(H[H.length-1].p)}.</p></div>`}
+    // 17.11: the conclusion first ("פחות אנליסטים ממליצים לקנות: 50% באוג׳, 41% בנוב׳") with its arrow; the columns run from the
+    // oldest at the left to the newest at the right, like the price chart, and the newest is the marked one
+    const flat=Math.abs(z-a)<0.02, dir=flat?'flat':z>a?'up':'down';
+    trend=`<div class="antr"><span class="k">המגמה בחודשים האחרונים</span><p class="antr-h tr-${dir}">${flat?'':`<span class="ar" aria-hidden="true">${z>a?'▲':'▼'}</span> `}${flat?'כמעט בלי שינוי':(z>a?'יותר אנליסטים ממליצים לקנות':'פחות אנליסטים ממליצים לקנות')}: ${Math.round(a*100)}% ב${mo(H[0].p)}, ${Math.round(z*100)}% ב${mo(H[H.length-1].p)}.</p><div class="ancols" role="img" aria-label="${H.map(x=>{const n2=x.sb+x.b+x.h+x.s+x.ss; return `${mo(x.p)}: ${Math.round((x.sb+x.b)/n2*100)}% קנייה`}).join(', ')}">${H.map((x,i)=>{const n2=x.sb+x.b+x.h+x.s+x.ss, wb=Math.round((x.sb+x.b)/n2*100), seg=(c,v)=>v?`<i class="${c}" style="height:${(v/n2*100).toFixed(1)}%"></i>`:'';
+      return `<div class="anc${i===H.length-1?' now':''}"><b>${wb}%</b><div class="anc-c">${seg('sb',x.sb)}${seg('b',x.b)}${seg('h',x.h)}${seg('s',x.s)}${seg('ss',x.ss)}</div><span>${mo(x.p)}</span></div>`}).join('')}</div></div>`}
   // what is expected of the next report
   const e=rs.est&&rs.est.date&&rs.est.date>=tzDay('Asia/Jerusalem')?rs.est:null;
   const est=e&&(e.eps!=null||e.rev)?`<p class="anx"><b>הצפי לדוח הבא (${dmy(e.date)}):</b> ${e.eps!=null?`רווח למניה <span class="n">${fmtPx(e.eps,ccy)}</span>`:''}${e.eps!=null&&e.rev?' · ':''}${e.rev?`הכנסות <span class="n">${e.rev>=1e9?(e.rev/1e9).toFixed(2)+' מיליארד':(e.rev/1e6).toFixed(0)+' מיליון'}</span> ${ccy==='USD'?'דולר':'₪'}`:''}</p>`:'';
@@ -26497,8 +26523,11 @@ function secAnalysts(it,k,rs,pr){if(!rs)return ''; const v=rs.votes&&(rs.votes.b
   // the fan: in the targets' own currency (a Tel Aviv share shown through its US listing is drawn with the US price)
   const fk=rs.twinOf||k, fp=rs.twinOf?priceOf(rs.twinOf):pr, fc=fp&&fp.ccy&&fp.ccy!=='PTS'?fp.ccy:'USD';
   const fan=rs.targetHi>0&&rs.targetLo>0&&fp&&fp.px>0&&(!rs.twinOf||fc==='USD')?`<div class="anfan" data-k="${esc(fk)}"><span class="k">יעדי המחיר של האנליסטים ל-12 חודשים</span><div class="anfan-b">${anFanSvg(fk,rs,fp.px,fc)}</div><p class="s">הקווים מחברים את המחיר עכשיו ליעד הנמוך, ל${+rs.targetMed>0?'חציון':'ממוצע'} ולגבוה שהאנליסטים פרסמו${rs.analysts?` (${rs.analysts} אנליסטים)`:''}. זו דעתם, לא תחזית של הדף; יעדים מתעדכנים ומתפספסים.</p></div>`:'';
-  return `<section class="ancard${AN_VIEW==='pie'?' an-pie':''}" aria-label="דירוג האנליסטים"><div class="an-h"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${sw}</div>${tiles?`<div class="mps">${tiles}</div>`:''}${bar}${fan}${trend}${est}${chg}
+  return `<section class="ancard${AN_VIEW==='pie'?' an-pie':''}" aria-label="דירוג האנליסטים"><div class="an-h"><h3>דירוג האנליסטים <span class="tag an">דעת אנליסטים</span></h3>${sw}</div>${sum}${bar}${tiles?`<div class="mps">${tiles}</div>`:''}${fan}${trend}${est}${chg}
     <p class="note" style="margin:8px 0 0">${esc(String(rs.source||'').replace(/Yahoo Finance \+ /,'')||'מקור חיצוני')}${when?' · '+when:''}. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף.</p></section>`}
+// 17.11: where today's price and the average target stand between the lowest and the highest target (in the range's tile)
+function anRange(lo,hi,px,avg,ccy){if(!(hi>lo))return ''; const at=v=>Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100)), P=px>0?at(px):null, A=avg>0?at(avg):null;
+  return `<div class="an-rng" dir="ltr" role="img" aria-label="${px>0?`המחיר היום ${fmtPx(px,ccy)}, `:''}בין היעד הנמוך ${fmtPx(lo,ccy)} לגבוה ${fmtPx(hi,ccy)}${avg>0?`, הממוצע ${fmtPx(avg,ccy)}`:''}">${P!=null?`<span class="rg-l" style="left:${Math.max(14,Math.min(86,P)).toFixed(1)}%">היום</span>`:''}<div class="rg-t">${P!=null?`<i class="rg-p" style="left:${P.toFixed(1)}%"></i>`:''}${A!=null?`<i class="rg-a" style="left:${A.toFixed(1)}%"></i>`:''}</div>${A!=null?'<div class="rg-e" dir="rtl"><span class="rk"><i></i>היעד הממוצע</span></div>':''}</div>`}
 // 5.11: for a security held, the holding's figures right above the report: its value, the day, since the last report
 // (from the close before it was published, so the reaction counts) and against the price paid
 function secPosStrip(it,k,rs){let m=null; try{m=P&&Q?mAllNow():null}catch(e){} const p=m&&m.pos.find(x=>x.sym===it.sym); if(!p)return '';
@@ -29536,6 +29565,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.1',at:'2026-11-17',t:'דירוג האנליסטים: קודם התשובה, אחר כך הנתונים',d:'בדף של נייר: משפט שאומר כמה אנליסטים ממליצים לקנות, להחזיק ולמכור; עוגה עם מקרא צמוד (מספר ואחוז בכל שורה); פס שמראה איפה המחיר של היום בין היעד הנמוך לגבוה; והמגמה נאמרת במשפט לפני העמודות. העוגה היא התצוגה הראשונה, ו"פסים" נשאר במתג.',go:'srch'},
   {v:'2026-11-11.7',at:'2026-11-11',t:'כל דף נפתח בכרטיס אחד',d:'במקום כמה ריבועים בראש הדף: כרטיס פתיחה אחד עם שם הדף ומה יש בו, שווי התיק בדפים שנשענים עליו, הלשוניות של הקבוצה, ושורת החלקים של הדף. השורות התחתונות נשארות למעלה כשגוללים.'},
   {v:'2026-11-11.6',at:'2026-11-11',t:'כל מה שקשור להתראות, בדף "התראות"',d:'בנוסף להתראות עצמן: החריגות מהכללים שלך עם "בדקתי", התראות המחיר שקבעת, מה מחכה בשבועיים הקרובים (דוחות, דיבידנדים, יום ההפקדה וחגים), ובסוף הדף ההגדרות: טלפון, מיילים, צלילים ומה מופיע.',go:'alrules'},
   {v:'2026-11-11.5',at:'2026-11-11',t:'חסכונות לפי מטרה: "החסכונות שלי"',d:'לשונית חדשה עם כל החסכונות במסך אחד: כמה יש בכל אחד, כמה מהיעד, ועד מתי. בכל חיסכון בוחרים אם הוא בקרן או במניה, ו"עד מתי" הוא תאריך מדויק ולא רק חודש ושנה.',go:'pots'},
