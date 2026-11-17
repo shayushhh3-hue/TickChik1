@@ -200,7 +200,7 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
   for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
   // 17.11 (the owner): no "בדיקת תזה" alerts; the thesis is off the site (thesisAlerts is kept, not called)
-  for(const a of insiderAlerts(store,HD,{now,followed:pr.syms}))if(pr.lv[a.lv])out.push(a);
+  // 17.11 (the owner): no insiders' alerts; "בעלי עניין" is off the site (insiderAlerts is kept, not called)
   return {pr,HD,alerts:out};
 }
 // 1.11: "התראות על שינוי בתזה": a holding the person wrote a thesis for (journal.thesis[sym]), and an event of substance
@@ -298,7 +298,7 @@ const NOT_NEWS=new Set(['mkt','cal','thesis','insider']);
 const asFund=h=>h&&h.link==='direct'&&h.how!=='fund'&&isFund(h.sym)&&!h.measured?{...h,link:'indirect',how:'fund'}:h;
 export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   const pa=pathsOf(u), iso=now.toISOString(), old=store.getDoc(pa.pulse), D=old.exists&&old.data?old.data:{items:[]};
-  const C=pulseCompute(store,u,{now}), byK=new Map((D.items||[]).filter(a=>a&&a.kind!=='thesis').map(a=>[a.k,a])), fresh=[];   // 17.11: the thesis alerts kept from before are dropped
+  const C=pulseCompute(store,u,{now}), byK=new Map((D.items||[]).filter(a=>a&&a.kind!=='thesis'&&a.kind!=='insider').map(a=>[a.k,a])), fresh=[];   // 17.11: the thesis alerts kept from before are dropped
   // 30.10: an alert made from the rules' reading whose article צ׳יקו has read since, under the event's own key: the read
   // one takes its place (not two alerts on the same article)
   {const artK=new Map(); for(const c of C.alerts)if(!c.rules)for(const z of (c.arts||[]))artK.set(z.id,c.k);

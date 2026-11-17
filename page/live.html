@@ -4051,7 +4051,7 @@ body[data-page="overview"] #idxRow{display:none!important}
           <label class="check"><input type="checkbox" id="nwUnread"><span>רק מה שלא קראתי</span></label>
           <div class="acts" style="justify-content:flex-start"><button type="button" class="btn sm" data-nwclr="all">לנקות הכול</button></div>
         </div>
-        <div class="chips nx-views" id="nxViews" role="group" aria-label="תצוגה"><button type="button" class="chip" data-nxv="top" aria-pressed="true">ראשי</button><button type="button" class="chip" data-nxv="latest" aria-pressed="false">אחרונות</button><button type="button" class="chip" data-nxv="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-nxv="anal" aria-pressed="false">ניתוחים ודעות</button><button type="button" class="chip" data-nxv="follow" aria-pressed="false">במעקב</button><button type="button" class="chip" data-nxv="events" aria-pressed="false">אירועים במעקב <span class="dv-n" id="nxEvN"></span></button><button type="button" class="chip" data-nxv="ins" aria-pressed="false">בעלי עניין</button><button type="button" class="chip" data-nxv="saved" aria-pressed="false">שמורות <span class="dv-n" id="nxSavedN"></span></button><button type="button" class="chip" data-nxv="hist" aria-pressed="false">היסטוריה</button></div>
+        <div class="chips nx-views" id="nxViews" role="group" aria-label="תצוגה"><button type="button" class="chip" data-nxv="top" aria-pressed="true">ראשי</button><button type="button" class="chip" data-nxv="latest" aria-pressed="false">אחרונות</button><button type="button" class="chip" data-nxv="imp" aria-pressed="false">חשובות</button><button type="button" class="chip" data-nxv="anal" aria-pressed="false">ניתוחים ודעות</button><button type="button" class="chip" data-nxv="follow" aria-pressed="false">במעקב</button><button type="button" class="chip" data-nxv="events" aria-pressed="false">אירועים במעקב <span class="dv-n" id="nxEvN"></span></button><button type="button" class="chip" data-nxv="saved" aria-pressed="false">שמורות <span class="dv-n" id="nxSavedN"></span></button><button type="button" class="chip" data-nxv="hist" aria-pressed="false">היסטוריה</button></div>
         <div class="nw-cats chips" id="nxCats" role="group" aria-label="קטגוריות" hidden></div>
         <div class="nw-active" id="nwActive" hidden></div>
         <div class="newsfeed" id="newsFeed"><div class="empty">החדשות נטענות…</div></div>
@@ -20313,7 +20313,7 @@ function renderPress(){
   const L=Object.entries(PRESS.syms).map(([sym,x])=>({sym,...x})).sort((a,b)=>(b.level-a.level)||(b.score-a.score)||String(a.sym).localeCompare(String(b.sym)));
   const hi=L.filter(x=>x.level>=2).length, at=PRESS.at?hm(PRESS.at):'';
   $('pressSub').textContent=`${L.length} ניירות · ${hi?`${hi} ב"גבוה" או "חריג"`:'אף אחד לא ב"גבוה"'} · נבדק ${at}`;
-  const row=x=>{const [lv,cls]=PR_LV[x.level]||PR_LV[0], S=(x.signals||[]).slice().sort((a,b)=>(b.w||0)-(a.w||0));
+  const row=x=>{const [lv,cls]=PR_LV[x.level]||PR_LV[0], S=prSig(x).slice().sort((a,b)=>(b.w||0)-(a.w||0));
     // "in similar cases": the backtest of the price signals alone, the security's own days or everybody's pooled
     const sim=x.similar?`<span class="pr-sim">לפי סימני המחיר בלבד (${PR_LV[x.seriesLevel||0][0]}): במקרים דומים ${x.similar.scope==='own'?'בשנה האחרונה של הנייר':'בשנה האחרונה של כל הניירות שלך'} <b>${x.similar.rate}%</b> נגמרו בירידה של 10%+ תוך 20 ימי מסחר, מול ${x.similar.base}% בסיס (${x.similar.n} ימים)</span>`:'';
     return `<div class="pr-r ${cls}"><div class="pr-h"><b class="sym">${esc(lab(x.sym))}</b>${x.held?'':'<span class="nm"> · במעקב</span>'}<span class="pr-lv">${lv}</span><span class="nm n">ציון ${x.score}</span>${x.base&&x.base.n?`<span class="nm">שיעור בסיס: ${x.base.rate}% מהימים בשנה נגמרו בירידה של 10%+ תוך 20 ימי מסחר</span>`:''}</div>${sim}
@@ -21046,7 +21046,7 @@ function anaFactsAI(F,issues,checks){
     statement_check:(()=>{try{const C=(P&&P.stmtCheck)||{}, L=Object.entries(C).filter(([,x])=>x&&x.at&&Date.now()-Date.parse(x.at)<45*864e5).map(([ac,x])=>({account:acctName(ac),statement_date:x.asOf?dmy(x.asOf):null,checked_at:dmy(x.at),differences:x.changed,
       rows:(x.rows||[]).slice(0,12).map(r=>`${lab(r.sym)}: ${({more:'יותר בדוח',less:'פחות בדוח',new:'חדש בדוח',gone:'חסר בדוח, נשאר באתר',split:'הותאם לפיצול',sell:'מכירה שנרשמה כאן'})[r.kind]||r.kind}${r.q0!=null&&r.q1!=null?` (${+(+r.q0).toFixed(4)} → ${+(+r.q1).toFixed(4)})`:''}`)})); return L.length?L:null}catch(e){return null}})(),
     // 8.11: the pressure gauge (the owner's alone): which signals are lit, with their numbers, and the record so far
-    pressure:(()=>{try{if(!OWNER||!PRESS||!PRESS.syms)return null; const L=Object.entries(PRESS.syms).filter(([,x])=>x.level>=1).sort((a,b)=>b[1].level-a[1].level).slice(0,12).map(([k,x])=>({security:lab(k),level:PR_LV[x.level][0],score:x.score,held:!!x.held,signals:(x.signals||[]).map(s=>s.t),base_rate_pct:x.base?x.base.rate:null}));
+    pressure:(()=>{try{if(!OWNER||!PRESS||!PRESS.syms)return null; const L=Object.entries(PRESS.syms).filter(([,x])=>x.level>=1).sort((a,b)=>b[1].level-a[1].level).slice(0,12).map(([k,x])=>({security:lab(k),level:PR_LV[x.level][0],score:x.score,held:!!x.held,signals:prSig(x).map(s=>s.t),base_rate_pct:x.base?x.base.rate:null}));
       const T=PTRACK&&PTRACK.stats; return {checked_at:PRESS.at?dmy(PRESS.at)+' '+hm(PRESS.at):null,elevated:L,calm:Object.values(PRESS.syms).filter(x=>x.level===0).length,record:T?{since:dmy(PTRACK.since),warnings:T.warned,hits_fell_10pct_in_20_days:T.hits,partial_5_to_10:T.partial,false_alarms:T.false,falls_without_warning:T.misses,pending:T.pending}:null}}catch(e){return null}})(),
     share_splits:(()=>{try{const L=spRecent(30).map(x=>({security:lab(x.sym),date:dmy(x.d),ratio:spRatioH(+x.r),your_units:(x.rows||[]).filter(r=>!r.kept).map(r=>`${+(+r.q0).toFixed(4)} ← ${+(+r.q1).toFixed(4)}`).join(', ')})); return L.length?L:null}catch(e){return null}})(),
     breadth:(()=>{const n=m.pos.filter(p=>p.dayPct!=null).length;return n?`${m.pos.filter(p=>p.dayPct<0).length} ירדו מתוך ${n}`:null})(),
@@ -21434,7 +21434,7 @@ const ANA_RULES=`כללים מחייבים:
 12. זמן הפועל לפי last_trading_day_is: כשהמסחר עדיין פתוח, תנועת היום בהווה ("התיק יורד היום"); כשנסגר, בעבר ("התיק ירד היום"); כשזה יום קודם, בעבר ועם התאריך ("ביום המסחר האחרון, 30.10, התיק ירד"). אל תכתוב "היום" על יום שעבר.
 13. share_splits הם פיצולי מניות שהאתר זיהה והחיל: כל יחידה הפכה לכמה יחידות (או כמה לאחת), והמחיר השתנה ביחס הפוך. ירידת מחיר של נייר ביום הפיצול שלו אינה הפסד: אמור שהשווי לא השתנה בגלל הפיצול, ושהכמות עודכנה.
 14. statement_check הוא מה שהדוח האחרון של כל חשבון שינה מול מה שהאתר החזיק, כפי שאושר בשמירה. כשנשאלים על הבדל בין הדוח לאתר, או "למה הכמות השתנתה", ענה מתוכו: הכמויות לפני ואחרי, והסיבה שנרשמה (קנייה, מכירה, פיצול, נייר שחסר בדוח). אם אין רשומה, אמור שאין השוואה שמורה.
-15. pressure הוא "מד לחץ": סימנים מדודים (תנועה, מחזור, דוח, אנליסטים, בעלי עניין, ידיעות, הסקטור) שבעבר הופיעו לפני ירידות, עם ציון ורמה. זו לא תחזית. כשנשאלים אם נייר "ייפול" או "בדרך לקרוס": אמור אילו סימנים דולקים ומה המספרים, מה שיעור הבסיס של הנייר, ומה לוח הציונים של המד עד כה (כולל אזעקות שווא וירידות בלי אזהרה). אל תאמר שנייר יירד או יעלה, ואל תציע למכור או לקנות.`;
+15. pressure הוא "מד לחץ": סימנים מדודים (תנועה, מחזור, דוח, אנליסטים, ידיעות, הסקטור) שבעבר הופיעו לפני ירידות, עם ציון ורמה. זו לא תחזית. כשנשאלים אם נייר "ייפול" או "בדרך לקרוס": אמור אילו סימנים דולקים ומה המספרים, מה שיעור הבסיס של הנייר, ומה לוח הציונים של המד עד כה (כולל אזעקות שווא וירידות בלי אזהרה). אל תאמר שנייר יירד או יעלה, ואל תציע למכור או לקנות.`;
 
 // ---- v130: fitting the person, not only the portfolio (from the partner's consultation). The profile records how well the
 // person knows the market, what they invest for and for how long; צ׳יקו adapts the depth of every explanation to it and
@@ -22026,7 +22026,7 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
     whyNow:'הכמות והמחיר של אחזקה שלך השתנו, והשווי נשאר',why:`${lab(x.sym)} בתיק שלך`,impact:'אין השפעה על השווי. ירידת המחיר ביום הפיצול אינה הפסד',
     check:'בדוח הבא מהבנק, לוודא שהכמות שם זהה לכמות המעודכנת כאן',src:['מחירי השוק'],cert:'עובדה מדווחת',limits:'הפיצול זוהה מהמחירים עצמם: המחיר הקודם והמחיר המתוקן של אותו יום שונים ביחס של פיצול',nav:{t:'sec:'+x.sym,l:'לדף של '+lab(x.sym)}})}catch(e){}
   // 8.11: the pressure gauge rose to גבוה or חריג today (the owner's alone): the lit signals, the base rate, the record
-  try{if(OWNER&&PRESS&&PRESS.syms){const today=ilDay(); for(const [sym,x] of Object.entries(PRESS.syms)){if(x.level<2||x.changedAt!==today||(x.prevLevel!=null&&x.prevLevel>=2))continue; const p=m.pos.find(q=>q.sym===sym), S=(x.signals||[]).slice().sort((a,b)=>b.w-a.w), T=PTRACK&&PTRACK.stats;
+  try{if(OWNER&&PRESS&&PRESS.syms){const today=ilDay(); for(const [sym,x] of Object.entries(PRESS.syms)){if(x.level<2||x.changedAt!==today||(x.prevLevel!=null&&x.prevLevel>=2))continue; const p=m.pos.find(q=>q.sym===sym), S=prSig(x).slice().sort((a,b)=>b.w-a.w), T=PTRACK&&PTRACK.stats;
     add({k:'press:'+sym+':'+today,kind:'event',lv:x.level===3?'crit':'imp',what:`${lab(sym)}: מד הלחץ עלה ל"${PR_LV[x.level][0]}" (ציון ${x.score})`,
       whatMore:S.slice(0,4).map(s=>s.t).join('. ')+'.',whyNow:`${S.length} סימנים דולקים היום, ${x.prevLevel!=null?`אתמול הרמה הייתה "${PR_LV[x.prevLevel][0]}"`:'בפעם הראשונה'}`,
       impact:(x.similar?`לפי סימני המחיר בלבד, במקרים דומים ${x.similar.rate}% נגמרו בירידה של 10%+ תוך 20 ימי מסחר (בסיס ${x.similar.base}%). `:'')+(x.base&&x.base.n?`שיעור הבסיס של הנייר: ${x.base.rate}% מהימים בשנה. `:'')+(T?`לוח הציונים של המד עד כה: ${T.hits} פגיעות, ${T.false} שווא, ${T.misses} ירידות בלי אזהרה.`:'המד עוד לא צבר רישום.'),
@@ -22680,8 +22680,8 @@ function reviewBlocks(ym,m){
   try{const TH=jrn().thesis||{}, ks=Object.keys(TH).filter(k=>TH[k]&&TH[k].why); if(ks.length){const changed=ks.filter(k=>inM(TH[k].updatedAt||TH[k].at)), st=ks.map(k=>{let R=null; try{R=thesisEval(k)}catch(e){} return {k,st:R?R.status:'none',n:R?R.ev.length:0}});
       H('תזות ההשקעה',`${ks.length} תזות כתובות${changed.length?'; '+changed.length+' נכתבו או עודכנו החודש':''}`); L([...changed.slice(0,4).map(k=>`${k}: ${TH[k].updatedAt&&TH[k].updatedAt!==TH[k].at?'עודכנה':'נכתבה'} ${dmy(TH[k].updatedAt||TH[k].at)}: "${imCut(TH[k].why,100)}"`),...st.filter(x=>x.st!=='none').slice(0,8).map(x=>`${x.k}: ${TH_ST[x.st][0]}${x.n?' ('+x.n+' עדויות מהחדשות)':''}`)])}}catch(e){}
   // 4. new risks: the anomalies now and the insiders' material filings of the month
-  try{const an=anomaliesOf(m).slice(0,5), ins=[]; for(const p of m.pos)for(const f of insOf(p.sym))if(f.material&&inM(f.filedAt))ins.push(`${p.sym}: ${INS_KH[f.kind]} של ${f.owner} (${f.role}), $${Math.round(f.value).toLocaleString('en-US')}${f.plan?', בתוכנית מתוכננת':''}`);
-    if(an.length||ins.length){H('סיכונים חדשים ודברים שיצאו מהרגיל',an.length?'מה שחורג היום מהטווח הרגיל, ודיווחי בעלי עניין מהותיים בחודש':'דיווחי בעלי עניין מהותיים בחודש'); L([...an.map(a=>`${a.what} (${a.vs}${a.cause?'; '+a.cause.text:'; סיבה מאומתת לא נמצאה'})`),...ins.slice(0,5)])}}catch(e){}
+  try{const an=anomaliesOf(m).slice(0,5), ins=[]; if(0)for(const p of m.pos)for(const f of insOf(p.sym))if(f.material&&inM(f.filedAt))ins.push(`${p.sym}: ${INS_KH[f.kind]} של ${f.owner} (${f.role}), $${Math.round(f.value).toLocaleString('en-US')}${f.plan?', בתוכנית מתוכננת':''}`);
+    if(an.length||ins.length){H('סיכונים חדשים ודברים שיצאו מהרגיל','מה שחורג היום מהטווח הרגיל'); L([...an.map(a=>`${a.what} (${a.vs}${a.cause?'; '+a.cause.text:'; סיבה מאומתת לא נמצאה'})`),...ins.slice(0,5)])}}catch(e){}
   // 5. the goals
   try{const tg=S.targets||{}, tsum=Object.values(tg).reduce((t,v)=>t+(+v||0),0), dr=+((S.rules||{}).drift)||0, lines=[];
     if(tsum>0){const off=Object.keys(GROUPS).filter(k=>k!=='cash').map(k=>({k,d:(m.groups[k]||{w:0}).w-(+tg[k]||0)})).filter(x=>Math.abs(x.d)>=(dr||5)); lines.push(off.length?`יעדי ההקצאה: ${off.length} קבוצות רחוקות מהיעד ב-${dr||5} נק׳ ומעלה (${off.map(x=>`${GROUPS[x.k]} ${x.d>0?'+':''}${x.d.toFixed(0)}`).join(', ')})`:'יעדי ההקצאה: כל הקבוצות בטווח שקבעת')}
@@ -25579,7 +25579,9 @@ function plPrefs(){const a=(S&&S.pulse)||{}, lv=a.lv||{}, q=a.quiet||{}, pu=a.pu
 function plQuiet(pr){pr=pr||plPrefs(); if(!pr.quiet.on)return false; const t=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).replace(/^24/,'00'), {from,to}=pr.quiet; if(from===to)return false; return from<to?t>=from&&t<to:t>=from||t<to}
 const plSt=()=>{const st=NEWSST=nxState(); st.pl=st.pl||{}; return st.pl};
 // the alerts to show: what the server made, under the preferences as they are now (a level switched off is not shown)
-function plItems(){const pr=plPrefs(); if(!PULSE||!pr.on)return []; return (PULSE.items||[]).filter(a=>a&&pr.lv[a.lv]&&a.kind!=='thesis')}   // 17.11: no thesis alerts
+// 17.11 (the owner): the pressure gauge's signals without the insiders' one (a reading kept from before still has it)
+const prSig=x=>((x&&x.signals)||[]).filter(s=>s&&s.id!=='insiders'&&s.k!=='insiders'&&!/בעלי עניין|בעל עניין/.test(String(s.t||'')));
+function plItems(){const pr=plPrefs(); if(!PULSE||!pr.on)return []; return (PULSE.items||[]).filter(a=>a&&pr.lv[a.lv]&&a.kind!=='thesis'&&a.kind!=='insider'&&!(a.mk&&a.mk.t==='ins'))}   // 17.11: no thesis alerts
 const plUnread=a=>{const s=plSt()[a.k]; return !s||!(s.r>=a.ver)};
 // 5.11: only what is fresh floats over צ׳יקו (the last two days); an important item from last week that was never opened
 // waits in "מה נוגע לתיק" instead of growing a "+57" over the page
@@ -26491,7 +26493,6 @@ function renderSec(){SECHOV=-1;
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
     ${(()=>{try{return secJournal(it)}catch(e){return ''}})()}
-    ${(()=>{try{return secInsiders(it)}catch(e){return ''}})()}
     ${(()=>{try{return secAbout(it,k,rs)}catch(e){return ''}})()}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
     ${moreH}
@@ -27909,7 +27910,7 @@ function renderNewsX(){
       :`<div class="empty">${NWV==='saved'?'עוד לא שמרת כתבות. "☆ לשמור" על כרטיס שומר אותו כאן, גם אחרי שהכתבה יוצאת מהשבוע שהאתר שומר.':'עוד לא קראת כתבות כאן. כתבה שפתחת (למקור, או "עוד") נרשמת בהיסטוריה.'}</div>`;
     return}
   if(NWV==='cal'){box.innerHTML=ecoCalH(); return}
-  if(NWV==='ins'){box.innerHTML=insViewH(); return}
+  if(NWV==='ins')NWV='top';   // 17.11 (the owner): the insiders' view is off the site
   if(NWV==='events'){box.innerHTML=evFollowH(all);
     // seen now: the next visit counts only what came after this one
     try{const st=NEWSST=nxState(), now=new Date().toISOString(); let ch=false; for(const f of Object.values(st.follow||{}))if(f&&f.at&&!f.off&&f.seen!==now){f.seen=now; ch=true} if(ch){nxSave(); const e=$('nxEvN'); if(e)e.textContent=''}}catch(e){}
@@ -28715,7 +28716,6 @@ function focusOf(spec){const [k,...r]=String(spec).split(':'), v=r.join(':'); le
   if(k==='st'){const o=ixStOf(v,m), p=o.p, sg=nxSecOf(v);
     return {kind:'stock',title:`מה קורה ל-${v}`,data:{symbol:v,name:p&&p.name||null,sector:sg?NX_SEC_HE[sg]||sg:null,period:IX_RL[IXR],price_now:p?fmtPx(p.px,p.ccy):null,day_change:p&&p.dayPct!=null?spct(p.dayPct,1):null,
       day_change_in_my_value:p&&p.dayPct!=null?sgn(p.dayIls):null,weight_in_portfolio:p?pct(p.w,1):null,my_value:p?ils(p.val):null,plain_summary:ixStSay(o),
-      insiders_90d:(()=>{const L=insOf(v); if(!L.length)return null; const S9=insSum(L); return {open_market_buys:S9.buy.n,buyers:S9.buy.who.size,buy_value:usd0(S9.buy.v),open_market_sells:S9.sell.n,sellers:S9.sell.who.size,sell_value:usd0(S9.sell.v),planned_program_sales:S9.plan,pay_mechanics_filings:S9.pay,latest:L.slice(0,4).map(f=>`${f.txDate||f.filedAt.slice(0,10)} ${f.owner} (${f.role}): ${INS_KH[f.kind]} ${(f.shares||0).toLocaleString('en-US')}${f.value?' '+usd0(f.value):''}${f.plan?' (תוכנית מתוכננת)':''}${f.material?' [מהותי]':''}`),note:'דיווחי טופס 4 ל-SEC; עובדות על עסקאות המדווחים, מפגר ביומיים; לא תחזית'}})(),
       events:o.L.filter(z=>z.a.kind!=='mkt').slice(0,8).map(z=>{const a=z.a, mv=nxMove(v,a.first||a.at); return {level:PL_LVS[a.lv],headline:a.title,what:a.what||null,how_it_reaches_the_stock:ixHow(z,v),possible_direction:(IX_DW[z.k.dir]||IX_DW.unclear)[2],
         certainty:NX_CERT[a.cert]||null,confidence:PL_CONF[a.conf]||null,published_at:a.first||a.at,change_since_publication:mv?spct(mv.pct,1):null,not_known:a.unknown||null,sources:(a.arts||[]).slice(0,3).map(s=>({source:s.pub,title:s.title,published_at:s.at}))}}),
       market_facts:o.L.filter(z=>z.a.kind==='mkt').map(z=>z.a.title),no_event_found:!o.L.some(z=>z.a.kind!=='mkt'),
@@ -29848,7 +29848,7 @@ try{refreshBack()}catch(e){}
   db.doc('research/x').onSnapshot(s=>{XD=s.exists?s.data():null; nxIds((XD&&XD.items)||[]).then(()=>{try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}})},fail);
   try{db.doc('research/stories').onSnapshot(s=>{STORIES=s.exists?s.data():null},()=>{})}catch(e){}
   try{db.doc('research/symchg').onSnapshot(s=>{SYMCHG=s.exists?s.data():null; try{render()}catch(e){}},()=>{})}catch(e){}   // 9.11: renamed and merged tickers
-  try{db.doc('research/insiders').onSnapshot(s=>{INS=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(SEC)renderSec()}catch(e){}},()=>{})}catch(e){}
+  // 17.11 (the owner): research/insiders is no longer read; "בעלי עניין" is off the site
   try{db.doc('research/etf').onSnapshot(s=>{ETFD=s.exists?s.data():null; try{if(['risk','state'].includes(document.body.dataset.page))render()}catch(e){}
     // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)
     try{if(!LOCAL&&!etfAsked&&P&&(P.positions||[]).some(p=>isF(p.sym)&&!((ETFD&&ETFD.by)||{})[p.sym])){etfAsked=true; fetch('/api/etf/refresh',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:'{}'}).catch(()=>{})}}catch(e){}},()=>{})}catch(e){}

@@ -1950,12 +1950,9 @@ test('1.11 insiders: the task keeps the filings by symbol (new ones fetched, kno
   // a partner who holds MSFT only
   const u=s.addUser({email:'p@x.com',password:'friend-pass-1',role:'friend'}); s.setDoc(`data/users/${u.id}/portfolio`,{positions:[{sym:'MSFT',qty:1,ccy:'USD'}]},{silent:true});
   const pv=partnerView(s,u,'research/insiders',D); assert.deepEqual(Object.keys(pv.by),['MSFT']); assert.equal(pv.checked,undefined);
-  // the alerts: the CEO's planned sale (material) as important; a VP's $151K sale of a holding as an update; the award never
-  const P=pulseUpdate(s,null,{now}).doc.items, a1=P.find(x=>x.k==='ins:0001-26-1'), a2=P.find(x=>x.k==='ins:0002-26-1'), a3=P.find(x=>x.k==='ins:0001-26-2');
-  assert.ok(a1&&a1.lv==='imp'&&a1.kind==='insider'&&a1.ins.plan===true&&/Huang/.test(a1.title),JSON.stringify(a1&&[a1.lv,a1.title])); assert.match(a1.what,/מכירה בשוק של 120,000 מניות בשווי \$21,900,000, בתוכנית מסחר מתוכננת/); assert.equal(a1.cert,'fact');
-  assert.ok(a2&&a2.lv==='upd',JSON.stringify(a2&&a2.lv)); assert.equal(a3,undefined,'pay mechanics never alert');
-  // the partner: MSFT's only, and only as the holder of it
-  const PP=pulseUpdate(s,u,{now}).doc.items; assert.ok(PP.some(x=>x.k==='ins:0002-26-1')); assert.ok(!PP.some(x=>x.k==='ins:0001-26-1'));
+  // 17.11 (the owner: "take the insiders off completely"): the filings make no alerts, for the owner or for a partner
+  const P=pulseUpdate(s,null,{now}).doc.items; assert.ok(!P.some(x=>x.kind==='insider'||String(x.k).startsWith('ins:')),'no insiders\' alerts');
+  const PP=pulseUpdate(s,u,{now}).doc.items; assert.ok(!PP.some(x=>x.kind==='insider'));
 });
 
 test('1.11 anomalies: the figures\' changes between research runs are kept on the company (rating, target 7%, growth and margins 5 points, forward multiple 15%), never a change within the noise',async()=>{

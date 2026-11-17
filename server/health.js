@@ -102,7 +102,7 @@ export function healthProblems(store,{env=process.env,now=new Date()}={}){
 
 // 8.11: a job that did not run at all is the silence nobody reports: how many hours each scheduled job may go between
 // runs (weekends and the night included), judged from its last run or from the server's start, whichever is later
-export const EXPECT={nightly:74,morning:26,consist:26,pressure:19,backup:26,research:80,ecocal:26,insiders:14,etf:26,bench:26,ilsyms:26,live:2,news:10,newsx:10,earnings:7,weekly:170,pxwatch:12};
+export const EXPECT={nightly:74,morning:26,consist:26,pressure:19,backup:26,research:80,ecocal:26,etf:26,bench:26,ilsyms:26,live:2,news:10,newsx:10,earnings:7,weekly:170,pxwatch:12};
 export function silentJobs(store,{now=new Date(),start=null}={}){
   const J=meta(store,'jobs')||{}, ss=meta(store,'serverStart'), since=start||(ss?new Date(ss):null)||new Date(Date.now()-process.uptime()*1000), out=[];
   for(const [name,hours] of Object.entries(EXPECT)){const last=J[name]&&J[name].at?new Date(J[name].at):null, from=last&&last>since?last:since, age=(now-from)/H;

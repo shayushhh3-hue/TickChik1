@@ -131,7 +131,7 @@ export function pressureBuild(store,{now=new Date(),syms=null}={}){
   const P=doc(store,'portfolio/main'), prevDoc=doc(store,PRESS_DOC)||{}, held=new Set(((P&&P.positions)||[]).filter(p=>p&&p.sym&&+p.qty>0).map(p=>p.sym));
   const list=syms||[...new Set([...held,...(()=>{const o=store.users().find(u=>u.role==='owner'); const w=o?doc(store,'watch/'+o.id):null; return ((w&&w.syms)||[]).filter(s=>/^[A-Z][A-Z.\-]{0,5}$/.test(s))})()])];
   const out={}, today=ilDay(now), tests={};
-  for(const sym of list){const ser=seriesOf(store,sym), S=signalsOf(sym,{Q,series:ser,company:R&&R.companies&&R.companies[sym],insiders:INS&&INS.by&&INS.by[sym],news:N&&N.items,readings:NX&&NX.by,comove:CM,ecocal:ECO,now});
+  for(const sym of list){const ser=seriesOf(store,sym), S=signalsOf(sym,{Q,series:ser,company:R&&R.companies&&R.companies[sym],news:N&&N.items,readings:NX&&NX.by,comove:CM,ecocal:ECO,now});
     const score=scoreOf(S), level=levelOf(score), prev=(prevDoc.syms||{})[sym]||null, px=Q&&+(Q.prices||{})[sym]||null;
     // the level the price and its volume alone give (what the backtest can judge), and the backtest itself
     const SS=S.filter(x=>['move','leap','volume','drawdown','trend','vol','streak'].includes(x.k)), seriesLevel=levelOf(scoreOf(SS)); tests[sym]=backtest(ser);
