@@ -1121,6 +1121,13 @@ test('finnhub: parsing, the paced client, and the pass that fills what Yahoo did
   const got3={}; await finnhubPass(s,['NEWCO'],got3,{fetch:f,now:new Date('2026-10-25T01:00:00Z'),force:new Set(['NEWCO']),gap:0,cal:false});
   assert.ok(!(got3.NEWCO&&got3.NEWCO.rep),'a fresh report is not replaced by an older one');
   const items=await newsFor('ACME',{fetch:f,now:new Date('2026-10-25T01:00:00Z')}); assert.equal(items[0].title,'Acme wins');
+  // 17.11: the calendar of published reports carries the revenue, and a report built without it (Finnhub's earnings) takes it
+  {const {repRevOf}=await import('../server/research.js');
+    const P=F.fhPastCal({earningsCalendar:[{symbol:'acme',date:'2026-07-28',epsActual:1.2,epsEstimate:1.1,revenueActual:5.2e9,revenueEstimate:5e9},{symbol:'acme',date:'2026-04-27',epsActual:1,epsEstimate:1}]});
+    assert.deepEqual(P.ACME,[{date:'2026-07-28',eps:1.2,est:1.1,rev:5.2e9,revE:5e9},{date:'2026-04-27',eps:1,est:1}],'the revenue with its row, only when it is there');
+    assert.deepEqual(repRevOf({q:'2026-06-30',eps:{a:1.2,e:1.1}},P.ACME),{rev:5.2e9,revE:5e9,revSrc:'cal'},'the row of that quarter\'s report');
+    assert.deepEqual(repRevOf({q:'2026-06-30',revE:4.9e9},P.ACME),{rev:5.2e9,revSrc:'cal'},'what was expected before the report stays');
+    assert.equal(repRevOf({q:'2026-06-30',rev:5.1e9},P.ACME),null,'a revenue already there is not replaced'); assert.equal(repRevOf({q:'2026-03-31'},P.ACME),null,'a row with no revenue gives none'); assert.equal(repRevOf({q:'2025-12-31'},P.ACME),null,'nor a row of another quarter')}
   delete process.env.FINNHUB_API_KEY;
 });
 

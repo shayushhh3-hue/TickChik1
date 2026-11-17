@@ -766,6 +766,23 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+/* 17.11 (the owner): the report in plain words: a sentence, a gauge in three parts, and rows of a question, its answer in
+   words and the figure beside it */
+.repbox .rq-hd{margin:6px 0 12px;font-size:20px;font-weight:800;line-height:1.4;color:var(--ink);max-width:none}
+.rq-g{margin:0 0 14px} .rq-gt,.rq-gl{direction:ltr} .rq-gt{position:relative;display:flex;flex-direction:row;height:12px} .rq-gt i{flex:1 1 0} .rq-gt .lo{background:#F7C1C1;border-radius:6px 0 0 6px} .rq-gt .mid{background:#D3D1C7} .rq-gt .hi{background:#BFE3C8;border-radius:0 6px 6px 0}
+.rq-gt b{position:absolute;top:-6px;width:4px;height:24px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.rq-gl{display:flex;flex-direction:row;margin-top:9px;font-size:12px;color:var(--ink2)} .rq-gl span{flex:1 1 0;text-align:center} .rq-gl .on{font-weight:800;color:var(--ink)}
+.repbox h4.rq-h{margin:14px 0 4px;font-size:13px;font-weight:700;color:var(--ink2)}
+.rq{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.rq-i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;line-height:1;background:var(--sunk);color:var(--ink2)}
+.rq-i::before{content:"•"} .rq.good .rq-i{background:var(--ok-bg);color:var(--ok-ink)} .rq.good .rq-i::before{content:"✓"} .rq.bad .rq-i{background:var(--crit-bg);color:var(--crit-ink)} .rq.bad .rq-i::before{content:"✕"}
+.rq.flat .rq-i::before{content:"="} .rq.wait .rq-i::before{content:"…"} .rq.info .rq-i{background:var(--accent-soft);color:var(--accent-ink)} .rq.info .rq-i::before{content:"›"}
+.rq-q{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px} .rq-q span{font-size:13px;color:var(--ink2)} .rq-q b{font-size:16px;font-weight:700;color:var(--ink);line-height:1.35} .rq.wait .rq-q b{color:var(--ink2)}
+.rq-v{flex:none;max-width:50%;display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:end} .rq-v b{font-size:15.5px;font-weight:700;color:var(--ink)} .rq-v small{font-size:12px;color:var(--ink2);line-height:1.35}
+.rq-m{display:inline-flex;gap:4px} .rq-m i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;line-height:1;background:var(--sunk);color:var(--ink2)}
+.rq-m .up{background:var(--ok-bg);color:var(--ok-ink)} .rq-m .up::before{content:"✓"} .rq-m .down{background:var(--crit-bg);color:var(--crit-ink)} .rq-m .down::before{content:"✕"} .rq-m .in::before{content:"="}
+.repbox .rq-guid{margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink2);max-width:none} .rq-guid b{color:var(--ink)} .repbox .rq-foot{margin:10px 0 0;font-size:12.5px}
+@media (max-width:560px){.rq{flex-wrap:wrap;gap:4px 12px} .rq-q{flex:1 1 0} .rq-v{flex:1 1 100%;max-width:none;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 10px;text-align:start;padding-inline-start:38px}}
 /* 11.11: the chart's buys and sales are round marks with a letter (ק, מ); the key under the chart */
 .trkey{color:var(--ink2)} .trm{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;line-height:1;vertical-align:-3px} .trm.b{background:#0F766E} .trm.s{background:#BE123C}
 .crev .rep i,.cll.rep i{background:#7C3AED} .crev .ex i,.cll.ex i{background:#0D9488} .crev .al i,.cll.al i{background:#F59E0B} .cll.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
@@ -21549,20 +21566,50 @@ function repBlock(k,rs){
   const S=repSumOf(r), ai=r.ai&&((r.ai.findings||[]).length||r.ai.explain)?r.ai:null, F=ai&&ai.findings&&ai.findings.length?ai.findings:(r.find||[]), X=repXLines(S);
   const nw=NEWSX[k], news=nw==='busy'?'<p class="note">טוען כתבות…</p>':Array.isArray(nw)?(nw.length?`<ul class="replinks">${nw.slice(0,6).map(a=>`<li><span class="srcref"><bdi>${esc(a.title)}</bdi></span><span class="sub"> · ${esc(a.pub)}${a.at?' · '+dmy(a.at):''}</span></li>`).join('')}</ul><p class="note">כותרות ממקור חיצוני (Yahoo Finance), בשפת המקור. הדף לא בודק אותן.</p>`:'<p class="note">לא נמצאו כתבות.</p>'):nw?`<p class="note">${esc(nw)}</p>`:'';
   const old=((rs&&rs.reps)||[]).filter(x=>x&&x.q&&x.q!==r.q).slice(0,8);
+  // 17.11 (the owner: "I am an investor at the most basic level and I do not understand the report"): the report in plain
+  // words. One sentence says what happened; a three-part gauge shows where the profit fell against what was expected; then
+  // short questions, each with its answer in words and the exact figure beside it for whoever reads figures ("כמה החברה
+  // הרוויחה?" for earnings per share, "כמה כסף נכנס ממכירות?" for revenue, how the share reacted, how often it beats, when
+  // the next report is and what is expected of it). Only what the page has: a row with no figure is not drawn. The
+  // explanation in words, the findings, the articles and the earlier reports are behind "עוד על הדוח"
+  const c=S.ccy, E=S.eps, V=S.rev, loss=E.a!=null&&E.a<0, B=t=>`<bdi>${esc(t)}</bdi>`, sp=x=>(x>0?'+':'−')+Math.abs(x).toFixed(1)+'%', spH=(x,res)=>`<span class="${res==='up'?'up':'down'}">${B(sp(x))}</span>`;
+  const WE=loss?{up:'הפסידה פחות ממה שציפו',down:'הפסידה יותר ממה שציפו',in:'הפסידה כמו שציפו'}:{up:'יותר ממה שציפו',down:'פחות ממה שציפו',in:'כמו שציפו'}, WV={up:'יותר ממה שציפו',down:'פחות ממה שציפו',in:'כמו שציפו'};
+  const headTxt=E.res?(loss?`החברה ${WE[E.res]}`:`החברה הרוויחה ${WE[E.res]} ממנה`)+(V.res&&V.a!=null?`, ו${{up:'מכרה יותר מהצפי',down:'מכרה פחות מהצפי',in:'מכרה כמו שציפו'}[V.res]}`:'')
+    :E.a!=null?(loss?`החברה הפסידה ${repEps(-E.a,c)} למניה`:`החברה הרוויחה ${repEps(E.a,c)} למניה`):V.a!=null?`לחברה נכנסו ${repBig(V.a,c)} ממכירות`:'הדוח פורסם';
+  const gp=E.res?(E.res==='in'?50:E.res==='up'?66.7+Math.min(10,Math.abs(E.s??5))/10*28:33.3-Math.min(10,Math.abs(E.s??5))/10*28):null;
+  const gauge=gp!=null?`<div class="rq-g" role="img" aria-label="הרווח מול הצפי: ${REPRES[E.res]}"><div class="rq-gt" dir="ltr"><i class="lo"></i><i class="mid"></i><i class="hi"></i><b style="left:${gp.toFixed(1)}%"></b></div><div class="rq-gl" dir="ltr"><span${E.res==='down'?' class="on"':''}>פחות מהצפי</span><span${E.res==='in'?' class="on"':''}>כמו שציפו</span><span${E.res==='up'?' class="on"':''}>יותר מהצפי</span></div></div>`:'';
+  const row=(st,q,a,v,sub)=>`<div class="rq ${st}"><i class="rq-i" aria-hidden="true"></i><div class="rq-q"><span>${q}</span><b>${a}</b></div>${v||sub?`<div class="rq-v">${v?`<b>${v}</b>`:''}${sub?`<small>${sub}</small>`:''}</div>`:''}</div>`;
+  const stOf=res=>res==='up'?'good':res==='down'?'bad':res==='in'?'flat':'info', did=[], ahead=[];
+  if(E.a!=null)did.push(row(loss&&E.res?(E.res==='up'?'good':E.res==='down'?'bad':'flat'):stOf(E.res),'כמה החברה הרוויחה?',E.res?WE[E.res]:loss?'הפסידה':'אין צפי להשוות אליו',`${B(repEps(E.a,c))} למניה`,E.e!=null?`ציפו ל-${B(repEps(E.e,c))}${E.s!=null&&E.res&&E.res!=='in'?' · '+spH(E.s,E.res):''}`:''));
+  if(V.a!=null)did.push(row(stOf(V.res),'כמה כסף נכנס ממכירות?',V.res?WV[V.res]:'אין צפי להשוות אליו',B(repBig(V.a,c)),V.e!=null?`ציפו ל-${B(repBig(V.e,c))}${V.s!=null&&V.res&&V.res!=='in'?' · '+spH(V.s,V.res):''}`:''));
+  else if(V.e!=null||V.pend)did.push(row('wait','כמה כסף נכנס ממכירות?','הנתון עוד לא הגיע','—',V.e!=null?`ציפו ל-${B(repBig(V.e,c))}`:''));
+  const erx=rs&&rs.erx&&rs.erx.avgAbs>0?`בדרך כלל זזה ${B('±'+rs.erx.avgAbs.toFixed(1)+'%')} סביב דוח`:'';
+  if(S.rx){const p=S.rx.pct, past=!!S.rx.fin; did.push(row(p>0?'good':p<0?'bad':'flat','איך המניה הגיבה?',`${p>0?(past?'עלתה':'עולה'):p<0?(past?'ירדה':'יורדת'):'לא זזה'} ${{post:'במסחר המאוחר',pre:'במסחר המוקדם',day:'ביום שאחרי'}[S.rx.k]||''}`.trim(),p?spH(p,p>0?'up':'down'):B('0%'),erx))}
+  else if(erx)did.push(row('info','כמה המניה זזה סביב דוח?',`בדרך כלל כ-${rs.erx.avgAbs.toFixed(1)}% למעלה או למטה`,'',''));
+  {const H4=[E.res].concat(old.map(x=>{const o=x.sum||repSumOf(x); return o&&o.eps?o.eps.res:null})).filter(Boolean).slice(0,4), n4=H4.length, ups=H4.filter(x=>x==='up').length;
+    if(n4>=2)did.push(row(ups*2>n4?'good':ups===0?'bad':'flat','היא בדרך כלל מרוויחה יותר מהצפי?',ups===n4?'כן, בכל הדוחות האחרונים':ups*2>n4?'כן, ברוב הדוחות':ups===0?'לא, באף אחד מהאחרונים':'לפעמים',
+      `<span class="rq-m" dir="ltr" role="img" aria-label="${H4.slice().reverse().map(x=>REPRES[x]).join(', ')}">${H4.slice().reverse().map(x=>`<i class="${x}"></i>`).join('')}</span>`,`${ups} מ-${n4} האחרונים מעל הצפי`))}
+  if(rs&&rs.next&&rs.next>=today){const dn=daysTo(rs.next); ahead.push(row('info','מתי הדוח הבא?',dn<=0?'היום':dn===1?'מחר':`בעוד ${dn} ימים`,B(dmy(rs.next)),rs.nextEst?'תאריך משוער':''))}
+  {const nx=S.nx&&S.nx.now!=null?S.nx.now:(rs&&rs.est&&rs.est.date>=today&&rs.est.eps!=null?rs.est.eps:null);
+    if(nx!=null){const d=E.a>0&&nx>0?(nx/E.a-1)*100:null, mv=S.nx&&S.nx.was!=null&&S.nx.res&&S.nx.res!=='in'?`הצפי ${S.nx.res==='down'?'ירד':'עלה'} אחרי הדוח`:'';
+      ahead.push(row('info','מה מצפים ממנה בפעם הבאה?',d!=null?(Math.abs(d)<1?'להרוויח בערך אותו דבר':d>0?'להרוויח יותר':'להרוויח פחות'):nx<0?'הפסד':'רווח',`${B(repEps(nx,c))} למניה`,[d!=null&&Math.abs(d)>=1?`${spH(d,d>0?'up':'down')} מהרבעון הזה`:'',mv].filter(Boolean).join(' · ')))}}
   return `<section class="repbox" aria-labelledby="${hid}">
     <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at&&!r.atEst?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
     ${rs&&rs.twinOf?`<p class="note">החברה נסחרת גם בניו יורק (<bdi dir="ltr">${esc(rs.twinOf)}</bdi>): הדוח ונתוני האנליסטים הם של החברה עצמה, משם, בדולרים.</p>`:''}
-    ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
+    <p class="rq-hd">${repH(headTxt)}</p>
+    ${gauge}
     ${due?`<p class="note">${dueTxt}</p>`:''}
-    ${repCardsH(S)}
-    ${X.length?`<ul class="rpx">${X.map(x=>`<li>👈 ${repH(x)}</li>`).join('')}</ul>`:''}
-    ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>${ai.context?`<h4>המגמה</h4><p>${tx(ai.context)}</p>`:''}${ai.watch?`<h4>על מה לשים לב</h4><p>${tx(ai.watch)}</p>`:''}${ai.terms&&ai.terms.length?`<dl class="rp-terms">${ai.terms.map(t=>{const i=t.indexOf(':'); return `<div><dt>${esc(t.slice(0,i))}</dt><dd>${esc(t.slice(i+1).trim())}</dd></div>`}).join('')}</dl>`:''}`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
-    <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
+    ${did.length?`<h4 class="rq-h">מה קרה</h4>${did.join('')}`:''}
+    ${ahead.length||S.guid?`<h4 class="rq-h">מה הלאה</h4>${ahead.join('')}${S.guid?`<p class="rq-guid"><b>מה החברה אמרה על ההמשך:</b> ${repH(S.guid)}</p>`:''}`:''}
+    <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: ההסבר, הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
+      ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
+      ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>${ai.context?`<h4>המגמה</h4><p>${tx(ai.context)}</p>`:''}${ai.watch?`<h4>על מה לשים לב</h4><p>${tx(ai.watch)}</p>`:''}${ai.terms&&ai.terms.length?`<dl class="rp-terms">${ai.terms.map(t=>{const i=t.indexOf(':'); return `<div><dt>${esc(t.slice(0,i))}</dt><dd>${esc(t.slice(i+1).trim())}</dd></div>`}).join('')}</dl>`:''}`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
       ${F.length?`<ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
       <div class="acts" style="justify-content:flex-start;margin-top:8px">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
       ${old.length?`<h4>הדוחות הקודמים</h4><ul class="rpold">${old.map(x=>{const o=x.sum||repSumOf(x); return `<li><b>${esc(x.label||x.q)}</b>${x.at&&!x.atEst?` · פורסם ${dmy(x.at)}`:''}${o?` · ${repH(repOne(o))||'בלי נתונים'}`:''}</li>`}).join('')}</ul>`:''}
+      <p class="note">המספרים מהדוח, וצפי האנליסטים כפי שהיה לפני הדוח (${esc(rs.source||'Yahoo Finance')}). ${ai?'"מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים'+(ai.headlines?' ומכותרות של כתבות':'')+'. ':''}תחזית החברה מופיעה רק כשהיא בכותרות, ונאמר כך.</p>
     </details>
-    <p class="note">המספרים מהדוח, וצפי האנליסטים כפי שהיה לפני הדוח (${esc(rs.source||'Yahoo Finance')}). ${ai?'"מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים'+(ai.headlines?' ומכותרות של כתבות':'')+'. ':''}צפי האנליסטים הוא של אנליסטים, לא תחזית של החברה; תחזית החברה מופיעה רק כשהיא בכותרות, ונאמר כך. זה ניתוח, לא המלצה לקנות או למכור.</p>
+    <p class="note rq-foot">הצפי הוא של אנליסטים, לא תחזית של החברה. זה ניתוח, לא המלצה לקנות או למכור.</p>
   </section>`;
 }
 async function repNews(k){if(!window.__tc)return; NEWSX[k]='busy'; try{renderSec()}catch(e){}
@@ -26264,7 +26311,7 @@ function secMine(it,on){
   if(!p){const amt=(S&&+S.monthly)||0,pr=priceOf(skey(it)),w=m&&m.total>0&&amt?amt/(m.total+amt)*100:null;
     let tiles='',rules='';
     if(w!=null){tiles=`<div class="mine3">${tile('אם תקנה בסכום ההפקדה החודשית',pct(w,1)+' מהתיק',ils(amt)+' מתוך '+ils(m.total+amt))}${R.maxPos?tile('התקרה שלך לנייר אחד',pct(R.maxPos,0)+' מהתיק',w>R.maxPos?'קנייה כזו תחרוג מהתקרה':'יש מקום'):''}</div>`;
-      if(R.maxPos)rules=`<div class="rules">${rule(w>R.maxPos?'crit':'ok','נייר בודד:',`קבעת עד ${pct(R.maxPos,0)} מהתיק לנייר אחד; קנייה בסכום ההפקדה תביא את ${name} ל-${pct(w,1)}.`)}</div>`}
+      if(R.maxPos)rules=`<div class="rules">${rule(w>R.maxPos?'crit':'ok',`קנייה בסכום ההפקדה החודשית תביא את ${name} ל-${pct(w,1)} מהתיק שלך.`,w>R.maxPos?`זה מעל ${pct(R.maxPos,0)}, התקרה שקבעת לנייר אחד.`:`קבעת שנייר אחד לא יעבור ${pct(R.maxPos,0)}, אז יש מקום.`)}</div>`}
     return head+`<p class="note" style="margin:0 0 8px">${m?`${name} לא בתיק שלך.`:'עוד אין תיק להשוות אליו.'}${on?' הנייר ברשימת המעקב שלך.':''}${it.t==='E'?' תעודת סל: אין לה דוחות כספיים ודירוג אנליסטים.':''}</p>`+tiles+rules}
   // held: three figures, then the viewer's rules as sentences
   const dayCls=p.dayPct==null?'':p.dayPct>=0?'up':'down';
@@ -26274,9 +26321,12 @@ function secMine(it,on){
     (p.cost?tile('מול מחיר הקנייה',sgn(p.costVal-p.cost),`${spct((p.costVal-p.cost)/p.cost*100,1)} · שילמת ${ils(p.cost)}`,(p.costVal-p.cost)>=0?'up':'down'):tile('מול מחיר הקנייה','—','אין מחיר קנייה שמור'))+
     `</div>`;
   const rules=[];
-  if(p.cost&&R.stopLoss){const dp=(p.costVal-p.cost)/p.cost*100;rules.push(rule(dp<=-R.stopLoss?'warn':'ok','ירידה ממחיר הקנייה:',dp>=0?`הנייר ברווח של ${pct(dp,1)}; הבדיקה שלך מתחילה בירידה של ${pct(R.stopLoss,0)}.`:`הנייר ירד ${pct(Math.abs(dp),1)} מהקנייה; ${dp<=-R.stopLoss?'עבר את':'עדיין לא הגיע ל'}סף הבדיקה שלך, ${pct(R.stopLoss,0)}.`))}
-  if(R.maxPos)rules.push(rule(p.w>R.maxPos?'crit':'ok','נייר בודד:',`קבעת עד ${pct(R.maxPos,0)} מהתיק לנייר אחד; ${name} הוא ${pct(p.w,1)}${p.w>R.maxPos?' – מעל התקרה':''}.`));
-  const g=m.groups[p.group]; if(g&&p.group!=='cash'&&R.maxGroup)rules.push(rule(g.w>R.maxGroup?'crit':'ok','קבוצה:',`${esc(GROUPS[p.group]||'')} היא ${pct(g.w,1)} מהתיק; הסף שלך ${pct(R.maxGroup,0)}${g.w>R.maxGroup?' – מעל הסף':''}.`));
+  // 17.11 (the owner: "יש לך 10% מניות שמתעסקות בביטחון"): each rule as a person would say it: the fact about the portfolio
+  // first, in bold; then the line the person set, and whether there is room or it is over
+  if(p.cost&&R.stopLoss){const dp=(p.costVal-p.cost)/p.cost*100, hit=dp<=-R.stopLoss;
+    rules.push(rule(hit?'warn':'ok',dp>=0?`${name} ברווח של ${pct(dp,1)} מאז שקנית.`:`${name} ירד ${pct(Math.abs(dp),1)} מאז שקנית.`,hit?`זה עבר את ${pct(R.stopLoss,0)}, הירידה שביקשת לבדוק.`:`ביקשת לבדוק אותו אם ירד ${pct(R.stopLoss,0)} מהמחיר שקנית${dp<0?', וזה עוד לא שם':''}.`))}
+  if(R.maxPos)rules.push(rule(p.w>R.maxPos?'crit':'ok',`${name} הוא ${pct(p.w,1)} מהתיק שלך.`,p.w>R.maxPos?`זה מעל ${pct(R.maxPos,0)}, התקרה שקבעת לנייר אחד.`:`קבעת שנייר אחד לא יעבור ${pct(R.maxPos,0)}, אז יש מקום.`));
+  const g=m.groups[p.group]; if(g&&p.group!=='cash'&&R.maxGroup)rules.push(rule(g.w>R.maxGroup?'crit':'ok',`יש לך ${pct(g.w,1)} מהתיק ב${esc(GROUPS[p.group]||'קבוצה הזאת')}.`,g.w>R.maxGroup?`זה מעל ${pct(R.maxGroup,0)}, התקרה שקבעת לקבוצה אחת.`:`קבעת שקבוצה אחת לא תעבור ${pct(R.maxGroup,0)}, אז יש מקום.`));
   return rules.length?head+`<div class="rules">${rules.join('')}</div>`:'';   // 5.11: the figures are in "האחזקה שלך" above the report
 }
 // 5.11: the price block in two (the owner's swap): the big price with the day's move right under the name, above the chart;
@@ -26407,7 +26457,6 @@ function renderSec(){SECHOV=-1;
     ${it.t!=='E'&&!ilm?repBlock(rs&&rs.twinOf||k,rs):''}
     ${nxSecBlock(k)}
     ${it.t==='I'?'':secMine(it,on)}
-    ${(()=>{try{return secThesis(it)}catch(e){return ''}})()}
     ${(()=>{try{return secJournal(it)}catch(e){return ''}})()}
     ${(()=>{try{return secInsiders(it)}catch(e){return ''}})()}
     <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
@@ -29572,6 +29621,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.2',at:'2026-11-17',t:'הדוח של החברה, בשפה פשוטה',d:'בדף של נייר: משפט אחד שאומר מה קרה בדוח, מד שמראה אם הרווח היה פחות, כמו או יותר מהצפי, ושאלות קצרות עם תשובה במילים והמספר המדויק לצדה: כמה החברה הרוויחה, כמה כסף נכנס ממכירות, איך המניה הגיבה, ומה מצפים ממנה בפעם הבאה. ההסבר המלא נמצא ב"עוד על הדוח".',go:'srch'},
   {v:'2026-11-17.1',at:'2026-11-17',t:'דירוג האנליסטים: קודם התשובה, אחר כך הנתונים',d:'בדף של נייר: משפט שאומר כמה אנליסטים ממליצים לקנות, להחזיק ולמכור; עוגה עם מקרא צמוד (מספר ואחוז בכל שורה); פס שמראה איפה המחיר של היום בין היעד הנמוך לגבוה; והמגמה נאמרת במשפט לפני העמודות. העוגה היא התצוגה הראשונה, ו"פסים" נשאר במתג.',go:'srch'},
   {v:'2026-11-11.7',at:'2026-11-11',t:'כל דף נפתח בכרטיס אחד',d:'במקום כמה ריבועים בראש הדף: כרטיס פתיחה אחד עם שם הדף ומה יש בו, שווי התיק בדפים שנשענים עליו, הלשוניות של הקבוצה, ושורת החלקים של הדף. השורות התחתונות נשארות למעלה כשגוללים.'},
   {v:'2026-11-11.6',at:'2026-11-11',t:'כל מה שקשור להתראות, בדף "התראות"',d:'בנוסף להתראות עצמן: החריגות מהכללים שלך עם "בדקתי", התראות המחיר שקבעת, מה מחכה בשבועיים הקרובים (דוחות, דיבידנדים, יום ההפקדה וחגים), ובסוף הדף ההגדרות: טלפון, מיילים, צלילים ומה מופיע.',go:'alrules'},

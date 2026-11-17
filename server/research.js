@@ -144,6 +144,10 @@ const KEEP=['at','atSrc','atEst','seen','ai','ev','revE','epsE','nxW','rx','mail
 // quarter's end and within 80 days of it
 export function repDateOf(q,dates){if(!q||!Array.isArray(dates))return null; const lim=new Date(Date.parse(q+'T00:00:00Z')+80*864e5).toISOString().slice(0,10);
   const c=dates.map(x=>x&&x.date).filter(d=>d&&d>q&&d<=lim).sort(); return c[0]||null}
+// 17.11: the revenue of a report built from Finnhub's earnings (the profit per share, no revenue): from the calendar's row
+// of the published report for that quarter (the first one after the quarter's end, within 80 days), with what was expected
+export function repRevOf(rep,dates){if(!rep||!rep.q||rep.rev!=null||rep.revPend||!Array.isArray(dates))return null; const lim=new Date(Date.parse(rep.q+'T00:00:00Z')+80*864e5).toISOString().slice(0,10);
+  const x=dates.filter(e=>e&&e.rev>0&&e.date>rep.q&&e.date<=lim).sort((a,b)=>a.date<b.date?-1:1)[0]; return x?{rev:x.rev,...(rep.revE==null&&x.revE>0?{revE:x.revE}:{}),revSrc:'cal'}:null}
 export function repEst(r,C,today){
   const qm=String(r.q).slice(0,7), byAt=(a,b)=>String(a.at||'')<String(b.at||'')?1:-1;
   const E=C.filter(e=>e&&e.date&&e.date>=r.q&&e.date<=today).sort(byAt)[0]||C.filter(e=>e&&e.q&&e.q.end&&String(e.q.end).slice(0,7)===qm).sort(byAt)[0]||null;
@@ -213,7 +217,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   try{fund=await fill(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,budgetMs:only?3*60e3:Math.max(6*60e3,budgetMs-(Date.now()-t0))})}catch(e){log('fundamentals failed: '+(e&&e.message||e))}
   // write what arrived; whatever did not keeps its last values and date
   // a report newer than the one stored: its day is the report date the calendar had (when it has passed), and it is an event
-  const fresh=[], words=[], posName={}, redated=new Map(); for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
+  let revN=0; const fresh=[], words=[], posName={}, redated=new Map(); for(const x of ((store.getDoc('portfolio/main').data||{}).positions||[]))if(x&&x.sym&&x.name)posName[x.sym]=x.name;
   for(const [k,v] of Object.entries(got)){const p=docKey(k), old=store.getDoc(p).data||{}, today=iso.slice(0,10);
     // the estimates for the coming report: when its date moves on, the one before is kept (the report it was for may come later)
     if(v.est){if(old.est&&old.est.date&&v.est.date!==old.est.date)v.estPrev=old.est; else if(old.estPrev)v.estPrev=old.estPrev}
@@ -240,6 +244,8 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
       v.rep.sum=repSum(v.rep)}
     const M={...merge(old,v),sym:k,source:srcOf(k,v),updatedAt:iso};
     if(M.rep&&M.rep.q&&!M.rep.atSrc&&M.repDates){const d=repDateOf(M.rep.q,M.repDates); if(d){M.rep={...M.rep,at:d,atSrc:'cal'}; delete M.rep.atEst; redated.set(k+'|'+M.rep.q,d); if(v.rep)v.rep.at=d}}
+    // 17.11: a report with no revenue (built from Finnhub's earnings) takes it from the calendar's row of that report
+    {const rv=repRevOf(M.rep,M.repDates); if(rv){M.rep={...M.rep,...rv}; M.rep.find=findingsOf(M.rep); M.rep.sum=repSum(M.rep); v.rep=M.rep; revN++}}
     // 28.10: the earlier reports too: each by the day it came out, when the filings or the calendar have it
     if(Array.isArray(M.reps)&&M.repDates)M.reps=M.reps.map(r=>{if(!r||!r.q||r.atSrc)return r; const d=repDateOf(r.q,M.repDates); if(!d)return r; redated.set(k+'|'+r.q,d); return {...r,at:d,atSrc:'cal',atEst:false}});
     // and the shared copy the page reads (research/latest) gets the corrected days with the rest of this run
@@ -250,7 +256,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
     const p=docKey(k); store.setDoc(p,{...(store.getDoc(p).data||{}),rep:v.rep},{silent:true})}
   const heldGot=[...held].filter(k=>got[k]);
   const touched=Object.entries(got).filter(([k,v])=>v.rep&&v.rep.ev&&v.rep.seen&&(now-Date.parse(v.rep.seen))<21*864e5);
-  if(heldGot.length||fresh.length||words.length||touched.length||redated.size){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
+  if(heldGot.length||fresh.length||words.length||touched.length||redated.size||revN){const L=store.getDoc('research/latest').data||{}, comp={...(L.companies||{})};
     for(const k of heldGot)comp[k]=withChg(comp[k],{...merge(comp[k],got[k]),source:srcOf(k,got[k]),updatedAt:iso},iso);
     const evOf=([k,r])=>({sym:k,name:posName[k]||(got[k]&&got[k].name)||k,date:r.at,atEst:!!r.atEst,q:r.q,label:r.label||null,text:repLine(r),find:r.find||[],ai:r.ai?{findings:r.ai.findings,explain:r.ai.explain,guidance:r.ai.guidance||''}:null,sum:repSum(r),source:SOURCE});
     const upd=new Map(touched.map(([k,v])=>[k+'|'+v.rep.q,evOf([k,v.rep])]));
@@ -382,7 +388,7 @@ export async function finnhubPass(store,order,got,{fetch:f=globalThis.fetch,tick
     // the days the last reports came out (120 days back): kept per security, so a report is dated by the day it was
     // published, not by the day the page first saw it; a stored report dated by a guess gets its real day
     try{const Pc=await fhPastEarnings({...o,now}); for(const k of order){if(!us(k))continue; const d=Pc[tk(k).toUpperCase()]||Pc[tk(k).toUpperCase().replace(/-/g,'.')]; if(!d||!d.length)continue;
-      const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{}, need=!!(got[k]||(doc.rep&&doc.rep.q&&!doc.rep.atSrc));
+      const doc=(store.getDoc('research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_')).data)||{}, need=!!(got[k]||(doc.rep&&doc.rep.q&&(!doc.rep.atSrc||(doc.rep.rev==null&&!doc.rep.revPend))));   // 17.11: also a report whose revenue is missing
       if(!need)continue; const g=got[k]||(got[k]={}); g.repDates=d.slice(0,6); st.dated=(st.dated||0)+1}}
     catch(e){st.first=st.first||'past calendar: '+e.message}}
   for(const k of order){

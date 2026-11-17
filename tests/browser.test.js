@@ -205,12 +205,17 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
-      under:(n=>{while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rpc')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),x:[...b.querySelectorAll('.rpx li')].map(l=>l.textContent),
+      under:(n=>{while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rq')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),hd:(b.querySelector('.rq-hd')||{}).textContent||'',gauge:(()=>{const g=b.querySelector('.rq-gt b'), on=b.querySelector('.rq-gl .on'); return g&&on?[parseFloat(g.style.left)>66,on.textContent]:null})(),moreOpen:b.querySelector('details.rpmore').open,
       what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
     assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
-    assert.deepEqual(r.cards,['רווח למניה צפי 3.41$ בפועל 3.62$ מעל הצפי · +6.2%','הכנסות צפי 75.30 מיליארד דולר בפועל 77.70 מיליארד דולר מעל הצפי · +3.2%']);
-    assert.equal(r.x[0],'👈 צפי האנליסטים לרבעון הבא עלה: רווח למניה 3.66$ במקום 3.58$ לפני הדוח.');
-    assert.match(r.x[1],/^👈 המניה יורדת ב-2\.3% במסחר המאוחר \(אפטר מרקט\), נכון ל-\d\d:\d\d\.$/);
+    // 17.11 (the owner: "the most basic investor"): the report in plain words: a sentence, a gauge, and rows of a question,
+    // its answer in words and the exact figure beside it
+    assert.equal(r.hd,'החברה הרוויחה יותר ממה שציפו ממנה, ומכרה יותר מהצפי'); assert.deepEqual(r.gauge,[true,'יותר מהצפי'],'the gauge marks the part the profit fell in');
+    assert.equal(r.cards[0],'כמה החברה הרוויחה? יותר ממה שציפו 3.62$ למניה ציפו ל-3.41$ · +6.2%'); assert.equal(r.cards[1],'כמה כסף נכנס ממכירות? יותר ממה שציפו 77.70 מיליארד דולר ציפו ל-75.30 מיליארד דולר · +3.2%');
+    assert.ok(r.cards.some(x=>/^איך המניה הגיבה\? יורדת במסחר המאוחר −2\.3%/.test(x)),'the share after the report: '+r.cards.join(' | '));
+    assert.ok(r.cards.some(x=>/^היא בדרך כלל מרוויחה יותר מהצפי\? כן, בכל הדוחות האחרונים 2 מ-2 האחרונים מעל הצפי$/.test(x)),'this report and the one before it: '+r.cards.join(' | '));
+    assert.ok(r.cards.some(x=>/^מה מצפים ממנה בפעם הבאה\? להרוויח יותר 3\.66\$ למניה \+1\.1% מהרבעון הזה · הצפי עלה אחרי הדוח$/.test(x)),'the next quarter: '+r.cards.join(' | '));
+    assert.deepEqual(r.what.slice(0,2),['מה קרה','מה הלאה']); assert.equal(r.moreOpen,false,'the explanation in words waits behind "עוד על הדוח"');
     assert.match(r.txt,/מה זה אומר\s*הרבעון היה מעל הצפי ברווח ובהכנסות\./); assert.deepEqual(r.f,ai.findings,'the findings are there, behind "עוד על הדוח"');
     assert.deepEqual(r.old,['Q2 2026 · פורסם 29.7 · רווח למניה 3.65$ (מעל הצפי) · הכנסות 76.40 מיליארד דולר (מעל הצפי)'],'the report before it');
     assert.ok(!r.tbl,'no table of the report\'s figures'); assert.match(r.txt,/זה ניתוח, לא המלצה לקנות או למכור/);
@@ -225,7 +230,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // a security nobody holds: the same analysis on its page, and nothing on the home page
     store.setDoc('research/s_NFLX',{sym:'NFLX',name:'Netflix',source:'Yahoo Finance',rep:{...rep,label:'Q3 2026'},next:'2027-01-20'},{silent:true});
     const o=await open(390); await tab(o.pg,'search'); await o.pg.waitForTimeout(500); await o.pg.evaluate(()=>window.__srch.open('NFLX')); await o.pg.waitForTimeout(1200);
-    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); let n=document.getElementById('secChartNote').nextElementSibling; while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return !!b&&n===b&&b.querySelectorAll('.rpc').length===2}),'on the page of a security not held');
+    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); let n=document.getElementById('secChartNote').nextElementSibling; while(n&&['mypos','ancard','big','pxal','chread'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return !!b&&n===b&&b.querySelectorAll('.rq').length>=2}),'on the page of a security not held');
     assert.deepEqual(o.pg.errs,[]); await o.ctx.close();
   }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
 });
@@ -1510,16 +1515,13 @@ test('1.11 the settings survive a visit: when the plan arrives before them (a fi
 test('1.11 the thesis: written on the security page, kept in the account, set against what was reported (a fact of substance), never against the price; the server alerts with the thesis beside the event',T,async t=>{
   if(skip())return t.skip('no browser');
   const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), J0=store.getDoc('journal/main');
-  const D=await rtData(); await rtSet(D); store.deleteDoc('journal/main');
+  // 17.11 (the owner: the thesis block "brings nothing"): it is no longer drawn on the security's page; a thesis already in
+  // the account is still set against what was reported (the alert, צ׳יקו)
+  const D=await rtData(); await rtSet(D); {const at=new Date().toISOString(); store.setDoc('journal/main',{thesis:{NVDA:{why:'מובילה בשבבי AI עם ביקוש גדל',expect:'',minus:'הורדת תחזית או ירידה בהכנסות ממרכזי נתונים',plus:'',horizon:'long',at,updatedAt:at}},entries:[]},{silent:true})}
   const {ctx,pg}=await open(390);
   try{
-    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!!document.querySelector('[data-thbox="NVDA"] form.th-f'),null,{timeout:10000});
-    await pg.fill('[data-thbox="NVDA"] [data-th="why"]','מובילה בשבבי AI עם ביקוש גדל'); await pg.fill('[data-thbox="NVDA"] [data-th="minus"]','הורדת תחזית או ירידה בהכנסות ממרכזי נתונים'); await pg.selectOption('[data-thbox="NVDA"] [data-th="horizon"]','long');
-    await pg.click('[data-thbox="NVDA"] form.th-f button[type=submit]'); await pg.waitForTimeout(1400);
-    const th=(store.getDoc('journal/main').data||{}).thesis||{}; assert.equal(th.NVDA&&th.NVDA.why,'מובילה בשבבי AI עם ביקוש גדל','kept in the account'); assert.equal(th.NVDA.horizon,'long');
-    // the verdict: the report beat (a fact, crit, direct) strengthens; shown with its certainty and source
-    const v=await pg.evaluate(()=>({st:document.querySelector('[data-thbox="NVDA"] .th-h .rs').textContent,ev:[...document.querySelectorAll('[data-thbox="NVDA"] .th-ev li')].map(l=>l.textContent),txt:document.querySelector('[data-thbox="NVDA"]').innerText}));
-    assert.equal(v.st,'מתחזקת'); assert.ok(v.ev.length>=1&&/אנבידיה היכתה/.test(v.ev[0]),JSON.stringify(v.ev)); assert.match(v.ev[0],/עובדה מדווחת/); assert.match(v.txt,/תנועת מחיר לבדה לא מאשרת|לא נספרת|לא דווח/);
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!document.getElementById('secPage').hidden&&!!document.querySelector('#secPage .top h2'),null,{timeout:10000}); await pg.waitForTimeout(800);
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage [data-thbox]')||/התזה שלי/.test(document.getElementById('secPage').textContent)),false,'no thesis block on the security\'s page');
     // the server: an alert that carries the thesis, once per event, as "important", not as a verdict
     {const {pulseUpdate}=await import('../server/pulse.js'); const r=pulseUpdate(store,null,{}); const a=r.doc.items.find(x=>x.k==='th:NVDA:nvda-q3-report'); assert.ok(a,'the thesis alert: '+r.doc.items.map(x=>x.k).join(',')); assert.equal(a.lv,'imp'); assert.equal(a.th.sym,'NVDA'); assert.match(a.th.minus,/הורדת תחזית/); assert.match(a.lvWhy,/לא קביעה/);
       assert.ok(!r.doc.items.some(x=>x.k.startsWith('th:KO')),'no thesis, no thesis alert')}
@@ -2907,9 +2909,9 @@ test('5.11 did it help: a row under each answer and each finding, counted for th
     await pg.click('#anaOut .ana-a .fbk [data-fb="up"]'); await pg.waitForTimeout(1500);
     const me=(store.users().find(u=>u.role==='owner')||{}).id, U=store.getDoc('usage/main').data||store.getDoc(`data/users/${me}/usage`).data||{}, all={}; for(const D of Object.values(U.days||{}))for(const [kk,n] of Object.entries(D))all[kk]=(all[kk]||0)+n;
     assert.ok(all['v:fb:up:ans']>=1&&all['v:fb:new:ins']>=1&&all['v:ins:shown']>=1,'counted: '+JSON.stringify(Object.keys(all).filter(x=>x.startsWith('v:'))));
-    // the thesis card says what was checked
+    // 17.11: the thesis card left the security's page (the owner); the answer stays with the thesis in the account (above)
     await pg.evaluate(()=>window.__ana.close()); await pg.evaluate(()=>window.__chico.go('sec:NVDA')); await pg.waitForTimeout(800);
-    assert.match(await pg.evaluate(()=>(document.querySelector('[data-thbox="NVDA"]')||{}).textContent||''),/הבדיקות שלך אחרי דוחות: .*\(Q3\): עדיין מחזיקה/);
+    assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage [data-thbox]')),false,'no thesis card on the security\'s page');
     // the management: the value card
     await pg.goto(U0()+'admin#product'); await pg.waitForSelector('#view .kpi',{timeout:15000}); assert.match(await pg.evaluate(()=>document.getElementById('view').textContent),/הערך של צ׳יקו.*"לא ידעתי"/s);
     assert.deepEqual(pg.errs,[]); await ctx.close();

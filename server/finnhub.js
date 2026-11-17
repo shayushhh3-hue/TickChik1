@@ -88,7 +88,7 @@ export async function fhEarningsCalSym(t,{now=new Date(),days=130,...o}={}){
 // for a report the page first saw later than that)
 export function fhPastCal(j){
   const o={}; for(const x of ((j&&j.earningsCalendar)||[])){if(!x||!x.symbol||!x.date||x.epsActual==null)continue; const k=String(x.symbol).toUpperCase();
-    (o[k]=o[k]||[]).push({date:x.date,eps:r2(x.epsActual),est:r2(x.epsEstimate)})}
+    (o[k]=o[k]||[]).push({date:x.date,eps:r2(x.epsActual),est:r2(x.epsEstimate),...(+x.revenueActual>0?{rev:+x.revenueActual}:{}),...(+x.revenueEstimate>0?{revE:+x.revenueEstimate}:{})})}   // 17.11: with the revenue, when the row has it
   for(const k in o)o[k].sort((a,b)=>a.date<b.date?1:-1);
   return o;
 }
