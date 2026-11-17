@@ -1615,9 +1615,9 @@ test('dividends: the way of a dividend, what came in per security with its tax a
   }finally{store.setDoc('history/main',H0,{silent:true})}
 });
 
-test('the spread of the portfolio: a bar or a pie at a click, the same shares, kept for next time',T,async t=>{
+test('the spread of the portfolio: a bar or a pie at a click on a computer, the same shares, kept for next time; on the phone one card answers what is most concentrated (17.11, proposal 2)',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'mix'); await pg.waitForSelector('#mixHome:not([hidden])');   // 10.11 (the owner): פיזור is a screen of its own, from the row over the home's value
+  let {ctx,pg}=await open(1280); await tab(pg,'mix'); await pg.waitForSelector('#mixHome:not([hidden])');   // 10.11 (the owner): פיזור is a screen of its own, from the row over the home's value
   const st=()=>pg.evaluate(()=>{const v=e=>!!e.offsetParent||e.getBoundingClientRect().width>0, pie=document.getElementById('mixPie');
     return {bar:v(document.getElementById('mixBar')),pie:!pie.hasAttribute('hidden')&&pie.getBoundingClientRect().width>0,slices:pie.querySelectorAll('path,circle').length,label:pie.getAttribute('aria-label'),
       list:document.querySelectorAll('#mixList li').length,on:[...document.querySelectorAll('[data-mixv]')].filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>b.dataset.mixv),
@@ -1628,6 +1628,17 @@ test('the spread of the portfolio: a bar or a pie at a click, the same shares, k
   assert.match(s.label,/טכנולוגיה \d/); assert.equal(s.ctr,s.total,'the total in the middle is the portfolio\'s'); assert.ok(!s.ox);
   await pg.reload(); await pg.waitForSelector('#mixHome:not([hidden])'); await pg.waitForTimeout(500); s=await st(); assert.deepEqual([s.pie,s.on],[true,['pie']],'kept for next time');
   await pg.click('[data-mixv="bar"]'); await pg.waitForTimeout(200); s=await st(); assert.deepEqual([s.bar,s.pie],[true,false]);
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+  // the phone: the answer card, the groups' card off, the list on your groups first, the last two folded
+  ({ctx,pg}=await open(390)); await tab(pg,'mix'); await pg.waitForTimeout(600);
+  const a=await pg.evaluate(()=>{const b=document.getElementById('mixAns'), pn=document.querySelector('[data-pane="mix"] section[aria-labelledby="hPnl"]');
+    return {shown:!!(b&&b.offsetParent),v:b?b.querySelector('.ma-v').textContent:'',bar:b?b.querySelectorAll('.ma-bar i').length:0,home:!!document.getElementById('mixHome').offsetParent,
+      on:(document.querySelector('#expBox [data-expv][aria-pressed="true"]')||{dataset:{}}).dataset.expv,tiles:getComputedStyle(document.querySelector('[data-pane="mix"] .mine3')).gridTemplateColumns.split(' ').length,
+      folded:!!pn&&pn.classList.contains('fold1')&&!pn.querySelector('#pnl').offsetParent,ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.equal(a.shown,true,'the answer card'); assert.match(a.v,/^טכנולוגיה \d/); assert.ok(a.bar>=3,'the bar of the groups'); assert.equal(a.home,false,'the groups\' card is the computer\'s');
+  assert.equal(a.on,'group','the one list opens on your groups'); assert.equal(a.tiles,2,'the tiles 2 by 2'); assert.equal(a.folded,true,'who earns and who loses folded'); assert.equal(a.ox,false);
+  await pg.click('[data-pane="mix"] section[aria-labelledby="hPnl"]>.row'); await pg.waitForTimeout(150);
+  assert.ok(await pg.evaluate(()=>!!document.getElementById('pnl').offsetParent),'it opens from its title');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 
@@ -2055,19 +2066,19 @@ test('1.11 completions: the X-ray names the common factors and direct against in
   try{
     // the X-ray
     await tab(pg,'mix'); await pg.waitForTimeout(500);   // 10.11: פיזור is a screen of its own
-    const xr=await pg.evaluate(()=>({txt:document.getElementById('expBox').innerText.replace(/\s+/g,' '),fac:[...document.querySelectorAll('#expBox .xr-fac li b')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
+    const xr=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent.replace(/\s+/g,' '),fac:[...document.querySelectorAll('#expBox .xr-fac li b')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(xr.ox,false); assert.ok(xr.fac.includes('שער הדולר')&&xr.fac.includes('טכנולוגיה ושבבים (AI)')&&xr.fac.includes('ישראל'),JSON.stringify(xr.fac)); assert.match(xr.txt,/שער הדולר \d+% \(\d+ ניירות/); assert.match(xr.txt,/ישיר מול עקיף: \d+% מהתיק בניירות בודדים.*\d+% דרך קרנות/); assert.match(xr.txt,/מדינת הפעילות של כל חברה אינה בנתונים/);
-    // the health score
-    await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(400);
+    // the health score (on the control screen; the X-ray is on פיזור since 10.11)
+    await tab(pg,'risk'); await pg.waitForTimeout(400); await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(400);
     const H=await pg.evaluate(()=>({parts:[...document.querySelectorAll('#hParts li')].map(l=>l.textContent.replace(/\s+/g,' ')),hist:document.getElementById('hHist').innerText,score:+document.getElementById('hNum').textContent}));
-    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(await pg.evaluate(()=>document.querySelector('#healthHome').innerText),/לא תשואה ולא המלצה/,'5.11: one sentence about the index');
+    const has=re=>H.parts.some(p=>re.test(p)); assert.ok(has(/ריכוז בענף.*טכנולוגיה \d+/),JSON.stringify(H.parts)); assert.ok(has(/ריכוז במטבע.*דולר \d+/)); assert.ok(has(/תנודתיות.*החודש הגרוע/)); assert.ok(has(/התאמה לאופק.*בטא \d\.\d\d מול אופק של 15 שנים/)); assert.match(await pg.evaluate(()=>document.querySelector('#healthHome').textContent),/לא תשואה ולא המלצה/,'5.11: one sentence about the index');
     await pg.waitForTimeout(1500); const ym=new Date().toISOString().slice(0,7); const mk=(store.getDoc('settings/main').data.hsc||{})[ym]; assert.ok(typeof mk==='number'&&Math.abs(mk-H.score)<=5,'one mark a month, in the account: '+mk+' vs '+H.score);
     // the goals compass: no goal yet, then a goal
     await tab(pg,'forecast'); await pg.waitForTimeout(500);
     let c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' ')); assert.match(c,/קבע יעד למעלה/);
     await pg.fill('#inGoal','300000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600);
     c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' '));
-    assert.match(c,/היום \(אחרי מס משוער\): ₪[\d,]+ מתוך ₪300,000, \d+% מהיעד/); assert.match(c,/בעוד 15 שנים, לפי 7\.0% בשנה ו-₪600 בחודש: ₪[\d,]+ אחרי מס/); assert.match(c,/ליעד מגיעים (בעוד|כבר)/); assert.match(c,/הפקדה חודשית שסוגרת את הפער באותן הנחות: ₪[\d,]+/); assert.match(c,/כל ₪100 נוספים בחודש: עוד כ-₪[\d,]+/); assert.match(c,/לא תחזית ולא טווח הסתברויות/);
+    assert.match(c,/היום \(אחרי מס משוער\): ₪[\d,]+ מתוך ₪300,000, \d+% מהיעד/); assert.match(c,/בעוד 15 שנים, לפי 7\.0% בשנה ו-₪600 בחודש: ₪[\d,]+ אחרי מס/); assert.match(c,/ליעד מגיעים (בעוד|כבר)/); assert.match(c,/הפקדה חודשית שסוגרת את הפער באותן הנחות: ₪[\d,]+/); assert.match(c,/כל ₪100 נוספים בחודש: עוד כ-₪[\d,]+/); assert.match(await pg.evaluate(()=>document.getElementById('goalCompass').textContent),/לא תחזית ולא טווח הסתברויות/);
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('settings/main',S0,{silent:true})}
 });

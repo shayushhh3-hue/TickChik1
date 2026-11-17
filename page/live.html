@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3750,6 +3750,44 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .cash-ed{margin-inline-start:auto;min-height:44px;font-size:15px}
   html body .pf-all-b,html body .cash-ed{background:none!important;border:0!important;box-shadow:none!important;color:var(--accent-ink)!important;padding:0 8px!important;font-weight:500!important;width:auto!important}
   html body #cashP:not(.open) #cashForm{display:none!important}
+  /* 17.11 proposal 2, "פיזור": the views' row, the answer first, the four concentration tiles 2 by 2, one list with "הקבוצות שלי" first, the factors as rows, the rest folded */
+  html body .pill-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 16px;padding:2px 0}
+  html body .pill-nav::-webkit-scrollbar{display:none}
+  html body .pill-nav button{flex:none;min-height:36px;padding:6px 14px;border-radius:20px;border:0;background:var(--accent-soft);color:var(--accent-ink);font:500 14px var(--sans);white-space:nowrap}
+  html body .pill-nav button[aria-current="page"]{background:var(--accent);color:#fff;font-weight:600}
+  html body .m-ans .ma-k{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  html body .m-ans .ma-v.sm{font-size:24px}
+  html body .m-ans .ma-tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:12px;background:var(--crit-bg);color:var(--crit-ink);white-space:nowrap}
+  html body .m-ans .ma-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-top:12px}
+  html body .m-ans .ma-bar i{display:block;height:100%}
+  html body .m-ans .ma-ac{margin-top:12px}
+  html body [data-pane="mix"] #mixHome{display:none!important}
+  html body [data-pane="mix"] .mine3{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  html body #expBox [data-expv="group"]{order:-1}
+  html body .xr-fac>.nm{display:none!important}
+  html body .xr-fac ul{list-style:none!important;margin:0!important;padding:0!important}
+  html body .xr-fac li{display:grid!important;grid-template-columns:minmax(0,1fr) auto 14px;column-gap:10px;align-items:center;min-height:56px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  html body .xr-fac li:last-child{border-bottom:0}
+  html body .xr-fac li>:nth-child(1){grid-column:1;grid-row:1;font-weight:500}
+  html body .xr-fac li>:nth-child(2){grid-column:2;grid-row:1/span 2}
+  html body .xr-fac li>:nth-child(3){grid-column:1;grid-row:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+  html body .xr-fac li>br{display:none}
+  html body .xr-fac li>:nth-child(5){grid-column:1/-1;grid-row:3;display:none;font-size:13px;margin-top:4px}
+  html body .xr-fac li.open>:nth-child(5){display:block}
+  html body .xr-fac li::after{content:"‹";grid-column:3;grid-row:1/span 2;color:var(--muted);font-size:20px;text-align:center}
+  html body .xr-fac li.open::after{content:"⌃"}
+  html body .more-h{margin:8px 0;font-size:14px;font-weight:600;color:var(--ink2)}
+  html body section.fold1>.row{cursor:pointer;min-height:52px;align-items:center;position:relative;padding-inline-end:24px!important}
+  html body section.fold1>.row::after{content:"‹";position:absolute;inset-inline-end:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}
+  html body section.fold1.open>.row::after{content:"⌃"}
+  html body section.fold1:not(.open)>:not(.row){display:none!important}
+  html body section.fold1>.row .sub{display:none!important}
+  html body #expSub{display:none!important}
+  html body #expBox>.chips{border:0!important;background:none!important;padding:0!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
+  html body [data-pane]>section.fold1.fold1.fold1{border:1px solid var(--line)!important;border-radius:8px!important;padding:0 16px!important;margin:0 0 8px!important;background:var(--surface)!important;box-shadow:none!important;min-height:0!important}
+  html body [data-pane]>section.fold1.fold1>.row{margin:0!important;padding-block:4px!important;border:0!important}
+  html body [data-pane]>section.fold1.fold1>.row h2{font-size:15px!important;font-weight:500!important;margin:0!important}
+  html body #expBox>.chips .chip{flex:none!important;white-space:nowrap!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4367,6 +4405,8 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
        when the page starts (foldBoot) -->
   <div class="pane" data-pane="mix" hidden>
     <div class="mix-head"><h2 id="hMixT">פיזור</h2><span class="sub">איך התיק מחולק: קבוצות, יעדים, חשיפות ורווח לפי נייר</span></div>
+    <nav class="pill-nav" id="mixTabs" aria-label="תצוגות התיק"><button type="button" data-tab="overview">סקירה</button><button type="button" aria-current="page">פיזור</button><button type="button" data-tab="history">מבט לאחור</button><button type="button" data-tab="state">מה קורה בתיק</button></nav>
+    <div class="m-ans" id="mixAns" role="group" aria-label="הכי מרוכז בתיק" hidden></div>
   </div>
   <div class="pane" data-pane="fit" hidden></div>
   <div class="pane" data-pane="news" hidden>
@@ -19013,7 +19053,22 @@ function renderMixHome(m){
     $('mixPie').innerHTML=h; $('mixPie').setAttribute('aria-label','פיזור לפי הקבוצות שלך: '+gs.map(g=>`${GROUPS[g.id]} ${pct(g.val/tot*100)}`).join(', '))}
   $('mixBar').innerHTML=gs.map(g=>`<i title="${esc(GROUPS[g.id])} ${pct(g.val/tot*100)}" style="width:${g.val/tot*100}%;background:${GCOL[g.id]||'#94A3B8'}"></i>`).join('');
   $('mixList').innerHTML=gs.map(g=>{const w=g.val/tot*100, over=cap>0&&g.id!=='cash'&&w>cap; return `<li><i style="background:${GCOL[g.id]||'#94A3B8'}"></i><span>${esc(GROUPS[g.id])} <span class="gv n">${ils(g.val)}</span></span><span class="gw n${over?' over':''}">${pct(w)}${over?' ▲':''}</span></li>`}).join('');
+  try{mixAnsFill(m,gs,cap,tot)}catch(e){console.error(e)}
 }
+// 17.11 (the owner's proposal 2, "פיזור"): the phone's answer card: the most concentrated of your groups, whether it is
+// past your limit, its value and its securities, and the bar of all the groups (the computer keeps the groups' card)
+function mixAnsFill(m,gs,cap,tot){const box=$('mixAns'); if(!box)return; const top=gs.find(g=>g.id!=='cash');
+  if(!top||!(tot>0)){box.hidden=true; return}
+  const w=top.val/tot*100, over=cap>0&&w>cap, syms=(m.pos||[]).filter(p=>p.group===top.id).map(p=>lab(p.sym||''));
+  box.hidden=false;
+  box.innerHTML=`<div class="ma-k"><span>הכי מרוכז בתיק</span>${over?'<span class="ma-tag">מעבר לגבול</span>':''}</div><div class="ma-v sm">${esc(GROUPS[top.id]||top.id)} <span class="n">${pct(w)}</span></div><div class="ma-l">${cap>0?`הגבול שלך ${pct(cap,0)} · `:''}<span class="n">${ils(top.val)}</span> ${syms.length===1?'בנייר אחד':`ב-${syms.length} ניירות`}${syms.length?': '+esc(syms.slice(0,4).join(', '))+(syms.length>4?'…':''):''}</div><div class="ma-bar" aria-hidden="true">${gs.map(g=>`<i style="width:${g.val/tot*100}%;background:${GCOL[g.id]||'#94A3B8'}"></i>`).join('')}</div>${over?'<div class="ma-ac"><button type="button" class="btn sm" data-tab="risk">מה אפשר לעשות</button></div>':''}`}
+// 17.11 (proposal 2): a section folded on the phone opens from its title row; a common factor opens its explanation
+function foldSec(s){if(!s||s.classList.contains('fold1'))return; s.classList.add('fold1'); const r=s.querySelector(':scope>.row'); if(!r)return;
+  try{if(matchMedia('(max-width:759px)').matches){r.setAttribute('role','button'); r.tabIndex=0; r.setAttribute('aria-expanded','false')}}catch(e){}}
+function foldTog(el){const s=el.closest('section.fold1'); if(s){const on=!s.classList.contains('open'); s.classList.toggle('open',on); const r=s.querySelector(':scope>.row'); if(r&&r.hasAttribute('aria-expanded'))r.setAttribute('aria-expanded',String(on)); return}
+  const li=el.closest('.xr-fac li'); if(li){const on=!li.classList.contains('open'); li.classList.toggle('open',on); li.setAttribute('aria-expanded',String(on))}}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return; if(t.closest('section.fold1>.row')||t.closest('.xr-fac li'))foldTog(t)});
+document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')return; const t=ev.target; if(!t||!t.matches||!t.matches('section.fold1>.row,.xr-fac li'))return; ev.preventDefault(); foldTog(t)});
 function render(){
   setTimeout(()=>{try{riskNavSync()}catch(e){}},0); rulesAutoApply();
   try{const w=document.querySelector('.wrap'), was=w.classList.contains('nopf'); w.classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length))); if(was!==w.classList.contains('nopf'))pxLine()}catch(e){}
@@ -19683,6 +19738,8 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.hkind .chip'); if(!b||!b.dataset.hv)return; HV=b.dataset.hv; try{localStorage.setItem('tr_holdv',HV)}catch(x){} try{render()}catch(x){}});
 let EXPV='sector', EXPM=null, ST={kind:'all',pct:20,group:'',by:{},co:0,usd:10};
 try{const v=localStorage.getItem('tr_expv'); if(['sector','ccy','market','kind','group'].includes(v))EXPV=v}catch(e){}
+// 17.11 (proposal 2): on the phone the one list opens on your own groups (the groups' card is the computer's)
+try{if(!localStorage.getItem('tr_expv')&&matchMedia('(max-width:759px)').matches)EXPV='group'}catch(e){}
 try{const s=JSON.parse(localStorage.getItem('tr_stress')||'null'); if(s&&typeof s==='object')ST={...ST,...s,by:{...(s.by||{})}}}catch(e){}
 const EXPL={sector:'ענף',ccy:'מטבע',market:'בורסה',kind:'סוג',group:'הקבוצות שלי'};
 const EXPN={sector:'ענף = תחום הפעילות של החברה. זה לא הקבוצות שקבעת, ולכן האחוזים שונים מ"פיזור לפי הקבוצות שלך"; השווי הכולל זהה. קרן מוצגת כקרן, כי לא ידוע אילו חברות יש בה.',ccy:'ניירות שנסחרים בדולר ומזומן בדולרים. קרן שנסחרת בשקל יכולה להחזיק נכסים בחו״ל, וזה לא נספר כאן.',
@@ -19702,7 +19759,7 @@ function renderExposure(m){
   const ov=E.overlap.status==='known'?etfLookH(E):E.overlap.status==='unknown-possible'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה.</b> ${esc(E.overlap.text)} כדי לחשב אותה צריך את ההרכב של הקרנות, ואין לדף מקור כזה.</p>`
     :E.overlap.status==='unknown'?`<p class="note"><b>חפיפה בין קרנות למניות: לא ידועה,</b> כי אין לדף את ההרכב של ${esc(E.funds.map(lab).join(', '))}. זה לא אומר שאין חפיפה.</p>`:'';
   // 1.11 (3): the common factors, direct against indirect, and what the page cannot say (the country of business, the funds' holdings)
-  const fac=E.factors&&E.factors.length?`<div class="xr-fac"><h3>גורמי סיכון משותפים</h3><p class="nm">כמה מהתיק זז יחד כשגורם אחד משתנה. נייר יכול להיות תחת כמה גורמים.</p><ul>${E.factors.slice(0,7).map(f=>`<li><b>${esc(f.label)}</b> <span class="n">${pct(f.w,0)}</span> <span class="nm">(${f.syms.length} ניירות: ${esc(f.syms.slice(0,6).map(lab).join(', '))}${f.syms.length>6?'…':''})</span><br><span class="nm">${esc(f.why)}</span></li>`).join('')}</ul></div>`:'';
+  const fac=E.factors&&E.factors.length?`<div class="xr-fac"><h3>גורמי סיכון משותפים</h3><p class="nm">כמה מהתיק זז יחד כשגורם אחד משתנה. נייר יכול להיות תחת כמה גורמים.</p><ul>${E.factors.slice(0,7).map(f=>`<li tabindex="0" role="button" aria-expanded="false"><b>${esc(f.label)}</b> <span class="n">${pct(f.w,0)}</span> <span class="nm">(${f.syms.length} ניירות: ${esc(f.syms.slice(0,6).map(lab).join(', '))}${f.syms.length>6?'…':''})</span><br><span class="nm">${esc(f.why)}</span></li>`).join('')}</ul></div>`:'';
   const dir=E.direct?`<p class="note"><b>ישיר מול עקיף:</b> ${pct(E.direct.stocks,0)} מהתיק בניירות בודדים (חשיפה ישירה), ${pct(E.direct.funds,0)} דרך קרנות (עקיפה; החברות שבתוך הקרן אינן בנתוני הדף). <b>מדינה:</b> לפי מקום המסחר בלבד ("שוק"); מדינת הפעילות של כל חברה אינה בנתונים.</p>`:'';
   const co=CM&&CM.to?`<p class="note">גורמים משותפים: ניירות שזזים יחד מופיעים בחלק "נעים יחד", לפי ${CM.days||'?'} ימי מסחר עד ${dmy(CM.to)}${(Date.now()-new Date(CM.to))/864e5>14?' (הנתון הזה לא מתעדכן כרגע)':''}.</p>`:'';
   box.innerHTML=tiles+`<div class="chips" role="group" aria-label="חלוקה לפי" style="margin:14px 0 10px">${Object.keys(EXPL).map(k=>`<button type="button" class="chip" data-expv="${k}" aria-pressed="${k===EXPV}">${EXPL[k]}</button>`).join('')}</div>`
@@ -20660,7 +20717,9 @@ function secIconH(id){const d=SECI[id]; return d?`<span class="sec-ic" aria-hidd
 // 10.11 (the owner): פיזור is a screen of its own (reached from the row over the home's value); its sections leave בקרה
 const MIXIDS=['hMixH','hMix','hExp','hPnl','hCore'];
 function foldBoot(){
-  {const mp=document.querySelector('[data-pane="mix"]'), rp=document.querySelector('[data-pane="risk"]'); if(mp&&rp)for(const id of MIXIDS){const s=rp.querySelector(`:scope > section[aria-labelledby="${id}"]`); if(s)mp.appendChild(s)}}
+  {const mp=document.querySelector('[data-pane="mix"]'), rp=document.querySelector('[data-pane="risk"]'); if(mp&&rp)for(const id of MIXIDS){const s=rp.querySelector(`:scope > section[aria-labelledby="${id}"]`); if(s)mp.appendChild(s)}
+   // 17.11 (proposal 2): on the phone the last two fold under "עוד בדף הזה"
+   if(mp){for(const id of ['hPnl','hCore']){const s=mp.querySelector(`:scope > section[aria-labelledby="${id}"]`); if(s)foldSec(s)} const pn=mp.querySelector(':scope > section[aria-labelledby="hPnl"]'); if(pn&&!document.getElementById('mixMoreH'))pn.insertAdjacentHTML('beforebegin','<h3 class="more-h" id="mixMoreH">עוד בדף הזה</h3>')}}
   for(const pane of document.querySelectorAll('.pane')){ if(pane.dataset.pane==='overview')continue;
     for(const s of pane.querySelectorAll(':scope > section')){const id=s.getAttribute('aria-labelledby'); if(!id||s.classList.contains('seccard'))continue;
       let head=s.querySelector(':scope > .row'); if(!head){const h2=s.querySelector(':scope > h2'); if(h2){head=document.createElement('div'); head.className='row'; s.insertBefore(head,h2); head.appendChild(h2)}}
@@ -23487,7 +23546,7 @@ function renderCompass(pts,e,unreal){
   const box=$('goalCompass'); if(!box)return; const goal=Math.max(0,+S.goal||0), yrs=+S.years||0, rate=+S.ratePct||0, mo=MTOT(), start=pts[0].val, tr=Math.max(0,+S.taxPct||0)/100;
   const L=pots(), potH=L.length?`<div class="cmp-pots"><h4>חסכונות לפי מטרה</h4><ul>${L.map(pt=>{let V=null; try{V=potValue(pt)}catch(x){} if(!V)return ''; const gap=V.tgt?Math.max(0,V.tgt-V.total):null;
     return `<li><b>${esc(pt.name||'חיסכון')}</b>: ${ils(V.total)}${V.tgt?` מתוך ${ils(V.tgt)} (${pct(V.pctT||0,0)})${gap?`, חסר ${ils(gap)}`:', ביעד'}`:' (בלי יעד)'}${pt.date?` · עד ${potDayTxt(pt.date)}`:''}${V.atDate!=null?` · לפי ההנחות: ${ils(V.atDate)} במועד`:''} <button type="button" class="lnk" data-tab="pots" data-pot="${esc(pt.id)}">לפתוח</button></li>`}).join('')}</ul></div>`:'';
-  if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note" style="margin:0">קבע יעד למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש ומה הפער.</p>${potH}`; return}
+  if(!goal){box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3><p class="note keep" style="margin:0">קבע יעד למעלה ("היעד שלי, אחרי מס") כדי לראות כמה ממנו כבר יש ומה הפער.</p>${potH}`; return}
   const netNow=start-Math.max(0,+(EXPM&&EXPM.pnl)||0)*tr, pNow=Math.max(0,Math.min(100,netNow/goal*100)), end=e.net, gap=goal-end, k=goalMonths(start,mo,rate,unreal,goal), need=needMonthly(start,yrs,rate,unreal,goal);
   const plus=(d)=>{const r=Math.pow(1+rate/100,1/12)-1; let v=0; for(let i=1;i<=yrs*12;i++)v=v*(1+r)+d; return v*(1-tr)};
   box.hidden=false; box.innerHTML=`<h3>מצפן המטרות</h3>
@@ -30315,6 +30374,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.19',at:'2026-11-17',t:'פיזור: התשובה קודם',d:'בטלפון: "פיזור" נפתח בכרטיס שאומר מה הכי מרוכז בתיק ואם זה מעבר לגבול שלך. ארבעת אריחי הריכוז מסודרים 2 על 2, ורשימה אחת נפתחת על הקבוצות שלך (אפשר לעבור לענף, מטבע או בורסה). גורמי הסיכון המשותפים הם שורות קצרות שנפתחות בלחיצה.',go:'mix'},
   {v:'2026-11-17.18',at:'2026-11-17',t:'התיק שלי: כרטיס אחד למעלה',d:'בטלפון: בראש "התיק שלי" כרטיס עם שווי האחזקות, השינוי היום והסכום בכל חשבון. מתחתיו סינון לפי חשבון ושמונה האחזקות הראשונות, עם "להציג את כל". הייצוא מאחורי ⋯, המזומן בשורה אחת, וכפתור "+ הוספה" אחד פותח את כל דרכי ההוספה.',go:'pfedit'},
   {v:'2026-11-17.17',at:'2026-11-17',t:'תוכנית: המעקב החודשי נכנס למסך',d:'בטלפון, כל חודש במעקב החודשי הוא כרטיס: החודש והיתרה למעלה, ההפקדה והקניות מתחת. שום עמודה לא נחתכת.',go:'plan'},
   {v:'2026-11-17.16',at:'2026-11-17',t:'הבית: הצעדים הבאים בשורה אחת',d:'בבית, "עוד צעדים כדי שהבקרה תעבוד בשבילך" הוא שורה אחת שנפתחת בלחיצה.',go:'ov'},
