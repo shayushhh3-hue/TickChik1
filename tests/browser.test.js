@@ -3483,7 +3483,7 @@ test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choi
   {const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(300);
     const r=await pg.evaluate(()=>{const cs=e=>getComputedStyle(e), w=document.querySelector('.worth'), line=document.querySelector('#wChS path[stroke="url(#wgA)"]'), mix=document.querySelector('#bMix svg'), ck=document.getElementById('bChk');
       const W=w.getBoundingClientRect(), V=document.getElementById('kTotal').getBoundingClientRect(), K=document.getElementById('kKpis').getBoundingClientRect(), C=document.getElementById('wChart').getBoundingClientRect();
-      return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:[...document.querySelectorAll('.worth #kKpis .kpi-k')].map(x=>x.textContent),
+      return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:[...document.querySelectorAll('.worth #kKpis .kpi-k, .worth #kPnlK .kpi-k')].map(x=>x.textContent),
         top:Math.round(V.top-document.getElementById('ovTabs').getBoundingClientRect().bottom),tabsTop:Math.round(document.getElementById('ovTabs').getBoundingClientRect().top-W.top),
         tabBg:cs(document.querySelector('#ovTabs button')).backgroundColor,tabInk:cs(document.querySelector('#ovTabs button')).color,
         right:Math.round(W.right-V.right),under:K.top>=V.bottom-1&&(!C.height||K.bottom<=C.top+1),

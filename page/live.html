@@ -3513,6 +3513,40 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 #srchBox>svg.duo{width:22px;height:22px;color:var(--accent);flex:none}
 .sec-ic svg path{fill:currentColor;fill-opacity:.18}
 #ovTabs button svg{width:22px!important;height:22px!important}
+/* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
+   thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
+:root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+.panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
+html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
+html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.insight{background:var(--surface)!important;border:1px solid var(--line)!important}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .pane:not([data-pane="overview"]) > section.seccard{box-shadow:none!important}
+/* pills: the chosen one solid purple, the others lavender with purple words */
+.chip{background:var(--accent-soft);color:var(--accent-ink);border:0!important;border-radius:20px!important;font-weight:500}
+.chip[aria-pressed="true"],.chip[aria-selected="true"]{background:var(--accent)!important;color:#fff!important}
+.chips{gap:8px}
+/* the home's views as pills */
+html body[data-page="overview"] #ovTabs#ovTabs{display:flex!important;grid-auto-flow:initial!important;flex-wrap:nowrap;gap:10px!important;overflow-x:auto;scrollbar-width:none;margin:4px 0 8px!important}
+#ovTabs::-webkit-scrollbar{display:none}
+html body[data-page="overview"] #ovTabs#ovTabs button{white-space:nowrap;line-height:1.4!important;gap:0!important;flex:none!important;flex-direction:row!important;min-height:34px!important;height:auto!important;padding:6px 14px!important;border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;box-shadow:none!important;font-size:14px!important;font-weight:500!important}
+html body[data-page="overview"] #ovTabs#ovTabs button svg{display:none!important}
+html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--accent)!important;color:#fff!important}
+#ovTabs .ov-here{cursor:default}
+/* the profit against the cost, under the value */
+.kpi-pnl{display:flex;justify-content:flex-start;margin:2px 0 6px}
+.kpi-pnl .kpi{display:inline-flex!important;flex-wrap:nowrap;align-items:baseline;gap:6px;padding:0!important;background:none!important;border-radius:0!important;justify-content:flex-start!important}
+.kpi-pnl .kpi-k{font-size:14px;color:var(--ink2)} .kpi-pnl .kpi-v{font-size:16px;font-weight:600} .kpi-pnl .kpi-s{font-size:13px}
+/* the bottom bar: flat, white, a thin line on top; the words under the icons; the open one dark, the others at half */
+@media (max-width:759px){
+  .botbar{inset-inline:0!important;bottom:0!important;border-radius:0!important;border:0!important;border-top:.5px solid rgb(0 0 0 / .12)!important;box-shadow:none!important;background:var(--surface)!important;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))!important;gap:0!important}
+  html[data-theme="dark"] .botbar{border-top-color:rgb(255 255 255 / .12)!important}
+  .botbar button,.botbar button[aria-current="page"],.botbar button.on{background:none!important;color:var(--ink)!important;opacity:.5;border-radius:8px!important;font-size:11.5px!important;font-weight:500!important;min-height:50px!important;gap:3px!important}
+  .botbar button[aria-current="page"],.botbar button.on{opacity:1;font-weight:600!important}
+  .botbar button svg,.botbar button[aria-current="page"] svg,.botbar button.on svg{width:24px!important;height:24px!important;padding:0!important;background:none!important;color:currentColor!important;border-radius:0!important}
+  .botbar .bb-fab{flex:1 1 0!important}
+  .botbar .bb-fab .fab-c{width:auto!important;height:auto!important;margin:0!important;background:none!important;box-shadow:none!important;color:currentColor!important}
+  .botbar .bb-fab .fab-c svg{width:24px!important;height:24px!important;color:currentColor!important}
+}
 </style>
 
 <div class="stbub" id="stBub" role="group" aria-label="התראות מעל צ׳יקו" hidden></div>
@@ -3589,6 +3623,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
     <div class="main">
       <!-- 10.11 (the owner): a small row of the portfolio's own views over the value, in place of the four big buttons -->
       <nav class="ovtabs" id="ovTabs" aria-label="תצוגות התיק">
+        <button type="button" class="ov-here" data-tab="overview" aria-current="page"><span>סקירה</span></button>
         <button type="button" data-tab="mix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z" fill="currentColor" fill-opacity=".2" stroke="none"/><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M14.5 1.8v7.7h7.7a7.7 7.7 0 0 0-7.7-7.7z" fill="currentColor" stroke="none"/></svg><span>פיזור</span></button>
         <button type="button" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".16" stroke="none"/><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg><span>מבט לאחור</span></button>
         <button type="button" data-tab="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z" fill="currentColor" fill-opacity=".2" stroke="none"/><path d="M4 5h16v10H9l-5 4z"/></svg><span>מה קורה בתיק</span></button>
@@ -3601,6 +3636,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
         <div class="wgrid">
           <div class="wv">
             <span class="big" id="kTotal">—</span>
+            <div class="kpis kpi-pnl" id="kPnlK" role="group" aria-label="רווח מול עלות" hidden></div>
             <div class="dayline"><span class="v" id="kDay">—</span><span class="d" id="kDayD"></span><span class="dpill" id="kDayPill"></span><span class="dw" id="kDayW"></span><i class="dl-br" aria-hidden="true"></i><span class="dm" id="kDayM" hidden></span><button type="button" class="whybtn" id="kWhy" data-ana="why" hidden>למה?</button></div>
             <div class="kpis" id="kKpis" role="group" aria-label="השינוי בתיק" hidden></div>
             <div class="ktoday" id="kToday" aria-live="polite" hidden></div>
@@ -19908,7 +19944,7 @@ function monChipCalc(m){
   return {ret:(now/then-1)*100,key,since,days:Math.round((Date.parse(today)-Date.parse(key))/864e5)}}
 // 10.11 (the owner): the value card as the brokers' apps have it: under the value one row of three figures of one make,
 // היום (with its "למה?"), the week (11.11; it was the last 30 days), and the profit against the cost
-function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos.length){el.hidden=true; return}
+function renderKpis(m){const el=$('kKpis'), pk=$('kPnlK'); if(!el)return; if(!m||!m.pos||!m.pos.length){el.hidden=true; if(pk)pk.hidden=true; return}
   const cell=(k,v,s,c)=>`<div class="kpi"><span class="kpi-k">${k}</span><span class="kpi-v n ${c||''}">${v}</span>${s?`<span class="kpi-s n ${c||''}">${s}</span>`:''}</div>`, C=[];
   C.push(m.dayPct!=null?cell('היום',sgn(m.dayIls),spct(m.dayPct),m.dayIls>=0?'up':'down'):cell('היום','—'));
   let r=null; try{r=monChipCalc(m)}catch(e){}
@@ -19920,7 +19956,8 @@ function renderKpis(m){const el=$('kKpis'); if(!el)return; if(!m||!m.pos||!m.pos
   // 11.11 (the owner): today and the week under the value (the 30 days only when the week is not known, as for one account)
   C.push(wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):cell('שבוע','—'));
   // 11.11 (the owner): the profit against the cost always there; with no cost known, one tap to the form that fills it in
-  C.push(m.cost>0?cell('רווח מול עלות',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):`<div class="kpi"><span class="kpi-k">רווח מול עלות</span><button type="button" class="kpi-add" data-tab="mine">להוסיף עלויות</button></div>`);
+  // 17.11 (the owner): the profit against the cost on a line of its own, right under the value
+  {const pH=m.cost>0?cell('רווח מול עלות',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):`<div class="kpi"><span class="kpi-k">רווח מול עלות</span><button type="button" class="kpi-add" data-tab="mine">להוסיף עלויות</button></div>`; if(pk){pk.hidden=false; setH(pk,pH)} else C.push(pH)}
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
   const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
   el.hidden=false; setH(el,C.join('')); const c0=el.querySelector('.kpi'); if(w&&c0)c0.appendChild(w)}
@@ -29994,6 +30031,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.8',at:'2026-11-17',t:'מראה חדש לפי העיצוב של שי',d:'רקע לבן, כרטיסים עם מסגרת דקה ופינות קטנות, לשוניות בצורת גלולות, סרגל תחתון שטוח עם מילים מתחת לאייקונים, ו"רווח מול עלות" ישר מתחת לשווי התיק. הנתונים והניסוחים לא השתנו.',go:'srch'},
   {v:'2026-11-17.7',at:'2026-11-17',t:'מראה חדש, אותם צבעים',d:'גופן חדש (IBM Plex Sans Hebrew), בלי מעברי צבע ובלי צל סגול מתחת לכרטיסים, פינות אחידות, ואייקונים דו-גוניים במחקר השוק. הצבעים והניסוחים לא השתנו.',go:'srch'},
   {v:'2026-11-17.6',at:'2026-11-17',t:'מחקר שוק, ולשונית למניות במעקב',d:'המחקר נקרא עכשיו מחקר שוק: רשימות מוכנות (עלו, ירדו, הגדולות), מה חסר לך בתיק, תנועות היום, קטגוריות לפי ענף, ותעודות סל, עם סינון לפי גודל ומיון. לחיצה על תיבת החיפוש מראה את הניירות שהסתכלת עליהם לאחרונה. המניות שסימנת למעקב עברו ללשונית משלהן: מניות במעקב.',go:'srch'},
   {v:'2026-11-17.5',at:'2026-11-17',t:'דף נייר קצר, עם לשוניות',d:'בטלפון, הדף של נייר מחולק ללשוניות מעל השם: סקירה, החברה, דוח, אנליסטים וחדשות. בסקירה יש משפט מסכם לכל לשונית, ונקודה על לשונית אומרת שיש בה משהו חדש. במחשב הדף נשאר דף אחד, והלשוניות קופצות לחלק. התראת מחיר עברה לכפתור הפעמון שליד שם הנייר.',go:'srch'},
