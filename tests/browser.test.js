@@ -205,7 +205,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // to its page from the message: the analysis right under the chart
     await pg.evaluate(()=>document.querySelector('#desk li.rep [data-gosec="MSFT"]').click()); await pg.waitForTimeout(1200);
     const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); return b?{h:b.querySelector('h3').textContent,sub:b.querySelector('.row .sub').textContent,
-      under:(n=>{while(n&&['mypos','ancard','big','pxal','chread','abx'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return n===b})(document.getElementById('secChartNote').nextElementSibling),cards:[...b.querySelectorAll('.rq')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),hd:(b.querySelector('.rq-hd')||{}).textContent||'',gauge:(()=>{const g=b.querySelector('.rq-gt b'), on=b.querySelector('.rq-gl .on'); return g&&on?[parseFloat(g.style.left)>66,on.textContent]:null})(),moreOpen:b.querySelector('details.rpmore').open,
+      under:(()=>{const A=[...document.querySelectorAll('#secPage>.stp>*')], i=A.indexOf(document.getElementById('secChartNote')), j=A.indexOf(b); return i>=0&&j>i&&A.slice(i+1,j).every(n=>['mypos','ancard','big','pxal','chread','abx'].some(c=>n.classList.contains(c)))})(),cards:[...b.querySelectorAll('.rq')].map(c=>c.innerText.replace(/\s+/g,' ').trim()),hd:(b.querySelector('.rq-hd')||{}).textContent||'',gauge:(()=>{const g=b.querySelector('.rq-gt b'), on=b.querySelector('.rq-gl .on'); return g&&on?[parseFloat(g.style.left)>66,on.textContent]:null})(),moreOpen:b.querySelector('details.rpmore').open,
       what:[...b.querySelectorAll('h4')].map(h=>h.textContent),f:[...b.querySelectorAll('.repf li')].map(x=>x.textContent),old:[...b.querySelectorAll('.rpold li')].map(x=>x.textContent),txt:b.textContent,tbl:!!b.querySelector('table')}:null});
     assert.ok(r,'the report box is on the page'); assert.equal(r.h,'ניתוח הדוח האחרון · Q3 2026'); assert.equal(r.sub,`פורסם ב-${dmY(day)}`); assert.ok(r.under,'right under the chart');
     // 17.11 (the owner: "the most basic investor"): the report in plain words: a sentence, a gauge, and rows of a question,
@@ -230,7 +230,7 @@ test('a company\'s report as an analysis: in the home page\'s to-do list, the al
     // a security nobody holds: the same analysis on its page, and nothing on the home page
     store.setDoc('research/s_NFLX',{sym:'NFLX',name:'Netflix',source:'Yahoo Finance',rep:{...rep,label:'Q3 2026'},next:'2027-01-20'},{silent:true});
     const o=await open(390); await tab(o.pg,'search'); await o.pg.waitForTimeout(500); await o.pg.evaluate(()=>window.__srch.open('NFLX')); await o.pg.waitForTimeout(1200);
-    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); let n=document.getElementById('secChartNote').nextElementSibling; while(n&&['mypos','ancard','big','pxal','chread','abx'].some(c=>n.classList.contains(c)))n=n.nextElementSibling; return !!b&&n===b&&b.querySelectorAll('.rq').length>=2}),'on the page of a security not held');
+    assert.ok(await o.pg.evaluate(()=>{const b=document.querySelector('#secPage .repbox'); const A=[...document.querySelectorAll('#secPage>.stp>*')], i=A.indexOf(document.getElementById('secChartNote')), j=A.indexOf(b), n=i>=0&&j>i&&A.slice(i+1,j).every(x=>['mypos','ancard','big','pxal','chread','abx'].some(c=>x.classList.contains(c)))?b:null; return !!b&&n===b&&b.querySelectorAll('.rq').length>=2}),'on the page of a security not held');
     assert.deepEqual(o.pg.errs,[]); await o.ctx.close();
   }finally{store.setDoc('research/latest',L0); store.deleteDoc('research/s_NFLX')}
 });
@@ -3685,4 +3685,59 @@ test('17.11 "מה קרה לאחרונה" on a security\'s page (the owner\'s moc
     assert.equal(await pg.evaluate(()=>document.body.dataset.page),'news','to the article in the news page');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0)}
+});
+
+test('17.11 a security\'s page in tabs on a phone (the owner: "the scroll feels very long"; "let\'s build the tabs"): the tabs above the name, a screen per tab, a sentence per tab in the overview, a dot for what is new, the holding as one row, the price alert behind the bell; one page with jumps on a wide screen',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
+  const k='research/s_NVDA', D0=store.getDoc(k);
+  const D=await rtData(); await rtSet(D);
+  store.setDoc(k,{...(D0.data||{}),sym:'NVDA',name:'NVIDIA',source:'FMP',rating:'Buy',analysts:32,votes:{buy:13,hold:16,sell:3},votes5:{sb:5,b:8,h:16,s:2,ss:1},target:205,targetHi:260,targetLo:150,
+    rep:{q:'2026-09-30',label:'Q3 2026',at:new Date(Date.now()-5*864e5).toISOString().slice(0,10),eps:{a:5.4,e:5.1,s:5.9},rev:35.1e9,revE:33.2e9},next:'2027-02-20',
+    prof:{desc:'NVIDIA designs graphics processors and data center chips for customers worldwide.',country:'US',emp:36000,sector:'Technology',industry:'Semiconductors'},peers:['AMD','AVGO','INTC'],
+    about:{line:'מתכננת שבבים שמריצים בינה מלאכותית ומשחקי מחשב',sells:['שבבים לחוות שרתים'],buyers:['ענקיות ענן'],money:[{name:'חוות שרתים',pct:88},{name:'משחקים',pct:12}],moves:['הביקוש לבינה מלאכותית'],at:new Date().toISOString(),v:1}},{silent:true});
+  const go=async pg=>{await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForSelector('#secPage .top h2',{timeout:10000}); await pg.waitForTimeout(1500)};
+  const info=pg=>pg.evaluate(()=>{const p=document.getElementById('secPage'), T=x=>String(x||'').replace(/\s+/g,' ').trim(), vis=s=>[...p.querySelectorAll(s)].some(e=>e.getClientRects().length>0);
+    return {on:p.classList.contains('st-on'),cur:p.dataset.stcur,first:p.firstElementChild.className,role:(p.querySelector('.stabs')||{getAttribute(){}}).getAttribute('role'),tabs:[...p.querySelectorAll('.stabs [data-stab]')].map(b=>T(b.textContent)+(b.querySelector('.dot')?'*':'')+(b.getAttribute('aria-selected')==='true'?'!':'')),
+      rows:[...p.querySelectorAll('.stsum-r')].filter(r=>r.getClientRects().length).map(r=>r.dataset.stgo+'|'+T(r.querySelector('.k').textContent)+'|'+T(r.querySelector('.s').textContent)),hold:T((p.querySelector('.sthold summary')||{}).textContent),
+      v:{top:vis('.top h2'),px:vis('.pxrow'),chart:vis('#secChart'),trade:vis('.sectrade'),abx:vis('.abx'),rep:vis('.repbox'),an:vis('.ancard'),nq:vis('.nqc'),ask:vis('.secask'),pxal:vis('#pxAl')},h:p.offsetHeight,vh:innerHeight,y:Math.round(scrollY),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+  try{
+    // a phone: the tabs, with the overview open
+    {const {ctx,pg}=await open(390,{parts:true}); await go(pg);
+      let r=await info(pg); if(process.env.NQ_DEBUG)console.log(JSON.stringify(r,null,1));
+      assert.ok(r.on,'the tabs are a phone\'s'); assert.equal(r.cur,'ov'); assert.match(r.first,/\bstabs\b/,'above the name'); assert.equal(r.role,'tablist');
+      assert.deepEqual(r.tabs,['סקירה!','החברה','דוח*','אנליסטים','חדשות*'],'the five tabs; a dot on the report of this week and on today\'s news');
+      assert.deepEqual(r.v,{top:true,px:true,chart:true,trade:true,abx:false,rep:false,an:false,nq:false,ask:true,pxal:false},'the overview: the chart and the trade buttons; the other tabs\' cards are not drawn');
+      assert.equal(r.rows.length,3); assert.match(r.rows[0],/^rp\|הדוח האחרון · לפני 5 ימים חדש\|החברה הרוויחה יותר ממה שציפו ממנה/); assert.match(r.rows[1],/^nw\|מה קרה לאחרונה חדש\|(דבר אחד קרה|שני דברים קרו|שלושה דברים קרו)/); assert.equal(r.rows[2],'an|מה האנליסטים חושבים|13 מתוך 32 אנליסטים ממליצים לקנות','a sentence per tab, the card\'s own');
+      assert.match(r.hold,/^האחזקה שלך ?₪[\d,]+ · (ברווח|בהפסד) של [\d.]+%/,'the holding in one row: '+r.hold); assert.ok(r.h<2.3*r.vh,'the overview is about two screens, not five: '+r.h); assert.ok(r.ox,'nothing sideways');
+      // a tab is a screen of its own, under the name and the price, from its top; its dot goes
+      for(const [tb,key] of [['co','abx'],['rp','rep'],['an','an'],['nw','nq']]){await pg.evaluate(()=>window.scrollTo(0,400)); await pg.click('#secPage .stabs [data-stab="'+tb+'"]'); await pg.waitForTimeout(300); r=await info(pg);
+        assert.equal(r.cur,tb); const want={top:true,px:true,chart:false,trade:false,abx:false,rep:false,an:false,nq:false,ask:false,pxal:false}; want[key]=true; assert.deepEqual(r.v,want,tb+': only its own card under the name and the price'); assert.equal(r.y,0,'from the top'); assert.ok(r.ox,tb+': nothing sideways'); assert.ok(r.tabs.find(x=>x.endsWith('!'))&&!r.tabs.find(x=>x.endsWith('!')).includes('*'),'the open tab has no dot')}
+      assert.deepEqual(r.tabs,['סקירה','החברה','דוח','אנליסטים','חדשות!'],'every dot seen');
+      if(process.env.SHOT_DIR){for(const tb of ['ov','co','rp','an','nw'])for(const th of ['light','dark']){await pg.click('#secPage .stabs [data-stab="'+tb+'"]'); await pg.evaluate(t=>{document.documentElement.dataset.theme=t},th); await pg.waitForTimeout(350); await pg.screenshot({path:process.env.SHOT_DIR+'/stab-'+tb+'-'+th+'.png',fullPage:true})} await pg.evaluate(()=>{document.documentElement.dataset.theme='light'})}
+      // the arrows move between the tabs; a row of the overview opens its tab
+      await pg.click('#secPage .stabs [data-stab="ov"]'); await pg.waitForTimeout(300); await pg.focus('#secPage .stabs [data-stab="ov"]'); await pg.keyboard.press('ArrowLeft'); await pg.waitForTimeout(200); assert.equal((await info(pg)).cur,'co','the left arrow: the next tab');
+      await pg.keyboard.press('Home'); await pg.waitForTimeout(200); assert.equal((await info(pg)).cur,'ov'); await pg.click('#secPage .stsum-r[data-stgo="an"]'); await pg.waitForTimeout(300); r=await info(pg); assert.equal(r.cur,'an'); assert.ok(r.v.an&&!r.v.chart);
+      // the page drawn again (a price arrives) keeps the tab; another security starts at the overview, with no dots it was not given
+      await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(400); assert.equal((await info(pg)).cur,'an','the tab is kept');
+      await pg.evaluate(()=>window.__srch.open('MSFT')); await pg.waitForSelector('#secPage .top h2'); await pg.waitForTimeout(600); assert.equal((await info(pg)).cur,'ov','another security: its overview');
+      await go(pg); r=await info(pg); assert.deepEqual(r.tabs,['סקירה!','החברה','דוח','אנליסטים','חדשות'],'what was seen stays seen');
+      // the holding's row opens to its figures and rules; the price alert is behind the bell
+      await pg.click('#secPage .sthold summary'); await pg.waitForTimeout(300); assert.ok(await pg.evaluate(()=>{const d=document.querySelector('#secPage .sthold'); return d.open&&d.querySelector('.mypos').getClientRects().length>0&&d.querySelector('.rules').getClientRects().length>0}),'the figures and the rules, in the row');
+      const bell=await pg.evaluate(()=>{const b=document.getElementById('secBell'); return {lab:b.getAttribute('aria-label'),exp:b.getAttribute('aria-expanded'),w:b.getBoundingClientRect().width,apart:Math.abs(b.getBoundingClientRect().left-document.getElementById('secMark').getBoundingClientRect().left)>40}}); assert.deepEqual([bell.lab,bell.exp,bell.apart],['התראת מחיר','false',true],'the bell beside the bookmark, not under it'); assert.ok(bell.w>=44);
+      await pg.click('#secBell'); await pg.waitForTimeout(300); assert.ok((await info(pg)).v.pxal,'the panel opens'); assert.equal(await pg.evaluate(()=>document.activeElement.id),'pxAbove');
+      await pg.fill('#pxAbove','250'); await pg.click('#pxAlSave'); await pg.waitForTimeout(400); assert.deepEqual(await pg.evaluate(()=>[document.getElementById('secBell').getAttribute('aria-label'),document.getElementById('secBell').classList.contains('on'),!!document.getElementById('pxAl')]),['התראת מחיר: פעילה',true,true],'an alert set: the bell says so');
+      await pg.click('#pxAlDel'); await pg.waitForTimeout(300); await pg.click('#secBell'); await pg.waitForTimeout(300); assert.equal((await info(pg)).v.pxal,false,'closed again');
+      // "לניתוח הדוח" from elsewhere lands on the report's tab
+      await pg.evaluate(()=>{window.__srch.open('MSFT'); const b=document.createElement('button'); b.dataset.gosec='NVDA'; b.dataset.sectab='rp'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForTimeout(900); r=await info(pg); assert.equal(r.cur,'rp','the way in asked for the report'); assert.ok(r.v.rep);
+      assert.deepEqual(pg.errs,[]); await ctx.close()}
+    // a wide screen: one page as it was; the tabs jump to the part
+    {const {ctx,pg}=await open(1280,{parts:true}); await go(pg); let r=await info(pg);
+      assert.equal(r.on,false,'one page'); assert.equal(r.role,'navigation'); assert.deepEqual(r.tabs,['סקירה','החברה','דוח','אנליסטים','חדשות']); assert.equal(r.rows.length,0); assert.equal(r.hold,'');
+      assert.deepEqual(r.v,{top:true,px:true,chart:true,trade:true,abx:true,rep:true,an:true,nq:true,ask:true,pxal:false},'every part is drawn; the price alert waits behind the bell');
+      await pg.click('#secPage .stabs [data-stab="rp"]'); await pg.waitForTimeout(1200); const at=await pg.evaluate(()=>Math.round(document.querySelector('#secPage .repbox').getBoundingClientRect().top)); assert.ok(at>=-5&&at<300,'the jump lands on the report: '+at);
+      assert.deepEqual(pg.errs,[]); await ctx.close()}
+    // the page's own tests of each part see every part at once, on a phone too
+    {const {ctx,pg}=await open(390); await go(pg); const r=await info(pg); assert.equal(r.on,false); assert.ok(r.v.abx&&r.v.rep&&r.v.an&&r.v.nq&&r.v.chart); await ctx.close()}
+  }finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k); rtRestore(N0,X0,ST0,PU0)}
 });

@@ -766,6 +766,35 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+/* 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs"): tabs above the security's
+   name. A part of the page is a .stp (it takes no box of its own, so the page's layout is as it was). On a phone
+   (#secPage.st-on) only the open tab's parts are drawn; on a wide screen every part is, and the tabs jump to it */
+.stp{display:contents}
+.stabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none} .stabs::-webkit-scrollbar{display:none}
+.stabs button{flex:0 0 auto;min-height:44px;padding:8px 12px 6px;font:inherit;font-size:14.5px;font-weight:600;color:var(--ink2);background:none;border:0;border-bottom:3px solid transparent;border-radius:0;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.stabs button:hover{color:var(--ink)} .stabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.stabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:8px}
+.stabs .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+#secPage.st-on .stabs button{flex:1 0 auto;padding-inline:6px}
+#secPage.st-on>.stp{display:none}
+#secPage.st-on[data-stcur="ov"]>.stp[data-stp="ov"],#secPage.st-on[data-stcur="co"]>.stp[data-stp="co"],#secPage.st-on[data-stcur="rp"]>.stp[data-stp="rp"],#secPage.st-on[data-stcur="an"]>.stp[data-stp="an"],#secPage.st-on[data-stcur="nw"]>.stp[data-stp="nw"]{display:contents}
+#secPage.st-on .abx,#secPage.st-on .nqc,#secPage.st-on .repbox,#secPage.st-on .ancard{margin-top:0}
+/* the price alert's bell by the name; the bookmark keeps its place after it */
+.secp .top .secbell+.secmark{margin-inline-start:0} .secp .top .secbell svg{width:21px;height:21px}
+@media (max-width:640px){#secPage .top{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"lg t bl mk";column-gap:10px} #secPage .top .secbell{grid-area:bl}}
+/* a phone's overview: the holding as one row that opens to its figures and rules, and a sentence for each of the tabs */
+.sthold{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.sthold>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:56px;cursor:pointer;border-radius:14px} .sthold>summary::-webkit-details-marker{display:none}
+.sthold>summary:focus-visible,.stsum-r:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sthold .tx,.stsum-r .tx{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px;text-align:start}
+.sthold .k,.stsum-r .k{font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:6px;flex-wrap:wrap} .sthold .s,.stsum-r .s{font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.4}
+.sthold svg.chv{flex:none;width:18px;height:18px;color:var(--muted);transition:transform .2s} .sthold[open] svg.chv{transform:rotate(180deg)}
+.sthold-b{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px} .sthold-b .mypos{margin:0} .sthold-b .mypos>h3{display:none} .sthold-b>.row{margin-top:0}
+.stsum{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:2px 14px}
+.stsum-r{display:flex;align-items:center;gap:12px;width:100%;padding:12px 0;min-height:60px;font:inherit;color:inherit;background:none;border:0;border-top:1px solid var(--line);border-radius:0;cursor:pointer} .stsum-r:first-child{border-top:0}
+.stsum-r svg.ic{flex:none;width:24px;height:24px;color:var(--muted)} .stsum-r svg.go{flex:none;width:18px;height:18px;color:var(--muted)}
+.stsum-r .new{font-style:normal;font-size:11.5px;font-weight:700;padding:0 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink)}
+@media (prefers-reduced-motion:reduce){.sthold svg.chv{transition:none}}
 /* 17.11 (the owner): "מה קרה לאחרונה" on a security's page, as the mock-up: a white card, a small label and the sentence, a
    row per event with a drawn line up or down, its tag in colour, and a fold that opens to what it means and the articles */
 .nqc{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px 14px;box-shadow:var(--shadow);max-width:760px;display:flex;flex-direction:column;gap:0}
@@ -20453,12 +20482,12 @@ function secPxAlert(k,pr){
     <div class="pxal-b"><button type="button" class="btn sm pri" id="pxAlSave"${canWrite?'':' disabled'}>${has?'עדכן':'קבע התראה'}</button>${has?`<button type="button" class="btn sm" id="pxAlDel"${canWrite?'':' disabled'}>הסר</button>`:''}</div></div>
     <p class="note" style="margin:8px 0 0">כשהמחיר חוצה את הסף זה מופיע בבקרה (קטגוריה "יעד"), בהודעת הבוקר, ובצליל כשהדף פתוח, ונשאר עד שתשנה. זו תזכורת שקבעת לעצמך, לא המלצה.${q?` המחיר עכשיו ${fmtPx(q.px,ccy)}.`:''}</p></div>`}
 function renderPxAlerts(){const el=$('pxAlList'); if(!el)return; const E=Object.entries((S&&S.pxAlerts)||{}).filter(([k,t])=>t&&(+t.above>0||+t.below>0)).sort((a,b)=>a[0]<b[0]?-1:1);
-  if(!E.length){setH(el,'<p class="note" style="margin:0;max-width:none">עוד לא קבעת התראת מחיר. קובעים בדף של הנייר: חיפוש ← הנייר ← "התראת מחיר".</p>');return}
+  if(!E.length){setH(el,'<p class="note" style="margin:0;max-width:none">עוד לא קבעת התראת מחיר. קובעים בדף של הנייר: חיפוש ← הנייר ← כפתור הפעמון שליד השם.</p>');return}
   setH(el,'<div class="pxl">'+E.map(([k,t])=>{const q=pxKeyPrice(k), ccy=q?q.ccy:'USD', hit=q&&((+t.above>0&&q.px>=+t.above)||(+t.below>0&&q.px<=+t.below));
-    return `<div class="pxl-r${hit?' hit':''}"><span class="sym">${esc(pxLab(k))}</span><span>${+t.above>0?'מעל '+nn(fmtPx(+t.above,ccy)):''}${+t.above>0&&+t.below>0?' · ':''}${+t.below>0?'מתחת ל-'+nn(fmtPx(+t.below,ccy)):''}</span><span class="sub">${q?'עכשיו '+nn(fmtPx(q.px,ccy)):'אין מחיר עדיין'}${hit?' · נחצה':''}</span><span class="pxl-b"><button type="button" class="btn sm" data-gosec="${esc(k)}">לדף הנייר</button><button type="button" class="btn sm" data-pxdel="${esc(k)}"${canWrite?'':' disabled'}>הסר</button></span></div>`}).join('')+'</div>')}
+    return `<div class="pxl-r${hit?' hit':''}"><span class="sym">${esc(pxLab(k))}</span><span>${+t.above>0?'מעל '+nn(fmtPx(+t.above,ccy)):''}${+t.above>0&&+t.below>0?' · ':''}${+t.below>0?'מתחת ל-'+nn(fmtPx(+t.below,ccy)):''}</span><span class="sub">${q?'עכשיו '+nn(fmtPx(q.px,ccy)):'אין מחיר עדיין'}${hit?' · נחצה':''}</span><span class="pxl-b"><button type="button" class="btn sm" data-gosec="${esc(k)}" data-pxopen>לדף הנייר</button><button type="button" class="btn sm" data-pxdel="${esc(k)}"${canWrite?'':' disabled'}>הסר</button></span></div>`}).join('')+'</div>')}
 document.addEventListener('click',ev=>{
   const d=ev.target.closest('[data-pxdel]'); if(d){if(!canWrite)return; pxAlertSet(d.dataset.pxdel,null,null); offerUndo('התראת המחיר ל-'+pxLab(d.dataset.pxdel)+' הוסרה.',null,4000,'סגור'); return}
-  const g=ev.target.closest('[data-gosec]'); if(g){goSec(g.dataset.gosec);return}
+  const g=ev.target.closest('[data-gosec]'); if(g){goSec(g.dataset.gosec,g.dataset.sectab||g.dataset.pxopen!=null?{tab:g.dataset.sectab||null,px:g.dataset.pxopen!=null}:undefined);return}
   if(ev.target.closest('#pxAlSave')){const box=ev.target.closest('#pxAl'); if(!box||!canWrite)return; const k=box.dataset.k, a=parseFloat($('pxAbove').value), b=parseFloat($('pxBelow').value);
     if(!(a>0)&&!(b>0)){$('pxAlState').textContent='הקלד מחיר באחד השדות.';return}
     pxAlertSet(k,a,b); try{renderSec()}catch(e){} const st=$('pxAlState'); if(st)st.textContent='נשמר · '+st.textContent; return}
@@ -24730,7 +24759,7 @@ function newReports(days){const held=new Set(((P&&P.positions)||[]).map(p=>p.sym
 function renderRepBan(){const el=$('repBan'); if(!el)return; if(!notifOn('דוחות')||$('deskSec')){el.hidden=true;return}
   const seen=repSeenGet(), L=newReports(10).filter(e=>!seen.has(e.key)).slice(0,3); if(!L.length){el.hidden=true;return}
   const was=el.hidden;
-  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}">לניתוח הדוח</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
+  setH(el,`${niH('info','db-ic')}<div class="rb-l">${L.map(e=>`<p style="margin:0 0 4px"><b>דוח חדש: ${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(e.first)}</p>`).join('')}</div><div class="acts">${L.length===1?`<button type="button" class="btn sm pri" data-gosec="${esc(L[0].sym)}" data-sectab="rp">לניתוח הדוח</button>`:L.map(e=>`<button type="button" class="btn sm" data-gosec="${esc(e.sym)}">${esc(lab(e.sym))}</button>`).join('')}<button type="button" class="btn sm" data-repban="${esc(L.map(e=>e.key).join(','))}">הבנתי</button></div>`);
   el.hidden=false; if(was)try{chime('sys')}catch(e){}}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-repban]'); if(!b)return; const S0=repSeenGet(); for(const k of b.dataset.repban.split(','))S0.add(k);
   try{localStorage.setItem('tr_repban',JSON.stringify([...S0].slice(-200)))}catch(e){} renderRepBan(); try{render()}catch(e){}});
@@ -26107,11 +26136,12 @@ function srchRender(){
 }
 const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
-function goSec(k){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k)}
+function goSec(k,o){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k,o)}
 function openSec(k,o){const y0=window.scrollY; try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');
   // 9.11: the phone's own back closes the page: each security opened is one history entry (none when coming back through one)
   // 11.11: through navWant, with the screen it was opened from (one entry with the research tab when that came in the same tap)
   if(!(o&&o.fromHistory))navWant({tab:'search',sec:k},y0);
+  if(SEC!==k||(o&&o.tab))SECTAB=(o&&o.tab)||'ov'; if(SEC!==k){SECPX=false; SECHOLD=false} if(o&&o.px)SECPX=true;
   SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
   if(RSX[k]===undefined)loadResearch(k).then(()=>{if(SEC===k)renderSec()});try{window.scrollTo({top:0})}catch(e){}}
 function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||[];if(seen.includes(k)||(WATCH.marks||[]).includes(k)||(WATCH.held||[]).includes(k)||((P&&P.positions)||[]).some(p=>p.sym===k))return;
@@ -26478,7 +26508,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const g=t.closest('[data-cmprng]'); if(g){CMP.rng=g.dataset.cmprng; cmpKeep(); renderCmp(); return}
   if(t.closest('[data-cmpclr]')){CMP.syms=[]; cmpKeep(); renderCmp(); return}});
 function renderSec(){SECHOV=-1;
-  const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
+  const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.classList.remove('st-on'); pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
   let pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
   // 9.11: a share listed in Tel Aviv and in New York: the report and the analysts are the company's, from its US listing
   const twin=repTwin(k); if(twin&&RSX[twin]&&!(rs&&rs.rep&&!repStale(rs)))rs={...RSX[twin],twinOf:twin};
@@ -26495,29 +26525,78 @@ function renderSec(){SECHOV=-1;
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
-  pg.innerHTML=`<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
-    <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
-    <div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>
-    ${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}
-    ${secPriceParts(it,pr,on,fx)[0]}
-    <p class="chline" id="secRead" aria-live="polite"></p>
+  // 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs and not the fold"): the page in
+  // parts. On a phone (TM) each tab is a screen: the overview (the chart, the trade buttons, the holding as one row that
+  // opens, a sentence for each other tab, taken from that tab's own card), the company, the report, the analysts, the news.
+  // The tabs, the name, the price and the bell stay on top of every tab. A tab with nothing to show is not offered; with
+  // none but the overview there is no bar. On a wide screen (and in the page's tests of each part) the page is one page as
+  // it was, and the bar jumps to the part. The price alert is behind the bell (SECPX) in both
+  const TM=stOn(), tryH=f=>{try{return f()||''}catch(e){return ''}};
+  const hTools=`<div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>`, hTrade=`${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}`;
+  const hChart=`<p class="chline" id="secRead" aria-live="polite"></p>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
-    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>
-    ${secPriceParts(it,pr,on,fx)[1]}
-    ${(()=>{try{return secAbout(it,k,rs)}catch(e){return ''}})()}
-    ${secPxAlert(k,pr)}
-    ${it.t==='I'?'':(()=>{try{return secPosStrip(it,k,rs)}catch(e){return ''}})()}
-    ${(()=>{try{return secAnalysts(it,k,rs,pr)}catch(e){return ''}})()}
-    ${it.t!=='E'&&!ilm?repBlock(rs&&rs.twinOf||k,rs):''}
-    ${nxSecBlock(k)}
-    ${it.t==='I'?'':secMine(it,on)}
-    ${(()=>{try{return secJournal(it)}catch(e){return ''}})()}
-    <div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>
-    ${moreH}
-    <p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
+    <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>`;
+  const hAsk=`<div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>`, hNote=`<p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
+  const [pxA,pxB]=secPriceParts(it,pr,on,fx);
+  const hAb=tryH(()=>secAbout(it,k,rs)), hPos=it.t==='I'?'':tryH(()=>secPosStrip(it,k,rs)), hAn=tryH(()=>secAnalysts(it,k,rs,pr)), hRp=it.t!=='E'&&!ilm?repBlock(rs&&rs.twinOf||k,rs):'', hNw=nxSecBlock(k), hMine=it.t==='I'?'':secMine(it,on), hJrn=tryH(()=>secJournal(it));
+  const rpFull=hRp.includes('rq-card'), tabs=['ov'].concat([['co',hAb],['rp',rpFull],['an',hAn],['nw',hNw]].filter(x=>x[1]).map(x=>x[0])), bar=tabs.length>1, cur=TM&&bar&&tabs.includes(SECTAB)?SECTAB:'ov';
+  // what is new in a tab (a dot on it, until the tab is opened): a report of the last two weeks, a news item of today
+  const rp0=rs&&rs.rep, nw0=hNw?tryH(()=>nxSecNewest(k)):null, pa=((S&&S.pxAlerts)||{})[k]||{}, paHas=+pa.above>0||+pa.below>0;
+  const marks={rp:rpFull&&rp0&&rp0.at&&Date.now()-Date.parse(String(rp0.at).slice(0,10)+'T12:00:00Z')<14*864e5?'r'+(rp0.q||rp0.at):'',nw:nw0&&Date.now()-Date.parse(nw0.at)<26*36e5?'n'+nw0.id:''};
+  const isNew=t=>!!marks[t]&&(STSEEN[k]||{})[t]!==marks[t]; if(TM&&bar&&marks[cur])stSeen(k,cur,marks[cur]);
+  const stBar=bar?`<div class="stabs" role="${TM?'tablist':'navigation'}" aria-label="החלקים של דף הנייר">${tabs.map(t=>`<button type="button"${TM?` role="tab" aria-selected="${t===cur}" tabindex="${t===cur?0:-1}"`:''} data-stab="${t}"${marks[t]?` data-mark="${esc(marks[t])}"`:''}>${ST_LAB[t]}${TM&&t!==cur&&isNew(t)?'<span class="dot" role="img" aria-label="חדש"></span>':''}</button>`).join('')}</div>`:'';
+  const W=(t,x)=>x?`<div class="stp" data-stp="${t}">${x}</div>`:'', hPx=SECPX?secPxAlert(k,pr):'';
+  let body;
+  if(TM&&bar){
+    const hold=stHoldH(it,hPos,hMine), more=pxB&&moreH.includes('<details class="more"')?moreH.replace('</summary>',()=>'</summary>'+pxB):'';
+    const pick=(x,c)=>{const m=x.match(new RegExp('<p class="'+c+'"[^>]*>([\\s\\S]*?)</p>')); return m?m[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim():''};
+    const sAn=((hAn.match(/<p class="an-sum"><b>([\s\S]*?)<\/b>/)||[])[1]||'').replace(/<[^>]+>/g,''), dAgo=d=>{const n=Math.round((Date.now()-Date.parse(String(d).slice(0,10)+'T12:00:00Z'))/864e5); return n<=0?'היום':n===1?'אתמול':n<60?`לפני ${n} ימים`:''};
+    const row=(t,lab,s)=>tabs.includes(t)&&s?`<button type="button" class="stsum-r" data-stgo="${t}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ST_IC[t]}</svg><span class="tx"><span class="k">${lab}${isNew(t)&&t!==cur?' <i class="new">חדש</i>':''}</span><span class="s">${s}</span></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>`:'';
+    const rows=(hold?'':row('co','מה החברה עושה',esc((rs&&rs.about&&rs.about.line)||'')))+row('rp','הדוח האחרון'+(rp0&&rp0.at&&!rp0.atEst&&dAgo(rp0.at)?' · '+dAgo(rp0.at):''),pick(hRp,'rq-hd'))+row('nw','מה קרה לאחרונה',pick(hNw,'nq-hd'))+row('an','מה האנליסטים חושבים',sAn);
+    body=pxA+hPx+W('ov',hChart+(more?'':pxB)+hTools+hTrade)+W('co',hAb)+W('ov',(hold||'')+(rows?`<div class="stsum" role="group" aria-label="בקצרה, ולכל לשונית">${rows}</div>`:''))+W('an',hAn)+W('rp',hRp)+W('nw',hNw)+W('ov',(rpFull?'':hRp)+(hold?'':hPos+hMine)+hJrn+hAsk+(more||moreH)+hNote)}
+  else body=W('ov',hTools+hTrade)+pxA+hPx+W('ov',hChart+pxB)+W('co',hAb)+W('ov',hPos)+W('an',hAn)+W(rpFull?'rp':'ov',hRp)+W('nw',hNw)+W('ov',hMine+hJrn+hAsk+moreH+hNote);
+  pg.classList.toggle('st-on',TM&&bar); pg.dataset.stcur=cur;
+  pg.innerHTML=`${stBar}<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
+    <button type="button" class="secmark secbell${paHas?' on':''}" id="secBell" aria-expanded="${SECPX}" aria-controls="pxAl" aria-label="${paHas?'התראת מחיר: פעילה':'התראת מחיר'}" title="התראת מחיר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></button>
+    <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
+    ${body}`;
   drawSec();
 }
 let SECV=null, SECHOV=-1;
+// 17.11 (the owner: "let's build the tabs"): the tab that is open (SECTAB; the overview for every security opened, unless the
+// way in asked for one: "לניתוח הדוח" lands on the report), the price alert's panel behind the bell (SECPX) and the
+// holding's row (SECHOLD). The tabs are a phone's (the width the page's phone layout starts at); the page's own tests of
+// each part see every part at once (tr_pt_all), as on the long screens. What was new in a tab and was seen is kept in
+// this browser (tr_stseen), so the dot does not come back
+let SECTAB='ov', SECPX=false, SECHOLD=false;
+const ST_LAB={ov:'סקירה',co:'החברה',rp:'דוח',an:'אנליסטים',nw:'חדשות'};
+const ST_IC={co:'<path d="M4 20V8l6-3v15"/><path d="M10 20V10h8v10"/><path d="M3 20h18"/><path d="M13 13.5h2M13 16.5h2M6.5 11h1M6.5 14h1"/>',rp:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 17v-3M12 17v-5M15 17v-2"/>',
+  nw:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2H6"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/>',an:'<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3 2.8-4.5 5.5-4.5s4.900 1.500 5.500 4.500"/><circle cx="17" cy="9.500" r="2.300"/><path d="M16.500 14.600c2.200.200 3.600 1.600 4 4.400"/>'};
+const ST_MQ=(()=>{try{return window.matchMedia('(max-width:759px)')}catch(e){return null}})();
+function stOn(){let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){} return !all&&!!(ST_MQ&&ST_MQ.matches)}
+try{ST_MQ&&ST_MQ.addEventListener('change',()=>{if(SEC)try{renderSec()}catch(e){}})}catch(e){}
+let STSEEN={}; try{STSEEN=JSON.parse(localStorage.getItem('tr_stseen')||'{}')||{}}catch(e){STSEEN={}}
+function stSeen(k,t,mark){if(!k||!mark)return; const o=STSEEN[k]||(STSEEN[k]={}); if(o[t]===mark)return; o[t]=mark; const ks=Object.keys(STSEEN); if(ks.length>60)delete STSEEN[ks[0]]; try{localStorage.setItem('tr_stseen',JSON.stringify(STSEEN))}catch(e){}}
+// a tab is opened in place: every part is already drawn, the page only says which one shows. On a wide screen the bar
+// jumps to the part
+function stSet(t,o){const pg=$('secPage'), bar=pg&&pg.querySelector('.stabs'), b=bar&&bar.querySelector('[data-stab="'+t+'"]'); if(!b)return;
+  if(!pg.classList.contains('st-on')){const w=t==='ov'?null:pg.querySelector('.stp[data-stp="'+t+'"]'), el=w?w.firstElementChild:pg; try{el&&el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})}catch(e){} return}
+  SECTAB=t; pg.dataset.stcur=t; for(const x of bar.querySelectorAll('[data-stab]')){const on=x===b; x.setAttribute('aria-selected',String(on)); x.tabIndex=on?0:-1}
+  const d=b.querySelector('.dot'); if(d)d.remove(); if(b.dataset.mark)stSeen(SEC,t,b.dataset.mark); {const n=pg.querySelector('.stsum-r[data-stgo="'+t+'"] .new'); if(n)n.remove()}
+  if(t==='ov')try{drawSec()}catch(e){}
+  if(!(o&&o.quiet))try{window.scrollTo({top:0})}catch(e){}}
+// a place scrolled to inside a tab that is not the open one (a link from elsewhere) opens its tab first
+function stReveal(el){const pg=$('secPage'); if(!pg||!pg.classList.contains('st-on')||!el||!el.closest)return; const w=el.closest('.stp[data-stp]'); if(w&&w.parentElement===pg&&w.dataset.stp!==pg.dataset.stcur)stSet(w.dataset.stp,{quiet:true})}
+document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest)return; const b=t.closest('.stabs [data-stab]'); if(b){stSet(b.dataset.stab); return} const g=t.closest('[data-stgo]'); if(g)stSet(g.dataset.stgo)});
+// the arrows move between the tabs (the page reads right to left: the left arrow is the next tab)
+document.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return; const b=e.target&&e.target.closest&&e.target.closest('.stabs[role="tablist"] [data-stab]'); if(!b)return;
+  const A=[...b.parentElement.querySelectorAll('[data-stab]')], i=A.indexOf(b), n=e.key==='Home'?0:e.key==='End'?A.length-1:(i+(e.key==='ArrowLeft'?1:-1)+A.length)%A.length; e.preventDefault(); stSet(A[n].dataset.stab,{quiet:true}); try{A[n].focus()}catch(x){}});
+document.addEventListener('toggle',e=>{const d=e.target; if(d&&d.classList&&d.classList.contains('sthold'))SECHOLD=d.open},true);
+// a phone's overview: the holding in one row (what it is worth, the gain or loss against the price paid, and the worst
+// of the person's rules as a tag); the row opens to the figures and the rules as they were
+function stHoldH(it,hPos,hMine){let m=null; try{m=P&&Q?mAllNow():null}catch(e){} const p=m&&m.pos.find(x=>x.sym===it.sym); if(!p||!(hPos||hMine))return '';
+  const st=/class="rs crit"/.test(hMine)?'crit':/class="rs warn"/.test(hMine)?'warn':/class="rs ok"/.test(hMine)?'ok':'', dp=p.cost?(p.costVal-p.cost)/p.cost*100:null;
+  return `<details class="sthold"${SECHOLD?' open':''}><summary><span class="tx"><span class="k">האחזקה שלך</span><span class="s"><bdi class="n">${ils(p.val)}</bdi>${dp!=null?` · ${dp>=0?'ברווח של':'בהפסד של'} ${pct(Math.abs(dp),1)}`:''}</span></span>${st?`<span class="rs ${st}">${{ok:'תקין',warn:'לבדיקה',crit:'חריגה'}[st]}</span>`:''}<svg class="chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="sthold-b">${hPos}${hMine}</div></details>`}
 // 5.11: the security chart in dollars or in shekels (a dollar security only), kept in this browser
 let SECCC='usd'; try{if(localStorage.getItem('tr_seccc')==='ils')SECCC='ils'}catch(e){}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-seccc]'); if(!b)return; SECCC=b.dataset.seccc==='ils'?'ils':'usd'; try{localStorage.setItem('tr_seccc',SECCC)}catch(e){}
@@ -26991,6 +27070,7 @@ function srchBoot(){
   // 11.11: the history's popstate is handled by navPop (with the screens)
   $('secPage').addEventListener('click',e=>{if(e.target.closest('#secBack')){closeSec();return}
     if(e.target.closest('#secMark')){toggleMark(SEC);return}
+    if(e.target.closest('#secBell')){SECPX=!SECPX; renderSec(); try{const b=$('secBell'); if(SECPX){const i=$('pxAbove'); i&&!i.disabled?i.focus({preventScroll:true}):b.focus({preventScroll:true}); $('pxAl').scrollIntoView({block:'nearest'})} else b.focus({preventScroll:true})}catch(x){} return}
     const r=e.target.closest('[data-rng]');if(r){SECRNG=r.dataset.rng;try{localStorage.setItem('tr_rng',SECRNG)}catch(x){}renderSec()}});
   try{SECRNG=localStorage.getItem('tr_rng')||'3m'}catch(e){}
   const tb=document.querySelector('[data-tab="search"]'); if(tb)tb.addEventListener('click',()=>{loadSymDb().then(srchRender);loadAllQ().then(()=>srchQ());setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},50)});
@@ -27074,7 +27154,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}   // every part at once (the page's own tests of each screen)
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
-try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
+try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} try{stReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
 function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 // 11.11 (the owner): the browser's back and forward (Safari, Chrome, a phone's own back) move between the site's screens.
@@ -28031,6 +28111,7 @@ function nxAlerts(m){const out=[]; try{for(const a of plItems().filter(a=>(a.lv=
 const NQ_DIR={pos:['good','עשוי להיות טוב','up'],neg:['bad','עשוי להיות רע','down'],mixed:['flat','מעורב','flat'],unclear:['flat','לא ברור עדיין','flat']};
 const NQ_IC={up:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',down:'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',flat:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/>'};
 const nqCnt=n=>n===1?'אחד':n===2?'שניים':n===3?'שלושה':String(n);
+function nxSecNewest(k){let b=null; for(const it of newsAll()){const on=it.x?((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k)):(it.syms||[]).includes(k); if(!on)continue; const at=it.at||it.seen; if(at&&(!b||String(at)>String(b.at)))b={id:String(it.id),at}} return b}
 function nxSecBlock(k){try{
   const about=it=>it.x&&((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k))||(!it.x&&(it.syms||[]).includes(k)), L=newsAll().filter(about).slice(0,14); if(!L.length)return '';
   for(const it of L)if((!it.x||it.x.rules)&&it.src!=='x')try{nxWant(it.id)}catch(e){}   // an article not read yet is read now
@@ -29555,7 +29636,7 @@ function todoOf(m,A,T){
     L.push({sev:a[0]==='crit'?'crit':a[0]==='warn'?'warn':'info',ic:SEVI[a[0]],cat:a[1],h:fShortH(a),b:(n?`<button type="button" class="dk-go" data-anav="${esc(n.t)}">${esc(n.l)} ›</button>`:'')+(canWrite?`<button type="button" class="dk-ack" data-ack="${esc(ackSig(a))}" aria-label="סמן שבדקתי: ${esc(a[1])}" title="הנושא יורד מהרשימה עד שמשהו בו ישתנה, או לשבוע">בדקתי</button>`:'')})}
   // a company of the portfolio (or one followed) published a report
   if(notifOn('דוחות')){const seen=repSeenGet(); for(const e of newReports(10).filter(e=>!seen.has(e.key)).slice(0,3))
-    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
+    L.push({sev:'rep',ic:'info',cat:'דוח חדש',h:`<b>${esc(e.name||lab(e.sym))}</b> פרסמה${e.atEst?'':' ב-'+nn(dmy(e.date))} את הדוח${e.label?' לרבעון '+esc(e.label):''}. ${(e.sum?repH:tx)(cut(e.first))}`,b:`<button type="button" class="dk-go" data-gosec="${esc(e.sym)}" data-sectab="rp">לניתוח הדוח ›</button><button type="button" class="dk-ack" data-repban="${esc(e.key)}">הבנתי</button>`,key:e.key})}
   if(rulesDefault()){const R=S.rules; L.push({sev:'setup',ic:'info',cat:'כללים',h:`הכללים עדיין ברירת המחדל${S.rulesAuto?` (עד ${nn(pct(R.maxPos,0))} לנייר, לפי ${S.rulesAuto} ניירות בתיק)`:`: עד ${nn(pct(R.maxPos,0))} לנייר`}, עד ${nn(pct(R.maxGroup,0))} לקבוצה. כדאי לבדוק שהם מתאימים לך.`,b:`<button type="button" class="dk-go" data-rules="go">לכללים ›</button>${canWrite?'<button type="button" class="dk-ack" data-rules="mine">אלה הכללים שלי</button>':''}`})}
   const ms=mailSugg(); if(ms)L.push({sev:'tip',ic:'info',cat:'מיילים',h:`אפשר לקבל במייל: ${ms.map(x=>esc(x[1])).join(' ו')}.`,b:ms.map(([k,l])=>`<button type="button" class="dk-go" data-uxmail="${k}">להפעיל: ${esc(l)}</button>`).join('')+'<button type="button" class="dk-ack" data-uxx="tr_tipmail">לא עכשיו</button>'});
   const nw=newsUnseen(); if(nw.length)L.push({sev:'tip',ic:'info',cat:'מה חדש',h:`נוספו לאתר: ${esc(nw.slice(0,3).map(x=>x.t).join(', '))}${nw.length>3?` ועוד ${nw.length-3}`:''}.`,b:'<button type="button" class="dk-go" data-uxgo="news">לראות מה חדש ›</button><button type="button" class="dk-ack" data-uxgo="newsx">הבנתי</button>'});
@@ -29726,6 +29807,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.5',at:'2026-11-17',t:'דף נייר קצר, עם לשוניות',d:'בטלפון, הדף של נייר מחולק ללשוניות מעל השם: סקירה, החברה, דוח, אנליסטים וחדשות. בסקירה יש משפט מסכם לכל לשונית, ונקודה על לשונית אומרת שיש בה משהו חדש. במחשב הדף נשאר דף אחד, והלשוניות קופצות לחלק. התראת מחיר עברה לכפתור הפעמון שליד שם הנייר.',go:'srch'},
   {v:'2026-11-17.4',at:'2026-11-17',t:'מה קרה לאחרונה, בשורה אחת לכל דבר',d:'בדף של נייר: משפט שמסכם מה קרה, שורה לכל אירוע (כמה ידיעות על אותו דבר הן שורה אחת), ותג שאומר אם זה עשוי להיות טוב או רע לנייר. לחיצה פותחת מה זה אומר ואת הידיעות עצמן. כל השאר ב"חיבור למציאות".',go:'srch'},
   {v:'2026-11-17.3',at:'2026-11-17',t:'מה החברה עושה',d:'בתחתית הדף של מניה: משפט אחד שאומר מה החברה עושה, מה היא מוכרת, למי, מאיפה הכסף שלה מגיע ומה משפיע עליה, בעברית פשוטה. צ׳יקו כותב את זה מהתיאור של החברה עצמה, פעם אחת לכל חברה; זה מופיע קודם במניות שבתיק ובמעקב.',go:'srch'},
   {v:'2026-11-17.2',at:'2026-11-17',t:'הדוח של החברה, בשפה פשוטה',d:'בדף של נייר: משפט אחד שאומר מה קרה בדוח, מד שמראה אם הרווח היה פחות, כמו או יותר מהצפי, ושאלות קצרות עם תשובה במילים והמספר המדויק לצדה: כמה החברה הרוויחה, כמה כסף נכנס ממכירות, איך המניה הגיבה, ומה מצפים ממנה בפעם הבאה. ההסבר המלא נמצא ב"עוד על הדוח".',go:'srch'},
