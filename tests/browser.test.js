@@ -2264,12 +2264,12 @@ test('the crisis center: up and down days, old prices, concentration, a missing 
   const Q0=store.getDoc('quotes/latest').data, P0=store.getDoc('portfolio/main').data;
   const center=async()=>{const {ctx,pg}=await open(390); await tab(pg,'risk'); await pg.waitForTimeout(300);
     await pg.evaluate(()=>document.querySelector('[data-pane="risk"] .subtabs [data-tab="state"]').click()); await pg.waitForTimeout(700);
-    const r=await pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('stateBody').textContent.replace(/\s+/g,' '),tags:[...document.querySelectorAll('#stateBody .stsec h3 .tag')].map(x=>x.textContent),cardW:Math.round(document.querySelector('#stateBody .stsec').getBoundingClientRect().width),boxW:Math.round(document.getElementById('stateBody').getBoundingClientRect().width),ox:document.documentElement.scrollWidth>innerWidth+1,cur:document.querySelector('#botbar [aria-current="page"]')?.dataset.bb}));
+    const r=await pg.evaluate(()=>({page:document.body.dataset.page,txt:document.getElementById('stateBody').textContent.replace(/\s+/g,' '),tags:[...document.querySelectorAll('#stateBody .stsec h3 .tag')].map(x=>x.textContent),cardW:Math.round(document.querySelector('#stateBody .stsec').getBoundingClientRect().width),boxW:Math.round(document.getElementById('stateBody').getBoundingClientRect().width),ox:document.documentElement.scrollWidth>innerWidth+1,cur:document.querySelector('#botbar [aria-current="page"]')?.dataset.bb,more:!!document.querySelector('#botbar [data-bb="more"].on')}));
     return {ctx,pg,r}};
   try{
     // a down day (the fixture): the change, who carried it, concentration above the rule, the market, three scenarios
     let {ctx,pg,r}=await center();
-    assert.equal(r.page,'state'); assert.equal(r.cur,'risk','the bar marks "בקרה"'); assert.equal(r.ox,false);
+    assert.equal(r.page,'state'); assert.equal(r.cur,undefined); assert.equal(r.more,true,'the bar marks "עוד": בקרה is in the drawer (10.11)'); assert.equal(r.ox,false);
     assert.deepEqual([...new Set(r.tags)].sort(),['הסבר','חישוב','נתון','סימולציה'].sort(),'each part says what it is');
     assert.ok(r.cardW>=r.boxW-2&&r.cardW>200,'the parts are full-width cards, not circles (the story icons once took their class): '+r.cardW+'/'+r.boxW);
     assert.match(r.txt,/השווי זז ב-\u200e?−₪/); assert.match(r.txt,/מעל הכלל שלך/); assert.match(r.txt,/S&P 500/); assert.match(r.txt,/שקלול לפי התיק שלך/);

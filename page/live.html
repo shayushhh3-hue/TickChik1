@@ -3516,6 +3516,22 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+/* 17.11 proposal 15: who moved the portfolio, as bars; the groups as tiles */
+.st-mv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.st-mv li{display:grid;grid-template-columns:24px minmax(44px,auto) 64px minmax(40px,1fr) auto;align-items:center;gap:8px}
+.st-mv .lg{width:24px!important;height:24px!important;font-size:9px}
+.st-mv .sym{font-size:14px;font-weight:600}
+.st-mv .mv-p{font-size:13px;text-align:end}
+.st-mv .mv-b{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.st-mv .mv-b i{display:block;height:100%;border-radius:4px;background:var(--loss)} .st-mv .mv-b i.up{background:var(--gain)}
+.st-mv li>.n:last-child{font-weight:600;font-size:14px;text-align:end;min-width:64px}
+.st-gh{margin:6px 0 0;font-size:14px;font-weight:600}
+.st-gt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:760px){.st-gt{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.st-g{background:var(--sunk);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.st-g>span:first-child{font-size:13px;color:var(--ink2)}
+.st-g .n{font-size:16px;font-weight:600}
+.stsec p.st-tot{font-size:13px;color:var(--ink2)}
 .pot-intro{background:var(--accent-soft);border-radius:8px;padding:16px;margin:0 0 16px}
 .pot-intro .ma-k{font-size:14px;color:var(--ink2)} .pot-intro .ma-v{font-size:22px;font-weight:600;margin:4px 0;color:var(--ink)} .pot-intro .ma-l{font-size:14px;color:var(--ink2);line-height:1.7} .pot-intro .ma-ac{margin-top:12px}
 .pot-tpl h3{margin:0 0 10px;font-size:16px;font-weight:600}
@@ -3525,7 +3541,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3953,6 +3969,24 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body :is(#dkTodo,#alTodoL,#alRules,.dk-top) .dk-ack.dk-ack{min-height:24px!important}
   html body #quickSay .qs-more.qs-more{min-height:24px!important;min-width:24px!important}
   html body .pane button.sym.hsym{min-width:24px!important}
+  /* 17.11 proposal 15, "מה קורה בתיק": the answer first, who moved it in bars, the groups as tiles, the rest as rows */
+  html body #statePer{display:flex!important;flex-wrap:nowrap!important;background:var(--sunk);border-radius:10px;padding:3px;gap:2px;margin:0 0 4px}
+  html body #statePer .chip{flex:1;min-height:40px;border:0!important;border-radius:8px!important;background:transparent!important;color:var(--ink2)!important;font:500 14px var(--sans)!important;box-shadow:none!important;padding:0 4px!important;justify-content:center}
+  html body #statePer .chip[aria-pressed="true"]{background:var(--surface)!important;color:var(--ink)!important;font-weight:600!important;box-shadow:0 1px 2px rgb(20 18 46 / .14)!important}
+  html body #statePer .sp-l{display:none}
+  html body section.state>.row{display:none!important}   /* the chosen pill says "מה קורה בתיק"; the card says when */
+  html body #stateBody .stsec h3 .tag{display:none!important}
+  html body #stateBody .stsec:is(.st-snap,.st-mkt){display:none!important}
+  html body #stateBody #stAns{margin:0}
+  html body #stateBody #stAns .dup{margin:6px 0}
+  html body #stateBody .st-more{margin:8px 0 -6px}
+  html body #stateBody .st-f{padding:0 16px!important;gap:0!important}
+  html body #stateBody .st-f:not(.open)>:not(h3){display:none!important}
+  html body #stateBody .st-f.open{padding-bottom:14px!important;gap:8px!important}
+  html body #stateBody .st-fh{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;width:100%;min-height:52px;background:none;border:0;padding:8px 0;padding-inline-end:24px;font:inherit;font-size:15px;font-weight:500;color:var(--ink);text-align:start;position:relative;cursor:pointer}
+  html body #stateBody .st-fh::after{content:"‹";position:absolute;inset-inline-end:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}
+  html body #stateBody .st-f.open .st-fh::after{content:"⌃"}
+  html body #stateBody .st-fs{font-size:13px;color:var(--ink2);font-weight:400}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -20144,7 +20178,7 @@ function anomaliesOf(m){
   const sdOf=(c,from,to)=>{const R=[]; for(let i=Math.max(1,from);i<to;i++){const a=+c[i-1], b=+c[i]; if(a>0&&b>0)R.push(Math.log(b/a))} if(R.length<8)return null; const mu=R.reduce((x,y)=>x+y,0)/R.length; return Math.sqrt(R.reduce((x,y)=>x+(y-mu)*(y-mu),0)/(R.length-1))*100};
   const causeH=c=>c?{text:`${c.he}`,cert:NX_CERT[c.cert]||c.cert,ev:c.ev,at:c.at}:null;
   // 1. a day's move against the security's own year; 2. the swings of the last two weeks against the sixty days before
-  for(const p of held){const C=CLOSES[p.sym]; if(!C||!C.c||C.c.length<30){if(CLOSES[p.sym]===undefined&&held.length<=25)try{loadCloses(p.sym).then(()=>{if(document.body.dataset.page==='state')renderState()})}catch(e){} continue}
+  for(const p of held){const C=CLOSES[p.sym]; if(!C||!C.c||C.c.length<30){const ask=anomaliesOf.ask||(anomaliesOf.ask=new Set()); if(CLOSES[p.sym]===undefined&&held.length<=25&&!ask.has(p.sym)){ask.add(p.sym); try{loadCloses(p.sym).then(()=>{if(document.body.dataset.page==='state')renderState()})}catch(e){}} continue}   // 17.11: asked once (a fund's closes are never kept here, and asking again on every drawing drew the screen ~18 times a second)
     const n=C.c.length, sd=sdOf(C.c,n-60,n); if(sd&&p.dayPct!=null&&Math.abs(p.dayPct)>=2){const z=Math.abs(p.dayPct)/sd; if(z>=2.5){const c=anomCause(p.sym);
       out.push({k:'px',sym:p.sym,what:`${lab(p.sym)} ${spct(p.dayPct,1)} ביום המסחר האחרון`,vs:levelOf()==='new'?`ביום רגיל היא זזה בערך ${sd.toFixed(1)}% למעלה או למטה; היום זה פי ${z.toFixed(1)} מהרגיל`:`יום רגיל שלה בשנה האחרונה זז כ-±${sd.toFixed(1)}% (סטיית תקן של 60 ימים); זה פי ${z.toFixed(1)}`,when:Q.updatedAt?dmy(Q.updatedAt)+' '+hm(Q.updatedAt):'',why:`${pct(p.w,1)} מהתיק; השינוי בשווי שלך ${sgn(p.dayIls||0)}`,cause:causeH(c),conf:'high',confWhy:'מדידה מהמחירים'})}}
     // 1.11 (15): the last day's volume against the sixty days before (when the closes carry volumes)
@@ -20168,7 +20202,7 @@ function anomaliesOf(m){
     for(const o of CM.pairs||[]){if(!hs.has(o.a)||!hs.has(o.b))continue; const r=ltOf(o.a,o.b); if(r!=null&&o.r-r>=0.4)out.push({k:'corr',sym:o.a,what:`${lab(o.a)} ו-${lab(o.b)} זזים יחד (${o.r.toFixed(2)}) ב-${CM.days||60} ימי המסחר האחרונים`,vs:`לאורך שנים הקשר ביניהם ${r.toFixed(2)}`,when:CM.to?'עד '+dmy(CM.to):'',why:'כששניים זזים יחד, הפיזור ביניהם קטן מכפי שנראה',cause:null,conf:'mid',confWhy:'מדד קשר על תקופה קצרה'})}
     for(const o of CM.opposite||[]){if(!hs.has(o.a)||!hs.has(o.b))continue; const r=ltOf(o.a,o.b); if(r!=null&&r>=0.3)out.push({k:'corr',sym:o.a,what:`${lab(o.a)} ו-${lab(o.b)} זזים הפוך (${o.r.toFixed(2)}) לאחרונה`,vs:`לאורך שנים הם נוטים לזוז יחד (${r.toFixed(2)})`,when:CM.to?'עד '+dmy(CM.to):'',why:'שינוי בקשר בין שני ניירות הוא לפעמים סימן לשינוי במה שמניע אחד מהם',cause:null,conf:'mid',confWhy:'מדד קשר על תקופה קצרה'})}}}catch(e){}
   return out}
-function anomH(m){const L=anomaliesOf(m), KH={px:'תנועת מחיר',volm:'מחזור מסחר',vol:'תנודתיות',fig:'נתוני אנליסטים / חברה',news:'אירוע חדשותי',expo:'חשיפה',corr:'קשר בין ניירות'};
+function anomH(m){const L=anomaliesOf(m); anomH.L=L; const KH={px:'תנועת מחיר',volm:'מחזור מסחר',vol:'תנודתיות',fig:'נתוני אנליסטים / חברה',news:'אירוע חדשותי',expo:'חשיפה',corr:'קשר בין ניירות'};
   if(!L.length)return stSec('calc','חריגות: מה יצא מהטווח הרגיל','<p>לא זוהו חריגות: התנועות של היום בטווח הרגיל של כל נייר, אין שינוי בנתוני האנליסטים בחודש האחרון, אין אירוע קריטי ביומיים האחרונים, והחשיפות כמו לפני חודש.</p><p class="note">נבדק: תנועת היום מול סטיית התקן של 60 יום של כל נייר (סף פי 2.5), מחזור המסחר מול 60 יום (פי 2.5, כשיש מחזורים), התנודתיות של שבועיים מול 60 יום (פי 2), שינויי אנליסטים ונתונים בין ריצות המחקר, אירועים קריטיים, שינוי של 5 נקודות בקבוצה, וקשר חריג בין ניירות. תנודה רגילה לא נחשבת חריגה.</p>');
   return stSec('calc','חריגות: מה יצא מהטווח הרגיל',`<ul class="anom">${L.slice(0,12).map(a=>`<li class="an-${a.k}"><div class="an-h"><span class="nx-tag">${KH[a.k]}</span> <b>${esc(a.what)}</b>${a.sym?` <button type="button" class="lnk" data-gosec="${esc(a.sym)}">לנייר ›</button>`:''}</div>
       <div class="an-b"><span><b>ביחס למה:</b> ${esc(a.vs)}</span>${a.when?`<span><b>מתי:</b> ${esc(a.when)}</span>`:''}<span><b>למה זה עשוי להיות חשוב:</b> ${esc(a.why)}</span>
@@ -20181,7 +20215,7 @@ function renderState(){
   const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules||{}, usd=Q.usdIls, depNow=(()=>{try{return HS?depTotal():null}catch(e){return null}})();
   const keys={week:stateKey(DY,7),month:stateKey(DY,30)}, top=stateTop(DY,acct); keys.peak=top?top.k:null;
   const avail={day:m.hasDay,week:!!keys.week,month:!!keys.month,peak:!!keys.peak}; if(!avail[SPER])SPER='day';
-  setH(per,[['day','יום המסחר האחרון'],['week','שבוע'],['month','חודש'],['peak','מהשיא']].map(([k,l])=>`<button type="button" class="chip" data-sper="${k}" aria-pressed="${k===SPER}"${avail[k]?'':' disabled title="אין נקודת השוואה שמורה לתקופה הזו"'}>${l}</button>`).join(''));
+  setH(per,[['day','<span class="sp-l">יום המסחר האחרון</span><span class="sp-s">יום אחרון</span>'],['week','שבוע'],['month','חודש'],['peak','מהשיא']].map(([k,l])=>`<button type="button" class="chip" data-sper="${k}" aria-pressed="${k===SPER}"${avail[k]?'':' disabled title="אין נקודת השוואה שמורה לתקופה הזו"'}>${l}</button>`).join(''));
   const ageH=Q.updatedAt?(Date.now()-new Date(Q.updatedAt))/36e5:null, live=/מסחר חי/.test(Q.priceLabel||'')&&ageH!=null&&ageH<2;
   $('stateWhen').textContent=Q.updatedAt?freshTxt():'';
   const warn=!live&&ageH!=null&&ageH>=2?`<p class="dup" role="status">המחירים מ-${dmy(Q.updatedAt)} ${hm(Q.updatedAt)} (${ago(Q.updatedAt)}). מה שמוצג כאן נכון למועד הזה, לא לעכשיו.</p>`:'';
@@ -20201,8 +20235,12 @@ function renderState(){
     if(!items.length)return stSec('calc','מי הזיז את התיק','<p>אין נתון לפירוק לפי ניירות.</p>');
     const tot=items.reduce((t,i)=>t+i.ils,0), gs={}; for(const i of items)(gs[i.group]=gs[i.group]||{n:GROUPS[i.group]||i.group,v:0}).v+=i.ils;
     const miss=SPER==='day'?W.excluded.map(x=>x.sym):PM?PM.missing:[];
-    return stSec('calc','מי הזיז את התיק',`<ul class="why-l">${items.slice(0,5).map(i=>`<li><b class="sym">${esc(lab(i.sym))}</b> ${money(i.ils)} <span class="nm">${tx(spct(i.pct,2))} במחיר</span></li>`).join('')}</ul>
-      <p>לפי קבוצות: ${Object.values(gs).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,3).map(g=>`${esc(g.n)} ${money(g.v)}`).join(' · ')}. סך מהמחירים: ${money(tot)}.</p>
+    // 17.11 (proposal 15): each security a bar as long as its share of the move, its sum and its change written beside it;
+    // the groups as tiles (the three that moved most, the rest together)
+    const top5=items.slice(0,5), mx=Math.max(...top5.map(i=>Math.abs(i.ils)))||1, G=Object.values(gs).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)), gr=G.slice(3);
+    const GT=[...G.slice(0,3).map(g=>[g.n,g.v]),...(gr.length?[[gr.length===1?gr[0].n:'שאר הקבוצות',gr.reduce((t,g)=>t+g.v,0)]]:[])], mA=v=>`<span class="n ${v>=0?'up':'down'}">${v>0?'▲ ':v<0?'▼ ':''}${sgn(v)}</span>`;
+    return stSec('calc','מי הזיז את התיק',`<ul class="st-mv">${top5.map(i=>`<li>${logoHtml(i.sym)}<b class="sym">${esc(lab(i.sym))}</b><span class="n mv-p ${i.pct>=0?'up':'down'}">${esc(spct(i.pct,2))}</span><span class="mv-b" aria-hidden="true"><i class="${i.ils>=0?'up':'down'}" style="width:${Math.max(4,Math.abs(i.ils)/mx*100).toFixed(1)}%"></i></span>${mA(i.ils)}</li>`).join('')}</ul>
+      <h4 class="st-gh">לפי קבוצות</h4><div class="st-gt">${GT.map(([n,v])=>`<div class="st-g"><span>${esc(n)}</span>${mA(v)}</div>`).join('')}</div><p class="st-tot">סך מהמחירים: ${money(tot)}.</p>
       ${miss.length?`<p class="note">לא נכללו (אין מחיר לתחילת התקופה): ${esc(miss.map(lab).join(', '))}.</p>`:''}${SPER!=='day'?'<p class="note">כל נייר נמדד בכמות של היום; דולרים לפי השער של היום.</p>':''}`)},'מי הזיז את התיק');
   // 3. exposures
   const expo=stTry(()=>{const E=exposures(m,P,Q,k=>{try{const it=itemOf(k);return (it&&it.sec)||''}catch(e){return ''}}); if(!E)return '';
@@ -20247,8 +20285,31 @@ function renderState(){
   const ai=!!SAMPLE&&!SAMPLE_OFF;
   const words=stSec('expl','במילים',ai?'<p>צ׳יקו יכול לנסח את זה במילים, רק מהמספרים שבדף.</p><button type="button" class="btn sm pri" data-ana="crisis">צ׳יקו, הסבר במילים</button>':'<p class="note">הסבר במילים זמין כשצ׳יקו מחובר. כל מה שלמעלה מחושב בדף, גם בלעדיו.</p>');
   const anom=stTry(()=>anomH(m));
-  body.innerHTML=snap+carry+anom+expo+mkt+sim+goals+chk+words;
+  // 17.11 (the owner's proposal 15, "מה קורה בתיק"): on the phone the answer first: how much the portfolio moved in the
+  // period, why in one sentence, and the market beside it (from the same numbers as "תמונת מצב" and "השוק", which stay
+  // in the page hidden on the phone); then who moved it; the other parts fold into rows under "עוד בדף הזה"
+  const PH=(()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}})();
+  const ans=PH?stTry(()=>{const ar=v=>v>0?'▲ ':v<0?'▼ ':'', mA=v=>`<span class="n ${v>=0?'up':'down'}">${ar(v)}${sgn(v)}</span>`, pA=v=>`<span class="n ${v>=0?'up':'down'}">${ar(v)}${esc(spct(v,2))}</span>`;
+    const PL={day:'יום המסחר האחרון',week:'השבוע האחרון',month:'החודש האחרון',peak:'מהשיא'}; let v='—'; const L=[];
+    if(SPER==='day'){if(W.has){v=mA(W.ils); L.push(`${esc(dayWord())} התיק ${W.ils>=0?'עלה':'ירד'} ב-${esc(pct(Math.abs(W.pct),2))}, מהמחירים בלבד.`)} else L.push('אין שינוי יומי: חסרים מחירי סגירה קודמים.');
+      const B=stateBench(m,Q); L.push(B.none?'השוק: אין כרגע נתוני מדד.':'השוק: '+[B.us?`${esc(B.us.name)} ${pA(B.us.pct)}`:'',B.il?`${esc(B.il.name)} ${pA(B.il.pct)}`:'',B.blend!=null?`לפי המשקלים שלך ${pA(B.blend)}`:''].filter(Boolean).join(' · '))}
+    else if(PM&&PM.change!=null){v=mA(PM.change); L.push(`מ-${esc(dmy(PM.key))}: ${esc(ils(PM.vThen))} ← ${esc(ils(PM.vNow))} (${esc(spct(PM.change/PM.vThen*100))}).`);
+      L.push(PM.dep!=null?`מתוך זה הפקדות ומשיכות ${money(PM.dep)}; השאר, ${money(PM.change-PM.dep)}, תנועת השוק והקניות והמכירות.`:'ההפקדות בתקופה לא ידועות לחשבון הזה, ולכן השינוי כולל אותן.')}
+    else L.push(PM?'אין שווי שמור לתחילת התקופה בחשבון הזה.':'אין נתון שמור לתחילת התקופה הזו.');
+    L.push(`שווי התיק עכשיו: <span class="n">${esc(ils(m.total))}</span>.`);
+    if(noPx.length)L.push(`לא נכללו בשווי, כי אין להם מחיר: ${esc(noPx.map(lab).join(', '))}.`);
+    const upd=Q.updatedAt?'עודכן '+(ilDay(Q.updatedAt)===ilDay()?hm(Q.updatedAt):dmy(Q.updatedAt)):'';
+    return `<div class="m-ans" id="stAns" role="group" aria-label="מה קרה בתיק"><div class="ma-k"><span>${PL[SPER]||''}</span>${upd?`<span class="ma-tag2">${esc(upd)}</span>`:''}</div>${warn}<div class="ma-v">${v}</div>${L.map(x=>`<div class="ma-l">${x}</div>`).join('')}</div>`},'מה קרה בתיק'):'';
+  const stF=(k,html,sub)=>{if(!PH||!html)return html; const on=STOPEN.has(k);
+    return html.replace('<div class="stsec">',`<div class="stsec st-f${on?' open':''}">`).replace(/<h3>([\s\S]*?)<\/h3>/,(a,inner)=>`<h3><button type="button" class="st-fh" data-stfh="${k}" aria-expanded="${on}"><span class="st-ft">${inner}</span>${sub?`<span class="st-fs">${sub}</span>`:''}</button></h3>`)};
+  const AL=anomH.L||[], anSub=AL.length?esc(AL[0].what)+(AL.length>1?` · ועוד ${AL.length-1}`:''):'לא זוהו חריגות';
+  const snapH=snap.replace('<div class="stsec">','<div class="stsec st-snap">'), mktH=mkt.replace('<div class="stsec">','<div class="stsec st-mkt">');
+  body.innerHTML=PH?ans+carry+snapH+mktH+'<h3 class="more-h st-more">עוד בדף הזה</h3>'+stF('anom',anom,anSub)+stF('expo',expo)+stF('sim',sim)+stF('goals',goals)+stF('chk',chk)+stF('words',words)
+    :snapH+carry+anom+expo+mktH+sim+goals+chk+words;
 }
+// 17.11 (proposal 15): the parts folded on the phone stay open or closed across the page's redraws
+var STOPEN=new Set();
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-stfh]'); if(!b)return; const k=b.dataset.stfh, s=b.closest('.st-f'), on=!STOPEN.has(k); if(on)STOPEN.add(k); else STOPEN.delete(k); if(s)s.classList.toggle('open',on); b.setAttribute('aria-expanded',String(on))});
 window.__model.stateSim=()=>{const m=model(P,Q,acct,acct==='all'?planAdj():null); return [20,30,40].map(x=>ils(stressRun(m,P,Q,{kind:'all',pct:-x}).after))};
 document.addEventListener('click',ev=>{
   const b=ev.target.closest('#statePer [data-sper]'); if(b&&!b.disabled){SPER=b.dataset.sper; try{localStorage.setItem('tr_sper',SPER)}catch(e){} renderState(); return}
@@ -27282,7 +27343,8 @@ function renderCmp(){const b=$('cmpBox'); if(!b||document.body.dataset.page!=='c
   // 17.11 (proposal 10): on the phone the first four groups of figures, the rest behind "עוד מדדים"
   try{const T=b.querySelector('.cmp-t'); if(T){let g=0; for(const tr of T.querySelectorAll('tbody tr')){if(tr.classList.contains('g'))g++; if(g>4)tr.classList.add('cmp-more')} if(g>4)T.insertAdjacentHTML('afterend','<button type="button" class="lnk cmp-more-b" data-cmpmore="1" aria-expanded="false">עוד מדדים ›</button>')}}catch(e){}
   // what is still to come: the figures and the closes of each security, then once more
-  const need=CMP.syms.filter(k=>RSX[k]===undefined||!CLOSES[k]); if(need.length&&!renderCmp.busy){renderCmp.busy=true; Promise.all([loadFit(),loadAllQ(),...need.map(k=>loadResearch(k).catch(()=>null)),...need.map(k=>loadCloses(k).catch(()=>null))]).then(()=>{renderCmp.busy=false; for(const k of need)if(RSX[k]===undefined)RSX[k]=null; renderCmp()})}}
+  const ask=renderCmp.ask||(renderCmp.ask=new Set()), need=CMP.syms.filter(k=>RSX[k]===undefined||!CLOSES[k]&&!ask.has(k)); if(need.length&&!renderCmp.busy){renderCmp.busy=true; for(const k of need)ask.add(k);   // 17.11: closes asked once a security (a fund's never come; asking again drew the screen in a loop)
+  Promise.all([loadFit(),loadAllQ(),...need.map(k=>loadResearch(k).catch(()=>null)),...need.map(k=>loadCloses(k).catch(()=>null))]).then(()=>{renderCmp.busy=false; for(const k of need)if(RSX[k]===undefined)RSX[k]=null; renderCmp()})}}
 function cmpAdd(k){k=String(k||'').trim().toUpperCase(); if(!k||!SECKEY.test(k)||CMP.syms.includes(k)||CMP.syms.length>=4)return false; CMP.syms.push(k); cmpKeep(); try{useAdd('cmp')}catch(e){} return true}
 document.addEventListener('submit',ev=>{const f=ev.target; if(!f||f.id!=='cmpAdd')return; ev.preventDefault(); const v=$('cmpIn').value; if(!cmpAdd(v))rtSay('סימול לא מוכר, או שכבר יש 4'); renderCmp()});
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
@@ -30669,6 +30731,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.33',at:'2026-11-17',t:'מה קורה בתיק: התשובה בשורה אחת, ומי הזיז בפסים',d:'בטלפון: "מה קורה בתיק" נפתח בכרטיס שאומר כמה התיק זז בתקופה ולמה, ולידו מה עשה השוק. מי הזיז את התיק מוצג בפסים לפי הגודל, עם הסכום והשינוי ליד כל פס, והקבוצות כאריחים. התוויות "נתון/חישוב/סימולציה" ירדו מהכותרות, והחלקים האחרים (חריגות, חשיפות, מה אם, מה שהגדרת, שאלות, במילים) הם שורות שנפתחות.',go:'state'},
   {v:'2026-11-17.32',at:'2026-11-17',t:'בקרה וסיכון: הציון והחריגות קודם',d:'בטלפון: "בקרה וסיכון" נפתח בכרטיס עם מדד הבריאות כמספר (למשל 74 מתוך 100), מה מוריד אותו, וכפתור שמוביל ישר לחריגות. הברכה והשעה ירדו (הן בבית), אזהרת המחירים היא פס של שורה עם "למה?", ב"מה לעשות" רק מה שצריך לעשות (הטיפים ב"עוד"), כל חריגה כתובה "קריטי" במילה, ו-צ׳יקו מקופל תחת "עוד בדף הזה".',go:'risk'},
   {v:'2026-11-17.31',at:'2026-11-17',t:'חסכונות לפי מטרה: מתחילים ממטרה',d:'כשעוד אין חיסכון, הדף נפתח בכרטיס שמסביר מה זה ובארבע מטרות מוכנות (ילד או ילדה, דירה, חופשה, לימודים). לחיצה פותחת את הטופס עם המטרה כבר מסומנת.',go:'pots'},
   {v:'2026-11-17.30',at:'2026-11-17',t:'יעד ותרחישים: התשובה קודם',d:'בטלפון: הדף נפתח בכרטיס שאומר לאן התיק מגיע אחרי מס, עם ההפקדה החודשית שלך, ומה הרווח הנקי. ההנחות (שנים, תשואה, מס) בשורה אחת עם "עריכה".',go:'goal'},
