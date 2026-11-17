@@ -1020,6 +1020,9 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
     await tab(pg,'plan'); await pg.waitForTimeout(400);
     // 11.11 (the owner): the goals are one tab of the plan, opening on "החסכונות שלי" (the new goal's form when there is none)
     await pg.evaluate(()=>document.querySelector('[data-pane="plan"] .subtabs [data-tab="pots"]').click()); await pg.waitForTimeout(400);
+    // 17.11 (proposal 13): with no goal, one card and four ready goals; "פתיחת חיסכון" opens the form
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#potBox [data-pottpl]')].map(b=>b.dataset.pottpl)),['child','home','trip','study']);
+    await pg.click('#potBox .pot-intro [data-potopen]'); await pg.waitForTimeout(300);
     assert.match(await pg.evaluate(()=>document.querySelector('#potBox h3').textContent),/בוא נפתח חיסכון לפי מטרה/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#potBox [data-potsepnew="1"]')&&/חיסכון נפרד/.test(document.getElementById('potBox').textContent)),'4.11: the "חיסכון נפרד" the note names is in the form');
     // "עד מתי" is a day; the goal is in a fund or a stock

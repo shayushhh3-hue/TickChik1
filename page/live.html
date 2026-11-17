@@ -3516,6 +3516,14 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+.pot-intro{background:var(--accent-soft);border-radius:8px;padding:16px;margin:0 0 16px}
+.pot-intro .ma-k{font-size:14px;color:var(--ink2)} .pot-intro .ma-v{font-size:22px;font-weight:600;margin:4px 0;color:var(--ink)} .pot-intro .ma-l{font-size:14px;color:var(--ink2);line-height:1.7} .pot-intro .ma-ac{margin-top:12px}
+.pot-tpl h3{margin:0 0 10px;font-size:16px;font-weight:600}
+.pot-tpl .pt-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pot-tpl .pt-t{min-height:76px;text-align:start;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;font:inherit;color:var(--ink);cursor:pointer}
+.pot-tpl .pt-t b{font-size:16px;font-weight:600} .pot-tpl .pt-t span{font-size:12px;color:var(--muted)}
+.pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
+.pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
 @media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
@@ -3929,7 +3937,10 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
 }
 /* the profit against the cost, under the value */
 .kpi-pnl{display:flex;justify-content:flex-start;margin:2px 0 6px}
-.kpi-pnl .kpi{display:inline-flex!important;flex-wrap:nowrap;align-items:baseline;gap:6px;padding:0!important;background:none!important;border-radius:0!important;justify-content:flex-start!important}
+.kpi-pnl .kpi{display:inline-flex!important;flex-wrap:wrap;align-items:baseline;gap:6px;padding:0!important;background:none!important;border-radius:0!important;justify-content:flex-start!important;max-width:100%}
+/* 17.11: its three parts by their own width (a whole line each, from the tiles' rule, sent the figures off the screen's
+   side with the bigger text) */
+.kpi-pnl .kpi>*{flex:none}
 .kpi-pnl .kpi-k{font-size:14px;color:var(--ink2)} .kpi-pnl .kpi-v{font-size:16px;font-weight:600} .kpi-pnl .kpi-s{font-size:13px}
 /* the bottom bar: flat, white, a thin line on top; the words under the icons; the open one dark, the others at half */
 @media (max-width:759px){
@@ -27864,11 +27875,14 @@ function pageHead(t){const pane=document.querySelector(`[data-pane="${t}"]`); if
   for(const x of [sub,pt,rn])if(x&&x.parentElement!==r)r.appendChild(x);
   if(sub&&r.firstElementChild!==sub)r.prepend(sub);
   const has=!!(sub||pt||rn); r.hidden=!has; h.classList.toggle('solo',!has); pgH(pane);
+  setTimeout(()=>{for(const x of [pt,rn,sub])if(x)chipIntoView(x)},0);   // 17.11: the chosen pill in sight in the one row
   // the research card's own name ("מחקר") and its row of two views are said by the opening card now
   if(t==='search'){const hs=$('hSearch'), sh=hs&&hs.closest('.sec-h,.row'); if(sh)sh.classList.add('pg-dup')}}
 // 11.11: a row of tabs wider than the screen scrolls its chosen tab into sight (it was cut at the edge: "חסכונות לפי מטר")
-function chipIntoView(row){try{if(!row||row.scrollWidth<=row.clientWidth+2)return; const on=row.querySelector('[aria-pressed="true"],[aria-selected="true"]'); if(!on)return;
-  const r=on.getBoundingClientRect(), rr=row.getBoundingClientRect(); if(r.left>=rr.left+4&&r.right<=rr.right-4)return; row.scrollLeft+=(r.left+r.width/2)-(rr.left+rr.width/2)}catch(e){}}
+// 17.11: on the phone the rows are one (the group's screens and the parts inside .pgrows, display:contents): the box that scrolls is .pgrows
+function chipIntoView(row){try{if(!row)return; const sc=getComputedStyle(row).display==='contents'&&row.parentElement?row.parentElement:row; if(sc.scrollWidth<=sc.clientWidth+2)return;
+  const on=[...row.querySelectorAll('[aria-pressed="true"],[aria-selected="true"]')].find(x=>x.getClientRects().length); if(!on)return;
+  const r=on.getBoundingClientRect(), rr=sc.getBoundingClientRect(); if(r.left>=rr.left+4&&r.right<=rr.right-4)return; sc.scrollLeft+=(r.left+r.width/2)-(rr.left+rr.width/2)}catch(e){}}
 
 // 4.11: the long screens in parts, like the control screen (no folds: a row at the top shows one part at a time, the
 // choice kept for next time). A link to a section inside (set:..., a scroll) opens the part that holds it
@@ -29867,6 +29881,14 @@ function potForm(pt){const dis=canWrite?'':' disabled', v=x=>x==null?'':esc(x), 
     ${isNew?'':`<label for="pf_cash">מזומן בחיסכון (₪)<input id="pf_cash" data-potf="cash" type="number" min="0" step="1" inputmode="decimal" value="${v(pt.cash)}"${dis}></label>`}</div>
     <div class="potkg"><span class="pk-l" id="pkL1">המטרה</span><div class="potkinds" role="group" aria-labelledby="pkL1">${Object.entries(POTK).map(([k,l])=>`<button type="button" class="chip" data-potkind="${k}" aria-pressed="${pt.kind===k}"${dis}>${l}</button>`).join('')}</div></div>
     <div class="potkg"><span class="pk-l" id="pkL2">במה החיסכון מושקע</span><div class="potkinds" role="group" aria-labelledby="pkL2">${Object.entries(POTI).map(([k,l])=>`<button type="button" class="chip" data-potinst="${k}" aria-pressed="${pt.inst===k}"${dis}>${l}</button>`).join('')}</div></div>`}
+// 17.11 (the owner's proposal 13, "חסכונות לפי מטרה"): with no goal yet the screen does not open on a form of seven fields
+// and eight pills: one card says what a goal is and opens the form, and four ready goals open it with the goal chosen
+var POTOPEN=false;
+function potIntroH(){const T=[['child','חיסכון לטווח ארוך'],['home','הון עצמי'],['trip','לטווח קצר'],['study','תאריך ידוע מראש']], dis=canWrite?'':' disabled';
+  return `<div class="pot-intro" role="group" aria-label="חיסכון לפי מטרה"><div class="ma-k"><span>חיסכון לפי מטרה</span></div><div class="ma-v sm">כסף בצד, למטרה אחת</div><div class="ma-l">בוחרים מטרה, סכום ותאריך, ורואים כל חודש אם אתם בדרך.</div><div class="ma-ac"><button type="button" class="btn sm pri" data-potopen="1"${dis}>פתיחת חיסכון</button></div></div>
+  <section class="pot-tpl" aria-labelledby="hPotTpl"><h3 id="hPotTpl">להתחיל ממטרה</h3><div class="pt-g">${T.map(([k,s])=>`<button type="button" class="pt-t" data-pottpl="${k}"${dis}><b>${esc(POTK[k])}</b><span>${s}</span></button>`).join('')}</div><button type="button" class="lnk pt-other" data-potopen="1"${dis}>מטרה אחרת (רכב, משכנתא, אחר) ›</button></section>`}
+document.addEventListener('click',e=>{const o=e.target.closest&&e.target.closest('[data-potopen],[data-pottpl]'); if(!o||!o.closest('#potBox'))return; POTOPEN=true; if(o.dataset.pottpl)POTDRAFT.kind=o.dataset.pottpl;
+  try{renderPots()}catch(x){console.error(x)} setTimeout(()=>{const n=$('pf_name'); if(n)try{n.focus()}catch(x){}},50)});
 function renderPots(){
   const box=$('potBox'); if(!box)return; const L=pots(), sel=potSel(), dis=canWrite?'':' disabled';
   try{subTabs('pots')}catch(e){}
@@ -29887,7 +29909,8 @@ function renderPots(){
         ${V.pctT!=null?`<span class="potprog" role="img" aria-label="${pct(V.pctT,0)} מהיעד"><i style="width:${V.pctT.toFixed(1)}%"></i></span>`:''}
         <span class="pc-f">${[V.pctT!=null?pct(V.pctT,0)+' מהיעד':'בלי סכום יעד',pt.date?'עד '+potDayTxt(pt.date):'',pt.date?leftTxt(V):'',+pt.monthly>0?ils(+pt.monthly)+' בחודש':''].filter(Boolean).join(' · ')}</span><span class="pc-go" aria-hidden="true">›</span></button>`}).join('');
     box.innerHTML=tabsH+`<div class="panel"><div class="pothead"><h3>החסכונות שלי</h3><button type="button" class="btn sm" data-potgo="new">+ חיסכון חדש</button></div>${tiles}<div class="potcards">${cards}</div><p class="note" style="margin:0">לחיצה על חיסכון פותחת אותו: הניירות שבו, ההתקדמות, ומה צריך כדי להגיע ליעד. החסכונות לא נספרים בשווי התיק, חוץ מניירות שהועתקו אליהם מהתיק.</p></div>`; return}
-  if(sel==='new'){box.innerHTML=tabsH+`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
+  if(sel==='new'){if(!L.length&&!POTOPEN){box.innerHTML=tabsH+potIntroH(); return}
+    box.innerHTML=tabsH+`<div class="panel"><h3>${L.length?'חיסכון חדש':'בוא נפתח חיסכון לפי מטרה'}</h3><p class="note" style="margin:0">חיסכון לילד, למשכנתא, לדירה: שם, סכום ותאריך יעד, ואחר כך הניירות שמיועדים אליו.</p>${potForm(null)}
     <div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsepnew="0" aria-pressed="${!POTDRAFT.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsepnew="1" aria-pressed="${!!POTDRAFT.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div></div>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="potCreate"${dis}>צור חיסכון</button><span class="saved" id="potState" role="status"></span></div></div>${note}`; return}
   const pt=L.find(p=>p.id===sel); if(!pt){POT='new';renderPots();return}
@@ -30593,6 +30616,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.31',at:'2026-11-17',t:'חסכונות לפי מטרה: מתחילים ממטרה',d:'כשעוד אין חיסכון, הדף נפתח בכרטיס שמסביר מה זה ובארבע מטרות מוכנות (ילד או ילדה, דירה, חופשה, לימודים). לחיצה פותחת את הטופס עם המטרה כבר מסומנת.',go:'pots'},
   {v:'2026-11-17.30',at:'2026-11-17',t:'יעד ותרחישים: התשובה קודם',d:'בטלפון: הדף נפתח בכרטיס שאומר לאן התיק מגיע אחרי מס, עם ההפקדה החודשית שלך, ומה הרווח הנקי. ההנחות (שנים, תשואה, מס) בשורה אחת עם "עריכה".',go:'goal'},
   {v:'2026-11-17.29',at:'2026-11-17',t:'תוכנית: ההפקדה הבאה בכרטיס אחד',d:'בטלפון: התוכנית נפתחת בכרטיס של ההפקדה הבאה: הסכום, האם סימנת שהכסף הגיע, ומה קונים אחריה. הכפתור "הכסף הגיע" מסמן את החודש במעקב החודשי.',go:'plan'},
   {v:'2026-11-17.28',at:'2026-11-17',t:'השוואה: נפתחת מוכנה',d:'ההשוואה נפתחת עם שתי האחזקות הגדולות, ואפשר להחליף או להוסיף עד ארבעה ניירות. בטלפון הבחירה מהתיק היא בכפתורים גדולים.',go:'srch'},
