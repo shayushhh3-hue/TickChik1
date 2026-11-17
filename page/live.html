@@ -766,6 +766,24 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+/* 17.11 (the owner): "מה קרה לאחרונה" on a security's page, as the mock-up: a white card, a small label and the sentence, a
+   row per event with a drawn line up or down, its tag in colour, and a fold that opens to what it means and the articles */
+.nqc{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px 14px;box-shadow:var(--shadow);max-width:760px;display:flex;flex-direction:column;gap:0}
+.nqc h3{margin:0;font-size:13px;font-weight:600;color:var(--ink2)} .nqc .nq-hd{margin:4px 0 14px;font-size:21px;font-weight:800;line-height:1.45;color:var(--ink);max-width:none}
+.nq{border-top:1px solid var(--line)} .nq>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 0;min-height:48px;cursor:pointer} .nq>summary::-webkit-details-marker{display:none}
+.nq>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+svg.nq-i{flex:none;width:24px;height:24px;color:var(--muted)} .nq.good svg.nq-i{color:var(--gain)} .nq.bad svg.nq-i{color:var(--loss)}
+.nq-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px} .nq-t b{font-size:16px;font-weight:700;color:var(--ink);line-height:1.4} .nq-t span{font-size:13px;color:var(--ink2)}
+.nq-tag{flex:none;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--sunk);color:var(--ink2)} .nq.good .nq-tag{background:var(--ok-bg);color:var(--ok-ink)} .nq.bad .nq-tag{background:var(--crit-bg);color:var(--crit-ink)}
+svg.nq-c{flex:none;width:18px;height:18px;color:var(--muted);transition:transform .2s} .nq[open] svg.nq-c{transform:rotate(180deg)}
+.nq-b{margin:0 0 12px;margin-inline-start:36px;background:var(--sunk);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.nq-b .nq-k{font-size:12px;color:var(--ink2)} .nq-b p{margin:0 0 8px;font-size:14px;line-height:1.6;color:var(--ink);max-width:none} .nq-b p.nm{color:var(--ink2)}
+.nq-b ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px} .nq-b li{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding:4px 0;font-size:13px}
+.nq-b li .lnk{font:inherit;text-align:start;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px} .nq-b li .lnk:hover{color:var(--vio-ink,var(--accent-ink))} .nq-b li>span{color:var(--ink2);white-space:nowrap}
+.nq-ft{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;padding-top:12px;border-top:1px solid var(--line)} .nq-ft .note{margin:0;flex:1 1 240px;font-size:12px;color:var(--ink2)}
+.nq-ft .lnk{font:inherit;font-size:13.5px;font-weight:700;min-height:32px;color:var(--vio-ink,var(--accent-ink));background:none;border:0;padding:0;cursor:pointer}
+@media (prefers-reduced-motion:reduce){svg.nq-c{transition:none}}
+@media (max-width:560px){.nqc{padding:16px 16px 10px} .nqc .nq-hd{font-size:19px} .nq>summary{flex-wrap:wrap;gap:6px 10px} .nq-t{flex:1 1 calc(100% - 36px)} .nq-tag{order:3;margin-inline-start:34px} svg.nq-c{order:4;margin-inline-start:auto} .nq-b{margin-inline-start:0}}
 /* 17.11 (the owner): "מה החברה עושה": a white card, a small label and the line, three tiles (what it sells, to whom, where
    the money comes from), what moves its business as chips, and a strip of facts */
 .abx{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px 16px;box-shadow:var(--shadow);max-width:760px;display:flex;flex-direction:column;gap:0}
@@ -27999,8 +28017,31 @@ function nxAlerts(m){const out=[]; try{for(const a of plItems().filter(a=>(a.lv=
     const x=[a.lv==='crit'?'crit':'warn','חדשות',`${who.length?who.join(', ')+': ':''}${a.title}. ${a.dir&&a.dir!=='unclear'?NX_DIR[a.dir]+'; ':''}${a.relWhy||''}.`,(a.holds||[]).map(h=>h.sym)];
     x.each=[{key:'news:'+(a.ev||a.k),text:x[2]}]; x.pl=a.k; x.nx=((a.arts||[])[0]||{}).id||null; out.push(x)}}catch(e){} return out}
 // for the security's page: the readings about it, compact
-function nxSecBlock(k){try{const m=mAllNow(), L=newsAll().filter(it=>it.x&&((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k))).slice(0,4); if(!L.length)return '';
-  const E=nxEvents(L); return `<section class="repbox" aria-label="ידיעות על הנייר"><div class="row"><h3>מה קרה לאחרונה, ומה זה אומר</h3><span><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button> · <button type="button" class="lnk" data-imopen="co:${esc(k)}">מפת השפעה ›</button></span></div><div class="nx-secl">${L.map(it=>nwCard({it,rel:m&&m.pos&&m.pos.length?newsRel(it,m):null},E,{compact:true})).join('')}</div></section>`}catch(e){return ''}}
+// 17.11 (the owner: "build it like that"): in plain words, as the mock-up he approved. The articles about the security,
+// newest first, are put together by event (צ׳יקו's reading names the event, x.ev); the three newest events are rows. A row:
+// the event in a few words (his Hebrew headline), how many articles and when, and a tag for what it may mean for this
+// share (the direction he read for it: good, bad, mixed, not clear yet). A row opens to what happened and why it touches
+// the share (his sentences) and the articles behind it, each a way to the article in the news page. The sentence at the
+// top counts the rows. The tags are his reading of the articles: said so at the foot; no forecast, no advice
+const NQ_DIR={pos:['good','עשוי להיות טוב','up'],neg:['bad','עשוי להיות רע','down'],mixed:['flat','מעורב','flat'],unclear:['flat','לא ברור עדיין','flat']};
+const NQ_IC={up:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',down:'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',flat:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/>'};
+const nqCnt=n=>n===1?'אחד':n===2?'שניים':n===3?'שלושה':String(n);
+function nxSecBlock(k){try{
+  const about=it=>it.x&&((it.x.aff||[]).some(a=>a.sym===k)||(it.syms||[]).includes(k))||(!it.x&&(it.syms||[]).includes(k)), L=newsAll().filter(about).slice(0,14); if(!L.length)return '';
+  for(const it of L)if((!it.x||it.x.rules)&&it.src!=='x')try{nxWant(it.id)}catch(e){}   // an article not read yet is read now
+  const E=[...nxEvents(L).values()].map(e=>{const lead=e.items.find(i=>i.x&&!i.x.rules)||e.items[0], x=lead.x||null, a=x&&(x.aff||[]).find(z=>z.sym===k), d=(a&&a.dir)||(x&&x.dir)||'unclear';
+    const title=x&&!x.rules?x.he:/[\u0590-\u05FF]/.test(lead.title||'')?lead.title:nxPendTitle(nwSymsOf(lead),lead.pub);
+    return {k:e.k,items:e.items,lead,x,dir:NQ_DIR[d]?d:'unclear',title,why:(a&&a.why)||'',at:e.items.map(i=>i.at||i.seen).filter(Boolean).sort().pop()||null}}).sort((a,b)=>String(b.at)<String(a.at)?-1:1).slice(0,3);
+  const it0=itemOf(k), word=it0&&(it0.t==='S'||it0.t==='T')?'למניה':'לנייר', n=E.length, pos=E.filter(e=>e.dir==='pos').length, neg=E.filter(e=>e.dir==='neg').length, oth=n-pos-neg;
+  const newest=E[0].at?Date.now()-Date.parse(E[0].at):Infinity, oldest=E[n-1].at?Date.now()-Date.parse(E[n-1].at):Infinity, when=oldest<26*36e5?'היום':oldest<7*864e5?'השבוע':'לאחרונה';
+  const head=n===1?(pos?`דבר אחד קרה ${when}, והוא עשוי להיות טוב ${word}`:neg?`דבר אחד קרה ${when}, והוא עשוי להיות רע ${word}`:`דבר אחד קרה ${when}; עוד לא ברור מה זה אומר ${word}`)
+    :`${n===2?'שני':n===3?'שלושה':n} דברים קרו ${when}: `+[pos?`${nqCnt(pos)} ${pos===1?'עשוי להיות טוב':'עשויים להיות טובים'} ${word}`:'',neg?(pos?`${nqCnt(neg)} ${neg===1?'רע':'רעים'}`:`${nqCnt(neg)} ${neg===1?'עשוי להיות רע':'עשויים להיות רעים'} ${word}`):'',oth?`${nqCnt(oth)} ${oth===1?'עוד לא ברור':'עוד לא ברורים'}`:''].filter(Boolean).join(', ');
+  const ic=d=>`<svg class="nq-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NQ_IC[NQ_DIR[d][2]]}</svg>`;
+  const rows=E.map(e=>{const D=NQ_DIR[e.dir], what=e.x&&!e.x.rules?String(e.x.what||''):'', mean=[what,e.why&&e.why!==what?e.why:''].filter(Boolean).join(' ');
+    return `<details class="nq ${D[0]}" data-ev="${esc(e.k)}"><summary>${ic(e.dir)}<span class="nq-t"><b>${esc(e.title)}</b><span>${e.items.length===1?'ידיעה אחת':e.items.length+' ידיעות'}${e.at?' · '+agoH(e.at):''}</span></span><span class="nq-tag">${D[1]}</span><svg class="nq-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="nq-b">${mean?`<span class="nq-k">מה זה אומר</span><p>${esc(mean)}</p>`:`<p class="nm">צ׳יקו עוד לא קרא את הידיעה הזאת. ההסבר יופיע כאן אחרי שיקרא.</p>`}<span class="nq-k">הידיעות</span><ul>${e.items.slice(0,5).map(i=>`<li><button type="button" class="lnk" data-anav="news:${esc(i.id)}">${esc(i.x&&!i.x.rules?i.x.he:String(i.title||'').slice(0,110))}</button><span><bdi>${esc(i.pub||'')}</bdi>${i.at?' · '+agoH(i.at):''}</span></li>`).join('')}</ul></div></details>`}).join('');
+  return `<section class="nqc" aria-label="ידיעות על הנייר"><h3>מה קרה לאחרונה</h3><p class="nq-hd">${esc(head)}</p>${rows}
+    <div class="nq-ft"><p class="note">"טוב" ו"רע" הם השערה של צ׳יקו מהידיעות, לא תחזית ולא המלצה.</p><button type="button" class="lnk" data-nxsym="${esc(k)}">לכל הידיעות ›</button></div></section>`}catch(e){return ''}}
 // for צ׳יקו: the readings that touch this portfolio, as data (what a source reported, how sure, what is not known)
 function nxFacts(m){try{const L=newsAll().map(it=>({it,rel:newsRel(it,m)})).filter(z=>z.it.x&&z.rel.text).sort((a,b)=>b.rel.score-a.rel.score).slice(0,6);
   if(!L.length)return null; return {note:'ידיעות ממקורות חיצוניים מהימים האחרונים, כפי שצ׳יקו קרא אותן מהכותרת והקטע; "cert" אומר אם זו עובדה מדווחת, פרשנות של המקור או הערכה. ידיעה אינה סיבה לתנועת מחיר אלא אם כתוב שהיא כזו, ואין כאן תחזית',
@@ -29680,6 +29721,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.4',at:'2026-11-17',t:'מה קרה לאחרונה, בשורה אחת לכל דבר',d:'בדף של נייר: משפט שמסכם מה קרה, שורה לכל אירוע (כמה ידיעות על אותו דבר הן שורה אחת), ותג שאומר אם זה עשוי להיות טוב או רע לנייר. לחיצה פותחת מה זה אומר ואת הידיעות עצמן. כל השאר ב"חיבור למציאות".',go:'srch'},
   {v:'2026-11-17.3',at:'2026-11-17',t:'מה החברה עושה',d:'בתחתית הדף של מניה: משפט אחד שאומר מה החברה עושה, מה היא מוכרת, למי, מאיפה הכסף שלה מגיע ומה משפיע עליה, בעברית פשוטה. צ׳יקו כותב את זה מהתיאור של החברה עצמה, פעם אחת לכל חברה; זה מופיע קודם במניות שבתיק ובמעקב.',go:'srch'},
   {v:'2026-11-17.2',at:'2026-11-17',t:'הדוח של החברה, בשפה פשוטה',d:'בדף של נייר: משפט אחד שאומר מה קרה בדוח, מד שמראה אם הרווח היה פחות, כמו או יותר מהצפי, ושאלות קצרות עם תשובה במילים והמספר המדויק לצדה: כמה החברה הרוויחה, כמה כסף נכנס ממכירות, איך המניה הגיבה, ומה מצפים ממנה בפעם הבאה. ההסבר המלא נמצא ב"עוד על הדוח".',go:'srch'},
   {v:'2026-11-17.1',at:'2026-11-17',t:'דירוג האנליסטים: קודם התשובה, אחר כך הנתונים',d:'בדף של נייר: משפט שאומר כמה אנליסטים ממליצים לקנות, להחזיק ולמכור; עוגה עם מקרא צמוד (מספר ואחוז בכל שורה); פס שמראה איפה המחיר של היום בין היעד הנמוך לגבוה; והמגמה נאמרת במשפט לפני העמודות. העוגה היא התצוגה הראשונה, ו"פסים" נשאר במתג.',go:'srch'},

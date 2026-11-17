@@ -3657,3 +3657,29 @@ test('17.11 "מה החברה עושה" at the foot of a security\'s page (the ow
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k)}
 });
+
+test('17.11 "מה קרה לאחרונה" on a security\'s page (the owner\'s mock-up): one sentence, a row per event with its tag for the share, the row opens to what it means and its articles; the rest is a tap away',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
+  const D=await rtData(); await rtSet(D);
+  const {ctx,pg}=await open(390);
+  try{
+    await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForSelector('#secPage .nqc',{timeout:10000}); await pg.waitForTimeout(500);
+    const r=await pg.evaluate(()=>{const b=document.querySelector('#secPage .nqc'), T=x=>x.replace(/\s+/g,' ').trim(); return {h:b.querySelector('h3').textContent,hd:T(b.querySelector('.nq-hd').textContent),rows:[...b.querySelectorAll('details.nq')].map(d=>({cls:d.className,open:d.open,t:T(d.querySelector('.nq-t b').textContent),sub:T(d.querySelector('.nq-t span').textContent),tag:d.querySelector('.nq-tag').textContent,n:d.querySelectorAll('.nq-b li').length,mean:T((d.querySelector('.nq-b p')||{}).textContent||'')})),
+      foot:T(b.querySelector('.nq-ft').textContent),old:!!document.querySelector('#secPage .nx-secl'),map:!!b.querySelector('[data-imopen]'),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    if(process.env.NQ_DEBUG)console.log(JSON.stringify(r,null,1));
+    assert.equal(r.h,'מה קרה לאחרונה'); assert.match(r.hd,/^(דבר אחד קרה|שני דברים קרו|שלושה דברים קרו) (היום|השבוע|לאחרונה)/,r.hd); assert.match(r.hd,/למניה/);
+    assert.ok(r.rows.length>=1&&r.rows.length<=3,'three rows at most: '+r.rows.length); assert.ok(r.rows.every(x=>!x.open),'closed until tapped');
+    const nv=r.rows.find(x=>/אנבידיה/.test(x.t)); assert.ok(nv,'the report\'s event is a row: '+r.rows.map(x=>x.t).join(' | '));
+    assert.match(nv.cls,/\bgood\b/); assert.equal(nv.tag,'עשוי להיות טוב'); assert.match(nv.sub,/^(ידיעה אחת|\d+ ידיעות) · /); assert.ok(nv.n>=1,'its articles'); assert.ok(nv.mean.length>10,'what it means, in his words: '+nv.mean);
+    assert.ok(r.rows.every(x=>['עשוי להיות טוב','עשוי להיות רע','מעורב','לא ברור עדיין'].includes(x.tag)));
+    assert.match(r.foot,/השערה של צ׳יקו מהידיעות, לא תחזית ולא המלצה/); assert.match(r.foot,/לכל הידיעות/); assert.equal(r.old,false,'the old cards are gone'); assert.equal(r.map,false); assert.ok(r.ox,'nothing sideways');
+    if(process.env.SHOT_DIR){await pg.evaluate(()=>{const d=document.querySelector('#secPage details.nq'); d.open=true}); for(const [w,th] of [[390,'light'],[390,'dark'],[1280,'light']]){await pg.setViewportSize({width:w,height:900}); await pg.evaluate(t=>{document.documentElement.dataset.theme=t},th); await pg.waitForTimeout(300); await (await pg.$('#secPage .nqc')).screenshot({path:process.env.SHOT_DIR+'/nq-'+w+'-'+th+'.png'})} await pg.setViewportSize({width:390,height:844}); await pg.evaluate(()=>{document.documentElement.dataset.theme='light'; document.querySelector('#secPage details.nq').open=false})}
+    // a row opens in place; an article in it leads to the article in the news page
+    await pg.evaluate(()=>{const d=[...document.querySelectorAll('#secPage details.nq')].find(x=>/אנבידיה/.test(x.querySelector(".nq-t b").textContent)); d.querySelector('summary').click()}); await pg.waitForTimeout(200);
+    assert.ok(await pg.evaluate(()=>{const d=[...document.querySelectorAll('#secPage details.nq')].find(x=>/אנבידיה/.test(x.querySelector(".nq-t b").textContent)); return d.open&&d.querySelector('.nq-b').offsetHeight>0}),'opened');
+    await pg.evaluate(()=>{const d=[...document.querySelectorAll('#secPage details.nq')].find(x=>/אנבידיה/.test(x.querySelector(".nq-t b").textContent)); d.querySelector('.nq-b li .lnk').click()}); await pg.waitForTimeout(900);
+    assert.equal(await pg.evaluate(()=>document.body.dataset.page),'news','to the article in the news page');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); rtRestore(N0,X0,ST0,PU0)}
+});
