@@ -3682,6 +3682,11 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .quick-say .qs-more{font-size:13px!important;background:none!important;border:0!important;padding:0!important;min-height:0!important;width:auto!important;color:var(--accent-ink)!important;box-shadow:none!important}
   /* 17.11: the profile shows what is filled */
   html body .me-fill{grid-column:1/-1;padding-top:6px}
+  /* 17.11: a holding's actions behind its "⋯"; the row opens the security */
+  html body [data-pane="mine"] tr:not(.acts-open):not(.open) td.pfx{display:none!important}
+  html body [data-pane="mine"] td.pfsum{position:relative;padding-inline-end:44px!important}
+  html body [data-pane="mine"] .pf-dots{position:absolute;inset-inline-end:0;top:2px;width:36px;height:36px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--accent-ink);font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0}
+  html body [data-pane="mine"] td.pfsum.secl{cursor:pointer}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -20154,6 +20159,8 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // back by the quick actions, the tiles before the holdings. Called by homeLayout and by every renderBento, so a style
 // that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
 // changed the classes: the views stayed in the card, the split outside it)
+// 17.11 (the owner): a holding's buy, sell, more and remove behind its "⋯"
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-pfdots]'); if(!b)return; e.stopPropagation(); const tr=b.closest('tr'); if(!tr)return; const on=!tr.classList.contains('acts-open'); tr.classList.toggle('acts-open',on); b.setAttribute('aria-expanded',String(on))},true);
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('[data-mefill]')){const m=$('meEdit'); if(m)m.click()}});
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-qsmore]'); if(!b)return; const p=b.closest('.quick-say'); if(!p)return; p.classList.toggle('open'); b.textContent=p.classList.contains('open')?'פחות':'יותר'});
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-hpall]'); if(!b)return; const u=$('hParts'); if(u){u.classList.toggle('all'); b.textContent=u.classList.contains('all')?'להציג רק את החלשים':'כל המדדים ('+(u.children.length-1)+')'}});
@@ -23933,7 +23940,7 @@ function renderMine(force){
     <td data-l="מחיר בדוח"><input type="number" data-pf="px" data-i="${i}" value="${nv(p.px)}" min="0" step="0.01" placeholder="—" aria-label="מחיר בדוח"${dis}></td>
     <td data-l="קבוצה"><select data-pf="group" data-i="${i}" aria-label="קבוצה"${dis}>${GK.map(k=>opt(k,p.group,GROUPS[k])).join('')}</select></td>
     <td class="pfx">${canWrite&&p.sym&&!ilIdx(p.sym)?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="buy" aria-label="קנייה של ${nv(p.sym)}">קנייה</button>${+p.qty>0?`<button class="btn sm pf-trade" type="button" data-rowtrade="${i}" data-rside="sell" aria-label="מכירה של ${nv(p.sym)}">מכירה</button>`:''}`:''}<button class="btn sm pf-more" type="button" data-pfmore="${i}" aria-expanded="false" aria-label="עוד פרטים על ${nv(p.sym)||'השורה'}">עוד</button><button class="btn sm" type="button" data-pfdel="${i}" aria-label="הסר את ${nv(p.sym)||'השורה'}"${dis}>הסר</button></td>
-    <td class="pfsum">${p.sym?`${logoHtml(p.sym)}<span class="ps-t"><span class="ps-h"><b>${nv(p.sym)}</b><span class="ps-d" aria-hidden="true">·</span><span>${+p.qty?fmtQ(+p.qty):'0'}</span><span class="ps-d" aria-hidden="true">·</span><span>${esc(acctName(p.acct))}</span>${fl?`<span class="flag">${fl}</span>`:''}</span>${p.name?`<span class="ps-n">${nv(p.name)}</span>`:''}</span>${pfLine(p)}`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
+    <td class="pfsum${p.sym&&SECKEY.test(p.sym)?' secl':''}"${p.sym&&SECKEY.test(p.sym)?` data-sec="${nv(p.sym)}"`:''}>${p.sym?`<button type="button" class="pf-dots" data-pfdots="${i}" aria-expanded="false" aria-label="פעולות על ${nv(p.sym)}">⋯</button>${logoHtml(p.sym)}<span class="ps-t"><span class="ps-h"><b>${nv(p.sym)}</b><span class="ps-d" aria-hidden="true">·</span><span>${+p.qty?fmtQ(+p.qty):'0'}</span><span class="ps-d" aria-hidden="true">·</span><span>${esc(acctName(p.acct))}</span>${fl?`<span class="flag">${fl}</span>`:''}</span>${p.name?`<span class="ps-n">${nv(p.name)}</span>`:''}</span>${pfLine(p)}`:''}</td></tr>`}).join(''):'<tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr>';
   {const cf=$('cashForm'); if(cf){const ids=acctIds(), key=ids.join('|'); if(cf.dataset.key!==key){cf.dataset.key=key; cf.innerHTML=ids.flatMap(a=>[['ILS','שקלים'],['USD','דולרים']].map(([c,l])=>`<label for="c_${esc(a)}_${c}">${esc(acctName(a))}, ${l}<input type="number" id="c_${esc(a)}_${c}" data-cash="${esc(a)}:${c}" step="0.01"></label>`)).join('')}}
    const u=$('upAcct'); if(u){const cur=u.value, key='a|'+acctIds().join('|'); if(u.dataset.key!==key){u.dataset.key=key; u.innerHTML='<option value="auto">זיהוי אוטומטי</option>'+acctOpts(); u.value=[...u.options].some(o=>o.value===cur)?cur:'auto'}}}
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
@@ -30205,6 +30212,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.15',at:'2026-11-17',t:'התיק: שורה נקייה לכל אחזקה',d:'בהתיק שלי, לחיצה על אחזקה פותחת את דף המניה, וקנייה, מכירה, עוד והסרה נמצאות מאחורי הכפתור ⋯.',go:'srch'},
   {v:'2026-11-17.14',at:'2026-11-17',t:'הפרופיל: רק מה שמילאת',d:'בהגדרות, הפרופיל מציג רק את הפרטים שמילאת, וכפתור "להשלמת פרטים" לשאר.',go:'srch'},
   {v:'2026-11-17.13',at:'2026-11-17',t:'מבט לאחור: צ׳יקו בשורה אחת',d:'הסיכום של צ׳יקו במבט לאחור מופיע בשורה אחת, ו"יותר" פותח את כולו.',go:'srch'},
   {v:'2026-11-17.12',at:'2026-11-17',t:'בקרה: פחות כפתורים',d:'בפריטים של "מה לעשות" ושל החריגות, לחיצה על הפריט פותחת אותו (במקום כפתור נפרד). במדד הבריאות מופיעים שלושת החלשים, והשאר ב"כל המדדים".',go:'srch'},
