@@ -3516,6 +3516,8 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+/* 17.11 proposal 17: a report's title opens it */
+.cat button.am{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:start;cursor:pointer}
 /* 17.11 proposal 16: the deposits' line dashed in the legend too; the comparison while the indices load */
 section[aria-labelledby="hTrend"] .legend i.lg-l2{background:repeating-linear-gradient(90deg,var(--s2) 0 5px,transparent 5px 8px)}
 section[aria-labelledby="hTrend"] .legend i.lg-l2::after{background:var(--s2)}
@@ -3548,7 +3550,7 @@ section[aria-labelledby="hTrend"] .legend i.lg-l2::after{background:var(--s2)}
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why,#repAns,.cat-seg,.cat-h{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -4000,6 +4002,26 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #quickSec .side>#kYtdBox{order:1} html body #quickSec .side>#kBestBox{order:2} html body #quickSec .side>#kWorstBox{order:3}
   html body #quickSec .quick-3{display:none!important}
   html body #quickSec>.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  /* 17.11 proposal 17, "דוחות": the report of now first, a picker of the kind, rows that open, one download icon */
+  html body section[aria-labelledby="hRep"]>:is(h2,.row){display:none!important}
+  html body section[aria-labelledby="hRep"] .panel>.row:has(.catsel){display:none!important}
+  html body .cat-seg{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px;margin:0 0 12px}
+  html body .cat-seg button{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:500 14px var(--sans);cursor:pointer}
+  html body .cat-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgb(20 18 46 / .14)}
+  html body .cat-h{margin:0;padding:12px 12px 2px;font-size:15px;font-weight:600}
+  html body #catList li.same .am b{display:none}
+  html body #catList li.same .am span{font-size:15px;color:var(--ink);font-weight:500}
+  html body .cat-h:empty{display:none}
+  html body #catList :is(.ci,.rvb){display:none!important}
+  html body #catList li.cur .am b::after{content:none!important}
+  html body #catList li{flex-wrap:nowrap!important;padding:2px 12px!important;align-items:center}
+  html body #catList .am{flex:1;min-height:52px;justify-content:center}
+  html body #repAns .ma-ac{display:flex;gap:8px;align-items:center}
+  html body #arcPanel>.row[role="button"]{cursor:pointer;min-height:52px;align-items:center;position:relative;padding-inline-end:24px}
+  html body #arcPanel>.row[role="button"]::after{content:"‹";position:absolute;inset-inline-end:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:20px}
+  html body #arcPanel.open>.row[role="button"]::after{content:"⌃"}
+  html body #arcPanel:not(.open):has(>.row[role="button"])>:not(.row){display:none!important}
+  html body #repMoreH:has(+ #arcPanel[hidden]){display:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4544,13 +4566,17 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   <div class="pane" data-pane="reports" hidden>
     <section aria-labelledby="hRep">
       <h2 id="hRep">דוחות</h2>
+      <div class="m-ans" id="repAns" role="group" aria-label="הדוח של עכשיו" hidden></div>
+      <div class="cat-seg" id="catSeg" role="group" aria-label="סוג הדוח"></div>
       <div class="panel" style="display:flex;flex-direction:column;gap:10px">
         <div class="row"><label class="catsel" for="catFilter"><span class="k">מציג</span><select id="catFilter" aria-label="סוג הדוח"></select></label><span class="sub" id="catSub"></span></div>
+        <h3 class="cat-h" id="catHead"></h3>
         <ul class="arc cat" id="catList"><li class="aempty">הדוחות יופיעו כאן אחרי שנתוני התיק ייטענו.</li></ul>
       </div>
       <div hidden>
         <div class="acts" style="justify-content:flex-start"><label class="repk" id="repWrap" for="repKind" hidden>סוג הדוח<select id="repKind"><option value="week">שבועי</option><option value="month">חודשי</option><option value="months">כל חודשי השנה</option><option value="quarter">רבעוני</option><option value="half">חצי שנתי</option><option value="year">שנתי</option></select></label><label class="repk" id="perWrap" for="repPer" hidden>תקופה<select id="repPer"></select></label><button class="btn" id="btnExcel" type="button" hidden>הורד כאקסל</button><button class="btn" id="btnReport" type="button" hidden>הורד דוח PDF</button><button class="btn" id="btnArc" type="button" hidden>שמור בארכיון</button></div>
       </div>
+      <h3 class="more-h" id="repMoreH">עוד בדף הזה</h3>
       <div class="panel" id="arcPanel" hidden>
         <div class="row"><h3>דוחות שמורים</h3><span class="sub" id="arcSub"></span></div>
         <p class="note" style="margin:6px 0 10px">דוח נשמר כפי שהיה ביום שהופק. שבועי, חודשי ורבעוני נשמרים כאן לבד.</p>
@@ -23086,14 +23112,29 @@ function renderCatalog(){
   const sel=$('catFilter'), sig=kinds.map(k=>k[0]).join(',');
   if(sel.dataset.sig!==sig){sel.dataset.sig=sig;sel.innerHTML=kinds.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('')}
   if(sel.value!==CATF)sel.value=CATF;
-  const rows=CAT.filter(c=>CATF==='all'||c.kind===CATF);
+  // 17.11 (the owner's proposal 17, "דוחות"): on the phone the report of now first (the month so far, to view or to
+  // download), then a picker of the kind (weekly, monthly, quarterly, yearly; the half years and "all the months" go with
+  // the yearly) and that kind's list; a row opens its report, one download icon named in full
+  const PH=(()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}})(), K4=['week','month','quarter','year'];
+  const cf=PH&&!K4.includes(CATF)?'month':CATF, inK=c=>cf==='all'||c.kind===cf||(PH&&cf==='year'&&(c.kind==='half'||c.kind==='months'));
+  const cm=PH?CAT.find(c=>c.kind==='month'&&c.cur):null;
+  const dlH=c=>`<details class="dl" data-cati="${CAT.indexOf(c)}"><summary class="dlb" aria-label="הורדת ${esc(c.title)}, ${esc(c.period)}" title="הורדה">${ICON_DL}</summary>
+      <div class="dlm"><span class="k">להוריד כקובץ</span><button type="button" data-dlf="pdf"${DLON?'':' disabled'}>PDF</button><button type="button" data-dlf="xlsx"${DLON?'':' disabled'}>אקסל</button>${ARCON&&canWrite?'<button type="button" data-dlf="arc">שמור בארכיון</button>':''}</div></details>`;
+  {const a=$('repAns'); if(a){a.hidden=!cm; if(cm)setH(a,`<div class="ma-k"><span>הדוח החודשי עד היום</span></div><div class="ma-v sm">${esc(cm.period)}</div><div class="ma-l">שווי, רווח והפקדות של החודש, עד היום.</div><div class="ma-ac"><button type="button" class="btn sm pri" data-rv="${CAT.indexOf(cm)}">לצפייה</button>${dlH(cm)}</div>`)}}
+  {const s=$('catSeg'); if(s)setH(s,PH?[['week','שבועי'],['month','חודשי'],['quarter','רבעוני'],['year','שנתי']].filter(([k])=>CAT.some(c=>c.kind===k||(k==='year'&&(c.kind==='half'||c.kind==='months')))).map(([k,l])=>`<button type="button" data-catf="${k}" aria-pressed="${k===cf}">${l}</button>`).join(''):'')}
+  const rows=CAT.filter(c=>inK(c)&&!(cm&&c===cm));
   $('catSub').textContent=CAT.length?`${rows.length} דוחות · מהחדש לישן`:'';
-  const h=rows.length?rows.map((c,i)=>`<li class="${c.cur?'cur':''}"><span class="ci ${c.kind}" aria-hidden="true">${CAT_ICON[c.kind]||''}</span><div class="am"><b>${esc(c.title)}</b><span>${esc(c.period)}</span></div>
-    <button type="button" class="btn sm pri rvb" data-rv="${CAT.indexOf(c)}" aria-label="צפייה ב${esc(c.title)}, ${esc(c.period)}">לצפייה</button><details class="dl" data-cati="${CAT.indexOf(c)}"><summary class="dlb" aria-label="הורד את ${esc(c.title)}, ${esc(c.period)}" title="הורדה">${ICON_DL}</summary>
-      <div class="dlm"><span class="k">להוריד כקובץ</span><button type="button" data-dlf="pdf"${DLON?'':' disabled'}>PDF</button><button type="button" data-dlf="xlsx"${DLON?'':' disabled'}>אקסל</button>${ARCON&&canWrite?'<button type="button" data-dlf="arc">שמור בארכיון</button>':''}</div></details></li>`).join('')
+  {const hd=$('catHead'), KN={week:'דוחות שבועיים',month:'דוחות חודשיים',quarter:'דוחות רבעוניים',year:'דוחות שנתיים',all:'כל הדוחות'}; if(hd)hd.textContent=PH&&rows.length?`${KN[cf]||'דוחות'} · ${rows.length}`:''}
+  {const ar=document.querySelector('#arcPanel>.row'); if(ar&&PH&&!ar.hasAttribute('role')){ar.setAttribute('role','button'); ar.tabIndex=0; ar.setAttribute('aria-expanded','false')}}
+  const h=rows.length?rows.map(c=>`<li class="${c.cur?'cur':''}${PH&&c.kind===cf&&cf!=='year'?' same':''}"><span class="ci ${c.kind}" aria-hidden="true">${CAT_ICON[c.kind]||''}</span><button type="button" class="am" data-rv="${CAT.indexOf(c)}" aria-label="צפייה ב${esc(c.title)}, ${esc(c.period)}"><b>${esc(c.title)}</b><span>${esc(c.period)}</span></button>
+    <button type="button" class="btn sm pri rvb" data-rv="${CAT.indexOf(c)}" aria-label="צפייה ב${esc(c.title)}, ${esc(c.period)}">לצפייה</button>${dlH(c)}</li>`).join('')
     :'<li class="aempty">אין עדיין נתונים לדוחות.</li>';
   setH(el,h);
 }
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return;
+  const b=t.closest('[data-catf]'); if(b){CATF=b.dataset.catf; try{localStorage.setItem('repFilter',CATF)}catch(x){} renderCatalog(); return}
+  const r=t.closest('#arcPanel>.row[role="button"]'); if(r){const p=r.parentElement, on=!p.classList.contains('open'); p.classList.toggle('open',on); r.setAttribute('aria-expanded',String(on))}});
+document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')return; const t=ev.target; if(!t||!t.matches||!t.matches('#arcPanel>.row[role="button"]'))return; ev.preventDefault(); t.click()});
 function fillPeriods(){
   const sel=$('repPer'), opts=periodOptions(RK), sig=RK+'|'+opts.map(o=>o[0]).join(',');
   if(sel.dataset.sig!==sig){sel.dataset.sig=sig; sel.innerHTML=opts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}
@@ -30759,6 +30800,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.35',at:'2026-11-17',t:'דוחות: הדוח של עכשיו למעלה, ורשימה לפי סוג',d:'בטלפון: "דוחות" נפתח בדוח החודשי עד היום, עם "לצפייה" והורדה. מתחתיו בוחרים סוג (שבועי, חודשי, רבעוני, שנתי) ורואים רק אותו. לחיצה על שורה פותחת את הדוח, ולכל שורה אייקון הורדה אחד, בלי כפתור סגול בכל שורה. הדוחות השמורים מקופלים תחת "עוד בדף הזה".',go:'reports'},
   {v:'2026-11-17.34',at:'2026-11-17',t:'מבט לאחור: האם הכסף שלי עובד?',d:'בטלפון: "מבט לאחור" נפתח בכרטיס שעונה על השאלה: כמה התיק שווה יותר (או פחות) ממה שהפקדת, ובכמה אחוזים. מתחת לגרף ארבעה אריחים, שניים בשורה (ההפקדות בכרטיס, הדולר בבית). קו ההפקדות בגרף מקווקו, כך שהוא נבדל גם בצורה ולא רק בצבע, וכשהמדדים עוד נטענים כתוב "נטען…" ליד כל מדד.',go:'history'},
   {v:'2026-11-17.33',at:'2026-11-17',t:'מה קורה בתיק: התשובה בשורה אחת, ומי הזיז בפסים',d:'בטלפון: "מה קורה בתיק" נפתח בכרטיס שאומר כמה התיק זז בתקופה ולמה, ולידו מה עשה השוק. מי הזיז את התיק מוצג בפסים לפי הגודל, עם הסכום והשינוי ליד כל פס, והקבוצות כאריחים. התוויות "נתון/חישוב/סימולציה" ירדו מהכותרות, והחלקים האחרים (חריגות, חשיפות, מה אם, מה שהגדרת, שאלות, במילים) הם שורות שנפתחות.',go:'state'},
   {v:'2026-11-17.32',at:'2026-11-17',t:'בקרה וסיכון: הציון והחריגות קודם',d:'בטלפון: "בקרה וסיכון" נפתח בכרטיס עם מדד הבריאות כמספר (למשל 74 מתוך 100), מה מוריד אותו, וכפתור שמוביל ישר לחריגות. הברכה והשעה ירדו (הן בבית), אזהרת המחירים היא פס של שורה עם "למה?", ב"מה לעשות" רק מה שצריך לעשות (הטיפים ב"עוד"), כל חריגה כתובה "קריטי" במילה, ו-צ׳יקו מקופל תחת "עוד בדף הזה".',go:'risk'},
