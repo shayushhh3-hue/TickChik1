@@ -3737,6 +3737,9 @@ test('17.11 a security\'s page in tabs on a phone (the owner: "the scroll feels 
       assert.deepEqual(r.v,{top:true,px:true,chart:true,trade:true,abx:true,rep:true,an:true,nq:true,ask:true,pxal:false},'every part is drawn; the price alert waits behind the bell');
       await pg.click('#secPage .stabs [data-stab="rp"]'); await pg.waitForTimeout(1200); const at=await pg.evaluate(()=>Math.round(document.querySelector('#secPage .repbox').getBoundingClientRect().top)); assert.ok(at>=-5&&at<300,'the jump lands on the report: '+at);
       assert.deepEqual(pg.errs,[]); await ctx.close()}
+    {const {ctx,pg}=await open(390,{parts:true}); await go(pg); const o=await pg.evaluate(()=>{const y=s=>{const e=document.querySelector('#secPage '+s); return e?Math.round(e.getBoundingClientRect().top):null}; return {name:y('.top h2'),tools:y('.sectools'),trade:y('.sectrade'),price:y('.pxrow'),chart:y('#secChart')}});
+      assert.ok(o.name<o.tools&&o.tools<o.trade&&o.trade<o.price&&o.price<o.chart,'17.11 (the owner): the currency, the compare and the trade buttons under the name, above the price and the chart: '+JSON.stringify(o));
+      if(process.env.SHOT_DIR)await pg.screenshot({path:process.env.SHOT_DIR+'/stab-order.png'}); await ctx.close()}
     // the page's own tests of each part see every part at once, on a phone too
     {const {ctx,pg}=await open(390); await go(pg); const r=await info(pg); assert.equal(r.on,false); assert.ok(r.v.abx&&r.v.rep&&r.v.an&&r.v.nq&&r.v.chart); await ctx.close()}
   }finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k); rtRestore(N0,X0,ST0,PU0)}

@@ -26526,7 +26526,7 @@ function renderSec(){SECHOV=-1;
       :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
   // 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs and not the fold"): the page in
-  // parts. On a phone (TM) each tab is a screen: the overview (the chart, the trade buttons, the holding as one row that
+  // parts. On a phone (TM) each tab is a screen: the overview (the trade buttons, the chart, the holding as one row that
   // opens, a sentence for each other tab, taken from that tab's own card), the company, the report, the analysts, the news.
   // The tabs, the name, the price and the bell stay on top of every tab. A tab with nothing to show is not offered; with
   // none but the overview there is no bar. On a wide screen (and in the page's tests of each part) the page is one page as
@@ -26553,7 +26553,8 @@ function renderSec(){SECHOV=-1;
     const sAn=((hAn.match(/<p class="an-sum"><b>([\s\S]*?)<\/b>/)||[])[1]||'').replace(/<[^>]+>/g,''), dAgo=d=>{const n=Math.round((Date.now()-Date.parse(String(d).slice(0,10)+'T12:00:00Z'))/864e5); return n<=0?'היום':n===1?'אתמול':n<60?`לפני ${n} ימים`:''};
     const row=(t,lab,s)=>tabs.includes(t)&&s?`<button type="button" class="stsum-r" data-stgo="${t}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ST_IC[t]}</svg><span class="tx"><span class="k">${lab}${isNew(t)&&t!==cur?' <i class="new">חדש</i>':''}</span><span class="s">${s}</span></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>`:'';
     const rows=(hold?'':row('co','מה החברה עושה',esc((rs&&rs.about&&rs.about.line)||'')))+row('rp','הדוח האחרון'+(rp0&&rp0.at&&!rp0.atEst&&dAgo(rp0.at)?' · '+dAgo(rp0.at):''),pick(hRp,'rq-hd'))+row('nw','מה קרה לאחרונה',pick(hNw,'nq-hd'))+row('an','מה האנליסטים חושבים',sAn);
-    body=pxA+hPx+W('ov',hChart+(more?'':pxB)+hTools+hTrade)+W('co',hAb)+W('ov',(hold||'')+(rows?`<div class="stsum" role="group" aria-label="בקצרה, ולכל לשונית">${rows}</div>`:''))+W('an',hAn)+W('rp',hRp)+W('nw',hNw)+W('ov',(rpFull?'':hRp)+(hold?'':hPos+hMine)+hJrn+hAsk+(more||moreH)+hNote)}
+    // 17.11 (the owner): the currency, the compare and the trade buttons above the price and the chart, where they were
+    body=W('ov',hTools+hTrade)+pxA+hPx+W('ov',hChart+(more?'':pxB))+W('co',hAb)+W('ov',(hold||'')+(rows?`<div class="stsum" role="group" aria-label="בקצרה, ולכל לשונית">${rows}</div>`:''))+W('an',hAn)+W('rp',hRp)+W('nw',hNw)+W('ov',(rpFull?'':hRp)+(hold?'':hPos+hMine)+hJrn+hAsk+(more||moreH)+hNote)}
   else body=W('ov',hTools+hTrade)+pxA+hPx+W('ov',hChart+pxB)+W('co',hAb)+W('ov',hPos)+W('an',hAn)+W(rpFull?'rp':'ov',hRp)+W('nw',hNw)+W('ov',hMine+hJrn+hAsk+moreH+hNote);
   pg.classList.toggle('st-on',TM&&bar); pg.dataset.stcur=cur;
   pg.innerHTML=`${stBar}<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
