@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3842,6 +3842,20 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .pane>.pgrows.pgrows>:is(.ptnav,#riskNav) .chip.chip{order:0}
   html body .pane>.pgrows.pgrows .chip.chip:is([aria-pressed="true"],[aria-selected="true"]){background:var(--accent)!important;color:#fff!important;font-weight:600!important}
   html body .pane>.pgrows.pgrows:has(>.ptnav:not([hidden]) .chip,>#riskNav:not([hidden]) .chip)>.subtabs .chip.chip:is([aria-pressed="true"],[aria-selected="true"]){display:none!important}
+  /* 17.11 proposal 6, "מחקר שוק": what is missing as the answer card, six small categories and "כל" */
+  html body section.scr-sec:has(.scr-gap){background:var(--accent-soft)!important;border:0!important;border-radius:8px!important;padding:16px!important;box-shadow:none!important}
+  html body section.scr-sec:has(.scr-gap) .scr-hd h3{font-size:14px!important;font-weight:500!important;color:var(--ink2)!important}
+  html body section.scr-sec:has(.scr-gap) .scr-hd span{display:none!important}
+  html body .scr-gap.scr-gap{background:none!important;border:0!important;padding:0!important;box-shadow:none!important;color:var(--ink)!important}
+  html body .scr-gap p{font-size:17px!important;font-weight:600!important;line-height:1.45!important;margin:2px 0 12px!important;color:var(--ink)!important}
+  html body .scr-gapb{display:flex!important;flex-wrap:wrap;gap:8px!important}
+  html body .scr-gapb button{min-height:36px!important;padding:0 14px!important;border-radius:18px!important;border:1px solid var(--accent)!important;background:var(--surface)!important;color:var(--accent-ink)!important;font:500 14px var(--sans)!important}
+  html body .scr-cg:not(.all) .scr-cat:nth-child(n+7){display:none!important}
+  html body .scr-cat.scr-cat{min-height:72px!important;padding:12px!important;align-items:flex-start!important;text-align:start!important}
+  html body .scr-cat.scr-cat>svg,html body .scr-cat.scr-cat .scr-ic{display:none!important}
+  html body section.scr-sec:has(.scr-cg) .scr-hd span{display:none!important}
+  html body .scr-cg-all{display:block;margin:10px auto 0;min-height:44px;font-size:15px;background:none!important;border:0!important;color:var(--accent-ink)!important}
+  html body .scr-cg-all[hidden]{display:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -26702,6 +26716,7 @@ function scrItems(s){const D=SYMDB||[], cat=SCR_CATS.find(c=>c[0]===s.k); let L;
   else L=L.slice().sort((a,b)=>scrCapUsd(b)-scrCapUsd(a));
   return L}
 function scrWhen(){return ALLQ&&ALLQ.date?'לפי הסגירה של '+dmy(ALLQ.date):'לפי הסגירה האחרונה'}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-scrcg]'); if(!b)return; const g=b.previousElementSibling; if(!g)return; g.classList.add('all'); b.setAttribute('aria-expanded','true'); b.hidden=true});
 function scrHome(row){
   if(!ALLQ&&!SCRQ){SCRQ=true; try{loadAllQ().then(()=>{SCRQD=true; if(!SQ.trim()&&!SEC&&document.body.dataset.page==='search')srchRender()})}catch(e){SCRQD=true}}
   const D=SYMDB||[], held=scrHeldIts(), mineN={}; for(const it of held){const c=scrCardCat(it); if(c)mineN[c]=(mineN[c]||0)+1}
@@ -26725,7 +26740,7 @@ function scrHome(row){
       <button type="button" class="lnk scr-all" data-scr="${SCRMV}">לכל הרשימה ›</button>`)}
   // the categories: how many in each (the very small hidden), and how many of them are held
   const cnt=k=>k==='etf'?D.filter(it=>it.t==='E'&&!SCR_ETF.find(x=>x[0]==='lev')[2].includes(it.sec)).length:scrItems({...scrNew(k),sub:'all'}).length;
-  out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrDuo(c[0])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div>`);
+  out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrDuo(c[0])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div><button type="button" class="lnk scr-cg-all" data-scrcg="1" aria-expanded="false">כל ${SCR_CATS.length} הקטגוריות ›</button>`);
   // the companies like the ones held: their peers that are neither held nor watched
   const H=new Set(held.map(skey)), W=new Set(wmarks()), pe=[];
   for(const it of held){if(it.t!=='S')continue; const r=(RS&&RS.companies&&RS.companies[it.sym])||RSX[it.sym]||null; for(const s of ((r&&r.peers)||[])){if(pe.length>=8)break; if(H.has(s)||W.has(s)||pe.some(x=>x.sym===s))continue; let x=null; try{x=itemOf(s)}catch(e){} if(x&&x.t==='S'&&x.sym===s)pe.push(x)}}
@@ -30477,6 +30492,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.24',at:'2026-11-17',t:'מחקר שוק: מה חסר לתיק, קודם',d:'בטלפון: "מה חסר לך" הוא הכרטיס הראשון במחקר שוק, עם כפתור לכל ענף שחסר. הקטגוריות הן שישה אריחים קטנים, ו"כל הקטגוריות" פותח את השאר.',go:'srch'},
   {v:'2026-11-17.23',at:'2026-11-17',t:'שורת ניווט אחת בכל דף',d:'בטלפון: במקום שתי שורות (המסכים של הקבוצה, ומתחתם החלקים של הדף) יש שורת גלולות אחת שנגללת הצידה. קודם החלקים של הדף, ואחריהם שאר המסכים.',go:'hist'},
   {v:'2026-11-17.22',at:'2026-11-17',t:'לוח מסחר: מה פתוח עכשיו, ואז השבועיים הקרובים',d:'בטלפון: "לוח מסחר" נפתח בכרטיס שאומר אם ארה״ב ותל אביב פתוחות עכשיו, ומתחתיו רשימה של השבועיים הקרובים. החודש הוא תצוגה שנייה, עם נקודה אחת ביום סגור או מקוצר במקום שני דגלים בכל יום. וגם: טווחי השעות מוצגים בכיוון הנכון (10:00–17:30, לא 17:30–10:00).',go:'cal'},
   {v:'2026-11-17.21',at:'2026-11-17',t:'חדשות: שם אחד, ומה נוגע לתיק קודם',d:'לדף יש עכשיו שם אחד, "חדשות", ושתי הלשוניות הן "נוגע לתיק" ו"כל החדשות". בטלפון הדף נפתח בכרטיס שאומר מה זז בתיק היום ואם יש ידיעה שמסבירה את זה. מפת ההשפעה עברה ללשונית משלה, והתקופה היא 24 שעות, 7 ימים או 30 ימים.',go:'nx'},
