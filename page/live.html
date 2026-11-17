@@ -3536,7 +3536,8 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
 .dhd{display:none}
 @media (max-width:759px){body.home-clean[data-page="overview"]::before,body.home-clean[data-page="overview"]::after{display:none!important}}
 @media (max-width:759px){
-  body.home-clean[data-page="overview"] .dhd{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px}
+  .hero>.dhd{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px}
+  .hero>.top{display:none!important}
   .dhd-t{font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
   .dhd-b{width:36px;height:36px;display:grid;place-items:center;border:0;background:none;color:var(--ink);padding:0;cursor:pointer;border-radius:50%}
   .dhd-b svg{width:24px;height:24px} .dhd-av{background:var(--accent-soft);color:var(--accent-ink)} .dhd-av svg{width:20px;height:20px}
@@ -3597,6 +3598,67 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body.home-clean[data-page="overview"] #obNext#obNext{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
   body.home-clean[data-page="overview"] #obNext h2{font-size:14px!important;font-weight:600!important}
   body.home-clean[data-page="overview"] .pane h2{font-weight:600}
+  /* symmetry on the home: every card on the same edges, the same padding (16) and the same gap (16) */
+  html body.home-clean[data-page="overview"] [data-pane="overview"] .hold{margin-inline:0!important;padding-inline:0!important}
+  html body.home-clean[data-page="overview"] #holdSec .panel.scroll{margin-inline:0!important;padding:4px 16px!important}
+  html body.home-clean[data-page="overview"] .insight.insight,html body.home-clean[data-page="overview"] #bSoon.bt.bt,html body.home-clean[data-page="overview"] #bChk.bt.bt,html body.home-clean[data-page="overview"] #obNext#obNext{padding:16px!important;margin:0 0 16px!important;width:100%!important;box-sizing:border-box!important}
+  html body.home-clean[data-page="overview"] #wChart#wChart{padding:16px 16px 0!important}
+  html body.home-clean[data-page="overview"] #wchH#wchH{padding:8px 16px 16px!important}
+  html body.home-clean[data-page="overview"] .worth .wtop{padding:16px 16px 2px!important}
+  html body.home-clean[data-page="overview"] .worth .wgrid .wv.wv{padding:4px 16px 16px!important}
+  html body.home-clean[data-page="overview"] .hero .worth.worth.worth.worth{margin:0 0 16px!important}
+  html body.home-clean[data-page="overview"] #bento{margin:0!important;padding:0!important;gap:0!important}
+  /* the stocks/funds/cash split: a 2×2 grid of equal stat cards */
+  html body.home-clean[data-page="overview"] #kindRow#kindRow{display:grid!important;grid-template-columns:1fr 1fr!important;grid-auto-flow:row!important;grid-auto-columns:auto!important;gap:12px!important;overflow:visible!important;border:0!important;padding:0!important;margin:0 0 16px!important}
+  html body.home-clean[data-page="overview"] [data-pane="overview"]{padding-top:0!important}
+  html body.home-clean[data-page="overview"] #kindRow .kt{flex:none!important;width:auto!important;min-width:0!important}
+  /* one title style for every card on the home */
+  body.home-clean[data-page="overview"] #obNext h2,body.home-clean[data-page="overview"] #hHold{font-size:14px!important}
+}
+/* 17.11 (the owner: "change the whole site to really look like this"): the phone's screens in the same look */
+@media (max-width:759px){
+  html body{background:var(--bg)!important}
+  html body::before,html body::after{display:none!important}
+  /* the screen's head: no card, the title larger and lighter */
+  html body .pghead.pghead{background:none!important;border:0!important;box-shadow:none!important;padding:0 0 6px!important}
+  html body .pg-t{font-size:20px!important;font-weight:600!important;letter-spacing:-.01em}
+  html body .pg-s{font-size:13px!important;color:var(--muted)!important}
+  html body .pg-ic{border-radius:8px!important}
+  /* no card in a card: the section is a plain column; its cards stand on the page */
+  html body .pane > section.seccard.seccard{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:16px!important;border-radius:0!important}
+  html body .pane > section.seccard > .row h2,html body .pane > section.seccard > h2,html body .pane h2{font-size:16px!important;font-weight:600!important}
+  html body .pane h3{font-weight:600!important}
+  /* one card: white, a thin border, 8px corners, no shade */
+  html body .pane :is(.mp,.rule,.al-sec,.liveal,.ix-mapd,.ix-empty,.ix-note,.ix-col,.ix-s,.ix-bub,.ix-q,.yend,.dk-trust,details.ag,.wy,.callout,.ae-now,.rhero,.wprefs,.fw-list,.fw-miss,.mk,.calday,.addman-t,.strip,.briefd,.brief,.panel,.wc,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.sres,.stsum,.sthold,.potcard,.mtile,.pf,.fact,.mine3>*,.ktiles .kt,.desk,.health,.obnext,.qa-b,.secask,details.more){border-radius:8px!important;box-shadow:none!important}
+  html body .pane :is(.al-sec,.liveal,.ix-mapd,.ix-empty,.ix-col,.ix-s,.ix-bub,.wprefs,.fw-list,.mk,.addman-t,.strip,.briefd,.panel,.wc,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.stsum,.sthold,.potcard,.desk,.obnext,details.ag,.rule){background-color:var(--surface)!important;border:1px solid var(--line)!important}
+  html body .pane :is(.al-sec,.ix-col,.wc,.nqc,.abx,.mypos,.sec-jrn,.potcard,.desk,.obnext,.wprefs){padding:16px!important}
+  html body .pane .addman-t{border-style:dashed!important;background:var(--surface)!important}
+  /* the soft boxes (notes, tips, the hero lines of a screen): lavender stat cards */
+  html body .pane :is(.ix-note,.ix-q,.rhero,.callout,.brief,.ae-now,.calday,.yend,.wy,.fw-miss,.mtile,.secp .pf,.fact){background:var(--accent-soft)!important;border:1px solid var(--line)!important;background-image:none!important}
+  /* the holdings' cards on "התיק שלי": white cards like the rest, and no frame around their list */
+  html body [data-pane="mine"] .panel.scroll,html body [data-pane="mine"] table.pf{background:none!important;border:0!important;padding:0!important}
+  html body .pane .soon-s > *{border-radius:8px!important}
+  html body [data-pane="mine"] table tbody tr{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
+  /* every tab row: pills, no frame around the row */
+  html body :is(.dvtabs,.mvtabs,.rt-tabs,.ix-range,.chips.subtabs,.chips.rng,.chips.hkind,.chips.scr-q,.ccsw,.al-in-f){background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:8px!important;border-radius:0!important}
+  html body :is(.dvtabs,.mvtabs,.rt-tabs,.ix-range,.ccsw) > button{border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important;min-height:34px!important;padding:6px 14px!important}
+  html body :is(.dvtabs,.mvtabs,.rt-tabs,.ix-range,.ccsw) > button:is([aria-pressed="true"],[aria-selected="true"],.on){background:var(--accent)!important;color:#fff!important}
+  html body .chips.subtabs .chip,html body .chips.rng .chip{border-radius:20px!important}
+  /* the security's page: no frame around the page; its tabs as pills; its figure tiles as lavender stat cards */
+  html body #secPage.secp.secp{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+  html body #secPage .stabs{border:0!important;gap:8px!important;padding:2px 0 4px!important}
+  html body #secPage .stabs button{flex:none!important;min-height:34px!important;padding:6px 14px!important;border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;font-weight:500!important}
+  html body #secPage .stabs button[aria-selected=true],html body #secPage .stabs button[aria-current=page]{background:var(--accent)!important;color:#fff!important}
+  html body .pane .mps .mp.mp,html body .pane .mine3>*{background:var(--accent-soft)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
+  html body .pane .repbox{background:var(--surface)!important;border:1px solid var(--line)!important;border-inline-start-width:1px!important}
+  /* the screen's tab row under its title: pills, with no box around them */
+  html body .pgrows.pgrows{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin-top:8px!important}
+  html body .chips.subtabs .chip:not([aria-selected=true]):not([aria-pressed=true]){background:var(--accent-soft)!important;color:var(--accent-ink)!important}
+  html body .chips.subtabs{gap:8px!important;display:flex!important;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  /* fields */
+  html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
+  /* type: titles 600, values 500 */
+  html body .pane :is(b,strong){font-weight:600}
 }
 /* the profit against the cost, under the value */
 .kpi-pnl{display:flex;justify-content:flex-start;margin:2px 0 6px}
@@ -3681,14 +3743,14 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     <button type="button" data-bb="more" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="bbl">עוד</span></button>
   </nav>
   <header class="hero" id="hero">
+      <!-- 17.11 (the owner's Figma "Dashboard"): the phone's header on every screen: the menu, the name in the middle, the profile -->
+      <div class="dhd" id="dHd"><button type="button" class="dhd-b" id="dHdMenu" aria-label="התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M7 12h14M3 18h18"/></svg></button><b class="dhd-t">תיק צ׳יק</b><button type="button" class="dhd-b dhd-av" id="dHdProf" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.9-3.6 3.6-5.5 7-5.5s6.1 1.9 7 5.5"/></svg></button></div>
     <div class="top">
       <div class="brand"><h1 class="wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Ch<span class="wm-i">ı<svg class="wm-ar" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M14 7h7v7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>k</span></h1><span class="brand-sub">התיק שלך. הסיפור שלך.</span><span class="live" id="fresh">טוען נתוני תיק…</span><button type="button" class="pxnow" id="pxNow" hidden>לעדכן מחירים עכשיו</button></div>
       <div class="acts"><span id="hdrAcct" class="hdr-acct"></span><button class="hbtn hprof" type="button" id="hdrProf" aria-label="החשבון שלי וניהול" title="החשבון שלי וניהול"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button><button class="hbtn" type="button" id="btnRefresh" aria-label="רענון: מושך מחירים עדכניים בשעות המסחר וטוען מחדש את הדף"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span class="lbl">רענון</span></button><div class="chips" role="group" aria-label="סינון לפי חשבון" id="acctChips"></div></div>
     </div>
     <div class="dup" id="loadErr" role="status" hidden style="margin:10px 0 0"></div>
     <div class="main">
-      <!-- 17.11 (the owner's Figma "Dashboard"): the phone home's header: the menu, the name in the middle, the profile -->
-      <div class="dhd" id="dHd"><button type="button" class="dhd-b" id="dHdMenu" aria-label="התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M7 12h14M3 18h18"/></svg></button><b class="dhd-t">תיק צ׳יק</b><button type="button" class="dhd-b dhd-av" id="dHdProf" aria-label="החשבון שלי"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.9-3.6 3.6-5.5 7-5.5s6.1 1.9 7 5.5"/></svg></button></div>
       <!-- 10.11 (the owner): a small row of the portfolio's own views over the value, in place of the four big buttons -->
       <nav class="ovtabs" id="ovTabs" aria-label="תצוגות התיק">
         <button type="button" class="ov-here" data-tab="overview" aria-current="page"><span>סקירה</span></button>
@@ -30100,6 +30162,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.9',at:'2026-11-17',t:'כל האתר בעיצוב החדש',d:'בכל המסכים בטלפון: כותרת אחת למעלה (תפריט, השם, פרופיל), בלי כרטיס בתוך כרטיס, כרטיסים לבנים באותו רוחב ובאותן פינות, ושורות לשוניות בצורת גלולות. בבית כל המלבנים באותו רוחב ובאותם מרווחים.',go:'srch'},
   {v:'2026-11-17.8',at:'2026-11-17',t:'מראה חדש לפי העיצוב של שי',d:'רקע לבן, כרטיסים עם מסגרת דקה ופינות קטנות, לשוניות בצורת גלולות, סרגל תחתון שטוח עם מילים מתחת לאייקונים, ו"רווח מול עלות" ישר מתחת לשווי התיק. הנתונים והניסוחים לא השתנו.',go:'srch'},
   {v:'2026-11-17.7',at:'2026-11-17',t:'מראה חדש, אותם צבעים',d:'גופן חדש (IBM Plex Sans Hebrew), בלי מעברי צבע ובלי צל סגול מתחת לכרטיסים, פינות אחידות, ואייקונים דו-גוניים במחקר השוק. הצבעים והניסוחים לא השתנו.',go:'srch'},
   {v:'2026-11-17.6',at:'2026-11-17',t:'מחקר שוק, ולשונית למניות במעקב',d:'המחקר נקרא עכשיו מחקר שוק: רשימות מוכנות (עלו, ירדו, הגדולות), מה חסר לך בתיק, תנועות היום, קטגוריות לפי ענף, ותעודות סל, עם סינון לפי גודל ומיון. לחיצה על תיבת החיפוש מראה את הניירות שהסתכלת עליהם לאחרונה. המניות שסימנת למעקב עברו ללשונית משלהן: מניות במעקב.',go:'srch'},
