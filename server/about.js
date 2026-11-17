@@ -5,6 +5,9 @@
 // whom, where the money comes from, what moves its business. He adds nothing of his own: no numbers that are not in the
 // facts, no advice, no forecast; the shares of the revenue are computed here, never by him. Written once per company and
 // kept with its research document
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {aiMeter} from './admin/counter.js';
 
 const str=(x,n)=>String(x==null?'':x).replace(/\s+/g,' ').trim().slice(0,n);
@@ -15,8 +18,22 @@ export function profAbout(j,now=new Date()){const o=Array.isArray(j)?j[0]:j; if(
   const emp=+String(o.fullTimeEmployees==null?'':o.fullTimeEmployees).replace(/[^\d]/g,'')||null;
   return {desc,country:str(o.country,3).toUpperCase()||null,emp:emp>0?emp:null,industry:str(o.industry,60)||null,sector:str(o.sector,40)||null,at:now.toISOString()}}
 
-// FMP's peers: the tickers of companies in the same business (five at most, the largest first when the size is given)
-export function peersParse(j,self=''){const L=Array.isArray(j)?j:[], out=[]; const add=(s,cap)=>{s=str(s,10).toUpperCase(); if(SYM.test(s)&&s!==String(self).toUpperCase()&&!out.some(x=>x.s===s))out.push({s,cap:+cap||0})};
+// 17.11 fix (the owner: "a click on a competitor does not open that share's page"): the shares the site has a page for,
+// from the page's list of securities (site/lib/symdb.txt, written by the build). FMP's peers also name shares that are not
+// in it (a foreign company's over-the-counter ticker, often the largest of them), and write a class with a hyphen (BRK-B)
+// where the list has a dot (BRK.B): a competitor's link then opened "הנייר לא נמצא". An empty set (no list to read): no check
+let KNOWN=null;
+export function knownSyms(){if(KNOWN)return KNOWN; KNOWN=new Set();
+  try{const f=path.join(path.dirname(fileURLToPath(import.meta.url)),'..','site','lib','symdb.txt');
+    for(const l of fs.readFileSync(f,'utf8').split('\n')){const p=l.split('\t'); if(p.length>=4&&p[0]&&p[2]==='S'&&p[3]!=='TLV')KNOWN.add(p[0])}}catch(e){}
+  return KNOWN}
+export const _setKnown=s=>{KNOWN=s?new Set(s):null};
+
+// FMP's peers: the tickers of companies in the same business (five at most, the largest first when the size is given);
+// with the site's list (known), only the ones that have a page there, under the key the site uses
+export function peersParse(j,self='',known=null){const L=Array.isArray(j)?j:[], out=[], dot=s=>s.replace('-','.'), me=dot(String(self).toUpperCase()), K=known&&known.size?known:null;
+  const key=s=>!K||K.has(s)?s:K.has(dot(s))?dot(s):'';
+  const add=(s,cap)=>{s=str(s,10).toUpperCase(); if(!SYM.test(s))return; s=key(s); if(s&&dot(s)!==me&&!out.some(x=>x.s===s))out.push({s,cap:+cap||0})};
   for(const x of L){if(typeof x==='string'){add(x);continue} if(!x||typeof x!=='object')continue; if(Array.isArray(x.peersList)){for(const p of x.peersList)add(p);continue} add(x.symbol||x.peer,x.mktCap||x.marketCap)}
   return out.sort((a,b)=>b.cap-a.cap).slice(0,5).map(x=>x.s)}
 

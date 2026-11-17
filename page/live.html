@@ -26652,10 +26652,15 @@ function secAbout(it,k,rs){const a=rs&&rs.about; if(!a||!a.line||it.t==='I')retu
   const money=!M.length?'':pcts?`<div class="abx-b" role="img" aria-label="${M.map(x=>`${esc(x.name)} ${x.pct}%`).join(', ')}">${M.map((x,i)=>`<div class="abx-br"><span>${esc(x.name)}</span><b class="n">${x.pct}%</b></div><div class="abx-bt"><i style="width:${Math.min(100,x.pct)}%;opacity:${(1-i*0.18).toFixed(2)}"></i></div>`).join('')}</div>`:li(M.map(x=>x.name));
   const tile=(n,t,body)=>body?`<div class="abx-t"><h4>${ic(n)}${t}</h4>${body}</div>`:'';
   const tiles=tile('sell','מה היא מוכרת',(a.sells||[]).length?li(a.sells):'')+tile('buy','למי היא מוכרת',(a.buyers||[]).length?li(a.buyers):'')+tile('coin','מאיפה הכסף מגיע',money);
-  const peers=(Array.isArray(rs.peers)?rs.peers:[]).filter(s=>SECKEY.test(s)&&s!==k).slice(0,3);
+  // 17.11 fix (the owner: "a click on a competitor does not open that share's page"): a competitor is a link only when
+  // the site has a page for it. The source also names shares that are not in the site's list (a foreign company's
+  // over-the-counter ticker) and writes a class with a hyphen (BRK-B) where the list has a dot (BRK.B): those opened
+  // "הנייר לא נמצא". The link carries the key the site uses, and the company's name for whoever hovers on it
+  const peerOf=s=>{s=String(s||''); if(!SECKEY.test(s))return null; for(const c of [s,s.replace('-','.')]){const x=itemOf(c); if(x&&x.t==='S'&&x.sym===c)return x} return null};
+  const peers=[...new Map((Array.isArray(rs.peers)?rs.peers:[]).map(peerOf).filter(x=>x&&x.sym!==k).map(x=>[x.sym,x])).values()].slice(0,3);
   const fact=(l,v)=>v?`<div class="abx-fc"><span>${l}</span><b>${v}</b></div>`:'';
   const facts=fact('ענף',esc(AB_SEC[P.sector]||SEC_HE[P.sector]||SEC_HE[it.sec]||P.sector||''))+fact('מדינה',esc(AB_CTRY[P.country]||P.country||''))+fact('עובדים',P.emp>0?esc(abEmp(+P.emp)):'')
-    +fact('מתחרות',peers.length?peers.map(s=>`<span class="lnk secl" role="link" tabindex="0" data-sec="${esc(s)}">${esc(lab(s))}</span>`).join(', '):'');
+    +fact('מתחרות',peers.length?peers.map(x=>`<span class="lnk secl" role="link" tabindex="0" data-sec="${esc(x.sym)}" title="${esc(x.name||x.sym)}">${esc(lab(x.sym))}</span>`).join(', '):'');
   return `<section class="abx" aria-labelledby="${hid}"><h3 id="${hid}">מה החברה עושה</h3>
     <p class="abx-hd"><bdi>${esc(it.he||it.name||it.sym)}</bdi> ${esc(a.line)}</p>
     ${tiles?`<div class="abx-g">${tiles}</div>`:''}

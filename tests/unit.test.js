@@ -2469,6 +2469,10 @@ test('17.11 what the company does: the profile\'s description, the peers and the
   assert.equal(A.profAbout([{description:'short'}]),null,'no description to read: nothing'); assert.equal(A.profAbout(null),null);
   assert.deepEqual(A.peersParse([{symbol:'CVX',mktCap:3e11},{symbol:'XOM',mktCap:5e11},{symbol:'SHEL',mktCap:2e11},{symbol:'bad sym'}],'XOM'),['CVX','SHEL'],'the largest first, never itself');
   assert.deepEqual(A.peersParse([{symbol:'XOM',peersList:['CVX','BP','COP']}],'XOM'),['CVX','BP','COP'],'the older shape');
+  // 17.11 fix (the owner: "a click on a competitor does not open that share's page"): with the site's list, only a share
+  // that has a page there is kept, under the key the site uses (a class with a dot)
+  assert.deepEqual(A.peersParse([{symbol:'TCEHY',mktCap:9e11},{symbol:'BRK-B',mktCap:8e11},{symbol:'CVX',mktCap:3e11},{symbol:'XOM',mktCap:5e11}],'XOM',new Set(['BRK.B','CVX','XOM'])),['BRK.B','CVX'],'no page on the site: not kept');
+  assert.deepEqual(A.peersParse(['TCEHY','CVX'],'XOM',new Set()),['TCEHY','CVX'],'no list to read: no check');
   assert.deepEqual(A.segsParse([{date:'2024-12-31',data:{A:1}},{date:'2025-12-31',data:{'Energy Products':550,'Upstream':300,'Chemical Products':100,'Specialty Products':50}}]),[{k:'Energy Products',pct:55},{k:'Upstream',pct:30},{k:'Chemical Products',pct:10},{k:'Specialty Products',pct:5}],'the latest year, as shares');
   assert.equal(A.segsParse([{date:'2025-12-31',data:{Only:5}}]),null,'one line is not a split');
   // the wording: short lines; advice, a number that is not in the facts, and a made-up share are dropped
@@ -2490,6 +2494,14 @@ test('17.11 what the company does: the profile\'s description, the peers and the
   assert.equal(got.XOM.prof.desc,DESC); assert.deepEqual(got.XOM.peers,['CVX']); assert.deepEqual(got.XOM.segs,[{k:'Fuel',pct:60},{k:'Oil',pct:40}]); assert.equal(got.XOM.beta,0.9,'its own figure stays');
   assert.ok(!seen.some(x=>x.endsWith(':FAR')),'a share nobody looks at is not asked: '+seen.join(' '));
   const n0=seen.length; await fmpPass(st,['XOM'],got,{key:'k',fetch:f,now,watched:new Set(['XOM']),pause:0}); assert.equal(seen.length,n0,'asked once');
+  assert.equal(got.XOM.peersV,2,'checked against the site\'s list');
+  // 17.11 fix: peers kept before the site's list was checked are asked once more, and only the ones with a page stay
+  try{A._setKnown(['CVX','XOM','OLDP']); st.setDoc('research/s_OLDP',{sym:'OLDP',prof:{desc:DESC},peers:['TCEHY','SHEL']},{silent:true});
+    const g2={OLDP:{...full(),gm:1,om:1,cr:1,dy:1,sector:'Energy'}}, n1=seen.length; await fmpPass(st,['OLDP'],g2,{key:'k',fetch:f,now,watched:new Set(['OLDP']),pause:0});
+    assert.deepEqual(seen.slice(n1),['stock-peers:OLDP'],'one call'); assert.deepEqual(g2.OLDP.peers,['CVX']); assert.equal(g2.OLDP.peersV,2);
+    st.setDoc('research/s_OLDP',{sym:'OLDP',prof:{desc:DESC},peers:['CVX'],peersV:2},{silent:true});
+    const g3={OLDP:{...full(),gm:1,om:1,cr:1,dy:1,sector:'Energy'}}, n2=seen.length; await fmpPass(st,['OLDP'],g3,{key:'k',fetch:f,now,watched:new Set(['OLDP']),pause:0}); assert.equal(seen.length,n2,'and not again')}
+  finally{A._setKnown(null)}
   // the pass: צ׳יקו is asked for the shares that have a description and no wording; what he gives is kept with the share
   const asked=[], ask=async F=>{asked.push(F.company); return F.company==='BAD'?null:{line:'מוכרת דלק',sells:['דלק'],buyers:[],money:F.segments?F.segments.map(s=>({name:s.key,pct:s.pct})):[],moves:[],at:now.toISOString(),v:1}};
   st.setDoc('research/s_OLD',{sym:'OLD',name:'OLD',prof:{desc:DESC}},{silent:true}); st.setDoc('research/s_DONE',{sym:'DONE',prof:{desc:DESC},about:{line:'x',sells:['y']}},{silent:true}); st.setDoc('research/s_BAD',{sym:'BAD',name:'BAD',prof:{desc:DESC}},{silent:true});
