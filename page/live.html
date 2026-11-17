@@ -766,6 +766,32 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+/* 17.11 (the owner: "market research"): the research landing as the market's screener, and the history under the box */
+[data-pane="search"].sec-open #sqHist{display:none!important}
+.sqhist{box-shadow:var(--shadow)} .sqhist .hd span{font-weight:600}
+.sres.scr-on{background:none;border:0;border-radius:0;overflow:visible;box-shadow:none}
+.scr-q{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px} .scr-q::-webkit-scrollbar{display:none} .scr-q .chip{flex:none}
+.scr-sec{margin-top:22px} .scr-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 10px} .scr-hd h3{margin:0;font-size:16px} .scr-hd span{font-size:12.5px;color:var(--ink2);text-align:end}
+.scr-gap{background:var(--warn-bg);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px} .scr-gap p{margin:0;font-size:14px;line-height:1.55;color:var(--ink);max-width:none}
+.scr-gapb{display:flex;gap:6px;flex-wrap:wrap} .scr-gapb button{font:inherit;font-size:13px;font-weight:600;min-height:34px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.scr-mvsw{margin-bottom:10px}
+.scr-mv{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px} .scr-mv::-webkit-scrollbar{display:none}
+.scr-mc{flex:none;width:104px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);cursor:pointer;font:inherit;color:var(--ink)}
+.scr-mc b{font-size:14px;font-family:var(--mono)} .scr-mc span{font-size:12px;color:var(--ink2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .scr-mc i{font-style:normal;font-family:var(--mono);font-size:13.5px;font-weight:700;unicode-bidi:isolate;direction:ltr}
+.scr-all{margin-top:8px;font:inherit;font-size:13.5px;font-weight:700;color:var(--accent-ink);background:none;border:0;padding:0;cursor:pointer;min-height:32px}
+.scr-cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.scr-cat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;min-height:96px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);cursor:pointer;font:inherit;color:var(--ink);text-align:start}
+.scr-cat:hover,.scr-mc:hover{border-color:var(--accent)} .scr-cat:focus-visible,.scr-mc:focus-visible,.scr-bk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scr-cat svg{width:24px;height:24px;color:var(--accent-ink);margin-bottom:4px} .scr-cat b{font-size:15px} .scr-cat span{font-size:12.5px;color:var(--ink2)} .scr-cat i{font-style:normal;font-size:12px;font-weight:700;color:var(--accent-ink)}
+.scr-pe .chip b{font-family:var(--mono)}
+.scr-lh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 10px} .scr-lh h3{margin:0;font-size:19px;flex:1 1 auto} .scr-n{font-size:13px;color:var(--ink2)}
+.scr-bk{flex-basis:100%;display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font:inherit;font-size:13.5px;font-weight:700;color:var(--accent-ink);background:none;border:0;padding:0;min-height:34px;cursor:pointer;width:max-content} .scr-bk svg{width:16px;height:16px}
+.scr-f{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.scr-fg{display:flex;flex-direction:column;gap:4px} .scr-fk{font-size:12px;color:var(--ink2)} .scr-fg .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .scr-fg .chips::-webkit-scrollbar{display:none} .scr-fg .chip{flex:none}
+.scr-tiny{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);min-height:32px;cursor:pointer} .scr-tiny input{width:18px;height:18px;accent-color:var(--accent)}
+.scr-tg{font-weight:700;color:var(--accent-ink)}
+.scr-fit{font-weight:700;color:var(--ink2)} .scr-fit.hi{color:var(--gain)} .scr-fit.mid{color:var(--accent-ink)}
+.scr-more{margin-top:10px;align-self:center}
 /* 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs"): tabs above the security's
    name. A part of the page is a .stp (it takes no box of its own, so the page's layout is as it was). On a phone
    (#secPage.st-on) only the open tab's parts are drawn; on a wide screen every part is, and the tabs jump to it */
@@ -3523,7 +3549,7 @@ body[data-page="overview"] #idxRow{display:none!important}
     <button type="button" role="tab" id="tab_reports" data-tab="reports" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg><span>דוחות</span></button>
     <button type="button" role="tab" id="tab_journal" data-tab="journal" aria-selected="false" hidden><span>יומן ההשקעות</span></button>
     <button type="button" role="tab" id="tab_ratings" data-tab="ratings" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>דירוג</span></button>
-    <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מעקב ומה מתאים</span></button>
+    <button type="button" role="tab" id="tab_watch" data-tab="watch" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>מניות במעקב</span></button>
     <button type="button" role="tab" id="tab_compare" data-tab="compare" aria-selected="false" hidden><span>השוואה</span></button>
     <button type="button" role="tab" id="tab_risk" data-tab="risk" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16v.5"/></svg><span>בקרה וסיכון</span></button>
     <div class="tsub" id="riskSub" role="group" aria-label="החלקים של בקרה וסיכון"></div>
@@ -3534,7 +3560,7 @@ body[data-page="overview"] #idxRow{display:none!important}
   <nav class="botbar" id="botbar" aria-label="ניווט מהיר">
     <button type="button" data-bb="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="bbl">בית</span></button>
     <button type="button" data-bb="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9"/></svg><span class="bbl">תיק</span></button>
-    <button type="button" data-bb="search" class="bb-fab" aria-label="מחקר"><span class="fab-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-3.8-3.8"/></svg></span><span class="bbl">מחקר</span></button>
+    <button type="button" data-bb="search" class="bb-fab" aria-label="מחקר שוק"><span class="fab-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-3.8-3.8"/></svg></span><span class="bbl">מחקר שוק</span></button>
     <button type="button" data-bb="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bbl">התראות</span></button>
     <button type="button" data-bb="more" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="bbl">עוד</span></button>
   </nav>
@@ -3991,10 +4017,11 @@ body[data-page="overview"] #idxRow{display:none!important}
 
   <div class="pane" data-pane="search" hidden>
     <section aria-labelledby="hSearch" style="display:flex;flex-direction:column;gap:12px">
-      <h2 id="hSearch">מחקר</h2>
+      <h2 id="hSearch">מחקר שוק</h2>
       <div class="chips" id="srchView" role="group" aria-label="תצוגה"><button type="button" class="chip" data-sv="search" aria-pressed="true">חיפוש נייר</button><button type="button" class="chip" data-tab="fit">מה מתאים לתיק שלי ›</button></div>
 
-      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" name="tc-search" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" aria-controls="sqHist" aria-expanded="false" type="text" name="tc-search" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="sres sqhist" id="sqHist" role="region" aria-label="נצפו לאחרונה" hidden></div>
       <div class="sres" id="sqRes"></div>
       <div class="secp panel" id="secPage" hidden></div>
       <p class="note" id="sqNote">מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה בימי מסחר, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.</p>
@@ -4151,7 +4178,7 @@ body[data-page="overview"] #idxRow{display:none!important}
   </div>
   <div class="pane" data-pane="watch" hidden>
     <section aria-labelledby="hWatch">
-      <div class="row"><h2 id="hWatch">מעקב ומה מתאים לתיק</h2><span class="sub" id="candFresh"></span></div>
+      <div class="row"><h2 id="hWatch">מניות במעקב</h2><span class="sub" id="candFresh"></span></div>
       <div class="chips" id="wView" role="group" aria-label="תצוגה" style="align-self:flex-start"><button type="button" class="chip" data-wv="mine" aria-pressed="true">המעקב שלי והמומלצים</button><button type="button" class="chip" data-wv="all" aria-pressed="false">כל הדירוג</button></div>
       <div id="wMine">
       <div class="rhero" id="candHero"></div>
@@ -25543,7 +25570,8 @@ function findSyms(q){
   return r.slice(0,30).map(x=>x[1]);
 }
 const recent=()=>{try{return JSON.parse(localStorage.getItem('tr_recent')||'[]')}catch(e){return[]}};
-const pushRecent=k=>{try{const r=[k].concat(recent().filter(x=>x!==k)).slice(0,12);localStorage.setItem('tr_recent',JSON.stringify(r))}catch(e){}};
+// 17.11 (the owner: "keep the search history ten securities back")
+const pushRecent=k=>{try{const r=[k].concat(recent().filter(x=>x!==k)).slice(0,10);localStorage.setItem('tr_recent',JSON.stringify(r))}catch(e){}};
 const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||(ilIsNum(k)&&ILF[k]&&ILF[k].v?ilItem(k,ILF[k].v.name||('נייר '+k),'F',{he:ILF[k].v.name||''}):null)||null};
 function wmarks(){if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_marks')||'[]')}catch(e){return[]}}return (WATCH&&WATCH.marks)||[]}
 const wmarkAt=()=>{if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_markat')||'{}')}catch(e){return {}}}return (WATCH&&WATCH.markAt)||{}};
@@ -26115,25 +26143,136 @@ function srchRender(){
   // 9.11: with a security open, the page is the whole screen: the research heading, the parts row and the search box wait
   // on the research landing (the phone's back, the bookmark page's back, or a tap on "מחקר" below return there)
   try{box.closest('[data-pane]').classList.toggle('sec-open',!!SEC); document.body.classList.toggle('sec-open',!!SEC)}catch(e){}
-  if(SEC){box.hidden=true;pg.hidden=false;renderSec();return}
+  if(SEC){sqHistShow(false);box.hidden=true;pg.hidden=false;renderSec();return}
   pg.hidden=true;box.hidden=false;
-  const row=(it,extra)=>{const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
+  const row=srRow;
+  if(!SYMDB){box.innerHTML='<div class="empty">טוען את רשימת הניירות…</div>';loadSymDb().then(()=>{if(SYMDB)srchRender()});return}
+  if(SQ.trim()){box.classList.remove('scr-on'); const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
+    box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'));return}
+  // 17.11 (the owner: "market research"): the landing is the market's screener. The watched have a tab of their own
+  // ("מניות במעקב"); the securities seen are under the search box when it is tapped
+  box.classList.add('scr-on'); box.innerHTML=SCR?scrList(row):scrHome(row);
+}
+// 17.11: a security's row in the search's results, in the history under the box and in the screener's lists
+function srRow(it,extra){const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
     return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${esc(it.t==='S'&&it.sec?(SEC_HE[it.sec]||it.sec):(TYPEL[it.t]||''))}${extra||''}</span></div>`+
       (pr?`<div class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</div>`:'')+
-      `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`};
-  if(!SYMDB){box.innerHTML='<div class="empty">טוען את רשימת הניירות…</div>';loadSymDb().then(()=>{if(SYMDB)srchRender()});return}
-  if(SQ.trim()){const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
-    box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'));return}
-  // 10.11: a security already in "במעקב שלי" is not listed again under "חיפושים אחרונים"
-  const marks=wmarks().map(itemOf).filter(Boolean), rec=recent().map(itemOf).filter(it=>it&&!wmarks().includes(skey(it)));
-  let h='';
-  if(marks.length)h+=`<div class="hd"><span>במעקב שלי</span><span>${marks.length}</span></div>`+marks.map(it=>row(it)).join('');
-  const cds=(CD&&Array.isArray(CD.items)?CD.items:[]).map(c=>c&&c.sym&&itemOf(c.sym)).filter(it=>it&&!wmarks().includes(skey(it)));
-  if(cds.length)h+=`<div class="hd"><span>מניות במעקב (מחקר)</span><span>${cds.length}</span></div>`+cds.map(it=>row(it)).join('');
-  if(rec.length)h+=`<div class="hd"><span>חיפושים אחרונים</span><button type="button" id="recClr">נקה הכל</button></div>`+rec.map(it=>row(it)).join('');
-  if(!h)h='<div class="empty">חפש נייר לפי שם או סימול. סמן נייר בסימנייה כדי לעקוב אחרי המחיר שלו כאן.</div>';
-  box.innerHTML=h;
-}
+      `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`}
+// 17.11 (the owner: "in the search box, when I tap it, the history of the securities I looked at"): the securities seen,
+// under the box when it is tapped with nothing typed; they go when something is typed, on a tap elsewhere, or with Escape
+function sqHistShow(on){const hb=$('sqHist'), inp=$('sq'); if(!hb)return;
+  const L=on&&!SQ.trim()&&!SEC?recent().map(k=>{try{return itemOf(k)}catch(e){return null}}).filter(Boolean).slice(0,10):[];
+  if(!L.length){if(!hb.hidden){hb.hidden=true; hb.innerHTML=''} if(inp)inp.setAttribute('aria-expanded','false'); return}
+  hb.innerHTML='<div class="hd"><span>נצפו לאחרונה</span><button type="button" id="sqHistClr">נקה הכל</button></div>'+L.map(it=>srRow(it)).join(''); hb.hidden=false; if(inp)inp.setAttribute('aria-expanded','true')}
+
+// ---- 17.11 (the owner: "let's go with the market screener; call it מחקר שוק"): the research landing. From the site's list
+// of securities (its kind, exchange, sector and size) and last night's snapshot of the prices (the day's move): quick lists,
+// the sectors the portfolio has no share in, the day's moves, the categories, and the companies like the ones held. A list
+// opens in place with its size, kind and order, and is an entry of its own in the browser's history. The day's move is the
+// last close's (said so); a company under a size floor is hidden unless asked for; nothing here is advice
+let SCR=null, SCRMV='up', SCRQ=false, SCRQD=false, SCRFIT=false;
+const SCR_CATS=[
+  ['tech','טכנולוגיה',['Technology','Information Technology'],'M7 7h10v10H7zM10 10h4v4h-4zM9.5 3v4M14.5 3v4M9.5 17v4M14.5 17v4M3 9.5h4M3 14.5h4M17 9.5h4M17 14.5h4'],
+  ['health','בריאות',['Health Care'],'M3 12h4l2-5 4 10 2-5h6'],
+  ['fin','פיננסים',['Finance','Financials'],'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18'],
+  ['cons','צריכה',['Consumer Discretionary','Consumer Staples'],'M3 4h2l2.2 11h10.6L20 7H6.2M9 19.5h.01M17 19.5h.01'],
+  ['ind','תעשייה',['Industrials'],'M3 20V10l6 3v-3l6 3V5h4v15zM3 20h18'],
+  ['energy','אנרגיה',['Energy'],'M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2-6 1 1.2 2 2 3 2.3 0-2.3-1-4.5 0-6.3z'],
+  ['re','נדל״ן',['Real Estate'],'M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5'],
+  ['util','תשתיות וחשמל',['Utilities'],'M13 3L5 14h6l-1 7 8-11h-6z'],
+  ['mat','חומרי גלם',['Basic Materials','Materials'],'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9'],
+  ['tel','תקשורת',['Telecommunications','Communication Services'],'M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0M12 12v9'],
+  ['il','ישראליות',null,'M12 3.5l7.5 13h-15zM12 20.5l-7.5-13h15z'],
+  ['etf','תעודות סל',null,'M12 3l9 5-9 5-9-5zM3 12.5l9 5 9-5M3 17l9 5 9-5']];
+const SCR_Q=[['up','עלו הכי הרבה'],['down','ירדו הכי הרבה'],['bigus','הגדולות בארה״ב'],['bigil','הגדולות בת״א'],['etf','תעודות סל']];
+const SCR_SIZE=[['all','כל הגדלים',0,Infinity],['xl','ענקיות',2e5,Infinity],['l','גדולות',1e4,2e5],['m','בינוניות',2e3,1e4],['s','קטנות',300,2e3]];
+const SCR_ETF=[['pop','רחבות ומוכרות'],['all','הכל'],['dev','שווקים מפותחים',['Developed Markets']],['large','חברות גדולות',['Large Cap','Blend','Value','Equities']],['growth','צמיחה',['Growth']],
+  ['mid','בינוניות וקטנות',['Mid Cap','Small Cap','Micro Cap']],['em','שווקים מתעוררים',['Emerging Markets','Frontier Markets']],
+  ['bonds','אג״ח',['Corporate Bonds','Municipal Bonds','High Yield Bonds','Treasury Bonds','Investment Grade Bonds','Government Bonds','Inflation-Protected Secu','Fixed Income','Bonds','Money Market Instruments']],
+  ['reit','נדל״ן',['REITs','Commercial Real Estate']],['com','סחורות',['Commodities','Commodities Broad Basket']],['lev','ממונפות ומסחר',['Trading','Derivatives','Alternative','Alternatives','Currencies']]];
+const SCR_POP=['VOO','SPY','IVV','VTI','ITOT','SCHB','QQQ','VT','ACWI','VXUS','VEA','IEFA','VWO','IEMG','IWM','DIA','SCHD','VIG','AGG','BND'];
+const SCR_MAIN=['tech','health','fin','cons','ind','energy','re','util'];
+const scrIc=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+function scrFx(){return (typeof Q!=='undefined'&&Q&&Q.usdIls)||(ALLQ&&ALLQ.fx)||3.6}
+function scrCapUsd(it){return it.t==='T'?(it.cap>0?it.cap/scrFx():0):(+it.cap||0)}
+function scrFloor(it){return it.t==='T'?50:300}   // $M: under it a company is "very small", hidden unless asked for
+function scrChg(it){const r=ALLQ?(it.t==='T'?(ALLQ.tlv||{})[it.sym]:(ALLQ.us||{})[it.sym]):null; return r&&r[1]!=null&&isFinite(r[1])?+r[1]:null}
+function scrSecCat(it){if(!it||(it.t!=='S'&&it.t!=='T'))return null; for(const c of SCR_CATS)if(c[2]&&c[2].includes(it.sec))return c[0]; return null}
+function scrCardCat(it){return !it?null:it.t==='T'?'il':it.t==='E'?'etf':it.t==='S'?scrSecCat(it):null}
+function scrHeldIts(){const out=[]; for(const p of ((typeof P!=='undefined'&&P&&P.positions)||[])){if(!p||!p.sym)continue; let it=null; try{it=itemOf(p.sym)}catch(e){} if(it&&!out.includes(it))out.push(it)} return out}
+function scrNew(k){return {k,size:'all',sort:k==='up'||k==='down'?'chg':k==='etf'?'pop':'cap',sub:k==='etf'?'pop':'all',tiny:false,n:50}}
+const scrNm=it=>(it.t==='T'&&it.he)||it.name||it.sym;
+const scrLab=k=>{const q=SCR_Q.find(x=>x[0]===k); if(q)return q[1]; const c=SCR_CATS.find(x=>x[0]===k); return c?c[1]:''};
+function scrItems(s){const D=SYMDB||[], cat=SCR_CATS.find(c=>c[0]===s.k); let L;
+  if(s.k==='up'||s.k==='down')L=D.filter(it=>it.t==='S'&&it.cap>=2000).filter(it=>{const c=scrChg(it); return c!=null&&(s.k==='up'?c>0:c<0)});
+  else if(s.k==='bigus')L=D.filter(it=>it.t==='S');
+  else if(s.k==='bigil'||s.k==='il')L=D.filter(it=>it.t==='T');
+  else if(s.k==='etf')L=D.filter(it=>it.t==='E');
+  else L=cat&&cat[2]?D.filter(it=>it.t==='S'&&cat[2].includes(it.sec)):[];
+  if(s.k==='il'&&s.sub!=='all')L=L.filter(it=>(SEC_HE[it.sec]||'אחר')===s.sub);
+  if(s.k==='etf'){const lev=SCR_ETF.find(x=>x[0]==='lev')[2], e=SCR_ETF.find(x=>x[0]===s.sub);
+    if(s.sub==='pop'){const P0=new Set(SCR_POP); L=L.filter(it=>P0.has(it.sym))} else if(s.sub==='all')L=L.filter(it=>!lev.includes(it.sec)); else if(e&&e[2])L=L.filter(it=>e[2].includes(it.sec))}
+  else{if(!s.tiny)L=L.filter(it=>scrCapUsd(it)>=scrFloor(it)); const z=SCR_SIZE.find(x=>x[0]===s.size); if(z&&z[0]!=='all')L=L.filter(it=>{const c=scrCapUsd(it); return c>=z[2]&&c<z[3]})}
+  if(s.sort==='chg'){const dn=s.k==='down'; L=L.map(it=>[it,scrChg(it)]).sort((a,b)=>a[1]==null?1:b[1]==null?-1:dn?a[1]-b[1]:b[1]-a[1]).map(x=>x[0])}
+  else if(s.sort==='name')L=L.slice().sort((a,b)=>scrNm(a).localeCompare(scrNm(b),'he'));
+  else if(s.sort==='pop'){const ix=new Map(SCR_POP.map((x,i)=>[x,i])); L=L.slice().sort((a,b)=>(ix.has(a.sym)?ix.get(a.sym):999)-(ix.has(b.sym)?ix.get(b.sym):999)||scrNm(a).localeCompare(scrNm(b),'he'))}
+  else L=L.slice().sort((a,b)=>scrCapUsd(b)-scrCapUsd(a));
+  return L}
+function scrWhen(){return ALLQ&&ALLQ.date?'לפי הסגירה של '+dmy(ALLQ.date):'לפי הסגירה האחרונה'}
+function scrHome(row){
+  if(!ALLQ&&!SCRQ){SCRQ=true; try{loadAllQ().then(()=>{SCRQD=true; if(!SQ.trim()&&!SEC&&document.body.dataset.page==='search')srchRender()})}catch(e){SCRQD=true}}
+  const D=SYMDB||[], held=scrHeldIts(), mineN={}; for(const it of held){const c=scrCardCat(it); if(c)mineN[c]=(mineN[c]||0)+1}
+  const sec=(t,sub,body,cls)=>`<section class="scr-sec${cls?' '+cls:''}"><div class="scr-hd"><h3>${t}</h3>${sub?`<span>${sub}</span>`:''}</div>${body}</section>`;
+  let out=`<div class="chips scr-q" role="group" aria-label="רשימות מוכנות">${SCR_Q.map(q=>`<button type="button" class="chip" data-scr="${q[0]}">${q[1]}</button>`).join('')}</div>`;
+  // the sectors the portfolio holds no share in (a fund may hold them: said so)
+  const shares=held.filter(it=>it.t==='S'||it.t==='T');
+  if(shares.length){const have=new Set(shares.map(scrSecCat)), miss=SCR_MAIN.filter(k=>!have.has(k)).slice(0,4);
+    if(miss.length){const nm=k=>SCR_CATS.find(c=>c[0]===k)[1], parts=miss.map(k=>'ב'+nm(k)), J=parts.length<2?parts[0]:parts.slice(0,-1).join(', ')+' ו'+parts[parts.length-1], fund=held.some(it=>it.t==='E'||it.t==='F');
+      out+=sec('מה חסר לך','לפי המניות בתיק',`<div class="scr-gap"><p>אין לך מניות ${J}.${fund?' ייתכן שיש לך חשיפה אליהן דרך הקרנות או תעודות הסל שלך.':''}</p><div class="scr-gapb">${miss.map(k=>`<button type="button" data-scr="${k}">${nm(k)} ›</button>`).join('')}</div></div>`)}}
+  // 17.11 (the owner: "and the ones that fit the portfolio best? keep them"): the five first of the fit ranking (the same
+  // one as in "מניות במעקב", where the full ranking is)
+  {let pool=null; try{const m=typeof P!=='undefined'&&P&&typeof Q!=='undefined'&&Q?mAllNow():null; pool=m?candPool(m):null}catch(e){pool=null}
+    if(!pool&&typeof FIT!=='undefined'&&!FIT&&!FITTRIED&&!SCRFIT){SCRFIT=true; try{Promise.all([loadSymDb(),loadFit()]).then(()=>{FITTRIED=true; if(!SQ.trim()&&!SEC&&!SCR&&document.body.dataset.page==='search')srchRender()})}catch(e){}}
+    const top=pool&&pool.pick?pool.pick.slice(0,5):[];
+    if(top.length)out+=sec('הכי מתאימות לתיק שלך','לפי הכללים שקבעת · לא המלצה',`<div class="sres scr-fitl">${top.map(r=>srRow(r.it,` · <b class="scr-fit ${r.f.score>=80?'hi':r.f.score>=65?'mid':'lo'}">התאמה ${r.f.score}</b>`)).join('')}</div><button type="button" class="lnk scr-all" data-tab="fit">לכל הדירוג ›</button>`)}
+  // the day's moves: companies of $2B and more, no funds (a leveraged fund is not a company's day)
+  if(ALLQ&&ALLQ.us){const L=scrItems(scrNew(SCRMV)).slice(0,10);
+    out+=sec('תנועות היום',scrWhen()+' · חברות מעל 2 מיליארד דולר',`<div class="chips scr-mvsw" role="group" aria-label="עלו או ירדו"><button type="button" class="chip" data-scrmv="up" aria-pressed="${SCRMV==='up'}">עלו</button><button type="button" class="chip" data-scrmv="down" aria-pressed="${SCRMV==='down'}">ירדו</button></div>
+      <div class="scr-mv">${L.map(it=>{const k=skey(it), c=scrChg(it); return `<button type="button" class="scr-mc" data-open="${esc(k)}">${logoHtml(k,'s')}<b dir="ltr">${esc(it.sym)}</b><span>${esc(scrNm(it))}</span><i class="n ${c>=0?'up':'down'}">${spct(c)}</i></button>`}).join('')||'<p class="note">אין נתון לסגירה הזאת.</p>'}</div>
+      <button type="button" class="lnk scr-all" data-scr="${SCRMV}">לכל הרשימה ›</button>`)}
+  // the categories: how many in each (the very small hidden), and how many of them are held
+  const cnt=k=>k==='etf'?D.filter(it=>it.t==='E'&&!SCR_ETF.find(x=>x[0]==='lev')[2].includes(it.sec)).length:scrItems({...scrNew(k),sub:'all'}).length;
+  out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrIc(c[3])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div>`);
+  // the companies like the ones held: their peers that are neither held nor watched
+  const H=new Set(held.map(skey)), W=new Set(wmarks()), pe=[];
+  for(const it of held){if(it.t!=='S')continue; const r=(RS&&RS.companies&&RS.companies[it.sym])||RSX[it.sym]||null; for(const s of ((r&&r.peers)||[])){if(pe.length>=8)break; if(H.has(s)||W.has(s)||pe.some(x=>x.sym===s))continue; let x=null; try{x=itemOf(s)}catch(e){} if(x&&x.t==='S'&&x.sym===s)pe.push(x)}}
+  if(pe.length)out+=sec('דומות למה שיש לך','מתחרות של המניות בתיק',`<div class="chips scr-pe">${pe.map(x=>`<button type="button" class="chip" data-open="${esc(x.sym)}" title="${esc(x.name||x.sym)}"><b dir="ltr">${esc(x.sym)}</b> ${esc(String(x.name||'').split(/[ ,]/)[0])}</button>`).join('')}</div>`);
+  return out}
+function scrList(row){const s=SCR, L=scrItems(s), etf=s.k==='etf', mv=s.k==='up'||s.k==='down', H=new Set(scrHeldIts().map(skey)), unit=etf?'תעודות':'חברות';
+  if((mv||s.sort==='chg')&&!ALLQ&&!SCRQ){SCRQ=true; try{loadAllQ().then(()=>{SCRQD=true; if(!SQ.trim()&&!SEC&&document.body.dataset.page==='search')srchRender()})}catch(e){SCRQD=true}}
+  const ch=(key,val,txt)=>`<button type="button" class="chip" data-scrf="${key}:${val}" aria-pressed="${String(s[key])===String(val)}">${txt}</button>`;
+  const grp=(lab,body)=>`<div class="scr-fg"><span class="scr-fk">${lab}</span><div class="chips" role="group" aria-label="${lab}">${body}</div></div>`;
+  let f='';
+  if(s.k==='il'){const by={}; for(const it of (SYMDB||[]))if(it.t==='T'){const x=SEC_HE[it.sec]||'אחר'; by[x]=(by[x]||0)+1} f+=grp('ענף',ch('sub','all','הכל')+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([x])=>ch('sub',x,esc(x))).join(''))}
+  if(etf)f+=grp('סוג',SCR_ETF.map(x=>ch('sub',x[0],x[1])).join(''));
+  if(!etf)f+=grp('גודל החברה',SCR_SIZE.filter(z=>!mv||z[0]==='all'||z[2]>=2e3).map(z=>ch('size',z[0],z[1])).join(''));
+  f+=grp('מיון',(etf?[['pop','מוכרות קודם'],['chg','שינוי היום'],['name','שם']]:mv?[['chg','שינוי היום'],['cap','גודל'],['name','שם']]:[['cap','גודל'],['chg','שינוי היום'],['name','שם']]).map(x=>ch('sort',x[0],x[1])).join(''));
+  if(!etf&&!mv)f+=`<label class="scr-tiny"><input type="checkbox" data-scrtiny${s.tiny?' checked':''}> גם חברות קטנות מאוד (מתחת ל-${s.k==='il'||s.k==='bigil'?'50':'300'} מיליון דולר)</label>`;
+  const rows=L.slice(0,s.n).map(it=>row(it,H.has(skey(it))||H.has(it.sym)?' · <b class="scr-tg">בתיק</b>':'')).join('');
+  const more=L.length>s.n?`<button type="button" class="btn sm scr-more" data-scrmore>עוד ${Math.min(50,L.length-s.n)} (מתוך ${L.length.toLocaleString('en-US')})</button>`:'';
+  return `<div class="scr-lh"><button type="button" class="scr-bk" data-scrback><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>מחקר שוק</button>
+    <h3>${scrLab(s.k)}</h3><span class="scr-n">${L.length.toLocaleString('en-US')} ${unit}${mv?' מעל 2 מיליארד דולר':''}</span></div>
+    <div class="scr-f">${f}</div>
+    <div class="sres scr-ls">${rows||`<div class="empty">${(mv||s.sort==='chg')&&!ALLQ?(SCRQD?'השינוי היומי עוד לא הגיע. הוא נקלט בכל לילה אחרי סגירת המסחר.':'טוען את השינוי היומי…'):'אין ניירות שעונים על הבחירה הזאת.'}</div>`}</div>${more}
+    <p class="note">${etf?'תעודות ממונפות ותעודות מסחר מופיעות רק תחת "ממונפות ומסחר". ':''}המחיר והשינוי היומי ${scrWhen()}. רשימה לפי נתונים, לא המלצה.</p>`}
+// a list opens in place, as an entry of its own in the browser's history; its way back is the landing (back through the
+// history when the landing is the entry under it)
+window.__scr={cap:k=>{let it=null; try{it=itemOf(k)}catch(e){} return it?scrCapUsd(it):null},recent:()=>recent(),push:k=>pushRecent(k)};   // for the page's tests
+function scrOpen(k){const y0=window.scrollY; SCR=scrNew(k); navWant({},y0); srchRender(); try{window.scrollTo({top:0})}catch(e){}}
+function scrClose(){const y0=window.scrollY, st=(()=>{try{return history.state||{}}catch(e){return {}}})();
+  if(SCR&&st.cat===SCR.k&&st.prev&&st.prev.tab==='search'&&!st.prev.sec&&!st.prev.cat){try{history.back(); return}catch(e){}}
+  SCR=null; navWant({},y0); srchRender(); try{window.scrollTo({top:0})}catch(e){}}
+
 const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k,o){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k,o)}
@@ -27059,6 +27198,22 @@ function srchBoot(){
   $('sqRes').addEventListener('click',e=>{const m=e.target.closest('[data-mark]');if(m){e.stopPropagation();toggleMark(m.dataset.mark);return}
     if(e.target.closest('#recClr')){try{localStorage.removeItem('tr_recent')}catch(x){}srchRender();return}
     const o=e.target.closest('[data-open]');if(o)openSec(o.dataset.open)});
+  $('sqRes').addEventListener('click',e=>{const t=e.target; if(!t||!t.closest)return;
+    const o=t.closest('[data-scr]'); if(o){scrOpen(o.dataset.scr); return}
+    if(t.closest('[data-scrback]')){scrClose(); return}
+    const f=t.closest('[data-scrf]'); if(f&&SCR){const i=f.dataset.scrf.indexOf(':'), k=f.dataset.scrf.slice(0,i); SCR[k]=f.dataset.scrf.slice(i+1); SCR.n=50; srchRender(); return}
+    if(t.closest('[data-scrmore]')&&SCR){SCR.n+=50; srchRender(); return}
+    const mv=t.closest('[data-scrmv]'); if(mv){SCRMV=mv.dataset.scrmv==='down'?'down':'up'; srchRender(); return}});
+  $('sqRes').addEventListener('change',e=>{if(e.target&&e.target.matches&&e.target.matches('[data-scrtiny]')&&SCR){SCR.tiny=e.target.checked; SCR.n=50; srchRender()}});
+  {const hb=$('sqHist'); if(hb){
+    inp.addEventListener('click',()=>sqHistShow(true));
+    inp.addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&!SQ.trim()){sqHistShow(true); const f=hb.querySelector('[data-open]'); if(f){e.preventDefault(); f.focus()}} else if(e.key==='Escape')sqHistShow(false)});
+    inp.addEventListener('input',()=>sqHistShow(!SQ.trim()&&document.activeElement===inp));
+    document.addEventListener('pointerdown',e=>{if(!hb.hidden&&!(e.target&&e.target.closest&&e.target.closest('#sqHist,#srchBox')))sqHistShow(false)});
+    hb.addEventListener('keydown',e=>{if(e.key==='Escape'){sqHistShow(false); inp.focus(); return} const o=e.target.closest('[data-open]'); if((e.key==='Enter'||e.key===' ')&&o&&!e.target.closest('[data-mark]')){e.preventDefault(); sqHistShow(false); openSec(o.dataset.open)}});
+    hb.addEventListener('click',e=>{const m=e.target.closest('[data-mark]'); if(m){e.stopPropagation(); toggleMark(m.dataset.mark); sqHistShow(true); return}
+      if(e.target.closest('#sqHistClr')){try{localStorage.removeItem('tr_recent')}catch(x){} sqHistShow(false); inp.focus(); return}
+      const o=e.target.closest('[data-open]'); if(o){sqHistShow(false); openSec(o.dataset.open)}})}}
   $('sqRes').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const o=e.target.closest('[data-open]');if(o&&!e.target.closest('[data-mark]')){e.preventDefault();openSec(o.dataset.open)}}});
   $('srchView').addEventListener('click',e=>{const b=e.target.closest('[data-sv]');if(b)setSV(b.dataset.sv)});
   $('fitBox2').addEventListener('click',e=>{const g=e.target.closest('[data-fg]');if(g){FITG=g.dataset.fg;renderFit();return}
@@ -27085,13 +27240,13 @@ function srchDb(){
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
 
 const TABS=['overview','alerts','mix','search','fit','plan','forecast','pots','history','reports','ratings','watch','news','risk','state','settings','mine','calendar','journal','compare'];
-const NAVG={overview:['overview','mix'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','watch','compare'],history:['history','reports','journal'],settings:['settings']};
-const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'חיפוש נייר',fit:'מעקב ומה מתאים',ratings:'דירוג',watch:'מעקב ומה מתאים',history:'היסטוריה',reports:'דוחות'};
-const HEADL={alerts:'התראות',mix:'פיזור',news:'חיבור למציאות',search:'מחקר',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
+const NAVG={overview:['overview','mix'],alerts:['alerts'],mine:['mine'],calendar:['calendar'],plan:['plan','forecast','pots'],risk:['risk','state'],news:['news'],search:['search','ratings','compare'],watch:['watch'],history:['history','reports','journal'],settings:['settings']};
+const SUBL={journal:'יומן ההשקעות',compare:'השוואה',news:'חדשות',plan:'מה לעשות בהפקדה הבאה',forecast:'יעד ותרחישים',pots:'חסכונות לפי מטרה',risk:'בקרה וסיכון',state:'מה קורה בתיק',search:'מחקר שוק',fit:'מניות במעקב',ratings:'דירוג',watch:'מניות במעקב',history:'היסטוריה',reports:'דוחות'};
+const HEADL={alerts:'התראות',mix:'פיזור',news:'חיבור למציאות',search:'מחקר שוק',watch:'מניות במעקב',plan:'תוכנית ויעד',history:'מבט לאחור',settings:'הגדרות'};
 const navGroup=t=>{for(const g in NAVG)if(NAVG[g].includes(t))return g;return t};
 function navBoot(){for(const g in NAVG){const hb=$('tab_'+g);if(hb&&HEADL[g]){const sp=hb.querySelector('span');if(sp)sp.textContent=HEADL[g]}
   for(const t of NAVG[g].slice(1)){const b=$('tab_'+t);if(b)b.hidden=true}}
-  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','news','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
+  try{const box=$('tab_overview').parentElement;for(const g of ['overview','mine','plan','risk','search','watch','news','history','calendar','settings']){const hb=$('tab_'+g);if(hb){box.appendChild(hb); if(g==='risk'&&$('riskSub'))box.appendChild($('riskSub'))}}}catch(e){}}
 function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.querySelector('[data-pane="'+t+'"]');if(!pane)return;
   if(g==='overview'){const r0=pane.querySelector(':scope>.subtabs'); if(r0)r0.remove(); pageHead(t); return}   // 10.11: the home has its own row of views (#ovTabs)
   let row=pane.querySelector(':scope>.subtabs,:scope>.pgrows>.subtabs');
@@ -27108,7 +27263,7 @@ function subTabs(t){const g=navGroup(t),list=NAVG[g]||[t];const pane=document.qu
 // it; its foot (.pgrows) holds the group's screens (a segmented row) and the screen's parts (tabs). Before, the value, the
 // screens and the parts were three boxes over the first card. The foot is an element of its own so it still stays at the
 // top while scrolling (9.11); the two read as one card. The holdings' card takes the value line into its own heading
-const PGH={search:['מחקר','חיפוש ניירות, דירוג, מעקב והשוואה','hSearch'],plan:['תוכנית ויעד','מה לעשות בהפקדה הבאה, לאן התיק מגיע, והחסכונות לפי מטרה','hPlan'],
+const PGH={search:['מחקר שוק','חיפוש, קטגוריות, מה זז היום, דירוג והשוואה','hSearch'],plan:['תוכנית ויעד','מה לעשות בהפקדה הבאה, לאן התיק מגיע, והחסכונות לפי מטרה','hPlan'],
   risk:['בקרה וסיכון','האם התיק עומד בכללים שלך, ומה קורה בו עכשיו','hCtl'],history:['מבט לאחור','איך התיק התקדם לאורך זמן, הדוחות ויומן ההשקעות','hHist'],
   settings:['הגדרות','הפרופיל, הפרטיות, החדשות, החשבונות והכללים','hSet'],overview:['פיזור','איך התיק מחולק: קבוצות, יעדים, חשיפות ורווח לפי נייר','hMix']};
 const PGI={hPlan:'M9 6h11M9 12h11M9 18h11M3.5 6l1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2',hCtl:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM12 8v5M12 16v.5',hHist:'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2',hMix:'M12 3a9 9 0 1 0 9 9h-9zM12 3v9h9'};
@@ -27168,10 +27323,10 @@ try{history.scrollRestoration='manual'}catch(e){}
 function navUrl(st){const t=st&&st.sec?'search':(st&&st.tab)||'overview'; return location.pathname+location.search+(t==='overview'?'':'#'+t)}
 function navWant(x,y0){if(!NAV_ON)return; if(!NAVQ){NAVQ={y0:y0!=null?y0:window.scrollY}; Promise.resolve().then(navFlush)} Object.assign(NAVQ,x)}
 function navFlush(){const q=NAVQ; NAVQ=null; if(!q||!NAV_ON)return; try{const cur=history.state||{}, page=document.body.dataset.page||'overview';
-  const st={tab:page, sec:page==='search'&&SEC?SEC:null};
-  if((cur.tab||'overview')===st.tab&&(cur.sec||null)===st.sec)return;   // the same screen (opened again, a render)
+  const st={tab:page, sec:page==='search'&&SEC?SEC:null, cat:page==='search'&&!SEC&&SCR?SCR.k:null};
+  if((cur.tab||'overview')===st.tab&&(cur.sec||null)===st.sec&&(cur.cat||null)===st.cat)return;   // the same screen (opened again, a render)
   history.replaceState({...cur,y:q.y0},'',location.href);   // where the screen being left was scrolled
-  st.prev={tab:cur.tab||'overview',sec:cur.sec||null}; if(!st.sec)delete st.sec;
+  st.prev={tab:cur.tab||'overview',sec:cur.sec||null,cat:cur.cat||null}; if(!st.sec)delete st.sec; if(!st.cat)delete st.cat;
   history.pushState(st,'',navUrl(st)); navTitle()}catch(e){}}
 // 11.11: the browser tab says the screen ("התראות · תיק צ׳יק", a security by its symbol), so the history's entries have names
 const NAV_T0=document.title||'תיק צ׳יק';
@@ -27181,7 +27336,7 @@ window.addEventListener('popstate',e=>{const st=e.state||{}, t=st.sec?'search':(
   try{setNav(false)}catch(x){}
   NAV_ON=false;
   try{if(st.sec){if(document.body.dataset.page!=='search')showTab('search'); if(st.sec!==SEC)openSec(st.sec,{fromHistory:true}); else try{srchRender()}catch(x){}}
-    else{if(SEC){SEC=null; try{srchRender()}catch(x){}} if(document.body.dataset.page!==t)showTab(t)}}catch(x){console.error(x)}
+    else{const c=t==='search'&&st.cat?st.cat:null; if(c!==(SCR?SCR.k:null)){SCR=c?scrNew(c):null; if(!SEC&&document.body.dataset.page==='search')try{srchRender()}catch(x){}} if(SEC){SEC=null; try{srchRender()}catch(x){}} if(document.body.dataset.page!==t)showTab(t)}}catch(x){console.error(x)}
   finally{NAV_ON=true} navTitle();
   const y=+st.y||0; requestAnimationFrame(()=>{try{window.scrollTo(0,y)}catch(x){}}); if(y)setTimeout(()=>{try{if(Math.abs(window.scrollY-y)>40)window.scrollTo(0,y)}catch(x){}},400)});
 // the security page's way out to the research landing (the research tab's own tap, the page's "back" when it has one): back
@@ -27197,7 +27352,8 @@ addEventListener('resize',()=>{try{stickH()}catch(e){}},{passive:true});
   let m=document.getElementById('qaMark'); if(!m){m=document.createElement('div'); m.id='qaMark'; m.setAttribute('aria-hidden','true'); q.before(m)}
   q.classList.toggle('stuck',m.getBoundingClientRect().top<-8)})},{passive:true})}
 function showTab(t,user){const y0=window.scrollY;
-  if(t==='search'&&user&&SEC&&document.body.dataset.page==='search'){closeSec(); return}   // 9.11: the tab's own tap, from the security page, is the way back to the landing
+  if(t==='search'&&user&&SEC&&document.body.dataset.page==='search'){closeSec(); return}
+  if(t==='search'&&user&&!SEC&&SCR){if(document.body.dataset.page==='search'){scrClose(); return} SCR=null}   // 17.11: from a list, the tab's tap is the way to the landing   // 9.11: the tab's own tap, from the security page, is the way back to the landing
   if(t==='fit'){t='watch'; try{WV='all'; localStorage.setItem('tr_wv','all')}catch(e){}}   // 4.11: one screen for the watch list and the fit
   if(!TABS.includes(t))t='overview';
   try{if(document.body.dataset.page!==t){USE_SEEN.clear(); useAdd('tab:'+t); evNav(document.body.dataset.page,t)}}catch(e){}
@@ -29739,10 +29895,10 @@ const GO=[
   {id:'bench',l:'האם אני עושה טוב? התיק מול המדדים',k:'מדד מדדים השוואה s&p תשואה שנתית ביצועים טוב',tab:'history',el:'hBench'},
   {id:'tax',l:'מס: אם הייתי מוכר היום',k:'מס רווחי הון קיזוז הפסדים מכירה',tab:'history',el:'hTax'},
   {id:'reps',l:'הדוחות שלי (שבועי, חודשי)',k:'דוח שבועי חודשי רבעוני pdf',tab:'reports'},
-  {id:'srch',l:'חיפוש נייר: מניות, קרנות ומדדים',k:'חיפוש מניה נייר סימול קרן קרנות מדד מדדים ישראלי תל אביב',tab:'search'},
+  {id:'srch',l:'מחקר שוק: חיפוש וקטגוריות',k:'חיפוש מניה נייר סימול קרן קרנות מדד מדדים ישראלי תל אביב מחקר שוק סורק קטגוריות ענף עלו ירדו',tab:'search'},
   {id:'rate',l:'דירוג ודוחות של חברות',k:'דירוג ציון דוחות כספיים רבעון חברה',tab:'ratings'},
-  {id:'fit',l:'מה מתאים לתיק (במעקב ומה מתאים)',k:'דירוג התאמה הצעות',tab:'fit'},
-  {id:'watch',l:'מעקב ומה מתאים לתיק',k:'מעקב רשימה מניות במעקב',tab:'watch'},
+  {id:'fit',l:'מה מתאים לתיק (במניות במעקב)',k:'דירוג התאמה הצעות',tab:'fit'},
+  {id:'watch',l:'מניות במעקב',k:'מעקב רשימה מניות במעקב',tab:'watch'},
   {id:'nx',l:'חיבור למציאות: מערכת החדשות',k:'חדשות כתבות ידיעות אירועים מה קורה מציאות חיבור שוק חיפוש',fn:()=>{showTab('news',true); rtGo('news')}},
   {id:'pulse',l:'חיבור למציאות: ההתראות האישיות',k:'התראות אישיות פולס קריטי חשוב עדכון תיק',fn:()=>{showTab('news',true); rtGo('al')}},
   {id:'imap',l:'מפת ההשפעה: מה בחדשות נוגע לתיק שלי',k:'מפה השפעה קשרים שרשרת גרף',fn:()=>imOpenFrom('pf:')},
@@ -29808,6 +29964,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.6',at:'2026-11-17',t:'מחקר שוק, ולשונית למניות במעקב',d:'המחקר נקרא עכשיו מחקר שוק: רשימות מוכנות (עלו, ירדו, הגדולות), מה חסר לך בתיק, תנועות היום, קטגוריות לפי ענף, ותעודות סל, עם סינון לפי גודל ומיון. לחיצה על תיבת החיפוש מראה את הניירות שהסתכלת עליהם לאחרונה. המניות שסימנת למעקב עברו ללשונית משלהן: מניות במעקב.',go:'srch'},
   {v:'2026-11-17.5',at:'2026-11-17',t:'דף נייר קצר, עם לשוניות',d:'בטלפון, הדף של נייר מחולק ללשוניות מעל השם: סקירה, החברה, דוח, אנליסטים וחדשות. בסקירה יש משפט מסכם לכל לשונית, ונקודה על לשונית אומרת שיש בה משהו חדש. במחשב הדף נשאר דף אחד, והלשוניות קופצות לחלק. התראת מחיר עברה לכפתור הפעמון שליד שם הנייר.',go:'srch'},
   {v:'2026-11-17.4',at:'2026-11-17',t:'מה קרה לאחרונה, בשורה אחת לכל דבר',d:'בדף של נייר: משפט שמסכם מה קרה, שורה לכל אירוע (כמה ידיעות על אותו דבר הן שורה אחת), ותג שאומר אם זה עשוי להיות טוב או רע לנייר. לחיצה פותחת מה זה אומר ואת הידיעות עצמן. כל השאר ב"חיבור למציאות".',go:'srch'},
   {v:'2026-11-17.3',at:'2026-11-17',t:'מה החברה עושה',d:'בתחתית הדף של מניה: משפט אחד שאומר מה החברה עושה, מה היא מוכרת, למי, מאיפה הכסף שלה מגיע ומה משפיע עליה, בעברית פשוטה. צ׳יקו כותב את זה מהתיאור של החברה עצמה, פעם אחת לכל חברה; זה מופיע קודם במניות שבתיק ובמעקב.',go:'srch'},

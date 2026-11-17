@@ -3604,7 +3604,7 @@ test('11.11 the browser\'s back and forward (the owner): every screen is an entr
 
 test('11.11 a security\'s card in "מעקב ומה מתאים" opens its page from anywhere on it (the owner); its buttons keep their own job',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'watch'); await pg.waitForTimeout(600);
+  const {ctx,pg}=await open(390); await tab(pg,'watch'); await pg.waitForTimeout(3000);   // the list settles (it is drawn again as its data arrive)
   // a card as the list draws one (the list's own cards need the night's research data)
   await pg.evaluate(()=>{const box=document.getElementById('candList'); box.insertAdjacentHTML('afterbegin','<article class="wc" data-card="MSFT" id="tcCard"><div class="wh"><div class="wt secl" data-sec="MSFT" role="link" tabindex="0"><span class="sym">MSFT</span></div></div><div class="wfacts"><span class="fc"><i>מחיר</i><b>1</b></span></div><div class="wfit"><button type="button" class="btn sm" id="tcBtn">כפתור</button></div></article>')});
   assert.equal(await pg.evaluate(()=>getComputedStyle(document.getElementById('tcCard')).cursor),'pointer');
@@ -3743,4 +3743,56 @@ test('17.11 a security\'s page in tabs on a phone (the owner: "the scroll feels 
     // the page's own tests of each part see every part at once, on a phone too
     {const {ctx,pg}=await open(390); await go(pg); const r=await info(pg); assert.equal(r.on,false); assert.ok(r.v.abx&&r.v.rep&&r.v.an&&r.v.nq&&r.v.chart); await ctx.close()}
   }finally{if(D0.exists)store.setDoc(k,D0.data,{silent:true}); else store.deleteDoc(k); rtRestore(N0,X0,ST0,PU0)}
+});
+
+test('17.11 "מחקר שוק" (the owner: the market screener): quick lists, what is missing, the day\'s moves, the categories, a list with its filters as an entry of its own; the securities seen under the search box; the watched in a tab of their own, "מניות במעקב"',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const AQ=store.getDoc('quotes/all');
+  store.setDoc('quotes/all',{date:'2026-11-16',updatedAt:new Date().toISOString(),us:{NVDA:[182,-2.4],AAPL:[231,0.7],MSFT:[505,-1.4],AMZN:[226,3.1],META:[600,4.2],XOM:[118,-3.5],ORCL:[221,1.9]},tlv:{}},{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    const T=x=>String(x||'').replace(/\s+/g,' ').trim();
+    await tab(pg,'search'); await pg.waitForFunction(()=>!!document.querySelector('#sqRes .scr-cat'),null,{timeout:10000}); await pg.waitForTimeout(600);
+    let r=await pg.evaluate(()=>{const b=document.getElementById('sqRes'), T=x=>String(x||'').replace(/\s+/g,' ').trim(); return {pg:T(document.querySelector('[data-pane="search"] .pg-t').textContent),bb:T(document.querySelector('[data-bb="search"] .bbl').textContent),
+      nav:[...document.querySelectorAll('#tabsbar [data-tab]:not([hidden])')].map(x=>x.dataset.tab),sub:[...document.querySelectorAll('[data-pane="search"] .subtabs [data-tab]')].map(x=>x.dataset.tab),
+      q:[...b.querySelectorAll('.scr-q [data-scr]')].map(x=>x.dataset.scr),secs:[...b.querySelectorAll('.scr-sec h3')].map(x=>x.textContent),cats:[...b.querySelectorAll('.scr-cat')].map(x=>T(x.innerText)),
+      gap:T((b.querySelector('.scr-gap p')||{}).textContent),mv:[...b.querySelectorAll('.scr-mc')].map(x=>x.dataset.open),old:/במעקב שלי|חיפושים אחרונים/.test(b.textContent),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    assert.equal(r.pg,'מחקר שוק'); assert.equal(r.bb,'מחקר שוק'); assert.ok(r.nav.indexOf('watch')===r.nav.indexOf('search')+1,'"מניות במעקב" a tab of its own, after the research: '+r.nav.join(',')); assert.ok(!r.sub.includes('watch'),'not a part of the research');
+    assert.deepEqual(r.q,['up','down','bigus','bigil','etf']); assert.deepEqual(r.secs.slice(0,1),['מה חסר לך']); assert.ok(r.secs.includes('תנועות היום')&&r.secs.includes('לפי קטגוריה'));
+    // the ones that fit the portfolio best stay (the owner): the first of the ranking, with the way to all of it
+    await pg.waitForFunction(()=>!!document.querySelector('#sqRes .scr-fitl .sit'),null,{timeout:8000}).catch(()=>{});
+    {const f=await pg.evaluate(()=>({h:[...document.querySelectorAll('#sqRes .scr-sec h3')].map(x=>x.textContent),n:document.querySelectorAll('#sqRes .scr-fitl .sit').length,s:[...document.querySelectorAll('#sqRes .scr-fit')].map(x=>x.textContent),all:!!document.querySelector('#sqRes .scr-sec [data-tab="fit"]')}));
+      assert.ok(f.h.includes('הכי מתאימות לתיק שלך'),f.h.join(',')); assert.ok(f.n>=1&&f.n<=5); assert.ok(f.s.every(x=>/^התאמה [0-9]+$/.test(x)),f.s.join(',')); assert.ok(f.all,'to the full ranking')}
+    assert.equal(r.cats.length,12); assert.match(r.cats[0],/^טכנולוגיה [\d,]+ חברות \d+ בתיק שלך$/,r.cats[0]); assert.match(r.cats[11],/^תעודות סל [\d,]+ תעודות/);
+    assert.match(r.gap,/^אין לך מניות ב/,'the sectors with no share held: '+r.gap); assert.deepEqual(r.mv.slice(0,3),['META','AMZN','ORCL'],'the day\'s risers, the largest move first'); assert.equal(r.old,false,'the watched and the history are not on the landing'); assert.ok(r.ox);
+    await pg.click('#sqRes [data-scrmv="down"]'); await pg.waitForTimeout(300); assert.deepEqual((await pg.evaluate(()=>[...document.querySelectorAll('#sqRes .scr-mc')].map(x=>x.dataset.open))).slice(0,3),['XOM','NVDA','MSFT'],'and the fallers');
+    // a category opens as a list: the largest first, the held marked; the size filter; an entry of its own in the history
+    await pg.click('#sqRes [data-scr="tech"]'); await pg.waitForTimeout(500);
+    r=await pg.evaluate(()=>{const b=document.getElementById('sqRes'), T=x=>String(x||'').replace(/\s+/g,' ').trim(); return {lh:T(b.querySelector('.scr-lh').innerText),rows:[...b.querySelectorAll('.scr-ls .sit')].map(x=>x.dataset.open),held:[...b.querySelectorAll('.scr-ls .sit')].filter(x=>x.querySelector('.scr-tg')).map(x=>x.dataset.open),st:history.state}});
+    assert.match(r.lh,/^מחקר שוק טכנולוגיה [\d,]+ חברות$/); assert.equal(r.rows.length,50,'fifty at a time'); assert.equal(r.rows[0],'NVDA','the largest first'); assert.ok(r.held.includes('NVDA')&&r.held.includes('MSFT'),'the held marked'); assert.equal(r.st.cat,'tech');
+    await pg.click('#sqRes [data-scrf="size:m"]'); await pg.waitForTimeout(300); assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#sqRes .scr-ls .sit')].every(x=>{const c=window.__scr.cap(x.dataset.open); return c>=2000&&c<10000})),'the mid-sized only');
+    await pg.click('#sqRes [data-scrmore]'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#sqRes .scr-ls .sit').length),100,'fifty more');
+    // a security from the list; back returns to the list as it was; back again to the landing
+    await pg.click('#sqRes .scr-ls .sit[data-open]'); await pg.waitForTimeout(1200); assert.ok(await pg.evaluate(()=>!document.getElementById('secPage').hidden));
+    await pg.goBack(); await pg.waitForTimeout(700); assert.deepEqual(await pg.evaluate(()=>[!!document.querySelector('#sqRes .scr-lh'),document.querySelector('#sqRes [data-scrf="size:m"]').getAttribute('aria-pressed')]),[true,'true'],'the list, with its filter');
+    await pg.goBack(); await pg.waitForTimeout(700); assert.ok(await pg.evaluate(()=>!!document.querySelector('#sqRes .scr-cat')),'the landing');
+    // the funds: the broad ones first; the leveraged only under their own kind
+    await pg.click('#sqRes [data-scr="etf"]'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.querySelector('#sqRes .scr-ls .sit').dataset.open),'VOO');
+    await pg.click('#sqRes .scr-bk'); await pg.waitForTimeout(500); assert.ok(await pg.evaluate(()=>!!document.querySelector('#sqRes .scr-cat')),'"מחקר שוק" in the list leads back');
+    // the history under the box: on a tap, the securities seen; typing, Escape or a tap elsewhere close it
+    await pg.click('#sq'); await pg.waitForTimeout(300);
+    r=await pg.evaluate(()=>{const h=document.getElementById('sqHist'); return {on:!h.hidden,head:h.querySelector('.hd span').textContent,rows:[...h.querySelectorAll('.sit')].map(x=>x.dataset.open),exp:document.getElementById('sq').getAttribute('aria-expanded')}});
+    assert.ok(r.on); assert.equal(r.head,'נצפו לאחרונה'); assert.ok(r.rows.length>=1,'the security opened from the list'); assert.equal(r.exp,'true');
+    // ten back (the owner): the eleventh seen pushes out the first
+    assert.equal(await pg.evaluate(()=>{for(const k of ['AAPL','MSFT','AMZN','META','GOOGL','TSLA','ORCL','XOM','KO','JPM','V'])window.__scr.push(k); const R=window.__scr.recent(); return JSON.stringify([R.length,R[0],R.includes('AAPL')])}),JSON.stringify([10,'V',false]));
+    await pg.keyboard.press('Escape'); await pg.click('#sq'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#sqHist .sit').length),10,'all ten under the box');
+    await pg.keyboard.type('MS'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.getElementById('sqHist').hidden),true,'typing: the results instead');
+    await pg.fill('#sq',''); await pg.click('#sq'); await pg.waitForTimeout(200); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('sqHist').hidden),true,'Escape');
+    await pg.click('#sq'); await pg.waitForTimeout(200); const first=await pg.evaluate(()=>document.querySelector('#sqHist .sit').dataset.open); await pg.click('#sqHist .sit'); await pg.waitForTimeout(1000);
+    assert.equal(await pg.evaluate(()=>(history.state||{}).sec),first,'a tap opens it');
+    // "מניות במעקב": a tab of its own
+    await tab(pg,'watch'); await pg.waitForTimeout(800); r=await pg.evaluate(()=>({page:document.body.dataset.page,h:document.getElementById('hWatch').firstChild.textContent,title:document.title,sel:document.querySelector('#tabsbar [data-tab="watch"]').getAttribute('aria-selected')}));
+    assert.deepEqual(r,{page:'watch',h:'מניות במעקב',title:'מניות במעקב · תיק צ׳יק',sel:'true'});
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); if(AQ.exists)store.setDoc('quotes/all',AQ.data,{silent:true}); else store.deleteDoc('quotes/all')}
 });
