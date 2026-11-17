@@ -47,7 +47,7 @@ export function fmpEarningsParse(j,now=new Date()){if(!Array.isArray(j))return n
 
 const US=k=>/^[A-Z]{1,5}([.\-][A-Z])?$/.test(k);   // a US share, a class share (BRK.B) too; not Tel Aviv's .TA or another exchange's suffix
 const day=now=>now.toISOString().slice(0,10);
-export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.fetch,tick=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),max=60,cap=FMP_DAY_CAP,pause=250,budgetMs=8*60e3}={}){
+export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.fetch,tick=k=>k,log=()=>{},now=new Date(),held=new Set(),watched=new Set(),force=new Set(),max=60,cap=FMP_DAY_CAP,pause=250,budgetMs=8*60e3}={}){
   const st={tried:0,filled:0,calls:0,fail:0,stopped:null,first:null,off:[]}; if(!key){st.stopped='nokey';return st}
   const t0=Date.now(), today=day(now);
   let C={day:today,n:0}; try{const x=JSON.parse(store.getMeta('fmpCalls')||'null'); if(x&&x.day===today)C=x}catch(e){}
@@ -59,7 +59,11 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
     if(r.status===401){st.stopped='key'; return null} if(r.status===429){st.stopped='limit'; return null}
     if(!r.ok)throw new Error('HTTP '+r.status); return r.json()};
   const miss=(v,ks)=>!v||ks.some(k=>v[k]==null);
-  const want=k=>{const v=got[k]; return held.has(k)||miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)};   // 5.11: a held share every night (its analysts' latest changes)
+  // 17.11: the targets' range (the lowest and the highest) also for a watched share and for the one a page asked about; it
+  // was asked only for a held one, so the range's line on the analysts' card was missing for the rest. Asked once: a share
+  // whose range the source does not have is marked (rngAt) and left for a week
+  const near=k=>held.has(k)||watched.has(k)||force.has(k), rngDue=(k,v)=>near(k)&&v.targetHi==null&&!(Date.parse(v.rngAt)>now.getTime()-7*864e5);
+  const want=k=>{const v=got[k]; return held.has(k)||miss(v,['pm','pe','de','beta','target','next'])||!(v&&v.votes)||rngDue(k,v)};   // 5.11: a held share every night (its analysts' latest changes)
   const list=[...new Set([...order.filter(k=>held.has(k)),...order.filter(k=>watched.has(k)),...order])].filter(k=>US(k)&&want(k)).slice(0,max);
   try{
     for(const k of list){if(st.stopped)break; if(Date.now()-t0>budgetMs){st.stopped='time';break}
@@ -67,13 +71,13 @@ export async function fmpPass(store,order,got,{key=fmpKey(),fetch:f=globalThis.f
       try{
         if(miss(v,['gm','om','pm','cr','de','pe','dy'])){const x=fmpRatiosParse(await ask('ratios-ttm','symbol='+t)); if(x)Object.assign(add,x)}
         if(!st.stopped&&miss(v,['beta','sector'])){const x=fmpProfileParse(await ask('profile','symbol='+t)); if(x)Object.assign(add,x)}
-        if(!st.stopped&&(v.target==null||(held.has(k)&&v.targetHi==null))){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x)}
+        if(!st.stopped&&(v.target==null||rngDue(k,v))){const x=fmpTargetParse(await ask('price-target-consensus','symbol='+t)); if(x)Object.assign(add,x); if(!st.stopped&&!(x&&x.targetHi>0)&&!held.has(k))add.rngAt=now.toISOString()}
         if(!st.stopped&&!(v.votes&&v.votes5)){const x=fmpGradesParse(await ask('grades-consensus','symbol='+t)); if(x)Object.assign(add,x)}
         if(!st.stopped&&held.has(k)){const x=fmpGradesListParse(await ask('grades','symbol='+t),now); if(x)add.gradesL=x}
         if(!st.stopped&&!v.next){const x=fmpEarningsParse(await ask('earnings','symbol='+t+'&limit=8'),now); if(x)Object.assign(add,x)}
       }catch(e){st.fail++; st.first=st.first||`${k}: ${e.message}`; if(st.fail>=8&&!st.filled){st.stopped='errors'}}
       // only what is missing: a figure Yahoo, Finnhub or the reports already gave is never replaced
-      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes)||a==='gradesL')){g[a]=b; n++}
+      const g=got[k]||(got[k]={}); let n=0; for(const [a,b] of Object.entries(add))if(b!=null&&(g[a]==null||(a==='votes'&&!g.votes)||a==='gradesL'||a==='rngAt')){g[a]=b; n++}
       if(n){g.fmpAt=now.toISOString(); st.filled++}
       if(pause)await new Promise(r=>setTimeout(r,pause))}
   }finally{save()}

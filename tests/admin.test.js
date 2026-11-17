@@ -547,6 +547,17 @@ test('5.11 FMP with the owner\'s key (any of its spellings): the trailing ratios
   assert.ok(JSON.parse(st.getMeta('fmpCalls')).n>=asked.length-0,'the day\'s calls are counted');
   const r2=await fmpPass(mk(),['AAA','BBB'],{},{key:'k',fetch:async()=>({ok:false,status:401,json:async()=>({})}),now,pause:0}); assert.equal(r2.stopped,'key'); assert.equal(r2.calls,1,'a refused key stops at once');
   const r3=await fmpPass(mk(),['AAA','BBB','CCC'],{},{key:'k',fetch:f,now,pause:0,cap:3}); assert.equal(r3.stopped,'budget'); assert.equal(r3.calls,3,'the budget holds');
+  // 17.11: the targets' range (the lowest and the highest) also for a watched share and for the one a page asked about: a
+  // complete share with a target and no range is asked for it; a share not held, watched or asked about is not
+  {const full=()=>({pe:30,pm:35,de:0.4,beta:0.9,target:500,next:'2027-01-27',votes:{buy:1,hold:0,sell:0},votes5:{sb:1,b:0,h:0,s:0,ss:0}}), seen=[];
+    const f2=async u=>{u=String(u); seen.push(u); const ep=u.split('/stable/')[1].split('?')[0]; return {ok:true,status:200,json:async()=>ep==='price-target-consensus'?[{targetConsensus:510,targetHigh:600,targetLow:420,targetMedian:505}]:[]}};
+    const g2={WWW:full(),OPN:full(),FAR:full()}; await fmpPass(mk(),['WWW','OPN','FAR'],g2,{key:'k',fetch:f2,now,watched:new Set(['WWW']),force:new Set(['OPN']),pause:0});
+    assert.deepEqual([g2.WWW.targetHi,g2.WWW.targetLo,g2.WWW.target],[600,420,500],'a watched share gets its range, its own target stays'); assert.equal(g2.OPN.targetHi,600,'and the share a page asked about');
+    assert.equal(g2.FAR.targetHi,undefined,'a share nobody looks at is not asked'); assert.ok(!seen.some(u=>u.includes('symbol=FAR')));
+    // the source has no range: marked, and not asked again within the week
+    const seen3=[], f3=async u=>{seen3.push(String(u)); return {ok:true,status:200,json:async()=>[{targetConsensus:510}]}}, g3={WWW:full()}, st3=mk();
+    await fmpPass(st3,['WWW'],g3,{key:'k',fetch:f3,now,watched:new Set(['WWW']),pause:0}); assert.ok(g3.WWW.rngAt,'marked'); const n3=seen3.length;
+    await fmpPass(st3,['WWW'],g3,{key:'k',fetch:f3,now:new Date(now.getTime()+864e5),watched:new Set(['WWW']),pause:0}); assert.equal(seen3.length,n3,'left for a week')}
 });
 
 test('5.11 the analysts from FMP: the target with its median, high and low, and the latest changes (90 days, newest first, six at most)',()=>{

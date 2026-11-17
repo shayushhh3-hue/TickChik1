@@ -68,6 +68,8 @@ export function figures(res,now=new Date()){
     rating:n?(RATING(val(fd.recommendationMean))||BY_KEY[fd.recommendationKey]||null):null,target:n&&tgt?r2(tgt*k):null,analysts:n,
     next:dates.find(d=>d>=today)||null,revg:pc(fd.revenueGrowth),epsg:pc(fd.earningsGrowth),beta:r2(val(sd.beta)??val(ks.beta)),
     price:px!=null?r2(px*k):null,chg52:pc(ks['52WeekChange']),name:pr.longName||pr.shortName||null};
+  // 17.11: the lowest and the highest target (and the median) when Yahoo gives them with the average: the range's line on the card
+  if(n&&tgt){const hi=r2((val(fd.targetHighPrice)||0)*k), lo=r2((val(fd.targetLowPrice)||0)*k), med=r2((val(fd.targetMedianPrice)||0)*k); if(hi>0&&lo>0&&hi>lo){out.targetHi=hi; out.targetLo=lo; if(med>0)out.targetMed=med}}
   if(tr)out.votes={buy:(val(tr.strongBuy)||0)+(val(tr.buy)||0),hold:val(tr.hold)||0,sell:(val(tr.sell)||0)+(val(tr.strongSell)||0)};
   // 22.10: what the analysts expect for the coming report (kept, so the report can be set against what was expected before
   // it), and the share's moves in and around the session (how it moved after a report: after hours, before the open, the day)
@@ -198,7 +200,7 @@ export async function researchTask(store,{log=()=>{},fetch:f=globalThis.fetch,no
   // 25.10: Finnhub (with the owner's key): the figures, the analysts and the coming reports Yahoo did not give
   let fhs=null; if(fhKey()&&!noFh){try{fhs=await finnhubPass(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,budgetMs:only?2*60e3:12*60e3,cal:!only,force:new Set(only||[])})}catch(e){log('finnhub failed: '+(e&&e.message||e))}}
   // 5.11: Financial Modeling Prep (with the owner's key) for what Yahoo and Finnhub did not give, within its daily budget
-  let fms=null; if(fm&&fmpKey()){try{fms=await fm(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?6:60})}catch(e){log('fmp failed: '+(e&&e.message||e))}}
+  let fms=null; if(fm&&fmpKey()){try{fms=await fm(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?6:60,force:new Set(only||[])})}catch(e){log('fmp failed: '+(e&&e.message||e))}}
   // 5.11: Nasdaq's own figures for what is still missing (all of it when Yahoo refuses the server)
   let nqs=null; if(nq){try{nqs=await nq(store,order,got,{fetch:f,tick:k=>tick(k,map),log,now,held,watched,max:only?10:80,budgetMs:only?60e3:6*60e3})}catch(e){log('nasdaq figures failed: '+(e&&e.message||e))}}
   // 28.10: the dividends ahead (declared, and the next ones by the company's rhythm, estimated) for the calendar
