@@ -1656,10 +1656,10 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   await pg.evaluate(()=>{const b=document.getElementById('pickBox'); b.open=true; const a=document.getElementById('pickAcct'); a.value='exc'; a.dispatchEvent(new Event('change',{bubbles:true}))});
   // "התיק שלי" opens on the holdings when there are any; adding by hand is its own tab, and an add shows the table
   assert.equal(await pg.evaluate(()=>document.querySelector('[data-pane="mine"] section').dataset.mvv),'hold');
-  // 11.11: adding by hand is inside the holdings: three tabs, and the bar that opens the adding in place
+  // 11.11: adding by hand is inside the holdings: three tabs. 17.11 (proposal 1): on the phone "+ הוספה" opens it in place
   assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#mvTabs [data-mv]')].map(b=>b.textContent.replace(/\d+/g,'').trim())),['האחזקות','העלאת דוחות','ביצוע פעולות']);
   assert.equal(await pg.evaluate(()=>document.getElementById('addManT').getAttribute('aria-expanded')),'false');
-  await pg.click('#addManT');
+  await pg.click('#mineAdd'); await pg.click('[data-mineadd="pick"]'); await pg.waitForTimeout(150);
   assert.ok(await pg.evaluate(()=>{const b=document.getElementById('pickBox'), w=document.getElementById('typeBox'); return b.open&&b.offsetHeight>0&&w.offsetHeight>0}),'the three ways open in place');
   await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','3'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   const rows=()=>pg.evaluate(()=>[...document.querySelectorAll('#pfRows tr')].filter(tr=>tr.querySelector('[data-pf="sym"]')?.value==='MSFT').map(tr=>({acct:tr.querySelector('[data-pf="acct"]').value,qty:+tr.querySelector('[data-pf="qty"]').value,flag:(tr.querySelector('.flag.pick')||{}).textContent||'',del:+tr.querySelector('[data-pfdel]').dataset.pfdel})));
@@ -1671,9 +1671,11 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   assert.match(await pg.evaluate(()=>document.getElementById('mvMsg').textContent),/בדוק את הטבלה/);
   // typed again: the hand row is replaced, never doubled
   assert.equal(await pg.evaluate(()=>document.getElementById('addManT').getAttribute('aria-expanded')),'false','the add closed to show the table');
-  await pg.click('#addManT'); await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
+  await pg.click('#mineAdd'); await pg.click('[data-mineadd="pick"]'); await pg.waitForTimeout(150); await pg.click('#pickBox .pick[data-pick="MSFT"]'); await pg.fill('#pickBox .pick[data-pick="MSFT"] input','4'); await pg.click('#btnPickAdd'); await pg.waitForTimeout(300);
   r=await rows(); assert.deepEqual(r.map(x=>x.qty),[2,4]);
   // removing the hand row: the statement's 2 stay
+  // on the phone: all the rows (the hand row is the 13th), and the row's ⋯ opens its buttons (17.11)
+  await pg.evaluate(()=>{const b=document.getElementById('pfAllB'); if(b&&!b.hidden&&/להציג את כל/.test(b.textContent))b.click()}); await pg.click(`#pfRows [data-pfdots="${r[1].del}"]`);
   await pg.click(`#pfRows [data-pfdel="${r[1].del}"]`); await pg.waitForTimeout(300);
   r=await rows(); assert.deepEqual(r.map(x=>[x.qty,x.flag]),[[2,'']]);
   assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -2996,20 +2998,24 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
   finally{store.setDoc('research/latest',R0,{silent:true})}
 });
 
-test('5.11 the portfolio\'s value at the top only where it is the base of the screen: the full card on the home, one thin line that leads home on the portfolio, the control and the plan, nothing on the other screens; hidden with the amounts',T,async t=>{
+test('17.11 the portfolio\'s value at the top only where it is the base of the screen: the full card on the home, the holdings\' own card on the portfolio (proposal 1), nothing on the other screens; hidden with the amounts',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
-  const at=()=>pg.evaluate(()=>{const b=document.getElementById('kLine'), m=document.querySelector('.hero .main'); return {line:!!(b&&b.offsetParent),aria:b?b.getAttribute('aria-label'):'',main:!!(m&&m.offsetParent)}});
+  const at=()=>pg.evaluate(()=>{const b=document.getElementById('kLine'), m=document.querySelector('.hero .main'), a=document.getElementById('mineAns'); return {line:!!(b&&b.offsetParent),main:!!(m&&m.offsetParent),ans:!!(a&&a.offsetParent),v:a&&a.querySelector('.ma-v')?a.querySelector('.ma-v').textContent:'',l:a?a.textContent:''}});
   let r=await at(); assert.equal(r.main,true,'the home: the full card'); assert.equal(r.line,false,'and no line');
-  for(const p of ['mine','risk','state','plan','forecast','pots']){await tab(pg,p); await pg.waitForTimeout(250); r=await at();
-    assert.equal(r.main,false,p+': no card'); assert.equal(r.line,true,p+': the line');
-    assert.match(r.aria,/^שווי (התיק|המניות|הקרנות) [₪$][\d,]+, [+−][\d.]+% (היום|ביום המסחר האחרון)\. לדף הבית$/,p+': the value and the day, without the date')}
-  for(const p of ['search','news','reports','journal','ratings','watch','compare','calendar','settings','history']){await tab(pg,p); await pg.waitForTimeout(200); r=await at();
+  await tab(pg,'mine'); await pg.waitForTimeout(250); r=await at();
+  assert.deepEqual([r.main,r.line,r.ans],[false,false,true],'the portfolio: its own card'); assert.match(r.v,/^₪[\d,]+$/); assert.match(r.l,/היום/);
+  for(const p of ['risk','state','plan','forecast','pots','search','news','reports','journal','ratings','watch','compare','calendar','settings','history']){await tab(pg,p); await pg.waitForTimeout(200); r=await at();
     assert.deepEqual([r.main,r.line],[false,false],p+': nothing at the top')}
-  // the amounts hidden: the value in the line too
+  // the amounts hidden: the card's too
   await tab(pg,'mine'); await pg.waitForTimeout(200); await pg.evaluate(()=>document.body.classList.add('hidenum'));
-  assert.match(await pg.evaluate(()=>getComputedStyle(document.querySelector('#kLine .kl-v')).filter),/blur/); await pg.evaluate(()=>document.body.classList.remove('hidenum'));
-  await pg.click('#kLine'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'overview','a tap leads home');
+  assert.match(await pg.evaluate(()=>getComputedStyle(document.querySelector('#mineAns .ma-v')).filter),/blur/); await pg.evaluate(()=>document.body.classList.remove('hidenum'));
+  // the deck: the filter by account, "show all", the export behind ⋯, the cash behind "עריכה"
+  const deck=()=>pg.evaluate(()=>({f:[...document.querySelectorAll('#mineAcctF [data-mineaf]')].map(b=>b.textContent),shown:[...document.querySelectorAll('#pfRows>tr[data-acct]')].filter(r=>r.offsetParent).length,all:document.querySelectorAll('#pfRows>tr[data-acct]').length,b:document.getElementById('pfAllB').hidden?'':document.getElementById('pfAllB').textContent,xs:!!document.getElementById('pfXs').offsetParent,cash:!!document.getElementById('cashForm').offsetParent}));
+  let d=await deck(); assert.ok(d.f.length>=3&&d.f[0]==='הכל','a filter: all and each account'); assert.equal(d.xs,false,'the export behind ⋯'); assert.equal(d.cash,false,'the cash form behind "עריכה"');
+  if(d.all>8){assert.equal(d.shown,8,'eight first'); assert.equal(d.b,'להציג את כל '+d.all); await pg.click('#pfAllB'); await pg.waitForTimeout(100); d=await deck(); assert.equal(d.shown,d.all,'then all')}
+  await pg.click('#pfXm'); await pg.click('#cashEd'); await pg.waitForTimeout(100); d=await deck(); assert.deepEqual([d.xs,d.cash],[true,true]);
+  await pg.click('#mineAcctF [data-mineaf]:nth-child(2)'); await pg.waitForTimeout(100); d=await deck(); assert.ok(d.shown>0&&d.shown<d.all,'one account');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
 

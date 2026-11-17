@@ -3516,6 +3516,8 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3717,6 +3719,37 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body table.ladder.ladder>tbody>tr>td[colspan]{text-align:center!important}
   html body table.ladder.ladder>tbody>tr>td[colspan]::before{content:none!important}
   html body .panel:has(>table.ladder)>.row{padding:12px 10px 0!important;flex-wrap:wrap!important;row-gap:2px!important}
+  /* 17.11 proposal 1, "התיק שלי": one card on top, a filter by account, eight holdings and "show all", the export behind ⋯, the cash in one line, one "+ הוספה" */
+  html body [data-pane="mine"] section>.row{display:flex!important;align-items:center;justify-content:space-between;gap:8px;position:relative;flex-wrap:wrap}
+  html body [data-pane="mine"] section>.row .kline,html body #addManT,html body #pfTot{display:none!important}
+  html body #mineAdd{display:inline-flex!important;align-items:center;gap:6px;min-height:40px;border-radius:20px!important;padding:0 16px!important;margin-inline-start:auto}
+  html body .mine-addm{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgb(20 18 46 / .14);padding:6px;min-width:240px;display:flex;flex-direction:column}
+  html body .mine-addm[hidden]{display:none!important}
+  html body .mine-addm button{min-height:48px;text-align:start;border:0;background:none;padding:0 14px;border-radius:8px;font:500 15px var(--sans);color:var(--ink)}
+  html body .mine-addm button:hover,html body .mine-addm button:focus-visible{background:var(--accent-soft)}
+  html body .m-ans{background:var(--accent-soft);border-radius:8px;padding:16px;margin:0 0 16px}
+  html body .m-ans[hidden]{display:none!important}
+  html body .m-ans .ma-k{font-size:14px;color:var(--ink2)}
+  html body .m-ans .ma-v{font-size:32px;font-weight:600;letter-spacing:-.02em;margin:4px 0;color:var(--ink);line-height:1.2}
+  html body .m-ans .ma-l{font-size:14px;color:var(--ink2);line-height:1.7}
+  html body .m-ans .up{color:var(--gain)} html body .m-ans .down{color:var(--loss)}
+  html body .m-acctf{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px;margin:0 0 12px}
+  html body .m-acctf[hidden]{display:none!important}
+  html body .m-acctf button{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:500 14px var(--sans)}
+  html body .m-acctf button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgb(20 18 46 / .14)}
+  html body #pfRows>tr.af-out,html body #pfRows>tr.pf-cut{display:none!important}
+  html body .pf-hrow{position:relative;display:flex!important;align-items:center;justify-content:space-between}
+  html body .pf-hrow>#pfXs{display:none!important}
+  html body .pf-hrow.x-open>#pfXs{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;position:absolute;inset-inline-end:0;top:calc(100% + 4px);z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 10px 30px rgb(20 18 46 / .14)}
+  html body #pfXm{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:50%;background:none;color:var(--ink2);font-size:22px;line-height:1}
+  html body .pf-all-b{display:block;margin:6px auto 0;min-height:44px;font-size:15px}
+  html body .pf-all-b[hidden]{display:none!important}
+  html body .cash-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  html body .cash-row h3{margin:0}
+  html body .cash-sum{color:var(--muted);font-size:14px}
+  html body .cash-ed{margin-inline-start:auto;min-height:44px;font-size:15px}
+  html body .pf-all-b,html body .cash-ed{background:none!important;border:0!important;box-shadow:none!important;color:var(--accent-ink)!important;padding:0 8px!important;font-weight:500!important;width:auto!important}
+  html body #cashP:not(.open) #cashForm{display:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4736,10 +4769,11 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
 
   <div class="pane" data-pane="mine" hidden>
     <section aria-labelledby="hMine" data-mvv="hold">
-      <div class="row"><h2 id="hMine">התיק שלי</h2><span class="saved" id="pfSaved"></span></div>
+      <div class="row"><h2 id="hMine">התיק שלי</h2><span class="saved" id="pfSaved"></span><button type="button" class="btn sm pri mine-add" id="mineAdd" aria-expanded="false" aria-controls="mineAddM" aria-haspopup="menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>הוספה</button><div class="mine-addm" id="mineAddM" role="menu" aria-label="הוספה לתיק" hidden><button type="button" role="menuitem" data-mineadd="pick">חיפוש או בחירת נייר</button><button type="button" role="menuitem" data-mineadd="up">העלאת דוח או צילום מסך</button><button type="button" role="menuitem" data-mineadd="sell">רישום קנייה או מכירה</button></div></div>
       <p class="note" id="pfWho"></p>
       <div class="dvtabs mvtabs" id="mvTabs" role="tablist" aria-label="מה עושים בתיק"><button type="button" class="chip" role="tab" data-mv="hold" aria-pressed="true" aria-selected="true">האחזקות <span class="dv-n" id="mvN"></span></button><button type="button" class="chip" role="tab" data-mv="up" aria-pressed="false" aria-selected="false">העלאת דוחות</button><button type="button" class="chip" role="tab" data-mv="sell" aria-pressed="false" aria-selected="false">ביצוע פעולות</button></div>
       <p class="mvmsg" id="mvMsg" role="status" hidden></p>
+      <div class="m-ans" id="mineAns" data-mvp="hold" role="group" aria-label="שווי האחזקות" hidden></div>
       <!-- 11.11 (the owner): adding by hand is part of the holdings, no longer a tab of its own: one bar that opens the
            three ways (a pick from a list, quick typing, a search of the world's exchanges) right above the table -->
       <button type="button" class="addman-t" id="addManT" data-mvp="hold" aria-expanded="false" aria-controls="pickBox typeBox"><span class="am-i" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="am-x"><b>הוספה ידנית</b><span>בחירה מרשימה, הקלדה מהירה או חיפוש נייר בכל העולם</span></span><span class="am-c" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
@@ -4803,18 +4837,20 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       <div class="panel recon" id="reconBox" data-mvp="hold" hidden></div>
       <div class="panel recon sdiff" id="sdBox" data-mvp="hold" hidden></div>
       <div class="panel scroll" data-mvp="hold">
-        <div class="row" style="margin-bottom:8px"><h3>האחזקות</h3><span><button class="btn sm" id="btnXlsx" type="button" title="כל התיק לאקסל: אחזקות, מזומן, פעולות, הפקדות, היסטוריה יומית ופיצולים">ייצוא לאקסל</button> <button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
+        <div class="m-acctf" id="mineAcctF" role="group" aria-label="סינון לפי חשבון" hidden></div>
+        <div class="row pf-hrow" style="margin-bottom:8px"><h3 id="pfH">האחזקות</h3><button type="button" class="pf-xm" id="pfXm" aria-expanded="false" aria-controls="pfXs" aria-label="ייצוא לאקסל ועוד">⋯</button><span id="pfXs"><button class="btn sm" id="btnXlsx" type="button" title="כל התיק לאקסל: אחזקות, מזומן, פעולות, הפקדות, היסטוריה יומית ופיצולים">ייצוא לאקסל</button> <button class="btn sm" id="btnCsv" type="button" title="האחזקות כקובץ CSV, לגיבוי או לאקסל">CSV</button> <button class="btn sm" id="btnAddRow" type="button">הוסף שורה</button></span></div>
         <table class="pf">
           <thead><tr><th>סימול</th><th>שם</th><th>חשבון</th><th>כמות</th><th>מטבע</th><th>עלות כוללת ₪</th><th>עלות כוללת $</th><th>מחיר בדוח</th><th>קבוצה</th><th></th></tr></thead>
           <tbody id="pfRows"><tr><td colspan="10" class="empty">עדיין אין אחזקות. העלה דוח או הוסף שורה.</td></tr></tbody>
         </table>
+        <button type="button" class="lnk pf-all-b" id="pfAllB" hidden></button>
         <p class="sub" id="pfTot" style="margin-top:8px"></p>
         <div class="dup" id="grpHint" hidden></div>
         <div class="dup" id="dupBox" hidden></div>
         <p class="note" style="margin-top:10px">סימול: למשל MSFT, או TA125 / TA90. עלות לא ידועה אפשר להשאיר ריקה. "עלות כוללת $" מפרידה בין המחיר לשער הדולר.</p>
       </div>
-      <div class="panel" data-mvp="hold">
-        <h3>מזומן בחשבונות</h3>
+      <div class="panel cash-p" id="cashP" data-mvp="hold">
+        <div class="cash-row"><h3>מזומן בחשבונות</h3><span class="cash-sum" id="cashSum"></span><button type="button" class="lnk cash-ed" id="cashEd" aria-expanded="false" aria-controls="cashForm">עריכה</button></div>
         <div class="form" id="cashForm" style="margin-top:8px"></div>
       </div>
       <div class="acts"><button class="btn" id="btnPfReset" type="button">בטל שינויים</button><button class="btn pri" id="btnPfSave" type="button">שמור את התיק</button></div>
@@ -20123,7 +20159,7 @@ function kLineFill(){
   const k=tx('kTotK')||'שווי התיק', m=(tx('kDayD').split(' · ')[0]||'').replace(/\u200E/g,'').match(/^([+−-][\d.,]+%)\s*(.*)$/), d=($('hero')&&$('hero').dataset.d)||'';
   const dw=m?m[2].replace(/\s*\([\d.]+\)$/,''):'';
   b.innerHTML=`<span class="kl-k">${esc(k)}</span><b class="kl-v n">${esc(tot)}</b>${m?`<span class="kl-s" aria-hidden="true">·</span><span class="kl-d${d==='up'||d==='down'?' '+d:''}"><span class="n">${esc(m[1])}</span> ${esc(dw)}</span>`:''}<span class="kl-go" aria-hidden="true">‹</span>`;
-  b.setAttribute('aria-label',`${k} ${tot}${m?', '+m[1]+' '+dw:''}. לדף הבית`); b.title='לדף הבית'; b.hidden=false}
+  b.setAttribute('aria-label',`${k} ${tot}${m?', '+m[1]+' '+dw:''}. לדף הבית`); b.title='לדף הבית'; b.hidden=false; try{mineDeck()}catch(e){}}
 function kMiniFill(){
   const box=$('kMini'); if(!box)return; const t=id=>{const e=$(id); return e?e.textContent.trim():''}, cls=id=>{const e=$(id); return e&&/\bup\b/.test(e.className)?'up':e&&/\bdown\b/.test(e.className)?'down':''};
   const L=[]; const row=(lab,id,sub)=>{const v=t(id); if(v&&v!=='—')L.push(`<div class="wm-r"><span class="wm-k">${esc(lab)}</span><b class="wm-v n ${cls(id)}">${esc(v)}</b>${sub?`<span class="wm-s">${esc(sub)}</span>`:''}</div>`)};
@@ -23962,7 +23998,7 @@ function renderMine(force){
   try{renderRecon()}catch(e){} try{renderSDiff()}catch(e){console.error(e)} try{renderFillWiz()}catch(e){console.error(e)}
   try{const H=groupHints(DRAFT), el=$('grpHint'); if(el){el.hidden=!H.length; el.innerHTML=H.length?`<b>קבוצה לפי הנייר:</b> ${H.map(h=>`${esc(h.sym)} מסומן "טכנולוגיה"; לפי הנייר עצמו: <b>${esc(GROUPS[h.g])}</b>`).join(' · ')}. <button type="button" class="lnk" id="grpApply"${canWrite?'':' disabled'}>לסמן לפי הנייר</button> <span class="nm">(ואז לשמור; הקבוצה היא שלך לשנות)</span>`:''}}catch(e){}
   {const n=$('mvN'); if(n)n.textContent=DRAFT.positions.length||''; if(!MV_SET)mvSet(DRAFT.positions.length?'hold':'type','',true)}
-  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; const pc=pfHue(p.sym), cls=[fx?'fixed':'',p.sym?'':'open blank'].filter(Boolean).join(' '); return `<tr${cls?` class="${cls}"`:''}${fx?` title="${esc(fl+': '+fx.t)}"`:''}${p.sym?` style="--pc:${pc}"`:''}>
+  $('pfRows').innerHTML=DRAFT.positions.length?DRAFT.positions.map((p,i)=>{const fx=fixOf(p), fl=fx?(fx.kind==='doubt'?'לבדיקה':'תוקן'):''; const pc=pfHue(p.sym), cls=[fx?'fixed':'',p.sym?'':'open blank'].filter(Boolean).join(' '); return `<tr${cls?` class="${cls}"`:''}${fx?` title="${esc(fl+': '+fx.t)}"`:''}${p.sym?` style="--pc:${pc}" data-acct="${esc(p.acct)}"`:''}>
     <td data-l="סימול"><input class="s" data-pf="sym" data-i="${i}" value="${nv(p.sym)}" aria-label="סימול" maxlength="12"${dis}>${fx?`<span class="flag">${fl}</span>`:''}${p.extra&&isManualRow(p)?'<span class="flag pick" title="הכמות בשורה הזו נוספה ביד, בנוסף לשורה מהדוח של אותו נייר. הסרה של השורה הזו לא נוגעת בשורה מהדוח; דוח חדש של החשבון יחליף את שתיהן">נוסף ידנית, בנוסף לדוח</span>':p.src==='pick'?'<span class="flag pick" title="סומן ביד בסימון המהיר; דוח או צילום של החשבון יחליפו את הכמות">סומן ידנית</span>':''}</td>
     <td data-l="שם" class="pfn"><input class="t" data-pf="name" data-i="${i}" value="${nv(p.name)}" aria-label="שם" placeholder="שם החברה (לא חובה)" maxlength="60"${dis}></td>
     <td data-l="חשבון"><select data-pf="acct" data-i="${i}" aria-label="חשבון"${dis}>${acctOpts(p.acct)}</select></td>
@@ -23979,9 +24015,43 @@ function renderMine(force){
   for(const el of document.querySelectorAll('[data-cash]')){const [a,c]=el.dataset.cash.split(':');el.value=(DRAFT.cash[a]&&DRAFT.cash[a][c])||''}
   renderDup(); renderTx(); try{pickInit()}catch(e){}
   for(const id of ['btnRead','btnReadText','btnAddRow','btnPfSave','btnPfReset','upAcct','btnList','btnWipe','btnWipeYes','btnPickAdd','btnPickSkip','pickAcct'])$(id).disabled=!canWrite;
-  whoNote();
+  whoNote(); try{mineDeck()}catch(e){console.error(e)}
 }
-function pfDirty(){dDirty=true;PFS.gen++;$('pfSaved').textContent='יש שינויים שלא נשמרו';renderDup()}
+// 17.11 (the owner's proposal 1, "התיק שלי"): the phone's deck of the holdings. The answer card (the value and today's
+// change as the home's card has them, and the value of each account), the filter by account (only with two or more),
+// the first eight holdings of the filter and "show all", and the cash in one line. A computer keeps the full table
+let MINE_AF='all', MINE_ALL=false;
+function mineDeck(){
+  const ans=$('mineAns'); if(!ans||!DRAFT)return; const P=(DRAFT.positions||[]).filter(p=>p.sym), n=P.length;
+  const ph=$('pfH'); if(ph)ph.textContent=n?n+' אחזקות':'האחזקות';
+  let d=null; try{d=dupCheck()}catch(e){}
+  const tx=id=>{const e=$(id); return e?e.textContent.replace(/‎/g,'').trim():''};
+  const tot=tx('kTotal'), dv=tx('kDay'), amt=dv.replace(/[▲▼]/g,'').trim(), pc=(tx('kDayD').match(/[+−-][\d.,]+%/)||[''])[0], dn=/▼/.test(dv), up=/▲/.test(dv);
+  const val=tot&&tot!=='—'?tot:(d?ils(d.all):''), accs=d?Object.keys(d.totals).filter(a=>d.totals[a]>0.5):[];
+  ans.hidden=!(n&&val);
+  if(!ans.hidden)ans.innerHTML=`<div class="ma-k">שווי האחזקות</div><div class="ma-v n">${esc(val)}</div>${amt&&pc?`<div class="ma-l">היום <span class="${dn?'down':up?'up':''}">${dn?'▼':up?'▲':''} <span class="n" dir="ltr">${dn?'−':up?'+':''}${esc(amt)} (${esc(pc)})</span></span></div>`:''}${accs.length>1?`<div class="ma-l">${accs.map(a=>esc(acctName(a))+' <span class="n">'+ils(d.totals[a])+'</span>').join(' · ')}</div>`:''}`;
+  const f=$('mineAcctF'), held=[...new Set(P.map(p=>p.acct))]; if(!held.includes(MINE_AF))MINE_AF='all';
+  if(f){f.hidden=held.length<2; f.innerHTML=held.length<2?'':[['all','הכל'],...held.map(a=>[a,acctName(a)])].map(([k,l])=>`<button type="button" data-mineaf="${esc(k)}" aria-pressed="${MINE_AF===k}">${esc(l)}</button>`).join('')}
+  let total=0; for(const r of document.querySelectorAll('#pfRows>tr')){if(!r.dataset.acct){r.classList.remove('af-out','pf-cut'); continue}
+    const inA=MINE_AF==='all'||r.dataset.acct===MINE_AF; r.classList.toggle('af-out',!inA); if(!inA){r.classList.remove('pf-cut'); continue}
+    total++; r.classList.toggle('pf-cut',!MINE_ALL&&total>8&&!r.classList.contains('open')&&!r.classList.contains('acts-open'))}
+  const b=$('pfAllB'); if(b){b.hidden=total<=8; b.textContent=MINE_ALL?'להציג רק 8':'להציג את כל '+total}
+  const cs=$('cashSum'); if(cs){const C=DRAFT.cash||{}, fx=Q?Q.usdIls:3.3; let c=0, na=0; for(const a of Object.keys(C)){const v=(+C[a].ILS||0)+(+C[a].USD||0)*fx; c+=v; if(v>0)na++}
+    cs.textContent=c>0?ils(c)+(na>1?' ב-'+na+' חשבונות':''):'אין'}
+}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return;
+  const menu=$('mineAddM'), btn=$('mineAdd'), shut=()=>{if(menu&&!menu.hidden){menu.hidden=true; if(btn)btn.setAttribute('aria-expanded','false')}};
+  const af=t.closest('[data-mineaf]'); if(af){MINE_AF=af.dataset.mineaf; MINE_ALL=false; mineDeck(); return}
+  if(t.closest('#pfAllB')){MINE_ALL=!MINE_ALL; mineDeck(); return}
+  const xm=t.closest('#pfXm'); if(xm){const row=xm.closest('.row'), on=!row.classList.contains('x-open'); row.classList.toggle('x-open',on); xm.setAttribute('aria-expanded',String(on)); return}
+  const ce=t.closest('#cashEd'); if(ce){const p=$('cashP'), on=!p.classList.contains('open'); p.classList.toggle('open',on); ce.setAttribute('aria-expanded',String(on)); ce.textContent=on?'סגירה':'עריכה'; return}
+  if(t.closest('#mineAdd')){if(!menu)return; const on=menu.hidden; menu.hidden=!on; btn.setAttribute('aria-expanded',String(on)); if(on){const f=menu.querySelector('button'); if(f)f.focus()} return}
+  const mi=t.closest('[data-mineadd]'); if(mi){shut(); const k=mi.dataset.mineadd;
+    if(k==='pick'){MV_SET=true; mvSet('hold'); addManSet(true); setTimeout(()=>{try{$('pickBox').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}},60)}
+    else mvGo(k); return}
+  if(!t.closest('#mineAddM'))shut()});
+document.addEventListener('keydown',ev=>{if(ev.key!=='Escape')return; const m=$('mineAddM'); if(m&&!m.hidden){m.hidden=true; const b=$('mineAdd'); if(b){b.setAttribute('aria-expanded','false'); b.focus()}}});
+function pfDirty(){dDirty=true;PFS.gen++;$('pfSaved').textContent='יש שינויים שלא נשמרו';renderDup(); try{mineDeck()}catch(e){}}
 // ---- duplicate and total check: the same security twice, the same holdings in both accounts, or a table worth far more than the statement says
 let LASTREAD=null;
 const rowVal=p=>{const px=(Q&&Q.prices&&Q.prices[p.sym]!=null)?Q.prices[p.sym]:(+p.px||0); return +p.qty*px*(p.ccy==='USD'?(Q?Q.usdIls:3.3):1)};
@@ -30245,6 +30315,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.18',at:'2026-11-17',t:'התיק שלי: כרטיס אחד למעלה',d:'בטלפון: בראש "התיק שלי" כרטיס עם שווי האחזקות, השינוי היום והסכום בכל חשבון. מתחתיו סינון לפי חשבון ושמונה האחזקות הראשונות, עם "להציג את כל". הייצוא מאחורי ⋯, המזומן בשורה אחת, וכפתור "+ הוספה" אחד פותח את כל דרכי ההוספה.',go:'pfedit'},
   {v:'2026-11-17.17',at:'2026-11-17',t:'תוכנית: המעקב החודשי נכנס למסך',d:'בטלפון, כל חודש במעקב החודשי הוא כרטיס: החודש והיתרה למעלה, ההפקדה והקניות מתחת. שום עמודה לא נחתכת.',go:'plan'},
   {v:'2026-11-17.16',at:'2026-11-17',t:'הבית: הצעדים הבאים בשורה אחת',d:'בבית, "עוד צעדים כדי שהבקרה תעבוד בשבילך" הוא שורה אחת שנפתחת בלחיצה.',go:'ov'},
   {v:'2026-11-17.15',at:'2026-11-17',t:'התיק: שורה נקייה לכל אחזקה',d:'בהתיק שלי, לחיצה על אחזקה פותחת את דף המניה, וקנייה, מכירה, עוד והסרה נמצאות מאחורי הכפתור ⋯.',go:'pfedit'},
