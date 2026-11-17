@@ -3633,3 +3633,19 @@ test('11.11 a security\'s card in "מעקב ומה מתאים" opens its page fr
   assert.equal(await pg.evaluate(()=>document.body.dataset.page),'watch','back returns to the list');
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('17.11 a browser\'s password manager has nothing to fill (the owner: "why is my e-mail in every search box?"): no password field on the page until one is shown, and an e-mail a browser fills into a search box is taken out; one typed stays',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  assert.equal(await pg.evaluate(()=>document.querySelectorAll('input[type="password"]').length),0,'no password field at rest');
+  // the account's password is a password field only while "delete my account" is ticked
+  assert.deepEqual(await pg.evaluate(()=>{const c=document.getElementById('wipeAcct'), p=document.getElementById('wipePw'); c.click(); const on=[p.type,p.getAttribute('autocomplete')]; p.value='x';
+    c.click(); return [on,[p.type,p.value]]}),[['password','current-password'],['text','']]);
+  // a search box: a value that arrives without typing (as a manager fills) and reads as an e-mail is taken out
+  await tab(pg,'search'); await pg.waitForTimeout(400);
+  assert.equal(await pg.evaluate(()=>{const i=document.getElementById('sq'); i.value='someone@example.com'; i.dispatchEvent(new Event('input',{bubbles:true})); return i.value}),'','filled by a browser: cleared');
+  assert.equal(await pg.evaluate(()=>{const i=document.getElementById('goQ'); i.value='someone@example.com'; i.dispatchEvent(new Event('change',{bubbles:true})); return i.value}),'');
+  await pg.click('#sq'); await pg.keyboard.type('me@x.io'); assert.equal(await pg.inputValue('#sq'),'me@x.io','typed by the person: kept');
+  await pg.fill('#sq','MSFT'); await pg.waitForTimeout(600); assert.ok(await pg.evaluate(()=>!!document.querySelector('#sqRes [data-open="MSFT"]')),'the search works as before');
+  assert.deepEqual(pg.errs,[]); await ctx.close();
+});

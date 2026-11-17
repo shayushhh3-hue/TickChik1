@@ -766,6 +766,7 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
+.pwdecoy{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;opacity:0;overflow:hidden;pointer-events:none}
 /* 17.11 (the owner): the report in plain words, as the mock-up he chose: a white card of its own width; a small line and
    then the sentence; a gauge in three parts with its part named in its colour; rows of a drawn icon, a question with its
    answer in words, and the figure beside it; a foot with the note and "עוד על הדוח" */
@@ -3419,7 +3420,7 @@ body[data-page="overview"] #idxRow{display:none!important}
   <header class="imv-hd"><div class="imv-t"><b id="imT">מפת השפעה</b><div class="imv-sub" id="imSub"></div></div><button type="button" class="stv-x" id="imX" aria-label="סגירת המפה">×</button></header>
   <div class="imv-bar">
     <div class="imv-views" id="imViews" role="tablist" aria-label="תצוגת המפה"><button type="button" role="tab" data-imv="pf" aria-selected="true">התיק שלי</button><button type="button" role="tab" data-imv="ev" aria-selected="false">אירוע</button><button type="button" role="tab" data-imv="co" aria-selected="false">חברה</button></div>
-    <div class="imv-tools"><label class="vh" for="imQ">חיפוש במפה</label><input type="search" id="imQ" placeholder="חיפוש: אירוע, חברה, מניה" autocomplete="off">
+    <div class="imv-tools"><label class="vh" for="imQ">חיפוש במפה</label><input type="search" id="imQ" name="tc-map" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="חיפוש: אירוע, חברה, מניה" autocomplete="off">
       <details class="imv-f"><summary class="btn sm">מסננים</summary><div class="imv-fp"><label class="check"><input type="checkbox" id="imFlDirect"><span>רק קשרים ישירים</span></label><label class="check"><input type="checkbox" id="imFlLow"><span>בלי קשרים בביטחון נמוך</span></label><label>כיוון <select id="imFlDir"><option value="">הכל</option><option value="pos">חיובי אפשרי</option><option value="neg">שלילי אפשרי</option><option value="mixed">מעורב</option></select></label></div></details>
 </div>
   </div>
@@ -3447,7 +3448,7 @@ body[data-page="overview"] #idxRow{display:none!important}
 <div class="wrap" dir="rtl" lang="he">
   <button class="navtab" id="navtab" type="button" aria-label="פתח את התפריט" aria-expanded="false" aria-controls="tabsbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <div class="scrim" id="scrim" hidden></div>
-  <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Chik</span></span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="gobox" role="search"><label for="goQ">לאן להגיע?</label><div class="goin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="goQ" placeholder="למשל: עמלות, לוח מסחר" autocomplete="off" enterkeyhint="go"></div><ul class="gores" id="goRes" hidden></ul></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
+  <div class="tabsbar" id="tabsbar"><div class="sbrand"><span class="sbmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-9"/></svg></span><span class="sbname wm" aria-label="תיק צ׳יק"><span class="wm-a">Tik</span><span class="wm-b">Chik</span></span><button class="sbclose" id="navclose" type="button" aria-label="סגור את התפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="gobox" role="search"><label for="goQ">לאן להגיע?</label><div class="goin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="goQ" name="tc-goto" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="למשל: עמלות, לוח מסחר" autocomplete="off" enterkeyhint="go"></div><ul class="gores" id="goRes" hidden></ul></div><nav class="tabs" role="tablist" aria-orientation="vertical" aria-label="אזורי הדף">
     <button type="button" role="tab" id="tab_overview" data-tab="overview" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span>סקירה</span></button>
     <button type="button" role="tab" id="tab_alerts" data-tab="alerts" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>התראות</span></button>
     <button type="button" role="tab" id="tab_search" data-tab="search" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>חיפוש</span></button>
@@ -3929,7 +3930,7 @@ body[data-page="overview"] #idxRow{display:none!important}
       <h2 id="hSearch">מחקר</h2>
       <div class="chips" id="srchView" role="group" aria-label="תצוגה"><button type="button" class="chip" data-sv="search" aria-pressed="true">חיפוש נייר</button><button type="button" class="chip" data-tab="fit">מה מתאים לתיק שלי ›</button></div>
 
-      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
+      <div class="srch" id="srchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sq" type="text" name="tc-search" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="שם, סימול או מספר: לאומי, NVDA, ת״א 35" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="חיפוש נייר"><button type="button" id="sqx" aria-label="נקה" hidden>×</button></div>
       <div class="sres" id="sqRes"></div>
       <div class="secp panel" id="secPage" hidden></div>
       <p class="note" id="sqNote">מניות ותעודות סל מארה״ב ומניות מתל אביב. לכל מניה יש מחיר סגירה יומי; נייר במעקב מקבל מחיר בכל שעה בימי מסחר, וכל נייר שפתחת מקבל גרף ונתוני דוחות בלילה שאחרי.</p>
@@ -4019,7 +4020,7 @@ body[data-page="overview"] #idxRow{display:none!important}
       </div>
       <div id="rtNews" class="rt-p" role="tabpanel" aria-labelledby="rtTabNews" hidden>
         
-        <div class="nw-search"><label class="vh" for="nxQ">חיפוש בחדשות</label><input type="search" id="nxQ" placeholder="חיפוש בחדשות על הניירות שלך" autocomplete="off" enterkeyhint="search"><button type="button" class="btn sm" id="nxFiltBtn" aria-expanded="false" aria-controls="nxFilt">סינון <span id="nxFiltN"></span></button></div>
+        <div class="nw-search"><label class="vh" for="nxQ">חיפוש בחדשות</label><input type="search" id="nxQ" name="tc-news" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="חיפוש בחדשות על הניירות שלך" autocomplete="off" enterkeyhint="search"><button type="button" class="btn sm" id="nxFiltBtn" aria-expanded="false" aria-controls="nxFilt">סינון <span id="nxFiltN"></span></button></div>
         <div class="nw-filt panel" id="nxFilt" hidden>
           <div class="nw-fg"><label for="nwRange">זמן</label><select id="nwRange"></select></div>
           <div class="nw-fg" id="nwCustom" hidden><label for="nwFrom">מתאריך</label><input type="date" id="nwFrom"><label for="nwTo">עד</label><input type="date" id="nwTo"></div>
@@ -4381,7 +4382,7 @@ body[data-page="overview"] #idxRow{display:none!important}
           <p id="wipeQ"><b>למחוק הכול לצמיתות?</b> יימחקו: <span id="wipeList"></span>. אי אפשר לשחזר.</p>
           <label for="wipeSet"><input type="checkbox" id="wipeSet"> למחוק גם את ההגדרות, הכללים והפרופיל שלי (אחוזי יעד, כללי סיכון, המדיניות שכתבתי, השם, המייל, הטלפון, השפה ויום ההפקדה)</label>
           <label for="wipeAcct" id="wipeAcctL" hidden><input type="checkbox" id="wipeAcct"> למחוק גם את החשבון עצמו: הכניסה שלי לאתר תימחק, ולא אוכל להיכנס שוב</label>
-          <div id="wipeAcctPw" hidden><label for="wipePw" style="font-size:13px">הסיסמה שלך, לאישור</label> <input type="password" id="wipePw" autocomplete="current-password" style="max-width:220px"></div>
+          <div id="wipeAcctPw" hidden><label for="wipePw" style="font-size:13px">הסיסמה שלך, לאישור</label> <input type="text" class="pwdecoy" id="wipeUser" autocomplete="username" tabindex="-1" aria-hidden="true"><input type="text" id="wipePw" autocomplete="off" data-pw="current-password" style="max-width:220px"></div>
           <div class="acts" style="justify-content:flex-start"><button class="btn" id="btnWipeNo" type="button">ביטול</button><button class="btn danger" id="btnWipeYes" type="button">כן, מחק הכול</button></div>
         </div>
       </div>
@@ -4410,7 +4411,7 @@ body[data-page="overview"] #idxRow{display:none!important}
         <div class="staged" id="staged" hidden></div>
         <ul class="upprog" id="upProg" hidden></ul>
         <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnRead" type="button" hidden>קרא שוב</button><button class="btn" id="btnStop" type="button" hidden>עצור</button><button class="btn pri" id="btnToHold" type="button" hidden>לבדיקה ושמירה בטבלה</button><span class="saved" id="upState" role="status" style="font-size:13.5px;color:var(--ink)"></span></div>
-        <div id="passWrap" hidden><label for="upPass">סיסמת ה-PDF, כפי שקיבלת מבית ההשקעות<input type="password" id="upPass" autocomplete="off" style="font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;direction:ltr;max-width:260px"></label></div>
+        <div id="passWrap" hidden><label for="upPass">סיסמת ה-PDF, כפי שקיבלת מבית ההשקעות<input type="text" id="upPass" autocomplete="off" data-pw="new-password" data-lpignore="true" data-1p-ignore style="font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;direction:ltr;max-width:260px"></label></div>
         <div class="dup tx" id="txBox" hidden></div>
         <div class="dup tx" id="monBox" hidden></div>
         <details><summary class="sub" style="cursor:pointer">עוד אפשרויות ועזרה</summary>
@@ -4430,7 +4431,7 @@ body[data-page="overview"] #idxRow{display:none!important}
         <h4 class="pickh" style="margin-top:10px">באילו מניות אתה מחזיק?</h4>
         <p class="note" style="margin:4px 0 0">בחר מניות והזן את הכמות. אפשר גם לדלג ולהעלות קובץ בהמשך.</p>
         <p class="note" style="margin:4px 0 0">מניה שכבר בתיק מדוח: הכמות שתזין כאן נכנסת בשורה נפרדת, "נוסף ידנית", בלי לגעת בכמות מהדוח, והסרה שלה מסירה רק אותה. כשתעלה דוח או צילום חדש של אותו חשבון, הכמות מהדוח תחליף את שתיהן (לא תתווסף), והדף יראה לך את ההבדל.</p>
-        <div class="srch" style="margin-top:10px"><input id="pickQ" type="search" placeholder="חיפוש לפי שם או סימול, למשל NVDA" autocomplete="off" aria-label="חיפוש מניה לפי שם או סימול"></div>
+        <div class="srch" style="margin-top:10px"><input id="pickQ" type="search" name="tc-pick" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="חיפוש לפי שם או סימול, למשל NVDA" autocomplete="off" aria-label="חיפוש מניה לפי שם או סימול"></div>
         <p class="note" id="pickNone" hidden style="margin:6px 0 0"></p>
         <div class="form" style="margin-top:10px;grid-template-columns:minmax(0,220px)"><label for="pickAcct">החשבון שבו הניירות<select id="pickAcct"></select></label></div>
         <div class="pickgrid" id="pickGrid" role="group" aria-label="מניות גדולות לסימון"></div>
@@ -4449,7 +4450,7 @@ body[data-page="overview"] #idxRow{display:none!important}
         <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="btnList" type="button">הוסף לטבלה</button><span class="saved" id="listState" role="status" style="font-size:13px"></span></div>
         <h3 style="margin-top:6px">חיפוש נייר מכל העולם</h3>
         <p class="note" style="margin:0">מניות וקרנות מכל בורסה: אירופה, אסיה, קנדה ועוד. כתוב שם או סימול, בחר מהרשימה וכתוב כמות. המחיר והמטבע מגיעים מהבורסה שבה הנייר נסחר, והשער מול השקל מתעדכן יחד עם המחירים.</p>
-        <div class="srch" id="wsBox" style="margin-top:4px"><input id="wsQ" type="text" placeholder="למשל: SAP, Toyota, Shell, ASML" autocomplete="off" aria-label="חיפוש נייר בכל העולם"><button type="button" class="btn sm" id="wsGo">חפש</button></div>
+        <div class="srch" id="wsBox" style="margin-top:4px"><input id="wsQ" type="text" name="tc-world" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="למשל: SAP, Toyota, Shell, ASML" autocomplete="off" aria-label="חיפוש נייר בכל העולם"><button type="button" class="btn sm" id="wsGo">חפש</button></div>
         <div class="wsres" id="wsRes" hidden></div>
       </div>
       <div class="panel sellp" id="sellBox" data-mvp="sell"></div>
@@ -4482,7 +4483,7 @@ body[data-page="overview"] #idxRow{display:none!important}
     <div class="chat-log" id="anaOut"></div>
     <div class="chat-foot">
       <div class="chat-sugg" id="anaSugg" role="group" aria-label="הצעות לשאלות"></div>
-      <form class="chat-in" id="anaForm" data-needs-ai hidden><label class="vh" for="anaQ">שאלה על התיק</label><input id="anaQ" type="text" maxlength="300" placeholder="שאל על התיק שלך, למשל: למה התיק ירד היום?" autocomplete="off"><button class="chat-send" type="submit" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H6M12 5.5L5.5 12 12 18.5"/></svg></button></form>
+      <form class="chat-in" id="anaForm" data-needs-ai hidden><label class="vh" for="anaQ">שאלה על התיק</label><input id="anaQ" type="text" name="tc-ask" data-nofill data-lpignore="true" data-1p-ignore data-form-type="other" maxlength="300" placeholder="שאל על התיק שלך, למשל: למה התיק ירד היום?" autocomplete="off"><button class="chat-send" type="submit" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H6M12 5.5L5.5 12 12 18.5"/></svg></button></form>
       <p class="chat-dis">צ׳יקו מסביר את הנתונים שבדף. הוא לא ייעוץ השקעות.</p>
     </div>
     <p class="vh" role="status" id="anaLive"></p>
@@ -23224,7 +23225,7 @@ document.addEventListener('click',ev=>{
   if(ev.target.id==='btnWipe'){$('wipeAsk').hidden=false;$('wipeState').textContent=''; try{$('wipeAcctL').hidden=!!OWNER||LOCAL||!db}catch(e){} try{$('btnWipeNo').focus({preventScroll:true})}catch(e){}return}
   if(ev.target.id==='btnWipeNo'){$('wipeAsk').hidden=true;return}
   if(ev.target.id==='btnWipeYes'){wipeAll();return}
-  if(ev.target.id==='wipeAcct'){$('wipeAcctPw').hidden=!ev.target.checked; if(ev.target.checked)$('wipeSet').checked=true; return}
+  if(ev.target.id==='wipeAcct'){$('wipeAcctPw').hidden=!ev.target.checked; pwShow('wipePw',ev.target.checked); if(ev.target.checked)$('wipeSet').checked=true; return}
   if(ev.target.id==='btnCsv'){try{const rows=[['symbol','name','qty','ccy','account','group','cost_ils','cost_usd','price_now','value_ils']]; let m=null; try{m=mAllNow()}catch(e){}
       for(const p of ((P&&P.positions)||[])){const mp=m&&m.pos.find(x=>x.sym===p.sym&&x.acct===p.acct)||m&&m.pos.find(x=>x.sym===p.sym); rows.push([p.sym,p.name||'',p.qty,p.ccy||'',p.acct||'',GROUPS[p.group]||p.group||'',p.costIls??'',p.costUsd??'',mp?mp.px:'',mp?Math.round(mp.val):''])}
       for(const c of ((P&&P.cash)||[]))rows.push(['CASH','מזומן',c.amount,c.ccy,c.acct,'מזומן','','','','']);
@@ -24064,7 +24065,7 @@ async function readStatement0(J){
       else{await libNeed('xlsx'); if(!window.XLSX)throw {code:'file'};const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
         text+='\n\n'+wb.SheetNames.slice(0,6).map(n=>'### '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false})).join('\n\n')}
     }catch(e){const c=e&&e.code; J.failed=true;
-      if(c==='password'){J.needPass=true; $('passWrap').hidden=false;$('upPass').focus()}
+      if(c==='password'){J.needPass=true; $('passWrap').hidden=false; pwShow('upPass',true); $('upPass').focus()}
       st.textContent=c==='password'?(J.pass?`הסיסמה לא פתחה את ${f.name}. נסה שוב ולחץ על "קרא שוב".`:`הקובץ ${f.name} מוגן בסיסמה. הקלד אותה למטה ולחץ על "קרא שוב" (או Enter).`):c==='noimg'?'בתצוגה הזו אי אפשר לשלוח תמונות לצ׳יקו. העלה PDF או Excel, או הקלד את הניירות בתיבה "הקלדה מהירה של התיק" שלמעלה.':c==='big'?`הקובץ ${f.name} גדול מדי.`:`לא הצלחתי לפתוח את ${f.name}. נסה קובץ אחר, או הדבק את טקסט הדוח.`;return}
   }
   if(imgs.length>12){skipped=imgs.length-12;imgs.length=12}
@@ -24160,7 +24161,7 @@ async function readStatement0(J){
       const why=older?`הדוח הזה מ-${dFull(d)}, ישן יותר מהדוח שכבר בטבלה לחשבון ${ACCTS[ac]} (מ-${dFull(have0)})`:`בקובץ הזה אין רשימת אחזקות, רק פעולות`;
       if(dual){st.textContent=`${why}. המנוע המעמיק בודק אותו, ורק הפעולות שבו ייכנסו…`; return {kind:'older'}}
       if(!DRAFT)DRAFT=draftFromP(); const added=mergeTx(ac,txs); if(mon.length)monPut(ac,mon);
-      if(added.length||mon.length)pfDirty(); renderTx(); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true; upStep(3);
+      if(added.length||mon.length)pfDirty(); renderTx(); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass)){$('passWrap').hidden=true; pwShow('upPass',false)} upStep(3);
       pDone.push(older?`הדוח מ-${dFull(d)}, ישן יותר מזה שבטבלה (${dFull(have0)})`:'בקובץ אין רשימת אחזקות, רק פעולות'); if(added.length)pDone.push(added.length===1?'נוספה פעולה אחת':`נוספו ${added.length} פעולות`);
       upProg(pDone,added.length?'נשאר לך: לבדוק את הפעולות ולשמור':'');
       st.textContent=lead+`${why}, ולכן האחזקות והמזומן לא הוחלפו.`+(added.length?` ${added.length===1?'נוספה ממנו פעולה אחת':`נוספו ממנו ${added.length} פעולות`} לרשימת הפעולות, והן יישמרו בהיסטוריה כשתלחץ על "שמור את התיק".`:txs.length?' כל הפעולות שבו כבר היו ברשימה.':' לא נמצאו בו פעולות.')+cutNote+partNote;
@@ -24231,7 +24232,7 @@ async function readStatement0(J){
     if(typeof out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(out.asOf))DRAFT.asOf[ac]=out.asOf;
     if(!merge){reflow(ac); HOLD[ac]=(HOLD[ac]||0)+1}   // a statement replaced the account: the reads before it of this account are older
     (DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();   // the holdings are known up to today (a screenshot shows the account as it is now)
-    pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass))$('passWrap').hidden=true;
+    pfDirty(); renderMine(true); STAGED=STAGED.filter(f=>!files.includes(f)||left.has(f)); showStaged(); $('upFile').value='';$('upImg').value=''; if(!JOBS.some(j=>j!==J&&j.needPass)){$('passWrap').hidden=true; pwShow('upPass',false)}
     {const priced=rows.filter(r=>RAWQ&&(RAWQ.prices||{})[r.sym]!=null).length; pDone.push(rows.length===1?'זוהה נייר אחד':`זוהו ${rows.length} ניירות`); if(cIls||cUsd)pDone.push('זוהתה יתרת מזומן'); if(txs.length)pDone.push(txs.length===1?'זוהתה פעולה אחת':`זוהו ${txs.length} פעולות`);
       pDone.push(`יש מחיר עדכני ל-${priced} מתוך ${rows.length}`); upProg(pDone,dual?'צ׳יקו בודק את הקריאה עם המנוע המעמיק':'נשאר לך: לבדוק את הטבלה ולשמור'); if(dual)upTick(true,t0)}
     // rows the person had picked by hand for this account: the read replaced them (merge by symbol), so the quantities
@@ -24603,7 +24604,7 @@ async function wipeAll(){
   try{for(const k of Object.keys(localStorage))if(/^tr_/.test(k)&&(k!=='tr_settings'||withSet||!LOCAL))localStorage.removeItem(k); if(withSet)localStorage.removeItem('wholeMode')}catch(e){}
   if(withSet)S=JSON.parse(JSON.stringify(DEF));
   ACK=[]; P=null; PLD=normPlan(null); setTrack(); pDirty=false; dirty=false; HS=null; DY={exists:false,points:{}}; DRAFT=null; dDirty=false; PFS.resets++; FIXED.clear(); FIRSTX=false; STAGED=[]; OB_SEL=null; OVER=0;
-  for(const id of ['listText','upText','upPass'])$(id).value=''; $('upFile').value=''; $('upImg').value=''; showStaged(); $('passWrap').hidden=true;
+  for(const id of ['listText','upText','upPass'])$(id).value=''; $('upFile').value=''; $('upImg').value=''; showStaged(); $('passWrap').hidden=true; pwShow('upPass',false);
   for(const id of ['upState','listState','pfSaved'])$(id).textContent='';
   $('wipeSet').checked=false; $('wipeAsk').hidden=true; $('btnWipeYes').disabled=!canWrite; $('btnWipeNo').disabled=false;
   $('fresh').textContent='עדיין אין נתוני תיק. העלה דוח בלשונית "התיק שלי".';
@@ -24634,6 +24635,18 @@ window.addEventListener('focus',pickBack); document.addEventListener('visibility
 // screenshots can only be read where the host allows images; otherwise hide the picker so nobody hits a dead end
 try{window.claude&&window.claude.use&&window.claude.use('sample').then(sm=>{if(!sm||!sm.limits)return;return sm.limits().then(c=>{if(!(c&&c.images&&c.images.maxCount)){document.querySelector('label[for=upImg]').style.display='none';document.querySelector('.upbtns').style.gridTemplateColumns='1fr';$('dropHint').textContent='PDF, Excel או CSV · אפשר כמה קבצים יחד · צילומי מסך לא נתמכים בתצוגה הזו. אפשר להעלות את הדוח כ-PDF, או להקליד את הניירות ב"הקלדה מהירה" שלמעלה'}})}).catch(()=>{})}catch(e){}
 $('upPass').addEventListener('keydown',e=>{if(e.key==='Enter')readStatement()});
+// 17.11 (the owner: "why is my e-mail in every search box?"): a browser's password manager took the page for a login,
+// because of its two password fields (hidden most of the time, outside any form): it filled the saved e-mail into the
+// text boxes before them, the search boxes. A password field is one only while it is shown (pwShow); otherwise it is a
+// plain, empty text box. And a search box never keeps a value a browser filled in: an e-mail that arrived without typing
+// (an input event with no inputType, or found there after the page loaded) is taken out
+function pwShow(id,on){const i=$(id); if(!i)return; if(on){i.type='password'; i.setAttribute('autocomplete',i.dataset.pw||'new-password')} else{i.value=''; i.type='text'; i.setAttribute('autocomplete','off')}}
+const NOFILL='input[type="search"],input[data-nofill]', MAILRX=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function nofillClear(i){if(!i||!MAILRX.test(String(i.value||'').trim()))return false; i.value=''; try{i.dispatchEvent(new Event('input',{bubbles:true}))}catch(e){} return true}
+function nofillSweep(){for(const i of document.querySelectorAll(NOFILL))if(document.activeElement!==i)nofillClear(i)}
+document.addEventListener('input',e=>{const i=e.target; if(!i||!i.matches||e.inputType||!i.matches(NOFILL))return; nofillClear(i)},true);
+document.addEventListener('change',e=>{const i=e.target; if(i&&i.matches&&i.matches(NOFILL)&&document.activeElement!==i)nofillClear(i)},true);
+for(const ms of [300,1200,3000,8000])setTimeout(()=>{try{nofillSweep()}catch(e){}},ms); addEventListener('pageshow',()=>setTimeout(()=>{try{nofillSweep()}catch(e){}},300));
 const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
 document.addEventListener('dragover',e=>{if(hasFiles(e)&&canWrite){e.preventDefault();$('drop').classList.add('over')}});
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)$('drop').classList.remove('over')});
@@ -28940,7 +28953,7 @@ function renderPots(){
   const nOut=(pt.items||[]).filter(i=>i.from==='pf').length, outIls=pt.sep?(pt.items||[]).filter(i=>i.from==='pf').reduce((t,i)=>{const r=V.rows.find(x=>x.sym===i.sym);return t+(r&&r.val||0)},0):0;
   const sepH=`<div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsep="0" aria-pressed="${!pt.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsep="1" aria-pressed="${!!pt.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div><p class="note" style="margin:6px 0 0">${pt.sep?(nOut?`${ils(outIls)} מהחיסכון הזה לא נספרים עכשיו בשווי התיק.`:'ניירות שתעביר לכאן מהתיק ייצאו משווי התיק.'):'הניירות שהועתקו מהתיק נשארים גם בשווי התיק. אפשר לבחור להוציא אותם.'}</p></div>`;
   const copy=held.length?`<div class="potadd"><label for="potCopy">${pt.sep?'להעביר נייר מהתיק':'להעתיק נייר מהתיק'}<select id="potCopy"${dis}>${held.map(p=>`<option value="${esc(p.sym)}" data-q="${+(+p.qty).toFixed(4)}">${esc(lab(p.sym))} · בתיק ${+(+p.qty).toFixed(4)}</option>`).join('')}</select></label><label for="potCopyQ">כמות<input id="potCopyQ" type="number" min="0" step="0.0001" inputmode="decimal" value="${+(+held[0].qty).toFixed(4)}"${dis}></label><button type="button" class="btn" id="potCopyGo"${dis}>${pt.sep?'העבר לחיסכון':'העתק לחיסכון'}</button></div>`:'';
-  const add=`<div class="potadd"><label for="potSym">או להוסיף נייר לפי סימול<input id="potSym" maxlength="12" placeholder="למשל VOO או 5129283" autocomplete="off" dir="ltr"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div>`;
+  const add=`<div class="potadd"><label for="potSym">או להוסיף נייר לפי סימול<input id="potSym" data-nofill maxlength="12" placeholder="למשל VOO או 5129283" autocomplete="off" dir="ltr"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div>`;
   box.innerHTML=tabsH+`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc([POTK[pt.kind],potInstTxt(pt)].filter(Boolean).join(' · '))}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}${sepH}</div>
     <div class="panel"><h3>הניירות בחיסכון</h3>${rows}${copy}${add}<span class="saved" id="potState" role="status"></span></div>
     <details class="panel"><summary><h3 style="display:inline">פרטי החיסכון</h3></summary>${potForm(pt)}</details>${note}`;
