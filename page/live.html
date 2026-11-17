@@ -3676,6 +3676,10 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #hParts:not(.all) li:nth-child(n+4):not(.hp-all){display:none!important}
   html body #hParts .hp-all{display:block;border:0;padding-top:4px}
   html body #hParts .hp-all .lnk{background:none!important;border:0!important;padding:0!important;min-height:0!important;color:var(--accent-ink)!important;font-weight:500!important;box-shadow:none!important}
+  /* 17.11: the history's צ׳יקו line: one line, "יותר" opens it */
+  html body .quick-say:not(.open)>span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  html body .quick-say{display:flex!important;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+  html body .quick-say .qs-more{font-size:13px!important;background:none!important;border:0!important;padding:0!important;min-height:0!important;width:auto!important;color:var(--accent-ink)!important;box-shadow:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -19003,7 +19007,7 @@ function render(){
     else if(mH.cost)L.push(mH.pnl>=0?`הניירות שווים ${ils(mH.pnl)} יותר ממה שעלו לך`:`הניירות שווים ${ils(-mH.pnl)} פחות ממה שעלו לך`);
     if(y!=null){const yl=(($('kYtdK')||{}).textContent||'מתחילת השנה').trim(); L.push(`${yl} התיק ${y>=0?'עלה':'ירד'} ${Math.abs(y).toFixed(1)}%`)}
     if(m.usdPct>=30)L.push(`${pct(m.usdPct,0)} ממנו בדולרים, ולכן גם השער מזיז אותו`);
-    el.hidden=!L.length; if(L.length)el.innerHTML=`<span><b>צ׳יקו:</b> ${esc(L.join('; '))}.</span>`}}catch(e){}
+    el.hidden=!L.length; if(L.length)el.innerHTML=`<span><b>צ׳יקו:</b> ${esc(L.join('; '))}.</span>${L.length>1?'<button type="button" class="lnk qs-more" data-qsmore>יותר</button>':''}`}}catch(e){}
 
   // alerts: the same engine the assistant uses (alertsOf)
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
@@ -20148,6 +20152,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // back by the quick actions, the tiles before the holdings. Called by homeLayout and by every renderBento, so a style
 // that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
 // changed the classes: the views stayed in the card, the split outside it)
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-qsmore]'); if(!b)return; const p=b.closest('.quick-say'); if(!p)return; p.classList.toggle('open'); b.textContent=p.classList.contains('open')?'פחות':'יותר'});
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-hpall]'); if(!b)return; const u=$('hParts'); if(u){u.classList.toggle('all'); b.textContent=u.classList.contains('all')?'להציג רק את החלשים':'כל המדדים ('+(u.children.length-1)+')'}});
 // 17.11 (the owner): a to-do item opens by itself (its link is the arrow); its "checked" stays a small word at its end
 document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest||t.closest('.dk-btns,a,button,input,select'))return; const li=t.closest('li'); if(!li||!li.closest('#dkTodo,#alTodoL,#alRules,.dk-top'))return; const g=li.querySelector('.dk-go'); if(g)g.click()});
@@ -30197,6 +30202,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.13',at:'2026-11-17',t:'מבט לאחור: צ׳יקו בשורה אחת',d:'הסיכום של צ׳יקו במבט לאחור מופיע בשורה אחת, ו"יותר" פותח את כולו.',go:'srch'},
   {v:'2026-11-17.12',at:'2026-11-17',t:'בקרה: פחות כפתורים',d:'בפריטים של "מה לעשות" ושל החריגות, לחיצה על הפריט פותחת אותו (במקום כפתור נפרד). במדד הבריאות מופיעים שלושת החלשים, והשאר ב"כל המדדים".',go:'srch'},
   {v:'2026-11-17.11',at:'2026-11-17',t:'תוכנית: ההגדרות מאחורי כפתור אחד',d:'בתוכנית ההפקדה, "איך קונים" ו"סדר הקנייה" נמצאים עכשיו מאחורי כפתור "הגדרות הקנייה", והמסך מתחיל בתוכנית עצמה.',go:'srch'},
   {v:'2026-11-17.10',at:'2026-11-17',t:'פחות טקסט בכל מסך',d:'בטלפון: כל מסך מתחיל בכותרת שלו בלבד, בלי שורת הסבר ואייקון; ההערות הקטנות מתחת לכל חלק הוסרו; שורת המסכים של כל קבוצה היא לשוניות פשוטות, והחלקים בגלולות.',go:'srch'},
