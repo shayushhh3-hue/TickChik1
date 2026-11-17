@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3904,6 +3904,17 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body [data-pane="plan"] .trk.trk{padding:8px 12px!important;min-height:0!important;gap:0!important}
   html body [data-pane="plan"] .trk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   html body [data-pane="plan"] .strip .cell .d{display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  /* 17.11 proposal 12, "יעד ותרחישים": the forecast first as the answer, the assumptions in one line, the flows folded */
+  html body .pane[data-pane="forecast"]:not([hidden]){display:flex!important;flex-direction:column!important}
+  html body .pane[data-pane="forecast"]>.pghead{order:-9}
+  html body .pane[data-pane="forecast"]>.pgrows{order:-8}
+  html body .pane[data-pane="forecast"]>section[aria-labelledby="hFwd"]{order:-7}
+  html body .fwd-asm{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;font-size:14px;color:var(--ink2)}
+  html body .fwd-asm b{color:var(--ink);font-weight:600}
+  html body .fwd-asm .lnk{min-height:44px;background:none!important;border:0!important;color:var(--accent-ink)!important;font-weight:500!important}
+  html body [data-pane="forecast"] .panel:has(#fwdAsm):not(.asm-open)>.form{display:none!important}
+  html body #goalBox{overflow:hidden}
+  html body #goalBox .gl-eta{white-space:normal!important;margin:0!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4210,6 +4221,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     </section>
     <section aria-labelledby="hFwd">
       <h2 id="hFwd">לאן התיק מגיע אם ממשיכים ככה?</h2>
+      <div class="m-ans" id="fwdAns" role="group" aria-label="לאן התיק מגיע" hidden></div>
       <div class="strip">
         <div class="cell"><div class="k">שווי אחרי מס</div><span class="v" id="fVal">—</span><div class="d" id="fValD">&nbsp;</div></div>
         <div class="cell"><div class="k">רווח נטו</div><span class="v" id="fNet">—</span><div class="d" id="fNetD">&nbsp;</div></div>
@@ -4217,6 +4229,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
         <div class="cell"><div class="k">מס רווחי הון</div><span class="v" id="fTax">—</span><div class="d" id="fTaxD">&nbsp;</div></div>
       </div>
       <div class="panel">
+        <div class="fwd-asm" id="fwdAsm"><span><b>ההנחות</b> · <span class="fa-t"></span></span><button type="button" class="lnk" data-fwdasm="1" aria-expanded="false">עריכה</button></div>
         <div class="form">
           <label for="inYears">אופק (שנים)<input type="number" id="inYears" min="1" max="40" step="1"></label>
           <label for="inRate">תשואה שנתית מונחת (%)<input type="number" id="inRate" min="-10" max="20" step="0.5"></label>
@@ -22783,7 +22796,7 @@ function renderGoal(mAll){
     if($('hGoalOv'))$('hGoalOv').textContent='היעד שלי'+(pu?': '+PURPOSE[pu]:'');
     const core=`<div class="gl-h">${pu?`<span class="gl-p">${esc(PURPOSE[pu])}</span>`:''}<span class="gl-v">${ils(goal)}</span><span class="sub">היום, אחרי מס: ${ils(netNow)} · ${pct(p,0)} מהיעד</span></div><div class="gbar" role="img" aria-label="${pct(p,0)} מהיעד"><i style="width:${p.toFixed(1)}%"></i></div><p class="gl-eta">${k===0?'הגעת ליעד.':k==null?'בקצב הנוכחי היעד לא מושג בתוך 60 שנה.':`בקצב הנוכחי תגיע ליעד ${whenH(k)}.`}${esc(fitH)}</p>`;
     gh=core+`<p class="note">${basis}</p>`; ov=core+`<button class="btn sm" type="button" data-tab="forecast">ליעד ולתרחישים</button>`}
-  else gh=`<p class="gl-eta">עוד לא קבעת יעד. הקלד סכום ב"היעד שלי" למטה.</p>`;
+  else gh=`<p class="gl-eta">עוד לא קבעת יעד. <button type="button" class="lnk" data-goalset="1">לקבוע סכום יעד</button></p>`;
   setH($('goalBox'),gh);
   $('goalOvSec').hidden=!ov; if(ov)setH($('goalOv'),ov);
   // three scenarios: the viewer's own rate, and three points under and over it
@@ -23726,7 +23739,17 @@ function drawFwd(raw,planEndY,unreal,missing){
   $('fVal').textContent=ils(e.net); $('fValD').textContent=`לפני מס: ${ils(e.val)}`;
   $('fwdNote').textContent=`מתחילים משווי התיק היום, ${ils(pts[0].val)}, ומפקידים ${ils(MTOT())} בחודש. התשואה היא הנחה שלך, לא תחזית; המס כאילו מוכרים הכול בסוף.`+(missing?` ל-${missing} ניירות חסרה עלות, והרווח שכבר נצבר בהם לא נספר.`:'');
   try{renderCompass(pts,e,unreal)}catch(x){console.error(x)}
+  try{fwdAnsFill(e,tr)}catch(x){console.error(x)}
 }
+// 17.11 (the owner's proposal 12, "יעד ותרחישים"): the phone's answer card (where the portfolio gets to after tax, at the
+// monthly deposit, and the net gain), the assumptions in one line with "עריכה" (the four fields open under it), and
+// "כסף שתצטרך, או שתוסיף" folded under its title
+function fwdAnsFill(e,tr){const box=$('fwdAns'); if(!box||!e)return; box.hidden=false; const nt=e.gain-e.tax, pn=e.dep>0?nt/e.dep*100:null;
+  box.innerHTML=`<div class="ma-k"><span>לאן התיק מגיע בעוד ${e.y} שנים</span></div><div class="ma-v n">${ils(e.net)}</div><div class="ma-l">אחרי מס, אם ממשיכים להפקיד <span class="n" dir="ltr">${ils(MTOT())}</span> בחודש</div><div class="ma-l">רווח נטו <span class="${nt>=0?'up':'down'}"><span class="n" dir="ltr">${sgn(nt)}</span></span>${pn!=null?` (<span class="n" dir="ltr">${spct(pn)}</span> על מה שהושקע)`:''}</div>`;
+  const a=$('fwdAsm'); if(a){const t=a.querySelector('.fa-t'); if(t)t.textContent=`${e.y} שנים · תשואה ${+S.ratePct||0}% בשנה · מס ${Math.round((tr||0)*100)}%`}
+  try{foldSec(document.querySelector('[data-pane="forecast"] section[aria-labelledby="hFlows"]'))}catch(x){}}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-goalset]'); if(!b)return; const a=document.querySelector('[data-fwdasm]'), p=a&&a.closest('.panel'); if(p&&!p.classList.contains('asm-open'))a.click(); const g=$('inGoal'); if(g){try{g.scrollIntoView({block:'center',behavior:'smooth'})}catch(e){} setTimeout(()=>{try{g.focus()}catch(e){}},250)}});
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-fwdasm]'); if(!b)return; const p=b.closest('.panel'); if(!p)return; const on=!p.classList.contains('asm-open'); p.classList.toggle('asm-open',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'סגירה':'עריכה'});
 $('chart2').addEventListener('pointermove',ev=>{
   const svg=$('svg2'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo||!FP.length)return;
   const r=svg.getBoundingClientRect(), sx=(ev.clientX-r.left)/r.width*geo.W;
@@ -30538,15 +30561,21 @@ function goFind(q){const w=goNorm(q).split(' ').filter(Boolean); if(!w.length)re
   return GO.filter(d=>!d.own||(MGR()&&window.__tc&&!LOCAL)).map(d=>({d,s:sc(d)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.d)}
 // 11.11 (the owner): what belongs to the alerts lives in התראות (their settings moved there from the settings): a link to a
 // place opens the screen that holds it and the folds around it, and scrolls to it
+// 17.11 (proposals 1–19): a place reached by a link opens what folds it on the phone: a folded section, the forecast's
+// assumptions, the cash form, the watch preferences (else the link would land on a hidden field)
+function revealUp(el){for(let p=el;p&&p!==document.body;p=p.parentElement){const c=p.classList; if(!c)continue;
+  if(c.contains('fold1')&&!c.contains('open')){c.add('open'); const r=p.querySelector(':scope>.row'); if(r&&r.hasAttribute('aria-expanded'))r.setAttribute('aria-expanded','true')}
+  if(c.contains('panel')&&p.querySelector(':scope>#fwdAsm')){c.add('asm-open'); const b=p.querySelector('[data-fwdasm]'); if(b){b.setAttribute('aria-expanded','true'); b.textContent='סגירה'}}
+  if(p.id==='cashP')c.add('open'); if(p.id==='candPrefs')c.add('open')}}
 function goPlace(id,tab){const el=$(id), pn=el&&el.closest('[data-pane]'), t=pn?pn.dataset.pane:tab; if(t)showTab(t,true); try{setNav(false)}catch(e){}
-  setTimeout(()=>{const e2=$(id); if(!e2||e2.hidden)return; for(let p=e2.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true; if(e2.tagName==='DETAILS')e2.open=true;
+  setTimeout(()=>{const e2=$(id); if(!e2||e2.hidden)return; for(let p=e2.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true; if(e2.tagName==='DETAILS')e2.open=true; try{revealUp(e2)}catch(x){}
     try{ptReveal(e2)}catch(x){} try{e2.scrollIntoView({block:'start'})}catch(x){} if(/INPUT|SELECT/.test(e2.tagName))try{e2.focus({preventScroll:true})}catch(x){}},90)}
 function goTo(d){
   if(!d)return; try{useAdd('go:'+d.id)}catch(e){} try{setNav(false)}catch(e){} const q=$('goQ'); if(q){q.value=''; goRender('')}
   if(d.fn){d.fn();return}
   showTab(d.tab,true);
   if(!d.el)return;
-  setTimeout(()=>{let el=$(d.el); if(!el)return; let sec=el.closest('section')||el;
+  setTimeout(()=>{let el=$(d.el); if(!el)return; try{revealUp(el)}catch(x){} let sec=el.closest('section')||el;
     {const pn=el.closest('[data-pane]'); if(pn&&pn.dataset.pane!==document.body.dataset.page)showTab(pn.dataset.pane,true)}   // 11.11: a place that moved to another screen
     {const dp=el.closest('[data-dvp]'); if(dp&&dp.classList.contains('dv-off'))try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}}
     {const mp=el.closest('[data-mvp]'); if(mp)try{mvSet(mp.dataset.mvp)}catch(e){}}
@@ -30564,6 +30593,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.30',at:'2026-11-17',t:'יעד ותרחישים: התשובה קודם',d:'בטלפון: הדף נפתח בכרטיס שאומר לאן התיק מגיע אחרי מס, עם ההפקדה החודשית שלך, ומה הרווח הנקי. ההנחות (שנים, תשואה, מס) בשורה אחת עם "עריכה".',go:'goal'},
   {v:'2026-11-17.29',at:'2026-11-17',t:'תוכנית: ההפקדה הבאה בכרטיס אחד',d:'בטלפון: התוכנית נפתחת בכרטיס של ההפקדה הבאה: הסכום, האם סימנת שהכסף הגיע, ומה קונים אחריה. הכפתור "הכסף הגיע" מסמן את החודש במעקב החודשי.',go:'plan'},
   {v:'2026-11-17.28',at:'2026-11-17',t:'השוואה: נפתחת מוכנה',d:'ההשוואה נפתחת עם שתי האחזקות הגדולות, ואפשר להחליף או להוסיף עד ארבעה ניירות. בטלפון הבחירה מהתיק היא בכפתורים גדולים.',go:'srch'},
   {v:'2026-11-17.27',at:'2026-11-17',t:'דירוג: במה התיק חזק, ושורה לכל נייר',d:'בטלפון: הדירוג נפתח בכרטיס שאומר במה התיק חזק ובמה הוא חלש. הטבלה היא שתי עמודות, הנייר והציון שלו, בלי גלילה הצידה.',go:'rate'},

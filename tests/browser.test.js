@@ -2084,6 +2084,7 @@ test('1.11 completions: the X-ray names the common factors and direct against in
     // the goals compass: no goal yet, then a goal
     await tab(pg,'forecast'); await pg.waitForTimeout(500);
     let c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' ')); assert.match(c,/קבע יעד למעלה/);
+    await pg.click('[data-goalset]'); await pg.waitForTimeout(300);   // 17.11 (proposal 12): the assumptions open from "לקבוע סכום יעד"
     await pg.fill('#inGoal','300000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600);
     c=await pg.evaluate(()=>document.getElementById('goalCompass').innerText.replace(/\s+/g,' '));
     assert.match(c,/היום \(אחרי מס משוער\): ₪[\d,]+ מתוך ₪300,000, \d+% מהיעד/); assert.match(c,/בעוד 15 שנים, לפי 7\.0% בשנה ו-₪600 בחודש: ₪[\d,]+ אחרי מס/); assert.match(c,/ליעד מגיעים (בעוד|כבר)/); assert.match(c,/הפקדה חודשית שסוגרת את הפער באותן הנחות: ₪[\d,]+/); assert.match(c,/כל ₪100 נוספים בחודש: עוד כ-₪[\d,]+/); assert.match(await pg.evaluate(()=>document.getElementById('goalCompass').textContent),/לא תחזית ולא טווח הסתברויות/);
@@ -2247,6 +2248,7 @@ test('1.11 the five steps of a new account: done by what is in the account, each
     assert.ok(left.includes('יעד כספי ואופק')&&!left.includes('מחירי קנייה והפקדות'),JSON.stringify(left)); assert.match(doneTxt,/בוצע:.*מחירי קנייה והפקדות/,'the fixture has costs and deposits');
     assert.match(r.cnt,/מתוך 6 בוצעו/); assert.match(r.h,/עוד \d צעדים כדי שהבקרה תעבוד/);
     // the goal step leads to the goal field
+    await pg.evaluate(()=>{const o=document.getElementById('obNext'); if(o&&!o.classList.contains('open'))o.querySelector('.obh').click()});   // 17.11: the steps are one line that opens
     await pg.click('#obList [data-goid="inGoal"]'); await pg.waitForTimeout(600); assert.equal(await pg.evaluate(()=>document.body.dataset.page+' '+document.activeElement.id),'forecast inGoal');
     await pg.fill('#inGoal','250000'); await pg.dispatchEvent('#inGoal','change'); await pg.waitForTimeout(600); await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.match(await pg.evaluate(()=>(document.querySelector('#obList li.done')||{}).textContent||''),/יעד כספי ואופק/,'the goal step is done once a goal and a horizon are set');
