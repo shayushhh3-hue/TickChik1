@@ -3687,6 +3687,11 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body [data-pane="mine"] td.pfsum{position:relative;padding-inline-end:44px!important}
   html body [data-pane="mine"] .pf-dots{position:absolute;inset-inline-end:0;top:2px;width:36px;height:36px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--accent-ink);font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0}
   html body [data-pane="mine"] td.pfsum.secl{cursor:pointer}
+  /* 17.11: the home's next steps: one line that opens */
+  html body #obNext:not(.open) #obList,html body #obNext:not(.open) .acts{display:none!important}
+  html body #obNext .obh{cursor:pointer;position:relative;padding-inline-end:26px}
+  html body #obNext .obh::after{content:"⌄";position:absolute;inset-inline-end:0;top:0;font-size:20px;color:var(--muted)}
+  html body #obNext.open .obh::after{content:"⌃"}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -3870,7 +3875,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     <div class="depban repban" id="repBan" role="status" hidden></div>
     <div id="taxBanner" hidden></div>
     <section class="panel crisis" id="crisisBox" hidden aria-labelledby="hCrisis"></section>
-    <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
+    <section class="panel obnext" id="obNext" hidden aria-labelledby="hOb"><div class="obh" role="button" tabindex="0" aria-expanded="false" aria-controls="obList"><h2 id="hOb">שלושה צעדים כדי שהבקרה תעבוד בשבילך</h2><span class="sub" id="obCnt"></span></div><ol class="obl" id="obList"></ol><div class="acts"><button class="btn sm" type="button" id="obSkip">לא עכשיו</button></div></section>
     <!-- 10.11 (the owner): the coming two weeks at the bottom of the home, after the holdings; less relevant at the top -->
     <section class="soon" id="soonSec" aria-labelledby="hSoon" hidden><div class="row soon-h"><h2 id="hSoon">השבועיים הקרובים בתיק שלך</h2><button type="button" class="lnk hold-all" data-tab="calendar">ללוח המלא ‹</button></div><div class="soon-s" id="soonList"></div><p class="soon-dv" id="soonDiv" hidden></p></section>
     
@@ -20159,6 +20164,9 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 // back by the quick actions, the tiles before the holdings. Called by homeLayout and by every renderBento, so a style
 // that arrives with the account (chosen on another device) arranges the page as one chosen here does (before, it only
 // changed the classes: the views stayed in the card, the split outside it)
+// 17.11 (the owner): the home's next steps as one line that opens
+document.addEventListener('click',e=>{const o=e.target&&e.target.closest&&e.target.closest('#obNext .obh'); if(!o)return; const s=o.closest('#obNext'); const on=!s.classList.contains('open'); s.classList.toggle('open',on); o.setAttribute('aria-expanded',String(on))});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return; const o=e.target&&e.target.closest&&e.target.closest('#obNext .obh'); if(!o)return; e.preventDefault(); o.click()});
 // 17.11 (the owner): a holding's buy, sell, more and remove behind its "⋯"
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-pfdots]'); if(!b)return; e.stopPropagation(); const tr=b.closest('tr'); if(!tr)return; const on=!tr.classList.contains('acts-open'); tr.classList.toggle('acts-open',on); b.setAttribute('aria-expanded',String(on))},true);
 document.addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('[data-mefill]')){const m=$('meEdit'); if(m)m.click()}});
@@ -30212,6 +30220,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.16',at:'2026-11-17',t:'הבית: הצעדים הבאים בשורה אחת',d:'בבית, "עוד צעדים כדי שהבקרה תעבוד בשבילך" הוא שורה אחת שנפתחת בלחיצה.',go:'srch'},
   {v:'2026-11-17.15',at:'2026-11-17',t:'התיק: שורה נקייה לכל אחזקה',d:'בהתיק שלי, לחיצה על אחזקה פותחת את דף המניה, וקנייה, מכירה, עוד והסרה נמצאות מאחורי הכפתור ⋯.',go:'srch'},
   {v:'2026-11-17.14',at:'2026-11-17',t:'הפרופיל: רק מה שמילאת',d:'בהגדרות, הפרופיל מציג רק את הפרטים שמילאת, וכפתור "להשלמת פרטים" לשאר.',go:'srch'},
   {v:'2026-11-17.13',at:'2026-11-17',t:'מבט לאחור: צ׳יקו בשורה אחת',d:'הסיכום של צ׳יקו במבט לאחור מופיע בשורה אחת, ו"יותר" פותח את כולו.',go:'srch'},
