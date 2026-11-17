@@ -3517,7 +3517,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3881,6 +3881,12 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .wc .wtags .tag:nth-child(n+2){display:none!important}
   html body .wc .wfit>.sub{display:none!important}
   html body .wgrid .wc.wc{border-inline-start:1px solid var(--line)!important}
+  /* 17.11 proposal 9, "דירוג": what the portfolio is strong and weak in first, the table in two columns */
+  html body #profRows .nm{display:none!important}
+  html body [data-pane="ratings"] .panel.scroll table td{white-space:normal!important}
+  html body [data-pane="ratings"] .panel.scroll table{width:100%!important;min-width:0!important}
+  html body [data-pane="ratings"] .panel.scroll table :is(th,td:not([colspan])):nth-child(n+3){display:none!important}
+  html body [data-pane="ratings"] .panel:has(#evList>li:only-child>span.sub){display:none!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4759,6 +4765,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   <div class="pane" data-pane="ratings" hidden>
     <section aria-labelledby="hProf" data-adv>
       <div class="row"><h2 id="hProf">פרופיל התיק</h2><span class="sub" id="profCov"></span></div>
+      <div class="m-ans" id="profAns" role="group" aria-label="במה התיק חזק ובמה חלש" hidden></div>
       <div class="panel"><div class="pwrap" id="profRows"><div class="empty">הפרופיל יופיע כאן אחרי שנתוני החברות ייטענו.</div></div>
         <p class="note" id="profNote" style="margin-top:12px"></p></div>
     </section>
@@ -19597,6 +19604,9 @@ function renderProfile(m){
   const rows=m.pos.filter(p=>RS.companies[p.sym]).map(p=>({p,d:dims(RS.companies[p.sym])})), cov=rows.reduce((t,r)=>t+r.p.val,0);
   if(!rows.length)return;
   $('profCov').textContent=`ממוצע משוקלל לפי שווי, על ${pct(m.total?cov/m.total*100:0,0)} מהתיק`;
+  // 17.11 (proposal 9): the answer card: the two strongest and the two weakest of the five, from the same weighted scores
+  try{const S5=DIMS.map(([k,lb])=>{const ok=rows.filter(r=>r.d[k]!=null), w=ok.reduce((t,r)=>t+r.p.val,0); return {lb,sc:w?ok.reduce((t,r)=>t+r.d[k]*r.p.val,0)/w:null}}).filter(x=>x.sc!=null).sort((a,b)=>b.sc-a.sc), a=$('profAns');
+    if(a&&S5.length>=3){const J=L=>L.length>1?L[0]+' וב'+L[1]:L[0]; a.hidden=false; a.innerHTML=`<div class="ma-k"><span>במה התיק חזק</span></div><div class="ma-v sm">ב${esc(J(S5.slice(0,2).map(x=>x.lb)))}</div><div class="ma-l">חלש ב${esc(J(S5.slice(-2).reverse().map(x=>x.lb)))}</div>`}}catch(e){}
   $('profRows').innerHTML=DIMS.map(([k,lab])=>{
     const ok=rows.filter(r=>r.d[k]!=null), w=ok.reduce((t,r)=>t+r.p.val,0), sc=w?ok.reduce((t,r)=>t+r.d[k]*r.p.val,0)/w:0;
     const srt=ok.slice().sort((a,b)=>b.d[k]-a.d[k]), hi=srt.slice(0,2).map(r=>r.p.sym).join(', '), lo=srt.slice(-2).reverse().map(r=>r.p.sym).join(', ');
@@ -30519,6 +30529,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.27',at:'2026-11-17',t:'דירוג: במה התיק חזק, ושורה לכל נייר',d:'בטלפון: הדירוג נפתח בכרטיס שאומר במה התיק חזק ובמה הוא חלש. הטבלה היא שתי עמודות, הנייר והציון שלו, בלי גלילה הצידה.',go:'rate'},
   {v:'2026-11-17.26',at:'2026-11-17',t:'מניות במעקב: כרטיסים קצרים',d:'בטלפון: "מה חשוב לי בהתאמה" מאחורי כפתור אחד. כל כרטיס מראה רק את המספרים שיש להם ערך, וסיבה אחת.',go:'watch'},
   {v:'2026-11-17.25',at:'2026-11-17',t:'דף מניה: מחיר בכרטיס, כפתורים קטנים',d:'בטלפון: המחיר בכרטיס סגול כמו שווי התיק בבית. מטבע הגרף הוא מתג קטן, "להשוות" הוא קישור, וקנייה ומכירה זה לצד זה. הם נשארו מעל המחיר והגרף, כמו שביקשת.',go:'srch'},
   {v:'2026-11-17.24',at:'2026-11-17',t:'מחקר שוק: מה חסר לתיק, קודם',d:'בטלפון: "מה חסר לך" הוא הכרטיס הראשון במחקר שוק, עם כפתור לכל ענף שחסר. הקטגוריות הן שישה אריחים קטנים, ו"כל הקטגוריות" פותח את השאר.',go:'srch'},
