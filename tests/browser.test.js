@@ -1522,13 +1522,11 @@ test('1.11 the thesis: written on the security page, kept in the account, set ag
   try{
     await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='NVDA'; document.body.appendChild(b); b.click(); b.remove()}); await pg.waitForFunction(()=>!document.getElementById('secPage').hidden&&!!document.querySelector('#secPage .top h2'),null,{timeout:10000}); await pg.waitForTimeout(800);
     assert.equal(await pg.evaluate(()=>!!document.querySelector('#secPage [data-thbox]')||/התזה שלי/.test(document.getElementById('secPage').textContent)),false,'no thesis block on the security\'s page');
-    // the server: an alert that carries the thesis, once per event, as "important", not as a verdict
-    {const {pulseUpdate}=await import('../server/pulse.js'); const r=pulseUpdate(store,null,{}); const a=r.doc.items.find(x=>x.k==='th:NVDA:nvda-q3-report'); assert.ok(a,'the thesis alert: '+r.doc.items.map(x=>x.k).join(',')); assert.equal(a.lv,'imp'); assert.equal(a.th.sym,'NVDA'); assert.match(a.th.minus,/הורדת תחזית/); assert.match(a.lvWhy,/לא קביעה/);
-      assert.ok(!r.doc.items.some(x=>x.k.startsWith('th:KO')),'no thesis, no thesis alert')}
-    // the alert center shows the thesis beside the event, with a way to צ׳יקו
-    await pg.waitForTimeout(800); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400); await pg.click('[data-ixall]'); await pg.waitForTimeout(400);
-    const al=await pg.evaluate(()=>{const c=[...document.querySelectorAll('#ixFull .pl')].find(x=>/בדיקת תזה/.test(x.textContent)); return c?{th:c.querySelector('.pl-th')?.textContent||'',chiko:!!c.querySelector('[data-chiko="th:NVDA"]')}:null});
-    assert.ok(al&&/התזה שלך על NVDA/.test(al.th)&&/הורדת תחזית/.test(al.th)&&al.chiko,JSON.stringify(al));
+    // 17.11 (the owner: "turn them off"): the server makes no thesis alert, and one kept from before is dropped
+    {const {pulseUpdate}=await import('../server/pulse.js'); const P1=store.getDoc('alerts/pulse'); store.setDoc('alerts/pulse',{...(P1.exists?P1.data:{}),items:[...((P1.exists&&P1.data.items)||[]),{k:'th:NVDA:old',kind:'thesis',lv:'imp',title:'בדיקת תזה: NVDA',at:new Date().toISOString()}]},{silent:true});
+      const r=pulseUpdate(store,null,{}); assert.ok(!r.doc.items.some(x=>x.kind==='thesis'||String(x.k).startsWith('th:')),'no thesis alerts: '+r.doc.items.map(x=>x.k).join(','))}
+    await pg.reload(); await pg.waitForTimeout(2500);
+    assert.equal(await pg.evaluate(()=>/בדיקת תזה/.test(document.body.textContent)),false,'none on the page either');
     // צ׳יקו gets the thesis, the verdict and what was reported, never the price as a proof
     const f=await pg.evaluate(()=>window.__focus('th:NVDA')); assert.equal(f.kind,'thesis'); assert.equal(f.data.my_thesis.why,'מובילה בשבבי AI עם ביקוש גדל'); assert.equal(f.data.page_verdict.status,'מתחזקת'); assert.ok(f.data.reported_since.length>=1);
     assert.deepEqual(pg.errs,[]);
@@ -2897,10 +2895,8 @@ test('5.11 did it help: a row under each answer and each finding, counted for th
   {const x={...S0}; delete x.chico; store.setDoc('settings/main',x,{silent:true})}
   try{
     const {ctx,pg}=await open(1280); await pg.click('#chatFab'); await pg.waitForSelector('#anaOut [data-chicoins] details');
-    const k=await pg.evaluate(()=>{const d=[...document.querySelectorAll('#anaOut details.chico-i')].find(x=>/פרסמה דוח/.test(x.textContent)); if(!d)return null; d.open=true; return {k:d.dataset.chicok,t:d.innerText.replace(/\s+/g,' ')}});
-    assert.ok(k,'the check-in is among the findings'); assert.match(k.t,/NVDA פרסמה דוח \(Q3\)\. התזה שלך עדיין מחזיקה\?/); assert.match(k.t,/כתבת: "מובילה בשבבי AI"/); assert.match(k.t,/מה כתבת שיחליש אותה: "ירידה בהזמנות/);
-    await pg.click(`#anaOut [data-chicok="${k.k}"] [data-thchk="NVDA:hold"]`); await pg.waitForTimeout(300); assert.match(await pg.evaluate(k=>document.querySelector(`#anaOut [data-chicok="${k}"]`).textContent,k.k),/נשמר עם התזה: עדיין מחזיקה/);
-    {let ok=false; for(let i=0;i<30&&!ok;i++){await pg.waitForTimeout(200); const T=((store.getDoc('journal/main').data||{}).thesis||{}).NVDA||{}; ok=Array.isArray(T.checks)&&T.checks[0]&&T.checks[0].v==='hold'&&T.checks[0].rep==='Q3'} assert.ok(ok,'kept with the thesis')}
+    // 17.11 (the owner): צ׳יקו no longer asks whether the thesis holds after a report
+    assert.equal(await pg.evaluate(()=>[...document.querySelectorAll('#anaOut details.chico-i')].some(x=>/התזה שלך/.test(x.textContent))),false,'no thesis question among the findings');
     // the finding: "לא ידעתי"
     await pg.evaluate(()=>{const d=document.querySelector('#anaOut details.chico-i'); d.open=true}); await pg.click('#anaOut details.chico-i[open] .fbk [data-fb="new"]'); await pg.waitForTimeout(200);
     assert.match(await pg.evaluate(()=>document.querySelector('#anaOut details.chico-i[open] .fbk').textContent),/תודה, נרשם/);

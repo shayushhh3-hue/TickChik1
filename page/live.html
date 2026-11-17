@@ -766,23 +766,29 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .crev{list-style:none;margin:8px 2px 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--ink)} .crev li{display:flex;align-items:center;gap:7px}
 .crev i,.cll i{width:11px;height:11px;border-radius:50%;flex:0 0 auto;display:inline-block}
 .crev .buy i,.cll.buy i{background:#0F766E} .crev .sell i,.cll.sell i{background:#BE123C}
-/* 17.11 (the owner): the report in plain words: a sentence, a gauge in three parts, and rows of a question, its answer in
-   words and the figure beside it */
-.repbox .rq-hd{margin:6px 0 12px;font-size:20px;font-weight:800;line-height:1.4;color:var(--ink);max-width:none}
-.rq-g{margin:0 0 14px} .rq-gt,.rq-gl{direction:ltr} .rq-gt{position:relative;display:flex;flex-direction:row;height:12px} .rq-gt i{flex:1 1 0} .rq-gt .lo{background:#F7C1C1;border-radius:6px 0 0 6px} .rq-gt .mid{background:#D3D1C7} .rq-gt .hi{background:#BFE3C8;border-radius:0 6px 6px 0}
-.rq-gt b{position:absolute;top:-6px;width:4px;height:24px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
-.rq-gl{display:flex;flex-direction:row;margin-top:9px;font-size:12px;color:var(--ink2)} .rq-gl span{flex:1 1 0;text-align:center} .rq-gl .on{font-weight:800;color:var(--ink)}
-.repbox h4.rq-h{margin:14px 0 4px;font-size:13px;font-weight:700;color:var(--ink2)}
-.rq{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
-.rq-i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;line-height:1;background:var(--sunk);color:var(--ink2)}
-.rq-i::before{content:"•"} .rq.good .rq-i{background:var(--ok-bg);color:var(--ok-ink)} .rq.good .rq-i::before{content:"✓"} .rq.bad .rq-i{background:var(--crit-bg);color:var(--crit-ink)} .rq.bad .rq-i::before{content:"✕"}
-.rq.flat .rq-i::before{content:"="} .rq.wait .rq-i::before{content:"…"} .rq.info .rq-i{background:var(--accent-soft);color:var(--accent-ink)} .rq.info .rq-i::before{content:"›"}
+/* 17.11 (the owner): the report in plain words, as the mock-up he chose: a white card of its own width; a small line and
+   then the sentence; a gauge in three parts with its part named in its colour; rows of a drawn icon, a question with its
+   answer in words, and the figure beside it; a foot with the note and "עוד על הדוח" */
+.repbox.rq-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px 16px;gap:0;box-shadow:var(--shadow);max-width:760px}
+.repbox.rq-card>.row{align-items:baseline;gap:4px 8px;flex-wrap:wrap;justify-content:flex-start} .repbox.rq-card>.row h3{font-size:13px;font-weight:600;color:var(--ink2)} .repbox.rq-card>.row .sub{font-size:13px;color:var(--ink2)} .repbox.rq-card>.row .sub::before{content:"· "}
+.repbox .rq-hd{margin:4px 0 16px;font-size:22px;font-weight:800;line-height:1.4;color:var(--ink);max-width:none}
+.rq-g{margin:0 0 18px} .rq-gt,.rq-gl{direction:ltr} .rq-gt{position:relative;display:flex;flex-direction:row;height:14px} .rq-gt i{flex:1 1 0} .rq-gt .lo{background:#F7C1C1;border-radius:7px 0 0 7px} .rq-gt .mid{background:#D3D1C7} .rq-gt .hi{background:#BFE3C8;border-radius:0 7px 7px 0}
+.rq-gt b{position:absolute;top:-6px;width:4px;height:26px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.rq-gl{display:flex;flex-direction:row;margin-top:10px;font-size:12.5px;color:var(--ink2)} .rq-gl span{flex:1 1 0;text-align:center} .rq-gl .on{font-weight:800;color:var(--ink)} .rq-gl .on.good{color:var(--gain)} .rq-gl .on.bad{color:var(--loss)}
+.repbox h4.rq-h{margin:6px 0 6px;font-size:13px;font-weight:700;color:var(--ink2)} .rq+h4.rq-h,.rq-guid+h4.rq-h{margin-top:16px}
+.rq{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+svg.rq-i{flex:none;width:24px;height:24px;color:var(--muted)} .rq.good svg.rq-i{color:var(--gain)} .rq.bad svg.rq-i{color:var(--loss)} .rq.info svg.rq-i{color:var(--vio-ink,var(--accent-ink))}
 .rq-q{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px} .rq-q span{font-size:13px;color:var(--ink2)} .rq-q b{font-size:16px;font-weight:700;color:var(--ink);line-height:1.35} .rq.wait .rq-q b{color:var(--ink2)}
-.rq-v{flex:none;max-width:50%;display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:end} .rq-v b{font-size:15.5px;font-weight:700;color:var(--ink)} .rq-v small{font-size:12px;color:var(--ink2);line-height:1.35}
-.rq-m{display:inline-flex;gap:4px} .rq-m i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;line-height:1;background:var(--sunk);color:var(--ink2)}
-.rq-m .up{background:var(--ok-bg);color:var(--ok-ink)} .rq-m .up::before{content:"✓"} .rq-m .down{background:var(--crit-bg);color:var(--crit-ink)} .rq-m .down::before{content:"✕"} .rq-m .in::before{content:"="}
-.repbox .rq-guid{margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink2);max-width:none} .rq-guid b{color:var(--ink)} .repbox .rq-foot{margin:10px 0 0;font-size:12.5px}
-@media (max-width:560px){.rq{flex-wrap:wrap;gap:4px 12px} .rq-q{flex:1 1 0} .rq-v{flex:1 1 100%;max-width:none;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 10px;text-align:start;padding-inline-start:38px}}
+.rq-v{flex:none;max-width:50%;display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:end} .rq-v b{font-size:16px;font-weight:700;color:var(--ink)} .rq-v small{font-size:12px;color:var(--ink2);line-height:1.35}
+.rq-m{display:inline-flex;gap:4px} .rq-m svg.rq-i{width:20px;height:20px;color:var(--muted)} .rq-m svg.rq-i.up{color:var(--gain)} .rq-m svg.rq-i.down{color:var(--loss)}
+.repbox .rq-guid{margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink2);max-width:none} .rq-guid b{color:var(--ink)}
+.rq-ft{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
+.repbox .rq-ft .rq-foot{margin:0;flex:1 1 240px;font-size:12px;color:var(--ink2)}
+.repbox .rq-ft details.rpmore{flex:0 0 auto} .repbox .rq-ft details.rpmore[open]{flex:1 1 100%;display:flex;flex-direction:column;gap:6px}
+.repbox .rq-ft details.rpmore>summary{list-style:none;display:inline-flex;align-items:center;gap:4px;min-height:32px;margin:0;font-size:13.5px;font-weight:700;color:var(--vio-ink,var(--accent-ink));cursor:pointer} .repbox .rq-ft details.rpmore>summary::-webkit-details-marker{display:none}
+.repbox .rq-ft details.rpmore>summary svg{width:16px;height:16px;transition:transform .2s} .repbox .rq-ft details.rpmore[open]>summary svg{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.repbox .rq-ft details.rpmore>summary svg{transition:none}}
+@media (max-width:560px){.repbox.rq-card{padding:16px 16px 12px} .repbox .rq-hd{font-size:20px} .rq{flex-wrap:wrap;gap:4px 12px} .rq-q{flex:1 1 0} .rq-v{flex:1 1 100%;max-width:none;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 10px;text-align:start;padding-inline-start:36px}}
 /* 11.11: the chart's buys and sales are round marks with a letter (ק, מ); the key under the chart */
 .trkey{color:var(--ink2)} .trm{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;line-height:1;vertical-align:-3px} .trm.b{background:#0F766E} .trm.s{background:#BE123C}
 .crev .rep i,.cll.rep i{background:#7C3AED} .crev .ex i,.cll.ex i{background:#0D9488} .crev .al i,.cll.al i{background:#F59E0B} .cll.avg i{width:16px;height:0;border-radius:0;border-top:2px dashed #0D9488}
@@ -21577,23 +21583,29 @@ function repBlock(k,rs){
   const headTxt=E.res?(loss?`החברה ${WE[E.res]}`:`החברה הרוויחה ${WE[E.res]} ממנה`)+(V.res&&V.a!=null?`, ו${{up:'מכרה יותר מהצפי',down:'מכרה פחות מהצפי',in:'מכרה כמו שציפו'}[V.res]}`:'')
     :E.a!=null?(loss?`החברה הפסידה ${repEps(-E.a,c)} למניה`:`החברה הרוויחה ${repEps(E.a,c)} למניה`):V.a!=null?`לחברה נכנסו ${repBig(V.a,c)} ממכירות`:'הדוח פורסם';
   const gp=E.res?(E.res==='in'?50:E.res==='up'?66.7+Math.min(10,Math.abs(E.s??5))/10*28:33.3-Math.min(10,Math.abs(E.s??5))/10*28):null;
-  const gauge=gp!=null?`<div class="rq-g" role="img" aria-label="הרווח מול הצפי: ${REPRES[E.res]}"><div class="rq-gt" dir="ltr"><i class="lo"></i><i class="mid"></i><i class="hi"></i><b style="left:${gp.toFixed(1)}%"></b></div><div class="rq-gl" dir="ltr"><span${E.res==='down'?' class="on"':''}>פחות מהצפי</span><span${E.res==='in'?' class="on"':''}>כמו שציפו</span><span${E.res==='up'?' class="on"':''}>יותר מהצפי</span></div></div>`:'';
-  const row=(st,q,a,v,sub)=>`<div class="rq ${st}"><i class="rq-i" aria-hidden="true"></i><div class="rq-q"><span>${q}</span><b>${a}</b></div>${v||sub?`<div class="rq-v">${v?`<b>${v}</b>`:''}${sub?`<small>${sub}</small>`:''}</div>`:''}</div>`;
+  const gauge=gp!=null?`<div class="rq-g" role="img" aria-label="הרווח מול הצפי: ${REPRES[E.res]}"><div class="rq-gt" dir="ltr"><i class="lo"></i><i class="mid"></i><i class="hi"></i><b style="left:${gp.toFixed(1)}%"></b></div><div class="rq-gl" dir="ltr"><span${E.res==='down'?' class="on bad"':''}>פחות מהצפי</span><span${E.res==='in'?' class="on"':''}>כמו שציפו</span><span${E.res==='up'?' class="on good"':''}>יותר מהצפי</span></div></div>`:'';
+  // 17.11: a drawn icon per row, in the row's colour: a tick, a cross or an equals sign in a ring for a result, a clock for a
+  // figure not in yet, a line going up or down for the share, arrows around for "how often", a calendar and a target ahead
+  const IC={good:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>',bad:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>',flat:'<circle cx="12" cy="12" r="9"/><path d="M9 10.5h6M9 13.5h6"/>',wait:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+    up:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',down:'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',rep:'<path d="M4 12V9a3 3 0 0 1 3-3h13M17 3l3 3-3 3M20 12v3a3 3 0 0 1-3 3H4M7 21l-3-3 3-3"/>',
+    cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',tgt:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',mv:'<path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4"/>'};
+  const icH=(k,cls)=>`<svg class="rq-i${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`, icOf=st=>st==='good'?'good':st==='bad'?'bad':st==='wait'?'wait':'flat';
+  const row=(st,q,a,v,sub,ic)=>`<div class="rq ${st}">${icH(ic||icOf(st))}<div class="rq-q"><span>${q}</span><b>${a}</b></div>${v||sub?`<div class="rq-v">${v?`<b>${v}</b>`:''}${sub?`<small>${sub}</small>`:''}</div>`:''}</div>`;
   const stOf=res=>res==='up'?'good':res==='down'?'bad':res==='in'?'flat':'info', did=[], ahead=[];
   if(E.a!=null)did.push(row(loss&&E.res?(E.res==='up'?'good':E.res==='down'?'bad':'flat'):stOf(E.res),'כמה החברה הרוויחה?',E.res?WE[E.res]:loss?'הפסידה':'אין צפי להשוות אליו',`${B(repEps(E.a,c))} למניה`,E.e!=null?`ציפו ל-${B(repEps(E.e,c))}${E.s!=null&&E.res&&E.res!=='in'?' · '+spH(E.s,E.res):''}`:''));
   if(V.a!=null)did.push(row(stOf(V.res),'כמה כסף נכנס ממכירות?',V.res?WV[V.res]:'אין צפי להשוות אליו',B(repBig(V.a,c)),V.e!=null?`ציפו ל-${B(repBig(V.e,c))}${V.s!=null&&V.res&&V.res!=='in'?' · '+spH(V.s,V.res):''}`:''));
   else if(V.e!=null||V.pend)did.push(row('wait','כמה כסף נכנס ממכירות?','הנתון עוד לא הגיע','—',V.e!=null?`ציפו ל-${B(repBig(V.e,c))}`:''));
   const erx=rs&&rs.erx&&rs.erx.avgAbs>0?`בדרך כלל זזה ${B('±'+rs.erx.avgAbs.toFixed(1)+'%')} סביב דוח`:'';
-  if(S.rx){const p=S.rx.pct, past=!!S.rx.fin; did.push(row(p>0?'good':p<0?'bad':'flat','איך המניה הגיבה?',`${p>0?(past?'עלתה':'עולה'):p<0?(past?'ירדה':'יורדת'):'לא זזה'} ${{post:'במסחר המאוחר',pre:'במסחר המוקדם',day:'ביום שאחרי'}[S.rx.k]||''}`.trim(),p?spH(p,p>0?'up':'down'):B('0%'),erx))}
-  else if(erx)did.push(row('info','כמה המניה זזה סביב דוח?',`בדרך כלל כ-${rs.erx.avgAbs.toFixed(1)}% למעלה או למטה`,'',''));
+  if(S.rx){const p=S.rx.pct, past=!!S.rx.fin; did.push(row(p>0?'good':p<0?'bad':'flat','איך המניה הגיבה?',`${p>0?(past?'עלתה':'עולה'):p<0?(past?'ירדה':'יורדת'):'לא זזה'} ${{post:'במסחר המאוחר',pre:'במסחר המוקדם',day:'ביום שאחרי'}[S.rx.k]||''}`.trim(),p?spH(p,p>0?'up':'down'):B('0%'),erx,p>0?'up':p<0?'down':'flat'))}
+  else if(erx)did.push(row('info','כמה המניה זזה סביב דוח?',`בדרך כלל כ-${rs.erx.avgAbs.toFixed(1)}% למעלה או למטה`,'','','mv'));
   {const H4=[E.res].concat(old.map(x=>{const o=x.sum||repSumOf(x); return o&&o.eps?o.eps.res:null})).filter(Boolean).slice(0,4), n4=H4.length, ups=H4.filter(x=>x==='up').length;
     if(n4>=2)did.push(row(ups*2>n4?'good':ups===0?'bad':'flat','היא בדרך כלל מרוויחה יותר מהצפי?',ups===n4?'כן, בכל הדוחות האחרונים':ups*2>n4?'כן, ברוב הדוחות':ups===0?'לא, באף אחד מהאחרונים':'לפעמים',
-      `<span class="rq-m" dir="ltr" role="img" aria-label="${H4.slice().reverse().map(x=>REPRES[x]).join(', ')}">${H4.slice().reverse().map(x=>`<i class="${x}"></i>`).join('')}</span>`,`${ups} מ-${n4} האחרונים מעל הצפי`))}
-  if(rs&&rs.next&&rs.next>=today){const dn=daysTo(rs.next); ahead.push(row('info','מתי הדוח הבא?',dn<=0?'היום':dn===1?'מחר':`בעוד ${dn} ימים`,B(dmy(rs.next)),rs.nextEst?'תאריך משוער':''))}
+      `<span class="rq-m" dir="ltr" role="img" aria-label="${H4.slice().reverse().map(x=>REPRES[x]).join(', ')}">${H4.slice().reverse().map(x=>icH(x==='up'?'good':x==='down'?'bad':'flat',x)).join('')}</span>`,`${ups} מ-${n4} האחרונים מעל הצפי`,'rep'))}
+  if(rs&&rs.next&&rs.next>=today){const dn=daysTo(rs.next); ahead.push(row('info','מתי הדוח הבא?',dn<=0?'היום':dn===1?'מחר':`בעוד ${dn} ימים`,B(dmy(rs.next)),rs.nextEst?'תאריך משוער':'','cal'))}
   {const nx=S.nx&&S.nx.now!=null?S.nx.now:(rs&&rs.est&&rs.est.date>=today&&rs.est.eps!=null?rs.est.eps:null);
     if(nx!=null){const d=E.a>0&&nx>0?(nx/E.a-1)*100:null, mv=S.nx&&S.nx.was!=null&&S.nx.res&&S.nx.res!=='in'?`הצפי ${S.nx.res==='down'?'ירד':'עלה'} אחרי הדוח`:'';
-      ahead.push(row('info','מה מצפים ממנה בפעם הבאה?',d!=null?(Math.abs(d)<1?'להרוויח בערך אותו דבר':d>0?'להרוויח יותר':'להרוויח פחות'):nx<0?'הפסד':'רווח',`${B(repEps(nx,c))} למניה`,[d!=null&&Math.abs(d)>=1?`${spH(d,d>0?'up':'down')} מהרבעון הזה`:'',mv].filter(Boolean).join(' · ')))}}
-  return `<section class="repbox" aria-labelledby="${hid}">
+      ahead.push(row('info','מה מצפים ממנה בפעם הבאה?',d!=null?(Math.abs(d)<1?'להרוויח בערך אותו דבר':d>0?'להרוויח יותר':'להרוויח פחות'):nx<0?'הפסד':'רווח',`${B(repEps(nx,c))} למניה`,[d!=null&&Math.abs(d)>=1?`${spH(d,d>0?'up':'down')} מהרבעון הזה`:'',mv].filter(Boolean).join(' · '),'tgt'))}}
+  return `<section class="repbox rq-card" aria-labelledby="${hid}">
     <div class="row"><h3 id="${hid}">ניתוח הדוח האחרון${r.label?` · ${esc(r.label)}`:''}</h3>${r.at&&!r.atEst?`<span class="sub">פורסם ב-${dmy(r.at)}.${r.at.slice(0,4)}</span>`:''}</div>
     ${rs&&rs.twinOf?`<p class="note">החברה נסחרת גם בניו יורק (<bdi dir="ltr">${esc(rs.twinOf)}</bdi>): הדוח ונתוני האנליסטים הם של החברה עצמה, משם, בדולרים.</p>`:''}
     <p class="rq-hd">${repH(headTxt)}</p>
@@ -21601,15 +21613,15 @@ function repBlock(k,rs){
     ${due?`<p class="note">${dueTxt}</p>`:''}
     ${did.length?`<h4 class="rq-h">מה קרה</h4>${did.join('')}`:''}
     ${ahead.length||S.guid?`<h4 class="rq-h">מה הלאה</h4>${ahead.join('')}${S.guid?`<p class="rq-guid"><b>מה החברה אמרה על ההמשך:</b> ${repH(S.guid)}</p>`:''}`:''}
-    <details class="rpmore"${NEWSX[k]?' open':''}><summary>עוד על הדוח: ההסבר, הממצאים, כתבות${old.length?' והדוחות הקודמים':''}</summary>
+    <div class="rq-ft"><p class="note rq-foot">הצפי הוא של אנליסטים, לא תחזית של החברה. זה ניתוח, לא המלצה לקנות או למכור.</p>
+    <details class="rpmore"${NEWSX[k]?' open':''}><summary aria-label="עוד על הדוח: ההסבר, הממצאים, כתבות${old.length?' והדוחות הקודמים':''}">עוד על הדוח <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
       ${ai&&ai.simple?`<p class="rp-simple">${tx(ai.simple)}</p>`:''}
       ${ai&&ai.explain?`<h4>מה זה אומר</h4><p>${tx(ai.explain)}</p>${ai.context?`<h4>המגמה</h4><p>${tx(ai.context)}</p>`:''}${ai.watch?`<h4>על מה לשים לב</h4><p>${tx(ai.watch)}</p>`:''}${ai.terms&&ai.terms.length?`<dl class="rp-terms">${ai.terms.map(t=>{const i=t.indexOf(':'); return `<div><dt>${esc(t.slice(0,i))}</dt><dd>${esc(t.slice(i+1).trim())}</dd></div>`}).join('')}</dl>`:''}`:site?`<p class="note">${S.rev.pend?'ההסבר נכתב כשההכנסות מגיעות למקור, בדרך כלל בתוך כמה שעות.':'ההסבר המילולי נכתב בתוך כמה שעות אחרי הדוח.'}</p>`:''}
       ${F.length?`<ul class="repf">${F.map(x=>`<li>${tx(x)}</li>`).join('')}</ul>`:''}
       <div class="acts" style="justify-content:flex-start;margin-top:8px">${site?`<button type="button" class="btn sm" data-repnews="${esc(k)}">${Array.isArray(nw)?'רענן כתבות':'כתבות על הדוח'}</button>`:''}${chk}</div>${msg}${news}
       ${old.length?`<h4>הדוחות הקודמים</h4><ul class="rpold">${old.map(x=>{const o=x.sum||repSumOf(x); return `<li><b>${esc(x.label||x.q)}</b>${x.at&&!x.atEst?` · פורסם ${dmy(x.at)}`:''}${o?` · ${repH(repOne(o))||'בלי נתונים'}`:''}</li>`}).join('')}</ul>`:''}
       <p class="note">המספרים מהדוח, וצפי האנליסטים כפי שהיה לפני הדוח (${esc(rs.source||'Yahoo Finance')}). ${ai?'"מה זה אומר" נכתב אוטומטית על ידי צ׳יקו מאותם מספרים'+(ai.headlines?' ומכותרות של כתבות':'')+'. ':''}תחזית החברה מופיעה רק כשהיא בכותרות, ונאמר כך.</p>
-    </details>
-    <p class="note rq-foot">הצפי הוא של אנליסטים, לא תחזית של החברה. זה ניתוח, לא המלצה לקנות או למכור.</p>
+    </details></div>
   </section>`;
 }
 async function repNews(k){if(!window.__tc)return; NEWSX[k]='busy'; try{renderSec()}catch(e){}
@@ -22003,17 +22015,8 @@ function chicoInsights(){const out=[]; if(!hasPf())return out; let m=null; try{m
       get why(){return `${p?`${lab(sym)} הוא ${pct(p.w,1)} מהתיק שלך`:`${lab(sym)} במעקב שלך`}. ${this.whyNow}. ${this.impact}`},
       check:'לקרוא את הסימנים ולבדוק אם יש להם סיבה ידועה (דוח, ידיעה, הסקטור) או שזו תנועת מחיר בלבד; אין כאן תחזית',src:[...new Set(S.map(s=>s.src).filter(Boolean))].slice(0,4),cert:'מדידה',limits:'סימנים שבעבר הופיעו לפני ירידות; לא כל ירידה באה אחרי סימנים ולא כל סימן נגמר בירידה. המד נמדד בעצמו ולוח הציונים שלו מוצג',nav:{t:'fold:hPress',l:'למד הלחץ'}})}}}catch(e){}
   // 2. a thesis weaker since it was written, or with something to check
-  try{const T=jrn().thesis||{}; for(const p of m.pos){if(!T[p.sym])continue; const v=thesisEval(p.sym); if(v.status!=='down'&&v.status!=='review')continue;
-    add({k:`th:${p.sym}:${v.status}:${(v.ev[0]||{}).id||''}`,kind:'thesis',lv:v.status==='down'&&v.conf!=='low'?'imp':'info',what:`התזה שלך על ${lab(p.sym)} ${v.status==='down'?'נחלשת':'דורשת בדיקה'}`,whatMore:v.ev[0]?v.ev[0].t:'',whyNow:`התפתחות מדווחת מאז שכתבת את התזה${v.since?' ('+dmy(v.since)+')':''}`,
-      why:`${lab(p.sym)} הוא ${pct(p.w,1)} מהתיק, וכתבת לו תזה`,impact:'לא השפעה על המחיר: בדיקה מול ההנחות שכתבת',check:'לפתוח את התזה ולבדוק אם מה שכתבת שיחליש אותה קרה',src:v.ev.slice(0,3).map(z=>z.src).filter(Boolean),cert:v.confWhy,limits:'ההערכה נשענת רק על עובדות מדווחות, לא על המחיר',nav:{t:'sec:'+p.sym,l:'לתזה'}})}}catch(e){}
-  // 2b. 5.11: a company with a written thesis reported: does the thesis still hold? asked once per report, answered in place
-  try{const T=jrn().thesis||{}; for(const p of m.pos){const t=T[p.sym]; if(!t||!(t.why||t.minus||t.plus))continue; const c=RS&&RS.companies&&RS.companies[p.sym], r=c&&c.rep; if(!r||!r.at)continue;
-    if(Date.now()-Date.parse(r.at)>14*864e5||String(t.checkedAt||'')>=String(r.at))continue;
-    const s0=r.now&&r.now.s!=null?`רווח למניה ${r.now.s>=0?'מעל':'מתחת ל'}צפי האנליסטים (${spct(r.now.s,0)})`:'';
-    add({k:`threp:${p.sym}:${String(r.at).slice(0,10)}`,kind:'thesis',lv:'imp',what:`${lab(p.sym)} פרסמה דוח${r.label?' ('+r.label+')':''}. התזה שלך עדיין מחזיקה?`,whatMore:[s0,t.why?`כתבת: "${String(t.why).slice(0,120)}"`:''].filter(Boolean).join('. '),
-      whyNow:`דוח חדש יצא ב-${dmy(r.at)}, אחרי שכתבת את התזה${t.updatedAt||t.at?' ('+dmy(t.updatedAt||t.at)+')':''}`,why:`${lab(p.sym)} הוא ${pct(p.w,1)} מהתיק`,impact:'לא השפעה על המחיר: בדיקה של ההנחות שלך מול מה שדווח',
-      check:t.minus?`מה כתבת שיחליש אותה: "${String(t.minus).slice(0,120)}". קרה?`:'לבדוק את מה שכתבת מול מה שדווח בדוח',src:[c.source||'הדוחות של החברה'],cert:'עובדה מדווחת (הדוח)',limits:'רק את/ה יודע/ת אם התזה מחזיקה; הדף לא מכריע',nav:{t:'sec:'+p.sym,l:'לדוח ולתזה'},
-      acts:`<div class="ana-navs th-chk"><button type="button" class="btn sm pri" data-thchk="${esc(p.sym)}:hold">עדיין מחזיקה</button><button type="button" class="btn sm" data-thchk="${esc(p.sym)}:weak">נחלשה</button></div>`})}}catch(e){}
+  // 17.11 (the owner): צ׳יקו no longer brings up the thesis (it weakening, and "does it still hold?" after a report); the
+  // thesis is off the site
   // 3. a rule crossed: concentration
   try{const F=anaFacts(); if(!F.empty)for(const i of anaIssues(F).filter(i=>!i.acked&&i.sev==='crit'&&/ריכוז|נייר|קבוצה/.test((i.cat||'')+(i.title||''))).slice(0,1))
     add({k:'iss:'+i.id,kind:'conc',lv:'imp',what:i.title||i.cat,whatMore:anaStrip(i.text||''),whyNow:'המשקל עבר את הכלל שקבעת (גם עלייה במחיר יכולה לגרום לזה)',why:'זה כלל שאתה קבעת לעצמך',impact:'תנועה של נייר או קבוצה אחת משפיעה יותר על כל התיק',check:'לבדוק בבקרה את המשקל מול הכלל, ובסימולטור מה משנה אותו',src:['חישוב הדף מהמחירים והכללים'],cert:'מדידה',limits:'לא אומר שצריך למכור',nav:{t:'risk',l:'לבקרה'}})}catch(e){}
@@ -25546,7 +25549,7 @@ function plPrefs(){const a=(S&&S.pulse)||{}, lv=a.lv||{}, q=a.quiet||{}, pu=a.pu
 function plQuiet(pr){pr=pr||plPrefs(); if(!pr.quiet.on)return false; const t=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).replace(/^24/,'00'), {from,to}=pr.quiet; if(from===to)return false; return from<to?t>=from&&t<to:t>=from||t<to}
 const plSt=()=>{const st=NEWSST=nxState(); st.pl=st.pl||{}; return st.pl};
 // the alerts to show: what the server made, under the preferences as they are now (a level switched off is not shown)
-function plItems(){const pr=plPrefs(); if(!PULSE||!pr.on)return []; return (PULSE.items||[]).filter(a=>a&&pr.lv[a.lv])}
+function plItems(){const pr=plPrefs(); if(!PULSE||!pr.on)return []; return (PULSE.items||[]).filter(a=>a&&pr.lv[a.lv]&&a.kind!=='thesis')}   // 17.11: no thesis alerts
 const plUnread=a=>{const s=plSt()[a.k]; return !s||!(s.r>=a.ver)};
 // 5.11: only what is fresh floats over צ׳יקו (the last two days); an important item from last week that was never opened
 // waits in "מה נוגע לתיק" instead of growing a "+57" over the page
