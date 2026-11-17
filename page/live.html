@@ -3663,6 +3663,10 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .chips.subtabs.subtabs .chip{background:none!important;color:var(--muted)!important;border-radius:0!important;padding:8px 2px!important;min-height:42px!important;border:0!important;border-bottom:2px solid transparent!important;font-weight:500!important;box-shadow:none!important}
   html body .chips.subtabs.subtabs .chip:is([aria-selected="true"],[aria-pressed="true"]){color:var(--ink)!important;border-bottom-color:var(--accent)!important;font-weight:600!important;background:none!important}
   html body .botbar button .bbl{font-size:12px!important}
+  /* 17.11: the plan's buying choices behind one button */
+  html body .hbset>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;font-size:14px;font-weight:500;color:var(--accent-ink)}
+  html body .hbset>summary::-webkit-details-marker{display:none} html body .hbset>summary::after{content:"⌄";font-size:18px;line-height:1;color:var(--muted)} html body .hbset[open]>summary::after{content:"⌃"}
+  html body .hbset[open]{display:flex;flex-direction:column;gap:10px}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -3879,8 +3883,11 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
       <div class="dvtabs" id="dvTabs" role="tablist" aria-label="החלקים של התוכנית"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">החודש</button><button type="button" class="chip" role="tab" data-dv="rows" aria-pressed="false" aria-selected="false">הניירות</button><button type="button" class="chip" role="tab" data-dv="chart" aria-pressed="false" aria-selected="false">הגרף</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">חד פעמית <span class="dv-n" id="dvOnceN"></span></button><button type="button" class="chip" role="tab" data-dv="set" aria-pressed="false" aria-selected="false">הגדרות</button></div>
       <div class="panel howbuy" data-dvp="rows">
+        <!-- 17.11 (the owner): the two buying choices behind one button; the screen starts with the plan itself -->
+        <details class="hbset"><summary>הגדרות הקנייה: איך קונים וסדר הקנייה</summary>
         <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
         <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
+        </details>
         <p class="note" id="kindNote"></p>
       </div>
       <div class="panel ob" id="planOb" data-dvp="all" hidden>
@@ -30177,6 +30184,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-17.11',at:'2026-11-17',t:'תוכנית: ההגדרות מאחורי כפתור אחד',d:'בתוכנית ההפקדה, "איך קונים" ו"סדר הקנייה" נמצאים עכשיו מאחורי כפתור "הגדרות הקנייה", והמסך מתחיל בתוכנית עצמה.',go:'srch'},
   {v:'2026-11-17.10',at:'2026-11-17',t:'פחות טקסט בכל מסך',d:'בטלפון: כל מסך מתחיל בכותרת שלו בלבד, בלי שורת הסבר ואייקון; ההערות הקטנות מתחת לכל חלק הוסרו; שורת המסכים של כל קבוצה היא לשוניות פשוטות, והחלקים בגלולות.',go:'srch'},
   {v:'2026-11-17.9',at:'2026-11-17',t:'כל האתר בעיצוב החדש',d:'בכל המסכים בטלפון: כותרת אחת למעלה (תפריט, השם, פרופיל), בלי כרטיס בתוך כרטיס, כרטיסים לבנים באותו רוחב ובאותן פינות, ושורות לשוניות בצורת גלולות. בבית כל המלבנים באותו רוחב ובאותם מרווחים.',go:'srch'},
   {v:'2026-11-17.8',at:'2026-11-17',t:'מראה חדש לפי העיצוב של שי',d:'רקע לבן, כרטיסים עם מסגרת דקה ופינות קטנות, לשוניות בצורת גלולות, סרגל תחתון שטוח עם מילים מתחת לאייקונים, ו"רווח מול עלות" ישר מתחת לשווי התיק. הנתונים והניסוחים לא השתנו.',go:'srch'},
