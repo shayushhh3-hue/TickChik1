@@ -155,9 +155,11 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
   let text='';
   try{
     if(ask)text=await ask(prompt);
-    // 1.11: a reading in Hebrew is long (a Hebrew token is a letter or two): room for 1,400 tokens an article, and a
+    // 17.11: room for 2,400 tokens an article (at 1,400 the answer was cut every run, so the last articles of every batch
+    // went unread), six articles a call so the whole stays under 16,000
+    // 1.11: a reading in Hebrew is long (a Hebrew token is a letter or two), and a
     // reading cut short by the budget is still used up to the last whole article (salvageArray), and said in the log
-    else{const t0=Date.now(); const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,1400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)}).catch(e=>{aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
+    else{const t0=Date.now(); const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,2400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)}).catch(e=>{aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
       if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} log('news analysis failed: HTTP '+r.status+' '+why); aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return null}
       const j=await r.json(); aiMeter({feature:'newsx',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''; if(j.stop_reason==='max_tokens')log('news analysis: the answer was cut by the token budget; the whole articles are kept')}
   }catch(e){log('news analysis failed: '+(e&&e.message||e)); return null}
@@ -169,7 +171,7 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
 
 // ---- the run: the articles not yet read (the securities' from research/news, the general ones from Finnhub), newest
 // first, a few batches a run; the analyses kept by article id for a week ----
-export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=10,maxBatches=4,keep=7,ask=null,general=generalNews,fed=fedNews,market=MARKET,genMax=300}={}){
+export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=6,maxBatches=6,keep=7,ask=null,general=generalNews,fed=fedNews,market=MARKET,genMax=300}={}){
   const t0=Date.now(), iso=now.toISOString(), from=new Date(now.getTime()-keep*DAY).toISOString();
   const old=store.getDoc(NEWSX_DOC), D=old.exists&&old.data?old.data:{}, by={...(D.by||{})}, gen=new Map();
   for(const it of (D.gen||[]))if(it&&it.link&&(it.at||it.seen)>=from)gen.set(it.link,it);
@@ -234,7 +236,7 @@ export async function newsxReadNow(store,ids,{visible=null,ask=null,fetch:f=glob
   const D=store.getDoc(NEWSX_DOC).data||{}, by=D.by||{}, arts=new Map();
   for(const it of ((store.getDoc('research/news').data||{}).items||[]))if(it&&it.link){const id=newsId(it.link); arts.set(id,{...it,id,src:'co'})}
   for(const it of (D.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
-  const todo=want.map(id=>arts.get(id)).filter(a=>a&&(!by[a.id]||by[a.id].rules)&&(!visible||visible(a))).slice(0,dayCap-used);
+  const todo=want.map(id=>arts.get(id)).filter(a=>a&&(!by[a.id]||by[a.id].rules)&&(!visible||visible(a))).slice(0,Math.min(6,dayCap-used));   // 17.11: six a call, as the runs
   if(!todo.length)return {read:0,none:true};
   NOW_BUSY=true;
   try{const got=await analyzeBatch(todo,{fetch:f,log,ask,known:knownEvents(by,{now})}); if(!got)return {read:0,fail:true};
