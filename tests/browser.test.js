@@ -3850,6 +3850,7 @@ test('19.11 TikChik WORLD IMPACT: the globe of what touches the portfolio; the d
     ({ctx,pg}=await open(1280));
     let s=await ready(pg);
     assert.equal(s.mode,'me'); assert.equal(s.assets,12,'every holding'); assert.ok(s.events>=3,JSON.stringify(s));
+    t.diagnostic('the globe: '+(s.gFail?'the network map instead ('+s.gFail+')':'WebGL, '+s.globe.arcs+' arcs, '+s.globe.items+' points'));
     if(s.gFail){assert.equal(s.view,'net','without WebGL the network map stands in'); assert.match(await pg.evaluate(()=>document.getElementById('wiMsg').textContent+'|'+document.getElementById('ixMap').hidden),/\|false$/)}
     else{assert.ok(s.globe.arcs>=1&&s.globe.items>=12,JSON.stringify(s.globe)); assert.equal(await pg.evaluate(()=>document.getElementById('ixMap').hidden),true,'the network map waits behind "רשת"')}
     // the panels: the portfolio, the events (only those with a path to a holding), the indices, the freshness in words
