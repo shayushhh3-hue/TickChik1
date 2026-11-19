@@ -1285,7 +1285,7 @@ test('day and night: the switch at the top, the choice in the settings (day, nig
     // the page opens at night (the trading look); the day is the blue-on-white one
     let s=await st(); assert.equal(s.th,'dark'); assert.equal(s.bg,'rgb(7, 7, 26)','the night is the violet-black ground'); assert.deepEqual(s.on,['dark']); assert.equal(s.lbl,'מצב יום');
     await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); const bb=document.querySelector('#botbar [data-bb="more"]'); if(bb&&bb.offsetParent&&!document.getElementById('tabsbar').classList.contains('open'))bb.click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st();
-    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(246, 245, 252)','light','light','מצב לילה','#F6F5FC']);
+    assert.deepEqual([s.th,s.bg,s.saved,s.on[0],s.lbl,s.meta],['light','rgb(255, 255, 255)','light','light','מצב לילה','#FFFFFF']);   // 17.11 (the owner's Figma look): the day is white, the browser's bar with it
     await pg.evaluate(()=>{const t=document.getElementById('btnTheme'); const bb=document.querySelector('#botbar [data-bb="more"]'); if(bb&&bb.offsetParent&&!document.getElementById('tabsbar').classList.contains('open'))bb.click()}); await pg.click('#btnTheme'); await pg.waitForTimeout(200); s=await st(); assert.equal(s.th,'dark'); assert.equal(s.meta,'#07071A');
     // the text is readable at night: no visible text below 4.5:1 against what is behind it (the ticker's small blue switch apart)
     const low=async()=>pg.evaluate(()=>{const P=c=>{const m=c.match(/rgba?\(([^)]+)\)/); if(!m)return null; const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
@@ -1338,7 +1338,9 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     const lk=await pg.evaluate(()=>{const r=document.querySelector('.hero .side .stat.secl'); return r&&r.dataset.sec});
     if(lk){await pg.click('.hero .side .stat.secl'); await pg.waitForTimeout(500); assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','the security\'s page'); await tab(pg,'overview'); await pg.waitForTimeout(300)}
     const all=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
-    // "קרנות": the value, the day, the profit and the rows of the funds only
+    // "קרנות": the value, the day, the profit and the rows of the funds only. 19.11: on a phone the tiles are in the clean card (the
+    // default since 11.11); the mosaic home has hidden them since 10.11 (the owner)
+    await pg.evaluate(()=>document.querySelector('[data-homeset="clean"]').click()); await pg.waitForTimeout(600);
     await pg.click('#kindRow [data-kv="fund"]'); await pg.waitForTimeout(400);
     const f=await pg.evaluate(()=>({k:document.getElementById('kTotK').textContent,tot:document.getElementById('kTotal').textContent,d:document.getElementById('kTotalD').textContent,
       pressed:[...document.querySelectorAll('#acctChips .chip,#kindRow [data-kv]')].filter(x=>x.getAttribute('aria-pressed')==='true').map(x=>x.querySelector('.kt-k')?x.querySelector('.kt-k').textContent:x.textContent),
@@ -3591,8 +3593,8 @@ test('11.11 the clean card is the phone\'s default (the owner): the wordmark and
   const {ctx,pg}=await open(390,{home:null}); await pg.waitForFunction(()=>!document.getElementById('bento').hidden,null,{timeout:15000}); await pg.waitForTimeout(400);
   const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), wm=document.querySelector('#hero .wm').getBoundingClientRect(), sub=document.querySelector('#hero .brand-sub').getBoundingClientRect(), pf=R('hdrProf'), w=document.querySelector('.worth').getBoundingClientRect();
     return {clean:document.body.classList.contains('home-clean'),saved:localStorage.getItem('tr_home'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),
-      wm:wm.width===0,sub:sub.width===0,prof:pf.width===0&&w.top<40,ox:document.documentElement.scrollWidth>innerWidth+1}});
-  assert.deepEqual(r,{clean:true,saved:null,pressed:'true',wm:true,sub:true,prof:true,ox:false},'12.11: the clean card by default, from the top of the screen (no wordmark, no profile button): '+JSON.stringify(r));
+      wm:wm.width===0,sub:sub.width===0,prof:pf.width===0,bar:(()=>{const a=document.getElementById('dHdProf'), b=document.getElementById('dHdMenu'); if(!a||!b)return false; const r=a.getBoundingClientRect(), s=b.getBoundingClientRect(); return r.width>=24&&s.width>=24&&r.top<70&&s.top<70&&/החשבון שלי/.test(a.getAttribute('aria-label')||'')})(),ox:document.documentElement.scrollWidth>innerWidth+1}});
+  assert.deepEqual(r,{clean:true,saved:null,pressed:'true',wm:true,sub:true,prof:true,bar:true,ox:false},'the clean card by default; at the top the 17.11 header (the menu, the account), not the old wordmark and profile button: '+JSON.stringify(r));
   await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(500);
   const a=await pg.evaluate(()=>({nav:document.getElementById('tabsbar').classList.contains('open'),acct:!!document.querySelector('#sbAcct #tcAcctBtn')&&document.getElementById('tcAcctBtn').offsetHeight>0}));
   assert.deepEqual(a,{nav:true,acct:true},'the account is in "עוד"');

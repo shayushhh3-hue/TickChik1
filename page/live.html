@@ -2041,14 +2041,15 @@ html[data-theme="dark"]{color-scheme:dark;
      market's own numbers, near-white text with a cool grey for the secondary. Solid colours, no gradients. */
   --v1:#8B5CF6; --v2:#C084FC; --mint:#2DD4BF; --mint-ink:#5EEAD4; --vio-ink:#B9A3FF;
   --grad:linear-gradient(135deg,#7C3AED 0%,#A855F7 100%); --grad-mint:linear-gradient(90deg,#2DD4BF 0%,#8B5CF6 100%);
-  --c1:#8B5CF6; --c1t:#B9A3FF; --c1o:#FFFFFF;  --c2:#2DD4BF; --c2t:#5EEAD4; --c2o:#06201F;  --c3:#818CF8; --c3t:#A5B4FC; --c3o:#0E1424;
+  --c1:#7C3AED; --c1t:#B9A3FF; --c1o:#FFFFFF;  --c2:#2DD4BF; --c2t:#5EEAD4; --c2o:#06201F;  --c3:#818CF8; --c3t:#A5B4FC; --c3o:#0E1424;
   --c4:#7C3AED; --c4t:#C4B5FD; --c4o:#FFFFFF;  --c5:#14B8A6; --c5t:#5EEAD4; --c5o:#06201F;
   --worth:#111233; --worth-sh:rgb(124 58 237 / .25); --mark:#A78BFA;
   --blue:#7C3AED; --blue-ink:#B9A3FF; --blue-soft:#221F4D; --blue-deep:#6D28D9;
   --navy:#07071A; --navy2:#111233; --navy3:#2B2A5C; --navy-t:#F4F3FF;
-  --gold:#8B5CF6; --gold-ink:#FFFFFF; --gold-soft:#221F4D; --pink:#221F4D; --tile:#221F4D; --tile-ink:#C4B5FD;
+  --gold:#7C3AED; --gold-ink:#FFFFFF; --gold-soft:#221F4D; --pink:#221F4D; --tile:#221F4D; --tile-ink:#C4B5FD;
   --bg:#07071A; --surface:#111233; --sunk:#181A3F; --ink:#F4F3FF; --ink2:#C9C8E6; --muted:#9A99C0;
-  --line:#2A2B5C; --accent:#8B5CF6; --accent-ink:#B9A3FF; --accent-soft:#221F4D; --on-accent:#FFFFFF; --focus:#C4B5FD;
+  --line:#2A2B5C; --accent:#7C3AED; --accent-ink:#B9A3FF;   /* 19.11: white on #8B5CF6 read 4.2:1 on what is pressed (the night check wants 4.5); #7C3AED reads 5.7:1 */
+  --accent-soft:#221F4D; --on-accent:#FFFFFF; --focus:#C4B5FD;
   --gain:#4ADE80; --loss:#F87171;
   --ok-c:#22C55E; --ok-bg:#0F2A1E; --ok-ink:#86EFAC;
   --warn-c:#F59E0B; --warn-bg:#2E2412; --warn:#FCD34D;
@@ -3967,7 +3968,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #desk .dk-trust.warn:not(.open):not(:has(details[open])) .dt-b>:is(.dt-s,.dt-d,.dt-a){display:none!important}
   html body #desk .dt-why{background:none;border:0;padding:0;min-height:24px;font:inherit;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
   html body #desk #dkTodo:not(.dk-all) :is(ol>li.info,ol>li.sev-tip,details.dk-rest){display:none!important}
-  html body #desk .dk-more2{background:none;border:0;padding:4px 0;min-height:32px;font:inherit;font-size:14px;font-weight:500;color:var(--accent);cursor:pointer}
+  html body #desk .dk-more2{background:none;border:0;padding:4px 0;min-height:32px;font:inherit;font-size:14px;font-weight:500;color:var(--accent-ink);cursor:pointer}
   html body #healthHome .hscore{display:none!important}
   html body #alerts details.ag{scroll-margin-top:72px}
   html body #alerts .ag.crit .agl>li .f-t::after{content:"קריטי";display:inline-block;margin-inline-start:8px;padding:1px 8px;border-radius:12px;background:var(--crit-bg);color:var(--crit-ink);font-size:12px;font-weight:600;vertical-align:middle}
@@ -4062,6 +4063,9 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .set-l button .v{margin-inline-start:auto;color:var(--ink2);font-size:14px}
   html body .set-l button::after{content:"‹";color:var(--muted);font-size:20px;flex:none}
   html body .set-l button:not(:has(.v))::after{margin-inline-start:auto}
+  /* 19.11: the plan's five views fit a phone's width again (they ran 39px past it and scrolled) */
+  html body #dvTabs#dvTabs{gap:6px!important}
+  html body #dvTabs#dvTabs .chip{padding-inline:9px!important}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -30544,7 +30548,7 @@ const themeDark=()=>document.documentElement.dataset.theme==='dark';
 function themeApply(){
   const v=themeGet(), dark=v==='dark'||(v==='auto'&&!!THEME_Q&&THEME_Q.matches), r=document.documentElement, was=r.dataset.theme;
   r.dataset.theme=dark?'dark':'light';
-  try{const m=document.querySelector('meta[name=theme-color]'); if(m)m.setAttribute('content',dark?'#07071A':'#F6F5FC')}catch(e){}
+  try{const m=document.querySelector('meta[name=theme-color]'); if(m)m.setAttribute('content',dark?'#07071A':'#FFFFFF')}catch(e){}   // 19.11: the day's ground is white (the Figma look, 17.11), and the browser's bar with it
   for(const b of document.querySelectorAll('[data-themeset]'))b.setAttribute('aria-pressed',String(b.dataset.themeset===v));
   const t=$('btnTheme'); if(t){const l=dark?'מצב יום':'מצב לילה', s=$('themeLbl'); if(s)s.textContent=l; else t.setAttribute('aria-label',l)}
   if(was!==r.dataset.theme){try{if(SEC)drawSec()}catch(e){}}
