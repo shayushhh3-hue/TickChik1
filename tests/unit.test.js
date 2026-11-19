@@ -974,8 +974,9 @@ test('the site: the PDF and Excel libraries in files of their own, loaded when n
   assert.ok(!/SheetJS|jsPDF - PDF Document|define\("pdfjs-dist\/build\/pdf"|TikChik vendored three\.js|TikChik WORLD IMPACT globe: the site/.test(h),'not inside the page');
   for(const n of ['jspdf','xlsx','pdf','pdfworker','three','globe'])assert.ok(fs.statSync(root+'site/lib/'+n+'.js').size>100000,n);
   assert.match(h,/window\.__tcLib=/); assert.match(h,/"pdf":"lib\/pdf\.js\?v=[0-9a-f]{10}"/);
-  // 19.11 TikChik WORLD IMPACT: three.js and the globe, the globe after three.js
-  assert.match(h,/"three":"lib\/three\.js\?v=[0-9a-f]{10}"/); assert.match(h,/"globe":"lib\/globe\.js\?v=[0-9a-f]{10}"/); assert.match(h,/DEP=\{pdf:\['pdfworker'\],globe:\['three'\]\}/);
+  // 19.11 TikChik WORLD IMPACT: three.js and the maps' library, each by itself (the flat map needs no three.js; the page asks
+  // for three.js before the globe)
+  assert.match(h,/"three":"lib\/three\.js\?v=[0-9a-f]{10}"/); assert.match(h,/"globe":"lib\/globe\.js\?v=[0-9a-f]{10}"/); assert.match(h,/DEP=\{pdf:\['pdfworker'\]\}/);
   assert.ok(h.length<page.length*0.5,'the page the phone loads is less than half: '+h.length+' / '+page.length);
   assert.ok(/SheetJS/.test(page),'the page in Claude keeps them inside');
 });

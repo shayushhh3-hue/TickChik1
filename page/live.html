@@ -4127,6 +4127,10 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
 .wi-stage{position:relative;min-height:440px;border-radius:20px;overflow:hidden;background:radial-gradient(120% 90% at 50% 45%,#221a5c 0%,#110c33 45%,#06061a 100%);border:1px solid rgb(124 58 237 / .35);isolation:isolate}
 .wi-globe{position:absolute;inset:0;touch-action:none}
 .wi-globe .tg-cv{width:100%;height:100%;display:block;cursor:grab}
+.wix-r{position:absolute;inset:0} .wix-r[hidden]{display:none}
+.wi-views{display:inline-flex;gap:4px;padding:3px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.wi-views .wi-mode{border:0;min-height:30px}
+.wi-stage.flat{background:#0a0d2e;min-height:0;height:auto;aspect-ratio:2/1}
 .wi-globe .tg-cv:active{cursor:grabbing}
 .tg-lay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .tg-l{position:absolute;top:0;left:0;pointer-events:auto;display:inline-flex;align-items:center;gap:6px;max-width:220px;padding:4px 8px;border-radius:10px;font:inherit;font-size:12px;line-height:1.25;color:#f4f2ff;background:rgb(13 12 40 / .82);border:1px solid rgb(167 139 250 / .55);box-shadow:0 4px 14px rgb(0 0 0 / .35);cursor:pointer;white-space:nowrap;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);will-change:transform}
@@ -4218,6 +4222,10 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
   .wi-grid{grid-template-columns:minmax(220px,1fr) minmax(0,2.3fr) minmax(250px,1.15fr)}
   .wi-stage{min-height:0;height:620px}
   .wi-grid>.wi-card{max-height:620px;overflow:auto;scrollbar-width:thin}
+  /* the flat map: the whole width, the world in it at once; the two cards side by side under it */
+  .wi-grid.flat{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .wi-grid.flat>.wi-stage{grid-column:1/-1;order:-1;height:auto;aspect-ratio:2.65/1;max-height:72vh}
+  .wi-grid.flat>.wi-card{max-height:420px}
   .wi-bottom{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,1.35fr)}
 }
 @container wi (max-width:979px){
@@ -4226,6 +4234,7 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
 @media (max-width:759px){
   html body .wi{padding:0 2px}
   html body .wi-stage{min-height:0;height:min(64vh,520px)}
+  html body .wi-stage.flat{height:min(46vh,320px);aspect-ratio:auto}
   html body .wi-brand h3{font-size:18px}
   html body .wi-legend{font-size:11px;gap:3px 10px}
   html body .wi-sheet{inset-inline:0;inset-block-start:auto;inset-block-end:0;width:100%;max-height:78vh;border-radius:20px 20px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
@@ -4854,7 +4863,7 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
                   <button type="button" class="wi-mode" data-wimode="world" aria-pressed="false" hidden>כל העולם · ניהול</button>
                   <button type="button" class="wi-mode" data-wifresh="1" id="wiNowB" aria-pressed="false" title="מתי עודכנו המחירים"><i class="wi-dot" id="wiNowD"></i><span id="wiNowL">עכשיו</span></button>
                   <button type="button" class="wi-mode" data-wihist="1" aria-pressed="false">היסטוריה</button>
-                  <button type="button" class="wi-mode" data-wiview="net" aria-pressed="false" title="מפת הרשת: אותם קשרים, בציור שטוח">רשת</button>
+                  <span class="wi-views" role="group" aria-label="צורת המפה"><button type="button" class="wi-mode" data-wiview="globe" aria-pressed="true">גלובוס</button><button type="button" class="wi-mode" data-wiview="flat" aria-pressed="false" title="מפת העולם השטוחה: כל האירועים והקשרים בבת אחת">מפה</button><button type="button" class="wi-mode" data-wiview="net" aria-pressed="false" title="מפת הרשת: אותם קשרים, בציור של קשרים">רשת</button></span>
                 </div>
               </div>
               <div class="wi-kinds" id="wiKinds" role="group" aria-label="מה להציג על הגלובוס">
@@ -6120,8 +6129,92 @@ function create(host,opts){
   return {setData:setData,focus:focus,highlight:highlight,resize:resize,destroy:destroy,zoom:function(f){S.dist=clampD(S.dist*f); S.user=true; S.idle=performance.now(); S.dirty=true},
     state:function(){return {rx:S.rx,ry:S.ry,dist:S.dist,items:ITEMS.length,arcs:ARCS.length,labels:LBL.filter(function(l){return l.shown}).length}},screenOf:function(id){var it=ITEMS.find(function(x){return x.id===id}); return it?screenOf(it):null}};
 }
+// ---- 19.11 the flat map (the owner: "not as a ball, as a world map, to see every event at once"): the same land, borders
+// and lights on one plane, from 78°N to 58°S; zoom and pan; the same interface as the globe. Canvas only: no three.js ----
+var LAT_T=78, LAT_B=-58, FLATBG=null;
+function flatBg(){if(FLATBG)return FLATBG; var M=maps(2048), W=M.W, H=W/2, c=document.createElement('canvas'); c.width=W; c.height=H; var g=c.getContext('2d'); g.drawImage(M.map,0,0);
+  var t=document.createElement('canvas'); t.width=W; t.height=H; var q=t.getContext('2d'); q.drawImage(M.lights,0,0); q.globalCompositeOperation='multiply'; q.fillStyle='#ffb45e'; q.fillRect(0,0,W,H);
+  g.globalCompositeOperation='lighter'; g.globalAlpha=0.9; g.drawImage(t,0,0); g.globalAlpha=1; g.globalCompositeOperation='source-over';
+  FLATBG={c:c,W:W,H:H,sy:(90-LAT_T)/180*H,sh:(LAT_T-LAT_B)/180*H}; return FLATBG}
+function createFlat(host,opts){
+  opts=opts||{}; var reduce=false; try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+  var B=flatBg(), cv=document.createElement('canvas'); cv.className='tg-cv tg-flat'; cv.setAttribute('role','img'); cv.setAttribute('aria-label',opts.label||'מפת העולם');
+  var lay=document.createElement('div'); lay.className='tg-lay'; host.appendChild(cv); host.appendChild(lay);
+  var ctx=cv.getContext('2d'), dpr=Math.min(window.devicePixelRatio||1,2);
+  // the view is kept apart from the box's size (z: the zoom over the whole world; cLat, cLon: the middle), so a box hidden and
+  // shown again (another view meanwhile) comes back as it was
+  var S={w:0,h:0,s:0,fit:1,tx:0,ty:0,z:1,cLat:10,cLon:10,anim:null,drag:false,hl:null,dirty:true,visible:true,t0:performance.now(),frame:0,small:false};
+  var ITEMS=[], ARCS=[], LBL=[];
+  var X=function(lon){return S.tx+(lon+180)/360*B.W*S.s}, Y=function(lat){return S.ty+(LAT_T-lat)/(LAT_T-LAT_B)*B.sh*S.s};
+  // the whole world in the width on a wide stage; on a narrow one (a phone) the height is filled and the map moves sideways
+  function fitS(){var a=S.w/S.h; return a<1.9?S.h/B.sh:Math.min(S.w/B.W,S.h/B.sh)}
+  function clampT(){var mw=B.W*S.s, mh=B.sh*S.s; S.tx=mw<=S.w?(S.w-mw)/2:Math.min(0,Math.max(S.w-mw,S.tx)); S.ty=mh<=S.h?(S.h-mh)/2:Math.min(0,Math.max(S.h-mh,S.ty))}
+  function keep(){if(S.w<2||S.h<2||!(S.s>0))return; S.cLon=(S.w/2-S.tx)/(B.W*S.s)*360-180; S.cLat=LAT_T-(S.h/2-S.ty)/(B.sh*S.s)*(LAT_T-LAT_B); S.z=S.fit?S.s/S.fit:1}
+  function apply(){S.fit=fitS(); S.s=S.fit*Math.max(1,S.z); S.tx=S.w/2-(S.cLon+180)/360*B.W*S.s; S.ty=S.h/2-(LAT_T-S.cLat)/(LAT_T-LAT_B)*B.sh*S.s; clampT()}
+  function resize(){var r=host.getBoundingClientRect(), w=Math.round(r.width), h=Math.round(r.height); if(w===S.w&&h===S.h)return;
+    S.anim=null; keep(); S.w=w; S.h=h; if(w<2||h<2)return;   // hidden: the view waits for the box to show again
+    S.small=w<760; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.width=w+'px'; cv.style.height=h+'px'; apply(); LBL.forEach(function(l){l.w=0}); S.dirty=true}
+  var ro=typeof ResizeObserver==='function'?new ResizeObserver(resize):null; if(ro)ro.observe(host); else window.addEventListener('resize',resize);
+  var io=typeof IntersectionObserver==='function'?new IntersectionObserver(function(es){S.visible=es.some(function(e){return e.isIntersecting})}):null; if(io)io.observe(host);
+  function zoomAt(f,cx,cy){var ns=Math.max(S.fit,Math.min(S.fit*8,S.s*f)); if(ns===S.s)return; S.tx=cx-(cx-S.tx)*ns/S.s; S.ty=cy-(cy-S.ty)*ns/S.s; S.s=ns; clampT(); S.dirty=true}
+  var P=new Map(), pinch=0, down=null;
+  cv.addEventListener('pointerdown',function(e){if(e.button!=null&&e.button>0)return; P.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{cv.setPointerCapture(e.pointerId)}catch(x){} S.drag=true; S.anim=null; down={x:e.clientX,y:e.clientY,t:performance.now()};
+    if(P.size===2){var a=[...P.values()]; pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}});
+  cv.addEventListener('pointermove',function(e){if(!P.has(e.pointerId))return; var o=P.get(e.pointerId), dx=e.clientX-o.x, dy=e.clientY-o.y; P.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(P.size===2){var a=[...P.values()], d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y), r=cv.getBoundingClientRect(); if(pinch>0)zoomAt(d/pinch,(a[0].x+a[1].x)/2-r.left,(a[0].y+a[1].y)/2-r.top); pinch=d; return}
+    S.tx+=dx; S.ty+=dy; clampT(); S.dirty=true});
+  function up(e){var was=P.has(e.pointerId); P.delete(e.pointerId); if(P.size<2)pinch=0; if(P.size===0)S.drag=false;
+    if(was&&down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<6&&performance.now()-down.t<500){var r=cv.getBoundingClientRect(); pick(e.clientX-r.left,e.clientY-r.top)} down=null}
+  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',function(e){e.preventDefault(); var r=cv.getBoundingClientRect(); zoomAt(e.deltaY<0?1.18:1/1.18,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+  cv.addEventListener('dblclick',function(e){var r=cv.getBoundingClientRect(); zoomAt(1.8,e.clientX-r.left,e.clientY-r.top)});
+  lay.addEventListener('click',function(e){var b=e.target.closest('[data-tgid]'); if(b&&opts.onPick){var it=ITEMS.find(function(x){return x.id===b.getAttribute('data-tgid')}); opts.onPick(it?{id:it.id,kind:it.kind}:{id:b.getAttribute('data-tgid')})}});
+  function pick(x,y){var best=null, bd=S.small?24:16; ITEMS.forEach(function(it){var d=Math.hypot(X(it.lon)-x,Y(it.lat)-y); if(d<bd){bd=d; best=it}}); if(opts.onPick)opts.onPick(best?{id:best.id,kind:best.kind}:null)}
+  function setData(D){LBL.forEach(function(l){l.el.remove()}); LBL=[]; ITEMS=[]; ARCS=[]; D=D||{};
+    (D.arcs||[]).forEach(function(a){if(!a.from||!a.to)return; var d=a.to.lon-a.from.lon, lon2=d>180?a.to.lon-360:d<-180?a.to.lon+360:a.to.lon;   // the short way, over the edge when it is shorter
+      if(Math.abs(lon2-a.from.lon)<0.3&&Math.abs(a.to.lat-a.from.lat)<0.3)return; ARCS.push({id:a.id,group:a.group||null,c:a.color||'#a78bfa',dashed:!!a.dashed,alpha:a.alpha==null?0.95:a.alpha,la1:a.from.lat,lo1:a.from.lon,la2:a.to.lat,lo2:lon2,ph:Math.random()})});
+    (D.points||[]).forEach(function(p){var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,c:p.color||'#a78bfa',size:p.size||1,halo:p.halo&&p.halo!=='none'?p.halo:null,group:p.group||null}; ITEMS.push(it);
+      if(p.label){var el=document.createElement('button'); el.type='button'; el.className='tg-l '+(p.label.cls||''); el.innerHTML=p.label.html; el.setAttribute('data-tgid',p.id); if(p.label.aria)el.setAttribute('aria-label',p.label.aria);
+        el.tabIndex=-1; el.style.transform='translate(-9999px,-9999px)'; lay.appendChild(el); LBL.push({el:el,it:it,pr:p.label.priority||0,w:0,h:0,shown:true})}});
+    S.dirty=true}
+  function highlight(groups){S.hl=groups==null?null:new Set([].concat(groups)); LBL.forEach(function(l){l.el.classList.toggle('sel',!!S.hl&&!!l.it.group&&S.hl.has(l.it.group))}); S.dirty=true}
+  // a place to the middle when the map is closer than the whole world; at the whole world everything is in view already
+  function focus(lat,lon,dist){if(S.w<2||S.h<2){if(dist==='fit'){S.z=1; S.cLat=lat; S.cLon=lon} return} var ts=dist==='fit'?S.fit:typeof dist==='number'?Math.max(S.fit,Math.min(S.fit*8,S.fit*dist)):S.s;
+    if(ts<=S.fit*1.02&&dist!=='fit'&&S.s<=S.fit*1.02)return;
+    var tx=S.w/2-(lon+180)/360*B.W*ts, ty=S.h/2-(LAT_T-lat)/(LAT_T-LAT_B)*B.sh*ts; S.anim={t0:performance.now(),ms:reduce?1:650,s0:S.s,tx0:S.tx,ty0:S.ty,s1:ts,tx1:tx,ty1:ty}; S.dirty=true}
+  function placeLabels(){var boxes=[]; LBL.forEach(function(l){if(!l.w){l.w=l.el.offsetWidth||60; l.h=l.el.offsetHeight||22}});
+    LBL.slice().sort(function(a,b){return b.pr-a.pr}).forEach(function(l){var x=X(l.it.lon), y=Y(l.it.lat), ok=x>-10&&x<S.w+10&&y>-10&&y<S.h+10, bx={x:x-l.w/2,y:y-l.h-8,w:l.w,h:l.h};
+      if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+3&&bx.x+bx.w+3>b.x&&bx.y<b.y+b.h+2&&bx.y+bx.h+2>b.y){ok=false; break}}
+      if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else if(l.shown){l.el.hidden=true; l.shown=false}})}
+  var CMAP={up:'#22c55e',down:'#ef4444',flat:'#94a3b8'};
+  function draw(t){ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S.w,S.h);
+    ctx.drawImage(B.c,0,B.sy,B.W,B.sh,S.tx,S.ty,B.W*S.s,B.sh*S.s);
+    var mw=B.W*S.s, lw=S.small?2:1.7;
+    ARCS.forEach(function(a){var on=!S.hl||S.hl.has(a.group), x1=X(a.lo1), y1=Y(a.la1), x2=X(a.lo2), y2=Y(a.la2), d=Math.hypot(x2-x1,y2-y1), cx=(x1+x2)/2, cy=(y1+y2)/2-Math.min(S.h*0.16,d*0.22);
+      [0,a.lo2>180?-mw:a.lo2<-180?mw:0].forEach(function(off,k){if(k===1&&!off)return; ctx.globalAlpha=(on?a.alpha:0.1)*0.28; ctx.strokeStyle=a.c; ctx.lineWidth=lw*3.2; ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke();
+        ctx.globalAlpha=on?a.alpha:0.1; ctx.lineWidth=lw; if(a.dashed){ctx.setLineDash([7,6]); ctx.lineDashOffset=reduce?0:-(t*26)%13} ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke(); ctx.setLineDash([]);
+        if(!reduce&&on&&!a.dashed){var u=(t*0.28+a.ph)%1, bx=(1-u)*(1-u)*x1+2*(1-u)*u*cx+u*u*x2+off, by=(1-u)*(1-u)*y1+2*(1-u)*u*cy+u*u*y2; ctx.globalAlpha=0.95; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bx,by,lw*1.3,0,6.283); ctx.fill()}})});
+    ctx.globalAlpha=1;
+    ITEMS.forEach(function(it){var x=X(it.lon), y=Y(it.lat); if(x<-20||x>S.w+20||y<-20||y>S.h+20)return; var on=!S.hl||!it.group||S.hl.has(it.group), r=(S.small?3.4:3)*it.size*Math.min(1.6,Math.sqrt(S.s/S.fit));
+      if(it.halo){var hc=CMAP[it.halo]||CMAP.flat; for(var k=0;k<2;k++){var f=reduce?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
+      var g=ctx.createRadialGradient(x,y,0,x,y,r*2.4); g.addColorStop(0,it.c); g.addColorStop(0.45,it.c); g.addColorStop(1,'rgba(0,0,0,0)'); ctx.globalAlpha=on?1:0.3; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r*2.4,0,6.283); ctx.fill()});
+    ctx.globalAlpha=1}
+  var raf=0;
+  function loop(now){raf=requestAnimationFrame(loop); if(!S.visible||document.hidden||S.w<2||S.h<2)return; S.frame++;
+    var moving=!!S.anim||S.drag, live=!reduce&&(ARCS.length||ITEMS.some(function(i){return i.halo}));
+    if(!moving&&!live&&!S.dirty)return; if(S.small&&!moving&&!S.dirty&&S.frame%2)return;
+    if(S.anim){var a=S.anim, k=Math.min(1,(now-a.t0)/a.ms), e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2; S.s=a.s0+(a.s1-a.s0)*e; S.tx=a.tx0+(a.tx1-a.tx0)*e; S.ty=a.ty0+(a.ty1-a.ty0)*e; clampT(); if(k>=1)S.anim=null; S.dirty=true}
+    draw((now-S.t0)/1000); if(S.dirty||moving)placeLabels(); S.dirty=false}
+  resize(); raf=requestAnimationFrame(loop);
+  function destroy(){cancelAnimationFrame(raf); if(ro)ro.disconnect(); if(io)io.disconnect(); LBL.forEach(function(l){l.el.remove()}); cv.remove(); lay.remove()}
+  return {setData:setData,focus:focus,highlight:highlight,resize:resize,destroy:destroy,flat:true,
+    zoom:function(f){zoomAt(1/f,S.w/2,S.h/2)},   // the globe's distance factor: below 1 is closer
+    state:function(){return {flat:true,s:Math.round(S.s/S.fit*100)/100,items:ITEMS.length,arcs:ARCS.length,labels:LBL.filter(function(l){return l.shown}).length}},
+    screenOf:function(id){var it=ITEMS.find(function(x){return x.id===id}); return it?{x:X(it.lon),y:Y(it.lat),front:1}:null}};
+}
 function supported(){try{var c=document.createElement('canvas'); return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
-window.TCGlobe={create:create,supported:supported,version:1};
+window.TCGlobe={create:create,createFlat:createFlat,supported:supported,version:2};
 })();
 
 </script>
@@ -29832,7 +29925,7 @@ function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v
 // paths that end at one of their assets; an admin's whole world from /api/admin/impact): nothing here filters anybody
 // else's data out, because none of it arrives. Green and red keep one meaning each: on a line, the possible direction of an
 // effect (a reading of the news, never a forecast); around an asset (its halo), its actual move in the market today.
-const WIMP={mode:'me',kind:'all',f:{cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''},view:'globe',me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,G:null,gTried:false,gFail:'',
+const WIMP={mode:'me',kind:'all',f:{cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''},view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),F:null,fTried:false,me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,G:null,gTried:false,gFail:'',
   hist:{sym:'',from:'',to:'',d:null,busy:false,err:'',pick:null},adm:'ev',log:null,admMsg:'',open:false,ixc:{}};
 const WI_CAT={geo:'גיאופוליטיקה',war:'מלחמות',regulation:'רגולציה',rates:'ריבית',macro:'מאקרו',energy:'אנרגיה',ai:'בינה מלאכותית',chips:'שבבים',finance:'פיננסים',industry:'תעשייה',trade:'סחר ומכסים',commodities:'סחורות',ma:'מיזוגים ורכישות',earnings:'דוחות',supply:'שרשראות אספקה',disaster:'אסונות טבע'};
 const WI_REG={us:'ארה״ב',israel:'ישראל',europe:'אירופה',uk:'בריטניה',china:'סין',japan:'יפן',india:'הודו',russia:'רוסיה',ukraine:'אוקראינה',middle_east:'המזרח התיכון',latam:'אמריקה הלטינית',asia:'אסיה',global:'עולמי'};
@@ -29864,12 +29957,24 @@ async function wiLoad(force){
   wiRender(); wiIdxSpark()}
 // the globe, once: the library is fetched when the screen first opens (the site keeps it by its version); without WebGL, or
 // inside Claude without the library, the network map stands in, said so
+// 19.11: the active drawing: the globe, the flat map (the owner: every event at once), or none (the network map). Each
+// has a box of its own on the stage; only the active one shows (a hidden one does not draw)
+const wiR=()=>WIMP.view==='globe'?WIMP.G:WIMP.view==='flat'?WIMP.F:null;
+const wiSub=k=>{const h=$('wiGlobe'); if(!h)return null; let d=h.querySelector(':scope>[data-r="'+k+'"]'); if(!d){d=document.createElement('div'); d.className='wix-r'; d.dataset.r=k; d.hidden=WIMP.view!==k; h.appendChild(d)} return d};
+function wiViz(){return WIMP.view==='flat'?wiFlat():WIMP.view==='globe'?wiGlobe():null}
+// the flat map needs no three.js: only the library of the maps (a phone that picks it fetches 130KB, not 800KB)
+async function wiFlat(){
+  if(WIMP.F||WIMP.fTried)return WIMP.F; WIMP.fTried=true; const host=wiSub('flat'); if(!host)return null;
+  try{if(window.__tcLib)await window.__tcLib('globe'); if(!window.TCGlobe||!window.TCGlobe.createFlat)throw new Error('הספרייה לא נטענה');
+    WIMP.F=window.TCGlobe.createFlat(host,{label:'מפת העולם: האירועים והקשרים שלהם לתיק',onPick:wiPick})}
+  catch(e){WIMP.gFail='המפה לא זמינה כאן ('+(e.message||e)+'). מוצגת מפת הרשת במקומה.'; WIMP.view='net'}
+  wiRender(); return WIMP.F}
 async function wiGlobe(){
-  if(WIMP.G||WIMP.gTried)return WIMP.G; WIMP.gTried=true; const host=$('wiGlobe'); if(!host)return null;
-  try{if(window.__tcLib)await window.__tcLib('globe'); if(!window.TCGlobe||!window.THREE)throw new Error('הספרייה לא נטענה');
+  if(WIMP.G||WIMP.gTried)return WIMP.G; WIMP.gTried=true; const host=wiSub('globe'); if(!host)return null;
+  try{if(window.__tcLib){await window.__tcLib('three'); await window.__tcLib('globe')} if(!window.TCGlobe||!window.THREE)throw new Error('הספרייה לא נטענה');
     if(!window.TCGlobe.supported())throw new Error('הדפדפן לא תומך בגרפיקה תלת־ממדית (WebGL)');
-    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת מפת הרשת.'; WIMP.view='net'; wiRender()}})}
-  catch(e){WIMP.gFail='הגלובוס לא זמין כאן ('+(e.message||e)+'). מוצגת מפת הרשת במקומו.'; WIMP.view='net'}
+    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת המפה השטוחה.'; WIMP.view='flat'; wiFlat()}})}
+  catch(e){WIMP.gFail='הגלובוס לא זמין כאן ('+(e.message||e)+'). מוצגת המפה השטוחה במקומו.'; WIMP.view='flat'; wiFlat()}
   wiRender(); return WIMP.G}
 function wiOpen(){
   // from the management center ("לגלובוס ההשפעה", /?wi=world#news): the box opens, and the whole world once the account is known
@@ -29880,7 +29985,7 @@ function wiOpen(){
   if(!$('wi').getClientRects().length)return; WIMP.open=true;
   const adm=document.querySelector('[data-wimode="world"]'); if(adm)adm.hidden=!wiAdminOk();
   if(!WIMP.hist.to){const t=new Date(); WIMP.hist.to=t.toISOString().slice(0,10); WIMP.hist.from=new Date(t.getTime()-90*864e5).toISOString().slice(0,10)}
-  wiLoad(false); if(WIMP.view==='globe')wiGlobe(); wiRender()}
+  wiLoad(false); wiViz(); wiRender()}
 
 // ---- what the filters leave ----
 function wiAssets(){const d=wiD(); return (d&&d.assets)||[]}
@@ -29926,14 +30031,15 @@ function wiGlobeData(){
 function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==='me';
   for(const b of w.querySelectorAll('[data-wimode]'))b.setAttribute('aria-pressed',String(b.dataset.wimode===WIMP.mode));
   for(const b of w.querySelectorAll('[data-wik]'))b.setAttribute('aria-pressed',String(b.dataset.wik===WIMP.kind));
-  {const b=w.querySelector('[data-wiview]'); if(b)b.setAttribute('aria-pressed',String(WIMP.view==='net'))}
-  const st=$('wiStage'), mp=$('ixMap'); if(st)st.hidden=WIMP.view==='net'; if(mp)mp.hidden=WIMP.view!=='net';
+  for(const b of w.querySelectorAll('[data-wiview]'))b.setAttribute('aria-pressed',String(b.dataset.wiview===WIMP.view));
+  const st=$('wiStage'), mp=$('ixMap'); if(st){st.hidden=WIMP.view==='net'; st.classList.toggle('flat',WIMP.view==='flat')} if(mp)mp.hidden=WIMP.view!=='net';
+  {const gr=w.querySelector('.wi-grid'); if(gr)gr.classList.toggle('flat',WIMP.view==='flat'); const h=$('wiGlobe'); if(h)for(const c of h.querySelectorAll(':scope>.wix-r'))c.hidden=c.dataset.r!==WIMP.view}
   w.classList.toggle('wi-busy',!!WIMP.busy);
   wiFreshBtn(d); wiFiltFill(d); wiCounts(d);
   const msg=$('wiMsg'); if(msg){let t=''; if(WIMP.err)t=WIMP.err; else if(!d)t=WIMP.busy?'המפה נבנית…':''; else if(me&&!(d.assets||[]).length)t='כשיהיו ניירות בתיק, הגלובוס יראה מה בעולם נוגע להם.'; else if(!wiEvents().length&&WIMP.kind!=='idx')t=me?'אין כרגע אירוע עם מסלול מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
-    if(WIMP.gFail&&WIMP.view==='globe')t=WIMP.gFail; msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
+    if(WIMP.gFail&&WIMP.view!=='net'&&!wiR())t=WIMP.gFail; msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
   // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
-  if(WIMP.G&&WIMP.view==='globe'){const sig=[WIMP.mode,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',wiSmall()].join('|'); if(sig!==WIMP.gsig){WIMP.gsig=sig; try{WIMP.G.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}
+  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',wiSmall()].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
   wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiHistCtl(); wiAdmRender(d);
   const f=$('wiFoot'); if(f)f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}
 function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(d&&d.assets)||[];
@@ -29986,7 +30092,7 @@ function wiPick(p){if(!p){WIMP.sel=null; wiSelApply(true); return}
   const id=String(p.id||''); if(id.startsWith('e:'))return wiSelect({t:'ev',k:id.slice(2)}); if(id.startsWith('a:'))return wiSelect({t:'as',sym:id.slice(2)});
   if(id.startsWith('n:'))return wiSelect({t:'co',id:id.slice(2)}); if(id.startsWith('i:'))return wiSelect({t:'ix',k:id.slice(2)})}
 function wiSelect(s){WIMP.sel=s; wiSelApply(true); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD())}
-function wiSelApply(turn){const G=WIMP.G, d=wiD(); if(!G)return; const s=WIMP.sel;
+function wiSelApply(turn){const G=wiR(), d=wiD(); if(!G)return; const s=WIMP.sel;
   if(!s){G.highlight(null); return}
   if(s.t==='ev'){const e=((d&&d.events)||[]).find(x=>x.k===s.k); G.highlight([s.k]); if(turn&&e&&e.loc)G.focus(e.loc.lat,e.loc.lon)}
   else if(s.t==='as'){const ks=((d&&d.events)||[]).filter(e=>(e.touches||[]).includes(s.sym)).map(e=>e.k), a=wiAssets().find(x=>x.sym===s.sym); G.highlight(ks.length?ks:['-']); if(turn&&a&&a.loc)G.focus(a.loc.lat,a.loc.lon)}
@@ -30080,23 +30186,24 @@ async function wiFix(body,btn){if(btn)btn.disabled=true; WIMP.admMsg='';
   catch(e){WIMP.admMsg=e.status===403?'אין הרשאה לתקן (צריך הרשאת עריכה במרכז הניהול).':'התיקון לא נשמר: '+e.message; wiAdmRender(wiD())}
   finally{if(btn)btn.disabled=false}}
 // an alert's "on the map": the globe turns to the event when it has it, else the network map, as before
-function wiFromLegacy(kind,key){if(kind==='ev'){const e=WIMP.me&&(WIMP.me.events||[]).find(x=>x.k===key); if(e&&WIMP.view==='globe'&&!WIMP.gFail){WIMP.mode='me'; wiSelect({t:'ev',k:key}); return true}} WIMP.view='net'; wiRender(); return false}
+function wiFromLegacy(kind,key){if(kind==='ev'){const e=WIMP.me&&(WIMP.me.events||[]).find(x=>x.k===key); if(e&&(WIMP.view==='globe'||WIMP.view==='flat')&&wiR()){WIMP.mode='me'; wiSelect({t:'ev',k:key}); return true}} WIMP.view='net'; wiRender(); return false}
 const wiScrollEl=()=>WIMP.view==='net'?$('ixMap'):$('wiStage');
 // the globe opens facing the portfolio: the middle of the holdings' places, by their weight (once per view and mode)
-function wiHome(force){const G=WIMP.G, d=wiD(); if(!G||!d)return; const key=WIMP.mode; if(!force&&WIMP.homed===key)return;
+function wiHome(force){const G=wiR(), d=wiD(); if(!G||!d)return; const key=WIMP.mode+'|'+WIMP.view; if(!force&&WIMP.homed===key)return;
   const L=WIMP.mode==='me'?wiAssets().filter(a=>a.loc).map(a=>({lat:a.loc.lat,lon:a.loc.lon,w:Math.max(1,a.w||1)})):((d.events||[]).filter(e=>e.loc).slice(0,40).map(e=>({lat:e.loc.lat,lon:e.loc.lon,w:1})));
   if(!L.length)return; WIMP.homed=key; let x=0,y=0,z=0,W=0; for(const p of L){const la=p.lat*Math.PI/180, lo=p.lon*Math.PI/180; x+=Math.cos(la)*Math.cos(lo)*p.w; y+=Math.cos(la)*Math.sin(lo)*p.w; z+=Math.sin(la)*p.w; W+=p.w}
   const lat=Math.atan2(z,Math.hypot(x,y))*180/Math.PI, lon=Math.atan2(y,x)*180/Math.PI; G.focus(Math.max(-35,Math.min(50,lat)),lon,'fit')}
 
 document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.closest('#wi,#wiSheet'))return;
   const m=t.closest('[data-wimode]'); if(m){const v=m.dataset.wimode; if(v==='world'&&!wiAdminOk())return; if(WIMP.mode!==v){WIMP.mode=v; WIMP.sel=null; wiSheet(); wiLoad(false)} wiRender(); return}
-  if(t.closest('[data-wiview]')){WIMP.view=WIMP.view==='net'?'globe':'net'; if(WIMP.view==='globe')wiGlobe(); else{try{ixDraw()}catch(e){}} wiRender(); return}
+  const vw=t.closest('[data-wiview]'); if(vw){const v=vw.dataset.wiview; if(v===WIMP.view)return; WIMP.view=v; try{localStorage.setItem('tr_wiview',v)}catch(e){}
+    wiRender(); if(v==='net'){try{ixDraw()}catch(e){}} else if(wiR()){wiR()._sig=null; wiRender(); wiSelApply(true)} else wiViz(); return}
   if(t.closest('[data-wifresh]')){const sh=$('wiSheet'), d=wiD(); WIMP.sel=null; if(sh&&d){const A=d.assets||[]; sh.innerHTML='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button><h4 id="wiSheetH">מתי עודכנו המחירים</h4><ul class="wi-list">'+A.map(a=>`<li class="wi-row"><span class="nm"><b dir="ltr">${esc(lab(a.sym))}</b><small><span class="wi-fr"><i class="wi-dot ${a.fresh?a.fresh.state:'none'}"></i>${esc(a.fresh?a.fresh.he:'')}${a.fresh&&a.fresh.at?' · '+esc(wiAt(a.fresh.at)):''}</span></small></span></li>`).join('')+'</ul><p class="wi-note">זמן אמת רק כשהמחיר הגיע מזרם העסקאות בשעות המסחר; בעיכוב: ממקור מאוחר של עד 15 דקות; סגירה: המחיר שנקבע בסוף יום המסחר. מחיר שלא עודכן מסומן כך.</p>'; sh.hidden=false} return}
   if(t.closest('[data-wihist]')){const h=$('wiHist'); if(h){h.scrollIntoView({block:'nearest',behavior:'smooth'}); if(!WIMP.hist.d)wiHistLoad()} return}
   const k=t.closest('[data-wik]'); if(k){WIMP.kind=k.dataset.wik; wiRender(); return}
   if(t.closest('#wiFiltB')){const f=$('wiFilt'), b=$('wiFiltB'); if(f){f.hidden=!f.hidden; if(b)b.setAttribute('aria-expanded',String(!f.hidden))} return}
   if(t.closest('[data-wifclr]')){const days=WIMP.f.t; WIMP.f={cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''}; if(days!=='7')wiLoad(true); wiRender(); return}
-  const z=t.closest('[data-wiz]'); if(z&&WIMP.G){const v=z.dataset.wiz; if(v==='in')WIMP.G.zoom(0.82); else if(v==='out')WIMP.G.zoom(1.22); else wiHome(true); return}
+  const z=t.closest('[data-wiz]'); if(z&&wiR()){const v=z.dataset.wiz, R=wiR(); if(v==='in')R.zoom(0.82); else if(v==='out')R.zoom(1.22); else wiHome(true); return}
   const e=t.closest('[data-wiev]'); if(e){wiSelect({t:'ev',k:e.dataset.wiev}); return}
   const a=t.closest('[data-wias]'); if(a){wiSelect({t:'as',sym:a.dataset.wias}); return}
   if(t.closest('[data-wix]')){WIMP.sel=null; wiSelApply(false); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD()); return}
@@ -30114,7 +30221,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.
 document.addEventListener('change',ev=>{const s=ev.target; if(!s||!s.closest||!s.closest('#wiFilt'))return; const k=s.dataset&&s.dataset.wif; if(!k)return; const was=WIMP.f[k]; WIMP.f[k]=s.value; if(k==='t'&&was!==s.value)wiLoad(true); wiRender()});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&WIMP.sel&&!$('wiSheet').hidden){WIMP.sel=null; wiSelApply(false); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD())}
   if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.closest&&ev.target.closest('[data-wihp]')){ev.preventDefault(); ev.target.closest('[data-wihp]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
-window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,kind:WIMP.kind,events:(wiD()&&wiD().events||[]).length,assets:wiAssets().length,globe:WIMP.G?WIMP.G.state():null,gFail:WIMP.gFail,err:WIMP.err,sel:WIMP.sel}),select:wiSelect};
+window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,kind:WIMP.kind,events:(wiD()&&wiD().events||[]).length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,gFail:WIMP.gFail,err:WIMP.err,sel:WIMP.sel}),select:wiSelect};
 // 17.11 (the owner's proposal 4, "חדשות"): the phone's answer card, what in the news touches the portfolio now: the
 // holdings that moved 3% or more today and whether a news item explains it, else the important items of the period,
 // else that it is quiet. The map is a tab of its own ("מפת השפעה") instead of the first half screen

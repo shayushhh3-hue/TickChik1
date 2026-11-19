@@ -135,7 +135,7 @@ export function extractLibs(body,dir){
   }
   const loader=Object.keys(files).length?`<script>
 // the PDF and Excel libraries, when the page needs them (each once; the PDF reader with its worker)
-window.__tcLib=(function(){var F=${JSON.stringify(files)},DEP={pdf:['pdfworker'],globe:['three']},P={};
+window.__tcLib=(function(){var F=${JSON.stringify(files)},DEP={pdf:['pdfworker']},P={};
   function one(n){if(!F[n])return Promise.resolve(); return P[n]||(P[n]=new Promise(function(ok,no){var s=document.createElement('script');s.src=F[n];s.onload=function(){ok()};s.onerror=function(){P[n]=null;no(new Error('lib '+n))};document.head.appendChild(s)}))}
   return function(n){return Promise.all((DEP[n]||[]).map(one)).then(function(){return one(n)})}})();
 </script>

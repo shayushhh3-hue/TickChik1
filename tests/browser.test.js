@@ -3874,6 +3874,13 @@ test('19.11 TikChik WORLD IMPACT: the globe of what touches the portfolio; the d
     // the history of a holding: its closes, the events, what was said and what followed, the caveat
     await pg.selectOption('#wiHSym','NVDA'); await pg.click('#wiHGo'); await pg.waitForFunction(()=>/סמיכות בזמן אינה סיבתיות/.test(document.getElementById('wiHEv').textContent),null,{timeout:15000});
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#wiHChart svg polyline')));
+    // the flat map (the owner: every event at once): the whole width, the whole world in it, an event opens from it too; the
+    // choice kept on the device
+    await pg.click('[data-wiview="flat"]'); await pg.waitForFunction(()=>{const x=window.__wi.state(); return x.view==='flat'&&x.flat&&x.flat.items>0},null,{timeout:15000});
+    const fl=await pg.evaluate(()=>{const r=document.getElementById('wiStage').getBoundingClientRect(); return {st:window.__wi.state().flat,w:Math.round(r.width),h:Math.round(r.height),grid:Math.round(document.querySelector('#wi .wi-grid').getBoundingClientRect().width),kept:localStorage.getItem('tr_wiview')}});
+    assert.ok(fl.st.items>=12&&fl.st.arcs>=1&&fl.st.s===1,JSON.stringify(fl.st)); assert.ok(fl.w>=fl.grid-2&&fl.h<fl.w/1.8,'the map takes the width, wider than tall: '+JSON.stringify(fl)); assert.equal(fl.kept,'flat');
+    await pg.click('#wiEvL [data-wiev="ev:nvda-q3-report"]'); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(()=>document.getElementById('wiSheet').hidden),false,'an event opens from the flat map too');
+    await pg.keyboard.press('Escape'); await pg.click('[data-wiview="globe"]'); await pg.waitForFunction(()=>window.__wi.state().view==='globe',null,{timeout:5000});
     // the admin's whole world, with the weak links and the log
     await pg.click('[data-wimode="world"]'); await pg.waitForFunction(()=>window.__wi.state().mode==='world'&&!document.getElementById('wiAdm').hidden,null,{timeout:15000});
     assert.match(await pg.evaluate(()=>document.getElementById('wiAdm').innerText),/קשרים חלשים/); assert.ok(await pg.evaluate(()=>window.__wi.state().events)>=s.events);
