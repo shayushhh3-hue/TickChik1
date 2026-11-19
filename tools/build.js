@@ -120,7 +120,9 @@ ${acct}</body>
   return out.length;
 }
 
-const LIBS=[['jspdf',/jsPDF - PDF Document creation/],['xlsx',/xlsx\.js \(C\) 2013-present SheetJS/],['pdfworker',/define\("pdfjs-dist\/build\/pdf\.worker"/],['pdf',/define\("pdfjs-dist\/build\/pdf"/]];
+const LIBS=[['jspdf',/jsPDF - PDF Document creation/],['xlsx',/xlsx\.js \(C\) 2013-present SheetJS/],['pdfworker',/define\("pdfjs-dist\/build\/pdf\.worker"/],['pdf',/define\("pdfjs-dist\/build\/pdf"/],
+  // 19.11 TikChik WORLD IMPACT: three.js (MIT) and the globe over it, fetched when the screen first opens
+  ['three',/TikChik vendored three\.js r169/],['globe',/TikChik WORLD IMPACT globe: the site's own code/]];
 export function extractLibs(body,dir){
   fs.mkdirSync(dir,{recursive:true}); const files={};
   for(const [name,re] of LIBS){
@@ -133,7 +135,7 @@ export function extractLibs(body,dir){
   }
   const loader=Object.keys(files).length?`<script>
 // the PDF and Excel libraries, when the page needs them (each once; the PDF reader with its worker)
-window.__tcLib=(function(){var F=${JSON.stringify(files)},DEP={pdf:['pdfworker']},P={};
+window.__tcLib=(function(){var F=${JSON.stringify(files)},DEP={pdf:['pdfworker'],globe:['three']},P={};
   function one(n){if(!F[n])return Promise.resolve(); return P[n]||(P[n]=new Promise(function(ok,no){var s=document.createElement('script');s.src=F[n];s.onload=function(){ok()};s.onerror=function(){P[n]=null;no(new Error('lib '+n))};document.head.appendChild(s)}))}
   return function(n){return Promise.all((DEP[n]||[]).map(one)).then(function(){return one(n)})}})();
 </script>

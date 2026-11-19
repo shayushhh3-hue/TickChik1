@@ -192,7 +192,8 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   app.get('/api/admin/impact',need('view'),(req,res)=>{try{res.json(impactWorld(store,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7))}))}
     catch(e){log('impact world failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'מפת ההשפעה לא זמינה כרגע.'}})}});
   app.get('/api/admin/impact/audit',need('view'),(req,res)=>res.json({items:auditList(store,{action:'impact.',limit:Math.min(300,+req.query.limit||100)})}));
-  app.post('/api/admin/impact/fix',need('edit'),(req,res)=>{try{res.json(impactFix(store,req.user,req.body||{},{ip:req.ip}))}
+  // a correction is applied at once: the graph is rebuilt with it (the same run as after a reading; a few milliseconds)
+  app.post('/api/admin/impact/fix',need('edit'),(req,res)=>{try{const r=impactFix(store,req.user,req.body||{},{ip:req.ip}); try{impactTask(store,{log})}catch(e){log('impact after a fix failed: '+(e&&e.message||e))} res.json(r)}
     catch(e){const st=e&&e.status||500; res.status(st).json({error:{code:st===403?'permission_denied':st===400?'invalid_argument':'internal',message:String(e&&e.message||e)}})}});
   app.post('/api/admin/impact/run',need('system'),(req,res)=>{try{const r=impactTask(store,{log}); audit(store,{user:req.user,action:'impact.run',target:'impact',detail:r,ip:req.ip}); res.json(r)}
     catch(e){res.status(500).json({error:{code:'internal',message:String(e&&e.message||e)}})}});

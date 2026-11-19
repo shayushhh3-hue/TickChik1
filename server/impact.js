@@ -314,8 +314,10 @@ function structLinks(e,HD,etf,{sectorOf}){
         why:`${sym} היא ${w}% מ-${d.etf&&d.etf!==F?d.etf+' (הקרן שהקרן שלך עוקבת כמוה)':F} לפי אחזקות הקרן${d.asOf?' ('+d.asOf.slice(8,10)+'.'+d.asOf.slice(5,7)+')':''}`,basis:'structure',arts:[],st:'auto',
         ev:[{t:`אחזקות הקרן מ-${d.src||'האתר של הקרן'}${d.asOf?', נכון ל-'+d.asOf:''}`,c:'fact'}]})}}
   // a broad market fund and an event of the whole market (the reading says "macro"): a weak, general link, said to be so
-  const macro=e.macro&&e.links.some(l=>l.to.startsWith('fac:'))&&eventMacro(e);
-  if(macro)for(const h of HD.pos){if(!h.fund||out.some(o=>o.to==='fund:'+h.sym))continue; const f=e.links.find(l=>l.to.startsWith('fac:'));
+  // 19.11: only a fund of the event's own market (an Israeli index fund and the Bank of Israel, an American one and the Fed),
+  // or any broad fund for an event of no country: a rate decision in Washington is not a link to a Tel Aviv index by itself
+  const macro=e.macro&&e.links.some(l=>l.to.startsWith('fac:'))&&eventMacro(e), mkt=s=>/^(TLV:|\d)/.test(s)||/^TA\d+$/.test(s)?'IL':'US';
+  if(macro)for(const h of HD.pos){if(!h.fund||out.some(o=>o.to==='fund:'+h.sym)||(e.cc.length&&!e.cc.includes(mkt(h.sym))))continue; const f=e.links.find(l=>l.to.startsWith('fac:'));
     out.push({id:f.to+'>fund:'+h.sym,from:f.to,to:'fund:'+h.sym,dir:null,s:1,conf:'low',confWhy:'כלל כללי: אירוע של השוק כולו נוגע לקרן רחבה',rel:'mid',direct:false,how:'broad',hz:f.hz,
       why:`${h.sym} היא קרן רחבה; לפי הקריאה האירוע עשוי לנגוע במניות רבות במקביל`,basis:'rules',arts:[],st:'auto',ev:[]})}
   return out;
@@ -333,8 +335,9 @@ function pathsTo(e,assets,extra,{maxHops=6,perAsset=3}={}){
   const out=[]; for(const L of found.values()){L.sort((a,b)=>better({direct:a.direct,s:a.s,c:a.conf,hops:a.hops},{direct:b.direct,s:b.s,c:b.conf,hops:b.hops})?-1:1); out.push(...L.slice(0,perAsset))}
   return {paths:out,all};
 }
-const nodeLabel=(id,coName)=>{const [t,v]=[id.slice(0,id.indexOf(':')),id.slice(id.indexOf(':')+1)];
-  return t==='cty'?(CC_HE[v]||v):t==='fac'?(FAC_HE[v]||v):t==='sec'?(SEC_HE[v]||v):t==='co'||t==='fund'?(coName(v)||v):v};
+// a node's short label (a company by its ticker; its name apart, for a tooltip)
+const nodeLabel=(id)=>{const [t,v]=[id.slice(0,id.indexOf(':')),id.slice(id.indexOf(':')+1)];
+  return t==='cty'?(CC_HE[v]||v):t==='fac'?(FAC_HE[v]||v):t==='sec'?(SEC_HE[v]||v):v};
 
 // the asset's place: a share at its headquarters (or its exchange, said to be), a fund or an index at its market
 function assetLoc(sym,fund,coLoc){if(fund)return /^TLV:|^\d{5,9}$/.test(sym)?marketPt('IL'):marketPt('US'); return coLoc(sym)}
@@ -379,7 +382,7 @@ export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
   const ev=out.slice(0,limit), keepK=new Set(ev.map(e=>e.k));
   const links=[...usedL.values()].filter(l=>keepK.has(l.ek));
   const nodes={}; for(const e of ev){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const p of e.paths)for(const n of p.nodes)if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
-      nodes[n]={t,label:nodeLabel(n,coName),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?(assets.get(n)||{}).loc||coLoc(n.slice(3)):t==='fund'?(assets.get(n)||{}).loc||null:null,mine:assets.has(n)}}}
+      nodes[n]={t,label:nodeLabel(n),...(t==='co'||t==='fund'?{name:coName(n.slice(n.indexOf(':')+1))}:{}),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?(assets.get(n)||{}).loc||coLoc(n.slice(3)):t==='fund'?(assets.get(n)||{}).loc||null:null,mine:assets.has(n)}}}
   // the portfolio's line: the value and today's move only when every price is known (else said to be partial)
   const pf={total:HD.total,n:HD.pos.length,known:HD.wOk,day:HD.wOk&&dayKnown?Math.round(dayV):null,dayPct:HD.wOk&&dayKnown&&HD.total?Math.round(dayV/(HD.total-dayV)*1e4)/100:null,usdPct:HD.usdPct,
     fresh:worstFresh(A)};
@@ -421,7 +424,7 @@ export function impactWorld(store,{now=new Date(),days=7,limit=200}={}){
   const nodes={}; const coLoc=sym=>{let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){} return hqOf(sym,{fix:FX.hq||null,about})||marketPt(/^TLV:/.test(sym)?'IL':'US')};
   const list=evs.slice(0,limit);
   for(const e of list){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const l of e.links)for(const n of [l.from,l.to])if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
-      nodes[n]={t,label:nodeLabel(n,()=>null),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}}
+      nodes[n]={t,label:nodeLabel(n),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}}
   return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...e,catHe:CAT_HE[e.cat]})),nodes,indices:indicesOf(Q,now),
     diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,fails,stale:stale.slice(0,80),fixes:Object.keys(FX.link||{}).length+Object.keys(FX.ev||{}).length+Object.keys(FX.hq||{}).length+Object.keys(FX.alias||{}).length},
     filters:filtersOf(list,[]),tiers:REL_HE};
