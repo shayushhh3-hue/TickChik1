@@ -83,7 +83,7 @@ export function holdingsOf(P,Q){
 
 // ---- the events: the readings of the last days, joined by their event key ----
 const LV_RANK={crit:3,imp:2,watch:1,info:0};
-export function eventsOf(store,{now=new Date(),days=3,visible=null}={}){
+export function eventsOf(store,{now=new Date(),days=3,visible=null,alias=true}={}){
   const X=store.getDoc('research/newsx').data||{}, N=store.getDoc('research/news').data||{}, by=X.by||{}, from=new Date(now.getTime()-days*DAY).toISOString(), arts=new Map();
   for(const it of (N.items||[]))if(it&&it.link)arts.set(newsId(it.link),{...it,id:newsId(it.link),src:'co'});
   for(const it of (X.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
@@ -93,6 +93,12 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null}={}){
     // alert of its own; those are one event (its first symbol and the day) until Claude reads them and names the event
     const day=String(a.at||a.seen||'').slice(0,10), sym0=((x.aff||[]).find(z=>z&&z.sym)||{}).sym||((a.syms||[])[0])||'';
     const k=x.ev?'ev:'+x.ev:(x.rules&&sym0?`rd:${sym0}:${day}`:'id:'+a.id), e=E.get(k)||{k,arts:[]}; e.arts.push({a,x}); E.set(k,e)}
+  // 19.11: two keys of one event, joined by the impact engine (server/impact.js) or by an admin's hand, are one event here
+  // too: one alert per event, whatever the number of keys the readings gave it (impact.js asks for the raw groups)
+  if(alias){let A={}; try{A={...((store.getDoc('research/impact').data||{}).alias||{})}; const F=store.getDoc('research/impactfix').data||{};
+      for(const [k,v] of Object.entries(F.alias||{}))if(k!==v)A[k]=v; for(const k of Object.keys(F.split||{}))delete A[k]}catch(e){A={}}
+    const root=k=>{let r=k, n=0; while(A[r]&&n++<8)r=A[r]; return r};
+    for(const from of Object.keys(A)){const to=root(from), a=E.get(from), b=E.get(to); if(a&&b&&a!==b){b.arts.push(...a.arts); E.delete(from)}}}
   for(const e of E.values()){
     // the reading that stands for the event: Claude's before the rules', the higher level, then the newest
     e.arts.sort((p,q)=>((p.x.rules?1:0)-(q.x.rules?1:0))||(LV_RANK[q.x.level]-LV_RANK[p.x.level])||(String(q.a.at||q.a.seen)<String(p.a.at||p.a.seen)?-1:1));

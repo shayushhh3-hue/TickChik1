@@ -14,6 +14,7 @@ import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
+import {impactWorld,impactFix,impactTask} from '../impact.js';
 import {yahooStatus,marketData, splitsAdmin} from './yahoo.js';
 import {keysList,keyTest} from './keys.js';
 import {runsView} from './runs.js';
@@ -186,6 +187,15 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   app.get('/api/admin/yahoo',need('view'),(req,res)=>res.json({status:yahooStatus(store,{days:Math.max(1,Math.min(30,+req.query.days||7))}),market:marketData(store),splits:splitsAdmin(store)}));
   app.get('/api/admin/world',need('view'),(req,res)=>{const M=worldModel(store,{days:+req.query.days||3}); let brief=null; try{brief=JSON.parse(store.getMeta('worldBrief:'+M.days)||'null')}catch(e){} res.json({...M,brief,keyOff:!process.env.ANTHROPIC_API_KEY&&!app.locals.worldAsk})});
   const WB=new Map();
+  // 19.11 TikChik WORLD IMPACT, the admin's view: every event and every link, with the sources, the duplicates, the weak
+  // links, the feeds' failures and the assets without a fresh price; the corrections need "edit" and are audited one by one
+  app.get('/api/admin/impact',need('view'),(req,res)=>{try{res.json(impactWorld(store,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7))}))}
+    catch(e){log('impact world failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'מפת ההשפעה לא זמינה כרגע.'}})}});
+  app.get('/api/admin/impact/audit',need('view'),(req,res)=>res.json({items:auditList(store,{action:'impact.',limit:Math.min(300,+req.query.limit||100)})}));
+  app.post('/api/admin/impact/fix',need('edit'),(req,res)=>{try{res.json(impactFix(store,req.user,req.body||{},{ip:req.ip}))}
+    catch(e){const st=e&&e.status||500; res.status(st).json({error:{code:st===403?'permission_denied':st===400?'invalid_argument':'internal',message:String(e&&e.message||e)}})}});
+  app.post('/api/admin/impact/run',need('system'),(req,res)=>{try{const r=impactTask(store,{log}); audit(store,{user:req.user,action:'impact.run',target:'impact',detail:r,ip:req.ip}); res.json(r)}
+    catch(e){res.status(500).json({error:{code:'internal',message:String(e&&e.message||e)}})}});
   app.post('/api/admin/world/brief',need('view'),async(req,res)=>{const last=WB.get(req.user.id)||0; if(Date.now()-last<20e3)return res.status(429).json({error:{code:'rate_limited',message:'התקציר הקודם עוד נכתב.'}}); WB.set(req.user.id,Date.now());
     try{res.json(await worldBrief(store,req.user,{days:+(req.body||{}).days||3,force:!!(req.body||{}).force,ask:app.locals.worldAsk||null,log}))}
     catch(e){res.status(e.message==='upstream'?502:400).json({error:{code:e.message,message:{upstream:'צ׳יקו לא ענה כרגע. נסה שוב בעוד רגע.',no_answer:'התקציר לא הגיע במבנה הנכון. נסה שוב.'}[e.message]||e.message}})}});

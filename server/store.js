@@ -117,6 +117,10 @@ export function access(user,p){
   if(seg[0]==='watch')return seg[1]===user.id?'rw':'';
   if(seg[0]==='research'&&seg[1]==='newsarc')return owner?'rw':'';   // the archive of the readings about everybody's securities: the owner's alone
   if(seg[0]==='research'&&/^pressure/.test(seg[1]||''))return isOwner(user)?'rw':'';   // 8.11: the pressure gauge and its record: the owner's alone until it is calibrated
+  // 19.11 TikChik WORLD IMPACT: the global event graph, its daily snapshots and the admins' corrections are the management's;
+  // read-only even for them through this API (a correction goes through /api/admin/impact/fix, which checks "edit" and is
+  // audited). A user's own view comes from /api/impact, cut on the server to their portfolio
+  if(seg[0]==='research'&&/^impact/.test(seg[1]||''))return owner?'r':'';
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(OWN_DOCS.has(seg[0]))return isOwner(user)?'rw':'';

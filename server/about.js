@@ -16,7 +16,8 @@ const SYM=/^[A-Z][A-Z.\-]{0,6}$/;
 // FMP's profile: the description and a few facts; null when there is no description to read
 export function profAbout(j,now=new Date()){const o=Array.isArray(j)?j[0]:j; if(!o||typeof o!=='object')return null; const desc=str(o.description,2400); if(desc.length<60)return null;
   const emp=+String(o.fullTimeEmployees==null?'':o.fullTimeEmployees).replace(/[^\d]/g,'')||null;
-  return {desc,country:str(o.country,3).toUpperCase()||null,emp:emp>0?emp:null,industry:str(o.industry,60)||null,sector:str(o.sector,40)||null,at:now.toISOString()}}
+  // 19.11: the city and the state too (the same answer), for the company's place on the globe (server/impactgeo.js)
+  return {desc,country:str(o.country,3).toUpperCase()||null,...(str(o.city,60)?{city:str(o.city,60)}:{}),...(str(o.state,20)?{state:str(o.state,20)}:{}),emp:emp>0?emp:null,industry:str(o.industry,60)||null,sector:str(o.sector,40)||null,at:now.toISOString()}}
 
 // 17.11 fix (the owner: "a click on a competitor does not open that share's page"): the shares the site has a page for,
 // from the page's list of securities (site/lib/symdb.txt, written by the build). FMP's peers also name shares that are not

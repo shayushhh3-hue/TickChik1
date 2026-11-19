@@ -34,6 +34,12 @@ const MOVES=['up','down','unclear'];
 export const STAGES=['developing','pending','updated','done','unknown'];
 export const STAGE_HE={developing:'מתפתח',pending:'ממתין להחלטה',updated:'עודכן',done:'הושלם',unknown:'לא ידוע'};
 const TICK=/^[A-Z][A-Z.\-]{0,6}$/;
+// 19.11 TikChik WORLD IMPACT: the event's category (sixteen, the owner's list) and the countries it happens in or touches
+// (ISO 3166 alpha-2). Older readings have neither; server/impact.js then places them by rules (catOf, ccOf), said to be so
+export const CATS=['geo','war','regulation','rates','macro','energy','ai','chips','finance','industry','trade','commodities','ma','earnings','supply','disaster'];
+export const CAT_HE={geo:'גיאופוליטיקה',war:'מלחמות',regulation:'רגולציה',rates:'ריבית',macro:'מאקרו',energy:'אנרגיה',ai:'בינה מלאכותית',chips:'שבבים',finance:'פיננסים',industry:'תעשייה',
+  trade:'סחר ומכסים',commodities:'סחורות',ma:'מיזוגים ורכישות',earnings:'דוחות',supply:'שרשראות אספקה',disaster:'אסונות טבע'};
+const CC_RE=/^[A-Z]{2}$/;
 
 // ---- the general market news (Finnhub /news): the last day, newest first. 30.10: four of Finnhub's categories (the
 // market in general, mergers, currencies, crypto), each article once, with the category it came from ----
@@ -84,7 +90,9 @@ export function newsPrompt(arts,known=[]){
 15. secx: לכל ענף שב-sectors: {"g":"הענף","via":"נושא מ-fac שדרכו הענף מושפע, או null","dir":"pos|neg|mixed|unclear","why":"משפט אחד: מסלול ההשפעה האפשרי על הענף"}.
 16. ב-aff, לחברה שאינה direct הוסף "via": הענף מתוך sectors שדרכו היא מושפעת, אם יש.
 17. st: איפה האירוע עומד לפי הכתבה: developing = עוד מתפתח; pending = ממתין להחלטה, לאישור או למועד ידוע; updated = נעשה צעד (החלטה התקבלה, הסכם נחתם, דוח פורסם) והעניין נמשך; done = האירוע הסתיים ואין המשך צפוי; unknown = הכתבה לא אומרת.
-החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","kind":"news","aff":[],"sectors":[],"themes":[],"regions":[],"occ":null,"fac":[],"secx":[],"macro":false,"unknown":"","more":"","ev":"","st":"unknown"}
+18. cat: הקטגוריה העיקרית של האירוע, אחת מתוך ${CATS.join('|')} (geo = גיאופוליטיקה, war = מלחמה ועימות צבאי, rates = ריבית ובנקים מרכזיים, macro = נתוני מאקרו, trade = סחר, מכסים וסנקציות, commodities = סחורות ומתכות, ma = מיזוג ורכישה, earnings = דוחות וצפי, supply = שרשרת אספקה, disaster = אסון טבע, industry = תעשייה ועסקים שאינם באחת האחרות).
+19. cc: עד 4 מדינות שבהן האירוע קורה או שהוא נוגע להן ישירות, בקוד ISO של שתי אותיות (US, IL, CN, DE...). רק מה שכתוב בכתבה או ברור ממנה; אחרת מערך ריק.
+החזר JSON בלבד: מערך באורך ${arts.length}, איבר לכל כתבה לפי הסדר, במבנה {"i":0,"he":"","what":"","type":"","level":"","dir":"","cert":"","kind":"news","aff":[],"sectors":[],"themes":[],"regions":[],"occ":null,"fac":[],"secx":[],"macro":false,"unknown":"","more":"","ev":"","st":"unknown","cat":"","cc":[]}
 
 ${known.length?`KNOWN_EVENTS: אירועים שכבר נקראו בימים האחרונים. אם כתבה עוסקת באחד מהם, השתמש באותו ev בדיוק, ואל תמציא מפתח חדש לאותו אירוע.
 ${JSON.stringify(known)}
@@ -134,7 +142,9 @@ export function cleanX(raw){
     .filter(Boolean).filter((x,i,A)=>A.findIndex(y=>y.g===x.g)===i).slice(0,4);
   for(const a of aff){const r=(Array.isArray(raw.aff)?raw.aff:[]).find(z=>z&&String(z.sym||'').toUpperCase()===a.sym); if(a.how!=='direct'&&r&&sectors.includes(r.via))a.via=r.via}
   const st=STAGES.includes(raw.st)?raw.st:'unknown';
-  return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:factFix(str(raw.more,400)),ev:ev||null,st};
+  // 19.11: the category and the countries (both optional: an answer without them is still a reading)
+  const cat=CATS.includes(raw.cat)?raw.cat:null, cc=(Array.isArray(raw.cc)?raw.cc:[]).map(s=>typeof s==='string'?s.trim().toUpperCase():'').filter(s=>CC_RE.test(s)).filter((x,i,A)=>A.indexOf(x)===i).slice(0,4);
+  return {he,what,type,level,dir,cert,kind,aff,sectors,themes,regions,occ,fac,secx,macro:raw.macro===true,unknown:str(raw.unknown,300),more:factFix(str(raw.more,400)),ev:ev||null,st,...(cat?{cat}:{}),...(cc.length?{cc}:{})};
 }
 // Claude reads a batch; the answers by article index. Nothing is written for an article that got no usable answer
 // the JSON array in an answer, whole or cut short: the text from the first "[", parsed as is, else cut back to the last
