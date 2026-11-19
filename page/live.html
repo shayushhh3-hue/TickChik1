@@ -29875,7 +29875,9 @@ function wiOpen(){
   // from the management center ("לגלובוס ההשפעה", /?wi=world#news): the box opens, and the whole world once the account is known
   if(WIMP.want===undefined){WIMP.want=/[?&]wi=world\b/.test(location.search)?'world':null; if(WIMP.want){const b=$('ixMapD'); if(b)b.open=true}}
   if(WIMP.want==='world'&&window.__tc){WIMP.want=null; if(wiAdminOk())WIMP.mode='world'}
-  const d=$('ixMapD'); if(!d||!d.open||!$('wi'))return; WIMP.open=true;
+  const d=$('ixMapD'); if(!d||!d.open||!$('wi'))return;
+  // not on the screen (a phone shows the map only in its own tab): nothing is fetched or drawn, not even the library
+  if(!$('wi').getClientRects().length)return; WIMP.open=true;
   const adm=document.querySelector('[data-wimode="world"]'); if(adm)adm.hidden=!wiAdminOk();
   if(!WIMP.hist.to){const t=new Date(); WIMP.hist.to=t.toISOString().slice(0,10); WIMP.hist.from=new Date(t.getTime()-90*864e5).toISOString().slice(0,10)}
   wiLoad(false); if(WIMP.view==='globe')wiGlobe(); wiRender()}
@@ -29930,7 +29932,8 @@ function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==
   wiFreshBtn(d); wiFiltFill(d); wiCounts(d);
   const msg=$('wiMsg'); if(msg){let t=''; if(WIMP.err)t=WIMP.err; else if(!d)t=WIMP.busy?'המפה נבנית…':''; else if(me&&!(d.assets||[]).length)t='כשיהיו ניירות בתיק, הגלובוס יראה מה בעולם נוגע להם.'; else if(!wiEvents().length&&WIMP.kind!=='idx')t=me?'אין כרגע אירוע עם מסלול מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
     if(WIMP.gFail&&WIMP.view==='globe')t=WIMP.gFail; msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
-  if(WIMP.G&&WIMP.view==='globe'){try{WIMP.G.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}
+  // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
+  if(WIMP.G&&WIMP.view==='globe'){const sig=[WIMP.mode,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',wiSmall()].join('|'); if(sig!==WIMP.gsig){WIMP.gsig=sig; try{WIMP.G.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}
   wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiHistCtl(); wiAdmRender(d);
   const f=$('wiFoot'); if(f)f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}
 function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(d&&d.assets)||[];
