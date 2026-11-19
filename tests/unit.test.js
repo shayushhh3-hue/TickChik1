@@ -968,7 +968,8 @@ test('Finnhub: the first source for a US ticker when its key is set, and the fre
 });
 
 test('the site: the PDF and Excel libraries in files of their own, loaded when needed, with a version in the address',async()=>{
-  const {buildSite}=await import('../tools/build.js'); const root=new URL('..',import.meta.url).pathname; buildSite(root);
+  // 19.11: a path on Windows too (".pathname" gave "/C:/…" with the Hebrew letters escaped)
+  const {buildSite}=await import('../tools/build.js'); const root=(await import('node:url')).fileURLToPath(new URL('..',import.meta.url)); buildSite(root);
   const h=fs.readFileSync(root+'site/index.html','utf8'), page=fs.readFileSync(root+'page/live.html','utf8');
   assert.ok(!/SheetJS|jsPDF - PDF Document|define\("pdfjs-dist\/build\/pdf"|TikChik vendored three\.js|TikChik WORLD IMPACT globe: the site/.test(h),'not inside the page');
   for(const n of ['jspdf','xlsx','pdf','pdfworker','three','globe'])assert.ok(fs.statSync(root+'site/lib/'+n+'.js').size>100000,n);
@@ -1980,7 +1981,7 @@ test('1.11 the readings: an answer cut short by the token budget is used up to t
   assert.equal(salvageArray('no json here'),null); assert.equal(salvageArray('[{"i":0,"he":'),null);
   const calls=[]; const f=async(u,o)=>{calls.push(JSON.parse(o.body)); return new Response(JSON.stringify({content:[{type:'text',text:'[{"i":0,"he":"כותרת","what":"מה קרה","type":"company","level":"info","dir":"unclear","cert":"fact"},{"i":1,"he":"כותרת 2","what":"מה'}],stop_reason:'max_tokens'}),{status:200})};
   process.env.ANTHROPIC_API_KEY='sk-test'; const got=await analyzeBatch([{title:'a',link:'https://x/1'},{title:'b',link:'https://x/2'}],{fetch:f}); delete process.env.ANTHROPIC_API_KEY;
-  assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,1400*2+800);
+  assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,2400*2+800,'17.11 (ca63522): 2,400 tokens an article');
 });
 
 test('1.11 alerts: articles read by the rules about the same company on the same day are one event, not one alert each',async()=>{

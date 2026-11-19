@@ -9,9 +9,11 @@ import {bump, countersSince, setCounterStore} from '../server/admin/counter.js';
 import {createHash} from 'node:crypto';
 import {keysList,keyTest} from '../server/admin/keys.js';
 import {fmpPass,fmpRatiosParse,fmpGradesParse,fmpEarningsParse,fmpKey,fmpKeyName,fmpGradesListParse,fmpTargetParse} from '../server/fmp.js';
+import {fileURLToPath} from 'node:url';
 
 process.env.OWNER_EMAIL='owner@example.com'; process.env.OWNER_PASSWORD='owner-pass-123'; process.env.ANTHROPIC_API_KEY=''; process.env.JOBS='0';
-const PAGE=new URL('../page/live.html',import.meta.url).pathname;
+// 19.11: a path on Windows too (".pathname" gave "/C:/…" with the Hebrew letters escaped, and the page was not read)
+const PAGE=fileURLToPath(new URL('../page/live.html',import.meta.url));
 const mk=()=>{const s=new Store(':memory:'); adminSchema(s); return s};
 const users=s=>{const o=s.addUser({email:'o@x.co',password:'password1',role:'owner'}), a=s.addUser({email:'a@x.co',password:'password1',role:'admin'}), f=s.addUser({email:'f@x.co',password:'password1',role:'friend'}), a2=s.addUser({email:'a2@x.co',password:'password1',role:'admin'});
   return {o:s.userById(o.id),a:s.userById(a.id),f:s.userById(f.id),a2:s.userById(a2.id)}};
@@ -95,7 +97,8 @@ test('product intelligence: a summary of everybody needs three active people, el
   assert.equal(nw.kind,'screen'); assert.ok(nw.name&&nw.name!=='news','the screen\'s name from the page: '+nw.name);
   const C=catalog(PAGE); assert.ok(Object.keys(C.tabs).length>=5,'tabs: '+Object.keys(C.tabs).length); assert.ok(Object.keys(C.secs).length>=20,'sections: '+Object.keys(C.secs).length);
   // 9.11: a screen is named by its tab, not by the first button of the copy that leads to it
-  assert.equal(C.tabs.search,'מחקר'); assert.equal(C.tabs.state,'מה קורה בתיק'); assert.equal(C.tabs.pots,'חסכונות לפי מטרה'); assert.equal(C.tabs.overview,'סקירה');
+  // 17.11 (the owner, d97539e): the research screen is "מחקר שוק"
+  assert.equal(C.tabs.search,'מחקר שוק'); assert.equal(C.tabs.state,'מה קורה בתיק'); assert.equal(C.tabs.pots,'חסכונות לפי מטרה'); assert.equal(C.tabs.overview,'סקירה');
   for(const [k,v] of Object.entries(C.tabs))assert.ok(v.length<=40&&!/[.!?]$/.test(v),k+': a name, not a sentence: '+v);
   assert.ok(P.never.length>0&&!P.never.some(x=>x.k==='tab:news'));
   // the funnel of the account's steps

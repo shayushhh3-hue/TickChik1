@@ -703,7 +703,10 @@ test('"מה חדש" and "לאן להגיע?": every item is dated and versioned,
   assert.equal(ids.size,W.GO.length,'no two with one id');
   for(const g of W.GO)assert.ok(g.fn||W.TABS.includes(g.tab),'a screen that exists: '+g.id);
   for(const n of W.NEWS){assert.match(n.at,/^\d{4}-\d\d-\d\d$/,n.t); assert.ok(n.t&&n.d,n.t); if(n.go)assert.ok(ids.has(n.go)||n.go==='goq','"קח אותי לשם" leads somewhere: '+n.t)}
-  assert.ok(W.NEWS[0].v&&W.NEWS.every((n,i)=>i===0||(n.v||n.at+'.1')<=(W.NEWS[i-1].v||W.NEWS[i-1].at+'.1')),'the newest first, so the release adds at the top');
+  // 19.11: a version is a day and a number ("2026-11-17.10" after "2026-11-17.9"), compared as the page compares them (newsVK)
+  const vk=load(['newsVK'],{...G}).newsVK, V=n=>vk(n.v||n.at+'.1');
+  assert.ok(W.NEWS[0].v&&W.NEWS.every((n,i)=>i===0||V(n)<=V(W.NEWS[i-1])),'the newest first, so the release adds at the top');
+  assert.ok(vk('2026-11-17.10')>vk('2026-11-17.9')&&vk('2026-11-18.1')>vk('2026-11-17.36'),'ten releases in a day and more: the newer is newer');
 });
 
 test('the match to the portfolio: what the viewer cares about weighs about twice as much, the weights still add to 100',()=>{
