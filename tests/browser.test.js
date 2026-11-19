@@ -1438,7 +1438,9 @@ test('my details and my choices: the profile keeps the personal details, צ׳י�
     await pg.click('#profDlg .prof-f .btn.pri'); await pg.waitForTimeout(1500);
     const pr=store.getDoc('settings/main').data.profile;
     assert.deepEqual({first:pr.first,birth:pr.birth,country:pr.country,city:pr.city,fam:pr.fam,kids:pr.kids,job:pr.job},{first:'שי',birth:'1988-'+md,country:'IL',city:'תל אביב',fam:'married',kids:2,job:'emp'});
-    const me=await pg.evaluate(()=>document.getElementById('meList').innerText);
+    // 17.11 (the owner's proposal 19): on a phone the profile is one line (it opens the dialog); its details stay in the list for a wider screen
+    const me=await pg.evaluate(()=>document.getElementById('meList').textContent);
+    assert.match(await pg.evaluate(()=>document.getElementById('meOne').textContent),/^שי/,'the profile in one line');
     assert.match(me,new RegExp('גיל '+age)); assert.match(me,/תל אביב, ישראל/); assert.match(me,/נשוי, 2 ילדים/); assert.match(me,/שכיר/);
     assert.deepEqual((await pg.evaluate(()=>window.__person())).about_me,{age_years:age,family_status:'נשוי',children:2,employment:'שכיר',country_of_residence:'ישראל'},'the age, never the date; no city');
     // the dialog opens again with what was saved
@@ -2865,7 +2867,8 @@ test('4.11 the long screens in parts: one part at a time, the choice kept, a lin
   const a=await pg.evaluate(()=>({chips:[...document.querySelectorAll('[data-pane="settings"] .ptnav .chip')].map(c=>c.textContent),on:(document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]')||{}).textContent,
     rules:!!document.getElementById('rMaxPos').offsetParent,me:!!document.getElementById('meSec').offsetParent,h:document.documentElement.scrollHeight}));
   assert.ok(['פרופיל','פרטיות','חדשות','התראות','חשבונות וכללים'].every(x=>a.chips.includes(x)),JSON.stringify(a.chips)); assert.equal(a.on,'פרופיל'); assert.equal(a.me,true); assert.equal(a.rules,false,'the rules are in another part');
-  await pg.click('[data-pane="settings"] .ptnav [data-pt="settings:money"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>!!document.getElementById('rMaxPos').offsetParent),true);
+  // 17.11 (the owner's proposal 19): on a phone the settings are one list; a row opens its topic, and "כל ההגדרות" leads back
+  await pg.click('[data-setgo="hRules"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>!!document.getElementById('setBack').offsetParent&&!document.getElementById('acctSec').offsetParent),true,'the rules as a page of their own'); assert.equal(await pg.evaluate(()=>!!document.getElementById('rMaxPos').offsetParent),true);
   // a link to a section opens its part
   await pg.evaluate(()=>window.__chico.go('set:nwSetSec')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>!!document.getElementById('nwSetSec').offsetParent&&document.querySelector('[data-pane="settings"] .ptnav [aria-pressed="true"]').textContent),'חדשות');
   // kept for next time

@@ -3550,7 +3550,7 @@ section[aria-labelledby="hTrend"] .legend i.lg-l2::after{background:var(--s2)}
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why,#repAns,.cat-seg,.cat-h{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why,#repAns,.cat-seg,.cat-h,#meOne,.set-gh,.vw-t,.set-nav,.set-back{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -4029,6 +4029,39 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body #jrnBox details.jrn-new:not([open])>summary::-webkit-details-marker{display:none}
   html body #jrnBox details.jrn-new:not([open])>summary::before{content:"+";font-size:18px;line-height:1}
   html body #jrnBox .jrn-mine{margin:16px 0 4px;font-size:15px;font-weight:600}
+  /* 17.11 proposal 19, "הגדרות": one grouped list; each choice a row with its value; each topic a page of its own */
+  html body [data-pane="settings"]>.pgrows.pgrows.pgrows{display:none!important}
+  html body .set-back{display:none}
+  html body [data-pane="settings"]:has(#meSec.pt-off,#meSec.so-off) .set-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;background:none;border:0;padding:0;font:inherit;font-size:15px;font-weight:600;color:var(--accent-ink);cursor:pointer;margin:0 0 4px}
+  html body .set-back::before{content:"›";font-size:22px;line-height:1}
+  html body [data-pane="settings"] .so-off{display:none!important}
+  html body [data-pane="settings"] :is(h2,h3)[tabindex="-1"]:focus{outline:none}
+  html body #meSec:has(#meOne:not([hidden]))>.row{display:none!important}
+  html body #meSec>.panel{background:none!important;border:0!important;padding:0!important;gap:0!important}
+  html body #meOne{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:56px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:inherit;font-size:15px;font-weight:600;color:var(--ink);text-align:start;cursor:pointer;order:-3}
+  html body #meOne[hidden]{display:none!important}
+  html body #meOne::after{content:"‹";color:var(--muted);font-size:20px;font-weight:400;flex:none}
+  html body #meList{order:-2;margin:8px 0 0}
+  html body #meList>div:not(.me-fill){display:none!important}
+  html body .set-gh{margin:20px 0 6px;font-size:13px;font-weight:600;color:var(--ink2)}
+  html body #setDispH{order:0}
+  html body #meSec .viewwrap{display:block;margin:0;background:var(--surface);border:1px solid var(--line);border-bottom-width:0;padding:0 14px}
+  html body #meSec .vw-theme{order:1;border-radius:8px 8px 0 0} html body #meSec .vw-size{order:2} html body #meSec .vw-con{order:3} html body #meSec .vw-mot{order:4} html body #meSec .vw-num{order:5} html body #meSec .vw-view{order:6}
+  html body #meSec .vw-home{order:7;border-bottom-width:1px;border-radius:0 0 8px 8px}
+  html body #meSec .viewwrap>.sub{display:none!important}
+  html body #meSec .viewwrap:not(.open)>.chips{display:none!important}
+  html body #meSec .viewwrap.open>.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 14px}
+  html body #meSec .vw-t{display:flex;align-items:center;gap:8px;width:100%;min-height:52px;background:none;border:0;padding:0;font:inherit;font-size:15px;color:var(--ink);text-align:start;cursor:pointer}
+  html body #meSec .vw-t .vw-v{margin-inline-start:auto;color:var(--ink2);font-size:14px}
+  html body #meSec .vw-t::after{content:"‹";color:var(--muted);font-size:20px;flex:none}
+  html body #meSec .viewwrap.open .vw-t::after{content:"⌃"}
+  html body .set-nav{display:block;margin:0 0 8px}
+  html body .set-l{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  html body .set-l li+li{border-top:1px solid var(--line)}
+  html body .set-l button{display:flex;align-items:center;gap:8px;width:100%;min-height:52px;padding:0 14px;background:none;border:0;font:inherit;font-size:15px;color:var(--ink);text-align:start;cursor:pointer}
+  html body .set-l button .v{margin-inline-start:auto;color:var(--ink2);font-size:14px}
+  html body .set-l button::after{content:"‹";color:var(--muted);font-size:20px;flex:none}
+  html body .set-l button:not(:has(.v))::after{margin-inline-start:auto}
   /* fields */
   html body .pane :is(select,textarea,input[type="text"],input[type="number"],input[type="search"],input[type="email"],.srch,.ix-in){border-radius:8px!important}
   /* 17.11 (the owner: "some parts bold, some not; huge type that does not fit"): one size for every pill and toggle (14, 500), one weight for every bold (600; the page's 700 and 800 are 600 now), the split's figures smaller */
@@ -4951,21 +4984,40 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
     </section>
   </div>
   <div class="pane" data-pane="settings" hidden>
+    <button type="button" class="set-back" id="setBack" data-setback>כל ההגדרות</button>
     <section aria-labelledby="hMe" id="meSec">
       <div class="row"><h2 id="hMe">הפרופיל שלי</h2><button class="btn sm" type="button" data-prof="edit" id="meEdit">לעריכה</button></div>
       <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+        <button type="button" class="me-one" id="meOne" data-prof="edit" hidden></button>
         <dl class="medl" id="meList" hidden></dl>
         <p class="note" id="meNote" style="max-width:none"></p>
-        <div class="viewwrap"><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
+        <h3 class="set-gh" id="setDispH">תצוגה ונגישות</h3>
+        <div class="viewwrap vw-view"><button type="button" class="vw-t" aria-expanded="false"><span>כמה פרטים להציג</span> <span class="vw-v"></span></button><span class="sub">כמה פרטים להציג באתר?</span><div class="chips viewsw" role="group" aria-label="רמת הפירוט באתר"><button class="chip" type="button" data-view="calm" aria-pressed="false">תצוגה פשוטה</button><button class="chip" type="button" data-view="full" aria-pressed="true">תצוגה מלאה</button></div></div>
         <p class="note" style="margin:0;max-width:none">פשוטה: בלי החלקים המתקדמים. מלאה: הכול.</p>
-        <div class="viewwrap" role="group" aria-label="מצב יום או לילה"><span class="sub">מצב תצוגה</span><div class="chips"><button class="chip" type="button" data-themeset="light" aria-pressed="true">☀️ יום</button><button class="chip" type="button" data-themeset="dark" aria-pressed="false">🌙 לילה</button><button class="chip" type="button" data-themeset="auto" aria-pressed="false">לפי הטלפון</button></div></div>
-        <div class="viewwrap" role="group" aria-label="סגנון דף הבית בטלפון"><span class="sub">דף הבית בטלפון</span><div class="chips"><button class="chip" type="button" data-homeset="clean" aria-pressed="true">כרטיס נקי</button><button class="chip" type="button" data-homeset="bento" aria-pressed="false">פסיפס</button></div></div>
-        <div class="viewwrap" role="group" aria-label="גודל הטקסט"><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
-        <div class="viewwrap" role="group" aria-label="ניגודיות"><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
-        <div class="viewwrap" role="group" aria-label="תנועה"><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
-        <div class="viewwrap" role="group" aria-label="הסכומים במסך"><span class="sub">הסכומים במסך</span><div class="chips"><button class="chip" type="button" data-hidenum="0" aria-pressed="true">מוצגים</button><button class="chip" type="button" data-hidenum="1" aria-pressed="false">מוסתרים</button></div></div>
+        <div class="viewwrap vw-theme" role="group" aria-label="מצב יום או לילה"><button type="button" class="vw-t" aria-expanded="false"><span>מצב תצוגה</span> <span class="vw-v"></span></button><span class="sub">מצב תצוגה</span><div class="chips"><button class="chip" type="button" data-themeset="light" aria-pressed="true">☀️ יום</button><button class="chip" type="button" data-themeset="dark" aria-pressed="false">🌙 לילה</button><button class="chip" type="button" data-themeset="auto" aria-pressed="false">לפי הטלפון</button></div></div>
+        <div class="viewwrap vw-home" role="group" aria-label="סגנון דף הבית בטלפון"><button type="button" class="vw-t" aria-expanded="false"><span>דף הבית בטלפון</span> <span class="vw-v"></span></button><span class="sub">דף הבית בטלפון</span><div class="chips"><button class="chip" type="button" data-homeset="clean" aria-pressed="true">כרטיס נקי</button><button class="chip" type="button" data-homeset="bento" aria-pressed="false">פסיפס</button></div></div>
+        <div class="viewwrap vw-size" role="group" aria-label="גודל הטקסט"><button type="button" class="vw-t" aria-expanded="false"><span>גודל הטקסט</span> <span class="vw-v"></span></button><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
+        <div class="viewwrap vw-con" role="group" aria-label="ניגודיות"><button type="button" class="vw-t" aria-expanded="false"><span>ניגודיות</span> <span class="vw-v"></span></button><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
+        <div class="viewwrap vw-mot" role="group" aria-label="תנועה"><button type="button" class="vw-t" aria-expanded="false"><span>אנימציות ותנועה</span> <span class="vw-v"></span></button><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
+        <div class="viewwrap vw-num" role="group" aria-label="הסכומים במסך"><button type="button" class="vw-t" aria-expanded="false"><span>הסכומים במסך</span> <span class="vw-v"></span></button><span class="sub">הסכומים במסך</span><div class="chips"><button class="chip" type="button" data-hidenum="0" aria-pressed="true">מוצגים</button><button class="chip" type="button" data-hidenum="1" aria-pressed="false">מוסתרים</button></div></div>
         <p class="note" style="margin:0;max-width:none">הבחירות נשמרות בחשבון ומופיעות בכל מכשיר.</p>
       </div>
+      <nav class="set-nav" id="setNav" aria-label="עוד הגדרות">
+        <h3 class="set-gh">התיק</h3><ul class="set-l">
+          <li><button type="button" data-setgo="hAccts"><span>חשבונות המסחר</span> <span class="v" id="sgAccts"></span></button></li>
+          <li><button type="button" data-setgo="hRules"><span>הכללים שלי</span> <span class="v" id="sgRules"></span></button></li>
+          <li><button type="button" data-setgo="hAlloc"><span>יעדי הקצאה</span></button></li></ul>
+        <h3 class="set-gh">התראות וחדשות</h3><ul class="set-l">
+          <li><button type="button" data-setgo="hNotifGo"><span>התראות, צלילים ומיילים</span></button></li>
+          <li><button type="button" data-setgo="hNwSet"><span>חדשות</span></button></li></ul>
+        <h3 class="set-gh">פרטיות ונתונים</h3><ul class="set-l">
+          <li><button type="button" data-setgo="hData" data-setpn="privPanel"><span>הפרטיות שלי</span></button></li>
+          <li><button type="button" data-setgo="hData" data-setpn="srcPanel"><span>מאיפה הנתונים ואיך הם מחושבים</span></button></li>
+          <li><button type="button" data-setgo="hData" data-setpn="princPanel"><span>העקרונות של תיק צ׳יק</span></button></li>
+          <li><button type="button" data-setgo="hUse"><span>במה אני משתמש באתר</span></button></li>
+          <li><button type="button" data-setgo="hData" data-setpn="wipePanel"><span>מחיקת נתונים</span></button></li>
+          <li id="sgSysLi" hidden><button type="button" data-setgo="hSys"><span>בריאות המערכת</span></button></li></ul>
+      </nav>
     </section>
 
     <section aria-labelledby="hNwSet" id="nwSetSec">
@@ -5014,7 +5066,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
       </div>
     </section>
 
-    <details class="panel"><summary id="hDep">חלופה: לחלק את ההפקדה לפי יעדי ההקצאה</summary>
+    <details class="panel" data-ptid="hAlloc"><summary id="hDep">חלופה: לחלק את ההפקדה לפי יעדי ההקצאה</summary>
       <label class="check" for="inFrac"><input type="checkbox" id="inFrac">אפשר לקנות שברי מניה (בחשבון שמאפשר זאת, למשל בלינק)</label>
       <div class="scroll">
         <table>
@@ -25692,6 +25744,26 @@ function profMaybe(){
   {const a=$('anaBox'); if(a&&!a.hidden)return}
   try{const t=localStorage.getItem('tr_prof_later'); if(t&&Date.now()-new Date(t).getTime()<14*864e5)return}catch(e){}
   profOpen(null)}
+// 17.11 (the owner's proposal 19, "הגדרות"): on the phone the settings are one grouped list, like a phone's own: the
+// profile in one line; "תצוגה ונגישות" as rows that say the current choice and open to change it; and the rest of the
+// settings as rows that open their topic as a page of its own ("כל ההגדרות" leads back). The parts' row of pills is not
+// shown on the phone; on a wider screen nothing changes
+function meOneFill(p){const b=$('meOne'); if(!b)return; if(!p){b.hidden=true; return}
+  const nm=((p.first||'')+(p.last?' '+p.last:'')).trim(), t=[nm,RISK[p.risk]?'משקיע: '+RISK[p.risk]:'',LEVEL[p.level]||'',+S.years>0?`אופק ${S.years} שנים`:''].filter(Boolean).join(' · ');
+  b.hidden=!t; b.textContent=t; b.setAttribute('aria-label','הפרופיל שלי: '+t+'. לעריכה')}
+function setNavFill(){try{const a=$('sgAccts'); if(a)a.textContent=Object.keys(ACCTS).filter(k=>k!=='all').map(acctName).join(', '); const r=$('sgRules'); if(r)r.textContent=rulesDefault()?'ברירת המחדל':'שקבעת';
+  const sy=$('sgSysLi'), ss=$('sysSec'); if(sy)sy.hidden=!ss||ss.hidden}catch(e){}}
+function vwSync(){for(const w of document.querySelectorAll('#meSec .viewwrap')){const v=w.querySelector('.vw-v'), on=w.querySelector('.chips [aria-pressed="true"]'); if(v)v.textContent=on?on.textContent.replace(/[^\p{L}\p{N}\s]/gu,'').trim():''}}
+try{const ms=document.getElementById('meSec'); if(ms&&'MutationObserver' in window)new MutationObserver(vwSync).observe(ms,{subtree:true,attributes:true,attributeFilter:['aria-pressed']}); vwSync()}catch(e){}
+function setGo(id,pn){const pane=document.querySelector('[data-pane="settings"]'), sec=pane&&pane.querySelector(`:scope>section[aria-labelledby="${id}"]`); if(!sec)return;
+  const k=ptOf('settings',sec); if(k)ptSet('settings',k);
+  for(const s of pane.querySelectorAll(':scope>section,:scope>details'))s.classList.toggle('so-off',s!==sec&&s.dataset.ptid!==id);   // the deposit's split goes with the targets
+  for(const p of sec.querySelectorAll(':scope>.panel'))p.classList.toggle('so-off',!!pn&&p.id!==pn);
+  try{window.scrollTo(0,0)}catch(e){} try{const h=pn?$(pn)&&$(pn).querySelector('h3'):sec.querySelector('h2'); if(h){h.tabIndex=-1; h.focus({preventScroll:true})}}catch(e){}}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return;
+  const v=t.closest('.vw-t'); if(v){const w=v.closest('.viewwrap'), on=!w.classList.contains('open'); w.classList.toggle('open',on); v.setAttribute('aria-expanded',String(on)); return}
+  const g=t.closest('[data-setgo]'); if(g){setGo(g.dataset.setgo,g.dataset.setpn||''); return}
+  if(t.closest('[data-setback]')){for(const x of document.querySelectorAll('[data-pane="settings"] .so-off'))x.classList.remove('so-off'); ptSet('settings','me'); try{window.scrollTo(0,0)}catch(e){} try{const b=$('meOne'); if(b&&!b.hidden)b.focus({preventScroll:true})}catch(e){}}});
 function renderMe(){
   const el=$('meList'); if(!el)return; const p=S.profile;
   $('meEdit').hidden=!canWrite; $('meEdit').textContent=p?'לעריכה':'למלא עכשיו';
@@ -25701,7 +25773,7 @@ function renderMe(){
   const h=p?[['שם',span((p.first||'')+(p.last?' '+p.last:''))],['מייל',p.email?span(p.email,1):'—'],['טלפון',p.phone?span(p.phone,1):'—'],
     ['תאריך לידה',BIRTH.test(p.birth||'')?esc(birthTxt(p.birth))+(ageOf(p.birth)!=null?` (גיל ${ageOf(p.birth)})`:''):'—'],['מגורים',[p.city?span(p.city):'',p.country?esc(countryName(p.country,I18N.lang||'he')):''].filter(Boolean).join(', ')||'—'],
     ['משפחה',[famL(p.fam,p.gender),kidsL(p.kids)].filter(Boolean).map(esc).join(', ')||'—'],['תעסוקה',esc(jobL(p.job,p.gender)||'—')],['שפת הדף',span(langName(p.lang||'he',I18N.lang||'he')||p.lang||'')],['סוג המשקיע',esc(RISK[p.risk]||'—')],['היכרות עם השוק',esc(LEVEL[p.level]||'לא נבחר (מכיר את היסודות)')],['בשביל מה',esc(PURPOSE[p.purpose]||'—')],['אופק',+S.years>0?esc(S.years+' שנים'):'—'],['יום ההפקדה',esc(depDayTxt())]].filter(r=>r[1]&&r[1]!=='—').map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')+(canWrite?'<div class="me-fill"><button type="button" class="btn sm" data-mefill>להשלמת פרטים</button></div>':''):'';   // 17.11 (the owner): only what is filled
-  el.hidden=!p; setH(el,h)}
+  el.hidden=!p; setH(el,h); try{meOneFill(p)}catch(e){} setNavFill()}
 document.addEventListener('keydown',e=>{const d=$('profDlg'); if(!d||d.hidden)return;
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();profClose(true);return}
   if(e.key==='Tab'){const f=[...d.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled])')].filter(x=>x.offsetParent!==null&&!(x.type==='radio'&&!x.checked&&d.querySelector(`[name="${x.name}"]:checked`)));
@@ -28083,7 +28155,7 @@ const PTV={}; try{Object.assign(PTV,JSON.parse(localStorage.getItem('tr_ptv')||'
 // stood outside every part and showed under each of them
 function ptSecs(t){const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return []; return [...pane.querySelectorAll('section[aria-labelledby]')].filter(x=>x.parentElement===pane||x.parentElement.parentElement===pane).concat([...pane.querySelectorAll(':scope>[data-ptid]')])}
 function ptOf(t,sec){const id=sec.dataset.ptid||sec.getAttribute('aria-labelledby'); for(const [k,[,ids]] of Object.entries(PARTS[t]||{}))if(ids.includes(id))return k; return null}
-function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return;
+function ptSet(t,k){const P=PARTS[t]; if(!P)return; if(t==='settings')try{for(const x of document.querySelectorAll('[data-pane="settings"] .so-off'))x.classList.remove('so-off')}catch(e){} const pane=document.querySelector(`[data-pane="${t}"]`); if(!pane)return;
   // a part whose every section is hidden by its own logic (the system's health for a viewer) is not offered
   const live=Object.keys(P).filter(x=>ptSecs(t).some(sec=>ptOf(t,sec)===x&&!sec.hidden&&!(sec.dataset.ptid&&!sec.children.length))); if(!live.length)return; if(!live.includes(k))k=live.includes(PTV[t])?PTV[t]:live[0];
   PTV[t]=k; try{localStorage.setItem('tr_ptv',JSON.stringify(PTV))}catch(e){}
@@ -28092,7 +28164,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; const pane=document.querySel
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}   // every part at once (the page's own tests of each screen)
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
-try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{ptReveal(this)}catch(e){} try{stReveal(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
+try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{if(this.closest&&this.closest('.so-off'))for(const x of document.querySelectorAll('.so-off'))x.classList.remove('so-off')}catch(e){} try{ptReveal(this)}catch(e){} try{stReveal(this)}catch(e){} try{revealUp(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
 function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 // 11.11 (the owner): the browser's back and forward (Safari, Chrome, a phone's own back) move between the site's screens.
@@ -30813,6 +30885,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-19.1',at:'2026-11-19',t:'הגדרות: רשימה אחת, כמו בטלפון',d:'בטלפון: ההגדרות הן רשימה אחת מקובצת במקום חמש לשוניות ושבע שורות של כפתורים. הפרופיל בשורה אחת; ב"תצוגה ונגישות" כל שורה כותבת את הבחירה הנוכחית (למשל "גודל הטקסט: רגיל") ונפתחת כדי לשנות; ו"התיק", "התראות וחדשות" ו"פרטיות ונתונים" הם שורות שכל אחת פותחת את הנושא שלה בדף משלו, עם "כל ההגדרות" כדי לחזור.',go:'settings'},
   {v:'2026-11-17.36',at:'2026-11-17',t:'יומן: קודם מה שמחכה לתיעוד',d:'בטלפון: היומן נפתח במה שעוד לא תועד, למשל קנייה מהדוח בלי סיבה, עם כפתור גדול "לתעד: למה קניתי?" שממלא את הטופס מהתנועה. הטופס עצמו (שמונה שדות) נפתח רק כשרוצים, מ"+ רשומה חדשה", ומעל הרשימה כתוב "הרשומות שלי".',go:'journal'},
   {v:'2026-11-17.35',at:'2026-11-17',t:'דוחות: הדוח של עכשיו למעלה, ורשימה לפי סוג',d:'בטלפון: "דוחות" נפתח בדוח החודשי עד היום, עם "לצפייה" והורדה. מתחתיו בוחרים סוג (שבועי, חודשי, רבעוני, שנתי) ורואים רק אותו. לחיצה על שורה פותחת את הדוח, ולכל שורה אייקון הורדה אחד, בלי כפתור סגול בכל שורה. הדוחות השמורים מקופלים תחת "עוד בדף הזה".',go:'reports'},
   {v:'2026-11-17.34',at:'2026-11-17',t:'מבט לאחור: האם הכסף שלי עובד?',d:'בטלפון: "מבט לאחור" נפתח בכרטיס שעונה על השאלה: כמה התיק שווה יותר (או פחות) ממה שהפקדת, ובכמה אחוזים. מתחת לגרף ארבעה אריחים, שניים בשורה (ההפקדות בכרטיס, הדולר בבית). קו ההפקדות בגרף מקווקו, כך שהוא נבדל גם בצורה ולא רק בצבע, וכשהמדדים עוד נטענים כתוב "נטען…" ליד כל מדד.',go:'history'},
