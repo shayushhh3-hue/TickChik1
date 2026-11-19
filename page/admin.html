@@ -819,7 +819,10 @@ SCREENS.world=async()=>{head('חדר החדשות העולמי','',{range:false}
     <div style="margin-top:8px;font-size:12.5px">${e.links.map(l=>/^https?:/.test(l.link)?`<a href="${esc(l.link)}" target="_blank" rel="noopener noreferrer">${esc(l.pub||'מקור')} ↗</a>`:'').join(' · ')}</div></details>`;
   const lean=l=>`<span class="pill ${DIRH[l][0]}">${DIRH[l][1]}</span>`;
   const B=d.brief;
+  // 19.11 TikChik WORLD IMPACT: the same events on the globe, with every link to a company, its reasons and sources, and
+  // the management's hand on them (approve, reject, correct, join or part; each in the audit log)
   view.innerHTML=`${banner('<b>המטרה:</b> '+esc(d.goal))}
+    ${banner('<b>TikChik WORLD IMPACT:</b> אותם אירועים על גלובוס, עם כל הקשרים שלהם לחברות, הסיבות והמקורות, הקשרים החלשים, הכפילויות והתקלות, ואישור או תיקון של כל קשר (נרשם ביומן). <a href="/?wi=world#news" style="font-weight:700">לגלובוס ההשפעה ←</a>')}
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><div class="seg" role="group" aria-label="חלון זמן">${[[1,'יממה'],[3,'3 ימים'],[7,'שבוע']].map(([k,l])=>`<button type="button" data-wd="${k}" aria-pressed="${WDAYS===k}">${l}</button>`).join('')}</div></div>
     ${Q.waiting>100?banner(`<b>התמונה חלקית:</b> ${nf(Q.waiting)} כתבות עוד ממתינות לקריאה של צ׳יקו.`,'warn'):''}
     <div class="grid kpis">${kpi({k:'e',label:'אירועים',value:Q.events,src:'הקריאות של צ׳יקו, מאוחדות לאירוע',note:`${nf(Q.multiSource)} מ-3 מקורות ומעלה · ${nf(Q.singleSource)} ממקור יחיד`})}

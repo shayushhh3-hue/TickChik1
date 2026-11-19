@@ -29871,7 +29871,11 @@ async function wiGlobe(){
     WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת מפת הרשת.'; WIMP.view='net'; wiRender()}})}
   catch(e){WIMP.gFail='הגלובוס לא זמין כאן ('+(e.message||e)+'). מוצגת מפת הרשת במקומו.'; WIMP.view='net'}
   wiRender(); return WIMP.G}
-function wiOpen(){const d=$('ixMapD'); if(!d||!d.open||!$('wi'))return; WIMP.open=true;
+function wiOpen(){
+  // from the management center ("לגלובוס ההשפעה", /?wi=world#news): the box opens, and the whole world once the account is known
+  if(WIMP.want===undefined){WIMP.want=/[?&]wi=world\b/.test(location.search)?'world':null; if(WIMP.want){const b=$('ixMapD'); if(b)b.open=true}}
+  if(WIMP.want==='world'&&window.__tc){WIMP.want=null; if(wiAdminOk())WIMP.mode='world'}
+  const d=$('ixMapD'); if(!d||!d.open||!$('wi'))return; WIMP.open=true;
   const adm=document.querySelector('[data-wimode="world"]'); if(adm)adm.hidden=!wiAdminOk();
   if(!WIMP.hist.to){const t=new Date(); WIMP.hist.to=t.toISOString().slice(0,10); WIMP.hist.from=new Date(t.getTime()-90*864e5).toISOString().slice(0,10)}
   wiLoad(false); if(WIMP.view==='globe')wiGlobe(); wiRender()}

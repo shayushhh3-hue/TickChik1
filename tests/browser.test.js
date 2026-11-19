@@ -3834,3 +3834,64 @@ test('17.11 "מחקר שוק" (the owner: the market screener): quick lists, wha
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); if(AQ.exists)store.setDoc('quotes/all',AQ.data,{silent:true}); else store.deleteDoc('quotes/all')}
 });
+
+// 19.11 TikChik WORLD IMPACT in the browser: the screen in the news' impact map, the globe or (without WebGL) the network
+// map in its place, said so; the owner's paths and the details of an event; the freshness never "live" on closing prices;
+// the admin's whole world; a partner who sees only their own; a phone without a sideways scroll
+test('19.11 TikChik WORLD IMPACT: the globe of what touches the portfolio; the details of an event; an admin\'s world; a partner\'s own only; a phone',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse'), S0=store.getDoc('settings/main').data, I0=store.getDoc('research/impact');
+  const D=await rtData(); await rtSet(D); const {impactTask}=await import('../server/impact.js'); impactTask(store);
+  let ctx, pg;
+  const ready=async p=>{await tab(p,'news'); await p.waitForTimeout(300);
+    await p.evaluate(()=>{const d=document.getElementById('ixMapD'); if(d)d.open=true; const t=document.getElementById('rtTabMap'); if(t&&getComputedStyle(t).display!=='none')t.click()});
+    await p.waitForFunction(()=>window.__wi&&(window.__wi.state().events>0||window.__wi.state().err)&&(window.__wi.state().globe||window.__wi.state().gFail),null,{timeout:30000}); return p.evaluate(()=>window.__wi.state())};
+  try{
+    ({ctx,pg}=await open(1280));
+    let s=await ready(pg);
+    assert.equal(s.mode,'me'); assert.equal(s.assets,12,'every holding'); assert.ok(s.events>=3,JSON.stringify(s));
+    if(s.gFail){assert.equal(s.view,'net','without WebGL the network map stands in'); assert.match(await pg.evaluate(()=>document.getElementById('wiMsg').textContent+'|'+document.getElementById('ixMap').hidden),/\|false$/)}
+    else{assert.ok(s.globe.arcs>=1&&s.globe.items>=12,JSON.stringify(s.globe)); assert.equal(await pg.evaluate(()=>document.getElementById('ixMap').hidden),true,'the network map waits behind "רשת"')}
+    // the panels: the portfolio, the events (only those with a path to a holding), the indices, the freshness in words
+    const v=await pg.evaluate(()=>({pf:document.getElementById('wiPfB').innerText.replace(/\s+/g,' '),ev:[...document.querySelectorAll('#wiEvL [data-wiev]')].map(b=>b.dataset.wiev),ix:document.getElementById('wiIxs').innerText.replace(/\s+/g,' '),
+      now:document.getElementById('wiNowL').textContent,adm:!document.querySelector('[data-wimode="world"]').hidden,keys:document.querySelectorAll('#wiKeys [data-wias]').length}));
+    assert.match(v.pf,/₪[\d,]+/); assert.ok(v.ev.includes('ev:nvda-q3-report')&&v.ev.includes('ev:msft-eu-probe')||v.ev.includes('ev:nvda-q3-report'),JSON.stringify(v.ev));
+    assert.ok(!v.ev.includes('ev:acme-widget'),'a deal of two companies nobody holds is not the portfolio\'s'); assert.match(v.ix,/S&P 500/);
+    assert.doesNotMatch(v.now,/זמן אמת/,'the fixture\'s prices are not live, and are not called so'); assert.equal(v.adm,true,'the owner has the management\'s view'); assert.ok(v.keys>=3);
+    // an event: the globe turns to it, its card says what happened, how sure, how far, and the way to each holding
+    await pg.click('#wiEvL [data-wiev="ev:nvda-q3-report"]'); await pg.waitForTimeout(500);
+    const sh=await pg.evaluate(()=>({hidden:document.getElementById('wiSheet').hidden,t:document.getElementById('wiSheet').innerText.replace(/\s+/g,' '),chains:document.querySelectorAll('#wiSheet .wi-chain').length,sel:window.__wi.state().sel}));
+    assert.equal(sh.hidden,false); assert.deepEqual(sh.sel,{t:'ev',k:'ev:nvda-q3-report'}); assert.ok(sh.chains>=1);
+    for(const w of ['כיוון אפשרי','עוצמה','ביטחון','טווח','איך זה מגיע לתיק שלך','המקורות','לא תחזית'])assert.ok(sh.t.includes(w),w+' in '+sh.t.slice(0,300));
+    // a link: why it is there, from what
+    await pg.click('#wiSheet [data-wilk]'); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('wiLkD').innerText),/קשר (ישיר|עקיף)/);
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(150); assert.equal(await pg.evaluate(()=>document.getElementById('wiSheet').hidden),true);
+    // the filters: a category leaves only its events; "אירועים" and back
+    await pg.click('#wiFiltB'); await pg.selectOption('#wiFilt [data-wif="cat"]','earnings'); await pg.waitForTimeout(200);
+    assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#wiEvL [data-wiev]')].map(b=>b.dataset.wiev)),['ev:nvda-q3-report']);
+    await pg.click('#wiFilt [data-wifclr]'); await pg.waitForTimeout(200);
+    // the history of a holding: its closes, the events, what was said and what followed, the caveat
+    await pg.selectOption('#wiHSym','NVDA'); await pg.click('#wiHGo'); await pg.waitForFunction(()=>/סמיכות בזמן אינה סיבתיות/.test(document.getElementById('wiHEv').textContent),null,{timeout:15000});
+    assert.ok(await pg.evaluate(()=>!!document.querySelector('#wiHChart svg polyline')));
+    // the admin's whole world, with the weak links and the log
+    await pg.click('[data-wimode="world"]'); await pg.waitForFunction(()=>window.__wi.state().mode==='world'&&!document.getElementById('wiAdm').hidden,null,{timeout:15000});
+    assert.match(await pg.evaluate(()=>document.getElementById('wiAdm').innerText),/קשרים חלשים/); assert.ok(await pg.evaluate(()=>window.__wi.state().events)>=s.events);
+    await pg.click('[data-wimode="me"]'); await pg.waitForTimeout(300);
+    assert.deepEqual(pg.errs,[]); await ctx.close(); ctx=null;
+    // a partner (KO only): their own events, nobody else's holdings anywhere on the screen, no management view
+    ({ctx,pg}=await open(1280,{who:'p2'}));
+    s=await ready(pg); assert.equal(s.assets,1);
+    const pv=await pg.evaluate(()=>({t:document.getElementById('wi').innerText,adm:!document.querySelector('[data-wimode="world"]').hidden,ev:[...document.querySelectorAll('#wiEvL [data-wiev]')].map(b=>b.dataset.wiev)}));
+    assert.equal(pv.adm,false); for(const bad of ['MSFT','NVDA','JPM','CAT','UNH','RKLB'])assert.ok(!pv.t.includes(bad),'the partner\'s screen names '+bad);
+    assert.ok(pv.ev.every(k=>['ev:ko-cfo'].includes(k)||!/nvda|msft/.test(k)),JSON.stringify(pv.ev));
+    const api=await pg.evaluate(async()=>({w:(await fetch('/api/admin/impact')).status,d:(await fetch('/api/db/doc?path=research/impact')).status}));
+    assert.deepEqual(api,{w:403,d:403},'the global graph is the management\'s');
+    assert.deepEqual(pg.errs,[]); await ctx.close(); ctx=null;
+    // a phone: the stage first, no sideways scroll
+    ({ctx,pg}=await open(390));
+    s=await ready(pg);
+    const ph=await pg.evaluate(()=>{const st=document.getElementById('wiStage').getBoundingClientRect(), ev=document.getElementById('wiEv').getBoundingClientRect(); return {w:document.documentElement.scrollWidth,vw:innerWidth,stageFirst:st.top<ev.top,stageH:Math.round(st.height),stageW:Math.round(st.width)}});
+    assert.ok(ph.w<=ph.vw+1,'no sideways scroll: '+JSON.stringify(ph)); assert.ok(ph.stageFirst&&ph.stageH>=300&&ph.stageW>=320,JSON.stringify(ph));
+    assert.deepEqual(pg.errs,[]);
+  }finally{if(ctx)await ctx.close(); rtRestore(N0,X0,ST0,PU0,S0); if(I0.exists)store.setDoc('research/impact',I0.data,{silent:true}); else store.deleteDoc('research/impact')}
+});

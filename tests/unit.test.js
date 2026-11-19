@@ -970,9 +970,11 @@ test('Finnhub: the first source for a US ticker when its key is set, and the fre
 test('the site: the PDF and Excel libraries in files of their own, loaded when needed, with a version in the address',async()=>{
   const {buildSite}=await import('../tools/build.js'); const root=new URL('..',import.meta.url).pathname; buildSite(root);
   const h=fs.readFileSync(root+'site/index.html','utf8'), page=fs.readFileSync(root+'page/live.html','utf8');
-  assert.ok(!/SheetJS|jsPDF - PDF Document|define\("pdfjs-dist\/build\/pdf"/.test(h),'not inside the page');
-  for(const n of ['jspdf','xlsx','pdf','pdfworker'])assert.ok(fs.statSync(root+'site/lib/'+n+'.js').size>100000,n);
+  assert.ok(!/SheetJS|jsPDF - PDF Document|define\("pdfjs-dist\/build\/pdf"|TikChik vendored three\.js|TikChik WORLD IMPACT globe: the site/.test(h),'not inside the page');
+  for(const n of ['jspdf','xlsx','pdf','pdfworker','three','globe'])assert.ok(fs.statSync(root+'site/lib/'+n+'.js').size>100000,n);
   assert.match(h,/window\.__tcLib=/); assert.match(h,/"pdf":"lib\/pdf\.js\?v=[0-9a-f]{10}"/);
+  // 19.11 TikChik WORLD IMPACT: three.js and the globe, the globe after three.js
+  assert.match(h,/"three":"lib\/three\.js\?v=[0-9a-f]{10}"/); assert.match(h,/"globe":"lib\/globe\.js\?v=[0-9a-f]{10}"/); assert.match(h,/DEP=\{pdf:\['pdfworker'\],globe:\['three'\]\}/);
   assert.ok(h.length<page.length*0.5,'the page the phone loads is less than half: '+h.length+' / '+page.length);
   assert.ok(/SheetJS/.test(page),'the page in Claude keeps them inside');
 });
