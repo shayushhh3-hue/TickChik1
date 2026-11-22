@@ -109,7 +109,7 @@ before(async()=>{
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 
 // a signed-in page; prices are not fetched (the page's "update now" answers at once), the profile and tip prompts wait
-async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,parts=false,home='bento'}={}){
+async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,parts=false,home='bento',map=null}={}){
   // the choices of how the page looks follow the account (S.ui); each test starts without the ones an earlier test made,
   // unless it is checking that they come along (another device: keepUi)
   if(!keepUi)for(const p of ['settings/main',...store.users().filter(u=>u.role!=='owner').map(u=>`data/users/${u.id}/settings`)]){const d=store.getDoc(p); if(d.exists&&d.data&&d.data.ui){const x={...d.data}; delete x.ui; store.setDoc(p,x,{silent:true})}}
@@ -120,6 +120,10 @@ async function open(W=390,{who='owner',route=null,prompts=false,keepUi=false,par
   // 11.11: the phone's home is the clean card by default; the tests of the home's parts were written on the bento and
   // keep it (home:'bento', a choice the page keeps), the tests of the clean card ask for it, or for the default (home:null)
   if(home)await ctx.addInitScript(h=>{try{if(localStorage.getItem('tr_home')==null)localStorage.setItem('tr_home',h)}catch(e){}},home);
+  // 19.11: the impact map opens as a globe where the browser has WebGL, and as the network map where it has not. The
+  // tests of the network map ask for it (map:'net', the choice the page keeps under "רשת"), so they run the same on
+  // every machine; the globe has a test of its own
+  if(map)await ctx.addInitScript(m=>{try{if(localStorage.getItem('tr_wiview')==null)localStorage.setItem('tr_wiview',m)}catch(e){}},map);
   await ctx.route('**/*',r=>{const u=r.request().url(); if(route&&route(r,u))return; if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true,"cached":true}'});return} if(u.startsWith(U)||u.startsWith('data:')||u.startsWith('blob:'))r.continue(); else r.abort()});
   const pg=await ctx.newPage(); pg.errs=[]; pg.on('pageerror',e=>pg.errs.push(e.message));
   const [email,pw]=who==='new'?['new@example.com','friend-pass-1']:who==='n2'?['n2@example.com','friend-pass-3']:who==='r3'?['r3@example.com','friend-pass-4']:who==='r4'?['r4@example.com','friend-pass-5']:who==='r5'?['r5@example.com','friend-pass-6']:who==='nw'?['nw@example.com','friend-pass-7']:who==='p2'?['p2@example.com','friend-pass-2']:who==='adm'?['adm@example.com','admin-pass-1']:['owner@example.com','owner-pass-123'];
@@ -590,7 +594,7 @@ test('31.10 the news that explains, follows and teaches: the story behind the he
     await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc, #newsFeed .nw-c').length>=2,null,{timeout:15000});
     // 1.11: the news tab is the portfolio's: no daily world picture, no markets strip, no categories, no calendar view
     const w=await pg.evaluate(()=>({daily:!!document.getElementById('nwDaily'),mk:!!document.getElementById('mktRow'),cats:document.getElementById('nxCats').hidden,cal:!!document.querySelector('#nxViews [data-nxv="cal"]'),tab:document.getElementById('rtTabNews').textContent}));
-    assert.deepEqual(w,{daily:false,mk:false,cats:true,cal:false,tab:'החדשות שלי'});
+    assert.deepEqual(w,{daily:false,mk:false,cats:true,cal:false,tab:'כל החדשות'});   // 17.11 (proposal 4): the tab's name (it was "החדשות שלי")
     // 5. the glossary: a term in a reading's text opens its explanation, for this level, with the sentence; Escape closes it
     const gl=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#newsFeed .gl')]; return {n:b.length,first:b[0]&&b[0].textContent,k:b[0]&&b[0].dataset.gl}});
     assert.ok(gl.n>=1,'terms marked in the text'); assert.ok(['rate','inflation','pe','yield','dividend','guidance','eps'].includes(gl.k)||gl.k,'a real term: '+gl.k);
@@ -740,7 +744,7 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const A=Object.fromEntries(R.owner.doc.items.map(a=>[a.k,a]));
     assert.equal(A['ev:nvda-q3-report'].lv,'crit'); assert.equal(A['ev:nvda-q3-report'].n,2,'two articles, one alert'); assert.ok(A['ev:msft-eu-probe']&&['imp','crit'].includes(A['ev:msft-eu-probe'].lv));
     assert.ok(!A['ev:aapl-op']||A['ev:aapl-op'].lv==='upd','an opinion (AAPL is held): a portfolio update at most'); assert.ok(!A['ev:acme-widget'],'a deal of companies not held: nothing');
-    const {ctx,pg}=await open(390); await tab(pg,'alerts'); await pg.waitForTimeout(300); await pg.waitForFunction(()=>!!document.querySelector('#alInbox .al-row'),null,{timeout:15000});
+    const {ctx,pg}=await open(390,{map:'net'}); await tab(pg,'alerts'); await pg.waitForTimeout(300); await pg.waitForFunction(()=>!!document.querySelector('#alInbox .al-row'),null,{timeout:15000});
     // 11.11 (the owner): every alert in התראות, an inbox by urgency; no icons over צ׳יקו, no stories viewer. The count on
     // התראות is the unread alerts that need attention
     const bub=await pg.evaluate(()=>({icons:!document.getElementById('stBub').hidden,bars:!!document.getElementById('stBars'),first:(document.querySelector('#alInbox .al-gh')||{}).textContent||'',
@@ -765,17 +769,22 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(300);
     // TikChik Impact: the four figures, the alerts short, the round map with the portfolio in the middle, the line of time, צ׳יקו
     const ix=await pg.evaluate(()=>({k:[...document.querySelectorAll('#ixKpis .ix-k')].map(x=>x.innerText.replace(/\s+/g,' ').trim()),a:[...document.querySelectorAll('#ixAlList .ix-a h4')].map(h=>h.textContent),aff:(document.querySelector('#ixAlList .ix-a .ix-af')||{}).textContent||'',
-      center:(window.__ix.graph()||{}).center,nodes:[...document.querySelectorAll('#ixG .ixn')].map(n=>n.dataset.ixn),mapOpen:document.getElementById('ixMapD').open,first:[...document.querySelectorAll('#ixBody > *')].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id||x.className).slice(0,3),qs:[...document.querySelectorAll('#ixQs .ix-q')].map(b=>b.textContent),ox:document.documentElement.scrollWidth>innerWidth+1}));
+      center:(window.__ix.graph()||{}).center,nodes:[...document.querySelectorAll('#ixG .ixn')].map(n=>n.dataset.ixn),map:!!document.getElementById('ixMapD').offsetParent,mapTab:!!document.getElementById('rtTabMap').offsetParent,chiko:!!document.querySelector('.ix-ch2').offsetParent,
+      first:[...document.querySelectorAll('#ixBody > *')].filter(x=>!x.hidden&&x.offsetParent).map(x=>x.id||x.className).slice(0,3),ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(await pg.evaluate(()=>document.getElementById('ixKpis').hidden),true,'1.11: no figure cards'); assert.equal(await pg.evaluate(()=>/רלוונטיות לתיק/.test(document.getElementById('ixAlList').textContent)),false,'no doubled text on the cards');
     assert.ok(ix.a.length>=1&&ix.a.length<=3,'three short on a phone'); assert.match(ix.aff,/^משפיע על: /); assert.equal(ix.center,'pf'); assert.ok(ix.nodes.includes('pf')&&ix.nodes.includes('h:NVDA')&&ix.nodes.includes('ev:ev:nvda-q3-report'),JSON.stringify(ix.nodes));
-    // 31.10: the holdings first, the events and צ׳יקו next; the round map behind its button
-    assert.equal(ix.mapOpen,true,'10.11 (the owner): the map at the top of the screen, open'); assert.deepEqual(ix.first.slice(0,2),['ixStx','ix-grid'],JSON.stringify(ix.first)); assert.deepEqual(ix.qs,['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']); assert.equal(ix.ox,false);
-    // צ׳יקו beside the map: the period's alerts as his context
-    seen.length=0; await pg.click('#ixQs .ix-q'); await pg.waitForFunction(()=>/על ההשפעה על התיק בתקופה/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
-    assert.match(await pg.evaluate(()=>document.getElementById('anaOut').textContent.replace(/\s+/g,' ')),/אנבידיה היכתה/,'the answer from the period\'s alerts');
-    assert.ok(seen.some(x=>x.includes('alerts_not_read')&&x.includes('אנבידיה')),'the alerts reach צ׳יקו'); await pg.evaluate(()=>window.__ana.close());
-    // the map, a tap away: it opens, drawn for its room
-    await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100),'the map opens');
+    // 31.10: the holdings first, the events next. 17.11 (the owner's proposal 4): on a phone the map is a tab of its own
+    // ("מפת השפעה"; it was the first half screen) and צ׳יקו's box is off the screen (his round button stays)
+    assert.deepEqual([ix.map,ix.mapTab,ix.chiko],[false,true,false],'the map behind its own tab, no צ׳יקו box: '+JSON.stringify(ix)); assert.deepEqual(ix.first.slice(0,2),['ixStx','ix-grid'],JSON.stringify(ix.first)); assert.equal(ix.ox,false);
+    // a wide screen: the map at the top of the screen, open (10.11, the owner), and צ׳יקו beside the events, with the period's alerts as his context
+    {const {ctx:c2,pg:p2}=await open(1280,{map:'net'}); await tab(p2,'news'); await p2.click('[data-rt="al"]'); await p2.waitForTimeout(300);
+      const wd=await p2.evaluate(()=>({map:document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100,mapTab:!!document.getElementById('rtTabMap').offsetParent,qs:[...document.querySelectorAll('#ixQs .ix-q')].filter(b=>b.offsetParent).map(b=>b.textContent)}));
+      assert.deepEqual(wd,{map:true,mapTab:false,qs:['מה הכי חשוב לי עכשיו?','אילו מהאחזקות שלי הכי חשופות לחדשות?','סכם לי את ההתראות של התקופה']},JSON.stringify(wd));
+      seen.length=0; await p2.click('#ixQs .ix-q'); await p2.waitForFunction(()=>/על ההשפעה על התיק בתקופה/.test(document.getElementById('anaOut').textContent)&&!/קורא את הפריט/.test(document.getElementById('anaOut').textContent),null,{timeout:15000});
+      assert.match(await p2.evaluate(()=>document.getElementById('anaOut').textContent.replace(/\s+/g,' ')),/אנבידיה היכתה/,'the answer from the period\'s alerts');
+      assert.ok(seen.some(x=>x.includes('alerts_not_read')&&x.includes('אנבידיה')),'the alerts reach צ׳יקו'); assert.deepEqual(p2.errs,[]); await c2.close()}
+    // the map, a tap away: its tab opens it, drawn for its room
+    await pg.click('#rtTabMap'); await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.getElementById('ixMapD').open&&document.getElementById('ixCv').getBoundingClientRect().height>100),'the map opens');
     // a point on the map: its short card; the period changes the figures
     await pg.evaluate(()=>window.__ix.sel('h:NVDA')); await pg.waitForTimeout(150); assert.match(await pg.evaluate(()=>document.getElementById('ixTip').textContent),/NVDA · [\d.]+% מהתיק/);
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#ixTip [data-ixst="NVDA"]')),'the holding\'s card on the map leads to its story');
@@ -784,9 +793,10 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     const tp=await pg.evaluate(()=>{const t=document.getElementById('ixTip'); return {t:t.innerText.replace(/\s+/g,' '),k:[...t.querySelectorAll('.nwi-r[open] .chn-k')].map(x=>x.textContent)}});
     assert.match(tp.t,/מה קרה: /); assert.match(tp.t,/איך זה עשוי להשפיע על (המניות שלך|NVDA)/); assert.match(tp.t,/NVDA בתיק \d+% בחדשות ▲ השערה: לטובה/); assert.deepEqual(tp.k,['מה קרה','החברה','ההחזקה שלך']);
     assert.match(tp.t,/בשורה התחתונה: NVDA/);
-    // "מה קורה למניה": the holdings touched, a card (a button) each; the share's own view in plain words
+    // "מה קורה למניה": the holdings touched, a card (a button) each; the share's own view in plain words (back under "נוגע לתיק")
+    await pg.click('[data-rt="al"]'); await pg.waitForTimeout(200);
     const sl=await pg.evaluate(()=>[...document.querySelectorAll('#ixStList [data-ixst]')].map(b=>({s:b.dataset.ixst,t:b.innerText.replace(/\s+/g,' ')})));
-    assert.ok(sl.some(x=>x.s==='NVDA'),JSON.stringify(sl)); assert.match(sl.find(x=>x.s==='NVDA').t,/NVDA.*מהתיק.*(אירוע אחד|\d+ אירועים).*לדף המניה/);
+    assert.ok(sl.some(x=>x.s==='NVDA'),JSON.stringify(sl)); assert.match(sl.find(x=>x.s==='NVDA').t,/NVDA.*מהתיק.*(ידיעה אחת|\d+ ידיעות).*לפרטים/);   // 10.11: the card counts news items and ends in "לפרטים" (it was events and "לדף המניה")
     // 1.11: the holding's card leads to the stock's own page (the long "מה קורה למניה" sheet left the site)
     await pg.click('#ixStList [data-ixst="NVDA"]'); await pg.waitForTimeout(400);
     assert.deepEqual(await pg.evaluate(()=>({page:document.body.dataset.page,sv:document.getElementById('ixSv').hidden})),{page:'search',sv:true});
@@ -796,10 +806,11 @@ test('חיבור למציאות, the personal alerts: three levels by rules, one
     assert.deepEqual(rm,{open:true,view:'co',center:'c:NVDA'},JSON.stringify(rm));
     await pg.evaluate(()=>window.__im.toRound('world')); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>(window.__ix.graph()||{}).center),'pf','1.11: no world view on the site');
     await pg.evaluate(()=>window.__im.toRound('pf:')); await pg.waitForTimeout(300);
-    // the map in words, for whoever reads better than looks
-    await pg.evaluate(()=>{document.getElementById('ixMapD').open=true}); await pg.waitForTimeout(150);
+    // the map in words, for whoever reads better than looks (on the map's tab)
+    await pg.click('#rtTabMap'); await pg.waitForTimeout(150);
     await pg.click('#ixTxtB'); await pg.waitForTimeout(150); const tx=await pg.evaluate(()=>({cv:document.getElementById('ixCv').hidden,t:document.getElementById('ixTxt').innerText.replace(/\s+/g,' ')}));
     assert.ok(tx.cv); assert.match(tx.t,/אנבידיה היכתה/); assert.match(tx.t,/NVDA \(ההחזקה שלך/); await pg.click('#ixTxtB'); await pg.waitForTimeout(150); assert.equal(await pg.evaluate(()=>document.getElementById('ixCv').hidden),false);
+    await pg.click('[data-rt="al"]'); await pg.waitForTimeout(150);
     await pg.click('#ixRange [data-ixr="1"]'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.querySelector('#ixRange [aria-pressed="true"]').dataset.ixr),'1');
     // 10.11: a short card says what happened in a line, not "על המפה" (the map is below it); no map button on the cards
     assert.equal(await pg.evaluate(()=>document.querySelectorAll('#ixAlList [data-ixmap]').length),0); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#ixAlList .ix-aw').length>0),'what happened, in a line');
@@ -858,10 +869,11 @@ test('the impact map: opened from an article and from an alert; the chain with a
   const N0=store.getDoc('research/news'), X0=store.getDoc('research/newsx'), ST0=store.getDoc('news/state'), PU0=store.getDoc('alerts/pulse');
   const D=await rtData(); await rtSet(D);
   try{for(const W of [390,1280]){
-    const {ctx,pg}=await open(W); await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc').length>=1,null,{timeout:15000});
+    const {ctx,pg}=await open(W,{map:'net'}); await tab(pg,'news'); await pg.click('[data-rt="news"]'); await pg.waitForFunction(()=>document.querySelectorAll('#newsFeed .nwc').length>=1,null,{timeout:15000});
     // from the article
     // 1.11: the "map" button of an article lands on the round personal map (the tree is not shown to the users)
-    await pg.click(`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"] [data-imopen]`); await pg.waitForTimeout(700);
+    // 10.11: the button is under the card's "עוד" (with the story and the follow button)
+    {const card=`#newsFeed .nwc[data-nid="${D.id('https://x/nvda1')}"]`; await pg.click(card+' details.nw-more>summary'); await pg.click(card+' [data-imopen]'); await pg.waitForTimeout(700)}
     const rd=await pg.evaluate(()=>({tree:document.getElementById('imView').hidden,al:document.getElementById('rtTabAl').getAttribute('aria-selected'),open:document.getElementById('ixMapD').open,view:document.querySelector('#ixViews [aria-selected="true"]').dataset.ixv,ev:document.querySelectorAll('#ixG .ixn.t-ev').length,exp:!!document.getElementById('ixExp')}));
     assert.equal(rd.tree,true,'the tree stays hidden'); assert.equal(rd.al,'true'); assert.ok(rd.open,'the round map opened'); assert.equal(rd.view,'ev'); assert.ok(rd.ev>=1,'the event on the round map'); assert.equal(rd.exp,false,'no button to the tree');
     // the tree itself (kept for its explanations; reachable in the code only)
@@ -955,9 +967,10 @@ test('before a report: the portfolio update says what the analysts expect, the p
   const {pulseUpdate}=await import('../server/pulse.js'); const r=pulseUpdate(store,null,{}); const a=r.doc.items.find(x=>x.k===`rep:NVDA:${d}`); assert.ok(a&&a.lv==='upd','a report coming: a portfolio update');
   try{
     const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400); await pg.click('[data-ixall]'); await pg.waitForTimeout(200);
-    const v=await pg.evaluate(k=>{const b=document.querySelector(`#plList [data-plk="${k}"]`); return {h:b.querySelector('h3').textContent,t:b.innerText}},`rep:NVDA:${d}`);
+    const v=await pg.evaluate(k=>{const b=document.querySelector(`#plList [data-plk="${k}"]`); return {h:b.querySelector('h3').textContent,t:b.innerText,note:[...b.querySelectorAll('p.note')].map(p=>p.textContent).join(' ')}},`rep:NVDA:${d}`);
     assert.match(v.h,/^NVDA מפרסמת דוח /); assert.match(v.t,/רווח למניה \$1\.25, הכנסות \$54\.1 מיליארד/);
-    assert.match(v.t,/הרווח מול הצפי: \u200e?\+6% · \u200e?\+10%/); assert.match(v.t,/סביב 4 הדוחות האחרונים המניה זזה בממוצע ±6\.2%/); assert.match(v.t,/תזוזה כזו היא בערך ±₪/); assert.match(v.t,/לא תחזית לדוח הזה/);
+    assert.match(v.t,/הרווח מול הצפי: \u200e?\+6% · \u200e?\+10%/); assert.match(v.t,/סביב 4 הדוחות האחרונים המניה זזה בממוצע ±6\.2%/); assert.match(v.t,/תזוזה כזו היא בערך ±₪/);
+    assert.match(v.note,/לא תחזית לדוח הזה/,'the card\'s closing line (17.11, the owner: the explanations, p.note, are not shown on a phone; a wider screen shows it)');
     assert.equal(await pg.evaluate(()=>[...document.querySelectorAll('#stBub .stc')].some(b=>/מפרסמת דוח/.test(b.getAttribute('aria-label')))),false,'a portfolio update is not an icon over צ׳יקו');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.match(await pg.evaluate(()=>document.getElementById('soonList').textContent),/בממוצע ±6\.2% סביב הדוח/,'on the home\'s two weeks too');
@@ -977,9 +990,10 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     await pg.press('#goQ','Enter'); await pg.waitForTimeout(900);
     const r=await pg.evaluate(()=>({page:document.body.dataset.page,menu:document.getElementById('tabsbar').classList.contains('open'),top:document.getElementById('hFees').getBoundingClientRect().top}));
     assert.equal(r.page,'history'); assert.ok(!r.menu,'the drawer closes'); assert.ok(r.top>=0&&r.top<500,'the fees in view: '+r.top);
-    // a part of the risk screen opens its fold
+    // a part of a long screen comes into view (10.11: the exposures are on "פיזור", a screen of its own; they were a part of the risk screen)
     await pg.evaluate(()=>window.__ux.go('exp')); await pg.waitForTimeout(900);
-    assert.ok(await pg.evaluate(()=>{const h=document.getElementById('hExp'), b=h.getBoundingClientRect(); return document.body.dataset.page==='risk'&&b.top>=0&&b.top<500&&!!document.getElementById('expBox').offsetParent}));
+    {const g=await pg.evaluate(()=>{const h=document.getElementById('hExp'), b=h.getBoundingClientRect(); return {page:document.body.dataset.page,top:Math.round(b.top),shown:!!document.getElementById('expBox').offsetParent}});
+      assert.ok(g.page==='mix'&&g.top>=0&&g.top<500&&g.shown,'the exposures in view: '+JSON.stringify(g))}
     // "מה חדש": from the list on the home page, then the dot in the drawer goes out
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.ok(await pg.evaluate(()=>!document.getElementById('sbNewsDot').hidden));
@@ -992,7 +1006,9 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     // the tour: one thing at a time, back and forth, and "דלג" ends it for good
     await tab(pg,'overview'); await pg.evaluate(()=>document.querySelector('#desk [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
     const st=()=>pg.evaluate(()=>({card:!document.getElementById('tourCard').hidden,step:document.querySelector('#tourCard .sub')?.textContent||'',lit:[...document.querySelectorAll('.tourhl')].map(e=>e.id||e.className).join()}));
-    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 8$/); assert.match(s.lit,/worth/);
+    // six steps on a phone since 10.11–17.11: the tour skips what is not on the screen, and "ארבע פעולות" (the home's quick
+    // actions) and "בקרה" (the bottom bar has "התראות" in its place) are no longer on a phone's home (a wide screen: 8)
+    let s=await st(); assert.ok(s.card); assert.match(s.step,/^1 מתוך 6$/); assert.match(s.lit,/worth/);
     await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^2 מתוך/); assert.equal(s.lit,'kTrust');
     await pg.click('#tourCard [data-tour="back"]'); s=await st(); assert.match(s.step,/^1 מתוך/);
     for(let i=0;i<2;i++)await pg.click('#tourCard [data-tour="next"]'); s=await st(); assert.match(s.step,/^3 מתוך/); assert.match(await pg.evaluate(()=>document.getElementById('tourCard').textContent),/בבלינק: "ההשקעות שלי"/);
@@ -1007,7 +1023,7 @@ test('finding the way: "לאן להגיע?" by the words people type, "מה חד
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   {const {ctx,pg}=await open(390,{who:'new'}); // before there is a portfolio: the tour skips what is not there yet
     await pg.evaluate(()=>document.querySelector('#welcome [data-uxgo="tour"]').click()); await pg.waitForTimeout(500);
-    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 5$/); assert.deepEqual(pg.errs,[]); await ctx.close()}
+    assert.match(await pg.evaluate(()=>document.querySelector('#tourCard .sub').textContent),/^1 מתוך 4$/,'the portfolio, the research, the search, צ׳יקו (5 while "בקרה" was in the bottom bar)'); assert.deepEqual(pg.errs,[]); await ctx.close()}
 });
 
 test('fees: the table\'s running total ends at the headline, the fees saved apart in their own month',T,async t=>{
@@ -1158,10 +1174,11 @@ test('a partner is offered the e-mails on the home\'s to-do list once they can r
   const {ctx,pg}=await open(390,{who:'p2'});
   await pg.route('**/api/mail/me',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ready:true,ownDomain:true,kinds:['morning','earnings','live'],last:{},to:'n…@example.com'})}));
   await pg.reload(); await pg.waitForFunction(()=>[...document.querySelectorAll('[data-uxmail]')].length>0,null,{timeout:15000}).catch(()=>{});
-  const ks=await pg.evaluate(()=>[...document.querySelectorAll('[data-uxmail]')].map(b=>b.dataset.uxmail));
-  if(!ks.length){t.diagnostic('no to-do list for an empty new partner'); await ctx.close(); return}
-  assert.deepEqual(ks.sort(),['earnings','live','morning']);
-  await pg.evaluate(()=>document.querySelector('[data-uxmail="morning"]').click()); await pg.waitForTimeout(1500);
+  // 10.11: the to-do list is drawn in two places, the control's ("#desk") and "מה לעשות" in התראות; each offers the three once
+  const ks=await pg.evaluate(()=>['#desk','#alTodo'].map(s=>[...document.querySelectorAll(s+' [data-uxmail]')].map(b=>b.dataset.uxmail).sort()));
+  if(!ks[0].length&&!ks[1].length){t.diagnostic('no to-do list for an empty new partner'); await ctx.close(); return}
+  assert.deepEqual(ks,[['earnings','live','morning'],['earnings','live','morning']]);
+  await pg.evaluate(()=>document.querySelector('#desk [data-uxmail="morning"]').click()); await pg.waitForTimeout(1500);
   const uid=await pg.evaluate(async()=>(await (await fetch('/api/me',{credentials:'same-origin'})).json()).me.id);
   assert.equal(store.getDoc(`data/users/${uid}/settings`).data.mail.morning,true);
   assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -1392,6 +1409,8 @@ test('a click on text inside a tab does not move the page',T,async t=>{
 test('my portfolio: cards on a phone, a table on a wide screen; privacy and deletion live in the settings',T,async t=>{
   if(skip())return t.skip('no browser');
   for(const W of [390,1280]){const {ctx,pg}=await open(W); await tab(pg,'mine'); await pg.waitForTimeout(400);
+    // 13.11–17.11 (the owner): on a phone a holding is a card of one line; its actions are behind "⋯" and its fields behind "עוד"
+    if(W===390){await pg.click('#pfRows tr [data-pfdots]'); await pg.click('#pfRows tr [data-pfmore]'); await pg.waitForTimeout(150)}
     const e=await pg.evaluate(()=>{const tr=document.querySelector('#pfRows tr'), r=tr.getBoundingClientRect();
       return {disp:getComputedStyle(tr).display,inside:[...tr.children].filter(td=>td.offsetParent).every(td=>{const c=td.getBoundingClientRect();return c.left>=r.left-1&&c.right<=r.right+1}),
         qty:document.querySelector('#pfRows [data-pf="qty"]').getBoundingClientRect().width,ox:document.documentElement.scrollWidth>innerWidth+1}});
@@ -3480,12 +3499,15 @@ test('9.11 a holding\'s row in התיק שלי (13.11: a coloured card, "מכי�
   const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
   try{const {ctx,pg}=await open(390); await tab(pg,'mine'); await pg.waitForTimeout(800);
     const i=await pg.evaluate(()=>{const b=[...document.querySelectorAll('#pfRows [data-rowtrade][data-rside="sell"]')].find(b=>/MSFT/.test(b.getAttribute('aria-label'))); return b?b.dataset.rowtrade:null}); assert.ok(i!=null,'a button in the row');
-    // 13.11: closed, the row is a coloured card ("MSFT · qty · account", its name, and קנייה | מכירה | עוד | הסר), the fields under "עוד"
-    const c=await pg.evaluate(i=>{const tr=document.querySelector(`#pfRows [data-rowtrade="${i}"]`).closest('tr'), sm=tr.querySelector('td.pfsum'), sym=tr.querySelector('input[data-pf="sym"]');
+    // 13.11: closed, the row is a coloured card ("MSFT · qty · account", its name). 17.11 (the owner): its actions
+    // (קנייה | מכירה | עוד | הסר) are behind the card's "⋯" (the card itself opens the security's page); the fields under "עוד"
+    const c=await pg.evaluate(i=>{const tr=document.querySelector(`#pfRows [data-rowtrade="${i}"]`).closest('tr'), sm=tr.querySelector('td.pfsum'), sym=tr.querySelector('input[data-pf="sym"]'), dots=tr.querySelector('[data-pfdots]');
+      const btns=()=>[...tr.querySelectorAll('td.pfx .btn')].filter(b=>b.offsetHeight>=34).map(b=>b.textContent.trim());
       const out={sum:sm.offsetHeight>0&&/MSFT\s*·\s*[\d.,]+\s*·\s*\S/.test(sm.innerText.replace(/\n/g,' ')),field:sym.offsetHeight,colour:getComputedStyle(tr).backgroundColor!=='rgba(0, 0, 0, 0)'&&!!tr.querySelector('.ps-v b'),
-        btns:[...tr.querySelectorAll('td.pfx .btn')].filter(b=>b.offsetHeight>=34).map(b=>b.textContent.trim()),ox:document.documentElement.scrollWidth>innerWidth+1};
+        closed:btns(),dots:!!dots&&dots.offsetHeight>=34&&dots.getAttribute('aria-expanded'),ox:document.documentElement.scrollWidth>innerWidth+1};
+      dots.click(); out.btns=btns(); out.dotsOpen=dots.getAttribute('aria-expanded');
       tr.querySelector('[data-pfmore]').click(); out.open=sym.offsetHeight>0&&sm.offsetHeight>0; tr.querySelector('[data-pfmore]').click(); return out},i);
-    assert.deepEqual(c,{sum:true,field:0,colour:true,btns:['קנייה','מכירה','עוד','הסר'],ox:false,open:true},'the holding as a card: '+JSON.stringify(c));
+    assert.deepEqual(c,{sum:true,field:0,colour:true,closed:[],dots:'false',ox:false,btns:['קנייה','מכירה','עוד','הסר'],dotsOpen:'true',open:true},'the holding as a card: '+JSON.stringify(c));
     await pg.screenshot({path:(process.env.SHOT||'/tmp')+'/pf-cards.png'});
     const q0=P0.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0);
     await pg.click(`#pfRows [data-rowtrade="${i}"][data-rside="sell"]`); await pg.waitForSelector('#trBoxRow:not([hidden]) #trQty');
