@@ -10,14 +10,20 @@
 //     the horizon, the explanation and the evidence;
 //   - the chain of impact, event -> country -> economic factor -> sector -> company -> share / fund / index, every link
 //     with its direction, strength, confidence, the reliability of its sources, direct or indirect, the horizon, the
-//     explanation and the evidence. A link exists only where a reading says so, or where it is a fact of structure (a
-//     share is in a sector by the site's list of securities; a fund holds a share by its published holdings). A possible
-//     direction is never a forecast, and two things that happened together are never said to cause each other.
+//     explanation and the evidence. A link between the event and a country, a factor, a sector or a company the article
+//     names exists only where a reading says so. A possible direction is never a forecast, and two things that happened
+//     together are never said to cause each other;
+//   - 22.11, the correction: the relation of the event to an ASSET (a holding) is decided for each asset on its own, in
+//     server/impactrel.js: the subject of the article, an analysis of that asset against the facts of its business (with
+//     the fact it rests on, checked), or a fund's published holdings. "The article was in the share's feed", "the share
+//     is in that sector" and "a broad fund and the whole market" made links before; they make none now. Beside what the
+//     engine says, what the market did (the asset's move after the day of the event, its benchmark beside it), kept apart.
 // Two views, both cut on the server:
 //   - the admin (the management center's "view"): everything, with the sources, the duplicates, the weak links, the
 //     failures of the feeds, the assets without a fresh price, and the corrections (each audited);
-//   - a user: only the events that reach their own portfolio, and of every event only the paths that end at one of their
-//     assets; a company they do not hold appears only as a link on such a path. A partner's events are built from the
+//   - a user: only the events that have a relation to one of their own assets, each asset with its own explanation; a
+//     company they do not hold appears only as a link on such a path (and on the event's card, among the companies the
+//     public article names: never as an asset). A partner's events are built from the
 //     articles a partner may read (the general news and the articles about their own securities), exactly as their alerts.
 // The personal view is derived from the same engine (the same function, the same rules and corrections), never a model of
 // its own per person.
@@ -216,7 +222,7 @@ function eventOf(group,{fix,prevOf,coLoc}){
   const named=[...NM.values()], listed=[...LST].filter(s=>!NM.has(s)).slice(0,12);
   return {k,ev:x.ev||null,he:str(F.he,120)||x.he||'',title:lead.title||'',what:x.what||'',chg:pickX('chg'),eco,more:x.more||'',unknown:x.unknown||'',cats,cat:cats[0],type:x.type||'other',typeHe:TYPE_HE[x.type]||'',level,kind:x.kind||'news',cert:x.cert||'est',
     named,listed,facs:[...FACS.values()],secs:[...SECS.values()],themes:[...THEMES],nodes:uniq([ev,...links.flatMap(l=>[l.from,l.to])]),
-    st:group.st||'unknown',stHe:STAGE_HE[group.st||'unknown'],occ:x.occ||null,first:times[0]||null,last:times[times.length-1]||null,seen:prev?prev.seen:new Date().toISOString(),
+    st:group.st||'unknown',stHe:STAGE_HE[group.st||'unknown'],occ:x.occ||pickX('occ')||null,first:times[0]||null,last:times[times.length-1]||null,seen:prev?prev.seen:new Date().toISOString(),
     cc,regions,loc,dir,s,conf,confWhy:CONF_OF.includes(F.conf)?'נקבע ביד מנהל':cf.why,hz:F.hz&&HZ_HE[F.hz]?F.hz:hzOf(cats),hzWhy:F.hz?'נקבע ביד מנהל':HZ_WHY,
     ai,rules:!ai,nArt:arts.length,nPubs,srcRel,src:[...src.values()].sort((a,b)=>TIER_R[b.tier]-TIER_R[a.tier]||b.n-a.n),dups,
     // 22.11: each source as evidence: what kind it is, what it can confirm, and whether the article itself was read
@@ -410,8 +416,11 @@ export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
     const c=cards.get(h.sym), fund=h.fund||(c&&c.kind==='fund'), id=(fund?'fund:':'co:')+h.sym, loc=assetLoc(h.sym,fund,coLoc);
     const a={sym:h.sym,id,name:coName(h.sym),kind:fund?'fund':'stock',w:h.w,px:px>0?px:null,chg,fresh:fr,loc,sec:fund?null:sectorOf(h.sym)||null,open:isIL(h.sym)?ilOpen(now):usOpen(now),
       biz:c&&c.about&&c.about.line?c.about.line:null,industry:(c&&c.industry)||null,facts:!!(c&&c.has),
-      // the halo: the asset's own move in the market today. Grey when there is no fresh figure: never the engine's direction
-      halo:chg==null||fr.state==='none'||fr.state==='stale'?'none':chg>0.05?'up':chg<-0.05?'down':'flat'};
+      // the halo: the asset's own move in the market, green or red only while it trades and the price is fresh (live or
+      // delayed). With the market closed, or no fresh figure, it is neutral ("idle": grey and still), so the last close is
+      // never drawn as a move that is happening now; the number itself stays in the label, said to be a close. Never the
+      // engine's direction
+      halo:chg==null||(fr.state!=='live'&&fr.state!=='delayed')?'idle':chg>0.05?'up':chg<-0.05?'down':'flat',haloWhy:chg==null||fr.state==='none'?'אין מחיר עדכני':fr.state==='stale'?'המחיר לא עדכני':fr.state==='close'?((isIL(h.sym)?ilOpen(now):usOpen(now))?'המחיר האחרון הוא מחיר סגירה, לא מהמסחר של עכשיו':'המסחר סגור: מוצג מחיר הסגירה'):''};
     A.push(a); bySym.set(h.sym,a)}
   const CL=new Map(), closes=k=>{if(!CL.has(k))CL.set(k,closesOf(store,k)); return CL.get(k)};
   // what the market did after the event, for one asset: from the closes, with the benchmark beside it; and the move since,
@@ -424,7 +433,7 @@ export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
   for(const e of events){if(e.hidden)continue;
     const rels=relsFor(e,cards,{REL,fix:FX,ai}), impacts=[], paths=[], checked=[];
     for(const [sym,r] of Object.entries(rels)){const a=bySym.get(sym); if(!a)continue;
-      if(r.rel!=='direct'&&r.rel!=='indirect'){if(r.rel==='wait'&&r.pending)waiting++; checked.push({sym,rel:r.rel,why:r.why||''}); continue}
+      if(r.rel!=='direct'&&r.rel!=='indirect'){if(r.rel==='wait'&&r.pending)waiting++; if(r.rel==='none'||r.pending)checked.push({sym,rel:r.rel,why:r.why||''}); continue}
       const p=pathFor(e,r,a), c=cards.get(sym), arts3=e.arts.slice(0,3).map(x=>({t:x.title||x.he,pub:x.pub,link:x.link,at:x.at,tier:x.tier}));
       paths.push(p.path);
       for(const l of p.links){const ev0=l.final?[...(r.fact?[{t:`עובדה מפרטי הנכס: "${r.fact}"`,pub:factSrc(c,r.fact)||'',fact:true}]:[]),...((l.arts||[]).length?l.arts.map(i=>e.arts[i]).filter(Boolean).slice(0,3).map(x=>({t:x.title||x.he,pub:x.pub,link:x.link,at:x.at,tier:x.tier})):arts3)]
@@ -443,7 +452,7 @@ export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
       ...impacts.filter(i=>!(e.named||[]).some(z=>z.sym===i.sym)).map(i=>({sym:i.sym,name:coName(i.sym),how:i.rel,dir:i.dir,why:i.mech,mine:true,by:i.src==='structure'?'structure':'analysis',verdict:{rel:i.rel,why:''}}))];
     out.push({k:e.k,he:e.he,what:e.what,chg:e.chg||'',eco:e.eco||'',more:e.more,unknown:e.unknown,cats:e.cats,cat:e.cat,catHe:CAT_HE[e.cat],type:e.type,level:e.level,kind:e.kind,cert:e.cert,st:e.st,stHe:e.stHe,
       occ:e.occ,first:e.first,last:e.last,got:e.seen||null,status:o?(o.status||'same'):'new',upd:o&&o.upd||null,cc:e.cc,regions:e.regions,loc:e.loc,dir:e.dir,s:e.s,conf:e.conf,confWhy:e.confWhy,hz:e.hz,hzWhy:e.hzWhy,rules:e.rules,
-      nArt:e.nArt,nPubs:e.nPubs,srcRel:e.srcRel,src:e.src.map(s=>({pub:s.pub,tier:s.tier,n:s.n})),evidence:evidenceOf(e,(e.named||[]).filter(z=>mine.has(z.sym))),dups:(e.dups||[]).length,
+      nArt:e.nArt,nPubs:e.nPubs,srcRel:e.srcRel,src:e.src.map(s=>({pub:s.pub,tier:s.tier,n:s.n})),evidence:evidenceOf(e,(e.named||[]).filter(z=>mine.has(z.sym))),dups:(e.dups||[]).length,hist:(o&&o.hist||[]).slice(-6),
       facs:(e.facs||[]).map(f=>({k:f.k,he:FAC_HE[f.k]||f.k,move:f.move,why:f.why})),said,found,impacts,checked,touches:uniq(impacts.map(i=>i.sym)),paths,rel:relScore(impacts,bySym)})}
   out.sort((a,b)=>(b.rel-a.rel)||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1));
   const ev=out.slice(0,limit), keepK=new Set(ev.map(e=>e.k));
@@ -468,7 +477,9 @@ function filtersOf(ev,A){const cc=new Map(), reg=new Set(), sec=new Set(), cats=
   return {countries:[...cc].map(([k,he])=>({k,he})),regions:[...reg],sectors:[...sec].map(k=>({k,he:SEC_HE[k]||k})),cats:[...cats].map(k=>({k,he:CAT_HE[k]}))}}
 
 // ================= the admin's view: everything, with what is wrong with it =================
-export function impactWorld(store,{now=new Date(),days=7,limit=200}={}){
+// 22.11: the relations to assets say which securities are held on the site (never by whom): they are given only to an admin
+// with the permission for personal detail ("sensitive"); another admin gets the events, their links and the counts
+export function impactWorld(store,{now=new Date(),days=7,limit=200,sensitive=true}={}){
   const PV=store.getDoc(IMPACT_DOC).data||null, from=new Date(now.getTime()-days*DAY).toISOString();
   const evs=(PV&&PV.events||[]).filter(e=>(e.last||'')>=from);
   const Q=store.getDoc('quotes/latest').data||{}, names=nameMap();
@@ -480,7 +491,7 @@ export function impactWorld(store,{now=new Date(),days=7,limit=200}={}){
   // 22.11: the weak relations to assets: at low confidence, resting on no fact of the asset, the same explanation given to
   // two assets, still waiting for the analysis, or an asset the site holds no facts about
   const weakRel=[], waitRel=[]; for(const e of evs)for(const [sym,r] of Object.entries(e.rels||{})){
-      if(r.rel==='wait'){waitRel.push({k:e.k,he:e.he,sym,why:r.why||'',sigs:r.sigs||[]}); continue} if(r.rel==='none'||r.st==='ok')continue; const why=[];
+      if(r.rel==='wait'){waitRel.push({k:e.k,he:e.he,sym,why:r.why||'',sigs:r.sigs||[],nofacts:!!r.nofacts}); continue} if(r.rel==='none'||r.st==='ok')continue; const why=[];
       if(r.conf==='low')why.push('ביטחון נמוך'); if(r.src==='ai'&&!r.grounded)why.push('לא נשען על עובדה מפרטי הנכס'); if(r.generic)why.push('אותו הסבר לשני נכסים'); if(r.pending)why.push('ממתין לניתוח נפרד'); if(r.cardHas===false)why.push('אין לאתר עובדות על הנכס');
       if(why.length)weakRel.push({k:e.k,he:e.he,sym,rel:r.rel,mech:r.mech||'',why})}
   // the failures of the feeds that make the picture: the reading, the gathering, the engine itself
@@ -499,8 +510,10 @@ export function impactWorld(store,{now=new Date(),days=7,limit=200}={}){
   for(const e of list){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const l of e.links)for(const n of [l.from,l.to])if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
       nodes[n]={t,label:nodeLabel(n),...(t==='co'?{name:names.get(n.slice(3))||null}:{}),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}
     for(const s of Object.keys(e.rels||{})){const n='co:'+s; if(!nodes[n])nodes[n]={t:'co',label:s,name:names.get(s)||null,loc:coLoc(s)}}}
-  return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...e,catHe:CAT_HE[e.cat],got:e.seen||null})),nodes,indices:indicesOf(Q,now),
-    diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,weakRel:weakRel.slice(0,150),nWeakRel:weakRel.length,waitRel:waitRel.slice(0,100),nWaitRel:waitRel.length,fails,stale:stale.slice(0,80),rel:RS,
+  const open=e=>sensitive?e:{...e,rels:{},listed:[],arts:e.arts.map(a=>({...a,syms:[]}))};
+  if(!sensitive)for(const e of list)for(const s of Object.keys(e.rels||{})){const n='co:'+s; if(nodes[n]&&!e.links.some(l=>l.from===n||l.to===n))delete nodes[n]}
+  return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...open(e),catHe:CAT_HE[e.cat],got:e.seen||null})),nodes,indices:indicesOf(Q,now),relsShown:!!sensitive,
+    diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,weakRel:sensitive?weakRel.slice(0,150):[],nWeakRel:weakRel.length,waitRel:sensitive?waitRel.slice(0,100):[],nWaitRel:waitRel.length,fails,stale:stale.slice(0,80),rel:RS,
       fixes:Object.keys(FX.link||{}).length+Object.keys(FX.ev||{}).length+Object.keys(FX.hq||{}).length+Object.keys(FX.alias||{}).length+Object.keys(FX.rel||{}).length},
     filters:filtersOf(list,[]),tiers:REL_HE,ver:VER_HE};
 }
@@ -553,7 +566,7 @@ const dayOk=d=>typeof d==='string'&&/^\d{4}-\d\d-\d\d$/.test(d)&&!isNaN(Date.par
 const rangeOf=(from,to,now,span=90)=>{const today=ilParts(now).iso; let t1=dayOk(to)||today; if(t1>today)t1=today; let t0=dayOk(from)||ilParts(new Date(Date.parse(t1)-span*DAY)).iso; if(t0>t1)t0=t1; return {t0,t1,today}};
 // what the engine said then about one asset: the relation kept in the snapshot (22.11 on); for an older snapshot, the
 // company the reading named (and, for a fund, a holding of it), said to be the earlier engine's
-const saidOf=(e,sym,inFund)=>{const r=e.rels&&e.rels[sym]; if(r)return {dir:r.dir,s:r.s,conf:r.conf,direct:r.rel==='direct',via:(r.via||[]).map(v=>v.slice(v.indexOf(':')+1)).join(' ← ')||null,mech:r.mech||'',fact:r.fact||'',basis:r.basis||null,hz:r.hz||null,pending:!!r.pending,at:r.at||null};
+const saidOf=(e,sym,inFund)=>{const r=e.rels&&e.rels[sym]; if(r)return {dir:r.dir,s:r.s,conf:r.conf,direct:r.rel==='direct',via:(r.via||[]).map(v=>nodeLabel(v)).join(' ← ')||null,mech:r.mech||'',fact:r.fact||'',basis:r.basis||null,hz:r.hz||null,pending:!!r.pending,at:r.at||null};
   if(e.rels)return null; const d=(e.cos||[]).find(c=>c.sym===sym); if(d)return {dir:d.dir,s:d.s,conf:d.c,direct:!!d.direct,via:null,mech:'',legacy:true};
   const f=(e.cos||[]).find(c=>inFund.has(c.sym)); return f?{dir:f.dir,s:f.s,conf:f.c,direct:false,via:f.sym,mech:'',legacy:true}:null};
 export function impactHistory(store,u,sym,{from=null,to=null,now=new Date()}={}){
@@ -618,4 +631,38 @@ export function impactQuality(store,{now=new Date(),days=120}={}){
     byConf:group(r=>r.conf,{high:'ביטחון גבוה',mid:'ביטחון בינוני',low:'ביטחון נמוך'}),byRel:group(r=>r.rel,{direct:'קשר ישיר',indirect:'קשר עקיף'}),
     bySrc:group(r=>r.src,{ai:'ניתוח נפרד לנכס',reading:'נושא הכתבה',structure:'אחזקות קרן',hand:'ביד מנהל'}),firstSnap:snaps[0]||null,
     note:'נספרים רק קשרים שנאמר בהם כיוון (חיובי או שלילי), פעם אחת לכל אירוע ונכס, לפי מה שנאמר ביום הראשון. "באותו כיוון" הוא תנועת הנכס מול המדד שלו (כשיש) אחרי יום האירוע. שיעור מוצג רק מ-10 מקרים שהסתיימו. זו בדיקה של איכות הניתוח, לא הוכחה שהוא חוזה מחירים: סמיכות בזמן אינה סיבתיות.'};
+}
+// 22.11: a check of a sample of the events that are here now (the admins; the owner's order: at least twenty): what the
+// engine itself can answer about each, said plainly, and what only a person can. For every event ten questions: did it
+// happen (a primary source, or a report read in full, against a headline alone or an opinion), is the day it happened
+// known and not after its publication, are the times of publication and of arrival in order, is the source reliable, is it
+// marked a fact or a reading, is it a duplicate (joined, or looks like another event that was not), do the relations to
+// assets rest on something (the subject of the article, a checked fact, holdings), has each an explanation, is "direct" the
+// subject only, and does the confidence fit the evidence. "pass", "warn" (look at it) or "fail" (wrong by the engine's own rules)
+export function impactAudit(store,{now=new Date(),n=20,sensitive=true}={}){
+  const PV=store.getDoc(IMPACT_DOC).data||{}, all=(PV.events||[]).filter(e=>!e.hidden), has=e=>Object.keys(e.rels||{}).length?1:0;
+  const ev=all.slice().sort((a,b)=>(has(b)-has(a))||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1)).slice(0,Math.max(1,Math.min(60,n)));
+  const C=(k,st,he)=>({k,st,he}), sym=s=>sensitive?s:'נכס';
+  const rows=ev.map(e=>{const A=e.arts||[], R=Object.entries(e.rels||{}).filter(([,r])=>r.rel==='direct'||r.rel==='indirect'), ch=[], fday=String(e.first||'').slice(0,10);
+    const prim=A.some(a=>a.ver==='primary'), factFull=A.some(a=>a.ver==='fact'&&a.rd==='full'), fact=A.some(a=>a.ver==='fact');
+    ch.push(e.rules?C('happened','fail','נקרא לפי כותרת בלבד: הכתבה עצמה לא נבדקה'):prim?C('happened','pass','יש מקור ראשוני (הגוף שהחליט או החברה עצמה)'):factFull?C('happened','pass','דווח כעובדה, והכתבה נקראה במלואה'):fact?C('happened','warn','דווח כעובדה, אך נקראו רק הכותרת והתקציר'):C('happened','warn','המקורות הם ניתוח, דעה או הערכה: לא דיווח על דבר שקרה'));
+    ch.push(!e.occ?C('occ','warn','הכתבות לא אומרות מתי זה קרה; מוצג מועד הפרסום, ומסומן כך'):fday&&e.occ>fday?C('occ','fail',`מועד ההתרחשות (${e.occ}) מאוחר ממועד הפרסום (${fday})`):C('occ','pass',`התרחש ${e.occ}, פורסם ${fday||'?'}`));
+    ch.push(!e.first?C('pub','fail','אין מועד פרסום'):e.seen&&Date.parse(e.seen)<Date.parse(e.first)-H?C('pub','warn','המנוע רשם את האירוע לפני מועד הפרסום שבמקור: שעון המקור לא מדויק'):C('pub','pass','מועד הפרסום והמועד שבו התקבל באתר שמורים בנפרד ובסדר'));
+    ch.push(e.srcRel==='low'?C('source','warn','המקור היחיד חלש (דעה, אתר המלצות או רשת חברתית)'):C('source','pass',`${REL_HE[e.srcRel]||''}${e.nPubs>1?`, ${e.nPubs} מקורות`:''}`));
+    ch.push(e.kind==='opinion'&&(LV[e.level]||0)>=2?C('kind','warn','טור דעה שסווג כאירוע חשוב'):C('kind','pass',e.rules?'קריאה אוטומטית, מסומנת כך':e.cert==='fact'?'מסומן: עובדה מדווחת':e.cert==='interp'?'מסומן: פרשנות של המקור':'מסומן: הערכה'));
+    // a possible duplicate that was not joined: another event of the same category within two days, naming the same company as its subject
+    const dir=new Set((e.named||[]).filter(z=>z.how==='direct').map(z=>z.sym)), twin=all.filter(o=>o.k!==e.k&&o.cat===e.cat&&Math.abs(Date.parse(o.first||0)-Date.parse(e.first||0))<48*H&&(o.named||[]).some(z=>z.how==='direct'&&dir.has(z.sym))).map(o=>o.k);
+    const joined=Object.entries(PV.alias||{}).filter(([,v])=>v===e.k).length;
+    ch.push(twin.length?C('dup','warn','אולי כפול של: '+twin.slice(0,3).join(', ')+' (אותה חברה ואותה קטגוריה ביומיים)'):C('dup','pass',(e.dups||[]).length||joined?`אוחדו ${(e.dups||[]).length} כפילויות ו-${joined} מפתחות לאירוע אחד`:'לא נמצא אירוע דומה'));
+    const soft=R.filter(([,r])=>r.pending||r.basis==='knowledge'||r.basis==='reading'||r.generic), softHe=r=>r.pending?'ממתין לניתוח':r.generic?'הסבר כללי':r.basis==='knowledge'?'ידע כללי':'מקריאת הכתבה';
+    ch.push(!R.length?C('rel','pass','אין נכס משויך (אף קשר לא עמד בכללים)'):soft.length?C('rel','warn',`${soft.length} מתוך ${R.length} קשרים לא נשענים על עובדה שנבדקה (${soft.slice(0,4).map(([s,r])=>sym(s)+': '+softHe(r)).join('; ')})`):C('rel','pass',`${R.length} קשרים, כולם נושא הכתבה, עובדה שנבדקה או אחזקות קרן`));
+    const noMech=R.filter(([,r])=>!(r.mech&&r.mech.length>=15)); ch.push(noMech.length?C('expl','fail','קשר בלי הסבר: '+noMech.map(([s])=>sym(s)).join(', ')):C('expl','pass',R.length?'לכל קשר יש הסבר':'אין קשרים'));
+    const badDir=R.filter(([s,r])=>r.rel==='direct'&&r.src!=='hand'&&!(e.named||[]).some(z=>z.sym===s&&z.how==='direct')); ch.push(badDir.length?C('direct','fail','"ישיר" לנכס שאינו נושא הכתבה: '+badDir.map(([s])=>sym(s)).join(', ')):C('direct','pass',R.length?'"ישיר" רק לנושא הכתבה; השאר עקיף':'אין קשרים'));
+    const strong=e.cert==='fact'&&(prim||TIER_R[e.srcRel]>=2||e.nPubs>=3), badC=R.filter(([,r])=>r.conf==='high'&&r.st!=='ok'&&r.st!=='edit'&&!(e.cert==='fact'&&(r.grounded||r.basis==='article'||r.src==='reading')));
+    ch.push(e.conf==='high'&&e.cert!=='fact'&&!(e.fix&&e.fix.conf)?C('conf','fail','ביטחון גבוה לאירוע שאינו עובדה מדווחת'):badC.length?C('conf','fail','ביטחון גבוה לקשר שלא נשען על עובדה: '+badC.map(([s])=>sym(s)).join(', ')):e.conf==='high'&&!strong?C('conf','warn','ביטחון גבוה ממקור יחיד שאינו ראשוני'):C('conf','pass',`${CONF_HE[e.conf]||''}: ${e.confWhy||''}`));
+    return {k:e.k,he:e.he,cat:e.cat,catHe:CAT_HE[e.cat]||'',level:e.level,first:e.first,nPubs:e.nPubs,rels:R.length,checks:ch,worst:ch.some(c=>c.st==='fail')?'fail':ch.some(c=>c.st==='warn')?'warn':'pass'}});
+  const sum={pass:rows.filter(r=>r.worst==='pass').length,warn:rows.filter(r=>r.worst==='warn').length,fail:rows.filter(r=>r.worst==='fail').length};
+  return {at:now.toISOString(),engineAt:PV.at||null,n:rows.length,of:all.length,events:rows,summary:sum,
+    labels:{happened:'האם קרה',occ:'מועד ההתרחשות',pub:'מועד הפרסום',source:'אמינות המקור',kind:'עובדה או פרשנות',dup:'כפילות',rel:'הנכסים ששויכו',expl:'הסבר ההשפעה',direct:'ישיר או עקיף',conf:'רמת הביטחון'},
+    note:'הבדיקה היא מה שהמנוע יכול לענות בעצמו על כל אירוע. "לבדוק" הוא מקום שבו כדאי שאדם יסתכל; "נכשל" הוא חריגה מכללי המנוע עצמו. האם אירוע באמת קרה נבדק כאן לפי סוג המקור (ראשוני, או דיווח שנקרא במלואו), לא לפי ידיעה עצמאית.'};
 }

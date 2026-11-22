@@ -24,7 +24,7 @@
 import {createHash} from 'node:crypto';
 import {aiMeter} from './admin/counter.js';
 import {isFund, sectorMap} from './pulse.js';
-import {MARKET, salvageArray} from './newsx.js';
+import {salvageArray} from './newsx.js';
 
 export const REL_DOC='research/impactrel';
 const DAY=864e5;
@@ -36,10 +36,11 @@ const docKey=k=>'research/s_'+String(k).replace(/[^A-Za-z0-9_.\-]/g,'_');
 const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9֐-׿%.]+/g,' ').replace(/\s+/g,' ').trim();
 const ADVICE=/(כדאי|מומלץ|ממליצ\S*)\s+(לקנות|למכור|להחזיק|להיכנס|לצאת)|הזדמנות קנייה|צפוי(?:ה|ים|ות)? ל(?:עלות|רדת|זנק|צנוח)|מחיר יעד/;
 
-// ---- the assets the engine examines: what anybody holds, and the market's anchors (so the list says nothing of who holds what) ----
+// ---- the assets the engine examines: what anybody holds (the relations are shown to an admin only with the permission for
+// personal detail, since the list of assets says what is held on the site, though never by whom) ----
 export function heldSyms(store){const S=new Set(), add=d=>{for(const p of ((d&&d.positions)||[]))if(p&&typeof p.sym==='string'&&p.sym)S.add(p.sym)};
   add(store.getDoc('portfolio/main').data); try{for(const p of store.pathsUnder('data/users'))if(/\/portfolio$/.test(p))add(store.getDoc(p).data)}catch(e){} return S}
-export const universeOf=store=>uniq([...heldSyms(store),...MARKET]);
+export const universeOf=store=>[...heldSyms(store)];
 
 // ---- the facts of one asset (its card): only what the site holds about it, each with where it came from ----
 // the channels a business is open to, read from its industry and its own description: used ONLY to choose which pairs are
@@ -129,6 +130,7 @@ export function baseRel(e,c,cd){
 // a fund whose holdings already carry the link
 export function needsAI(e,c,cd){
   if(!cd)return false; const z=cd.named, nD=(e.named||[]).filter(x=>x.how==='direct').length;
+  if(!c.has&&!z)return false;   // the site holds no facts of this asset (no description, revenue or holdings): nothing to examine the event against
   if(c.kind==='fund')return !(z&&z.how==='direct'&&inTitle(e,c.sym))&&!fundRel(e,c,cd);
   if(z&&z.how==='direct'&&z.said!==false&&nD<=3)return false;
   return true;
@@ -216,7 +218,9 @@ export async function relTask(store,events,{now=new Date(),log=()=>{},fetch:f=gl
   const todo=[];
   for(const e of events.slice().sort((a,b)=>(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1))){
     if(e.hidden||e.rules||(e.last||'')<from)continue; const cand=candidatesOf(e,cards), rec=by[e.k]||{rels:{},miss:{}}, pairs=[];
-    const pr=cd=>cd.named?0:cd.listed?1:cd.peers?2:cd.holds?3:4;
+    // the order of asking: a company the reading names, a competitor of the article's subject, a channel in common, a fund's
+    // holdings; last, an article that only sat in the share's feed (most of those are refused)
+    const pr=cd=>cd.named?0:cd.peers?1:cd.ch?2:cd.holds?3:4;
     for(const cd of [...cand.values()].sort((a,b)=>pr(a)-pr(b))){const c=cards.get(cd.sym); if(!c||!needsAI(e,c,cd))continue;
       const r=rec.rels&&rec.rels[cd.sym], sig=sigOf(e,c); if(r&&r.sig===sig)continue; if(((rec.miss||{})[cd.sym]||0)>=2)continue;
       if(pairs.length<perEvent)pairs.push({c,cd,sig}); else st.waiting++}
@@ -250,7 +254,7 @@ export function relsFor(e,cards,{REL=null,fix=null,ai=true}={}){
   const cand=candidatesOf(e,cards), rec=(REL&&REL.by&&REL.by[e.k])||null, FX=(fix&&fix.rel)||{}, out={};
   for(const cd of cand.values()){const c=cards.get(cd.sym); if(!c)continue; const need=needsAI(e,c,cd), r0=rec&&rec.rels?rec.rels[cd.sym]:null, cur=r0&&r0.sig===sigOf(e,c)?r0:null, base=baseRel(e,c,cd);
     let r=null;
-    if(cur)r={...cur}; else if(!need)r=base; else if(base)r={...base,pending:ai&&!e.rules}; else r={rel:'wait',src:'none',pending:ai&&!e.rules,why:ai?'הזוג נבחר לבדיקה (סימנים: '+cd.sig.join(', ')+') וממתין לניתוח נפרד מול עובדות הנכס':'אין מנתח זמין (ANTHROPIC_API_KEY חסר): בלי ניתוח נפרד לנכס לא מוצג קשר'};
+    if(cur)r={...cur}; else if(!need)r=base||(!c.has?{rel:'wait',src:'none',pending:false,nofacts:true,why:'אין לאתר עובדות על העסק של הנכס (תיאור, הכנסות או אחזקות): אין מול מה לבדוק את האירוע'}:null); else if(base)r={...base,pending:ai&&!e.rules}; else r={rel:'wait',src:'none',pending:ai&&!e.rules,why:ai?'הזוג נבחר לבדיקה (סימנים: '+cd.sig.join(', ')+') וממתין לניתוח נפרד מול עובדות הנכס':'אין מנתח זמין (ANTHROPIC_API_KEY חסר): בלי ניתוח נפרד לנכס לא מוצג קשר'};
     if(!r)continue; r.sigs=cd.sig; r.cardHas=c.has;
     const f=FX[e.k+'|'+cd.sym], linked=r.rel==='direct'||r.rel==='indirect';
     if(f&&f.st==='no'){r.st='no'; r.fixBy=f.by||null; r.was=r.rel; r.rel='none'; r.why='נדחה ביד מנהל'+(f.note?': '+f.note:'')}

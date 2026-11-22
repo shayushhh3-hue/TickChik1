@@ -14,7 +14,7 @@ import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
-import {impactWorld,impactFix,impactTask,impactRelRun,impactQuality} from '../impact.js';
+import {impactWorld,impactFix,impactTask,impactRelRun,impactQuality,impactAudit} from '../impact.js';
 import {yahooStatus,marketData, splitsAdmin} from './yahoo.js';
 import {keysList,keyTest} from './keys.js';
 import {runsView} from './runs.js';
@@ -189,7 +189,7 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   const WB=new Map();
   // 19.11 TikChik WORLD IMPACT, the admin's view: every event and every link, with the sources, the duplicates, the weak
   // links, the feeds' failures and the assets without a fresh price; the corrections need "edit" and are audited one by one
-  app.get('/api/admin/impact',need('view'),(req,res)=>{try{res.json(impactWorld(store,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7))}))}
+  app.get('/api/admin/impact',need('view'),(req,res)=>{try{res.json(impactWorld(store,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7)),sensitive:can(req.user,'sensitive')}))}
     catch(e){log('impact world failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'מפת ההשפעה לא זמינה כרגע.'}})}});
   app.get('/api/admin/impact/audit',need('view'),(req,res)=>res.json({items:auditList(store,{action:'impact.',limit:Math.min(300,+req.query.limit||100)})}));
   // a correction is applied at once: the graph is rebuilt with it (the same run as after a reading; a few milliseconds)
@@ -198,6 +198,9 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   // 22.11: how the engine's statements stood against what followed (the snapshots against the closes): a check of the engine
   app.get('/api/admin/impact/quality',need('view'),(req,res)=>{try{res.json(impactQuality(store,{days:Math.max(7,Math.min(180,Math.round(+req.query.days)||120))}))}
     catch(e){log('impact quality failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'מדידת האיכות לא זמינה כרגע.'}})}});
+  // 22.11: the check of a sample of the events (twenty unless asked otherwise): ten questions an event, pass / look / fail
+  app.get('/api/admin/impact/sample',need('view'),(req,res)=>{try{res.json(impactAudit(store,{n:Math.max(1,Math.min(60,Math.round(+req.query.n)||20)),sensitive:can(req.user,'sensitive')}))}
+    catch(e){log('impact sample failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'בדיקת המדגם לא זמינה כרגע.'}})}});
   // 22.11: a run by hand also examines the pairs that wait (the relation of each event to each asset), within the daily cap
   app.post('/api/admin/impact/run',need('system'),async(req,res)=>{try{const r=impactTask(store,{log}); let rel=null; try{rel=await impactRelRun(store,{log,ask:app.locals.impactAsk||null})}catch(e){log('impact relations by hand failed: '+(e&&e.message||e))}
       audit(store,{user:req.user,action:'impact.run',target:'impact',detail:{...r,rel:rel?{asked:rel.asked,judged:rel.judged,none:rel.none,waiting:rel.waiting}:null},ip:req.ip}); res.json({...r,rel})}

@@ -11,7 +11,7 @@ import {Store} from '../server/store.js';
 import {adminSchema, auditList, auditVerify} from '../server/admin/core.js';
 import {newsId, cleanX, saidIn, ruleRead, analyzeBatch, _setSymNames} from '../server/newsx.js';
 import {_setSectors, _setKinds, eventsOf} from '../server/pulse.js';
-import {impactTask, impactRelRun, impactForUser, impactWorld, impactFix, impactHistory, impactPast, impactQuality, reactionOf, buildEvents, catsOf, srcTier, freshOf, indicesOf, _setNames, IMPACT_DOC, FIX_DOC, SNAP} from '../server/impact.js';
+import {impactTask, impactRelRun, impactForUser, impactWorld, impactFix, impactHistory, impactPast, impactQuality, impactAudit, reactionOf, buildEvents, catsOf, srcTier, freshOf, indicesOf, _setNames, IMPACT_DOC, FIX_DOC, SNAP} from '../server/impact.js';
 import {REL_DOC, cardOf, candidatesOf, cleanRel, baseRel, needsAI, relsFor, fundRel, markGeneric, relPrompt} from '../server/impactrel.js';
 import {hqOf, cityPt} from '../server/impactgeo.js';
 
@@ -93,7 +93,8 @@ test('the engine: one event per thing (two keys and two publishers joined), the 
   assert.equal(op2.status,'update'); assert.ok(op2.hist.at(-1).ch.includes('level')); assert.ok(op2.hist.at(-1).ch.includes('src')); assert.equal(op2.rev,1);
   // a snapshot of the day: what was said then, with the place, about each asset the event has a relation to
   const snap=s.listDocs(SNAP); assert.deepEqual(snap.map(r=>r.id).sort(),['2026-11-18','2026-11-19'],'a snapshot per Israeli day'); const sq=snap.find(r=>r.id==='2026-11-18').data.events.find(e=>e.k==='ev:taiwan-quake');
-  assert.ok(sq.cos.some(c=>c.sym==='AAPL'&&c.dir==='neg'&&!c.direct)); assert.equal(sq.loc.name,'טייוואן'); assert.equal(sq.rels.TSM.rel,'direct'); assert.equal(sq.rels.AAPL.rel,'indirect'); assert.match(sq.rels.AAPL.mech,/לקוחה של TSMC/);
+  assert.ok(sq.cos.some(c=>c.sym==='AAPL'&&c.dir==='neg'&&!c.direct)); assert.equal(sq.loc.name,'טייוואן'); assert.equal(sq.rels.AAPL.rel,'indirect'); assert.match(sq.rels.AAPL.mech,/לקוחה של TSMC/);
+  assert.equal(sq.rels.TSM,undefined,'only what somebody holds is examined: TSMC is the subject, and nobody\'s asset'); assert.deepEqual(Object.keys(sq.rels).sort(),['AAPL','NVDA','QQQ']);
 });
 
 test('the category and the countries come from the reading when it gives them; older readings are placed by rules',()=>{
@@ -135,9 +136,11 @@ test('the user\'s view: only what has a relation to their own assets; a company 
   assert.deepEqual(qk.paths.find(p=>p.to==='NVDA').nodes,['ev:ev:taiwan-quake','co:TSM','co:NVDA']); assert.equal(qk.impacts.find(i=>i.sym==='QQQ').holds.length,2,'NVIDIA and Apple, both held by the fund');
   // Apple's fine reaches the owner only through QQQ, which holds Apple (8.9%): indirect, by the fund's holdings
   const af=O.events.find(e=>e.k==='ev:apple-eu-fine'); assert.deepEqual(af.touches,['QQQ']); assert.deepEqual(af.paths[0].nodes,['ev:ev:apple-eu-fine','co:AAPL','fund:QQQ']); assert.equal(af.paths[0].direct,false);
-  // the halo is the market's own move: NVDA down today, XOM up; the line colour is the possible direction, apart
-  assert.equal(O.assets.find(a=>a.sym==='NVDA').halo,'down'); assert.equal(O.assets.find(a=>a.sym==='XOM').halo,'up');
-  assert.equal(O.assets.find(a=>a.sym==='XOM').fresh.state,'close');
+  // the halo is the market's own move while it trades: NVDA down now (a fresh price in the session); Exxon's last price is a
+  // close, so its halo is neutral and says why: a close is never drawn as a move that is happening. The line's colour is the
+  // possible direction, apart
+  assert.equal(O.assets.find(a=>a.sym==='NVDA').halo,'down'); const xo=O.assets.find(a=>a.sym==='XOM'); assert.equal(xo.fresh.state,'close'); assert.equal(xo.halo,'idle'); assert.match(xo.haloWhy,/מחיר סגירה/); assert.equal(xo.chg,0.92,'the number stays, said to be a close');
+  const night=impactForUser(s,U.o,{now:new Date('2026-11-19T03:00:00Z')}); assert.ok(night.assets.every(a=>a.halo==='idle'),'the market is closed: every halo neutral'); assert.match(night.assets.find(a=>a.sym==='NVDA').haloWhy,/המסחר סגור/);
   // the partner: Apple's fine (their own article) and the quake through TSMC; never the owner's holdings as holdings
   const fk=F.events.map(e=>e.k); assert.ok(fk.includes('ev:apple-eu-fine')); assert.ok(fk.includes('ev:taiwan-quake'));
   assert.ok(!fk.includes('ev:nvda-q3-report'),'an article gathered for somebody else\'s share is not theirs');
@@ -320,6 +323,14 @@ test('22.11 the acceptance scenarios: each holder sees their own asset\'s events
   const W=impactWorld(s,{now:at}), wr=W.events.find(e=>e.k==='ev:market-wrap'); assert.equal(wr.rels.NVDA.rel,'none'); assert.match(wr.rels.NVDA.why,/אין מסלול/); assert.deepEqual(wr.listed.slice().sort(),['META','NVDA']);
   assert.ok(W.diag.weakRel.some(w=>w.k==='ev:eu-ai-rules'&&w.sym==='META'&&w.why.includes('לא נשען על עובדה מפרטי הנכס'))); assert.ok(W.diag.weakRel.some(w=>w.k==='ev:ai-spending'&&w.why.includes('אותו הסבר לשני נכסים')));
   assert.equal(W.events.find(e=>e.k==='ev:chip-export-curbs').rels.NVDA.rel,'none'); assert.equal(W.stats.rels>0,true);
+  // the check of a sample: ten questions an event, by the engine's own rules; what only a person can answer is said to be so
+  const AU=impactAudit(s,{now:at,n:20}), au=k=>AU.events.find(e=>e.k===k), ck=(k,c)=>au(k).checks.find(x=>x.k===c);
+  assert.equal(AU.n,AU.events.length); assert.ok(AU.n>=10&&AU.n<=20); assert.ok(AU.events.every(e=>e.checks.length===10)); assert.equal(AU.summary.pass+AU.summary.warn+AU.summary.fail,AU.n); assert.equal(Object.keys(AU.labels).length,10);
+  assert.equal(ck('ev:sony-nvidia-deal','happened').st,'pass','the company\'s own release is a primary source'); assert.equal(ck('ev:power-demand-stocks','happened').st,'warn','an analysis is not a report of something that happened');
+  assert.equal(ck('ev:defense-budget','occ').st,'pass'); assert.equal(ck('ev:memory-prices','occ').st,'warn','the day it happened is not said'); assert.equal(ck('ev:defense-budget','rel').st,'pass','Lockheed\'s link rests on a checked fact');
+  assert.equal(ck('ev:eu-ai-rules','rel').st,'warn'); assert.match(ck('ev:eu-ai-rules','rel').he,/META: ידע כללי/); assert.equal(ck('ev:ai-spending','rel').st,'warn'); assert.match(ck('ev:ai-spending','rel').he,/הסבר כללי/);
+  assert.ok(AU.events.every(e=>e.checks.find(c=>c.k==='direct').st==='pass'&&e.checks.find(c=>c.k==='expl').st==='pass'),'no "direct" for a company that is not the subject, no link without an explanation');
+  assert.ok(!JSON.stringify(impactAudit(s,{now:at,sensitive:false})).includes('META'),'without the permission for personal detail the assets are not named');
 });
 
 test('22.11 the source names it, or the engine found it: checked against the text the reader saw',async()=>{
@@ -414,12 +425,16 @@ test('the API: a partner cannot reach the global graph by any route; their view 
     // the admin: the world, the corrections with "edit", the log; a run by "system"
     assert.equal((await req('a','POST','/api/login',{email:'adm@x.co',password:'password1'})).status,200);
     r=await req('a','GET','/api/admin/impact'); assert.equal(r.status,200); assert.equal(r.j.mode,'world'); assert.ok(r.j.events.length>=6); assert.ok(r.j.diag.rel===null||typeof r.j.diag.rel==='object');
+    // an admin without the permission for personal detail: the events and the counts, not which assets are held on the site
+    assert.equal(r.j.relsShown,false); assert.ok(r.j.events.every(e=>!Object.keys(e.rels).length&&!e.listed.length&&e.arts.every(a=>!a.syms.length))); assert.deepEqual(r.j.diag.weakRel,[]); assert.ok(r.j.diag.nWeakRel>=1);
+    assert.equal((await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'})).status,200); {const w=await req('o','GET','/api/admin/impact'); assert.equal(w.j.relsShown,true); assert.equal(w.j.events.find(e=>e.k==='ev:nvda-q3-report').rels.NVDA.rel,'direct')}
     r=await req('a','POST','/api/admin/impact/fix',{kind:'link',k:'ev:opec-cut',id:'sec:Energy>co:CVX',st:'ok'}); assert.equal(r.status,200);
     r=await req('a','POST','/api/admin/impact/fix',{kind:'rel',k:'ev:taiwan-quake',sym:'NVDA',st:'ok'}); assert.equal(r.status,200);
     r=await req('a','POST','/api/admin/impact/fix',{kind:'nope'}); assert.equal(r.status,400);
     r=await req('a','GET','/api/admin/impact/audit'); assert.equal(r.status,200); assert.equal(r.j.items[0].action,'impact.rel');
     r=await req('a','POST','/api/admin/impact/run'); assert.equal(r.status,200); assert.equal(r.j.rel.ai,false,'no key: the analysis is said to be off, nothing is made up');
     r=await req('a','GET','/api/admin/impact/quality'); assert.equal(r.status,200); assert.match(r.j.note,/סמיכות בזמן אינה סיבתיות/);
+    assert.equal((await req('p','GET','/api/admin/impact/sample')).status,403); r=await req('a','GET','/api/admin/impact/sample?n=5'); assert.equal(r.status,200); assert.equal(r.j.n,5); assert.ok(r.j.events.every(e=>e.checks.length===10));
     // the admin's own portfolio view is theirs (empty here), never the owner's
     r=await req('a','GET','/api/impact'); assert.equal(r.status,200); assert.equal(r.j.pf.n,0); assert.equal(r.j.events.length,0);
     // without the header a change is refused (the page's own calls only)

@@ -4241,6 +4241,86 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
   html body .tg-l.ev{max-width:150px}
 }
 @media (prefers-reduced-motion:reduce){.wi-dot.live{box-shadow:none}}
+/* 22.11 WORLD IMPACT, the correction: the network and the history on the stage, the event's card in four parts, the reset */
+.wi-bottom[hidden],.wi-past[hidden],.wi-rst[hidden],.wi-mode[hidden]{display:none}
+.wi-past{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:10px 14px;border-radius:14px;background:#fef3c7;color:#78350f;font-size:13px;line-height:1.5;border:1px solid #f59e0b}
+html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#b45309}
+.wi-rst{font:inherit;font-size:13px;font-weight:700;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid #f59e0b;background:#f59e0b;color:#1c1300;cursor:pointer;white-space:nowrap;flex:none}
+.wi-k.wi-rst{margin-inline-start:auto}
+.wi-rst:focus-visible,.wn-n:focus-visible,.wn-hit:focus-visible,.wi-lm button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wi-lm{position:absolute;inset-block-start:10px;inset-inline-start:10px;z-index:2;display:flex;align-items:center;gap:2px;padding:3px 4px 3px 8px;border-radius:999px;background:rgb(13 12 40 / .78);border:1px solid rgb(167 139 250 / .45);font-size:12px;color:#d9d4ff}
+.wi-lm span{padding-inline-end:4px}
+.wi-lm button{font:inherit;font-size:12px;font-weight:700;min-height:30px;padding:0 10px;border-radius:999px;border:0;background:none;color:#d9d4ff;cursor:pointer}
+.wi-lm button[aria-pressed="true"]{background:#7c3aed;color:#fff}
+.wi-stage.net,.wi-stage.hist{height:auto!important;min-height:300px;max-height:none!important;aspect-ratio:auto!important;overflow:visible}
+.wi-stage.net .wi-globe,.wi-stage.hist .wi-globe{position:relative;inset:auto;touch-action:auto}
+.wi-stage.net .wix-r,.wi-stage.hist .wix-r{position:relative;inset:auto}
+.wi-stage.net .wi-zoom,.wi-stage.net .wi-lm,.wi-stage.net .wi-legend,.wi-stage.net .wi-msg,.wi-stage.hist .wi-zoom,.wi-stage.hist .wi-lm,.wi-stage.hist .wi-legend,.wi-stage.hist .wi-msg{display:none}
+.wn,.wh{display:flex;flex-direction:column;gap:10px;padding:12px;color:#f4f2ff}
+.wn-bar,.wh-bar,.wh-as{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wn-lbl{font-size:12px;color:#c4bdf5;font-weight:600}
+.wn .wi-k,.wh .wi-k{background:rgb(13 12 40 / .7);border-color:rgb(167 139 250 / .45);color:#d9d4ff;min-height:32px}
+.wn .wi-k[aria-pressed="true"],.wh .wi-k[aria-pressed="true"]{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.wn .wi-k.wn-full{border-color:#f59e0b;color:#fde68a}
+.wn-g{position:relative;width:100%}
+.wn-e{position:absolute;inset:0;overflow:visible}
+.wn-e path.dim{opacity:.18}
+.wn-hit{cursor:pointer;pointer-events:stroke}
+.wn-hit:hover{stroke:rgb(255 255 255 / .16)}
+.wn-h{position:absolute;top:0;font-size:11.5px;font-weight:700;color:#c4bdf5;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wn.v .wn-h{text-align:start}
+.wn-n{position:absolute;font:inherit;font-size:12.5px;line-height:1.25;padding:4px 8px;border-radius:12px;border:1px solid rgb(167 139 250 / .5);background:rgb(13 12 40 / .88);color:#f4f2ff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;overflow:hidden}
+.wn-n b{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.wn-n.t-ev{border-color:rgb(251 191 36 / .7);justify-content:flex-start;text-align:start} .wn-n.t-ev b{-webkit-line-clamp:3}
+.wn-n.t-cty{border-color:rgb(56 189 248 / .6)} .wn-n.t-fac{border-color:rgb(74 222 128 / .6)} .wn-n.t-sec{border-color:rgb(96 165 250 / .65)} .wn-n.t-co{border-color:rgb(148 163 184 / .6);color:#cbd5e1}
+.wn-n.t-as{background:#7c3aed;border-color:#a78bfa;color:#fff;font-size:13.5px} .wn-n.t-as .up{color:#bbf7d0} .wn-n.t-as .down{color:#fecaca} .wn-n.t-as .flat{color:#e9e6ff}
+.wn-n.cur{outline:2px solid #fbbf24;outline-offset:1px}
+.wn-empty{margin:0;padding:40px 16px;text-align:center;font-size:14px;line-height:1.6;color:#e9e6ff}
+.wn-more{margin:0;font-size:12.5px;color:#d9d4ff;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wn-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:#d9d4ff}
+.wn-leg i{display:inline-block;width:18px;height:0;border-top:3px solid;vertical-align:middle;margin-inline-end:5px;border-radius:2px} .wn-leg i.dash{border-top-style:dashed}
+.wn-d{padding:10px 12px;border-radius:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.wn-dh{font-size:13.5px}
+.wh-bar label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600;color:#c4bdf5}
+.wh-bar input{font:inherit;font-size:13.5px;min-height:36px;border-radius:10px;border:1px solid rgb(167 139 250 / .5);background:rgb(13 12 40 / .7);color:#f4f2ff;padding:0 8px;color-scheme:dark}
+.wh-bar{align-items:flex-end} .wh-q{display:inline-flex;gap:4px;flex-wrap:wrap}
+.wh .wi-note{color:#c4bdf5} .wh .wi-hchart svg{height:190px} .wh .mk{cursor:pointer}
+.wh .wi-hevr{background:var(--surface);color:var(--ink)} .wh .wi-hevr .wi-note{color:var(--ink2)} .wh .lnk{font:inherit;text-align:start;background:none;border:0;padding:0;color:var(--vio-ink);cursor:pointer}
+.wi-selb{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:10px;background:var(--accent-soft);font-size:12.5px}
+.wi-why{white-space:normal!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;color:var(--ink)!important;font-size:12px!important;line-height:1.45;margin-top:2px}
+.wi-tag.sym.ind{background:none;border:1px dashed rgb(124 58 237 / .5)}
+.wi-tag.co{direction:ltr;background:none;border:1px solid var(--line);color:var(--ink2);font-weight:600}
+.tg-l.as small{font-size:10px;color:#c4bdf5;margin-inline-start:2px}
+.wi-sec h5{display:flex;align-items:center;gap:6px}
+.wi-sec h5 i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;flex:none}
+.wi-sec.wi-a,.wi-sec.wi-b,.wi-sec.wi-c{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.wi-times{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--ink2)} .wi-times b{font-weight:700;color:var(--ink)}
+.wi-cos{display:flex;flex-wrap:wrap;gap:6px}
+.wi-co{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;padding:4px 9px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:12px;max-width:100%}
+.wi-co b{font-weight:800} .wi-co small{color:var(--ink2);font-size:11px} .wi-co small.no{color:var(--loss)} .wi-co em{font-style:normal;font-weight:700;font-size:10.5px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff}
+.wi-co.mine{border-color:var(--accent)} .wi-co .dd{width:8px;height:8px;border-radius:50%;background:#94a3b8;flex:none} .wi-co .dd.pos{background:var(--gain)} .wi-co .dd.neg{background:var(--loss)} .wi-co .dd.mixed{background:#d97706}
+.wi-imp{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.wi-imp header{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .wi-imp header b{font-size:15px} .wi-imp header small{color:var(--ink2);font-size:12px}
+.wi-imp h6,.wi-mkt h6{margin:4px 0 0;font-size:12.5px;font-weight:800;color:var(--vio-ink)}
+.wi-imp p{margin:0;font-size:13.5px;line-height:1.6}
+.wi-fact{font-size:12.5px!important} .wi-fact q{font-style:italic;unicode-bidi:plaintext}
+.wi-mkt{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed var(--line);background:var(--bg)}
+.wi-mkt h6{color:var(--ink)}
+.wi-m span{font-size:11px}
+.wi-evd{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.wi-evd li{display:flex;flex-direction:column;gap:2px} .wi-evd a{color:var(--vio-ink);text-decoration:none;font-weight:600} .wi-evd a:hover{text-decoration:underline}
+.tg-l.ev.cl{border-style:dashed;text-align:center}
+@media (min-width:1200px){.wi.wi-sheeted{padding-inline-end:452px}}
+@container wi (min-width:980px){.wi-grid.flat>.wi-stage.net,.wi-grid.flat>.wi-stage.hist{aspect-ratio:auto;max-height:none}}
+@media (max-width:759px){
+  html body .wi-stage.net,html body .wi-stage.hist{height:auto;min-height:240px}
+  html body .wi-zoom button{width:44px;height:44px;font-size:20px}
+  html body .wi-lm{inset-block-start:auto;inset-block-end:46px;font-size:11.5px} html body .wi-lm button{min-height:34px;padding:0 9px}
+  html body .wi-legend{inset-block-end:6px} html body .wi-legend span:nth-child(n+4){display:none}
+  html body .wn,html body .wh{padding:8px}
+  html body .wi-past{font-size:12.5px} html body .wi-rst{min-height:40px}
+  html body .wh-bar label{flex:1;min-width:130px} html body .wh-bar input{width:100%}
+}
 
 </style>
 
@@ -4862,17 +4942,18 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
                   <button type="button" class="wi-mode" data-wimode="me" aria-pressed="true">התיק שלי</button>
                   <button type="button" class="wi-mode" data-wimode="world" aria-pressed="false" hidden>כל העולם · ניהול</button>
                   <button type="button" class="wi-mode" data-wifresh="1" id="wiNowB" aria-pressed="false" title="מתי עודכנו המחירים"><i class="wi-dot" id="wiNowD"></i><span id="wiNowL">עכשיו</span></button>
-                  <button type="button" class="wi-mode" data-wihist="1" aria-pressed="false">היסטוריה</button>
-                  <span class="wi-views" role="group" aria-label="צורת המפה"><button type="button" class="wi-mode" data-wiview="globe" aria-pressed="true">גלובוס</button><button type="button" class="wi-mode" data-wiview="flat" aria-pressed="false" title="מפת העולם השטוחה: כל האירועים והקשרים בבת אחת">מפה</button><button type="button" class="wi-mode" data-wiview="net" aria-pressed="false" title="מפת הרשת: אותם קשרים, בציור של קשרים">רשת</button></span>
+                  <span class="wi-views" role="group" aria-label="צורת התצוגה"><button type="button" class="wi-mode" data-wiview="globe" aria-pressed="true" title="הגלובוס: האירועים והנכסים במקומם בעולם">גלובוס</button><button type="button" class="wi-mode" data-wiview="flat" aria-pressed="false" title="מפת העולם השטוחה: כל האזורים בבת אחת">מפה</button><button type="button" class="wi-mode" data-wiview="net" aria-pressed="false" title="רשת הקשרים: אירוע, מדינה, גורם כלכלי, ענף, חברה, נכס">רשת</button><button type="button" class="wi-mode" data-wiview="hist" aria-pressed="false" title="לפי תאריך: מה נאמר אז, ומה קרה בשוק אחרי">היסטוריה</button></span>
                 </div>
               </div>
-              <div class="wi-kinds" id="wiKinds" role="group" aria-label="מה להציג על הגלובוס">
+              <div class="wi-past" id="wiPast" role="status" hidden></div>
+              <div class="wi-kinds" id="wiKinds" role="group" aria-label="מה להציג">
                 <button type="button" class="wi-k" data-wik="all" aria-pressed="true">הכול</button>
                 <button type="button" class="wi-k" data-wik="stock" aria-pressed="false">מניות <span class="n" data-win="stock"></span></button>
                 <button type="button" class="wi-k" data-wik="idx" aria-pressed="false">מדדים</button>
                 <button type="button" class="wi-k" data-wik="fund" aria-pressed="false">קרנות <span class="n" data-win="fund"></span></button>
                 <button type="button" class="wi-k" data-wik="ev" aria-pressed="false">אירועים <span class="n" data-win="ev"></span></button>
                 <button type="button" class="wi-k" id="wiFiltB" aria-expanded="false" aria-controls="wiFilt">מסננים <span class="n" id="wiFiltN"></span></button>
+                <button type="button" class="wi-k wi-rst" id="wiReset" data-wireset="1" title="מחזיר את התאריכים, המסננים והבחירה למצב ההתחלתי. שום נתון לא נמחק" hidden>↺ איפוס התצוגה</button>
               </div>
               <div class="wi-filt" id="wiFilt" hidden>
                 <label>מדינה<select data-wif="cc"></select></label>
@@ -4883,27 +4964,25 @@ html[data-theme="dark"] .wi-nd.ev{background:#422c06;color:#fde68a} html[data-th
                 <label>כיוון אפשרי<select data-wif="dir"><option value="">הכול</option><option value="pos">חיובי</option><option value="neg">שלילי</option><option value="mixed">מעורב</option><option value="unclear">לא ברור</option></select></label>
                 <label>זמן<select data-wif="t"><option value="1">24 שעות</option><option value="3">3 ימים</option><option value="7" selected>שבוע</option></select></label>
                 <label>ביטחון<select data-wif="conf"><option value="">הכול</option><option value="high">גבוה</option><option value="mid">בינוני ומעלה</option></select></label>
-                <button type="button" class="btn sm" data-wifclr="1">לנקות</button>
+                <button type="button" class="btn sm" data-wifclr="1">לנקות מסננים</button>
               </div>
               <div class="wi-grid">
                 <aside class="wi-card" id="wiPf" aria-labelledby="wiPfH"><h4 id="wiPfH">התיק שלי <small id="wiPfS"></small></h4><div id="wiPfB"></div></aside>
                 <div class="wi-stage" id="wiStage">
                   <div class="wi-globe" id="wiGlobe"></div>
-                  <div class="wi-zoom" role="group" aria-label="הגלובוס"><button type="button" data-wiz="in" aria-label="קרוב יותר">+</button><button type="button" data-wiz="out" aria-label="רחוק יותר">−</button><button type="button" data-wiz="home" aria-label="למרכז התיק">⌖</button></div>
-                  <div class="wi-legend" aria-hidden="true"><span><i style="border-color:#4ade80"></i>השפעה חיובית אפשרית</span><span><i style="border-color:#f87171"></i>שלילית</span><span><i style="border-color:#94a3b8"></i>לא ברור</span><span><i class="dash" style="border-color:#c4bdf5"></i>עקיפה</span><span><i class="ring" style="border-color:#4ade80"></i>הילה: התנועה בשוק היום</span></div>
+                  <div class="wi-zoom" role="group" aria-label="קירוב"><button type="button" data-wiz="in" aria-label="קרוב יותר">+</button><button type="button" data-wiz="out" aria-label="רחוק יותר">−</button><button type="button" data-wiz="home" aria-label="למרכז התיק">⌖</button></div>
+                  <div class="wi-lm" id="wiLm" role="group" aria-label="אילו קשרים לצייר"><span>קשרים:</span><button type="button" data-wilm="focus" aria-pressed="true" title="רק של מה שנבחר; לפני בחירה, הקשרים הישירים של האירועים המובילים">ממוקד</button><button type="button" data-wilm="direct" aria-pressed="false" title="כל הקשרים הישירים">ישירים</button><button type="button" data-wilm="all" aria-pressed="false" title="כל הקשרים, גם העקיפים">הכול</button></div>
+                  <div class="wi-legend" aria-hidden="true"><span><i style="border-color:#4ade80"></i>השפעה חיובית אפשרית</span><span><i style="border-color:#f87171"></i>שלילית</span><span><i style="border-color:#94a3b8"></i>לא ברור</span><span><i class="dash" style="border-color:#c4bdf5"></i>עקיפה</span><span><i class="ring" style="border-color:#4ade80"></i>הילה: התנועה בשוק עכשיו (אפורה כשהמסחר סגור)</span></div>
                   <div class="wi-msg" id="wiMsg" role="status" hidden></div>
                 </div>
                 <aside class="wi-card" id="wiEv" aria-labelledby="wiEvH"><h4 id="wiEvH">אירועי השפעה <small id="wiEvS"></small></h4><ul class="wi-list" id="wiEvL"></ul></aside>
               </div>
-              <div class="wi-bottom">
+              <div class="wi-bottom" id="wiBottom">
                 <section class="wi-card" aria-labelledby="wiKeyH"><h4 id="wiKeyH">השפעה על הנכסים המרכזיים</h4><div class="wi-keys" id="wiKeys"></div></section>
                 <section class="wi-card" aria-labelledby="wiIxH"><h4 id="wiIxH">מדדי שוק <small id="wiIxS"></small></h4><div class="wi-ixs" id="wiIxs"></div></section>
-                <section class="wi-card" id="wiHist" aria-labelledby="wiHH"><h4 id="wiHH">מבט היסטורי</h4>
-                  <div class="wi-hctl"><label>נכס<select id="wiHSym"></select></label><label>מתאריך<input type="date" id="wiHFrom"></label><label>עד<input type="date" id="wiHTo"></label><button type="button" class="btn sm" id="wiHGo">להציג</button></div>
-                  <div class="wi-hchart" id="wiHChart"></div><div class="wi-hev" id="wiHEv"></div></section>
               </div>
               <section class="wi-card wi-adm" id="wiAdm" aria-labelledby="wiAdmH" hidden><h4 id="wiAdmH">ניהול המנוע <small id="wiAdmS"></small></h4>
-                <div class="wi-tabs" role="group" aria-label="ניהול"><button type="button" class="wi-k" data-wiadm="ev" aria-pressed="true">אירועים</button><button type="button" class="wi-k" data-wiadm="weak" aria-pressed="false">קשרים חלשים</button><button type="button" class="wi-k" data-wiadm="dups" aria-pressed="false">כפילויות</button><button type="button" class="wi-k" data-wiadm="fails" aria-pressed="false">תקלות עדכון</button><button type="button" class="wi-k" data-wiadm="stale" aria-pressed="false">נכסים בלי נתון עדכני</button><button type="button" class="wi-k" data-wiadm="log" aria-pressed="false">יומן תיקונים</button><button type="button" class="wi-k" data-wiadm="run">הרצה עכשיו</button></div>
+                <div class="wi-tabs" role="group" aria-label="ניהול"><button type="button" class="wi-k" data-wiadm="ev" aria-pressed="true">אירועים</button><button type="button" class="wi-k" data-wiadm="rel" aria-pressed="false">קשרים לנכסים</button><button type="button" class="wi-k" data-wiadm="weak" aria-pressed="false">חוליות חלשות</button><button type="button" class="wi-k" data-wiadm="dups" aria-pressed="false">כפילויות</button><button type="button" class="wi-k" data-wiadm="fails" aria-pressed="false">תקלות עדכון</button><button type="button" class="wi-k" data-wiadm="stale" aria-pressed="false">נכסים בלי נתון עדכני</button><button type="button" class="wi-k" data-wiadm="qual" aria-pressed="false">איכות המנוע</button><button type="button" class="wi-k" data-wiadm="samp" aria-pressed="false">בדיקת מדגם</button><button type="button" class="wi-k" data-wiadm="log" aria-pressed="false">יומן תיקונים</button><button type="button" class="wi-k" data-wiadm="run">הרצה עכשיו</button></div>
                 <div id="wiAdmB"></div></section>
               <p class="wi-foot" id="wiFoot"></p>
             </section>
@@ -6070,16 +6149,18 @@ function create(host,opts){
     (D.arcs||[]).forEach(function(a,i){var g=arcGeo(a.from,a.to,a.lift); if(!g)return;
       var m=new T.ShaderMaterial({uniforms:{color:{value:col(a.color)},time:{value:0},dashed:{value:a.dashed?1:0},alpha:{value:a.alpha==null?0.95:a.alpha},speed:{value:reduce?0:(a.speed||1)}},transparent:true,depthWrite:false,blending:T.AdditiveBlending,
         vertexShader:arcMatProto.vertexShader,fragmentShader:arcMatProto.fragmentShader});
-      var mesh=new T.Mesh(g,m); mesh.userData={id:a.id,group:a.group||null,base:m.uniforms.alpha.value}; arcsG.add(mesh); ARCS.push(mesh)});
+      var mesh=new T.Mesh(g,m); mesh.userData={id:a.id,group:a.group||null,base:m.uniforms.alpha.value,quiet:!!a.quiet,tags:a.tags||null}; arcsG.add(mesh); ARCS.push(mesh)});
     (D.points||[]).forEach(function(p){var pos=v3(T,p.lat,p.lon,1.006), sp=new T.Sprite(new T.SpriteMaterial({map:spriteTex,color:col(p.color),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));
       var sz=(p.size||1)*(small?0.05:0.042); sp.scale.set(sz,sz,1); sp.position.copy(pos); marks.add(sp);
-      var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,pos:pos,sp:sp,group:p.group||null}; ITEMS.push(it);
+      var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,pos:pos,sp:sp,group:p.group||null,quiet:!!p.quiet,off:false}; ITEMS.push(it);
       if(p.halo&&p.halo!=='none'){var hc=p.halo==='up'?'#22c55e':p.halo==='down'?'#ef4444':'#94a3b8';
-        for(var k=0;k<2;k++){var rg=new T.Mesh(new T.RingGeometry(0.018,0.024,48),new T.MeshBasicMaterial({color:col(hc),transparent:true,opacity:0.8,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending}));
-          rg.position.copy(v3(T,p.lat,p.lon,1.004)); rg.lookAt(v3(T,p.lat,p.lon,2)); marks.add(rg); HALOS.push({m:rg,ph:k*0.5,s:(p.size||1)})}}
+        // 22.11: "idle" (the market is closed, or no fresh price): one grey ring that does not move, so a close is never
+        // drawn as a move that is happening now
+        for(var k=0;k<(p.halo==='idle'?1:2);k++){var rg=new T.Mesh(new T.RingGeometry(0.018,0.024,48),new T.MeshBasicMaterial({color:col(hc),transparent:true,opacity:0.8,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending}));
+          rg.position.copy(v3(T,p.lat,p.lon,1.004)); rg.lookAt(v3(T,p.lat,p.lon,2)); marks.add(rg); HALOS.push({m:rg,ph:k*0.5,s:(p.size||1),idle:p.halo==='idle'})}}
       if(p.label){var el=document.createElement('button'); el.type='button'; el.className='tg-l '+(p.label.cls||''); el.innerHTML=p.label.html; el.setAttribute('data-tgid',p.id); if(p.label.aria)el.setAttribute('aria-label',p.label.aria);
-        el.tabIndex=-1; el.style.transform='translate(-9999px,-9999px)'; lay.appendChild(el); LBL.push({el:el,it:it,pr:p.label.priority||0,w:0,h:0,shown:true})}});
-    S.dirty=true}
+        el.tabIndex=-1; el.style.transform='translate(-9999px,-9999px)'; lay.appendChild(el); LBL.push({el:el,it:it,pr:p.label.priority||0,w:0,h:0,shown:true,quiet:!!p.label.quiet,off:false})}});
+    applyHl()}
   // ---- the camera and the hands ----
   function resize(){var r=host.getBoundingClientRect(), w=Math.max(1,Math.round(r.width)), h=Math.max(1,Math.round(r.height)); if(w===S.w&&h===S.h)return; S.w=w; S.h=h; R.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); S.fit=fitDist(); if(!S.user)S.dist=S.fit; else S.dist=clampD(S.dist); LBL.forEach(function(l){l.w=0}); S.dirty=true}
   var ro=typeof ResizeObserver==='function'?new ResizeObserver(resize):null; if(ro)ro.observe(host); else window.addEventListener('resize',resize);
@@ -6097,17 +6178,24 @@ function create(host,opts){
   var tmp=new T.Vector3();
   function screenOf(it){tmp.copy(it.pos).applyMatrix4(world.matrixWorld); var nrm=tmp.clone().normalize(), toCam=cam.position.clone().sub(tmp).normalize(), front=nrm.dot(toCam); tmp.project(cam); return {x:(tmp.x+1)/2*S.w,y:(1-tmp.y)/2*S.h,front:front}}
   function pick(cx,cy){var r=cv.getBoundingClientRect(), x=cx-r.left, y=cy-r.top, best=null, bd=small?26:18;
-    ITEMS.forEach(function(it){var s=screenOf(it); if(s.front<0.05)return; var d=Math.hypot(s.x-x,s.y-y); if(d<bd){bd=d; best=it}});
+    ITEMS.forEach(function(it){if(it.off)return; var s=screenOf(it); if(s.front<0.05)return; var d=Math.hypot(s.x-x,s.y-y); if(d<bd){bd=d; best=it}});
     if(best&&opts.onPick)opts.onPick({id:best.id,kind:best.kind}); else if(opts.onPick)opts.onPick(null)}
   // turn the globe so a place faces the viewer (the shortest way round), and come closer
   function focus(lat,lon,dist){var ty=-(lon+90)*D2R, tx=Math.max(-1.25,Math.min(1.25,lat*D2R)), dy=((ty-S.ry)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI;
     var td=dist==='fit'?S.fit:dist?clampD(S.fit*dist):S.dist; if(dist)S.user=dist!=='fit'; S.anim={t0:performance.now(),ms:reduce?1:900,ry0:S.ry,rx0:S.rx,d0:S.dist,dy:dy,dx:tx-S.rx,dd:td-S.dist}; S.idle=performance.now(); S.dirty=true}
-  function highlight(groups){var G=groups==null?null:new Set([].concat(groups)); ARCS.forEach(function(m){var on=!G||G.has(m.userData.group); m.material.uniforms.alpha.value=on?m.userData.base:0.1}); ITEMS.forEach(function(it){it.sp.material.opacity=!G||!it.group||G.has(it.group)?1:0.3}); LBL.forEach(function(l){l.el.classList.toggle('sel',!!G&&!!l.it.group&&G.has(l.it.group))}); S.hl=G; S.dirty=true}
+  // 22.11 (less noise): a "quiet" line, point or label is not drawn until its event is chosen; with a choice, only the lines
+  // of the chosen events are drawn (and, for one asset, only the paths that end at it: its tag), the others not dimmed but gone
+  function applyHl(){var G=S.hl, tag=S.tag;
+    ARCS.forEach(function(m){var u=m.userData, on=G?(G.has(u.group)&&(!tag||!u.tags||u.tags.indexOf(tag)>=0)):!u.quiet; m.material.uniforms.alpha.value=on?u.base:0; m.visible=on});
+    ITEMS.forEach(function(it){var inG=!!G&&!!it.group&&G.has(it.group); it.off=it.quiet&&!inG; it.sp.visible=!it.off; it.sp.material.opacity=!G||!it.group||inG?1:0.3});
+    LBL.forEach(function(l){var inG=!!G&&!!l.it.group&&G.has(l.it.group); l.el.classList.toggle('sel',inG); l.off=l.it.off||(l.quiet&&!inG)});
+    S.dirty=true}
+  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl()}
   // the labels: placed where their point is, hidden behind the globe or under a more important one
   function placeLabels(){var boxes=[];
     LBL.forEach(function(l){if(!l.w){l.w=l.el.offsetWidth||60; l.h=l.el.offsetHeight||22}});
     var order=LBL.slice().sort(function(a,b){return b.pr-a.pr});
-    order.forEach(function(l){var s=screenOf(l.it), ok=s.front>0.18&&s.x>-20&&s.x<S.w+20&&s.y>-20&&s.y<S.h+20;
+    order.forEach(function(l){var s=screenOf(l.it), ok=!l.off&&s.front>0.18&&s.x>-20&&s.x<S.w+20&&s.y>-20&&s.y<S.h+20;
       var bx={x:s.x-l.w/2,y:s.y-l.h-10,w:l.w,h:l.h};
       if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+4&&bx.x+bx.w+4>b.x&&bx.y<b.y+b.h+3&&bx.y+bx.h+3>b.y){ok=false; break}}
       if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; l.el.style.opacity=String(Math.min(1,(s.front-0.18)*4)); if(!l.shown){l.el.hidden=false; l.shown=true}}
@@ -6120,14 +6208,16 @@ function create(host,opts){
     else if(!S.drag){if(Math.abs(S.vx)+Math.abs(S.vy)>1e-5){S.ry+=S.vy; S.rx=Math.max(-1.25,Math.min(1.25,S.rx+S.vx)); S.vx*=0.93; S.vy*=0.93}
       else if(!reduce&&opts.spin!==false&&now-S.idle>9000)S.ry+=0.00065*(small?2:1)}
     world.rotation.set(S.rx,S.ry,0); cam.position.set(0,0,S.dist); cam.lookAt(0,0,0); world.updateMatrixWorld();
+    // 22.11: how close the viewer is (far, near): the page shows more detail when near (the events of one place apart)
+    var lv=S.dist<S.fit*0.8?1:0; if(lv!==(S.lvl||0)&&!S.anim){S.lvl=lv; if(opts.onLevel)try{opts.onLevel(lv)}catch(e){}}
     ARCS.forEach(function(m){m.material.uniforms.time.value=t});
-    HALOS.forEach(function(h){var f=reduce?0.5:((t*0.55+h.ph)%1), s=(1+f*1.8)*h.s; h.m.scale.set(s,s,s); h.m.material.opacity=0.85*(1-f)});
+    HALOS.forEach(function(h){var f=reduce||h.idle?0.5:((t*0.55+h.ph)%1), s=(1+f*1.8)*h.s; h.m.scale.set(s,s,s); h.m.material.opacity=0.85*(1-f)});
     R.render(scene,cam); if(S.frame%2===0||S.drag||S.anim||S.dirty)placeLabels(); S.dirty=false}
   resize(); raf=requestAnimationFrame(loop);
   cv.addEventListener('webglcontextlost',function(e){e.preventDefault(); if(opts.onLost)opts.onLost()});
   function destroy(){cancelAnimationFrame(raf); if(ro)ro.disconnect(); if(io)io.disconnect(); clear(); [earth,atm].forEach(function(m){m.geometry.dispose(); m.material.dispose()}); tex.dispose(); ltex.dispose(); spriteTex.dispose(); R.dispose(); cv.remove(); lay.remove()}
   return {setData:setData,focus:focus,highlight:highlight,resize:resize,destroy:destroy,zoom:function(f){S.dist=clampD(S.dist*f); S.user=true; S.idle=performance.now(); S.dirty=true},
-    state:function(){return {rx:S.rx,ry:S.ry,dist:S.dist,items:ITEMS.length,arcs:ARCS.length,labels:LBL.filter(function(l){return l.shown}).length}},screenOf:function(id){var it=ITEMS.find(function(x){return x.id===id}); return it?screenOf(it):null}};
+    state:function(){return {rx:S.rx,ry:S.ry,dist:S.dist,lvl:S.lvl||0,items:ITEMS.length,arcs:ARCS.length,arcsOn:ARCS.filter(function(m){return m.visible}).length,itemsOn:ITEMS.filter(function(i){return !i.off}).length,labels:LBL.filter(function(l){return l.shown}).length}},screenOf:function(id){var it=ITEMS.find(function(x){return x.id===id}); return it?screenOf(it):null}};
 }
 // ---- 19.11 the flat map (the owner: "not as a ball, as a world map, to see every event at once"): the same land, borders
 // and lights on one plane, from 78°N to 58°S; zoom and pan; the same interface as the globe. Canvas only: no three.js ----
@@ -6169,52 +6259,59 @@ function createFlat(host,opts){
   cv.addEventListener('wheel',function(e){e.preventDefault(); var r=cv.getBoundingClientRect(); zoomAt(e.deltaY<0?1.18:1/1.18,e.clientX-r.left,e.clientY-r.top)},{passive:false});
   cv.addEventListener('dblclick',function(e){var r=cv.getBoundingClientRect(); zoomAt(1.8,e.clientX-r.left,e.clientY-r.top)});
   lay.addEventListener('click',function(e){var b=e.target.closest('[data-tgid]'); if(b&&opts.onPick){var it=ITEMS.find(function(x){return x.id===b.getAttribute('data-tgid')}); opts.onPick(it?{id:it.id,kind:it.kind}:{id:b.getAttribute('data-tgid')})}});
-  function pick(x,y){var best=null, bd=S.small?24:16; ITEMS.forEach(function(it){var d=Math.hypot(X(it.lon)-x,Y(it.lat)-y); if(d<bd){bd=d; best=it}}); if(opts.onPick)opts.onPick(best?{id:best.id,kind:best.kind}:null)}
+  function pick(x,y){var best=null, bd=S.small?24:16; ITEMS.forEach(function(it){if(it.off)return; var d=Math.hypot(X(it.lon)-x,Y(it.lat)-y); if(d<bd){bd=d; best=it}}); if(opts.onPick)opts.onPick(best?{id:best.id,kind:best.kind}:null)}
   function setData(D){LBL.forEach(function(l){l.el.remove()}); LBL=[]; ITEMS=[]; ARCS=[]; D=D||{};
     (D.arcs||[]).forEach(function(a){if(!a.from||!a.to)return; var d=a.to.lon-a.from.lon, lon2=d>180?a.to.lon-360:d<-180?a.to.lon+360:a.to.lon;   // the short way, over the edge when it is shorter
-      if(Math.abs(lon2-a.from.lon)<0.3&&Math.abs(a.to.lat-a.from.lat)<0.3)return; ARCS.push({id:a.id,group:a.group||null,c:a.color||'#a78bfa',dashed:!!a.dashed,alpha:a.alpha==null?0.95:a.alpha,la1:a.from.lat,lo1:a.from.lon,la2:a.to.lat,lo2:lon2,ph:Math.random()})});
-    (D.points||[]).forEach(function(p){var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,c:p.color||'#a78bfa',size:p.size||1,halo:p.halo&&p.halo!=='none'?p.halo:null,group:p.group||null}; ITEMS.push(it);
+      if(Math.abs(lon2-a.from.lon)<0.3&&Math.abs(a.to.lat-a.from.lat)<0.3)return; ARCS.push({id:a.id,group:a.group||null,c:a.color||'#a78bfa',dashed:!!a.dashed,alpha:a.alpha==null?0.95:a.alpha,la1:a.from.lat,lo1:a.from.lon,la2:a.to.lat,lo2:lon2,ph:Math.random(),quiet:!!a.quiet,tags:a.tags||null,on:true})});
+    (D.points||[]).forEach(function(p){var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,c:p.color||'#a78bfa',size:p.size||1,halo:p.halo&&p.halo!=='none'?p.halo:null,group:p.group||null,quiet:!!p.quiet,off:false}; ITEMS.push(it);
       if(p.label){var el=document.createElement('button'); el.type='button'; el.className='tg-l '+(p.label.cls||''); el.innerHTML=p.label.html; el.setAttribute('data-tgid',p.id); if(p.label.aria)el.setAttribute('aria-label',p.label.aria);
-        el.tabIndex=-1; el.style.transform='translate(-9999px,-9999px)'; lay.appendChild(el); LBL.push({el:el,it:it,pr:p.label.priority||0,w:0,h:0,shown:true})}});
+        el.tabIndex=-1; el.style.transform='translate(-9999px,-9999px)'; lay.appendChild(el); LBL.push({el:el,it:it,pr:p.label.priority||0,w:0,h:0,shown:true,quiet:!!p.label.quiet,off:false})}});
+    applyHl()}
+  // 22.11 (less noise): the same rule as the globe: a quiet line, point or label waits for its event to be chosen
+  function applyHl(){var G=S.hl, tag=S.tag;
+    ARCS.forEach(function(a){a.on=G?(G.has(a.group)&&(!tag||!a.tags||a.tags.indexOf(tag)>=0)):!a.quiet});
+    ITEMS.forEach(function(it){var inG=!!G&&!!it.group&&G.has(it.group); it.off=it.quiet&&!inG});
+    LBL.forEach(function(l){var inG=!!G&&!!l.it.group&&G.has(l.it.group); l.el.classList.toggle('sel',inG); l.off=l.it.off||(l.quiet&&!inG)});
     S.dirty=true}
-  function highlight(groups){S.hl=groups==null?null:new Set([].concat(groups)); LBL.forEach(function(l){l.el.classList.toggle('sel',!!S.hl&&!!l.it.group&&S.hl.has(l.it.group))}); S.dirty=true}
+  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl()}
   // a place to the middle when the map is closer than the whole world; at the whole world everything is in view already
   function focus(lat,lon,dist){if(S.w<2||S.h<2){if(dist==='fit'){S.z=1; S.cLat=lat; S.cLon=lon} return} var ts=dist==='fit'?S.fit:typeof dist==='number'?Math.max(S.fit,Math.min(S.fit*8,S.fit*dist)):S.s;
     if(ts<=S.fit*1.02&&dist!=='fit'&&S.s<=S.fit*1.02)return;
     var tx=S.w/2-(lon+180)/360*B.W*ts, ty=S.h/2-(LAT_T-lat)/(LAT_T-LAT_B)*B.sh*ts; S.anim={t0:performance.now(),ms:reduce?1:650,s0:S.s,tx0:S.tx,ty0:S.ty,s1:ts,tx1:tx,ty1:ty}; S.dirty=true}
   function placeLabels(){var boxes=[]; LBL.forEach(function(l){if(!l.w){l.w=l.el.offsetWidth||60; l.h=l.el.offsetHeight||22}});
-    LBL.slice().sort(function(a,b){return b.pr-a.pr}).forEach(function(l){var x=X(l.it.lon), y=Y(l.it.lat), ok=x>-10&&x<S.w+10&&y>-10&&y<S.h+10, bx={x:x-l.w/2,y:y-l.h-8,w:l.w,h:l.h};
+    LBL.slice().sort(function(a,b){return b.pr-a.pr}).forEach(function(l){var x=X(l.it.lon), y=Y(l.it.lat), ok=!l.off&&x>-10&&x<S.w+10&&y>-10&&y<S.h+10, bx={x:x-l.w/2,y:y-l.h-8,w:l.w,h:l.h};
       if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+3&&bx.x+bx.w+3>b.x&&bx.y<b.y+b.h+2&&bx.y+bx.h+2>b.y){ok=false; break}}
       if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else if(l.shown){l.el.hidden=true; l.shown=false}})}
   var CMAP={up:'#22c55e',down:'#ef4444',flat:'#94a3b8'};
   function draw(t){ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S.w,S.h);
     ctx.drawImage(B.c,0,B.sy,B.W,B.sh,S.tx,S.ty,B.W*S.s,B.sh*S.s);
     var mw=B.W*S.s, lw=S.small?2:1.7;
-    ARCS.forEach(function(a){var on=!S.hl||S.hl.has(a.group), x1=X(a.lo1), y1=Y(a.la1), x2=X(a.lo2), y2=Y(a.la2), d=Math.hypot(x2-x1,y2-y1), cx=(x1+x2)/2, cy=(y1+y2)/2-Math.min(S.h*0.16,d*0.22);
+    ARCS.forEach(function(a){if(!a.on)return; var on=true, x1=X(a.lo1), y1=Y(a.la1), x2=X(a.lo2), y2=Y(a.la2), d=Math.hypot(x2-x1,y2-y1), cx=(x1+x2)/2, cy=(y1+y2)/2-Math.min(S.h*0.16,d*0.22);
       [0,a.lo2>180?-mw:a.lo2<-180?mw:0].forEach(function(off,k){if(k===1&&!off)return; ctx.globalAlpha=(on?a.alpha:0.1)*0.28; ctx.strokeStyle=a.c; ctx.lineWidth=lw*3.2; ctx.setLineDash([]);
         ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke();
         ctx.globalAlpha=on?a.alpha:0.1; ctx.lineWidth=lw; if(a.dashed){ctx.setLineDash([7,6]); ctx.lineDashOffset=reduce?0:-(t*26)%13} ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke(); ctx.setLineDash([]);
         if(!reduce&&on&&!a.dashed){var u=(t*0.28+a.ph)%1, bx=(1-u)*(1-u)*x1+2*(1-u)*u*cx+u*u*x2+off, by=(1-u)*(1-u)*y1+2*(1-u)*u*cy+u*u*y2; ctx.globalAlpha=0.95; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bx,by,lw*1.3,0,6.283); ctx.fill()}})});
     ctx.globalAlpha=1;
-    ITEMS.forEach(function(it){var x=X(it.lon), y=Y(it.lat); if(x<-20||x>S.w+20||y<-20||y>S.h+20)return; var on=!S.hl||!it.group||S.hl.has(it.group), r=(S.small?3.4:3)*it.size*Math.min(1.6,Math.sqrt(S.s/S.fit));
-      if(it.halo){var hc=CMAP[it.halo]||CMAP.flat; for(var k=0;k<2;k++){var f=reduce?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
+    ITEMS.forEach(function(it){if(it.off)return; var x=X(it.lon), y=Y(it.lat); if(x<-20||x>S.w+20||y<-20||y>S.h+20)return; var on=!S.hl||!it.group||S.hl.has(it.group), r=(S.small?3.4:3)*it.size*Math.min(1.6,Math.sqrt(S.s/S.fit));
+      if(it.halo){var hc=CMAP[it.halo]||CMAP.flat, idle=it.halo==='idle'; for(var k=0;k<(idle?1:2);k++){var f=reduce||idle?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
       var g=ctx.createRadialGradient(x,y,0,x,y,r*2.4); g.addColorStop(0,it.c); g.addColorStop(0.45,it.c); g.addColorStop(1,'rgba(0,0,0,0)'); ctx.globalAlpha=on?1:0.3; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r*2.4,0,6.283); ctx.fill()});
     ctx.globalAlpha=1}
   var raf=0;
   function loop(now){raf=requestAnimationFrame(loop); if(!S.visible||document.hidden||S.w<2||S.h<2)return; S.frame++;
-    var moving=!!S.anim||S.drag, live=!reduce&&(ARCS.length||ITEMS.some(function(i){return i.halo}));
+    var moving=!!S.anim||S.drag, live=!reduce&&(ARCS.some(function(a){return a.on})||ITEMS.some(function(i){return i.halo&&i.halo!=='idle'}));
     if(!moving&&!live&&!S.dirty)return; if(S.small&&!moving&&!S.dirty&&S.frame%2)return;
     if(S.anim){var a=S.anim, k=Math.min(1,(now-a.t0)/a.ms), e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2; S.s=a.s0+(a.s1-a.s0)*e; S.tx=a.tx0+(a.tx1-a.tx0)*e; S.ty=a.ty0+(a.ty1-a.ty0)*e; clampT(); if(k>=1)S.anim=null; S.dirty=true}
-    draw((now-S.t0)/1000); if(S.dirty||moving)placeLabels(); S.dirty=false}
+    draw((now-S.t0)/1000); if(S.dirty||moving)placeLabels(); S.dirty=false;
+    var lv=S.s>=S.fit*1.9?1:0; if(lv!==(S.lvl||0)&&!S.anim){S.lvl=lv; if(opts.onLevel)try{opts.onLevel(lv)}catch(e){}}}
   resize(); raf=requestAnimationFrame(loop);
   function destroy(){cancelAnimationFrame(raf); if(ro)ro.disconnect(); if(io)io.disconnect(); LBL.forEach(function(l){l.el.remove()}); cv.remove(); lay.remove()}
   return {setData:setData,focus:focus,highlight:highlight,resize:resize,destroy:destroy,flat:true,
     zoom:function(f){zoomAt(1/f,S.w/2,S.h/2)},   // the globe's distance factor: below 1 is closer
-    state:function(){return {flat:true,s:Math.round(S.s/S.fit*100)/100,items:ITEMS.length,arcs:ARCS.length,labels:LBL.filter(function(l){return l.shown}).length}},
+    state:function(){return {flat:true,s:Math.round(S.s/S.fit*100)/100,lvl:S.lvl||0,items:ITEMS.length,arcs:ARCS.length,arcsOn:ARCS.filter(function(a){return a.on}).length,itemsOn:ITEMS.filter(function(i){return !i.off}).length,labels:LBL.filter(function(l){return l.shown}).length}},
     screenOf:function(id){var it=ITEMS.find(function(x){return x.id===id}); return it?{x:X(it.lon),y:Y(it.lat),front:1}:null}};
 }
 function supported(){try{var c=document.createElement('canvas'); return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
-window.TCGlobe={create:create,createFlat:createFlat,supported:supported,version:2};
+window.TCGlobe={create:create,createFlat:createFlat,supported:supported,version:3};
 })();
 
 </script>
@@ -29921,60 +30018,91 @@ function ixGraphText(G){if(!G||!G.center||G.nodes.length<2)return '<p class="nm"
 function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v=null; try{v=localStorage.getItem('tr_ixmap')}catch(e){} d.open=v!=='0'}
   try{ixDraw()}catch(e){console.error(e)} try{ixTrustRender()}catch(e){} try{wiOpen()}catch(e){console.error(e)}}
 // ===================== 19.11 TikChik WORLD IMPACT =====================
-// The globe of what moves the portfolio: the events, their paths to the holdings, the markets and the history. The data
-// come from the server already cut to the viewer (/api/impact: the viewer's own portfolio, and of every event only the
-// paths that end at one of their assets; an admin's whole world from /api/admin/impact): nothing here filters anybody
-// else's data out, because none of it arrives. Green and red keep one meaning each: on a line, the possible direction of an
-// effect (a reading of the news, never a forecast); around an asset (its halo), its actual move in the market today.
-const WIMP={mode:'me',kind:'all',f:{cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''},view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),F:null,fTried:false,me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,G:null,gTried:false,gFail:'',
-  hist:{sym:'',from:'',to:'',d:null,busy:false,err:'',pick:null},adm:'ev',log:null,admMsg:'',open:false,ixc:{}};
+// What in the world touches the portfolio: the events, their relation to each holding, the markets and the history. The data
+// come from the server already cut to the viewer (/api/impact: the viewer's own portfolio; an admin's whole world from
+// /api/admin/impact): nothing here filters anybody else's data out, because none of it arrives. Green and red keep one
+// meaning each: on a line, the possible direction of an effect (an analysis of the news, never a forecast); around an asset
+// (its halo), its actual move in the market today.
+// 22.11, the correction (the owner's test of the first version):
+//  - four views that are four things: the globe (the world in three dimensions), the map (flat, every region at once), the
+//    network (the chain event, country, factor, sector, company, asset as a drawing of links: it was a button that led to the
+//    older map under the screen), and the history (a range of dates: what was said then and what the market did);
+//  - less noise: the lines are drawn for what is chosen (an event, an asset); before a choice only the direct lines of the
+//    leading events; the events of one place are one point until the viewer comes closer; a control for direct only / all;
+//  - the event's card in four parts kept apart: what happened (facts), the evidence (the sources and what each confirms), why
+//    it matters to each asset (its own explanation and the fact it rests on), and what the market actually did;
+//  - "חזרה להיום": one button that puts the dates, the filters, the choice and the globe back, and deletes nothing.
+const WI_F0=()=>({cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''});
+const WIMP={mode:'me',time:'now',kind:'all',lm:'focus',f:WI_F0(),view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),
+  F:null,fTried:false,G:null,gTried:false,gFail:'',me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,lvl:0,
+  past:{from:'',to:'',d:null,shape:null,busy:false,err:''},hist:{sym:'',d:null,busy:false,err:'',pick:null,all:false},
+  net:{off:{},direct:false,focus:null,more:0,sig:'',edges:[]},adm:'ev',log:null,qual:null,admMsg:'',open:false,ixc:{},legacy:false};
 const WI_CAT={geo:'גיאופוליטיקה',war:'מלחמות',regulation:'רגולציה',rates:'ריבית',macro:'מאקרו',energy:'אנרגיה',ai:'בינה מלאכותית',chips:'שבבים',finance:'פיננסים',industry:'תעשייה',trade:'סחר ומכסים',commodities:'סחורות',ma:'מיזוגים ורכישות',earnings:'דוחות',supply:'שרשראות אספקה',disaster:'אסונות טבע'};
 const WI_REG={us:'ארה״ב',israel:'ישראל',europe:'אירופה',uk:'בריטניה',china:'סין',japan:'יפן',india:'הודו',russia:'רוסיה',ukraine:'אוקראינה',middle_east:'המזרח התיכון',latam:'אמריקה הלטינית',asia:'אסיה',global:'עולמי'};
-const WI_DIR={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'כיוון לא ברור'}, WI_S={3:'חזקה',2:'בינונית',1:'חלשה'}, WI_C={high:'גבוה',mid:'בינוני',low:'נמוך'};
-const WI_HZ={short:'קצר: ימים עד שבועות',mid:'בינוני: שבועות עד חודשים',long:'ארוך: חודשים ומעלה'}, WI_REL={high:'מקור מוביל',official:'הודעה רשמית',mid:'מקור רגיל',low:'מקור חלש'}, WI_CERT={fact:'עובדה מדווחת',interp:'פרשנות',est:'הערכה'};
-const WI_HOW={direct:'ישיר: החברה שהידיעה עוסקת בה',supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'דרך הענף',macro:'דרך המאקרו',fund:'הקרן מחזיקה במניה',member:'המניה בענף',broad:'קרן רחבה על השוק'};
+const WI_DIR={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'כיוון לא ברור'}, WI_DIRS={pos:'חיובי',neg:'שלילי',mixed:'מעורב',unclear:'לא ברור'}, WI_S={3:'חזקה',2:'בינונית',1:'חלשה'}, WI_C={high:'גבוה',mid:'בינוני',low:'נמוך'};
+const WI_HZ={short:'קצר: ימים עד שבועות',mid:'בינוני: שבועות עד חודשים',long:'ארוך: חודשים ומעלה'}, WI_REL={high:'מקור מוביל',official:'הודעה רשמית',mid:'מקור רגיל',low:'מקור חלש'}, WI_CERT={fact:'עובדה מדווחת',interp:'פרשנות של המקור',est:'הערכה'};
+const WI_HOW={direct:'נושא הכתבה',supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'דרך הענף',macro:'דרך המאקרו',fund:'הקרן מחזיקה במניה',indirect:'קשר עקיף'};
 const WI_LOC={hq:'מטה החברה',country:'לפי המדינה',region:'לפי האזור',market:'לפי הבורסה, לא מטה החברה',fix:'נקבע ביד מנהל'}, WI_LSRC={fmp:'לפי הפרופיל של החברה (FMP)',list:'לפי רשימת המטות של האתר',fix:'תיקון של מנהל'};
 const WI_COL={pos:'#4ade80',neg:'#f87171',mixed:'#fbbf24',unclear:'#94a3b8'}, WI_ST={new:'חדש',update:'עודכן'};
-const WI_FR={live:'זמן אמת',delayed:'בעיכוב של עד 15 דקות',close:'מחיר סגירה',stale:'לא עדכני',none:'אין מחיר'};
+const WI_BASIS={facts:'נשען על עובדה מפרטי הנכס, שנבדקה מול המקור',article:'הנכס מוזכר בכתבה עצמה',knowledge:'ידע כללי של המנתח, לא עובדה מפרטי הנכס',structure:'עובדה של מבנה: אחזקות הקרן שפורסמו',reading:'נכתב בקריאת הכתבה; ניתוח נפרד לנכס עוד לא נעשה',hand:'נקבע ביד מנהל'};
+const WI_BY={reading:'הסקה של קריאת הכתבה',analysis:'ניתוח נפרד של הנכס',structure:'אחזקות הקרן'}, WI_VS={same:'באותו כיוון',opposite:'בכיוון ההפוך',flat:'כמעט בלי תנועה',wait:'עוד לא ידוע',none:''};
+const WI_NT={ev:'אירוע',cty:'מדינה',fac:'גורם כלכלי',sec:'ענף',co:'חברה',as:'הנכס שלי'}, WI_SIG={named:'מוזכר בקריאה',listed:'הכתבה ברשימת הכתבות של הנייר',peers:'מתחרה של נושא הכתבה',holds:'אחזקה של הקרן',ch:'תחום משותף',hand:'ביד מנהל'};
 const wiAdminOk=()=>!!(window.__tc&&window.__tc.mc);
 const wiSmall=()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}};
-const wiD=()=>WIMP.mode==='world'?WIMP.world:WIMP.me;
-const wiPctH=(v,d=1)=>v==null?'':`<span class="${v>0.05?'up':v<-0.05?'down':'flat'}" dir="ltr">${v>0.005?'+':v<-0.005?'−':''}${Math.abs(v).toFixed(d)}%</span>`;
+const wiPastOn=()=>WIMP.time==='past'&&WIMP.mode==='me';
+const wiD=()=>WIMP.mode==='world'?WIMP.world:wiPastOn()?WIMP.past.shape:WIMP.me;
+const wiPctT=(v,d=2)=>v==null?'—':(v>0.005?'+':v<-0.005?'−':'')+Math.abs(v).toFixed(d)+'%';
+const wiPctH=(v,d=1)=>v==null?'':`<span class="${v>0.05?'up':v<-0.05?'down':'flat'}" dir="ltr">${wiPctT(v,d)}</span>`;
 const wiAgo=iso=>{if(!iso)return ''; try{return ago(iso)}catch(e){return ''}};
 const wiDay=iso=>{try{return dmy(iso)}catch(e){return String(iso||'').slice(0,10)}};
 const wiAt=iso=>{if(!iso)return ''; const d=new Date(iso); return isNaN(d)?'':d.toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})};
 const wiNodeT=id=>String(id).slice(0,String(id).indexOf(':'));
+const wiISO=t=>new Date(t).toISOString().slice(0,10);
 async function wiJson(u,o){const r=await fetch(u,{credentials:'same-origin',...(o||{})}); const j=await r.json().catch(()=>null); if(!r.ok)throw Object.assign(new Error((j&&j.error&&(j.error.message||j.error))||('HTTP '+r.status)),{status:r.status}); return j}
 
 // ---- the data: once a minute at most, or when asked; a partner's request is the same as anybody's: the server decides ----
 async function wiLoad(force){
   const world=WIMP.mode==='world'&&wiAdminOk(), now=Date.now(), have=world?WIMP.world:WIMP.me, age=now-(world?WIMP.wat:WIMP.at);
-  if(!window.__tc){WIMP.err='גלובוס ההשפעה עובד באתר עצמו: שם השרת בונה את המפה לפי התיק שלך.'; wiRender(); return}
+  if(!window.__tc){WIMP.err='מפת ההשפעה עובדת באתר עצמו: שם השרת בונה אותה לפי התיק שלך.'; wiRender(); return}
   if(WIMP.busy||(!force&&have&&age<60e3&&have.days===+WIMP.f.t))return;
   WIMP.busy=true; wiRender();
   try{const j=await wiJson((world?'/api/admin/impact':'/api/impact')+'?days='+encodeURIComponent(WIMP.f.t)); if(world){WIMP.world=j; WIMP.wat=Date.now()} else {WIMP.me=j; WIMP.at=Date.now()} WIMP.err=''}
   catch(e){WIMP.err=e.status===429?'':e.status===403?'אין הרשאה לתצוגה הזאת.':'המפה לא נטענה: '+e.message}
   finally{WIMP.busy=false}
   wiRender(); wiIdxSpark()}
-// the globe, once: the library is fetched when the screen first opens (the site keeps it by its version); without WebGL, or
-// inside Claude without the library, the network map stands in, said so
-// 19.11: the active drawing: the globe, the flat map (the owner: every event at once), or none (the network map). Each
-// has a box of its own on the stage; only the active one shows (a hidden one does not draw)
+// the past, in the same shape as today's data (so the globe, the map and the network draw it as they draw today): the events
+// of the range with what was said then; never mixed with today's
+function wiPastShape(d){if(!d)return null; const A=d.assets||[], byS=new Map(A.map(a=>[a.sym,a])), nodes={}, links=[];
+  for(const a of A)nodes[a.id]={t:a.kind==='fund'?'fund':'co',label:a.sym,name:a.name,loc:a.loc,mine:true};
+  const ev=(d.events||[]).map(e=>{nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc};
+    const paths=(e.impacts||[]).map(i=>{const a=byS.get(i.sym); if(!a)return null; const id='ev:'+e.k+'>'+a.id;
+      links.push({id,ek:e.k,from:'ev:'+e.k,to:a.id,dir:i.dir,s:i.s,conf:i.conf,direct:!!i.direct,why:i.mech||'',fact:i.fact||'',basis:i.basis||null,final:true,past:true,ev:(e.sources||[]).map(x=>({t:x.title,pub:x.pub,link:x.link,at:x.at}))});
+      return {to:i.sym,node:a.id,links:[id],nodes:['ev:'+e.k,a.id],dir:i.dir,s:i.s,conf:i.conf,direct:!!i.direct}}).filter(Boolean);
+    return {...e,past:true,last:e.last||e.first,cats:[e.cat],regions:[],paths,touches:(e.impacts||[]).map(i=>i.sym),impacts:(e.impacts||[]).map(i=>({...i,rel:i.direct?'direct':'indirect'}))}});
+  return {mode:'past',past:true,at:d.at,days:0,from:d.from,to:d.to,assets:A.map(a=>({...a,fresh:null,chg:null,px:null,halo:'none'})),events:ev,links,nodes,indices:[],
+    filters:{countries:[],regions:[],sectors:[],cats:[...new Set(ev.map(e=>e.cat))].map(k=>({k,he:WI_CAT[k]||k}))},notes:[d.note||'']}}
+async function wiPastLoad(){const P=WIMP.past; if(!window.__tc||P.busy)return; P.busy=true; wiRender();
+  try{const q=new URLSearchParams(); if(P.from)q.set('from',P.from); if(P.to)q.set('to',P.to); const j=await wiJson('/api/impact/past?'+q); P.d=j; P.shape=wiPastShape(j); P.from=j.from; P.to=j.to; P.err=''}
+  catch(e){P.err='ההיסטוריה לא נטענה: '+e.message; P.d=null; P.shape=null} finally{P.busy=false}
+  wiRender(); if(WIMP.view==='hist')wiHistLoad()}
+// the drawing in use: the globe, the flat map, or none (the network and the history are drawn as elements of the page). Each
+// has a box of its own on the stage; only the one in use shows (a hidden one does not draw)
 const wiR=()=>WIMP.view==='globe'?WIMP.G:WIMP.view==='flat'?WIMP.F:null;
 const wiSub=k=>{const h=$('wiGlobe'); if(!h)return null; let d=h.querySelector(':scope>[data-r="'+k+'"]'); if(!d){d=document.createElement('div'); d.className='wix-r'; d.dataset.r=k; d.hidden=WIMP.view!==k; h.appendChild(d)} return d};
 function wiViz(){return WIMP.view==='flat'?wiFlat():WIMP.view==='globe'?wiGlobe():null}
+const wiLevel=lv=>{if(lv===WIMP.lvl)return; WIMP.lvl=lv; const R=wiR(); if(R)R._sig=null; wiRender()};
 // the flat map needs no three.js: only the library of the maps (a phone that picks it fetches 130KB, not 800KB)
 async function wiFlat(){
   if(WIMP.F||WIMP.fTried)return WIMP.F; WIMP.fTried=true; const host=wiSub('flat'); if(!host)return null;
   try{if(window.__tcLib)await window.__tcLib('globe'); if(!window.TCGlobe||!window.TCGlobe.createFlat)throw new Error('הספרייה לא נטענה');
-    WIMP.F=window.TCGlobe.createFlat(host,{label:'מפת העולם: האירועים והקשרים שלהם לתיק',onPick:wiPick})}
-  catch(e){WIMP.gFail='המפה לא זמינה כאן ('+(e.message||e)+'). מוצגת מפת הרשת במקומה.'; WIMP.view='net'}
+    WIMP.F=window.TCGlobe.createFlat(host,{label:'מפת העולם: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel})}
+  catch(e){WIMP.gFail='המפה לא זמינה כאן ('+(e.message||e)+'). מוצגת רשת הקשרים במקומה.'; WIMP.view='net'}
   wiRender(); return WIMP.F}
 async function wiGlobe(){
   if(WIMP.G||WIMP.gTried)return WIMP.G; WIMP.gTried=true; const host=wiSub('globe'); if(!host)return null;
   try{if(window.__tcLib){await window.__tcLib('three'); await window.__tcLib('globe')} if(!window.TCGlobe||!window.THREE)throw new Error('הספרייה לא נטענה');
     if(!window.TCGlobe.supported())throw new Error('הדפדפן לא תומך בגרפיקה תלת־ממדית (WebGL)');
-    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת המפה השטוחה.'; WIMP.view='flat'; wiFlat()}})}
+    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת המפה השטוחה.'; WIMP.view='flat'; wiFlat()}})}
   catch(e){WIMP.gFail='הגלובוס לא זמין כאן ('+(e.message||e)+'). מוצגת המפה השטוחה במקומו.'; WIMP.view='flat'; wiFlat()}
   wiRender(); return WIMP.G}
 function wiOpen(){
@@ -29985,66 +30113,95 @@ function wiOpen(){
   // not on the screen (a phone shows the map only in its own tab): nothing is fetched or drawn, not even the library
   if(!$('wi').getClientRects().length)return; WIMP.open=true;
   const adm=document.querySelector('[data-wimode="world"]'); if(adm)adm.hidden=!wiAdminOk();
-  if(!WIMP.hist.to){const t=new Date(); WIMP.hist.to=t.toISOString().slice(0,10); WIMP.hist.from=new Date(t.getTime()-90*864e5).toISOString().slice(0,10)}
   wiLoad(false); wiViz(); wiRender()}
 
 // ---- what the filters leave ----
 function wiAssets(){const d=wiD(); return (d&&d.assets)||[]}
-function wiEvents(){const d=wiD(); if(!d)return []; const F=WIMP.f, A=new Map(wiAssets().map(a=>[a.sym,a]));
+function wiEvents(){const d=wiD(); if(!d)return []; const F=WIMP.f, A=new Map(wiAssets().map(a=>[a.sym,a])), me=WIMP.mode==='me';
   return (d.events||[]).filter(e=>{
     if(F.cc&&!(e.cc||[]).includes(F.cc))return false; if(F.reg&&!(e.regions||[]).includes(F.reg))return false;
     if(F.cat&&!(e.cats||[e.cat]).includes(F.cat))return false; if(F.s&&!((+e.s||1)>=+F.s))return false; if(F.dir&&e.dir!==F.dir)return false;
     if(F.conf&&!(F.conf==='high'?e.conf==='high':e.conf!=='low'))return false;
-    if(F.sec){if(WIMP.mode==='world'){if(!(e.links||[]).some(l=>l.to==='sec:'+F.sec))return false} else if(!(e.touches||[]).some(s=>(A.get(s)||{}).sec===F.sec))return false}
-    if(WIMP.mode==='me'&&(WIMP.kind==='stock'||WIMP.kind==='fund')&&!(e.touches||[]).some(s=>(A.get(s)||{}).kind===WIMP.kind))return false;
+    if(F.sec){if(!me){if(!(e.links||[]).some(l=>l.to==='sec:'+F.sec))return false} else if(!(e.touches||[]).some(s=>(A.get(s)||{}).sec===F.sec))return false}
+    if(me&&(WIMP.kind==='stock'||WIMP.kind==='fund')&&!(e.touches||[]).some(s=>(A.get(s)||{}).kind===WIMP.kind))return false;
     return true})}
-// the place of a node on the globe: an asset where it was put, an event where it happens, a company at its headquarters
+// the events the choice leaves: an asset chosen shows its own events only
+function wiEventsSel(){const E=wiEvents(), s=WIMP.sel; return s&&s.t==='as'&&WIMP.mode==='me'?E.filter(e=>(e.touches||[]).includes(s.sym)):E}
+// 22.11: is anything away from the plain view of today (a past range, a filter, a choice, a kind, the lines' mode, a layer off)
+const wiDirty=()=>WIMP.time==='past'||WIMP.view==='hist'||!!WIMP.sel||WIMP.kind!=='all'||WIMP.lm!=='focus'||Object.entries(WIMP.f).some(([k,v])=>k==='t'?v!=='7':!!v)||WIMP.net.direct||!!WIMP.net.focus||Object.values(WIMP.net.off).some(Boolean);
+// "חזרה להיום": the dates, the filters, the choice, the kinds, the lines and the layers go back to where they began, the
+// globe turns back to the portfolio, and today's data are asked for again. Nothing is deleted: the history stays on the server
+function wiReset(){WIMP.time='now'; WIMP.past={from:'',to:'',d:null,shape:null,busy:false,err:''}; WIMP.hist={sym:'',d:null,busy:false,err:'',pick:null,all:false}; WIMP.f=WI_F0(); WIMP.kind='all'; WIMP.lm='focus'; WIMP.sel=null;
+  WIMP.net={off:{},direct:false,focus:null,more:0,sig:'',edges:[]}; if(WIMP.view==='hist'){let v='globe'; try{v=localStorage.getItem('tr_wiview')||'globe'}catch(e){} WIMP.view=['globe','flat','net'].includes(v)?v:'globe'}
+  WIMP.homed=''; WIMP.legacy=false; const f=$('wiFilt'), fb=$('wiFiltB'); if(f)f.hidden=true; if(fb)fb.setAttribute('aria-expanded','false'); const R=wiR(); if(R)R._sig=null;
+  wiSheet(); wiRender(); wiViz(); wiLoad(true).then(()=>{try{wiHome(true)}catch(e){}})}
+
+// ---- the globe and the map: the points and the lines ----
+// 22.11, less noise: the events of one place are one point with their number until the viewer comes closer; a line is
+// "quiet" (not drawn until its event or its asset is chosen) unless it is a direct line of one of the three leading events;
+// a company on the way (not held) and its label wait for their event to be chosen
 function wiGlobeData(){
-  const d=wiD(); if(!d)return {points:[],arcs:[]}; const K=WIMP.kind, E=WIMP.kind==='idx'?[]:wiEvents(), pts=[], arcs=[], occ=new Map(), place=new Map(), seenA=new Set(), small=wiSmall();
+  const d=wiD(); if(!d)return {points:[],arcs:[]}; const K=WIMP.kind, me=WIMP.mode==='me', E=K==='idx'?[]:wiEvents().slice(0,me?60:150), pts=[], arcs=[], occ=new Map(), place=new Map(), seenA=new Set(), small=wiSmall(), near=WIMP.lvl>=1, lm=WIMP.lm;
   const jit=(lat,lon)=>{const k=Math.round(lat*3)+','+Math.round(lon*3), n=occ.get(k)||0; occ.set(k,n+1); if(!n)return {lat,lon}; const a=n*2.39996, r=1.2+0.5*Math.floor(n/5); return {lat:Math.max(-85,Math.min(85,lat+Math.sin(a)*r)),lon:lon+Math.cos(a)*r/Math.max(0.35,Math.cos(lat*Math.PI/180))}};
-  const nodes=d.nodes||{}, near=(a,b)=>a&&b&&Math.abs(a.lat-b.lat)<2.5&&Math.abs(a.lon-b.lon)<2.5;
-  if(WIMP.mode==='me'){
-    for(const a of wiAssets()){if(!a.loc||K==='idx'||(K==='stock'&&a.kind!=='stock')||(K==='fund'&&a.kind!=='fund'))continue; const p=jit(a.loc.lat,a.loc.lon); place.set(a.id,p); if(a.kind==='fund')place.set('co:'+a.sym,p);
-      const cls=a.halo==='up'?'up':a.halo==='down'?'down':'flat';
+  const nodes=d.nodes||{}, close=(a,b)=>a&&b&&Math.abs(a.lat-b.lat)<2.5&&Math.abs(a.lon-b.lon)<2.5;
+  if(me){for(const a of wiAssets()){if(!a.loc||K==='idx'||K==='ev'||(K==='stock'&&a.kind!=='stock')||(K==='fund'&&a.kind!=='fund'))continue; const p=jit(a.loc.lat,a.loc.lon); place.set(a.id,p); if(a.kind==='fund')place.set('co:'+a.sym,p);
+      const cls=a.halo==='up'?'up':a.halo==='down'?'down':'flat', shut=a.halo==='idle'&&a.chg!=null;
       pts.push({id:'a:'+a.sym,kind:'asset',lat:p.lat,lon:p.lon,color:'#c4b5fd',size:1.15+Math.min(1.1,(a.w||0)/18),halo:a.halo,
-        label:K==='ev'?null:{cls:'as '+cls,priority:60+(a.w||0),aria:`${lab(a.sym)} ${a.chg==null?'':a.chg+'%'}`,html:`${logoHtml(a.sym)}<b dir="ltr">${esc(lab(a.sym))}</b>${a.chg==null?'':wiPctH(a.chg)}`}})}}
-  if(K==='all'||K==='idx')for(const x of (d.indices||[])){if(!x.loc||x.state==='none')continue; const p=jit(x.loc.lat,x.loc.lon), h=x.chg==null?'none':x.chg>0.05?'up':x.chg<-0.05?'down':'flat';
+        label:{cls:'as '+cls,priority:60+(a.w||0),aria:`${lab(a.sym)} ${a.chg==null?'':a.chg+'%'}${shut?' (סגירה)':''}`,html:`${logoHtml(a.sym)}<b dir="ltr">${esc(lab(a.sym))}</b>${a.chg==null?'':wiPctH(a.chg)}${shut?'<small>סגירה</small>':''}`}})}}
+  if(K==='all'||K==='idx')for(const x of (d.indices||[])){if(!x.loc||x.state==='none')continue; const p=jit(x.loc.lat,x.loc.lon), h=x.chg==null||x.state!=='delayed'?'idle':x.chg>0.05?'up':x.chg<-0.05?'down':'flat';
     pts.push({id:'i:'+x.k,kind:'index',lat:p.lat,lon:p.lon,color:'#93c5fd',size:0.9,halo:K==='idx'?h:'none',label:{cls:'ix',priority:K==='idx'?80:20,html:`<b>${esc(x.name)}</b>${wiPctH(x.chg,2)}`}})}
   const coPt=(id,ek)=>{if(place.has(id))return place.get(id); const n=nodes[id]; if(!n||!n.loc)return null; const p=jit(n.loc.lat,n.loc.lon); place.set(id,p);
-    if(!seenA.has(id)){seenA.add(id); const s=id.slice(id.indexOf(':')+1); pts.push({id:'n:'+id,kind:'company',lat:p.lat,lon:p.lon,color:'#94a3b8',size:0.62,group:ek,label:small?null:{cls:'co',priority:4,html:`<b dir="ltr">${esc(s)}</b>`}})} return p};
+    if(!seenA.has(id)){seenA.add(id); const s=id.slice(id.indexOf(':')+1); pts.push({id:'n:'+id,kind:'company',lat:p.lat,lon:p.lon,color:'#94a3b8',size:0.62,group:ek,quiet:lm!=='all',label:{cls:'co',priority:4,quiet:true,html:`<b dir="ltr">${esc(s)}</b>`}})} return p};
   const L=new Map((d.links||[]).map(l=>[(l.ek||'')+'|'+l.id,l]));
-  E.slice(0,WIMP.mode==='world'?150:60).forEach((e,i)=>{if(!e.loc)return; const p=jit(e.loc.lat,e.loc.lon), ek=e.k; place.set('ev:'+ek,p);
-    pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:0.75+0.3*(+e.s||1),group:ek,
-      label:i<(small?6:12)?{cls:'ev',priority:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:null});
-    const seenArc=new Set(), arc=(a,b,dir,dashed,id)=>{if(!a||!b||near(a,b))return; const k=id; if(seenArc.has(k))return; seenArc.add(k); arcs.push({id:ek+'|'+k,from:a,to:b,color:WI_COL[dir]||WI_COL.unclear,dashed,group:ek,lift:(arcs.length%3)*0.03,alpha:0.95})};
-    if(WIMP.mode==='me'){for(const pa of (e.paths||[])){
+  // the events by place: three or more in one cell of four degrees are one point until the viewer is near
+  const cells=new Map(); for(const e of E){if(!e.loc)continue; const k=Math.round(e.loc.lat/4)+','+Math.round(e.loc.lon/4); if(!cells.has(k))cells.set(k,[]); cells.get(k).push(e)}
+  WIMP.clu={}; const nLab=near?(small?6:12):(small?3:6), selK=WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:null;
+  for(const [ck,M] of cells){if(M.length>=3&&!near){const la=M.reduce((t,e)=>t+e.loc.lat,0)/M.length, lo=M.reduce((t,e)=>t+e.loc.lon,0)/M.length, id='c:'+ck, crit=M.some(e=>e.level==='crit'); WIMP.clu[ck]=M.map(e=>e.k);
+      for(const e of M)place.set('ev:'+e.k,{lat:la,lon:lo});
+      pts.push({id,kind:'cluster',lat:la,lon:lo,color:crit?'#f59e0b':'#fde68a',size:1.5+Math.min(1,M.length/8),label:{cls:'ev cl',priority:45,aria:`${M.length} אירועים ב${M[0].loc.name||'מקום אחד'}`,html:`<b>${M.length} אירועים</b><small>${esc(M[0].loc.name||'')} · לחיצה מקרבת</small>`}})}
+    else for(const e of M)place.set('ev:'+e.k,jit(e.loc.lat,e.loc.lon))}
+  E.forEach((e,i)=>{if(!e.loc)return; const p=place.get('ev:'+e.k), ek=e.k, inClu=Object.values(WIMP.clu).some(Ks=>Ks.includes(ek));
+    if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:0.75+0.3*(+e.s||1),group:ek,
+      label:i<nLab||ek===selK?{cls:'ev',priority:ek===selK?100:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
+    const seenArc=new Set(), arc=(a,b,dir,dashed,id,tag,direct)=>{if(!a||!b||close(a,b))return; if(lm==='direct'&&!direct)return; const o=seenArc.has(id)?arcs.find(x=>x.id===ek+'|'+id):null; if(o){if(tag&&o.tags&&!o.tags.includes(tag))o.tags.push(tag); return} seenArc.add(id);
+      arcs.push({id:ek+'|'+id,from:a,to:b,color:WI_COL[dir]||WI_COL.unclear,dashed,group:ek,tags:tag?[tag]:null,quiet:lm==='focus',dr:!!direct,lift:(arcs.length%3)*0.03,alpha:0.95})};
+    if(me){for(const pa of (e.paths||[])){if(K==='stock'||K==='fund'){const a=wiAssets().find(x=>x.sym===pa.to); if(a&&a.kind!==K)continue}
         // the places along the path: the event, a country, a company, the asset; a factor or a sector has no place, and the
-        // arc over it is drawn dashed (an indirect step)
+        // line over it is drawn dashed (an indirect step)
         let prev={id:'ev:'+ek,p}, seg=[];
         pa.nodes.slice(1).forEach((n,j)=>{const lid=pa.links[j], l=L.get(ek+'|'+lid); seg.push(l); const t=wiNodeT(n);
-          let q=null; if(t==='co'||t==='fund')q=coPt(n,ek); else if(t==='cty'){const c=nodes[n]; if(c&&c.loc&&!near(c.loc,e.loc))q=c.loc}
+          let q=null; if(t==='co'||t==='fund')q=coPt(n,ek); else if(t==='cty'){const c=nodes[n]; if(c&&c.loc&&!close(c.loc,e.loc))q=c.loc}
           if(!q)return; const dir=([...seg].reverse().map(z=>z&&z.dir).find(v=>v&&v!=='unclear'))||pa.dir||'unclear', direct=seg.every(z=>z&&z.direct);
-          arc(prev.p,q,dir,!direct,prev.id+'>'+n); prev={id:n,p:q}; seg=[]})}}
-    else{for(const l of (e.links||[])){if(!l.to.startsWith('co:'))continue; const to=coPt(l.to,ek); if(!to)continue; const from=l.from.startsWith('co:')?coPt(l.from,ek):p; arc(from,to,l.dir,!l.direct,l.id)}}});
+          arc(prev.p,q,dir,!direct,prev.id+'>'+n,pa.to,!!pa.direct); prev={id:n,p:q}; seg=[]})}}
+    else{for(const l of (e.links||[])){if(!l.to.startsWith('co:'))continue; const to=coPt(l.to,ek); if(!to)continue; const from=l.from.startsWith('co:')?coPt(l.from,ek):p; arc(from,to,l.dir,!l.direct,l.id,null,!!l.direct)}}});
+  // before a choice: the lines of the three leading events that have a line to draw (their direct ones when they have any);
+  // every other line waits for its event or its asset to be chosen
+  if(lm==='focus'){let n=0; for(const e of E){const A=arcs.filter(a=>a.group===e.k); if(!A.length)continue; const D=A.filter(a=>a.dr); for(const a of (D.length?D:A))a.quiet=false; if(++n>=3)break}}
   return {points:pts,arcs}}
 
 // ---- the drawing of every part ----
-function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==='me';
+function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==='me', V=WIMP.view, past=wiPastOn();
   for(const b of w.querySelectorAll('[data-wimode]'))b.setAttribute('aria-pressed',String(b.dataset.wimode===WIMP.mode));
   for(const b of w.querySelectorAll('[data-wik]'))b.setAttribute('aria-pressed',String(b.dataset.wik===WIMP.kind));
-  for(const b of w.querySelectorAll('[data-wiview]'))b.setAttribute('aria-pressed',String(b.dataset.wiview===WIMP.view));
-  const st=$('wiStage'), mp=$('ixMap'); if(st){st.hidden=WIMP.view==='net'; st.classList.toggle('flat',WIMP.view==='flat')} if(mp)mp.hidden=WIMP.view!=='net';
-  {const gr=w.querySelector('.wi-grid'); if(gr)gr.classList.toggle('flat',WIMP.view==='flat'); const h=$('wiGlobe'); if(h)for(const c of h.querySelectorAll(':scope>.wix-r'))c.hidden=c.dataset.r!==WIMP.view}
-  w.classList.toggle('wi-busy',!!WIMP.busy);
+  for(const b of w.querySelectorAll('[data-wiview]')){b.setAttribute('aria-pressed',String(b.dataset.wiview===V)); if(b.dataset.wiview==='hist')b.hidden=!me}
+  for(const b of w.querySelectorAll('[data-wilm]'))b.setAttribute('aria-pressed',String(b.dataset.wilm===WIMP.lm));
+  const st=$('wiStage'); if(st)st.className='wi-stage'+(V==='globe'?'':' '+V);
+  {const gr=w.querySelector('.wi-grid'); if(gr)gr.classList.toggle('flat',V!=='globe'); const h=$('wiGlobe'); if(h){if(V==='net')wiSub('net'); if(V==='hist')wiSub('hist'); for(const c of h.querySelectorAll(':scope>.wix-r'))c.hidden=c.dataset.r!==V}}
+  w.classList.toggle('wi-busy',!!(WIMP.busy||WIMP.past.busy)); w.classList.toggle('wi-pastm',past);
+  {const b=$('wiPast'); if(b){b.hidden=!past; if(past){const P=WIMP.past; b.innerHTML=`<span><b>מוצג העבר:</b> ${P.from&&P.to?`${esc(wiDay(P.from))} עד ${esc(wiDay(P.to))}`:'טוען…'} · מה שהמנוע אמר אז ומה שקרה בשוק אחרי. הנתונים של היום אינם מעורבים כאן.</span><button type="button" class="wi-rst" data-wireset="1">↺ חזרה להיום</button>`}}
+    const r=$('wiReset'); if(r)r.hidden=!wiDirty()||past}
   wiFreshBtn(d); wiFiltFill(d); wiCounts(d);
-  const msg=$('wiMsg'); if(msg){let t=''; if(WIMP.err)t=WIMP.err; else if(!d)t=WIMP.busy?'המפה נבנית…':''; else if(me&&!(d.assets||[]).length)t='כשיהיו ניירות בתיק, הגלובוס יראה מה בעולם נוגע להם.'; else if(!wiEvents().length&&WIMP.kind!=='idx')t=me?'אין כרגע אירוע עם מסלול מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
-    if(WIMP.gFail&&WIMP.view!=='net'&&!wiR())t=WIMP.gFail; msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
+  const msg=$('wiMsg'); if(msg){let t=''; if(V==='globe'||V==='flat'){if(WIMP.err&&!past)t=WIMP.err; else if(past&&WIMP.past.err)t=WIMP.past.err; else if(!d)t=WIMP.busy||WIMP.past.busy?'המפה נבנית…':''; else if(me&&!(d.assets||[]).length)t='כשיהיו ניירות בתיק, המפה תראה מה בעולם נוגע להם.';
+      else if(!wiEvents().length&&WIMP.kind!=='idx')t=past?'לא נשמר אירוע עם קשר לנכס בתיק בטווח התאריכים הזה.':me?'אין כרגע אירוע עם קשר עסקי מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
+      if(WIMP.gFail&&!wiR())t=WIMP.gFail} msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
   // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
-  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',wiSmall()].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
-  wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiHistCtl(); wiAdmRender(d);
-  const f=$('wiFoot'); if(f)f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}
-function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(d&&d.assets)||[];
-  if(!A.length){D.className='wi-dot'; L.textContent='עכשיו'; return}
+  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
+  if(V==='net')try{wiNetDraw()}catch(e){console.error(e)} if(V==='hist')try{wiHistDraw()}catch(e){console.error(e)}
+  wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiAdmRender(d);
+  {const b=$('wiBottom'); if(b)b.hidden=past||V==='hist'}
+  const f=$('wiFoot'); if(f){const en=d&&d.engine; f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',en&&en.waiting?`${en.waiting} קשרים אפשריים עוד ממתינים לניתוח נפרד של הנכס, ולכן לא מוצגים.`:'',en&&!en.ai?'ניתוח הקשר לכל נכס אינו פעיל כרגע: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה.':'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}}
+function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(WIMP.me&&WIMP.me.assets)||[];
+  if(!A.length||WIMP.mode==='world'){D.className='wi-dot'; L.textContent='עכשיו'; return}
   const n=s=>A.filter(a=>a.fresh&&a.fresh.state===s).length, live=n('live'), del=n('delayed'), close=n('close');
   // never "live" when it is not: the dot and the word follow the slowest price that is shown
   const s=live&&!del&&!close&&!n('stale')&&!n('none')?'live':del||live?'delayed':close?'close':'stale';
@@ -30055,174 +30212,337 @@ function wiCounts(d){const w=$('wi'); if(!w)return; const A=(d&&d.assets)||[], E
 function wiFiltFill(d){const box=$('wiFilt'); if(!box||!d)return; const F=(d&&d.filters)||{}, sel=(k,opts)=>{const s=box.querySelector(`[data-wif="${k}"]`); if(!s)return; const v=WIMP.f[k];
     s.innerHTML='<option value="">הכול</option>'+opts.map(o=>`<option value="${esc(o.k)}"${o.k===v?' selected':''}>${esc(o.he)}</option>`).join('')};
   sel('cc',F.countries||[]); sel('reg',(F.regions||[]).map(k=>({k,he:WI_REG[k]||k}))); sel('sec',F.sectors||[]); sel('cat',(F.cats||[]).map(o=>({k:o.k,he:o.he||WI_CAT[o.k]||o.k})));
-  for(const k of ['s','dir','t','conf']){const s=box.querySelector(`[data-wif="${k}"]`); if(s)s.value=WIMP.f[k]}
+  for(const k of ['s','dir','t','conf']){const s=box.querySelector(`[data-wif="${k}"]`); if(s){s.value=WIMP.f[k]; if(k==='t')s.disabled=wiPastOn()}}
   const n=['cc','reg','sec','cat','s','dir','conf'].filter(k=>WIMP.f[k]).length+(WIMP.f.t!=='7'?1:0), N=$('wiFiltN'); if(N)N.textContent=n?String(n):''}
 function wiPfRender(d){const B=$('wiPfB'), S=$('wiPfS'); if(!B)return;
-  if(WIMP.mode==='world'){const s=(d&&d.stats)||{}; if(S)S.textContent='כל העולם'; B.innerHTML=`<p class="wi-note">תצוגת ניהול: כל האירועים והקשרים של המנוע, לא תיק של אדם. ${s.events!=null?`${s.events} אירועים, ${s.links} קשרים, ${s.aliases} איחודים.`:''}</p>`; return}
-  let m=null; try{m=mAllNow()}catch(e){} const A=wiAssets();
+  if(WIMP.mode==='world'){const s=(d&&d.stats)||{}; if(S)S.textContent='כל העולם'; B.innerHTML=`<p class="wi-note">תצוגת ניהול: כל האירועים והקשרים של המנוע, לא תיק של אדם. ${s.events!=null?`${s.events} אירועים, ${s.links} קשרים בין חוליות, ${s.rels||0} קשרים לנכסים (${s.none||0} נבדקו ונדחו, ${s.wait||0} ממתינים), ${s.aliases} איחודים.`:''}</p>`; return}
+  let m=null; try{m=mAllNow()}catch(e){} const A=(WIMP.me&&WIMP.me.assets)||wiAssets(), cnt=new Map(wiAssets().map(a=>[a.sym,(wiEvents().filter(e=>(e.touches||[]).includes(a.sym))).length]));
   if(!A.length){B.innerHTML='<p class="wi-note">אין ניירות בתיק עדיין.</p>'; if(S)S.textContent=''; return}
   const tot=m&&m.total>0?`<div class="wi-pfv"><b>₪${ils(Math.round(m.total))}</b>${m.dayIls!=null?`<span class="${m.dayIls>=0?'up':'down'}" dir="ltr">${m.dayIls>=0?'▲ +':'▼ −'}₪${ils(Math.abs(Math.round(m.dayIls)))}${m.dayPct!=null?' ('+(m.dayPct>=0?'+':'−')+Math.abs(m.dayPct).toFixed(2)+'%)':''}</span>`:''}<small class="wi-note">שווי התיק והשינוי היום</small></div>`:'';
-  const rows=A.slice().sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,6).map(a=>`<li><button type="button" class="wi-row" data-wias="${esc(a.sym)}"${WIMP.sel&&WIMP.sel.t==='as'&&WIMP.sel.sym===a.sym?' aria-current="true"':''}>${logoHtml(a.sym)}<span class="nm"><b dir="ltr">${esc(lab(a.sym))}</b><small><span class="wi-fr"><i class="wi-dot ${a.fresh?a.fresh.state:'none'}"></i>${esc(a.fresh?a.fresh.he:'')}</span></small></span><span class="v">${a.chg==null?'—':wiPctH(a.chg)}</span></button></li>`).join('');
+  const rows=A.slice().sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,8).map(a=>{const n=cnt.get(a.sym)||0; return `<li><button type="button" class="wi-row" data-wias="${esc(a.sym)}"${WIMP.sel&&WIMP.sel.t==='as'&&WIMP.sel.sym===a.sym?' aria-current="true"':''}>${logoHtml(a.sym)}<span class="nm"><b dir="ltr">${esc(lab(a.sym))}</b><small>${n?`${n} ${n===1?'אירוע נוגע':'אירועים נוגעים'}`:'אין אירוע נוגע'}${a.fresh?` · <span class="wi-fr"><i class="wi-dot ${a.fresh.state}"></i>${esc(a.fresh.he||'')}</span>`:''}</small></span><span class="v">${a.chg==null?'—':wiPctH(a.chg)}</span></button></li>`}).join('');
   if(S)S.textContent=A.length+' ניירות';
-  B.innerHTML=tot+`<ul class="wi-list">${rows}</ul>`+(A.length>6?`<p class="wi-note">ועוד ${A.length-6} ניירות; כולם על הגלובוס.</p>`:'')}
-function wiEvRender(d){const L=$('wiEvL'), S=$('wiEvS'); if(!L)return; const E=wiEvents();
-  if(S)S.textContent=WIMP.mode==='world'?(E.length?E.length+' באירועי העולם':''):(E.length?E.length+' נוגעים לתיק':'');
+  B.innerHTML=tot+`<ul class="wi-list">${rows}</ul>`+(A.length>8?`<p class="wi-note">ועוד ${A.length-8} ניירות; כולם על המפה.</p>`:'')+'<p class="wi-note">בחירה בנייר מציגה רק את האירועים שנוגעים לו, עם ההסבר שלו.</p>'}
+function wiEvRender(d){const L=$('wiEvL'), S=$('wiEvS'), H=$('wiEvH'); if(!L)return; const E=wiEventsSel(), sel=WIMP.sel, as=sel&&sel.t==='as'&&WIMP.mode==='me'?sel.sym:null, past=wiPastOn();
+  if(H&&H.firstChild)H.firstChild.textContent=past?'אירועי התקופה ':'אירועי השפעה ';
+  if(S)S.textContent=WIMP.mode==='world'?(E.length?E.length+' באירועי העולם':''):(E.length?E.length+(as?' נוגעים ל-'+lab(as):' נוגעים לתיק'):'');
   if(!d){L.innerHTML=''; return}
-  if(!E.length){L.innerHTML=`<li class="wi-note">${WIMP.mode==='world'?'אין אירועים בטווח.':'אין אירוע עם מסלול מוסבר לנכס שלך בטווח שנבחר.'}</li>`; return}
-  L.innerHTML=E.slice(0,40).map(e=>{const T=WIMP.mode==='world'?(e.cos||[]).slice(0,4):(e.touches||[]).slice(0,4);
-    return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"${WIMP.sel&&WIMP.sel.t==='ev'&&WIMP.sel.k===e.k?' aria-current="true"':''}><i class="dd ${esc(e.dir||'unclear')}" aria-hidden="true"></i><span class="nm"><b>${esc(e.he)}</b>
-      <small>${esc(WI_CAT[e.cat]||'')} · ${esc(wiAgo(e.last||e.first))}${e.nPubs>1?` · ${e.nPubs} מקורות`:''}</small>
-      <span class="wi-tags">${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${T.map(s=>`<span class="wi-tag sym">${esc(s)}</span>`).join('')}${e.rules?'<span class="wi-tag">לפי כותרת</span>':''}</span></span></button></li>`}).join('')}
+  const head=as?`<li class="wi-selb"><span>מוצגים רק האירועים של <b dir="ltr">${esc(lab(as))}</b></span><button type="button" class="wi-fixb" data-wix="1">לכל האירועים</button></li>`:'';
+  if(!E.length){L.innerHTML=head+`<li class="wi-note">${WIMP.mode==='world'?'אין אירועים בטווח.':as?'לא נמצא אירוע עם קשר עסקי מוסבר לנייר הזה בטווח שנבחר.':past?'לא נשמר אירוע עם קשר לתיק בטווח התאריכים הזה.':'אין אירוע עם קשר עסקי מוסבר לנכס שלך בטווח שנבחר.'}</li>`; return}
+  L.innerHTML=head+E.slice(0,40).map(e=>{const I=(e.impacts||[]).filter(i=>!as||i.sym===as), one=as&&I[0], T=WIMP.mode==='world'?(e.cos||[]).slice(0,4).map(s=>`<span class="wi-tag sym">${esc(s)}</span>`).join(''):I.slice(0,4).map(i=>`<span class="wi-tag sym${i.rel==='direct'?'':' ind'}" title="${i.rel==='direct'?'קשר ישיר':'קשר עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}">${esc(lab(i.sym))}${i.rel==='direct'?'':' ⋯'}</span>`).join('');
+    return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"${sel&&sel.t==='ev'&&sel.k===e.k?' aria-current="true"':''}><i class="dd ${esc((one&&one.dir)||e.dir||'unclear')}" aria-hidden="true"></i><span class="nm"><b>${esc(e.he)}</b>
+      <small>${esc(WI_CAT[e.cat]||'')} · ${e.past?esc(wiDay(e.day)):esc(wiAgo(e.last||e.first))}${e.nPubs>1?` · ${e.nPubs} מקורות`:''}</small>${one&&one.mech?`<small class="wi-why">${esc(one.mech)}</small>`:''}
+      <span class="wi-tags">${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${T}${WIMP.mode==='me'&&!as?(e.said||[]).filter(c=>!c.mine).slice(0,3).map(c=>`<span class="wi-tag co" title="מוזכרת בכתבה; לא בתיק שלך">${esc(c.sym)}</span>`).join(''):''}${I.length&&I.every(i=>i.pending)?'<span class="wi-tag">ממתין לניתוח הנכס</span>':''}${e.rules?'<span class="wi-tag">לפי כותרת</span>':''}${e.legacy?'<span class="wi-tag">המנוע הקודם</span>':''}</span></span></button></li>`}).join('')}
 function wiSpark(c,{w=120,h=34}={}){if(!Array.isArray(c)||c.length<3)return ''; const lo=Math.min(...c), hi=Math.max(...c), r=hi-lo||1, up=c[c.length-1]>=c[0];
   const pts=c.map((v,i)=>`${(i/(c.length-1)*w).toFixed(1)},${(h-2-(v-lo)/r*(h-4)).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${up?'var(--gain)':'var(--loss)'}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`}
 function wiKeysRender(d){const B=$('wiKeys'); if(!B)return; if(WIMP.mode==='world'){B.innerHTML='<p class="wi-note">בתצוגת הניהול אין נכסים של אדם.</p>'; return}
-  const K=(d&&d.keys)||[]; if(!K.length){B.innerHTML='<p class="wi-note">אין נכסים להציג.</p>'; return}
+  const K=(WIMP.me&&WIMP.me.keys)||[]; if(!K.length){B.innerHTML='<p class="wi-note">אין נכסים להציג.</p>'; return}
   B.innerHTML=K.slice(0,wiSmall()?4:5).map(a=>`<button type="button" class="wi-key" data-wias="${esc(a.sym)}"><b>${esc(lab(a.sym))}</b><span class="v">${a.chg==null?'—':wiPctH(a.chg)}</span>${a.spark?wiSpark(a.spark.c):''}<small class="wi-note">${a.events?`${a.events} ${a.events===1?'אירוע נוגע':'אירועים נוגעים'}`:'אין אירוע נוגע'} · ${esc(a.fresh?a.fresh.he:'')}</small></button>`).join('')}
 // the indices: the change from the previous close, how fresh it is, and a month's line when the closes are at hand
 async function wiIdxSpark(){if(!db||WIMP.ixc._busy)return; WIMP.ixc._busy=true; try{for(const k of ['SPX','NDX','DJI','TA35']){if(WIMP.ixc[k]!==undefined)continue; WIMP.ixc[k]=null;
       try{const s=await db.doc('quotes/c_IDX_'+k).get(); const x=s.exists?s.data():null; if(x&&Array.isArray(x.c))WIMP.ixc[k]=x.c.slice(-30).map(Number).filter(v=>v>0)}catch(e){}}}
   finally{WIMP.ixc._busy=false} wiIdxRender(wiD())}
-function wiIdxRender(d){const B=$('wiIxs'), S=$('wiIxS'); if(!B)return; const I=(d&&d.indices)||[]; if(!I.length){B.innerHTML='<p class="wi-note">אין נתוני מדדים.</p>'; return}
+function wiIdxRender(d){const B=$('wiIxs'), S=$('wiIxS'); if(!B)return; const I=((WIMP.mode==='world'?d:WIMP.me)||{}).indices||[]; if(!I.length){B.innerHTML='<p class="wi-note">אין נתוני מדדים.</p>'; return}
   if(S){const st=I.find(x=>x.state&&x.state!=='none'); S.textContent=st?st.he:''}
-  B.innerHTML=I.filter(x=>x.state!=='none').slice(0,4).map(x=>`<div class="wi-ix"><b>${esc(x.name)}</b><span class="v">${x.chg==null?'—':wiPctH(x.chg,2)}</span>${wiSpark(WIMP.ixc[x.k])}<small class="wi-note">${esc(x.he||'')}${x.at?' · '+esc(wiAt(x.at)):''}</small></div>`).join('')+
+  B.innerHTML=I.filter(x=>x.state!=='none').slice(0,4).map(x=>`<div class="wi-ix"><b>${esc(x.name)}</b><span class="v">${x.chg==null?'—':wiPctH(x.chg,2)}</span>${wiSpark(WIMP.ixc[x.k])}<small class="wi-note">${esc(x.he||'')}${x.at?' · '+esc(wiAt(x.at)):''}${x.open===false?' · המסחר סגור':''}</small></div>`).join('')+
     (I.some(x=>x.state==='none')?`<p class="wi-note">אין נתון: ${esc(I.filter(x=>x.state==='none').map(x=>x.name).join(', '))}.</p>`:'')}
 
-// ---- choosing a thing: the globe turns to it, its paths light up, and its card opens ----
-function wiPick(p){if(!p){WIMP.sel=null; wiSelApply(true); return}
+// ---- choosing a thing: the globe turns to it, its lines are drawn, and its card opens ----
+function wiPick(p){if(!p){if(WIMP.sel){WIMP.sel=null; wiSelApply(true); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD()); wiRender()} return}
   const id=String(p.id||''); if(id.startsWith('e:'))return wiSelect({t:'ev',k:id.slice(2)}); if(id.startsWith('a:'))return wiSelect({t:'as',sym:id.slice(2)});
-  if(id.startsWith('n:'))return wiSelect({t:'co',id:id.slice(2)}); if(id.startsWith('i:'))return wiSelect({t:'ix',k:id.slice(2)})}
-function wiSelect(s){WIMP.sel=s; wiSelApply(true); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD())}
+  if(id.startsWith('n:'))return wiSelect({t:'co',id:id.slice(2)}); if(id.startsWith('i:'))return wiSelect({t:'ix',k:id.slice(2)});
+  // a point of several events: the viewer comes closer and the events part
+  if(id.startsWith('c:')){const R=wiR(), d=wiD(), ks=(WIMP.clu||{})[id.slice(2)]||[], e=((d&&d.events)||[]).find(x=>x.k===ks[0]); if(R&&e&&e.loc){WIMP.lvl=1; R._sig=null; wiRender(); R.focus(e.loc.lat,e.loc.lon,R.flat?2.6:0.62)}}}
+function wiSelect(s){WIMP.sel=s; WIMP.net.focus=null; wiSelApply(true); wiSheet(); wiRender()}
 function wiSelApply(turn){const G=wiR(), d=wiD(); if(!G)return; const s=WIMP.sel;
   if(!s){G.highlight(null); return}
   if(s.t==='ev'){const e=((d&&d.events)||[]).find(x=>x.k===s.k); G.highlight([s.k]); if(turn&&e&&e.loc)G.focus(e.loc.lat,e.loc.lon)}
-  else if(s.t==='as'){const ks=((d&&d.events)||[]).filter(e=>(e.touches||[]).includes(s.sym)).map(e=>e.k), a=wiAssets().find(x=>x.sym===s.sym); G.highlight(ks.length?ks:['-']); if(turn&&a&&a.loc)G.focus(a.loc.lat,a.loc.lon)}
+  else if(s.t==='as'){const ks=((d&&d.events)||[]).filter(e=>(e.touches||[]).includes(s.sym)).map(e=>e.k), a=wiAssets().find(x=>x.sym===s.sym); G.highlight(ks.length?ks:['-'],{tag:s.sym}); if(turn&&a&&a.loc)G.focus(a.loc.lat,a.loc.lon)}
   else if(s.t==='co'){const n=(d&&d.nodes||{})[s.id]; if(turn&&n&&n.loc)G.focus(n.loc.lat,n.loc.lon)}
   else if(s.t==='ix'){const x=((d&&d.indices)||[]).find(i=>i.k===s.k); if(turn&&x&&x.loc)G.focus(x.loc.lat,x.loc.lon)}}
 const wiNodeH=(id,d)=>{const n=((d&&d.nodes)||{})[id]||{}, t=wiNodeT(id), lbl=n.label||id.slice(id.indexOf(':')+1);
   return `<span class="wi-nd ${t==='co'||t==='fund'?(n.mine?'mine':'co'):t}"${n.name?` title="${esc(n.name)}"`:''}>${t==='ev'?'אירוע':esc(t==='co'||t==='fund'?lab(lbl):lbl)}</span>`};
 function wiLinkH(l,i,ek){if(!l)return '<span class="wi-lk">←</span>'; return `<button type="button" class="wi-lk ${esc(l.dir||'unclear')}${l.direct?'':' ind'}" data-wilk="${esc(ek+'|'+l.id)}" aria-label="הסבר הקשר: ${esc(WI_DIR[l.dir]||'')}">${l.move==='up'?'↑':l.move==='down'?'↓':'←'}</button>`}
-function wiLinkD(l){const ev=(l.ev||[]).map(v=>v.link?`<a href="${esc(v.link)}" target="_blank" rel="noopener noreferrer">${esc(v.t||v.pub||'מקור')}</a>${v.pub?' · '+esc(v.pub):''}`:esc(v.t||'')).filter(Boolean);
+// one link, explained: what kind it is, how strong, how sure and why, what it rests on, and its sources
+function wiLinkD(l){const ev=(l.ev||[]).map(v=>`<li>${v.link?`<a href="${esc(v.link)}" target="_blank" rel="noopener noreferrer">${esc(v.t||v.pub||'מקור')}</a>`:esc(v.t||'')}${v.pub?` <span class="wi-note">· ${esc(v.pub)}${v.at?' · '+esc(wiAt(v.at)):''}</span>`:''}</li>`).join('');
   return `<div class="wi-lkd"><b>${esc(WI_DIR[l.dir]||WI_DIR.unclear)}${l.move?` (${l.move==='up'?'עלייה':l.move==='down'?'ירידה':'כיוון לא ברור'} של הגורם)`:''}</b>
     <span>${l.direct?'קשר ישיר':'קשר עקיף'}${l.how&&WI_HOW[l.how]?' · '+esc(WI_HOW[l.how]):''} · עוצמה ${esc(WI_S[l.s]||'')} · ביטחון ${esc(WI_C[l.conf]||'')}${l.confWhy?` (${esc(l.confWhy)})`:''}</span>
-    <span>אמינות המקור: ${esc(WI_REL[l.rel]||'')}${l.hz?' · טווח '+esc(WI_HZ[l.hz]||''):''}${l.basis==='structure'?' · עובדה של מבנה (רשימה או אחזקות), לא מקריאת כתבה':l.basis==='rules'?' · לפי כלל, לא מקריאה מלאה':''}${l.st&&l.st!=='auto'?' · '+(l.st==='ok'?'אושר ביד מנהל':l.st==='edit'?'תוקן ביד מנהל':''):''}</span>
-    ${l.why?`<span>${esc(l.why)}</span>`:''}${ev.length?`<span>ראיות: ${ev.join(' · ')}</span>`:''}${WIMP.mode==='world'&&wiAdminOk()?wiFixBtns(l):''}</div>`}
+    <span>${l.rel?'אמינות המקור: '+esc(WI_REL[l.rel]||''):''}${l.hz?' · טווח '+esc(WI_HZ[l.hz]||''):''}${l.basis&&WI_BASIS[l.basis]?' · '+esc(WI_BASIS[l.basis]):l.basis==='rules'?' · לפי כלל, לא מקריאה מלאה':''}${l.st&&l.st!=='auto'?' · '+(l.st==='ok'?'אושר ביד מנהל':l.st==='edit'?'תוקן ביד מנהל':l.st==='add'?'נוסף ביד מנהל':''):''}${l.pending?' · ממתין לניתוח נפרד של הנכס':''}</span>
+    ${l.why?`<span>${esc(l.why)}</span>`:'<span class="wi-note">לחוליה הזאת אין הסבר כתוב.</span>'}${l.up?`<span>מה יכול לחזק: ${esc(l.up)}</span>`:''}${l.down?`<span>מה יכול להחליש: ${esc(l.down)}</span>`:''}${ev?`<span>על מה זה נשען:</span><ul class="wi-ul">${ev}</ul>`:''}${WIMP.mode==='world'&&wiAdminOk()&&!l.final?wiFixBtns(l):''}</div>`}
 function wiFixBtns(l){const k=WIMP.sel&&WIMP.sel.k; if(!k)return ''; return `<span class="acts"><button type="button" class="wi-fixb ok" data-wifix='${esc(JSON.stringify({kind:'link',k,id:l.id,st:'ok'}))}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${esc(JSON.stringify({kind:'link',k,id:l.id,st:'no'}))}'>דחייה</button>${['pos','neg','unclear'].filter(x=>x!==l.dir).map(x=>`<button type="button" class="wi-fixb" data-wifix='${esc(JSON.stringify({kind:'link',k,id:l.id,st:'edit',dir:x}))}'>${x==='pos'?'לחיובי':x==='neg'?'לשלילי':'ללא כיוון'}</button>`).join('')}${l.st&&l.st!=='auto'?`<button type="button" class="wi-fixb" data-wifix='${esc(JSON.stringify({kind:'link',k,id:l.id,st:'auto'}))}'>ביטול התיקון</button>`:''}</span>`}
-function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD(); if(!s||!d){sh.hidden=true; sh.innerHTML=''; return}
-  const X='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button>';
-  if(s.t==='ev'){const e=(d.events||[]).find(x=>x.k===s.k); if(!e){sh.hidden=true; return}
-    const L=new Map((d.links||[]).map(l=>[(l.ek||'')+'|'+l.id,l])), linkOf=id=>WIMP.mode==='world'?(e.links||[]).find(l=>l.id===id):L.get(e.k+'|'+id);
-    const where=e.loc?`${esc(e.loc.name||'')} · ${esc(WI_LOC[e.loc.how]||'')}${WI_LSRC[e.loc.src]?' ('+esc(WI_LSRC[e.loc.src])+')':''}`:'בלי מקום מוגדר (אירוע עולמי)';
-    const chains=WIMP.mode==='world'?(e.links||[]).slice(0,30).map(l=>`<div class="wi-chain">${wiNodeH(l.from,d)}${wiLinkH(l,0,e.k)}${wiNodeH(l.to,d)}</div>`).join('')
-      :(e.paths||[]).map(p=>`<div class="wi-chain">${p.nodes.map((n,i)=>(i?wiLinkH(linkOf(p.links[i-1]),i,e.k):'')+wiNodeH(n,d)).join('')}<span class="wi-tag">${p.direct?'ישיר':'עקיף'} · ${esc(WI_C[p.conf]||'')}${p.note?' · '+esc(p.note):''}</span></div>`).join('');
+
+// ---- the event's card: four parts that are four things ----
+// A. what happened: the facts, with the three times kept apart (when it happened, when it was published, when it reached the
+//    site). B. the evidence: the sources, each with what it can confirm and whether it was read. C. why it matters to each
+//    asset: that asset's own explanation, the fact it rests on, what would strengthen or weaken it. D. what the market did:
+//    the asset's actual move after the day of the event, beside the benchmark. C is an analysis; D is a measurement
+const wiCo=(c,mineOnly)=>`<span class="wi-co${c.mine?' mine':''}" title="${esc((c.name||c.sym)+(c.why?': '+c.why:''))}"><b dir="ltr">${esc(lab(c.sym))}</b>${c.name&&c.name!==c.sym?`<small>${esc(c.name)}</small>`:''}<i class="dd ${esc(c.dir||'unclear')}"></i>${c.mine?'<em>בתיק שלך</em>':''}${c.by?`<small>${esc(WI_BY[c.by]||'')}</small>`:c.how&&WI_HOW[c.how]?`<small>${esc(WI_HOW[c.how])}</small>`:''}${c.verdict&&(c.verdict.rel==='none'||c.verdict.rel==='wait')?`<small class="no">${c.verdict.rel==='none'?'נבדק: אין קשר עסקי מסוים':'ממתין לניתוח'}</small>`:''}</span>`;
+function wiMktH(i,e){const r=i.mkt?i.mkt.r:i.react, m=i.mkt||{bench:i.bench,day:e.day,open:null,fresh:null,today:null,since:null}, b=r&&r.bench;
+  const cell=(t,v,bv,sub)=>`<div class="wi-m">${t}<b>${v==null?'עוד אין':wiPctH(v,2)}</b>${bv!=null&&v!=null?`<span>${esc(m.bench||'המדד')} ${wiPctT(bv)} · פער ${wiPctT(Math.round((v-bv)*100)/100)}</span>`:''}${sub?`<span>${sub}</span>`:''}</div>`;
+  let body='';
+  if(!r)body='<p class="wi-note">לאתר אין מחירי סגירה של הנכס סביב יום האירוע, ולכן אין מה להציג כאן. שום מספר לא הומצא.</p>';
+  else if(r.wait)body=`<p class="wi-note">עוד אין מחיר סגירה אחרי יום האירוע (${esc(wiDay(m.day))}).${m.today!=null?` התנועה של הנכס היום עד כה: ${wiPctH(m.today,2)} · ${esc((m.fresh&&m.fresh.he)||'')}.`:''}</p>`;
+  else body=`<div class="wi-ms">${cell(r.same?`ביום האירוע (${esc(wiDay(r.day0))})`:`ביום המסחר הראשון אחריו (${esc(wiDay(r.day0))})`,r.d1,b&&b.d1,r.vol?`נפח המסחר: פי ${r.vol} מהרגיל`:'')}${cell('יום מסחר אחרי',r.d2,b&&b.d2)}${cell('שבוע מסחר אחרי',r.d5,b&&b.d5)}${cell('חודש מסחר אחרי',r.d20,b&&b.d20)}${m.since!=null?cell('מאז ועד עכשיו',m.since,null,esc((m.fresh&&m.fresh.he)||'')):''}</div><p class="wi-note">נמדד מהסגירה שלפני האירוע (${esc(wiDay(r.baseDay))}), לפי מחירי הסגירה של האתר.</p>`;
+  const ref=r&&!r.wait?(r.d5!=null?r.d5:r.d1):null, rb=b?(r.d5!=null?b.d5:b.d1):null, x=ref==null?null:rb==null?ref:ref-rb, act=x==null?'עוד לא ידועה':Math.abs(x)<0.3?'כמעט בלי תנועה':x>0?'עלייה':'ירידה', gap=(i.dir==='pos'||i.dir==='neg')&&x!=null&&Math.abs(x)>=0.3&&((x>0)!==(i.dir==='pos'));
+  return `<div class="wi-mkt"><h6>מה קרה בשוק בפועל</h6>${body}<p class="wi-note">ההשפעה האפשרית לפי הניתוח: <b>${esc(WI_DIRS[i.dir]||'לא ברור')}</b> · התנועה בפועל${rb!=null?' מול המדד':''}: <b>${act}</b>${gap?'. <b>יש פער בין ההשערה לתוצאה</b>; לאתר אין מידע שמסביר אותו, והוא לא מנחש סיבה':''}.${m.open===true?' המסחר פתוח כרגע.':m.open===false?' המסחר סגור כרגע.':''} סמיכות בזמן אינה סיבתיות.</p></div>`}
+function wiImpactH(e,i,d){const L=new Map((d.links||[]).map(l=>[(l.ek||'')+'|'+l.id,l])), p=(e.paths||[]).find(x=>x.to===i.sym), a=wiAssets().find(x=>x.sym===i.sym)||{};
+  const chain=p?`<div class="wi-chain">${p.nodes.map((n,j)=>(j?wiLinkH(L.get(e.k+'|'+p.links[j-1]),j,e.k):'')+wiNodeH(n,d)).join('')}</div>`:'';
+  return `<article class="wi-imp" id="wiImp-${esc(i.sym)}"><header><b dir="ltr">${esc(lab(i.sym))}</b>${a.name&&a.name!==i.sym?`<small>${esc(a.name)}</small>`:''}<span class="wi-tag ${i.rel==='direct'?'new':''}">${i.rel==='direct'?'קשר ישיר':'קשר עקיף'}</span>${i.pending?'<span class="wi-tag">ממתין לניתוח נפרד של הנכס</span>':''}${i.generic?'<span class="wi-tag">הסבר כללי: ביטחון נמוך</span>':''}${i.legacy?'<span class="wi-tag">המנוע הקודם</span>':''}</header>
+    <h6>למה זה משפיע על הנכס הזה</h6>${i.mech?`<p>${esc(i.mech)}</p>`:'<p class="wi-note">ההסבר לא נשמר (המנוע הקודם שמר רק כיוון ועוצמה).</p>'}
+    <div class="wi-ms"><div class="wi-m">כיוון אפשרי<b>${esc(WI_DIR[i.dir]||WI_DIR.unclear)}</b></div><div class="wi-m">עוצמה<b>${esc(WI_S[i.s]||'')}</b></div><div class="wi-m">ביטחון<b>${esc(WI_C[i.conf]||'')}</b>${i.confWhy?`<span>${esc(i.confWhy)}</span>`:''}</div><div class="wi-m">טווח משוער<b>${esc(WI_HZ[i.hz]||'לא נקבע')}</b></div></div>
+    ${i.fact?`<p class="wi-fact">נשען על: <q dir="auto">${esc(i.fact)}</q>${i.factSrc?` <span class="wi-note">· ${esc(i.factSrc)}</span>`:''}</p>`:i.basis&&WI_BASIS[i.basis]?`<p class="wi-note">${esc(WI_BASIS[i.basis])}.</p>`:''}
+    ${i.up?`<p class="wi-note"><b>מה יכול לחזק:</b> ${esc(i.up)}</p>`:''}${i.down?`<p class="wi-note"><b>מה יכול להחליש:</b> ${esc(i.down)}</p>`:''}
+    ${chain?`<h6>המסלול</h6>${chain}<p class="wi-note">לחיצה על חץ מסבירה את החוליה ומראה על מה היא נשענת.</p>`:''}${wiMktH(i,e)}</article>`}
+function wiEvidH(e){const E=e.evidence||(e.sources||[]).map(x=>({pub:x.pub,title:x.title,link:x.link,at:x.at}))||[]; if(!E.length)return '<p class="wi-note">המקורות של האירוע לא נשמרו.</p>';
+  return `<ul class="wi-evd">${E.map(v=>`<li>${v.ver?`<span class="wi-tier ${v.ver==='primary'?'official':v.ver==='fact'?'high':v.ver==='opinion'||v.ver==='head'?'low':''}">${v.ver==='primary'?'מקור ראשוני':v.ver==='fact'?'דיווח':v.ver==='analysis'?'ניתוח':v.ver==='opinion'?'דעה':v.ver==='head'?'כותרת בלבד':'הערכה'}</span>`:''}${v.link?`<a href="${esc(v.link)}" target="_blank" rel="noopener noreferrer">${esc(v.title||'מקור')}</a>`:esc(v.title||'')}
+      <span class="wi-note">${esc(v.pub||'')}${v.tier?' · '+esc(WI_REL[v.tier]||''):''}${v.at?' · פורסם '+esc(wiAt(v.at)):''}</span>${v.verHe?`<span class="wi-note"><b>מה זה מאמת:</b> ${esc(v.verHe)}</span>`:''}
+      ${v.rd?`<span class="wi-note">${v.rd==='full'?'הכתבה נקראה במלואה':v.rd==='head'?'נקראו הכותרת והתקציר בלבד; גוף הכתבה לא נפתח':'נקראה הכותרת בלבד, לפי כללים'}${(v.supports||[]).length?' · מזכיר את '+v.supports.map(s=>esc(lab(s))).join(', '):''}</span>`:''}</li>`).join('')}</ul>`}
+// on a wide screen the card stands beside the map, not over it: the screen leaves it room (the class) while it is open
+const wiSheetRoom=()=>{const sh=$('wiSheet'), w=$('wi'); if(w)w.classList.toggle('wi-sheeted',!!sh&&!sh.hidden)};
+function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD(); if(!s||!d){sh.hidden=true; sh.innerHTML=''; wiSheetRoom(); return}
+  const X='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button>', world=WIMP.mode==='world';
+  if(s.t==='ev'){const e=(d.events||[]).find(x=>x.k===s.k); if(!e){sh.hidden=true; wiSheetRoom(); return}
+    const where=e.loc?`${esc(e.loc.name||'')}${WI_LOC[e.loc.how]?' · '+esc(WI_LOC[e.loc.how]):''}${WI_LSRC[e.loc.src]?' ('+esc(WI_LSRC[e.loc.src])+')':''}`:'בלי מקום מוגדר';
+    const isSaid=z=>z.said===true||(z.how==='direct'&&z.said!==false), said=e.said||(e.named||[]).filter(isSaid), found=e.found||(e.named||[]).filter(z=>!isSaid(z)).map(z=>({...z,by:'reading'}));
+    const times=[e.occ?`<span><b>התרחש:</b> ${esc(wiDay(e.occ))}</span>`:'<span><b>התרחש:</b> הכתבות לא אומרות מתי</span>',e.first?`<span><b>פורסם לראשונה:</b> ${esc(wiAt(e.first))}</span>`:'',e.last&&e.last!==e.first?`<span><b>פרסום אחרון:</b> ${esc(wiAt(e.last))}</span>`:'',e.got?`<span><b>התקבל באתר:</b> ${esc(wiAt(e.got))}</span>`:'',e.upd?`<span><b>עודכן במנוע:</b> ${esc(wiAt(e.upd))}</span>`:''].filter(Boolean).join('');
+    const who=[...said.map(c=>lab(c.sym)),...(e.cc||[]).map(c=>(d.filters&&(d.filters.countries||[]).find(x=>x.k===c)||{}).he||c)];
+    const facs=(e.facs||[]).map(f=>`<li><b>${esc(f.he||f.k)}</b> ${f.move==='up'?'↑':f.move==='down'?'↓':''} ${esc(f.why||'')}</li>`).join('');
     const hist=(e.hist||[]).slice(-4).reverse().map(h=>`<li>${esc(wiAt(h.at))}: ${esc(h.he||'')}</li>`).join('');
-    sh.innerHTML=X+`<span class="wi-tags"><span class="wi-tag cat">${esc(WI_CAT[e.cat]||'')}</span>${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${e.stHe?`<span class="wi-tag">${esc(e.stHe)}</span>`:''}${e.rules?'<span class="wi-tag">נקרא לפי כותרת בלבד</span>':''}</span>
+    const imps=(e.impacts||[]).map(i=>wiImpactH(e,i,d)).join('');
+    // the admin's view of the same event: every relation the engine examined, the refused and the waiting too, with a hand on each
+    const rels=world?Object.entries(e.rels||{}).map(([sym,r])=>{const j=o=>esc(JSON.stringify({kind:'rel',k:e.k,sym,...o})); return `<tr><td dir="ltr"><b>${esc(sym)}</b></td><td>${r.rel==='direct'?'ישיר':r.rel==='indirect'?'עקיף':r.rel==='none'?'נבדק: אין קשר':'ממתין'}${r.pending?' · ממתין לניתוח':''}${r.generic?' · הסבר כללי':''}</td>
+        <td>${esc(r.mech||r.why||'')}${r.fact?`<br><small>נשען על: "${esc(r.fact)}"</small>`:''}<br><small>${r.rel==='direct'||r.rel==='indirect'?`${esc(WI_DIRS[r.dir]||'')} · עוצמה ${esc(WI_S[r.s]||'')} · ביטחון ${esc(WI_C[r.conf]||'')} · ${esc(WI_BASIS[r.basis]||'')}`:''} · נבחר לבדיקה: ${esc((r.sigs||[]).map(x=>WI_SIG[x]||x).join(', '))}${r.model?' · '+esc(r.model):''}${r.st&&r.st!=='auto'?' · ביד מנהל':''}</small></td>
+        <td class="acts">${wiAdminOk()?`<button type="button" class="wi-fixb ok" data-wifix='${j({st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({st:'no'})}'>דחייה</button>${r.rel==='direct'||r.rel==='indirect'?['pos','neg','unclear'].filter(x=>x!==r.dir).map(x=>`<button type="button" class="wi-fixb" data-wifix='${j({st:'edit',dir:x})}'>${x==='pos'?'לחיובי':x==='neg'?'לשלילי':'ללא כיוון'}</button>`).join(''):''}${r.st&&r.st!=='auto'?`<button type="button" class="wi-fixb" data-wifix='${j({st:'auto'})}'>חזרה למנוע</button>`:''}`:''}</td></tr>`}).join(''):'';
+    const chains=world?(e.links||[]).slice(0,30).map(l=>`<div class="wi-chain">${wiNodeH(l.from,d)}${wiLinkH(l,0,e.k)}${wiNodeH(l.to,d)}</div>`).join(''):'';
+    sh.innerHTML=X+`<span class="wi-tags"><span class="wi-tag cat">${esc(WI_CAT[e.cat]||'')}</span>${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${e.stHe?`<span class="wi-tag">${esc(e.stHe)}</span>`:''}${e.past?`<span class="wi-tag upd">היסטוריה · ${esc(wiDay(e.day))}</span>`:''}${e.rules?'<span class="wi-tag">נקרא לפי כותרת בלבד</span>':''}</span>
       <h4 id="wiSheetH">${esc(e.he)}</h4>
-      <p class="wi-note">${e.occ?'התרחש '+esc(wiDay(e.occ))+' · ':''}פורסם ${esc(wiAt(e.first))}${e.last&&e.last!==e.first?' · עדכון אחרון '+esc(wiAt(e.last)):''}<br>מקום: ${where}</p>
-      <div class="wi-ms"><div class="wi-m">כיוון אפשרי<b>${esc(WI_DIR[e.dir]||'')}</b></div><div class="wi-m">עוצמה<b>${esc(WI_S[e.s]||'')}</b></div><div class="wi-m">ביטחון<b>${esc(WI_C[e.conf]||'')}</b><span>${esc(e.confWhy||'')}</span></div><div class="wi-m">טווח<b>${esc(WI_HZ[e.hz]||'')}</b><span>${esc(e.hzWhy||'')}</span></div></div>
-      <div class="wi-sec"><h5>מה קרה</h5><p>${esc(e.what||'')}</p>${e.more?`<h5>רקע</h5><p>${esc(e.more)}</p>`:''}${e.unknown?`<h5>מה עוד לא ידוע</h5><p>${esc(e.unknown)}</p>`:''}</div>
-      ${(e.evid||[]).length?`<div class="wi-sec"><h5>הראיות</h5><ul class="wi-ul">${e.evid.map(v=>`<li>${esc(v.t)} <span class="wi-tag">${esc(WI_CERT[v.c]||'')}</span></li>`).join('')}</ul></div>`:''}
-      <div class="wi-sec"><h5>${WIMP.mode==='world'?'הקשרים':'איך זה מגיע לתיק שלך'}</h5>${chains||'<p class="wi-note">אין קשר.</p>'}<div id="wiLkD"></div></div>
-      <div class="wi-sec"><h5>המקורות (${e.nPubs||0})</h5><div class="wi-src">${(e.arts||[]).slice(0,8).map(a=>`<span><span class="wi-tier ${esc(a.tier||'mid')}">${esc(WI_REL[a.tier]||'')}</span>${a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">${esc(a.title||a.he||'')}</a>`:esc(a.title||'')} · ${esc(a.pub||'')} · ${esc(wiAgo(a.at))}</span>`).join('')}${(e.dups||[]).length?`<span class="wi-note">${e.dups.length} כפילויות של אותה ידיעה אוחדו לאירוע הזה.</span>`:''}</div></div>
-      ${hist?`<div class="wi-sec"><h5>מה השתנה</h5><ul class="wi-ul">${hist}</ul></div>`:''}
-      ${WIMP.mode==='world'&&wiAdminOk()?wiEvFix(e):''}
-      <p class="wi-note">הכיוון הוא השערה מקריאת החדשות, לא תחזית ולא המלצה. שני דברים שקרו יחד לא אומרים שאחד גרם לשני.</p>`}
-  else if(s.t==='as'){const a=wiAssets().find(x=>x.sym===s.sym); if(!a){sh.hidden=true; return} const E=(d.events||[]).filter(e=>(e.touches||[]).includes(a.sym));
+      <section class="wi-sec wi-a"><h5><i>א</i>מה קרה</h5><p>${esc(e.what||'')}</p>${e.chg?`<p><b>מה השתנה:</b> ${esc(e.chg)}</p>`:''}
+        <div class="wi-times">${times}</div><p class="wi-note"><b>איפה:</b> ${where}${who.length?` · <b>מי מעורב:</b> ${esc(who.join(', '))}`:''}</p>
+        <p class="wi-note"><b>מה ידוע כרגע:</b> ${esc(WI_CERT[e.cert]||(e.rules?'קריאה אוטומטית לפי הכותרת':'לא סווג'))}${e.stHe?' · '+esc(e.stHe):''}${e.nPubs?` · ${e.nPubs===1?'מקור אחד':e.nPubs+' מקורות'}`:''}${e.dups?` · ${typeof e.dups==='number'?e.dups:e.dups.length} כפילויות אוחדו`:''}</p>
+        ${e.unknown?`<p class="wi-note"><b>מה עוד לא ידוע:</b> ${esc(e.unknown)}</p>`:''}${e.more?`<p class="wi-note"><b>רקע:</b> ${esc(e.more)}</p>`:''}</section>
+      ${e.eco||facs?`<section class="wi-sec"><h5>למה זה חשוב מבחינה כלכלית</h5>${e.eco?`<p>${esc(e.eco)}</p>`:''}${facs?`<ul class="wi-ul">${facs}</ul>`:''}</section>`:''}
+      ${said.length||found.length?`<section class="wi-sec"><h5>חברות ונכסים</h5>${said.length?`<p class="wi-note"><b>הוזכרו במקור</b> (בשמן, בכתבה עצמה):</p><div class="wi-cos">${said.map(c=>wiCo(c)).join('')}</div>`:''}${found.length?`<p class="wi-note"><b>זוהו על ידי המנוע</b> (לא מוזכרות בכתבה):</p><div class="wi-cos">${found.map(c=>wiCo(c)).join('')}</div>`:''}</section>`:''}
+      ${world?`<section class="wi-sec"><h5>הקשר לכל נכס, כפי שהמנוע החליט</h5>${rels?`<div class="wi-adm"><table><thead><tr><th>נכס</th><th>החלטה</th><th>ההסבר ועל מה הוא נשען</th><th>פעולה</th></tr></thead><tbody>${rels}</tbody></table></div>`:'<p class="wi-note">אף נכס לא נבחר לבדיקה מול האירוע הזה.</p>'}${(e.listed||[]).length?`<p class="wi-note">הכתבות הופיעו ברשימות של: <span dir="ltr">${esc(e.listed.join(', '))}</span>. זה לא קשר: זה רק שולח את הזוג לבדיקה.</p>`:''}</section>
+        <section class="wi-sec"><h5>החוליות לפי הקריאה</h5>${chains||'<p class="wi-note">אין חוליות.</p>'}</section>`
+      :`<section class="wi-sec wi-c"><h5><i>ג</i>${e.past?'מה נאמר אז על הנכסים שלך':'למה זה משפיע על הנכסים שלך'}</h5>${imps||'<p class="wi-note">אין קשר.</p>'}${(e.checked||[]).length?`<p class="wi-note">נבדקו גם: ${e.checked.map(c=>`<span dir="ltr">${esc(lab(c.sym))}</span> (${c.rel==='none'?'אין קשר עסקי מסוים':'ממתין לניתוח'})`).join(', ')}.</p>`:''}</section>`}
+      <div id="wiLkD"></div>
+      <section class="wi-sec wi-b"><h5><i>ב</i>הראיות והמקורות</h5>${wiEvidH(e)}</section>
+      ${hist?`<section class="wi-sec"><h5>מה השתנה באירוע</h5><ul class="wi-ul">${hist}</ul></section>`:''}
+      ${world&&wiAdminOk()?wiEvFix(e):''}
+      <p class="wi-note">הכיוון הוא השערה מניתוח החדשות, לא תחזית ולא המלצה. שני דברים שקרו יחד לא אומרים שאחד גרם לשני.</p>`}
+  else if(s.t==='as'){const a=wiAssets().find(x=>x.sym===s.sym)||((WIMP.me&&WIMP.me.assets)||[]).find(x=>x.sym===s.sym); if(!a){sh.hidden=true; return} const E=(d.events||[]).filter(e=>(e.touches||[]).includes(a.sym));
     sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(lab(a.sym))}${a.name&&a.name!==a.sym?` <small class="wi-note">${esc(a.name)}</small>`:''}</h4>
-      <div class="wi-ms"><div class="wi-m">היום<b>${a.chg==null?'—':wiPctH(a.chg,2)}</b></div><div class="wi-m">המחיר<b dir="ltr">${a.px==null?'—':esc(String(a.px))}</b><span>${esc(a.fresh?a.fresh.he:'')}${a.fresh&&a.fresh.at?' · '+esc(wiAt(a.fresh.at)):''}</span></div><div class="wi-m">משקל בתיק<b>${a.w==null?'לא ידוע':a.w+'%'}</b></div><div class="wi-m">מקום<b>${esc(a.loc?(a.loc.name||''):'')}</b><span>${esc(a.loc?(WI_LOC[a.loc.how]||'')+(WI_LSRC[a.loc.src]?' · '+WI_LSRC[a.loc.src]:''):'')}</span></div></div>
-      <p class="wi-note">ההילה סביב הנכס על הגלובוס היא התנועה שלו בשוק היום, לא השערה.</p>
-      <div class="wi-sec"><h5>אירועים שנוגעים לנכס (${E.length})</h5>${E.length?`<ul class="wi-list">${E.slice(0,10).map(e=>`<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')} · ${esc(wiAgo(e.last))}</small></span></button></li>`).join('')}</ul>`:'<p class="wi-note">אין אירוע עם מסלול אליו בטווח.</p>'}</div>
+      ${a.biz?`<p class="wi-note"><b>מה היא עושה:</b> ${esc(a.biz)}${a.industry?` · ${esc(a.industry)}`:''}</p>`:a.facts===false?'<p class="wi-note">לאתר אין עדיין עובדות על העסק של הנכס הזה (תיאור, הכנסות, אחזקות). בלי עובדות כאלה מוצג רק אירוע שהנכס הוא נושא הכתבה שלו.</p>':''}
+      ${a.fresh?`<div class="wi-ms"><div class="wi-m">היום<b>${a.chg==null?'—':wiPctH(a.chg,2)}</b></div><div class="wi-m">המחיר<b dir="ltr">${a.px==null?'—':esc(String(a.px))}</b><span>${esc(a.fresh.he||'')}${a.fresh.at?' · '+esc(wiAt(a.fresh.at)):''}${a.open===false?' · המסחר סגור':''}</span></div><div class="wi-m">משקל בתיק<b>${a.w==null?'לא ידוע':a.w+'%'}</b></div><div class="wi-m">מקום<b>${esc(a.loc?(a.loc.name||''):'')}</b><span>${esc(a.loc?(WI_LOC[a.loc.how]||'')+(WI_LSRC[a.loc.src]?' · '+WI_LSRC[a.loc.src]:''):'')}</span></div></div>
+      <p class="wi-note">ההילה סביב הנכס היא התנועה שלו בשוק בזמן המסחר, לא השערה: ירוקה בעלייה, אדומה בירידה. ${a.haloWhy?`עכשיו היא אפורה: ${esc(a.haloWhy)}.`:'כשהמסחר סגור או שאין מחיר עדכני היא אפורה.'}</p>`:''}
+      <div class="wi-sec"><h5>${wiPastOn()?'אירועי התקופה שנגעו לנכס':'אירועים שנוגעים לנכס'} (${E.length})</h5>${E.length?`<ul class="wi-list">${E.slice(0,12).map(e=>{const i=(e.impacts||[]).find(x=>x.sym===a.sym)||{}; return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(i.dir||e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')} · ${e.past?esc(wiDay(e.day)):esc(wiAgo(e.last))} · ${i.rel==='direct'?'ישיר':'עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}</small>${i.mech?`<small class="wi-why">${esc(i.mech)}</small>`:''}</span></button></li>`}).join('')}</ul>`:'<p class="wi-note">לא נמצא אירוע עם קשר עסקי מוסבר לנכס הזה בטווח. אירוע כללי לא מוצג רק כי הנכס בתיק.</p>'}</div>
       <div class="acts" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-wihistof="${esc(a.sym)}">ההיסטוריה של הנכס</button>${/^[A-Z]/.test(a.sym)||/^TLV:/.test(a.sym)?`<button type="button" class="btn sm" data-wisec="${esc(a.sym)}">לדף הנייר</button>`:''}</div>`}
-  else if(s.t==='co'){const n=(d.nodes||{})[s.id]||{}, sym=s.id.slice(s.id.indexOf(':')+1);
-    sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(n.label||sym)}</h4><p class="wi-note">${WIMP.mode==='world'?'חברה שהאירועים מזכירים.':'החברה לא בתיק שלך: היא מופיעה רק כחוליה במסלול שמגיע לנכס שלך.'} ${n.loc?`מקום: ${esc(n.loc.name||'')} · ${esc(WI_LOC[n.loc.how]||'')}${WI_LSRC[n.loc.src]?' ('+esc(WI_LSRC[n.loc.src])+')':''}.`:''}</p>
-      ${WIMP.mode==='world'&&wiAdminOk()?`<div class="wi-sec"><h5>תיקון מיקום המטה</h5><div class="wi-hctl"><label>קו רוחב<input type="number" step="0.01" id="wiHqLat" value="${n.loc?n.loc.lat:''}"></label><label>קו אורך<input type="number" step="0.01" id="wiHqLon" value="${n.loc?n.loc.lon:''}"></label><label>שם<input type="text" id="wiHqName" value="${esc(n.loc?n.loc.name||'':'')}"></label><button type="button" class="btn sm" data-wihq="${esc(sym)}">שמירה</button></div></div>`:''}`}
-  else if(s.t==='ix'){const x=(d.indices||[]).find(i=>i.k===s.k)||{}; sh.innerHTML=X+`<h4 id="wiSheetH">${esc(x.name||'')}</h4><div class="wi-ms"><div class="wi-m">מהסגירה הקודמת<b>${x.chg==null?'—':wiPctH(x.chg,2)}</b></div><div class="wi-m">עדכניות<b>${esc(x.he||'')}</b><span>${esc(wiAt(x.at))}</span></div></div><p class="wi-note">המדד מוצג במקום של הבורסה שלו. ההילה היא התנועה שלו היום.</p>`}
-  sh.hidden=false; try{const b=sh.querySelector('.wi-x'); if(b&&!wiSmall())b.focus({preventScroll:true})}catch(e){}}
+  else if(s.t==='co'){const n=(d.nodes||{})[s.id]||{}, sym=s.id.slice(s.id.indexOf(':')+1), on=(d.events||[]).filter(e=>(e.paths||[]).some(p=>p.nodes.includes(s.id)));
+    sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(n.label||sym)}${n.name?` <small class="wi-note">${esc(n.name)}</small>`:''}</h4><p class="wi-note">${world?'חברה שהאירועים מזכירים.':'החברה לא בתיק שלך. היא מופיעה רק כחוליה במסלול שמגיע לנכס שלך, ולא כנכס בפני עצמו.'} ${n.loc?`מקום: ${esc(n.loc.name||'')} · ${esc(WI_LOC[n.loc.how]||'')}${WI_LSRC[n.loc.src]?' ('+esc(WI_LSRC[n.loc.src])+')':''}.`:''}</p>
+      ${on.length?`<div class="wi-sec"><h5>במסלולים של</h5><ul class="wi-list">${on.slice(0,6).map(e=>`<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>אל ${esc((e.paths||[]).filter(p=>p.nodes.includes(s.id)).map(p=>lab(p.to)).join(', '))}</small></span></button></li>`).join('')}</ul></div>`:''}
+      ${world&&wiAdminOk()?`<div class="wi-sec"><h5>תיקון מיקום המטה</h5><div class="wi-hctl"><label>קו רוחב<input type="number" step="0.01" id="wiHqLat" value="${n.loc?n.loc.lat:''}"></label><label>קו אורך<input type="number" step="0.01" id="wiHqLon" value="${n.loc?n.loc.lon:''}"></label><label>שם<input type="text" id="wiHqName" value="${esc(n.loc?n.loc.name||'':'')}"></label><button type="button" class="btn sm" data-wihq="${esc(sym)}">שמירה</button></div></div>`:''}`}
+  else if(s.t==='ix'){const x=(d.indices||[]).find(i=>i.k===s.k)||{}; sh.innerHTML=X+`<h4 id="wiSheetH">${esc(x.name||'')}</h4><div class="wi-ms"><div class="wi-m">מהסגירה הקודמת<b>${x.chg==null?'—':wiPctH(x.chg,2)}</b></div><div class="wi-m">עדכניות<b>${esc(x.he||'')}</b><span>${esc(wiAt(x.at))}${x.open===false?' · המסחר סגור':''}</span></div></div><p class="wi-note">המדד מוצג במקום של הבורסה שלו. ההילה היא התנועה שלו היום.</p>`}
+  sh.hidden=false; sh.scrollTop=0; wiSheetRoom(); try{const b=sh.querySelector('.wi-x'); if(b&&!wiSmall())b.focus({preventScroll:true})}catch(e){}}
 function wiEvFix(e){const j=o=>esc(JSON.stringify(o)), F=e.fix||{};
   return `<div class="wi-sec"><h5>ניהול האירוע</h5><div class="wi-hctl"><label>קטגוריה<select id="wiFxCat"><option value="">לפי המנוע</option>${Object.entries(WI_CAT).map(([k,v])=>`<option value="${k}"${F.cat===k?' selected':''}>${esc(v)}</option>`).join('')}</select></label><button type="button" class="btn sm" data-wifxcat="${esc(e.k)}">שמירה</button></div>
     <div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button type="button" class="wi-fixb ok" data-wifix='${j({kind:'event',k:e.k,st:'ok'})}'>אישור האירוע</button><button type="button" class="wi-fixb no" data-wifix='${j({kind:'event',k:e.k,st:'hidden'})}'>הסתרה מהמשתמשים</button>${F.st?`<button type="button" class="wi-fixb" data-wifix='${j({kind:'event',k:e.k,st:''})}'>ביטול</button>`:''}<button type="button" class="wi-fixb" data-wifix='${j({kind:'split',k:e.k})}'>לא לאחד עם אחרים</button></div>
-    <div class="wi-hctl" style="margin-top:6px"><label>לאחד לתוך אירוע (מפתח)<input type="text" id="wiFxInto" placeholder="ev:..."></label><button type="button" class="btn sm" data-wifxjoin="${esc(e.k)}">איחוד</button></div></div>`}
+    <div class="wi-hctl" style="margin-top:6px"><label>לאחד לתוך אירוע (מפתח)<input type="text" id="wiFxInto" placeholder="ev:..."></label><button type="button" class="btn sm" data-wifxjoin="${esc(e.k)}">איחוד</button></div>
+    <div class="wi-hctl" style="margin-top:6px"><label>קשר שהמנוע לא מצא: הנייר<input type="text" id="wiFxSym" placeholder="NVDA" dir="ltr" style="width:90px"></label><label style="flex:1;min-width:160px">ההסבר (חובה)<input type="text" id="wiFxWhy" placeholder="המנגנון שמחבר את האירוע לנכס"></label><button type="button" class="btn sm" data-wifxadd="${esc(e.k)}">הוספה ביד</button></div></div>`}
 
-// ---- the history: an asset's closes over a range, the events that reached it, what was said then and what followed ----
-function wiHistCtl(){const s=$('wiHSym'), f=$('wiHFrom'), t=$('wiHTo'); if(!s)return; const A=WIMP.mode==='me'?wiAssets():[];
-  const card=$('wiHist'); if(card)card.hidden=WIMP.mode==='world';
-  if(!WIMP.hist.sym&&A.length)WIMP.hist.sym=A.slice().sort((a,b)=>(b.w||0)-(a.w||0))[0].sym;
-  const opts=A.map(a=>`<option value="${esc(a.sym)}"${a.sym===WIMP.hist.sym?' selected':''}>${esc(lab(a.sym))}</option>`).join(''); if(s.dataset.v!==opts){s.innerHTML=opts; s.dataset.v=opts}
-  if(f&&!f.value)f.value=WIMP.hist.from; if(t&&!t.value)t.value=WIMP.hist.to; wiHistRender()}
-async function wiHistLoad(){const H=WIMP.hist; if(!H.sym||!window.__tc)return; H.busy=true; H.pick=null; wiHistRender();
-  try{const q=new URLSearchParams({sym:H.sym}); if(H.from)q.set('from',H.from); if(H.to)q.set('to',H.to); H.d=await wiJson('/api/impact/history?'+q); H.err=''}
-  catch(e){H.err=e.status===403?'הנייר הזה לא בתיק שלך.':'ההיסטוריה לא נטענה: '+e.message; H.d=null} finally{H.busy=false} wiHistRender()}
-function wiHistRender(){const C=$('wiHChart'), V=$('wiHEv'); if(!C||!V)return; const H=WIMP.hist, d=H.d;
-  if(H.busy){C.innerHTML='<p class="wi-note">טוען…</p>'; V.innerHTML=''; return}
-  if(H.err){C.innerHTML=`<p class="wi-note">${esc(H.err)}</p>`; V.innerHTML=''; return}
-  if(!d){C.innerHTML='<p class="wi-note">בחרו נכס וטווח, ו"להציג": גרף המחיר, האירועים שנגעו בו, מה נאמר אז ומה קרה אחרי.</p>'; V.innerHTML=''; return}
-  const S=d.series||[], W=600, Hh=170;
-  if(S.length<2){C.innerHTML='<p class="wi-note">אין מחירי סגירה לנכס בטווח הזה.</p>'} else{
-    const lo=Math.min(...S.map(x=>x[1])), hi=Math.max(...S.map(x=>x[1])), r=hi-lo||1, X=i=>(i/(S.length-1)*(W-20)+10), Y=v=>(Hh-18-(v-lo)/r*(Hh-36)), idx=day=>{let i=S.findIndex(x=>x[0]>=day); return i<0?S.length-1:i};
+// ---- the network: the chain as a drawing of links, a layer for each kind of thing ----
+// event, country, economic factor, sector, company, the viewer's asset; a line's colour is the possible direction, a dashed line
+// an indirect link, its width the strength. A click on a thing shows it (an event: only its own links; an asset: only the
+// events that reach it; a country, a factor, a sector: only the chains through it); a click on a line explains it. A layer
+// can be put away (its links are then joined over it), and "direct only" leaves the direct relations
+function wiNetModel(){const d=wiD(), N=WIMP.net, me=WIMP.mode==='me', sel=WIMP.sel; if(!d)return {nodes:[],edges:[],total:0,shown:0};
+  let E=wiEvents(); if(sel&&sel.t==='ev')E=E.filter(e=>e.k===sel.k); else if(sel&&sel.t==='as'&&me)E=E.filter(e=>(e.touches||[]).includes(sel.sym));
+  const total=E.length, cap=(sel?40:(wiSmall()?5:8))+N.more; E=E.slice(0,cap);
+  const L=new Map((d.links||[]).map(l=>[(l.ek||'')+'|'+l.id,l])), nodes=new Map(), edges=new Map(), ND=d.nodes||{};
+  const col=id=>{const t=wiNodeT(id); return t==='ev'?0:t==='cty'?1:t==='fac'?2:t==='sec'?3:(me&&ND[id]&&ND[id].mine)?5:4};
+  const off=id=>{const t=wiNodeT(id); return (t==='cty'&&N.off.cty)||(t==='fac'&&N.off.fac)||(t==='sec'&&N.off.sec)||((t==='co'||t==='fund')&&N.off.co&&me&&!(ND[id]&&ND[id].mine))};
+  const addN=(id,ek)=>{let n=nodes.get(id); if(!n){n={id,c:col(id),eks:new Set()}; nodes.set(id,n)} n.eks.add(ek); return n};
+  const addE=(a,b,ls,ek)=>{const k=a+'>'+b; let o=edges.get(k); if(!o){o={k,a,b,ls:[],eks:new Set()}; edges.set(k,o)} for(const l of ls)if(l&&!o.ls.includes(l))o.ls.push(l); o.eks.add(ek)};
+  for(const e of E){const ek=e.k;
+    if(me){for(const p of (e.paths||[])){if(N.direct&&!p.direct)continue; if(sel&&sel.t==='as'&&p.to!==sel.sym)continue;
+        let prev=p.nodes[0], seg=[]; addN(prev,ek);
+        for(let i=1;i<p.nodes.length;i++){const n=p.nodes[i]; seg.push(L.get(ek+'|'+p.links[i-1])); if(i<p.nodes.length-1&&off(n))continue; addN(n,ek); addE(prev,n,seg,ek); prev=n; seg=[]}}}
+    else{const ev='ev:'+ek; addN(ev,ek);
+      for(const l of (e.links||[])){if(N.direct&&!l.direct)continue; if(off(l.from)||off(l.to))continue; addN(l.from,ek); addN(l.to,ek); addE(l.from,l.to,[{...l,ek}],ek)}
+      for(const [sym,r] of Object.entries(e.rels||{})){if(r.rel!=='direct'&&r.rel!=='indirect')continue; if(N.direct&&r.rel!=='direct')continue; const to='co:'+sym, from=(r.via||[]).slice(-1)[0]||ev; if(off(from)||!nodes.has(from)&&from!==ev)continue; addN(to,ek);
+        addE(from,to,[{id:from+'>'+to,ek,from,to,dir:r.dir,s:r.s,conf:r.conf,confWhy:r.confWhy,direct:r.rel==='direct',why:r.mech,fact:r.fact,basis:r.basis,up:r.up,down:r.down,pending:r.pending,final:true,ev:r.fact?[{t:'עובדה מפרטי הנכס: "'+r.fact+'"'}]:[]}],ek)}}}
+  let NN=[...nodes.values()], EE=[...edges.values()];
+  // the chains through one thing only (a country, a factor, a sector, a company on the way)
+  if(N.focus&&nodes.has(N.focus)){const ks=nodes.get(N.focus).eks; EE=EE.filter(x=>[...x.eks].some(k=>ks.has(k))); const keep=new Set(EE.flatMap(x=>[x.a,x.b])); keep.add(N.focus); NN=NN.filter(n=>keep.has(n.id))}
+  for(const x of EE){x.dir=([...x.ls].reverse().map(l=>l&&l.dir).find(v=>v&&v!=='unclear'))||'unclear'; x.direct=x.ls.every(l=>l&&l.direct); x.s=Math.max(1,Math.min(3,Math.min(...x.ls.map(l=>(l&&l.s)||1)))); x.pending=x.ls.some(l=>l&&l.pending)}
+  return {nodes:NN,edges:EE,total,shown:E.length}}
+function wiNetDraw(){const host=wiSub('net'); if(!host)return; const d=wiD(), N=WIMP.net, me=WIMP.mode==='me', W=Math.max(264,(Math.round(host.getBoundingClientRect().width)||0)-(wiSmall()?16:24)), sel=WIMP.sel;   // the box's inner width (its padding off)
+  const sig=[WIMP.mode,WIMP.time,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',W,JSON.stringify(sel||null),JSON.stringify(N.off),N.direct,N.focus,N.more,WIMP.busy||WIMP.past.busy,WIMP.err].join('|'); if(sig===N.sig&&host.firstChild)return; N.sig=sig;
+  const LAY=[['cty','מדינות'],['fac','גורמים כלכליים'],['sec','ענפים'],...(me?[['co','חברות בדרך']]:[])];
+  const bar=`<div class="wn-bar" role="group" aria-label="מה להציג ברשת"><span class="wn-lbl">שכבות:</span>${LAY.map(([k,he])=>`<button type="button" class="wi-k" data-wnl="${k}" aria-pressed="${!N.off[k]}">${he}</button>`).join('')}<button type="button" class="wi-k" data-wndir="1" aria-pressed="${!!N.direct}">רק קשרים ישירים</button>${sel||N.focus||N.direct||Object.values(N.off).some(Boolean)?'<button type="button" class="wi-k wn-full" data-wnfull="1">↺ תצוגה מלאה</button>':''}</div>`;
+  const pastE=wiPastOn()&&WIMP.past.err;
+  if(!d||WIMP.err&&!wiPastOn()||pastE){host.innerHTML=`<div class="wn">${bar}<p class="wn-empty" role="status">${esc(pastE||WIMP.err||(WIMP.busy||WIMP.past.busy?'הרשת נבנית…':'אין נתונים להצגה.'))}</p></div>`; return}
+  const M=wiNetModel(); N.edges=M.edges;
+  if(!M.edges.length){host.innerHTML=`<div class="wn">${bar}<p class="wn-empty" role="status">${me&&!(d.assets||[]).length?'כשיהיו ניירות בתיק, הרשת תראה את הקשרים של האירועים אליהם.':N.direct?'אין קשרים ישירים להצגה בטווח ובמסננים שנבחרו. אפשר לכבות את "רק קשרים ישירים".':sel&&sel.t==='as'?'לא נמצא אירוע עם קשר עסקי מוסבר לנייר הזה בטווח שנבחר.':'אין קשרים מוסברים להצגה בטווח ובמסננים שנבחרו. קשר בלי הסבר לא מצויר.'}</p></div>`; return}
+  const cols=[...new Set(M.nodes.map(n=>n.c))].sort((a,b)=>a-b), vert=W<620, HE={0:'אירועים',1:'מדינות',2:'גורמים כלכליים',3:'ענפים',4:me?'חברות בדרך':'חברות',5:'הנכסים שלי'};
+  const by=c=>M.nodes.filter(n=>n.c===c), P=new Map(), nh=c=>c===0?58:c===5?44:36, gap=10; let H=0, heads='';
+  if(!vert){const cw=Math.max(88,Math.min(210,Math.floor((W-12)/cols.length)-16));
+    cols.forEach((c,i)=>{const x=W-6-(i+0.5)*(W-12)/cols.length; let y=30; heads+=`<span class="wn-h" style="left:${Math.round(x-cw/2)}px;width:${cw}px">${HE[c]}</span>`;
+      for(const n of by(c)){P.set(n.id,{x:x-cw/2,y,w:cw,h:nh(c),c}); y+=nh(c)+gap} H=Math.max(H,y)});
+    // the shorter columns sit in the middle of the tallest, so the lines run level
+    cols.forEach(c=>{const L=by(c), h=L.reduce((t,n)=>t+nh(c)+gap,0), dy=Math.max(0,Math.round((H-30-h)/2)); for(const n of L)P.get(n.id).y+=dy})}
+  else{let y=4; cols.forEach(c=>{const L=by(c), per=c===0?1:c===5?2:3, cw=Math.floor((W-12-(per-1)*8)/per); heads+=`<span class="wn-h" style="left:6px;top:${y}px;width:${W-12}px">${HE[c]}</span>`; y+=22;
+      L.forEach((n,i)=>{const r=Math.floor(i/per), k=i%per; P.set(n.id,{x:W-6-(k+1)*cw-k*8,y:y+r*(nh(c)+8),w:cw,h:nh(c),c})}); y+=Math.ceil(L.length/per)*(nh(c)+8)+26}); H=y}
+  const ND=d.nodes||{}, A=new Map(wiAssets().map(a=>[a.id,a])), mid=(a,b)=>(a+b)/2;
+  const paths=M.edges.map((x,i)=>{const a=P.get(x.a), b=P.get(x.b); if(!a||!b)return ''; let dd;
+      if(!vert){const x1=a.x, y1=a.y+a.h/2, x2=b.x+b.w, y2=b.y+b.h/2, mx=mid(x1,x2); dd=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
+      else{const x1=a.x+a.w/2, y1=a.y+a.h, x2=b.x+b.w/2, y2=b.y, my=mid(y1,y2); dd=`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`}
+      const on=!N.pick||N.pick===x.k;
+      return `<path d="${dd}" fill="none" stroke="${WI_COL[x.dir]||WI_COL.unclear}" stroke-width="${1.2+x.s*0.8}" ${x.direct?'':'stroke-dasharray="6 5"'} opacity="${x.pending?0.5:0.9}" class="${on?'':'dim'}"/><path d="${dd}" fill="none" stroke="transparent" stroke-width="16" class="wn-hit" data-wne="${i}" tabindex="0" role="button" aria-label="הסבר הקשר בין ${esc(wiNetName(x.a,ND))} ל${esc(wiNetName(x.b,ND))}"><title>הסבר הקשר</title></path>`}).join('');
+  const boxes=M.nodes.map(n=>{const p=P.get(n.id), t=wiNodeT(n.id), nd=ND[n.id]||{}, mine=n.c===5, a=A.get(n.id), cur=(sel&&((sel.t==='ev'&&n.id==='ev:'+sel.k)||(sel.t==='as'&&a&&a.sym===sel.sym)||(sel.t==='co'&&sel.id===n.id)))||N.focus===n.id;
+      const inner=t==='ev'?`<b>${esc(nd.label||'')}</b>`:mine?`<b dir="ltr">${esc(lab(nd.label||''))}</b>${a&&a.chg!=null?wiPctH(a.chg):''}`:t==='co'||t==='fund'?`<b dir="ltr">${esc(nd.label||'')}</b>`:`<b>${esc(nd.label||'')}</b>`;
+      return `<button type="button" class="wn-n t-${mine?'as':t==='fund'?'co':t}${cur?' cur':''}" data-wnn="${esc(n.id)}" style="left:${Math.round(p.x)}px;top:${Math.round(p.y)}px;width:${p.w}px;height:${p.h}px" title="${esc((mine?'הנכס שלי':WI_NT[t==='fund'?'co':t]||'')+': '+(nd.name||nd.label||''))}">${inner}</button>`}).join('');
+  const more=M.total>M.shown?`<p class="wn-more">מוצגים ${M.shown} מתוך ${M.total} אירועים, החשובים לתיק קודם. <button type="button" class="wi-fixb" data-wnmore="1">להציג עוד</button></p>`:'';
+  const hint=N.focus?`<p class="wn-more">מוצגות רק השרשראות שעוברות דרך <b>${esc(wiNetName(N.focus,ND))}</b>.</p>`:sel&&sel.t==='ev'?'<p class="wn-more">מוצג אירוע אחד. "תצוגה מלאה" מחזירה את כולם.</p>':sel&&sel.t==='as'?`<p class="wn-more">מוצגים רק האירועים שמגיעים אל <b dir="ltr">${esc(lab(sel.sym))}</b>.</p>`:'';
+  host.innerHTML=`<div class="wn${vert?' v':''}">${bar}${hint}<div class="wn-g" style="height:${H+6}px">${heads}<svg class="wn-e" width="${W}" height="${H+6}" viewBox="0 0 ${W} ${H+6}" aria-hidden="false">${paths}</svg>${boxes}</div>${more}
+    <div class="wn-leg" aria-hidden="true"><span><i style="border-color:#4ade80"></i>השפעה חיובית אפשרית</span><span><i style="border-color:#f87171"></i>שלילית</span><span><i style="border-color:#fbbf24"></i>מעורבת</span><span><i style="border-color:#94a3b8"></i>לא ברור</span><span><i class="dash" style="border-color:#c4bdf5"></i>קשר עקיף</span></div>
+    <div class="wn-d" id="wiNetD" role="status">${N.pickH||'<p class="wi-note">לחיצה על קו מסבירה את הקשר ומראה את המקורות שלו. לחיצה על אירוע או על נכס ממקדת את הרשת בו.</p>'}</div></div>`}
+const wiNetName=(id,ND)=>{const n=(ND||{})[id]||{}, t=wiNodeT(id); return t==='ev'?(n.label||'האירוע'):n.label||id.slice(id.indexOf(':')+1)};
+function wiNetEdge(i){const N=WIMP.net, x=N.edges[i], d=wiD(); if(!x||!d)return; N.pick=x.k;
+  N.pickH=`<div class="wn-dh"><b>${esc(wiNetName(x.a,d.nodes))}</b> ← <b>${esc(wiNetName(x.b,d.nodes))}</b>${x.ls.length>1?` <span class="wi-note">(${x.ls.length} חוליות; שכבה שהוסתרה מחוברת כאן)</span>`:''}</div>`+x.ls.filter(Boolean).map(l=>(x.ls.length>1?`<div class="wi-chain">${wiNodeH(l.from,d)}<span class="wi-lk">←</span>${wiNodeH(l.to,d)}</div>`:'')+wiLinkD(l)).join('');
+  N.sig=''; wiNetDraw(); const box=$('wiNetD'); if(box)try{box.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}
+function wiNetNode(id){const N=WIMP.net, d=wiD(), t=wiNodeT(id), nd=((d&&d.nodes)||{})[id]||{}; N.pick=null; N.pickH='';
+  if(t==='ev')return wiSelect({t:'ev',k:id.slice(3)}); if((t==='co'||t==='fund')&&nd.mine&&WIMP.mode==='me')return wiSelect({t:'as',sym:id.slice(id.indexOf(':')+1)});
+  if(t==='co'||t==='fund'){N.focus=N.focus===id?null:id; WIMP.sel={t:'co',id}; wiSheet(); N.sig=''; wiRender(); return}
+  N.focus=N.focus===id?null:id; if(WIMP.sel){WIMP.sel=null; wiSheet()} N.sig=''; wiRender()}
+
+// ---- the history: a range of dates; what was said then and what the market did ----
+// The dates are the viewer's; a day alone shows that day. The line is the closes of one asset over the range, with a mark
+// on each event that had a relation to it; under it every event, what the engine said on the day it first saw it, and the
+// asset's move after (beside its benchmark). Today's data are not in this view
+function wiHistEnter(){const P=WIMP.past; WIMP.time='past'; if(!P.to){const t=Date.now(); P.to=wiISO(t); P.from=wiISO(t-30*864e5)}
+  if(!WIMP.hist.sym){const A=(WIMP.me&&WIMP.me.assets)||[]; if(A.length)WIMP.hist.sym=A.slice().sort((a,b)=>(b.w||0)-(a.w||0))[0].sym} WIMP.sel=null; wiSheet(); wiPastLoad()}
+async function wiHistLoad(){const H=WIMP.hist, P=WIMP.past; if(!H.sym||!window.__tc)return; H.busy=true; H.pick=null; wiHistDraw();
+  try{const q=new URLSearchParams({sym:H.sym}); if(P.from)q.set('from',P.from); if(P.to)q.set('to',P.to); H.d=await wiJson('/api/impact/history?'+q); H.err=''}
+  catch(e){H.err=e.status===403?'הנייר הזה לא בתיק שלך.':'ההיסטוריה לא נטענה: '+e.message; H.d=null} finally{H.busy=false} wiHistDraw()}
+function wiHistDraw(){const host=wiSub('hist'); if(!host)return; const H=WIMP.hist, P=WIMP.past, d=H.d, A=(WIMP.me&&WIMP.me.assets)||(P.d&&P.d.assets)||[], today=wiISO(Date.now());
+  if(!host.querySelector('.wh')){host.innerHTML=`<div class="wh"><div class="wh-bar"><label>מתאריך<input type="date" id="wiHFrom" max="${today}"></label><label>עד תאריך<input type="date" id="wiHTo" max="${today}"></label>
+      <span class="wh-q" role="group" aria-label="טווח מהיר"><button type="button" class="wi-k" data-whq="1">יום אחד</button><button type="button" class="wi-k" data-whq="7">7 ימים</button><button type="button" class="wi-k" data-whq="30">30 ימים</button><button type="button" class="wi-k" data-whq="90">90 ימים</button></span>
+      <button type="button" class="btn sm" id="wiHGo">להציג</button></div>
+      <div class="wh-as" id="wiHAs" role="group" aria-label="הנכס שבגרף"></div><div class="wi-hchart" id="wiHChart"></div><div class="wi-hev" id="wiHEv"></div></div>`}
+  const f=$('wiHFrom'), t=$('wiHTo'); if(f&&document.activeElement!==f)f.value=P.from||''; if(t&&document.activeElement!==t)t.value=P.to||'';
+  const as=$('wiHAs'); if(as)as.innerHTML=A.length?A.slice().sort((a,b)=>(b.w||0)-(a.w||0)).map(a=>`<button type="button" class="wi-k" data-whas="${esc(a.sym)}" aria-pressed="${!H.all&&a.sym===H.sym}" dir="ltr">${esc(lab(a.sym))}</button>`).join('')+`<button type="button" class="wi-k" data-whall="1" aria-pressed="${!!H.all}">כל הנכסים</button>`:'<span class="wi-note">אין ניירות בתיק.</span>';
+  const C=$('wiHChart'), V=$('wiHEv'); if(!C||!V)return;
+  if(P.busy||H.busy){C.innerHTML='<p class="wi-note">טוען…</p>'; V.innerHTML=''; return}
+  if(P.err||H.err){C.innerHTML=`<p class="wi-note" role="status">${esc(P.err||H.err)}</p>`; V.innerHTML=''; return}
+  const mv=v=>v==null?'עוד אין':`<b dir="ltr">${wiPctT(v)}</b>`, one=P.from&&P.from===P.to;
+  const react=(r,bench)=>!r?'אין מחירי סגירה סביב יום האירוע':r.wait?'עוד אין סגירה אחרי יום האירוע':`${r.same?'ביום האירוע':'ביום המסחר הראשון אחריו'} ${mv(r.d1)}${r.bench&&r.bench.d1!=null?` (${esc(bench||'המדד')} ${wiPctT(r.bench.d1)})`:''} · שבוע ${mv(r.d5)}${r.bench&&r.bench.d5!=null?` (${wiPctT(r.bench.d5)})`:''} · חודש ${mv(r.d20)}${r.vol?` · נפח פי ${r.vol} מהרגיל`:''}`;
+  if(H.all){const E=(P.d&&P.d.events)||[]; C.innerHTML=`<p class="wi-note">כל האירועים שנשמרו ${one?'ביום '+esc(wiDay(P.from)):`מ-${esc(wiDay(P.from))} עד ${esc(wiDay(P.to))}`} עם קשר לאחד הנכסים שלך. לגרף מחיר, בחרו נכס אחד.</p>`;
+    V.innerHTML=(E.length?`<p class="wi-note">${E.length} אירועים בטווח.</p>`:'<p class="wi-note">לא נשמר אירוע עם קשר לתיק בטווח התאריכים הזה.</p>')+E.map(e=>`<div class="wi-hevr"><button type="button" class="lnk" data-wiev="${esc(e.k)}"><b>${esc(e.he)}</b></button><span class="wi-note">${esc(wiDay(e.day))} · ${esc(e.catHe||'')}${e.legacy?' · המנוע הקודם':''}</span>
+      ${(e.impacts||[]).map(i=>`<span class="mv"><b dir="ltr">${esc(lab(i.sym))}</b> נאמר אז: ${esc(WI_DIR[i.dir]||'')}, ${i.direct?'ישיר':'עקיף'}, ביטחון ${esc(WI_C[i.conf]||'')}${i.mech?` · ${esc(i.mech)}`:''}</span><span class="mv">מה קרה: ${react(i.react,i.bench)}${WI_VS[i.vs]?' · '+WI_VS[i.vs]:''}</span>`).join('')}</div>`).join('')+`<p class="wi-note">${esc((P.d&&P.d.note)||'')}</p>`; return}
+  if(!d){C.innerHTML='<p class="wi-note">בחרו נכס וטווח תאריכים, ו"להציג".</p>'; V.innerHTML=''; return}
+  const S=d.series||[], W=600, Hh=190;
+  if(S.length<2){C.innerHTML=`<p class="wi-note">${S.length===1?`מחיר הסגירה של ${esc(lab(d.sym))} ב-${esc(wiDay(S[0][0]))}: <b dir="ltr">${esc(String(S[0][1]))}</b>. גרף מצויר מיומיים ומעלה.`:'אין לאתר מחירי סגירה של הנכס בטווח הזה.'}</p>`} else{
+    const lo=Math.min(...S.map(x=>x[1])), hi=Math.max(...S.map(x=>x[1])), r=hi-lo||1, X=i=>(i/(S.length-1)*(W-20)+10), Y=v=>(Hh-22-(v-lo)/r*(Hh-44)), idx=day=>{let i=S.findIndex(x=>x[0]>=day); return i<0?S.length-1:i};
     const line=S.map((x,i)=>`${X(i).toFixed(1)},${Y(x[1]).toFixed(1)}`).join(' ');
-    const mk=(d.events||[]).map(e=>{const i=idx(e.day), c=e.said.dir==='pos'?'var(--gain)':e.said.dir==='neg'?'var(--loss)':'#94a3b8'; return `<g class="mk" data-wihp="${esc(e.k)}" role="button" tabindex="0" aria-label="${esc(e.he)}"><line x1="${X(i)}" x2="${X(i)}" y1="10" y2="${Hh-14}" stroke="${c}" stroke-dasharray="3 3" opacity=".55"/><circle cx="${X(i)}" cy="${Y(S[i][1])}" r="${H.pick===e.k?7:5}" fill="${c}" stroke="var(--surface)" stroke-width="2"/></g>`}).join('');
-    C.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="מחיר ${esc(d.sym)} מ-${esc(d.from)} עד ${esc(d.to)}, עם ${(d.events||[]).length} אירועים"><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>${mk}<text x="10" y="${Hh-2}" font-size="11" fill="var(--ink2)">${esc(wiDay(S[0][0]))}</text><text x="${W-10}" y="${Hh-2}" font-size="11" fill="var(--ink2)" text-anchor="end">${esc(wiDay(S[S.length-1][0]))}</text></svg>`}
-  const T=d.tally||{}, E=(d.events||[]).slice().reverse(), pick=H.pick?E.filter(e=>e.k===H.pick):E.slice(0,6);
-  const mv=v=>v==null?'עוד אין':`<b>${(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2)}%</b>`;
-  V.innerHTML=(E.length?`<p class="wi-note">${E.length} אירועים בטווח. הכיוון שנאמר מול התנועה בחמשת ימי המסחר אחרי: ${T.same||0} באותו כיוון, ${T.opposite||0} בכיוון ההפוך, ${T.flat||0} כמעט בלי תנועה, ${T.wait||0} עוד מחכים.</p>`:'<p class="wi-note">לא נמצאו אירועים שנגעו בנכס בטווח הזה.</p>')+
-    pick.map(e=>`<div class="wi-hevr"><b>${esc(e.he)}</b><span class="wi-note">${esc(wiDay(e.day))} · ${esc(e.catHe||'')}${e.said.via?' · דרך '+esc(e.said.via):''}${e.src==='arc'?' · מארכיון הקריאות':''}</span>
-      <span class="mv">מה נאמר אז: ${esc(WI_DIR[e.said.dir]||'')}, עוצמה ${esc(WI_S[e.said.s]||'')}, ביטחון ${esc(WI_C[e.said.conf]||'')}</span>
-      <span class="mv">מה קרה: ביום ${mv(e.onDay)} · יום אחרי ${mv(e.after&&e.after.d1)} · שבוע ${mv(e.after&&e.after.d5)} · חודש ${mv(e.after&&e.after.d20)}${e.vs==='same'?' · באותו כיוון':e.vs==='opposite'?' · בכיוון ההפוך':e.vs==='flat'?' · כמעט בלי תנועה':''}</span></div>`).join('')+`<p class="wi-note">${esc(d.note||'')}</p>`}
+    const mk=(d.events||[]).map(e=>{const i=idx(e.day), c=e.said.dir==='pos'?'#4ade80':e.said.dir==='neg'?'#f87171':'#94a3b8'; return `<g class="mk" data-wihp="${esc(e.k)}" role="button" tabindex="0" aria-label="${esc(e.he)}"><line x1="${X(i)}" x2="${X(i)}" y1="10" y2="${Hh-18}" stroke="${c}" stroke-dasharray="3 3" opacity=".6"/><circle cx="${X(i)}" cy="${Y(S[i][1])}" r="${H.pick===e.k?8:5.5}" fill="${c}" stroke="#0d0c28" stroke-width="2"/></g>`}).join('');
+    C.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="מחיר ${esc(d.sym)} מ-${esc(d.from)} עד ${esc(d.to)}, עם ${(d.events||[]).length} אירועים"><polyline points="${line}" fill="none" stroke="#c4b5fd" stroke-width="2" vector-effect="non-scaling-stroke"/>${mk}<text x="10" y="${Hh-4}" font-size="11" fill="#c4bdf5">${esc(wiDay(S[0][0]))}</text><text x="${W-10}" y="${Hh-4}" font-size="11" fill="#c4bdf5" text-anchor="end">${esc(wiDay(S[S.length-1][0]))}</text></svg>
+      <p class="wi-note">מחירי הסגירה של <b dir="ltr">${esc(lab(d.sym))}</b>${d.src?' · '+esc(d.src):''}. כל עיגול הוא אירוע שהיה לו קשר לנכס; הצבע הוא הכיוון האפשרי שנאמר אז.</p>`}
+  const T=d.tally||{}, E=(d.events||[]).slice().reverse(), pick=H.pick?E.filter(e=>e.k===H.pick):E.slice(0,12);
+  V.innerHTML=(E.length?`<p class="wi-note">${E.length===1?'אירוע אחד':E.length+' אירועים'} בטווח. הכיוון שנאמר מול התנועה בשבוע המסחר אחרי${d.benchHas?' (ביחס ל-'+esc(d.bench)+')':''}: ${T.same||0} באותו כיוון, ${T.opposite||0} בכיוון ההפוך, ${T.flat||0} כמעט בלי תנועה, ${T.wait||0} עוד לא ידוע.</p>`:`<p class="wi-note">לא נמצא אירוע עם קשר לנכס ${one?'ביום הזה':'בטווח הזה'}.</p>`)+
+    (H.pick&&E.length>1?'<p class="wi-note"><button type="button" class="wi-fixb" data-wihp="">לכל האירועים בטווח</button></p>':'')+
+    pick.map(e=>`<div class="wi-hevr"><b>${esc(e.he)}</b><span class="wi-note">${e.occ?'התרחש '+esc(wiDay(e.occ))+' · ':''}פורסם ${esc(e.first?wiAt(e.first):wiDay(e.day))}${e.saidDay&&e.saidDay!==e.day?' · נקלט במנוע '+esc(wiDay(e.saidDay)):''} · ${esc(e.catHe||'')}${e.said.via?' · דרך '+esc(e.said.via):''}${e.src==='arc'?' · מארכיון הקריאות':e.said.legacy?' · המנוע הקודם':''}</span>
+      <span class="mv">מה נאמר אז: ${esc(WI_DIR[e.said.dir]||'')}, ${e.said.direct?'קשר ישיר':'קשר עקיף'}, עוצמה ${esc(WI_S[e.said.s]||'')}, ביטחון ${esc(WI_C[e.said.conf]||'')}</span>${e.said.mech?`<span class="mv">${esc(e.said.mech)}${e.said.fact?` · נשען על: "${esc(e.said.fact)}"`:''}</span>`:''}
+      <span class="mv">מה קרה בשוק: ${react(e.react,d.bench)}${WI_VS[e.vs]?' · '+WI_VS[e.vs]:''}</span></div>`).join('')+`<p class="wi-note">${esc(d.note||'')}</p>`}
 
-// ---- the admin's panel: what is weak, joined, failing or stale, and the log of the corrections ----
+// ---- the admin's panel: what is weak, joined, failing or stale, the relations to assets, and the log of the corrections ----
 function wiAdmRender(d){const box=$('wiAdm'), B=$('wiAdmB'), S=$('wiAdmS'); if(!box)return; const on=WIMP.mode==='world'&&wiAdminOk(); box.hidden=!on; if(!on||!B)return;
   for(const b of box.querySelectorAll('[data-wiadm]'))if(b.dataset.wiadm!=='run')b.setAttribute('aria-pressed',String(b.dataset.wiadm===WIMP.adm));
   const G=(d&&d.diag)||{}; if(S)S.textContent=d&&d.engineAt?'ריצה אחרונה '+wiAgo(d.engineAt):'';
   const msg=WIMP.admMsg?`<p class="wi-note" role="status">${esc(WIMP.admMsg)}</p>`:'';
   const j=o=>esc(JSON.stringify(o)), T=(h,rows)=>`<table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${h.length}">אין.</td></tr>`}</tbody></table>`;
-  if(WIMP.adm==='ev')B.innerHTML=msg+T(['אירוע','קטגוריה','מקורות','קשרים','ביטחון','מצב'],((d&&d.events)||[]).slice(0,80).map(e=>`<tr><td><button type="button" class="lnk" data-wiev="${esc(e.k)}">${esc(e.he)}</button></td><td>${esc(WI_CAT[e.cat]||'')}</td><td>${e.nPubs}/${e.nArt}</td><td>${(e.links||[]).length}</td><td>${esc(WI_C[e.conf]||'')}</td><td>${esc(WI_ST[e.status]||'')}${e.fix?' · תוקן':''}${e.hidden?' · מוסתר':''}</td></tr>`));
-  else if(WIMP.adm==='weak')B.innerHTML=msg+`<p class="wi-note">${G.nWeak||0} קשרים חלשים (מוצגים עד 150).</p>`+T(['אירוע','הקשר','למה חלש','פעולה'],(G.weak||[]).map(w=>`<tr><td>${esc(w.he)}</td><td dir="ltr">${esc(w.from)} → ${esc(w.to)}</td><td>${esc((w.why||[]).join(', '))}</td><td class="acts"><button type="button" class="wi-fixb ok" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'no'})}'>דחייה</button></td></tr>`));
+  if(WIMP.adm==='ev')B.innerHTML=msg+T(['אירוע','קטגוריה','מקורות','חוליות','קשרים לנכסים','ביטחון','מצב'],((d&&d.events)||[]).slice(0,80).map(e=>{const R=Object.values(e.rels||{}), n=R.filter(r=>r.rel==='direct'||r.rel==='indirect').length, no=R.filter(r=>r.rel==='none').length, wt=R.filter(r=>r.rel==='wait').length;
+    return `<tr><td><button type="button" class="lnk" data-wiev="${esc(e.k)}">${esc(e.he)}</button></td><td>${esc(WI_CAT[e.cat]||'')}</td><td>${e.nPubs}/${e.nArt}</td><td>${(e.links||[]).length}</td><td>${n}${no?` · ${no} נדחו`:''}${wt?` · ${wt} ממתינים`:''}</td><td>${esc(WI_C[e.conf]||'')}</td><td>${esc(WI_ST[e.status]||'')}${e.fix?' · תוקן':''}${e.hidden?' · מוסתר':''}</td></tr>`}));
+  else if(WIMP.adm==='rel'){const R=G.rel; B.innerHTML=msg+(d&&d.relsShown===false?'<p class="wi-note">פירוט הקשרים לנכסים מוצג רק למי שיש לו הרשאת "מידע אישי רגיש", כי רשימת הנכסים אומרת מה מוחזק באתר. כאן מוצגים המספרים בלבד.</p>':'')+`<p class="wi-note">${R?`ניתוח הקשר לכל נכס: ${R.ai?'פעיל':'לא פעיל (אין מפתח)'} · בריצה האחרונה (${esc(wiAt(R.at))}) נבדקו ${R.judged||0} זוגות מתוך ${R.asked||0}, ${R.none||0} בלי קשר · ${R.used||0} זוגות היום${R.capped?' · התקרה היומית הושגה':''}${R.first?' · '+esc(R.first):''}.`:'ניתוח הקשר לכל נכס עוד לא רץ.'} ${G.nWeakRel||0} קשרים חלשים (מוצגים עד 150), ${G.nWaitRel||0} ממתינים.</p>`+
+      T(['אירוע','נכס','הקשר','למה חלש','פעולה'],(G.weakRel||[]).map(w=>`<tr><td><button type="button" class="lnk" data-wiev="${esc(w.k)}">${esc(w.he)}</button></td><td dir="ltr">${esc(w.sym)}</td><td>${w.rel==='direct'?'ישיר':'עקיף'} · ${esc(w.mech||'')}</td><td>${esc((w.why||[]).join(', '))}</td><td class="acts"><button type="button" class="wi-fixb ok" data-wifix='${j({kind:'rel',k:w.k,sym:w.sym,st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({kind:'rel',k:w.k,sym:w.sym,st:'no'})}'>דחייה</button></td></tr>`))+
+      '<h5 style="margin:10px 0 4px">ממתינים לניתוח</h5>'+T(['אירוע','נכס','למה נבחר לבדיקה','מצב'],(G.waitRel||[]).map(w=>`<tr><td><button type="button" class="lnk" data-wiev="${esc(w.k)}">${esc(w.he)}</button></td><td dir="ltr">${esc(w.sym)}</td><td>${esc((w.sigs||[]).map(x=>WI_SIG[x]||x).join(', '))}</td><td>${w.nofacts?'אין לאתר עובדות על הנכס: לא ייבדק':'בתור לניתוח'}</td></tr>`))}
+  else if(WIMP.adm==='weak')B.innerHTML=msg+`<p class="wi-note">${G.nWeak||0} חוליות חלשות בין האירוע לבין מדינה, גורם, ענף או חברה שהקריאה מונה (מוצגות עד 150).</p>`+T(['אירוע','החוליה','למה חלשה','פעולה'],(G.weak||[]).map(w=>`<tr><td>${esc(w.he)}</td><td dir="ltr">${esc(w.from)} → ${esc(w.to)}</td><td>${esc((w.why||[]).join(', '))}</td><td class="acts"><button type="button" class="wi-fixb ok" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'no'})}'>דחייה</button></td></tr>`));
   else if(WIMP.adm==='dups')B.innerHTML=msg+T(['אירוע','כפילויות','מפתחות שאוחדו','פעולה'],(G.dups||[]).map(x=>`<tr><td>${esc(x.he)}</td><td>${x.dups}</td><td dir="ltr">${esc((x.joined||[]).join(', '))}</td><td class="acts">${(x.joined||[]).map(k=>`<button type="button" class="wi-fixb" data-wifix='${j({kind:'split',k})}'>לפצל את ${esc(k)}</button>`).join('')}</td></tr>`));
   else if(WIMP.adm==='fails')B.innerHTML=msg+T(['מערכת','מה קרה','מתי'],(G.fails||[]).map(f=>`<tr><td>${esc(f.he)}</td><td>${esc(f.note||'')}</td><td>${esc(wiAt(f.at))}</td></tr>`));
   else if(WIMP.adm==='stale')B.innerHTML=msg+`<p class="wi-note">חברות שהאירועים מזכירים ואין להן מחיר עדכני (אף פעם לא ההחזקות של אדם).</p>`+T(['נייר','מצב','מתי'],(G.stale||[]).map(x=>`<tr><td dir="ltr">${esc(x.sym)}</td><td>${esc(x.he)}</td><td>${esc(wiAt(x.at))}</td></tr>`));
+  else if(WIMP.adm==='qual'){if(!WIMP.qual){B.innerHTML=msg+'<p class="wi-note">טוען…</p>'; wiJson('/api/admin/impact/quality').then(r=>{WIMP.qual=r; wiAdmRender(wiD())}).catch(e=>{WIMP.qual={err:e.message}; wiAdmRender(wiD())}); return}
+    const Q=WIMP.qual; if(Q.err){B.innerHTML=msg+`<p class="wi-note">מדידת האיכות לא נטענה: ${esc(Q.err)}</p>`; return}
+    const c=t=>`${t.same}/${t.opposite}/${t.flat}/${t.wait}${t.rate!=null?` · ${t.rate}%`:''}`, row=g=>`<tr><td>${esc(g.he)}</td><td>${g.d1.n}</td><td dir="ltr">${c(g.d1)}</td><td dir="ltr">${c(g.d5)}</td><td dir="ltr">${c(g.d20)}</td></tr>`;
+    B.innerHTML=msg+`<p class="wi-note">${Q.n} קשרים שנאמר בהם כיוון, מאז ${esc(wiDay(Q.from))}. בכל תא: באותו כיוון / בכיוון ההפוך / כמעט בלי תנועה / עוד לא ידוע, ושיעור "באותו כיוון" מ-10 מקרים שהסתיימו ומעלה.</p>`+
+      T(['קבוצה','קשרים','אחרי יום','אחרי שבוע','אחרי חודש'],[row({he:'הכול',...Q.all}),...(Q.byConf||[]).map(row),...(Q.byRel||[]).map(row),...(Q.bySrc||[]).map(row)])+`<p class="wi-note">${esc(Q.note||'')}</p>`}
+  // 22.11: the check of a sample of twenty events: ten questions an event, what passed, what a person should look at, what failed
+  else if(WIMP.adm==='samp'){if(!WIMP.samp){B.innerHTML=msg+'<p class="wi-note">בודק…</p>'; wiJson('/api/admin/impact/sample?n=20').then(r=>{WIMP.samp=r; wiAdmRender(wiD())}).catch(e=>{WIMP.samp={err:e.message}; wiAdmRender(wiD())}); return}
+    const A=WIMP.samp; if(A.err){B.innerHTML=msg+`<p class="wi-note">בדיקת המדגם לא נטענה: ${esc(A.err)}</p>`; return}
+    const ST={pass:'עבר',warn:'לבדוק',fail:'נכשל'}, by=k=>{const o={pass:0,warn:0,fail:0}; for(const e of A.events)for(const c of e.checks)if(c.k===k)o[c.st]++; return o};
+    B.innerHTML=msg+`<p class="wi-note">נבדקו ${A.n} אירועים מתוך ${A.of} שבמנוע (אלה שיש להם קשר לנכס קודם, ואחריהם החשובים והחדשים): ${A.summary.pass} עברו את כל עשר הבדיקות, ב-${A.summary.warn} יש מה לבדוק, ${A.summary.fail} נכשלו בבדיקה אחת לפחות.</p>`+
+      T(['הבדיקה','עבר','לבדוק','נכשל'],Object.entries(A.labels||{}).map(([k,he])=>{const o=by(k); return `<tr><td>${esc(he)}</td><td>${o.pass}</td><td>${o.warn}</td><td>${o.fail}</td></tr>`}))+
+      '<h5 style="margin:10px 0 4px">לכל אירוע</h5>'+T(['אירוע','תוצאה','מה נמצא'],A.events.map(e=>{const bad=e.checks.filter(c=>c.st!=='pass'); return `<tr><td><button type="button" class="lnk" data-wiev="${esc(e.k)}">${esc(e.he)}</button><br><small>${esc(e.catHe||'')} · ${esc(wiAt(e.first))} · ${e.nPubs||0} מקורות · ${e.rels} קשרים לנכסים</small></td><td><span class="wi-tier ${e.worst==='pass'?'high':e.worst==='fail'?'low':''}">${ST[e.worst]}</span></td>
+        <td>${bad.length?bad.map(c=>`<b>${esc((A.labels||{})[c.k]||c.k)}</b> (${ST[c.st]}): ${esc(c.he)}`).join('<br>'):'עבר את כל עשר הבדיקות'}<details><summary>כל הבדיקות</summary>${e.checks.map(c=>`${esc((A.labels||{})[c.k]||c.k)}: ${ST[c.st]} · ${esc(c.he)}`).join('<br>')}</details></td></tr>`}))+`<p class="wi-note">${esc(A.note||'')}</p>`}
   else if(WIMP.adm==='log'){if(!WIMP.log){B.innerHTML=msg+'<p class="wi-note">טוען…</p>'; wiJson('/api/admin/impact/audit').then(r=>{WIMP.log=r.items||[]; wiAdmRender(wiD())}).catch(e=>{WIMP.log=[]; WIMP.admMsg='היומן לא נטען: '+e.message; wiAdmRender(wiD())}); return}
     B.innerHTML=msg+T(['מתי','מי','פעולה','על מה','לפני → אחרי'],WIMP.log.map(r=>`<tr><td>${esc(wiAt(r.at))}</td><td dir="ltr">${esc(r.actor||'')}</td><td>${esc(r.action)}</td><td dir="ltr">${esc(r.target||'')}</td><td dir="ltr"><small>${esc(JSON.stringify((r.detail||{}).before||null))} → ${esc(JSON.stringify((r.detail||{}).after||null))}</small></td></tr>`))}}
 async function wiFix(body,btn){if(btn)btn.disabled=true; WIMP.admMsg='';
-  try{await wiJson('/api/admin/impact/fix',{method:'POST',headers:{'content-type':'application/json','x-tc':'1'},body:JSON.stringify(body)}); WIMP.admMsg='התיקון נשמר, נרשם ביומן והוחל.'; WIMP.log=null; await wiLoad(true); if(WIMP.sel)wiSheet()}
+  try{await wiJson('/api/admin/impact/fix',{method:'POST',headers:{'content-type':'application/json','x-tc':'1'},body:JSON.stringify(body)}); WIMP.admMsg='התיקון נשמר, נרשם ביומן והוחל.'; WIMP.log=null; WIMP.samp=null; await wiLoad(true); if(WIMP.sel)wiSheet()}
   catch(e){WIMP.admMsg=e.status===403?'אין הרשאה לתקן (צריך הרשאת עריכה במרכז הניהול).':'התיקון לא נשמר: '+e.message; wiAdmRender(wiD())}
   finally{if(btn)btn.disabled=false}}
-// an alert's "on the map": the globe turns to the event when it has it, else the network map, as before
-function wiFromLegacy(kind,key){if(kind==='ev'){const e=WIMP.me&&(WIMP.me.events||[]).find(x=>x.k===key); if(e&&(WIMP.view==='globe'||WIMP.view==='flat')&&wiR()){WIMP.mode='me'; wiSelect({t:'ev',k:key}); return true}} WIMP.view='net'; wiRender(); return false}
-const wiScrollEl=()=>WIMP.view==='net'?$('ixMap'):$('wiStage');
+// an article's or an alert's "on the map": when the globe or the flat map is drawn and the event is among the viewer's
+// events of today, it is chosen there (as on 19.11); otherwise (the network, the history, nothing drawn yet) the older map
+// of one article, under this screen, shows it, and nothing opens over the page
+function wiFromLegacy(kind,key){WIMP.legacy=true; if(kind==='ev'&&WIMP.time==='now'&&(WIMP.view==='globe'||WIMP.view==='flat')&&wiR()){const e=WIMP.me&&(WIMP.me.events||[]).find(x=>x.k===key); if(e){WIMP.mode='me'; WIMP.legacy=false; wiSelect({t:'ev',k:key}); return true}} return false}
+const wiScrollEl=()=>WIMP.legacy?$('ixMap'):$('wiStage');
 // the globe opens facing the portfolio: the middle of the holdings' places, by their weight (once per view and mode)
-function wiHome(force){const G=wiR(), d=wiD(); if(!G||!d)return; const key=WIMP.mode+'|'+WIMP.view; if(!force&&WIMP.homed===key)return;
+function wiHome(force){const G=wiR(), d=wiD(); if(!G||!d)return; const key=WIMP.mode+'|'+WIMP.view+'|'+WIMP.time; if(!force&&WIMP.homed===key)return;
   const L=WIMP.mode==='me'?wiAssets().filter(a=>a.loc).map(a=>({lat:a.loc.lat,lon:a.loc.lon,w:Math.max(1,a.w||1)})):((d.events||[]).filter(e=>e.loc).slice(0,40).map(e=>({lat:e.loc.lat,lon:e.loc.lon,w:1})));
   if(!L.length)return; WIMP.homed=key; let x=0,y=0,z=0,W=0; for(const p of L){const la=p.lat*Math.PI/180, lo=p.lon*Math.PI/180; x+=Math.cos(la)*Math.cos(lo)*p.w; y+=Math.cos(la)*Math.sin(lo)*p.w; z+=Math.sin(la)*p.w; W+=p.w}
   const lat=Math.atan2(z,Math.hypot(x,y))*180/Math.PI, lon=Math.atan2(y,x)*180/Math.PI; G.focus(Math.max(-35,Math.min(50,lat)),lon,'fit')}
+function wiSetView(v){if(v===WIMP.view)return; const was=WIMP.view; WIMP.view=v; WIMP.legacy=false; if(v!=='hist')try{localStorage.setItem('tr_wiview',v)}catch(e){}
+  WIMP.net.sig=''; WIMP.net.pick=null; WIMP.net.pickH='';
+  if(v==='hist'){wiRender(); wiHistEnter(); return}
+  wiRender(); if(v==='net')return; if(wiR()){wiR()._sig=null; wiRender(); wiSelApply(true)} else wiViz()}
 
 document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.closest('#wi,#wiSheet'))return;
-  const m=t.closest('[data-wimode]'); if(m){const v=m.dataset.wimode; if(v==='world'&&!wiAdminOk())return; if(WIMP.mode!==v){WIMP.mode=v; WIMP.sel=null; wiSheet(); wiLoad(false)} wiRender(); return}
-  const vw=t.closest('[data-wiview]'); if(vw){const v=vw.dataset.wiview; if(v===WIMP.view)return; WIMP.view=v; try{localStorage.setItem('tr_wiview',v)}catch(e){}
-    wiRender(); if(v==='net'){try{ixDraw()}catch(e){}} else if(wiR()){wiR()._sig=null; wiRender(); wiSelApply(true)} else wiViz(); return}
-  if(t.closest('[data-wifresh]')){const sh=$('wiSheet'), d=wiD(); WIMP.sel=null; if(sh&&d){const A=d.assets||[]; sh.innerHTML='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button><h4 id="wiSheetH">מתי עודכנו המחירים</h4><ul class="wi-list">'+A.map(a=>`<li class="wi-row"><span class="nm"><b dir="ltr">${esc(lab(a.sym))}</b><small><span class="wi-fr"><i class="wi-dot ${a.fresh?a.fresh.state:'none'}"></i>${esc(a.fresh?a.fresh.he:'')}${a.fresh&&a.fresh.at?' · '+esc(wiAt(a.fresh.at)):''}</span></small></span></li>`).join('')+'</ul><p class="wi-note">זמן אמת רק כשהמחיר הגיע מזרם העסקאות בשעות המסחר; בעיכוב: ממקור מאוחר של עד 15 דקות; סגירה: המחיר שנקבע בסוף יום המסחר. מחיר שלא עודכן מסומן כך.</p>'; sh.hidden=false} return}
-  if(t.closest('[data-wihist]')){const h=$('wiHist'); if(h){h.scrollIntoView({block:'nearest',behavior:'smooth'}); if(!WIMP.hist.d)wiHistLoad()} return}
-  const k=t.closest('[data-wik]'); if(k){WIMP.kind=k.dataset.wik; wiRender(); return}
+  if(t.closest('[data-wireset]')){wiReset(); return}
+  const m=t.closest('[data-wimode]'); if(m){const v=m.dataset.wimode; if(v==='world'&&!wiAdminOk())return; if(WIMP.mode!==v){WIMP.mode=v; WIMP.sel=null; WIMP.net.sig=''; WIMP.net.focus=null; if(v==='world'&&WIMP.view==='hist')WIMP.view='globe'; wiSheet(); wiLoad(false); wiViz()} wiRender(); return}
+  const vw=t.closest('[data-wiview]'); if(vw){wiSetView(vw.dataset.wiview); return}
+  const lm=t.closest('[data-wilm]'); if(lm){WIMP.lm=lm.dataset.wilm; const R=wiR(); if(R)R._sig=null; wiRender(); return}
+  if(t.closest('[data-wifresh]')){const sh=$('wiSheet'), d=WIMP.me; WIMP.sel=null; if(sh&&d){const A=d.assets||[]; sh.innerHTML='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button><h4 id="wiSheetH">מתי עודכנו המחירים</h4><ul class="wi-list">'+A.map(a=>`<li class="wi-row"><span class="nm"><b dir="ltr">${esc(lab(a.sym))}</b><small><span class="wi-fr"><i class="wi-dot ${a.fresh?a.fresh.state:'none'}"></i>${esc(a.fresh?a.fresh.he:'')}${a.fresh&&a.fresh.at?' · '+esc(wiAt(a.fresh.at)):''}${a.open===false?' · המסחר סגור':''}</span></small></span></li>`).join('')+'</ul><p class="wi-note">זמן אמת רק כשהמחיר הגיע מזרם העסקאות בשעות המסחר; בעיכוב: ממקור מאוחר של עד 15 דקות; סגירה: המחיר שנקבע בסוף יום המסחר. מחיר שלא עודכן מסומן כך. כשהמסחר סגור, המחיר הוא מחיר סגירה ולא מוצג כזמן אמת.</p>'; sh.hidden=false; wiSheetRoom()} return}
+  const k=t.closest('[data-wik]'); if(k&&k.dataset.wik){WIMP.kind=k.dataset.wik; WIMP.net.sig=''; wiRender(); return}
   if(t.closest('#wiFiltB')){const f=$('wiFilt'), b=$('wiFiltB'); if(f){f.hidden=!f.hidden; if(b)b.setAttribute('aria-expanded',String(!f.hidden))} return}
-  if(t.closest('[data-wifclr]')){const days=WIMP.f.t; WIMP.f={cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''}; if(days!=='7')wiLoad(true); wiRender(); return}
+  if(t.closest('[data-wifclr]')){const days=WIMP.f.t; WIMP.f=WI_F0(); if(days!=='7'&&!wiPastOn())wiLoad(true); wiRender(); return}
   const z=t.closest('[data-wiz]'); if(z&&wiR()){const v=z.dataset.wiz, R=wiR(); if(v==='in')R.zoom(0.82); else if(v==='out')R.zoom(1.22); else wiHome(true); return}
+  const ne=t.closest('[data-wne]'); if(ne){wiNetEdge(+ne.dataset.wne); return}
+  const nn=t.closest('[data-wnn]'); if(nn){wiNetNode(nn.dataset.wnn); return}
+  const nl=t.closest('[data-wnl]'); if(nl){const N=WIMP.net; N.off[nl.dataset.wnl]=!N.off[nl.dataset.wnl]; N.pick=null; N.pickH=''; if(N.focus&&N.off[wiNodeT(N.focus)])N.focus=null; N.sig=''; wiRender(); return}
+  if(t.closest('[data-wndir]')){const N=WIMP.net; N.direct=!N.direct; N.pick=null; N.pickH=''; N.sig=''; wiRender(); return}
+  if(t.closest('[data-wnfull]')){WIMP.net={off:{},direct:false,focus:null,more:0,sig:'',edges:[]}; WIMP.sel=null; wiSheet(); wiSelApply(false); wiRender(); return}
+  if(t.closest('[data-wnmore]')){WIMP.net.more+=8; WIMP.net.sig=''; wiRender(); return}
+  const hq=t.closest('[data-whq]'); if(hq){const n=+hq.dataset.whq, P=WIMP.past, end=P.to||wiISO(Date.now()); P.to=end; P.from=n===1?end:wiISO(Date.parse(end)-(n-1)*864e5); wiPastLoad(); return}
+  const ha=t.closest('[data-whas]'); if(ha){WIMP.hist.sym=ha.dataset.whas; WIMP.hist.all=false; WIMP.hist.d=null; wiHistLoad(); return}
+  if(t.closest('[data-whall]')){WIMP.hist.all=!WIMP.hist.all; wiHistDraw(); return}
+  if(t.closest('#wiHGo')){const P=WIMP.past, f=($('wiHFrom')||{}).value||'', to=($('wiHTo')||{}).value||''; P.from=f&&to&&f>to?to:f; P.to=to; wiPastLoad(); return}
+  const hp=t.closest('[data-wihp]'); if(hp){const kk=hp.dataset.wihp; WIMP.hist.pick=!kk||WIMP.hist.pick===kk?null:kk; wiHistDraw(); return}
   const e=t.closest('[data-wiev]'); if(e){wiSelect({t:'ev',k:e.dataset.wiev}); return}
   const a=t.closest('[data-wias]'); if(a){wiSelect({t:'as',sym:a.dataset.wias}); return}
-  if(t.closest('[data-wix]')){WIMP.sel=null; wiSelApply(false); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD()); return}
-  const lk=t.closest('[data-wilk]'); if(lk){const [ek,...r]=lk.dataset.wilk.split('|'), id=r.join('|'), d=wiD(), l=WIMP.mode==='world'?(((d.events||[]).find(x=>x.k===ek)||{}).links||[]).find(x=>x.id===id):(d.links||[]).find(x=>x.ek===ek&&x.id===id), box=$('wiLkD'); if(box&&l)box.innerHTML=wiLinkD(l); return}
-  const hs=t.closest('[data-wihistof]'); if(hs){WIMP.hist.sym=hs.dataset.wihistof; const s=$('wiHSym'); if(s)s.value=WIMP.hist.sym; WIMP.sel=null; wiSheet(); wiHistLoad(); const h=$('wiHist'); if(h)h.scrollIntoView({block:'nearest',behavior:'smooth'}); return}
+  if(t.closest('[data-wix]')){WIMP.sel=null; WIMP.net.focus=null; wiSelApply(false); wiSheet(); wiRender(); return}
+  const lk=t.closest('[data-wilk]'); if(lk){const [ek,...r]=lk.dataset.wilk.split('|'), id=r.join('|'), d=wiD(), l=WIMP.mode==='world'?(((d.events||[]).find(x=>x.k===ek)||{}).links||[]).find(x=>x.id===id):(d.links||[]).find(x=>x.ek===ek&&x.id===id), box=$('wiLkD'); if(box&&l){box.innerHTML=wiLinkD(l); try{box.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(x){}} return}
+  const hs=t.closest('[data-wihistof]'); if(hs){WIMP.hist.sym=hs.dataset.wihistof; WIMP.hist.all=false; WIMP.hist.d=null; WIMP.sel=null; wiSheet(); if(WIMP.view==='hist')wiHistLoad(); else wiSetView('hist'); const h=$('wiStage'); if(h)try{h.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(x){} return}
   const sc=t.closest('[data-wisec]'); if(sc){try{goSec(sc.dataset.wisec)}catch(e){} return}
-  if(t.closest('#wiHGo')){WIMP.hist.sym=($('wiHSym')||{}).value||WIMP.hist.sym; WIMP.hist.from=($('wiHFrom')||{}).value||''; WIMP.hist.to=($('wiHTo')||{}).value||''; wiHistLoad(); return}
-  const hp=t.closest('[data-wihp]'); if(hp){WIMP.hist.pick=WIMP.hist.pick===hp.dataset.wihp?null:hp.dataset.wihp; wiHistRender(); return}
-  const ad=t.closest('[data-wiadm]'); if(ad){if(ad.dataset.wiadm==='run'){WIMP.admMsg='מריץ…'; wiAdmRender(wiD()); wiJson('/api/admin/impact/run',{method:'POST',headers:{'x-tc':'1'}}).then(r=>{WIMP.admMsg=`המנוע רץ: ${r.events} אירועים, ${r.new} חדשים, ${r.upd} עודכנו.`; wiLoad(true)}).catch(e=>{WIMP.admMsg=e.status===403?'הרצה ידנית דורשת הרשאת ניהול מערכת.':'ההרצה נכשלה: '+e.message; wiAdmRender(wiD())}); return}
+  const ad=t.closest('[data-wiadm]'); if(ad){if(ad.dataset.wiadm==='run'){WIMP.admMsg='מריץ…'; wiAdmRender(wiD()); wiJson('/api/admin/impact/run',{method:'POST',headers:{'x-tc':'1'}}).then(r=>{const R=r.rel; WIMP.admMsg=`המנוע רץ: ${r.events} אירועים, ${r.new} חדשים, ${r.upd} עודכנו.${R?(R.ai?` נבדקו ${R.judged} זוגות של אירוע ונכס (${R.none} בלי קשר), ${R.waiting} ממתינים.`:' ניתוח הקשר לכל נכס לא פעיל (אין מפתח).'):''}`; WIMP.qual=null; WIMP.samp=null; wiLoad(true)}).catch(e=>{WIMP.admMsg=e.status===403?'הרצה ידנית דורשת הרשאת ניהול מערכת.':'ההרצה נכשלה: '+e.message; wiAdmRender(wiD())}); return}
     WIMP.adm=ad.dataset.wiadm; WIMP.admMsg=''; wiAdmRender(wiD()); return}
   const fx=t.closest('[data-wifix]'); if(fx){let b=null; try{b=JSON.parse(fx.dataset.wifix)}catch(x){} if(b)wiFix(b,fx); return}
   const fc=t.closest('[data-wifxcat]'); if(fc){wiFix({kind:'event',k:fc.dataset.wifxcat,cat:($('wiFxCat')||{}).value||''},fc); return}
   const fj=t.closest('[data-wifxjoin]'); if(fj){const into=String(($('wiFxInto')||{}).value||'').trim(); if(into)wiFix({kind:'join',k:fj.dataset.wifxjoin,into},fj); return}
-  const hq=t.closest('[data-wihq]'); if(hq){wiFix({kind:'hq',sym:hq.dataset.wihq,loc:{lat:+($('wiHqLat')||{}).value,lon:+($('wiHqLon')||{}).value,name:($('wiHqName')||{}).value||''}},hq); return}});
-document.addEventListener('change',ev=>{const s=ev.target; if(!s||!s.closest||!s.closest('#wiFilt'))return; const k=s.dataset&&s.dataset.wif; if(!k)return; const was=WIMP.f[k]; WIMP.f[k]=s.value; if(k==='t'&&was!==s.value)wiLoad(true); wiRender()});
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&WIMP.sel&&!$('wiSheet').hidden){WIMP.sel=null; wiSelApply(false); wiSheet(); wiEvRender(wiD()); wiPfRender(wiD())}
-  if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.closest&&ev.target.closest('[data-wihp]')){ev.preventDefault(); ev.target.closest('[data-wihp]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
-window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,kind:WIMP.kind,events:(wiD()&&wiD().events||[]).length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,gFail:WIMP.gFail,err:WIMP.err,sel:WIMP.sel}),select:wiSelect};
+  const fa=t.closest('[data-wifxadd]'); if(fa){const sym=String(($('wiFxSym')||{}).value||'').trim().toUpperCase(), why=String(($('wiFxWhy')||{}).value||'').trim(); if(sym&&why)wiFix({kind:'rel',k:fa.dataset.wifxadd,sym,st:'add',why},fa); else{WIMP.admMsg='קשר ביד מנהל צריך נייר והסבר.'; wiAdmRender(wiD())} return}
+  const hqb=t.closest('[data-wihq]'); if(hqb){wiFix({kind:'hq',sym:hqb.dataset.wihq,loc:{lat:+($('wiHqLat')||{}).value,lon:+($('wiHqLon')||{}).value,name:($('wiHqName')||{}).value||''}},hqb); return}});
+document.addEventListener('change',ev=>{const s=ev.target; if(!s||!s.closest||!s.closest('#wiFilt'))return; const k=s.dataset&&s.dataset.wif; if(!k)return; const was=WIMP.f[k]; WIMP.f[k]=s.value; WIMP.net.sig=''; if(k==='t'&&was!==s.value&&!wiPastOn())wiLoad(true); wiRender()});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&WIMP.sel&&$('wiSheet')&&!$('wiSheet').hidden){WIMP.sel=null; WIMP.net.focus=null; wiSelApply(false); wiSheet(); wiRender()}
+  if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.closest&&ev.target.closest('[data-wihp],[data-wne]')){ev.preventDefault(); ev.target.closest('[data-wihp],[data-wne]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
+window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,time:WIMP.time,kind:WIMP.kind,lm:WIMP.lm,lvl:WIMP.lvl,dirty:wiDirty(),events:(wiD()&&wiD().events||[]).length,shown:wiEventsSel().length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,
+    data:()=>{const D=wiGlobeData(); return {points:D.points.length,arcs:D.arcs.length,loud:D.arcs.filter(a=>!a.quiet).length,clusters:D.points.filter(p=>p.kind==='cluster').length,labels:D.points.filter(p=>p.label&&!p.label.quiet).length}},
+    net:WIMP.view==='net'?{nodes:document.querySelectorAll('#wi .wn-n').length,edges:document.querySelectorAll('#wi .wn-hit').length,off:{...WIMP.net.off},direct:WIMP.net.direct,focus:WIMP.net.focus}:null,past:{from:WIMP.past.from,to:WIMP.past.to,n:WIMP.past.d?(WIMP.past.d.events||[]).length:null},gFail:WIMP.gFail,err:WIMP.err,sel:WIMP.sel}),select:wiSelect,view:wiSetView,reset:wiReset};
 // 17.11 (the owner's proposal 4, "חדשות"): the phone's answer card, what in the news touches the portfolio now: the
 // holdings that moved 3% or more today and whether a news item explains it, else the important items of the period,
 // else that it is quiet. The map is a tab of its own ("מפת השפעה") instead of the first half screen
