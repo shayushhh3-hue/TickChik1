@@ -21099,7 +21099,8 @@ function homeArrange(){const ph=PHONE.matches, cl=ph&&homeStyle()==='clean', as=
   /* 12.11 (the owner): the clean card's order: the value, the row of views, "מה קרה היום בתיק?", the coming two weeks, then the holdings with the stocks/funds split at their head */
   const so=$('bSoon');
   try{kOkSync()}catch(e){}
-  if(cl){{const wc=$('wChart'), wh=$('wchH'); if(wc&&wh&&wc.nextElementSibling!==wh)wc.after(wh)} if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&w&&ot.nextElementSibling!==w)w.before(ot);   // 17.11 (the owner's Figma): the views right under the header, over the value if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);
+  if(cl){{const wc=$('wChart'), wh=$('wchH'); if(wc&&wh&&wc.nextElementSibling!==wh)wc.after(wh)} if(as&&wt&&as.parentElement!==wt)wt.append(as); if(ot&&w&&ot.nextElementSibling!==w)w.before(ot);   // 17.11 (the owner's Figma): the views right under the header, over the value
+    if(so&&ib&&so.previousElementSibling!==ib)ib.after(so);   // 22.11 fix: the 17.11 comment above was written in the middle of the line and swallowed this statement, so the coming two weeks stayed under the holdings
     if(kr&&hs&&kr.parentElement!==hs)hs.prepend(kr); if(bx&&hs&&bx.previousElementSibling!==hs)hs.after(bx); return}
   if(so&&bx&&so.parentElement!==bx)bx.prepend(so);
   if(ot&&mt&&ot.previousElementSibling!==mt)mt.after(ot); if(as&&ot&&as.parentElement!==ot)ot.prepend(as);
