@@ -3,7 +3,7 @@
 // unknown data, the chat's labels, the charts, small screens, and the hard cases (a large portfolio, old prices, a broken
 // server answer). Nothing leaves the machine: Claude is a local stand-in and every outside address answers 404.
 // Run: npm run test:browser   (the tests are skipped when no browser is installed)
-import {test,before,after} from 'node:test';
+import {test as nodeTest,before,after,afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {fixture,closes} from './fixture.js';
@@ -13,6 +13,16 @@ const R=fileURLToPath(new URL('..',import.meta.url));   // a path on Windows too
 let claude, seen=[], bodies=[], srv, U, store, browser, docs, R5;
 const TODAY=new Date().toISOString().slice(0,10), dF=iso=>{const d=new Date(iso); return d.getUTCDate()+'.'+(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()};   // statements of today
 process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceiling is for the world
+// 22.11: CI runs this file in three parts side by side, each on a machine of its own (BROWSER_PART="2/3": every third
+// test, from the second; the tests of the other parts are reported as skipped, so a test keeps its number in every
+// part). The parts stay even as tests are added at the end. Without BROWSER_PART (a local run): every test.
+const PART=(process.env.BROWSER_PART||'').match(/^(\d+)\/(\d+)$/); let nTests=0;
+const test=(name,opt,fn)=>nodeTest(name,!PART||nTests++%+PART[2]===+PART[1]-1?opt:{...opt,skip:'in another part (this one is '+PART[0]+')'},fn);
+// A test that fails never reaches its own ctx.close(): its pages stayed open to the end of the run, asking the server
+// and saving their old copy of the settings over what later tests wrote (19.11 in CI: 45 failures, 21 of them tests
+// that pass alone, and the later tests five times slower). Whatever a test left open is closed when it ends.
+const ctxs=new Set();
+afterEach(async()=>{for(const c of ctxs){try{await c.close()}catch(e){}} ctxs.clear()});
 
 before(async()=>{
   claude=http.createServer(async(req,res)=>{let b='';for await(const c of req)b+=c; const J=JSON.parse(b), p=JSON.stringify(J.messages||[]); seen.push(p); bodies.push({model:J.model,stream:!!J.stream,max_tokens:J.max_tokens,at:Date.now()});
@@ -94,6 +104,7 @@ before(async()=>{
   srv=await new Promise(r=>{const s=http.createServer((req,res)=>{if(req.method==='POST'&&req.url.startsWith('/api/prices')){res.writeHead(200,{'content-type':'application/json'}); res.end('{"ok":true,"cached":true}'); return} app(req,res)}); s.listen(0,'127.0.0.1',()=>r(s))});
   U='http://127.0.0.1:'+srv.address().port+'/';
   try{browser=await (await import('playwright')).chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage'],...(process.env.PW_CHANNEL?{channel:process.env.PW_CHANNEL}:{})})}catch(e){browser=null}   // PW_CHANNEL=msedge: a machine's own Edge, no download
+  if(browser){const nc=browser.newContext.bind(browser); browser.newContext=async o=>{const c=await nc(o); ctxs.add(c); c.on('close',()=>ctxs.delete(c)); return c}}   // every context, however a test opens it
 });
 after(async()=>{try{await browser?.close()}catch(e){} srv?.close(); claude?.close()});
 

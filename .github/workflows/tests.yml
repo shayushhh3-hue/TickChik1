@@ -1,14 +1,20 @@
 # The tests on every push and pull request, outside Railway: a red mark in GitHub before a broken version reaches the site.
 # The browser tests run with the Hebrew fonts the server's image has (as in the Dockerfile), at Israel time; a failing
 # test is written as an annotation, so its message shows on the run's page (and through the API) without the full log.
+# 22.11: two kinds of job side by side. "unit" is the unit tests and the image's build. "browser" is the browser tests
+# in three parts (BROWSER_PART, read by tests/browser.test.js: every third test, so the parts stay even as tests are
+# added), each on a machine of its own: one job for the whole file ran into its 40 minutes once tests failed, was
+# cancelled there, and showed nothing. A part takes about a third of the file; its tests' step has a limit of its own,
+# so a part that hangs ends as a failure with its annotations (the job's limit is the last resort: the fonts' download
+# was seen to take sixteen minutes on a slow day of the package mirror).
 name: tests
 on:
   push:
   pull_request:
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 20
     env:
       TZ: Asia/Jerusalem
     steps:
@@ -20,16 +26,44 @@ jobs:
       - run: npm ci
       - run: npm test 2>&1 | tee unit.log; exit ${PIPESTATUS[0]}
         shell: bash
-      - run: npx playwright install --with-deps chromium && sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-dejavu-core fonts-freefont-ttf
-      - run: npm run test:browser 2>&1 | tee browser.log; exit ${PIPESTATUS[0]}
-        shell: bash
       - name: failing tests, as annotations
-        if: failure()
+        if: failure() || cancelled()
         shell: bash
         run: |
           set +e +o pipefail
-          for f in unit.log browser.log; do [ -f "$f" ] || continue
-            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message|failureType|location):|\s+[+-] |\s+at .*browser\.test\.js)' | cut -c1-700 | head -60 | while IFS= read -r l; do echo "::error title=$f::${l//%/%25}"; done
+          for f in unit.log; do [ -f "$f" ] || continue
+            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message|failureType|location):|\s+[+-] |\s+at .*\.test\.js)' | cut -c1-700 | head -60 | while IFS= read -r l; do echo "::error title=$f::${l//%/%25}"; done
           done
           exit 0
       - run: docker build -t tikchik .
+  browser:
+    name: browser (part ${{ matrix.part }} of 3)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
+    env:
+      TZ: Asia/Jerusalem
+      BROWSER_PART: ${{ matrix.part }}/3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium && sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-dejavu-core fonts-freefont-ttf
+      - run: npm run test:browser 2>&1 | tee browser.log; exit ${PIPESTATUS[0]}
+        shell: bash
+        timeout-minutes: 20
+      - name: failing tests, as annotations
+        if: failure() || cancelled()
+        shell: bash
+        run: |
+          set +e +o pipefail
+          for f in browser.log; do [ -f "$f" ] || continue
+            grep -n -A40 '^not ok' "$f" | grep -E '^[0-9]+[:-](not ok|\s+(error|expected|actual|message|failureType|location):|\s+[+-] |\s+at .*browser\.test\.js)' | cut -c1-700 | head -60 | while IFS= read -r l; do echo "::error title=$f (part ${{ matrix.part }})::${l//%/%25}"; done
+          done
+          exit 0
