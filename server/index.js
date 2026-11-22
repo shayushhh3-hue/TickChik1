@@ -14,7 +14,7 @@ import {storyOf} from './story.js';
 import {ecocalTask} from './ecocal.js';
 import {insidersTask,INS_DOC} from './insiders.js';
 import {pulseTask} from './pulse.js';
-import {impactTask, impactForUser, impactHistory} from './impact.js';
+import {impactTask, impactForUser, impactHistory, impactPast, impactRelRun} from './impact.js';
 import {refreshQuotes} from '../shared/pxjob.js';
 import {reconcileSplits} from '../shared/splits.js';
 import {confirmSplits} from './fmp.js';
@@ -488,7 +488,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const NXNOW=new Map();
   app.post('/api/newsx/read',needUser,async(req,res)=>{const u=req.user, last=NXNOW.get(u.id)||0; if(Date.now()-last<10e3)return res.status(429).json({error:{code:'rate_limited',message:'הקריאה הקודמת עוד רצה'}});
     NXNOW.set(u.id,Date.now()); const own=ownerLike(u), ok=own?null:symsOfUser(store,u.id), visible=own?null:a=>a.src==='gen'||(Array.isArray(a.syms)&&a.syms.some(s=>ok.has(s)));
-    try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read){try{impactTask(store,{log})}catch(e){log('impact after a reading failed:',e&&e.message||e)} try{pulseTask(store,{log})}catch(e){}} res.json(r)}
+    try{const r=await newsxReadNow(store,(req.body||{}).ids,{visible,log}); if(r.read){try{impactTask(store,{log})}catch(e){log('impact after a reading failed:',e&&e.message||e)} try{pulseTask(store,{log})}catch(e){}
+        // 22.11: and the relation of what was just read to each asset, behind the answer (a few events, within the daily cap)
+        impactRelRun(store,{log,maxEvents:4,ask:app.locals.impactAsk||null}).catch(e=>log('impact relations after a reading failed:',e&&e.message||e))} res.json(r)}
     catch(e){res.status(502).json({error:{code:'upstream_error',message:String(e&&e.message||e)}})}});
   // 31.10: "הסיפור מאחורי הכותרת" of one event: kept per event, made again when new articles joined it. Once in five
   // seconds a person; a partner's story rests only on the articles they may read
@@ -516,6 +518,11 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(!/^(TLV:)?[A-Z0-9.-]{1,12}$/.test(sym))return res.status(400).json({error:{code:'invalid_argument',message:'נייר לא מוכר'}});
     try{res.json(impactHistory(store,req.user,sym,{from:String(req.query.from||''),to:String(req.query.to||'')}))}
     catch(e){const st=e&&e.status===403?403:500; if(st===500)log('impact history failed:',e&&e.stack||e); res.status(st).json({error:{code:st===403?'permission_denied':'internal',message:st===403?'הנייר הזה לא בתיק שלך.':'ההיסטוריה לא זמינה כרגע.'}})}});
+  // 22.11: the board on past days: the events of a range of dates that had a relation to one of the asker's own assets, as
+  // the engine said it then, and what the market did after. The asker is the session's; nothing in the request names a person
+  app.get('/api/impact/past',needUser,(req,res)=>{
+    try{res.json(impactPast(store,req.user,{from:String(req.query.from||''),to:String(req.query.to||'')}))}
+    catch(e){log('impact past failed:',e&&e.stack||e); res.status(500).json({error:{code:'internal',message:'ההיסטוריה לא זמינה כרגע.'}})}});
   app.get('/api/news',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase().slice(0,16); if(!rsUsable(k))return res.status(400).json({error:'נייר לא מוכר'});
     const c=NEWS.get(k); if(c&&Date.now()-c.at<30*60e3)return res.json({items:c.items,cached:true});
     try{const map=((store.getDoc('settings/main').data)||{}).symMap||{}; const items=await newsFor(rsTick(k,map)); NEWS.set(k,{at:Date.now(),items}); if(NEWS.size>300)NEWS.delete(NEWS.keys().next().value); res.json({items})}

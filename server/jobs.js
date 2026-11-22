@@ -16,7 +16,7 @@ import {smokeTask, restoreTest} from './control.js';
 import {xTask} from './xfeed.js';
 import {liveTask} from './livealert.js';
 import {pulseTask} from './pulse.js';
-import {impactTask} from './impact.js';
+import {impactTask, impactRelRun} from './impact.js';
 import {ecocalTask} from './ecocal.js';
 import {insidersTask} from './insiders.js';
 import {etfTask} from './etf.js';
@@ -25,6 +25,9 @@ import {jobNote, healthCheck} from './health.js';
 
 // 19.11 TikChik WORLD IMPACT: the event graph after every reading (server/impact.js); a failure there never stops the alerts
 const impactSafe=(s,o)=>{try{impactTask(s,o)}catch(e){(o&&o.log||console.log)('impact failed:',e&&e.message||e)}};
+// 22.11: then the relation of each event to each asset, examined one asset at a time (server/impactrel.js: Claude, a few
+// events a run, a daily cap); a failure there leaves what stood before and never stops the alerts
+const impactRelSafe=async(s,o)=>{try{await impactRelRun(s,o)}catch(e){(o&&o.log||console.log)('impact relations failed:',e&&e.message||e)}};
 export const SCHEDULE=[
   // prices: every 5 minutes while Tel Aviv or New York trades, every 15 minutes at all other hours (fund prices come out at
   // night), on the hour's :40 from 10:40 to 23:40 (closing prices), and four
@@ -66,8 +69,8 @@ export const SCHEDULE=[
   // 29.10: ...and read right after they are gathered (what happened, whom it may touch, how sure); 'newsx' alone is the
   // owner's "read now" and a catch-up a quarter of an hour later
   // 30.10: and after each reading, everyone's personal alerts (server/pulse.js), so the alert center is current
-  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o)}},
-  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%10===5, run:async(s,o)=>{await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o)}},
+  {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o); await impactRelSafe(s,o)}},
+  {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%10===5, run:async(s,o)=>{await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o); await impactRelSafe(s,o)}},
   // 29.10: what investors post on X about the securities (with a token that may read), twice a day, before the readings
   {name:'x',       when:p=>(p.h===9||p.h===17)&&p.min===15, run:(s,o)=>xTask(s,{...o,newsSyms})},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},

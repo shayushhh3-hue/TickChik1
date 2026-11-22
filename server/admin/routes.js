@@ -14,7 +14,7 @@ import {backupStatus} from '../backup.js';
 import {intelSchema,radarScan,radarList,radarUpdate,voice,intelAsk,intelHistory} from './intel.js';
 import {catalog} from './metrics.js';
 import {worldModel,worldBrief} from './world.js';
-import {impactWorld,impactFix,impactTask} from '../impact.js';
+import {impactWorld,impactFix,impactTask,impactRelRun,impactQuality} from '../impact.js';
 import {yahooStatus,marketData, splitsAdmin} from './yahoo.js';
 import {keysList,keyTest} from './keys.js';
 import {runsView} from './runs.js';
@@ -195,7 +195,12 @@ export function adminRoutes(app,{store,pageFile,adminFile,setRole,dataDir='/data
   // a correction is applied at once: the graph is rebuilt with it (the same run as after a reading; a few milliseconds)
   app.post('/api/admin/impact/fix',need('edit'),(req,res)=>{try{const r=impactFix(store,req.user,req.body||{},{ip:req.ip}); try{impactTask(store,{log})}catch(e){log('impact after a fix failed: '+(e&&e.message||e))} res.json(r)}
     catch(e){const st=e&&e.status||500; res.status(st).json({error:{code:st===403?'permission_denied':st===400?'invalid_argument':'internal',message:String(e&&e.message||e)}})}});
-  app.post('/api/admin/impact/run',need('system'),(req,res)=>{try{const r=impactTask(store,{log}); audit(store,{user:req.user,action:'impact.run',target:'impact',detail:r,ip:req.ip}); res.json(r)}
+  // 22.11: how the engine's statements stood against what followed (the snapshots against the closes): a check of the engine
+  app.get('/api/admin/impact/quality',need('view'),(req,res)=>{try{res.json(impactQuality(store,{days:Math.max(7,Math.min(180,Math.round(+req.query.days)||120))}))}
+    catch(e){log('impact quality failed: '+(e&&e.stack||e)); res.status(500).json({error:{code:'internal',message:'מדידת האיכות לא זמינה כרגע.'}})}});
+  // 22.11: a run by hand also examines the pairs that wait (the relation of each event to each asset), within the daily cap
+  app.post('/api/admin/impact/run',need('system'),async(req,res)=>{try{const r=impactTask(store,{log}); let rel=null; try{rel=await impactRelRun(store,{log,ask:app.locals.impactAsk||null})}catch(e){log('impact relations by hand failed: '+(e&&e.message||e))}
+      audit(store,{user:req.user,action:'impact.run',target:'impact',detail:{...r,rel:rel?{asked:rel.asked,judged:rel.judged,none:rel.none,waiting:rel.waiting}:null},ip:req.ip}); res.json({...r,rel})}
     catch(e){res.status(500).json({error:{code:'internal',message:String(e&&e.message||e)}})}});
   app.post('/api/admin/world/brief',need('view'),async(req,res)=>{const last=WB.get(req.user.id)||0; if(Date.now()-last<20e3)return res.status(429).json({error:{code:'rate_limited',message:'התקציר הקודם עוד נכתב.'}}); WB.set(req.user.id,Date.now());
     try{res.json(await worldBrief(store,req.user,{days:+(req.body||{}).days||3,force:!!(req.body||{}).force,ask:app.locals.worldAsk||null,log}))}

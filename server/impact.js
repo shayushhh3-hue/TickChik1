@@ -27,6 +27,7 @@ import {symsOfUser, ownerLike} from './store.js';
 import {audit, can} from './admin/core.js';
 import {usOpen, ilOpen, ilParts} from '../shared/market.js';
 import {CC, CC_HE, REG_CC, countryPt, regionPt, marketPt, hqOf, INDEX_MKT} from './impactgeo.js';
+import {REL_DOC, relsFor, relTask, cardsOf, universeOf, relStatus} from './impactrel.js';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -90,6 +91,13 @@ const OFFICIAL=/business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|
 export function srcTier(pub,kind){const p=String(pub||''); if(TIER_LOW.test(p)||kind==='opinion')return 'low'; if(TIER_HIGH.test(p))return 'high'; if(OFFICIAL.test(p)||kind==='pr')return 'official'; return 'mid'}
 const TIER_R={low:0,mid:1,official:1,high:2};
 const bestTier=L=>L.reduce((b,t)=>TIER_R[t]>TIER_R[b]?t:b,'low');
+// 22.11: what a source is evidence OF (the owner: the evidence repeated "what happened"). A primary source (the body that
+// decided, the company's own release or filing) confirms the event itself; a news report confirms that it was reported; an
+// analysis supports the explanation and confirms no new fact; an opinion is evidence of nothing. And whether the article
+// was read in full, or only its headline: a source that was not opened is never shown as checked
+const PRIMARY=/federal reserve|sec edgar|bank of israel|european central bank|\becb\b|\bmaya\b|מאיה|\btase\b|business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release|treasury|white house|bureau of labor/i;
+export const VER_HE={primary:'מקור ראשוני: הגוף שהחליט או החברה עצמה. מאמת את עצם האירוע',fact:'דיווח חדשותי: מאמת שהאירוע דווח כעובדה',analysis:'ניתוח של המקור: תומך בהסבר, אינו מאמת עובדה חדשה',opinion:'טור דעה: אינו ראיה לעובדות',est:'דיווח שהקריאה שלו היא הערכה, לא עובדה מאומתת',head:'נקראה הכותרת בלבד: הכתבה עצמה לא נבדקה'};
+const verOf=(x,pub,tier)=>x.rules?'head':x.kind==='opinion'?'opinion':(PRIMARY.test(String(pub||''))||x.kind==='pr'||tier==='official')?'primary':x.kind==='analysis'||x.cert==='interp'?'analysis':x.cert==='fact'?'fact':'est';
 
 // ---- the horizon, by the kind of event: a rule, said to be one ----
 const HZ_CAT={earnings:'short',ma:'short',disaster:'short',rates:'mid',macro:'mid',regulation:'mid',trade:'mid',geo:'mid',war:'mid',supply:'mid',energy:'mid',commodities:'mid',finance:'mid',ai:'long',chips:'long',industry:'long'};
@@ -158,7 +166,10 @@ function eventOf(group,{fix,prevOf,coLoc}){
   if(!loc&&regions.length)loc=regionPt(regions[0]);
   if(!loc&&directCos.length){const l=coLoc(directCos[0]); if(l)loc={...l,of:directCos[0]}}
   // the links, from the readings: each says why and rests on its articles
-  const L=new Map(), why=[], ev=node.ev(k);
+  // 22.11: beside the links, what the readings say plainly, for the relation of the event to each asset (server/impactrel.js):
+  // the companies they name (how, why, and whether the article itself names them), the securities the articles were only
+  // listed under (no link by itself), the factors and the sectors with their reasons
+  const L=new Map(), why=[], ev=node.ev(k), NM=new Map(), LST=new Set(), FACS=new Map(), SECS=new Map(), THEMES=new Set();
   const add=(from,to,o,i)=>{const id=from+'>'+to; let l=L.get(id);
     if(!l){l={id,from,to,dir:o.dir||'unclear',move:o.move||null,direct:!!o.direct,how:o.how||null,why:o.why||'',basis:o.basis||'reading',arts:[],cs:[],tiers:[],s:o.s||1}; L.set(id,l)}
     else{if(o.dir&&o.dir!=='unclear'&&l.dir!=='unclear'&&o.dir!==l.dir)l.dir='mixed'; else if(l.dir==='unclear'&&o.dir)l.dir=o.dir; if(!l.why&&o.why)l.why=o.why; l.s=Math.max(l.s,o.s||1)}
@@ -177,8 +188,16 @@ function eventOf(group,{fix,prevOf,coLoc}){
       else if(['supplier','customer','competitor'].includes(a.how))add(dco.length===1?node.co(dco[0]):ev,node.co(a.sym),{dir:a.dir||'unclear',direct:false,how:a.how,why:a.why||'',s:Math.max(1,b-1)},i);
       else if(a.how==='sector')add(a.via&&(xx.sectors||[]).includes(a.via)?node.sec(a.via):ev,node.co(a.sym),{dir:a.dir||'unclear',direct:false,how:'sector',why:a.why||'',s:Math.max(1,b-1)},i);
       else if(a.how==='macro')add(facs.length===1?node.fac(facs[0].k):ev,node.co(a.sym),{dir:a.dir||'unclear',direct:false,how:'macro',why:a.why||'',s:1},i)}
-    // the securities an article was gathered for are the companies it is about
-    if(z.a.src==='co')for(const s of (z.a.syms||[]))if(!(xx.aff||[]).some(a=>a.sym===s))add(ev,node.co(s),{dir:xx.dir,direct:true,how:'direct',why:'הכתבה נאספה על החברה הזאת',s:b},i);
+    // 22.11: a security an article was only gathered under is NOT a link (a list of "three stocks that…" and a market wrap sit
+    // in the feed of every share they mention): it is kept as "listed", one of the signs that send the pair to be examined
+    for(const a of (xx.aff||[])){const o=NM.get(a.sym), d=a.dir||(a.how==='direct'?xx.dir:'unclear');
+      if(!o)NM.set(a.sym,{sym:a.sym,how:a.how,dir:d||'unclear',why:a.why||'',said:a.said,via:a.via||null,arts:[i]});
+      else{if(!o.arts.includes(i))o.arts.push(i); if(a.how==='direct'&&o.how!=='direct'){o.how='direct'; o.dir=d||o.dir; if(a.why)o.why=a.why} else if(!o.why&&a.why)o.why=a.why;
+        if(a.said===true)o.said=true; else if(o.said===undefined&&a.said===false)o.said=false}}
+    for(const s of (z.a.syms||[]))if(!(xx.aff||[]).some(a=>a.sym===s))LST.add(s);
+    for(const f of facs)if(!FACS.has(f.k))FACS.set(f.k,{k:f.k,move:f.move||'unclear',why:f.why||''});
+    for(const g of (xx.sectors||[]))if(!SECS.has(g)){const s=secx.get(g); SECS.set(g,{g,dir:s?s.dir:'unclear',why:s&&s.why||'',via:s&&s.via||null})}
+    for(const t of (xx.themes||[]))THEMES.add(t);
     if(!xx.rules&&xx.what)why.push({t:xx.what,c:xx.cert||'interp',a:[i]})});
   // each link: its confidence (the best of its readings), the reliability of its sources, the admin's hand
   const FL=(fix&&fix.link)||{}, links=[];
@@ -191,11 +210,18 @@ function eventOf(group,{fix,prevOf,coLoc}){
   const dir=['pos','neg','mixed','unclear'].includes(F.dir)?F.dir:x.dir||'unclear', s=[1,2,3].includes(+F.s)?+F.s:Math.min(3,base);
   const cf=confOf(x,{direct:directCos.length>0,tiers,nPubs}), conf=CONF_OF.includes(F.conf)?F.conf:cf.c;
   const prev=prevOf(k);
-  return {k,ev:x.ev||null,he:str(F.he,120)||x.he||'',title:lead.title||'',what:x.what||'',more:x.more||'',unknown:x.unknown||'',cats,cat:cats[0],type:x.type||'other',typeHe:TYPE_HE[x.type]||'',level,kind:x.kind||'news',
+  // 22.11: what changed and why it matters economically: the reading's own words (newer readings); for an older one, the
+  // reason it gave for the first factor or sector (said to be the economic path, nothing invented)
+  const pickX=f=>{const z=usable.find(q=>q.x[f]); return z?z.x[f]:''}, eco=pickX('eco')||([...FACS.values()].find(f=>f.why)||{}).why||([...SECS.values()].find(s=>s.why)||{}).why||'';
+  const named=[...NM.values()], listed=[...LST].filter(s=>!NM.has(s)).slice(0,12);
+  return {k,ev:x.ev||null,he:str(F.he,120)||x.he||'',title:lead.title||'',what:x.what||'',chg:pickX('chg'),eco,more:x.more||'',unknown:x.unknown||'',cats,cat:cats[0],type:x.type||'other',typeHe:TYPE_HE[x.type]||'',level,kind:x.kind||'news',cert:x.cert||'est',
+    named,listed,facs:[...FACS.values()],secs:[...SECS.values()],themes:[...THEMES],nodes:uniq([ev,...links.flatMap(l=>[l.from,l.to])]),
     st:group.st||'unknown',stHe:STAGE_HE[group.st||'unknown'],occ:x.occ||null,first:times[0]||null,last:times[times.length-1]||null,seen:prev?prev.seen:new Date().toISOString(),
     cc,regions,loc,dir,s,conf,confWhy:CONF_OF.includes(F.conf)?'נקבע ביד מנהל':cf.why,hz:F.hz&&HZ_HE[F.hz]?F.hz:hzOf(cats),hzWhy:F.hz?'נקבע ביד מנהל':HZ_WHY,
     ai,rules:!ai,nArt:arts.length,nPubs,srcRel,src:[...src.values()].sort((a,b)=>TIER_R[b.tier]-TIER_R[a.tier]||b.n-a.n),dups,
-    arts:arts.map((z,i)=>({i,id:z.a.id,pub:z.a.pub||'',title:z.a.title||'',link:z.a.link||'',at:z.a.at||z.a.seen||null,src:z.a.src||'co',syms:z.a.src==='co'?(z.a.syms||[]).slice(0,6):[],tier:srcTier(z.a.pub,z.x.kind),he:z.x.he||'',rules:!!z.x.rules,kind:z.x.kind||'news'})),
+    // 22.11: each source as evidence: what kind it is, what it can confirm, and whether the article itself was read
+    arts:arts.map((z,i)=>{const tier=srcTier(z.a.pub,z.x.kind); return {i,id:z.a.id,pub:z.a.pub||'',title:z.a.title||'',link:z.a.link||'',at:z.a.at||z.a.seen||null,got:z.a.seen||null,src:z.a.src||'co',syms:z.a.src==='co'?(z.a.syms||[]).slice(0,6):[],tier,he:z.x.he||'',rules:!!z.x.rules,kind:z.x.kind||'news',
+      cert:z.x.cert||'est',rd:z.x.rules?'rules':z.x.rd||null,ver:verOf(z.x,z.a.pub,tier),primary:PRIMARY.test(String(z.a.pub||''))||z.x.kind==='pr'}}),
     evid:why.slice(0,6),links,macro:usable.some(z=>z.x.macro===true),fix:Object.keys(F).length?{...F}:null,hidden:F.st==='hidden'};
 }
 
@@ -237,23 +263,34 @@ export function changesOf(o,e){
 const MATERIAL=new Set(['new','level','dir','cos','stage','fact','read']);
 
 // ---- the run: the registry written for the admins, with the history of every event and a snapshot of the day ----
+// 22.11: every event carries its relation to each asset the engine examines (server/impactrel.js): the analysis where it
+// was made, what stands without one (the subject of the article, a fund's holdings), what was refused and what waits
 export function impactTask(store,{now=new Date(),days=7,log=()=>{}}={}){
   const t0=Date.now(), iso=now.toISOString(), PV=store.getDoc(IMPACT_DOC).data||{}, PE=new Map((PV.events||[]).map(e=>[e.k,e]));
   const {events,alias}=buildEvents(store,{now,days,prev:PV});
-  let nNew=0, nUpd=0;
+  const REL=store.getDoc(REL_DOC).data||null, FX=store.getDoc(FIX_DOC).data||{}, cards=cardsOf(store,universeOf(store),{names:nameMap()}), ai=!!process.env.ANTHROPIC_API_KEY;
+  let nNew=0, nUpd=0, nRel=0, nNone=0, nWait=0;
   const out=events.map(e=>{const o=PE.get(e.k)||PE.get(Object.keys(alias).find(a=>alias[a]===e.k)), ch=changesOf(o,e), mat=ch.filter(c=>MATERIAL.has(c));
     const hist=(o&&o.hist||[]).slice(-11); if(ch.length&&(!o||ch.join()!==((o.hist||[]).slice(-1)[0]||{}).ch?.join()))hist.push({at:iso,ch,he:ch.map(c=>CH_HE[c]).join(' · ')});
     const status=!o?'new':mat.length?'update':o.status==='new'&&now-Date.parse(o.seen||iso)<6*H?'new':'same';
     if(status==='new'&&!o)nNew++; else if(status==='update')nUpd++;
-    return {...e,status,rev:(o?o.rev||0:0)+(mat.length&&o?1:0),hist,upd:mat.length&&o?iso:(o&&o.upd)||null,cos:uniq(e.links.filter(l=>l.to.startsWith('co:')).map(l=>l.to.slice(3)))}});
-  const doc={v:1,at:iso,days,n:out.length,events:out,alias,stats:{events:out.length,new:nNew,upd:nUpd,links:out.reduce((t,e)=>t+e.links.length,0),aliases:Object.keys(alias).length,ms:Date.now()-t0}};
+    const rels=relsFor(e,cards,{REL,fix:FX,ai}); for(const r of Object.values(rels)){if(r.rel==='direct'||r.rel==='indirect')nRel++; else if(r.rel==='none')nNone++; else nWait++}
+    return {...e,status,rev:(o?o.rev||0:0)+(mat.length&&o?1:0),hist,upd:mat.length&&o?iso:(o&&o.upd)||null,cos:uniq(e.links.filter(l=>l.to.startsWith('co:')).map(l=>l.to.slice(3))),rels}});
+  const doc={v:2,at:iso,days,n:out.length,events:out,alias,stats:{events:out.length,new:nNew,upd:nUpd,links:out.reduce((t,e)=>t+e.links.length,0),aliases:Object.keys(alias).length,rels:nRel,none:nNone,wait:nWait,ms:Date.now()-t0}};
   store.setDoc(IMPACT_DOC,doc,{silent:true});
-  // the snapshot of the day: what the engine said about each event and each company it reached, as it said it then
+  // the snapshot of the day: what the engine said about each event and each asset it reached, as it said it then
   try{snapshot(store,out,now)}catch(e){log('impact snapshot: '+(e&&e.message||e))}
   store.setMeta('impactStatus',JSON.stringify({at:iso,...doc.stats}));
   CACHE.clear();
-  log(`impact: ${out.length} events (${nNew} new, ${nUpd} updated), ${doc.stats.links} links, ${doc.stats.aliases} joined, ${doc.stats.ms}ms`);
+  log(`impact: ${out.length} events (${nNew} new, ${nUpd} updated), ${doc.stats.links} links, ${nRel} relations to assets (${nNone} refused, ${nWait} waiting), ${doc.stats.aliases} joined, ${doc.stats.ms}ms`);
   return doc.stats;
+}
+// 22.11: the analysis of the pairs that wait (Claude, a few a run), then the registry again with what was decided
+export async function impactRelRun(store,{now=new Date(),days=7,log=()=>{},fetch:f=globalThis.fetch,ask=null,...o}={}){
+  const {events}=buildEvents(store,{now,days});
+  const st=await relTask(store,events,{now,log,fetch:f,ask,names:nameMap(),...o});
+  if(st.judged)impactTask(store,{now,days,log:()=>{}});
+  return st;
 }
 // the companies an event reaches through its links (the paths of the global graph), with the path's direction, strength,
 // confidence and whether it is direct
@@ -268,11 +305,18 @@ export function reachOf(e,{maxHops=4}={}){
 }
 const lastDir=P=>{for(let i=P.length-1;i>=0;i--){const d=P[i].dir; if(d&&d!=='unclear')return d} return 'unclear'};
 const better=(a,b)=>(a.direct!==b.direct?a.direct:a.s!==b.s?a.s>b.s:CONF_R[a.c]!==CONF_R[b.c]?CONF_R[a.c]>CONF_R[b.c]:a.hops<b.hops);
+// 22.11: the snapshot keeps the analysis as it was first said: for each event the place, what happened, and for each asset
+// the relation with its direction, strength, confidence, horizon, explanation, the fact it rests on, and when it was said.
+// What was said earlier the same day is not written over by a later run (the first statement is the one measured later)
+const relSnap=(r,e,iso)=>({rel:r.rel,dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',hz:r.hz||e.hz||null,mech:r.mech||'',fact:r.fact||'',basis:r.basis||null,src:r.src||null,pending:!!r.pending,at:r.at||iso,...(r.via&&r.via.length?{via:r.via}:{})});
 function snapshot(store,events,now){
-  const day=ilParts(now).iso, p=SNAP+'/'+day;
-  const items=events.filter(e=>!e.hidden).map(e=>({k:e.k,he:e.he,cat:e.cat,level:e.level,dir:e.dir,s:e.s,conf:e.conf,first:e.first,last:e.last,status:e.status,rules:e.rules,
-    vis:{gen:e.arts.some(a=>a.src==='gen'),syms:uniq(e.arts.flatMap(a=>a.syms||[])).slice(0,20)},cos:reachOf(e).slice(0,40)}));
-  store.setDoc(p,{day,at:now.toISOString(),n:items.length,events:items},{silent:true});
+  const day=ilParts(now).iso, p=SNAP+'/'+day, iso=now.toISOString(), old=new Map((((store.getDoc(p).data||{}).events)||[]).map(e=>[e.k,e]));
+  const items=events.filter(e=>!e.hidden).map(e=>{const o=old.get(e.k), R={};
+    for(const [s,r] of Object.entries(e.rels||{})){if(r.rel!=='direct'&&r.rel!=='indirect')continue; const was=o&&o.rels&&o.rels[s]; R[s]=was&&!was.pending?was:relSnap(r,e,iso)}
+    return {k:e.k,he:e.he,what:e.what||'',cat:e.cat,level:e.level,dir:e.dir,s:e.s,conf:e.conf,occ:e.occ||null,first:e.first,last:e.last,got:e.seen||null,status:e.status,rules:e.rules,nPubs:e.nPubs,srcRel:e.srcRel,cc:e.cc,
+      loc:e.loc?{lat:e.loc.lat,lon:e.loc.lon,name:e.loc.name||'',how:e.loc.how||null}:null,
+      vis:{gen:e.arts.some(a=>a.src==='gen'),syms:uniq(e.arts.flatMap(a=>a.syms||[])).slice(0,20)},cos:reachOf(e).slice(0,40),rels:R,src:e.arts.slice(0,3).map(a=>({pub:a.pub,title:a.title,link:a.link,at:a.at}))}});
+  store.setDoc(p,{v:2,day,at:iso,n:items.length,events:items},{silent:true});
   // 180 days are kept
   const from=ilParts(new Date(now.getTime()-180*DAY)).iso; for(const r of store.listDocs(SNAP))if(r.id<from)store.deleteDoc(SNAP+'/'+r.id);
 }
@@ -281,7 +325,7 @@ function snapshot(store,events,now){
 export function freshOf(Q,sym,now=new Date()){
   const m=((Q&&Q.meta)||{})[sym]||{}, px=+(((Q&&Q.prices)||{})[sym]), stale=((Q&&Q.stale)||{})[sym];
   if(!(px>0))return {state:'none',he:'אין מחיר',at:null};
-  const il=/^TLV:|^\d{5,9}$/.test(sym)||m.ccy==='ILS'||m.src==='maya', open=il?ilOpen(now):usOpen(now), today=il?ilParts(now).iso:null;
+  const il=/^TLV:|^\d{5,9}$/.test(sym)||m.ccy==='ILS'||m.src==='maya', open=il?ilOpen(now):usOpen(now);
   const rtAt=m.rt?Date.parse(m.rt):0;
   if(stale)return {state:'stale',he:'לא עדכני: '+stale,at:m.at?new Date(m.at).toISOString():null};
   if(!il&&rtAt&&now-rtAt<3*60e3&&open)return {state:'live',he:'זמן אמת (מסחר בארה״ב)',at:new Date(rtAt).toISOString()};
@@ -295,106 +339,127 @@ export function indicesOf(Q,now=new Date()){
     const chg=+b.prev>0?Math.round((b.px/b.prev-1)*1e4)/100:null, il=INDEX_MKT[k]==='IL', open=il?ilOpen(now):usOpen(now), at=b.at?new Date(b.at):null;
     const fr=open&&at&&now-at<40*60e3?{state:'delayed',he:'בעיכוב של עד 15 דקות'}:{state:'close',he:b.date?`סגירה ${String(b.date).slice(8,10)}.${String(b.date).slice(5,7)}`:'נתון אחרון'};
     const mp=marketPt(INDEX_MKT[k]||'US');
-    return {k,name,px:+b.px,prev:+b.prev||null,chg,...fr,at:at?at.toISOString():null,date:b.date||null,loc:mp}})}
+    return {k,name,px:+b.px,prev:+b.prev||null,chg,...fr,open,at:at?at.toISOString():null,date:b.date||null,loc:mp}})}
 
-// ================= a user's view: the paths that end at their assets, and nothing else =================
+// ================= what the market did, apart from what the engine said =================
+// The close before the day of the event, the first close on or after it, and one, five and twenty trading days on; beside
+// each, the same for the benchmark of the asset's market; and the volume of the first day against the twenty before it.
+// Never the cause: two things that happened together are not said to cause each other.
+const isIL=sym=>/^TLV:|^\d{5,9}$/.test(String(sym));
+const closesOf=(store,key)=>{try{const d=store.getDoc('quotes/c_'+String(key).replace(':','_')).data; return d&&Array.isArray(d.d)&&Array.isArray(d.c)&&d.d.length>=2?d:null}catch(e){return null}};
+export function reactionOf(C,B,day){
+  if(!C||!day)return null; const d=C.d, c=C.c, i0=d.findIndex(x=>x>=day);
+  if(i0<0)return {wait:true,last:d[d.length-1]};          // the event is after the last close the site has
+  if(i0<1)return null; const base=+c[i0-1]; if(!(base>0))return null;
+  const pc=(A,b,i)=>{const v=+A[i]; return v>0?Math.round((v/b-1)*1e4)/100:null}, o={base,baseDay:d[i0-1],day0:d[i0],same:d[i0]===day,d1:pc(c,base,i0),d2:pc(c,base,i0+1),d5:pc(c,base,i0+4),d20:pc(c,base,i0+19)};
+  if(B&&Array.isArray(B.d)){const j0=B.d.findIndex(x=>x>=day), bb=j0>=1?+B.c[j0-1]:0; if(bb>0)o.bench={d1:pc(B.c,bb,j0),d2:pc(B.c,bb,j0+1),d5:pc(B.c,bb,j0+4),d20:pc(B.c,bb,j0+19)}}
+  if(Array.isArray(C.v)&&+C.v[i0]>0){const pv=C.v.slice(Math.max(0,i0-20),i0).map(Number).filter(v=>v>0); if(pv.length>=10)o.vol=Math.round(+C.v[i0]/(pv.reduce((t,v)=>t+v,0)/pv.length)*100)/100}
+  return o;
+}
+const evDay=e=>{const f=String(e.first||'').slice(0,10); return e.occ&&(!f||e.occ<=f)?e.occ:f||null};
+const benchOf=sym=>isIL(sym)?['IDX:TA125','ת״א 125']:['IDX:SPX','S&P 500'];
+// the direction that was said against what followed, by the move against the benchmark when there is one (else the move
+// itself): the same way, the opposite, almost no move, or not yet known. A count, never a proof
+const versus=(dir,r,k='d5')=>{if(dir!=='pos'&&dir!=='neg')return 'none'; if(!r||r.wait)return 'wait'; const v=r[k]!=null?r[k]:k==='d5'?r.d1:null; if(v==null)return 'wait';
+  const b=r.bench&&r.bench[k]!=null?r.bench[k]:r.bench&&k==='d5'&&r[k]==null?r.bench.d1:null, x=b==null?v:Math.round((v-b)*100)/100; return Math.abs(x)<0.3?'flat':(x>0)===(dir==='pos')?'same':'opposite'};
+
+// ================= a user's view: the relations of the events to their own assets, and nothing else =================
 const visFor=(store,u)=>{if(!u||ownerLike(u))return null; const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))};
-// the structural links of one portfolio: a held share in a sector, a held fund holding a share
-function structLinks(e,HD,etf,{sectorOf}){
-  const out=[], held=new Map(HD.pos.map(h=>[h.sym,h])), named=new Set(e.links.filter(l=>l.to.startsWith('co:')).map(l=>l.to.slice(3)));
-  // a sector the event touches -> a held share in it that the event does not name
-  for(const l of e.links){if(!l.to.startsWith('sec:'))continue; const g=l.to.slice(4);
-    for(const h of HD.pos){if(h.fund||named.has(h.sym)||sectorOf(h.sym)!==g)continue;
-      out.push({id:l.to+'>co:'+h.sym,from:l.to,to:'co:'+h.sym,dir:null,s:1,conf:'low',confWhy:'החברה לא מוזכרת; הקשר הוא דרך הענף שלה בלבד',rel:'high',direct:false,how:'member',hz:l.hz,
-        why:`${h.sym} נמצאת בענף ${SEC_HE[g]||g} (לפי רשימת הניירות של האתר)`,basis:'structure',arts:[],st:'auto',ev:[{t:'רשימת הניירות של האתר: הענף של המניה',c:'fact'}]})}}
-  // a company the event reaches -> a held fund that holds it (by the fund's published holdings)
-  for(const [F,d] of Object.entries(etf||{})){if(!held.has(F)||!d||!Array.isArray(d.top))continue;
-    for(const [sym,w] of d.top){if(!named.has(sym)||!(+w>=1))continue;
-      out.push({id:'co:'+sym+'>fund:'+F,from:'co:'+sym,to:'fund:'+F,dir:null,s:+w>=5?2:1,conf:'mid',confWhy:'עובדה: הקרן מחזיקה במניה; ההשפעה על הקרן לפי המשקל',rel:'high',direct:false,how:'fund',hz:null,
-        why:`${sym} היא ${w}% מ-${d.etf&&d.etf!==F?d.etf+' (הקרן שהקרן שלך עוקבת כמוה)':F} לפי אחזקות הקרן${d.asOf?' ('+d.asOf.slice(8,10)+'.'+d.asOf.slice(5,7)+')':''}`,basis:'structure',arts:[],st:'auto',
-        ev:[{t:`אחזקות הקרן מ-${d.src||'האתר של הקרן'}${d.asOf?', נכון ל-'+d.asOf:''}`,c:'fact'}]})}}
-  // a broad market fund and an event of the whole market (the reading says "macro"): a weak, general link, said to be so
-  // 19.11: only a fund of the event's own market (an Israeli index fund and the Bank of Israel, an American one and the Fed),
-  // or any broad fund for an event of no country: a rate decision in Washington is not a link to a Tel Aviv index by itself
-  const macro=e.macro&&e.links.some(l=>l.to.startsWith('fac:'))&&eventMacro(e), mkt=s=>/^(TLV:|\d)/.test(s)||/^TA\d+$/.test(s)?'IL':'US';
-  if(macro)for(const h of HD.pos){if(!h.fund||out.some(o=>o.to==='fund:'+h.sym)||(e.cc.length&&!e.cc.includes(mkt(h.sym))))continue; const f=e.links.find(l=>l.to.startsWith('fac:'));
-    out.push({id:f.to+'>fund:'+h.sym,from:f.to,to:'fund:'+h.sym,dir:null,s:1,conf:'low',confWhy:'כלל כללי: אירוע של השוק כולו נוגע לקרן רחבה',rel:'mid',direct:false,how:'broad',hz:f.hz,
-      why:`${h.sym} היא קרן רחבה; לפי הקריאה האירוע עשוי לנגוע במניות רבות במקביל`,basis:'rules',arts:[],st:'auto',ev:[]})}
-  return out;
-}
-// the paths from an event to the assets: depth-first over the event's links and the portfolio's structural ones
-function pathsTo(e,assets,extra,{maxHops=6,perAsset=3}={}){
-  const adj=new Map(), all=[...e.links,...extra]; for(const l of all){if(!adj.has(l.from))adj.set(l.from,[]); adj.get(l.from).push(l)}
-  const found=new Map();
-  const walk=(n,P,seen)=>{if(P.length>=maxHops)return; for(const l of (adj.get(n)||[])){if(seen.has(l.to))continue; const Q=[...P,l];
-      if(assets.has(l.to)){const a=assets.get(l.to), d=lastDir(Q.map(z=>({...z,dir:z.dir||null}))), s=Math.min(...Q.map(z=>z.s||1)), c=Q.map(z=>z.conf).reduce(minC);
-        const p={to:a.sym,node:l.to,links:Q.map(z=>z.id),nodes:[node.ev(e.k),...Q.map(z=>z.to)],dir:d,s,conf:c,direct:Q.length===1&&!!l.direct,hops:Q.length};
-        const L=found.get(a.sym)||[]; L.push(p); found.set(a.sym,L)}
-      walk(l.to,Q,new Set([...seen,l.to]))}};
-  walk(node.ev(e.k),[],new Set([node.ev(e.k)]));
-  const out=[]; for(const L of found.values()){L.sort((a,b)=>better({direct:a.direct,s:a.s,c:a.conf,hops:a.hops},{direct:b.direct,s:b.s,c:b.conf,hops:b.hops})?-1:1); out.push(...L.slice(0,perAsset))}
-  return {paths:out,all};
-}
 // a node's short label (a company by its ticker; its name apart, for a tooltip)
 const nodeLabel=(id)=>{const [t,v]=[id.slice(0,id.indexOf(':')),id.slice(id.indexOf(':')+1)];
   return t==='cty'?(CC_HE[v]||v):t==='fac'?(FAC_HE[v]||v):t==='sec'?(SEC_HE[v]||v):v};
-
 // the asset's place: a share at its headquarters (or its exchange, said to be), a fund or an index at its market
-function assetLoc(sym,fund,coLoc){if(fund)return /^TLV:|^\d{5,9}$/.test(sym)?marketPt('IL'):marketPt('US'); return coLoc(sym)}
-function sparkOf(store,sym,n=30){try{const d=store.getDoc('quotes/c_'+String(sym).replace(':','_')).data; if(!d||!Array.isArray(d.c)||!Array.isArray(d.d))return null; const c=d.c.slice(-n).map(Number).filter(v=>v>0); return c.length>=5?{c,from:d.d[Math.max(0,d.d.length-n)],to:d.d[d.d.length-1]}:null}catch(e){return null}}
+function assetLoc(sym,fund,coLoc){if(fund)return isIL(sym)?marketPt('IL'):marketPt('US'); return coLoc(sym)}
+function sparkOf(store,sym,n=30){const d=closesOf(store,sym); if(!d)return null; const c=d.c.slice(-n).map(Number).filter(v=>v>0); return c.length>=5?{c,from:d.d[Math.max(0,d.d.length-n)],to:d.d[d.d.length-1]}:null}
+// the path of one relation: from the event, through the steps the relation names (each joined by the reading's own links
+// where they exist), into the asset; the last link is the relation itself, with its explanation and what it rests on
+function pathFor(e,r,a){
+  const adj=new Map(); for(const l of e.links){if(!adj.has(l.from))adj.set(l.from,[]); adj.get(l.from).push(l)}
+  const bfs=(from,to)=>{const q=[[from,[]]], seen=new Set([from]); while(q.length){const [n,P]=q.shift(); if(n===to)return P; if(P.length>=4)continue; for(const l of (adj.get(n)||[]))if(!seen.has(l.to)){seen.add(l.to); q.push([l.to,[...P,l]])}} return null};
+  const ev=node.ev(e.k), steps=[ev,...(r.via||[]).filter(v=>v!==a.id&&v!=='co:'+a.sym)], L=[];
+  for(let i=0;i<steps.length-1;i++){const P=bfs(steps[i],steps[i+1]); if(P&&P.length)L.push(...P);
+    else L.push({id:steps[i]+'>'+steps[i+1],from:steps[i],to:steps[i+1],dir:null,s:1,conf:r.conf,confWhy:'',rel:e.srcRel,direct:false,how:null,hz:e.hz,why:'',basis:'analysis',arts:[],st:'auto'})}
+  const last=steps[steps.length-1], z=(e.named||[]).find(q=>q.sym===a.sym);
+  L.push({id:last+'>'+a.id,from:last,to:a.id,dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',confWhy:r.confWhy||'',rel:e.srcRel,direct:r.rel==='direct',how:r.how||(r.src==='structure'?'fund':null),hz:r.hz||e.hz,why:r.mech||'',
+    fact:r.fact||'',basis:r.basis||null,src:r.src||null,up:r.up||'',down:r.down||'',pending:!!r.pending,generic:!!r.generic,arts:(z&&z.arts)||[],st:r.st||'auto',final:true});
+  const seen=new Set(), LL=L.filter(l=>!seen.has(l.id)&&seen.add(l.id));
+  return {links:LL,path:{to:a.sym,node:a.id,links:LL.map(l=>l.id),nodes:[ev,...LL.map(l=>l.to)],dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',direct:r.rel==='direct',hops:LL.length,pending:!!r.pending}};
+}
+// where the fact a relation rests on came from (the card's own source of that field)
+const factSrc=(c,fact)=>{if(!c||!fact)return null; const n=s=>String(s||'').toLowerCase().replace(/\s+/g,' '), f=n(fact);
+  if(c.fund&&n(c.fund.top.map(([s,w])=>`${s} ${w}%`).join(' ')).includes(f.split(',')[0]))return c.src.fund;
+  if(n(c.desc).includes(f))return c.src.desc; if(n(c.segs.map(s=>`${s.k} ${s.pct==null?'':s.pct+'%'}`).join(' ')).includes(f))return c.src.segs; if(n(c.peers.join(' ')).includes(f))return c.src.peers;
+  return c.industry&&n(c.industry).includes(f)?'הענף של החברה (FMP)':c.src.desc||c.src.fund||null};
+const relScore=(I,bySym)=>I.reduce((t,i)=>{const a=bySym.get(i.sym)||{}, w=a.w==null?1:Math.max(0.5,a.w/5); return t+(i.rel==='direct'?3:1)*(i.s||1)*(CONF_R[i.conf]+1)*w*(i.pending?0.6:1)},0);
+const VER_R={primary:0,fact:1,analysis:2,est:3,opinion:4,head:5};
+// the evidence of an event: its sources, the primary ones first, each with what it can confirm and whether it was read
+const evidenceOf=(e,mineNamed)=>e.arts.slice().sort((a,b)=>(VER_R[a.ver]-VER_R[b.ver])||(TIER_R[b.tier]-TIER_R[a.tier])||(String(a.at)<String(b.at)?-1:1)).slice(0,8)
+  .map(a=>({pub:a.pub,title:a.title,link:a.link,at:a.at,got:a.got||null,tier:a.tier,kind:a.kind,cert:a.cert,ver:a.ver,verHe:VER_HE[a.ver]||'',rd:a.rd||null,primary:!!a.primary,supports:mineNamed.filter(z=>(z.arts||[]).includes(a.i)).map(z=>z.sym)}));
 
 export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
   const pa=pathsOf(u), P=store.getDoc(pa.portfolio).data, Q=store.getDoc('quotes/latest').data||{}, HD=holdingsOf(P,Q);
   const vis=visFor(store,u), sec=sectorMap(), sectorOf=s=>{const g=sec.get(s)||''; return ({'Information Technology':'Technology',Financials:'Finance',Materials:'Basic Materials',Healthcare:'Health Care'})[g]||g};
   const {events,coLoc}=buildEvents(store,{now,days,visible:vis,visKey:vis?'u:'+u.id+':'+[...symsOfUser(store,u.id)].sort().join(','):'all'});
   const PV=store.getDoc(IMPACT_DOC).data||{}, PE=new Map((PV.events||[]).map(e=>[e.k,e]));
-  const etfAll=(store.getDoc('research/etf').data||{}).by||{}, etf=Object.fromEntries(Object.entries(etfAll).filter(([k])=>HD.pos.some(h=>h.sym===k)));
   const mine=new Set(HD.pos.map(h=>h.sym)), names=nameMap(), coName=s=>(mine.has(s)&&((Q.meta||{})[s]||{}).name)||names.get(s)||null;
+  const REL=store.getDoc(REL_DOC).data||null, FX=store.getDoc(FIX_DOC).data||{}, ai=!!process.env.ANTHROPIC_API_KEY, cards=cardsOf(store,[...mine],{names});
   // the assets: the holdings, each with its price, today's move (the halo: the market's own move, nothing else) and freshness
-  const assets=new Map(), A=[];
-  let dayV=0, dayKnown=true;
+  const A=[], bySym=new Map(); let dayV=0, dayKnown=true;
   for(const h of HD.pos){const px=+((Q.prices||{})[h.sym]), pv=+((Q.prev||{})[h.sym]), chg=px>0&&pv>0?Math.round((px/pv-1)*1e4)/100:null, fr=freshOf(Q,h.sym,now);
     if(h.w!=null&&chg!=null&&HD.total)dayV+=h.val*(1-1/(1+chg/100)); else dayKnown=false;
-    const id=(h.fund?'fund:':'co:')+h.sym, loc=assetLoc(h.sym,h.fund,coLoc);
-    const a={sym:h.sym,id,name:coName(h.sym),kind:h.fund?'fund':'stock',w:h.w,px:px>0?px:null,chg,fresh:fr,loc,sec:h.fund?null:sectorOf(h.sym)||null,
-      halo:chg==null||fr.state==='none'?'none':chg>0.05?'up':chg<-0.05?'down':'flat'};
-    assets.set(id,a); A.push(a)}
-  // a held fund named as a company in a reading ("co:QQQ") is the same asset
-  for(const a of A)if(a.kind==='fund')assets.set('co:'+a.sym,a);
-  // the events that reach the portfolio, each with only its paths to the assets
-  const out=[], usedL=new Map(), usedN=new Set();
+    const c=cards.get(h.sym), fund=h.fund||(c&&c.kind==='fund'), id=(fund?'fund:':'co:')+h.sym, loc=assetLoc(h.sym,fund,coLoc);
+    const a={sym:h.sym,id,name:coName(h.sym),kind:fund?'fund':'stock',w:h.w,px:px>0?px:null,chg,fresh:fr,loc,sec:fund?null:sectorOf(h.sym)||null,open:isIL(h.sym)?ilOpen(now):usOpen(now),
+      biz:c&&c.about&&c.about.line?c.about.line:null,industry:(c&&c.industry)||null,facts:!!(c&&c.has),
+      // the halo: the asset's own move in the market today. Grey when there is no fresh figure: never the engine's direction
+      halo:chg==null||fr.state==='none'||fr.state==='stale'?'none':chg>0.05?'up':chg<-0.05?'down':'flat'};
+    A.push(a); bySym.set(h.sym,a)}
+  const CL=new Map(), closes=k=>{if(!CL.has(k))CL.set(k,closesOf(store,k)); return CL.get(k)};
+  // what the market did after the event, for one asset: from the closes, with the benchmark beside it; and the move since,
+  // by the last price, only when that price is newer than the close before the event (its freshness said, never "live" when not)
+  const marketOf=(a,e)=>{const day=evDay(e), [bk,bn]=benchOf(a.sym), r=reactionOf(closes(a.sym),closes(bk),day), m=(Q.meta||{})[a.sym]||{};
+    const o={day,bench:bn,open:a.open,fresh:{state:a.fresh.state,he:a.fresh.he,at:a.fresh.at||null},r:r||null,since:null,today:a.chg==null?null:a.chg};
+    if(r&&!r.wait&&r.base&&a.px&&a.fresh.state!=='none'&&a.fresh.state!=='stale'&&(!m.date||m.date>=r.day0))o.since=Math.round((a.px/r.base-1)*1e4)/100;
+    return o};
+  const out=[], usedL=new Map(); let waiting=0;
   for(const e of events){if(e.hidden)continue;
-    const extra=structLinks(e,HD,etf,{sectorOf}), {paths,all}=pathsTo(e,assets,extra); if(!paths.length)continue;
-    // a fund the article lists without naming it in the headline is reached through what it holds, not directly (as the alerts)
-    const said=`${e.title} ${e.he}`, named=s=>new RegExp(`(^|[^A-Za-z0-9])${reEsc(String(s).replace(/^TLV:/,''))}([^A-Za-z0-9]|$)`).test(said);
-    for(const p of paths){const a=assets.get(p.node); if(a&&a.kind==='fund'&&p.direct&&!named(a.sym)){p.direct=false; p.conf='low'; p.note='הקרן מופיעה בכתבה כנכס קשור, לא בכותרת: הקשר עקיף, דרך מה שהקרן מחזיקה'}}
-    const byId=new Map(all.map(l=>[l.id,l]));
-    for(const p of paths){for(const id of p.links){const l=byId.get(id); if(!l)continue; const dir=l.dir||p.dir;
-        usedL.set(e.k+'|'+id,{id,ek:e.k,from:l.from,to:l.to,dir,move:l.move||null,s:l.s||1,conf:l.conf,confWhy:l.confWhy||'',rel:l.rel,direct:!!l.direct,how:l.how||null,hz:l.hz||e.hz,why:l.why||'',basis:l.basis,st:l.st||'auto',
-          ev:l.ev||l.arts.map(i=>{const a=e.arts[i]; return a?{t:a.he||a.title,pub:a.pub,link:a.link,at:a.at,tier:a.tier}:null}).filter(Boolean).slice(0,4)})}
-      for(const n of p.nodes)usedN.add(n)}
-    const o=PE.get(e.k);
-    out.push({k:e.k,he:e.he,what:e.what,more:e.more,unknown:e.unknown,cats:e.cats,cat:e.cat,catHe:CAT_HE[e.cat],type:e.type,level:e.level,kind:e.kind,st:e.st,stHe:e.stHe,occ:e.occ,first:e.first,last:e.last,
-      status:o?(o.status||'same'):'new',upd:o&&o.upd||null,cc:e.cc,regions:e.regions,loc:e.loc,dir:e.dir,s:e.s,conf:e.conf,confWhy:e.confWhy,hz:e.hz,hzWhy:e.hzWhy,rules:e.rules,nArt:e.nArt,nPubs:e.nPubs,srcRel:e.srcRel,
-      src:e.src.map(s=>({pub:s.pub,tier:s.tier,n:s.n})),arts:e.arts.slice(0,6).map(a=>({pub:a.pub,title:a.title,link:a.link,at:a.at,tier:a.tier,he:a.he})),evid:e.evid.map(v=>({t:v.t,c:v.c})),
-      touches:uniq(paths.map(p=>p.to)),paths,rel:relOf(paths,assets)})}
+    const rels=relsFor(e,cards,{REL,fix:FX,ai}), impacts=[], paths=[], checked=[];
+    for(const [sym,r] of Object.entries(rels)){const a=bySym.get(sym); if(!a)continue;
+      if(r.rel!=='direct'&&r.rel!=='indirect'){if(r.rel==='wait'&&r.pending)waiting++; checked.push({sym,rel:r.rel,why:r.why||''}); continue}
+      const p=pathFor(e,r,a), c=cards.get(sym), arts3=e.arts.slice(0,3).map(x=>({t:x.title||x.he,pub:x.pub,link:x.link,at:x.at,tier:x.tier}));
+      paths.push(p.path);
+      for(const l of p.links){const ev0=l.final?[...(r.fact?[{t:`עובדה מפרטי הנכס: "${r.fact}"`,pub:factSrc(c,r.fact)||'',fact:true}]:[]),...((l.arts||[]).length?l.arts.map(i=>e.arts[i]).filter(Boolean).slice(0,3).map(x=>({t:x.title||x.he,pub:x.pub,link:x.link,at:x.at,tier:x.tier})):arts3)]
+          :(l.arts||[]).map(i=>{const x=e.arts[i]; return x?{t:x.title||x.he,pub:x.pub,link:x.link,at:x.at,tier:x.tier}:null}).filter(Boolean).slice(0,4);
+        usedL.set(e.k+'|'+l.id,{id:l.id,ek:e.k,from:l.from,to:l.to,dir:l.dir||p.path.dir,move:l.move||null,s:l.s||1,conf:l.conf,confWhy:l.confWhy||'',rel:l.rel,direct:!!l.direct,how:l.how||null,hz:l.hz||e.hz,why:l.why||'',basis:l.basis,st:l.st||'auto',
+          ...(l.final?{final:true,fact:l.fact||'',src:l.src||null,up:l.up||'',down:l.down||'',pending:!!l.pending,generic:!!l.generic}:{}),ev:ev0})}
+      const z=(e.named||[]).find(q=>q.sym===sym);
+      impacts.push({sym,kind:a.kind,rel:r.rel,dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',confWhy:r.confWhy||'',hz:r.hz||e.hz,mech:r.mech||'',fact:r.fact||'',factSrc:factSrc(c,r.fact),basis:r.basis||null,src:r.src||null,up:r.up||'',down:r.down||'',
+        pending:!!r.pending,generic:!!r.generic,st:r.st||'auto',holds:r.holds||null,said:!!(z&&(z.said===true||(z.how==='direct'&&z.said!==false))),path:p.path.nodes,mkt:marketOf(a,e)})}
+    if(!impacts.length)continue;
+    const o=PE.get(e.k), isSaid=z=>z.said===true||(z.how==='direct'&&z.said!==false), verd=s=>{const r=rels[s]; return r?{rel:r.rel,why:r.rel==='none'||r.rel==='wait'?r.why||'':''}:null};
+    // the companies: the ones the source names, apart from the ones the engine found (the reading's own inference, or the
+    // analysis of an asset the article does not name)
+    const said=(e.named||[]).filter(isSaid).map(z=>({sym:z.sym,name:coName(z.sym),how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})}));
+    const found=[...(e.named||[]).filter(z=>!isSaid(z)).map(z=>({sym:z.sym,name:coName(z.sym),how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),by:'reading',...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})})),
+      ...impacts.filter(i=>!(e.named||[]).some(z=>z.sym===i.sym)).map(i=>({sym:i.sym,name:coName(i.sym),how:i.rel,dir:i.dir,why:i.mech,mine:true,by:i.src==='structure'?'structure':'analysis',verdict:{rel:i.rel,why:''}}))];
+    out.push({k:e.k,he:e.he,what:e.what,chg:e.chg||'',eco:e.eco||'',more:e.more,unknown:e.unknown,cats:e.cats,cat:e.cat,catHe:CAT_HE[e.cat],type:e.type,level:e.level,kind:e.kind,cert:e.cert,st:e.st,stHe:e.stHe,
+      occ:e.occ,first:e.first,last:e.last,got:e.seen||null,status:o?(o.status||'same'):'new',upd:o&&o.upd||null,cc:e.cc,regions:e.regions,loc:e.loc,dir:e.dir,s:e.s,conf:e.conf,confWhy:e.confWhy,hz:e.hz,hzWhy:e.hzWhy,rules:e.rules,
+      nArt:e.nArt,nPubs:e.nPubs,srcRel:e.srcRel,src:e.src.map(s=>({pub:s.pub,tier:s.tier,n:s.n})),evidence:evidenceOf(e,(e.named||[]).filter(z=>mine.has(z.sym))),dups:(e.dups||[]).length,
+      facs:(e.facs||[]).map(f=>({k:f.k,he:FAC_HE[f.k]||f.k,move:f.move,why:f.why})),said,found,impacts,checked,touches:uniq(impacts.map(i=>i.sym)),paths,rel:relScore(impacts,bySym)})}
   out.sort((a,b)=>(b.rel-a.rel)||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1));
   const ev=out.slice(0,limit), keepK=new Set(ev.map(e=>e.k));
   const links=[...usedL.values()].filter(l=>keepK.has(l.ek));
-  const nodes={}; for(const e of ev){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const p of e.paths)for(const n of p.nodes)if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
-      nodes[n]={t,label:nodeLabel(n),...(t==='co'||t==='fund'?{name:coName(n.slice(n.indexOf(':')+1))}:{}),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?(assets.get(n)||{}).loc||coLoc(n.slice(3)):t==='fund'?(assets.get(n)||{}).loc||null:null,mine:assets.has(n)}}}
+  const nodes={}; for(const e of ev){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const p of e.paths)for(const n of p.nodes)if(!nodes[n]){const t=n.slice(0,n.indexOf(':')), s=n.slice(n.indexOf(':')+1), a=(t==='co'||t==='fund')?bySym.get(s):null;
+      nodes[n]={t,label:nodeLabel(n),...(t==='co'||t==='fund'?{name:coName(s)}:{}),loc:t==='cty'?countryPt(s):a?a.loc:t==='co'?coLoc(s):null,mine:!!a}}}
   // the portfolio's line: the value and today's move only when every price is known (else said to be partial)
-  const pf={total:HD.total,n:HD.pos.length,known:HD.wOk,day:HD.wOk&&dayKnown?Math.round(dayV):null,dayPct:HD.wOk&&dayKnown&&HD.total?Math.round(dayV/(HD.total-dayV)*1e4)/100:null,usdPct:HD.usdPct,
-    fresh:worstFresh(A)};
-  const keys=A.filter(a=>a.kind==='stock'||a.kind==='fund').sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,6).map(a=>({...a,spark:sparkOf(store,a.sym),events:ev.filter(e=>e.touches.includes(a.sym)).length}));
-  return {mode:'me',at:now.toISOString(),days,engineAt:PV.at||null,pf,assets:A,keys,indices:indicesOf(Q,now),events:ev,links,nodes,
+  const pf={total:HD.total,n:HD.pos.length,known:HD.wOk,day:HD.wOk&&dayKnown?Math.round(dayV):null,dayPct:HD.wOk&&dayKnown&&HD.total?Math.round(dayV/(HD.total-dayV)*1e4)/100:null,usdPct:HD.usdPct,fresh:worstFresh(A)};
+  for(const a of A)a.events=ev.filter(e=>e.touches.includes(a.sym)).length;
+  const keys=A.slice().sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,6).map(a=>({...a,spark:sparkOf(store,a.sym)}));
+  const RS=relStatus(store);
+  return {mode:'me',at:now.toISOString(),days,engineAt:PV.at||null,engine:{ai,waiting,relAt:RS&&RS.at||null,capped:!!(RS&&RS.capped)},pf,assets:A,keys,indices:indicesOf(Q,now),events:ev,links,nodes,
     priceLabel:Q.priceLabel||'',filters:filtersOf(ev,A),
-    notes:['הכיוון הוא השערה מקריאת החדשות, לא תחזית ולא המלצה. קו ירוק או אדום הוא כיוון אפשרי; ההילה סביב נכס היא התנועה שלו בשוק בפועל היום.',
-      'מוצגים רק אירועים שיש להם מסלול מוסבר לנכס בתיק. חברה שלא בתיק מופיעה רק כחוליה במסלול כזה.']};
+    notes:['הכיוון הוא השערה מניתוח החדשות, לא תחזית ולא המלצה. קו ירוק או אדום הוא כיוון אפשרי; ההילה סביב נכס היא התנועה שלו בשוק בפועל היום.',
+      'מוצג רק אירוע שנמצא לו קשר עסקי מוסבר לנכס בתיק, נכס אחרי נכס. חברה שלא בתיק מופיעה רק כחוליה במסלול כזה.']};
 }
-// an event of the whole market: the reading said so (macro), Claude's, a level that counts
-function eventMacro(e){return e.level==='crit'||e.level==='imp'?e.cats.some(c=>['rates','macro','war','geo','trade','energy'].includes(c)):false}
-const relOf=(paths,assets)=>paths.reduce((t,p)=>{const a=assets.get(p.node)||{}; const w=a.w==null?1:Math.max(0.5,a.w/5); return t+(p.direct?3:1)*p.s*(CONF_R[p.conf]+1)*w},0);
 const FR_R={none:0,stale:1,close:2,delayed:3,live:4};
 const worstFresh=A=>{if(!A.length)return null; const w=A.reduce((b,a)=>FR_R[a.fresh.state]<FR_R[b.fresh.state]?a:b); const n=A.filter(a=>a.fresh.state===w.fresh.state).length; return {state:w.fresh.state,he:w.fresh.he,n}};
 function filtersOf(ev,A){const cc=new Map(), reg=new Set(), sec=new Set(), cats=new Set();
@@ -406,36 +471,46 @@ function filtersOf(ev,A){const cc=new Map(), reg=new Set(), sec=new Set(), cats=
 export function impactWorld(store,{now=new Date(),days=7,limit=200}={}){
   const PV=store.getDoc(IMPACT_DOC).data||null, from=new Date(now.getTime()-days*DAY).toISOString();
   const evs=(PV&&PV.events||[]).filter(e=>(e.last||'')>=from);
-  const Q=store.getDoc('quotes/latest').data||{};
+  const Q=store.getDoc('quotes/latest').data||{}, names=nameMap();
   // the duplicates: the articles of one event that are the same story, and the keys joined into another
   const dups=evs.filter(e=>(e.dups||[]).length||Object.values(PV.alias||{}).includes(e.k)).map(e=>({k:e.k,he:e.he,dups:(e.dups||[]).length,joined:Object.entries(PV.alias||{}).filter(([,v])=>v===e.k).map(([k])=>k),nArt:e.nArt,nPubs:e.nPubs})).slice(0,60);
   // the weak links: low confidence, a headline-only reading, or a single weak source
   const weak=[]; for(const e of evs)for(const l of e.links){const why=[]; if(l.conf==='low')why.push('ביטחון נמוך'); if(l.basis==='rules')why.push('קריאה לפי כותרת בלבד'); if(l.rel==='low')why.push('מקור חלש'); if(!l.why)why.push('בלי הסבר');
     if(why.length&&l.st==='auto')weak.push({k:e.k,he:e.he,link:l.id,from:l.from,to:l.to,why})}
+  // 22.11: the weak relations to assets: at low confidence, resting on no fact of the asset, the same explanation given to
+  // two assets, still waiting for the analysis, or an asset the site holds no facts about
+  const weakRel=[], waitRel=[]; for(const e of evs)for(const [sym,r] of Object.entries(e.rels||{})){
+      if(r.rel==='wait'){waitRel.push({k:e.k,he:e.he,sym,why:r.why||'',sigs:r.sigs||[]}); continue} if(r.rel==='none'||r.st==='ok')continue; const why=[];
+      if(r.conf==='low')why.push('ביטחון נמוך'); if(r.src==='ai'&&!r.grounded)why.push('לא נשען על עובדה מפרטי הנכס'); if(r.generic)why.push('אותו הסבר לשני נכסים'); if(r.pending)why.push('ממתין לניתוח נפרד'); if(r.cardHas===false)why.push('אין לאתר עובדות על הנכס');
+      if(why.length)weakRel.push({k:e.k,he:e.he,sym,rel:r.rel,mech:r.mech||'',why})}
   // the failures of the feeds that make the picture: the reading, the gathering, the engine itself
-  const M=k=>{try{return JSON.parse(store.getMeta(k)||'null')}catch(e){return null}}, XS=M('newsxStatus'), NS=M('newsStatus'), IS=M('impactStatus');
+  const M=k=>{try{return JSON.parse(store.getMeta(k)||'null')}catch(e){return null}}, XS=M('newsxStatus'), NS=M('newsStatus'), IS=M('impactStatus'), RS=relStatus(store);
   const fails=[]; if(XS&&XS.first)fails.push({k:'newsx',he:'קריאת הכתבות (צ׳יקו)',note:XS.first,at:XS.at}); if(XS&&!XS.ai)fails.push({k:'newsx-key',he:'קריאת הכתבות',note:'אין ANTHROPIC_API_KEY: האירועים נקראים לפי כותרת בלבד',at:XS.at});
   if(XS&&XS.waiting>30)fails.push({k:'newsx-wait',he:'כתבות שממתינות לקריאה',note:`${XS.waiting} כתבות עוד לא נקראו`,at:XS.at});
   if(NS&&NS.first)fails.push({k:'news',he:'איסוף הכתבות',note:String(NS.first).replace(/^[A-Z0-9.\-^=]{1,12}:\s*/,'נייר אחד: '),at:NS.at});
   if(!IS)fails.push({k:'impact',he:'מנוע ההשפעה',note:'עוד לא רץ; ירוץ אחרי הקריאה הבאה של החדשות',at:null}); else if(now-Date.parse(IS.at)>3*H)fails.push({k:'impact-old',he:'מנוע ההשפעה',note:'הריצה האחרונה לפני יותר משלוש שעות',at:IS.at});
+  if(RS&&!RS.ai)fails.push({k:'rel-key',he:'ניתוח הקשר לכל נכס',note:'אין ANTHROPIC_API_KEY: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה',at:RS.at});
+  if(RS&&RS.first)fails.push({k:'rel',he:'ניתוח הקשר לכל נכס',note:RS.first,at:RS.at}); if(RS&&RS.capped)fails.push({k:'rel-cap',he:'ניתוח הקשר לכל נכס',note:`התקרה היומית הושגה (${RS.used} זוגות); השאר ימתינו למחר`,at:RS.at});
   // the assets without a fresh price: the companies the events reach (public news), never anybody's holdings
   const named=uniq(evs.flatMap(e=>e.cos||[])), stale=[]; for(const s of named){const f=freshOf(Q,s,now); if(f.state==='none'||f.state==='stale')stale.push({sym:s,state:f.state,he:f.he,at:f.at})}
   const FX=store.getDoc(FIX_DOC).data||{};
   const nodes={}; const coLoc=sym=>{let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){} return hqOf(sym,{fix:FX.hq||null,about})||marketPt(/^TLV:/.test(sym)?'IL':'US')};
   const list=evs.slice(0,limit);
   for(const e of list){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const l of e.links)for(const n of [l.from,l.to])if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
-      nodes[n]={t,label:nodeLabel(n),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}}
-  return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...e,catHe:CAT_HE[e.cat]})),nodes,indices:indicesOf(Q,now),
-    diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,fails,stale:stale.slice(0,80),fixes:Object.keys(FX.link||{}).length+Object.keys(FX.ev||{}).length+Object.keys(FX.hq||{}).length+Object.keys(FX.alias||{}).length},
-    filters:filtersOf(list,[]),tiers:REL_HE};
+      nodes[n]={t,label:nodeLabel(n),...(t==='co'?{name:names.get(n.slice(3))||null}:{}),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}
+    for(const s of Object.keys(e.rels||{})){const n='co:'+s; if(!nodes[n])nodes[n]={t:'co',label:s,name:names.get(s)||null,loc:coLoc(s)}}}
+  return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...e,catHe:CAT_HE[e.cat],got:e.seen||null})),nodes,indices:indicesOf(Q,now),
+    diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,weakRel:weakRel.slice(0,150),nWeakRel:weakRel.length,waitRel:waitRel.slice(0,100),nWaitRel:waitRel.length,fails,stale:stale.slice(0,80),rel:RS,
+      fixes:Object.keys(FX.link||{}).length+Object.keys(FX.ev||{}).length+Object.keys(FX.hq||{}).length+Object.keys(FX.alias||{}).length+Object.keys(FX.rel||{}).length},
+    filters:filtersOf(list,[]),tiers:REL_HE,ver:VER_HE};
 }
 
 // ================= the admin's hand: approve, reject or correct; every change audited with what it was =================
-const FIX_KINDS=['link','event','hq','join','split'];
+const FIX_KINDS=['link','event','hq','join','split','rel'];
 export function impactFix(store,user,b,{ip=''}={}){
   if(!can(user,'edit'))throw Object.assign(new Error('permission_denied'),{status:403});
   const kind=String(b&&b.kind||''); if(!FIX_KINDS.includes(kind))throw Object.assign(new Error('bad_kind'),{status:400});
-  const D=store.getDoc(FIX_DOC).data||{}, FX={link:{},ev:{},hq:{},alias:{},split:{},...D}, at=new Date().toISOString(), by=user.email||user.id;
+  const D=store.getDoc(FIX_DOC).data||{}, FX={link:{},ev:{},hq:{},alias:{},split:{},rel:{},...D}, at=new Date().toISOString(), by=user.email||user.id;
   const k=str(b.k,80), okK=s=>/^(ev:[a-z0-9\-]{1,60}|rd:[A-Z0-9:.\-]{1,30}:\d{4}-\d\d-\d\d|id:[a-f0-9]{12})$/.test(s);
   let target='', before=null, after=null;
   if(kind==='link'){const id=str(b.id,200); if(!okK(k)||!/^[a-z]{2,4}:[^>]{1,80}>[a-z]{2,4}:[^>]{1,80}$/.test(id))throw Object.assign(new Error('bad_link'),{status:400});
@@ -443,6 +518,14 @@ export function impactFix(store,user,b,{ip=''}={}){
     if(st==='auto')delete FX.link[key]; else FX.link[key]={st,...(['pos','neg','mixed','unclear'].includes(b.dir)?{dir:b.dir}:{}),...([1,2,3].includes(+b.s)?{s:+b.s}:{}),...(CONF_OF.includes(b.conf)?{conf:b.conf}:{}),
       ...(str(b.why,300)?{why:str(b.why,300)}:{}),...(str(b.note,300)?{note:str(b.note,300)}:{}),by,at};
     after=FX.link[key]||null; target=key}
+  // 22.11: the relation of an event to an asset: approve it, refuse it, correct its direction, strength, confidence or
+  // explanation, add one the engine did not find (said to be by hand), or give it back to the engine
+  else if(kind==='rel'){const sym=str(b.sym,16).toUpperCase(); if(!okK(k)||!/^(TLV:)?[A-Z0-9.\-]{1,10}$/.test(sym))throw Object.assign(new Error('bad_rel'),{status:400});
+    const st=['ok','no','edit','auto','add'].includes(b.st)?b.st:'edit', key=k+'|'+sym; before=FX.rel[key]||null;
+    if(st==='add'&&!str(b.why,420))throw Object.assign(new Error('why_required'),{status:400});
+    if(st==='auto')delete FX.rel[key]; else FX.rel[key]={st,...(['pos','neg','mixed','unclear'].includes(b.dir)?{dir:b.dir}:{}),...([1,2,3].includes(+b.s)?{s:+b.s}:{}),...(CONF_OF.includes(b.conf)?{conf:b.conf}:{}),
+      ...(str(b.why,420)?{why:str(b.why,420)}:{}),...(str(b.note,300)?{note:str(b.note,300)}:{}),...(st==='add'?{rel:b.rel==='direct'?'direct':'indirect'}:{}),by,at};
+    after=FX.rel[key]||null; target='rel:'+key}
   else if(kind==='event'){if(!okK(k))throw Object.assign(new Error('bad_event'),{status:400}); before=FX.ev[k]||null;
     const o={...(before||{})}; if(b.cat!==undefined){if(b.cat&&!CATS.includes(b.cat))throw Object.assign(new Error('bad_cat'),{status:400}); if(b.cat)o.cat=b.cat; else delete o.cat}
     if(b.loc!==undefined){if(b.loc===null)delete o.loc; else{const lat=+b.loc.lat, lon=+b.loc.lon; if(!(lat>=-90&&lat<=90&&lon>=-180&&lon<=180))throw Object.assign(new Error('bad_loc'),{status:400}); o.loc={lat,lon,name:str(b.loc.name,60)}}}
@@ -462,38 +545,77 @@ export function impactFix(store,user,b,{ip=''}={}){
   return {ok:true,kind,target,before,after};
 }
 
-// ================= the history of one asset: its closes with the events that touched it, what was said then, what followed =================
-// Nearness in time is not cause: the page says so beside every event. "What followed" is the asset's move after the day of
-// the event (1, 5 and 20 trading days, server/newsx.js moveAfter), against the direction the engine gave then.
+// ================= the history =================
+// Nearness in time is not cause: the page says so beside every event. "What was said" is what the engine said on the day it
+// first saw the event (the snapshot of that day); "what followed" is the asset's move after the day of the event, with the
+// benchmark beside it, never claimed to be because of the event.
+const dayOk=d=>typeof d==='string'&&/^\d{4}-\d\d-\d\d$/.test(d)&&!isNaN(Date.parse(d))?d:null;
+const rangeOf=(from,to,now,span=90)=>{const today=ilParts(now).iso; let t1=dayOk(to)||today; if(t1>today)t1=today; let t0=dayOk(from)||ilParts(new Date(Date.parse(t1)-span*DAY)).iso; if(t0>t1)t0=t1; return {t0,t1,today}};
+// what the engine said then about one asset: the relation kept in the snapshot (22.11 on); for an older snapshot, the
+// company the reading named (and, for a fund, a holding of it), said to be the earlier engine's
+const saidOf=(e,sym,inFund)=>{const r=e.rels&&e.rels[sym]; if(r)return {dir:r.dir,s:r.s,conf:r.conf,direct:r.rel==='direct',via:(r.via||[]).map(v=>v.slice(v.indexOf(':')+1)).join(' ← ')||null,mech:r.mech||'',fact:r.fact||'',basis:r.basis||null,hz:r.hz||null,pending:!!r.pending,at:r.at||null};
+  if(e.rels)return null; const d=(e.cos||[]).find(c=>c.sym===sym); if(d)return {dir:d.dir,s:d.s,conf:d.c,direct:!!d.direct,via:null,mech:'',legacy:true};
+  const f=(e.cos||[]).find(c=>inFund.has(c.sym)); return f?{dir:f.dir,s:f.s,conf:f.c,direct:false,via:f.sym,mech:'',legacy:true}:null};
 export function impactHistory(store,u,sym,{from=null,to=null,now=new Date()}={}){
   const pa=pathsOf(u), P=store.getDoc(pa.portfolio).data, mine=new Set(((P&&P.positions)||[]).map(p=>p&&p.sym).filter(Boolean));
   if(!mine.has(sym))throw Object.assign(new Error('not_yours'),{status:403});
   const vis=ownerLike(u)?null:symsOfUser(store,u.id), visOk=v=>!vis||!!(v&&(v.gen||(v.syms||[]).some(s=>vis.has(s))));
-  const day=d=>d&&/^d{4}-dd-dd$/.test(d)?d:null;
-  const t1=day(to)||ilParts(now).iso, t0=day(from)||ilParts(new Date(Date.parse(t1)-90*DAY)).iso;
-  const C=store.getDoc('quotes/c_'+String(sym).replace(':','_')).data||null;
-  const series=C&&Array.isArray(C.d)?C.d.map((d,i)=>[d,+C.c[i]]).filter(([d,v])=>d>=t0&&d<=t1&&v>0):[];
-  // a fund: the events that reached one of its largest holdings count, said so ("דרך NVDA")
-  const etf=((store.getDoc('research/etf').data||{}).by||{})[sym], inFund=new Set(((etf&&etf.top)||[]).filter(([,w])=>+w>=1).map(([s])=>s));
-  const hitOf=cos=>{const d=(cos||[]).find(c=>c.sym===sym); if(d)return {...d,via:null}; const f=(cos||[]).find(c=>inFund.has(c.sym)); return f?{...f,direct:false,via:f.sym}:null};
+  const {t0,t1,today}=rangeOf(from,to,now), C=closesOf(store,sym), [bk,bn]=benchOf(sym), B=closesOf(store,bk);
+  const series=C?C.d.map((d,i)=>[d,+C.c[i]]).filter(([d,v])=>d>=t0&&d<=t1&&v>0):[];
+  const etf=((store.getDoc('research/etf').data||{}).by||{})[sym], inFund=new Set(((etf&&etf.top)||[]).filter(([,w])=>+w>=3).map(([s])=>s));
   const seen=new Map(), snaps=store.listDocs(SNAP).map(r=>r.id).sort(), firstSnap=snaps[0]||null;
-  // 1. the snapshots: what the engine said about the event on the day it saw it
-  for(const id of snaps){if(id<t0||id>t1)continue; const S=store.getDoc(SNAP+'/'+id).data||{};
-    for(const e of (S.events||[])){if(seen.has(e.k)||!visOk(e.vis))continue; const h=hitOf(e.cos); if(!h)continue;
-      seen.set(e.k,{k:e.k,he:e.he,cat:e.cat,catHe:CAT_HE[e.cat]||'',level:e.level,day:id,first:e.first,said:{dir:h.dir,s:h.s,conf:h.c,direct:!!h.direct,via:h.via},rules:!!e.rules,src:'snap'})}}
+  // 1. the snapshots: what the engine said about the event on the day it first saw it; the event is placed on its own day
+  for(const id of snaps){if(id>t1)break; const S=store.getDoc(SNAP+'/'+id).data||{};
+    for(const e of (S.events||[])){if(seen.has(e.k)||!visOk(e.vis))continue; const h=saidOf(e,sym,inFund); if(!h)continue; const day=evDay(e)||id; if(day<t0||day>t1){if(day<t0)seen.set(e.k,null); continue}
+      seen.set(e.k,{k:e.k,he:e.he,what:e.what||'',cat:e.cat,catHe:CAT_HE[e.cat]||'',level:e.level,day,occ:e.occ||null,first:e.first||null,got:e.got||null,saidDay:id,said:h,rules:!!e.rules,src:'snap',sources:e.src||[]})}}
   // 2. before the snapshots began: the archive of the readings (research/newsarc), each article as it was read then
   if(!firstSnap||t0<firstSnap)for(const r of store.listDocs('research/newsarc')){for(const it of ((r.data||{}).items||[])){const d=String(it.at||'').slice(0,10);
       if(d<t0||d>t1||(firstSnap&&d>=firstSnap))continue; if(vis&&!(it.src==='gen'||(it.syms||[]).some(s=>vis.has(s))))continue;
-      const z=(it.aff||[]).find(a=>a.sym===sym)||((it.syms||[]).includes(sym)?{sym,how:'direct',dir:it.dir}:null)||(()=>{const f=(it.aff||[]).find(a=>inFund.has(a.sym)); return f?{...f,how:'fund',via:f.sym}:null})();
+      const z=(it.aff||[]).find(a=>a.sym===sym)||(()=>{const f=(it.aff||[]).find(a=>inFund.has(a.sym)&&a.how==='direct'); return f?{...f,how:'fund',via:f.sym}:null})();
       if(!z)continue; const k=it.ev?'ev:'+it.ev:'id:'+it.id; if(seen.has(k))continue; const cat=catsOf(it,{title:''})[0];
-      seen.set(k,{k,he:it.he,cat,catHe:CAT_HE[cat]||'',level:it.level,day:d,first:it.at,said:{dir:z.dir||it.dir,s:Math.max(1,LV[it.level]||1),conf:it.rules?'low':it.cert==='fact'?'high':'mid',direct:z.how==='direct',via:z.via||null},rules:!!it.rules,src:'arc'})}}
-  const evs=[...seen.values()].sort((a,b)=>a.day<b.day?-1:1).slice(-60);
-  // 3. what followed: the close before the day, and the move after 1, 5 and 20 trading days; the move on the day itself
-  for(const e of evs){const m=C?moveAfter(C,e.day):null; e.after=m?{base:m.p0,baseDay:m.d0,d1:m.r1,d5:m.r5,d20:m.r20}:null;
-    const i=C&&Array.isArray(C.d)?C.d.indexOf(e.day):-1; e.onDay=i>0&&+C.c[i-1]>0&&+C.c[i]>0?Math.round((+C.c[i]/+C.c[i-1]-1)*1e4)/100:null;
-    const ref=e.after?(e.after.d5!=null?e.after.d5:e.after.d1):null;
-    e.vs=e.said.dir==='pos'||e.said.dir==='neg'?(ref==null?'wait':Math.abs(ref)<0.3?'flat':(ref>0)===(e.said.dir==='pos')?'same':'opposite'):'none'}
+      seen.set(k,{k,he:it.he,what:'',cat,catHe:CAT_HE[cat]||'',level:it.level,day:d,occ:null,first:it.at,got:null,saidDay:d,said:{dir:z.dir||it.dir,s:Math.max(1,LV[it.level]||1),conf:it.rules?'low':it.cert==='fact'?'high':'mid',direct:z.how==='direct',via:z.via||null,mech:'',legacy:true},rules:!!it.rules,src:'arc',sources:[]})}}
+  const evs=[...seen.values()].filter(Boolean).sort((a,b)=>a.day<b.day?-1:1).slice(-80);
+  // 3. what followed, and the direction that was said against it
+  for(const e of evs){e.react=reactionOf(C,B,e.day); e.vs=versus(e.said.dir,e.react)}
   const tally={same:evs.filter(e=>e.vs==='same').length,opposite:evs.filter(e=>e.vs==='opposite').length,flat:evs.filter(e=>e.vs==='flat').length,wait:evs.filter(e=>e.vs==='wait').length};
-  return {sym,from:t0,to:t1,series,src:C&&C.src||null,events:evs,tally,firstSnap,
-    note:'סמיכות בזמן אינה סיבתיות: מחיר זז מסיבות רבות. "מה שנאמר אז" הוא הכיוון האפשרי שהמנוע נתן ביום האירוע; "מה שקרה" הוא תנועת המחיר אחרי, בלי לטעון שהאירוע גרם לה.'};
+  return {sym,from:t0,to:t1,today,series,src:C&&C.source||C&&C.src||null,bench:bn,benchHas:!!B,events:evs,tally,firstSnap,
+    note:'סמיכות בזמן אינה סיבתיות: מחיר זז מסיבות רבות. "מה שנאמר אז" הוא הכיוון האפשרי שהמנוע נתן כשראה את האירוע לראשונה; "מה שקרה" הוא תנועת המחיר אחרי, מול המדד כשיש, בלי לטעון שהאירוע גרם לה.'};
+}
+// 22.11: the board on past days: the events of a range of dates that had a relation to one of the viewer's assets, as the
+// engine said it then (the snapshots), each with where it happened and what the market did after. Only the viewer's own
+// assets, only the articles they may read; today's data are never mixed in
+export function impactPast(store,u,{from=null,to=null,now=new Date(),limit=80}={}){
+  const pa=pathsOf(u), P=store.getDoc(pa.portfolio).data, Q=store.getDoc('quotes/latest').data||{}, HD=holdingsOf(P,Q), mine=new Set(HD.pos.map(h=>h.sym));
+  const vis=ownerLike(u)?null:symsOfUser(store,u.id), visOk=v=>!vis||!!(v&&(v.gen||(v.syms||[]).some(s=>vis.has(s))));
+  const {t0,t1,today}=rangeOf(from,to,now,7), names=nameMap(), FX=store.getDoc(FIX_DOC).data||{}, etfBy=(store.getDoc('research/etf').data||{}).by||{};
+  const CL=new Map(), closes=k=>{if(!CL.has(k))CL.set(k,closesOf(store,k)); return CL.get(k)};
+  const coLoc=sym=>{let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){} return hqOf(sym,{fix:FX.hq||null,about})||marketPt(isIL(sym)?'IL':'US')};
+  const A=HD.pos.map(h=>{const fund=h.fund||!!(etfBy[h.sym]&&etfBy[h.sym].top); return {sym:h.sym,id:(fund?'fund:':'co:')+h.sym,name:(((Q.meta||{})[h.sym]||{}).name)||names.get(h.sym)||null,kind:fund?'fund':'stock',w:h.w,loc:assetLoc(h.sym,fund,coLoc)}});
+  const inFundOf=new Map(A.filter(a=>a.kind==='fund').map(a=>[a.sym,new Set((((etfBy[a.sym]||{}).top)||[]).filter(([,w])=>+w>=3).map(([s])=>s))]));
+  const seen=new Map(), snaps=store.listDocs(SNAP).map(r=>r.id).sort(); let legacy=0;
+  for(const id of snaps){if(id>t1)break; const S=store.getDoc(SNAP+'/'+id).data||{};
+    for(const e of (S.events||[])){if(seen.has(e.k)||!visOk(e.vis))continue; const day=evDay(e)||id; if(day>t1)continue; if(day<t0){seen.set(e.k,null); continue}
+      const imp=[]; for(const a of A){const h=saidOf(e,a.sym,inFundOf.get(a.sym)||new Set()); if(!h)continue; const [bk,bn]=benchOf(a.sym), r=reactionOf(closes(a.sym),closes(bk),day); imp.push({sym:a.sym,...h,bench:bn,react:r,vs:versus(h.dir,r)})}
+      if(!imp.length){continue} if(!e.rels)legacy++;
+      seen.set(e.k,{k:e.k,he:e.he,what:e.what||'',cat:e.cat,catHe:CAT_HE[e.cat]||'',level:e.level,dir:e.dir,s:e.s,conf:e.conf,day,occ:e.occ||null,first:e.first||null,last:e.last||null,got:e.got||null,saidDay:id,loc:e.loc||null,cc:e.cc||[],nPubs:e.nPubs||null,
+        rules:!!e.rules,legacy:!e.rels,sources:e.src||[],impacts:imp,touches:imp.map(i=>i.sym)})}}
+  const evs=[...seen.values()].filter(Boolean).sort((a,b)=>(a.day<b.day?1:a.day>b.day?-1:(LV[b.level]-LV[a.level]))).slice(0,limit);
+  return {mode:'past',at:now.toISOString(),from:t0,to:t1,today,assets:A,events:evs,legacy,firstSnap:snaps[0]||null,
+    note:'מוצג מה שהמנוע אמר אז, כפי שנשמר באותו יום, ומה שקרה בשוק אחרי. הנתונים של היום אינם מעורבים כאן.'+(legacy?' אירועים מלפני 22.11 נשמרו בלי ההסבר והמקום (המנוע הקודם).':'')};
+}
+// 22.11: how the engine's statements stood against what followed, over the snapshots (the admins): for every relation said
+// with a direction, the asset's move against its benchmark one, five and twenty trading days after the event, by how sure
+// the engine was, by the kind of relation and by where it came from. A check of the engine, never a claim that it predicts
+export function impactQuality(store,{now=new Date(),days=120}={}){
+  const from=ilParts(new Date(now.getTime()-days*DAY)).iso, snaps=store.listDocs(SNAP).map(r=>r.id).filter(id=>id>=from).sort(), seen=new Set(), rows=[];
+  const CL=new Map(), closes=k=>{if(!CL.has(k))CL.set(k,closesOf(store,k)); return CL.get(k)};
+  for(const id of snaps){const S=store.getDoc(SNAP+'/'+id).data||{}; for(const e of (S.events||[])){if(!e.rels)continue; const day=evDay(e)||id;
+      for(const [sym,r] of Object.entries(e.rels)){const key=e.k+'|'+sym; if(seen.has(key))continue; seen.add(key); if(r.dir!=='pos'&&r.dir!=='neg')continue;
+        const [bk]=benchOf(sym), re=reactionOf(closes(sym),closes(bk),day); rows.push({conf:r.conf,rel:r.rel,src:r.src||'reading',cat:e.cat,d1:versus(r.dir,re,'d1'),d5:versus(r.dir,re,'d5'),d20:versus(r.dir,re,'d20')})}}}
+  const tally=(L,k)=>{const o={n:L.length,same:0,opposite:0,flat:0,wait:0}; for(const r of L)if(o[r[k]]!=null)o[r[k]]++; const done=o.same+o.opposite; o.rate=done>=10?Math.round(o.same/done*100):null; return o};
+  const group=(f,labels)=>Object.entries(labels).map(([k,he])=>{const L=rows.filter(r=>f(r)===k); return {k,he,d1:tally(L,'d1'),d5:tally(L,'d5'),d20:tally(L,'d20')}}).filter(g=>g.d1.n);
+  return {at:now.toISOString(),from,n:rows.length,all:{d1:tally(rows,'d1'),d5:tally(rows,'d5'),d20:tally(rows,'d20')},
+    byConf:group(r=>r.conf,{high:'ביטחון גבוה',mid:'ביטחון בינוני',low:'ביטחון נמוך'}),byRel:group(r=>r.rel,{direct:'קשר ישיר',indirect:'קשר עקיף'}),
+    bySrc:group(r=>r.src,{ai:'ניתוח נפרד לנכס',reading:'נושא הכתבה',structure:'אחזקות קרן',hand:'ביד מנהל'}),firstSnap:snaps[0]||null,
+    note:'נספרים רק קשרים שנאמר בהם כיוון (חיובי או שלילי), פעם אחת לכל אירוע ונכס, לפי מה שנאמר ביום הראשון. "באותו כיוון" הוא תנועת הנכס מול המדד שלו (כשיש) אחרי יום האירוע. שיעור מוצג רק מ-10 מקרים שהסתיימו. זו בדיקה של איכות הניתוח, לא הוכחה שהוא חוזה מחירים: סמיכות בזמן אינה סיבתיות.'};
 }
