@@ -16,8 +16,11 @@ process.env.API_RPM='1000000';   // 8.11: the tests hammer one address; the ceil
 // 22.11: CI runs this file in three parts side by side, each on a machine of its own (BROWSER_PART="2/3": every third
 // test, from the second; the tests of the other parts are reported as skipped, so a test keeps its number in every
 // part). The parts stay even as tests are added at the end. Without BROWSER_PART (a local run): every test.
+// "test" is read from the global object, once for each test below: on this part's turn it is node's test, otherwise
+// node's test.skip. (A function around node's test would do the same, but node reports the place test() was called
+// from as the test's own, and every test would be reported at that function's line.)
 const PART=(process.env.BROWSER_PART||'').match(/^(\d+)\/(\d+)$/); let nTests=0;
-const test=(name,opt,fn)=>nodeTest(name,!PART||nTests++%+PART[2]===+PART[1]-1?opt:{...opt,skip:'in another part (this one is '+PART[0]+')'},fn);
+Object.defineProperty(globalThis,'test',{configurable:true,get:()=>!PART||nTests++%+PART[2]===+PART[1]-1?nodeTest:nodeTest.skip});
 // A test that fails never reaches its own ctx.close(): its pages stayed open to the end of the run, asking the server
 // and saving their old copy of the settings over what later tests wrote (19.11 in CI: 45 failures, 21 of them tests
 // that pass alone, and the later tests five times slower). Whatever a test left open is closed when it ends.
@@ -1532,7 +1535,9 @@ test('31.10 a long line on the home screen ("אין מחיר ל-…") is cut wit
   try{const {ctx,pg}=await open(390); await pg.waitForFunction(()=>!!document.querySelector('#desk .dk-cut'),null,{timeout:15000}).catch(async e=>{throw new Error('DESK: '+await pg.evaluate(()=>{const d=document.getElementById('desk'); return (d?d.innerText:'none').slice(0,600)+' | hidden:'+document.getElementById('deskSec').hidden}))});
     const before=await pg.evaluate(()=>({cut:document.querySelector('#desk .dk-cut').textContent,full:document.querySelector('#desk .dk-full').hidden}));
     assert.match(before.cut,/…/); assert.equal(before.full,true);
-    await pg.evaluate(()=>document.querySelector('#desk [data-dkmore="1"]').click()); await pg.waitForTimeout(100);
+    // the list is drawn again while the page's data is still arriving, and a line opened before that is closed by it
+    // (seen in CI: the tap came half a second after the page opened): tapped again when that happened
+    await pg.evaluate(async()=>{for(let i=0;i<6;i++){const c=document.querySelector('#desk .dk-cut'); c.querySelector('[data-dkmore="1"]').click(); await new Promise(r=>setTimeout(r,350)); if(c.isConnected)return}});
     const after=await pg.evaluate(()=>({cutHid:document.querySelector('#desk .dk-cut').hidden,full:document.querySelector('#desk .dk-full').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
     assert.equal(after.cutHid,true); for(const k of syms)assert.ok(after.full.includes(k),'the whole list: '+k); assert.equal(after.ox,false);
     assert.deepEqual(pg.errs,[]); await ctx.close();
@@ -1805,8 +1810,10 @@ test('hard cases: a large portfolio, prices from yesterday, a broken server answ
     const {ctx,pg}=await open(390); const r=await pg.evaluate(()=>(document.querySelector('#desk .sub')?.textContent||'')+' | '+document.getElementById('holdSub').textContent);
     assert.doesNotMatch(r,/מסחר חי/); assert.match(r,/המחירים האחרונים שהתקבלו|עודכנו/); await ctx.close();
   }finally{store.setDoc('quotes/latest',Q0,{silent:true})}
-  { // the server answers once with an HTML page: the page says so (not "an empty portfolio"), then loads by itself
-    const ctx=await browser.newContext({viewport:{width:390,height:844}}); let broken=1;
+  { // the server answers with an HTML page: the page says so (not "an empty portfolio"), then loads by itself.
+    // 8.11: the runtime asks for the first documents before the page does, and a broken answer to that early request is
+    // simply asked again by the page (nothing to say). So two answers are broken here: the early one and the page's own
+    const ctx=await browser.newContext({viewport:{width:390,height:844}}); let broken=2;
     await ctx.addInitScript(()=>{try{localStorage.setItem('tr_prof_later',new Date().toISOString());localStorage.setItem('tr_bot_tip','x')}catch(e){}});
     await ctx.route('**/*',r=>{const u=r.request().url(); if(u.includes('/api/db/doc?path=portfolio%2Fmain')&&broken>0){broken--; r.fulfill({status:200,contentType:'text/html',body:'<html>proxy error</html>'});return}
       if(u.includes('/api/prices')){r.fulfill({status:200,contentType:'application/json',body:'{"ok":true}'});return} if(u.startsWith(U)||u.startsWith('data:'))r.continue(); else r.abort()});
@@ -1836,7 +1843,8 @@ test('where the result came from: the same bottom line as the headline, six part
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'history');
   await pg.waitForFunction(()=>/₪/.test(document.querySelector('#decRows .tot .n')?.textContent||''),null,{timeout:10000});
-  const c=await pg.evaluate(()=>{const num=s=>{const m=String(s).replace(/‎/g,'').match(/^([+−-])₪([\d,]+)/); return m?(m[1]==='+'?1:-1)*+m[2].replace(/,/g,''):null};
+  // 6.11: a zero has no sign ("₪0", it was "+₪0"); every other amount keeps its sign
+  const c=await pg.evaluate(()=>{const num=s=>{const m=String(s).replace(/‎/g,'').match(/^([+−-]?)₪([\d,]+)/); if(!m)return null; const v=+m[2].replace(/,/g,''); return m[1]?(m[1]==='+'?1:-1)*v:v===0?0:null};
     return {head:num(document.getElementById('kDep').textContent),tot:num(document.querySelector('#decRows .tot .n').textContent),
       parts:[...document.querySelectorAll('#decRows .drow:not(.tot) .n')].map(e=>num(e.textContent)),note:document.getElementById('decNote').textContent}});
   t.diagnostic('breakdown: '+JSON.stringify({head:c.head,tot:c.tot,parts:c.parts}));
@@ -1933,16 +1941,18 @@ test('exposures and a stress test: the shares, the unknown overlap, a scenario w
   const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.setItem('tr_fold',JSON.stringify({hExp:true,hStress:true}))}catch(e){}});
   await tab(pg,'risk'); await pg.waitForTimeout(800);
   // 28.10: no folds any more: every section is open
-  // and the screen in three parts: the exposures under "פיזור", the stress test under "סיכון ותרחישים", one part at a time
-  // 5.11: five parts: what moves together and the risk measures have their own
-  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].filter(b=>!b.hidden).map(b=>b.textContent)),['מצב','פיזור','מה זז יחד','תרחישים','מדדי סיכון'],'the gauge\'s part shows only when the gauge has run (8.11)');
-  assert.ok(await pg.evaluate(()=>{const n=document.getElementById('riskNav'); return n.scrollWidth<=n.clientWidth+1}),'the five fit on a phone');
-  for(const [k,id] of [['co','hCo'],['vol','hRk']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150); assert.ok(await pg.evaluate(id=>!!document.getElementById(id).offsetParent&&!document.getElementById('hExp').offsetParent,id),'its own part: '+k)}
-  for(const [k,id,other] of [['mix','hExp','hStress'],['risk','hStress','hExp']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150);
-    assert.ok(await pg.evaluate(([id,other])=>!!document.getElementById(id).offsetParent&&!document.getElementById(other).offsetParent&&!document.querySelector('.fold-t'),[id,other]),'one part at a time: '+k)}
-  const e=await pg.evaluate(()=>({txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+  // 5.11: the screen in parts, one at a time: what moves together and the risk measures have their own
+  // 10.11 (the owner): the exposures are "פיזור", a screen of its own, so the control has four parts
+  assert.deepEqual(await pg.evaluate(()=>[...document.querySelectorAll('#riskNav [data-rg]')].filter(b=>!b.hidden).map(b=>b.textContent)),['מצב','מה זז יחד','תרחישים','מדדי סיכון'],'the gauge\'s part shows only when the gauge has run (8.11)');
+  assert.ok(await pg.evaluate(()=>{const n=document.getElementById('riskNav'); return n.scrollWidth<=n.clientWidth+1}),'the four fit on a phone');
+  for(const [k,id] of [['co','hCo'],['vol','hRk'],['risk','hStress']]){await pg.click(`#riskNav [data-rg="${k}"]`); await pg.waitForTimeout(150);
+    assert.ok(await pg.evaluate(([k,id])=>!!document.getElementById(id).offsetParent&&!document.getElementById('hExp').offsetParent&&(k==='risk'||!document.getElementById('hStress').offsetParent)&&!document.querySelector('.fold-t'),[k,id]),'one part at a time: '+k)}
+  // the exposures, on their own screen
+  await tab(pg,'mix'); await pg.waitForTimeout(400);
+  const e=await pg.evaluate(()=>({page:document.body.dataset.page,shown:!!document.getElementById('hExp').offsetParent&&!document.getElementById('hStress').offsetParent&&!document.querySelector('.fold-t'),txt:document.getElementById('expBox').textContent,ox:document.documentElement.scrollWidth>innerWidth+1}));
+  assert.equal(e.page,'mix'); assert.ok(e.shown,'the exposures, and not the stress test');
   assert.match(e.txt,/הנייר הגדול/); assert.match(e.txt,/חפיפה בין קרנות למניות: לא ידועה/,'fund holdings are unknown, said so'); assert.equal(e.ox,false,'no sideways scroll');
-  await pg.click('#riskNav [data-rg="risk"]');
+  await tab(pg,'risk'); await pg.waitForTimeout(300); await pg.click('#riskNav [data-rg="risk"]');
   for(const [k,re] of [['all',/ירידה אחידה של 20%/],['usd',/הדולר יורד ב-10%/],['group',/בקבוצת/]]){
     await pg.click(`#stKind [data-stk="${k}"]`); await pg.waitForTimeout(300);
     const r=await pg.evaluate(()=>{const R=window.__model.stress(), v=[...document.querySelectorAll('#stOut .st-bar [data-v]')].map(b=>+b.dataset.v), d=+document.querySelector('#stOut [data-d]').dataset.d;
@@ -2141,13 +2151,17 @@ test('1.11 the time machine: an episode on the monthly closes the page has, per 
   const {ctx,pg}=await open(390);
   try{
     await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="risk"]'); await pg.waitForTimeout(300);
-    let r=await pg.evaluate(()=>document.getElementById('tmBox').innerText.replace(/\s+/g,' ')); assert.match(r,/בחר משבר/);
+    // before a choice: the episodes, none pressed, and the line that says to choose one (17.11, the owner: the explanations,
+    // p.note, are not shown on a phone; the line is in the box for a wider screen)
+    const r=await pg.evaluate(()=>({t:document.getElementById('tmBox').innerText.replace(/\s+/g,' '),note:[...document.querySelectorAll('#tmBox p.note')].map(p=>p.textContent).join(' '),on:document.querySelectorAll('#tmBox [data-tmep][aria-pressed="true"]').length}));
+    assert.match(r.t,/הקורונה 2020/); assert.equal(r.on,0,'no episode chosen yet'); assert.match(r.note,/בחר משבר/);
     await pg.click('#tmBox [data-tmep="covid"]'); await pg.waitForFunction(()=>!/טוען/.test(document.getElementById('tmBox').innerText),null,{timeout:20000});
-    const T2=await pg.evaluate(()=>({txt:document.getElementById('tmBox').innerText.replace(/\s+/g,' '),rows:Object.fromEntries([...document.querySelectorAll('#tmBox .tm-t tbody tr')].map(tr=>[tr.querySelector('th').textContent.trim().split(' ')[0],[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())])),ox:document.documentElement.scrollWidth>innerWidth+1,pressed:document.querySelector('#tmBox [data-tmep="covid"]').getAttribute('aria-pressed')}));
+    const T2=await pg.evaluate(()=>({txt:document.getElementById('tmBox').innerText.replace(/\s+/g,' '),note:[...document.querySelectorAll('#tmBox p.note')].map(p=>p.textContent).join(' '),rows:Object.fromEntries([...document.querySelectorAll('#tmBox .tm-t tbody tr')].map(tr=>[tr.querySelector('th').textContent.trim().split(' ')[0],[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())])),ox:document.documentElement.scrollWidth>innerWidth+1,pressed:document.querySelector('#tmBox [data-tmep="covid"]').getAttribute('aria-pressed')}));
     assert.equal(T2.ox,false); assert.equal(T2.pressed,'true'); assert.match(T2.txt,/הקורונה 2020 \(2020-02 עד 2020-03\)/);
     const nv=T2.rows['NVIDIA']||T2.rows['NVDA']; assert.ok(nv,JSON.stringify(Object.keys(T2.rows))); assert.match(nv[0],/−34%/,'the fall to the trough'); assert.equal(nv[1],'1'); assert.equal(nv[2],'3 חוד׳','regained in three months'); assert.match(nv[3],/\+\d+%/,'the year after');
     assert.match((T2.rows['Microsoft']||T2.rows['MSFT'])[0],/אין סגירות חודשיות במקור/,'no monthly closes reachable: said, not invented');
-    assert.match(T2.txt,/התיק של היום, לפי המשקלים של היום, על \d+% ממנו שהיה קיים אז/); assert.match(T2.txt,/נפילה מתחילת התקופה לשפל: .?−34%/); assert.match(T2.txt,/סימולציה היפותטית, לא תוצאה היסטורית/);
+    assert.match(T2.txt,/התיק של היום, לפי המשקלים של היום, על \d+% ממנו שהיה קיים אז/); assert.match(T2.txt,/נפילה מתחילת התקופה לשפל: .?−34%/);
+    assert.match(T2.note,/מגבלות:.*סימולציה היפותטית, לא תוצאה היסטורית/,'the limits, in the box\'s closing line (p.note: since 17.11 not shown on a phone, shown on a wider screen)');
     const f=await pg.evaluate(()=>window.__focus('tm')); assert.equal(f.kind,'tm'); assert.equal(f.data.episode.name,'הקורונה 2020'); const h=f.data.holdings.find(x=>x.symbol==='NVDA'); assert.equal(h.months_to_regain,3); assert.match(f.data.rule,/לא תוצאה היסטורית/);
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); store.setDoc('quotes/c_NVDA',C0,{silent:true})}
@@ -2254,7 +2268,11 @@ test('1.11 the data-completion panel: a hand-typed portfolio (no costs, no depos
   const {ctx,pg}=await open(390); await pg.evaluate(()=>{try{localStorage.removeItem('tr_wiz_later')}catch(e){}});
   try{
     // the overview says what to complete; the panel sits in "התיק שלי"
-    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(300); const todo=await pg.evaluate(()=>document.querySelector('[data-pane="risk"]').innerText.replace(/\s+/g,' ')); assert.match(todo,/אין מחיר קנייה/);
+    // 10.11–17.11: the control's list shows its first two things to do, the rest behind "עוד N" (tapped again if the list was
+    // drawn again under the tap, while the page's data was still arriving)
+    await tab(pg,'risk'); await pg.waitForTimeout(500); await pg.click('#riskNav [data-rg="now"]'); await pg.waitForTimeout(300);
+    const todo=await pg.evaluate(async()=>{const d=document.getElementById('desk'), txt=()=>d.innerText.replace(/\s+/g,' '); for(let i=0;i<6&&!/אין מחיר קנייה/.test(txt());i++){const b=d.querySelector('[data-dkall]'); if(b)b.click(); await new Promise(r=>setTimeout(r,300))} return txt()});
+    assert.match(todo,/ל-3 ניירות אין מחיר קנייה/,'the control\'s to-do list says it: '+todo.slice(0,300));
     await tab(pg,'mine'); await pg.waitForTimeout(600);
     // 10.11: one line until opened, saying what is missing
     const sum=await pg.evaluate(()=>{const d=document.getElementById('wizD'), s=d.querySelector('summary').textContent.replace(/\s+/g,' '), was=d.open; d.open=true; return s+(was?' (open)':'')}); assert.match(sum,/חסרים מחירי קנייה ל-3 ניירות וההפקדות/); assert.doesNotMatch(sum,/\(open\)/,'closed at first');
@@ -2424,6 +2442,8 @@ test('planned money out and in: entered once, framed in today\'s numbers, asked 
   const {ctx,pg}=await open(390);
   try{
     await tab(pg,'forecast'); await pg.waitForTimeout(400);
+    // 17.11 (the owner's proposal 12): on a phone "כסף שתצטרך, או שתוסיף" is a folded section; its heading opens it
+    assert.equal(await pg.evaluate(()=>!!document.getElementById('flWhen').offsetParent),false,'folded at first'); await pg.click('#hFlows');
     await pg.fill('#flWhen',ym); await pg.selectOption('#flKind','out'); await pg.fill('#flAmt','5000'); await pg.fill('#flNote','מקדמה'); await pg.click('#flAdd'); await pg.waitForTimeout(1500);
     const li=await pg.evaluate(()=>document.getElementById('flowsList').textContent);
     assert.match(li,/משיכה: ₪5,000/); assert.match(li,/בעוד 18 חודשים/); assert.match(li,/מהשווי של התיק היום/); assert.match(li,/לא הערכה של התיק שלך/);
@@ -2781,7 +2801,7 @@ test('1.11 support and content: a partner writes from "עזרה ותמיכה", t
     await pg.click('#tcNotes .n button'); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcNotes .n').length),0);
     await pg.goto(U+'help.html'); await pg.waitForSelector('#mine .tk'); assert.match(await pg.textContent('#mine'),/ממתינה לתגובה שלך/);
     await pg.click('#mine .tk'); await pg.waitForFunction(()=>/תוקן, אפשר לנסות שוב/.test(document.getElementById('conv').textContent),null,{timeout:8000});
-    await pg.goto(U); await pg.waitForSelector('#tcAcctBtn'); await pg.waitForTimeout(1500);
+    await pg.goto(U); await pg.waitForSelector('#tcAcctBtn',{state:'attached'}); await pg.waitForTimeout(1500);   // 11.11: on a phone the account button is in the side menu, not at the top: there, not on the screen
     assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcNotes .n').length),0,'closed for good on this device');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.db.exec("delete from content; delete from ticket_msgs; delete from tickets")}
@@ -2867,7 +2887,8 @@ test('4.11 one count for the same list, the news load in a word and its numbers,
     const {ctx,pg}=await open(390); await tab(pg,'news'); await pg.click('[data-rt="al"]'); await pg.waitForTimeout(400);
     const r=await pg.evaluate(()=>({load:(document.getElementById('ixLoad')||{}).textContent||'',hid:document.getElementById('ixLoad').hidden,n:document.getElementById('ixAlN').textContent,aria:document.getElementById('ixAlN').getAttribute('aria-label')||'',
       more:(document.querySelector('#ixAlList .ix-more')||{}).textContent||'',h:document.getElementById('ixAlH').textContent}));
-    assert.equal(r.hid,false); assert.match(r.load,/עומס חדשותי בתיק: (רגוע|רגיל|ער|סוער)/); assert.match(r.load,/(אירוע אחד|\d+ אירועים) היום.*ביום בממוצע בשבוע שלפני/);
+    // 10.11 (the owner): the load said as a sentence, "יום ער בחדשות על התיק: 5 ידיעות היום, 3 חשובות. ביום רגיל בשבוע האחרון: …" (it was "עומס חדשותי בתיק: ער")
+    assert.equal(r.hid,false); assert.match(r.load,/יום (רגוע|רגיל|ער|סוער) בחדשות על התיק:/); assert.match(r.load,/(ידיעה אחת|\d+ ידיעות) היום.*ביום רגיל בשבוע האחרון: (פחות מאחת|כ-\d+)\./);
     assert.match(r.n,/^\d+ חדשות$/); const un=+r.n.split(' ')[0], tot=+(r.aria.match(/מתוך (\d+)/)||[])[1]; assert.ok(tot>=un,'unread out of all');
     if(r.more)assert.ok(r.more.includes(`לכל ${tot} ההתראות`)&&r.more.includes(`(${un} חדשות)`),'the button counts the same list: '+r.more);
     assert.match(r.h,/^מה נוגע לתיק/);
@@ -2999,14 +3020,16 @@ test('5.11 the home from the recording: "today" by the markets the portfolio hol
     const out={us:H.day(us,q),mix:H.day(mix,q).slice(0,2),y:H.dmy(y)};
     const G={positions:[{sym:'XOM',group:'tech'},{sym:'VOO',group:'tech'},{sym:'MSFT',group:'tech'},{sym:'CVX',group:'tech',_g:'user'},{sym:'JPM',group:'fin'}]};
     out.n=H.grpAuto(G); out.g=G.positions.map(p=>p.group+(p._g?':'+p._g:'')).join(',');
-    const rows=[...document.querySelectorAll('#rows tr:not(.sec):not(.cashrow):not(.hdet)')].length; out.all=[document.getElementById('holdAll').textContent,rows];
+    const rows=[...document.querySelectorAll('#rows tr:not(.sec):not(.cashrow):not(.hdet)')]; out.all=[document.getElementById('holdSub').textContent,rows.length,rows.filter(x=>x.offsetParent).length,!!document.getElementById('holdAll').offsetParent];
     out.span=H.span(); out.chips=[...document.querySelectorAll('[data-wr]')].map(b=>b.dataset.wr+':'+(b.hidden?'h':'v')).join(',');
     return out});
   assert.deepEqual(r.us.slice(0,2),[`ביום המסחר האחרון (${r.y})`,`ביום המסחר האחרון (${r.y})`],'US shares only: the last New York day, while Tel Aviv trades');
   assert.equal(r.us[2],false,'and not "still moving"');
   assert.deepEqual(r.mix,['היום','היום'],'with an Israeli holding the day is today');
   assert.equal(r.n,2); assert.equal(r.g,'ind:auto,etf:auto,tech,tech:user,fin','only the default changes; a group the user chose stays');
-  assert.match(r.all[0],new RegExp(`הצג הכל \\(${r.all[1]} ניירות\\)`),'the button counts the securities, not the cash row');
+  // 10.11 (the owner): every holding shows on the home and there is no "הצג הכל" button; the count is the line over the list's
+  assert.ok(r.all[1]>5); assert.match(r.all[0],new RegExp(`^${r.all[1]} ניירות · `),'the line over the list counts the securities, not the cash row');
+  assert.deepEqual(r.all.slice(2),[r.all[1],false],'every holding shows, with no button to show the rest: '+JSON.stringify(r.all));
   for(const c of r.chips.split(',')){const [w,v]=c.split(':'); if(+w>0)assert.equal(v,r.span<=+w?'h':'v',`range ${w} with ${r.span.toFixed(1)} months of data`)}
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
@@ -3044,7 +3067,7 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
     recAt:'2026-11-01',target:220,targetHi:260,targetLo:150,targetMed:225,est:{date:d,eps:1.05,rev:6.5e10},gradesL:[{d:'2026-11-02',firm:'Goldman Sachs',from:'Neutral',to:'Buy',act:'upgrade'},{d:'2026-10-20',firm:'Morgan Stanley',from:'Overweight',to:'Overweight',act:'maintain'}],source:'Finnhub + FMP'};
   store.setDoc('research/latest',{...R0,companies:{...R0.companies,NVDA:N}},{silent:true});
   try{const {ctx,pg}=await open(390); await tab(pg,'search'); await pg.waitForTimeout(400); await pg.evaluate(()=>window.__srch.open('NVDA')); await pg.waitForTimeout(1500);
-    const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.ancols .anc').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
+    const a=await pg.evaluate(()=>{const c=document.querySelector('.ancard'); return c?{txt:c.innerText.replace(/\s+/g,' '),note:[...c.querySelectorAll('p.note')].map(p=>p.textContent).join(' '),bars:c.querySelectorAll('.anbar:not(.sm) i').length,months:c.querySelectorAll('.ancols .anc').length,changes:c.querySelectorAll('.angr li').length,ox:document.documentElement.scrollWidth<=innerWidth+1}:null});
     assert.ok(a,'the card'); assert.equal(a.bars,4,'four levels with votes (no strong sell)'); assert.match(a.txt,/קנייה חזקה 12 30% קנייה 18 45% החזקה 8 20% מכירה 2 5%/,'17.11: the key as rows, a level with no votes left out: '+a.txt.slice(0,300));
     assert.match(a.txt,/30 מתוך 40 אנליסטים ממליצים לקנות 8 ממליצים להחזיק, 2 ממליצים למכור\. ממוצע הדירוגים: קנייה\./,'17.11: the split said in a sentence');
     assert.ok(!/הקונסנזוס/.test(a.txt),'the consensus tile gave way to the sentence');
@@ -3054,7 +3077,8 @@ test('5.11 the analysts\' card: the five levels, the months, the target with its
     assert.equal(a.months,4); assert.match(a.txt,/המגמה: כמה ממליצים לקנות ▲ עלה מ-60% ל-75% בשלושה חודשים/,'17.11: the trend tile says what happened');
     assert.ok(await pg.evaluate(()=>{const b=[...document.querySelectorAll('.ancard .an-trt .anc i')].map(e=>e.getBoundingClientRect().height); return b.length===4&&b[3]>b[0]}),'one plain column a month, its height the share that says buy');
     assert.match(a.txt,/הצפי לדוח הבא \([\d.]+\): רווח למניה \$1\.05 · הכנסות 65\.00 מיליארד דולר/);
-    assert.equal(a.changes,2); assert.match(a.txt,/Goldman Sachs: Neutral ← Buy \(שדרוג\)/); assert.match(a.txt,/Finnhub \+ FMP · נכון ל-1\.11/); assert.ok(a.ox);
+    assert.equal(a.changes,2); assert.match(a.txt,/Goldman Sachs: Neutral ← Buy \(שדרוג\)/); assert.ok(a.ox);
+    assert.match(a.note,/Finnhub \+ FMP · נכון ל-1\.11\. דעת אנליסטים ממקור חיצוני, לא המלצה של הדף/,'the source and its date, in the card\'s closing line (p.note: since 17.11 not shown on a phone, shown on a wider screen)');
     if(process.env.SHOT)await (await pg.$('.ancard')).screenshot({path:process.env.SHOT});
     assert.deepEqual(pg.errs,[]); await ctx.close()}
   finally{store.setDoc('research/latest',R0,{silent:true})}
@@ -3320,7 +3344,7 @@ test('9.11 a security\'s page: the watch mark is a bookmark at the top-left (fil
   await pg.goBack(); await pg.waitForTimeout(600);
   const after=await pg.evaluate(()=>({sec:document.getElementById('secPage').hidden,res:!document.getElementById('sqRes').hidden,page:document.body.dataset.page}));
   assert.deepEqual(after,{sec:true,res:true,page:'search'});
-  assert.equal(await vis('[data-pane="search"]>.pghead .pg-t'),true,'the heading is back on the landing (11.11: in the opening card)'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.pgrows>.subtabs'),true); assert.equal(await vis('.hero .top .acts'),false,'9.11: the header buttons and the accounts are on the home only');
+  assert.equal(await vis('[data-pane="search"]>.pghead .pg-t'),true,'the heading is back on the landing (11.11: in the opening card)'); assert.equal(await vis('srchBox'),true); assert.equal(await vis('[data-pane="search"]>.pgrows .chip'),true,'the screens\' row is back (17.11: one row of pills; the row\'s own box is not drawn, its pills are)'); assert.equal(await vis('.hero .top .acts'),false,'9.11: the header buttons and the accounts are on the home only');
   // a tap on the research tab below, from an open security, also returns to the landing (through the history, so back does not reopen it)
   await pg.click('#sqRes [data-open="MSFT"]'); await pg.waitForTimeout(1200); assert.equal(await vis('hSearch'),false);
   await pg.click('#botbar [data-bb="search"]'); await pg.waitForTimeout(800);
@@ -3477,10 +3501,13 @@ test('9.11 the home\'s header on a phone: the four buttons at the top-left on th
   try{
     await pg.evaluate(()=>window.scrollTo(0,0));
     const r=await pg.evaluate(()=>{const R=id=>document.getElementById(id).getBoundingClientRect(), top=document.querySelector('.hero .top');
-      return {top:top.getBoundingClientRect().height,tick:document.querySelector('.worth').getBoundingClientRect().top,acct:R('acctSel').width,chips:getComputedStyle(document.getElementById('acctChips')).display,inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(document.getElementById('fresh')).display,busy:document.getElementById('fresh').classList.contains('busy'),W:innerWidth,
+      const hd=document.getElementById('dHd'), hr=hd.getBoundingClientRect(), hb=['dHdMenu','dHdProf'].map(id=>{const b=R(id); return b.width>=24&&b.top>=0&&b.bottom<=hr.bottom+1});
+      return {top:top.getBoundingClientRect().height,tick:document.querySelector('.worth').getBoundingClientRect().top,hd:{bottom:Math.round(hr.bottom),name:hd.querySelector('.dhd-t').textContent,btns:hb},acct:R('acctSel').width,chips:getComputedStyle(document.getElementById('acctChips')).display,inCard:!!document.querySelector('#ovTabs #acctSel'),fresh:getComputedStyle(document.getElementById('fresh')).display,busy:document.getElementById('fresh').classList.contains('busy'),W:innerWidth,
         side:{ref:!!document.querySelector('#tabsbar .sbx #navRefresh'),upd:!!document.querySelector('#tabsbar .sbx #btnUpd'),th:!!document.querySelector('#tabsbar .sbx #btnTheme'),tape:!!document.querySelector('#tabsbar .sbx #btnTape'),acct:!!document.querySelector('#tabsbar .sbx #sbAcct #tcAcct'),mc:!!document.querySelector('#tabsbar #tcAcctMenu a[href="/admin"]')}}});
-    // 11.11 (the owner): nothing above the value card: no wordmark, no "⋯", no refresh and no account; all of them are in the side menu
-    assert.ok(r.top===0&&r.tick<40,'the value card at the top of the home: '+JSON.stringify(r));
+    // 11.11 (the owner): no wordmark row above the value card, no "⋯", no refresh and no account; all of them are in the side menu.
+    // 17.11 (the owner's Figma "Dashboard"): the phone's header on every screen (the menu, the name in the middle, the
+    // profile) is the one thing above the card
+    assert.ok(r.top===0&&r.hd.name==='תיק צ׳יק'&&r.hd.btns.every(Boolean)&&r.hd.bottom<=80&&r.tick>=r.hd.bottom&&r.tick-r.hd.bottom<=16,'the value card right under the header, at the top of the home: '+JSON.stringify(r));
     assert.ok(Object.values(r.side).every(Boolean),'refresh, the upload, night mode, the tape and the account (with the management center) in the side menu: '+JSON.stringify(r));
     assert.ok(r.inCard&&r.acct>0&&r.chips==='none','10.11 (the owner): the accounts a switch first in the row of views over the card: '+JSON.stringify(r));
     const a=await pg.evaluate(()=>[...document.querySelectorAll('#acctSel option')].map(o=>o.value)); await pg.selectOption('#acctSel',a[1]); await pg.waitForTimeout(400);
@@ -3556,17 +3583,19 @@ test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choi
       const W=w.getBoundingClientRect(), V=document.getElementById('kTotal').getBoundingClientRect(), K=document.getElementById('kKpis').getBoundingClientRect(), C=document.getElementById('wChart').getBoundingClientRect();
       return {on:document.body.classList.contains('bento-on'),bg:cs(w).backgroundColor,line:line?cs(line).stroke:null,kpis:[...document.querySelectorAll('.worth #kKpis .kpi-k, .worth #kPnlK .kpi-k')].map(x=>x.textContent),
         top:Math.round(V.top-document.getElementById('ovTabs').getBoundingClientRect().bottom),tabsTop:Math.round(document.getElementById('ovTabs').getBoundingClientRect().top-W.top),
-        tabBg:cs(document.querySelector('#ovTabs button')).backgroundColor,tabInk:cs(document.querySelector('#ovTabs button')).color,
+        tabs:[...document.querySelectorAll('#ovTabs button')].filter(b=>cs(b).display!=='none').map(b=>({t:b.textContent.trim(),here:b.getAttribute('aria-current')==='page',bg:cs(b).backgroundColor,ink:cs(b).color})),
         right:Math.round(W.right-V.right),under:K.top>=V.bottom-1&&(!C.height||K.bottom<=C.top+1),
         mix:!!mix||!!document.getElementById('bMix'),mon:!!document.getElementById('kMon').offsetParent,ck:ck.hidden?'':ck.textContent.replace(/\s+/g,' ').trim(),go:(ck.querySelector('.bc-go')||{}).dataset||null,
         small:[...document.querySelectorAll('#bento .bc-go,#bento .bt[data-tab]')].filter(b=>b.getBoundingClientRect().height<44).length,
         gap:Math.round(document.getElementById('bento').getBoundingClientRect().top-w.getBoundingClientRect().bottom),ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.on&&r.bg==='rgb(91, 33, 182)','the violet card: '+JSON.stringify(r)); assert.ok(r.line===null||r.line==='rgb(255, 255, 255)','the chart\'s line white on it');
     // 11.11 (the owner): the value at the top right of the violet card; under it today, the week and the profit against the cost
-    // 11.11 (the owner): the views' row first in the card, white with violet words; the value under it, at the right
-    assert.ok(r.tabsTop<24&&r.tabBg==='rgb(255, 255, 255)'&&r.tabInk==='rgb(91, 33, 182)','the views at the top, white: '+JSON.stringify(r));
+    // 11.11 (the owner): the views' row first in the card; the value under it, at the right
+    // 17.11 (the owner's Figma): the views are pills, "סקירה" first and the chosen one (solid), the others in one lighter colour (they were white with violet words)
+    {const [h,...o]=r.tabs; assert.ok(r.tabsTop<24&&h&&h.t==='סקירה'&&h.here&&o.length===3&&o.every(x=>!x.here&&x.bg===o[0].bg&&x.ink===o[0].ink)&&h.bg!==o[0].bg,'the views at the top of the card, as pills: '+JSON.stringify(r))}
     assert.ok(r.top>=0&&r.top<70&&r.right<40,'the value under them, at the right: '+JSON.stringify(r)); assert.ok(r.under,'the figures under the value, over the chart');
-    assert.equal(r.kpis[0],'היום'); assert.match(r.kpis[1],/^(שבוע|30 יום|ב-\d+ ימים)$/); assert.equal(r.kpis[2],'רווח מול עלות');
+    // 17.11 (the owner): the profit against the cost on a line of its own, right under the value; today and the week under it
+    assert.equal(r.kpis[0],'רווח מול עלות'); assert.equal(r.kpis[1],'היום'); assert.match(r.kpis[2],/^(שבוע|30 יום|ב-\d+ ימים)$/);
     assert.deepEqual([r.mix,r.mon],[false,false],'11.11 (the owner): no ring of the split ("פיזור" in the card goes there) and no chip of the days beside "שווי התיק"');
     assert.match(r.ck,/^(לבדוק · .+|אין מה לבדוק\..*)/,'one thing to check, or none: '+r.ck); assert.ok(r.go&&r.go.anav,'it leads somewhere');
     assert.equal(r.small,0,'every tile and button at least 44px tall'); assert.equal(r.gap,12,'12px under the card'); assert.equal(r.ox,false);
@@ -3587,13 +3616,14 @@ test('11.11 the phone\'s home as the owner\'s mock-up ("כרטיס נקי", chos
       return {clean:document.body.classList.contains('home-clean'),bento:document.body.classList.contains('bento-on'),pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed'),saved:localStorage.getItem('tr_home'),
         violet:getComputedStyle(w).backgroundColor==='rgb(91, 33, 182)',beside:c.width>R(w).width*0.8&&c.top>=v.bottom-2,right:Math.round(R(w).right-v.right),
         kind:kr===document.getElementById('holdSec').firstElementChild&&kr.offsetHeight>0&&kr.querySelectorAll('.kt').length>=2,soon:document.getElementById('bSoon').previousElementSibling===ib&&document.getElementById('bSoon').offsetHeight>0,insight:!ib.hidden&&ib.offsetHeight>0&&/מה (קרה היום|השתנה מאז)/.test(ib.textContent),
-        tabs:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.nextElementSibling===ib?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=44).map(x=>x.dataset.tab):[],
+        tabs:ot.nextElementSibling===w&&R(ot).bottom<=R(w).top&&R(ot).top>=R(document.getElementById('dHd')).bottom-1?[...ot.querySelectorAll('button')].filter(x=>x.offsetHeight>=30).map(x=>x.dataset.tab+(x.getAttribute('aria-current')==='page'?'*':'')):[],
         head:!!document.querySelector('.worth .wtop #acctSel'),after:bx.previousElementSibling===document.getElementById('holdSec')&&!bx.hidden,pills:[...document.querySelectorAll('#rows tr.hrow td:nth-child(6) .n')].filter(x=>x.offsetHeight>0).length,
         ox:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(r.clean&&!r.bento&&r.pressed==='true'&&r.saved==='clean','the choice: '+JSON.stringify(r));
     assert.ok(!r.violet&&r.beside&&r.right<40,'12.11: a plain card, the value at its right and the chart under it, the card\'s width: '+JSON.stringify(r));
     assert.ok(r.kind&&r.soon&&r.insight&&r.head,'12.11: the split at the holdings\' head, the coming two weeks under "מה קרה היום בתיק?", the accounts in the card\'s head: '+JSON.stringify(r));
-    assert.deepEqual(r.tabs,['mix','history','state','mine'],'the views as four tiles under it, "הוסף נכסים" the fourth');
+    // 17.11 (the owner's Figma): the views are pills right under the header, over the value, "סקירה" first and chosen (12.11: four tiles under the card, "הוסף נכסים" the fourth)
+    assert.deepEqual(r.tabs,['overview*','mix','history','state'],'the views as pills between the header and the value: '+JSON.stringify(r));
     assert.ok(r.after&&r.pills>0&&!r.ox,'the tiles after the holdings, each holding\'s share a pill, no sideways scroll: '+JSON.stringify(r));
     // and back: everything in its place again
     await pg.evaluate(()=>document.querySelector('[data-homeset="bento"]').click()); await pg.waitForTimeout(600);
@@ -3613,10 +3643,11 @@ test('11.11 "כרטיס נקי" chosen on another device: the style that arrives
   try{store.setDoc('settings/main',{...S0,ui:{...((S0&&S0.ui)||{}),tr_home:'clean'}},{silent:true});
     const {ctx,pg}=await open(390,{keepUi:true}); await pg.waitForFunction(()=>document.body.classList.contains('home-clean'),null,{timeout:15000}); await pg.waitForTimeout(400);
     const r=await pg.evaluate(()=>{const w=document.querySelector('.worth'), ot=document.getElementById('ovTabs'), kr=document.getElementById('kindRow');
-      return {saved:localStorage.getItem('tr_home'),tabsInPane:ot.parentElement===document.querySelector('[data-pane="overview"]')&&ot.nextElementSibling===document.getElementById('insightBar'),
+      return {saved:localStorage.getItem('tr_home'),tabsOverValue:!ot.closest('.worth')&&ot.nextElementSibling===w,soonUnderInsight:document.getElementById('bSoon').previousElementSibling===document.getElementById('insightBar')&&document.getElementById('bSoon').offsetHeight>0,
         kindInCard:kr.parentElement===document.getElementById('holdSec')&&kr.offsetHeight>0,acctInHead:!!document.querySelector('.worth .wtop #acctSel'),after:document.getElementById('bento').previousElementSibling===document.getElementById('holdSec'),
         pressed:document.querySelector('[data-homeset="clean"]').getAttribute('aria-pressed')}});
-    assert.deepEqual(r,{saved:'clean',tabsInPane:true,kindInCard:true,acctInHead:true,after:true,pressed:'true'},'the whole clean card, not half of it');
+    // 17.11 (the owner's Figma): the views are out of the card, right over the value (12.11: under it, in the pane); the coming two weeks under "מה קרה היום בתיק?"
+    assert.deepEqual(r,{saved:'clean',tabsOverValue:true,soonUnderInsight:true,kindInCard:true,acctInHead:true,after:true,pressed:'true'},'the whole clean card, not half of it');
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('settings/main',S0,{silent:true})}
 });
