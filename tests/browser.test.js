@@ -4342,6 +4342,9 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
       const n0=store.getDoc('plan/main').data.purchases.length; await p2.click('#planAns [data-pa="nextRound"]'); await p2.waitForFunction(()=>!document.querySelector('#planAns [data-pa="nextRound"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
       const D=store.getDoc('plan/main').data, L=D.items.filter(i=>i.status!=='skip');
       assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); await p2.click('#planAns [data-pa="aheadAll"]'); assert.match(await card2(),/עד עכשיו נקנו/);
+      // the round begun now: what was bought this month is listed once, ticked, and is not asked for again this month; its tick is taken back in the same place
+      {const v=await p2.evaluate(()=>({buy:document.querySelectorAll('#planAns [data-planbuy]').length,old:document.querySelectorAll('#planAns .pc-list li.done [data-pa="dropBuy"]').length})); assert.equal(v.buy,0,'no security twice in a month'); assert.equal(v.old,n0,'everything bought this month is in the list');
+        await p2.click('#planAns [data-pa="dropBuy"]'); for(let k=0;k<40&&store.getDoc('plan/main').data.purchases.length!==n0-1;k++)await p2.waitForTimeout(200); assert.equal(store.getDoc('plan/main').data.purchases.length,n0-1,'that purchase only')}
       assert.deepEqual(p2.errs,[])}finally{await o2.ctx.close()}
     // a round finished in an earlier month: the next one begins by itself
     {const d=JSON.parse(JSON.stringify(store.getDoc('plan/main').data)), now=new Date(), prev=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,15)), ym=prev.toISOString().slice(0,7); d.start=ym; d.round=1; d.purchases=[];

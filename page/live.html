@@ -20411,7 +20411,8 @@ function planState(mAll){
   const rows=[], put=(m,sym)=>{while(rows.length<=m)rows.push([]); rows[m].push(sym)};
   for(const i of PL.items)if(i.status==='done'&&i.pid){const x=PL.purchases.find(y=>y.id===i.pid)||PL.purchases.find(y=>y.sym===i.sym), mo=x&&x.month?ymDiff(x.month,start):i.doneAt?ymDiff(ilDay(i.doneAt).slice(0,7),start):cur; put(Math.max(0,mo),i.sym); at[i.sym]=Math.max(0,mo)}
   // rotating: one purchase a month, so a month that already has one lays the rest out from the next
-  const from=rot&&(rows[cur]||[]).length?cur+1:cur, noFirst=from===cur&&depNow;
+  // 24.11: so does a round begun in a month that already holds purchases of the round before it (no security twice in a month)
+  const hotOld=!wait&&planOldNow().length>0, from=(rot&&(rows[cur]||[]).length)||hotOld?cur+1:cur, noFirst=from===cur&&depNow;
   // (a one-time deposit is marked only after it was made, so it is in the cash already: nothing extra ahead)
   const fwd=ladder(PL.items.filter(i=>i.status==='todo'&&cost[i.sym]!=null).map(i=>({sym:i.sym,c:cost[i.sym]})),noFirst?cash-TM():cash,TM(),PL.mode,{});
   fwd.rows.forEach((r,k)=>{for(const sym of r){put(from+k,sym); at[sym]=from+k; when[sym]=Math.max(0,from+k-cur)}});
@@ -20596,6 +20597,8 @@ function planAct(a,d){
   else if(a==='untilEdit'){PLU_EDIT=!PLU_EDIT; render(); return}
   else if(a==='aheadAll'){PLU_ALL=!PLU_ALL; render(); return}
   // a new round: every security bought in this one waits again, in the same order; what was bought stays in the purchases
+  // a purchase of an earlier round taken back (the card's "ביטול" beside it): that one only, never one an item points at
+  else if(a==='dropBuy'){const id=String(d.id||''); if(!id||PL.items.some(i=>i.pid===id)||!PL.purchases.some(x=>x.id===id))return; PL.purchases=PL.purchases.filter(x=>x.id!==id)}
   else if(a==='nextRound'){const L=PL.items.filter(i=>i.status!=='skip'); if(!L.length||L.some(i=>i.status==='todo'))return; for(const i of L){i.status='todo'; delete i.pid; delete i.doneAt; i.note=''} PL.round=(+PL.round||1)+1; PLU_EDIT=false}
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=OB_FROM&&ymDiff(OB_FROM,ymNow())>0?OB_FROM:ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null; OB_FROM=''; if(OB_UNTIL)PL.until=OB_UNTIL; else delete PL.until; PL.round=1; OB_UNTIL=''}
   planChanged();
@@ -31702,6 +31705,7 @@ function planLaterH(st,B){
     ${show.length?`<ul class="pc-list" aria-label="הקניות הבאות">${show.map(li).join('')}</ul>`:`<p class="pc-note">בהפקדה של ${ils(B)} בחודש אין קנייה נוספת עד סוף התקופה.</p>`}${more}
     ${months.length?`<button type="button" class="btn sm pc-all" data-pa="aheadAll" aria-expanded="${PLU_ALL}">${PLU_ALL?'להציג פחות':'כל התוכנית'}</button>`:''}</div>`}
 // every security of the round was bought in an earlier month, and the period goes on: the next round begins (once)
+function planOldNow(){const live=new Set(PL.items.filter(i=>i.pid).map(i=>i.pid)), ym=ymNow(); return PL.purchases.filter(x=>x.id&&!live.has(x.id)&&(x.month||(x.at?ilDay(x.at).slice(0,7):''))===ym&&PL.items.some(i=>i.sym===x.sym&&i.status!=='skip'&&(i.pid||i.status==='todo')))}
 let ROLLING=false;
 function planRoll(st){if(ROLLING||!canWrite||st.fixed||!st.until||ymDiff(st.until,ymNow())<0)return; try{if(!PLK&&!LOCAL)return}catch(e){return}
   const act=PL.items.filter(i=>i.status!=='skip'); if(!act.length||act.some(i=>i.status!=='done'))return;
@@ -31723,17 +31727,18 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
   const row=sym=>{const c=$('buy_'+sym)||document.querySelector('#ladRows [data-buy="'+sym+'"][data-ym="'+ym+'"]'), cost=st.cost[sym]||0, got=!!(c&&c.checked), short=!got&&cost>st.bal+0.005;
     const stH=got?`<span class="ps-ok">✓ נקנה</span>${c&&!c.disabled?un(c.id,lab(sym)):''}`:short?`<span class="ps-wait">חסרים <span class="n" dir="ltr">${ils(Math.max(0.01,Math.ceil((cost-st.bal)*100)/100),2)}</span></span>`:c&&!c.disabled?`<button type="button" class="btn sm pri" data-planbuy="${esc(c.id)}" aria-label="קניתי ${esc(lab(sym))}">קניתי</button>`:'';
     return `<li class="${got?'done':''}"><span class="pc-s">${esc(lab(sym))}</span><span class="pc-c n" dir="ltr">${ils(cost,2)}</span><span class="pc-a">${stH}</span></li>`};
+  const oldNow=st.fixed||st.wait?[]:planOldNow(), oldRow=x=>`<li class="done"><span class="pc-s">${esc(lab(x.sym))}</span><span class="pc-c n" dir="ltr">${ils(+x.paidIls||0,2)}</span><span class="pc-a"><span class="ps-ok">✓ נקנה</span>${canWrite?`<button type="button" class="pc-un" data-pa="dropBuy" data-id="${esc(x.id)}" aria-label="ביטול הסימון: ${esc(lab(x.sym))}">ביטול</button>`:''}</span></li>`;
   const head=`<div class="ma-k"><span>תוכנית ההפקדה${st.wait?'':' · '+esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div>`;
   box.hidden=false;
   if(st.wait){const n=ymDiff(st.start,ymNow());
     box.innerHTML=`${head}<div class="ps-bal">מתחילה ב${esc(ymLong(st.start))}</div>
       <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterH(st,B)}`; return}
-  const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':`נקנו ${done} מתוך ${act.length} בסבב הזה.`;
+  const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':`נקנו ${done} מתוך ${act.length} בסבב הזה.`;
   box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
     <div class="pc-sec"><h3 class="pc-h">החודש</h3>
       <ul class="pc-list" aria-label="מה עושים החודש">
         <li class="${d?'done':''}"><span class="pc-s">הפקדה חודשית</span><span class="pc-c n" dir="ltr">${ils(amt)}</span><span class="pc-a">${d?`<span class="ps-ok">✓ הופקד</span>${can?un('dep_'+ym,'ההפקדה'):''}`:can?`<button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הפקדתי</button>`:''}</span></li>
-        ${buys.map(row).join('')}
+        ${oldNow.map(oldRow).join('')}${buys.map(row).join('')}
       </ul>
       ${note?`<p class="pc-note" role="status">${note}</p>`:''}</div>
     ${planLaterH(st,B)}
