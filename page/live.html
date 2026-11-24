@@ -25097,10 +25097,13 @@ function trRender(){const box=$('trBox'), row=$('trBoxRow'), show=!!TRX&&(TRX.ho
     <p class="tr-sum" id="trSum" aria-live="polite"></p>
     <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="trSave" disabled>${sell?'לרשום את המכירה':'לרשום את הקנייה'}</button><button type="button" class="btn" id="trX">ביטול</button><span class="saved" id="trMsg" role="status">${esc(T.msg||'')}</span></div>`;
   trCalc()}
-function trVals(){const T=TRX; if(!T)return null; const q=+(T.q||0), px=+(T.pxIn!==''?T.pxIn:(T.px||0)); const h=trHeld(T.sym,T.acct)[0]||null; return {T,q,px,amt:q*px,h,have:h?+h.qty:0,avg:h?slAvg(h):null}}
+// 24.11 (the owner: 365.5 typed for a fund at ₪3.62 made ₪760,240): a Tel Aviv price typed in agorot, 40 to 250 times the
+// price now in shekels, is read in agorot (÷100), and the sum says so
+const trAg=T=>{if(!T||T.ccy!=='ILS'||T.pxIn===''||!(T.px>0))return false; const r=+T.pxIn/T.px; return r>40&&r<250};
+function trVals(){const T=TRX; if(!T)return null; const q=+(T.q||0), ag=trAg(T), px=+(T.pxIn!==''?T.pxIn:(T.px||0))/(ag?100:1); const h=trHeld(T.sym,T.acct)[0]||null; return {T,q,px,ag,amt:q*px,h,have:h?+h.qty:0,avg:h?slAvg(h):null}}
 function trCalc(){const v=trVals(), out=$('trSum'), btn=$('trSave'); if(!v||!out)return; const {T,q,px,amt,have,avg}=v, sell=T.side==='sell'; let ok=false, H='';
   if(q>0&&px>0){if(sell&&q>have+1e-9)H=`יש לך ${+have.toFixed(4)} יחידות בחשבון הזה.`;
-    else{ok=true; H=`<b>סה״כ ${slB(slAmt(amt,T.ccy))}</b>`;
+    else{ok=true; H=(v.ag?`<span class="nm">המחיר הוזן באגורות: ${+T.pxIn} אג׳ = ${slB(slAmt(px,T.ccy))} ליחידה.</span>`:'')+`<b>סה״כ ${slB(slAmt(amt,T.ccy))}</b>`;
       if(sell&&avg!=null){const g=amt-q*avg; H+=` · <span class="${g>=0?'up':'down'}">${g>=0?'רווח':'הפסד'} של ${slB(slAmt(Math.abs(g),T.ccy))} (${slB(spct(g/(q*avg)*100,1))})</span>`}
       else if(!sell){const a2=avg!=null?(avg*have+amt)/(have+q):null; H+=` · ${have?`אחרי הקנייה: ${+(have+q).toFixed(4)} יחידות${a2!=null?`, מחיר ממוצע ${slB(slAmt(a2,T.ccy))}`:''}`:'אחזקה חדשה בתיק'}`}
       H+=T.ccy==='ILS'||T.ccy==='USD'?`<span class="nm">המזומן ב${esc(acctName(T.acct))} ${sell?'יעלה':'ירד'} ב-${slB(slAmt(amt,T.ccy))}.</span>`:`<span class="nm">המזומן בחשבון לא ישתנה: הוא רשום בשקלים ובדולרים, והעסקה ב-${esc(CCYHE[T.ccy]||T.ccy)}.</span>`}}

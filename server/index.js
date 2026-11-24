@@ -496,6 +496,9 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     // only Maya's own "no such fund" says the number is unknown; a timeout or a refusal of the moment says Maya did not answer
     if((!q||q.err)&&!ser)return /HTTP 404|no price field/.test(q&&q.err||'')?res.status(404).json({error:{code:'not_found',message:'לא מצאתי במאיה קרן או נייר במספר הזה.'}})
       :res.status(502).json({error:{code:'upstream_error',message:'מאיה (אתר הבורסה) לא ענתה כרגע, ולכן אין מחיר וגרף לנייר הזה. ננסה שוב כשהדף ייפתח בעוד דקה.'}});
+    // 24.11: Maya publishes a mutual fund's price in agorot (362.12 = ₪3.6212 a unit); the page works in shekels (a fund
+    // shown at ₪362.12 made a purchase of 2,080 units ₪760,240)
+    const sh=x=>x==null?x:Math.round(x*1e4)/1e6; if(ser)ser={...ser,c:ser.c.map(sh)}; if(q&&!q.err){q.px=sh(q.px); if(q.prev)q.prev=sh(q.prev)}
     const ok=q&&!q.err, n=ser?ser.c.length:0;
     const v=ok?{id,name:q.name||'',px:q.px,prev:q.prev||null,chg:q.chg!=null?q.chg:null,date:q.closeDate||'',src:'מאיה (הבורסה לניירות ערך)',series:ser}
       :{id,name:'',px:ser.c[n-1],prev:n>1?ser.c[n-2]:null,chg:n>1&&ser.c[n-2]>0?(ser.c[n-1]/ser.c[n-2]-1)*100:null,date:ser.d[n-1],src:'מאיה (הבורסה), הסדרה השמורה',series:ser};

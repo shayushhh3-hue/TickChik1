@@ -422,6 +422,9 @@ test('prices: an Israeli mutual fund comes from Maya, read defensively, in the s
   // a stored price already in agorot keeps Maya's scale
   const e=buildQuotesDoc({prev:{prices:{'5129283':1200}},fetched:all,symbols:['5129283'],positions:[],now:new Date('2026-10-18T15:00:00Z')});
   assert.equal(e.prices['5129283'],1234.56);
+  // 24.11: no price of ours at all (nobody holds it, nothing stored): Maya's agorot are taken in shekels
+  const n0=buildQuotesDoc({prev:{},fetched:await fetchAll(['5129283'],{positions:[],fetch:f}),symbols:['5129283'],positions:[],now:new Date('2026-10-18T15:00:00Z')});
+  assert.equal(n0.prices['5129283'],12.3456);
 });
 
 test('prices: a fund that follows a US index is carried from its official price by the index and the dollar',async()=>{
@@ -441,7 +444,7 @@ test('prices: a fund that follows a US index is carried from its official price 
   // overnight: the future's move since its last settlement is added to the index's close
   all.bench={NDX:{px:20400,prev:20300,date:'2026-10-19',fut:{px:20604,prev:20400,date:'2026-10-20'}}};
   const e=buildQuotesDoc({prev:{},fetched:all,symbols:['5129283'],now:new Date('2026-10-20T07:00:00Z')});
-  assert.ok(Math.abs(e.prices['5129283']-373.6*(20604/20000)*0.99)<1e-3);
+  assert.ok(Math.abs(e.prices['5129283']-3.736*(20604/20000)*0.99)<1e-3,'no price of ours: Maya\'s agorot in shekels');
   assert.equal(trackOf('מור מחקה NASDAQ100'),'NDX'); assert.equal(trackOf('הראל כספית מגמת ריבית'),'');
 });
 
@@ -1009,7 +1012,7 @@ test('Israeli securities for the search: the exchange\'s own lists (shares, fund
   try{
     await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'});
     const r=(await req('o','GET','/api/ilfund?id=5129283')).j;
-    assert.equal(r.name,'הראל מחקה נאסד"ק 100'); assert.equal(r.px,367.77); assert.equal(r.date,'2026-10-19'); assert.deepEqual(r.series,{d:['2026-10-16','2026-10-19'],c:[365.1,367.77]});
+    assert.equal(r.name,'הראל מחקה נאסד"ק 100'); assert.equal(r.px,3.6777,'Maya\'s agorot in shekels'); assert.equal(r.date,'2026-10-19'); assert.deepEqual(r.series,{d:['2026-10-16','2026-10-19'],c:[3.651,3.6777]});
     assert.equal((await req('o','GET','/api/ilfund?id=12')).status,400); assert.equal((await req('o','GET','/api/ilfund?id=5999999')).status,404);
   }finally{globalThis.fetch=real; srv.close()}
 });

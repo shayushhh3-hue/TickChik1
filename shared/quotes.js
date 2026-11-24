@@ -312,7 +312,8 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
   for(const sym of symbols){
     const q=fetched.quotes[sym];
     if(q&&q.src==='maya'){ // Maya quotes funds in agorot or in shekels; the price we hold says which (a fund never moves a hundredfold)
-      const base=prices[sym]>0?prices[sym]:posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:0, k=base>0?q.px/base:1;
+      // 24.11: with no price of ours to compare, Maya's own scale: agorot (a mutual fund's price is published in agorot)
+      const base=prices[sym]>0?prices[sym]:posOf[sym]&&+posOf[sym].px>0?+posOf[sym].px:0, k=base>0?q.px/base:100;
       if(k>40&&k<250){q.px/=100; if(q.prev)q.prev/=100} else if(k>0.004&&k<0.025){q.px*=100; if(q.prev)q.prev*=100}
       if(!(q.px>0))continue; got++;
       const om=old.meta&&old.meta[sym]||{}, nm=q.name||(posOf[sym]&&posOf[sym].name)||om.name||'';
