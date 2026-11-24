@@ -4084,3 +4084,23 @@ test('24.11 the look-back\'s chart read a day at a time: the buttons, the arrow 
   await pg.mouse.click(at.x,at.y); await pg.waitForTimeout(150); const c=await st(); assert.equal(c.mv,'visible'); assert.doesNotMatch(c.txt,/^היום/);
   assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll'); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+
+test('24.11 units taken off the table by hand: the page asks whether they were sold; a sale puts the proceeds in the account\'s cash and the value stays; "no" is a correction',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main');
+  try{
+    const {ctx,pg}=await open(390); let asked=''; pg.on('dialog',d=>{asked=d.message(); d.accept().catch(()=>{})});
+    const total=()=>pg.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
+    const t0=await total(), usd0=(P0.cash.find(c=>c.acct==='exc'&&c.ccy==='USD')||{amount:0}).amount, px=store.getDoc('quotes/latest').data.prices.MSFT;
+    await tab(pg,'mine'); await pg.waitForTimeout(500);
+    // MSFT, 2 units in the fixture: one unit is taken off by hand, the cash is not touched
+    await pg.evaluate(()=>{const i=[...document.querySelectorAll('[data-pf="qty"]')].find(x=>{const r=x.closest('tr'); return r&&/MSFT/.test(r.textContent)}); i.value='1'; i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true}))});
+    await pg.waitForTimeout(200); await pg.evaluate(()=>document.getElementById('btnPfSave').click()); await pg.waitForTimeout(1800);
+    assert.match(asked,/ירדו יחידות בתיק: MSFT 1 יח׳/,'asked: '+asked); assert.match(asked,/אם מכרת אותן/);
+    const P1=store.getDoc('portfolio/main').data, usd1=(P1.cash.find(c=>c.acct==='exc'&&c.ccy==='USD')||{amount:0}).amount;
+    assert.equal(P1.positions.find(p=>p.sym==='MSFT').qty,1); assert.ok(Math.abs(usd1-usd0-px)<0.01,'the proceeds in the account\'s dollars: '+usd0+' → '+usd1);
+    const man=((store.getDoc('history/main').data.accounts||[]).find(a=>a.acct==='exc')||{}).manual||[]; assert.ok(man.some(x=>x.sym==='MSFT'&&x.side==='sell'&&x.qty===1),'kept as a sale');
+    assert.ok(Math.abs(await total()-t0)<=2,'the portfolio is worth the same: '+t0+' → '+await total());
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0,{silent:true}); if(H0.exists)store.setDoc('history/main',H0.data,{silent:true})}
+});

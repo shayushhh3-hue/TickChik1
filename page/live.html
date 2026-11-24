@@ -26092,6 +26092,17 @@ async function savePf(){
     // deleting everything lives in the settings ("פרטיות ונתונים"); an emptied table leads there, to the same confirmation
     if(had&&canWrite){showTab('settings',true);$('wipeAsk').hidden=false;$('wipeState').textContent='הטבלה ב"התיק שלי" ריקה. כדי למחוק את כל מה ששמור, יש לאשר כאן.';try{$('wipePanel').scrollIntoView({block:'center'})}catch(e){}}
     return}
+  // 24.11 (the owner: a partner sold shares, took the units off the table, and the portfolio showed a loss): units that went
+  // down (or a holding that left) in an account whose cash was not touched are asked about once: a sale puts its proceeds, at
+  // the price now, in that account's cash and is kept in the history as a sale, so the value stays; "no" is a correction
+  const soldRecs=[]; try{if(P&&Q&&Q.prices&&typeof confirm==='function'){const cashOf=(src,a)=>src.filter(c=>c.acct===a).reduce((t,c)=>t+(+c.amount||0)*(c.ccy==='USD'?1e6:1),0), dOf=a=>((+((DRAFT.cash||{})[a]||{}).ILS||0)+(+((DRAFT.cash||{})[a]||{}).USD||0)*1e6);
+    const L=[]; for(const o of P.positions||[]){if(!(+o.qty>0))continue; const n=pos.find(p=>p.sym===o.sym&&p.acct===o.acct), dq=+o.qty-(n?+n.qty:0); if(!(dq>1e-6))continue;
+      if(Math.abs(dOf(o.acct)-cashOf(P.cash||[],o.acct))>0.005)continue;   // the cash of the account was updated too: nothing to add
+      const px=+Q.prices[o.sym]||0, cc=ccyOfPos(o,Q), rt=px?rateOf(cc,Q):null; if(!px||!rt)continue; L.push({o,n,dq,px,cc,rt,ils:dq*px*rt})}
+    if(L.length&&confirm('ירדו יחידות בתיק: '+L.map(x=>lab(x.o.sym)+' '+(+x.dq.toFixed(4))+' יח׳ (בערך '+ils(x.ils)+')').join(', ')+'.\n\nאם מכרת אותן: התמורה תיכנס למזומן של החשבון, ושווי התיק לא ירד.\n\nאישור = מכרתי.  ביטול = זה רק תיקון של הכמות.')){
+      for(const x of L){const il=x.cc==='ILS', usd=x.cc==='USD', amt=il?x.dq*x.px:usd?x.dq*x.px:x.ils, c=il||!usd?'ILS':'USD'; (DRAFT.cash[x.o.acct]=DRAFT.cash[x.o.acct]||{ILS:0,USD:0})[c]=Math.round(((+DRAFT.cash[x.o.acct][c]||0)+amt)*100)/100;
+        const f=x.dq/(+x.o.qty), cut=x.o.costIls!=null?+x.o.costIls*f:null; if(x.n){if(x.n.costIls!=null&&Math.abs(+x.n.costIls-(+x.o.costIls||0))<0.005)x.n.costIls=Math.round(+x.o.costIls*(1-f)*100)/100; if(x.n.costUsd!=null&&x.o.costUsd!=null&&Math.abs(+x.n.costUsd-+x.o.costUsd)<0.005)x.n.costUsd=Math.round(+x.o.costUsd*(1-f)*100)/100}
+        soldRecs.push({acct:x.o.acct,rec:{id:Date.now().toString(36)+soldRecs.length,date:ilDay(),sym:x.o.sym,side:'sell',qty:Math.round(x.dq*1e6)/1e6,px:Math.round(x.px*1e6)/1e6,amt:Math.round(amt*100)/100,ccy:c==='ILS'&&!il?'ILS':x.cc==='ILS'?'ILS':'USD',fx:+Q.usdIls||null,at:new Date().toISOString(),est:true,...(cut!=null?{realIls:Math.round((x.ils-cut)*100)/100}:{})}})}}}}catch(e){console.error(e)}
   const cash=[]; for(const a of Object.keys(DRAFT.cash||{}))for(const c of ['ILS','USD'])if(DRAFT.cash[a]&&+DRAFT.cash[a][c])cash.push({acct:a,amount:+DRAFT.cash[a][c],ccy:c});
   // 8.11: what the statement changed against the site, as approved by this save (per account, the last one)
   const stmtCheck=(()=>{try{const out={...((P&&P.stmtCheck)||{})}; for(const ac of Object.keys((DRAFT.sdiff)||{})){const X=stmtDiff(ac); if(!X)continue;
@@ -26109,6 +26120,7 @@ async function savePf(){
       // unit changed by hand with no statement and no sale behind it
       const H2=ledgerRecord(hx?hx.H:null,{P0:U0.P,pos,landed:Object.keys((DRAFT.sdiff)||{}),asOf:DRAFT.asOf||{}});
       if(hx||H2){const H=H2||hx.H; await pset('history',H); HS=H; if(hx){txNote=histNote(hx); dyMoved=await bumpDaily(hx.bumps).catch(()=>false)}} DRAFT.tx=[]; DRAFT.monthly={}; renderTx()}catch(e){txNote=' הפעולות לא נשמרו, נסה שוב.'}
+    if(soldRecs.length)try{const H=HS?cl(HS):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; for(const s of soldRecs){let A=H.accounts.find(z=>z.acct===s.acct); if(!A){A={acct:s.acct,ccy:acctCcy(s.acct),deposits:[],trades:[],snapshots:[]}; H.accounts.push(A)} A.manual=[...(A.manual||[]),s.rec]} await pset('history',H); HS=H; txNote+=' המכירה נרשמה, והתמורה במזומן.'}catch(e){txNote+=' המכירה לא נרשמה בהיסטוריה.'}
     const now=new Set(pos.map(p=>p.sym)), gone=[...before].filter(x=>!now.has(x)), purged=gone.length?await purgeSyms(gone):true;
     const arcHit=gone.length?ARC.filter(e=>{const t=JSON.stringify(e.R||'')+JSON.stringify(e.snap||'');return gone.some(x=>t.includes('"'+x+'"'))}).length:0;
     if(!OWNER&&!LOCAL&&MYID){const syms=[...new Set(pos.filter(p=>(p.ccy==='USD'&&/^[A-Z][A-Z.\-]{0,5}$/.test(p.sym))||/^\d{5,9}$/.test(p.sym)||/^TA(125|90)$/.test(p.sym)).map(p=>p.sym))].slice(0,40);
@@ -32095,6 +32107,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.5',at:'2026-11-24',t:'הורדת יחידות מהטבלה? האתר שואל אם מכרת',d:'כששומרים את "התיק שלי" אחרי שיחידות ירדו או שנייר הוסר, והמזומן של החשבון לא עודכן, האתר שואל אם זו מכירה. אם כן, התמורה (לפי המחיר עכשיו) נכנסת למזומן של החשבון, המכירה נרשמת, ושווי התיק לא יורד.',go:'pfedit'},
   {v:'2026-11-24.4',at:'2026-11-24',t:'מכירה היא כסף שנכנס, לא הפסד',d:'כשרושמים מכירה, התמורה נכנסת למזומן ושווי התיק לא משתנה. עד היום "רווח מול עלות" ירד אחרי מכירה, כי הרווח של מה שנמכר יצא מהחישוב. עכשיו מה שמומש במכירות נשאר בתוך הרווח, וכתוב לידו כמה ממנו מומש.',go:'hist'},
   {v:'2026-11-24.3',at:'2026-11-24',t:'מבט לאחור: מכירה כתובה בטבלה החודשית',d:'ב"מבט לאחור" ← "לאורך זמן", בטבלת התשואה החודשית: חודש שבו מכרת נייר כותב את זה מתחת לשם החודש, עם הנייר, מספר היחידות, והרווח או ההפסד כשמחיר הקנייה ידוע.',go:'hist'},
   {v:'2026-11-24.2',at:'2026-11-24',t:'מבט לאחור: הגרף יום אחרי יום, והעסקאות שלך ביומן ובציר הזמן',d:'בגרף "שווי התיק מול סך ההפקדות" אפשר לנוע יום אחרי יום: נגיעה או גרירה על הגרף, החצים במקלדת, או הכפתורים "אחורה" ו"קדימה" שמתחתיו. ביום שנבחר מופיעה נקודת ציון על כל קו, והמספרים שלו כתובים מתחת לגרף, יחד עם מה שעשית באותו יום: קנייה, מכירה, הפקדה או משיכה. יום שיש בו פעולה מסומן במעוין על הקו. כל הימים שהאתר שמר נמצאים עכשיו על הגרף. וגם: קנייה או מכירה שרשמת באתר מופיעה ב"ציר הזמן שלי" ומחכה ביומן לסיבה שלך.',go:'hist'},
