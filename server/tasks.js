@@ -8,7 +8,7 @@ import {reconcileSplits} from '../shared/splits.js';
 import {pressureSection} from './pressure.js';
 import {healthCheck} from './health.js';
 import {confirmSplits, symbolChanges} from './fmp.js';
-import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist, MINOR} from '../shared/quotes.js';
+import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist, nasdaqHist, MINOR} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
 
@@ -99,10 +99,15 @@ export async function longClosesFor(store,key,map={}){
 export async function closesFor(key,map={}){
   // an index: IDX:SPX, IDX:TA125 (the indices the page knows, BENCH)
   if(key.startsWith('IDX:')&&!BENCH[key.slice(4)])throw new Error('unknown index');
+  // 24.11: a mutual fund (TLV:5xxxxxx) is not on Yahoo: its official prices from Maya, as the nightly run reads them
+  const fid=key.replace(/^TLV:/,''); if(isIlFund(fid)&&!map[key]){const d=await mayaFundSeries(fid,{pageSize:300}); if(d.d.length<2)throw new Error('Maya: no prices'); return {key,d:d.d,c:d.c,updatedAt:new Date().toISOString(),source:'מאיה (הבורסה)'}}
   const t=key.startsWith('IDX:')?BENCH[key.slice(4)].t:key.startsWith('TLV:')?(map[key]||key.slice(4)+'.TA'):tickerFor(key,null,map);
   // 5.11: a US share from Stooq first: the year, the five years by week and the months in one request
   if(/^[A-Z]{1,5}([.\-][A-Z])?$/.test(key)&&!PROXY[key]){try{const h=await stooqHist(t); return {key,d:h.d,c:h.c,...(h.v?{v:h.v}:{}),...(h.w&&h.w.d.length>=3?{w:h.w}:{}),...(h.m&&h.m.d.length>=3?{m:h.m}:{}),updatedAt:new Date().toISOString(),source:'Stooq'}}catch(e){}}
-  const d=await series(t,'1y','1d'); const doc={key,d:d.d,c:d.c,updatedAt:new Date().toISOString(),source:'Yahoo Finance'};
+  // 24.11: Yahoo; for a US share or ETF Nasdaq's year of days when Yahoo fails too (its error is the one kept, so a pause stays a pause)
+  let d; try{d=await series(t,'1y','1d')}catch(e){if(!/^[A-Z]{1,5}([.\-][A-Z])?$/.test(key)||PROXY[key])throw e; let h; try{h=await nasdaqHist(t)}catch(e2){throw e}
+    return {key,d:h.d,c:h.c,v:h.v,updatedAt:new Date().toISOString(),source:'Nasdaq'}}
+  const doc={key,d:d.d,c:d.c,updatedAt:new Date().toISOString(),source:'Yahoo Finance'};
   try{const w=await series(t,'5y','1wk'); if(w.d.length>=3)doc.w=w}catch(e){}
   try{const m=await series(t,'max','1mo'); if(m.d.length>=3)doc.m=m}catch(e){}
   return doc;

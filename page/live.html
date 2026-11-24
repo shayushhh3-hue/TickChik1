@@ -1090,6 +1090,7 @@ body:not([data-page="overview"]) .hero .status{margin-top:0;align-self:center}
 .lg{position:relative;width:30px;height:30px;border-radius:27%;background:linear-gradient(150deg,#2B2E35 0%,#17191E 60%,#0E0F12 100%);box-shadow:inset 0 0 0 1px rgb(255 255 255 / .08),0 1px 2px rgb(0 0 0 / .18);display:inline-grid;place-items:center;overflow:hidden;flex:none;vertical-align:middle;font-family:var(--mono);font-weight:600;font-size:9px;letter-spacing:.02em;color:#EAF0F6;line-height:1}
 .lg.lt{background:#FFFFFF;box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgb(46 74 102 / .08)} .lg.br{box-shadow:inset 0 0 0 1px rgb(255 255 255 / .12),0 1px 2px rgb(0 0 0 / .15)}
 .lg i{font-style:normal;display:block}
+.lg .rl{position:absolute;inset:12%;width:76%;height:76%;object-fit:contain;opacity:0;pointer-events:none} .lg.rlon{background:#FFFFFF!important;box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgb(46 74 102 / .08)} .lg.rlon .rl{opacity:1} .lg.rlon i{visibility:hidden}
 .lg.mono{background:var(--mbg)!important;color:#fff} .lg.mono i{font-weight:600;letter-spacing:-.02em;line-height:1} .lg.mono.m3 i{font-size:.85em} .lg.mono.m4 i{font-size:.7em} .lg.on i{display:none} .lg .sp{position:absolute;inset:12%;background-repeat:no-repeat;background-size:2000% auto} .lg.lt .sp{inset:9%}
 .lg.s{width:22px;height:22px;font-size:7.5px} .lg.l{width:48px;height:48px;font-size:13px}
 td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
@@ -27784,16 +27785,27 @@ const ISS_C=new Map();
 function issuerOf(k){if(ISS_C.has(k))return ISS_C.get(k); let nm='';
   try{const it=typeof itemOf==='function'?itemOf(k):null; nm=[it&&it.name,it&&it.he].filter(Boolean).join(' ')}catch(e){}
   try{const p=((P&&P.positions)||[]).find(x=>x.sym===k); if(p)nm+=' '+(p.name||'')}catch(e){}
-  if(!nm.trim())return null; const out=issuerByName(nm); if(SYMDB||nm)ISS_C.set(k,out); return out}
+  // 24.11: a fund opened by its number: its name from Maya (the house: הראל, מגדל…); not kept until Maya has answered
+  const num=/^(TLV:)?\d{6,9}$/.test(k); let fn=''; try{const f=ILF[k.replace(/^TLV:/,'')]; fn=f&&f.v&&f.v.name||''}catch(e){} if(fn)nm+=' '+fn;
+  if(!nm.trim())return null; const out=issuerByName(nm); if((SYMDB||nm)&&(!num||fn||out))ISS_C.set(k,out); return out}
 function issuerByName(nm){let out=null; for(const [re,v] of ISSUERS)if(re.test(nm)){out=v.t?(lgPos(v.t)?{ps:v.t}:null):v; if(out)break}
   // an index fund with no house found: the index it follows
   if(!out){const ix=/nasdaq|נאסד/i.test(nm)&&/100/.test(nm)?'100':/s&p|אס.?אנד.?פי/i.test(nm)&&/500/.test(nm)?'500':/ת"?א|תל.?אביב|ta-?\d/i.test(nm)&&/(35|90|125|בנקים)/.test(nm)?(nm.match(/35|90|125|בנקים/)||[''])[0]:''; if(ix)out={m:ix,bg:'#4C1D95'}}
   return out}
+// 24.11: the company logos the server fetched (RLOK: drawn at once next time) or does not have (RLBAD: not asked again)
+const RLOK=new Set(), RLBAD=new Set(), RLKEY=/^TLV:[A-Z][A-Z0-9.\-]{0,7}$|^[A-Z][A-Z.\-]{0,5}$|^[A-Z0-9][A-Z0-9\-]{0,8}\.[A-Z]{1,3}$/;
+function rlImg(k){if(LOCAL||RLBAD.has(k)||!RLKEY.test(k))return ''; return `<img class="rl" src="/api/logo?s=${encodeURIComponent(k)}" alt="" loading="lazy" decoding="async" data-rl="${esc(k)}">`}
+document.addEventListener('load',ev=>{const t=ev.target; if(!t||t.tagName!=='IMG'||!t.classList.contains('rl'))return; const k=t.dataset.rl;
+  if(t.naturalWidth<8){RLBAD.add(k); t.remove(); return} RLOK.add(k); const p=t.parentNode; if(p&&p.classList)p.classList.add('rlon')},true);
+document.addEventListener('error',ev=>{const t=ev.target; if(!t||t.tagName!=='IMG'||!t.classList.contains('rl'))return; RLBAD.add(t.dataset.rl); t.remove()},true);
 window.__logo={html:(k,c,name)=>{if(name!=null)ISS_C.set(k,issuerByName(name)); return logoHtml(k,c)}};   // for the page's tests
 function logoHtml(k,cls,nx){k=String(k||'');const sym=k.replace(/^(TLV|IDX):/,''),ini=esc(/^\d{6,9}$/.test(sym)?'קרן':/^TA\d+$/.test(sym)?sym.slice(2):(sym.replace(/[^A-Z0-9]/g,'').slice(0,3)||'·')),cl='lg'+(cls?' '+cls:'')+(nx?' nx-'+nx.lv:'');let ps=lgPos(k); if(!ps&&k.startsWith('TLV:'))ps=lgPos(sym);   // a dual-listed share: its US logo
   const a=nx?` role="button" tabindex="0" data-plopen="${esc(nx.k)}" aria-label="${nx.lv==='crit'?'התראה קריטית':'התראה חשובה'}: ${esc(nx.title)}" title="${esc(nx.title)}"`:' aria-hidden="true"';
-  if(!ps){const is=issuerOf(k); if(is&&is.ps)ps=lgPos(is.ps); else if(is&&is.m)return `<span class="${cl} mono${is.m.length>3?' m4':is.m.length>2?' m3':''}" style="--mbg:${is.bg}"${a}><i>${esc(is.m)}</i></span>`}
-  if(!ps)return `<span class="${cl}"${a}><i>${ini}</i></span>`;
+  // 24.11: no logo in the sheets, of its own or its issuer's: the company's logo from the server (/api/logo, a public
+  // source kept on its disk) laid over the issuer's tile or the monogram, which stay when the source has none
+  if(!ps){const is=issuerOf(k); if(is&&is.ps)ps=lgPos(is.ps); else{const rl=rlImg(k), on=rl&&RLOK.has(k)?' rlon':'';
+    if(is&&is.m)return `<span class="${cl} mono${is.m.length>3?' m4':is.m.length>2?' m3':''}${on}" style="--mbg:${is.bg}"${a}><i>${esc(is.m)}</i>${rl}</span>`;
+    return `<span class="${cl}${on}"${a}><i>${ini}</i>${rl}</span>`}}
   const [sh,c,r,rows,lt,bc]=ps,u=LGOK.get(sh),cl2=cl+(lt?' lt':bc?' br':''),st=bc?` style="background:${bc}"`:'';
   if(u)return `<span class="${cl2} on"${st}${a}><i>${ini}</i><b class="sp" style="background-image:url(&quot;${esc(u)}&quot;);background-position:${lgPosCss(c,r,rows)}"></b></span>`;
   lgSoon();return `<span class="${cl2}"${st} data-sh="${sh}" data-c="${c}" data-r="${r}" data-rows="${rows}"${a}><i>${ini}</i></span>`}
@@ -27992,7 +28004,11 @@ function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||
 function mergeSeries(a,b){const m=new Map();for(const s of [b,a])if(s&&s.d&&s.c)for(let i=0;i<s.d.length;i++)if(s.c[i]!=null)m.set(s.d[i],+s.c[i]);
   const d=[...m.keys()].sort();return {d,c:d.map(x=>m.get(x))}}
 // three sources, most precise first: c_<key> (per-security, from the nightly task), h_<bucket> (daily snapshot accumulation), g_<bucket> (five-year backfill: daily + weekly)
-async function loadCloses(k){if(CLOSES[k])return; if(ilIsNum(k)){await ilFundLoad(k); if(SEC===k)renderSec(); return} if(!db)return;let a=null,b=null,g=null,gw=null;
+// 24.11 (the owner: no security page without a chart): a security no source had a series for is marked none (the page
+// says so plainly, and asks again when it is opened a minute later); nothing is drawn that no source gave
+async function loadCloses(k){if(CLOSES[k]&&!(CLOSES[k].none&&Date.now()-CLOSES[k].at>60e3))return;
+  if(ilIsNum(k)){const j=await ilFundLoad(k); if(!CLOSES[k]||!(CLOSES[k].c||[]).length)CLOSES[k]={d:[],c:[],none:true,at:Date.now()}; else if(j&&j.series){if(j.series.w)CLOSES[k].w=j.series.w; if(j.series.m)CLOSES[k].m=j.series.m} if(SEC===k)renderSec(); return}
+  if(!db)return;let a=null,b=null,g=null,gw=null;
   const getDoc=async n=>{try{const s=await db.doc('quotes/'+n).get();return s.exists?(s.data()||null):null}catch(e){return null}};
   const [ca,hb,gb]=await Promise.all([getDoc('c_'+k.replace(':','_')),getDoc(hName(k)),k.startsWith('TLV:')?Promise.resolve(null):getDoc('g_'+hName(k).slice(2))]);
   a=ca; if(hb){const arr=(hb.c||{})[k];if(arr)b={d:hb.d||[],c:arr}}
@@ -28000,6 +28016,7 @@ async function loadCloses(k){if(CLOSES[k])return; if(ilIsNum(k)){await ilFundLoa
   const m=mergeSeries(mergeSeries(a,b),g); if(a&&a.w&&a.w.d)m.w=a.w;else if(gw)m.w=gw; if(a&&a.m&&a.m.d)m.m=a.m;
   if(a&&Array.isArray(a.v)&&a.v.length===(a.d||[]).length){const vm=new Map(a.d.map((dt,i)=>[dt,a.v[i]])); m.v=m.d.map(dt=>vm.has(dt)?vm.get(dt):null)}   // 1.11: the volumes, aligned to the merged days
   try{serSplit(k,m); if(m.w)serSplit(k,m.w); if(m.m)serSplit(k,m.m)}catch(e){}   // 6.11: days saved before a split, in the new units
+  if(m.d.length<3&&!(m.w&&m.w.d&&m.w.d.length>=3)&&!(m.m&&m.m.d&&m.m.d.length>=3)){m.none=true; m.at=Date.now()}
   CLOSES[k]=m;if(SEC===k)renderSec()}
 // what the security on screen means for the viewer's own portfolio: holding, effect, and the viewer's rules
 // ---- 1.11: "זיכרון תזת ההשקעה" and the journal, one document a person (journal/main or data/users/<id>/journal):
@@ -28647,7 +28664,7 @@ function drawSec(){
     if(fxS&&fxS.d&&fxS.d.length){const o=[]; for(const q of pts){const f=serAt(fxS,isoDay(q[0])); if(f&&f.c>0)o.push([q[0],q[1]*f.c])} if(o.length>=3){pts=o; CC='ILS'} else fxNo=true}
     else{fxNo=true; try{benchLoad()}catch(e){}}}
   const W=cv.clientWidth||600,H=cv.clientHeight||220,dpr=window.devicePixelRatio||1; cv.width=W*dpr;cv.height=H*dpr; const g=cv.getContext('2d'); g.scale(dpr,dpr); g.clearRect(0,0,W,H); g.direction='ltr';
-  if(pts.length<3){cv.style.display='none';SECV=null;const rd=$('secRead');if(rd){rd.innerHTML='';rd.hidden=true}note.textContent=d===undefined?'טוען נתונים…':ipoDay(ipoOf(SEC))?'הנייר חדש בבורסה: גרף יופיע כשיהיו לו שלושה ימי מסחר לפחות.':'אין עדיין מספיק נתונים לגרף בטווח הזה. הנייר נרשם: בלילה הקרוב תימשך ההיסטוריה שלו (יומי, שבועי וחודשי).';return}
+  if(pts.length<3){cv.style.display='none';SECV=null;const rd=$('secRead');if(rd){rd.innerHTML='';rd.hidden=true}note.textContent=d===undefined?'טוען נתונים…':d&&d.none&&!ipoDay(ipoOf(SEC))?'אין נתוני מחיר לגרף: אף מקור (Stooq, Yahoo Finance, Nasdaq, מאיה) לא החזיר היסטוריה לנייר הזה כרגע. ננסה שוב כשהדף ייפתח בפעם הבאה.':ipoDay(ipoOf(SEC))?'הנייר חדש בבורסה: גרף יופיע כשיהיו לו שלושה ימי מסחר לפחות.':'אין עדיין מספיק נתונים לגרף בטווח הזה. הנייר נרשם: בלילה הקרוב תימשך ההיסטוריה שלו (יומי, שבועי וחודשי).';return}
   cv.style.display='block';
   const t0=pts[0][0],t1=pts[pts.length-1][0],base=pts[0][1];
   let lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1])); if(hi===lo){hi*=1.02;lo*=0.98}

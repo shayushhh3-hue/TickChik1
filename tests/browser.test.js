@@ -4236,3 +4236,30 @@ test('24.11 a sale whose money an older statement wiped from the cash: offered b
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0,{silent:true}); store.setDoc('history/main',H0,{silent:true}); if(D0.exists)store.setDoc('history/daily',D0.data,{silent:true}); else store.deleteDoc('history/daily')}
 });
+
+// 24.11 (the owner: "שלא יהיו חברות בלי אייקונים ובלי גרפים"): every security's page has an icon and either a chart or a
+// plain "no data" (never "loading" forever, never a line no source gave); a fund by its number with its house's tile
+for(const W of [390,1280])test(`24.11 every security page: an icon, and a chart or a plain "no data" (${W}px)`,T,async t=>{
+  if(skip())return t.skip('no browser');
+  const d=[],c=[]; for(let i=0;i<40;i++){d.push(new Date(Date.UTC(2026,9,1)+i*864e5).toISOString().slice(0,10)); c.push(360+i/2)}
+  const FUND={id:'5129283',name:'הראל מחקה נאסד"ק 100',px:379.5,prev:379,chg:0.13,date:d.at(-1),src:'מאיה',series:{d,c}};
+  const route=(r,u)=>{if(u.includes('/api/ilfund?id=5129283')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(FUND)});return true}
+    if(u.includes('/api/ilfund?id=5000001')){r.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:{message:'מאיה (אתר הבורסה) לא ענתה כרגע'}})});return true} return false};
+  const {ctx,pg}=await open(W,{route});
+  try{
+    await tab(pg,'search'); await pg.waitForTimeout(600);
+    const at=async(k,ms=2500)=>{await pg.evaluate(x=>window.__srch.open(x),k); await pg.waitForTimeout(ms);
+      return pg.evaluate(()=>{const lg=document.querySelector('#secPage .lg'), cv=document.getElementById('secChart'), n=document.getElementById('secChartNote');
+        return {lg:lg?{cls:lg.className,txt:lg.textContent.trim(),img:!!lg.querySelector('img'),w:Math.round(lg.getBoundingClientRect().width)}:null,chart:!!cv&&cv.style.display==='block',note:n?n.textContent:'',txt:document.getElementById('secPage').textContent}})};
+    // a fund by its number: Maya's year drawn, and its house's tile
+    let s=await at('5129283'); assert.ok(s.chart,'the fund\'s chart: '+s.note); assert.ok(s.lg&&/mono/.test(s.lg.cls)&&s.lg.txt==='הראל',JSON.stringify(s.lg));
+    // a Tel Aviv share outside the logo sheets with no logo at the source (the tests reach no internet): its monogram, no broken image
+    s=await at('TLV:LUMI'); assert.ok(s.lg&&s.lg.txt&&s.lg.w>=20,JSON.stringify(s.lg)); assert.ok(!s.lg.img,'the image the source lacks is gone');
+    assert.ok(s.chart||/אין נתוני מחיר לגרף/.test(s.note),'a chart or a plain no-data: '+s.note); assert.doesNotMatch(s.note,/טוען נתונים/);
+    // a US share nobody holds or follows, and no source answers: said plainly
+    s=await at('PLTR'); assert.ok(s.lg&&s.lg.w>=20); assert.ok(s.chart||/אין נתוני מחיר לגרף: אף מקור/.test(s.note),s.note);
+    // a fund Maya did not answer for: said so, not "unknown number"
+    s=await at('5000001'); assert.match(s.txt,/מאיה \(אתר הבורסה\) לא ענתה כרגע/);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+});

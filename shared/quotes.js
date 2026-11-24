@@ -160,6 +160,17 @@ export async function yahooBars(ticker,{fetch:f=timedFetch,range='1mo'}={}){
 // days). Its last sale, the day's change and the time of the last trade; an ETF is asked as an ETF when the stock call has
 // nothing. A plain US ticker only (no exchange suffix)
 const NQ_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*',origin:'https://www.nasdaq.com',referer:'https://www.nasdaq.com/','accept-language':'en-US,en;q=0.9'};
+// 24.11: a US share's or ETF's year of daily closes from Nasdaq's history (the same service), the chart's third source when
+// Stooq and Yahoo both fail. Rows {date:'11/23/2026', close:'$4.03', volume:'44,714,940'}; the oldest first
+export function nasdaqHistParse(j){const rows=(((j||{}).data||{}).tradesTable||{}).rows; if(!Array.isArray(rows))return {d:[],c:[]};
+  const by=new Map(); for(const r of rows){const m=String(r&&r.date||'').match(/^(\d\d)\/(\d\d)\/(\d{4})$/), c=parseFloat(String(r&&r.close||'').replace(/[$,]/g,'')), v=parseFloat(String(r&&r.volume||'').replace(/,/g,''));
+    if(m&&c>0)by.set(`${m[3]}-${m[1]}-${m[2]}`,[Math.round(c*1e4)/1e4,isFinite(v)?v:null])}
+  const d=[...by.keys()].sort(); return {d,c:d.map(x=>by.get(x)[0]),v:d.map(x=>by.get(x)[1])}}
+export async function nasdaqHist(ticker,{fetch:f=timedFetch,now=new Date()}={}){
+  const to=now.toISOString().slice(0,10), from=new Date(now.getTime()-370*864e5).toISOString().slice(0,10); let last=null;
+  for(const cls of ['stocks','etf']){try{const r=await f(`https://api.nasdaq.com/api/quote/${encodeURIComponent(String(ticker).replace(/-/g,'.'))}/historical?assetclass=${cls}&fromdate=${from}&todate=${to}&limit=400`,{headers:NQ_H});
+      if(!r.ok){last=new Error('Nasdaq HTTP '+r.status);continue} const h=nasdaqHistParse(await r.json()); if(h.d.length>=3)return h; last=new Error('Nasdaq: no rows')}catch(e){last=e}}
+  throw last||new Error('Nasdaq: no rows')}
 const MON={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
 export function nasdaqParse(j,now=new Date()){
   const d=j&&j.data, pd=d&&d.primaryData; if(!pd)return null;

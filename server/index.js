@@ -27,6 +27,7 @@ import {cspState, cspReport} from './csp.js';
 import {smokeOnStart, recheckOnStart, restoreOnStart} from './control.js';
 import {startRt} from './rt.js';
 import {closesFor,longClosesFor} from './tasks.js';
+import {logoStore} from './logos.js';
 import {researchTask, newsFor, tick as rsTick, usable as rsUsable, queueResearch} from './research.js';
 import {buildSite} from '../tools/build.js';
 import {ilParts} from '../shared/market.js';
@@ -241,13 +242,16 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     // 24.11: a security of another exchange whose symbol the night's series do not cover (0700.HK, RELIANCE.NS) is fetched
     // again when its saved chart is 20 hours old
     const far=m&&d.exists&&d.data&&!d.data.missing&&/^[A-Z0-9][A-Z0-9\-]{0,8}\.[A-Z]{1,3}$/.test(m[1])&&!/^[A-Z][A-Z.\-]{0,5}$/.test(m[1])&&Date.now()-new Date(d.data.updatedAt)>20*36e5;
-    if(m&&(!d.exists||far||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>7*864e5))){
+    if(m&&(!d.exists||far||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>(d.data.soft?36e5:7*864e5)))){
       const key=m[1].replace(/^TLV_/,'TLV:').replace(/^IDX_/,'IDX:'); try{const doc=await chartOnce(key); return res.json({exists:true,data:doc,id:'c_'+m[1]})}catch(e){}}
     res.json(d.exists?{...d,data:partnerView(store,req.user,p,d.data)}:d)});
   const CHARTS=new Map();
   const chartOnce=key=>{if(CHARTS.has(key))return CHARTS.get(key); const pr=(async()=>{
       const map=(store.getDoc('settings/main').data||{}).symMap||{};
-      let doc; try{doc=await closesFor(key,map)}catch(e){const was=store.getDoc('quotes/c_'+key.replace(':','_')); if(was.exists&&was.data&&!was.data.missing)return was.data; doc={key,missing:true,updatedAt:new Date().toISOString()};
+      let doc; try{doc=await closesFor(key,map)}catch(e){const was=store.getDoc('quotes/c_'+key.replace(':','_')); if(was.exists&&was.data&&!was.data.missing)return was.data; const why=String(e&&e.message||e).slice(0,120);
+        // 24.11: only the source's own "no such symbol" keeps the page without a chart for a week; a failure of the moment
+        // (a timeout, a 403/5xx, Maya not answering) is asked again within the hour (RKLB was kept missing after one timeout)
+        doc={key,missing:true,why,updatedAt:new Date().toISOString(),...(/HTTP 404|no result|^empty$|unknown index/.test(why)?{}:{soft:true})};
         if(e&&(e.paused||e.rate))return doc}   // 24.11: the source paused for a minute is not "no chart for a week": not kept, asked again on the next visit
       store.setDoc('quotes/c_'+key.replace(':','_'),doc,{silent:true}); return doc})().finally(()=>setTimeout(()=>CHARTS.delete(key),60000).unref());
     CHARTS.set(key,pr); return pr};
@@ -484,10 +488,23 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const ILF=new Map();
   app.get('/api/ilfund',needUser,async(req,res)=>{const id=String(req.query.id||'').trim(); if(!/^\d{6,9}$/.test(id))return res.status(400).json({error:{code:'invalid_argument',message:'מספר נייר של 6 עד 9 ספרות.'}});
     const c=ILF.get(id); if(c&&Date.now()-c.at<30*60e3)return res.json({...c.v,cached:true});
-    const [q,s]=await Promise.all([mayaFund(id).catch(e=>({err:String(e&&e.message||e)})),mayaFundSeries(id).catch(()=>null)]);
-    if(!q||q.err)return res.status(404).json({error:{code:'not_found',message:'לא מצאתי במאיה קרן או נייר במספר הזה.'}});
-    const v={id,name:q.name||'',px:q.px,prev:q.prev||null,chg:q.chg!=null?q.chg:null,date:q.closeDate||'',src:'מאיה (הבורסה לניירות ערך)',series:s&&s.d.length>=2?s:null};
+    // 24.11: a year of Maya's prices for the chart (was a month); when Maya's history does not answer, the series the night
+    // saved for a held or followed fund (the same official prices), so the page has a chart whenever any source had one
+    const [q,s]=await Promise.all([mayaFund(id).catch(e=>({err:String(e&&e.message||e)})),mayaFundSeries(id,{pageSize:300}).catch(()=>null)]);
+    let ser=s&&s.d.length>=2?s:null;
+    if(!ser)for(const n of ['quotes/c_TLV_'+id,'quotes/c_'+id]){const o=store.getDoc(n); if(o.exists&&o.data&&!o.data.missing&&o.data.d&&o.data.d.length>=2){ser={d:o.data.d,c:o.data.c}; if(o.data.w)ser.w=o.data.w; if(o.data.m)ser.m=o.data.m; break}}
+    // only Maya's own "no such fund" says the number is unknown; a timeout or a refusal of the moment says Maya did not answer
+    if((!q||q.err)&&!ser)return /HTTP 404|no price field/.test(q&&q.err||'')?res.status(404).json({error:{code:'not_found',message:'לא מצאתי במאיה קרן או נייר במספר הזה.'}})
+      :res.status(502).json({error:{code:'upstream_error',message:'מאיה (אתר הבורסה) לא ענתה כרגע, ולכן אין מחיר וגרף לנייר הזה. ננסה שוב כשהדף ייפתח בעוד דקה.'}});
+    const ok=q&&!q.err, n=ser?ser.c.length:0;
+    const v=ok?{id,name:q.name||'',px:q.px,prev:q.prev||null,chg:q.chg!=null?q.chg:null,date:q.closeDate||'',src:'מאיה (הבורסה לניירות ערך)',series:ser}
+      :{id,name:'',px:ser.c[n-1],prev:n>1?ser.c[n-2]:null,chg:n>1&&ser.c[n-2]>0?(ser.c[n-1]/ser.c[n-2]-1)*100:null,date:ser.d[n-1],src:'מאיה (הבורסה), הסדרה השמורה',series:ser};
     ILF.set(id,{at:Date.now(),v}); if(ILF.size>400)ILF.delete(ILF.keys().next().value); res.json(v)});
+  // 24.11: a company's logo the page's sheets lack, from a public source, kept on the disk (server/logos.js)
+  const LOGOS=logoStore(path.join(dataDir,'logos'));
+  app.get('/api/logo',needUser,async(req,res)=>{const b=await LOGOS.get(String(req.query.s||'').slice(0,16)).catch(()=>null);
+    if(!b){res.set('Cache-Control','private, max-age=86400'); return res.status(404).end()}
+    res.set({'Content-Type':'image/png','Cache-Control':'private, max-age=604800','X-Content-Type-Options':'nosniff'}); res.end(b)});
   // a company's latest report and the articles about it, for the security page. The figures are fetched again at most every
   // 20 minutes per security (one at a time); the articles are cached 30 minutes. Data to show, never instructions
   const RSONE=new Map(), NEWS=new Map(); let rsOneBusy=null;
