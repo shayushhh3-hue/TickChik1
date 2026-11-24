@@ -1763,7 +1763,8 @@ test('a stock typed by hand beside the statement: its own row, and removing it l
   // removing the hand row: the statement's 2 stay
   // on the phone: all the rows (the hand row is the 13th), and the row's ⋯ opens its buttons (17.11)
   await pg.evaluate(()=>{const b=document.getElementById('pfAllB'); if(b&&!b.hidden&&/להציג את כל/.test(b.textContent))b.click()}); await pg.click(`#pfRows [data-pfdots="${r[1].del}"]`);
-  await pg.click(`#pfRows [data-pfdel="${r[1].del}"]`); await pg.waitForTimeout(300);
+  // 24.11: the menu's "הסר" may still be sliding in (CI: "element is not stable" until the timeout, three runs in one day): the button pressed once it is there
+    {const sel=`#pfRows [data-pfdel="${r[1].del}"]`; await pg.waitForSelector(sel,{state:'visible'}); await pg.$eval(sel,b=>b.click())} await pg.waitForTimeout(300);
   r=await rows(); assert.deepEqual(r.map(x=>[x.qty,x.flag]),[[2,'']]);
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
