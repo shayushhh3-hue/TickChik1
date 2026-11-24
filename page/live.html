@@ -3517,6 +3517,16 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+/* 24.11 (the owner): the look-back's chart read a day at a time */
+#chart3{touch-action:pan-y}
+#chart3:focus-visible{outline:2px solid var(--focus,#7C3AED);outline-offset:2px;border-radius:8px}
+.trend-nav{display:flex;align-items:center;gap:8px;margin-top:10px}
+.trend-nav .btn{flex:none;min-height:40px;white-space:nowrap}
+.trend-sel{flex:1;margin:0;min-height:2.9em;font-size:13px;line-height:1.45;color:var(--ink2);text-align:center}
+.trend-sel b{color:var(--ink)}
+.trend-sel .ts-ev{display:block;margin-top:2px}
+.legend i.lg-ev{width:9px;height:9px;border:1.6px solid var(--ink);background:var(--surface);transform:rotate(45deg);border-radius:1px}
+body.hidenum .trend-sel .n{filter:blur(7px);user-select:none}
 /* 24.11 (the owner): the plan's cash, a box an account and one for all of it */
 .pcash{margin:0 0 12px}
 .pcash[hidden]{display:none}
@@ -4759,9 +4769,10 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
     <!-- 11.11 (the owner): the value against the deposits first on מבט לאחור -->
     <div class="m-ans" id="histAns" data-ptid="hQuick" role="group" aria-label="האם הכסף שלי עובד?" hidden></div>
     <section aria-labelledby="hTrend">
-      <div class="row"><h2 id="hTrend">האם הכסף שלי עובד? שווי מול הפקדות</h2><div class="legend"><span><i class="lg-l1"></i>שווי התיק</span><span><i class="lg-l2"></i>סך ההפקדות</span></div></div>
+      <div class="row"><h2 id="hTrend">האם הכסף שלי עובד? שווי מול הפקדות</h2><div class="legend"><span><i class="lg-l1"></i>שווי התיק</span><span><i class="lg-l2"></i>סך ההפקדות</span><span><i class="lg-ev"></i>יום עם פעולה</span></div></div>
       <div class="panel">
-        <div class="chart" id="chart3"><svg id="svg3" viewBox="0 0 640 260" role="img" aria-label="שווי התיק מול סך ההפקדות, חודש אחר חודש"></svg><div class="tip" id="tip3" hidden></div></div>
+        <div class="chart" id="chart3" tabindex="0" role="group" aria-label="גרף שווי התיק מול סך ההפקדות. החצים שמאלה וימינה עוברים יום יום, Home ו-End לקצוות" aria-describedby="trendSel"><svg id="svg3" viewBox="0 0 640 260" role="img" aria-label="שווי התיק מול סך ההפקדות, חודש אחר חודש"></svg><div class="tip" id="tip3" hidden></div></div>
+        <div class="trend-nav" dir="ltr"><button type="button" class="btn sm" id="trendBack" aria-label="אחורה בגרף, ליום הקודם" dir="rtl">אחורה <span aria-hidden="true">←</span></button><p class="trend-sel" id="trendSel" dir="rtl"></p><button type="button" class="btn sm" id="trendFwd" aria-label="קדימה בגרף, ליום הבא" dir="rtl" disabled><span aria-hidden="true">→</span> קדימה</button></div><span class="vh" id="trendSay" role="status" aria-live="polite"></span>
         <div class="note" id="trendNote"></div>
         <div class="dup tx" id="calcFix" hidden></div>
       </div>
@@ -21432,19 +21443,29 @@ function renderTrend(){
   const byNow=Object.fromEntries(acctIds().map(a=>[a,model(P,Q,a).total])), ex=byNow.exc||0, bl=byNow.blink||0;
   pts.push({t:Date.now(),label:'היום',exc:ex,blink:bl,by:byNow,val:mAll.total,dep:depNow,now:true});
   TP=pts;
+  // 24.11 (the owner): every day the page saved is on this chart (TPD), also the days before the last month-end; TP keeps what it
+  // held (the week's change and the reports read it). A day's deposits stay between the two month-ends around it
+  {const meK=new Set(MR.map(r=>r.ym+'-'+String(new Date(+r.ym.slice(0,4),+r.ym.slice(5),0).getDate()).padStart(2,'0'))), ME=pts.filter(p=>p.ym), old=[];
+   for(const k of Object.keys((DY&&DY.points)||{}).sort()){if(k===today||meK.has(k))continue; const x=DY.points[k], t=+new Date(k+'T12:00:00'); if(!(t<lastT)||!x||!(+x.v>0)||x.dep==null)continue;
+     const a=ME.filter(p=>p.t<=t).pop(), b=ME.find(p=>p.t>t); if(!a)continue; const lo=Math.min(a.dep,b?b.dep:a.dep), hi=Math.max(a.dep,b?b.dep:a.dep);
+     old.push({t,label:dmyy(k),exc:x.exc,blink:x.blink,by:x.by||{exc:x.exc,blink:x.blink},val:+x.v,dep:Math.min(hi,Math.max(lo,+x.dep)),day:true})}
+   TPD=old.length?pts.concat(old).sort((p,q)=>p.t-q.t):pts;
+   // what was done on each day (before the saved days: in each month), beside its point
+   const dayOf=p=>{const d=new Date(p.t); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}; for(const p of TPD)p.ev=[];
+   try{let j=0; for(const e of tlEvents().filter(e=>e.k!=='דוח נשמר').sort((a,b)=>a.d<b.d?-1:1)){while(j<TPD.length&&dayOf(TPD[j])<e.d)j++; if(j<TPD.length&&(j>0||dayOf(TPD[0])===e.d))TPD[j].ev.push(e)}}catch(x){}}
   // 25.10: the home chart's months: every whole month the page knows (also those without a known deposit total, and a
   // month known from one saved day), not only the ones the deposits chart can use; and today
   TPW=monthSeries().filter(r=>!r.now&&!r.miss&&!r.asOf&&r.val>0).map(r=>{const d=new Date(+r.ym.slice(0,4),+r.ym.slice(5),0);
     return {t:+d,ym:r.ym,label:`סוף ${MSHORT[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,by:r.by,val:r.val,dep:r.dep}}).concat([pts[pts.length-1]]);
   setTimeout(()=>{try{renderWChart()}catch(e){}},0);
   const W=cw('chart3'),sm=W<480,H=sm?230:260,L=sm?46:58,Rm=sm?64:74,T=14,Bm=30, t0=pts[0].t, t1=pts[pts.length-1].t;
-  const tk3=niceTicks(Math.min(...pts.map(p=>Math.min(p.val,p.dep)))*0.96,Math.max(...pts.map(p=>Math.max(p.val,p.dep)))*1.03,3), minV=tk3[0], maxV=tk3[tk3.length-1];
+  const tk3=niceTicks(Math.min(...TPD.map(p=>Math.min(p.val,p.dep)))*0.96,Math.max(...TPD.map(p=>Math.max(p.val,p.dep)))*1.03,3), minV=tk3[0], maxV=tk3[tk3.length-1];
   const x=t=>L+(W-L-Rm)*(t1>t0?(t-t0)/(t1-t0):0.5), y=v=>H-Bm-(H-T-Bm)*(v-minV)/(maxV-minV), kf=v=>'₪'+(v/1000).toFixed(v%1000?1:0)+'K';
   let g='';
   for(const v of tk3){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="2 5"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${kf(v)}</text>`}
   pts.forEach((p,i)=>{if(p.ym&&i%2===0)g+=`<text x="${x(p.t)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--sans)">${['ינו׳','פבר׳','מרץ','אפר׳','מאי','יונ׳','יול׳','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'][+p.ym.slice(5)-1]||''} ${p.ym.slice(2,4)}</text>`});   // 9.11: "מאי 26", not "5/26" (read as a date)
-  const stepD=pts.map((p,i)=>(i?`L${x(p.t).toFixed(1)} ${y(pts[i-1].dep).toFixed(1)}L`:'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join('');
-  const lineV=pts.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.val).toFixed(1)).join(' ');
+  const stepD=TPD.map((p,i)=>(i?`L${x(p.t).toFixed(1)} ${y(TPD[i-1].dep).toFixed(1)}L`:'M')+x(p.t).toFixed(1)+' '+y(p.dep).toFixed(1)).join('');
+  const lineV=TPD.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.val).toFixed(1)).join(' ');
   g+=`<path d="${stepD}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 4"/><path d="${lineV}" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
   // a month whose value was reconstructed, not read from a statement, is a hollow dot on the line (and "משוחזר" in the table)
   for(const p of pts.filter(p=>p.est))g+=`<circle cx="${x(p.t)}" cy="${y(p.val)}" r="4" fill="var(--surface)" stroke="var(--s1)" stroke-width="2"/>`;
@@ -21453,7 +21474,11 @@ function renderTrend(){
   const e=pts[pts.length-1]; let y1=y(e.val),y2=y(e.dep); if(Math.abs(y1-y2)<14){const mid=(y1+y2)/2,sg=e.val>=e.dep?1:-1;y1=mid-7*sg;y2=mid+7*sg}
   g+=`<text x="${x(e.t)+8}" y="${y1+4}" font-size="12" font-weight="600" fill="var(--ink)" font-family="var(--mono)">${kf(e.val)}</text><text x="${x(e.t)+8}" y="${y2+4}" font-size="12" fill="var(--ink2)" font-family="var(--mono)">${kf(e.dep)}</text>`;
   g+=`<line id="cross3" x1="0" x2="0" y1="${T}" y2="${H-Bm}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
-  $('svg3').setAttribute('viewBox','0 0 '+W+' '+H); $('svg3').innerHTML=g; $('svg3').dataset.geo=JSON.stringify({L,Rm,W,t0,t1});
+  // 24.11: a day with an action (a purchase, a sale, a deposit, a withdrawal) is a diamond on the value's line; a whole month's point is not marked, its actions are said when it is chosen
+  for(const p of TPD)if(p.ev&&p.ev.length&&!p.ym){const X=x(p.t), Y=y(p.val); g+=`<path class="mk-ev" d="M${X.toFixed(1)} ${(Y-6).toFixed(1)}L${(X+5).toFixed(1)} ${Y.toFixed(1)}L${X.toFixed(1)} ${(Y+6).toFixed(1)}L${(X-5).toFixed(1)} ${Y.toFixed(1)}Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>`}
+  // 24.11: the chosen day's marks, one on each line, in the legend's shapes
+  g+=`<rect id="mk3d" width="10" height="10" rx="1.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/><circle id="mk3v" r="6" fill="var(--s1)" stroke="var(--surface)" stroke-width="2.5" visibility="hidden"/>`;
+  $('svg3').setAttribute('viewBox','0 0 '+W+' '+H); $('svg3').innerHTML=g; $('svg3').dataset.geo=JSON.stringify({L,Rm,W,t0,t1,H,T,Bm,minV,maxV}); try{trendSel(TSEL)}catch(x){}
   try{$('svg3').setAttribute('aria-label',`שווי התיק מול סך ההפקדות, חודש אחר חודש. היום: שווי ${ils(e.val)}, הפקדות ${ils(e.dep)}`)}catch(x){}   // 17.11 (proposal 16): the chart in words
   const worst=pts.reduce((a,b)=>(b.val-b.dep)<(a.val-a.dep)?b:a), diff=e.val-e.dep;
   $('trendNote').innerHTML=`<b class="n ${diff>=0?'up':'down'}">${sgn(diff)} (${spct(e.dep?diff/e.dep*100:0)})</b> מול מה שהופקד: התיק שווה היום ${ils(e.val)} ומה שהופקד הוא ${ils(e.dep)}.${pts.some(p=>p.est)?' עיגול ריק על הקו: שווי משוחזר, לא מדוח.':''}<details class="more"><summary>פרטים על הגרף</summary>הנקודה הנמוכה ביותר הייתה ${esc(worst.label)}, ${sgn(worst.val-worst.dep)}. שווי אקסלנס לפי דוח הברוקר, ובחודשים בלי דוח הוא משוחזר. ${esc(HS.monthlyNote||'')} מהיום נשמרת נקודה אחת לכל יום שבו הדף נפתח.</details>`;
@@ -21468,15 +21493,35 @@ function renderTrend(){
     const ref=pd('daily'); (DY.exists?ref.update({points:{[today]:pt}}):ref.set({points:{[today]:pt}})).catch(()=>{}).then(()=>{setTimeout(()=>{dyBusy=false},60000)});
   }
 }
-$('chart3').addEventListener('pointermove',ev=>{
-  const svg=$('svg3'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo||!TP.length)return;
-  const r=svg.getBoundingClientRect(), sx=(ev.clientX-r.left)/r.width*geo.W, tt=geo.t0+(sx-geo.L)/(geo.W-geo.L-geo.Rm)*(geo.t1-geo.t0);
-  const p=TP.reduce((a,b)=>Math.abs(b.t-tt)<Math.abs(a.t-tt)?b:a), px=geo.L+(geo.W-geo.L-geo.Rm)*(geo.t1>geo.t0?(p.t-geo.t0)/(geo.t1-geo.t0):0.5), d=p.val-p.dep;
-  const c=svg.querySelector('#cross3'); c.setAttribute('x1',px);c.setAttribute('x2',px);c.setAttribute('visibility','visible');
+// 24.11 (the owner: "the chart accessible, with marks as I move back through the days"): the value and the deposits read a
+// point at a time. A touch or a drag on the chart, the arrow keys on it, or the two buttons under it choose a day; the day
+// gets a mark on each line (a circle on the value, a square on the deposits, as in the legend) and its figures are written
+// under the chart, and said to a screen reader. The days the page saved are all on the chart now (TPD), not only those
+// after the last month-end, so going back is a day at a time as far back as the days go, and a month at a time before
+let TPD=[], TSEL=null;
+function trendSel(t,say){const svg=$('svg3'), geo=JSON.parse((svg&&svg.dataset.geo)||'null'), out=$('trendSel'), L=TPD.length?TPD:TP; if(!svg||!geo||!L.length)return;
+  const c=svg.querySelector('#cross3'), mv=svg.querySelector('#mk3v'), md=svg.querySelector('#mk3d'), vis=(el,on)=>el&&el.setAttribute('visibility',on?'visible':'hidden');
+  const p=t==null?L[L.length-1]:L.reduce((a,b)=>Math.abs(b.t-t)<Math.abs(a.t-t)?b:a), d=p.val-p.dep; TSEL=t==null?null:p.t;
+  const x=geo.L+(geo.W-geo.L-geo.Rm)*(geo.t1>geo.t0?(p.t-geo.t0)/(geo.t1-geo.t0):0.5), y=v=>geo.H-geo.Bm-(geo.H-geo.T-geo.Bm)*(v-geo.minV)/(geo.maxV-geo.minV);
+  if(c){c.setAttribute('x1',x); c.setAttribute('x2',x)} if(mv){mv.setAttribute('cx',x); mv.setAttribute('cy',y(p.val))} if(md){md.setAttribute('x',x-5); md.setAttribute('y',y(p.dep)-5)}
+  vis(c,t!=null); vis(mv,t!=null); vis(md,t!=null);
+  if(out)setH(out,`<b>${esc(p.label)}</b>${p.est?' · משוחזר':''} · שווי <span class="n">${ils(p.val)}</span> · הפקדות <span class="n">${ils(p.dep)}</span> · הפרש <span class="n ${d>=0?'up':'down'}">${sgn(d)}</span>${p.ev&&p.ev.length?`<span class="ts-ev">${p.ym?'בחודש הזה':p.now?'היום':'באותו יום'}: ${p.ev.slice(0,4).map(e=>`<b>${e.k}</b> ${e.t}`).join(' · ')}${p.ev.length>4?` · ועוד ${p.ev.length-4}`:''}</span>`:''}`);
+  const i=L.indexOf(p), b=$('trendBack'), f=$('trendFwd'); if(b)b.disabled=i<=0; if(f)f.disabled=t==null||i>=L.length-1;
+  if(say){const s=$('trendSay'), pl=x=>{const e=document.createElement('div'); e.innerHTML=x; return e.textContent}; if(s)s.textContent=`${p.label}: שווי ${ils(p.val)}, הפקדות ${ils(p.dep)}, הפרש ${sgn(d)}`+(p.ev&&p.ev.length?'. '+p.ev.slice(0,4).map(e=>e.k+' '+pl(e.t)).join(', '):'')}
+  return p}
+function trendStep(k){const L=TPD.length?TPD:TP; if(!L.length)return; const i=TSEL==null?L.length-1:L.findIndex(p=>p.t===TSEL), j=Math.max(0,Math.min(L.length-1,(i<0?L.length-1:i)+k)); trendSel(L[j].t,true)}
+const trendAt=ev=>{const svg=$('svg3'), geo=JSON.parse(svg.dataset.geo||'null'); if(!geo)return null; const r=svg.getBoundingClientRect(), sx=(ev.clientX-r.left)/r.width*geo.W; return geo.t0+(sx-geo.L)/(geo.W-geo.L-geo.Rm)*(geo.t1-geo.t0)};
+$('chart3').addEventListener('pointerdown',ev=>{const tt=trendAt(ev); if(tt!=null)trendSel(tt,true)});
+$('chart3').addEventListener('pointermove',ev=>{if(ev.pointerType!=='mouse'&&!ev.buttons&&!ev.pressure)return; const tt=trendAt(ev); if(tt==null)return; const p=trendSel(tt,ev.pointerType!=='mouse'); if(!p||ev.pointerType!=='mouse')return;
+  const svg=$('svg3'), geo=JSON.parse(svg.dataset.geo||'null'), r=svg.getBoundingClientRect(), px=geo.L+(geo.W-geo.L-geo.Rm)*(geo.t1>geo.t0?(p.t-geo.t0)/(geo.t1-geo.t0):0.5), d=p.val-p.dep;
   const tip=$('tip3'); tip.hidden=false; tip.innerHTML=`<b>${esc(p.label)}</b>${p.est?' · משוחזר':''}<br>שווי <span class="n">${ils(p.val)}</span> · הפקדות <span class="n">${ils(p.dep)}</span><br>הפרש <span class="n ${d>=0?'up':'down'}">${sgn(d)}</span>`+(p.by?'<br>'+Object.entries(p.by).filter(([a,v])=>v!=null).map(([a,v])=>`${esc(acctName(a))} <span class="n">${ils(v)}</span>`).join(' · '):'');
   const left=px/geo.W*r.width; tip.style.left=Math.max(0,Math.min(r.width-230,left+(left>r.width/2?-240:12)))+'px';
 });
-$('chart3').addEventListener('pointerleave',()=>{$('tip3').hidden=true;const c=$('svg3').querySelector('#cross3');if(c)c.setAttribute('visibility','hidden')});
+$('chart3').addEventListener('pointerleave',ev=>{$('tip3').hidden=true; if(ev.pointerType==='mouse')trendSel(null)});
+$('chart3').addEventListener('keydown',ev=>{const k=ev.key, L=TPD.length?TPD:TP; if(!L.length)return;
+  if(k==='ArrowLeft'){ev.preventDefault(); trendStep(-1)} else if(k==='ArrowRight'){ev.preventDefault(); trendStep(1)}
+  else if(k==='Home'){ev.preventDefault(); trendSel(L[0].t,true)} else if(k==='End'){ev.preventDefault(); trendSel(L[L.length-1].t,true)} else if(k==='Escape'){trendSel(null)}});
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return; if(t.closest('#trendBack'))trendStep(-1); else if(t.closest('#trendFwd'))trendStep(1)});
 // Look-back per account, from a periodic statement or a transactions list: deposits, values, fees and trades.
 function renderHistory(){
   if(!HS||!P||!Q)return;
@@ -21752,8 +21797,9 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-rules]')
 function settingTouched(before){if(!setBefore)setBefore=before; clearTimeout(setT); setT=setTimeout(()=>{const b=setBefore; setBefore=null; if(b===JSON.stringify(S))return;
   offerUndo('ההגדרות עודכנו',()=>{S=mergeSettings(JSON.parse(b));fillInputs();changed()})},1600)}
 // ---- the timeline: what was actually done, newest month first ----
-function renderTimeline(){
-  const sec=$('tlSec'); if(!sec)return; const E=[], AC=ACCTS, money=(v,c)=>(c==='USD'?'$':'₪')+Math.abs(+v).toLocaleString('en-US',{maximumFractionDigits:2});
+// what was actually done, each with its day (the timeline lists it; the look-back's chart says it beside the chosen day)
+function tlEvents(){
+  const E=[], AC=ACCTS, money=(v,c)=>(c==='USD'?'$':'₪')+Math.abs(+v).toLocaleString('en-US',{maximumFractionDigits:2});
   for(const A of ((HS&&HS.accounts)||[])){const ac=AC[A.acct]||'';
     for(const d of A.deposits||[])if(d&&d.date&&+d.amount)E.push({d:d.date,k:+d.amount>0?'הפקדה':'משיכה',t:`${nn(money(d.amount,d.ccy||A.ccy))}${ac?' · '+ac:''}`});
     for(const x of A.fx||[])if(x&&x.date&&+x.amount)E.push({d:x.date,k:'המרת מט״ח',t:`${nn(money(x.amount,x.ccy))} ל${x.toCcy==='USD'?'דולרים':'שקלים'}${+x.toAmount>0?` (${nn(money(x.toAmount,x.toCcy))})`:''}${ac?' · '+ac:''}`});
@@ -21765,7 +21811,9 @@ function renderTimeline(){
   for(const d of allDep())if(d&&d.month)E.push({d:(d.at||d.month+'-01').slice(0,10),k:'הפקדה בתוכנית',t:nn(ils(+d.amount||0))});
   for(const b of allBuy())if(b&&b.sym)E.push({d:(b.at||(b.month||'')+'-01').slice(0,10),k:'קנייה בתוכנית',t:`${symH(b.sym)} · ${nn(ils(+b.paidIls||0))}`});
   for(const r of (typeof ARC!=='undefined'&&ARC)||[])if(r&&r.createdAt)E.push({d:String(r.createdAt).slice(0,10),k:'דוח נשמר',t:esc(r.title||'')});
-  const ok=E.filter(e=>/^\d{4}-\d\d-\d\d$/.test(e.d)).sort((a,b)=>a.d<b.d?1:-1);
+  return E.filter(e=>/^\d{4}-\d\d-\d\d$/.test(e.d))}
+function renderTimeline(){
+  const sec=$('tlSec'); if(!sec)return; const ok=tlEvents().sort((a,b)=>a.d<b.d?1:-1);
   if(!ok.length){sec.hidden=true;return} sec.hidden=false;
   const by={}; for(const e of ok)(by[e.d.slice(0,7)]=by[e.d.slice(0,7)]||[]).push(e);
   const month=ym=>`<div class="tlm"><h3>${MONTHS[+ym.slice(5)-1]} ${ym.slice(0,4)}</h3><ul>${by[ym].map(e=>`<li><span class="tk">${dmy(e.d)}</span><b>${e.k}</b> ${e.t}</li>`).join('')}</ul></div>`;
@@ -27824,6 +27872,9 @@ function jrnTradesOpen(days=240){
   const have=new Set((jrn().entries||[]).map(e=>e.tk).filter(Boolean)), since=new Date(Date.now()-days*864e5).toISOString().slice(0,10), out=[];
   for(const a of (HS&&HS.accounts)||[])for(const t of a.trades||[]){if(t.div||!t.sym||!t.date||t.date<since)continue; const q=+t.qty||0; if(!q)continue; const tk=`${a.acct}|${t.date}|${t.sym}|${q}`; if(have.has(tk))continue;
     out.push({tk,acct:a.acct,at:t.date,sym:t.sym,qty:Math.abs(q),px:+t.px||null,ccy:t.ccy||(a.ccy==='USD'?'USD':'ILS'),t:q>0?'buy':'sell'})}
+  // 24.11 (the owner): a purchase or a sale written in the page's own box (A.manual) waits for its reason too
+  for(const a of (HS&&HS.accounts)||[])for(const t of a.manual||[]){if(!t||!t.sym||!t.date||!(+t.qty>0))continue; const day=String(t.date).slice(0,10); if(day<since)continue; const q=t.side==='sell'?-(+t.qty):+t.qty, tk=`${a.acct}|${day}|${t.sym}|${q}`; if(have.has(tk)||out.some(o=>o.tk===tk))continue;
+    out.push({tk,acct:a.acct,at:day,sym:t.sym,qty:Math.abs(q),px:+t.px||null,ccy:t.ccy||(a.ccy==='USD'?'USD':'ILS'),t:q>0?'buy':'sell',own:true})}
   return out.sort((a,b)=>a.at<b.at?1:-1).slice(0,12)}
 // the price since an entry: a fact beside the decision, never its grade
 function jrnSince(e){if(!e.sym||!(e.px>0)||!['buy','sell','expect','hold'].includes(e.t))return null; let now=null, ccy=e.ccy||'USD'; try{const q=Q&&Q.prices&&Q.prices[e.sym]; if(q>0){now=q; ccy=ccyOfPos({sym:e.sym},Q)||ccy} else{const pr=priceOf(e.sym); if(pr&&pr.px>0&&pr.ccy!=='PTS'){now=pr.px; ccy=pr.ccy}}}catch(x){} if(!(now>0))return null; return {px:+e.px,now,ccy,pct:(now/+e.px-1)*100}}
@@ -27841,7 +27892,7 @@ function jrnEvents(){const F=evFol(), by=new Map(); try{for(const it of newsAll(
 function jrnFormH(e){
   e=e||{}; const held=((P&&P.positions)||[]).map(p=>p.sym).filter((k,i,A)=>A.indexOf(k)===i), W=wmarks().filter(k=>!held.includes(k)), EV=jrnEvents(), today=new Date().toISOString().slice(0,10);
   const o=(v,l,cur)=>`<option value="${esc(v)}"${cur===v?' selected':''}>${esc(l)}</option>`;
-  return `<form class="th-f jrn-f" id="jrnForm" data-id="${esc(e.id||'')}"${e.tk?` data-tk="${esc(e.tk)}"`:''}>
+  return `<form class="th-f jrn-f" id="jrnForm" data-id="${esc(e.id||'')}"${e.tk?` data-tk="${esc(e.tk)}"`:''}${e.own||e.from==='own'?' data-own="1"':''}>
     <div class="jrn-row"><label>תאריך<input type="date" data-j="at" value="${esc(e.at||today)}" max="${today}" required></label>
       <label>סוג<select data-j="t">${Object.entries(JRN_K).map(([k,v])=>o(k,v,e.t||'buy')).join('')}</select></label>
       <label>נייר<input list="jrnSyms" data-j="sym" value="${esc(e.sym||'')}" maxlength="14" placeholder="סימול (לא חובה)" autocomplete="off" style="text-transform:uppercase;font-family:var(--mono)"><datalist id="jrnSyms">${held.map(k=>o(k,lab(k))).join('')}${W.map(k=>o(k,lab(k))).join('')}</datalist></label></div>
@@ -27852,7 +27903,7 @@ function jrnFormH(e){
     <div class="acts"><button type="submit" class="btn pri sm">${e.id?'לעדכן':'לשמור ביומן'}</button>${e.id||JRN_PRE?`<button type="button" class="btn sm" data-jrncancel="1">ביטול</button>`:''}</div></form>`}
 function jrnEntryH(e){
   const since=jrnSince(e), th=!!((jrn().thesis||{})[e.sym]||{}).why, out=e.out&&e.out.v?e.out:null;
-  return `<li class="jrn-e t-${esc(e.t)}" data-jid="${esc(e.id)}"><div class="jrn-h"><span class="nm">${dmy(e.at)}</span><span class="nx-tag jrn-t">${JRN_K[e.t]||e.t}</span>${e.sym?`<button type="button" class="lnk sym" data-gosec="${esc(e.sym)}">${esc(e.sym)}</button>`:''}${e.qty?`<span class="nm">${e.qty} יח׳${e.px?' ב-'+e.px+(e.ccy==='ILS'?' ₪':' $'):''}</span>`:e.px?`<span class="nm">מחיר ${e.px}</span>`:''}${e.from==='trade'?'<span class="nx-tag">מהדוח</span>':''}</div>
+  return `<li class="jrn-e t-${esc(e.t)}" data-jid="${esc(e.id)}"><div class="jrn-h"><span class="nm">${dmy(e.at)}</span><span class="nx-tag jrn-t">${JRN_K[e.t]||e.t}</span>${e.sym?`<button type="button" class="lnk sym" data-gosec="${esc(e.sym)}">${esc(e.sym)}</button>`:''}${e.qty?`<span class="nm">${e.qty} יח׳${e.px?' ב-'+e.px+(e.ccy==='ILS'?' ₪':' $'):''}</span>`:e.px?`<span class="nm">מחיר ${e.px}</span>`:''}${e.from==='trade'?'<span class="nx-tag">מהדוח</span>':e.from==='own'?'<span class="nx-tag">נרשם באתר</span>':''}</div>
     ${e.why?`<p><b>למה:</b> ${esc(e.why)}</p>`:''}${e.expect?`<p><b>ציפייה:</b> ${esc(e.expect)}</p>`:''}
     ${e.ev?`<p class="nm">אירוע: <button type="button" class="lnk" data-story="${esc(e.ev.k)}">${esc(e.ev.he||e.ev.k)}</button></p>`:''}
     ${since?`<p class="nm">מאז: המחיר ${since.px} ← ${Math.round(since.now*100)/100} (<span class="${since.pct>=0?'up':'down'}">${since.pct>=0?'+':''}${since.pct.toFixed(1)}%</span>). תנועת מחיר היא עובדה, לא ציון להחלטה.</p>`:''}
@@ -27867,7 +27918,7 @@ function jrnH(){
   const stats=all.length?`<div class="jrn-st"><span><b>${st.n}</b> רשומות${st.first?` מ-${dmy(st.first)}`:''}</span>${Object.entries(st.by).map(([k,n])=>`<span>${JRN_K[k]||k}: <b>${n}</b></span>`).join('')}
       <span>תוצאות: <b>${st.out.right}</b> התממשו · <b>${st.out.wrong}</b> לא · <b>${st.out.mixed}</b> חלקית · <b>${st.out.open}</b> פתוחות</span>${st.holdN?`<span>זמן החזקה ממוצע ביומן: <b>${Math.round(st.holdDays)}</b> ימים (${st.holdN})</span>`:''}${st.top.length?`<span>הכי הרבה: ${st.top.slice(0,3).map(([k,n])=>`${esc(k)} (${n})`).join(', ')}</span>`:''}</div>`:'';
   const PH=(()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}})();
-  const openH=open.length&&canWrite?`<details class="nx-more jrn-openw"${PH?'':' open'}><summary>תנועות מהדוחות שעוד לא ביומן (${open.length})</summary><ul class="jrn-open">${open.map(t=>`<li><span class="nm">${dmy(t.at)}</span> ${JRN_K[t.t]} <b>${esc(t.sym)}</b> ${t.qty} יח׳${t.px?' ב-'+t.px:''} <button type="button" class="btn sm" data-jrnfrom="${esc(t.tk)}">לתעד: למה?</button></li>`).join('')}</ul><p class="nm">מהדוחות שקראת. היומן לא כותב אותן לבד: הסיבה היא שלך.</p></details>`:'';
+  const openH=open.length&&canWrite?`<details class="nx-more jrn-openw"${PH?'':' open'}><summary>${open.some(t=>t.own)?'תנועות שעוד לא ביומן':'תנועות מהדוחות שעוד לא ביומן'} (${open.length})</summary><ul class="jrn-open">${open.map(t=>`<li><span class="nm">${dmy(t.at)}</span> ${JRN_K[t.t]} <b>${esc(t.sym)}</b> ${t.qty} יח׳${t.px?' ב-'+t.px:''} <button type="button" class="btn sm" data-jrnfrom="${esc(t.tk)}">לתעד: למה?</button></li>`).join('')}</ul><p class="nm">${open.some(t=>t.own)?'מהדוחות שקראת ומהעסקאות שרשמת באתר':'מהדוחות שקראת'}. היומן לא כותב אותן לבד: הסיבה היא שלך.</p></details>`:'';
   // 17.11 (the owner's proposal 18, "יומן"): on the phone what waits to be written up comes first, with a full-size button
   // that fills the form from the trade; the form itself opens only when wanted ("+ רשומה חדשה")
   const ansH=PH&&canWrite&&open.length?(()=>{const t0=open[0], kinds=[...new Set(open.map(t=>t.t))], n=open.length;
@@ -27889,7 +27940,7 @@ document.addEventListener('submit',ev=>{const f=ev.target; if(!f||f.id!=='jrnFor
   const why=v('why'), expect=v('expect'); if(!why&&!expect&&!sym){rtSay('כתוב לפחות למה, או ציפייה, או נייר'); return}
   const old=(jrn().entries||[]).find(x=>x.id===f.dataset.id)||{}, evk=v('ev'), evEl=f.querySelector('[data-j="ev"] option:checked');
   const e={...old,id:old.id||Math.random().toString(36).slice(2,10),at,t,sym:sym||null,qty:+v('qty')||null,px:+v('px')||null,ccy:old.ccy||(sym&&(isF(sym)||/^TLV:|^\d/.test(sym))?'ILS':'USD'),why,expect,ev:evk?{k:evk,he:evEl?evEl.dataset.he||'':''}:null,created:old.created||new Date().toISOString(),updatedAt:new Date().toISOString()};
-  if(f.dataset.tk){e.tk=f.dataset.tk; e.from='trade'} jrnPut(e); JRN_EDIT=null; JRN_PRE=null; try{useAdd('jrn')}catch(x){} rtSay(old.id?'הרשומה עודכנה':'נשמר ביומן'); renderJrn()});
+  if(f.dataset.tk){e.tk=f.dataset.tk; e.from=f.dataset.own?'own':'trade'} jrnPut(e); JRN_EDIT=null; JRN_PRE=null; try{useAdd('jrn')}catch(x){} rtSay(old.id?'הרשומה עודכנה':'נשמר ביומן'); renderJrn()});
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return; const box=t.closest('#jrnBox'); 
   const js=t.closest('[data-jrnsym]'); if(js){JF={...JF,sym:js.dataset.jrnsym}; JRN_EDIT=null; JRN_PRE=null; showTab('journal',true); return}
   const nw=t.closest('[data-jrnnew]'); if(nw){JRN_PRE={sym:nw.dataset.jrnnew,t:'note'}; JRN_EDIT=null; showTab('journal',true); try{$('jrnBox').querySelector('[data-j="why"]')?.focus()}catch(e){} return}
@@ -32027,6 +32078,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.2',at:'2026-11-24',t:'מבט לאחור: הגרף יום אחרי יום, והעסקאות שלך ביומן ובציר הזמן',d:'בגרף "שווי התיק מול סך ההפקדות" אפשר לנוע יום אחרי יום: נגיעה או גרירה על הגרף, החצים במקלדת, או הכפתורים "אחורה" ו"קדימה" שמתחתיו. ביום שנבחר מופיעה נקודת ציון על כל קו, והמספרים שלו כתובים מתחת לגרף, יחד עם מה שעשית באותו יום: קנייה, מכירה, הפקדה או משיכה. יום שיש בו פעולה מסומן במעוין על הקו. כל הימים שהאתר שמר נמצאים עכשיו על הגרף. וגם: קנייה או מכירה שרשמת באתר מופיעה ב"ציר הזמן שלי" ומחכה ביומן לסיבה שלך.',go:'hist'},
   {v:'2026-11-24.1',at:'2026-11-24',t:'התוכנית: מזומן נפרד לכל חשבון',d:'כל מסלול בתוכנית קונה מהמזומן של החשבון שלו: מסלול המניות מהחשבון שמחזיק את המניות, ומסלול המדדים מהחשבון שמחזיק את הקרנות. המזומן של החשבון השני כבר לא מזיז את התור. בראש התוכנית יש קופסה לכל חשבון ועוד אחת של כל המזומן יחד, ובהגדרות התוכנית קובעים מאיזה חשבון קונה כל מסלול. גם ב"התיק שלי" המזומן כתוב לכל חשבון בנפרד.',go:'plan'},
   {v:'2026-11-19.1',at:'2026-11-19',t:'הגדרות: רשימה אחת, כמו בטלפון',d:'בטלפון: ההגדרות הן רשימה אחת מקובצת במקום חמש לשוניות ושבע שורות של כפתורים. הפרופיל בשורה אחת; ב"תצוגה ונגישות" כל שורה כותבת את הבחירה הנוכחית (למשל "גודל הטקסט: רגיל") ונפתחת כדי לשנות; ו"התיק", "התראות וחדשות" ו"פרטיות ונתונים" הם שורות שכל אחת פותחת את הנושא שלה בדף משלו, עם "כל ההגדרות" כדי לחזור.',go:'me'},
   {v:'2026-11-17.36',at:'2026-11-17',t:'יומן: קודם מה שמחכה לתיעוד',d:'בטלפון: היומן נפתח במה שעוד לא תועד, למשל קנייה מהדוח בלי סיבה, עם כפתור גדול "לתעד: למה קניתי?" שממלא את הטופס מהתנועה. הטופס עצמו (שמונה שדות) נפתח רק כשרוצים, מ"+ רשומה חדשה", ומעל הרשימה כתוב "הרשומות שלי".',go:'jrn'},

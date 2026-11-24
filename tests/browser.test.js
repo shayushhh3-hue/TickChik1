@@ -3453,6 +3453,10 @@ test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box 
     await tab(pg,'history'); await pg.waitForTimeout(500);
     const tl=await pg.evaluate(()=>({hid:document.getElementById('tlSec').hidden,txt:document.getElementById('tl').textContent.replace(/s+/g,' ')}));
     assert.equal(tl.hid,false); assert.match(tl.txt,/מכירה.{0,12}MSFT · 1 יח׳/,'the sale: '+tl.txt.slice(0,300)); assert.match(tl.txt,/קנייה.{0,12}TSLA · 2 יח׳/);
+    // 24.11: and both wait in the journal for their reason
+    await pg.evaluate(()=>document.querySelector('[data-pane="history"] .subtabs [data-tab="journal"]').click()); await pg.waitForTimeout(600);
+    const jr=await pg.evaluate(()=>document.getElementById('jrnBox').textContent.replace(/s+/g,' '));
+    assert.match(jr,/תנועות שעוד לא ביומן \(\d+\)/); assert.match(jr,/מכירה MSFT 1 יח׳/,'the sale waits: '+jr.slice(0,300)); assert.match(jr,/קנייה TSLA 2 יח׳/);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
 });
@@ -4052,4 +4056,26 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'the history on a phone'); await pg.click('#wiPast [data-wireset]'); await pg.waitForFunction(()=>window.__wi.state().time==='now',null,{timeout:10000});
     assert.deepEqual(pg.errs,[]);
   }finally{if(ctx)await ctx.close(); back(); store.deleteDoc(old)}
+});
+
+test('24.11 the look-back\'s chart read a day at a time: the buttons, the arrow keys and a click choose a day; a mark on each line; its figures under the chart',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(600);
+  const st=()=>pg.evaluate(()=>{const v=id=>document.querySelector('#svg3 #'+id).getAttribute('visibility'); return {mv:v('mk3v'),md:v('mk3d'),cross:v('cross3'),x:+document.querySelector('#svg3 #mk3v').getAttribute('cx'),txt:document.getElementById('trendSel').textContent.replace(/\s+/g,' ').trim(),back:document.getElementById('trendBack').disabled,fwd:document.getElementById('trendFwd').disabled,say:document.getElementById('trendSay').textContent}});
+  let s=await st(); assert.equal(s.mv,'hidden','no mark before a day is chosen'); assert.match(s.txt,/^היום · שווי ₪[\d,]+ · הפקדות ₪[\d,]+ · הפרש/); assert.equal(s.fwd,true); assert.equal(s.back,false);
+  // one step back: a mark on each line, the day's figures under the chart, the way forward opens
+  await pg.click('#trendBack'); await pg.waitForTimeout(150); const a=await st();
+  assert.deepEqual([a.mv,a.md,a.cross],['visible','visible','visible']); assert.doesNotMatch(a.txt,/^היום/); assert.match(a.txt,/שווי ₪[\d,]+ · הפקדות ₪[\d,]+ · הפרש/); assert.equal(a.fwd,false); assert.match(a.say,/שווי ₪/,'said to a screen reader');
+  await pg.click('#trendBack'); await pg.waitForTimeout(150); const b=await st(); assert.ok(b.x<a.x,'further back is further left: '+b.x+' < '+a.x); assert.notEqual(b.txt,a.txt);
+  // the keys on the chart: right is forward, Home the first point, End today, Escape lets go
+  await pg.focus('#chart3'); await pg.keyboard.press('ArrowRight'); await pg.waitForTimeout(100); assert.equal((await st()).txt,a.txt);
+  await pg.keyboard.press('Home'); await pg.waitForTimeout(100); const h=await st(); assert.equal(h.back,true,'the first point'); assert.ok(h.x<b.x);
+  // what was done is said beside the point: the second month's deposit
+  await pg.keyboard.press('ArrowRight'); await pg.waitForTimeout(100); assert.match((await st()).txt,/בחודש הזה: הפקדה/,'the deposit of the month beside its point');
+  await pg.keyboard.press('End'); await pg.waitForTimeout(100); const e=await st(); assert.match(e.txt,/^היום/); assert.equal(e.mv,'visible');
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(100); assert.equal((await st()).mv,'hidden');
+  // a click (or a finger) on the chart chooses the day under it
+  const at=await pg.evaluate(()=>{const r=document.getElementById('svg3').getBoundingClientRect(); return {x:r.left+r.width*0.4,y:r.top+r.height/2}});
+  await pg.mouse.click(at.x,at.y); await pg.waitForTimeout(150); const c=await st(); assert.equal(c.mv,'visible'); assert.doesNotMatch(c.txt,/^היום/);
+  assert.ok(await pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll'); assert.deepEqual(pg.errs,[]); await ctx.close();
 });
