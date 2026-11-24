@@ -1876,6 +1876,18 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pstep .pc-lg{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px;line-height:1.45;color:var(--ink)}
 .pstep .pc-lg li{display:flex;align-items:flex-start;gap:8px} .pstep .pc-lg i{flex:none;width:12px;height:12px;border-radius:50%;margin-top:4px}
 .pstep .pc-lg .lg-p{background:var(--accent)} .pstep .pc-lg .lg-r{background:var(--gain)}
+.pstep .pc-set{flex-basis:100%;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)} .pstep .pc-set:empty{display:none}
+.pstep .pc-set .panel{border:0!important;background:none!important;box-shadow:none!important;padding:0!important;margin:0!important}
+/* 24.11 (the owner: "צריך להנגיש את הגדרת התוכנית ואת ההפקדה החד פעמית"): the plan's two forms as calm rows: the name of a field on one side, the field on the other, 44px to press, 16px to read */
+html body [data-pane="plan"] #planSetP .form,html body [data-pane="plan"] .oncebox .onceform{display:block!important;max-width:560px}
+html body [data-pane="plan"] #planSetP .form>label:not([hidden]),html body [data-pane="plan"] .oncebox .onceform>label:not([hidden]){display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:6px 0;margin:0;border-top:1px solid var(--line);font-size:15px;font-weight:400;color:var(--ink);line-height:1.35}
+html body [data-pane="plan"] #planSetP .form>label:first-child,html body [data-pane="plan"] .oncebox .onceform>label:first-child{border-top:0}
+html body [data-pane="plan"] #planSetP .form>label>input,html body [data-pane="plan"] #planSetP .form>label>select,html body [data-pane="plan"] .oncebox .onceform>label>input,html body [data-pane="plan"] .oncebox .onceform>label>select,html body [data-pane="plan"] #planSetP .form .dd2 select{flex:none;width:150px!important;min-height:44px!important;box-sizing:border-box;font:inherit;font-size:16px!important;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);margin:0}
+html body [data-pane="plan"] #planSetP .form .dd2{flex:none;width:170px;display:flex;gap:6px} html body [data-pane="plan"] #planSetP .form .dd2 select{flex:1 1 0;width:auto!important;min-width:0}
+html body [data-pane="plan"] .oncebox .onceform>label>#onceNote{width:190px!important}
+html body [data-pane="plan"] #planSetP .form input:focus-visible,html body [data-pane="plan"] #planSetP .form select:focus-visible,html body [data-pane="plan"] .oncebox .onceform input:focus-visible,html body [data-pane="plan"] .oncebox .onceform select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+html body [data-pane="plan"] .oncebox .acts .btn{min-height:48px!important;min-width:150px} html body [data-pane="plan"] .oncebox{padding:14px 16px!important} html body [data-pane="plan"] #planSetP .form>label>select,html body [data-pane="plan"] .oncebox .onceform>label>select{width:170px!important}
+html body [data-pane="plan"] #planSetP>.row h3{margin:0;font-size:14px;font-weight:600;color:var(--ink2)}
 .pstep .pc-ask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
 .pstep .pc-all,.pstep .pc-now{margin-top:8px} .pstep .pc-foot{margin:2px 0 0;font-size:12.5px;color:var(--ink2)}
 .pl-more[hidden]{display:none} .pl-more:hover{background:var(--accent-soft)}
@@ -4667,7 +4679,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="onceAdd">הוסף הפקדה</button><span class="saved" id="onceState" role="status"></span></div>
         <ul class="oncelist" id="onceList"></ul>
       </div>
-      <div class="panel" data-dvp="set">
+      <div id="planSetHome"><div class="panel" data-dvp="set" id="planSetP">
         <div class="row" style="margin-bottom:8px"><h3>הגדרות התוכנית</h3></div>
         <div class="form">
           <label for="inMonthly">הפקדה חודשית למניות (₪)<input type="number" id="inMonthly" min="0" step="50"></label>
@@ -4679,7 +4691,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
           <label for="inPlanAcct" id="planAcctL" hidden><span class="pa-k">מאיזה חשבון קונה המסלול הזה</span><select id="inPlanAcct"></select></label>
         </div>
         <p class="note" id="feeNote" style="margin-top:12px"></p>
-      </div>
+      </div></div>
       <div class="pl-gone" hidden>
       <button type="button" class="pl-more" id="planMore" aria-expanded="false" hidden></button>
       <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
@@ -31806,7 +31818,19 @@ function plFold(){const box=$('planAns'), b=$('planMore'); if(!box||!b)return; c
 function plMore(v){PLMORE=!!v; try{localStorage.setItem('tr_plan_more',PLMORE?'1':'0')}catch(e){} plFold(); if(PLMORE&&DVV==='chart'){try{if(PTS.length)drawChart(PTS)}catch(e){}}}
 function plUnfold(el){if(!PLMORE&&el&&el.closest&&el.closest('section.pl-fold')&&!el.closest('#planAns'))plMore(true)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#planMore'); if(b)plMore(!PLMORE)});
-function planAnsFill(st,depBy,B){try{return planAnsFill0(st,depBy,B)}finally{try{plFold()}catch(e){}}}
+// 24.11 (the owner: "את הגדרת התוכנית בדף… תעלה למעלה מתחת לאיפה שרשום לשנות, כלומר באותו מלבן"): the plan's settings
+// (the monthly sums, the day, the fee, the account) sit in the card, in the rectangle of the period, under its heading
+// and "לשנות". The panel is the page's own element with its fields and listeners: taken out before the card is drawn
+// and put into the card's slot after it; with no plan (no card) it stays where it was. While one of its fields is being
+// typed in the card is not drawn again (the field would lose the cursor): it is, once the field is left
+let PSET_SKIP=false;
+function planSetOut(){const p=$('planSetP'), h=$('planSetHome'); if(p&&h&&p.parentNode!==h)h.appendChild(p)}
+function planSetIn(){const p=$('planSetP'), sl=$('planSetSlot'), box=$('planAns'); if(!p)return; if(sl&&box&&!box.hidden)sl.appendChild(p); else planSetOut()}
+function planLaterBox(st,B){const h=planLaterH(st,B), slot='<div class="pc-set" id="planSetSlot"></div>', i=h.lastIndexOf('</div>'); return i<0?`<div class="pc-sec">${slot}</div>`:h.slice(0,i)+slot+h.slice(i)}
+function planAnsFill(st,depBy,B){const p=$('planSetP'), box=$('planAns');
+  if(p&&box&&box.contains(p)&&p.contains(document.activeElement)&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){PSET_SKIP=true; return}
+  try{planSetOut(); return planAnsFill0(st,depBy,B)}finally{try{plFold()}catch(e){} try{planSetIn()}catch(e){}}}
+document.addEventListener('focusout',e=>{if(!PSET_SKIP)return; const p=$('planSetP'); if(p&&p.contains(e.target)&&!(e.relatedTarget&&p.contains(e.relatedTarget))){PSET_SKIP=false; setTimeout(()=>{try{render()}catch(e){}},0)}});
 function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start||!PL.items.length){box.hidden=true; return}
   const ym=ymAdd(st.start,st.cur), d=depBy[ym], amt=d?(+d.amount||0):B, buys=(st.lad&&st.lad.rows&&st.lad.rows[st.cur])||[];
   const trk=document.querySelector('.trk[aria-pressed="true"] b'), dep=$('dep_'+ym), can=!!(dep&&!dep.disabled);
@@ -31820,7 +31844,7 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
   box.hidden=false;
   if(st.wait){const n=ymDiff(st.start,ymNow());
     box.innerHTML=`${head}<div class="ps-bal">מתחילה ב${esc(ymLong(st.start))}</div>
-      <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterH(st,B)}`; return}
+      <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterBox(st,B)}`; return}
   const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':'';
   box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
     ${planRingH(st,done,act.length)}
@@ -31830,7 +31854,7 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
         ${oldNow.map(oldRow).join('')}${buys.map(row).join('')}
       </ul>
       ${note?`<p class="pc-note" role="status">${note}</p>`:''}${SYNC_SAY?`<p class="pc-note pc-sync" role="status">${esc(SYNC_SAY)} אם זו לא קנייה של התוכנית, לוחצים "ביטול" לידה.</p>`:''}</div>
-    ${planLaterH(st,B)}
+    ${planLaterBox(st,B)}
     <p class="pc-foot">לפי המחירים של היום. לא המלצה.</p>`;
   try{planRoll(st)}catch(e){} try{planSync()}catch(e){}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep],[data-planbuy],[data-planun]'); if(!b)return; const un=b.dataset.planun, c=$(un||b.dataset.planbuy||('dep_'+b.dataset.plandep)); if(c&&!c.disabled&&c.checked===!!un)c.click()});

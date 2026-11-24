@@ -3019,7 +3019,7 @@ test('5.11 the crowded screens in parts like the control screen: the deposit pla
   // 24.11 (the owner: one page, nothing there for show): no tabs and nothing folded. The month, the securities, the months' table, the
   // one-time deposit and the settings are on the page in that order; the four figures and the chart are not
   assert.deepEqual(await pg.evaluate(()=>['planAns','planRows','ladRows','onceAmt','inMonthly','dvTabs','planMore','pBal','chart'].map(id=>!!document.getElementById(id).offsetParent)),[true,true,true,true,true,false,false,false,false]);
-  assert.ok(await pg.evaluate(()=>{const ys=['planAns','planRows','ladRows','onceAmt','inMonthly'].map(id=>document.getElementById(id).getBoundingClientRect().top); return ys.every((y,i)=>!i||y>ys[i-1])}),'in the order they are read');
+  assert.ok(await pg.evaluate(()=>{const ys=['planAns','inMonthly','planRows','ladRows','onceAmt'].map(id=>document.getElementById(id).getBoundingClientRect().top); return ys.every((y,i)=>!i||y>ys[i-1])&&document.getElementById('planAns').contains(document.getElementById('inMonthly'))}),'in the order they are read (24.11: the settings in the card, in the rectangle of the period)');
   assert.equal(await pg.evaluate(()=>{const L=[...document.querySelectorAll('#planRows tr.pactr')]; return L.length>0&&L.every(r=>!r.getClientRects().length)}),true,'the actions of each security wait for the edit button');
   await pg.click('#planEditBtn'); assert.ok(await pg.evaluate(()=>document.querySelector('#planRows tr.pactr').getClientRects().length>0)); assert.equal(await pg.getAttribute('#planEditBtn','aria-pressed'),'true');
   assert.match(await pg.textContent('#planSum'),/נשארו \d+ לקנות בסבב/); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#ladRows tr.far').length>0&&!!document.querySelector('#ladRows [data-ladall]')),true,'the months ahead on request');
@@ -4457,4 +4457,29 @@ test('24.11 the plan from a month of one\'s own, and the earlier rounds in the m
       assert.match(await pg.evaluate(()=>document.getElementById('ladRows').innerText),/נקנו בסבב קודם/);
       assert.deepEqual(pg.errs,[])}finally{await o.ctx.close()}
   }finally{for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+
+// 24.11 (the owner: "את הגדרת התוכנית… תעלה למעלה מתחת לאיפה שרשום לשנות, באותו מלבן", "צריך להנגיש את הגדרת התוכנית ואת
+// ההפקדה החד פעמית"): the settings sit in the card's rectangle of the period; both forms are rows with fields a finger can press
+for(const W of [390,1280])test(`24.11 the plan's settings in the card's rectangle under "לשנות", and the two forms as rows: fields of 44px, typing keeps the cursor, the card follows (${W}px)`,T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(W);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000}); await pg.waitForSelector('#planAns #planSetP #inMonthly');
+    const v=await pg.evaluate(()=>{const p=document.getElementById('planSetP'), sec=p.closest('.pc-sec'), box=el=>{const r=el.getBoundingClientRect(); return [Math.round(r.width),Math.round(r.height)]};
+      const fields=[...document.querySelectorAll('#planSetP .form>label:not([hidden]) input, #planSetP .form>label:not([hidden]) select, .oncebox .onceform input, .oncebox .onceform select')].filter(x=>x.offsetParent);
+      const rows=[...document.querySelectorAll('#planSetP .form>label:not([hidden]), .oncebox .onceform>label')].filter(x=>x.offsetParent).map(l=>{const c=l.querySelector('input,select,.dd2'), a=l.getBoundingClientRect(), b=c.getBoundingClientRect(); return Math.abs((a.top+a.height/2)-(b.top+b.height/2))<a.height/2+1&&b.height<=a.height+1});
+      return {same:!!(sec&&sec.querySelector('[data-pa="untilEdit"]')),home:document.getElementById('planSetHome').children.length,n:fields.length,small:fields.map(x=>x.id+':'+box(x)).filter((s,i)=>box(fields[i])[1]<44),font:fields.every(x=>parseFloat(getComputedStyle(x).fontSize)>=16),rows:rows.every(Boolean),
+        btn:box(document.getElementById('onceAdd')),over:document.documentElement.scrollWidth>innerWidth+1}});
+    assert.ok(v.same,'in the rectangle that holds "לשנות"'); assert.equal(v.home,0,'not left at the bottom of the page'); assert.ok(v.n>=8,'the fields of both forms: '+v.n);
+    assert.deepEqual(v.small,[],'every field at least 44px high'); assert.ok(v.font,'16px text in the fields'); assert.ok(v.rows,'a row a field: the name beside it'); assert.ok(v.btn[1]>=44); assert.ok(!v.over,'nothing wider than the screen');
+    if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planSetP').scrollIntoView({block:'start'})); await pg.screenshot({path:`${process.env.SHOT}/plan-set-${W}.png`}); await pg.evaluate(()=>document.querySelector('.oncebox').scrollIntoView({block:'start'})); await pg.screenshot({path:`${process.env.SHOT}/plan-once-${W}.png`})}
+    // typing the monthly sum: the cursor stays in the field while the page saves and draws; left, the card shows the sum
+    await pg.click('#inMonthly'); await pg.fill('#inMonthly',''); await pg.type('#inMonthly','650',{delay:120}); await pg.waitForTimeout(900);
+    assert.deepEqual(await pg.evaluate(()=>[document.activeElement&&document.activeElement.id,document.getElementById('inMonthly').value]),['inMonthly','650'],'still typing in it');
+    await pg.evaluate(()=>document.getElementById('inMonthly').blur()); await pg.waitForFunction(()=>/₪650/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    assert.ok(await pg.evaluate(()=>!!document.querySelector('#planAns #planSetP #inMonthly')),'the settings are back in the card after it was drawn');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
