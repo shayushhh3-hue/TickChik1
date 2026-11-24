@@ -3016,6 +3016,9 @@ test('5.11 the crowded screens in parts like the control screen: the growth plan
   const {ctx,pg}=await open(390,{parts:true});
   await pg.evaluate(()=>{try{localStorage.removeItem('tr_dvv')}catch(e){}});
   await tab(pg,'plan'); await pg.waitForTimeout(500);
+  // 24.11: the plan opens with the two steps only; the parts are behind one button, and stay open once opened
+  {const f=()=>pg.evaluate(()=>({btn:!document.getElementById('planMore').hidden,exp:document.getElementById('planMore').getAttribute('aria-expanded'),tabs:!!document.getElementById('dvTabs').offsetParent,card:!!document.getElementById('planAns').offsetParent}));
+    assert.deepEqual(await f(),{btn:true,exp:'false',tabs:false,card:true},'folded at first'); await pg.click('#planMore'); assert.deepEqual(await f(),{btn:true,exp:'true',tabs:true,card:true},'opened')}
   const vis=()=>pg.evaluate(()=>['ladRows','planRows','chart','onceAmt','inMonthly','pBal'].map(id=>!!document.getElementById(id).offsetParent));
   const fit=()=>pg.evaluate(()=>{const r=document.getElementById('dvTabs'); return r.scrollWidth<=r.clientWidth+1});
   assert.ok(await fit(),'the five fit on a phone');

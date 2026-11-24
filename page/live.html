@@ -1845,6 +1845,9 @@ details>summary{padding-block:4px}
 .pstep .ps-ok{color:var(--gain);font-weight:600;font-size:14px;white-space:nowrap} .pstep .ps-wait{color:var(--ink2);font-size:13px;white-space:nowrap}
 .pstep .ps-sum{margin:12px 0 0;font-size:14px;color:var(--ink);line-height:1.5}
 table.ladder .ck{min-height:44px} table.ladder .ck input{width:22px;height:22px}
+section.pl-fold>:not(.row):not(#planAns):not(#planMore){display:none!important}
+.pl-more{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;margin:0 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--accent-ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.pl-more[hidden]{display:none} .pl-more:hover{background:var(--accent-soft)}
 label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:18px;flex:none}
 @media (pointer:coarse){details>summary{padding-block:7px} .why>summary{padding:7px 0} .dk-go{padding:8px 6px} .ck,label.check{min-height:36px}}
 /* the holdings editor on a phone: each row is a card with a label over every field, so quantity and cost are not
@@ -4571,6 +4574,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
     <section aria-labelledby="hPlan">
       <div class="row"><h2 id="hPlan">תוכנית ההפקדה</h2><span class="saved" id="planSaved"></span></div>
       <div class="m-ans pstep" id="planAns" role="group" aria-label="מה עושים החודש: להפקיד ולקנות" hidden></div>
+      <button type="button" class="pl-more" id="planMore" aria-expanded="false" hidden></button>
       <div class="tracks" role="group" aria-label="מסלול">
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
@@ -29121,7 +29125,7 @@ function ptSet(t,k){const P=PARTS[t]; if(!P)return; if(t==='settings')try{for(co
   for(const sec of ptSecs(t)){const o=ptOf(t,sec); if(o)sec.classList.toggle('pt-off',!all&&o!==k)}}
 // every scroll to a place on these screens (a link from the home steps, a check's "go there") opens its part first
 try{const _siv=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(...a){try{if(this.closest&&this.closest('.so-off'))for(const x of document.querySelectorAll('.so-off'))x.classList.remove('so-off')}catch(e){} try{ptReveal(this)}catch(e){} try{stReveal(this)}catch(e){} try{revealUp(this)}catch(e){} return _siv.apply(this,a)}}catch(e){}
-function ptReveal(el){if(!el||!el.closest)return; {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
+function ptReveal(el){if(!el||!el.closest)return; try{plUnfold(el)}catch(e){} {const dp=el.closest('[data-dvp].dv-off'); if(dp)try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}} const pane=el.closest('[data-pane]'); if(!pane)return; const t=pane.dataset.pane; if(!PARTS[t])return; const sec=el.closest('section[aria-labelledby]'); const blk=el.closest('[data-ptid]'), k=blk?ptOf(t,blk):sec?ptOf(t,sec):null; if(k&&PTV[t]!==k)ptSet(t,k)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptnav [data-pt]'); if(!b)return; const [t,k]=b.dataset.pt.split(':'); ptSet(t,k); try{const n=b.closest('.ptnav'), top=n.getBoundingClientRect().top; if(top<0)n.scrollIntoView({block:'start'})}catch(x){}});
 // 11.11 (the owner): the browser's back and forward (Safari, Chrome, a phone's own back) move between the site's screens.
 // Every screen opened is an entry of its own (#mine, #watch…; the home is the bare address), a security's page is one too
@@ -31549,7 +31553,19 @@ let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))
 // every screen: 1. deposit this month's sum ("הפקדתי"), 2. buy this month's securities, each with its price and its own
 // "קניתי". Under them one line: how many were bought and whether the money is enough. The buttons tick the monthly
 // table's own boxes (dep_<month>, buy_<sym>), so the figures and what is saved are the table's own, unchanged
-function planAnsFill(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start||!PL.items.length){box.hidden=true; return}
+// 24.11 (the owner, the second step): under the two steps everything else of the plan (the tracks, the accounts' cash,
+// the months, the securities, the chart, the one-time deposit, the settings) is folded behind one button; opened, it
+// stays open in this browser. A link or a search that leads into a folded part opens it. Not folded while there is no
+// plan yet (the card is hidden then), nor for the page's own tests of the sections (tr_pt_all)
+let PLMORE=false; try{PLMORE=localStorage.getItem('tr_plan_more')==='1'}catch(e){}
+function plFold(){const box=$('planAns'), b=$('planMore'); if(!box||!b)return; const sec=box.closest('section'); let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
+  const on=!box.hidden&&!all; b.hidden=!on; if(sec)sec.classList.toggle('pl-fold',on&&!PLMORE); b.setAttribute('aria-expanded',String(PLMORE));
+  b.innerHTML=PLMORE?'להסתיר את הפירוט <span aria-hidden="true">▴</span>':'כל הפירוט: החודשים, הניירות, הגרף וההגדרות <span aria-hidden="true">▾</span>'}
+function plMore(v){PLMORE=!!v; try{localStorage.setItem('tr_plan_more',PLMORE?'1':'0')}catch(e){} plFold(); if(PLMORE&&DVV==='chart'){try{if(PTS.length)drawChart(PTS)}catch(e){}}}
+function plUnfold(el){if(!PLMORE&&el&&el.closest&&el.closest('section.pl-fold')&&!el.closest('#planAns'))plMore(true)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#planMore'); if(b)plMore(!PLMORE)});
+function planAnsFill(st,depBy,B){try{return planAnsFill0(st,depBy,B)}finally{try{plFold()}catch(e){}}}
+function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start||!PL.items.length){box.hidden=true; return}
   const ym=ymAdd(st.start,st.cur), d=depBy[ym], amt=d?(+d.amount||0):B, buys=(st.lad&&st.lad.rows&&st.lad.rows[st.cur])||[];
   const trk=document.querySelector('.trk[aria-pressed="true"] b'), dep=$('dep_'+ym), can=!!(dep&&!dep.disabled);
   const act=PL.items.filter(i=>i.status!=='skip'), done=act.filter(i=>i.status==='done').length, todo=PL.items.filter(i=>i.status==='todo'), need=todo.reduce((t,i)=>t+(st.cost[i.sym]||0),0), gap=need-st.bal;
@@ -32413,6 +32429,7 @@ function goTo(d){
   if(!d.el)return;
   setTimeout(()=>{let el=$(d.el); if(!el)return; try{revealUp(el)}catch(x){} let sec=el.closest('section')||el;
     {const pn=el.closest('[data-pane]'); if(pn&&pn.dataset.pane!==document.body.dataset.page)showTab(pn.dataset.pane,true)}   // 11.11: a place that moved to another screen
+    try{plUnfold(el)}catch(e){}
     {const dp=el.closest('[data-dvp]'); if(dp&&dp.classList.contains('dv-off'))try{dvSet(dp.dataset.dvp.split(' ').find(k=>DVK.includes(k))||'month')}catch(e){}}
     {const mp=el.closest('[data-mvp]'); if(mp)try{mvSet(mp.dataset.mvp)}catch(e){}}
     const fs=el.closest('[data-pane="risk"] > [data-rg]'); if(fs){try{rgSet(fs.dataset.rg)}catch(e){}}
