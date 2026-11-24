@@ -20007,9 +20007,18 @@ document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')retur
 // the account's cash, and the days saved since then get them too, so the chart does not keep the dip. Asked once a sale.
 let CASHBACK_BUSY=false;
 async function cashBackOffer(){if(CASHBACK_BUSY||!canWrite||!P||!HS||!Q||typeof confirm!=='function')return; const fx=+Q.usdIls||0, L=[];
-  for(const A of HS.accounts||[]){const sc=((P.stmtCheck)||{})[A.acct], sd=(P.asOf||{})[A.acct]; if(!sc||!sc.at||!sd)continue;
-    for(const t of A.manual||[]){if(!t||t.side!=='sell'||!(+t.amt>0)||t.cashBack||t.cashAsked||!t.at)continue; const day=String(t.date||'').slice(0,10);
-      if(t.at<sc.at&&sc.at<'2026-11-24T10:59:32.000Z'&&sd<=day)L.push({A,t,ils:(+t.amt)*(t.ccy==='ILS'?1:fx),from:ilDay(sc.at)})}}
+  // found two ways: (1) a statement dated on or before the sale's day was saved after the sale was written; (2) (24.11, a partner
+  // whose statement left no such trace) the account's cash in the sale's currency is smaller than the sale's money less what was
+  // bought there since, so the money cannot be in it. The day the money went: the statement's save, or the first saved day on
+  // which the account fell by most of it
+  const since=new Date(Date.now()-90*864e5).toISOString().slice(0,10), today=ilDay(), dk=Object.keys((DY&&DY.points)||{}).sort();
+  for(const A of HS.accounts||[]){const sc=((P.stmtCheck)||{})[A.acct], sd=(P.asOf||{})[A.acct];
+    for(const t of A.manual||[]){if(!t||t.side!=='sell'||!(+t.amt>0)||t.cashBack||t.cashAsked||!t.at)continue; const day=String(t.date||'').slice(0,10), c=t.ccy==='ILS'?'ILS':'USD', ils=(+t.amt)*(c==='ILS'?1:fx);
+      if(sc&&sc.at&&sd&&t.at<sc.at&&sc.at<'2026-11-24T10:59:32.000Z'&&sd<=day){L.push({A,t,ils,from:ilDay(sc.at)}); continue}
+      if(day<since||t.est)continue; const have=(P.cash||[]).filter(z=>z.acct===A.acct&&(z.ccy==='USD'?'USD':'ILS')===c).reduce((s,z)=>s+(+z.amount||0),0), bought=(A.manual||[]).filter(z=>z&&z.side==='buy'&&(z.ccy==='ILS'?'ILS':'USD')===c&&z.at>t.at).reduce((s,z)=>s+(+z.amt||0),0);
+      if(have+bought>=+t.amt-0.5)continue;
+      let from=today; for(let n=1;n<dk.length;n++){const k=dk[n]; if(k<=day||k>=today)continue; const a=DY.points[dk[n-1]], b=DY.points[k], va=a&&a.by&&a.by[A.acct]!=null?+a.by[A.acct]:a&&a[A.acct]!=null?+a[A.acct]:null, vb=b&&b.by&&b.by[A.acct]!=null?+b.by[A.acct]:b&&b[A.acct]!=null?+b[A.acct]:null; if(va!=null&&vb!=null&&va-vb>=ils*0.6){from=k; break}}
+      L.push({A,t,ils,from})}}
   if(!L.length)return; CASHBACK_BUSY=true;
   try{const yes=confirm('נמצאה מכירה שהכסף שלה לא במזומן של החשבון:\n'+L.map(x=>`${dmy(x.t.date)} · ${lab(x.t.sym)} · ${ils(x.ils)} · ${acctName(x.A.acct)}`).join('\n')+'\n\nדוח שנקרא אחרי המכירה החליף את המזומן, ולכן המכירה נראית בגרף כהפסד.\n\nאישור = להחזיר את הכסף למזומן ולתקן את הגרף גם אחורה.  ביטול = הכסף כבר לא בחשבון (למשל נמשך).');
     const cl=x=>JSON.parse(JSON.stringify(x)), H=cl(HS), P2=cl(P); P2.cash=Array.isArray(P2.cash)?P2.cash:[];
