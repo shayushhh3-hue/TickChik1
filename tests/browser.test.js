@@ -4593,3 +4593,36 @@ test('24.11 the plan\'s balance reset to ₪0 (its own deposits and purchases si
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 24.11 (the owner: "תוסיף גם בקרנות אופציה לאפס את היתרה", "ובבלינק ובאקסלנס בתוכנית ההפקדה"): the funds track has the
+// reset too, also with a fixed sum a fund; and each account's cash can be reset to ₪0 for the plan, apart from the others
+test('24.11 a reset of the funds track\'s balance (fixed sums too), and of one account\'s cash for the plan: the other account and the portfolio\'s value stay',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)), ids=[...new Set([...(pf.positions||[]).map(x=>x.acct),...(pf.cash||[]).map(x=>x.acct)])].filter(Boolean);
+  // two accounts with shekels in each, so the boxes are drawn
+  if(ids.length<2)return t.skip('one account in the fixture'); pf.cash=(pf.cash||[]).filter(x=>!ids.slice(0,2).includes(x.acct)).concat([{acct:ids[0],ccy:'ILS',amount:1000},{acct:ids[1],ccy:'ILS',amount:400}]); store.setDoc('portfolio/main',pf,{silent:true});
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); pl.idx=Object.assign({start:'',opening:0,items:[],deposits:[],purchases:[]},pl.idx||{}); const F=(pf.positions||[]).filter(x=>/^TA\d/.test(x.sym)).map(x=>x.sym);
+  if(!F.length)return t.skip('no fund in the fixture'); pl.idx.mode='fixed'; pl.idx.items=F.map(s0=>({sym:s0,status:'todo',note:'',amt:100})); pl.idx.start=pl.idx.start||new Date().toISOString().slice(0,7); store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForSelector('#planAns #planZeroRow [data-pa="zeroBal"]',{timeout:10000});
+    const bal=()=>pg.evaluate(()=>{const t=document.querySelector('#planAns .ps-bal b').textContent; return (/−/.test(t)?-1:1)*+t.replace(/[^\d.]/g,'')});
+    await pg.click('#planAns [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
+    assert.equal(await bal(),0,'the funds track from ₪0'); await pg.click('#planAns [data-pa="zeroOff"]'); await pg.waitForSelector('#planAns [data-pa="zeroBal"]');
+    // the stocks track: one account reset, the other kept; the value of the portfolio untouched
+    await pg.click('[data-track="stocks"]'); await pg.waitForSelector(`#pCashRow [data-pa="acctZero"][data-acct="${ids[0]}"]`,{timeout:8000});
+    const boxes=()=>pg.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#pCashRow .pc-b')].map(b=>[b.querySelector('.pc-k').textContent,+b.querySelector('b').textContent.replace(/[^\d.]/g,'')])));
+    const v0=await pg.evaluate(()=>document.getElementById('kTotal').textContent), b0=await bal(), x0=await boxes();
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#pCashRow .pc-zb')].every(b=>b.getBoundingClientRect().height>=44)),'a reset a finger can press');
+    await pg.click(`#pCashRow [data-pa="acctZero"][data-acct="${ids[0]}"]`); await pg.waitForFunction(()=>/מאופס בתוכנית מ-/.test(document.getElementById('pCashRow').innerText),null,{timeout:8000});
+    const x1=await boxes(), names=Object.keys(x1); const n0=names.find(k=>Math.abs(x0[k]-1000)<1&&!/כל/.test(k)), n1=names.find(k=>Math.abs(x0[k]-400)<1&&!/כל/.test(k));
+    assert.ok(n0&&n1,'the two accounts: '+JSON.stringify(x0)); assert.equal(x1[n0],0,'the reset account: ₪0 in the plan'); assert.equal(x1[n1],400,'the other kept');
+    assert.ok(Math.abs(await bal()-(b0-1000))<1,'the plan\'s balance without that account\'s cash'); assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),v0,'the portfolio\'s value untouched');
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
+    assert.ok(store.getDoc('plan/main').data.acctZero[ids[0]],'kept with the plan');
+    await pg.click(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`); await pg.waitForFunction(()=>!/מאופס בתוכנית/.test(document.getElementById('pCashRow').innerText),null,{timeout:8000});
+    assert.ok(Math.abs(await bal()-b0)<1,'undone');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
