@@ -1262,10 +1262,8 @@ test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and 
     const tot0=num(await pg.evaluate(()=>document.getElementById('kTotal').textContent));
     await tab(pg,'plan'); await pg.waitForTimeout(400); await pg.evaluate(()=>document.querySelector('[data-track="stocks"]').click()); await pg.waitForTimeout(300);
     const bal0=num(await pg.textContent('#pBal'));
-    // 28.10: the plan in two tabs: the monthly one first; the one-time deposit behind its tab, the balance in both
-    assert.deepEqual(await pg.evaluate(()=>[!!document.getElementById('ladRows').offsetParent,!!document.getElementById('onceAmt').offsetParent,!!document.getElementById('pBal').offsetParent]),[true,false,true]);
-    await pg.click('#dvTabs [data-dv="once"]'); await pg.waitForTimeout(150);
-    assert.deepEqual(await pg.evaluate(()=>[!!document.getElementById('ladRows').offsetParent,!!document.getElementById('onceAmt').offsetParent,!!document.getElementById('pBal').offsetParent]),[false,true,true]);
+    // 24.11 (one page): the months and the one-time deposit are both on the page, no tab between them
+    assert.deepEqual(await pg.evaluate(()=>[!!document.getElementById('ladRows').offsetParent,!!document.getElementById('onceAmt').offsetParent]),[true,true]);
     await pg.fill('#onceAmt','2000'); await pg.fill('#onceNote','בונוס'); await pg.click('#onceAdd'); await pg.waitForTimeout(1500);
     const r=await pg.evaluate(()=>({bal:document.getElementById('pBal').textContent,list:document.getElementById('onceList').textContent,cur:document.querySelector('#ladRows tr.cur').textContent,st:document.getElementById('onceState').textContent,n:document.getElementById('dvOnceN').textContent}));
     assert.equal(r.n,'1','the count on its tab');
@@ -1645,8 +1643,9 @@ test('the funds track: a fixed amount for each fund every month, the sum is the 
     if(await pg.isVisible('#planOb'))await pg.click('#obGo'); await pg.waitForTimeout(300);
     await pg.evaluate(()=>{const d=document.querySelector('[data-pane="plan"] details.hbset'); if(d)d.open=true});   // 17.11: the buying choices are behind one button
     assert.ok(await pg.isVisible('#kindFix'),'the choice is there in the funds track'); await pg.click('#kindFix'); await pg.waitForTimeout(300);
+    await pg.click('#planEditBtn'); await pg.waitForTimeout(250);
     const amts=await pg.$$('[data-amt]'); assert.equal(amts.length,2);
-    // on a phone the actions sit in a row right under each fund, on the right, and the table fits the screen
+    // on a phone the actions sit in a row right under each fund, on the right, and the table fits the screen (24.11: once "עריכת הרשימה" was pressed)
     const lay=await pg.evaluate(()=>{const rows=[...document.querySelectorAll('#planRows tr')], i=rows.findIndex(r=>r.querySelector('[data-amt]')), a=rows[i+1], p=document.getElementById('planRows').closest('.panel');
       return {head:[...document.querySelectorAll('#planRows')[0].closest('table').querySelectorAll('thead th')].map(h=>h.textContent),under:!!(a&&a.classList.contains('pactr')&&a.querySelector('[data-pa="skip"]')&&a.querySelector('[data-pa="move"]')),
         right:a?Math.abs(a.querySelector('[data-pa="skip"]').getBoundingClientRect().right-rows[i].querySelector('.sym').getBoundingClientRect().right)<16:false,fits:p.scrollWidth<=p.clientWidth+1}});
@@ -3011,28 +3010,18 @@ test('5.11 did it help: a row under each answer and each finding, counted for th
 });
 const U0=()=>U;
 
-test('5.11 the crowded screens in parts like the control screen: the growth plan in five (this month, the securities, the chart, one-time, settings) and the journal in two; the choice kept, a link opens its part',T,async t=>{
+test('5.11 the crowded screens in parts like the control screen: the deposit plan on one page (24.11: no tabs, nothing folded) and the journal in two; the choice kept, a link opens its part',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390,{parts:true});
   await pg.evaluate(()=>{try{localStorage.removeItem('tr_dvv')}catch(e){}});
   await tab(pg,'plan'); await pg.waitForTimeout(500);
-  // 24.11: the plan opens with the two steps only; the parts are behind one button, and stay open once opened
-  {const f=()=>pg.evaluate(()=>({btn:!document.getElementById('planMore').hidden,exp:document.getElementById('planMore').getAttribute('aria-expanded'),tabs:!!document.getElementById('dvTabs').offsetParent,card:!!document.getElementById('planAns').offsetParent}));
-    assert.deepEqual(await f(),{btn:true,exp:'false',tabs:false,card:true},'folded at first'); await pg.click('#planMore'); assert.deepEqual(await f(),{btn:true,exp:'true',tabs:true,card:true},'opened')}
-  const vis=()=>pg.evaluate(()=>['ladRows','planRows','chart','onceAmt','inMonthly','pBal'].map(id=>!!document.getElementById(id).offsetParent));
-  const fit=()=>pg.evaluate(()=>{const r=document.getElementById('dvTabs'); return r.scrollWidth<=r.clientWidth+1});
-  assert.ok(await fit(),'the five fit on a phone');
-  assert.deepEqual(await vis(),[true,false,false,false,false,true],'this month');
-  await pg.click('#dvTabs [data-dv="rows"]'); assert.deepEqual(await vis(),[false,true,false,false,false,false]);
-  await pg.click('#dvTabs [data-dv="chart"]'); await pg.waitForTimeout(200); assert.deepEqual(await vis(),[false,false,true,false,false,false]);
-  assert.ok(await pg.evaluate(()=>document.getElementById('svg').querySelectorAll('path,polyline,line').length>3),'the chart drawn when shown');
-  await pg.click('#dvTabs [data-dv="once"]'); assert.deepEqual(await vis(),[false,false,false,true,false,true]);
-  await pg.click('#dvTabs [data-dv="set"]'); assert.deepEqual(await vis(),[false,false,false,false,true,false]);
-  // the choice kept; a scroll to a place in another part opens it
-  await pg.reload(); await pg.waitForFunction(()=>/[₪$]\d/.test(document.getElementById('kTotal')?.textContent||'')); await tab(pg,'plan'); await pg.waitForTimeout(400);
-  assert.equal(await pg.evaluate(()=>document.querySelector('#dvTabs [aria-pressed="true"]').dataset.dv),'set');
-  await pg.evaluate(()=>document.getElementById('ladRows').scrollIntoView()); await pg.waitForTimeout(100);
-  assert.equal(await pg.evaluate(()=>document.querySelector('#dvTabs [aria-pressed="true"]').dataset.dv),'month');
+  // 24.11 (the owner: one page, nothing there for show): no tabs and nothing folded. The month, the securities, the months' table, the
+  // one-time deposit and the settings are on the page in that order; the four figures and the chart are not
+  assert.deepEqual(await pg.evaluate(()=>['planAns','planRows','ladRows','onceAmt','inMonthly','dvTabs','planMore','pBal','chart'].map(id=>!!document.getElementById(id).offsetParent)),[true,true,true,true,true,false,false,false,false]);
+  assert.ok(await pg.evaluate(()=>{const ys=['planAns','planRows','ladRows','onceAmt','inMonthly'].map(id=>document.getElementById(id).getBoundingClientRect().top); return ys.every((y,i)=>!i||y>ys[i-1])}),'in the order they are read');
+  assert.equal(await pg.evaluate(()=>{const L=[...document.querySelectorAll('#planRows tr.pactr')]; return L.length>0&&L.every(r=>!r.getClientRects().length)}),true,'the actions of each security wait for the edit button');
+  await pg.click('#planEditBtn'); assert.ok(await pg.evaluate(()=>document.querySelector('#planRows tr.pactr').getClientRects().length>0)); assert.equal(await pg.getAttribute('#planEditBtn','aria-pressed'),'true');
+  assert.match(await pg.textContent('#planSum'),/נשארו \d+ לקנות בסבב/); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#ladRows tr.far').length>0&&!!document.querySelector('#ladRows [data-ladall]')),true,'the months ahead on request');
   // the journal
   await tab(pg,'journal'); await pg.waitForTimeout(500);
   const j=()=>pg.evaluate(()=>[!!document.getElementById('jrnBox').offsetParent,!!document.getElementById('dnaBox').offsetParent,[...document.querySelectorAll('[data-pane="journal"] .ptnav [data-pt]')].map(b=>b.textContent).join('|')]);
@@ -4321,7 +4310,7 @@ test('24.11 the plan ticks by itself a purchase that is already in the portfolio
     await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-src',{timeout:12000});
     const s=await pg.evaluate(()=>{const b=document.getElementById('planAns'), li=b.querySelector('.pc-src').closest('li'), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),done:li.classList.contains('done'),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}});
     assert.ok(s.done); assert.match(s.li,/לפי קנייה שרשומה בתיק/); assert.match(s.li,/123.45/,'what was really paid: '+s.li); assert.match(s.li,/✓ נקנה/); assert.match(s.say,/סימנתי בתוכנית/);
-    assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ ניירות/); assert.ok(!s.over);
+    assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ בסבב הזה/); assert.ok(!s.over);
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-sync.png'})}
     await pg.waitForFunction(()=>{try{return /נשמר/.test(document.getElementById('planSaved').textContent)}catch(e){return false}},null,{timeout:8000});
     const sv=store.getDoc('plan/main').data, pu=sv.purchases.find(x=>x.tid==='m|tsync1'); assert.ok(pu&&pu.paidIls===123.45,'saved with the key of the trade'); assert.ok((sv.seen||[]).includes('m|tsync1'));

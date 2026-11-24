@@ -1867,6 +1867,10 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pstep .pc-note{margin:8px 0 0;font-size:14px;color:var(--ink2);line-height:1.5}
 .pstep .pc-src{display:block;font-size:12.5px;font-weight:400;color:var(--ink2);line-height:1.35}
 .pstep .pc-sync{color:var(--ink)}
+.pl-gone{display:none!important}
+.pl-sum{margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--ink2)} .pl-sum:empty{display:none}
+#planRowsP:not(.pl-edit) tr.pactr{display:none!important}
+#planEditBtn[hidden]{display:none!important}
 .pstep .pc-prog{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .pstep .pc-dn{flex:none;width:96px;height:96px}
 .pstep .pc-lg{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px;line-height:1.45;color:var(--ink)}
@@ -4613,22 +4617,9 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
     </section>
     <section aria-labelledby="hPlan">
       <div class="row"><h2 id="hPlan">תוכנית ההפקדה</h2><span class="saved" id="planSaved"></span></div>
-      <div class="m-ans pstep" id="planAns" role="group" aria-label="מה עושים החודש: להפקיד ולקנות" hidden></div>
-      <button type="button" class="pl-more" id="planMore" aria-expanded="false" hidden></button>
       <div class="tracks" role="group" aria-label="מסלול">
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
-      </div>
-      <div class="pcash" id="pCashRow" role="group" aria-label="המזומן בכל חשבון, ולאיזה מסלול הוא" hidden></div>
-      <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
-      <div class="dvtabs" id="dvTabs" role="tablist" aria-label="החלקים של התוכנית"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">החודש</button><button type="button" class="chip" role="tab" data-dv="rows" aria-pressed="false" aria-selected="false">הניירות</button><button type="button" class="chip" role="tab" data-dv="chart" aria-pressed="false" aria-selected="false">הגרף</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">חד פעמית <span class="dv-n" id="dvOnceN"></span></button><button type="button" class="chip" role="tab" data-dv="set" aria-pressed="false" aria-selected="false">הגדרות</button></div>
-      <div class="panel howbuy" data-dvp="rows">
-        <!-- 17.11 (the owner): the two buying choices behind one button; the screen starts with the plan itself -->
-        <details class="hbset"><summary>הגדרות הקנייה: איך קונים וסדר הקנייה</summary>
-        <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
-        <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
-        </details>
-        <p class="note" id="kindNote"></p>
       </div>
       <div class="panel ob" id="planOb" data-dvp="all" hidden>
         <h3>בונים תוכנית הגדלה</h3>
@@ -4638,14 +4629,26 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div id="obUntil"></div>
         <div class="obact"><button class="btn pri" id="obGo" type="button" data-pa="initPlan">בנה תוכנית</button><button class="btn" id="obToPf" type="button" data-tab="mine" hidden>לעבור ל"התיק שלי"</button></div>
       </div>
-      <div class="strip" data-dvp="month once">
-        <div class="cell"><div class="k">יתרה להשקעה</div><span class="v" id="pBal">—</span><div class="d" id="pBalD">&nbsp;</div></div>
-        <div class="cell"><div class="k">נקנו מהתוכנית</div><span class="v" id="pDone">—</span><div class="prog" style="margin-top:8px"><div id="pBar" style="width:0"></div></div></div>
-        <div class="cell"><div class="k">חסר כדי לקנות הכול</div><span class="v" id="pLeft">—</span><div class="d" id="pLeftD">&nbsp;</div></div>
-        <div class="cell"><div class="k">סיום משוער</div><span class="v" id="pEnd" style="direction:rtl">—</span><div class="d" id="pEndD">&nbsp;</div></div>
+      <div class="m-ans pstep" id="planAns" role="group" aria-label="מה עושים החודש: להפקיד ולקנות" hidden></div>
+      <div class="pcash" id="pCashRow" role="group" aria-label="המזומן בכל חשבון, ולאיזה מסלול הוא" hidden></div>
+      <div class="panel scroll" data-dvp="rows" id="planRowsP">
+        <div class="row" style="margin-bottom:4px"><h3>הניירות בתוכנית</h3><button type="button" class="btn sm" id="planEditBtn" aria-pressed="false">עריכת הרשימה</button></div>
+        <p class="pl-sum" id="planSum"></p>
+        <table>
+          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
+          <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="panel howbuy" data-dvp="rows">
+        <!-- 17.11 (the owner): the two buying choices behind one button; the screen starts with the plan itself -->
+        <details class="hbset"><summary>הגדרות הקנייה: איך קונים וסדר הקנייה</summary>
+        <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
+        <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
+        </details>
+        <p class="note" id="kindNote"></p>
       </div>
       <div class="panel scroll" data-dvp="month">
-        <div class="row" style="margin-bottom:8px"><h3>מעקב חודשי</h3><span class="sub" id="depState"></span></div>
+        <div class="row" style="margin-bottom:8px"><h3>חודש אחרי חודש</h3><span class="sub" id="depState"></span></div>
         <table class="ladder">
           <thead><tr><th>חודש</th><th>הפקדה</th><th>קנייה</th><th class="num">יתרה</th></tr></thead>
           <tbody id="ladRows"><tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr></tbody>
@@ -4664,29 +4667,34 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="onceAdd">הוסף הפקדה</button><span class="saved" id="onceState" role="status"></span></div>
         <ul class="oncelist" id="onceList"></ul>
       </div>
-      <div class="panel" data-dvp="chart">
-        <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: בפועל · מקווקו: לפי הלוח</span></div></div>
-        <div class="chart" id="chart"><svg id="svg" viewBox="0 0 640 260" role="img" aria-label="סך ההפקדות מול הסכום שהושקע במניות, חודש אחר חודש"></svg><div class="tip" id="tip" hidden></div></div>
-        <p class="note" id="projNote"></p>
-      </div>
-      <div class="panel scroll" data-dvp="rows">
-        <div class="row" style="margin-bottom:8px"><h3>הניירות בתוכנית</h3></div>
-        <table>
-          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
-          <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
-        </table>
-      </div>
       <div class="panel" data-dvp="set">
+        <div class="row" style="margin-bottom:8px"><h3>הגדרות התוכנית</h3></div>
         <div class="form">
           <label for="inMonthly">הפקדה חודשית למניות (₪)<input type="number" id="inMonthly" min="0" step="50"></label>
           <label for="inMonthlyIdx">הפקדה חודשית למדדים (₪)<input type="number" id="inMonthlyIdx" min="0" step="50"></label>
           <label for="inDepDay">יום ההפקדה בחודש<select id="inDepDay"></select></label>
           <label for="inTaxMonth" id="taxLab">תזכורת לדוח השנתי לרשות המיסים<span class="dd2"><select id="inTaxDay" aria-label="יום"></select><select id="inTaxMonth" aria-label="חודש"></select></span></label>
           <label for="inFee">עמלת מינימום לעסקה (₪)<input type="number" id="inFee" min="0" step="0.5"></label>
-          <div><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px;direction:rtl;unicode-bidi:normal">—</span></div>
+          <div class="pl-gone"><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px;direction:rtl;unicode-bidi:normal">—</span></div>
           <label for="inPlanAcct" id="planAcctL" hidden><span class="pa-k">מאיזה חשבון קונה המסלול הזה</span><select id="inPlanAcct"></select></label>
         </div>
         <p class="note" id="feeNote" style="margin-top:12px"></p>
+      </div>
+      <div class="pl-gone" hidden>
+      <button type="button" class="pl-more" id="planMore" aria-expanded="false" hidden></button>
+      <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
+      <div class="dvtabs" id="dvTabs" role="tablist" aria-label="החלקים של התוכנית"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">החודש</button><button type="button" class="chip" role="tab" data-dv="rows" aria-pressed="false" aria-selected="false">הניירות</button><button type="button" class="chip" role="tab" data-dv="chart" aria-pressed="false" aria-selected="false">הגרף</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">חד פעמית <span class="dv-n" id="dvOnceN"></span></button><button type="button" class="chip" role="tab" data-dv="set" aria-pressed="false" aria-selected="false">הגדרות</button></div>
+      <div class="strip" data-dvp="month once">
+        <div class="cell"><div class="k">יתרה להשקעה</div><span class="v" id="pBal">—</span><div class="d" id="pBalD">&nbsp;</div></div>
+        <div class="cell"><div class="k">נקנו מהתוכנית</div><span class="v" id="pDone">—</span><div class="prog" style="margin-top:8px"><div id="pBar" style="width:0"></div></div></div>
+        <div class="cell"><div class="k">חסר כדי לקנות הכול</div><span class="v" id="pLeft">—</span><div class="d" id="pLeftD">&nbsp;</div></div>
+        <div class="cell"><div class="k">סיום משוער</div><span class="v" id="pEnd" style="direction:rtl">—</span><div class="d" id="pEndD">&nbsp;</div></div>
+      </div>
+      <div class="panel" data-dvp="chart">
+        <div class="row" style="margin-bottom:6px"><h3>הפקדות מול השקעה</h3><div class="legend"><span><i class="lg-l2"></i>הפקדות</span><span><i class="lg-l1"></i>במניות</span><span>מלא: בפועל · מקווקו: לפי הלוח</span></div></div>
+        <div class="chart" id="chart"><svg id="svg" viewBox="0 0 640 260" role="img" aria-label="סך ההפקדות מול הסכום שהושקע במניות, חודש אחר חודש"></svg><div class="tip" id="tip" hidden></div></div>
+        <p class="note" id="projNote"></p>
+      </div>
       </div>
     </section>
   </div>
@@ -19288,7 +19296,7 @@ function planRingH(st,done,total){if(st.fixed||!total)return ''; const C=r=>2*Ma
   const pR=done/total, mN=st.until?ymDiff(st.until,st.start)+1:0, mD=mN?Math.min(mN,PL.deposits.filter(d=>!d.once).length):0, pP=mN?mD/mN:null, main=pP!=null?pP:pR, pc=Math.round(main*100);
   const say=(pP!=null?`הופקדו ${mD} מתוך ${mN} ההפקדות של התקופה. `:'')+`נקנו ${done} מתוך ${total} ניירות בסבב.`;
   return `<div class="pc-prog"><svg class="pc-dn" viewBox="0 0 100 100" role="img" aria-label="התקדמות התוכנית: ${pc}%. ${esc(say)}">${pP!=null?arc(43,9,pP,'var(--accent)')+arc(30,8,pR,'var(--gain)'):arc(41,11,pR,'var(--gain)')}<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="600" fill="var(--ink)" direction="ltr">${pc}%</text></svg>
-    <ul class="pc-lg">${pP!=null?`<li><i class="lg-p"></i><span>התקופה, עד ${esc(ymLong(st.until))}: הופקדו <b class="n">${mD}</b> מתוך <b class="n">${mN}</b> הפקדות</span></li>`:''}<li><i class="lg-r"></i><span>הסבב: נקנו <b class="n">${done}</b> מתוך <b class="n">${total}</b> ניירות</span></li></ul></div>`}
+    <ul class="pc-lg">${pP!=null?`<li><i class="lg-p"></i><span>התקופה, עד ${esc(ymLong(st.until))}: הופקדו <b class="n">${mD}</b> מתוך <b class="n">${mN}</b> הפקדות</span></li>`:''}<li><i class="lg-r"></i><span>נקנו <b class="n">${done}</b> מתוך <b class="n">${total}</b> בסבב הזה</span></li></ul></div>`}
 // the plan's deposits that the history does not hold yet, each with its day (a history deposit within 10 days and 2% of the
 // amount is the same money; so is a month of a table uploaded from an app that describes it, see planCovered)
 function planExtraList(hs=HS){
@@ -20557,7 +20565,7 @@ function renderPlan(mAll){
     run+=(d?+d.amount||0:0)+onAmt-oldAmt-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     pd+=B+onAmt; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=(d?+d.amount||0:0)+onAmt; ai+=oldAmt+buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0); pi+=oldAmt;
     CH.push({ym,pd,pi,ad,ai,act:m<=lastMark,buys:buys.slice(),cur:m===st.cur});
-    const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur+3?'far':''].join(' ');
+    const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur?'far':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?`<div class="nm">${st.wait?'חודש ההתחלה':'החודש'}</div>`:m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
     <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div></td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
@@ -20574,7 +20582,8 @@ function renderPlan(mAll){
   drawFwd(project(mAll.total,MTOT(),Math.max(1,Math.min(40,+S.years||1)),+S.ratePct||0),todo.length&&st.lad.complete?(lastM-st.cur+1)/12:null,mAll.pnl,mAll.missingCost);
   try{renderGoal(mAll)}catch(e){}
   // 5.11: three months ahead, the rest a tap away (the plan ran 17 rows to its end)
-  {const far=Math.max(0,nRows-(st.cur+4)); if(far>0)h+=`<tr class="lad-more"><td colspan="4"><button type="button" class="btn sm" data-ladall="1">${LADALL?'להציג רק 3 חודשים קדימה':`להציג את כל הלוח (עוד ${far} חודשים, עד ${ymShort(ymAdd(st.start,nRows-1))})`}</button></td></tr>`}
+  // 24.11 (one page): the months ahead are in "הניירות בתוכנית" already (when each is bought), so this table opens with what was
+  {const far=Math.max(0,nRows-(st.cur+1)); if(far>0)h+=`<tr class="lad-more"><td colspan="4"><button type="button" class="btn sm" data-ladall="1" aria-expanded="${LADALL}">${LADALL?'להסתיר את החודשים הבאים':`להציג גם את ${far===1?'החודש הבא':far+' החודשים הבאים'}, עד ${ymShort(ymAdd(st.start,nRows-1))}`}</button></td></tr>`}
   if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
   try{planAnsFill(st,depBy,B)}catch(e){console.error(e)}
   try{renderOnce()}catch(e){}
@@ -20582,6 +20591,8 @@ function renderPlan(mAll){
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.';
 
   $('thCost').textContent=st.fixed?'סכום בחודש ₪':st.rot?'סכום קנייה ₪':'עלות יחידה ₪';
+  {const ps=$('planSum'), miss=Math.max(0,need-st.bal); if(ps)ps.textContent=!PL.items.length?'':st.fixed?`כל חודש ${ils(B)} מתחלקים בין ${fixedItems().length} קרנות.`:!todo.length?'כל הניירות נקנו בסבב הזה.':`נשארו ${todo.length} לקנות בסבב, ${ils(need)} במחירי היום. `+(miss>0.5?`חסרים ${ils(miss)}`:'היתרה מספיקה לכולם')+(st.lad.complete&&B>0?`, והאחרון ייקנה ב${ymLong(ymAdd(st.start,lastM))}.`:'.');
+   const eb=$('planEditBtn'); if(eb){eb.hidden=!canWrite||!PL.items.length; eb.setAttribute('aria-pressed',String(PEDIT)); eb.textContent=PEDIT?'סיום עריכה':'עריכת הרשימה'} const pp=$('planRowsP'); if(pp)pp.classList.toggle('pl-edit',PEDIT)}
   // securities in the plan
   const rank=i=>i.status==='todo'?1:i.status==='done'?2:3;
   const list=PL.items.map((it,ix)=>({it,ix})).sort((a,b)=>rank(a.it)-rank(b.it)||(PL.mode!=='cheap'?a.ix-b.ix:(st.at[a.it.sym]??999)-(st.at[b.it.sym]??999)||(st.cost[a.it.sym]||0)-(st.cost[b.it.sym]||0)));
@@ -20589,7 +20600,7 @@ function renderPlan(mAll){
     const c=st.cost[it.sym], w=st.sch.when[it.sym]; let tag,acts='';
     if(st.fixed&&it.status!=='skip'){
       return `<tr${canWrite?' class="hasacts"':''}><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td></tr>${canWrite?`<tr class="pactr"><td colspan="3"><div class="acts pacts"><button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button></div></td></tr>`:''}`}
-    if(it.status==='done'){tag=`<span class="st done">הוגדל</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
+    if(it.status==='done'){tag=`<span class="st done">נקנה</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
     else if(it.status==='skip'){tag='<span class="st skip">מחוץ לתוכנית</span>';acts=`<button class="btn sm" type="button" data-pa="unskip" data-ix="${ix}">החזר</button>`}
     else{
       tag=w===0?'<span class="st now">אפשר החודש</span>':w!=null?`<span class="st wait">${ymShort(ymAdd(st.start,st.at[it.sym]))}</span> <span class="nm">עוד ${w} ${w===1?'חודש':'חודשים'}</span>`:'<span class="st wait">ממתין</span>';
@@ -20602,6 +20613,8 @@ function renderPlan(mAll){
   $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
   return st;
 }
+let PEDIT=false;
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#planEditBtn')){PEDIT=!PEDIT; try{render()}catch(x){}}});
 function planAct(a,d){
   if(!P||!Q)return; const st=planState(mAllNow()), now=new Date().toISOString(), id='e'+Date.now().toString(36);
   const ix=+d.ix, it=PL.items[ix];
@@ -31756,7 +31769,8 @@ function planRoll(st){if(ROLLING||!canWrite||st.fixed||!st.until||ymDiff(st.unti
   if(!(last<ymNow()))return; ROLLING=true; setTimeout(()=>{try{planAct('nextRound',{})}finally{ROLLING=false}},0)}
 let PLMORE=false; try{PLMORE=localStorage.getItem('tr_plan_more')==='1'}catch(e){}
 function plFold(){const box=$('planAns'), b=$('planMore'); if(!box||!b)return; const sec=box.closest('section'); let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
-  const on=!box.hidden&&!all; b.hidden=!on; if(sec)sec.classList.toggle('pl-fold',on&&!PLMORE); b.setAttribute('aria-expanded',String(PLMORE));
+  const on=false; b.hidden=!on;   // 24.11: one page, nothing folded
+  if(sec)sec.classList.toggle('pl-fold',on&&!PLMORE); b.setAttribute('aria-expanded',String(PLMORE));
   b.innerHTML=PLMORE?'להסתיר את הפירוט <span aria-hidden="true">▴</span>':'כל הפירוט: החודשים, הניירות, הגרף וההגדרות <span aria-hidden="true">▾</span>'}
 function plMore(v){PLMORE=!!v; try{localStorage.setItem('tr_plan_more',PLMORE?'1':'0')}catch(e){} plFold(); if(PLMORE&&DVV==='chart'){try{if(PTS.length)drawChart(PTS)}catch(e){}}}
 function plUnfold(el){if(!PLMORE&&el&&el.closest&&el.closest('section.pl-fold')&&!el.closest('#planAns'))plMore(true)}
@@ -31776,7 +31790,7 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
   if(st.wait){const n=ymDiff(st.start,ymNow());
     box.innerHTML=`${head}<div class="ps-bal">מתחילה ב${esc(ymLong(st.start))}</div>
       <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterH(st,B)}`; return}
-  const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':`נקנו ${done} מתוך ${act.length} בסבב הזה.`;
+  const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':'';
   box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
     ${planRingH(st,done,act.length)}
     <div class="pc-sec"><h3 class="pc-h">החודש</h3>
@@ -31792,7 +31806,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
-  if(sec)for(const el of sec.querySelectorAll('[data-dvp]')){const ks=el.dataset.dvp.split(' '); el.classList.toggle('dv-off',!(ks.includes('all')||ks.includes(DVV)||(all&&DVV==='month'&&!ks.includes('once'))))}
+  if(sec)for(const el of sec.querySelectorAll('[data-dvp]')){const ks=el.dataset.dvp.split(' '); el.classList.remove('dv-off')}   // 24.11 (the owner: one page): no part is put away
   for(const b of row.querySelectorAll('[data-dv]')){const on=b.dataset.dv===DVV; b.setAttribute('aria-pressed',String(on)); b.setAttribute('aria-selected',String(on))}
   if(DVV==='chart'){try{if(PTS.length)drawChart(PTS)}catch(e){}}}
 (function dvBoot(){const go=()=>{const row=$('dvTabs'); if(!row)return; let after=false;
@@ -32651,6 +32665,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.11',at:'2026-11-24',t:'תוכנית ההפקדה בעמוד אחד',d:'אין יותר לשוניות ואין כפתור "כל הפירוט". מלמעלה למטה: המסלול, מה עושים החודש, הניירות בתוכנית ומתי כל אחד נקנה, החודשים, הפקדה חד פעמית וההגדרות. ארבעת המספרים והגרף שחזרו על מה שכבר כתוב ירדו מהעמוד. כפתורי הסדר וההוצאה של כל נייר מופיעים רק אחרי "עריכת הרשימה".',go:'plan'},
   {v:'2026-11-24.10',at:'2026-11-24',t:'תוכנית ההפקדה מסמנת לבד, ועיגול התקדמות',d:'קנייה של החודש שכבר רשומה בתיק שלך (מדוח שהעלית, או שרשמת באתר) מסומנת בתוכנית לבד, עם הסכום ששולם באמת. גם הפקדה חודשית שנקראה מדוח. ליד כל סימון כזה כתוב מאיפה הוא, ו"ביטול" מחזיר אותו. בראש הכרטיס יש עכשיו עיגול שמראה כמה מהתוכנית כבר מאחוריך: ההפקדות של התקופה והקניות של הסבב.',go:'plan'},
   {v:'2026-11-24.9',at:'2026-11-24',t:'חיסכון: מוסיפים נייר בחיפוש, כמו במחקר שוק',d:'ב"הניירות בחיסכון" השדה להוספת נייר הוא עכשיו חיפוש: כותבים שם או סימול (אפל, VOO, toyota), בוחרים מהרשימה, כותבים כמות ולוחצים "הוסף". מופיעים ניירות מהרשימה של האתר, ומתחתם מניות וקרנות מבורסות אחרות בעולם. אפשר עדיין לכתוב סימול מדויק או מספר קרן בלי לבחור.',go:'pots'},
   {v:'2026-11-24.8',at:'2026-11-24',t:'חדש בבורסה: גם מניות חדשות בתל אביב',d:'מניה שנרשמת למסחר בבורסה בתל אביב מופיעה ב"חדש בבורסה" במחקר שוק ובעדכון השבועי בהתראות, מהיום שנרשם לה יום מסחר ראשון. המקור הוא הרשימה של הבורסה עצמה, ולכן זה פועל רק כשהאתר מחובר אליה. לונדון עדיין לא בלוח: האתר של הבורסה שם לא מאפשר קריאה אוטומטית.',go:'srch'},
