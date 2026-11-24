@@ -4307,6 +4307,31 @@ for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדת
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
 
+// 24.11 (the owner: "תעשה איך שנראה לך… אפילו עם דיאגרמה עוגה של קצב התקדמות"): a purchase the page already holds ticks its
+// security in the plan by itself; taken back, it stays taken back; and the card opens with a ring of the progress
+test('24.11 the plan ticks by itself a purchase that is already in the portfolio, says where it came from, leaves it alone once taken back; a ring shows the progress',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const pl=keep['plan/main'].data, pf=keep['portfolio/main'].data, it=((pl&&pl.items)||[]).find(i=>i.status==='todo'), pos=it&&(pf.positions||[]).find(p=>p.sym===it.sym); if(!it||!pos)return t.skip('no security waiting in the fixture plan');
+  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'), H=JSON.parse(JSON.stringify(keep['history/main'].data));
+  let A=H.accounts.find(x=>x.acct===pos.acct); if(!A){A={acct:pos.acct,ccy:'USD',deposits:[],trades:[]}; H.accounts.push(A)}
+  A.manual=[...(A.manual||[]),{id:'tsync1',date:day,sym:it.sym,side:'buy',qty:1,px:123.45,amt:123.45,ccy:'ILS',at:new Date().toISOString()}]; store.setDoc('history/main',H,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-src',{timeout:12000});
+    const s=await pg.evaluate(()=>{const b=document.getElementById('planAns'), li=b.querySelector('.pc-src').closest('li'), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),done:li.classList.contains('done'),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}});
+    assert.ok(s.done); assert.match(s.li,/לפי קנייה שרשומה בתיק/); assert.match(s.li,/123.45/,'what was really paid: '+s.li); assert.match(s.li,/✓ נקנה/); assert.match(s.say,/סימנתי בתוכנית/);
+    assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ ניירות/); assert.ok(!s.over);
+    if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-sync.png'})}
+    await pg.waitForFunction(()=>{try{return /נשמר/.test(document.getElementById('planSaved').textContent)}catch(e){return false}},null,{timeout:8000});
+    const sv=store.getDoc('plan/main').data, pu=sv.purchases.find(x=>x.tid==='m|tsync1'); assert.ok(pu&&pu.paidIls===123.45,'saved with the key of the trade'); assert.ok((sv.seen||[]).includes('m|tsync1'));
+    // taken back: the button returns, and the page does not tick it again
+    await pg.evaluate(()=>document.querySelector('#planAns .pc-src').closest('li').querySelector('[data-planun]').click());
+    await pg.waitForFunction(()=>!document.querySelector('#planAns .pc-src'),null,{timeout:8000}); await pg.waitForTimeout(1500);
+    assert.equal(await pg.locator('#planAns .pc-src').count(),0,'not ticked again'); assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+
 // 24.11 (the owner: "שיהיה אופציה של מכמה זמן לכמה זמן התוכנית… והמערכת תבנה בהתאם לתקציב והפקדות"): the plan has a period;
 // to its end the system lays the purchases out in rounds from the monthly deposit; a round done, the next one begins
 test('24.11 the plan to the end of its period: a period chosen in the card, the months laid out in rounds from the deposit, and a new round when every security was bought',T,async t=>{

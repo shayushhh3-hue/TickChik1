@@ -1865,6 +1865,13 @@ html body .pu-pick .chip.chip{min-height:44px!important;height:auto!important} h
 .pstep .pc-list li.done .pc-s,.pstep .pc-list li.done .pc-c{color:var(--ink2);font-weight:400}
 html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;border:0;background:none;font:inherit;font-size:13px;color:var(--ink2);text-decoration:underline;cursor:pointer}
 .pstep .pc-note{margin:8px 0 0;font-size:14px;color:var(--ink2);line-height:1.5}
+.pstep .pc-src{display:block;font-size:12.5px;font-weight:400;color:var(--ink2);line-height:1.35}
+.pstep .pc-sync{color:var(--ink)}
+.pstep .pc-prog{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.pstep .pc-dn{flex:none;width:96px;height:96px}
+.pstep .pc-lg{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px;line-height:1.45;color:var(--ink)}
+.pstep .pc-lg li{display:flex;align-items:flex-start;gap:8px} .pstep .pc-lg i{flex:none;width:12px;height:12px;border-radius:50%;margin-top:4px}
+.pstep .pc-lg .lg-p{background:var(--accent)} .pstep .pc-lg .lg-r{background:var(--gain)}
 .pstep .pc-ask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
 .pstep .pc-all,.pstep .pc-now{margin-top:8px} .pstep .pc-foot{margin:2px 0 0;font-size:12.5px;color:var(--ink2)}
 .pl-more[hidden]{display:none} .pl-more:hover{background:var(--accent-soft)}
@@ -19233,25 +19240,61 @@ const cashDay=a=>[stmtDay(a),((P&&P.cashAt)||{})[a]||''].sort().pop()||'';
 // once the account that holds the security has a newer statement (buys). Otherwise the rule is the one it always was
 function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:[],cash:[]};
   const a=tracksApart()?trackAcct(t):'all', ids=acctIds(), ilA=ids.filter(x=>acctCcy(x)!=='USD'), depA=ilA.length?ilA:ids, own=d=>a!=='all'&&markDay(d)>=SEP_DAY;
-  const deps=(X.deposits||[]).filter(d=>own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA));
-  const buys=(X.purchases||[]).filter(x=>{const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
-  const cash=a==='all'?buys:(X.purchases||[]).filter(x=>own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x));
+  const deps=(X.deposits||[]).filter(d=>d.tid?false:own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA));
+  const buys=(X.purchases||[]).filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
+  const cash=a==='all'?buys:(X.purchases||[]).filter(x=>x.tid?false:own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x));
   return {deps,buys,cash}}
 function planOpen(){
   if(typeof tracksApart==='function'&&tracksApart()){const a=trackOpen('stocks'), b=trackOpen('idx'); return {deps:a.deps.concat(b.deps),buys:a.buys.concat(b.buys),spent:a.cash.concat(b.cash).reduce((t,x)=>t+(+x.paidIls||0),0)}}
   const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
-  const deps=allDep().filter(d=>!coveredBy(markDay(d),depA));
-  const buys=allBuy().filter(x=>{const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
+  const deps=allDep().filter(d=>!d.tid&&!coveredBy(markDay(d),depA));
+  const buys=allBuy().filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
   return {deps,buys};
 }
 // a track's own balance: its account's cash, and what was ticked in the track since that cash was known
 function trackCash(t){const o=trackOpen(t); return acctCash(trackAcct(t))+o.deps.reduce((s,d)=>s+(+d.amount||0),0)-o.cash.reduce((s,x)=>s+(+x.paidIls||0),0)}
+// 24.11 (the owner: "תעשה איך שנראה לך"): the plan reads what is already known instead of asking for a tick. A purchase of
+// this month that the page already holds (read from a statement, or written in the page's own box) ticks its security in
+// the plan by itself, with what was really paid; a deposit of this month in a statement, of the monthly amount, ticks the
+// monthly deposit. Such a tick carries the trade's key (tid): its money and units are in the accounts' figures already, so
+// it is never counted as "ticked and not in the figures yet" (trackOpen, planOpen, planExtraList). A tick taken back stays
+// taken back: the key is kept in the track's own list (seen) and is not offered again.
+function realBuys(ym,hs=HS){const out=[], T=[];
+  for(const A of (hs&&hs.accounts)||[])for(const t of A.trades||[]){if(!t||t.div||!t.sym||!(+t.qty>0)||String(t.date||'').slice(0,7)!==ym)continue; const c=t.ccy||(A.ccy==='USD'?'USD':'ILS'), r={k:`${A.acct}|${t.date}|${t.sym}|${+t.qty}`,acct:A.acct,sym:t.sym,day:String(t.date).slice(0,10),qty:+t.qty,px:+t.px||0,ccy:c,amt:(+t.qty)*(+t.px||0)}; out.push(r); T.push(r)}
+  // a purchase written in the page that a statement holds too (same security and quantity, within three days) is one purchase
+  for(const A of (hs&&hs.accounts)||[])for(const t of A.manual||[]){if(!t||t.side!=='buy'||!t.sym||!(+t.qty>0)||String(t.date||'').slice(0,7)!==ym)continue; const day=String(t.date).slice(0,10);
+    if(T.some(r=>r.sym===t.sym&&Math.abs(r.qty-(+t.qty))<1e-6&&Math.abs(new Date(r.day)-new Date(day))<=3*864e5))continue;
+    out.push({k:'m|'+(t.id||day+'|'+t.sym+'|'+(+t.qty)),acct:A.acct,sym:t.sym,day,qty:+t.qty,px:+t.px||0,ccy:t.ccy==='ILS'?'ILS':'USD',amt:+t.amt>0?+t.amt:(+t.qty)*(+t.px||0)})}
+  return out}
+function planSyncDo(){if(!P||!HS||!Q||!PLD)return 0; const ym=ymNow(), R=realBuys(ym), fx=+Q.usdIls||0, apart=tracksApart(), now=new Date().toISOString(), moOf=x=>x.month||(x.at?ilDay(x.at).slice(0,7):''); let n=0;
+  const TR=[['stocks',PLD,+S.monthly||0],['idx',PLD.idx,+S.monthlyIdx||0]], depTaken=k=>TR.some(([t,X])=>X&&(X.deposits||[]).some(d=>d.tid===k));
+  for(const [t,X,M] of TR){if(!X||!(X.items||[]).length||(X.start&&X.start>ym))continue; const a=apart?trackAcct(t):'all', seen=new Set(X.seen||[]), n0=n, fixed=t==='idx'&&X.mode==='fixed';
+    for(const it of X.items){if(it.status==='skip'||(!fixed&&it.status!=='todo')||(fixed&&!(+it.amt>0)))continue;
+      const mine=R.filter(r=>r.sym===it.sym&&(a==='all'||r.acct===a)), inPlan=(X.purchases||[]).filter(x=>x.sym===it.sym&&moOf(x)===ym); if(mine.length<=inPlan.length)continue;
+      const r=mine.find(r=>!seen.has(r.k)&&!inPlan.some(x=>x.tid===r.k)); if(!r)continue; const paid=Math.round(r.amt*(r.ccy==='USD'?fx:1)*100)/100; if(!(paid>0))continue;
+      const id='a'+Date.now().toString(36)+n; X.purchases.push({id,sym:it.sym,paidIls:paid,qty:r.qty,px:r.px||null,ccy:r.ccy,fx:fx||null,month:ym,at:now,tid:r.k}); if(!fixed){it.status='done'; it.doneAt=now; it.note=''; it.pid=id} seen.add(r.k); n++}
+    // the monthly deposit: a deposit of this month in a statement, of this track's amount (or of the two tracks' together)
+    if(M>0&&!(X.deposits||[]).some(d=>!d.once&&d.month===ym)){const both=TR.every(([,Y,m])=>m>0&&Y&&(Y.items||[]).length), tot=TR.reduce((s,[,,m])=>s+m,0); let hit=null;
+      for(const A of HS.accounts||[]){if(a!=='all'&&A.acct!==a)continue; for(const d of A.deposits||[]){if(!d||!(+d.amount>0)||String(d.date||'').slice(0,7)!==ym)continue; const v=(+d.amount)*((d.ccy||A.ccy)==='USD'?fx:1), k0=`d|${A.acct}|${d.date}|${+d.amount}`, near=(x,y)=>Math.abs(x-y)<=Math.max(1,y*0.02);
+          const k=near(v,M)&&!depTaken(k0)?k0:both&&near(v,tot)?k0+'#'+t:''; if(!k||seen.has(k)||depTaken(k))continue; hit={k,day:String(d.date).slice(0,10)}; break} if(hit)break}
+      if(hit){X.deposits.push({id:'a'+Date.now().toString(36)+n,month:ym,amount:M,at:hit.day+'T09:00:00.000Z',tid:hit.k}); seen.add(hit.k); n++}}
+    if(n>n0)X.seen=[...seen].slice(-300)}
+  return n}
+let SYNCING=false, SYNC_SAY='';
+function planSync(){if(SYNCING||!canWrite||!P||!HS||!Q)return; try{if(!PLK&&!LOCAL)return}catch(e){return}
+  SYNCING=true; setTimeout(()=>{try{const n=planSyncDo(); if(n){SYNC_SAY=n===1?'סימנתי בתוכנית פעולה אחת שכבר רשומה בתיק שלך.':`סימנתי בתוכנית ${n} פעולות שכבר רשומות בתיק שלך.`; planChanged()}}catch(e){console.error(e)}finally{SYNCING=false}},0)}
+// the progress as a ring: the period's deposits outside, this round's purchases inside (the owner asked for a pie of the pace)
+function planRingH(st,done,total){if(st.fixed||!total)return ''; const C=r=>2*Math.PI*r, arc=(r,w,p,col)=>`<circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--line)" stroke-width="${w}"/>${p>0?`<circle cx="50" cy="50" r="${r}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(C(r)*Math.min(1,p)).toFixed(1)} ${C(r).toFixed(1)}" transform="rotate(-90 50 50)"/>`:''}`;
+  const pR=done/total, mN=st.until?ymDiff(st.until,st.start)+1:0, mD=mN?Math.min(mN,PL.deposits.filter(d=>!d.once).length):0, pP=mN?mD/mN:null, main=pP!=null?pP:pR, pc=Math.round(main*100);
+  const say=(pP!=null?`הופקדו ${mD} מתוך ${mN} ההפקדות של התקופה. `:'')+`נקנו ${done} מתוך ${total} ניירות בסבב.`;
+  return `<div class="pc-prog"><svg class="pc-dn" viewBox="0 0 100 100" role="img" aria-label="התקדמות התוכנית: ${pc}%. ${esc(say)}">${pP!=null?arc(43,9,pP,'var(--accent)')+arc(30,8,pR,'var(--gain)'):arc(41,11,pR,'var(--gain)')}<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="600" fill="var(--ink)" direction="ltr">${pc}%</text></svg>
+    <ul class="pc-lg">${pP!=null?`<li><i class="lg-p"></i><span>התקופה, עד ${esc(ymLong(st.until))}: הופקדו <b class="n">${mD}</b> מתוך <b class="n">${mN}</b> הפקדות</span></li>`:''}<li><i class="lg-r"></i><span>הסבב: נקנו <b class="n">${done}</b> מתוך <b class="n">${total}</b> ניירות</span></li></ul></div>`}
 // the plan's deposits that the history does not hold yet, each with its day (a history deposit within 10 days and 2% of the
 // amount is the same money; so is a month of a table uploaded from an app that describes it, see planCovered)
 function planExtraList(hs=HS){
   const H=[]; for(const A of (hs&&hs.accounts)||[])for(const d of A.deposits||[])if(+d.amount>0)H.push({day:d.date,ils:+d.amount*((d.ccy||A.ccy)==='USD'?usdRate():1)});
   const used=new Set(), out=[];
-  for(const d of allDep()){const day=markDay(d), amt=+d.amount||0; if(day&&planCovered(day,amt,hs))continue;
+  for(const d of allDep()){if(d.tid)continue; const day=markDay(d), amt=+d.amount||0; if(day&&planCovered(day,amt,hs))continue;
     const i=day?H.findIndex((h,j)=>!used.has(j)&&Math.abs(new Date(h.day)-new Date(day))<=10*864e5&&Math.abs(h.ils-amt)<=Math.max(1,amt*0.02)):-1;
     if(i>=0)used.add(i); else out.push({day,amt})}
   return out;
@@ -31726,7 +31769,7 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
   const un=(id,what)=>canWrite?`<button type="button" class="pc-un" data-planun="${esc(id)}" aria-label="ביטול הסימון: ${esc(what)}">ביטול</button>`:'';
   const row=sym=>{const c=$('buy_'+sym)||document.querySelector('#ladRows [data-buy="'+sym+'"][data-ym="'+ym+'"]'), got=!!(c&&c.checked), it=PL.items.find(i=>i.sym===sym), pu=got&&!st.fixed&&it&&((it.pid&&PL.purchases.find(x=>x.id===it.pid))||PL.purchases.slice().reverse().find(x=>x.sym===sym)), cost=pu&&+pu.paidIls>0?+pu.paidIls:(st.cost[sym]||0), short=!got&&cost>st.bal+0.005;   // a ticked row shows what was paid
     const stH=got?`<span class="ps-ok">✓ נקנה</span>${c&&!c.disabled?un(c.id,lab(sym)):''}`:short?`<span class="ps-wait">חסרים <span class="n" dir="ltr">${ils(Math.max(0.01,Math.ceil((cost-st.bal)*100)/100),2)}</span></span>`:c&&!c.disabled?`<button type="button" class="btn sm pri" data-planbuy="${esc(c.id)}" aria-label="קניתי ${esc(lab(sym))}">קניתי</button>`:'';
-    return `<li class="${got?'done':''}"><span class="pc-s">${esc(lab(sym))}</span><span class="pc-c n" dir="ltr">${ils(cost,2)}</span><span class="pc-a">${stH}</span></li>`};
+    return `<li class="${got?'done':''}"><span class="pc-s">${esc(lab(sym))}${pu&&pu.tid?'<span class="pc-src">לפי קנייה שרשומה בתיק</span>':''}</span><span class="pc-c n" dir="ltr">${ils(cost,2)}</span><span class="pc-a">${stH}</span></li>`};
   const oldNow=st.fixed||st.wait?[]:planOldNow(), oldRow=x=>`<li class="done"><span class="pc-s">${esc(lab(x.sym))}</span><span class="pc-c n" dir="ltr">${ils(+x.paidIls||0,2)}</span><span class="pc-a"><span class="ps-ok">✓ נקנה</span>${canWrite?`<button type="button" class="pc-un" data-pa="dropBuy" data-id="${esc(x.id)}" aria-label="ביטול הסימון: ${esc(lab(x.sym))}">ביטול</button>`:''}</span></li>`;
   const head=`<div class="ma-k"><span>תוכנית ההפקדה${st.wait?'':' · '+esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div>`;
   box.hidden=false;
@@ -31735,15 +31778,16 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
       <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterH(st,B)}`; return}
   const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':`נקנו ${done} מתוך ${act.length} בסבב הזה.`;
   box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
+    ${planRingH(st,done,act.length)}
     <div class="pc-sec"><h3 class="pc-h">החודש</h3>
       <ul class="pc-list" aria-label="מה עושים החודש">
-        <li class="${d?'done':''}"><span class="pc-s">הפקדה חודשית</span><span class="pc-c n" dir="ltr">${ils(amt)}</span><span class="pc-a">${d?`<span class="ps-ok">✓ הופקד</span>${can?un('dep_'+ym,'ההפקדה'):''}`:can?`<button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הפקדתי</button>`:''}</span></li>
+        <li class="${d?'done':''}"><span class="pc-s">הפקדה חודשית${d&&d.tid?'<span class="pc-src">לפי הפקדה שנקראה מהדוח</span>':''}</span><span class="pc-c n" dir="ltr">${ils(amt)}</span><span class="pc-a">${d?`<span class="ps-ok">✓ הופקד</span>${can?un('dep_'+ym,'ההפקדה'):''}`:can?`<button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הפקדתי</button>`:''}</span></li>
         ${oldNow.map(oldRow).join('')}${buys.map(row).join('')}
       </ul>
-      ${note?`<p class="pc-note" role="status">${note}</p>`:''}</div>
+      ${note?`<p class="pc-note" role="status">${note}</p>`:''}${SYNC_SAY?`<p class="pc-note pc-sync" role="status">${esc(SYNC_SAY)} אם זו לא קנייה של התוכנית, לוחצים "ביטול" לידה.</p>`:''}</div>
     ${planLaterH(st,B)}
     <p class="pc-foot">לפי המחירים של היום. לא המלצה.</p>`;
-  try{planRoll(st)}catch(e){}}
+  try{planRoll(st)}catch(e){} try{planSync()}catch(e){}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep],[data-planbuy],[data-planun]'); if(!b)return; const un=b.dataset.planun, c=$(un||b.dataset.planbuy||('dep_'+b.dataset.plandep)); if(c&&!c.disabled&&c.checked===!!un)c.click()});
 function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
@@ -32607,6 +32651,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.10',at:'2026-11-24',t:'תוכנית ההפקדה מסמנת לבד, ועיגול התקדמות',d:'קנייה של החודש שכבר רשומה בתיק שלך (מדוח שהעלית, או שרשמת באתר) מסומנת בתוכנית לבד, עם הסכום ששולם באמת. גם הפקדה חודשית שנקראה מדוח. ליד כל סימון כזה כתוב מאיפה הוא, ו"ביטול" מחזיר אותו. בראש הכרטיס יש עכשיו עיגול שמראה כמה מהתוכנית כבר מאחוריך: ההפקדות של התקופה והקניות של הסבב.',go:'plan'},
   {v:'2026-11-24.9',at:'2026-11-24',t:'חיסכון: מוסיפים נייר בחיפוש, כמו במחקר שוק',d:'ב"הניירות בחיסכון" השדה להוספת נייר הוא עכשיו חיפוש: כותבים שם או סימול (אפל, VOO, toyota), בוחרים מהרשימה, כותבים כמות ולוחצים "הוסף". מופיעים ניירות מהרשימה של האתר, ומתחתם מניות וקרנות מבורסות אחרות בעולם. אפשר עדיין לכתוב סימול מדויק או מספר קרן בלי לבחור.',go:'pots'},
   {v:'2026-11-24.8',at:'2026-11-24',t:'חדש בבורסה: גם מניות חדשות בתל אביב',d:'מניה שנרשמת למסחר בבורסה בתל אביב מופיעה ב"חדש בבורסה" במחקר שוק ובעדכון השבועי בהתראות, מהיום שנרשם לה יום מסחר ראשון. המקור הוא הרשימה של הבורסה עצמה, ולכן זה פועל רק כשהאתר מחובר אליה. לונדון עדיין לא בלוח: האתר של הבורסה שם לא מאפשר קריאה אוטומטית.',go:'srch'},
   {v:'2026-11-24.7',at:'2026-11-24',t:'חדש בבורסה: גם טוקיו, אירופה, טורונטו והונג קונג',d:'"חדש בבורסה" במחקר שוק והעדכון השבועי בהתראות כוללים עכשיו גם ניירות שנרשמו למסחר מחוץ לארה״ב: בטוקיו, בבורסות Euronext (פריז, אמסטרדם, מילאנו, אוסלו ועוד), בטורונטו ובהונג קונג. כל נייר מופיע עם הבורסה שלו ויום המסחר הראשון, ונפתח לדף נייר במטבע שלו. נייר מוצג כחדש רק אחרי שנרשם לו יום מסחר ראשון, וחברה שרק עברה בין רשימות לא מוצגת. הנפקות עתידיות בטוקיו נמצאות ב"הנפקות צפויות".',go:'srch'},
