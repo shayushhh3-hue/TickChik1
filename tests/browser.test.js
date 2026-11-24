@@ -4208,3 +4208,24 @@ test('24.11 the new listings outside the US: a share listed in Tokyo is in "חד
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+test('24.11 a sale whose money an older statement wiped from the cash: offered back once, the cash and the saved days get it, the value returns',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('portfolio/main').data, H0=store.getDoc('history/main').data, D0=store.getDoc('history/daily');
+  try{
+    const day=new Date(Date.now()-5*864e5).toISOString().slice(0,10), d2=new Date(Date.now()-2*864e5).toISOString().slice(0,10);
+    // a sale of 100 dollars written 5 days ago; a statement dated before it was saved 4 days ago (and replaced the cash)
+    const H=JSON.parse(JSON.stringify(H0)); H.accounts.find(a=>a.acct==='exc').manual=[{id:'s1',date:day,sym:'MSFT',side:'sell',qty:0.2,px:500,amt:100,ccy:'USD',fx:3.7,at:new Date(Date.now()-5*864e5).toISOString()}];
+    store.setDoc('history/main',H,{silent:true});
+    store.setDoc('portfolio/main',{...P0,asOf:{...P0.asOf,exc:new Date(Date.now()-9*864e5).toISOString().slice(0,10)},stmtCheck:{exc:{at:new Date(Date.now()-4*864e5).toISOString(),asOf:null,rows:[]}}},{silent:true});
+    store.setDoc('history/daily',{points:{...((D0.exists&&D0.data.points)||{}),[d2]:{v:20000,dep:21000,exc:12000,blink:8000,by:{exc:12000,blink:8000},at:new Date(Date.now()-2*864e5).toISOString(),fx:3.7}}},{silent:true});
+    const {ctx,pg}=await open(390); let asked=''; pg.on('dialog',d=>{asked=d.message(); d.accept().catch(()=>{})});
+    const total=()=>pg.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,'')), t0=await total();
+    for(let i=0;i<40&&!asked;i++)await pg.waitForTimeout(250); await pg.waitForTimeout(1500);
+    assert.match(asked,/נמצאה מכירה שהכסף שלה לא במזומן/); assert.match(asked,/MSFT · ₪370 · אקסלנס/);
+    const P1=store.getDoc('portfolio/main').data; assert.equal((P1.cash.find(c=>c.acct==='exc'&&c.ccy==='USD')||{}).amount,100,'the proceeds are back in the account');
+    assert.ok(Math.abs(await total()-t0-370)<=2,'the value has them: '+t0+' → '+await total());
+    assert.equal(store.getDoc('history/daily').data.points[d2].v,20370,'the saved day has them too'); assert.equal(store.getDoc('history/main').data.accounts.find(a=>a.acct==='exc').manual[0].cashBack,true,'once');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('portfolio/main',P0,{silent:true}); store.setDoc('history/main',H0,{silent:true}); if(D0.exists)store.setDoc('history/daily',D0.data,{silent:true}); else store.deleteDoc('history/daily')}
+});

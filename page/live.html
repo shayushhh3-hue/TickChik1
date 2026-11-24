@@ -20000,7 +20000,29 @@ function foldTog(el){const s=el.closest('section.fold1'); if(s){const on=!s.clas
   const li=el.closest('.xr-fac li'); if(li){const on=!li.classList.contains('open'); li.classList.toggle('open',on); li.setAttribute('aria-expanded',String(on))}}
 document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return; if(t.closest('section.fold1>.row')||t.closest('.xr-fac li'))foldTog(t)});
 document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ')return; const t=ev.target; if(!t||!t.matches||!t.matches('section.fold1>.row,.xr-fac li'))return; ev.preventDefault(); foldTog(t)});
+// 24.11 (the owner: a partner's chart showed a sale as a loss, also on the days already saved): a sale written here whose
+// money a statement read later wiped from the account's cash (the statement is dated on or before the sale's day, so it
+// cannot hold the money; its save came after the sale was written) is found once and offered back: the proceeds return to
+// the account's cash, and the days saved since then get them too, so the chart does not keep the dip. Asked once a sale.
+let CASHBACK_BUSY=false;
+async function cashBackOffer(){if(CASHBACK_BUSY||!canWrite||!P||!HS||!Q||typeof confirm!=='function')return; const fx=+Q.usdIls||0, L=[];
+  for(const A of HS.accounts||[]){const sc=((P.stmtCheck)||{})[A.acct], sd=(P.asOf||{})[A.acct]; if(!sc||!sc.at||!sd)continue;
+    for(const t of A.manual||[]){if(!t||t.side!=='sell'||!(+t.amt>0)||t.cashBack||t.cashAsked||!t.at)continue; const day=String(t.date||'').slice(0,10);
+      if(t.at<sc.at&&sc.at<'2026-11-24T10:59:32.000Z'&&sd<=day)L.push({A,t,ils:(+t.amt)*(t.ccy==='ILS'?1:fx),from:ilDay(sc.at)})}}
+  if(!L.length)return; CASHBACK_BUSY=true;
+  try{const yes=confirm('נמצאה מכירה שהכסף שלה לא במזומן של החשבון:\n'+L.map(x=>`${dmy(x.t.date)} · ${lab(x.t.sym)} · ${ils(x.ils)} · ${acctName(x.A.acct)}`).join('\n')+'\n\nדוח שנקרא אחרי המכירה החליף את המזומן, ולכן המכירה נראית בגרף כהפסד.\n\nאישור = להחזיר את הכסף למזומן ולתקן את הגרף גם אחורה.  ביטול = הכסף כבר לא בחשבון (למשל נמשך).');
+    const cl=x=>JSON.parse(JSON.stringify(x)), H=cl(HS), P2=cl(P); P2.cash=Array.isArray(P2.cash)?P2.cash:[];
+    for(const x of L){const A=(H.accounts||[]).find(z=>z.acct===x.A.acct), t=A&&(A.manual||[]).find(z=>z.id===x.t.id&&z.at===x.t.at); if(!t)continue;
+      if(!yes){t.cashAsked=true; continue} t.cashBack=true; const c=x.t.ccy==='ILS'?'ILS':'USD'; let cash=P2.cash.find(z=>z.acct===A.acct&&z.ccy===c); if(!cash){cash={acct:A.acct,ccy:c,amount:0}; P2.cash.push(cash)} cash.amount=Math.round(((+cash.amount||0)+(+x.t.amt))*100)/100}
+    if(yes){P2.updatedAt=new Date().toISOString(); await pset('portfolio',P2); P=P2;
+      // the saved days from the statement's save on: each gets the money back (the whole portfolio and the account)
+      try{if(DY&&DY.exists&&DY.points){const up={}, today=ilDay(); for(const k of Object.keys(DY.points)){if(k>=today)continue; let add=0; const by={}; for(const x of L)if(k>=x.from){add+=x.ils; by[x.A.acct]=(by[x.A.acct]||0)+x.ils} if(!add)continue;
+          const p=cl(DY.points[k]); p.v=Math.round((+p.v+add)*100)/100; for(const a of Object.keys(by)){if(p.by&&p.by[a]!=null)p.by[a]=Math.round((+p.by[a]+by[a])*100)/100; if(p[a]!=null)p[a]=Math.round((+p[a]+by[a])*100)/100} up[k]=p; DY.points[k]=p}
+        if(Object.keys(up).length)await pset('daily',{points:DY.points})}}catch(e){console.error(e)}}
+    await pset('history',H); HS=H; if(!dDirty)DRAFT=draftFromP(); try{render()}catch(e){} if(yes)try{rtSay('כסף המכירה חזר למזומן, והגרף תוקן')}catch(e){}}
+  catch(e){console.error(e)} finally{CASHBACK_BUSY=false}}
 function render(){
+  try{if(!render.cb&&P&&HS&&Q&&DY){render.cb=true; setTimeout(()=>{cashBackOffer().catch(()=>{})},4000)}}catch(e){}
   setTimeout(()=>{try{riskNavSync()}catch(e){}},0); rulesAutoApply();
   try{const w=document.querySelector('.wrap'), was=w.classList.contains('nopf'); w.classList.toggle('nopf',PFK&&(!P||!((P.positions||[]).length||(P.cash||[]).length))); if(was!==w.classList.contains('nopf'))pxLine()}catch(e){}
   try{renderOb()}catch(e){}
