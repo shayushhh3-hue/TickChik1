@@ -3957,7 +3957,7 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
       views:[...document.querySelectorAll('#wi [data-wiview]')].map(b=>b.textContent),reset:document.getElementById('wiReset').hidden,dirty:window.__wi.state().dirty}));
     let E=await evs(pg); for(const k of ['ev:nvda-q3-report','ev:msft-eu-probe','ev:ko-cfo','ev:fed-hold'])assert.ok(E.includes(k),k+' in '+E);
     assert.ok(!E.includes('ev:acme-widget'),'a deal of two companies nobody holds is not the portfolio\'s'); assert.ok(!E.includes('ev:opec-cut'),'22.11: an event of a sector alone, with no relation to a holding, is not shown');
-    assert.match(v.pf,/₪[\d,]+/); assert.match(v.ix,/S&P 500/); assert.doesNotMatch(v.now,/זמן אמת/,'the fixture\'s prices are not live, and are not called so'); assert.equal(v.adm,true,'the owner has the management\'s view'); assert.ok(v.keys>=3);
+    assert.match(v.pf,/₪[\d,]+/); assert.match(v.ix,/S&P 500/); assert.doesNotMatch(v.now,/זמן אמת/,'the fixture\'s prices are not live, and are not called so'); assert.equal(v.adm,true,'the owner has the management\'s view'); assert.ok(v.keys>=3,'the key assets: '+v.keys);
     assert.deepEqual(v.views,['גלובוס','מפה','רשת','היסטוריה']); assert.equal(v.reset,true,'nothing to put back yet'); assert.equal(v.dirty,false);
     // less noise: before a choice only the leading events' lines; a choice draws its own lines only
     const d0=await pg.evaluate(()=>({d:window.__wi.state().data(),g:window.__wi.state().globe})); assert.ok(d0.d.loud<=d0.d.arcs&&d0.g.arcsOn===d0.d.loud,JSON.stringify(d0));
@@ -3965,22 +3965,22 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     await pg.click('#wiEvL [data-wiev="ev:nvda-q3-report"]'); await pg.waitForTimeout(600);
     const sh=await pg.evaluate(()=>{const S=document.getElementById('wiSheet'); return {hidden:S.hidden,t:S.innerText.replace(/\s+/g,' '),h5:[...S.querySelectorAll('h5')].map(h=>h.textContent),imps:[...S.querySelectorAll('.wi-imp')].map(a=>a.id+'|'+a.innerText.replace(/\s+/g,' ').slice(0,1400)),
       evd:[...S.querySelectorAll('.wi-evd li')].map(l=>l.innerText.replace(/\s+/g,' ')),links:S.querySelectorAll('.wi-evd a[href]').length,cos:[...S.querySelectorAll('.wi-co')].map(c=>c.innerText.replace(/\s+/g,' ')),sel:window.__wi.state().sel,on:window.__wi.state().globe.arcsOn,all:window.__wi.state().globe.arcs,room:document.getElementById('wi').classList.contains('wi-sheeted')}});
-    assert.equal(sh.hidden,false); assert.deepEqual(sh.sel,{t:'ev',k:'ev:nvda-q3-report'}); assert.equal(sh.room,true); assert.ok(sh.on<=sh.all);
+    assert.equal(sh.hidden,false); assert.deepEqual(sh.sel,{t:'ev',k:'ev:nvda-q3-report'}); assert.equal(sh.room,true,'the card stands beside the map'); assert.ok(sh.on<=sh.all,'lines drawn: '+sh.on+' of '+sh.all);
     assert.deepEqual(sh.h5.map(x=>x.replace(/^[אבג]/,'')),['מה קרה','למה זה חשוב מבחינה כלכלית','חברות ונכסים','למה זה משפיע על הנכסים שלך','הראיות והמקורות','מה השתנה באירוע'],'what happened, why it matters, the companies, each asset, the evidence, the event\'s own changes: '+sh.h5);
     for(const w of ['התרחש:','פורסם לראשונה:','התקבל באתר:','מה ידוע כרגע:','הוזכרו במקור','זוהו על ידי המנוע','מה קרה בשוק בפועל','סמיכות בזמן אינה סיבתיות','לא תחזית'])assert.ok(sh.t.includes(w),w+' in '+sh.t.slice(0,500));
     // each asset its own explanation: NVIDIA the subject of the article; Microsoft by the analysis, with the fact it rests on
     const nv=sh.imps.find(x=>x.startsWith('wiImp-NVDA|')), ms=sh.imps.find(x=>x.startsWith('wiImp-MSFT|')); assert.ok(nv&&ms,'both assets, each with a card of its own: '+sh.imps.map(x=>x.slice(0,14)));
     assert.match(nv,/קשר ישיר/); assert.match(ms,/קשר עקיף/); assert.match(ms,/קונה מעבדים גרפיים למרכזי הנתונים/); assert.match(ms,/buys large numbers of graphics processors/); assert.match(ms,/מה יכול לחזק: מחסור מתמשך בשבבים/); assert.doesNotMatch(nv,/קונה מעבדים גרפיים למרכזי הנתונים/,'not the same explanation under both');
-    assert.ok(sh.cos.some(c=>/NVDA/.test(c)&&/בתיק שלך/.test(c))); assert.ok(sh.cos.some(c=>/MSFT/.test(c)&&/הסקה של קריאת הכתבה/.test(c)),'Microsoft is the reader\'s inference, not named in the article: '+sh.cos);
+    assert.ok(sh.cos.some(c=>/NVDA/.test(c)&&/בתיק שלך/.test(c)),'NVIDIA among the companies, marked as held: '+sh.cos); assert.ok(sh.cos.some(c=>/MSFT/.test(c)&&/הסקה של קריאת הכתבה/.test(c)),'Microsoft is the reader\'s inference, not named in the article: '+sh.cos);
     // the evidence is the sources, each with what it confirms; not the story again
     assert.equal(sh.evd.length,2); assert.equal(sh.links,2); for(const l of sh.evd){assert.match(l,/מה זה מאמת:/); assert.doesNotMatch(l,/החברה דיווחה על הכנסות מעל הצפי/)}
     // a link: why it is there, from what
     await pg.click('#wiSheet #wiImp-MSFT [data-wilk]'); await pg.waitForTimeout(200); assert.match(await pg.evaluate(()=>document.getElementById('wiLkD').innerText),/קשר (ישיר|עקיף)/);
-    await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('wiSheet').hidden),true);
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); assert.equal(await pg.evaluate(()=>document.getElementById('wiSheet').hidden),true,'Escape closes the card');
     // an asset: only its own events, each with its own explanation; and back to all
     await pg.click('#wiPfB [data-wias="JPM"]'); await pg.waitForTimeout(500); assert.deepEqual(await evs(pg),['ev:fed-hold']); assert.match(await pg.evaluate(()=>document.getElementById('wiEvL').innerText),/הפער בין הריבית על הלוואות/);
     assert.equal(await pg.evaluate(()=>document.getElementById('wiReset').hidden),false,'a choice can be put back');
-    await pg.click('#wiEvL .wi-selb [data-wix]'); await pg.waitForTimeout(300); assert.ok((await evs(pg)).length>=4);
+    await pg.click('#wiEvL .wi-selb [data-wix]'); await pg.waitForTimeout(300); {const all=await evs(pg); assert.ok(all.length>=4,'every event again: '+all)}
     // the filters: a category leaves only its events
     await pg.click('#wiFiltB'); await pg.selectOption('#wiFilt [data-wif="cat"]','earnings'); await pg.waitForTimeout(200); assert.deepEqual(await evs(pg),['ev:nvda-q3-report']);
     // the network: a drawing of links, not the older map; a line explains itself; a layer goes away; direct only; one event; all again
@@ -3992,7 +3992,7 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     await pg.evaluate(()=>{const p=[...document.querySelectorAll('#wi .wn-hit')].find(x=>/JPM/.test(x.getAttribute('aria-label'))); p.dispatchEvent(new MouseEvent('click',{bubbles:true}))}); await pg.waitForTimeout(250);
     assert.match(await pg.evaluate(()=>document.getElementById('wiNetD').innerText.replace(/\s+/g,' ')),/קשר עקיף.*net interest income from loans and deposits/,'the line explains itself, with the fact and the sources');
     await pg.click('#wi [data-wnl="sec"]'); await pg.waitForTimeout(250); assert.ok(!(await pg.evaluate(()=>[...document.querySelectorAll('#wi .wn-h')].map(h=>h.textContent))).includes('ענפים'),'a layer put away');
-    await pg.click('#wi [data-wndir]'); await pg.waitForTimeout(250); n=await pg.evaluate(()=>({dash:document.querySelectorAll('#wi .wn-e path[stroke-dasharray]').length,nodes:document.querySelectorAll('#wi .wn-n').length})); assert.equal(n.dash,0,'direct only'); assert.ok(n.nodes>=4);
+    await pg.click('#wi [data-wndir]'); await pg.waitForTimeout(250); n=await pg.evaluate(()=>({dash:document.querySelectorAll('#wi .wn-e path[stroke-dasharray]').length,nodes:document.querySelectorAll('#wi .wn-n').length})); assert.equal(n.dash,0,'direct only'); assert.ok(n.nodes>=4,'nodes with direct links: '+n.nodes);
     await pg.click('#wi [data-wnfull]'); await pg.waitForTimeout(250);
     await pg.click('#wi .wn-n[data-wnn="ev:ev:msft-eu-probe"]'); await pg.waitForTimeout(400); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#wi .wn-n.t-ev').length),1,'one event: its own links only'); assert.equal(await pg.evaluate(()=>document.getElementById('wiSheet').hidden),false);
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(250); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#wi .wn-n.t-ev').length)>=4,'all again');
@@ -4000,7 +4000,7 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     await pg.click('#wi [data-wiview="hist"]'); await pg.waitForFunction(()=>{const x=window.__wi.state(); return x.view==='hist'&&x.time==='past'&&x.past.n!=null&&!!document.getElementById('wiHEv')&&/סמיכות בזמן אינה סיבתיות/.test(document.getElementById('wiHEv').textContent)},null,{timeout:15000});
     await pg.click('#wiHAs [data-whas="NVDA"]'); await pg.waitForFunction(()=>!!document.querySelector('#wiHChart svg polyline'),null,{timeout:10000});
     let h=await pg.evaluate(()=>({banner:document.getElementById('wiPast').innerText.replace(/\s+/g,' '),bottom:document.getElementById('wiBottom').hidden,list:document.getElementById('wiEvL').innerText,chart:!!document.querySelector('#wiHChart svg polyline'),sym:(document.querySelector('#wiHAs [aria-pressed="true"]')||{}).textContent,past:window.__wi.state().past}));
-    assert.match(h.banner,/מוצג העבר:.*הנתונים של היום אינם מעורבים/); assert.match(h.banner,/חזרה להיום/); assert.equal(h.bottom,true,'today\'s cards are put away'); assert.match(h.list,/הזמנת שרתים בהיקף ענק/); assert.equal(h.chart,true); assert.ok(h.past.from<h.past.to);
+    assert.match(h.banner,/מוצג העבר:.*הנתונים של היום אינם מעורבים/); assert.match(h.banner,/חזרה להיום/); assert.equal(h.bottom,true,'today\'s cards are put away'); assert.match(h.list,/הזמנת שרתים בהיקף ענק/); assert.equal(h.chart,true,'the line of the closes'); assert.ok(h.past.from<h.past.to,'the range: '+JSON.stringify(h.past));
     // one day alone: that day's events only; a day with none says so
     await pg.fill('#wiHFrom',day(10)); await pg.fill('#wiHTo',day(10)); await pg.click('#wiHGo'); await pg.waitForFunction(d=>window.__wi.state().past.from===d&&window.__wi.state().past.n!=null,day(10),{timeout:10000}); await pg.waitForTimeout(400);
     assert.deepEqual(await evs(pg),['ev:old-cloud-order']); await pg.click('#wiHAs [data-whas="NVDA"]'); await pg.waitForFunction(()=>/מה נאמר אז/.test(document.getElementById('wiHEv').textContent),null,{timeout:10000});
@@ -4009,7 +4009,7 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     // the same range on the map (the past stays until the viewer goes back), then "חזרה להיום": everything as it began
     await pg.click('#wi [data-wiview="flat"]'); await pg.waitForFunction(()=>{const x=window.__wi.state(); return x.view==='flat'&&x.time==='past'&&x.flat},null,{timeout:15000}); assert.equal(await pg.evaluate(()=>document.getElementById('wiPast').hidden),false);
     await pg.click('#wiPast [data-wireset]'); await pg.waitForFunction(()=>{const x=window.__wi.state(); return x.time==='now'&&x.events>=4&&!x.dirty},null,{timeout:15000});
-    h=await pg.evaluate(()=>({banner:document.getElementById('wiPast').hidden,bottom:document.getElementById('wiBottom').hidden,reset:document.getElementById('wiReset').hidden,st:window.__wi.state()})); assert.equal(h.banner,true); assert.equal(h.bottom,false); assert.equal(h.reset,true); assert.equal(h.st.sel,null); assert.equal(h.st.past.from,''); assert.equal(h.st.lm,'focus');
+    h=await pg.evaluate(()=>({banner:document.getElementById('wiPast').hidden,bottom:document.getElementById('wiBottom').hidden,reset:document.getElementById('wiReset').hidden,st:window.__wi.state()})); assert.equal(h.banner,true,'the past\'s banner is gone'); assert.equal(h.bottom,false,'today\'s cards are back'); assert.equal(h.reset,true,'nothing left to put back'); assert.equal(h.st.sel,null); assert.equal(h.st.past.from,''); assert.equal(h.st.lm,'focus');
     assert.ok(store.getDoc(old).exists,'the way back deletes nothing');
     // the flat map: the whole width, the whole world in it; the choice of view kept on the device
     const fl=await pg.evaluate(()=>{const r=document.getElementById('wiStage').getBoundingClientRect(); return {st:window.__wi.state().flat,w:Math.round(r.width),h:Math.round(r.height),grid:Math.round(document.querySelector('#wi .wi-grid').getBoundingClientRect().width),kept:localStorage.getItem('tr_wiview')}});
@@ -4018,8 +4018,8 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     await pg.click('#wi [data-wilm="all"]'); await pg.waitForTimeout(500); let a=await pg.evaluate(()=>window.__wi.state().flat); assert.equal(a.arcsOn,a.arcs); assert.ok(a.arcs>=1,JSON.stringify(a));
     await pg.click('#wiReset'); await pg.waitForFunction(()=>!window.__wi.state().dirty,null,{timeout:10000});
     // the admin's whole world: the relations to assets (what waits, what is weak), and the engine against what followed
-    await pg.click('[data-wimode="world"]'); await pg.waitForFunction(()=>window.__wi.state().mode==='world'&&!document.getElementById('wiAdm').hidden,null,{timeout:15000});
-    assert.ok(await pg.evaluate(()=>window.__wi.state().events)>=s.events); assert.equal(await pg.evaluate(()=>document.querySelector('#wi [data-wiview="hist"]').hidden),true,'the history is a person\'s, not the world\'s');
+    await pg.click('[data-wimode="world"]'); await pg.waitForFunction(()=>window.__wi.state().mode==='world'&&!document.getElementById('wiAdm').hidden&&window.__wi.state().events>0,null,{timeout:15000});   // the panel shows before the world's data arrive
+    {const we=await pg.evaluate(()=>window.__wi.state().events); assert.ok(we>=s.events,'the world has at least the owner\'s events: '+we+' of '+s.events)} assert.equal(await pg.evaluate(()=>document.querySelector('#wi [data-wiview="hist"]').hidden),true,'the history is a person\'s, not the world\'s');
     await pg.click('#wiAdm [data-wiadm="rel"]'); await pg.waitForTimeout(250); assert.match(await pg.evaluate(()=>document.getElementById('wiAdmB').innerText),/ניתוח הקשר לכל נכס[\s\S]*ממתינים לניתוח/);
     await pg.click('#wiAdm [data-wiadm="qual"]'); await pg.waitForFunction(()=>/לא הוכחה שהוא חוזה/.test(document.getElementById('wiAdmB').textContent),null,{timeout:10000});
     await pg.evaluate(()=>window.__wi.select({t:'ev',k:'ev:opec-cut'})); await pg.waitForTimeout(400);
@@ -4041,7 +4041,7 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     assert.ok(ph.w<=ph.vw+1,'no sideways scroll: '+JSON.stringify(ph)); assert.ok(ph.stageFirst&&ph.stageH>=300&&ph.stageW>=320,JSON.stringify(ph)); assert.ok(ph.zoom.every(x=>x>=44),'the zoom buttons: '+ph.zoom);
     await pg.click('#wi [data-wiview="net"]'); await pg.waitForFunction(()=>document.querySelectorAll('#wi .wn-n').length>0,null,{timeout:8000});
     const pn=await pg.evaluate(()=>({v:!!document.querySelector('#wi .wn.v'),w:document.documentElement.scrollWidth,vw:innerWidth,box:(()=>{const g=document.querySelector('#wi .wn-g').getBoundingClientRect(); return [...document.querySelectorAll('#wi .wn-n')].every(b=>{const r=b.getBoundingClientRect(); return r.left>=g.left-1&&r.right<=g.right+1})})()}));
-    assert.equal(pn.v,true,'the layers as rows'); assert.ok(pn.w<=pn.vw+1); assert.equal(pn.box,true);
+    assert.equal(pn.v,true,'the layers as rows'); assert.ok(pn.w<=pn.vw+1,'no sideways scroll in the network: '+pn.w+' > '+pn.vw); assert.equal(pn.box,true,'every node inside the drawing on a phone');
     await pg.evaluate(()=>window.__wi.select({t:'ev',k:'ev:nvda-q3-report'})); await pg.waitForTimeout(400);
     const ps=await pg.evaluate(()=>{const r=document.getElementById('wiSheet').getBoundingClientRect(); return {w:Math.round(r.width),bottom:Math.round(innerHeight-r.bottom),sw:document.documentElement.scrollWidth,vw:innerWidth}}); assert.ok(ps.w>=ps.vw-2&&ps.bottom<=1&&ps.sw<=ps.vw+1,JSON.stringify(ps));
     await pg.click('#wiSheet [data-wix]'); await pg.click('#wi [data-wiview="hist"]'); await pg.waitForFunction(()=>window.__wi.state().view==='hist'&&window.__wi.state().past.n!=null,null,{timeout:15000});
