@@ -4362,11 +4362,25 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
 .wi-evd{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}
 .wi-evd li{display:flex;flex-direction:column;gap:2px} .wi-evd a{color:var(--vio-ink);text-decoration:none;font-weight:600} .wi-evd a:hover{text-decoration:underline}
 .tg-l.ev.cl{border-style:dashed;text-align:center}
+/* 24.11: the events stand out; the countries' names (only when close) stay quiet behind them; the zoom said and labelled */
+.tg-l.ev{border:1.5px solid rgb(251 191 36 / .9);background:rgb(30 20 4 / .9);font-size:12.5px;box-shadow:0 0 0 3px rgb(251 191 36 / .14),0 4px 14px rgb(0 0 0 / .4)}
+.tg-l.ev b{color:#fff7df}
+.tg-c{position:absolute;top:0;left:0;transform:translate(-9999px,-9999px);font-size:10.5px;font-weight:600;letter-spacing:.02em;color:rgb(226 232 240 / .72);text-shadow:0 1px 2px #000,0 0 4px #000;white-space:nowrap;pointer-events:none;will-change:transform}
+.tg-c[hidden]{display:none}
+.wi-zoom button{width:auto;min-width:40px;padding:0 10px;gap:6px;display:inline-flex;align-items:center;justify-content:center}
+.wi-zoom button span{font-size:12px;font-weight:700}
+.wi-zl{display:block;text-align:center;font-size:12px;font-weight:800;color:#fde68a;background:rgb(13 12 40 / .75);border-radius:8px;padding:2px 0;direction:ltr}
+.wi-globe:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.wi-regs{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wi-regs[hidden]{display:none}
+.wi-regs-s{font-size:13px;font-weight:700;color:var(--ink);flex:none;white-space:nowrap}
+.wi-regs-h{font-size:12px;color:var(--ink2);flex-basis:100%}
 @media (min-width:1200px){.wi.wi-sheeted{padding-inline-end:452px}}
 @container wi (min-width:980px){.wi-grid.flat>.wi-stage.net,.wi-grid.flat>.wi-stage.hist{aspect-ratio:auto;max-height:none}}
 @media (max-width:759px){
   html body .wi-stage.net,html body .wi-stage.hist{height:auto;min-height:240px}
-  html body .wi-zoom button{width:44px;height:44px;font-size:20px}
+  html body .wi-zoom button{width:44px;height:44px;font-size:20px;padding:0} html body .wi-zoom button span{display:none}
+  html body .wi-regs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} html body .wi-regs .wi-k{flex:none} html body .wi-regs-h{display:none}
   html body .wi-lm{inset-block-start:auto;inset-block-end:46px;font-size:11.5px} html body .wi-lm button{min-height:34px;padding:0 9px}
   html body .wi-legend{inset-block-end:6px} html body .wi-legend span:nth-child(n+4){display:none}
   html body .wn,html body .wh{padding:8px}
@@ -5021,11 +5035,12 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
                 <label>ביטחון<select data-wif="conf"><option value="">הכול</option><option value="high">גבוה</option><option value="mid">בינוני ומעלה</option></select></label>
                 <button type="button" class="btn sm" data-wifclr="1">לנקות מסננים</button>
               </div>
+              <div class="wi-regs" id="wiRegs" role="group" aria-label="קפיצה לאזור במפה"></div>
               <div class="wi-grid">
                 <aside class="wi-card" id="wiPf" aria-labelledby="wiPfH"><h4 id="wiPfH">התיק שלי <small id="wiPfS"></small></h4><div id="wiPfB"></div></aside>
                 <div class="wi-stage" id="wiStage">
-                  <div class="wi-globe" id="wiGlobe"></div>
-                  <div class="wi-zoom" role="group" aria-label="קירוב"><button type="button" data-wiz="in" aria-label="קרוב יותר">+</button><button type="button" data-wiz="out" aria-label="רחוק יותר">−</button><button type="button" data-wiz="home" aria-label="למרכז התיק">⌖</button></div>
+                  <div class="wi-globe" id="wiGlobe" tabindex="0" aria-label="המפה. המקשים + ו-− מקרבים ומרחיקים, 0 חוזר לכל התיק. הרשימה של האירועים נמצאת ליד המפה."></div>
+                  <div class="wi-zoom" role="group" aria-label="קירוב המפה"><button type="button" data-wiz="in" aria-label="קירוב">+<span>קירוב</span></button><output class="wi-zl" id="wiZl" aria-live="polite" title="כמה המפה מקורבת">×1</output><button type="button" data-wiz="out" aria-label="הרחקה">−<span>הרחקה</span></button><button type="button" data-wiz="home" aria-label="חזרה לכל התיק">⌖<span>התיק</span></button></div>
                   <div class="wi-lm" id="wiLm" role="group" aria-label="אילו קשרים לצייר"><span>קשרים:</span><button type="button" data-wilm="focus" aria-pressed="true" title="רק של מה שנבחר; לפני בחירה, הקשרים הישירים של האירועים המובילים">ממוקד</button><button type="button" data-wilm="direct" aria-pressed="false" title="כל הקשרים הישירים">ישירים</button><button type="button" data-wilm="all" aria-pressed="false" title="כל הקשרים, גם העקיפים">הכול</button></div>
                   <div class="wi-legend" aria-hidden="true"><span><i style="border-color:#4ade80"></i>השפעה חיובית אפשרית</span><span><i style="border-color:#f87171"></i>שלילית</span><span><i style="border-color:#94a3b8"></i>לא ברור</span><span><i class="dash" style="border-color:#c4bdf5"></i>עקיפה</span><span><i class="ring" style="border-color:#4ade80"></i>הילה: התנועה בשוק עכשיו (אפורה כשהמסחר סגור)</span></div>
                   <div class="wi-msg" id="wiMsg" role="status" hidden></div>
@@ -6156,6 +6171,30 @@ function maps(W){if(MAPS&&MAPS.W===W)return MAPS; var H=W/2, P=polys(TOPO);
   CITIES.forEach(function(cv){var x=X(cv[0]), y=Y(cv[1]), w=cv[2]; glow(x,y,(3+w*2.2)*k,0.55+w*0.1); for(var i=0;i<w*5;i++){var a=rnd()*6.283, d=(2+rnd()*(4+w*4))*k; glow(x+Math.cos(a)*d,y+Math.sin(a)*d*0.8,(1.2+rnd()*1.8)*k,0.25+rnd()*0.3)}});
   MAPS={W:W,map:c,lights:l}; return MAPS}
 
+// 24.11 (the owner: "the countries' names only when zooming in"): one point per country (the middle of its largest land),
+// its name in Hebrew where the site has one; shown only when the viewer is close, the larger countries first, never over a
+// label of an event or an asset
+var CTRY=null, CTRY_HE={'United States of America':'ארה״ב',Canada:'קנדה',Mexico:'מקסיקו',Brazil:'ברזיל',Argentina:'ארגנטינה',Chile:'צ׳ילה',Colombia:'קולומביה',Peru:'פרו',Venezuela:'ונצואלה',
+  'United Kingdom':'בריטניה',Ireland:'אירלנד',France:'צרפת',Germany:'גרמניה',Spain:'ספרד',Portugal:'פורטוגל',Italy:'איטליה',Netherlands:'הולנד',Belgium:'בלגיה',Switzerland:'שווייץ',Austria:'אוסטריה',
+  Poland:'פולין',Czechia:'צ׳כיה',Hungary:'הונגריה',Romania:'רומניה',Greece:'יוון',Sweden:'שוודיה',Norway:'נורווגיה',Finland:'פינלנד',Denmark:'דנמרק',Ukraine:'אוקראינה',Russia:'רוסיה',Belarus:'בלארוס',Turkey:'טורקיה',
+  Israel:'ישראל',Egypt:'מצרים',Jordan:'ירדן',Lebanon:'לבנון',Syria:'סוריה',Iraq:'עיראק',Iran:'איראן','Saudi Arabia':'ערב הסעודית','United Arab Emirates':'איחוד האמירויות',Qatar:'קטאר',Kuwait:'כווית',Oman:'עומאן',Yemen:'תימן',
+  China:'סין',Japan:'יפן','South Korea':'דרום קוריאה','North Korea':'צפון קוריאה',Taiwan:'טייוואן',India:'הודו',Pakistan:'פקיסטן',Afghanistan:'אפגניסטן',Kazakhstan:'קזחסטן',Mongolia:'מונגוליה',Vietnam:'וייטנאם',Thailand:'תאילנד',
+  Indonesia:'אינדונזיה',Malaysia:'מלזיה',Philippines:'הפיליפינים',Australia:'אוסטרליה','New Zealand':'ניו זילנד','South Africa':'דרום אפריקה',Nigeria:'ניגריה',Ethiopia:'אתיופיה',Kenya:'קניה',Algeria:'אלג׳יריה',Morocco:'מרוקו',
+  Libya:'לוב',Sudan:'סודן','Dem. Rep. Congo':'קונגו',Angola:'אנגולה',Tanzania:'טנזניה',Greenland:'גרינלנד',Iceland:'איסלנד',"Cuba":"קובה","Dominican Rep.":"הרפובליקה הדומיניקנית","Haiti":"האיטי","Nicaragua":"ניקרגואה","Guatemala":"גואטמלה","Honduras":"הונדורס","Panama":"פנמה","Costa Rica":"קוסטה ריקה","El Salvador":"אל סלבדור","Belize":"בליז","Jamaica":"ג׳מייקה","Puerto Rico":"פוארטו ריקו","Ecuador":"אקוודור","Bolivia":"בוליביה","Paraguay":"פרגוואי","Uruguay":"אורוגוואי","Guyana":"גיאנה","Suriname":"סורינאם","Cyprus":"קפריסין","Serbia":"סרביה","Bulgaria":"בולגריה","Croatia":"קרואטיה","Slovakia":"סלובקיה","Slovenia":"סלובניה","Lithuania":"ליטא","Latvia":"לטביה","Estonia":"אסטוניה","Albania":"אלבניה","Moldova":"מולדובה","Bosnia and Herz.":"בוסניה","Luxembourg":"לוקסמבורג","Georgia":"גאורגיה","Armenia":"ארמניה","Azerbaijan":"אזרבייג׳ן","Uzbekistan":"אוזבקיסטן","Turkmenistan":"טורקמניסטן","Tajikistan":"טג׳יקיסטן","Kyrgyzstan":"קירגיזסטן","Myanmar":"מיאנמר","Bangladesh":"בנגלדש","Nepal":"נפאל","Sri Lanka":"סרי לנקה","Cambodia":"קמבודיה","Laos":"לאוס","Papua New Guinea":"פפואה גינאה החדשה","Tunisia":"תוניסיה","Mali":"מאלי","Niger":"ניז׳ר","Chad":"צ׳אד","Somalia":"סומליה","Ghana":"גאנה","Zambia":"זמביה","Zimbabwe":"זימבבואה","Mozambique":"מוזמביק","Madagascar":"מדגסקר","Namibia":"נמיביה","Botswana":"בוטסואנה","Cameroon":"קמרון","Côte d'Ivoire":"חוף השנהב","Senegal":"סנגל","Mauritania":"מאוריטניה","Uganda":"אוגנדה","S. Sudan":"דרום סודן","Central African Rep.":"הרפובליקה המרכז אפריקאית","Gabon":"גבון","Congo":"קונגו","Guinea":"גינאה","Eritrea":"אריתריאה","Malawi":"מלאווי","Burkina Faso":"בורקינה פאסו","Liberia":"ליבריה","Sierra Leone":"סיירה לאונה","W. Sahara":"סהרה המערבית","Antarctica":"אנטרקטיקה"};
+function ctryPts(){if(CTRY)return CTRY; CTRY=[]; var best={};
+  polys(TOPO).forEach(function(p){var r=p.rings[0]; if(!p.name||!r||r.length<4)return; var a=0,cx=0,cy=0;
+    for(var i=0,j=r.length-1;i<r.length;j=i++){var f=r[j][0]*r[i][1]-r[i][0]*r[j][1]; a+=f; cx+=(r[j][0]+r[i][0])*f; cy+=(r[j][1]+r[i][1])*f}
+    if(!a)return; a/=2; var A=Math.abs(a); if(!best[p.name]||A>best[p.name].A)best[p.name]={A:A,lon:cx/(6*a),lat:cy/(6*a)}});
+  Object.keys(best).forEach(function(n){var b=best[n]; if(b.A<0.8)return; CTRY.push({name:CTRY_HE[n]||n,lon:b.lon,lat:b.lat,A:b.A})});
+  CTRY.sort(function(a,b){return b.A-a.A}); return CTRY}
+function ctryLay(lay){return ctryPts().map(function(c){var el=document.createElement('span'); el.className='tg-c'; el.textContent=c.name; el.setAttribute('aria-hidden','true'); el.hidden=true; lay.appendChild(el); return {el:el,c:c,w:0,h:0,shown:false}})}
+function ctryPlace(CL,on,proj,boxes,W,H){CL.forEach(function(l){
+  if(!on){if(l.shown){l.el.hidden=true; l.shown=false} return}
+  var s=proj(l.c), ok=!!s&&s.x>8&&s.x<W-8&&s.y>8&&s.y<H-8;
+  if(ok&&!l.w){l.el.hidden=false; l.w=l.el.offsetWidth||40; l.h=l.el.offsetHeight||14}
+  var bx=ok?{x:s.x-l.w/2,y:s.y-l.h/2,w:l.w,h:l.h}:null;
+  if(ok)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+3&&bx.x+bx.w+3>b.x&&bx.y<b.y+b.h+2&&bx.y+bx.h+2>b.y){ok=false; break}}
+  if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else{l.el.hidden=true; l.shown=false}})}
 function create(host,opts){
   opts=opts||{}; var T=window.THREE; if(!T)throw new Error('three is not loaded');
   // the colours as written (hex, the canvas): no colour management, no conversion on the way out
@@ -6170,7 +6209,7 @@ function create(host,opts){
   var S={dist:3.4,fit:3.4,user:false,rx:0.42,ry:-1.95,vx:0,vy:0,drag:false,idle:0,anim:null,w:1,h:1,t0:performance.now(),frame:0,visible:true,dirty:true};
   // the distance at which the whole globe fits the stage, whatever its shape: 86% of the narrower field of view
   function fitDist(){var v=cam.fov*D2R/2, hf=Math.atan(Math.tan(v)*cam.aspect), a=0.86*Math.min(v,hf); return Math.max(1.8,Math.min(9,1/Math.sin(a)))}
-  function clampD(d){return Math.max(S.fit*0.42,Math.min(S.fit*1.6,d))}
+  function clampD(d){return Math.max(Math.max(1.28,S.fit*0.34),Math.min(S.fit*1.6,d))}
   // the earth
   var M=maps(small?1536:2048), tex=new T.CanvasTexture(M.map), ltex=new T.CanvasTexture(M.lights); tex.anisotropy=Math.min(4,R.capabilities.getMaxAnisotropy());
   var earthMat=new T.ShaderMaterial({uniforms:{map:{value:tex},lights:{value:ltex},sun:{value:new T.Vector3(-0.55,0.55,0.65).normalize()}},
@@ -6208,7 +6247,7 @@ function create(host,opts){
     (D.points||[]).forEach(function(p){var pos=v3(T,p.lat,p.lon,1.006), sp=new T.Sprite(new T.SpriteMaterial({map:spriteTex,color:col(p.color),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));
       var sz=(p.size||1)*(small?0.05:0.042); sp.scale.set(sz,sz,1); sp.position.copy(pos); marks.add(sp);
       var it={id:p.id,kind:p.kind,lat:p.lat,lon:p.lon,pos:pos,sp:sp,group:p.group||null,quiet:!!p.quiet,off:false}; ITEMS.push(it);
-      if(p.halo&&p.halo!=='none'){var hc=p.halo==='up'?'#22c55e':p.halo==='down'?'#ef4444':'#94a3b8';
+      if(p.halo&&p.halo!=='none'){var hc=p.halo==='up'?'#22c55e':p.halo==='down'?'#ef4444':p.halo==='ev'?(p.color||'#fde68a'):'#94a3b8';
         // 22.11: "idle" (the market is closed, or no fresh price): one grey ring that does not move, so a close is never
         // drawn as a move that is happening now
         for(var k=0;k<(p.halo==='idle'?1:2);k++){var rg=new T.Mesh(new T.RingGeometry(0.018,0.024,48),new T.MeshBasicMaterial({color:col(hc),transparent:true,opacity:0.8,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending}));
@@ -6229,6 +6268,9 @@ function create(host,opts){
     if(was&&down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<6&&performance.now()-down.t<500){S.vx=S.vy=0; pick(e.clientX,e.clientY)} down=null}
   cv.addEventListener('pointerdown',onDown); cv.addEventListener('pointermove',onMove); cv.addEventListener('pointerup',onUp); cv.addEventListener('pointercancel',onUp);
   cv.addEventListener('wheel',function(e){e.preventDefault(); S.dist=clampD(S.dist*(1+Math.sign(e.deltaY)*Math.min(0.12,Math.abs(e.deltaY)/600))); S.user=true; S.idle=performance.now(); S.dirty=true},{passive:false});
+  // 24.11: a double click (or a double tap) comes closer
+  cv.addEventListener('dblclick',function(e){e.preventDefault(); S.anim=null; S.dist=clampD(S.dist*0.7); S.user=true; S.idle=performance.now(); S.dirty=true});
+  var CL=ctryLay(lay);
   lay.addEventListener('click',function(e){var b=e.target.closest('[data-tgid]'); if(b&&opts.onPick){var it=ITEMS.find(function(x){return x.id===b.getAttribute('data-tgid')}); opts.onPick(it?{id:it.id,kind:it.kind}:{id:b.getAttribute('data-tgid')})}});
   var tmp=new T.Vector3();
   function screenOf(it){tmp.copy(it.pos).applyMatrix4(world.matrixWorld); var nrm=tmp.clone().normalize(), toCam=cam.position.clone().sub(tmp).normalize(), front=nrm.dot(toCam); tmp.project(cam); return {x:(tmp.x+1)/2*S.w,y:(1-tmp.y)/2*S.h,front:front}}
@@ -6254,7 +6296,7 @@ function create(host,opts){
       var bx={x:s.x-l.w/2,y:s.y-l.h-10,w:l.w,h:l.h};
       if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+4&&bx.x+bx.w+4>b.x&&bx.y<b.y+b.h+3&&bx.y+bx.h+3>b.y){ok=false; break}}
       if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; l.el.style.opacity=String(Math.min(1,(s.front-0.18)*4)); if(!l.shown){l.el.hidden=false; l.shown=true}}
-      else if(l.shown){l.el.hidden=true; l.shown=false}})}
+      else if(l.shown){l.el.hidden=true; l.shown=false}}); return boxes}
   var raf=0, last=0;
   function loop(now){raf=requestAnimationFrame(loop); if(!S.visible||document.hidden)return; S.frame++;
     if(small&&S.frame%2&&!S.drag&&!S.anim)return;   // half the frames on a phone when nothing moves by hand
@@ -6267,7 +6309,8 @@ function create(host,opts){
     var lv=S.dist<S.fit*0.8?1:0; if(lv!==(S.lvl||0)&&!S.anim){S.lvl=lv; if(opts.onLevel)try{opts.onLevel(lv)}catch(e){}}
     ARCS.forEach(function(m){m.material.uniforms.time.value=t});
     HALOS.forEach(function(h){var f=reduce||h.idle?0.5:((t*0.55+h.ph)%1), s=(1+f*1.8)*h.s; h.m.scale.set(s,s,s); h.m.material.opacity=0.85*(1-f)});
-    R.render(scene,cam); if(S.frame%2===0||S.drag||S.anim||S.dirty)placeLabels(); S.dirty=false}
+    R.render(scene,cam); if(S.frame%2===0||S.drag||S.anim||S.dirty){var bx=placeLabels(); ctryPlace(CL,S.dist<S.fit*0.8,function(c){if(!c.p3)c.p3=v3(T,c.lat,c.lon,1.004); var s=screenOf({pos:c.p3}); return s.front>0.35?s:null},bx||[],S.w,S.h)} S.dirty=false;
+    var zz=Math.round(S.fit/S.dist*10)/10; if(zz!==S.zz){S.zz=zz; if(opts.onZoom)try{opts.onZoom(zz)}catch(e){}}}
   resize(); raf=requestAnimationFrame(loop);
   cv.addEventListener('webglcontextlost',function(e){e.preventDefault(); if(opts.onLost)opts.onLost()});
   function destroy(){cancelAnimationFrame(raf); if(ro)ro.disconnect(); if(io)io.disconnect(); clear(); [earth,atm].forEach(function(m){m.geometry.dispose(); m.material.dispose()}); tex.dispose(); ltex.dispose(); spriteTex.dispose(); R.dispose(); cv.remove(); lay.remove()}
@@ -6336,8 +6379,8 @@ function createFlat(host,opts){
   function placeLabels(){var boxes=[]; LBL.forEach(function(l){if(!l.w){l.w=l.el.offsetWidth||60; l.h=l.el.offsetHeight||22}});
     LBL.slice().sort(function(a,b){return b.pr-a.pr}).forEach(function(l){var x=X(l.it.lon), y=Y(l.it.lat), ok=!l.off&&x>-10&&x<S.w+10&&y>-10&&y<S.h+10, bx={x:x-l.w/2,y:y-l.h-8,w:l.w,h:l.h};
       if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+3&&bx.x+bx.w+3>b.x&&bx.y<b.y+b.h+2&&bx.y+bx.h+2>b.y){ok=false; break}}
-      if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else if(l.shown){l.el.hidden=true; l.shown=false}})}
-  var CMAP={up:'#22c55e',down:'#ef4444',flat:'#94a3b8'};
+      if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else if(l.shown){l.el.hidden=true; l.shown=false}}); return boxes}
+  var CMAP={up:'#22c55e',down:'#ef4444',flat:'#94a3b8'}, CL=ctryLay(lay);
   function draw(t){ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S.w,S.h);
     ctx.drawImage(B.c,0,B.sy,B.W,B.sh,S.tx,S.ty,B.W*S.s,B.sh*S.s);
     var mw=B.W*S.s, lw=S.small?2:1.7;
@@ -6348,7 +6391,7 @@ function createFlat(host,opts){
         if(!reduce&&on&&!a.dashed){var u=(t*0.28+a.ph)%1, bx=(1-u)*(1-u)*x1+2*(1-u)*u*cx+u*u*x2+off, by=(1-u)*(1-u)*y1+2*(1-u)*u*cy+u*u*y2; ctx.globalAlpha=0.95; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bx,by,lw*1.3,0,6.283); ctx.fill()}})});
     ctx.globalAlpha=1;
     ITEMS.forEach(function(it){if(it.off)return; var x=X(it.lon), y=Y(it.lat); if(x<-20||x>S.w+20||y<-20||y>S.h+20)return; var on=!S.hl||!it.group||S.hl.has(it.group), r=(S.small?3.4:3)*it.size*Math.min(1.6,Math.sqrt(S.s/S.fit));
-      if(it.halo){var hc=CMAP[it.halo]||CMAP.flat, idle=it.halo==='idle'; for(var k=0;k<(idle?1:2);k++){var f=reduce||idle?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
+      if(it.halo){var hc=it.halo==='ev'?it.c:(CMAP[it.halo]||CMAP.flat), idle=it.halo==='idle'; for(var k=0;k<(idle?1:2);k++){var f=reduce||idle?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
       var g=ctx.createRadialGradient(x,y,0,x,y,r*2.4); g.addColorStop(0,it.c); g.addColorStop(0.45,it.c); g.addColorStop(1,'rgba(0,0,0,0)'); ctx.globalAlpha=on?1:0.3; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r*2.4,0,6.283); ctx.fill()});
     ctx.globalAlpha=1}
   var raf=0;
@@ -6356,7 +6399,8 @@ function createFlat(host,opts){
     var moving=!!S.anim||S.drag, live=!reduce&&(ARCS.some(function(a){return a.on})||ITEMS.some(function(i){return i.halo&&i.halo!=='idle'}));
     if(!moving&&!live&&!S.dirty)return; if(S.small&&!moving&&!S.dirty&&S.frame%2)return;
     if(S.anim){var a=S.anim, k=Math.min(1,(now-a.t0)/a.ms), e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2; S.s=a.s0+(a.s1-a.s0)*e; S.tx=a.tx0+(a.tx1-a.tx0)*e; S.ty=a.ty0+(a.ty1-a.ty0)*e; clampT(); if(k>=1)S.anim=null; S.dirty=true}
-    draw((now-S.t0)/1000); if(S.dirty||moving)placeLabels(); S.dirty=false;
+    draw((now-S.t0)/1000); if(S.dirty||moving){var bx=placeLabels(); ctryPlace(CL,S.s>=S.fit*1.9,function(c){return {x:X(c.lon),y:Y(c.lat)}},bx||[],S.w,S.h)} S.dirty=false;
+    var zz=Math.round(S.s/S.fit*10)/10; if(zz!==S.zz){S.zz=zz; if(opts.onZoom)try{opts.onZoom(zz)}catch(e){}}
     var lv=S.s>=S.fit*1.9?1:0; if(lv!==(S.lvl||0)&&!S.anim){S.lvl=lv; if(opts.onLevel)try{opts.onLevel(lv)}catch(e){}}}
   resize(); raf=requestAnimationFrame(loop);
   function destroy(){cancelAnimationFrame(raf); if(ro)ro.disconnect(); if(io)io.disconnect(); LBL.forEach(function(l){l.el.remove()}); cv.remove(); lay.remove()}
@@ -30449,18 +30493,33 @@ const wiR=()=>WIMP.view==='globe'?WIMP.G:WIMP.view==='flat'?WIMP.F:null;
 const wiSub=k=>{const h=$('wiGlobe'); if(!h)return null; let d=h.querySelector(':scope>[data-r="'+k+'"]'); if(!d){d=document.createElement('div'); d.className='wix-r'; d.dataset.r=k; d.hidden=WIMP.view!==k; h.appendChild(d)} return d};
 function wiViz(){return WIMP.view==='flat'?wiFlat():WIMP.view==='globe'?wiGlobe():null}
 const wiLevel=lv=>{if(lv===WIMP.lvl)return; WIMP.lvl=lv; const R=wiR(); if(R)R._sig=null; wiRender()};
+// 24.11 (the owner: "how to make the huge amount of information on the map accessible, zoom in more clearly, the events
+// stand out"): the zoom said in numbers beside its buttons, and the world in regions: each region with its number of events,
+// a press takes the map there (closer), "כל העולם" back
+const wiZoomShow=z=>{const o=$('wiZl'); if(o)o.textContent='×'+(Math.round(z*10)/10).toString()};
+const WI_REGS=[['na','צפון אמריקה',40,-98,(la,lo)=>lo<-50&&la>=12],['sa','דרום אמריקה',-15,-60,(la,lo)=>lo<-30&&la<12],['me','המזרח התיכון',29,42,(la,lo)=>lo>=25&&lo<63&&la>=12&&la<42],
+  ['eu','אירופה',50,12,(la,lo)=>lo>=-25&&lo<45&&la>=35],['af','אפריקה',3,20,(la,lo)=>lo>=-20&&lo<52&&la<35],['as','אסיה',32,105,(la,lo)=>lo>=60&&la>=-10],['oc','אוקיאניה',-25,140,(la,lo)=>lo>=110&&la<-10]];
+const wiRegOf=l=>{if(!l)return null; const r=WI_REGS.find(([, , , ,f])=>f(l.lat,l.lon)); return r?r[0]:null};
+function wiRegsRender(){const box=$('wiRegs'); if(!box)return; const V=WIMP.view; box.hidden=!(V==='globe'||V==='flat')||!wiR(); if(box.hidden)return;
+  const E=wiEvents(), n={}; let placed=0; for(const e of E){const r=wiRegOf(e.loc); if(r){n[r]=(n[r]||0)+1; placed++}}
+  const R=WI_REGS.filter(r=>n[r[0]]).sort((a,b)=>n[b[0]]-n[a[0]]), sel=WIMP.reg||'';
+  box.innerHTML=`<span class="wi-regs-s" role="status">${E.length?`${E.length===1?'אירוע אחד':E.length+' אירועים'}${R.length===1?' באזור אחד':R.length?` ב-${R.length} אזורים`:''}`:'אין אירועים בטווח'}</span>`+
+    `<button type="button" class="wi-k" data-wireg="" aria-pressed="${!sel}">🌍 כל העולם</button>`+R.map(([k,he])=>`<button type="button" class="wi-k" data-wireg="${k}" aria-pressed="${sel===k}">${he} <span class="n">${n[k]}</span></button>`).join('')+
+    `<span class="wi-regs-h">קירוב: גלגלת, צביטה, לחיצה כפולה, או + ו-−. שמות המדינות מופיעים אחרי קירוב.</span>`}
+function wiRegGo(k){const R=wiR(); WIMP.reg=k||''; if(!R)return; if(!k){wiHome(true); wiRegsRender(); return}
+  const r=WI_REGS.find(x=>x[0]===k); if(r)R.focus(r[2],r[3],R.flat?2.4:0.55); wiRegsRender()}
 // the flat map needs no three.js: only the library of the maps (a phone that picks it fetches 130KB, not 800KB)
 async function wiFlat(){
   if(WIMP.F||WIMP.fTried)return WIMP.F; WIMP.fTried=true; const host=wiSub('flat'); if(!host)return null;
   try{if(window.__tcLib)await window.__tcLib('globe'); if(!window.TCGlobe||!window.TCGlobe.createFlat)throw new Error('הספרייה לא נטענה');
-    WIMP.F=window.TCGlobe.createFlat(host,{label:'מפת העולם: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel})}
+    WIMP.F=window.TCGlobe.createFlat(host,{label:'מפת העולם: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel,onZoom:wiZoomShow})}
   catch(e){WIMP.gFail='המפה לא זמינה כאן ('+(e.message||e)+'). מוצגת רשת הקשרים במקומה.'; WIMP.view='net'}
   wiRender(); return WIMP.F}
 async function wiGlobe(){
   if(WIMP.G||WIMP.gTried)return WIMP.G; WIMP.gTried=true; const host=wiSub('globe'); if(!host)return null;
   try{if(window.__tcLib){await window.__tcLib('three'); await window.__tcLib('globe')} if(!window.TCGlobe||!window.THREE)throw new Error('הספרייה לא נטענה');
     if(!window.TCGlobe.supported())throw new Error('הדפדפן לא תומך בגרפיקה תלת־ממדית (WebGL)');
-    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת המפה השטוחה.'; WIMP.view='flat'; wiFlat()}})}
+    WIMP.G=window.TCGlobe.create(host,{label:'גלובוס: האירועים והקשרים שלהם לתיק',onPick:wiPick,onLevel:wiLevel,onZoom:wiZoomShow,onLost:()=>{WIMP.gFail='הגרפיקה של הגלובוס נעצרה בדפדפן. רענון הדף יחזיר אותה; בינתיים מוצגת המפה השטוחה.'; WIMP.view='flat'; wiFlat()}})}
   catch(e){WIMP.gFail='הגלובוס לא זמין כאן ('+(e.message||e)+'). מוצגת המפה השטוחה במקומו.'; WIMP.view='flat'; wiFlat()}
   wiRender(); return WIMP.G}
 function wiOpen(){
@@ -30491,7 +30550,7 @@ const wiDirty=()=>WIMP.time==='past'||WIMP.view==='hist'||!!WIMP.sel||WIMP.kind!
 // globe turns back to the portfolio, and today's data are asked for again. Nothing is deleted: the history stays on the server
 function wiReset(){WIMP.time='now'; WIMP.past={from:'',to:'',d:null,shape:null,busy:false,err:''}; WIMP.hist={sym:'',d:null,busy:false,err:'',pick:null,all:false}; WIMP.f=WI_F0(); WIMP.kind='all'; WIMP.lm='focus'; WIMP.sel=null;
   WIMP.net={off:{},direct:false,focus:null,more:0,sig:'',edges:[]}; if(WIMP.view==='hist'){let v='globe'; try{v=localStorage.getItem('tr_wiview')||'globe'}catch(e){} WIMP.view=['globe','flat','net'].includes(v)?v:'globe'}
-  WIMP.homed=''; WIMP.legacy=false; const f=$('wiFilt'), fb=$('wiFiltB'); if(f)f.hidden=true; if(fb)fb.setAttribute('aria-expanded','false'); const R=wiR(); if(R)R._sig=null;
+  WIMP.homed=''; WIMP.legacy=false; WIMP.reg=''; const f=$('wiFilt'), fb=$('wiFiltB'); if(f)f.hidden=true; if(fb)fb.setAttribute('aria-expanded','false'); const R=wiR(); if(R)R._sig=null;
   wiSheet(); wiRender(); wiViz(); wiLoad(true).then(()=>{try{wiHome(true)}catch(e){}})}
 
 // ---- the globe and the map: the points and the lines ----
@@ -30516,10 +30575,10 @@ function wiGlobeData(){
   WIMP.clu={}; const nLab=near?(small?6:12):(small?3:6), selK=WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:null;
   for(const [ck,M] of cells){if(M.length>=3&&!near){const la=M.reduce((t,e)=>t+e.loc.lat,0)/M.length, lo=M.reduce((t,e)=>t+e.loc.lon,0)/M.length, id='c:'+ck, crit=M.some(e=>e.level==='crit'); WIMP.clu[ck]=M.map(e=>e.k);
       for(const e of M)place.set('ev:'+e.k,{lat:la,lon:lo});
-      pts.push({id,kind:'cluster',lat:la,lon:lo,color:crit?'#f59e0b':'#fde68a',size:1.5+Math.min(1,M.length/8),label:{cls:'ev cl',priority:45,aria:`${M.length} אירועים ב${M[0].loc.name||'מקום אחד'}`,html:`<b>${M.length} אירועים</b><small>${esc(M[0].loc.name||'')} · לחיצה מקרבת</small>`}})}
+      pts.push({id,kind:'cluster',lat:la,lon:lo,color:crit?'#f59e0b':'#fde68a',size:1.7+Math.min(1,M.length/8),halo:'ev',label:{cls:'ev cl',priority:45,aria:`${M.length} אירועים ב${M[0].loc.name||'מקום אחד'}`,html:`<b>${M.length} אירועים</b><small>${esc(M[0].loc.name||'')} · לחיצה מקרבת</small>`}})}
     else for(const e of M)place.set('ev:'+e.k,jit(e.loc.lat,e.loc.lon))}
   E.forEach((e,i)=>{if(!e.loc)return; const p=place.get('ev:'+e.k), ek=e.k, inClu=Object.values(WIMP.clu).some(Ks=>Ks.includes(ek));
-    if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:0.75+0.3*(+e.s||1),group:ek,
+    if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:1+0.35*(+e.s||1),group:ek,halo:e.level==='crit'||e.level==='imp'||i<nLab?'ev':'none',
       label:i<nLab||ek===selK?{cls:'ev',priority:ek===selK?100:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
     const seenArc=new Set(), arc=(a,b,dir,dashed,id,tag,direct)=>{if(!a||!b||close(a,b))return; if(lm==='direct'&&!direct)return; const o=seenArc.has(id)?arcs.find(x=>x.id===ek+'|'+id):null; if(o){if(tag&&o.tags&&!o.tags.includes(tag))o.tags.push(tag); return} seenArc.add(id);
       arcs.push({id:ek+'|'+id,from:a,to:b,color:WI_COL[dir]||WI_COL.unclear,dashed,group:ek,tags:tag?[tag]:null,quiet:lm==='focus',dr:!!direct,lift:(arcs.length%3)*0.03,alpha:0.95})};
@@ -30555,7 +30614,7 @@ function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==
   // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
   {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
   if(V==='net')try{wiNetDraw()}catch(e){console.error(e)} if(V==='hist')try{wiHistDraw()}catch(e){console.error(e)}
-  wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiAdmRender(d);
+  wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiAdmRender(d); wiRegsRender();
   {const b=$('wiBottom'); if(b)b.hidden=past||V==='hist'}
   const f=$('wiFoot'); if(f){const en=d&&d.engine; f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',en&&en.waiting?`${en.waiting} קשרים אפשריים עוד ממתינים לניתוח נפרד של הנכס, ולכן לא מוצגים.`:'',en&&!en.ai?'ניתוח הקשר לכל נכס אינו פעיל כרגע: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה.':'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}}
 function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(WIMP.me&&WIMP.me.assets)||[];
@@ -30870,7 +30929,8 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.
   const k=t.closest('[data-wik]'); if(k&&k.dataset.wik){WIMP.kind=k.dataset.wik; WIMP.net.sig=''; wiRender(); return}
   if(t.closest('#wiFiltB')){const f=$('wiFilt'), b=$('wiFiltB'); if(f){f.hidden=!f.hidden; if(b)b.setAttribute('aria-expanded',String(!f.hidden))} return}
   if(t.closest('[data-wifclr]')){const days=WIMP.f.t; WIMP.f=WI_F0(); if(days!=='7'&&!wiPastOn())wiLoad(true); wiRender(); return}
-  const z=t.closest('[data-wiz]'); if(z&&wiR()){const v=z.dataset.wiz, R=wiR(); if(v==='in')R.zoom(0.82); else if(v==='out')R.zoom(1.22); else wiHome(true); return}
+  const z=t.closest('[data-wiz]'); if(z&&wiR()){const v=z.dataset.wiz, R=wiR(); if(v==='in')R.zoom(0.72); else if(v==='out')R.zoom(1.35); else{WIMP.reg=''; wiHome(true); wiRegsRender()} return}
+  const rg=t.closest('[data-wireg]'); if(rg){wiRegGo(rg.dataset.wireg); return}
   const ne=t.closest('[data-wne]'); if(ne){wiNetEdge(+ne.dataset.wne); return}
   const nn=t.closest('[data-wnn]'); if(nn){wiNetNode(nn.dataset.wnn); return}
   const nl=t.closest('[data-wnl]'); if(nl){const N=WIMP.net; N.off[nl.dataset.wnl]=!N.off[nl.dataset.wnl]; N.pick=null; N.pickH=''; if(N.focus&&N.off[wiNodeT(N.focus)])N.focus=null; N.sig=''; wiRender(); return}
@@ -30896,6 +30956,9 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.
   const fa=t.closest('[data-wifxadd]'); if(fa){const sym=String(($('wiFxSym')||{}).value||'').trim().toUpperCase(), why=String(($('wiFxWhy')||{}).value||'').trim(); if(sym&&why)wiFix({kind:'rel',k:fa.dataset.wifxadd,sym,st:'add',why},fa); else{WIMP.admMsg='קשר ביד מנהל צריך נייר והסבר.'; wiAdmRender(wiD())} return}
   const hqb=t.closest('[data-wihq]'); if(hqb){wiFix({kind:'hq',sym:hqb.dataset.wihq,loc:{lat:+($('wiHqLat')||{}).value,lon:+($('wiHqLon')||{}).value,name:($('wiHqName')||{}).value||''}},hqb); return}});
 document.addEventListener('change',ev=>{const s=ev.target; if(!s||!s.closest||!s.closest('#wiFilt'))return; const k=s.dataset&&s.dataset.wif; if(!k)return; const was=WIMP.f[k]; WIMP.f[k]=s.value; WIMP.net.sig=''; if(k==='t'&&was!==s.value&&!wiPastOn())wiLoad(true); wiRender()});
+// 24.11: the keyboard on the map: + and − come closer and go back, 0 returns to the whole portfolio
+document.addEventListener('keydown',ev=>{const g=ev.target&&ev.target.closest&&ev.target.closest('#wiGlobe'), R=wiR(); if(!g||!R||ev.ctrlKey||ev.metaKey||ev.altKey)return;
+  if(ev.key==='+'||ev.key==='='){ev.preventDefault(); R.zoom(0.72)} else if(ev.key==='-'||ev.key==='_'){ev.preventDefault(); R.zoom(1.35)} else if(ev.key==='0'){ev.preventDefault(); WIMP.reg=''; wiHome(true); wiRegsRender()}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&WIMP.sel&&$('wiSheet')&&!$('wiSheet').hidden){WIMP.sel=null; WIMP.net.focus=null; wiSelApply(false); wiSheet(); wiRender()}
   if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.closest&&ev.target.closest('[data-wihp],[data-wne]')){ev.preventDefault(); ev.target.closest('[data-wihp],[data-wne]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
 window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,time:WIMP.time,kind:WIMP.kind,lm:WIMP.lm,lvl:WIMP.lvl,dirty:wiDirty(),events:(wiD()&&wiD().events||[]).length,shown:wiEventsSel().length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,

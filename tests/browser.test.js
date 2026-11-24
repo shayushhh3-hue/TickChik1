@@ -3979,6 +3979,13 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
     assert.ok(!E.includes('ev:acme-widget'),'a deal of two companies nobody holds is not the portfolio\'s'); assert.ok(!E.includes('ev:opec-cut'),'22.11: an event of a sector alone, with no relation to a holding, is not shown');
     assert.match(v.pf,/₪[\d,]+/); assert.match(v.ix,/S&P 500/); assert.doesNotMatch(v.now,/זמן אמת/,'the fixture\'s prices are not live, and are not called so'); assert.equal(v.adm,true,'the owner has the management\'s view'); assert.ok(v.keys>=3,'the key assets: '+v.keys);
     assert.deepEqual(v.views,['גלובוס','מפה','רשת','היסטוריה']); assert.equal(v.reset,true,'nothing to put back yet'); assert.equal(v.dirty,false);
+    // 24.11 (the owner): the world in regions with their number of events, a press takes the map closer there; the zoom said
+    // in numbers; the countries' names only when close
+    {const g=await pg.evaluate(()=>({regs:[...document.querySelectorAll('#wiRegs [data-wireg]')].map(b=>b.textContent.trim()),sum:document.querySelector('#wiRegs .wi-regs-s').textContent,zl:document.getElementById('wiZl').textContent,c:document.querySelectorAll('#wiGlobe .tg-c:not([hidden])').length}));
+      assert.ok(g.regs.length>=2&&/כל העולם/.test(g.regs[0]),'the regions: '+g.regs); assert.match(g.sum,/\d+ אירועים|אירוע אחד/); assert.equal(g.zl,'×1','the zoom said'); assert.equal(g.c,0,'no country names from afar');
+      await pg.click('#wiRegs [data-wireg]:not([data-wireg=""])'); await pg.waitForFunction(()=>document.querySelectorAll('#wiGlobe .tg-c:not([hidden])').length>0,null,{timeout:10000});
+      assert.notEqual(await pg.evaluate(()=>document.getElementById('wiZl').textContent),'×1','closer after a region was pressed');
+      await pg.click('#wiRegs [data-wireg=""]'); await pg.waitForFunction(()=>document.querySelectorAll('#wiGlobe .tg-c:not([hidden])').length===0,null,{timeout:10000})}
     // less noise: before a choice only the leading events' lines; a choice draws its own lines only
     const d0=await pg.evaluate(()=>({d:window.__wi.state().data(),g:window.__wi.state().globe})); assert.ok(d0.d.loud<=d0.d.arcs&&d0.g.arcsOn===d0.d.loud,JSON.stringify(d0));
     // an event: its card in four parts
