@@ -299,7 +299,7 @@ export function ipoAlerts(store,now=new Date()){
     const parts=[nI?(nI===1?'הנפקה אחת':nI+' הנפקות'):'',nF?(nF===1?'קרן או סימול חדש אחד':nF+' קרנות וסימולים חדשים'):''].filter(Boolean).join(' ו-');
     out.push({kind:'ipo',type:'ipo',cert:'fact',rules:false,conf:'high',confWhy:'מלוח ההנפקות ומרשימת הסימולים של הבורסות; יום המסחר הראשון ממקור המחירים',
       k:`ipo:${wk}`,lv:'upd',lvWhy:'ניירות חדשים שהתחילו להיסחר; עדכון על השוק, לא אירוע בתיק שלך',title,what:A.length===1?`${A[0].kind==='ipo'?'הנפקה':'נייר חדש'} מהשבוע של ${dmHe(wk)}. הנייר נמצא בחיפוש של מחקר שוק, עם דף נייר משלו.`:`${parts} בשבוע של ${dmHe(wk)}. כולם נמצאים בחיפוש של מחקר שוק, כל אחד עם דף נייר משלו.`,
-      dir:'unclear',imp:'mid',rel:'none',relWhy:'לא נוגע לאחזקות שלך: אלה ניירות חדשים בבורסה, שאפשר לחפש ולהוסיף למעקב',holds:[],secs:[],usd:null,fol:[],followed:false,sectors:[],themes:[],regions:['us'],fac:[],secx:[],
+      dir:'unclear',imp:'mid',rel:'none',relWhy:'לא נוגע לאחזקות שלך: אלה ניירות חדשים בבורסה, שאפשר לחפש ולהוסיף למעקב',holds:[],secs:[],usd:null,fol:[],followed:false,sectors:[],themes:[],regions:[],fac:[],secx:[],
       occ:A[0].d,unknown:'',arts:[],n:A.length,first:null,
       ipo:{wk,src:(D&&D.source)||'',list:A.slice(0,40).map(x=>({sym:x.sym,name:x.name||x.sym,t:x.t||'S',ex:x.ex||'',exch:x.exch||'',d:x.d,kind:x.kind,...(x.first?{first:x.first}:{}),...(x.date?{date:x.date}:{}),...(x.price?{price:x.price}:{}),...(x.spac?{spac:true}:{})}))}})}
   return out;

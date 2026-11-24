@@ -4184,3 +4184,25 @@ test('24.11 מחקר שוק beyond the page\'s list: a share listed this week is
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+test('24.11 the new listings outside the US: a share listed in Tokyo is in "חדש בבורסה" with its exchange and day, and opens its page in yen',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep=Object.fromEntries(['research/ipos','quotes/c_657A.T'].map(p=>[p,store.getDoc(p)])), day=k=>new Date(Date.now()-k*864e5).toISOString().slice(0,10);
+  store.setDoc('research/ipos',{items:[{sym:'657A.T',name:'HiJoJo Partners Inc.',exch:'Tokyo Stock Exchange',ex:'',t:'S',date:day(2),first:day(2),ccy:'JPY',kind:'ipo',far:true,src:['JPX'],at:new Date().toISOString()},
+      {sym:'ITD.MI',name:'INTRED S.p.A.',exch:'Euronext Milan',t:'S',date:day(1),first:'2019-07-18',old:true,kind:'ipo',far:true,src:['Euronext'],at:new Date().toISOString()},
+      {sym:'TBX.TO',name:'Tributary Exploration Inc',exch:'Toronto Stock Exchange',t:'S',date:day(1),kind:'list',far:true,src:['TSX'],at:new Date().toISOString()}],
+    upcoming:[{sym:'711A.T',name:'UNITEC FOODS CO.,LTD.',exch:'Tokyo Stock Exchange',date:day(-20),src:'JPX'}],syms:[],source:'רשימות הרישום של טוקיו (JPX), Euronext',updatedAt:new Date().toISOString()},{silent:true});
+  store.setDoc('quotes/c_657A.T',{key:'657A.T',d:[day(2),day(1)],c:[905,900],source:'Yahoo Finance',updatedAt:new Date().toISOString()},{silent:true});
+  const route=(r,u)=>{if(u.includes('/api/secinfo?sym=657A.T')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({sym:'657A.T',name:'HiJoJo Partners Inc.',type:'stock',exch:'Tokyo',ccy:'JPY',px:900,prev:905,date:day(1),first:day(2),src:'Yahoo Finance',delayed:true})}); return true} return false};
+  const {ctx,pg}=await open(390,{route});
+  try{
+    await tab(pg,'search'); await pg.waitForFunction(()=>!!document.querySelector('#sqRes .scr-nwl .sit'),null,{timeout:15000});
+    const rows=await pg.evaluate(()=>[...document.querySelectorAll('#sqRes .scr-nwl .sit')].map(x=>x.dataset.open+' | '+x.textContent.replace(/\s+/g,' ').trim()));
+    assert.equal(rows.length,1,'the transfer and the one with no trade yet are not told: '+JSON.stringify(rows)); assert.match(rows[0],/^657A\.T \| .*HiJoJo Partners Inc\. ?657A\.T · Tokyo Stock Exchange · מניה · הנפקה \d+\.\d+/);
+    await pg.click('#sqRes [data-scr="new"]'); await pg.waitForSelector('#sqRes .scr-upc li'); assert.match(await pg.evaluate(()=>document.querySelector('#sqRes .scr-upc li').textContent.replace(/\s+/g,' ')),/UNITEC FOODS CO\.,LTD\. ?711A\.T · Tokyo Stock Exchange · צפויה ב-/);
+    await pg.click('#sqRes .scr-ls .sit[data-open="657A.T"]'); await pg.waitForFunction(()=>/¥900\.00/.test(document.querySelector('#secPage .big .v')?.textContent||''),null,{timeout:10000});
+    const r=await pg.evaluate(()=>{const p=document.getElementById('secPage'), n=p.querySelector('.sec-nw'); return {h:p.querySelector('h2').textContent,nw:n?n.textContent.replace(/\s+/g,' ').trim():'',seen:!!(n&&n.offsetParent),all:p.textContent.replace(/\s+/g,' '),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    assert.equal(r.h,'HiJoJo Partners Inc.'); assert.match(r.nw,/^חדש בבורסה · יום המסחר הראשון \d+\.\d+ · Tokyo Stock Exchange$/); assert.ok(r.seen); assert.match(r.all,/ין יפני/); assert.match(r.all,/מחיר בעיכוב/); assert.ok(r.ox,'on a phone');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

@@ -6,7 +6,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Store, access} from '../server/store.js';
-import {ipoTask, ipoFresh, ipoStale, nasdaqIpoParse, fhIpoParse, symDirParse, ipoDate, exLetter, weekOf, isSpac, dirName} from '../server/ipos.js';
+import {ipoTask, ipoFresh, ipoStale, nasdaqIpoParse, fhIpoParse, symDirParse, ipoDate, exLetter, weekOf, isSpac, dirName, jpxParse, euronextParse, tsxParse, hkexParse} from '../server/ipos.js';
 import {ipoAlerts, pulseUpdate} from '../server/pulse.js';
 import {_resetFh} from '../server/finnhub.js';
 import {searchParse, fundByName, yahooChart, tickerFor} from '../shared/quotes.js';
@@ -76,7 +76,7 @@ test('the job: the offerings of the calendar, the symbols the page\'s list lacks
   assert.equal(ipoStale(s,{now:NOW}),true,'nothing kept yet');
   let f=sources({nasdaq:cal,dirN:D1});
   let r=await ipoTask(s,{fetch:f,now:NOW,known:KNOWN,chart,key:'',log:m=>log.push(m)});
-  assert.equal(r.ok,true); assert.deepEqual(r.sources,{finnhub:'nokey',nasdaq:'ok',dir:'ok'}); assert.equal(f.asked.filter(u=>u.includes('finnhub')).length,0,'no key: Finnhub is not asked');
+  assert.equal(r.ok,true); assert.deepEqual([r.sources.finnhub,r.sources.nasdaq,r.sources.dir,r.sources.jpx],['nokey','ok','ok','err'],'an exchange that did not answer is said, and the rest goes on'); assert.equal(f.asked.filter(u=>u.includes('finnhub')).length,0,'no key: Finnhub is not asked');
   assert.equal(f.asked.filter(u=>u.includes('api.nasdaq.com')).length,2,'this month and the one before');
   let D=s.getDoc('research/ipos').data;
   assert.deepEqual(D.items.map(x=>x.sym).sort(),['ANT','NOTYT','SPCU'],'the offerings of the last weeks; an old one is not kept, and the first run calls no listed symbol new');
@@ -176,6 +176,32 @@ test('the API: a security\'s lookup for its page (signed in only, a symbol only)
     r=await req('p','GET','/api/db/doc?path=research/ipos'); assert.equal(r.status,200); assert.deepEqual(r.j.data.syms,[['ANT','Anthropic, PBC','S','Q']]);
     assert.equal((await req('p','PUT','/api/db/doc?path=research/ipos',{items:[]})).status,403,'and cannot write it');
   }finally{srv.close()}
+});
+
+test('the exchanges outside the US: Tokyo, Euronext, Toronto and Hong Kong read from their own pages; told once the price source shows a first trade; a transfer is not new; a day ahead is expected',async()=>{
+  const JPX=`<table><tbody><tr><td class="a-center" rowspan="2">Dec. 22, 2026<br />(Nov. 18, 2026)</td><td class="a-left" rowspan="2"><a href="https://x.example/">UNITEC FOODS CO.,LTD.</a></td><td class="a-center"><span id="711A"></span>711A</td><td>-</td></tr><tr><td>Standard</td></tr>
+    <tr><td class="a-center" rowspan="2">Nov. 20, 2026<br />(Oct. 16, 2026)</td><td class="a-left" rowspan="2">HiJoJo Partners Inc.</td><td class="a-center"><span id="657A"></span>657A</td></tr><tr><td>Growth</td></tr></tbody></table>`;
+  const cell=(c,v)=>`<td class="views-field views-field-${c}">${v} </td>`, row=(d,n,tk,city)=>`<tr><td class="views-field views-field-field-iponi-ipo-date"><time datetime="${d}T12:00:00Z">x</time></td>${cell('field-iponi-display-title',n)}${cell('field-iponi-ticker-symbol',tk)}${cell('field-iponi-isin-code','XX')}${cell('term-node-tid',city)}${cell('term-node-tid-1','Euronext')}</tr>`;
+  const ENX=`<table><thead><tr><th>Date</th><th>Company name</th></tr></thead><tbody>${row('2026-11-23','<a href="/x">INTRED S.p.A.</a>','ITD','Milan')}${row('2026-11-18','Cetus Maritime Holdings Limited','CTUS','Oslo')}${row('2026-11-10','Somewhere Else','SMW','Atlantis')}</tbody></table>`;
+  const TSX={results:[{name:'TD Canadian Corporate Bond Index ETF',date:1795410000,symbol:'TCB'},{name:'Tributary Exploration Inc',date:1795410000,symbol:'TBX'},{name:'bad',date:0,symbol:'??'}]}, TSXV={results:[{name:'Bastion Square Partners II Inc.',date:1793682000,symbol:'BASQ.P'}]};
+  const HK=`<table><tr><th>Stock Code</th><th>Stock Name</th></tr><tbody><tr>\n<td style="text-align: left;">9941</td>\n<td>Beijing Sinotau Co., Ltd. - B<br />\n</td><td>&nbsp;</td></tr><tr>\n<td style="text-align: left;">54</td>\n<td>Ganzhou Hemay &amp; Co.<br /></td></tr></tbody></table>`;
+  assert.deepEqual(jpxParse(JPX).map(x=>[x.sym,x.name,x.date,x.kind]),[['711A.T','UNITEC FOODS CO.,LTD.','2026-12-22','ipo'],['657A.T','HiJoJo Partners Inc.','2026-11-20','ipo']]);
+  assert.deepEqual(euronextParse(ENX).map(x=>[x.sym,x.name,x.exch,x.date]),[['ITD.MI','INTRED S.p.A.','Euronext Milan','2026-11-23'],['CTUS.OL','Cetus Maritime Holdings Limited','Euronext Oslo','2026-11-18']],'a market the price source has no suffix for is left out');
+  assert.deepEqual(tsxParse(TSX).map(x=>[x.sym,x.t,x.date,x.kind]),[['TCB.TO','E','2026-11-23','list'],['TBX.TO','S','2026-11-23','list']]); assert.deepEqual(tsxParse(TSXV,true).map(x=>[x.sym,x.exch]),[['BASQ-P.V','TSX Venture']]);
+  assert.deepEqual(hkexParse(HK).map(x=>[x.sym,x.name,x.date]),[['9941.HK','Beijing Sinotau Co., Ltd. - B',''],['0054.HK','Ganzhou Hemay & Co.','']]);
+  const f=async u=>{u=String(u); if(u.includes('jpx.co.jp'))return text(JPX); if(u.includes('euronext.com'))return text(ENX); if(u.endsWith('/recent/tsx'))return json(TSX); if(u.endsWith('/recent/tsxv'))return json(TSXV); if(u.includes('hkexnews.hk'))return text(HK); return new Response('no',{status:503})};
+  const asked=[], C={'657A.T':{px:900,first:'2026-11-20',ccy:'JPY'},'ITD.MI':{px:12,first:'2019-07-18',ccy:'EUR'},'CTUS.OL':{px:30,first:'2026-11-18',ccy:'NOK'},'TCB.TO':{px:20,first:'2026-11-23',ccy:'CAD',type:'ETF'},'9941.HK':{px:15,first:'2026-11-23',ccy:'HKD'}};
+  const ch=async t=>{asked.push(t); if(C[t])return C[t]; throw new Error('no data')};
+  const s=new Store(':memory:'); let r=await ipoTask(s,{fetch:f,now:NOW,known:KNOWN,chart:ch,key:''}); assert.equal(r.ok,true,'the US sources down, these carry on'); assert.deepEqual([r.sources.jpx,r.sources.euronext,r.sources.tsx,r.sources.tsxv,r.sources.hkex,r.sources.nasdaq],['ok','ok','ok','ok','ok','err']);
+  const D=s.getDoc('research/ipos').data; assert.ok(asked.includes('657A.T')&&asked.includes('BASQ-P.V'),'asked of the price source by its own symbol');
+  assert.deepEqual(ipoFresh(D,{now:NOW}).map(x=>[x.sym,x.d,x.kind]),[['9941.HK','2026-11-23','list'],['TCB.TO','2026-11-23','list'],['657A.T','2026-11-20','ipo'],['CTUS.OL','2026-11-18','ipo']],'only what the price source shows trading; Hong Kong by its first trade');
+  assert.equal(D.items.find(x=>x.sym==='ITD.MI').old,true,'it traded for years: a transfer, not a new security'); assert.equal(D.items.find(x=>x.sym==='657A.T').ccy,'JPY'); assert.equal(D.items.find(x=>x.sym==='TBX.TO').first,undefined);
+  assert.deepEqual(D.upcoming.map(x=>[x.sym,x.date,x.src]),[['711A.T','2026-12-22','JPX']]); assert.ok(!D.syms.some(x=>/\./.test(x[0])),'the US search list holds no foreign symbol'); assert.match(D.source,/טוקיו \(JPX\), Euronext, טורונטו \(TSX\), הונג קונג \(HKEX\)/);
+  // the next run: nothing is new again, and the transfer is not looked up again
+  const n0=asked.filter(x=>x==='ITD.MI').length; r=await ipoTask(s,{fetch:f,now:new Date(NOW.getTime()+7*36e5),known:KNOWN,chart:ch,key:''}); assert.deepEqual(r.fresh,[]); assert.equal(asked.filter(x=>x==='ITD.MI').length,n0);
+  const A=ipoAlerts(s,NOW); assert.deepEqual(A.map(a=>[a.k,a.n]).sort(),[['ipo:2026-11-16',2],['ipo:2026-11-23',2]]); assert.ok(A.find(a=>a.k==='ipo:2026-11-16').ipo.list.some(x=>x.sym==='657A.T'&&x.exch==='Tokyo Stock Exchange'));
+  // the page: a listing of another exchange is told with its first trade only
+  const W=load(['ipoFreshP'],{}); assert.deepEqual(W.ipoFreshP(D,10,NOW.getTime()).map(x=>x.sym),['9941.HK','TCB.TO','657A.T','CTUS.OL']);
 });
 
 // ---- the page's own code (taken out of page/live.html) ----

@@ -27047,10 +27047,12 @@ function ipoLoad(){if(!db||LOCAL||(IPO_ASK&&Date.now()-IPO_ASK<3*36e5))return; I
   try{db.doc('research/ipos').get().then(s=>{IPO_D=s&&s.exists?s.data():null; ipoAugment(); try{if(SEC)renderSec(); else if(document.body.dataset.page==='search')srchRender()}catch(e){}}).catch(()=>{IPO_ASK=0})}catch(e){}}
 // the listings to tell about: an offering from the calendar, or a new symbol whose first day of trading is known; newest first
 function ipoFreshP(D,days,now){const t=now||Date.now(), iso=x=>new Date(x).toISOString().slice(0,10), from=iso(t-(days||10)*864e5), to=iso(t+864e5);
-  return ((D&&D.items)||[]).filter(it=>it&&it.sym&&!it.old&&(it.kind==='ipo'||it.first)).map(it=>({...it,d:it.first||it.date})).filter(it=>it.d&&it.d>=from&&it.d<=to)
+  return ((D&&D.items)||[]).filter(it=>it&&it.sym&&!it.old&&((it.kind==='ipo'&&!it.far)||it.first)).map(it=>({...it,d:it.first||it.date})).filter(it=>it.d&&it.d>=from&&it.d<=to)
     .sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:0)||((a.kind==='ipo'?0:1)-(b.kind==='ipo'?0:1))||((a.spac?1:0)-(b.spac?1:0))||(a.sym<b.sym?-1:1))}
 function ipoAugment(){
   if(!SYMDB||!IPO_D||!Array.isArray(IPO_D.syms))return; if(IPO_AUG===(IPO_D.updatedAt||'')+':'+SYMDB.length)return;
+  // the new listings of the exchanges outside the US: known to the page by the symbol the price source uses (711A.T, ITD.MI)
+  for(const x of (IPO_D.items||[]))if(x&&x.far&&!x.old&&wsecCan(x.sym)&&!WSI.has(x.sym))WSI.set(x.sym,wItem(x.sym,{name:x.name,exch:x.exch,type:x.t==='E'?'etf':'stock',ccy:x.ccy||''}));
   const have=new Set(SYMDB.filter(x=>x.t!=='T'&&!x.il).map(x=>x.sym)), NW=new Map(((IPO_D.items)||[]).filter(x=>x&&x.sym&&!x.old).map(x=>[x.sym,x]));
   for(const r of IPO_D.syms){const sym=String((r&&r[0])||''); if(!/^[A-Z][A-Z.]{0,5}$/.test(sym)||have.has(sym))continue; have.add(sym); const nw=NW.get(sym), nm=String((nw&&nw.name)||r[1]||sym);
     SYMDB.push({sym,name:nm,t:r[2]==='E'?'E':'S',ex:String(r[3]||''),sec:'',cap:0,ls:sym.toLowerCase(),ln:nm.toLowerCase(),he:HEBN[sym]||'',dyn:1})}
@@ -27916,7 +27918,7 @@ function scrNewList(row){const L=ipoItems(45), U=((IPO_D&&IPO_D.upcoming)||[]).s
   return `<div class="scr-lh"><button type="button" class="scr-bk" data-scrback><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>מחקר שוק</button>
     <h3>חדש בבורסה</h3><span class="scr-n">${L.length.toLocaleString('en-US')} ניירות ב-45 הימים האחרונים</span></div>
     <div class="sres scr-ls">${rows||'<div class="empty">לא נרשמו ניירות חדשים ב-45 הימים האחרונים.</div>'}</div>${more}${up}
-    <p class="note">הנפקות בבורסות בארה״ב, וקרנות וסימולים חדשים מהיום שנרשם להם יום מסחר ראשון. ${IPO_D&&IPO_D.source?'מקורות: '+esc(IPO_D.source)+'. ':''}${IPO_D&&IPO_D.updatedAt?'נבדק '+agoH(IPO_D.updatedAt)+'. ':''}המחירים בעיכוב. רשימה לפי נתונים, לא המלצה.</p>`}
+    <p class="note">הנפקות בבורסות בארה״ב, ורישומים חדשים בטוקיו, ב-Euronext, בטורונטו ובהונג קונג; קרנות, סימולים ורישומים מחוץ לארה״ב מופיעים מהיום שנרשם להם יום מסחר ראשון. ${IPO_D&&IPO_D.source?'מקורות: '+esc(IPO_D.source)+'. ':''}${IPO_D&&IPO_D.updatedAt?'נבדק '+agoH(IPO_D.updatedAt)+'. ':''}המחירים בעיכוב. רשימה לפי נתונים, לא המלצה.</p>`}
 function scrList(row){if(SCR&&SCR.k==='new')return scrNewList(row);
   const s=SCR, L=scrItems(s), etf=s.k==='etf', mv=s.k==='up'||s.k==='down', H=new Set(scrHeldIts().map(skey)), unit=etf?'תעודות':'חברות';
   if((mv||s.sort==='chg')&&!ALLQ&&!SCRQ){SCRQ=true; try{loadAllQ().then(()=>{SCRQD=true; if(!SQ.trim()&&!SEC&&document.body.dataset.page==='search')srchRender()})}catch(e){SCRQD=true}}
@@ -32254,6 +32256,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.7',at:'2026-11-24',t:'חדש בבורסה: גם טוקיו, אירופה, טורונטו והונג קונג',d:'"חדש בבורסה" במחקר שוק והעדכון השבועי בהתראות כוללים עכשיו גם ניירות שנרשמו למסחר מחוץ לארה״ב: בטוקיו, בבורסות Euronext (פריז, אמסטרדם, מילאנו, אוסלו ועוד), בטורונטו ובהונג קונג. כל נייר מופיע עם הבורסה שלו ויום המסחר הראשון, ונפתח לדף נייר במטבע שלו. נייר מוצג כחדש רק אחרי שנרשם לו יום מסחר ראשון, וחברה שרק עברה בין רשימות לא מוצגת. הנפקות עתידיות בטוקיו נמצאות ב"הנפקות צפויות".',go:'srch'},
   {v:'2026-11-24.6',at:'2026-11-24',t:'מחקר שוק: מניות וקרנות מכל העולם, וניירות חדשים בבורסה',d:'החיפוש במחקר שוק מוצא עכשיו גם מניות וקרנות מבורסות אחרות בעולם (טוקיו, לונדון, פרנקפורט ועוד). הן מופיעות מתחת לתוצאות הרגילות, עם הבורסה והסוג, ולכל אחת יש דף נייר עם מחיר במטבע שלה וגרף; אפשר להוסיף אותה למעקב ולתיק. ניירות שהתחילו להיסחר אחרי שהרשימה של האתר נבנתה, למשל Anthropic (ANT), נכנסים לחיפוש לבד. ב"חדש בבורסה" במחקר שוק רואים את ההנפקות האחרונות ואת הצפויות, ובהתראות מגיע עדכון אחד בשבוע על ניירות חדשים (אפשר לכבות אותו ב"סוגי אירועים"). המחירים של ניירות כאלה בעיכוב, ומה שהמקור לא נותן כתוב כ"אין נתון".',go:'srch'},
   {v:'2026-11-24.5',at:'2026-11-24',t:'הורדת יחידות מהטבלה? האתר שואל אם מכרת',d:'כששומרים את "התיק שלי" אחרי שיחידות ירדו או שנייר הוסר, והמזומן של החשבון לא עודכן, האתר שואל אם זו מכירה. אם כן, התמורה (לפי המחיר עכשיו) נכנסת למזומן של החשבון, המכירה נרשמת, ושווי התיק לא יורד.',go:'pfedit'},
   {v:'2026-11-24.4',at:'2026-11-24',t:'מכירה היא כסף שנכנס, לא הפסד',d:'כשרושמים מכירה, התמורה נכנסת למזומן ושווי התיק לא משתנה. עד היום "רווח מול עלות" ירד אחרי מכירה, כי הרווח של מה שנמכר יצא מהחישוב. עכשיו מה שמומש במכירות נשאר בתוך הרווח, וכתוב לידו כמה ממנו מומש.',go:'hist'},
