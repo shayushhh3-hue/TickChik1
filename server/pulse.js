@@ -294,7 +294,7 @@ export function ipoAlerts(store,now=new Date()){
   for(const [wk,A] of W){
     // the companies' offerings first, then the new funds and symbols, the blank-check companies last
     const rank=x=>x.kind==='ipo'&&!x.spac?0:x.kind==='ipo'?2:1; A.sort((a,b)=>rank(a)-rank(b)||(a.d<b.d?1:a.d>b.d?-1:0)||(a.sym<b.sym?-1:1));
-    const nm=x=>`${coShort(x.name)||x.sym} (${x.sym})`, nI=A.filter(x=>x.kind==='ipo').length, nF=A.length-nI;
+    const nm=x=>`${coShort(x.name)||x.sym} (${String(x.sym).replace(/^TLV:/,'')})`, nI=A.filter(x=>x.kind==='ipo').length, nF=A.length-nI;
     const title=A.length===1?`${A[0].kind==='ipo'?'הנפקה חדשה':'נייר חדש בבורסה'}: ${nm(A[0])}`:`${A.length} ניירות חדשים בבורסה: ${A.slice(0,2).map(nm).join(', ')}${A.length>2?` ועוד ${A.length-2}`:''}`;
     const parts=[nI?(nI===1?'הנפקה אחת':nI+' הנפקות'):'',nF?(nF===1?'קרן או סימול חדש אחד':nF+' קרנות וסימולים חדשים'):''].filter(Boolean).join(' ו-');
     out.push({kind:'ipo',type:'ipo',cert:'fact',rules:false,conf:'high',confWhy:'מלוח ההנפקות ומרשימת הסימולים של הבורסות; יום המסחר הראשון ממקור המחירים',

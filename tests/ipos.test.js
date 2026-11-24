@@ -204,6 +204,26 @@ test('the exchanges outside the US: Tokyo, Euronext, Toronto and Hong Kong read 
   const W=load(['ipoFreshP'],{}); assert.deepEqual(W.ipoFreshP(D,10,NOW.getTime()).map(x=>x.sym),['9941.HK','TCB.TO','657A.T','CTUS.OL']);
 });
 
+test('Tel Aviv: a share that joins the exchange\'s own list is a new one, told with its first trade; the first list only teaches; without the list nothing is said',async()=>{
+  const s=new Store(':memory:'), none=async()=>new Response('no',{status:503}), asked=[];
+  const ch=async t=>{asked.push(t); if(t==='NEWIL.TA')return {px:1200,first:'2026-11-23',ccy:'ILS'}; throw new Error('no data')};
+  const stocks=n=>Array.from({length:n},(_,i)=>['IL'+i,'חברה '+i,'Company '+i,'',1000+i]);
+  // no list (no key): the job says so and tells nothing
+  let r=await ipoTask(s,{fetch:none,now:NOW,known:KNOWN,chart:ch,key:'',world:false}); assert.equal(r.ok,false); assert.equal(s.getMeta('ipoIlKnown'),null);
+  // the first list: learned, nothing new
+  s.setDoc('research/ilsyms',{stocks:stocks(120),day:'2026-11-23'}); s.setDoc('research/ipos',{items:[{sym:'ANT',kind:'ipo',date:'2026-11-19',first:'2026-11-19',at:NOW.toISOString()}],syms:[],updatedAt:NOW.toISOString()});
+  const f0=async u=>String(u).includes('api.nasdaq.com')?json(NQ([P('ANT','Anthropic, PBC','NASDAQ Global Select','11/19/2026','83.00')])):new Response('no',{status:503});
+  r=await ipoTask(s,{fetch:f0,now:NOW,known:KNOWN,chart:ch,key:'',world:false}); assert.equal(JSON.parse(s.getMeta('ipoIlKnown')).length,120); assert.deepEqual(r.fresh,[]);
+  // the next morning two shares joined: one trades, one has no trade yet
+  s.setDoc('research/ilsyms',{stocks:[...stocks(120),['NEWIL','חדשה בע״מ','New IL Ltd','',2001],['WAIT','ממתינה','Waiting Ltd','',2002]],day:'2026-11-24'});
+  const f=async u=>String(u).includes('api.nasdaq.com')?json(NQ([P('ANT','Anthropic, PBC','NASDAQ Global Select','11/19/2026','83.00')])):new Response('no',{status:503});
+  r=await ipoTask(s,{fetch:f,now:new Date(NOW.getTime()+20*36e5),known:KNOWN,chart:ch,key:'',world:false}); assert.equal(r.ok,true); assert.equal(r.sources.tase,'ok'); assert.deepEqual(r.fresh.sort(),['TLV:NEWIL','TLV:WAIT']);
+  const D=s.getDoc('research/ipos').data, x=D.items.find(z=>z.sym==='TLV:NEWIL'); assert.deepEqual([x.name,x.exch,x.kind,x.first,x.date,x.src],['חדשה בע״מ','הבורסה בתל אביב','list','2026-11-23','2026-11-24',['TASE']]); assert.ok(asked.includes('NEWIL.TA'),'asked of the price source as a Tel Aviv ticker');
+  assert.deepEqual(ipoFresh(D,{now:new Date(NOW.getTime()+20*36e5)}).map(z=>z.sym),['TLV:NEWIL','ANT']); assert.ok(!D.syms.some(z=>/NEWIL/.test(z[0])),'not in the US list'); assert.match(D.source,/תל אביב \(TASE\)/);
+  r=await ipoTask(s,{fetch:f,now:new Date(NOW.getTime()+27*36e5),known:KNOWN,chart:ch,key:'',world:false}); assert.deepEqual(r.fresh,[],'not new twice');
+  const A=ipoAlerts(s,new Date(NOW.getTime()+27*36e5)).find(a=>a.k==='ipo:2026-11-23'); assert.equal(A.title,'נייר חדש בבורסה: חדשה בע״מ (NEWIL)'); assert.equal(A.ipo.list[0].sym,'TLV:NEWIL');
+});
+
 // ---- the page's own code (taken out of page/live.html) ----
 test('the page: the key of a security from another market, the rows of the search across markets, what is told as new',()=>{
   const W=load(['WKEY','wsecCan','wsFar','wsKey','wsRows','ipoFreshP','SECKEY'],{});

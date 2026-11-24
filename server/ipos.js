@@ -160,6 +160,14 @@ export async function ipoTask(store,{fetch:f=timedFetch,now=new Date(),log=()=>{
   // 3b. the listings of the other exchanges: from their day of listing on (a day still ahead is "expected")
   for(const r of far){if(r.date&&r.date>today){if(r.kind==='ipo')upcoming.push({sym:r.sym,name:r.name,exch:r.exch,date:r.date,price:null,range:null,src:r.src}); continue} if(r.date&&r.date<from)continue;
     const was=by.get(r.sym); add(r.sym,{name:(was&&was.name)||r.name,exch:r.exch,ex:'',t:r.t||(was&&was.t)||'S',...(r.date?{date:r.date}:{}),kind:r.kind,far:true,src:[...new Set([...((was&&was.src)||[]),r.src])]})}
+  // 3c. Tel Aviv (24.11, the owner): the exchange's own list of traded shares (research/ilsyms, kept every morning by
+  // server/ilsyms.js with the exchange's key, TASE_API_KEY). A share that was not in the list on the run before is a new
+  // one; the first list seen only teaches what is listed. Without the key there is no list, and nothing is said
+  try{const IL=store.getDoc('research/ilsyms').data, L=(IL&&Array.isArray(IL.stocks)?IL.stocks:[]).filter(x=>x&&/^[A-Z0-9]{1,7}$/.test(String(x[0]||'')));
+    if(L.length>=100){let K0=null; try{K0=JSON.parse(store.getMeta('ipoIlKnown')||'null')}catch(e){} const was=Array.isArray(K0)?new Set(K0):null;
+      if(was)for(const x of L){const k=String(x[0]); if(was.has(k))continue; add('TLV:'+k,{name:str(x[1]||x[2]||k),exch:'הבורסה בתל אביב',ex:'TLV',t:'S',date:(IL.day&&IL.day<=today?IL.day:today),kind:'list',il:true,src:['TASE']})}
+      store.setMeta('ipoIlKnown',JSON.stringify([...new Set([...(was||[]),...L.map(x=>String(x[0]))])])); src.tase='ok'}
+    else src.tase='nolist'}catch(e){src.tase='err'; errors.push('TASE: '+String(e&&e.message||e).slice(0,100))}
   // 4. the dynamic part of the search, and the symbols that were not listed on the run before
   let syms=Array.isArray(O.syms)?O.syms:[];
   // without the page's own list (the site was not built yet) every listed symbol would look new to the search: it waits
@@ -171,14 +179,14 @@ export async function ipoTask(store,{fetch:f=timedFetch,now=new Date(),log=()=>{
       if(seeded&&!prev.has(x.sym))add(x.sym,{name:x.name,ex:x.ex,exch:'',t:x.etf?'E':'S',kind:x.etf?'etf':'list',src:['Nasdaq Trader'],listed:true,...(isSpac(x.name)?{spac:true}:{})})}
     syms=rows.sort((a,b)=>a[0]<b[0]?-1:1).slice(0,6000)}
   // an offering the directory does not list yet is still found by its symbol
-  {const have=new Set(syms.map(x=>x[0])); for(const it of by.values())if(it.kind==='ipo'&&!it.far&&!have.has(it.sym)&&!K.has(it.sym)){syms.push([it.sym,it.name,it.t||'S',it.ex||'']); have.add(it.sym)} syms=syms.slice().sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0)}
+  {const have=new Set(syms.map(x=>x[0])); for(const it of by.values())if(it.kind==='ipo'&&!it.far&&!it.il&&!have.has(it.sym)&&!K.has(it.sym)){syms.push([it.sym,it.name,it.t||'S',it.ex||'']); have.add(it.sym)} syms=syms.slice().sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0)}
   // a ticker that only changed its name (FMP's list, research/symchg) is not a new security
   try{const C=(store.getDoc('research/symchg').data||{}).items||[]; for(const c of C){const it=by.get(String(c&&c.new||'')); if(it&&it.kind!=='ipo'){it.old=true; it.why='שינוי סימול'}}}catch(e){}
   // 5. the first day of trading, from the price source: asked for a listing that has none yet, a few a run, again after six hours
   let checks=0;
   const order=[...by.values()].filter(it=>!it.first&&!it.old&&!(Date.parse(it.checkedAt)>now.getTime()-6*36e5)).sort((a,b)=>((a.kind==='ipo'?0:1)-(b.kind==='ipo'?0:1))||(String(b.date||b.at)<String(a.date||a.at)?-1:1));
   for(const it of order){if(checks>=maxChecks)break; checks++; it.checkedAt=nowIso;
-    try{const q=await chart(it.far?it.sym:it.sym.replace(/\./g,'-'),{fetch:f}); if(q&&q.first){if(it.far){if(q.ccy)it.ccy=q.ccy; if(q.type==='ETF')it.t='E';
+    try{const q=await chart(it.il?it.sym.slice(4)+'.TA':it.far?it.sym:it.sym.replace(/\./g,'-'),{fetch:f}); if(q&&q.first){if(it.far){if(q.ccy)it.ccy=q.ccy; if(q.type==='ETF')it.t='E';
           // listed on this exchange long after it first traded there: a transfer or a second line, not a new security
           if(Date.parse(q.first)<Date.parse(it.date||String(it.at).slice(0,10))-30*DAY){it.first=q.first; it.old=true; it.why='נסחר מזמן'; continue}}it.first=q.first; if(q.xname&&!it.exch)it.exch=str(q.xname,40); if(q.name&&(!it.name||it.name===it.sym))it.name=str(q.name);
         // a symbol that traded long before it was seen here is an old security under a new ticker, not a new listing
@@ -186,7 +194,7 @@ export async function ipoTask(store,{fetch:f=timedFetch,now=new Date(),log=()=>{
     catch(e){}}
   const items=[...by.values()].sort((a,b)=>String(b.first||b.date||b.at)<String(a.first||a.date||a.at)?-1:1).slice(0,300);
   const upc=new Map(); for(const u of upcoming)if(u.date>=today&&!upc.has(u.sym))upc.set(u.sym,{sym:u.sym,name:u.name,exch:u.exch,date:u.date,...(u.range?{range:u.range}:{}),...(u.price?{price:u.price}:{}),src:u.src,...(isSpac(u.name)?{spac:true}:{})});
-  const wn=[src.jpx==='ok'?'טוקיו (JPX)':'',src.euronext==='ok'?'Euronext':'',src.tsx==='ok'||src.tsxv==='ok'?'טורונטו (TSX)':'',src.hkex==='ok'?'הונג קונג (HKEX)':''].filter(Boolean);
+  const wn=[src.jpx==='ok'?'טוקיו (JPX)':'',src.euronext==='ok'?'Euronext':'',src.tsx==='ok'||src.tsxv==='ok'?'טורונטו (TSX)':'',src.hkex==='ok'?'הונג קונג (HKEX)':'',src.tase==='ok'?'תל אביב (TASE)':''].filter(Boolean);
   const names=[src.nasdaq==='ok'?'לוח ההנפקות של Nasdaq':'',src.finnhub==='ok'?'Finnhub':'',wn.length?'רשימות הרישום של '+wn.join(', '):'',src.dir==='ok'||seeded?'רשימת הסימולים של הבורסות בארה״ב (Nasdaq Trader)':'','Yahoo Finance (יום המסחר הראשון)'].filter(Boolean);
   const doc={items,upcoming:[...upc.values()].sort((a,b)=>a.date<b.date?-1:1).slice(0,40),syms,dir:seeded||(!!dir&&listOk),sources:src,errors:errors.slice(0,6),source:names.join(', '),updatedAt:nowIso,
     n:{ipo:items.filter(x=>x.kind==='ipo').length,etf:items.filter(x=>x.kind==='etf'&&!x.old).length,dyn:syms.length}};
