@@ -4795,7 +4795,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="stat" id="kFxBox"><div class="k">דולר / שקל</div><span class="v" id="kFx">—</span><div class="d" id="kFxD"></div></div>
       </div>
       <p class="chsay quick-say" id="quickSay" hidden></p>
-      <p class="nm quick-3"><b>מול העלות</b>: הניירות מול מה ששילמת. <b>מול ההפקדות</b>: כל התיק מול מה שהכנסת. <b>לאורך התקופה</b>: התשואה בלי ההפקדות.</p>
+      <p class="nm quick-3"><b>מול העלות</b>: הניירות מול מה ששילמת, יחד עם מה שכבר מומש במכירות. <b>מול ההפקדות</b>: כל התיק מול מה שהכנסת. <b>לאורך התקופה</b>: התשואה בלי ההפקדות.</p>
     </section>
     <section aria-labelledby="hSince" id="sinceSec" hidden>
       <div class="row"><h2 id="hSince">מאז הביקור הקודם שלך</h2><span class="sub" id="sinceSub"></span></div>
@@ -19336,7 +19336,11 @@ function costBasis(P,Q,hs=HS){
 // what an account's sales realized, in shekels: the trades' own prices, shekel trades as they are and the rest at today's
 // dollar rate; an account with no trades keeps the number its statement gave (realizedUsd)
 // 6.11: a sale written by hand (A.manual) carries its own result, from the purchase price that was written with it
-const manualReal=(A,fx)=>(A.manual||[]).filter(x=>x&&x.side==='sell'&&x.real!=null).reduce((t,x)=>t+(+x.real)*(x.ccy==='ILS'?1:fx),0);
+// 24.11: the sale's own shekel result when it was kept (realIls: the proceeds less the shekel cost of the units sold), else its result in its currency
+const manualReal=(A,fx)=>(A.manual||[]).filter(x=>x&&x.side==='sell'&&(x.realIls!=null||x.real!=null)).reduce((t,x)=>t+(x.realIls!=null?+x.realIls:(+x.real)*(x.ccy==='ILS'?1:fx)),0);
+// 24.11 (the owner): what the sales realized, for the account on screen (all the accounts in "הכל"): a sale is money that came
+// in, so the profit against the cost keeps it instead of losing the profit of what was sold
+function realizedView(){try{if(!HS||!Q)return 0; const fx=+Q.usdIls||0; let t=0; for(const A of HS.accounts||[]){if(acct!=='all'&&A.acct!==acct)continue; t+=realizedIls(A,fx)} return Math.abs(t)<0.5?0:Math.round(t*100)/100}catch(e){return 0}}
 function realizedIls(A,fx){
   const tr=(A.trades||[]).filter(t=>!t.div); if(!tr.length)return (+A.realizedUsd||0)*fx+(typeof manualReal==='function'?manualReal(A,fx):0);
   const il=t=>(t.ccy||(A.ccy==='USD'?'USD':''))==='ILS';
@@ -20029,11 +20033,12 @@ function render(){
   const de=$('kDay'); de.textContent=mH.hasDay?(mH.dayIls>=0?'▲ ':'▼ ')+(HC==='usd'?dlr(Math.abs(mH.dayIls-(mH.dayFx||0))/fxV):ils(Math.abs(mH.dayIls))):'—'; de.className='v '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):''); $('kDayD').textContent=mH.hasDay?`${spct(mH.dayPct,2)} ${dayShortW()}`+(HC==='usd'?' · '+sgn(mH.dayIls):HC==='both'?' · '+sgnDlr(mH.dayIls/fxV):''):''; $('hero').dataset.d=mH.hasDay?(mH.dayIls>=0?'up':'down'):''; try{dayMkt(mH)}catch(e){}
   try{const pl=$('kDayPill'), dw=$('kDayW'); if(pl){pl.textContent=mH.hasDay?`${de.textContent} · ${spct(mH.dayPct,2)}`:''; pl.className='dpill '+(mH.hasDay?(mH.dayIls>=0?'up':'down'):'')} if(dw)dw.textContent=mH.hasDay?dayShortW():''}catch(e){}
   const pe=$('kPnl'), uP=DU&&DU.cost>0?{d:DU.val-DU.cost,pct:(DU.val-DU.cost)/DU.cost*100,ap:DU.est?'≈':''}:null;
-  pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):mH.cost?sgn(mH.pnl):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):(mH.cost?(mH.pnl>=0?'up':'down'):''));
+  const RZ=HC==='usd'||mH.fund||mH.stock?0:realizedView();   // 24.11 (the owner): what the sales realized stays in the profit
+  pe.textContent=HC==='usd'?(uP?uP.ap+sgnDlr(uP.d):'—'):(mH.cost||RZ)?sgn(mH.pnl+RZ):'—'; pe.className='v '+(HC==='usd'?(uP?(uP.d>=0?'up':'down'):''):((mH.cost||RZ)?((mH.pnl+RZ)>=0?'up':'down'):''));
   // 1.11: an empty tile says where to complete the figure, in one tap
   const fillB=canWrite?' <button type="button" class="lnk" data-tab="mine" data-goid="fillWiz">להשלים ›</button>':'';
   {const pd=$('kPnlD'), txt=HC==='usd'?(uP?`${spct(uP.pct)} בדולרים, בלי שינוי השער`+(mH.cost?` · ${sgn(mH.pnl)} בשקלים`:''):null)
-    :(mH.cost?spct(mH.pnlPct)+(mH.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(mH.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):null);
+    :(mH.cost?(RZ?`כולל ${sgn(RZ)} שמומשו במכירות · על המוחזק `:'')+spct(mH.pnlPct)+(mH.pnl>0&&(+S.taxPct||0)>0?` · נטו אחרי מס ${sgn(mH.pnl*(1-S.taxPct/100))}`:'')+(HC==='both'&&uP?` · ${uP.ap}${sgnDlr(uP.d)} (${spct(uP.pct)}) בדולרים`:''):null);
     if(txt!=null)pd.textContent=txt; else pd.innerHTML='אין נתוני עלות'+fillB}
   // since the start of the year, and against the money put in: only from numbers the page has (the saved month-ends, the
   // uploaded tables, the deposits); otherwise "—" and the reason
@@ -21220,7 +21225,7 @@ function renderKpis(m){const el=$('kKpis'), pk=$('kPnlK'); if(!el)return; if(!m|
   C.push(wk?cell('שבוע',sgn(wk.d),spct(wk.p),wk.d>=0?'up':'down'):r&&isFinite(r.ret)?cell(r.since?`ב-${r.days} ימים`:'30 יום',spct(r.ret,1),'',r.ret>=0?'up':'down'):cell('שבוע','—'));
   // 11.11 (the owner): the profit against the cost always there; with no cost known, one tap to the form that fills it in
   // 17.11 (the owner): the profit against the cost on a line of its own, right under the value
-  {const pH=m.cost>0?cell('רווח מול עלות',sgn(m.pnl),spct(m.pnlPct),m.pnl>=0?'up':'down'):`<div class="kpi"><span class="kpi-k">רווח מול עלות</span><button type="button" class="kpi-add" data-tab="mine">להוסיף עלויות</button></div>`; if(pk){pk.hidden=false; setH(pk,pH)} else C.push(pH)}
+  {const RZ=m.fund||m.stock?0:realizedView(), pH=m.cost>0?cell('רווח מול עלות',sgn(m.pnl+RZ),RZ?'כולל מכירות':spct(m.pnlPct),(m.pnl+RZ)>=0?'up':'down'):`<div class="kpi"><span class="kpi-k">רווח מול עלות</span><button type="button" class="kpi-add" data-tab="mine">להוסיף עלויות</button></div>`; if(pk){pk.hidden=false; setH(pk,pH)} else C.push(pH)}
   // "למה?" lives in the day's cell; it is taken out before the row is drawn again (else the drawing would drop it)
   const w=$('kWhy'), dl=document.querySelector('.worth .dayline'); if(w&&dl&&el.contains(w))dl.appendChild(w);
   el.hidden=false; setH(el,C.join('')); const c0=el.querySelector('.kpi'); if(w&&c0)c0.appendChild(w)}
@@ -24935,7 +24940,8 @@ async function trSave(){const v=trVals(); if(!v||!canWrite)return; const {T,q,px
   if(sell&&(!x||q>+x.qty+1e-9)){m.textContent='האחזקה השתנתה בינתיים. נסה שוב.'; return}
   const cc=T.ccy==='ILS'?'ILS':'USD'; let cash=P2.cash.find(z=>z.acct===T.acct&&z.ccy===cc); if(!cash){cash={acct:T.acct,ccy:cc,amount:0}; P2.cash.push(cash)}
   const avg=x?slAvg(x):null;
-  if(sell){const f=q/(+x.qty); if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
+  let cutIls=null;   // 24.11: the shekel cost of the units sold, for the sale's result in shekels
+  if(sell){const f=q/(+x.qty); cutIls=x.costIls!=null?+x.costIls*f:null; if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
   else{if(!x){const g=(()=>{try{return groupOf(T.sym)}catch(e){return null}})(); x={sym:T.sym,name:T.name,acct:T.acct,qty:0,ccy:T.ccy,costIls:T.ccy==='ILS'?0:(fx?0:null),costUsd:T.ccy==='ILS'?null:0,px:null,group:g||(T.ccy==='ILS'?'il':T.t==='E'?'etf':'tech')}; P2.positions.push(x)}
     if(T.ccy==='ILS'){x.costIls=slR((+x.costIls||0)+amt)} else {if(x.costUsd!=null)x.costUsd=slR(+x.costUsd+amt); if(x.costIls!=null&&fx)x.costIls=slR(+x.costIls+amt*fx)}
     x.qty=slR(+x.qty+q,6); cash.amount=slR(Math.max(0,(+cash.amount||0)-amt))}
@@ -24943,6 +24949,7 @@ async function trSave(){const v=trVals(); if(!v||!canWrite)return; const {T,q,px
   const H=HS?cl(HS):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; let A=H.accounts.find(z=>z.acct===T.acct); if(!A){A={acct:T.acct,ccy:acctCcy(T.acct),deposits:[],trades:[],snapshots:[]}; H.accounts.push(A)}
   const rec={id:Date.now().toString(36),date:T.d,sym:T.sym,side:sell?'sell':'buy',qty:q,px:slR(px,6),amt:slR(amt),ccy:T.ccy,fx:fx||null,at:new Date().toISOString()};
   if(sell&&avg!=null){rec.buyPx=slR(avg,6); rec.real=slR(amt-q*avg)}
+  if(sell&&cutIls!=null&&(T.ccy==='ILS'||fx))rec.realIls=slR(amt*(T.ccy==='ILS'?1:fx)-cutIls);
   A.manual=[...(A.manual||[]),rec];
   m.textContent='שומר…'; $('trSave').disabled=true;
   try{await pset('portfolio',P2); P=P2; await pset('history',H); HS=H; if(!dDirty)DRAFT=draftFromP();
@@ -24999,6 +25006,7 @@ async function slSave(){const v=slVals(); if(!v||!canWrite)return; const st=$('s
   const x=P2.positions.find(z=>z.sym===p.sym&&(z.acct||'')===(p.acct||'')&&Math.abs(+z.qty-+p.qty)<1e-9); if(!x){st.textContent='האחזקה השתנתה בינתיים. נסה שוב.'; renderSell(); return}
   const f=q/(+x.qty); P2.cash=Array.isArray(P2.cash)?P2.cash:[];
   let cash=P2.cash.find(z=>z.acct===x.acct&&z.ccy===(c==='ILS'?'ILS':'USD')); if(!cash){cash={acct:x.acct,ccy:c==='ILS'?'ILS':'USD',amount:0}; P2.cash.push(cash)}
+  const cutIls=sell&&x.costIls!=null?+x.costIls*f:null;   // 24.11: the shekel cost of the units sold
   if(sell){if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
   else{const avgOk=slAvg(x)!=null||(x.costUsd==null&&x.costIls==null&&+x.qty===0); if(c==='ILS'){if(x.costIls!=null)x.costIls=slR(+x.costIls+amt)} else {if(x.costUsd!=null)x.costUsd=slR(+x.costUsd+amt); if(x.costIls!=null&&fx)x.costIls=slR(+x.costIls+amt*fx)}
     x.qty=slR(+x.qty+q,6); cash.amount=slR(Math.max(0,(+cash.amount||0)-amt))}
@@ -25006,6 +25014,7 @@ async function slSave(){const v=slVals(); if(!v||!canWrite)return; const st=$('s
   const H=HS?cl(HS):{accounts:[],depIlsNow:0,monthly:[]}; H.accounts=H.accounts||[]; let A=H.accounts.find(z=>z.acct===x.acct); if(!A){A={acct:x.acct,ccy:acctCcy(x.acct),deposits:[],trades:[],snapshots:[]}; H.accounts.push(A)}
   const rec={id:Date.now().toString(36),date:d,sym:x.sym,side:sell?'sell':'buy',qty:q,px:slR(amt/q,6),amt:slR(amt),ccy:c,fx:fx||null,at:new Date().toISOString()};
   if(sell){rec.buyPx=slR(bp,6); rec.real=slR(amt-q*bp)}
+  if(sell&&cutIls!=null&&(c==='ILS'||fx))rec.realIls=slR(amt*(c==='ILS'?1:fx)-cutIls);
   A.manual=[...(A.manual||[]),rec];
   st.textContent='שומר…'; $('slSave').disabled=true;
   try{await pset('portfolio',P2); P=P2; await pset('history',H); HS=H; if(!dDirty)DRAFT=draftFromP();
@@ -26809,7 +26818,7 @@ function upTick(on,from){clearInterval(UPTT); UPTT=0; if(!on)return; UPT0=from||
 
 // ---- a short explanation behind the terms of the page ----
 const TERMS={
-  pnlk:['מול העלות, מול ההפקדות, לאורך התקופה','מול העלות: הניירות מול מה ששילמת עליהם. מול ההפקדות: כל התיק מול הכסף שהכנסת אליו. לאורך התקופה: התשואה עצמה, בלי ההשפעה של ההפקדות.'],
+  pnlk:['מול העלות, מול ההפקדות, לאורך התקופה','מול העלות: הניירות מול מה ששילמת עליהם, יחד עם הרווח או ההפסד שכבר מומש במכירות (מכירה היא כסף שנכנס, לא הפסד). מול ההפקדות: כל התיק מול הכסף שהכנסת אליו. לאורך התקופה: התשואה עצמה, בלי ההשפעה של ההפקדות.'],
   rate:['תשואה שנתית מונחת','האחוז שהתיק אמור לגדול בו בשנה בממוצע, לפי ההנחה שלך. זו לא תחזית: שנה אחת יכולה להיות הרבה מעל או מתחת לה.'],
   tax:['מס רווחי הון','מס על הרווח ממכירת ניירות ערך, לרוב 25% על הרווח הריאלי. הדף מחשב אותו כאילו מוכרים הכול בסוף התקופה.'],
   vol:['תנודתיות חודשית','כמה המחיר נוטה לזוז בחודש טיפוסי, באחוזים. מספר גבוה הוא נסיעה רועדת יותר, לא בהכרח השקעה גרועה.'],
@@ -32086,6 +32095,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.4',at:'2026-11-24',t:'מכירה היא כסף שנכנס, לא הפסד',d:'כשרושמים מכירה, התמורה נכנסת למזומן ושווי התיק לא משתנה. עד היום "רווח מול עלות" ירד אחרי מכירה, כי הרווח של מה שנמכר יצא מהחישוב. עכשיו מה שמומש במכירות נשאר בתוך הרווח, וכתוב לידו כמה ממנו מומש.',go:'hist'},
   {v:'2026-11-24.3',at:'2026-11-24',t:'מבט לאחור: מכירה כתובה בטבלה החודשית',d:'ב"מבט לאחור" ← "לאורך זמן", בטבלת התשואה החודשית: חודש שבו מכרת נייר כותב את זה מתחת לשם החודש, עם הנייר, מספר היחידות, והרווח או ההפסד כשמחיר הקנייה ידוע.',go:'hist'},
   {v:'2026-11-24.2',at:'2026-11-24',t:'מבט לאחור: הגרף יום אחרי יום, והעסקאות שלך ביומן ובציר הזמן',d:'בגרף "שווי התיק מול סך ההפקדות" אפשר לנוע יום אחרי יום: נגיעה או גרירה על הגרף, החצים במקלדת, או הכפתורים "אחורה" ו"קדימה" שמתחתיו. ביום שנבחר מופיעה נקודת ציון על כל קו, והמספרים שלו כתובים מתחת לגרף, יחד עם מה שעשית באותו יום: קנייה, מכירה, הפקדה או משיכה. יום שיש בו פעולה מסומן במעוין על הקו. כל הימים שהאתר שמר נמצאים עכשיו על הגרף. וגם: קנייה או מכירה שרשמת באתר מופיעה ב"ציר הזמן שלי" ומחכה ביומן לסיבה שלך.',go:'hist'},
   {v:'2026-11-24.1',at:'2026-11-24',t:'התוכנית: מזומן נפרד לכל חשבון',d:'כל מסלול בתוכנית קונה מהמזומן של החשבון שלו: מסלול המניות מהחשבון שמחזיק את המניות, ומסלול המדדים מהחשבון שמחזיק את הקרנות. המזומן של החשבון השני כבר לא מזיז את התור. בראש התוכנית יש קופסה לכל חשבון ועוד אחת של כל המזומן יחד, ובהגדרות התוכנית קובעים מאיזה חשבון קונה כל מסלול. גם ב"התיק שלי" המזומן כתוב לכל חשבון בנפרד.',go:'plan'},

@@ -3440,7 +3440,10 @@ test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box 
     assert.equal(await pg.evaluate(()=>document.body.dataset.page),'search','stays on the page');
     assert.equal(+(await pg.inputValue('#trPx')),Math.round(px*1e4)/1e4,'the price now by default');
     await pg.fill('#trQty','1'); await pg.waitForTimeout(100); assert.match(await pg.textContent('#trSum'),/סה״כ/);
+    const nI=s=>+String(s).replace(/[^d.−-]/g,'').replace('−','-'), fig=()=>pg.evaluate(()=>[document.getElementById('kTotal').textContent,document.getElementById('kPnl').textContent,document.getElementById('kPnlD').textContent]), f0=await fig();
     await pg.click('#trSave'); await pg.waitForTimeout(1200);
+    // 24.11 (the owner): a sale is money that came in: the value stays, and the profit against the cost keeps what was realized
+    {const f1=await fig(); assert.equal(f1[0],f0[0],'the portfolio is worth the same after the sale'); assert.ok(Math.abs(nI(f1[1])-nI(f0[1]))<=2,'the profit does not fall by what was sold: '+f0[1]+' → '+f1[1]); assert.match(f1[2],/כולל .+ שמומשו במכירות/)}
     const q1=store.getDoc('portfolio/main').data.positions.filter(p=>p.sym==='MSFT').reduce((a,p)=>a+ +p.qty,0); assert.equal(Math.round((q0-q1)*1e6)/1e6,1,'one unit sold');
     // a security not held: one tap, a quantity, saved as a new holding
     await pg.evaluate(()=>{const b=document.createElement('button'); b.dataset.gosec='TSLA'; document.body.appendChild(b); b.click(); b.remove()});
