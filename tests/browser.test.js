@@ -3989,6 +3989,13 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
       await pg.click('#wiRegs [data-wireg]:not([data-wireg=""])'); await pg.waitForFunction(()=>document.querySelectorAll('#wiGlobe .tg-c:not([hidden])').length>0,null,{timeout:10000});
       assert.notEqual(await pg.evaluate(()=>document.getElementById('wiZl').textContent),'×1','closer after a region was pressed');
       await pg.click('#wiRegs [data-wireg=""]'); await pg.waitForFunction(()=>document.querySelectorAll('#wiGlobe .tg-c:not([hidden])').length===0,null,{timeout:10000})}
+    // 24.11: one sentence over the map, the assets as a bar (one asset's events alone), "only the new", the time line
+    {const q=await pg.evaluate(()=>({sum:document.getElementById('wiSum').innerText,asb:[...document.querySelectorAll('#wiAsb [data-wiasb]')].map(b=>b.dataset.wiasb),tl:!document.getElementById('wiTl').hidden}));
+      assert.match(q.sum,/אירועים נוגעים לתיק|אירוע אחד נוגע לתיק/,'the sentence: '+q.sum); assert.equal(q.asb.length,12,'every asset in the bar'); assert.equal(q.tl,true,'the time line');
+      const all=(await evs(pg)).length; await pg.click('#wiAsb [data-wiasb="NVDA"]'); await pg.waitForTimeout(300); const nv=await evs(pg); assert.ok(nv.length>=1&&nv.length<all,'NVIDIA\'s events alone: '+nv);
+      await pg.click('#wiAsb [data-wiasb="NVDA"]'); await pg.waitForTimeout(300); assert.equal((await evs(pg)).length,all,'all again');
+      await pg.evaluate(()=>{const r=document.getElementById('wiTlR'); r.value=r.min; r.dispatchEvent(new Event('input',{bubbles:true}))}); await pg.waitForTimeout(300); assert.ok((await evs(pg)).length<all,'the time line at its start hides the later events');
+      await pg.evaluate(()=>window.__wi.reset()); await pg.waitForFunction(n=>document.querySelectorAll('#wiEvL [data-wiev]').length===n,all,{timeout:10000})}
     // less noise: before a choice only the leading events' lines; a choice draws its own lines only
     const d0=await pg.evaluate(()=>({d:window.__wi.state().data(),g:window.__wi.state().globe})); assert.ok(d0.d.loud<=d0.d.arcs&&d0.g.arcsOn===d0.d.loud,JSON.stringify(d0));
     // an event: its card in four parts

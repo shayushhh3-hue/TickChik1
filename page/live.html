@@ -4383,6 +4383,19 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
 .wi-zl{display:block;text-align:center;font-size:12px;font-weight:800;color:#fde68a;background:rgb(13 12 40 / .75);border-radius:8px;padding:2px 0;direction:ltr}
 .wi-globe:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
 .wi-regs{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wi-sum{margin:0;font-size:14px;line-height:1.6;color:var(--ink)} .wi-sum[hidden]{display:none} .wi-sum .fr{color:#b45309} html[data-theme="dark"] .wi-sum .fr{color:#fbbf24}
+.wi-sum .lnk{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--vio-ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.wi-asb{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px} .wi-asb[hidden]{display:none}
+.wi-asb-l{font-size:12px;font-weight:700;color:var(--ink2);flex:none}
+.wi-asbb{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:4px 10px 4px 6px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.wi-asbb .lg{width:24px;height:24px;border-radius:7px;flex:none} .wi-asbb .n{font-size:11.5px;font-weight:800;min-width:18px;padding:0 5px;border-radius:999px;background:var(--accent-soft);color:var(--vio-ink);text-align:center}
+.wi-asbb.z{opacity:.55} .wi-asbb[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.wi-asbb:focus-visible,.wi-tl input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wi-k.fr{border-color:#f59e0b;color:#92400e} .wi-k.fr[aria-pressed="true"]{background:#fef3c7} html[data-theme="dark"] .wi-k.fr{color:#fde68a} html[data-theme="dark"] .wi-k.fr[aria-pressed="true"]{background:#422c06}
+.wi-tag.fresh{background:#f59e0b;color:#1c1300}
+.tg-l.ev.fresh{border-color:#f59e0b;box-shadow:0 0 0 3px rgb(245 158 11 / .35),0 4px 14px rgb(0 0 0 / .4)}
+.wi-tl{display:flex;align-items:center;gap:8px} .wi-tl[hidden]{display:none}
+.wi-tl-r{flex:1;display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;color:var(--ink2)} .wi-tl input{width:100%;accent-color:var(--accent);min-height:28px}
 .wi-regs[hidden]{display:none}
 .wi-regs-s{font-size:13px;font-weight:700;color:var(--ink);flex:none;white-space:nowrap}
 .wi-regs-h{font-size:12px;color:var(--ink2);flex-basis:100%}
@@ -5048,7 +5061,10 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
                 <label>ביטחון<select data-wif="conf"><option value="">הכול</option><option value="high">גבוה</option><option value="mid">בינוני ומעלה</option></select></label>
                 <button type="button" class="btn sm" data-wifclr="1">לנקות מסננים</button>
               </div>
+              <p class="wi-sum" id="wiSum" role="status"></p>
+              <div class="wi-asb" id="wiAsb" role="group" aria-label="רק האירועים של נכס אחד"></div>
               <div class="wi-regs" id="wiRegs" role="group" aria-label="קפיצה לאזור במפה"></div>
+              <div class="wi-tl" id="wiTl" hidden><button type="button" class="wi-k" id="wiTlPlay" aria-label="הפעלת ציר הזמן">▶</button><label class="wi-tl-r"><span id="wiTlL">כל הטווח</span><input type="range" id="wiTlR" aria-label="ציר הזמן: עד איזה רגע להציג אירועים"></label></div>
               <div class="wi-grid">
                 <aside class="wi-card" id="wiPf" aria-labelledby="wiPfH"><h4 id="wiPfH">התיק שלי <small id="wiPfS"></small></h4><div id="wiPfB"></div></aside>
                 <div class="wi-stage" id="wiStage">
@@ -6300,7 +6316,8 @@ function create(host,opts){
     ITEMS.forEach(function(it){var inG=!!G&&!!it.group&&G.has(it.group); it.off=it.quiet&&!inG; it.sp.visible=!it.off; it.sp.material.opacity=!G||!it.group||inG?1:0.3});
     LBL.forEach(function(l){var inG=!!G&&!!l.it.group&&G.has(l.it.group); l.el.classList.toggle('sel',inG); l.off=l.it.off||(l.quiet&&!inG)});
     S.dirty=true}
-  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl()}
+  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl(); if(o&&o.grow&&!reduce)growArcs()}
+  function growArcs(){var t0=performance.now(), i=0; ARCS.forEach(function(m){if(!m.visible)return; m.userData.g0=t0+(i++)*380; m.geometry.setDrawRange(0,0)}); S.dirty=true}
   // the labels: placed where their point is, hidden behind the globe or under a more important one
   function placeLabels(){var boxes=[];
     LBL.forEach(function(l){if(!l.w){l.w=l.el.offsetWidth||60; l.h=l.el.offsetHeight||22}});
@@ -6320,7 +6337,7 @@ function create(host,opts){
     world.rotation.set(S.rx,S.ry,0); cam.position.set(0,0,S.dist); cam.lookAt(0,0,0); world.updateMatrixWorld();
     // 22.11: how close the viewer is (far, near): the page shows more detail when near (the events of one place apart)
     var lv=S.dist<S.fit*0.8?1:0; if(lv!==(S.lvl||0)&&!S.anim){S.lvl=lv; if(opts.onLevel)try{opts.onLevel(lv)}catch(e){}}
-    ARCS.forEach(function(m){m.material.uniforms.time.value=t});
+    ARCS.forEach(function(m){m.material.uniforms.time.value=t; var u=m.userData; if(u.g0!=null){var k=Math.max(0,Math.min(1,(now-u.g0)/650)), n=m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count; if(k>=1){m.geometry.setDrawRange(0,Infinity); u.g0=null} else m.geometry.setDrawRange(0,Math.floor(n*k/3)*3)}});
     HALOS.forEach(function(h){var f=reduce||h.idle?0.5:((t*0.55+h.ph)%1), s=(1+f*1.8)*h.s; h.m.scale.set(s,s,s); h.m.material.opacity=0.85*(1-f)});
     R.render(scene,cam); if(S.frame%2===0||S.drag||S.anim||S.dirty){var bx=placeLabels(); ctryPlace(CL,S.dist<S.fit*0.8,function(c){if(!c.p3)c.p3=v3(T,c.lat,c.lon,1.004); var s=screenOf({pos:c.p3}); return s.front>0.35?s:null},bx||[],S.w,S.h)} S.dirty=false;
     var zz=Math.round(S.fit/S.dist*10)/10; if(zz!==S.zz){S.zz=zz; if(opts.onZoom)try{opts.onZoom(zz)}catch(e){}}}
@@ -6384,7 +6401,7 @@ function createFlat(host,opts){
     ITEMS.forEach(function(it){var inG=!!G&&!!it.group&&G.has(it.group); it.off=it.quiet&&!inG});
     LBL.forEach(function(l){var inG=!!G&&!!l.it.group&&G.has(l.it.group); l.el.classList.toggle('sel',inG); l.off=l.it.off||(l.quiet&&!inG)});
     S.dirty=true}
-  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl()}
+  function highlight(groups,o){S.hl=groups==null?null:new Set([].concat(groups)); S.tag=(o&&o.tag)||null; applyHl(); if(o&&o.grow&&!reduce)growArcs()}
   // a place to the middle when the map is closer than the whole world; at the whole world everything is in view already
   function focus(lat,lon,dist){if(S.w<2||S.h<2){if(dist==='fit'){S.z=1; S.cLat=lat; S.cLon=lon} return} var ts=dist==='fit'?S.fit:typeof dist==='number'?Math.max(S.fit,Math.min(S.fit*8,S.fit*dist)):S.s;
     if(ts<=S.fit*1.02&&dist!=='fit'&&S.s<=S.fit*1.02)return;
@@ -6394,14 +6411,16 @@ function createFlat(host,opts){
       if(ok&&l.pr<100)for(var i=0;i<boxes.length;i++){var b=boxes[i]; if(bx.x<b.x+b.w+3&&bx.x+bx.w+3>b.x&&bx.y<b.y+b.h+2&&bx.y+bx.h+2>b.y){ok=false; break}}
       if(ok){boxes.push(bx); l.el.style.transform='translate('+Math.round(bx.x)+'px,'+Math.round(bx.y)+'px)'; if(!l.shown){l.el.hidden=false; l.shown=true}} else if(l.shown){l.el.hidden=true; l.shown=false}}); return boxes}
   var CMAP={up:'#22c55e',down:'#ef4444',flat:'#94a3b8'}, CL=ctryLay(lay);
+  function growArcs(){var t0=performance.now(), i=0; ARCS.forEach(function(a){if(!a.on)return; a.g0=t0+(i++)*380}); S.dirty=true}
+  function qpath(c,x1,y1,cx,cy,x2,y2,u){c.moveTo(x1,y1); if(u>=1){c.quadraticCurveTo(cx,cy,x2,y2); return} for(var k=1;k<=24;k++){var v=u*k/24, w=1-v; c.lineTo(w*w*x1+2*w*v*cx+v*v*x2,w*w*y1+2*w*v*cy+v*v*y2)}}
   function draw(t){ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S.w,S.h);
     ctx.drawImage(B.c,0,B.sy,B.W,B.sh,S.tx,S.ty,B.W*S.s,B.sh*S.s);
     var mw=B.W*S.s, lw=S.small?2:1.7;
-    ARCS.forEach(function(a){if(!a.on)return; var on=true, x1=X(a.lo1), y1=Y(a.la1), x2=X(a.lo2), y2=Y(a.la2), d=Math.hypot(x2-x1,y2-y1), cx=(x1+x2)/2, cy=(y1+y2)/2-Math.min(S.h*0.16,d*0.22);
+    ARCS.forEach(function(a){if(!a.on)return; var gu=1; if(a.g0!=null){gu=Math.max(0,Math.min(1,(performance.now()-a.g0)/650)); if(gu>=1)a.g0=null} if(gu<=0)return; var on=true, x1=X(a.lo1), y1=Y(a.la1), x2=X(a.lo2), y2=Y(a.la2), d=Math.hypot(x2-x1,y2-y1), cx=(x1+x2)/2, cy=(y1+y2)/2-Math.min(S.h*0.16,d*0.22);
       [0,a.lo2>180?-mw:a.lo2<-180?mw:0].forEach(function(off,k){if(k===1&&!off)return; ctx.globalAlpha=(on?a.alpha:0.1)*0.28; ctx.strokeStyle=a.c; ctx.lineWidth=lw*3.2; ctx.setLineDash([]);
-        ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke();
-        ctx.globalAlpha=on?a.alpha:0.1; ctx.lineWidth=lw; if(a.dashed){ctx.setLineDash([7,6]); ctx.lineDashOffset=reduce?0:-(t*26)%13} ctx.beginPath(); ctx.moveTo(x1+off,y1); ctx.quadraticCurveTo(cx+off,cy,x2+off,y2); ctx.stroke(); ctx.setLineDash([]);
-        if(!reduce&&on&&!a.dashed){var u=(t*0.28+a.ph)%1, bx=(1-u)*(1-u)*x1+2*(1-u)*u*cx+u*u*x2+off, by=(1-u)*(1-u)*y1+2*(1-u)*u*cy+u*u*y2; ctx.globalAlpha=0.95; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bx,by,lw*1.3,0,6.283); ctx.fill()}})});
+        ctx.beginPath(); qpath(ctx,x1+off,y1,cx+off,cy,x2+off,y2,gu); ctx.stroke();
+        ctx.globalAlpha=on?a.alpha:0.1; ctx.lineWidth=lw; if(a.dashed){ctx.setLineDash([7,6]); ctx.lineDashOffset=reduce?0:-(t*26)%13} ctx.beginPath(); qpath(ctx,x1+off,y1,cx+off,cy,x2+off,y2,gu); ctx.stroke(); ctx.setLineDash([]);
+        if(!reduce&&on&&!a.dashed&&gu>=1){var u=(t*0.28+a.ph)%1, bx=(1-u)*(1-u)*x1+2*(1-u)*u*cx+u*u*x2+off, by=(1-u)*(1-u)*y1+2*(1-u)*u*cy+u*u*y2; ctx.globalAlpha=0.95; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bx,by,lw*1.3,0,6.283); ctx.fill()}})});
     ctx.globalAlpha=1;
     ITEMS.forEach(function(it){if(it.off)return; var x=X(it.lon), y=Y(it.lat); if(x<-20||x>S.w+20||y<-20||y>S.h+20)return; var on=!S.hl||!it.group||S.hl.has(it.group), r=(S.small?3.4:3)*it.size*Math.min(1.6,Math.sqrt(S.s/S.fit));
       if(it.halo){var hc=it.halo==='ev'?it.c:(CMAP[it.halo]||CMAP.flat), idle=it.halo==='idle'; for(var k=0;k<(idle?1:2);k++){var f=reduce||idle?0.5:((t*0.55+k*0.5)%1); ctx.globalAlpha=0.85*(1-f)*(on?1:0.4); ctx.strokeStyle=hc; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y,r*(1.6+f*2.4),0,6.283); ctx.stroke()}}
@@ -30475,6 +30494,8 @@ function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v
 //    it matters to each asset (its own explanation and the fact it rests on), and what the market actually did;
 //  - "חזרה להיום": one button that puts the dates, the filters, the choice and the globe back, and deletes nothing.
 const WI_F0=()=>({cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''});
+const WI_SEEN0=(()=>{try{return localStorage.getItem('tr_wi_seen')||''}catch(e){return ''}})();
+const wiNewOf=e=>!!WI_SEEN0&&!!e&&(String(e.first||'')>WI_SEEN0||String(e.upd||'')>WI_SEEN0);
 const WIMP={mode:'me',time:'now',kind:'all',lm:'focus',f:WI_F0(),view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),
   F:null,fTried:false,G:null,gTried:false,gFail:'',me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,lvl:0,
   past:{from:'',to:'',d:null,shape:null,busy:false,err:''},hist:{sym:'',d:null,busy:false,err:'',pick:null,all:false},
@@ -30509,7 +30530,7 @@ async function wiLoad(force){
   if(WIMP.busy||(!force&&have&&age<60e3&&have.days===+WIMP.f.t))return;
   WIMP.busy=true; wiRender();
   try{const j=await wiJson((world?'/api/admin/impact':'/api/impact')+'?days='+encodeURIComponent(WIMP.f.t)); if(world){WIMP.world=j; WIMP.wat=Date.now()} else {WIMP.me=j; WIMP.at=Date.now()} WIMP.err=''}
-  catch(e){WIMP.err=e.status===429?'':e.status===403?'אין הרשאה לתצוגה הזאת.':'המפה לא נטענה: '+e.message}
+  catch(e){WIMP.err=e.status===429?'':e.status===403?'אין הרשאה לתצוגה הזאת.':'המפה לא נטענה: '+e.message; if(e.status===429&&!(world?WIMP.world:WIMP.me))setTimeout(()=>wiLoad(true),1700)}   // 24.11: a reload right after another load is asked again, not left empty
   finally{WIMP.busy=false}
   wiRender(); wiIdxSpark()}
 // the past, in the same shape as today's data (so the globe, the map and the network draw it as they draw today): the events
@@ -30540,10 +30561,30 @@ const wiZoomShow=z=>{const o=$('wiZl'); if(o)o.textContent='×'+(Math.round(z*10
 const WI_REGS=[['na','צפון אמריקה',40,-98,(la,lo)=>lo<-50&&la>=12],['sa','דרום אמריקה',-15,-60,(la,lo)=>lo<-30&&la<12],['me','המזרח התיכון',29,42,(la,lo)=>lo>=25&&lo<63&&la>=12&&la<42],
   ['eu','אירופה',50,12,(la,lo)=>lo>=-25&&lo<45&&la>=35],['af','אפריקה',3,20,(la,lo)=>lo>=-20&&lo<52&&la<35],['as','אסיה',32,105,(la,lo)=>lo>=60&&la>=-10],['oc','אוקיאניה',-25,140,(la,lo)=>lo>=110&&la<-10]];
 const wiRegOf=l=>{if(!l)return null; const r=WI_REGS.find(([, , , ,f])=>f(l.lat,l.lon)); return r?r[0]:null};
-function wiRegsRender(){const box=$('wiRegs'); if(!box)return; const V=WIMP.view; box.hidden=!(V==='globe'||V==='flat')||!wiR(); if(box.hidden)return;
+// one sentence over the map: how many events, how many new since the last visit, which asset is touched most, the most important
+function wiSumRender(){const p=$('wiSum'); if(!p)return; const d=wiD(); if(!d||WIMP.view==='hist'){p.hidden=true; return} p.hidden=false;
+  const E=wiEvents(), me=WIMP.mode==='me', past=WIMP.time==='past', when=past?'בתקופה שנבחרה':({1:'ב-24 השעות האחרונות',3:'ב-3 הימים האחרונים',7:'השבוע'})[WIMP.f.t]||'בטווח', nNew=past?0:E.filter(wiNewOf).length;
+  if(!E.length){p.textContent=me?`${when}: אין אירוע עם קשר מוסבר לתיק, בטווח ובמסננים שנבחרו.`:'אין אירועים בטווח שנבחר.'; return}
+  const cnt={}; if(me)for(const e of E)for(const s of (e.touches||[]))cnt[s]=(cnt[s]||0)+1; const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0], lead=E[0];
+  p.innerHTML=me?`<b>${when}: ${E.length===1?'אירוע אחד נוגע':E.length+' אירועים נוגעים'} לתיק</b>${nNew?`, <b class="fr">${nNew} חדשים מאז הביקור הקודם</b>`:''}.${top?` הכי הרבה ל-<b dir="ltr">${esc(lab(top[0]))}</b> (${top[1]}).`:''} החשוב ביותר: <button type="button" class="lnk" data-wiev="${esc(lead.k)}">${esc(lead.he)}</button>.`
+    :`<b>${when}: ${E.length} אירועים בעולם</b>, ${E.filter(e=>e.level==='crit').length} קריטיים${nNew?`, ${nNew} חדשים מאז הביקור`:''}.`}
+// the viewer's own assets as a bar: a press shows only that asset's events (and its paths); again, all of them
+function wiAsbRender(){const b=$('wiAsb'); if(!b)return; const me=WIMP.mode==='me', A=me?wiAssets():[]; b.hidden=!A.length||WIMP.view==='hist'; if(b.hidden)return;
+  const E=(()=>{const s=WIMP.sel; WIMP.sel=null; const x=wiEvents(); WIMP.sel=s; return x})(), n=s=>E.filter(e=>(e.touches||[]).includes(s)).length, sel=WIMP.sel&&WIMP.sel.t==='as'?WIMP.sel.sym:null;
+  b.innerHTML='<span class="wi-asb-l">הנכסים שלך:</span>'+A.slice().sort((x,y)=>(n(y.sym)-n(x.sym))||((y.w||0)-(x.w||0))).slice(0,14).map(a=>{const k=n(a.sym); return `<button type="button" class="wi-asbb${k?'':' z'}" data-wiasb="${esc(a.sym)}" aria-pressed="${sel===a.sym}" title="${esc(a.name||a.sym)}: ${k} ${k===1?'אירוע':'אירועים'}">${logoHtml(a.sym)}<b dir="ltr">${esc(lab(a.sym))}</b><span class="n">${k}</span></button>`}).join('')}
+// the time line: the events up to a moment of the range (3 hours a step); ▶ plays it day by day
+function wiTlStop(){if(WIMP.tlT){clearInterval(WIMP.tlT); WIMP.tlT=null} const b=$('wiTlPlay'); if(b){b.textContent='▶'; b.setAttribute('aria-label','הפעלת ציר הזמן')}}
+function wiTlRender(){const box=$('wiTl'), r=$('wiTlR'), L=$('wiTlL'); if(!box||!r)return; const ok=WIMP.time==='now'&&(WIMP.view==='globe'||WIMP.view==='flat'||WIMP.view==='net')&&!!wiD(); box.hidden=!ok; if(!ok)return;
+  const now=Date.now(), from=now-(+WIMP.f.t||7)*864e5, st=3*36e5; r.min=String(Math.floor(from/st)); r.max=String(Math.ceil(now/st)); r.step='1'; if(document.activeElement!==r)r.value=String(WIMP.tl==null?r.max:Math.round(WIMP.tl/st));
+  L.textContent=WIMP.tl==null?'כל הטווח, עד עכשיו':'עד '+new Date(WIMP.tl).toLocaleString('he-IL',{weekday:'short',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+wiEvents().length+' אירועים'}
+function wiTlSet(v){const r=$('wiTlR'); if(!r)return; const st=3*36e5; WIMP.tl=+v>=+r.max?null:+v*st; WIMP.net.sig=''; wiRender()}
+function wiTlPlay(){if(WIMP.tlT){wiTlStop(); return} const r=$('wiTlR'); if(!r)return; let v=+r.min; const b=$('wiTlPlay'); if(b){b.textContent='❚❚'; b.setAttribute('aria-label','עצירת ציר הזמן')}
+  WIMP.tlT=setInterval(()=>{v+=2; if(v>=+r.max){wiTlStop(); wiTlSet(r.max); return} r.value=String(v); wiTlSet(v)},450)}
+function wiRegsRender(){wiSumRender(); wiAsbRender(); wiTlRender(); const box=$('wiRegs'); if(!box)return; const V=WIMP.view; box.hidden=!(V==='globe'||V==='flat')||!wiR(); if(box.hidden)return;
   const E=wiEvents(), n={}; let placed=0; for(const e of E){const r=wiRegOf(e.loc); if(r){n[r]=(n[r]||0)+1; placed++}}
   const R=WI_REGS.filter(r=>n[r[0]]).sort((a,b)=>n[b[0]]-n[a[0]]), sel=WIMP.reg||'';
   box.innerHTML=`<span class="wi-regs-s" role="status">${E.length?`${E.length===1?'אירוע אחד':E.length+' אירועים'}${R.length===1?' באזור אחד':R.length?` ב-${R.length} אזורים`:''}`:'אין אירועים בטווח'}</span>`+
+    (WIMP.time==='now'&&(WIMP.onlyNew||(wiD()&&(wiD().events||[]).some(wiNewOf)))?`<button type="button" class="wi-k fr" data-wionlynew="1" aria-pressed="${!!WIMP.onlyNew}">✨ רק מה שחדש מאז הביקור</button>`:'')+
     `<button type="button" class="wi-k" data-wireg="" aria-pressed="${!sel}">🌍 כל העולם</button>`+R.map(([k,he])=>`<button type="button" class="wi-k" data-wireg="${k}" aria-pressed="${sel===k}">${he} <span class="n">${n[k]}</span></button>`).join('')+
     `<span class="wi-regs-h">קירוב: גלגלת, צביטה, לחיצה כפולה, או + ו-−. שמות המדינות מופיעים אחרי קירוב.</span>`}
 function wiRegGo(k){const R=wiR(); WIMP.reg=k||''; if(!R)return; if(!k){wiHome(true); wiRegsRender(); return}
@@ -30569,6 +30610,8 @@ function wiOpen(){
   const d=$('ixMapD'); if(!d||!d.open||!$('wi'))return;
   // not on the screen (a phone shows the map only in its own tab): nothing is fetched or drawn, not even the library
   if(!$('wi').getClientRects().length)return; WIMP.open=true;
+  // this visit is the next one's "last visit" (the events new to the viewer are counted from the one before)
+  if(!WIMP.seenSet){WIMP.seenSet=true; try{localStorage.setItem('tr_wi_seen',new Date().toISOString())}catch(e){}}
   const adm=document.querySelector('[data-wimode="world"]'); if(adm)adm.hidden=!wiAdminOk();
   wiLoad(false); wiViz(); wiRender()}
 
@@ -30580,17 +30623,19 @@ function wiEvents(){const d=wiD(); if(!d)return []; const F=WIMP.f, A=new Map(wi
     if(F.cat&&!(e.cats||[e.cat]).includes(F.cat))return false; if(F.s&&!((+e.s||1)>=+F.s))return false; if(F.dir&&e.dir!==F.dir)return false;
     if(F.conf&&!(F.conf==='high'?e.conf==='high':e.conf!=='low'))return false;
     if(F.sec){if(!me){if(!(e.links||[]).some(l=>l.to==='sec:'+F.sec))return false} else if(!(e.touches||[]).some(s=>(A.get(s)||{}).sec===F.sec))return false}
+    if(WIMP.time==='now'&&WIMP.onlyNew&&!wiNewOf(e))return false;
+    if(WIMP.time==='now'&&WIMP.tl!=null&&Date.parse(e.first||e.last||0)>WIMP.tl)return false;
     if(me&&(WIMP.kind==='stock'||WIMP.kind==='fund')&&!(e.touches||[]).some(s=>(A.get(s)||{}).kind===WIMP.kind))return false;
     return true})}
 // the events the choice leaves: an asset chosen shows its own events only
 function wiEventsSel(){const E=wiEvents(), s=WIMP.sel; return s&&s.t==='as'&&WIMP.mode==='me'?E.filter(e=>(e.touches||[]).includes(s.sym)):E}
 // 22.11: is anything away from the plain view of today (a past range, a filter, a choice, a kind, the lines' mode, a layer off)
-const wiDirty=()=>WIMP.time==='past'||WIMP.view==='hist'||!!WIMP.sel||WIMP.kind!=='all'||WIMP.lm!=='focus'||Object.entries(WIMP.f).some(([k,v])=>k==='t'?v!=='7':!!v)||WIMP.net.direct||!!WIMP.net.focus||Object.values(WIMP.net.off).some(Boolean);
+const wiDirty=()=>!!WIMP.onlyNew||WIMP.tl!=null||WIMP.time==='past'||WIMP.view==='hist'||!!WIMP.sel||WIMP.kind!=='all'||WIMP.lm!=='focus'||Object.entries(WIMP.f).some(([k,v])=>k==='t'?v!=='7':!!v)||WIMP.net.direct||!!WIMP.net.focus||Object.values(WIMP.net.off).some(Boolean);
 // "חזרה להיום": the dates, the filters, the choice, the kinds, the lines and the layers go back to where they began, the
 // globe turns back to the portfolio, and today's data are asked for again. Nothing is deleted: the history stays on the server
 function wiReset(){WIMP.time='now'; WIMP.past={from:'',to:'',d:null,shape:null,busy:false,err:''}; WIMP.hist={sym:'',d:null,busy:false,err:'',pick:null,all:false}; WIMP.f=WI_F0(); WIMP.kind='all'; WIMP.lm='focus'; WIMP.sel=null;
   WIMP.net={off:{},direct:false,focus:null,more:0,sig:'',edges:[]}; if(WIMP.view==='hist'){let v='globe'; try{v=localStorage.getItem('tr_wiview')||'globe'}catch(e){} WIMP.view=['globe','flat','net'].includes(v)?v:'globe'}
-  WIMP.homed=''; WIMP.legacy=false; WIMP.reg=''; const f=$('wiFilt'), fb=$('wiFiltB'); if(f)f.hidden=true; if(fb)fb.setAttribute('aria-expanded','false'); const R=wiR(); if(R)R._sig=null;
+  WIMP.homed=''; WIMP.legacy=false; WIMP.reg=''; WIMP.onlyNew=false; wiTlStop(); WIMP.tl=null; const f=$('wiFilt'), fb=$('wiFiltB'); if(f)f.hidden=true; if(fb)fb.setAttribute('aria-expanded','false'); const R=wiR(); if(R)R._sig=null;
   wiSheet(); wiRender(); wiViz(); wiLoad(true).then(()=>{try{wiHome(true)}catch(e){}})}
 
 // ---- the globe and the map: the points and the lines ----
@@ -30619,7 +30664,7 @@ function wiGlobeData(){
     else for(const e of M)place.set('ev:'+e.k,jit(e.loc.lat,e.loc.lon))}
   E.forEach((e,i)=>{if(!e.loc)return; const p=place.get('ev:'+e.k), ek=e.k, inClu=Object.values(WIMP.clu).some(Ks=>Ks.includes(ek));
     if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:1+0.35*(+e.s||1),group:ek,halo:e.level==='crit'||e.level==='imp'||i<nLab?'ev':'none',
-      label:i<nLab||ek===selK?{cls:'ev',priority:ek===selK?100:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
+      label:i<nLab||ek===selK||(WIMP.time==='now'&&wiNewOf(e))?{cls:'ev'+(WIMP.time==='now'&&wiNewOf(e)?' fresh':''),priority:ek===selK?100:WIMP.time==='now'&&wiNewOf(e)?65:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
     const seenArc=new Set(), arc=(a,b,dir,dashed,id,tag,direct)=>{if(!a||!b||close(a,b))return; if(lm==='direct'&&!direct)return; const o=seenArc.has(id)?arcs.find(x=>x.id===ek+'|'+id):null; if(o){if(tag&&o.tags&&!o.tags.includes(tag))o.tags.push(tag); return} seenArc.add(id);
       arcs.push({id:ek+'|'+id,from:a,to:b,color:WI_COL[dir]||WI_COL.unclear,dashed,group:ek,tags:tag?[tag]:null,quiet:lm==='focus',dr:!!direct,lift:(arcs.length%3)*0.03,alpha:0.95})};
     if(me){for(const pa of (e.paths||[])){if(K==='stock'||K==='fund'){const a=wiAssets().find(x=>x.sym===pa.to); if(a&&a.kind!==K)continue}
@@ -30652,7 +30697,7 @@ function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==
       else if(!wiEvents().length&&WIMP.kind!=='idx')t=past?'לא נשמר אירוע עם קשר לנכס בתיק בטווח התאריכים הזה.':me?'אין כרגע אירוע עם קשר עסקי מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
       if(WIMP.gFail&&!wiR())t=WIMP.gFail} msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
   // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
-  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
+  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,WIMP.tl,!!WIMP.onlyNew,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
   if(V==='net')try{wiNetDraw()}catch(e){console.error(e)} if(V==='hist')try{wiHistDraw()}catch(e){console.error(e)}
   wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiAdmRender(d); wiRegsRender();
   {const b=$('wiBottom'); if(b)b.hidden=past||V==='hist'}
@@ -30688,7 +30733,7 @@ function wiEvRender(d){const L=$('wiEvL'), S=$('wiEvS'), H=$('wiEvH'); if(!L)ret
   L.innerHTML=head+E.slice(0,40).map(e=>{const I=(e.impacts||[]).filter(i=>!as||i.sym===as), one=as&&I[0], T=WIMP.mode==='world'?(e.cos||[]).slice(0,4).map(s=>`<span class="wi-tag sym">${esc(s)}</span>`).join(''):I.slice(0,4).map(i=>`<span class="wi-tag sym${i.rel==='direct'?'':' ind'}" title="${i.rel==='direct'?'קשר ישיר':'קשר עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}">${esc(lab(i.sym))}${i.rel==='direct'?'':' ⋯'}</span>`).join('');
     return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"${sel&&sel.t==='ev'&&sel.k===e.k?' aria-current="true"':''}><i class="dd ${esc((one&&one.dir)||e.dir||'unclear')}" aria-hidden="true"></i><span class="nm"><b>${esc(e.he)}</b>
       <small>${esc(WI_CAT[e.cat]||'')} · ${e.past?esc(wiDay(e.day)):esc(wiAgo(e.last||e.first))}${e.nPubs>1?` · ${e.nPubs} מקורות`:''}</small>${one&&one.mech?`<small class="wi-why">${esc(one.mech)}</small>`:''}
-      <span class="wi-tags">${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${T}${WIMP.mode==='me'&&!as?(e.said||[]).filter(c=>!c.mine).slice(0,3).map(c=>`<span class="wi-tag co" title="מוזכרת בכתבה; לא בתיק שלך">${esc(c.sym)}</span>`).join(''):''}${I.length&&I.every(i=>i.pending)?'<span class="wi-tag">ממתין לניתוח הנכס</span>':''}${e.rules?'<span class="wi-tag">לפי כותרת</span>':''}${e.legacy?'<span class="wi-tag">המנוע הקודם</span>':''}</span></span></button></li>`}).join('')}
+      <span class="wi-tags">${WIMP.time==='now'&&wiNewOf(e)?'<span class="wi-tag fresh">✨ חדש מאז הביקור</span>':e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${T}${WIMP.mode==='me'&&!as?(e.said||[]).filter(c=>!c.mine).slice(0,3).map(c=>`<span class="wi-tag co" title="מוזכרת בכתבה; לא בתיק שלך">${esc(c.sym)}</span>`).join(''):''}${I.length&&I.every(i=>i.pending)?'<span class="wi-tag">ממתין לניתוח הנכס</span>':''}${e.rules?'<span class="wi-tag">לפי כותרת</span>':''}${e.legacy?'<span class="wi-tag">המנוע הקודם</span>':''}</span></span></button></li>`}).join('')}
 function wiSpark(c,{w=120,h=34}={}){if(!Array.isArray(c)||c.length<3)return ''; const lo=Math.min(...c), hi=Math.max(...c), r=hi-lo||1, up=c[c.length-1]>=c[0];
   const pts=c.map((v,i)=>`${(i/(c.length-1)*w).toFixed(1)},${(h-2-(v-lo)/r*(h-4)).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${up?'var(--gain)':'var(--loss)'}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`}
@@ -30713,7 +30758,7 @@ function wiPick(p){if(!p){if(WIMP.sel){WIMP.sel=null; wiSelApply(true); wiSheet(
 function wiSelect(s){WIMP.sel=s; WIMP.net.focus=null; wiSelApply(true); wiSheet(); wiRender()}
 function wiSelApply(turn){const G=wiR(), d=wiD(); if(!G)return; const s=WIMP.sel;
   if(!s){G.highlight(null); return}
-  if(s.t==='ev'){const e=((d&&d.events)||[]).find(x=>x.k===s.k); G.highlight([s.k]); if(turn&&e&&e.loc)G.focus(e.loc.lat,e.loc.lon)}
+  if(s.t==='ev'){const e=((d&&d.events)||[]).find(x=>x.k===s.k); G.highlight([s.k],{grow:turn}); if(turn&&e&&e.loc)G.focus(e.loc.lat,e.loc.lon)}
   else if(s.t==='as'){const ks=((d&&d.events)||[]).filter(e=>(e.touches||[]).includes(s.sym)).map(e=>e.k), a=wiAssets().find(x=>x.sym===s.sym); G.highlight(ks.length?ks:['-'],{tag:s.sym}); if(turn&&a&&a.loc)G.focus(a.loc.lat,a.loc.lon)}
   else if(s.t==='co'){const n=(d&&d.nodes||{})[s.id]; if(turn&&n&&n.loc)G.focus(n.loc.lat,n.loc.lon)}
   else if(s.t==='ix'){const x=((d&&d.indices)||[]).find(i=>i.k===s.k); if(turn&&x&&x.loc)G.focus(x.loc.lat,x.loc.lon)}}
@@ -30833,7 +30878,7 @@ function wiNetModel(){const d=wiD(), N=WIMP.net, me=WIMP.mode==='me', sel=WIMP.s
   for(const x of EE){x.dir=([...x.ls].reverse().map(l=>l&&l.dir).find(v=>v&&v!=='unclear'))||'unclear'; x.direct=x.ls.every(l=>l&&l.direct); x.s=Math.max(1,Math.min(3,Math.min(...x.ls.map(l=>(l&&l.s)||1)))); x.pending=x.ls.some(l=>l&&l.pending)}
   return {nodes:NN,edges:EE,total,shown:E.length}}
 function wiNetDraw(){const host=wiSub('net'); if(!host)return; const d=wiD(), N=WIMP.net, me=WIMP.mode==='me', W=Math.max(264,(Math.round(host.getBoundingClientRect().width)||0)-(wiSmall()?16:24)), sel=WIMP.sel;   // the box's inner width (its padding off)
-  const sig=[WIMP.mode,WIMP.time,WIMP.kind,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',W,JSON.stringify(sel||null),JSON.stringify(N.off),N.direct,N.focus,N.more,WIMP.busy||WIMP.past.busy,WIMP.err].join('|'); if(sig===N.sig&&host.firstChild)return; N.sig=sig;
+  const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.tl,!!WIMP.onlyNew,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',W,JSON.stringify(sel||null),JSON.stringify(N.off),N.direct,N.focus,N.more,WIMP.busy||WIMP.past.busy,WIMP.err].join('|'); if(sig===N.sig&&host.firstChild)return; N.sig=sig;
   const LAY=[['cty','מדינות'],['fac','גורמים כלכליים'],['sec','ענפים'],...(me?[['co','חברות בדרך']]:[])];
   const bar=`<div class="wn-bar" role="group" aria-label="מה להציג ברשת"><span class="wn-lbl">שכבות:</span>${LAY.map(([k,he])=>`<button type="button" class="wi-k" data-wnl="${k}" aria-pressed="${!N.off[k]}">${he}</button>`).join('')}<button type="button" class="wi-k" data-wndir="1" aria-pressed="${!!N.direct}">רק קשרים ישירים</button>${sel||N.focus||N.direct||Object.values(N.off).some(Boolean)?'<button type="button" class="wi-k wn-full" data-wnfull="1">↺ תצוגה מלאה</button>':''}</div>`;
   const pastE=wiPastOn()&&WIMP.past.err;
@@ -30971,6 +31016,9 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.
   if(t.closest('[data-wifclr]')){const days=WIMP.f.t; WIMP.f=WI_F0(); if(days!=='7'&&!wiPastOn())wiLoad(true); wiRender(); return}
   const z=t.closest('[data-wiz]'); if(z&&wiR()){const v=z.dataset.wiz, R=wiR(); if(v==='in')R.zoom(0.72); else if(v==='out')R.zoom(1.35); else{WIMP.reg=''; wiHome(true); wiRegsRender()} return}
   const rg=t.closest('[data-wireg]'); if(rg){wiRegGo(rg.dataset.wireg); return}
+  if(t.closest('[data-wionlynew]')){WIMP.onlyNew=!WIMP.onlyNew; WIMP.net.sig=''; wiRender(); return}
+  const ab=t.closest('[data-wiasb]'); if(ab){const k=ab.dataset.wiasb; if(WIMP.sel&&WIMP.sel.t==='as'&&WIMP.sel.sym===k){WIMP.sel=null; WIMP.net.focus=null; wiSelApply(false); wiSheet(); wiRender()} else wiSelect({t:'as',sym:k}); return}
+  if(t.closest('#wiTlPlay')){wiTlPlay(); return}
   const ne=t.closest('[data-wne]'); if(ne){wiNetEdge(+ne.dataset.wne); return}
   const nn=t.closest('[data-wnn]'); if(nn){wiNetNode(nn.dataset.wnn); return}
   const nl=t.closest('[data-wnl]'); if(nl){const N=WIMP.net; N.off[nl.dataset.wnl]=!N.off[nl.dataset.wnl]; N.pick=null; N.pickH=''; if(N.focus&&N.off[wiNodeT(N.focus)])N.focus=null; N.sig=''; wiRender(); return}
@@ -30995,6 +31043,7 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.
   const fj=t.closest('[data-wifxjoin]'); if(fj){const into=String(($('wiFxInto')||{}).value||'').trim(); if(into)wiFix({kind:'join',k:fj.dataset.wifxjoin,into},fj); return}
   const fa=t.closest('[data-wifxadd]'); if(fa){const sym=String(($('wiFxSym')||{}).value||'').trim().toUpperCase(), why=String(($('wiFxWhy')||{}).value||'').trim(); if(sym&&why)wiFix({kind:'rel',k:fa.dataset.wifxadd,sym,st:'add',why},fa); else{WIMP.admMsg='קשר ביד מנהל צריך נייר והסבר.'; wiAdmRender(wiD())} return}
   const hqb=t.closest('[data-wihq]'); if(hqb){wiFix({kind:'hq',sym:hqb.dataset.wihq,loc:{lat:+($('wiHqLat')||{}).value,lon:+($('wiHqLon')||{}).value,name:($('wiHqName')||{}).value||''}},hqb); return}});
+document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='wiTlR'){wiTlStop(); wiTlSet(ev.target.value)}});
 document.addEventListener('change',ev=>{const s=ev.target; if(!s||!s.closest||!s.closest('#wiFilt'))return; const k=s.dataset&&s.dataset.wif; if(!k)return; const was=WIMP.f[k]; WIMP.f[k]=s.value; WIMP.net.sig=''; if(k==='t'&&was!==s.value&&!wiPastOn())wiLoad(true); wiRender()});
 // 24.11: the keyboard on the map: + and − come closer and go back, 0 returns to the whole portfolio
 document.addEventListener('keydown',ev=>{const g=ev.target&&ev.target.closest&&ev.target.closest('#wiGlobe'), R=wiR(); if(!g||!R||ev.ctrlKey||ev.metaKey||ev.altKey)return;
