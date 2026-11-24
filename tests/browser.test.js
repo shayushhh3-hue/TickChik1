@@ -4295,3 +4295,38 @@ for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדת
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 24.11 (the owner: "שיהיה אופציה של מכמה זמן לכמה זמן התוכנית… והמערכת תבנה בהתאם לתקציב והפקדות"): the plan has a period;
+// to its end the system lays the purchases out in rounds from the monthly deposit; a round done, the next one begins
+test('24.11 the plan to the end of its period: a period chosen in the card, the months laid out in rounds from the deposit, and a new round when every security was bought',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
+    // the engine: 100 a month, A costs 100 and B 250, in order: A now, B when 250 is there, then a second round
+    const E=await pg.evaluate(()=>{const f=(window.__model&&window.__model.planAhead)||planAhead, q=[{sym:'A',c:100},{sym:'B',c:250}]; return {m:f(q,q,0,100,8,'manual'),c:f(q,q,0,100,8,'cheap'),none:f([],[],50,100,3,'manual'),zero:f(q,q,0,0,5,'manual')}});
+    assert.deepEqual(E.m.rows,[['A'],[],[],['B'],['A'],[],['B'],['A']]); assert.deepEqual(E.m.count,{A:3,B:2}); assert.equal(E.m.rounds,2,'two more rounds begun'); assert.equal(E.m.deposits,800); assert.equal(E.m.spent,800); assert.equal(E.m.left,0);
+    assert.deepEqual(E.c.count,{A:3,B:2},'the cheap one first, the round still ends before the next begins'); assert.deepEqual(E.none.rows,[[],[],[]]); assert.equal(E.none.left,350); assert.equal(E.zero.buys,0);
+    // the card asks until when; a year chosen: the plan to its last month, the deposits left, what will be bought
+    const card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
+    assert.match(await card(),/עד מתי התוכנית\?/); assert.doesNotMatch(await card(),/התוכנית עד /);
+    await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/התוכנית עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    let s=await card(); assert.match(s,/נשארו 1[12] הפקדות של ₪/); assert.match(s,/לא המלצה/);
+    const A=await pg.evaluate(()=>{const b=document.getElementById('planAns'); return {li:b.querySelectorAll('.pu-months li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
+    assert.equal(A.li,6,'six months first'); assert.ok(A.all,'and the rest on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
+    if(process.env.SHOT){await pg.evaluate(()=>document.querySelector('#planAns .ps-steps>li:nth-child(3)').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-period.png'})}
+    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pu-months li').length)>=11,'every month of the period');
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+    const U=store.getDoc('plan/main').data.until; assert.match(U,/^\d{4}-\d\d$/,'the period is saved with the plan');
+    // every security bought: the round is done, and the next one begins with the same securities waiting again
+    {const d=JSON.parse(JSON.stringify(store.getDoc('plan/main').data)), now=new Date().toISOString(), ym=now.slice(0,7); d.items.forEach((i,k)=>{if(i.status==='todo'){const id='t'+k; d.purchases.push({id,sym:i.sym,paidIls:1,month:ym,at:now}); i.status='done'; i.pid=id; i.doneAt=now}}); store.setDoc('plan/main',d,{silent:true})}
+    const o2=await open(390); try{const p2=o2.pg, card2=()=>p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/s+/g,' '));
+      await tab(p2,'plan'); await p2.waitForSelector('#planAns [data-pa="nextRound"]',{timeout:10000}); assert.match(await card2(),/סבב 1 הושלם/);
+      const n0=store.getDoc('plan/main').data.purchases.length; await p2.click('#planAns [data-pa="nextRound"]'); await p2.waitForFunction(()=>!document.querySelector('#planAns [data-pa="nextRound"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+      const D=store.getDoc('plan/main').data, L=D.items.filter(i=>i.status!=='skip');
+      assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); assert.match(await card2(),/עד עכשיו נקנו בתוכנית/);
+      assert.deepEqual(p2.errs,[])}finally{await o2.ctx.close()}
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
