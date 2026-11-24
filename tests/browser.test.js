@@ -3449,6 +3449,10 @@ test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box 
     assert.match(await pg.textContent('#trSum'),/אחזקה חדשה בתיק/); await pg.click('#trSave'); await pg.waitForTimeout(1200);
     const ts=store.getDoc('portfolio/main').data.positions.find(p=>p.sym==='TSLA'); assert.ok(ts&&+ts.qty===2,'a new holding: '+JSON.stringify(ts));
     assert.ok(await pg.evaluate(()=>document.querySelectorAll('#secPage [data-sectrade]').length===2),'now held: both buttons');
+    // 24.11: both are on the look-back's timeline ("ציר הזמן שלי"); a sale says its result when the buying price is known
+    await tab(pg,'history'); await pg.waitForTimeout(500);
+    const tl=await pg.evaluate(()=>({hid:document.getElementById('tlSec').hidden,txt:document.getElementById('tl').textContent.replace(/s+/g,' ')}));
+    assert.equal(tl.hid,false); assert.match(tl.txt,/מכירה.{0,12}MSFT · 1 יח׳/,'the sale: '+tl.txt.slice(0,300)); assert.match(tl.txt,/קנייה.{0,12}TSLA · 2 יח׳/);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0); if(H0.exists)store.setDoc('history/main',H0.data); else store.deleteDoc('history/main')}
 });

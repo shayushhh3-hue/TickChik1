@@ -21758,6 +21758,10 @@ function renderTimeline(){
     for(const d of A.deposits||[])if(d&&d.date&&+d.amount)E.push({d:d.date,k:+d.amount>0?'הפקדה':'משיכה',t:`${nn(money(d.amount,d.ccy||A.ccy))}${ac?' · '+ac:''}`});
     for(const x of A.fx||[])if(x&&x.date&&+x.amount)E.push({d:x.date,k:'המרת מט״ח',t:`${nn(money(x.amount,x.ccy))} ל${x.toCcy==='USD'?'דולרים':'שקלים'}${+x.toAmount>0?` (${nn(money(x.toAmount,x.toCcy))})`:''}${ac?' · '+ac:''}`});
     for(const t of A.trades||[])if(t&&t.date&&t.sym)E.push({d:t.date,k:t.div?'דיבידנד':t.qty<0?'מכירה':'קנייה',t:`${symH(t.sym)}${t.div?(t.total?` · ${nn(money(t.total,t.ccy||A.ccy||acctCcy(A.acct)))}`:''):` · ${nn(+Math.abs(t.qty).toFixed(4))} יח׳${t.px?` · ${nn(money(t.px,t.ccy||A.ccy||acctCcy(A.acct)))}`:''}`}${ac?' · '+ac:''}`})}
+  // 24.11 (the owner asked whether a purchase or a sale is kept in the look-back): one written in the page's own box (A.manual) was
+  // saved but not listed here. It is listed now, a sale with its result; not twice when a statement read later holds it too
+  for(const A of ((HS&&HS.accounts)||[])){const ac=AC[A.acct]||'', cc=t=>t.ccy||A.ccy||acctCcy(A.acct), has=t=>(A.trades||[]).some(x=>x&&!x.div&&x.sym===t.sym&&String(x.date).slice(0,10)===String(t.date).slice(0,10)&&Math.abs(Math.abs(+x.qty)-(+t.qty))<1e-6);
+    for(const t of A.manual||[])if(t&&t.date&&t.sym&&+t.qty>0&&!has(t))E.push({d:String(t.date).slice(0,10),k:t.side==='sell'?'מכירה':'קנייה',t:`${symH(t.sym)} · ${nn(+(+t.qty).toFixed(4))} יח׳${t.px?` · ${nn(money(t.px,cc(t)))}`:''}${t.side==='sell'&&t.real!=null?` · ${+t.real>=0?'רווח':'הפסד'} של ${nn(money(t.real,cc(t)))}`:''}${ac?' · '+ac:''}`})}
   for(const d of allDep())if(d&&d.month)E.push({d:(d.at||d.month+'-01').slice(0,10),k:'הפקדה בתוכנית',t:nn(ils(+d.amount||0))});
   for(const b of allBuy())if(b&&b.sym)E.push({d:(b.at||(b.month||'')+'-01').slice(0,10),k:'קנייה בתוכנית',t:`${symH(b.sym)} · ${nn(ils(+b.paidIls||0))}`});
   for(const r of (typeof ARC!=='undefined'&&ARC)||[])if(r&&r.createdAt)E.push({d:String(r.createdAt).slice(0,10),k:'דוח נשמר',t:esc(r.title||'')});
