@@ -4484,3 +4484,38 @@ test('24.11 TikChik WORLD, the whole world: a button beside "התיק שלי" sh
     assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_wiscope')),'me'); assert.deepEqual((await keys()).sort(),mineK.slice().sort(),'exactly the portfolio\'s view as it was');
   }finally{if(ctx)await ctx.close().catch(()=>{}); back(); try{impactTask(store)}catch(e){}}
 });
+
+// 24.11 (the owner: "שום מספר של החזקות לא מסונכרן עם השני… למה אי אפשר להוסיף אותה לתוכנית ההפקדה"): a security joins the
+// plan after it was built; the plan says what its count is made of; a holding in two accounts is two holdings, one security
+test('24.11 a security added to the plan after it was built (a holding in no track by a press, another by its symbol), and the counts say what they count',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  // the plan without its last two securities (as if they were bought after it was built), and one security held in two accounts
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)), pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)), cut=pl.items.splice(-2).map(i=>i.sym);
+  const one=pf.positions.find(x=>x.sym&&+x.qty>0), acct2=one.acct==='exc'?'blink':'exc'; pf.positions.push({...one,acct:acct2,qty:1});
+  store.setDoc('plan/main',pl,{silent:true}); store.setDoc('portfolio/main',pf,{silent:true});
+  const rows=pf.positions.filter(x=>x.sym&&+x.qty>0).length, dist=new Set(pf.positions.filter(x=>x.sym&&+x.qty>0).map(x=>x.sym)).size, n0=pl.items.filter(i=>i.status!=='skip').length;
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAddBox:not([hidden]) .pl-cnt',{timeout:10000});
+    const box=()=>pg.evaluate(()=>document.getElementById('planAddBox').innerText.replace(/\s+/g,' '));
+    let s=await box(); assert.match(s,new RegExp(`בתוכנית של מסלול המניות ${n0} ניירות`)); assert.match(s,new RegExp(`בתיק ${dist} ניירות שונים`),'a security in two accounts is one security: '+s);
+    assert.match(await pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')),new RegExp(`מתוך ${n0} בסבב הזה [(]${n0} הם הניירות שבתוכנית של המסלול`));
+    // a holding in no track: one press, and it waits at the end of the queue
+    const chips=await pg.evaluate(()=>[...document.querySelectorAll('#planAddBox [data-pa="addIt"]')].map(b=>[b.dataset.sym,Math.round(b.getBoundingClientRect().height)]));
+    assert.ok(cut.every(x=>chips.some(c=>c[0]===x)),'what is held and in no track is offered: '+JSON.stringify(chips)); assert.ok(chips.every(c=>c[1]>=44));
+    await pg.click(`#planAddBox [data-pa="addIt"][data-sym="${cut[0]}"]`); await pg.waitForFunction(k=>new RegExp(`בתוכנית של מסלול המניות ${k} ניירות`).test(document.getElementById('planAddBox').innerText.replace(/\s+/g,' ')),n0+1,{timeout:8000});
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+    let D=store.getDoc('plan/main').data; assert.deepEqual(D.items.at(-1),{sym:cut[0],status:'todo',note:''},'at the end of the queue'); assert.match(await box(),/נוסף לתוכנית/);
+    // another by its symbol: the second one, typed; a symbol with no price is refused with the way to get one
+    await pg.fill('#planAddIn',cut[1].toLowerCase()); await pg.click('#planAddF button[type="submit"]');
+    await pg.waitForFunction(k=>new RegExp(`בתוכנית של מסלול המניות ${k} ניירות`).test(document.getElementById('planAddBox').innerText.replace(/\s+/g,' ')),n0+2,{timeout:8000});
+    await pg.fill('#planAddIn','ZZZZ'); await pg.click('#planAddF button[type="submit"]'); await pg.waitForFunction(()=>/אין עדיין מחיר ל-ZZZZ/.test(document.getElementById('planAddMsg').textContent),null,{timeout:5000});
+    await pg.evaluate(()=>document.getElementById('planAddIn').blur()); await pg.waitForTimeout(900);
+    D=store.getDoc('plan/main').data; assert.deepEqual(D.items.slice(-2).map(i=>i.sym),cut); assert.ok(!D.items.some(i=>i.sym==='ZZZZ'));
+    // the holdings' own counts: the rows and the securities, said together
+    await tab(pg,'mine'); await pg.waitForTimeout(900);
+    assert.equal(await pg.evaluate(()=>document.getElementById('pfH').textContent),`${rows} אחזקות · ${dist} ניירות שונים`);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

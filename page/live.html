@@ -1890,6 +1890,13 @@ html body [data-pane="plan"] .oncebox .acts .btn{min-height:48px!important;min-w
 html body [data-pane="plan"] #planSetP>.row h3{margin:0;font-size:14px;font-weight:600;color:var(--ink2)}
 .pstep .pc-ask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
 .pstep .pc-all,.pstep .pc-now{margin-top:8px} .pstep .pc-foot{margin:2px 0 0;font-size:12.5px;color:var(--ink2)}
+.pl-add{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:10px} .pl-add[hidden]{display:none}
+.pl-add .pl-msg{margin:0;font-size:14px;line-height:1.5;color:var(--ink)} .pl-add .pl-msg:empty{display:none}
+.pl-add .pl-cnt{margin:0;font-size:14px;line-height:1.6;color:var(--ink)} .pl-add .k{font-size:14px;color:var(--ink2)}
+.pl-add .chips{display:flex;flex-wrap:wrap;gap:8px} html body .pl-add .chip.chip{min-height:44px!important;height:auto!important;padding-inline:14px}
+.pl-addf{display:grid;gap:6px} .pl-addf label{font-size:14px;color:var(--ink2)} .pl-addr{display:flex;gap:8px;align-items:center;max-width:420px}
+.pl-addr input{flex:1;min-width:0;min-height:44px;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)} html body .pl-addr .btn{min-height:44px!important}
+.pl-addr input:focus-visible{outline:2px solid var(--accent);outline-offset:1px} .pstep .pc-of{display:block;font-size:12.5px;color:var(--ink2);font-weight:400}
 .pl-more[hidden]{display:none} .pl-more:hover{background:var(--accent-soft)}
 label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:18px;flex:none}
 @media (pointer:coarse){details>summary{padding-block:7px} .why>summary{padding:7px 0} .dk-go{padding:8px 6px} .ck,label.check{min-height:36px}}
@@ -4650,6 +4657,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
           <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
           <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
         </table>
+        <div class="pl-add" id="planAddBox" hidden></div>
       </div>
       <div class="panel howbuy" data-dvp="rows">
         <!-- 17.11 (the owner): the two buying choices behind one button; the screen starts with the plan itself -->
@@ -19310,7 +19318,7 @@ function planRingH(st,done,total){if(st.fixed||!total)return ''; const C=r=>2*Ma
   const pR=done/total, mN=st.until?ymDiff(st.until,st.start)+1:0, mD=mN?Math.min(mN,PL.deposits.filter(d=>!d.once).length):0, pP=mN?mD/mN:null, main=pP!=null?pP:pR, pc=Math.round(main*100);
   const say=(pP!=null?`הופקדו ${mD} מתוך ${mN} ההפקדות של התקופה. `:'')+`נקנו ${done} מתוך ${total} ניירות בסבב.`;
   return `<div class="pc-prog"><svg class="pc-dn" viewBox="0 0 100 100" role="img" aria-label="התקדמות התוכנית: ${pc}%. ${esc(say)}">${pP!=null?arc(43,9,pP,'var(--accent)')+arc(30,8,pR,'var(--gain)'):arc(41,11,pR,'var(--gain)')}<text x="50" y="51" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="600" fill="var(--ink)" direction="ltr">${pc}%</text></svg>
-    <ul class="pc-lg">${pP!=null?`<li><i class="lg-p"></i><span>התקופה, עד ${esc(ymLong(st.until))}: הופקדו <b class="n">${mD}</b> מתוך <b class="n">${mN}</b> הפקדות</span></li>`:''}<li><i class="lg-r"></i><span>נקנו <b class="n">${done}</b> מתוך <b class="n">${total}</b> בסבב הזה</span></li></ul></div>`}
+    <ul class="pc-lg">${pP!=null?`<li><i class="lg-p"></i><span>התקופה, עד ${esc(ymLong(st.until))}: הופקדו <b class="n">${mD}</b> מתוך <b class="n">${mN}</b> הפקדות</span></li>`:''}<li><i class="lg-r"></i><span>נקנו <b class="n">${done}</b> מתוך <b class="n">${total}</b> בסבב הזה <small class="pc-of">(${total} הם הניירות שבתוכנית של המסלול, לא כל האחזקות)</small></span></li></ul></div>`}
 // the plan's deposits that the history does not hold yet, each with its day (a history deposit within 10 days and 2% of the
 // amount is the same money; so is a month of a table uploaded from an app that describes it, see planCovered)
 function planExtraList(hs=HS){
@@ -20371,7 +20379,7 @@ function render(){
     <td class="num">${vcell(`<span class="n">${ils(p.val)}</span>`,`<span class="n">${dlr(p.val/fxV)}</span>`)}${old?`<div class="nm pxold" title="המחיר הזה אינו מחיר עדכני מהבורסה">${esc(/^מחיר קודם/.test(old)&&((Q.meta||{})[p.sym]||{}).date?'מחיר מ-'+dmy(Q.meta[p.sym].date).slice(0,5):/^מחיר קודם/.test(old)?'מחיר לא עדכני':old)}</div>`:''}</td><td class="num"><span class="n">${pct(p.w)}</span><i class="hwb" aria-hidden="true" style="--w:${Math.min(100,Math.max(2,p.w/(mxW||1)*100)).toFixed(1)}%;--gc:${GCOL[p.group]||'#94A3B8'}"></i></td>
     <td class="num">${vcell(`<span class="n">${p.cost?ils(p.cost):'—'}</span>`,`<span class="n">${uc!=null?ap+dlr(uc):'—'}</span>`)}</td>
     <td class="num">${vcell(d==null?'<span class="n">—</span>':`<span class="n ${d>=0?'up':'down'}">${sgn(d)} (${spct(dp)})</span>`,pnlU)}</td></tr>${det}`};
-  {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
+  {const hs=$('holdSub'); if(hs)hs.textContent=(KV==='fund'?`רק הקרנות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:KV==='stock'?`רק המניות: ${mH.pos.length} מתוך ${m.pos.length} ניירות`:`${m.pos.length} ניירות${(()=>{try{const r=((P&&P.positions)||[]).filter(x=>x&&x.sym&&+x.qty>0).length; return r>m.pos.length?` שונים (${r} אחזקות בחשבונות: נייר שבשני חשבונות נספר פעם אחת)`:''}catch(e){return ''}})()} · מזומן ${HC==='usd'?dlr(m.cash/fxV):ils(m.cash)}`)+(HC!=='ils'?' · בדולרים: הרווח מול העלות בלי שינוי השער, ונייר בשקלים לפי השער היום':'')+(Q&&Q.updatedAt?` · מחירים: ${Q.priceLabel&&Q.priceLabel!=='המחירים האחרונים שהתקבלו'?Q.priceLabel+', ':''}עודכנו ${new Date(Q.updatedAt).toDateString()===new Date().toDateString()?'':dmy(Q.updatedAt)+' '}${hm(Q.updatedAt)}`:' · אין עדיין מחירים מהבורסה')}
   // 5.11: no buying price anywhere: the two columns of cost and profit would be a dash in every row; they leave, and the
   // line above says where to add the costs
   {const sec=$('holdSec'), nc=!(m.pos||[]).some(p=>p.cost>0); if(sec)sec.classList.toggle('nocost',nc);
@@ -20448,6 +20456,8 @@ function planState(mAll){
   const fee=+S.minFeeIls||0, cost={}, name={}, start=PL.start||ymNow();
   const rot=PL.mode==='rotate', B0=TM();
   for(const p of mAll.pos){cost[p.sym]=rot?B0:p.pxIls+fee;name[p.sym]=p.name}
+  // 24.11: a security added to the plan that is not held yet: its price from the quotes, when there is one
+  for(const i of PL.items)if(cost[i.sym]==null){const v=planPxIls(i.sym); if(v>0){cost[i.sym]=rot?B0:v+fee; if(!name[i.sym])name[i.sym]=NAMEOF[i.sym]||''}}
   const paid={}; for(const x of PL.purchases)paid[x.sym]=+x.paidIls||0;
   const dep=PL.deposits.reduce((s,d)=>s+(+d.amount||0),0), spent=PL.purchases.reduce((s,d)=>s+(+d.paidIls||0),0);
   // one cash balance for the whole portfolio, the same in both tracks: the accounts' cash, plus the deposits ticked in either
@@ -20625,6 +20635,7 @@ function renderPlan(mAll){
       (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
   const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
   $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
+  try{planAddFill(mAll)}catch(e){console.error(e)}
   return st;
 }
 let PEDIT=false;
@@ -20669,6 +20680,14 @@ function planAct(a,d){
   // a new round: every security bought in this one waits again, in the same order; what was bought stays in the purchases
   // a purchase of an earlier round taken back (the card's "ביטול" beside it): that one only, never one an item points at
   else if(a==='dropBuy'){const id=String(d.id||''); if(!id||PL.items.some(i=>i.pid===id)||!PL.purchases.some(x=>x.id===id))return; PL.purchases=PL.purchases.filter(x=>x.id!==id)}
+  // 24.11 (the owner: "אני לא מצליח להוסיף את קרן 5128905… למה אי אפשר להוסיף אותה לתוכנית ההפקדה"): a security joins the plan of
+  // the track on screen after the plan was built (the list was fixed at its building: what was bought later could not
+  // enter). At the end of the queue; one taken out before comes back; one that is in the other track stays there
+  else if(a==='addIt'){const sym=String(d.sym||''); if(!sym)return; const ex=PL.items.find(i=>i.sym===sym), other=TRACK==='idx'?PLD:PLD.idx;
+    if(ex){if(ex.status!=='skip'){PADD_MSG=`${lab(sym)} כבר בתוכנית.`; render(); return} ex.status='todo'}
+    else{if(other&&(other.items||[]).some(i=>i.sym===sym&&i.status!=='skip')){PADD_MSG=`${lab(sym)} נמצא במסלול ה${TRACK==='idx'?'מניות':'מדדים'}. מעבירים אותו משם ב"עריכת הרשימה".`; render(); return}
+      PL.items.push({sym,status:'todo',note:''}); if(!PL.start)PL.start=ymNow()}
+    PADD_MSG=`${lab(sym)} נוסף לתוכנית, בסוף התור.`}
   else if(a==='nextRound'){const L=PL.items.filter(i=>i.status!=='skip'); if(!L.length||L.some(i=>i.status==='todo'))return; for(const i of L){i.status='todo'; delete i.pid; delete i.doneAt; i.note=''} PL.round=(+PL.round||1)+1; PLU_EDIT=false}
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=OB_FROM&&ymDiff(OB_FROM,ymNow())>0?OB_FROM:ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null; OB_FROM=''; if(OB_UNTIL)PL.until=OB_UNTIL; else delete PL.until; PL.round=1; OB_UNTIL=''}
   planChanged();
@@ -25430,7 +25449,9 @@ function renderMine(force){
 let MINE_AF='all', MINE_ALL=false;
 function mineDeck(){
   const ans=$('mineAns'); if(!ans||!DRAFT)return; const P=(DRAFT.positions||[]).filter(p=>p.sym), n=P.length;
-  const ph=$('pfH'); if(ph)ph.textContent=n?n+' אחזקות':'האחזקות';
+  // 24.11 (the owner: "שום מספר של החזקות לא מסונכרן עם השני"): a holding is a security in an account; the same security in two
+  // accounts is two holdings and one security. Both counts are said together, so 33 and 28 are not read as a disagreement
+  const nDist=new Set(P.map(p=>p.sym)).size, ph=$('pfH'); if(ph)ph.textContent=n?(nDist<n?`${n} אחזקות · ${nDist} ניירות שונים`:n+' אחזקות'):'האחזקות';
   let d=null; try{d=dupCheck()}catch(e){}
   const tx=id=>{const e=$(id); return e?e.textContent.replace(/‎/g,'').trim():''};
   const tot=tx('kTotal'), dv=tx('kDay'), amt=dv.replace(/[▲▼]/g,'').trim(), pc=(tx('kDayD').match(/[+−-][\d.,]+%/)||[''])[0], dn=/▼/.test(dv), up=/▲/.test(dv);
@@ -31771,6 +31792,21 @@ let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))
 // the months, the securities, the chart, the one-time deposit, the settings) is folded behind one button; opened, it
 // stays open in this browser. A link or a search that leads into a folded part opens it. Not folded while there is no
 // plan yet (the card is hidden then), nor for the page's own tests of the sections (tr_pt_all)
+let PADD_MSG='';
+// the price of a security in shekels from the quotes (a dollar one at the day's rate); 0 when there is none
+function planPxIls(sym){try{const pr=priceOf(sym); if(!pr||!(pr.px>0))return 0; if(pr.ccy==='USD')return pr.px*(+Q.usdIls||0); return pr.ccy==='ILS'||!pr.ccy?pr.px:0}catch(e){return 0}}
+// what the count of the plan is made of, the holdings that are in no track (a press adds one), and a field for another security
+function planAddFill(mAll){const box=$('planAddBox'); if(!box)return; box.hidden=!PL.items.length; if(box.hidden)return; if(box.contains(document.activeElement)&&document.activeElement.tagName==='INPUT'){const m=$('planAddMsg'); if(m)m.textContent=PADD_MSG; return}
+  const other=TRACK==='idx'?PLD:PLD.idx, tN=TRACK==='idx'?'מדדים':'מניות', oN=TRACK==='idx'?'מניות':'מדדים', mine=new Set(PL.items.map(i=>i.sym)), oth=new Set(((other&&other.items)||[]).filter(i=>i.status!=='skip').map(i=>i.sym));
+  const held=mAll.pos.map(x=>x.sym), free=held.filter(x=>!mine.has(x)&&!oth.has(x)), inO=held.filter(x=>!mine.has(x)&&oth.has(x)), act=PL.items.filter(i=>i.status!=='skip'), out=PL.items.length-act.length, notHeld=act.filter(i=>!held.includes(i.sym)).length, dis=canWrite?'':' disabled';
+  const chip=x=>`<button type="button" class="chip" data-pa="addIt" data-sym="${esc(x)}"${dis}>+ ${esc(lab(x))}</button>`;
+  setH(box,`<p class="pl-cnt">בתוכנית של מסלול ה${tN} <b class="n">${act.length}</b> ניירות${notHeld?` (${notHeld} מהם עוד לא בתיק)`:''}. בתיק <b class="n">${held.length}</b> ניירות שונים: ${act.length-notHeld} בתוכנית הזו, ${inO.length} במסלול ה${oN}, ${free.length} לא באף מסלול${out?`, ${out} הוצאו מהתוכנית`:''}.</p>
+    ${free.length?`<div class="k">בתיק ולא באף מסלול. לחיצה מוסיפה לתוכנית הזו:</div><div class="chips pl-free">${free.map(chip).join('')}</div>`:''}
+    ${canWrite?`<form class="pl-addf" id="planAddF"><label for="planAddIn">להוסיף נייר אחר, לפי סימול או מספר נייר</label><div class="pl-addr"><input id="planAddIn" autocomplete="off" autocapitalize="characters" maxlength="16" placeholder="למשל 5128905 או NVDA" dir="ltr"><button type="submit" class="btn sm">להוסיף</button></div></form>`:''}<p class="pl-msg" id="planAddMsg" role="status">${esc(PADD_MSG)}</p>`)}
+document.addEventListener('submit',e=>{const f=e.target; if(!f||f.id!=='planAddF')return; e.preventDefault(); const inp=$('planAddIn'), v=String(inp&&inp.value||'').trim().toUpperCase().replace(/\s+/g,''); if(!v)return;
+  let sym=''; try{const P0=mAllNow().pos, c=[v,'TLV:'+v,v.replace(/^TLV:/,'')]; const h=P0.find(x=>c.includes(x.sym)); if(h)sym=h.sym; else{const k=c.find(x=>SECKEY.test(x)&&planPxIls(x)>0); if(k)sym=k}}catch(err){}
+  if(!sym){PADD_MSG=`אין עדיין מחיר ל-${v}. קודם רושמים קנייה שלו ב"התיק שלי", או פותחים אותו ב"מחקר שוק" ומסמנים למעקב, ואז אפשר להוסיף אותו כאן.`; const m=$('planAddMsg'); if(m)m.textContent=PADD_MSG; return}
+  if(inp){inp.value=''; inp.blur()} planAct('addIt',{sym})});
 let PLU_EDIT=false, PLU_ALL=false, OB_UNTIL='', OB_FROM='';
 const planFresh=()=>!PL.deposits.length&&!PL.purchases.length;   // nothing ticked in the plan yet: its first month may still move
 const ymLong=ym=>MONTHS[+ym.slice(5)-1]+' '+ym.slice(0,4);
