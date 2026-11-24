@@ -25799,7 +25799,11 @@ async function readStatement0(J){
     // written here, and the base of "מה השתנה מול האתר" (renderSDiff) kept until the save
     try{stmtPrep(ac,rows,isoOf(out.asOf)||asOf0||null,merge)}catch(e){console.error(e)}
     DRAFT.positions=DRAFT.positions.filter(p=>merge?!(p.acct===ac&&have.has(canonSym(p.sym,p.name))):p.acct!==ac).concat(rows);
-    const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0)), cashRaw=merge?{ILS:cIls||+cash0.ILS||0,USD:cUsd||+cash0.USD||0}:{ILS:cIls,USD:cUsd};
+    const cIls=Math.max(0,numOr(out.cashIls,0)), cUsd=Math.max(0,numOr(out.cashUsd,0)), noCash=out.cashIls==null&&out.cashUsd==null, cashRaw=merge||noCash?{ILS:cIls||+cash0.ILS||0,USD:cUsd||+cash0.USD||0}:{ILS:cIls,USD:cUsd};
+    // 24.11 (the owner: a partner sold a fund here, a statement was read after it, and the sale's money left the portfolio as if
+    // it were lost): a statement that names no cash at all keeps the cash the account had; and one dated before a sale or a
+    // purchase written here keeps their money (the proceeds added, the price paid taken off), as it keeps their units
+    if(!merge&&!noCash)try{const sd=isoOf(out.asOf)||'', A=((HS&&HS.accounts)||[]).find(z=>z.acct===ac); if(sd)for(const t of (A&&A.manual)||[]){if(!t||!(+t.amt>0)||String(t.date||'').slice(0,10)<=sd)continue; const c=t.ccy==='ILS'?'ILS':'USD'; cashRaw[c]=Math.max(0,Math.round(((+cashRaw[c]||0)+(t.side==='sell'?1:-1)*(+t.amt))*100)/100)}}catch(e){console.error(e)}
     DRAFT.cash[ac]={...cashRaw};
     if(typeof out.asOf==='string'&&/^\d{4}-\d\d-\d\d$/.test(out.asOf))DRAFT.asOf[ac]=out.asOf;
     if(!merge){reflow(ac); HOLD[ac]=(HOLD[ac]||0)+1}   // a statement replaced the account: the reads before it of this account are older
