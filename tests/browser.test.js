@@ -4563,3 +4563,33 @@ test('24.11 a purchase or a sale asks about the deposit plan (in the card and th
       assert.deepEqual(p2.errs,[])}finally{await o2.ctx.close()}
   }finally{try{await ctx.close()}catch(e){} for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 24.11 (the owner: "תוסיף אופציה לאפס את יתרת המזומן בתוכנית ההפקדה"; "ואם מפקידים חד פעמית בתיק צ'יק שזה יעלה ביתרת
+// המזומן"): the plan's balance starts from ₪0 at a reset and counts only the plan's own money since; a one-time deposit
+// raises the cash of its account's box too, and the boxes add up to all the cash
+test('24.11 the plan\'s balance reset to ₪0 (its own deposits and purchases since, undone in place), and a one-time deposit in its account\'s cash',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns #planZeroRow [data-pa="zeroBal"]',{timeout:10000});
+    const bal=()=>pg.evaluate(()=>{const t=document.querySelector('#planAns .ps-bal b').textContent; return (/−/.test(t)?-1:1)*+t.replace(/[^\d.]/g,'')});
+    const boxes=()=>pg.evaluate(()=>{const n=x=>+String(x||'').replace(/[^\d.]/g,''); const B=[...document.querySelectorAll('#pCashRow .pc-b')]; return B.length?{acc:B.filter(b=>!b.classList.contains('all')).map(b=>n(b.querySelector('b').textContent)),all:n(B.find(b=>b.classList.contains('all')).querySelector('b').textContent)}:null});
+    // a one-time deposit: the balance, and the box of its account (the boxes add up to all the cash)
+    const b0=await bal(), x0=await boxes();
+    await pg.fill('#onceAmt','1500'); await pg.click('#onceAdd'); await pg.waitForFunction(()=>/הפקדה חד-פעמית/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    assert.ok(Math.abs(await bal()-b0-1500)<1,'the plan\'s balance');
+    if(x0){const x1=await boxes(); assert.ok(Math.abs(x1.all-x0.all-1500)<1,'all the cash'); assert.ok(Math.abs(x1.acc.reduce((a,b)=>a+b,0)-x0.acc.reduce((a,b)=>a+b,0)-1500)<1,'an account\'s box: '+JSON.stringify([x0,x1])); assert.ok(Math.abs(x1.acc.reduce((a,b)=>a+b,0)-x1.all)<1.5,'the boxes add up to all the cash')}
+    // reset: ₪0, and from now on only the plan's own money
+    await pg.click('#planAns [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
+    assert.equal(await bal(),0); assert.match(await pg.evaluate(()=>document.getElementById('planAns').innerText),/מאז האיפוס/);
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
+    assert.match(store.getDoc('plan/main').data.zero,/^\d{4}-\d\d-\d\dT/,'saved with the plan, a moment');
+    await pg.fill('#onceAmt','700'); await pg.click('#onceAdd'); await pg.waitForFunction(()=>/700/.test(document.querySelector('#planAns .ps-bal b').textContent),null,{timeout:8000});
+    assert.equal(await bal(),700,'a deposit after the reset counts');
+    // undone in place: the balance as it was
+    await pg.click('#planAns [data-pa="zeroOff"]'); await pg.waitForFunction(()=>!!document.querySelector('#planAns [data-pa="zeroBal"]'),null,{timeout:8000});
+    assert.ok(Math.abs(await bal()-b0-2200)<1,'the accounts\' cash is back in it');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
