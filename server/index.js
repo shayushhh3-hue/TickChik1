@@ -551,7 +551,7 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   const IMPV=new Map();
   app.get('/api/impact',needUser,(req,res)=>{const t=Date.now(), last=IMPV.get(req.user.id)||0; if(t-last<1500)return res.status(429).json({error:{code:'rate_limited',message:'רגע, המפה עוד נבנית.'}}); IMPV.set(req.user.id,t);
     if(IMPV.size>2000)IMPV.clear();
-    try{res.json(impactForUser(store,req.user,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7))}))}
+    try{res.json(impactForUser(store,req.user,{days:Math.max(1,Math.min(7,Math.round(+req.query.days)||7)),scope:req.query.scope==='world'?'world':'me'}))}
     catch(e){log('impact view failed:',e&&e.stack||e); res.status(500).json({error:{code:'internal',message:'מפת ההשפעה לא זמינה כרגע.'}})}});
   // the history of one of the asker's own assets: its closes, the events that reached it, what was said then and what followed
   app.get('/api/impact/history',needUser,(req,res)=>{const sym=String(req.query.sym||'').trim().toUpperCase().slice(0,16);

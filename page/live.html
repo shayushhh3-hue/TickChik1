@@ -5061,8 +5061,10 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
               <div class="wi-top">
                 <div class="wi-brand"><h3 id="wiH">TikChik<span>WORLD IMPACT</span></h3><p>התיק שלך. ההשפעה של העולם.</p></div>
                 <div class="wi-modes" role="group" aria-label="תצוגת ההשפעה">
-                  <button type="button" class="wi-mode" data-wimode="me" aria-pressed="true">התיק שלי</button>
-                  <button type="button" class="wi-mode" data-wimode="world" aria-pressed="false" hidden>כל העולם · ניהול</button>
+                  <button type="button" class="wi-mode" data-wimode="me" aria-pressed="true" title="רק האירועים שנמצא להם קשר עסקי לנכס בתיק שלך">התיק שלי</button>
+                  <!-- 24.11 (the owner: "from all the exchanges and all the world's news sites"): the whole world's events, whether or not they reach the portfolio -->
+                  <button type="button" class="wi-mode" data-wiscope="all" aria-pressed="false" title="אירועים מכל העולם, מכל הבורסות, גם כאלה שלא נוגעים לתיק שלך">כל העולם</button>
+                  <button type="button" class="wi-mode" data-wimode="world" aria-pressed="false" hidden title="תצוגת הניהול: כל האירועים והקשרים של המנוע">ניהול המנוע</button>
                   <button type="button" class="wi-mode" data-wifresh="1" id="wiNowB" aria-pressed="false" title="מתי עודכנו המחירים"><i class="wi-dot" id="wiNowD"></i><span id="wiNowL">עכשיו</span></button>
                   <span class="wi-views" role="group" aria-label="צורת התצוגה"><button type="button" class="wi-mode" data-wiview="globe" aria-pressed="true" title="הגלובוס: האירועים והנכסים במקומם בעולם">גלובוס</button><button type="button" class="wi-mode" data-wiview="flat" aria-pressed="false" title="מפת העולם השטוחה: כל האזורים בבת אחת">מפה</button><button type="button" class="wi-mode" data-wiview="net" aria-pressed="false" title="רשת הקשרים: אירוע, מדינה, גורם כלכלי, ענף, חברה, נכס">רשת</button><button type="button" class="wi-mode" data-wiview="hist" aria-pressed="false" title="לפי תאריך: מה נאמר אז, ומה קרה בשוק אחרי">היסטוריה</button></span>
                 </div>
@@ -5108,7 +5110,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
                 <section class="wi-card" aria-labelledby="wiIxH"><h4 id="wiIxH">מדדי שוק <small id="wiIxS"></small></h4><div class="wi-ixs" id="wiIxs"></div></section>
               </div>
               <section class="wi-card wi-adm" id="wiAdm" aria-labelledby="wiAdmH" hidden><h4 id="wiAdmH">ניהול המנוע <small id="wiAdmS"></small></h4>
-                <div class="wi-tabs" role="group" aria-label="ניהול"><button type="button" class="wi-k" data-wiadm="ev" aria-pressed="true">אירועים</button><button type="button" class="wi-k" data-wiadm="rel" aria-pressed="false">קשרים לנכסים</button><button type="button" class="wi-k" data-wiadm="weak" aria-pressed="false">חוליות חלשות</button><button type="button" class="wi-k" data-wiadm="dups" aria-pressed="false">כפילויות</button><button type="button" class="wi-k" data-wiadm="fails" aria-pressed="false">תקלות עדכון</button><button type="button" class="wi-k" data-wiadm="stale" aria-pressed="false">נכסים בלי נתון עדכני</button><button type="button" class="wi-k" data-wiadm="qual" aria-pressed="false">איכות המנוע</button><button type="button" class="wi-k" data-wiadm="samp" aria-pressed="false">בדיקת מדגם</button><button type="button" class="wi-k" data-wiadm="log" aria-pressed="false">יומן תיקונים</button><button type="button" class="wi-k" data-wiadm="run">הרצה עכשיו</button></div>
+                <div class="wi-tabs" role="group" aria-label="ניהול"><button type="button" class="wi-k" data-wiadm="ev" aria-pressed="true">אירועים</button><button type="button" class="wi-k" data-wiadm="rel" aria-pressed="false">קשרים לנכסים</button><button type="button" class="wi-k" data-wiadm="weak" aria-pressed="false">חוליות חלשות</button><button type="button" class="wi-k" data-wiadm="dups" aria-pressed="false">כפילויות</button><button type="button" class="wi-k" data-wiadm="fails" aria-pressed="false">תקלות עדכון</button><button type="button" class="wi-k" data-wiadm="wsrc" aria-pressed="false">מקורות העולם</button><button type="button" class="wi-k" data-wiadm="stale" aria-pressed="false">נכסים בלי נתון עדכני</button><button type="button" class="wi-k" data-wiadm="qual" aria-pressed="false">איכות המנוע</button><button type="button" class="wi-k" data-wiadm="samp" aria-pressed="false">בדיקת מדגם</button><button type="button" class="wi-k" data-wiadm="log" aria-pressed="false">יומן תיקונים</button><button type="button" class="wi-k" data-wiadm="run">הרצה עכשיו</button></div>
                 <div id="wiAdmB"></div></section>
               <p class="wi-foot" id="wiFoot"></p>
             </section>
@@ -30582,7 +30584,9 @@ function ixMapTop(){const d=$('ixMapD'); if(d&&!IXMAPINIT){IXMAPINIT=true; let v
 const WI_F0=()=>({cc:'',reg:'',sec:'',cat:'',s:'',dir:'',t:'7',conf:''});
 const WI_SEEN0=(()=>{try{return localStorage.getItem('tr_wi_seen')||''}catch(e){return ''}})();
 const wiNewOf=e=>!!WI_SEEN0&&!!e&&(String(e.first||'')>WI_SEEN0||String(e.upd||'')>WI_SEEN0);
-const WIMP={mode:'me',time:'now',kind:'all',lm:'focus',f:WI_F0(),view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),
+// 24.11: scope = 'me' (what reaches the portfolio, as before) or 'all' (the whole world's events; /api/impact?scope=world,
+// cut on the server to the public news and the viewer's own securities' news), remembered on this device
+const WIMP={mode:'me',scope:(()=>{try{return localStorage.getItem('tr_wiscope')==='all'?'all':'me'}catch(e){return 'me'}})(),all:null,aat:0,time:'now',kind:'all',lm:'focus',f:WI_F0(),view:(()=>{try{const v=localStorage.getItem('tr_wiview'); return ['globe','flat','net'].includes(v)?v:'globe'}catch(e){return 'globe'}})(),
   F:null,fTried:false,G:null,gTried:false,gFail:'',me:null,world:null,at:0,wat:0,busy:false,err:'',sel:null,lvl:0,
   past:{from:'',to:'',d:null,shape:null,busy:false,err:''},hist:{sym:'',d:null,busy:false,err:'',pick:null,all:false},
   net:{off:{},direct:false,focus:null,more:0,sig:'',edges:[]},adm:'ev',log:null,qual:null,admMsg:'',open:false,ixc:{},legacy:false};
@@ -30599,7 +30603,8 @@ const WI_NT={ev:'אירוע',cty:'מדינה',fac:'גורם כלכלי',sec:'ע�
 const wiAdminOk=()=>!!(window.__tc&&window.__tc.mc);
 const wiSmall=()=>{try{return matchMedia('(max-width:759px)').matches}catch(e){return false}};
 const wiPastOn=()=>WIMP.time==='past'&&WIMP.mode==='me';
-const wiD=()=>WIMP.mode==='world'?WIMP.world:wiPastOn()?WIMP.past.shape:WIMP.me;
+const wiAll=()=>WIMP.mode==='me'&&WIMP.scope==='all'&&!wiPastOn();
+const wiD=()=>WIMP.mode==='world'?WIMP.world:wiPastOn()?WIMP.past.shape:WIMP.scope==='all'?WIMP.all:WIMP.me;
 const wiPctT=(v,d=2)=>v==null?'—':(v>0.005?'+':v<-0.005?'−':'')+Math.abs(v).toFixed(d)+'%';
 const wiPctH=(v,d=1)=>v==null?'':`<span class="${v>0.05?'up':v<-0.05?'down':'flat'}" dir="ltr">${wiPctT(v,d)}</span>`;
 const wiAgo=iso=>{if(!iso)return ''; try{return ago(iso)}catch(e){return ''}};
@@ -30611,12 +30616,12 @@ async function wiJson(u,o){const r=await fetch(u,{credentials:'same-origin',...(
 
 // ---- the data: once a minute at most, or when asked; a partner's request is the same as anybody's: the server decides ----
 async function wiLoad(force){
-  const world=WIMP.mode==='world'&&wiAdminOk(), now=Date.now(), have=world?WIMP.world:WIMP.me, age=now-(world?WIMP.wat:WIMP.at);
+  const world=WIMP.mode==='world'&&wiAdminOk(), all=!world&&WIMP.scope==='all', now=Date.now(), have=world?WIMP.world:all?WIMP.all:WIMP.me, age=now-(world?WIMP.wat:all?WIMP.aat:WIMP.at);
   if(!window.__tc){WIMP.err='מפת ההשפעה עובדת באתר עצמו: שם השרת בונה אותה לפי התיק שלך.'; wiRender(); return}
   if(WIMP.busy||(!force&&have&&age<60e3&&have.days===+WIMP.f.t))return;
   WIMP.busy=true; wiRender();
-  try{const j=await wiJson((world?'/api/admin/impact':'/api/impact')+'?days='+encodeURIComponent(WIMP.f.t)); if(world){WIMP.world=j; WIMP.wat=Date.now()} else {WIMP.me=j; WIMP.at=Date.now()} WIMP.err=''}
-  catch(e){WIMP.err=e.status===429?'':e.status===403?'אין הרשאה לתצוגה הזאת.':'המפה לא נטענה: '+e.message; if(e.status===429&&!(world?WIMP.world:WIMP.me))setTimeout(()=>wiLoad(true),1700)}   // 24.11: a reload right after another load is asked again, not left empty
+  try{const j=await wiJson((world?'/api/admin/impact':'/api/impact')+'?days='+encodeURIComponent(WIMP.f.t)+(all?'&scope=world':'')); if(world){WIMP.world=j; WIMP.wat=Date.now()} else if(all){WIMP.all=j; WIMP.aat=Date.now()} else {WIMP.me=j; WIMP.at=Date.now()} WIMP.err=''}
+  catch(e){WIMP.err=e.status===429?'':e.status===403?'אין הרשאה לתצוגה הזאת.':'המפה לא נטענה: '+e.message; if(e.status===429&&!(world?WIMP.world:all?WIMP.all:WIMP.me))setTimeout(()=>wiLoad(true),1700)}   // 24.11: a reload right after another load is asked again, not left empty
   finally{WIMP.busy=false}
   wiRender(); wiIdxSpark()}
 // the past, in the same shape as today's data (so the globe, the map and the network draw it as they draw today): the events
@@ -30650,7 +30655,11 @@ const wiRegOf=l=>{if(!l)return null; const r=WI_REGS.find(([, , , ,f])=>f(l.lat,
 // one sentence over the map: how many events, how many new since the last visit, which asset is touched most, the most important
 function wiSumRender(){const p=$('wiSum'); if(!p)return; const d=wiD(); if(!d||WIMP.view==='hist'){p.hidden=true; return} p.hidden=false;
   const E=wiEvents(), me=WIMP.mode==='me', past=WIMP.time==='past', when=past?'בתקופה שנבחרה':({1:'ב-24 השעות האחרונות',3:'ב-3 הימים האחרונים',7:'השבוע'})[WIMP.f.t]||'בטווח', nNew=past?0:E.filter(wiNewOf).length;
-  if(!E.length){p.textContent=me?`${when}: אין אירוע עם קשר מוסבר לתיק, בטווח ובמסננים שנבחרו.`:'אין אירועים בטווח שנבחר.'; return}
+  const all=wiAll();
+  if(!E.length){p.textContent=all?`${when}: אין אירועים בעולם, בטווח ובמסננים שנבחרו.`:me?`${when}: אין אירוע עם קשר מוסבר לתיק, בטווח ובמסננים שנבחרו.`:'אין אירועים בטווח שנבחר.'; return}
+  // 24.11 the whole world: how many events, how many of them reach the portfolio, the critical ones, the leading one
+  if(all){const nM=E.filter(e=>e.mine).length, nC=E.filter(e=>e.level==='crit').length, lead0=E[0];
+    p.innerHTML=`<b>${when}: ${E.length===1?'אירוע אחד בעולם':E.length+' אירועים בעולם'}</b>, ${nM?`<b>${nM===1?'אחד נוגע':nM+' נוגעים'} לתיק שלך</b>`:'אף אחד מהם לא נוגע לתיק שלך'}${nC?`, ${nC===1?'אחד קריטי':nC+' קריטיים'}`:''}${nNew?`, <b class="fr">${nNew} חדשים מאז הביקור הקודם</b>`:''}. החשוב ביותר: <button type="button" class="lnk" data-wiev="${esc(lead0.k)}">${esc(lead0.he)}</button>.`; return}
   const cnt={}; if(me)for(const e of E)for(const s of (e.touches||[]))cnt[s]=(cnt[s]||0)+1; const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0], lead=E[0];
   p.innerHTML=me?`<b>${when}: ${E.length===1?'אירוע אחד נוגע':E.length+' אירועים נוגעים'} לתיק</b>${nNew?`, <b class="fr">${nNew} חדשים מאז הביקור הקודם</b>`:''}.${top?` הכי הרבה ל-<b dir="ltr">${esc(lab(top[0]))}</b> (${top[1]}).`:''} החשוב ביותר: <button type="button" class="lnk" data-wiev="${esc(lead.k)}">${esc(lead.he)}</button>.`
     :`<b>${when}: ${E.length} אירועים בעולם</b>, ${E.filter(e=>e.level==='crit').length} קריטיים${nNew?`, ${nNew} חדשים מאז הביקור`:''}.`}
@@ -30729,7 +30738,9 @@ function wiReset(){WIMP.time='now'; WIMP.past={from:'',to:'',d:null,shape:null,b
 // "quiet" (not drawn until its event or its asset is chosen) unless it is a direct line of one of the three leading events;
 // a company on the way (not held) and its label wait for their event to be chosen
 function wiGlobeData(){
-  const d=wiD(); if(!d)return {points:[],arcs:[]}; const K=WIMP.kind, me=WIMP.mode==='me', E=K==='idx'?[]:wiEvents().slice(0,me?60:150), pts=[], arcs=[], occ=new Map(), place=new Map(), seenA=new Set(), small=wiSmall(), near=WIMP.lvl>=1, lm=WIMP.lm;
+  // 24.11: all = the whole world's events (a user's scope): more of them, the ones that reach the portfolio drawn as before,
+  // the others quieter, each with a line to the companies it names (shown when the event is chosen)
+  const d=wiD(); if(!d)return {points:[],arcs:[]}; const K=WIMP.kind, me=WIMP.mode==='me', all=me&&d.scope==='world', E=K==='idx'?[]:wiEvents().slice(0,me&&!all?60:150), pts=[], arcs=[], occ=new Map(), place=new Map(), seenA=new Set(), small=wiSmall(), near=WIMP.lvl>=1, lm=WIMP.lm;
   const jit=(lat,lon)=>{const k=Math.round(lat*3)+','+Math.round(lon*3), n=occ.get(k)||0; occ.set(k,n+1); if(!n)return {lat,lon}; const a=n*2.39996, r=1.2+0.5*Math.floor(n/5); return {lat:Math.max(-85,Math.min(85,lat+Math.sin(a)*r)),lon:lon+Math.cos(a)*r/Math.max(0.35,Math.cos(lat*Math.PI/180))}};
   const nodes=d.nodes||{}, close=(a,b)=>a&&b&&Math.abs(a.lat-b.lat)<2.5&&Math.abs(a.lon-b.lon)<2.5;
   if(me){for(const a of wiAssets()){if(!a.loc||K==='idx'||K==='ev'||(K==='stock'&&a.kind!=='stock')||(K==='fund'&&a.kind!=='fund'))continue; const p=jit(a.loc.lat,a.loc.lon); place.set(a.id,p); if(a.kind==='fund')place.set('co:'+a.sym,p);
@@ -30749,8 +30760,9 @@ function wiGlobeData(){
       pts.push({id,kind:'cluster',lat:la,lon:lo,color:crit?'#f59e0b':'#fde68a',size:1.7+Math.min(1,M.length/8),halo:'ev',label:{cls:'ev cl',priority:45,aria:`${M.length} אירועים ב${M[0].loc.name||'מקום אחד'}`,html:`<b>${M.length} אירועים</b><small>${esc(M[0].loc.name||'')} · לחיצה מקרבת</small>`}})}
     else for(const e of M)place.set('ev:'+e.k,jit(e.loc.lat,e.loc.lon))}
   E.forEach((e,i)=>{if(!e.loc)return; const p=place.get('ev:'+e.k), ek=e.k, inClu=Object.values(WIMP.clu).some(Ks=>Ks.includes(ek));
-    if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':'#fde68a',size:1+0.35*(+e.s||1),group:ek,halo:e.level==='crit'||e.level==='imp'||i<nLab?'ev':'none',
-      label:i<nLab||ek===selK||(WIMP.time==='now'&&wiNewOf(e))?{cls:'ev'+(WIMP.time==='now'&&wiNewOf(e)?' fresh':''),priority:ek===selK?100:WIMP.time==='now'&&wiNewOf(e)?65:40-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
+    const far=all&&!e.mine;   // an event of the world that reaches no asset of the viewer: smaller, and lit only when critical
+    if(!inClu)pts.push({id:'e:'+ek,kind:'event',lat:p.lat,lon:p.lon,color:e.level==='crit'?'#f59e0b':far&&e.level!=='imp'?'#a8b3c7':'#fde68a',size:far?0.8+0.25*(+e.s||1):1+0.35*(+e.s||1),group:ek,halo:far?(e.level==='crit'||i<nLab?'ev':'none'):e.level==='crit'||e.level==='imp'||i<nLab?'ev':'none',
+      label:i<nLab||ek===selK||(WIMP.time==='now'&&wiNewOf(e)&&!far)?{cls:'ev'+(WIMP.time==='now'&&wiNewOf(e)?' fresh':''),priority:ek===selK?100:WIMP.time==='now'&&wiNewOf(e)?65:(all&&e.mine?55:40)-i,html:`<b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')}${e.past?' · '+esc(wiDay(e.day)):e.last?' · '+esc(wiAgo(e.last)):''}${all&&e.mine?' · נוגע לתיק':''}</small>`}:{cls:'ev',priority:2,quiet:true,html:`<b>${esc(e.he)}</b>`}});
     const seenArc=new Set(), arc=(a,b,dir,dashed,id,tag,direct)=>{if(!a||!b||close(a,b))return; if(lm==='direct'&&!direct)return; const o=seenArc.has(id)?arcs.find(x=>x.id===ek+'|'+id):null; if(o){if(tag&&o.tags&&!o.tags.includes(tag))o.tags.push(tag); return} seenArc.add(id);
       arcs.push({id:ek+'|'+id,from:a,to:b,color:WI_COL[dir]||WI_COL.unclear,dashed,group:ek,tags:tag?[tag]:null,quiet:lm==='focus',dr:!!direct,lift:(arcs.length%3)*0.03,alpha:0.95})};
     if(me){for(const pa of (e.paths||[])){if(K==='stock'||K==='fund'){const a=wiAssets().find(x=>x.sym===pa.to); if(a&&a.kind!==K)continue}
@@ -30760,7 +30772,9 @@ function wiGlobeData(){
         pa.nodes.slice(1).forEach((n,j)=>{const lid=pa.links[j], l=L.get(ek+'|'+lid); seg.push(l); const t=wiNodeT(n);
           let q=null; if(t==='co'||t==='fund')q=coPt(n,ek); else if(t==='cty'){const c=nodes[n]; if(c&&c.loc&&!close(c.loc,e.loc))q=c.loc}
           if(!q)return; const dir=([...seg].reverse().map(z=>z&&z.dir).find(v=>v&&v!=='unclear'))||pa.dir||'unclear', direct=seg.every(z=>z&&z.direct);
-          arc(prev.p,q,dir,!direct,prev.id+'>'+n,pa.to,!!pa.direct); prev={id:n,p:q}; seg=[]})}}
+          arc(prev.p,q,dir,!direct,prev.id+'>'+n,pa.to,!!pa.direct); prev={id:n,p:q}; seg=[]})}
+      // the whole world: an event that reaches no asset of the viewer is tied to the companies it names (public news), each where it sits
+      if(all&&!(e.paths||[]).length)for(const z of [...(e.said||[]),...(e.found||[])].slice(0,6)){const q=coPt('co:'+z.sym,ek); if(q)arc(p,q,z.dir||'unclear',z.how!=='direct','ev:'+ek+'>co:'+z.sym,null,z.how==='direct')}}
     else{for(const l of (e.links||[])){if(!l.to.startsWith('co:'))continue; const to=coPt(l.to,ek); if(!to)continue; const from=l.from.startsWith('co:')?coPt(l.from,ek):p; arc(from,to,l.dir,!l.direct,l.id,null,!!l.direct)}}});
   // before a choice: the lines of the three leading events that have a line to draw (their direct ones when they have any);
   // every other line waits for its event or its asset to be chosen
@@ -30769,7 +30783,8 @@ function wiGlobeData(){
 
 // ---- the drawing of every part ----
 function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==='me', V=WIMP.view, past=wiPastOn();
-  for(const b of w.querySelectorAll('[data-wimode]'))b.setAttribute('aria-pressed',String(b.dataset.wimode===WIMP.mode));
+  for(const b of w.querySelectorAll('[data-wimode]'))b.setAttribute('aria-pressed',String(b.dataset.wimode===WIMP.mode&&(b.dataset.wimode!=='me'||WIMP.scope!=='all')));
+  for(const b of w.querySelectorAll('[data-wiscope]'))b.setAttribute('aria-pressed',String(me&&WIMP.scope==='all'));
   for(const b of w.querySelectorAll('[data-wik]'))b.setAttribute('aria-pressed',String(b.dataset.wik===WIMP.kind));
   for(const b of w.querySelectorAll('[data-wiview]')){b.setAttribute('aria-pressed',String(b.dataset.wiview===V)); if(b.dataset.wiview==='hist')b.hidden=!me}
   for(const b of w.querySelectorAll('[data-wilm]'))b.setAttribute('aria-pressed',String(b.dataset.wilm===WIMP.lm));
@@ -30780,14 +30795,14 @@ function wiRender(){const w=$('wi'); if(!w)return; const d=wiD(), me=WIMP.mode==
     const r=$('wiReset'); if(r)r.hidden=!wiDirty()||past}
   wiFreshBtn(d); wiFiltFill(d); wiCounts(d);
   const msg=$('wiMsg'); if(msg){let t=''; if(V==='globe'||V==='flat'){if(WIMP.err&&!past)t=WIMP.err; else if(past&&WIMP.past.err)t=WIMP.past.err; else if(!d)t=WIMP.busy||WIMP.past.busy?'המפה נבנית…':''; else if(me&&!(d.assets||[]).length)t='כשיהיו ניירות בתיק, המפה תראה מה בעולם נוגע להם.';
-      else if(!wiEvents().length&&WIMP.kind!=='idx')t=past?'לא נשמר אירוע עם קשר לנכס בתיק בטווח התאריכים הזה.':me?'אין כרגע אירוע עם קשר עסקי מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
+      else if(!wiEvents().length&&WIMP.kind!=='idx')t=past?'לא נשמר אירוע עם קשר לנכס בתיק בטווח התאריכים הזה.':wiAll()?(d.world&&d.world.off?'חדשות העולם כבויות באתר כרגע.':d.world&&!d.world.read?'חדשות העולם עוד לא נקראו. הן נאספות ונקראות כל 20 דקות; בינתיים מוצג מה שנוגע לתיק.':'אין אירועים בעולם בטווח ובמסננים שנבחרו.'):me?'אין כרגע אירוע עם קשר עסקי מוסבר לנכס בתיק, בטווח ובמסננים שנבחרו.':'אין אירועים בטווח שנבחר.';
       if(WIMP.gFail&&!wiR())t=WIMP.gFail} msg.innerHTML=t?`<span>${esc(t)}</span>`:''; msg.hidden=!t}
   // the globe is drawn again only when what it shows changed (the news screen renders often; the globe keeps turning meanwhile)
-  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,WIMP.tl,!!WIMP.onlyNew,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
+  {const R=wiR(); if(R){const sig=[WIMP.mode,WIMP.scope,WIMP.time,WIMP.kind,WIMP.lm,WIMP.lvl,WIMP.tl,!!WIMP.onlyNew,JSON.stringify(WIMP.f),d?d.at:'',d&&d.from||'',wiSmall(),WIMP.sel&&WIMP.sel.t==='ev'?WIMP.sel.k:''].join('|'); if(sig!==R._sig){R._sig=sig; try{R.setData(wiGlobeData()); wiSelApply(false); wiHome(false)}catch(e){console.error(e)}}}}
   if(V==='net')try{wiNetDraw()}catch(e){console.error(e)} if(V==='hist')try{wiHistDraw()}catch(e){console.error(e)}
   wiPfRender(d); wiEvRender(d); wiKeysRender(d); wiIdxRender(d); wiAdmRender(d); wiRegsRender();
   {const b=$('wiBottom'); if(b)b.hidden=past||V==='hist'}
-  const f=$('wiFoot'); if(f){const en=d&&d.engine; f.textContent=[...((d&&d.notes)||[]),d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',en&&en.waiting?`${en.waiting} קשרים אפשריים עוד ממתינים לניתוח נפרד של הנכס, ולכן לא מוצגים.`:'',en&&!en.ai?'ניתוח הקשר לכל נכס אינו פעיל כרגע: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה.':'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}}
+  const f=$('wiFoot'); if(f){const en=d&&d.engine; f.textContent=[...((d&&d.notes)||[]),d&&d.world&&!d.world.off?`חדשות העולם: ${d.world.ok} מתוך ${d.world.feeds} מקורות ענו, ${d.world.read} כתבות נקראו בימים האחרונים.`:'',d&&d.engineAt?`המנוע עודכן ${wiAgo(d.engineAt)}.`:'',en&&en.waiting?`${en.waiting} קשרים אפשריים עוד ממתינים לניתוח נפרד של הנכס, ולכן לא מוצגים.`:'',en&&!en.ai?'ניתוח הקשר לכל נכס אינו פעיל כרגע: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה.':'',d&&d.priceLabel?`מחירים: ${d.priceLabel}.`:''].filter(Boolean).join(' ')}}
 function wiFreshBtn(d){const D=$('wiNowD'), L=$('wiNowL'); if(!D||!L)return; const A=(WIMP.me&&WIMP.me.assets)||[];
   if(!A.length||WIMP.mode==='world'){D.className='wi-dot'; L.textContent='עכשיו'; return}
   const n=s=>A.filter(a=>a.fresh&&a.fresh.state===s).length, live=n('live'), del=n('delayed'), close=n('close');
@@ -30812,11 +30827,12 @@ function wiPfRender(d){const B=$('wiPfB'), S=$('wiPfS'); if(!B)return;
   B.innerHTML=tot+`<ul class="wi-list">${rows}</ul>`+(A.length>8?`<p class="wi-note">ועוד ${A.length-8} ניירות; כולם על המפה.</p>`:'')+'<p class="wi-note">בחירה בנייר מציגה רק את האירועים שנוגעים לו, עם ההסבר שלו.</p>'}
 function wiEvRender(d){const L=$('wiEvL'), S=$('wiEvS'), H=$('wiEvH'); if(!L)return; const E=wiEventsSel(), sel=WIMP.sel, as=sel&&sel.t==='as'&&WIMP.mode==='me'?sel.sym:null, past=wiPastOn();
   if(H&&H.firstChild)H.firstChild.textContent=past?'אירועי התקופה ':'אירועי השפעה ';
-  if(S)S.textContent=WIMP.mode==='world'?(E.length?E.length+' באירועי העולם':''):(E.length?E.length+(as?' נוגעים ל-'+lab(as):' נוגעים לתיק'):'');
+  const all=wiAll();
+  if(S)S.textContent=WIMP.mode==='world'?(E.length?E.length+' באירועי העולם':''):all&&!as?(E.length?`${E.length} בעולם · ${E.filter(e=>e.mine).length} נוגעים לתיק`:''):(E.length?E.length+(as?' נוגעים ל-'+lab(as):' נוגעים לתיק'):'');
   if(!d){L.innerHTML=''; return}
   const head=as?`<li class="wi-selb"><span>מוצגים רק האירועים של <b dir="ltr">${esc(lab(as))}</b></span><button type="button" class="wi-fixb" data-wix="1">לכל האירועים</button></li>`:'';
-  if(!E.length){L.innerHTML=head+`<li class="wi-note">${WIMP.mode==='world'?'אין אירועים בטווח.':as?'לא נמצא אירוע עם קשר עסקי מוסבר לנייר הזה בטווח שנבחר.':past?'לא נשמר אירוע עם קשר לתיק בטווח התאריכים הזה.':'אין אירוע עם קשר עסקי מוסבר לנכס שלך בטווח שנבחר.'}</li>`; return}
-  L.innerHTML=head+E.slice(0,40).map(e=>{const I=(e.impacts||[]).filter(i=>!as||i.sym===as), one=as&&I[0], T=WIMP.mode==='world'?(e.cos||[]).slice(0,4).map(s=>`<span class="wi-tag sym">${esc(s)}</span>`).join(''):I.slice(0,4).map(i=>`<span class="wi-tag sym${i.rel==='direct'?'':' ind'}" title="${i.rel==='direct'?'קשר ישיר':'קשר עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}">${esc(lab(i.sym))}${i.rel==='direct'?'':' ⋯'}</span>`).join('');
+  if(!E.length){L.innerHTML=head+`<li class="wi-note">${WIMP.mode==='world'?'אין אירועים בטווח.':all&&!as?'אין אירועים בעולם בטווח ובמסננים שנבחרו.':as?'לא נמצא אירוע עם קשר עסקי מוסבר לנייר הזה בטווח שנבחר.':past?'לא נשמר אירוע עם קשר לתיק בטווח התאריכים הזה.':'אין אירוע עם קשר עסקי מוסבר לנכס שלך בטווח שנבחר.'}</li>`; return}
+  L.innerHTML=head+E.slice(0,all?60:40).map(e=>{const I=(e.impacts||[]).filter(i=>!as||i.sym===as), one=as&&I[0], T=WIMP.mode==='world'?(e.cos||[]).slice(0,4).map(s=>`<span class="wi-tag sym">${esc(s)}</span>`).join(''):I.slice(0,4).map(i=>`<span class="wi-tag sym${i.rel==='direct'?'':' ind'}" title="${i.rel==='direct'?'קשר ישיר':'קשר עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}">${esc(lab(i.sym))}${i.rel==='direct'?'':' ⋯'}</span>`).join('');
     return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"${sel&&sel.t==='ev'&&sel.k===e.k?' aria-current="true"':''}><i class="dd ${esc((one&&one.dir)||e.dir||'unclear')}" aria-hidden="true"></i><span class="nm"><b>${esc(e.he)}</b>
       <small>${esc(WI_CAT[e.cat]||'')} · ${e.past?esc(wiDay(e.day)):esc(wiAgo(e.last||e.first))}${e.nPubs>1?` · ${e.nPubs} מקורות`:''}</small>${one&&one.mech?`<small class="wi-why">${esc(one.mech)}</small>`:''}
       <span class="wi-tags">${WIMP.time==='now'&&wiNewOf(e)?'<span class="wi-tag fresh">✨ חדש מאז הביקור</span>':e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${T}${WIMP.mode==='me'&&!as?(e.said||[]).filter(c=>!c.mine).slice(0,3).map(c=>`<span class="wi-tag co" title="מוזכרת בכתבה; לא בתיק שלך">${esc(c.sym)}</span>`).join(''):''}${I.length&&I.every(i=>i.pending)?'<span class="wi-tag">ממתין לניתוח הנכס</span>':''}${e.rules?'<span class="wi-tag">לפי כותרת</span>':''}${e.legacy?'<span class="wi-tag">המנוע הקודם</span>':''}</span></span></button></li>`}).join('')}
@@ -30864,7 +30880,7 @@ function wiFixBtns(l){const k=WIMP.sel&&WIMP.sel.k; if(!k)return ''; return `<sp
 //    site). B. the evidence: the sources, each with what it can confirm and whether it was read. C. why it matters to each
 //    asset: that asset's own explanation, the fact it rests on, what would strengthen or weaken it. D. what the market did:
 //    the asset's actual move after the day of the event, beside the benchmark. C is an analysis; D is a measurement
-const wiCo=(c,mineOnly)=>`<span class="wi-co${c.mine?' mine':''}" title="${esc((c.name||c.sym)+(c.why?': '+c.why:''))}"><b dir="ltr">${esc(lab(c.sym))}</b>${c.name&&c.name!==c.sym?`<small>${esc(c.name)}</small>`:''}<i class="dd ${esc(c.dir||'unclear')}"></i>${c.mine?'<em>בתיק שלך</em>':''}${c.by?`<small>${esc(WI_BY[c.by]||'')}</small>`:c.how&&WI_HOW[c.how]?`<small>${esc(WI_HOW[c.how])}</small>`:''}${c.verdict&&(c.verdict.rel==='none'||c.verdict.rel==='wait')?`<small class="no">${c.verdict.rel==='none'?'נבדק: אין קשר עסקי מסוים':'ממתין לניתוח'}</small>`:''}</span>`;
+const wiCo=(c,mineOnly)=>`<span class="wi-co${c.mine?' mine':''}" title="${esc((c.name||c.sym)+(c.exch?' · '+c.exch:'')+(c.why?': '+c.why:''))}"><b dir="ltr">${esc(c.sym?lab(c.sym):c.name||'')}</b>${c.sym&&c.name&&c.name!==c.sym?`<small>${esc(c.name)}</small>`:''}${c.exch?`<small class="xc" dir="ltr">${esc(c.exch)}</small>`:''}<i class="dd ${esc(c.dir||'unclear')}"></i>${c.mine?'<em>בתיק שלך</em>':''}${c.by?`<small>${esc(WI_BY[c.by]||'')}</small>`:c.how&&WI_HOW[c.how]?`<small>${esc(WI_HOW[c.how])}</small>`:''}${c.verdict&&(c.verdict.rel==='none'||c.verdict.rel==='wait')?`<small class="no">${c.verdict.rel==='none'?'נבדק: אין קשר עסקי מסוים':'ממתין לניתוח'}</small>`:''}</span>`;
 function wiMktH(i,e){const r=i.mkt?i.mkt.r:i.react, m=i.mkt||{bench:i.bench,day:e.day,open:null,fresh:null,today:null,since:null}, b=r&&r.bench;
   const cell=(t,v,bv,sub)=>`<div class="wi-m">${t}<b>${v==null?'עוד אין':wiPctH(v,2)}</b>${bv!=null&&v!=null?`<span>${esc(m.bench||'המדד')} ${wiPctT(bv)} · פער ${wiPctT(Math.round((v-bv)*100)/100)}</span>`:''}${sub?`<span>${sub}</span>`:''}</div>`;
   let body='';
@@ -30912,7 +30928,8 @@ function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD
       ${said.length||found.length?`<section class="wi-sec"><h5>חברות ונכסים</h5>${said.length?`<p class="wi-note"><b>הוזכרו במקור</b> (בשמן, בכתבה עצמה):</p><div class="wi-cos">${said.map(c=>wiCo(c)).join('')}</div>`:''}${found.length?`<p class="wi-note"><b>זוהו על ידי המנוע</b> (לא מוזכרות בכתבה):</p><div class="wi-cos">${found.map(c=>wiCo(c)).join('')}</div>`:''}</section>`:''}
       ${world?`<section class="wi-sec"><h5>הקשר לכל נכס, כפי שהמנוע החליט</h5>${rels?`<div class="wi-adm"><table><thead><tr><th>נכס</th><th>החלטה</th><th>ההסבר ועל מה הוא נשען</th><th>פעולה</th></tr></thead><tbody>${rels}</tbody></table></div>`:'<p class="wi-note">אף נכס לא נבחר לבדיקה מול האירוע הזה.</p>'}${(e.listed||[]).length?`<p class="wi-note">הכתבות הופיעו ברשימות של: <span dir="ltr">${esc(e.listed.join(', '))}</span>. זה לא קשר: זה רק שולח את הזוג לבדיקה.</p>`:''}</section>
         <section class="wi-sec"><h5>החוליות לפי הקריאה</h5>${chains||'<p class="wi-note">אין חוליות.</p>'}</section>`
-      :`<section class="wi-sec wi-c"><h5><i>ג</i>${e.past?'מה נאמר אז על הנכסים שלך':'למה זה משפיע על הנכסים שלך'}</h5>${imps||'<p class="wi-note">אין קשר.</p>'}${(e.checked||[]).length?`<p class="wi-note">נבדקו גם: ${e.checked.map(c=>`<span dir="ltr">${esc(lab(c.sym))}</span> (${c.rel==='none'?'אין קשר עסקי מסוים':'ממתין לניתוח'})`).join(', ')}.</p>`:''}</section>`}
+      :`${(e.others||[]).length?`<section class="wi-sec"><h5>חברות נוספות שהכתבה מזכירה</h5><p class="wi-note">בלי סימול מאומת (חברה פרטית, ממשלתית, או סימול שלא אומת מול מקור המחירים):</p><div class="wi-cos">${e.others.map(c=>wiCo(c)).join('')}</div></section>`:''}
+      <section class="wi-sec wi-c"><h5><i>ג</i>${e.past?'מה נאמר אז על הנכסים שלך':'למה זה משפיע על הנכסים שלך'}</h5>${imps||(d.scope==='world'?'<p class="wi-note">לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך. הוא מוצג כי בחרת לראות את כל העולם.</p>':'<p class="wi-note">אין קשר.</p>')}${(e.checked||[]).length?`<p class="wi-note">נבדקו גם: ${e.checked.map(c=>`<span dir="ltr">${esc(lab(c.sym))}</span> (${c.rel==='none'?'אין קשר עסקי מסוים':'ממתין לניתוח'})`).join(', ')}.</p>`:''}</section>`}
       <div id="wiLkD"></div>
       <section class="wi-sec wi-b"><h5><i>ב</i>הראיות והמקורות</h5>${wiEvidH(e)}</section>
       ${hist?`<section class="wi-sec"><h5>מה השתנה באירוע</h5><ul class="wi-ul">${hist}</ul></section>`:''}
@@ -30926,8 +30943,11 @@ function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD
       <div class="wi-sec"><h5>${wiPastOn()?'אירועי התקופה שנגעו לנכס':'אירועים שנוגעים לנכס'} (${E.length})</h5>${E.length?`<ul class="wi-list">${E.slice(0,12).map(e=>{const i=(e.impacts||[]).find(x=>x.sym===a.sym)||{}; return `<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(i.dir||e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')} · ${e.past?esc(wiDay(e.day)):esc(wiAgo(e.last))} · ${i.rel==='direct'?'ישיר':'עקיף'} · ביטחון ${esc(WI_C[i.conf]||'')}</small>${i.mech?`<small class="wi-why">${esc(i.mech)}</small>`:''}</span></button></li>`}).join('')}</ul>`:'<p class="wi-note">לא נמצא אירוע עם קשר עסקי מוסבר לנכס הזה בטווח. אירוע כללי לא מוצג רק כי הנכס בתיק.</p>'}</div>
       <div class="acts" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-wihistof="${esc(a.sym)}">ההיסטוריה של הנכס</button>${/^[A-Z]/.test(a.sym)||/^TLV:/.test(a.sym)?`<button type="button" class="btn sm" data-wisec="${esc(a.sym)}">לדף הנייר</button>`:''}</div>`}
   else if(s.t==='co'){const n=(d.nodes||{})[s.id]||{}, sym=s.id.slice(s.id.indexOf(':')+1), on=(d.events||[]).filter(e=>(e.paths||[]).some(p=>p.nodes.includes(s.id)));
-    sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(n.label||sym)}${n.name?` <small class="wi-note">${esc(n.name)}</small>`:''}</h4><p class="wi-note">${world?'חברה שהאירועים מזכירים.':'החברה לא בתיק שלך. היא מופיעה רק כחוליה במסלול שמגיע לנכס שלך, ולא כנכס בפני עצמו.'} ${n.loc?`מקום: ${esc(n.loc.name||'')} · ${esc(WI_LOC[n.loc.how]||'')}${WI_LSRC[n.loc.src]?' ('+esc(WI_LSRC[n.loc.src])+')':''}.`:''}</p>
+    // 24.11 the whole world: the events that name the company (public news)
+    const named=d.scope==='world'?(d.events||[]).filter(e=>!on.includes(e)&&[...(e.said||[]),...(e.found||[])].some(z=>z.sym===sym)):[];
+    sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(n.label||sym)}${n.name?` <small class="wi-note">${esc(n.name)}</small>`:''}</h4><p class="wi-note">${world?'חברה שהאירועים מזכירים.':d.scope==='world'?'חברה שאירועי העולם מזכירים. היא לא בתיק שלך.':'החברה לא בתיק שלך. היא מופיעה רק כחוליה במסלול שמגיע לנכס שלך, ולא כנכס בפני עצמו.'} ${n.loc?`מקום: ${esc(n.loc.name||'')} · ${esc(WI_LOC[n.loc.how]||'')}${WI_LSRC[n.loc.src]?' ('+esc(WI_LSRC[n.loc.src])+')':''}.`:''}</p>
       ${on.length?`<div class="wi-sec"><h5>במסלולים של</h5><ul class="wi-list">${on.slice(0,6).map(e=>`<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>אל ${esc((e.paths||[]).filter(p=>p.nodes.includes(s.id)).map(p=>lab(p.to)).join(', '))}</small></span></button></li>`).join('')}</ul></div>`:''}
+      ${named.length?`<div class="wi-sec"><h5>האירועים שמזכירים אותה</h5><ul class="wi-list">${named.slice(0,8).map(e=>`<li><button type="button" class="wi-row wi-evr" data-wiev="${esc(e.k)}"><i class="dd ${esc(e.dir)}"></i><span class="nm"><b>${esc(e.he)}</b><small>${esc(WI_CAT[e.cat]||'')} · ${esc(wiAgo(e.last||e.first))}</small></span></button></li>`).join('')}</ul></div>`:''}
       ${world&&wiAdminOk()?`<div class="wi-sec"><h5>תיקון מיקום המטה</h5><div class="wi-hctl"><label>קו רוחב<input type="number" step="0.01" id="wiHqLat" value="${n.loc?n.loc.lat:''}"></label><label>קו אורך<input type="number" step="0.01" id="wiHqLon" value="${n.loc?n.loc.lon:''}"></label><label>שם<input type="text" id="wiHqName" value="${esc(n.loc?n.loc.name||'':'')}"></label><button type="button" class="btn sm" data-wihq="${esc(sym)}">שמירה</button></div></div>`:''}`}
   else if(s.t==='ix'){const x=(d.indices||[]).find(i=>i.k===s.k)||{}; sh.innerHTML=X+`<h4 id="wiSheetH">${esc(x.name||'')}</h4><div class="wi-ms"><div class="wi-m">מהסגירה הקודמת<b>${x.chg==null?'—':wiPctH(x.chg,2)}</b></div><div class="wi-m">עדכניות<b>${esc(x.he||'')}</b><span>${esc(wiAt(x.at))}${x.open===false?' · המסחר סגור':''}</span></div></div><p class="wi-note">המדד מוצג במקום של הבורסה שלו. ההילה היא התנועה שלו היום.</p>`}
   sh.hidden=false; sh.scrollTop=0; wiSheetRoom(); try{const b=sh.querySelector('.wi-x'); if(b&&!wiSmall())b.focus({preventScroll:true})}catch(e){}}
@@ -31056,6 +31076,12 @@ function wiAdmRender(d){const box=$('wiAdm'), B=$('wiAdmB'), S=$('wiAdmS'); if(!
   else if(WIMP.adm==='weak')B.innerHTML=msg+`<p class="wi-note">${G.nWeak||0} חוליות חלשות בין האירוע לבין מדינה, גורם, ענף או חברה שהקריאה מונה (מוצגות עד 150).</p>`+T(['אירוע','החוליה','למה חלשה','פעולה'],(G.weak||[]).map(w=>`<tr><td>${esc(w.he)}</td><td dir="ltr">${esc(w.from)} → ${esc(w.to)}</td><td>${esc((w.why||[]).join(', '))}</td><td class="acts"><button type="button" class="wi-fixb ok" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({kind:'link',k:w.k,id:w.link,st:'no'})}'>דחייה</button></td></tr>`));
   else if(WIMP.adm==='dups')B.innerHTML=msg+T(['אירוע','כפילויות','מפתחות שאוחדו','פעולה'],(G.dups||[]).map(x=>`<tr><td>${esc(x.he)}</td><td>${x.dups}</td><td dir="ltr">${esc((x.joined||[]).join(', '))}</td><td class="acts">${(x.joined||[]).map(k=>`<button type="button" class="wi-fixb" data-wifix='${j({kind:'split',k})}'>לפצל את ${esc(k)}</button>`).join('')}</td></tr>`));
   else if(WIMP.adm==='fails')B.innerHTML=msg+T(['מערכת','מה קרה','מתי'],(G.fails||[]).map(f=>`<tr><td>${esc(f.he)}</td><td>${esc(f.note||'')}</td><td>${esc(wiAt(f.at))}</td></tr>`));
+  // 24.11 the world's news (server/worldnews.js): the day's readings against the cap, the regions, and every feed: answered or not
+  else if(WIMP.adm==='wsrc'){const W=d&&d.world, RG={na:'צפון אמריקה',sa:'דרום אמריקה',eu:'אירופה',me:'המזרח התיכון',af:'אפריקה',as:'אסיה',oc:'אוקיאניה',gl:'כל העולם'}, TR={p:'מקור ראשוני',h:'מו״ל מוביל',m:'מו״ל מוכר'};
+    B.innerHTML=msg+(!W?'<p class="wi-note">אין נתונים על חדשות העולם.</p>':W.off?'<p class="wi-note">חדשות העולם כבויות (WORLD_NEWS=0 בסביבת השרת).</p>'
+      :`<p class="wi-note">חדשות העולם: ${W.okFeeds} מתוך ${W.nFeeds} מקורות ענו בקריאה האחרונה שלהם · ${W.headlines} כותרות נאספו בשלושת הימים האחרונים · ${W.read} כתבות נקראו ושמורות · היום נקראו ${W.used} מתוך תקרה של ${W.cap} (WORLD_READ_DAY_CAP)${W.cap===0?' · הקריאה כבויה':''}${W.last&&!W.last.ai?' · אין מפתח לקריאה (ANTHROPIC_API_KEY)':''}${W.last&&W.last.dropped?` · בריצה האחרונה הושמטו ${W.last.dropped} סימולים שלא אומתו`:''}.</p>
+        <p class="wi-note">כתבות שנקראו לפי אזור המו״ל: ${Object.entries(W.byReg||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${esc(RG[k]||k)} ${n}`).join(' · ')||'עוד אין'}.</p>`
+        +T(['מקור','מדינה','אזור','שפה','סוג','מצב','נקרא לאחרונה'],(W.feeds||[]).slice().sort((a,b)=>(a.ok===b.ok?0:a.ok?1:-1)||String(a.pub).localeCompare(String(b.pub))).map(x=>`<tr><td>${esc(x.pub)}</td><td dir="ltr">${esc(x.cc)}</td><td>${esc(RG[x.reg]||x.reg)}</td><td dir="ltr">${esc(x.lang)}</td><td>${esc(TR[x.tier]||'')}</td><td>${!x.at?'עוד לא נקרא':x.ok?`ענה · ${x.n} כותרות`:`לא ענה${x.fails>1?` (${x.fails} פעמים ברצף)`:''}: <span dir="ltr">${esc(x.err||'')}</span>`}</td><td>${esc(wiAt(x.at))}</td></tr>`)))}
   else if(WIMP.adm==='stale')B.innerHTML=msg+`<p class="wi-note">חברות שהאירועים מזכירים ואין להן מחיר עדכני (אף פעם לא ההחזקות של אדם).</p>`+T(['נייר','מצב','מתי'],(G.stale||[]).map(x=>`<tr><td dir="ltr">${esc(x.sym)}</td><td>${esc(x.he)}</td><td>${esc(wiAt(x.at))}</td></tr>`));
   else if(WIMP.adm==='qual'){if(!WIMP.qual){B.innerHTML=msg+'<p class="wi-note">טוען…</p>'; wiJson('/api/admin/impact/quality').then(r=>{WIMP.qual=r; wiAdmRender(wiD())}).catch(e=>{WIMP.qual={err:e.message}; wiAdmRender(wiD())}); return}
     const Q=WIMP.qual; if(Q.err){B.innerHTML=msg+`<p class="wi-note">מדידת האיכות לא נטענה: ${esc(Q.err)}</p>`; return}
@@ -31093,6 +31119,11 @@ function wiSetView(v){if(v===WIMP.view)return; const was=WIMP.view; WIMP.view=v;
 
 document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest||!t.closest('#wi,#wiSheet'))return;
   if(t.closest('[data-wireset]')){wiReset(); return}
+  // 24.11 the scope: the whole world's events, or (the mode's own button) what reaches the portfolio; remembered on this device
+  {const sc=t.closest('[data-wiscope]'), mm=t.closest('[data-wimode]'), to=sc?'all':mm&&mm.dataset.wimode==='me'?'me':null;
+    if(to&&(WIMP.scope!==to||(sc&&WIMP.mode!=='me'))){WIMP.scope=to; try{localStorage.setItem('tr_wiscope',to)}catch(e){} const was=WIMP.mode; WIMP.mode='me'; WIMP.sel=null; WIMP.net.sig=''; WIMP.net.focus=null; if(to==='all'&&WIMP.time==='past'){WIMP.time='now'; if(WIMP.view==='hist')WIMP.view='globe'}
+      wiSheet(); wiLoad(false); wiViz(); wiRender(); if(sc||was==='me')return}
+    else if(sc){wiRender(); return}}
   const m=t.closest('[data-wimode]'); if(m){const v=m.dataset.wimode; if(v==='world'&&!wiAdminOk())return; if(WIMP.mode!==v){WIMP.mode=v; WIMP.sel=null; WIMP.net.sig=''; WIMP.net.focus=null; if(v==='world'&&WIMP.view==='hist')WIMP.view='globe'; wiSheet(); wiLoad(false); wiViz()} wiRender(); return}
   const vw=t.closest('[data-wiview]'); if(vw){wiSetView(vw.dataset.wiview); return}
   const lm=t.closest('[data-wilm]'); if(lm){WIMP.lm=lm.dataset.wilm; const R=wiR(); if(R)R._sig=null; wiRender(); return}
@@ -31136,7 +31167,7 @@ document.addEventListener('keydown',ev=>{const g=ev.target&&ev.target.closest&&e
   if(ev.key==='+'||ev.key==='='){ev.preventDefault(); R.zoom(0.72)} else if(ev.key==='-'||ev.key==='_'){ev.preventDefault(); R.zoom(1.35)} else if(ev.key==='0'){ev.preventDefault(); WIMP.reg=''; wiHome(true); wiRegsRender()}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&WIMP.sel&&$('wiSheet')&&!$('wiSheet').hidden){WIMP.sel=null; WIMP.net.focus=null; wiSelApply(false); wiSheet(); wiRender()}
   if((ev.key==='Enter'||ev.key===' ')&&ev.target&&ev.target.closest&&ev.target.closest('[data-wihp],[data-wne]')){ev.preventDefault(); ev.target.closest('[data-wihp],[data-wne]').dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
-window.__wi={state:()=>({mode:WIMP.mode,view:WIMP.view,time:WIMP.time,kind:WIMP.kind,lm:WIMP.lm,lvl:WIMP.lvl,dirty:wiDirty(),events:(wiD()&&wiD().events||[]).length,shown:wiEventsSel().length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,
+window.__wi={state:()=>({mode:WIMP.mode,scope:WIMP.scope,view:WIMP.view,time:WIMP.time,kind:WIMP.kind,lm:WIMP.lm,lvl:WIMP.lvl,dirty:wiDirty(),events:(wiD()&&wiD().events||[]).length,shown:wiEventsSel().length,assets:wiAssets().length,globe:wiR()?wiR().state():null,flat:WIMP.F?WIMP.F.state():null,
     data:()=>{const D=wiGlobeData(); return {points:D.points.length,arcs:D.arcs.length,loud:D.arcs.filter(a=>!a.quiet).length,clusters:D.points.filter(p=>p.kind==='cluster').length,labels:D.points.filter(p=>p.label&&!p.label.quiet).length}},
     net:WIMP.view==='net'?{nodes:document.querySelectorAll('#wi .wn-n').length,edges:document.querySelectorAll('#wi .wn-hit').length,off:{...WIMP.net.off},direct:WIMP.net.direct,focus:WIMP.net.focus}:null,past:{from:WIMP.past.from,to:WIMP.past.to,n:WIMP.past.d?(WIMP.past.d.events||[]).length:null},gFail:WIMP.gFail,err:WIMP.err,sel:WIMP.sel}),select:wiSelect,view:wiSetView,reset:wiReset};
 // 17.11 (the owner's proposal 4, "חדשות"): the phone's answer card, what in the news touches the portfolio now: the

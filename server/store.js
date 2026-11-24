@@ -121,6 +121,9 @@ export function access(user,p){
   // read-only even for them through this API (a correction goes through /api/admin/impact/fix, which checks "edit" and is
   // audited). A user's own view comes from /api/impact, cut on the server to their portfolio
   if(seg[0]==='research'&&/^impact/.test(seg[1]||''))return owner?'r':'';
+  // 24.11 TikChik WORLD: the world's news (the headlines gathered, the readings, the symbols confirmed) are large, and are
+  // served to a user through /api/impact (the map's view of the whole world), never as documents
+  if(seg[0]==='research'&&/^world/.test(seg[1]||''))return owner?'r':'';
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(OWN_DOCS.has(seg[0]))return isOwner(user)?'rw':'';

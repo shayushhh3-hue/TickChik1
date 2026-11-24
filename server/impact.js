@@ -34,6 +34,7 @@ import {audit, can} from './admin/core.js';
 import {usOpen, ilOpen, ilParts} from '../shared/market.js';
 import {CC, CC_HE, REG_CC, countryPt, regionPt, marketPt, hqOf, INDEX_MKT} from './impactgeo.js';
 import {REL_DOC, relsFor, relTask, cardsOf, universeOf, relStatus} from './impactrel.js';
+import {worldNames, ccOfSym, worldStatus, WORLD_DOC, WORLD_SYMS_DOC} from './worldnews.js';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -91,7 +92,7 @@ export function catsOf(x,a){
 export function ccOf(x){const L=Array.isArray(x&&x.cc)?x.cc.filter(c=>CC[c]):[]; if(L.length)return L.slice(0,4); return uniq(((x&&x.regions)||[]).map(r=>REG_CC[r]).filter(Boolean)).slice(0,4)}
 
 // ---- the sources: how reliable a publisher is, by its kind (a list the admin can read; a publisher not on it is "mid") ----
-const TIER_HIGH=/reuters|bloomberg|associated press|\bap\b|wall street journal|\bwsj\b|financial times|\bft\.com|the economist|nikkei|cnbc|barron|marketwatch|federal reserve|sec edgar|bank of israel|european central bank|\becb\b|globes|גלובס|calcalist|כלכליסט|themarker|דה מרקר|\bbbc\b|new york times|washington post|axios|politico|\bmaya\b|מאיה|tase/i;
+const TIER_HIGH=/guardian|handelsblatt|frankfurter allgemeine|neue z[üu]rcher|le figaro|el pa[ií]s|expansi[óo]n|il sole 24|south china morning post|straits times|economic times|globe and mail|sydney morning herald|abc news|deutsche welle|yonhap|folha de|bank of england|bank of japan|reuters|bloomberg|associated press|\bap\b|wall street journal|\bwsj\b|financial times|\bft\.com|the economist|nikkei|cnbc|barron|marketwatch|federal reserve|sec edgar|bank of israel|european central bank|\becb\b|globes|גלובס|calcalist|כלכליסט|themarker|דה מרקר|\bbbc\b|new york times|washington post|axios|politico|\bmaya\b|מאיה|tase/i;
 const TIER_LOW=/motley fool|fool\.com|seeking alpha|investorplace|benzinga|zacks|insider monkey|gurufocus|tipranks|24\/7 wall|simply wall|\bx\.com\b|twitter|reddit|stocktwits|youtube/i;
 const OFFICIAL=/business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release/i;
 export function srcTier(pub,kind){const p=String(pub||''); if(TIER_LOW.test(p)||kind==='opinion')return 'low'; if(TIER_HIGH.test(p))return 'high'; if(OFFICIAL.test(p)||kind==='pr')return 'official'; return 'mid'}
@@ -101,7 +102,7 @@ const bestTier=L=>L.reduce((b,t)=>TIER_R[t]>TIER_R[b]?t:b,'low');
 // decided, the company's own release or filing) confirms the event itself; a news report confirms that it was reported; an
 // analysis supports the explanation and confirms no new fact; an opinion is evidence of nothing. And whether the article
 // was read in full, or only its headline: a source that was not opened is never shown as checked
-const PRIMARY=/federal reserve|sec edgar|bank of israel|european central bank|\becb\b|\bmaya\b|מאיה|\btase\b|business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release|treasury|white house|bureau of labor/i;
+const PRIMARY=/bank of england|bank of japan|federal reserve|sec edgar|bank of israel|european central bank|\becb\b|\bmaya\b|מאיה|\btase\b|business ?wire|pr ?newswire|globe ?newswire|accesswire|newsfile|press release|treasury|white house|bureau of labor/i;
 export const VER_HE={primary:'מקור ראשוני: הגוף שהחליט או החברה עצמה. מאמת את עצם האירוע',fact:'דיווח חדשותי: מאמת שהאירוע דווח כעובדה',analysis:'ניתוח של המקור: תומך בהסבר, אינו מאמת עובדה חדשה',opinion:'טור דעה: אינו ראיה לעובדות',est:'דיווח שהקריאה שלו היא הערכה, לא עובדה מאומתת',head:'נקראה הכותרת בלבד: הכתבה עצמה לא נבדקה'};
 const verOf=(x,pub,tier)=>x.rules?'head':x.kind==='opinion'?'opinion':(PRIMARY.test(String(pub||''))||x.kind==='pr'||tier==='official')?'primary':x.kind==='analysis'||x.cert==='interp'?'analysis':x.cert==='fact'?'fact':'est';
 
@@ -175,7 +176,7 @@ function eventOf(group,{fix,prevOf,coLoc}){
   // 22.11: beside the links, what the readings say plainly, for the relation of the event to each asset (server/impactrel.js):
   // the companies they name (how, why, and whether the article itself names them), the securities the articles were only
   // listed under (no link by itself), the factors and the sectors with their reasons
-  const L=new Map(), why=[], ev=node.ev(k), NM=new Map(), LST=new Set(), FACS=new Map(), SECS=new Map(), THEMES=new Set();
+  const L=new Map(), why=[], ev=node.ev(k), NM=new Map(), LST=new Set(), FACS=new Map(), SECS=new Map(), THEMES=new Set(), OTH=new Map();
   const add=(from,to,o,i)=>{const id=from+'>'+to; let l=L.get(id);
     if(!l){l={id,from,to,dir:o.dir||'unclear',move:o.move||null,direct:!!o.direct,how:o.how||null,why:o.why||'',basis:o.basis||'reading',arts:[],cs:[],tiers:[],s:o.s||1}; L.set(id,l)}
     else{if(o.dir&&o.dir!=='unclear'&&l.dir!=='unclear'&&o.dir!==l.dir)l.dir='mixed'; else if(l.dir==='unclear'&&o.dir)l.dir=o.dir; if(!l.why&&o.why)l.why=o.why; l.s=Math.max(l.s,o.s||1)}
@@ -197,10 +198,12 @@ function eventOf(group,{fix,prevOf,coLoc}){
     // 22.11: a security an article was only gathered under is NOT a link (a list of "three stocks that…" and a market wrap sit
     // in the feed of every share they mention): it is kept as "listed", one of the signs that send the pair to be examined
     for(const a of (xx.aff||[])){const o=NM.get(a.sym), d=a.dir||(a.how==='direct'?xx.dir:'unclear');
-      if(!o)NM.set(a.sym,{sym:a.sym,how:a.how,dir:d||'unclear',why:a.why||'',said:a.said,via:a.via||null,arts:[i]});
+      if(!o)NM.set(a.sym,{sym:a.sym,how:a.how,dir:d||'unclear',why:a.why||'',said:a.said,via:a.via||null,arts:[i],...(a.name?{name:a.name}:{}),...(a.exch?{exch:a.exch}:{})});
       else{if(!o.arts.includes(i))o.arts.push(i); if(a.how==='direct'&&o.how!=='direct'){o.how='direct'; o.dir=d||o.dir; if(a.why)o.why=a.why} else if(!o.why&&a.why)o.why=a.why;
         if(a.said===true)o.said=true; else if(o.said===undefined&&a.said===false)o.said=false}}
     for(const s of (z.a.syms||[]))if(!(xx.aff||[]).some(a=>a.sym===s))LST.add(s);
+    // 24.11: a company the reading names with no known symbol (private, a state's, or a symbol that was not confirmed): a name only
+    for(const c of (xx.cos||[])){const kk=String(c.name||'').toLowerCase(); if(kk&&!OTH.has(kk))OTH.set(kk,{name:c.name,how:c.how||'sector',dir:c.dir||'unclear',why:c.why||'',said:!!c.said})}
     for(const f of facs)if(!FACS.has(f.k))FACS.set(f.k,{k:f.k,move:f.move||'unclear',why:f.why||''});
     for(const g of (xx.sectors||[]))if(!SECS.has(g)){const s=secx.get(g); SECS.set(g,{g,dir:s?s.dir:'unclear',why:s&&s.why||'',via:s&&s.via||null})}
     for(const t of (xx.themes||[]))THEMES.add(t);
@@ -221,7 +224,7 @@ function eventOf(group,{fix,prevOf,coLoc}){
   const pickX=f=>{const z=usable.find(q=>q.x[f]); return z?z.x[f]:''}, eco=pickX('eco')||([...FACS.values()].find(f=>f.why)||{}).why||([...SECS.values()].find(s=>s.why)||{}).why||'';
   const named=[...NM.values()], listed=[...LST].filter(s=>!NM.has(s)).slice(0,12);
   return {k,ev:x.ev||null,he:str(F.he,120)||x.he||'',title:lead.title||'',what:x.what||'',chg:pickX('chg'),eco,more:x.more||'',unknown:x.unknown||'',cats,cat:cats[0],type:x.type||'other',typeHe:TYPE_HE[x.type]||'',level,kind:x.kind||'news',cert:x.cert||'est',
-    named,listed,facs:[...FACS.values()],secs:[...SECS.values()],themes:[...THEMES],nodes:uniq([ev,...links.flatMap(l=>[l.from,l.to])]),
+    named,listed,others:[...OTH.values()].slice(0,8),world:arts.every(z=>z.a.world===true),facs:[...FACS.values()],secs:[...SECS.values()],themes:[...THEMES],nodes:uniq([ev,...links.flatMap(l=>[l.from,l.to])]),
     st:group.st||'unknown',stHe:STAGE_HE[group.st||'unknown'],occ:x.occ||pickX('occ')||null,first:times[0]||null,last:times[times.length-1]||null,seen:prev?prev.seen:new Date().toISOString(),
     cc,regions,loc,dir,s,conf,confWhy:CONF_OF.includes(F.conf)?'נקבע ביד מנהל':cf.why,hz:F.hz&&HZ_HE[F.hz]?F.hz:hzOf(cats),hzWhy:F.hz?'נקבע ביד מנהל':HZ_WHY,
     ai,rules:!ai,nArt:arts.length,nPubs,srcRel,src:[...src.values()].sort((a,b)=>TIER_R[b.tier]-TIER_R[a.tier]||b.n-a.n),dups,
@@ -236,11 +239,13 @@ function eventOf(group,{fix,prevOf,coLoc}){
 // several people, or reopened, does not rebuild them); a write to any of the documents changes the key
 const CACHE=new Map();
 const stamp=(store,p)=>{try{const r=store.db.prepare('select updated_at from docs where path=?').get(p); return r?r.updated_at:''}catch(e){return ''}};
-export function buildEvents(store,{now=new Date(),days=7,visible=null,visKey=null,fix=undefined,prev=undefined}={}){
-  const ck=visKey&&fix===undefined&&prev===undefined?[visKey,days,stamp(store,'research/newsx'),stamp(store,'research/news'),stamp(store,FIX_DOC),stamp(store,IMPACT_DOC),Math.floor(now.getTime()/60e3)].join('|'):null;
+// 24.11: world = which of the world's news join (server/worldnews.js): 'top' the important events (the registry and each
+// portfolio's view are made of these), 'all' every event that was read (the view of the whole world), false none
+export function buildEvents(store,{now=new Date(),days=7,visible=null,visKey=null,fix=undefined,prev=undefined,world='top'}={}){
+  const ck=visKey&&fix===undefined&&prev===undefined?[visKey,world,days,stamp(store,'research/newsx'),stamp(store,'research/news'),stamp(store,WORLD_DOC),stamp(store,WORLD_SYMS_DOC),stamp(store,FIX_DOC),stamp(store,IMPACT_DOC),Math.floor(now.getTime()/60e3)].join('|'):null;
   if(ck&&CACHE.has(ck))return CACHE.get(ck);
   const FX=fix===undefined?(store.getDoc(FIX_DOC).data||{}):fix||{}, PV=prev===undefined?(store.getDoc(IMPACT_DOC).data||{}):prev||{};
-  const groups=eventsOf(store,{now,days,visible,alias:false});
+  const groups=eventsOf(store,{now,days,visible,alias:false,world});
   const alias=aliasesOf(groups,{fix:FX}), byK=new Map(groups.map(g=>[g.k,g]));
   // an alias joins the articles into its root's group
   for(const [from,to] of Object.entries(alias)){const a=byK.get(from), b=byK.get(to); if(!a||!b||a===b)continue; b.arts.push(...a.arts); b.ai=b.ai||a.ai; byK.delete(from)}
@@ -249,7 +254,8 @@ export function buildEvents(store,{now=new Date(),days=7,visible=null,visKey=nul
     g.st=(g.arts.slice().sort((p,q)=>String(q.a.at||q.a.seen)<String(p.a.at||p.a.seen)?-1:1).find(z=>z.x.st&&z.x.st!=='unknown')||{x:{}}).x.st||'unknown'}
   const PE=new Map((PV.events||[]).map(e=>[e.k,e])), prevOf=k=>PE.get(k)||PE.get(Object.keys(alias).find(a=>alias[a]===k))||null;
   const SD=new Map(), coLoc=sym=>{if(SD.has(sym))return SD.get(sym); let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){}
-    let l=hqOf(sym,{fix:FX.hq||null,about}); if(!l)l=/^TLV:|^\d{5,9}$/.test(sym)?marketPt('IL'):/^[A-Z][A-Z.\-]{0,6}$/.test(sym)?marketPt('US'):null; SD.set(sym,l); return l};
+    // 24.11: a security of another exchange with no known headquarters is placed at that exchange (said to be the exchange)
+    let l=hqOf(sym,{fix:FX.hq||null,about}); if(!l)l=/^TLV:|^\d{5,9}$/.test(sym)?marketPt('IL'):ccOfSym(sym)?marketPt(ccOfSym(sym)):/^[A-Z][A-Z.\-]{0,6}$/.test(sym)?marketPt('US'):null; SD.set(sym,l); return l};
   const events=[...byK.values()].map(g=>eventOf(g,{fix:FX,prevOf,coLoc}));
   events.sort((a,b)=>(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1));
   const val={events,alias,coLoc};
@@ -273,7 +279,7 @@ const MATERIAL=new Set(['new','level','dir','cos','stage','fact','read']);
 // was made, what stands without one (the subject of the article, a fund's holdings), what was refused and what waits
 export function impactTask(store,{now=new Date(),days=7,log=()=>{}}={}){
   const t0=Date.now(), iso=now.toISOString(), PV=store.getDoc(IMPACT_DOC).data||{}, PE=new Map((PV.events||[]).map(e=>[e.k,e]));
-  const {events,alias}=buildEvents(store,{now,days,prev:PV});
+  const B=buildEvents(store,{now,days,prev:PV}), alias=B.alias; let nW=0; const events=B.events.filter(e=>!e.world||++nW<=250);
   const REL=store.getDoc(REL_DOC).data||null, FX=store.getDoc(FIX_DOC).data||{}, cards=cardsOf(store,universeOf(store),{names:nameMap()}), ai=!!process.env.ANTHROPIC_API_KEY;
   let nNew=0, nUpd=0, nRel=0, nNone=0, nWait=0;
   const out=events.map(e=>{const o=PE.get(e.k)||PE.get(Object.keys(alias).find(a=>alias[a]===e.k)), ch=changesOf(o,e), mat=ch.filter(c=>MATERIAL.has(c));
@@ -293,7 +299,7 @@ export function impactTask(store,{now=new Date(),days=7,log=()=>{}}={}){
 }
 // 22.11: the analysis of the pairs that wait (Claude, a few a run), then the registry again with what was decided
 export async function impactRelRun(store,{now=new Date(),days=7,log=()=>{},fetch:f=globalThis.fetch,ask=null,...o}={}){
-  const {events}=buildEvents(store,{now,days});
+  let nW=0; const events=buildEvents(store,{now,days}).events.filter(e=>!e.world||++nW<=250);
   const st=await relTask(store,events,{now,log,fetch:f,ask,names:nameMap(),...o});
   if(st.judged)impactTask(store,{now,days,log:()=>{}});
   return st;
@@ -317,7 +323,7 @@ const better=(a,b)=>(a.direct!==b.direct?a.direct:a.s!==b.s?a.s>b.s:CONF_R[a.c]!
 const relSnap=(r,e,iso)=>({rel:r.rel,dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',hz:r.hz||e.hz||null,mech:r.mech||'',fact:r.fact||'',basis:r.basis||null,src:r.src||null,pending:!!r.pending,at:r.at||iso,...(r.via&&r.via.length?{via:r.via}:{})});
 function snapshot(store,events,now){
   const day=ilParts(now).iso, p=SNAP+'/'+day, iso=now.toISOString(), old=new Map((((store.getDoc(p).data||{}).events)||[]).map(e=>[e.k,e]));
-  const items=events.filter(e=>!e.hidden).map(e=>{const o=old.get(e.k), R={};
+  const items=events.filter(e=>!e.hidden&&(!e.world||Object.values(e.rels||{}).some(r=>r.rel==='direct'||r.rel==='indirect'))).map(e=>{const o=old.get(e.k), R={};
     for(const [s,r] of Object.entries(e.rels||{})){if(r.rel!=='direct'&&r.rel!=='indirect')continue; const was=o&&o.rels&&o.rels[s]; R[s]=was&&!was.pending?was:relSnap(r,e,iso)}
     return {k:e.k,he:e.he,what:e.what||'',cat:e.cat,level:e.level,dir:e.dir,s:e.s,conf:e.conf,occ:e.occ||null,first:e.first,last:e.last,got:e.seen||null,status:e.status,rules:e.rules,nPubs:e.nPubs,srcRel:e.srcRel,cc:e.cc,
       loc:e.loc?{lat:e.loc.lat,lon:e.loc.lon,name:e.loc.name||'',how:e.loc.how||null}:null,
@@ -402,12 +408,18 @@ const VER_R={primary:0,fact:1,analysis:2,est:3,opinion:4,head:5};
 const evidenceOf=(e,mineNamed)=>e.arts.slice().sort((a,b)=>(VER_R[a.ver]-VER_R[b.ver])||(TIER_R[b.tier]-TIER_R[a.tier])||(String(a.at)<String(b.at)?-1:1)).slice(0,8)
   .map(a=>({pub:a.pub,title:a.title,link:a.link,at:a.at,got:a.got||null,tier:a.tier,kind:a.kind,cert:a.cert,ver:a.ver,verHe:VER_HE[a.ver]||'',rd:a.rd||null,primary:!!a.primary,supports:mineNamed.filter(z=>(z.arts||[]).includes(a.i)).map(z=>z.sym)}));
 
-export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
+// 24.11 (the owner: "from all the exchanges of the world, events from all the world's news sites"): scope 'world' is the
+// whole world's events, whether or not they reach the portfolio: every event that was read and is worth watching, from the
+// public news only (the general news, the world's news) and the asker's own securities' news, exactly what the asker may
+// read in the news tab; never an event known only from another person's securities. An event that reaches the portfolio
+// carries its relations as in the portfolio's view ('me', as before); the others say that no relation was found
+export function impactForUser(store,u,{now=new Date(),days=7,limit=40,scope='me'}={}){
+  const all=scope==='world'; if(all)limit=Math.max(limit,160);
   const pa=pathsOf(u), P=store.getDoc(pa.portfolio).data, Q=store.getDoc('quotes/latest').data||{}, HD=holdingsOf(P,Q);
   const vis=visFor(store,u), sec=sectorMap(), sectorOf=s=>{const g=sec.get(s)||''; return ({'Information Technology':'Technology',Financials:'Finance',Materials:'Basic Materials',Healthcare:'Health Care'})[g]||g};
-  const {events,coLoc}=buildEvents(store,{now,days,visible:vis,visKey:vis?'u:'+u.id+':'+[...symsOfUser(store,u.id)].sort().join(','):'all'});
+  const {events,coLoc}=buildEvents(store,{now,days,visible:vis,visKey:vis?'u:'+u.id+':'+[...symsOfUser(store,u.id)].sort().join(','):'all',world:all?'all':'top'});
   const PV=store.getDoc(IMPACT_DOC).data||{}, PE=new Map((PV.events||[]).map(e=>[e.k,e]));
-  const mine=new Set(HD.pos.map(h=>h.sym)), names=nameMap(), coName=s=>(mine.has(s)&&((Q.meta||{})[s]||{}).name)||names.get(s)||null;
+  const mine=new Set(HD.pos.map(h=>h.sym)), names=nameMap(), WNM=worldNames(store), coName=s=>(mine.has(s)&&((Q.meta||{})[s]||{}).name)||names.get(s)||(WNM.get(s)||{}).name||null;
   const REL=store.getDoc(REL_DOC).data||null, FX=store.getDoc(FIX_DOC).data||{}, ai=!!process.env.ANTHROPIC_API_KEY, cards=cardsOf(store,[...mine],{names});
   // the assets: the holdings, each with its price, today's move (the halo: the market's own move, nothing else) and freshness
   const A=[], bySym=new Map(); let dayV=0, dayKnown=true;
@@ -443,31 +455,45 @@ export function impactForUser(store,u,{now=new Date(),days=7,limit=40}={}){
       const z=(e.named||[]).find(q=>q.sym===sym);
       impacts.push({sym,kind:a.kind,rel:r.rel,dir:r.dir||'unclear',s:r.s||1,conf:r.conf||'low',confWhy:r.confWhy||'',hz:r.hz||e.hz,mech:r.mech||'',fact:r.fact||'',factSrc:factSrc(c,r.fact),basis:r.basis||null,src:r.src||null,up:r.up||'',down:r.down||'',
         pending:!!r.pending,generic:!!r.generic,st:r.st||'auto',holds:r.holds||null,said:!!(z&&(z.said===true||(z.how==='direct'&&z.said!==false))),path:p.path.nodes,mkt:marketOf(a,e)})}
-    if(!impacts.length)continue;
+    // the whole world: an event that reaches no asset is shown too, when it was read (not a headline by the rules) and is worth watching
+    if(!impacts.length&&(!all||e.rules||(LV[e.level]||0)<1))continue;
     const o=PE.get(e.k), isSaid=z=>z.said===true||(z.how==='direct'&&z.said!==false), verd=s=>{const r=rels[s]; return r?{rel:r.rel,why:r.rel==='none'||r.rel==='wait'?r.why||'':''}:null};
     // the companies: the ones the source names, apart from the ones the engine found (the reading's own inference, or the
     // analysis of an asset the article does not name)
-    const said=(e.named||[]).filter(isSaid).map(z=>({sym:z.sym,name:coName(z.sym),how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})}));
-    const found=[...(e.named||[]).filter(z=>!isSaid(z)).map(z=>({sym:z.sym,name:coName(z.sym),how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),by:'reading',...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})})),
+    // 24.11: a company of another exchange carries its exchange's country (the symbol's suffix) and the exchange's name
+    const exOf=z=>{const c=ccOfSym(z.sym); return c||z.exch?{...(c?{xcc:c}:{}),...(z.exch?{exch:z.exch}:{})}:{}};
+    const said=(e.named||[]).filter(isSaid).map(z=>({sym:z.sym,name:coName(z.sym)||z.name||null,how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),...exOf(z),...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})}));
+    const found=[...(e.named||[]).filter(z=>!isSaid(z)).map(z=>({sym:z.sym,name:coName(z.sym)||z.name||null,how:z.how,dir:z.dir,why:z.why,mine:mine.has(z.sym),by:'reading',...exOf(z),...(mine.has(z.sym)?{verdict:verd(z.sym)}:{})})),
       ...impacts.filter(i=>!(e.named||[]).some(z=>z.sym===i.sym)).map(i=>({sym:i.sym,name:coName(i.sym),how:i.rel,dir:i.dir,why:i.mech,mine:true,by:i.src==='structure'?'structure':'analysis',verdict:{rel:i.rel,why:''}}))];
     out.push({k:e.k,he:e.he,what:e.what,chg:e.chg||'',eco:e.eco||'',more:e.more,unknown:e.unknown,cats:e.cats,cat:e.cat,catHe:CAT_HE[e.cat],type:e.type,level:e.level,kind:e.kind,cert:e.cert,st:e.st,stHe:e.stHe,
       occ:e.occ,first:e.first,last:e.last,got:e.seen||null,status:o?(o.status||'same'):'new',upd:o&&o.upd||null,cc:e.cc,regions:e.regions,loc:e.loc,dir:e.dir,s:e.s,conf:e.conf,confWhy:e.confWhy,hz:e.hz,hzWhy:e.hzWhy,rules:e.rules,
       nArt:e.nArt,nPubs:e.nPubs,srcRel:e.srcRel,src:e.src.map(s=>({pub:s.pub,tier:s.tier,n:s.n})),evidence:evidenceOf(e,(e.named||[]).filter(z=>mine.has(z.sym))),dups:(e.dups||[]).length,hist:(o&&o.hist||[]).slice(-6),
-      facs:(e.facs||[]).map(f=>({k:f.k,he:FAC_HE[f.k]||f.k,move:f.move,why:f.why})),said,found,impacts,checked,touches:uniq(impacts.map(i=>i.sym)),paths,rel:relScore(impacts,bySym)})}
+      facs:(e.facs||[]).map(f=>({k:f.k,he:FAC_HE[f.k]||f.k,move:f.move,why:f.why})),said,found,impacts,checked,touches:uniq(impacts.map(i=>i.sym)),paths,rel:relScore(impacts,bySym),
+      ...(all?{mine:impacts.length>0,world:!!e.world,others:e.others||[],secs:(e.secs||[]).map(s=>({g:s.g,he:SEC_HE[s.g]||s.g,dir:s.dir,why:s.why}))}:{})})}
+  // the portfolio's view: by the weight of the relation; the whole world: by the event's own level, the newest first (an
+  // event that reaches the portfolio is never cut out of the list)
+  if(all)out.sort((a,b)=>(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1)); else
   out.sort((a,b)=>(b.rel-a.rel)||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1));
+  if(all&&out.length>limit){const keep=out.filter(e=>e.mine), rest=out.filter(e=>!e.mine).slice(0,Math.max(0,limit-keep.length)), K=new Set([...keep,...rest]); out.splice(0,out.length,...out.filter(e=>K.has(e)))}
   const ev=out.slice(0,limit), keepK=new Set(ev.map(e=>e.k));
   const links=[...usedL.values()].filter(l=>keepK.has(l.ek));
   const nodes={}; for(const e of ev){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const p of e.paths)for(const n of p.nodes)if(!nodes[n]){const t=n.slice(0,n.indexOf(':')), s=n.slice(n.indexOf(':')+1), a=(t==='co'||t==='fund')?bySym.get(s):null;
-      nodes[n]={t,label:nodeLabel(n),...(t==='co'||t==='fund'?{name:coName(s)}:{}),loc:t==='cty'?countryPt(s):a?a.loc:t==='co'?coLoc(s):null,mine:!!a}}}
+      nodes[n]={t,label:nodeLabel(n),...(t==='co'||t==='fund'?{name:coName(s)}:{}),loc:t==='cty'?countryPt(s):a?a.loc:t==='co'?coLoc(s):null,mine:!!a}}
+    // the whole world: the companies an event names (public news), each where it sits, so the map can show them
+    if(all)for(const z of [...e.said,...e.found]){const n='co:'+z.sym; if(!nodes[n]){const a=bySym.get(z.sym); nodes[n]={t:'co',label:z.sym,name:z.name||null,loc:a?a.loc:coLoc(z.sym),mine:!!a}}}}
   // the portfolio's line: the value and today's move only when every price is known (else said to be partial)
   const pf={total:HD.total,n:HD.pos.length,known:HD.wOk,day:HD.wOk&&dayKnown?Math.round(dayV):null,dayPct:HD.wOk&&dayKnown&&HD.total?Math.round(dayV/(HD.total-dayV)*1e4)/100:null,usdPct:HD.usdPct,fresh:worstFresh(A)};
   for(const a of A)a.events=ev.filter(e=>e.touches.includes(a.sym)).length;
   const keys=A.slice().sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,6).map(a=>({...a,spark:sparkOf(store,a.sym)}));
   const RS=relStatus(store);
-  return {mode:'me',at:now.toISOString(),days,engineAt:PV.at||null,engine:{ai,waiting,relAt:RS&&RS.at||null,capped:!!(RS&&RS.capped)},pf,assets:A,keys,indices:indicesOf(Q,now),events:ev,links,nodes,
-    priceLabel:Q.priceLabel||'',filters:filtersOf(ev,A),
+  // 24.11: the world's news behind the view: how many publishers answered, how many articles were read, so the page can say
+  // where the events come from (and when the layer is off or still empty)
+  let wsrc=null; if(all){try{const WS=worldStatus(store,{now}); wsrc={off:WS.off,feeds:WS.nFeeds,ok:WS.okFeeds,read:WS.read,at:WS.updatedAt,byReg:WS.byReg}}catch(e){}}
+  return {mode:'me',scope:all?'world':'me',at:now.toISOString(),days,engineAt:PV.at||null,engine:{ai,waiting,relAt:RS&&RS.at||null,capped:!!(RS&&RS.capped)},pf,assets:A,keys,indices:indicesOf(Q,now),events:ev,links,nodes,
+    priceLabel:Q.priceLabel||'',filters:filtersOf(ev,A),...(all?{world:wsrc,nMine:ev.filter(e=>e.mine).length}:{}),
     notes:['הכיוון הוא השערה מניתוח החדשות, לא תחזית ולא המלצה. קו ירוק או אדום הוא כיוון אפשרי; ההילה סביב נכס היא התנועה שלו בשוק בפועל היום.',
-      'מוצג רק אירוע שנמצא לו קשר עסקי מוסבר לנכס בתיק, נכס אחרי נכס. חברה שלא בתיק מופיעה רק כחוליה במסלול כזה.']};
+      all?'מוצגים אירועים מכל העולם, גם כאלה שלא נמצא להם קשר לתיק שלך. אירוע שנוגע לתיק מסומן, והקשר שלו מוסבר נכס אחרי נכס; לשאר כתוב שלא נמצא קשר.'
+         :'מוצג רק אירוע שנמצא לו קשר עסקי מוסבר לנכס בתיק, נכס אחרי נכס. חברה שלא בתיק מופיעה רק כחוליה במסלול כזה.']};
 }
 const FR_R={none:0,stale:1,close:2,delayed:3,live:4};
 const worstFresh=A=>{if(!A.length)return null; const w=A.reduce((b,a)=>FR_R[a.fresh.state]<FR_R[b.fresh.state]?a:b); const n=A.filter(a=>a.fresh.state===w.fresh.state).length; return {state:w.fresh.state,he:w.fresh.he,n}};
@@ -502,10 +528,15 @@ export function impactWorld(store,{now=new Date(),days=7,limit=200,sensitive=tru
   if(!IS)fails.push({k:'impact',he:'מנוע ההשפעה',note:'עוד לא רץ; ירוץ אחרי הקריאה הבאה של החדשות',at:null}); else if(now-Date.parse(IS.at)>3*H)fails.push({k:'impact-old',he:'מנוע ההשפעה',note:'הריצה האחרונה לפני יותר משלוש שעות',at:IS.at});
   if(RS&&!RS.ai)fails.push({k:'rel-key',he:'ניתוח הקשר לכל נכס',note:'אין ANTHROPIC_API_KEY: מוצגים רק נכס שהוא נושא הכתבה וקרן דרך האחזקות שלה',at:RS.at});
   if(RS&&RS.first)fails.push({k:'rel',he:'ניתוח הקשר לכל נכס',note:RS.first,at:RS.at}); if(RS&&RS.capped)fails.push({k:'rel-cap',he:'ניתוח הקשר לכל נכס',note:`התקרה היומית הושגה (${RS.used} זוגות); השאר ימתינו למחר`,at:RS.at});
+  // 24.11: the world's news: feeds that do not answer, the day's cap reached, no reading at all
+  let WS=null; try{WS=worldStatus(store,{now})}catch(e){}
+  if(WS&&!WS.off){if(WS.failing.length)fails.push({k:'world-feeds',he:'חדשות העולם: מקורות שלא ענו',note:`${WS.failing.length} מתוך ${WS.nFeeds}: ${WS.failing.slice(0,6).map(x=>x.pub).join(', ')}${WS.failing.length>6?'…':''}`,at:WS.failing[0].at});
+    if(WS.cap>0&&WS.used>=WS.cap)fails.push({k:'world-cap',he:'חדשות העולם: קריאת הכתבות',note:`התקרה היומית הושגה (${WS.used} כתבות); השאר ימתינו למחר`,at:WS.last&&WS.last.at||null});
+    if(WS.last&&WS.last.first)fails.push({k:'world',he:'חדשות העולם',note:WS.last.first,at:WS.last.at})}
   // the assets without a fresh price: the companies the events reach (public news), never anybody's holdings
   const named=uniq(evs.flatMap(e=>e.cos||[])), stale=[]; for(const s of named){const f=freshOf(Q,s,now); if(f.state==='none'||f.state==='stale')stale.push({sym:s,state:f.state,he:f.he,at:f.at})}
   const FX=store.getDoc(FIX_DOC).data||{};
-  const nodes={}; const coLoc=sym=>{let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){} return hqOf(sym,{fix:FX.hq||null,about})||marketPt(/^TLV:/.test(sym)?'IL':'US')};
+  const nodes={}; const coLoc=sym=>{let about=null; try{about=(store.getDoc('research/s_'+String(sym).replace(/[^A-Za-z0-9_.\-]/g,'_')).data||{}).prof||null}catch(e){} return hqOf(sym,{fix:FX.hq||null,about})||marketPt(/^TLV:/.test(sym)?'IL':ccOfSym(sym)||'US')};
   const list=evs.slice(0,limit);
   for(const e of list){nodes['ev:'+e.k]={t:'ev',label:e.he,loc:e.loc}; for(const l of e.links)for(const n of [l.from,l.to])if(!nodes[n]){const t=n.slice(0,n.indexOf(':'));
       nodes[n]={t,label:nodeLabel(n),...(t==='co'?{name:names.get(n.slice(3))||null}:{}),loc:t==='cty'?countryPt(n.slice(4)):t==='co'?coLoc(n.slice(3)):null}}
@@ -515,7 +546,7 @@ export function impactWorld(store,{now=new Date(),days=7,limit=200,sensitive=tru
   return {mode:'world',at:now.toISOString(),days,engineAt:PV&&PV.at||null,stats:PV&&PV.stats||null,events:list.map(e=>({...open(e),catHe:CAT_HE[e.cat],got:e.seen||null})),nodes,indices:indicesOf(Q,now),relsShown:!!sensitive,
     diag:{dups,weak:weak.slice(0,150),nWeak:weak.length,weakRel:sensitive?weakRel.slice(0,150):[],nWeakRel:weakRel.length,waitRel:sensitive?waitRel.slice(0,100):[],nWaitRel:waitRel.length,fails,stale:stale.slice(0,80),rel:RS,
       fixes:Object.keys(FX.link||{}).length+Object.keys(FX.ev||{}).length+Object.keys(FX.hq||{}).length+Object.keys(FX.alias||{}).length+Object.keys(FX.rel||{}).length},
-    filters:filtersOf(list,[]),tiers:REL_HE,ver:VER_HE};
+    filters:filtersOf(list,[]),tiers:REL_HE,ver:VER_HE,world:WS};
 }
 
 // ================= the admin's hand: approve, reject or correct; every change audited with what it was =================

@@ -84,10 +84,17 @@ export function holdingsOf(P,Q){
 
 // ---- the events: the readings of the last days, joined by their event key ----
 const LV_RANK={crit:3,imp:2,watch:1,info:0};
-export function eventsOf(store,{now=new Date(),days=3,visible=null,alias=true}={}){
-  const X=store.getDoc('research/newsx').data||{}, N=store.getDoc('research/news').data||{}, by=X.by||{}, from=new Date(now.getTime()-days*DAY).toISOString(), arts=new Map();
+export function eventsOf(store,{now=new Date(),days=3,visible=null,alias=true,world=false}={}){
+  const X=store.getDoc('research/newsx').data||{}, N=store.getDoc('research/news').data||{}, from=new Date(now.getTime()-days*DAY).toISOString(), arts=new Map();
+  let by=X.by||{};
   for(const it of (N.items||[]))if(it&&it.link)arts.set(newsId(it.link),{...it,id:newsId(it.link),src:'co'});
   for(const it of (X.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
+  // 24.11 TikChik WORLD: the world's news (server/worldnews.js), public like the general news, for the map only: an alert
+  // is still made of the securities' and the market's news, as before
+  if(world){const W=store.getDoc('research/worldx').data||{}; if(W.arts&&W.arts.length){by={...(W.by||{}),...by}; for(const it of W.arts){if(!it||!it.id||arts.has(it.id))continue;
+        // 'top': only what the reading found important (the registry and the relations to the assets are made of these)
+        if(world==='top'){const x=(W.by||{})[it.id]; if(!x||(x.level!=='crit'&&x.level!=='imp'))continue}
+        arts.set(it.id,it)}}}
   const E=new Map();
   for(const a of arts.values()){const x=by[a.id]; if(!x||(a.at||a.seen||'')<from||(visible&&!visible(a)))continue;   // posts on X are not a source for an alert: they are not in these two lists
     // 1.11: a reading by the rules has no event key, so every article about the same company on the same day was an

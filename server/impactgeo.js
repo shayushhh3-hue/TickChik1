@@ -49,7 +49,31 @@ export const CITY={
   'amsterdam':[52.37,4.90],'veldhoven':[51.42,5.40],'eindhoven':[51.44,5.47],'walldorf':[49.31,8.64],'munich':[48.14,11.58],'stuttgart':[48.78,9.18],'frankfurt':[50.11,8.68],'paris':[48.86,2.35],'courbevoie':[48.90,2.26],
   'basel':[47.56,7.59],'vevey':[46.46,6.84],'zurich':[47.38,8.54],'copenhagen':[55.68,12.57],'bagsvaerd':[55.76,12.45],'stockholm':[59.33,18.07],'oslo':[59.91,10.75],'dublin':[53.35,-6.26],'toronto':[43.65,-79.38],
   'vancouver':[49.28,-123.12],'montreal':[45.50,-73.57],'ottawa':[45.42,-75.70],'calgary':[51.05,-114.07],'sydney':[-33.87,151.21],'melbourne':[-37.81,144.96],'sao paulo':[-23.55,-46.63],'rio de janeiro':[-22.91,-43.17],
-  'mexico city':[19.43,-99.13],'mumbai':[19.08,72.88],'bengaluru':[12.97,77.59],'bangalore':[12.97,77.59],'riyadh':[24.71,46.68],'dhahran':[26.29,50.11],'dubai':[25.20,55.27],'abu dhabi':[24.45,54.38]};
+  'mexico city':[19.43,-99.13],'mumbai':[19.08,72.88],'bengaluru':[12.97,77.59],'bangalore':[12.97,77.59],'riyadh':[24.71,46.68],'dhahran':[26.29,50.11],'dubai':[25.20,55.27],'abu dhabi':[24.45,54.38],
+  // 24.11: the cities of the world's large companies
+  'wolfsburg':[52.42,10.79],'ludwigshafen':[49.48,8.44],'leverkusen':[51.03,6.98],'herzogenaurach':[49.57,10.88],'neubiberg':[48.08,11.66],'toulouse':[43.60,1.44],'clichy':[48.90,2.31],'baar':[47.20,8.53],
+  'maranello':[44.53,10.87],'rome':[41.90,12.50],'milan':[45.46,9.19],'turin':[45.07,7.69],'madrid':[40.42,-3.70],'bilbao':[43.26,-2.93],'arteixo':[43.30,-8.51],'espoo':[60.21,24.66],'gothenburg':[57.71,11.97],
+  'stavanger':[58.97,5.73],'icheon':[37.27,127.44],'new taipei':[25.01,121.46],'ningde':[26.67,119.55],'ahmedabad':[23.02,72.57],'perth':[-31.95,115.86],'cape town':[-33.92,18.42],'johannesburg':[-26.20,28.05],
+  'doha':[25.29,51.53],'yamaguchi':[34.19,131.47],'renhuai':[27.79,106.40],'geneva':[46.20,6.14],'brussels':[50.85,4.35],'helsinki':[60.17,24.94],'vienna':[48.21,16.37],'warsaw':[52.23,21.01],'istanbul':[41.01,28.98],
+  'bangkok':[13.76,100.50],'jakarta':[-6.21,106.85],'kuala lumpur':[3.14,101.69],'manila':[14.60,120.98],'hanoi':[21.03,105.85],'new delhi':[28.61,77.21],'pune':[18.52,73.86],'guangzhou':[23.13,113.26],
+  'brisbane':[-27.47,153.03],'auckland':[-36.85,174.76],'buenos aires':[-34.60,-58.38],'santiago':[-33.45,-70.67],'bogota':[4.71,-74.07],'lagos':[6.52,3.38],'nairobi':[-1.29,36.82],'cairo':[30.04,31.24]};
+// 24.11: the headquarters of the large companies of the other exchanges, by the symbol the price source uses (checked by
+// hand, as the list below; FMP's profile and an admin's correction come first). A company that is not here is placed at
+// its exchange, and said to be
+export const HQ_WORLD={
+  '7203.T':['toyota city','JP'],'6758.T':['tokyo','JP'],'9984.T':['tokyo','JP'],'7974.T':['kyoto','JP'],'7267.T':['tokyo','JP'],'8306.T':['tokyo','JP'],'6861.T':['osaka','JP'],'8035.T':['tokyo','JP'],'6501.T':['tokyo','JP'],
+  '9983.T':['yamaguchi','JP'],'005930.KS':['suwon','KR'],'000660.KS':['icheon','KR'],'005380.KS':['seoul','KR'],'2330.TW':['hsinchu','TW'],'2317.TW':['new taipei','TW'],'2454.TW':['hsinchu','TW'],
+  '0700.HK':['shenzhen','CN'],'9988.HK':['hangzhou','CN'],'1211.HK':['shenzhen','CN'],'1810.HK':['beijing','CN'],'3690.HK':['beijing','CN'],'0939.HK':['beijing','CN'],'1398.HK':['beijing','CN'],'0857.HK':['beijing','CN'],
+  '0005.HK':['london','GB'],'600519.SS':['renhuai','CN'],'300750.SZ':['ningde','CN'],'ASML.AS':['veldhoven','NL'],'MC.PA':['paris','FR'],'OR.PA':['clichy','FR'],'RMS.PA':['paris','FR'],'TTE.PA':['courbevoie','FR'],
+  'SAN.PA':['paris','FR'],'AIR.PA':['toulouse','FR'],'BNP.PA':['paris','FR'],'SAP.DE':['walldorf','DE'],'SIE.DE':['munich','DE'],'ALV.DE':['munich','DE'],'VOW3.DE':['wolfsburg','DE'],'BMW.DE':['munich','DE'],
+  'MBG.DE':['stuttgart','DE'],'BAS.DE':['ludwigshafen','DE'],'BAYN.DE':['leverkusen','DE'],'IFX.DE':['neubiberg','DE'],'ADS.DE':['herzogenaurach','DE'],'DBK.DE':['frankfurt','DE'],'NESN.SW':['vevey','CH'],
+  'NOVN.SW':['basel','CH'],'ROG.SW':['basel','CH'],'UBSG.SW':['zurich','CH'],'ZURN.SW':['zurich','CH'],'SHEL.L':['london','GB'],'AZN.L':['cambridge uk','GB'],'HSBA.L':['london','GB'],'BP.L':['london','GB'],
+  'ULVR.L':['london','GB'],'RIO.L':['london','GB'],'GSK.L':['london','GB'],'GLEN.L':['baar','CH'],'BARC.L':['london','GB'],'LLOY.L':['london','GB'],'NOVO-B.CO':['bagsvaerd','DK'],'MAERSK-B.CO':['copenhagen','DK'],
+  'ERIC-B.ST':['stockholm','SE'],'VOLV-B.ST':['gothenburg','SE'],'NOKIA.HE':['espoo','FI'],'EQNR.OL':['stavanger','NO'],'ENEL.MI':['rome','IT'],'ENI.MI':['rome','IT'],'RACE.MI':['maranello','IT'],'ISP.MI':['turin','IT'],
+  'UCG.MI':['milan','IT'],'SAN.MC':['madrid','ES'],'ITX.MC':['arteixo','ES'],'IBE.MC':['bilbao','ES'],'BBVA.MC':['bilbao','ES'],'RELIANCE.NS':['mumbai','IN'],'TCS.NS':['mumbai','IN'],'HDFCBANK.NS':['mumbai','IN'],
+  'INFY.NS':['bengaluru','IN'],'ICICIBANK.NS':['mumbai','IN'],'BHP.AX':['melbourne','AU'],'CBA.AX':['sydney','AU'],'CSL.AX':['melbourne','AU'],'FMG.AX':['perth','AU'],'RY.TO':['toronto','CA'],'TD.TO':['toronto','CA'],
+  'SHOP.TO':['ottawa','CA'],'ENB.TO':['calgary','CA'],'CNQ.TO':['calgary','CA'],'PETR4.SA':['rio de janeiro','BR'],'VALE3.SA':['rio de janeiro','BR'],'ITUB4.SA':['sao paulo','BR'],'2222.SR':['dhahran','SA'],
+  'D05.SI':['singapore','SG'],'NPN.JO':['cape town','ZA']};
 // the headquarters of well-known companies (city key, country), checked by hand; FMP's profile and an admin's correction
 // come first. A company not here and without a profile is placed at its exchange, and said to be
 export const HQ_LIST={
@@ -71,12 +95,19 @@ export const HQ_LIST={
   EOG:['houston','US'],MPC:['findlay','US'],PSX:['houston','US'],VLO:['san antonio','US'],NEM:['denver','US'],FCX:['phoenix','US']};
 // where an index, a fund or an exchange sits: New York for the American market, Tel Aviv for the Israeli one
 export const MARKET_PT={US:[40.707,-74.011,'הבורסה בניו יורק'],IL:[32.064,34.770,'הבורסה בתל אביב'],GB:[51.515,-0.099,'הבורסה בלונדון'],DE:[50.115,8.674,'הבורסה בפרנקפורט'],JP:[35.682,139.777,'הבורסה בטוקיו'],
-  HK:[22.284,114.158,'הבורסה בהונג קונג'],CN:[31.234,121.506,'הבורסה בשנגחאי'],CA:[43.648,-79.384,'הבורסה בטורונטו']};
+  HK:[22.284,114.158,'הבורסה בהונג קונג'],CN:[31.234,121.506,'הבורסה בשנגחאי'],CA:[43.648,-79.384,'הבורסה בטורונטו'],
+  // 24.11: the exchanges of the rest of the world, each at its city
+  FR:[48.87,2.34,'הבורסה בפריז'],NL:[52.37,4.89,'הבורסה באמסטרדם'],CH:[47.38,8.54,'הבורסה בציריך'],IT:[45.46,9.19,'הבורסה במילאנו'],ES:[40.42,-3.69,'הבורסה במדריד'],SE:[59.33,18.07,'הבורסה בסטוקהולם'],
+  DK:[55.68,12.57,'הבורסה בקופנהגן'],NO:[59.91,10.75,'הבורסה באוסלו'],FI:[60.17,24.94,'הבורסה בהלסינקי'],BE:[50.85,4.35,'הבורסה בבריסל'],AT:[48.21,16.37,'הבורסה בווינה'],PL:[52.23,21.01,'הבורסה בוורשה'],
+  KR:[37.52,126.93,'הבורסה בסיאול'],TW:[25.03,121.56,'הבורסה בטאיפיי'],IN:[18.93,72.83,'הבורסה במומבאי'],SG:[1.28,103.85,'הבורסה בסינגפור'],AU:[-33.86,151.21,'הבורסה בסידני'],NZ:[-41.29,174.78,'הבורסה בוולינגטון'],
+  BR:[-23.55,-46.63,'הבורסה בסאו פאולו'],MX:[19.43,-99.17,'הבורסה במקסיקו סיטי'],ZA:[-26.11,28.06,'הבורסה ביוהנסבורג'],SA:[24.69,46.69,'הבורסה בריאד'],AE:[25.21,55.28,'הבורסה בדובאי'],TR:[41.11,29.02,'הבורסה באיסטנבול'],
+  TH:[13.76,100.57,'הבורסה בבנגקוק'],ID:[-6.22,106.81,'הבורסה בג׳קרטה'],MY:[3.15,101.71,'הבורסה בקואלה לומפור']};
 export const INDEX_MKT={SPX:'US',NDX:'US',DJI:'US',RUT:'US',VIX:'US',TA35:'IL',TA125:'IL',TA90:'IL'};
 const P=(lat,lon,name,how,src,extra={})=>({lat:Math.round(lat*1000)/1000,lon:Math.round(lon*1000)/1000,name,how,src,...extra});
 export const countryPt=(cc,{market=false}={})=>{const c=CC[cc]; if(!c)return null; const f=market&&FIN[cc]; return f?P(f[0],f[1],f[2],'country','gaz',{cc}):P(c[0],c[1],c[2],'country','gaz',{cc})};
 export const regionPt=r=>{const c=REG_CC[r]; if(c&&c!=='EU')return countryPt(c); const g=REGION_PT[r]; return g?P(g[0],g[1],g[2],'region','gaz',{region:r}):null};
-export const marketPt=cc=>{const m=MARKET_PT[cc]; return m?P(m[0],m[1],m[2],'market','gaz',{cc}):null};
+// 24.11: an exchange with no point of its own is placed at its country's financial centre, else its capital (a city, as all here)
+export const marketPt=cc=>{const m=MARKET_PT[cc]; if(m)return P(m[0],m[1],m[2],'market','gaz',{cc}); const f=FIN[cc], c=CC[cc]; return f?P(f[0],f[1],'הבורסה ב'+f[2],'market','gaz',{cc}):c?P(c[0],c[1],'הבורסה של '+c[2],'market','gaz',{cc}):null};
 const norm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');
 // a city from a profile ("Santa Clara", "Tel Aviv-Yafo"), with the country it should be in (a London that is not in GB is
 // not London, England); null when the city is not in the list
@@ -89,7 +120,7 @@ export function hqOf(sym,{fix=null,about=null}={}){
   const f=fix&&fix[sym]; if(f&&Number.isFinite(+f.lat)&&Number.isFinite(+f.lon))return P(+f.lat,+f.lon,String(f.name||sym).slice(0,60),'hq','fix',{by:f.by||null,at:f.at||null});
   if(about&&(about.city||about.country)){const cc=String(about.country||'').toUpperCase(); const c=about.city?cityPt(about.city,cc,about.state):null; if(c)return c;
     if(CC[cc])return {...countryPt(cc),how:'country',src:'fmp',note:'הפרופיל נותן את המדינה בלבד'}}
-  const L=HQ_LIST[sym]; if(L){const c=CITY[L[0]]; if(c)return P(c[0],c[1],L[0].replace(/\b\w/g,m=>m.toUpperCase()).replace(' Uk',''),'hq','list',{cc:L[1]})}
+  const L=HQ_LIST[sym]||HQ_WORLD[sym]; if(L){const c=CITY[L[0]]; if(c)return P(c[0],c[1],L[0].replace(/\b\w/g,m=>m.toUpperCase()).replace(' Uk',''),'hq','list',{cc:L[1]})}
   return null;
 }
 export const CC_HE=Object.fromEntries(Object.entries(CC).map(([k,v])=>[k,v[2]]));

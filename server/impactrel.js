@@ -216,7 +216,7 @@ export async function relTask(store,events,{now=new Date(),log=()=>{},fetch:f=gl
   // the events that are here now keep their decisions; the others go
   const live=new Set(events.map(e=>e.k)); for(const k of Object.keys(by))if(!live.has(k))delete by[k];
   const todo=[];
-  for(const e of events.slice().sort((a,b)=>(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1))){
+  for(const e of events.slice().sort((a,b)=>(LV[b.level]-LV[a.level])||((a.world?1:0)-(b.world?1:0))||(String(b.last)>String(a.last)?1:-1))){
     if(e.hidden||e.rules||(e.last||'')<from)continue; const cand=candidatesOf(e,cards), rec=by[e.k]||{rels:{},miss:{}}, pairs=[];
     // the order of asking: a company the reading names, a competitor of the article's subject, a channel in common, a fund's
     // holdings; last, an article that only sat in the share's feed (most of those are refused)

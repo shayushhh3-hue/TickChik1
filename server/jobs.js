@@ -21,6 +21,7 @@ import {ecocalTask} from './ecocal.js';
 import {insidersTask} from './insiders.js';
 import {etfTask} from './etf.js';
 import {newsSyms} from './newsfeed.js';
+import {worldTask} from './worldnews.js';
 import {jobNote, healthCheck} from './health.js';
 import {ipoTask} from './ipos.js';
 
@@ -76,6 +77,9 @@ export const SCHEDULE=[
   // 30.10: and after each reading, everyone's personal alerts (server/pulse.js), so the alert center is current
   {name:'news',    when:p=>p.h>=7&&p.h<=23&&p.min%30===10, run:async(s,o)=>{await newsTask(s,o); await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o); await impactRelSafe(s,o)}},
   {name:'newsx',   when:p=>p.h>=7&&p.h<=23&&p.min%10===5, run:async(s,o)=>{await newsxTask(s,o); impactSafe(s,o); pulseTask(s,o); await impactRelSafe(s,o)}},
+  // 24.11 TikChik WORLD: the world's news (server/worldnews.js): the publishers' feeds that are due, the day's share of
+  // readings; around the clock, every twenty minutes, in a lane of its own (it never holds the securities' news back)
+  {name:'world',   lane:'world', when:p=>p.min%20===8, run:async(s,o)=>{const r=await worldTask(s,o); if(r&&r.read)impactSafe(s,o); return r}},
   // 29.10: what investors post on X about the securities (with a token that may read), twice a day, before the readings
   {name:'x',       when:p=>(p.h===9||p.h===17)&&p.min===15, run:(s,o)=>xTask(s,{...o,newsSyms})},
   {name:'quarterly',when:p=>p.d===1&&[1,4,7,10].includes(p.m)&&p.h===9&&p.min===25, run:(s,o)=>reportTask(s,{...o,kind:'quarter'})},
