@@ -4077,45 +4077,6 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
   }finally{if(ctx)await ctx.close(); back(); store.deleteDoc(old)}
 });
 
-test('24.11 TikChik WORLD, the whole world: a button beside "התיק שלי" shows the world\'s events with their companies of any exchange; the portfolio\'s view is as it was',{timeout:120000},async t=>{
-  if(skip())return t.skip('no browser');
-  const KEEP=['research/worldx','research/worldsyms','research/impact'].map(p=>[p,store.getDoc(p)]);
-  const back=()=>{for(const [p,d] of KEEP){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}};
-  const D=await rtData(); await rtSet(D); const {impactTask}=await import('../server/impact.js'), {newsId}=await import('../server/newsx.js');
-  // two events of the world's news (server/worldnews.js keeps them so): a company of Tokyo and one of Frankfurt, neither in the portfolio
-  const now=Date.now(), A=(title,pub,link,h,o)=>({id:newsId(link),title,pub,link,at:new Date(now-h*36e5).toISOString(),seen:new Date(now-h*36e5).toISOString(),sum:null,syms:[],src:'gen',cat:'world',world:true,...o});
-  const X=o=>({what:'w',type:'other',level:'imp',dir:'unclear',cert:'fact',kind:'news',aff:[],sectors:[],themes:[],regions:[],fac:[],secx:[],macro:false,unknown:'',more:'',st:'unknown',at:new Date(now).toISOString(),...o});
-  const a1=A('Toyota raises profit forecast','Nikkei Asia','https://asia.nikkei.com/t1',3,{cc0:'JP',reg0:'as',lang:'en'}), a2=A('Volkswagen schließt zwei Werke','Handelsblatt','https://handelsblatt.com/v1',5,{cc0:'DE',reg0:'eu',lang:'de'});
-  store.setDoc('research/worldx',{arts:[a1,a2],by:{[a1.id]:X({he:'טויוטה מעלה את תחזית הרווח',what:'טויוטה העלתה את תחזית הרווח השנתית.',level:'crit',dir:'pos',cat:'earnings',cc:['JP'],ev:'toyota-raises-forecast-wt',aff:[{sym:'7203.T',name:'Toyota Motor Corporation',exch:'Tokyo Stock Exchange',how:'direct',dir:'pos',why:'החברה שהכתבה עליה',said:true}],cos:[{name:'Huawei',how:'sector',dir:'unclear',why:'חברה פרטית',said:false}]}),
-    [a2.id]:X({he:'פולקסווגן סוגרת שני מפעלים',what:'פולקסווגן הודיעה על סגירת שני מפעלים.',level:'imp',dir:'neg',cat:'industry',cc:['DE'],ev:'vw-closes-plants-wt',aff:[{sym:'VOW3.DE',name:'Volkswagen AG',exch:'XETRA',how:'direct',dir:'neg',why:'החברה שהכתבה עליה',said:true}]})},updatedAt:new Date(now).toISOString()},{silent:true});
-  impactTask(store);
-  let ctx, pg;
-  const keys=()=>pg.evaluate(()=>[...document.querySelectorAll('#wiEvL [data-wiev]')].map(b=>b.dataset.wiev));
-  try{
-    ({ctx,pg}=await open(1280)); await tab(pg,'news'); await pg.waitForTimeout(300);
-    await pg.evaluate(()=>{try{localStorage.removeItem('tr_wiscope')}catch(e){} const d=document.getElementById('ixMapD'); if(d)d.open=true; const t=document.getElementById('rtTabMap'); if(t&&getComputedStyle(t).display!=='none')t.click()});
-    await pg.waitForFunction(()=>window.__wi&&window.__wi.state().events>0&&(window.__wi.state().globe||window.__wi.state().gFail),null,{timeout:30000});
-    const s=await pg.evaluate(()=>window.__wi.state()); assert.equal(s.scope,'me','the portfolio\'s view first, as before');
-    const mineK=await keys(); assert.ok(mineK.length>0&&!mineK.includes('ev:toyota-raises-forecast-wt'),'a world event with no relation is not in the portfolio\'s view: '+mineK.join());
-    // the whole world
-    await pg.click('[data-wiscope="all"]');
-    await pg.waitForFunction(()=>window.__wi.state().scope==='all'&&[...document.querySelectorAll('#wiEvL [data-wiev]')].some(b=>b.dataset.wiev==='ev:toyota-raises-forecast-wt'),null,{timeout:20000});
-    const v=await pg.evaluate(()=>({sum:document.getElementById('wiSum').innerText,evS:document.getElementById('wiEvS').innerText,pressed:[...document.querySelectorAll('.wi-modes [aria-pressed="true"]')].map(b=>b.textContent.trim()),foot:document.getElementById('wiFoot').innerText}));
-    const allK=await keys();
-    assert.match(v.sum,/אירועים בעולם/,v.sum); assert.match(v.sum,/לתיק שלך/,v.sum); assert.match(v.evS,/בעולם · \d+ נוגעים לתיק/,v.evS); assert.ok(v.pressed.includes('כל העולם')&&!v.pressed.includes('התיק שלי'),v.pressed.join());
-    assert.ok(allK.length>mineK.length&&mineK.every(k=>allK.includes(k))&&allK.includes('ev:vw-closes-plants-wt'),'the portfolio\'s events and the world\'s: '+allK.join()); assert.match(v.foot,/מוצגים אירועים מכל העולם/,v.foot);
-    // the card of a world event: the company of another exchange, named in the source; no relation to the portfolio, said plainly
-    await pg.$eval('#wiEvL [data-wiev="ev:toyota-raises-forecast-wt"]',b=>b.click()); await pg.waitForFunction(()=>!document.getElementById('wiSheet').hidden&&/טויוטה/.test(document.getElementById('wiSheet').innerText),null,{timeout:8000});
-    const c=await pg.evaluate(()=>document.getElementById('wiSheet').innerText.replace(/\s+/g,' '));
-    assert.match(c,/הוזכרו במקור[^]*7203\.T[^]*Toyota Motor Corporation[^]*Tokyo Stock Exchange/,'the company, its name and its exchange: '+c.slice(0,700)); assert.match(c,/חברות נוספות שהכתבה מזכירה[^]*Huawei/,c.slice(0,900));
-    assert.match(c,/לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך/,c.slice(0,1200)); assert.match(c,/Toyota City[^]*מטה החברה/,'placed at the company\'s headquarters: '+c.slice(0,500));
-    // back to the portfolio: remembered on the device, and the list is the portfolio's again
-    await pg.$eval('[data-wimode="me"]',b=>b.click());
-    await pg.waitForFunction(()=>window.__wi.state().scope==='me'&&window.__wi.state().events>0&&![...document.querySelectorAll('#wiEvL [data-wiev]')].some(b=>b.dataset.wiev==='ev:toyota-raises-forecast-wt'),null,{timeout:20000});
-    assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_wiscope')),'me'); assert.deepEqual((await keys()).sort(),mineK.slice().sort(),'exactly the portfolio\'s view as it was');
-  }finally{if(ctx)await ctx.close().catch(()=>{}); back(); try{impactTask(store)}catch(e){}}
-});
-
 test('24.11 the look-back\'s chart read a day at a time: the buttons, the arrow keys and a click choose a day; a mark on each line; its figures under the chart',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390); await tab(pg,'history'); await pg.waitForTimeout(600);
@@ -4482,4 +4443,44 @@ for(const W of [390,1280])test(`24.11 the plan's settings in the card's rectangl
     assert.ok(await pg.evaluate(()=>!!document.querySelector('#planAns #planSetP #inMonthly')),'the settings are back in the card after it was drawn');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+
+// 24.11: added at the end, as every new test is (the parts of CI are every third test of the file, in its order)
+test('24.11 TikChik WORLD, the whole world: a button beside "התיק שלי" shows the world\'s events with their companies of any exchange; the portfolio\'s view is as it was',{timeout:120000},async t=>{
+  if(skip())return t.skip('no browser');
+  const KEEP=['research/worldx','research/worldsyms','research/impact'].map(p=>[p,store.getDoc(p)]);
+  const back=()=>{for(const [p,d] of KEEP){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}};
+  const D=await rtData(); await rtSet(D); const {impactTask}=await import('../server/impact.js'), {newsId}=await import('../server/newsx.js');
+  // two events of the world's news (server/worldnews.js keeps them so): a company of Tokyo and one of Frankfurt, neither in the portfolio
+  const now=Date.now(), A=(title,pub,link,h,o)=>({id:newsId(link),title,pub,link,at:new Date(now-h*36e5).toISOString(),seen:new Date(now-h*36e5).toISOString(),sum:null,syms:[],src:'gen',cat:'world',world:true,...o});
+  const X=o=>({what:'w',type:'other',level:'imp',dir:'unclear',cert:'fact',kind:'news',aff:[],sectors:[],themes:[],regions:[],fac:[],secx:[],macro:false,unknown:'',more:'',st:'unknown',at:new Date(now).toISOString(),...o});
+  const a1=A('Toyota raises profit forecast','Nikkei Asia','https://asia.nikkei.com/t1',3,{cc0:'JP',reg0:'as',lang:'en'}), a2=A('Volkswagen schließt zwei Werke','Handelsblatt','https://handelsblatt.com/v1',5,{cc0:'DE',reg0:'eu',lang:'de'});
+  store.setDoc('research/worldx',{arts:[a1,a2],by:{[a1.id]:X({he:'טויוטה מעלה את תחזית הרווח',what:'טויוטה העלתה את תחזית הרווח השנתית.',level:'crit',dir:'pos',cat:'earnings',cc:['JP'],ev:'toyota-raises-forecast-wt',aff:[{sym:'7203.T',name:'Toyota Motor Corporation',exch:'Tokyo Stock Exchange',how:'direct',dir:'pos',why:'החברה שהכתבה עליה',said:true}],cos:[{name:'Huawei',how:'sector',dir:'unclear',why:'חברה פרטית',said:false}]}),
+    [a2.id]:X({he:'פולקסווגן סוגרת שני מפעלים',what:'פולקסווגן הודיעה על סגירת שני מפעלים.',level:'imp',dir:'neg',cat:'industry',cc:['DE'],ev:'vw-closes-plants-wt',aff:[{sym:'VOW3.DE',name:'Volkswagen AG',exch:'XETRA',how:'direct',dir:'neg',why:'החברה שהכתבה עליה',said:true}]})},updatedAt:new Date(now).toISOString()},{silent:true});
+  impactTask(store);
+  let ctx, pg;
+  const keys=()=>pg.evaluate(()=>[...document.querySelectorAll('#wiEvL [data-wiev]')].map(b=>b.dataset.wiev));
+  try{
+    ({ctx,pg}=await open(1280)); await tab(pg,'news'); await pg.waitForTimeout(300);
+    await pg.evaluate(()=>{try{localStorage.removeItem('tr_wiscope')}catch(e){} const d=document.getElementById('ixMapD'); if(d)d.open=true; const t=document.getElementById('rtTabMap'); if(t&&getComputedStyle(t).display!=='none')t.click()});
+    await pg.waitForFunction(()=>window.__wi&&window.__wi.state().events>0&&(window.__wi.state().globe||window.__wi.state().gFail),null,{timeout:30000});
+    const s=await pg.evaluate(()=>window.__wi.state()); assert.equal(s.scope,'me','the portfolio\'s view first, as before');
+    const mineK=await keys(); assert.ok(mineK.length>0&&!mineK.includes('ev:toyota-raises-forecast-wt'),'a world event with no relation is not in the portfolio\'s view: '+mineK.join());
+    // the whole world
+    await pg.click('[data-wiscope="all"]');
+    await pg.waitForFunction(()=>window.__wi.state().scope==='all'&&[...document.querySelectorAll('#wiEvL [data-wiev]')].some(b=>b.dataset.wiev==='ev:toyota-raises-forecast-wt'),null,{timeout:20000});
+    const v=await pg.evaluate(()=>({sum:document.getElementById('wiSum').innerText,evS:document.getElementById('wiEvS').innerText,pressed:[...document.querySelectorAll('.wi-modes [aria-pressed="true"]')].map(b=>b.textContent.trim()),foot:document.getElementById('wiFoot').innerText}));
+    const allK=await keys();
+    assert.match(v.sum,/אירועים בעולם/,v.sum); assert.match(v.sum,/לתיק שלך/,v.sum); assert.match(v.evS,/בעולם · \d+ נוגעים לתיק/,v.evS); assert.ok(v.pressed.includes('כל העולם')&&!v.pressed.includes('התיק שלי'),v.pressed.join());
+    assert.ok(allK.length>mineK.length&&mineK.every(k=>allK.includes(k))&&allK.includes('ev:vw-closes-plants-wt'),'the portfolio\'s events and the world\'s: '+allK.join()); assert.match(v.foot,/מוצגים אירועים מכל העולם/,v.foot);
+    // the card of a world event: the company of another exchange, named in the source; no relation to the portfolio, said plainly
+    await pg.$eval('#wiEvL [data-wiev="ev:toyota-raises-forecast-wt"]',b=>b.click()); await pg.waitForFunction(()=>!document.getElementById('wiSheet').hidden&&/טויוטה/.test(document.getElementById('wiSheet').innerText),null,{timeout:8000});
+    const c=await pg.evaluate(()=>document.getElementById('wiSheet').innerText.replace(/\s+/g,' '));
+    assert.match(c,/הוזכרו במקור[^]*7203\.T[^]*Toyota Motor Corporation[^]*Tokyo Stock Exchange/,'the company, its name and its exchange: '+c.slice(0,700)); assert.match(c,/חברות נוספות שהכתבה מזכירה[^]*Huawei/,c.slice(0,900));
+    assert.match(c,/לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך/,c.slice(0,1200)); assert.match(c,/Toyota City[^]*מטה החברה/,'placed at the company\'s headquarters: '+c.slice(0,500));
+    // back to the portfolio: remembered on the device, and the list is the portfolio's again
+    await pg.$eval('[data-wimode="me"]',b=>b.click());
+    await pg.waitForFunction(()=>window.__wi.state().scope==='me'&&window.__wi.state().events>0&&![...document.querySelectorAll('#wiEvL [data-wiev]')].some(b=>b.dataset.wiev==='ev:toyota-raises-forecast-wt'),null,{timeout:20000});
+    assert.equal(await pg.evaluate(()=>localStorage.getItem('tr_wiscope')),'me'); assert.deepEqual((await keys()).sort(),mineK.slice().sort(),'exactly the portfolio\'s view as it was');
+  }finally{if(ctx)await ctx.close().catch(()=>{}); back(); try{impactTask(store)}catch(e){}}
 });
