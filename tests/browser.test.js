@@ -4337,3 +4337,40 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 24.11 (the owner: "אז תעשה מה שלא עשית"): the plan's first month is the person's own, also a month ahead; and after a
+// new round the purchases of the earlier rounds stay in their months of the monthly table, and unticking touches only this round's
+test('24.11 the plan from a month of one\'s own, and the earlier rounds in the monthly table: a plan ahead waits and says when, its first month moves while nothing was ticked; an old round\'s purchase stays when this round\'s is unticked',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const ymOf=k=>{const [y,m]=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit'}).format(new Date()).split('-').map(Number), d=new Date(Date.UTC(y,m-1+k,1)); return d.toISOString().slice(0,7)};
+  const base=JSON.parse(JSON.stringify(keep['plan/main'].data)), nowIso=new Date().toISOString();
+  try{
+    // a plan that begins in two months, for a year
+    {const d=JSON.parse(JSON.stringify(base)); d.items.forEach(i=>{if(i.status!=='skip'){i.status='todo'; delete i.pid; delete i.doneAt}}); d.deposits=[]; d.purchases=[]; d.start=ymOf(2); d.until=ymOf(13); store.setDoc('plan/main',d,{silent:true})}
+    let o=await open(390); try{const pg=o.pg, card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
+      await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
+      let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); assert.match(s,/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
+      assert.match(await pg.evaluate(()=>document.querySelector('#ladRows tr.cur').innerText),/חודש ההתחלה/);
+      // nothing ticked yet: the first month moves, here back to this month, and the plan is on
+      await pg.click('#planAns [data-pa="untilEdit"]'); await pg.waitForSelector('#puFrom');
+      await pg.evaluate(v=>{const i=document.getElementById('puFrom'); i.value=v; i.dispatchEvent(new Event('change',{bubbles:true}))},ymOf(0));
+      await pg.waitForFunction(()=>/להפקיד ₪/.test(document.getElementById('planAns').innerText)&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+      assert.equal(store.getDoc('plan/main').data.start,ymOf(0)); assert.doesNotMatch(await card(),/מתחילה ב/);
+      assert.deepEqual(pg.errs,[])}finally{await o.ctx.close()}
+    // round 2: the first security was bought last month in round 1 and again now; the second only in round 1
+    {const d=JSON.parse(JSON.stringify(base)), L=d.items.filter(i=>i.status!=='skip'); L.forEach(i=>{i.status='todo'; delete i.pid; delete i.doneAt}); d.deposits=[]; d.start=ymOf(-2); d.round=2; delete d.until;
+      d.purchases=[{id:'old0',sym:L[0].sym,paidIls:111,month:ymOf(-1),at:nowIso},{id:'old1',sym:L[1].sym,paidIls:222,month:ymOf(-1),at:nowIso},{id:'new0',sym:L[0].sym,paidIls:5,month:ymOf(0),at:nowIso}];
+      L[0].status='done'; L[0].pid='new0'; L[0].doneAt=nowIso; store.setDoc('plan/main',d,{silent:true})}
+    o=await open(390); try{const pg=o.pg, sym0=store.getDoc('plan/main').data.items.find(i=>i.pid==='new0').sym;
+      await tab(pg,'plan'); await pg.waitForSelector('#ladRows .oldr',{timeout:10000});
+      const rows=await pg.evaluate(()=>[...document.querySelectorAll('#ladRows tr')].map(r=>r.innerText.replace(/\s+/g,' ')));
+      const prev=rows.find(r=>/נקנו בסבב קודם/.test(r)); assert.ok(prev&&/₪111/.test(prev)&&/₪222/.test(prev),'both of round 1 in their month: '+prev);
+      assert.equal(await pg.evaluate(x=>document.getElementById('buy_'+x).checked,sym0),true,'this round\'s purchase is ticked');
+      await pg.evaluate(x=>document.getElementById('buy_'+x).click(),sym0);
+      await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(700);
+      assert.deepEqual(store.getDoc('plan/main').data.purchases.map(x=>x.id).sort(),['old0','old1'],'only this round\'s purchase is gone');
+      assert.match(await pg.evaluate(()=>document.getElementById('ladRows').innerText),/נקנו בסבב קודם/);
+      assert.deepEqual(pg.errs,[])}finally{await o.ctx.close()}
+  }finally{for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
