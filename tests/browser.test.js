@@ -4519,3 +4519,47 @@ test('24.11 a security added to the plan after it was built (a holding in no tra
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 24.11 (the owner: "אם אני אמכור מניה או אקנה שיהיה לי התראה אם להוסיף/להוריד אותה לתוכנית ההפקדה"; "למה אתה לא מתייחס
+// להפקדה החד פעמית ומסנכרן אותה בשווי התיק ובתוכנית ההפקדה"): a security bought and in no track asks to join, one sold
+// asks to leave, in the card and in the alerts; each answer is kept; a one-time deposit is a row of the month and in the balance
+test('24.11 a purchase or a sale asks about the deposit plan (in the card and the alerts, answered once), and a one-time deposit is a row of the month, in the balance and in the value',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)), pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data));
+  const inPlan=new Set([...(pl.items||[]),...((pl.idx||{}).items||[])].map(i=>i.sym)), held=pf.positions.filter(x=>x.sym&&+x.qty>0).map(x=>x.sym), bought=held.find(x=>!inPlan.has(x));
+  const sold=(pl.items||[]).find(i=>i.status==='todo'&&held.includes(i.sym)).sym;
+  if(!bought)return t.skip('no holding outside the plan in the fixture');
+  pl.held=[...new Set([...held])]; delete pl.ask; store.setDoc('plan/main',pl,{silent:true});
+  pf.positions=pf.positions.filter(x=>x.sym!==sold); store.setDoc('portfolio/main',pf,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns .pc-hold',{timeout:10000});
+    const card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
+    let c=await card(); assert.match(c,new RegExp(`קנית ${bought} להוסיף לתוכנית\?`)); assert.match(c,new RegExp(`מכרת את ${sold} היא עדיין בתור`));
+    assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#planAns .pc-hold button')].every(b=>b.getBoundingClientRect().height>=44)),'every answer a finger can press');
+    // the same in the alerts of בקרה, with the way to the plan
+    const al=await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^plan:/.test(i.key)).map(i=>i.key).sort());
+    assert.deepEqual(al,[...held.filter(x=>!inPlan.has(x)).map(x=>`plan:add:${x}`),`plan:drop:${sold}`].sort(),"every holding in no track, and the sale");
+    // answered: the purchase joins the stocks track, the sale leaves the queue
+    await pg.click(`#planAns [data-pa="holdAdd"][data-sym="${bought}"][data-trk="stocks"]`); await pg.click(`#planAns [data-pa="holdDrop"][data-sym="${sold}"]`);
+    await pg.waitForFunction(b=>!document.querySelector('#planAns [data-sym="'+b+'"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),bought,{timeout:8000}); await pg.waitForTimeout(700);
+    let D=store.getDoc('plan/main').data; assert.ok(D.items.some(i=>i.sym===bought&&i.status==='todo'),'joined the stocks track'); assert.equal(D.items.find(i=>i.sym===sold).status,'skip','left the queue');
+    assert.deepEqual(await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^plan:/.test(i.key)).map(i=>i.key)),held.filter(x=>!inPlan.has(x)&&x!==bought).map(x=>`plan:add:${x}`),'only the questions not answered');
+    // "לא" is kept: taken out of the plan again and answered no, it is not asked again
+    {const d=JSON.parse(JSON.stringify(D)); d.items=d.items.filter(i=>i.sym!==bought); store.setDoc('plan/main',d,{silent:true})}
+    await ctx.close(); const o2=await open(390); try{const p2=o2.pg; await tab(p2,'plan'); await p2.waitForSelector(`#planAns [data-pa="holdNo"][data-sym="${bought}"]`,{timeout:10000});
+      await p2.click(`#planAns [data-pa="holdNo"][data-sym="${bought}"]`); await p2.waitForFunction(b=>!document.querySelector('#planAns [data-sym="'+b+'"]'),bought,{timeout:8000});
+      await p2.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await p2.waitForTimeout(700);
+      assert.equal(store.getDoc('plan/main').data.ask[bought],'no');
+      // a one-time deposit: a row of the month, the balance says it, the value has it
+      const bal0=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v0=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
+      await p2.click('#planAns [data-planonce]'); await p2.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+      await p2.fill('#onceAmt','2000'); await p2.fill('#onceNote','בונוס'); await p2.click('#onceAdd');
+      await p2.waitForFunction(()=>/הפקדה חד-פעמית בונוס ₪2,000 ✓ נוספה/.test(document.getElementById('planAns').innerText.replace(/\s+/g,' ')),null,{timeout:8000});
+      c=await p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')); assert.match(c,/כולל ₪2,000 מהפקדה חד-פעמית/);
+      const bal1=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v1=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
+      assert.ok(Math.abs(bal1-bal0-2000)<1,`the balance: ${bal0} → ${bal1}`); assert.ok(Math.abs(v1-v0-2000)<1,`the value: ${v0} → ${v1}`);
+      assert.deepEqual(p2.errs,[])}finally{await o2.ctx.close()}
+  }finally{try{await ctx.close()}catch(e){} for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

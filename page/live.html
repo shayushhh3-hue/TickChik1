@@ -1890,6 +1890,9 @@ html body [data-pane="plan"] .oncebox .acts .btn{min-height:48px!important;min-w
 html body [data-pane="plan"] #planSetP>.row h3{margin:0;font-size:14px;font-weight:600;color:var(--ink2)}
 .pstep .pc-ask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
 .pstep .pc-all,.pstep .pc-now{margin-top:8px} .pstep .pc-foot{margin:2px 0 0;font-size:12.5px;color:var(--ink2)}
+.pstep .pc-q{display:block;font-size:13px;font-weight:400;color:var(--ink2);margin-top:2px}
+.pstep .pc-a2{flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:60%} .pstep .pc-hold{border-color:var(--accent)!important}
+html body .pstep .pc-once{margin-top:8px;min-height:44px!important}
 .pl-add{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:10px} .pl-add[hidden]{display:none}
 .pl-add .pl-msg{margin:0;font-size:14px;line-height:1.5;color:var(--ink)} .pl-add .pl-msg:empty{display:none}
 .pl-add .pl-cnt{margin:0;font-size:14px;line-height:1.6;color:var(--ink)} .pl-add .k{font-size:14px;color:var(--ink2)}
@@ -20027,6 +20030,10 @@ function alertsOf(m){
     u.why={src:'rule',rows:[['הכלל שלך',`עד ${nn(pct(+R.usdCap,0))} מהתיק בדולרים`],['בפועל',`${nn(pct(m.usdPct))} · ${nn(ils(m.usdPct/100*m.total))}`],['שער הדולר',nn(Q.usdIls.toFixed(3))]],tab:'settings',tl:'לשנות את התקרה'};u.each=[{key:'usd:cap',text:u[2]}]}
   const tsum=Object.values(S.targets).reduce((s,x)=>s+(+x||0),0);
   if(tsum>0) for(const k in GROUPS){const d=m.groups[k].w-(+S.targets[k]||0); if(Math.abs(d)>=R.drift){A.push(['warn','סטייה',`${GROUPS[k]} ${d>0?'מעל':'מתחת'} ליעד ב-${Math.abs(d).toFixed(1)} נקודות אחוז (${ils(Math.abs(d)/100*m.total)}).`,[GROUPS[k]]]);A[A.length-1].why=whyDrift(k,d,m)}}
+  try{const H=planHoldAsk(), L=[...H.add.map(x=>`קנית ${lab(x.sym)}`),...H.drop.map(x=>`מכרת את ${lab(x.sym)}`)]; if(L.length){
+    A.push(['warn','תוכנית',`${L.join(', ')}. ${H.add.length&&H.drop.length?'להוסיף או להוריד מתוכנית ההפקדה?':H.add.length?'להוסיף לתוכנית ההפקדה?':'להוריד מתוכנית ההפקדה?'}`,[...H.add,...H.drop].map(x=>lab(x.sym))]);
+    const u=A[A.length-1]; u.why={src:'plan',rows:[...H.add.map(x=>[lab(x.sym),'בתיק, ולא באף מסלול של התוכנית']),...H.drop.map(x=>[lab(x.sym),`נמכר, ועדיין בתור של מסלול ה${trkHe(x.trk)}`])],tab:'plan',tl:'לתוכנית ההפקדה'};
+    u.each=[...H.add.map(x=>({key:'plan:add:'+x.sym,text:`קנית ${lab(x.sym)}: להוסיף לתוכנית ההפקדה?`})),...H.drop.map(x=>({key:'plan:drop:'+x.sym,text:`מכרת את ${lab(x.sym)}: להוריד מתוכנית ההפקדה?`}))]}}catch(e){}
   if(pxLate()) A.push(['warn','נתונים',`המחירים עודכנו ${ago(Q.updatedAt)}, ועדכון מתוכנן לא הגיע מאז. עד העדכון הבא הבקרה מחושבת לפי המחירים האלה.`]);
   const lagged=new Set();
   for(const g of pxLagInfo(m)){g.syms.forEach(x=>lagged.add(x)); const n=g.syms.length;
@@ -20635,6 +20642,7 @@ function renderPlan(mAll){
       (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
   const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
   $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
+  try{planHoldSync()}catch(e){console.error(e)}
   try{planAddFill(mAll)}catch(e){console.error(e)}
   return st;
 }
@@ -20683,6 +20691,12 @@ function planAct(a,d){
   // 24.11 (the owner: "אני לא מצליח להוסיף את קרן 5128905… למה אי אפשר להוסיף אותה לתוכנית ההפקדה"): a security joins the plan of
   // the track on screen after the plan was built (the list was fixed at its building: what was bought later could not
   // enter). At the end of the queue; one taken out before comes back; one that is in the other track stays there
+  else if(a==='holdAdd'||a==='holdNo'||a==='holdDrop'||a==='holdKeep'){const sym=String(d.sym||''); if(!sym)return; PLD.ask=Object.assign({},PLD.ask||{}); delete PLD.ask[sym];
+    if(a==='holdNo')PLD.ask[sym]='no';
+    else if(a==='holdKeep')PLD.ask[sym]='keep';
+    else if(a==='holdAdd'){const X=d.trk==='idx'?PLD.idx:PLD; if(!X)return; const ex=(X.items||[]).find(i=>i.sym===sym); if(ex)ex.status=ex.status==='skip'?'todo':ex.status; else{X.items=X.items||[]; X.items.push({sym,status:'todo',note:''}); if(!X.start)X.start=ymNow()}}
+    else{const X=d.trk==='idx'?PLD.idx:PLD, it=X&&(X.items||[]).find(i=>i.sym===sym); if(it&&it.status==='todo')it.status='skip'; else if(it&&it.status==='done'){it.status='skip'; delete it.pid}}
+    setTrack()}
   else if(a==='addIt'){const sym=String(d.sym||''); if(!sym)return; const ex=PL.items.find(i=>i.sym===sym), other=TRACK==='idx'?PLD:PLD.idx;
     if(ex){if(ex.status!=='skip'){PADD_MSG=`${lab(sym)} כבר בתוכנית.`; render(); return} ex.status='todo'}
     else{if(other&&(other.items||[]).some(i=>i.sym===sym&&i.status!=='skip')){PADD_MSG=`${lab(sym)} נמצא במסלול ה${TRACK==='idx'?'מניות':'מדדים'}. מעבירים אותו משם ב"עריכת הרשימה".`; render(); return}
@@ -31792,6 +31806,29 @@ let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))
 // the months, the securities, the chart, the one-time deposit, the settings) is folded behind one button; opened, it
 // stays open in this browser. A link or a search that leads into a folded part opens it. Not folded while there is no
 // plan yet (the card is hidden then), nor for the page's own tests of the sections (tr_pt_all)
+// 24.11 (the owner: "אם אני אמכור מניה או אקנה שיהיה לי התראה אם להוסיף/להוריד אותה לתוכנית ההפקדה"): the holdings and the
+// plan are compared on every drawing. A security held and in no track (bought after the plan was built) asks to join
+// it; a security of the plan that was held and is held no more (sold) asks to leave it. Each question is answered once:
+// "לא" and "להשאיר" are kept with the plan (ask), and asked again only when the holding changes again (sold and bought
+// back). held: the securities the plan saw held, so a security added before it was bought is not taken for sold
+function planHeldNow(){const H=new Set(); for(const x of ((P&&P.positions)||[]))if(x&&x.sym&&+x.qty>0)H.add(x.sym); return H}
+function planHoldAsk(){const out={add:[],drop:[]}; if(!PLD||!P)return out; const H=planHeldNow(), ask=PLD.ask||{}, was=new Set(PLD.held||[]);
+  const T=[['stocks',PLD],['idx',PLD.idx]].filter(([,X])=>X), inAny=sym=>T.some(([,X])=>(X.items||[]).some(i=>i.sym===sym));
+  if(!T.some(([,X])=>(X.items||[]).length))return out;
+  for(const sym of H)if(!inAny(sym)&&ask[sym]!=='no')out.add.push({sym,trk:isIdx(sym)?'idx':'stocks'});
+  for(const [trk,X] of T)for(const i of X.items||[])if(i.status!=='skip'&&!H.has(i.sym)&&was.has(i.sym)&&ask[i.sym]!=='keep')out.drop.push({sym:i.sym,trk});
+  return out}
+// the plan's memory of what it saw held, and the answers that lapse when the holding changes; saved only when changed
+function planHoldSync(){if(!PLD||!P||!canWrite)return; try{if(!PLK&&!LOCAL)return}catch(e){return}
+  const H=planHeldNow(); if(!H.size)return; const was=new Set(PLD.held||[]), ask=Object.assign({},PLD.ask||{}); let ch=false;
+  for(const s0 of H)if(!was.has(s0)){was.add(s0); ch=true}
+  for(const k of Object.keys(ask)){if((ask[k]==='no'&&!H.has(k))||(ask[k]==='keep'&&H.has(k))){delete ask[k]; ch=true}}
+  if(!ch)return; PLD.held=[...was].sort(); PLD.ask=ask; pDirty=true; P_SEQ++; clearTimeout(pTimer); pTimer=setTimeout(savePlan,800)}
+const trkHe=t=>t==='idx'?'מדדים':'מניות';
+function planHoldH(){const A=planHoldAsk(); if(!A.add.length&&!A.drop.length)return ''; const dis=canWrite?'':' disabled';
+  const add=x=>{const o=x.trk==='idx'?'stocks':'idx'; return `<li><span class="pc-s">קנית <bdi>${esc(lab(x.sym))}</bdi><span class="pc-q">להוסיף לתוכנית?</span></span><span class="pc-a pc-a2"><button type="button" class="btn sm pri" data-pa="holdAdd" data-sym="${esc(x.sym)}" data-trk="${x.trk}"${dis}>למסלול ה${trkHe(x.trk)}</button><button type="button" class="btn sm" data-pa="holdAdd" data-sym="${esc(x.sym)}" data-trk="${o}"${dis}>ל${trkHe(o)}</button><button type="button" class="pc-un" data-pa="holdNo" data-sym="${esc(x.sym)}"${dis}>לא</button></span></li>`};
+  const drop=x=>`<li><span class="pc-s">מכרת את <bdi>${esc(lab(x.sym))}</bdi><span class="pc-q">היא עדיין בתור של מסלול ה${trkHe(x.trk)}. להוריד?</span></span><span class="pc-a pc-a2"><button type="button" class="btn sm pri" data-pa="holdDrop" data-sym="${esc(x.sym)}" data-trk="${x.trk}"${dis}>להוריד</button><button type="button" class="pc-un" data-pa="holdKeep" data-sym="${esc(x.sym)}"${dis}>להשאיר</button></span></li>`;
+  return `<div class="pc-sec pc-hold" role="group" aria-label="שינויים בתיק"><h3 class="pc-h">שינויים בתיק</h3><ul class="pc-list">${A.add.map(add).join('')}${A.drop.map(drop).join('')}</ul></div>`}
 let PADD_MSG='';
 // the price of a security in shekels from the quotes (a dollar one at the day's rate); 0 when there is none
 function planPxIls(sym){try{const pr=priceOf(sym); if(!pr||!(pr.px>0))return 0; if(pr.ccy==='USD')return pr.px*(+Q.usdIls||0); return pr.ccy==='ILS'||!pr.ccy?pr.px:0}catch(e){return 0}}
@@ -31876,23 +31913,29 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
     const stH=got?`<span class="ps-ok">✓ נקנה</span>${c&&!c.disabled?un(c.id,lab(sym)):''}`:short?`<span class="ps-wait">חסרים <span class="n" dir="ltr">${ils(Math.max(0.01,Math.ceil((cost-st.bal)*100)/100),2)}</span></span>`:c&&!c.disabled?`<button type="button" class="btn sm pri" data-planbuy="${esc(c.id)}" aria-label="קניתי ${esc(lab(sym))}">קניתי</button>`:'';
     return `<li class="${got?'done':''}"><span class="pc-s">${esc(lab(sym))}${pu&&pu.tid?'<span class="pc-src">לפי קנייה שרשומה בתיק</span>':''}</span><span class="pc-c n" dir="ltr">${ils(cost,2)}</span><span class="pc-a">${stH}</span></li>`};
   const oldNow=st.fixed||st.wait?[]:planOldNow(), oldRow=x=>`<li class="done"><span class="pc-s">${esc(lab(x.sym))}</span><span class="pc-c n" dir="ltr">${ils(+x.paidIls||0,2)}</span><span class="pc-a"><span class="ps-ok">✓ נקנה</span>${canWrite?`<button type="button" class="pc-un" data-pa="dropBuy" data-id="${esc(x.id)}" aria-label="ביטול הסימון: ${esc(lab(x.sym))}">ביטול</button>`:''}</span></li>`;
+  // 24.11 (the owner: "למה אתה לא מתייחס להפקדה החד פעמית… מוסיף שיש עוד יתרה?"): the one-time deposits of this month are rows of
+  // "החודש" with what they were for, the balance says how much of it they are, and the card asks for one in place
+  const onceAll=(PL.deposits||[]).filter(x=>x.once), onceNow=onceAll.filter(x=>x.month===ymAdd(st.start,st.cur)), onceOpen=(()=>{try{const o=TRACK==='idx'||tracksApart()?trackOpen(TRACK):planOpen(); return (o.deps||[]).filter(x=>x.once&&onceAll.includes(x))}catch(e){return []}})(), onceSum=onceOpen.reduce((t,x)=>t+(+x.amount||0),0);
+  const onceRow=x=>`<li class="done"><span class="pc-s">הפקדה חד-פעמית${x.note?` <span class="pc-q">${esc(x.note)}</span>`:''}</span><span class="pc-c n" dir="ltr">${ils(+x.amount||0)}</span><span class="pc-a"><span class="ps-ok">✓ נוספה</span>${canWrite?`<button type="button" class="pc-un" data-oncedel="${esc(x.id)}" data-trk="${TRACK==='idx'?'idx':'stocks'}" aria-label="ביטול ההפקדה החד-פעמית של ${ils(+x.amount||0)}">ביטול</button>`:''}</span></li>`;
   const head=`<div class="ma-k"><span>תוכנית ההפקדה${st.wait?'':' · '+esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div>`;
   box.hidden=false;
   if(st.wait){const n=ymDiff(st.start,ymNow());
     box.innerHTML=`${head}<div class="ps-bal">מתחילה ב${esc(ymLong(st.start))}</div>
       <p class="pc-note">עוד ${n===1?'חודש':n+' חודשים'} להתחלה. ההפקדה הראשונה, <b class="n" dir="ltr">${ils(B)}</b>, ב${esc(ymLong(st.start))}${buys.length?`, ואחריה קונים: ${esc(buys.map(lab).join(', '))}`:''}. עד אז אין מה לסמן.</p>${planLaterBox(st,B)}`; return}
   const nextYm=ymAdd(ymNow(),1), note=st.fixed?'':allDone?(st.until&&ymDiff(st.until,ymNow())>0?`כל הניירות נקנו. הסבב הבא מתחיל ב${esc(ymLong(nextYm))}.`:'כל הניירות בתוכנית נקנו.'):!buys.length&&oldNow.length?`כל מה שתוכנן לחודש נקנה. הקנייה הבאה ב${esc(ymLong(nextYm))} או אחריו.`:!buys.length?'החודש לא קונים: הכסף נצבר לקנייה הבאה.':'';
-  box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
+  box.innerHTML=`${head}<div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה${onceSum>0?`<span class="pc-of">כולל <b class="n" dir="ltr">${ils(onceSum)}</b> מהפקדה חד-פעמית${onceOpen.length>1?'':''}, ${buys.length?'והיא כבר בחשבון של הקניות שלמטה':'והיא תיכנס לקנייה הבאה'}</span>`:''}</div>${planHoldH()}
     ${planRingH(st,done,act.length)}
     <div class="pc-sec"><h3 class="pc-h">החודש</h3>
       <ul class="pc-list" aria-label="מה עושים החודש">
         <li class="${d?'done':''}"><span class="pc-s">הפקדה חודשית${d&&d.tid?'<span class="pc-src">לפי הפקדה שנקראה מהדוח</span>':''}</span><span class="pc-c n" dir="ltr">${ils(amt)}</span><span class="pc-a">${d?`<span class="ps-ok">✓ הופקד</span>${can?un('dep_'+ym,'ההפקדה'):''}`:can?`<button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הפקדתי</button>`:''}</span></li>
-        ${oldNow.map(oldRow).join('')}${buys.map(row).join('')}
+        ${onceNow.map(onceRow).join('')}${oldNow.map(oldRow).join('')}${buys.map(row).join('')}
       </ul>
+      ${canWrite?'<button type="button" class="btn sm pc-once" data-planonce="1">+ הפקדה חד-פעמית</button>':''}
       ${note?`<p class="pc-note" role="status">${note}</p>`:''}${SYNC_SAY?`<p class="pc-note pc-sync" role="status">${esc(SYNC_SAY)} אם זו לא קנייה של התוכנית, לוחצים "ביטול" לידה.</p>`:''}</div>
     ${planLaterBox(st,B)}
     <p class="pc-foot">לפי המחירים של היום. לא המלצה.</p>`;
   try{planRoll(st)}catch(e){} try{planSync()}catch(e){}}
+document.addEventListener('click',e=>{const o=e.target.closest&&e.target.closest('[data-planonce]'); if(!o)return; const f=$('onceAmt'); if(!f)return; try{ptReveal(f)}catch(err){} f.scrollIntoView({block:'center',behavior:'smooth'}); setTimeout(()=>f.focus(),350)});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep],[data-planbuy],[data-planun]'); if(!b)return; const un=b.dataset.planun, c=$(un||b.dataset.planbuy||('dep_'+b.dataset.plandep)); if(c&&!c.disabled&&c.checked===!!un)c.click()});
 function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
