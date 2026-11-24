@@ -4287,18 +4287,22 @@ for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדת
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(W);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
     const read=()=>pg.evaluate(()=>{const b=document.getElementById('planAns'), r=x=>{const q=x.getBoundingClientRect(); return [Math.round(q.width),Math.round(q.height)]};
       return {txt:b.innerText.replace(/\s+/g,' '),dep:!!b.querySelector('[data-plandep]'),buys:[...b.querySelectorAll('[data-planbuy]')].map(x=>x.dataset.planbuy),btn:[...b.querySelectorAll('button')].map(r),
         over:document.documentElement.scrollWidth>innerWidth+1,h2:document.getElementById('hPlan').textContent,strip:document.querySelector('[data-pane="plan"] .strip').innerText}});
     let s=await read(); if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-${W}.png`,fullPage:false});
-    assert.equal(s.h2,'תוכנית ההפקדה'); assert.match(s.txt,/יש לך .*להשקעה/); assert.match(s.txt,/להפקיד ₪/); assert.match(s.txt,/נקנו \d+ מתוך \d+ ניירות/);
+    assert.equal(s.h2,'תוכנית ההפקדה'); assert.match(s.txt,/יש לך .*להשקעה/); assert.match(s.txt,/החודש/); assert.match(s.txt,/הפקדה חודשית ₪/); assert.match(s.txt,/נקנו \d+ מתוך \d+ בסבב הזה/); assert.match(s.txt,/לא המלצה/);
     assert.doesNotMatch(s.txt+s.strip,/הוגדלו|נשאר לממן|בתור/,'no jargon'); assert.ok(!s.over,'nothing wider than the screen');
     assert.ok(s.btn.length&&s.btn.every(([w,h])=>w>=44&&h>=44),'every button at least 44px: '+JSON.stringify(s.btn));
     if(s.dep){await pg.click('#planAns [data-plandep]'); await pg.waitForFunction(()=>/הופקד/.test(document.getElementById('planAns').innerText),null,{timeout:8000}); s=await read(); assert.ok(!s.dep,'the deposit is marked once')}
     if(s.buys.length){const id=s.buys[0]; await pg.click(`#planAns [data-planbuy="${id}"]`); await pg.waitForFunction(()=>/✓ נקנה/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
       assert.ok(await pg.evaluate(x=>{const c=document.getElementById(x); return !c||c.checked||c.disabled},id),'the table\'s own box is the one ticked')}
     if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-after-${W}.png`});
+    // the same place undoes it: "ביטול" beside what was ticked, and the button is back
+    if(await pg.locator('#planAns .pc-list li.done:not(:first-child) [data-planun]').count()){
+      const before=await pg.locator('#planAns [data-planbuy]').count(); await pg.click('#planAns .pc-list li.done:not(:first-child) [data-planun]');
+      await pg.waitForFunction(k=>document.querySelectorAll('#planAns [data-planbuy]').length===k+1,before,{timeout:8000})}
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
@@ -4310,30 +4314,42 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
     // the engine: 100 a month, A costs 100 and B 250, in order: A now, B when 250 is there, then a second round
     const E=await pg.evaluate(()=>{const f=(window.__model&&window.__model.planAhead)||planAhead, q=[{sym:'A',c:100},{sym:'B',c:250}]; return {m:f(q,q,0,100,8,'manual'),c:f(q,q,0,100,8,'cheap'),none:f([],[],50,100,3,'manual'),zero:f(q,q,0,0,5,'manual')}});
     assert.deepEqual(E.m.rows,[['A'],[],[],['B'],['A'],[],['B'],['A']]); assert.deepEqual(E.m.count,{A:3,B:2}); assert.equal(E.m.rounds,2,'two more rounds begun'); assert.equal(E.m.deposits,800); assert.equal(E.m.spent,800); assert.equal(E.m.left,0);
     assert.deepEqual(E.c.count,{A:3,B:2},'the cheap one first, the round still ends before the next begins'); assert.deepEqual(E.none.rows,[[],[],[]]); assert.equal(E.none.left,350); assert.equal(E.zero.buys,0);
     // the card asks until when; a year chosen: the plan to its last month, the deposits left, what will be bought
     const card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
-    assert.match(await card(),/עד מתי התוכנית\?/); assert.doesNotMatch(await card(),/התוכנית עד /);
-    await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/התוכנית עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
-    let s=await card(); assert.match(s,/נשארו 1[12] הפקדות של ₪/); assert.match(s,/לא המלצה/);
-    const A=await pg.evaluate(()=>{const b=document.getElementById('planAns'); return {li:b.querySelectorAll('.pu-months li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
-    assert.equal(A.li,6,'six months first'); assert.ok(A.all,'and the rest on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
-    if(process.env.SHOT){await pg.evaluate(()=>document.querySelector('#planAns .ps-steps>li:nth-child(3)').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-period.png'})}
-    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pu-months li').length)>=11,'every month of the period');
+    assert.match(await card(),/לקבוע עד מתי/); assert.doesNotMatch(await card(),/בהמשך, עד /);
+    await pg.click('#planAns [data-pa="untilEdit"]'); await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/בהמשך, עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    let s=await card(); assert.match(s,/לא המלצה/); assert.doesNotMatch(s,/נשארו \d+ הפקדות/,'the figures only on request');
+    const A=await pg.evaluate(()=>{const b=document.getElementById('planAns'); return {li:b.querySelectorAll('.pc-sec:last-of-type .pc-list li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
+    assert.ok(A.li>=1&&A.li<=3,'the next three purchases at most: '+A.li); assert.ok(A.all,'and the rest on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
+    if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-period.png'})}
+    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pc-sec:last-of-type .pc-list li').length)>=10,'every month of the period'); assert.match(await card(),/נשארו 1[12] הפקדות של ₪/);
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
     const U=store.getDoc('plan/main').data.until; assert.match(U,/^\d{4}-\d\d$/,'the period is saved with the plan');
     // every security bought: the round is done, and the next one begins with the same securities waiting again
     {const d=JSON.parse(JSON.stringify(store.getDoc('plan/main').data)), now=new Date().toISOString(), ym=now.slice(0,7); d.items.forEach((i,k)=>{if(i.status==='todo'){const id='t'+k; d.purchases.push({id,sym:i.sym,paidIls:1,month:ym,at:now}); i.status='done'; i.pid=id; i.doneAt=now}}); store.setDoc('plan/main',d,{silent:true})}
     const o2=await open(390); try{const p2=o2.pg, card2=()=>p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/s+/g,' '));
-      await tab(p2,'plan'); await p2.waitForSelector('#planAns [data-pa="nextRound"]',{timeout:10000}); assert.match(await card2(),/סבב 1 הושלם/);
+      // every security bought this month: nothing more to tick, the next round is next month's (no security twice in a month)
+      await tab(p2,'plan'); await p2.waitForFunction(()=>/כל הניירות נקנו\. הסבב הבא מתחיל ב/.test(document.getElementById('planAns').innerText),null,{timeout:10000});
+      assert.equal(await p2.locator('#planAns [data-planbuy]').count(),0); assert.equal(await p2.locator('#planAns [data-pa="nextRound"]').count(),0,'no button for a round in the card');
+      await p2.waitForTimeout(600); assert.ok(!(store.getDoc('plan/main').data.round>1),'not begun by itself in the month of the purchases');
+      // on request, in the period's own place, a round can begin now
+      await p2.click('#planAns [data-pa="untilEdit"]'); await p2.waitForSelector('#planAns [data-pa="nextRound"]');
       const n0=store.getDoc('plan/main').data.purchases.length; await p2.click('#planAns [data-pa="nextRound"]'); await p2.waitForFunction(()=>!document.querySelector('#planAns [data-pa="nextRound"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
       const D=store.getDoc('plan/main').data, L=D.items.filter(i=>i.status!=='skip');
-      assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); assert.match(await card2(),/עד עכשיו נקנו בתוכנית/);
+      assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); await p2.click('#planAns [data-pa="aheadAll"]'); assert.match(await card2(),/עד עכשיו נקנו/);
       assert.deepEqual(p2.errs,[])}finally{await o2.ctx.close()}
+    // a round finished in an earlier month: the next one begins by itself
+    {const d=JSON.parse(JSON.stringify(store.getDoc('plan/main').data)), now=new Date(), prev=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,15)), ym=prev.toISOString().slice(0,7); d.start=ym; d.round=1; d.purchases=[];
+      d.items.forEach((i,k)=>{if(i.status!=='skip'){const id='p'+k; d.purchases.push({id,sym:i.sym,paidIls:1,month:ym,at:prev.toISOString()}); i.status='done'; i.pid=id; i.doneAt=prev.toISOString()}}); store.setDoc('plan/main',d,{silent:true})}
+    const o3=await open(390); try{await tab(o3.pg,'plan'); await o3.pg.waitForSelector('#planAns [data-planbuy], #planAns .ps-wait',{timeout:10000});
+      for(let k=0;k<40&&!(store.getDoc('plan/main').data.round>1);k++)await o3.pg.waitForTimeout(200);
+      const D=store.getDoc('plan/main').data; assert.equal(D.round,2,'the next round began by itself'); assert.ok(D.items.filter(i=>i.status!=='skip').every(i=>i.status==='todo')); assert.equal(D.purchases.length,D.items.filter(i=>i.status!=='skip').length,'round 1 kept');
+      assert.deepEqual(o3.pg.errs,[])}finally{await o3.ctx.close()}
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
@@ -4349,13 +4365,13 @@ test('24.11 the plan from a month of one\'s own, and the earlier rounds in the m
     // a plan that begins in two months, for a year
     {const d=JSON.parse(JSON.stringify(base)); d.items.forEach(i=>{if(i.status!=='skip'){i.status='todo'; delete i.pid; delete i.doneAt}}); d.deposits=[]; d.purchases=[]; d.start=ymOf(2); d.until=ymOf(13); store.setDoc('plan/main',d,{silent:true})}
     let o=await open(390); try{const pg=o.pg, card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
-      await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
-      let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); assert.match(s,/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
+      await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
+      let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); await pg.click('#planAns [data-pa="aheadAll"]'); assert.match(await card(),/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
       assert.match(await pg.evaluate(()=>document.querySelector('#ladRows tr.cur').innerText),/חודש ההתחלה/);
       // nothing ticked yet: the first month moves, here back to this month, and the plan is on
       await pg.click('#planAns [data-pa="untilEdit"]'); await pg.waitForSelector('#puFrom');
       await pg.evaluate(v=>{const i=document.getElementById('puFrom'); i.value=v; i.dispatchEvent(new Event('change',{bubbles:true}))},ymOf(0));
-      await pg.waitForFunction(()=>/להפקיד ₪/.test(document.getElementById('planAns').innerText)&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+      await pg.waitForFunction(()=>/הפקדה חודשית/.test(document.getElementById('planAns').innerText)&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
       assert.equal(store.getDoc('plan/main').data.start,ymOf(0)); assert.doesNotMatch(await card(),/מתחילה ב/);
       assert.deepEqual(pg.errs,[])}finally{await o.ctx.close()}
     // round 2: the first security was bought last month in round 1 and again now; the second only in round 1
