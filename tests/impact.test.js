@@ -441,3 +441,19 @@ test('the API: a partner cannot reach the global graph by any route; their view 
     assert.equal((await fetch(base+'/api/admin/impact/fix',{method:'POST',headers:{cookie:jar.a,'content-type':'application/json'},body:'{}'})).status,403);
   }finally{srv.close()}
 });
+
+test('24.11 the alerts follow the engine: an alert only where the engine found a relation to the holding, with its explanation',async()=>{
+  const {pulseUpdate}=await import('../server/pulse.js');
+  const s=mk(), U=world(s); impactTask(s,{now:at}); await impactRelRun(s,{now:at,ask:asker(ANS)});
+  const K=u=>pulseUpdate(s,u,{now:at,save:false}).doc.items.filter(a=>a.kind==='news'||!a.kind), keys=u=>K(u).map(a=>a.k).sort();
+  // the market wrap sat in NVIDIA's feed: the readings' rule called it NVIDIA's own news; the engine says no relation, so no alert
+  assert.ok(!keys(U.nv).includes('ev:market-wrap'),'no alert for an article that only sat in the feed');
+  assert.ok(!keys(U.nv).includes('ev:defense-budget')&&!keys(U.nv).includes('ev:fed-cut'),'nor for an event with no relation to NVIDIA');
+  const mm=K(U.nv).find(a=>a.k==='ev:memory-prices'); assert.ok(mm,'the memory prices: a relation NVIDIA has'); assert.equal(mm.holds[0].link,'indirect'); assert.match(mm.relWhy,/קונה זיכרון מהיר/); assert.equal(mm.holds[0].fact,'accelerated computing platforms for data centers');
+  // Lockheed: the defense budget, by Lockheed's own explanation and the engine's confidence
+  const lm=K(U.lm); assert.deepEqual(lm.map(a=>a.k),['ev:defense-budget']); assert.match(lm[0].relWhy,/ממשלת ארה״ב/); assert.equal(lm[0].conf,'high');
+  // Meta: the EU rules, at the engine's low confidence (general knowledge, not a fact of Meta's business)
+  const me=K(U.me).find(a=>a.k==='ev:eu-ai-rules'); assert.ok(me); assert.equal(me.conf,'low'); assert.ok(!K(U.me).some(a=>a.k==='ev:memory-prices'));
+  // the memory fund: through Micron, by its holdings
+  assert.deepEqual(keys(U.dr),['ev:memory-prices']); assert.equal(K(U.dr)[0].holds[0].how,'fund');
+});

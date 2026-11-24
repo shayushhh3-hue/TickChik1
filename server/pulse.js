@@ -113,7 +113,20 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null,alias=true}={
 // fund holds the whole market, so every such event named VOO/SPY directly and came out critical. A fund is linked
 // through what it holds, an indirect link, unless the news is about the fund itself (its symbol in the headline)
 const INDIRECT=new Set(['supplier','customer','competitor','sector','fund']);
-const HOW_HE={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'חברה באותו ענף',fund:'קרן רחבה שמחזיקה גם במניות'};
+const HOW_HE={supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'חברה באותו ענף',fund:'קרן רחבה שמחזיקה גם במניות',rel:'קשורה דרך העסק שלה'};
+// 24.11 (the owner: "the alerts by the new engine"): the links of an event to a portfolio are the impact engine's relations
+// (server/impactrel.js, kept in research/impact): one asset at a time, the subject of the article, a fact of the asset's
+// business, or a fund's holdings. A sector, the dollar and "the market as a whole" are no link, and an article that only
+// sat in a share's feed is none either. Each link carries the engine's explanation and confidence
+const CONF_N={low:0,mid:1,high:2};
+export function engineLinks(e,HD,R){const H=new Map(HD.pos.map(h=>[h.sym,h])), direct=[], indirect=[];
+  for(const [sym,r] of Object.entries(R||{})){const h=H.get(sym); if(!h||!r||(r.rel!=='direct'&&r.rel!=='indirect'))continue;
+    const via=((r.via||[]).find(v=>String(v).startsWith('sec:'))||'').slice(4)||null;
+    const L={sym,w:h.w,how:r.rel==='direct'?'direct':r.src==='structure'?'fund':(['supplier','customer','competitor'].includes(r.how)?r.how:'rel'),dir:r.dir||'unclear',why:r.mech||'',via,rules:!!e.x.rules,cert:e.x.cert||'interp',
+      conf:r.conf||'low',confWhy:r.confWhy||'',pending:!!r.pending,fact:r.fact||''};
+    (r.rel==='direct'?direct:indirect).push(L)}
+  return {direct,indirect,secs:[],usd:null,macro:!!e.x.macro,followed:[],engine:true};
+}
 export function linksFor(e,HD,{followed=[]}={}){
   const H=new Map(HD.pos.map(h=>[h.sym,h])), direct=[], indirect=[], seen=new Set(), F=new Set(followed), fol=[];
   const named=(k,a,x)=>{const t=`${(a&&a.title)||''} ${(x&&x.he)||''}`, s=String(k).replace(/^TLV:/,''); return new RegExp(`(^|[^A-Za-z0-9])${s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9]|$)`).test(t)};
@@ -146,6 +159,7 @@ export function measuresOf(e,L,sens='mid'){
   if(L.direct.length){const big=!dW||dW.w>=T.dHigh, D=L.direct.filter(d=>d.w!=null).sort((a,b)=>b.w-a.w).filter((d,i,A)=>A.findIndex(z=>z.sym===d.sym)===i); rel=big?'high':'mid';
     // 6.11: every held company the event names (the biggest first), not only the biggest one
     why=D.length>1?`ההחזקות עצמן מוזכרות: ${D.slice(0,3).map(d=>`${d.sym}, ${d.w}% מהתיק`).join(' · ')}${D.length>3?` ועוד ${D.length-3}`:''}`:dW?`ההחזקה עצמה מוזכרת: ${dW.sym}, ${dW.w}% מהתיק`:`ההחזקה עצמה מוזכרת: ${L.direct[0].sym} (המשקל בתיק לא ידוע כרגע)`}
+  else if(L.indirect.length&&L.engine){const big=!iW||iW.w>=T.iMid; rel=big?'mid':'low'; const z=iW||L.indirect[0]; why=`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''}${z.why?': '+z.why:''}`}
   else if(L.indirect.length){const big=!iW||iW.w>=T.iMid; rel=big?'mid':'low'; const z=iW||L.indirect[0]; why=z.how==='fund'?`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''} היא קרן רחבה; הידיעה נוגעת לשוק או לחברות שהיא מחזיקה, לא לקרן עצמה`:`קשר עקיף: ${z.sym}${z.w!=null?` (${z.w}% מהתיק)`:''}, ${HOW_HE[z.how]||'קשורה'}${z.how==='sector'?' לזו':''} של החברה שבידיעה`}
   else if(sW>=T.sMid){rel='mid'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
   else if(sW>=T.sLow){rel='low'; why=`${Math.round(sW)}% מהתיק בענפים שהאירוע נוגע להם`}
@@ -157,6 +171,8 @@ export function measuresOf(e,L,sens='mid'){
   else if(L.direct.length&&x.cert==='fact'){conf='high'; cwhy='דיווח על דבר שקרה, והחברה שבתיק היא נושא הידיעה'}
   else if(L.direct.length||(L.indirect.length&&strong&&strong.why)){conf='mid'; cwhy=x.cert==='fact'?(L.direct.length?'דיווח על דבר שקרה; החברה שבתיק מוזכרת בו':'דיווח על דבר שקרה; הקשר לחברה שבתיק עקיף, והסיבה שלו כתובה'):x.cert==='interp'?'פרשנות של המקור, לא עובדה שנבדקה':'הערכה של צ׳יקו מהקשר כללי'}
   else{conf='low'; cwhy='קשר דרך ענף או השפעה רחבה, לא דרך החברה עצמה'}
+  // 24.11: with the engine's links, the confidence is the engine's own for the strongest link (never above what the reading allows)
+  if(L.engine&&e.ai&&(L.direct.length||L.indirect.length)){const b=[...L.direct,...L.indirect].reduce((p,q)=>CONF_N[q.conf]>CONF_N[p.conf]?q:p); if(CONF_N[b.conf]<CONF_N[conf]||!L.direct.length){conf=b.conf; cwhy=b.confWhy||cwhy}}
   if(x.cert==='est'&&conf==='high'){conf='mid'; cwhy='הערכה של צ׳יקו, לא דיווח'}
   return {imp,rel,relWhy:why,conf,confWhy:cwhy};
 }
@@ -185,9 +201,12 @@ export function pulseCompute(store,u,{now=new Date()}={}){
   // a partner's alerts come only from what that partner may read: the general news and the articles about their own
   // securities (the owner and the admins read everything)
   const vis=u&&u.role==='friend'?(()=>{const ok=symsOfUser(store,u.id); return a=>a.src==='gen'||(a.syms||[]).some(k=>ok.has(k))})():null;
+  // 24.11: the engine's relations, by event (the same keys: the alerts and the engine join the same events); before the engine
+  // has ever run (a new site) the readings' links stand in, as before
+  const IMP=store.getDoc('research/impact'), REL=IMP.exists?new Map(((IMP.data||{}).events||[]).map(ev=>[ev.k,ev.rels||{}])):null;
   for(const e of eventsOf(store,{now,visible:vis})){
     const x=e.x; if(pr.types[x.type]===false)continue;
-    const L=hasPf?linksFor(e,HD,{followed:pr.syms}):{direct:[],indirect:[],secs:[],usd:null,macro:!!x.macro,followed:linksFor(e,{pos:[],wOk:false,usdPct:null},{followed:pr.syms}).followed};
+    const L=hasPf?(REL?{...engineLinks(e,HD,REL.get(e.k)),followed:linksFor(e,{pos:[],wOk:false,usdPct:null},{followed:pr.syms}).followed}:linksFor(e,HD,{followed:pr.syms})):{direct:[],indirect:[],secs:[],usd:null,macro:!!x.macro,followed:linksFor(e,{pos:[],wOk:false,usdPct:null},{followed:pr.syms}).followed};
     const m=measuresOf(e,L,pr.sens); let r=hasPf?levelOf(m,x.kind||'news'):null;
     // the topics the person chose: an event reached only through a sector or the dollar must be one of them
     if(r&&!L.direct.length&&!L.indirect.length&&pr.themes.length&&!(x.themes||[]).some(t=>pr.themes.includes(t)))r=null;
