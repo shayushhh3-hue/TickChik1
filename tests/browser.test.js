@@ -4341,14 +4341,25 @@ for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדת
 test('24.11 the plan ticks by itself a purchase that is already in the portfolio, says where it came from, leaves it alone once taken back; a ring shows the progress',T,async t=>{
   if(skip())return t.skip('no browser');
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  // an earlier test of the same run that writes a purchase in the page's box leaves the plan ticked by the page (it puts the
+  // history back, not the plan): CI runs 391-393 read that row (MSFT, ₪1,868.50) for this test's own. The plan starts clean
+  // of such ticks here, and stays clean for the tests after it
+  {const d=JSON.parse(JSON.stringify(keep['plan/main'].data)); for(const X of [d,d.idx]){if(!X)continue; const gone=new Set((X.purchases||[]).filter(x=>x.tid).map(x=>x.id));
+      X.purchases=(X.purchases||[]).filter(x=>!x.tid); X.deposits=(X.deposits||[]).filter(x=>!x.tid); delete X.seen; for(const i of X.items||[])if(i.pid&&gone.has(i.pid)){i.status='todo'; delete i.pid; delete i.doneAt}}
+    keep['plan/main']={...keep['plan/main'],data:d}; store.setDoc('plan/main',d,{silent:true})}
   const pl=keep['plan/main'].data, pf=keep['portfolio/main'].data, it=((pl&&pl.items)||[]).find(i=>i.status==='todo'), pos=it&&(pf.positions||[]).find(p=>p.sym===it.sym); if(!it||!pos)return t.skip('no security waiting in the fixture plan');
-  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'), H=JSON.parse(JSON.stringify(keep['history/main'].data));
+  // the day as the page has it (Israel's), and no other purchase of this security this month: an earlier test of the same run may have left one
+  // (CI runs 391-393: the row was ticked from such a purchase, ₪1,868.50, not from the one written here)
+  const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()), H=JSON.parse(JSON.stringify(keep['history/main'].data));
+  {const mine=t=>t&&t.sym===it.sym&&String(t.date||'').slice(0,7)===day.slice(0,7); for(const X of H.accounts){if(X.trades)X.trades=X.trades.filter(t=>!mine(t)); if(X.manual)X.manual=X.manual.filter(t=>!mine(t))}}
   let A=H.accounts.find(x=>x.acct===pos.acct); if(!A){A={acct:pos.acct,ccy:'USD',deposits:[],trades:[]}; H.accounts.push(A)}
   A.manual=[...(A.manual||[]),{id:'tsync1',date:day,sym:it.sym,side:'buy',qty:1,px:123.45,amt:123.45,ccy:'ILS',at:new Date().toISOString()}]; store.setDoc('history/main',H,{silent:true});
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-src',{timeout:12000});
-    const s=await pg.evaluate(()=>{const b=document.getElementById('planAns'), li=b.querySelector('.pc-src').closest('li'), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),done:li.classList.contains('done'),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}});
+    // the row of this test's own security
+    const mine=sym=>[...document.querySelectorAll('#planAns:not([hidden]) .pc-src')].map(x=>x.closest('li')).find(li=>li&&li.innerText.trim().startsWith(sym));
+    await tab(pg,'plan'); await pg.waitForFunction(`(${mine})(${JSON.stringify(it.sym)})`,null,{timeout:12000});
+    const s=await pg.evaluate(sym=>{const b=document.getElementById('planAns'), li=[...b.querySelectorAll('.pc-src')].map(x=>x.closest('li')).find(l=>l&&l.innerText.trim().startsWith(sym)), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),done:li.classList.contains('done'),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}},it.sym);
     assert.ok(s.done); assert.match(s.li,/לפי קנייה שרשומה בתיק/); assert.match(s.li,/123.45/,'what was really paid: '+s.li); assert.match(s.li,/✓ נקנה/); assert.match(s.say,/סימנתי בתוכנית/);
     assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ בסבב הזה/); assert.ok(!s.over);
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-sync.png'})}
