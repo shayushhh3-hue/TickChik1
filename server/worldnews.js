@@ -221,15 +221,17 @@ export async function worldTask(store,{fetch:f=globalThis.fetch,now=new Date(),l
   const arts=new Map((W.arts||[]).filter(a=>a&&a.id&&(a.at||a.seen)>=from).map(a=>[a.id,a])), by={}; for(const [k,v] of Object.entries(W.by||{}))if(arts.has(k))by[k]=v;
   // the day's cap, spread over the day: by this hour no more than the day's share (and a batch to begin with)
   const used=+(store.getMeta('worldRead:'+day)||0), frac=(now.getUTCHours()*60+now.getUTCMinutes()+20)/1440, room=Math.max(0,Math.min(dayCap-used,Math.ceil(dayCap*frac)+perBatch-used));
-  st.used=used;
+  st.used=used; let spent=0;
   if(st.ai&&room>0){
     // what was read (here, or as general news) is not read again; the same story by another headline neither
     const X=store.getDoc('research/newsx').data||{}, read=new Set([...Object.keys(by),...Object.keys(X.by||{})]);
     const picks=worldPick(FD.items||[],{read,now,n:Math.min(perRun,room)}); st.picked=picks.length;
     const allBy={...(X.by||{}),...by}, atOf=new Map([...arts.values(),...picks].map(a=>[a.id,a.at||a.seen||iso]));
     for(let b=0;b*perBatch<picks.length;b++){const batch=picks.slice(b*perBatch,(b+1)*perBatch).map(a=>({...a,src:'gen',syms:[]}));
-      const got=await analyzeBatch(batch,{fetch:f,log,ask,known:knownEvents(allBy,{now}),world:true}); store.setMeta('worldRead:'+day,String(used+b*perBatch+batch.length));
+      const got=await analyzeBatch(batch,{fetch:f,log,ask,known:knownEvents(allBy,{now}),world:true});
+      // a reading that did not happen (the reader refused, or did not answer) does not use the day's cap; two in a run end the run
       if(!got){st.fail++; st.first=st.first||'analysis: no usable answer'; if(st.fail>=2)break; continue}
+      spent+=batch.length; store.setMeta('worldRead:'+day,String(used+spent));
       // the symbols: only the known ones stay; a company whose symbol is not known stays as a name
       const affs=Object.values(got).flatMap(x=>x.aff||[]), V=await worldVerify(store,affs,{search,now,pause,...(f!==globalThis.fetch?{fetch:f}:{})});
       for(const [i,x] of Object.entries(got)){const a=batch[+i]; if(!a)continue; const keep=[], cos=[];

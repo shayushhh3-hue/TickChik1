@@ -128,6 +128,8 @@ test('the run: the day\'s cap spread over the day, the readings kept apart from 
   const s=mk(); world(s);
   // no reader: nothing is read, nothing is invented
   let st=await worldTask(s,{now:at,gather:noGather,search,pause:0}); assert.equal(st.ai,false); assert.equal(st.read,0); assert.equal((s.getDoc(WORLD_DOC).data||{arts:[]}).arts.length,0);
+  // a reader that refuses (a key that is not accepted) reads nothing and uses nothing of the day's cap
+  st=await worldTask(s,{now:at,gather:noGather,ask:async()=>{throw new Error('HTTP 401')},search,pause:0}); assert.equal(st.read,0); assert.equal(st.usedNow,0,'nothing was read: nothing is counted'); assert.match(st.first,/no usable answer/);
   // the cap at 0 turns the reading off; a small cap is spread: by 15:00 UTC of a day of 8, five and a batch may have been read
   st=await worldTask(s,{now:at,gather:noGather,ask:asker,search,pause:0,dayCap:0}); assert.equal(st.read,0);
   st=await worldTask(s,{now:new Date('2026-11-18T00:10:00Z'),gather:noGather,ask:asker,search,pause:0,dayCap:2,perBatch:1,perRun:6}); assert.equal(st.read,2,'no more than the day\'s cap');
