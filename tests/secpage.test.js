@@ -43,3 +43,13 @@ test('24.11 logos: a photo where a logo belongs is not served (an opaque picture
   assert.equal(looksLikePhoto(png(128,128,2,5659)),false,'a logo on white'); assert.equal(looksLikePhoto(png(128,21,2,5627)),false,'a thin wordmark');
   assert.equal(looksLikePhoto(png(250,250,6,40000)),false,'with transparency: a logo');
 });
+
+test('24.11 a fund\'s year from Maya: 30 rows a request (more is a 400), period 2 = a year, rows of any age kept',async()=>{
+  const {mayaFundSeries}=await import('../shared/quotes.js');
+  const all=[]; for(let i=0;i<70;i++)all.push({tradeDate:new Date(Date.UTC(2026,10,19)-i*2*864e5).toISOString().slice(0,10)+'T00:00:00',sellPrice:300+i});
+  const asked=[]; const f=async(u,o)=>{const b=JSON.parse(o.body); asked.push(b); assert.doesNotMatch(u,/[?&]_=/); if(b.pageSize>30)return new Response('{}',{status:400});
+    return new Response(JSON.stringify(all.slice((b.pageNumber-1)*30,b.pageNumber*30)),{status:200})};
+  const s=await mayaFundSeries('5128905',{fetch:f,pageSize:300});
+  assert.equal(s.d.length,70,'every row, the oldest four months back too'); assert.equal(s.d[0],all.at(-1).tradeDate.slice(0,10)); assert.equal(s.c.at(-1),300);
+  assert.deepEqual(asked.map(b=>[b.pageNumber,b.pageSize,b.period]),[[1,30,2],[2,30,2],[3,30,2]],'stops at a short page');
+});

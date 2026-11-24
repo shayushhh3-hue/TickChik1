@@ -70,7 +70,9 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
 // the US index a fund follows, from its name (Hebrew or English): its value moves with that index between official prices
 export const trackOf=name=>{const n=String(name||''); return /nasdaq|נאסד|ndx/i.test(n)&&/100/.test(n)?'NDX':/s&p|אס.?אנד.?פי/i.test(n)&&/500/.test(n)?'SPX':/dow|דאו/i.test(n)?'DJI':/russell|ראסל/i.test(n)?'RUT':''};
 export const isIlFund=sym=>/^5\d{6}$/.test(String(sym||''));
-const MAYA_H={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',accept:'application/json, text/plain, */*','x-maya-with':'allow',referer:'https://maya.tase.co.il/','accept-language':'he-IL,he;q=0.9'};
+// 24.11: a plain request. With the extra headers (x-maya-with, referer, no-cache) Maya stopped answering at all (a timeout)
+// from 22.10: the funds' prices stood still for a month. The same request without them answers in a third of a second
+const MAYA_H={'user-agent':'Mozilla/5.0',accept:'application/json'};
 const flat=(o,pre='',d=0,out={})=>{if(o&&typeof o==='object'&&d<4){for(const [k,v] of Object.entries(o)){if(v&&typeof v==='object'&&!Array.isArray(v))flat(v,pre+k+'.',d+1,out); else if(Array.isArray(v))v.slice(0,3).forEach((x,i)=>flat(x,pre+k+'['+i+'].',d+1,out)); else out[pre+k]=v}} return out};
 const numOf=v=>{if(typeof v==='number')return v; if(typeof v==='string'){const n=+v.replace(/[,\s₪%]/g,''); return isNaN(n)?null:n} return null};
 const dateOf=v=>{if(!v)return ''; const s=String(v); let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return `${m[1]}-${m[2]}-${m[3]}`;
@@ -119,23 +121,30 @@ export function mayaHistParse(j,now=new Date()){
   delete q.dates; return q;
 }
 // a fund's prices for its page's chart: the history interface, a month of days, oldest first ({d, c}); and its name
+// 24.11: Maya answers at most 30 rows a request (a larger pageSize is a 400): the rows asked page by page up to pageSize
 export async function mayaFundSeries(id,{fetch:f=timedFetch,now=new Date(),pageSize=60}={}){
-  const r=await f(MAYA_HIST(id)+'?_='+now.getTime(),{method:'POST',headers:{...MAYA_H,'content-type':'application/json','cache-control':'no-cache'},body:JSON.stringify({pageSize,pageNumber:1,period:0}),cache:'no-store'});
-  if(!r.ok)throw new Error('history HTTP '+r.status);
-  const j=await r.json(), rowsOf=x=>Array.isArray(x)?x:x&&typeof x==='object'?Object.values(x).map(rowsOf).find(a=>a&&a.length&&typeof a[0]==='object')||null:null;
-  const by=new Map(); for(const row of rowsOf(j)||[]){const q=fundFromJson(row,now); if(q&&q.closeDate&&q.px>0)by.set(q.closeDate,q.px)}
+  const rowsOf=x=>Array.isArray(x)?x:x&&typeof x==='object'?Object.values(x).map(rowsOf).find(a=>a&&a.length&&typeof a[0]==='object')||null:null;
+  const by=new Map(), per=30, pages=Math.max(1,Math.ceil(pageSize/per)), period=pageSize<=30?0:pageSize<=100?1:2;   // period: 0 a month, 1 half a year, 2 a year, 3 more
+  for(let p=1;p<=pages;p++){
+    const r=await f(MAYA_HIST(id),{method:'POST',headers:{...MAYA_H,'content-type':'application/json'},body:JSON.stringify({pageSize:per,pageNumber:p,period}),cache:'no-store'});
+    if(!r.ok){if(p>1)break; throw new Error('history HTTP '+r.status)}
+    // a row {tradeDate:'2026-11-19T00:00:00', sellPrice:362.12} read as it is (fundFromJson keeps only a date of the last 90
+    // days, right for today's price, wrong for a year's chart); another shape is still read through fundFromJson
+    const rows=rowsOf(await r.json())||[]; for(const row of rows){const d0=String(row&&row.tradeDate||'').slice(0,10), p0=numOf(row&&(row.sellPrice??row.redemptionPrice));
+      if(/^\d{4}-\d\d-\d\d$/.test(d0)&&p0>0){by.set(d0,p0); continue} const q=fundFromJson(row,now); if(q&&q.closeDate&&q.px>0)by.set(q.closeDate,q.px)}
+    if(rows.length<per)break}
   const d=[...by.keys()].sort(); return {d,c:d.map(x=>by.get(x))};
 }
 export async function mayaFund(id,{fetch:f=timedFetch,now=Date.now}={}){
   const H={...MAYA_H,'cache-control':'no-cache',pragma:'no-cache'}, errs=[];
   const got=(await Promise.all(MAYA_URLS(id).map(async u=>{
-    try{const r=await f(u+(u.includes('?')?'&':'?')+'_='+now(),{headers:H,cache:'no-store'}); if(!r.ok){errs.push(new Error('HTTP '+r.status));return null}
+    try{const r=await f(u,{headers:H,cache:'no-store'}); if(!r.ok){errs.push(new Error('HTTP '+r.status));return null}
       const j=await r.json(), q=mayaParse(j); if(q)return {q,host:new URL(u).host};
       errs.push(new Error('no price field; keys: '+Object.keys(flat(j)).slice(0,40).join(',')))}
     catch(e){errs.push(e)}
     return null}).concat([(async()=>{
       // the history comes last: a details answer of the same day is kept for its name and yields
-      try{const r=await f(MAYA_HIST(id)+'?_='+now(),{method:'POST',headers:{...H,'content-type':'application/json'},body:JSON.stringify({pageSize:10,pageNumber:1,period:0}),cache:'no-store'});
+      try{const r=await f(MAYA_HIST(id),{method:'POST',headers:{...H,'content-type':'application/json'},body:JSON.stringify({pageSize:10,pageNumber:1,period:0}),cache:'no-store'});
         if(!r.ok){errs.push(new Error('history HTTP '+r.status));return null}
         const q=mayaHistParse(await r.json()); if(q)return {q,host:'maya.tase.co.il/history'}; errs.push(new Error('history: no rows'))}
       catch(e){errs.push(e)}
