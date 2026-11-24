@@ -170,14 +170,35 @@ test('navigation: a bottom bar on a phone and a tablet, the menu at the side on 
     assert.ok(ox,'the content sits beside the menu, no sideways scroll'); await ctx.close()}
 });
 
-test('the plan: one cash balance for the whole portfolio, the same in the stocks and the funds tracks',T,async t=>{
+test('the plan\'s cash: one balance while both tracks buy from the same account; a balance of its own for each track once they buy from different accounts (24.11, the owner), with a box an account and one for all of it',T,async t=>{
   if(skip())return t.skip('no browser');
-  const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.waitForTimeout(400);
-  const bal=async k=>{await pg.evaluate(k=>document.querySelector(`[data-track="${k}"]`).click(),k); await pg.waitForTimeout(400); return pg.evaluate(()=>document.getElementById('pBal').textContent)};
-  const a=await bal('stocks'), b=await bal('idx'), c=await bal('stocks');
-  assert.match(a,/₪/); assert.equal(a,b,'the same balance in both tracks'); assert.equal(a,c);
-  assert.match(await pg.evaluate(()=>document.getElementById('pBalD').textContent),/משותף לשני המסלולים/);
-  assert.deepEqual(pg.errs,[]); await ctx.close();
+  const S0=store.getDoc('settings/main').data;
+  try{
+    const {ctx,pg}=await open(390); await tab(pg,'plan'); await pg.waitForTimeout(400);
+    const bal=async k=>{await pg.evaluate(k=>document.querySelector(`.trk[data-track="${k}"]`).click(),k); await pg.waitForTimeout(400); return pg.evaluate(()=>document.getElementById('pBal').textContent)};
+    const num=s=>+String(s).replace(/[^\d.]/g,'');
+    // the fixture holds most of the shares and most of the funds in the same account: one balance, as it was
+    const a=await bal('stocks'), b=await bal('idx'), c=await bal('stocks');
+    assert.match(a,/₪/); assert.equal(a,b,'the same balance in both tracks'); assert.equal(a,c);
+    assert.match(await pg.evaluate(()=>document.getElementById('pBalD').textContent),/משותף לשני המסלולים/);
+    let row=await pg.evaluate(()=>({vis:!!document.getElementById('pCashRow').offsetParent,k:[...document.querySelectorAll('#pCashRow .pc-k')].map(x=>x.textContent),on:[...document.querySelectorAll('#pCashRow .pc-b.on .pc-k')].map(x=>x.textContent)}));
+    assert.ok(row.vis); assert.deepEqual(row.k,['אקסלנס','בלינק','כל המזומן'],'a box an account, and all of it'); assert.deepEqual(row.on,['כל המזומן']);
+    // the stocks track buys from the other account: each track has its own balance, and the two add up to all the cash
+    await pg.evaluate(()=>{const s=document.getElementById('inPlanAcct'); s.value='blink'; s.dispatchEvent(new Event('change',{bubbles:true}))}); await pg.waitForTimeout(500);
+    const s1=await bal('stocks'), d1=await pg.evaluate(()=>document.getElementById('pBalD').textContent), i1=await bal('idx'), d2=await pg.evaluate(()=>document.getElementById('pBalD').textContent);
+    assert.notEqual(s1,i1,'apart: '+s1+' / '+i1); assert.equal(num(i1),400,'the funds track: the cash of its own account'); assert.ok(Math.abs(num(s1)-18.5)<=1,'the stocks track: the 5 dollars of its own account, '+s1);
+    assert.match(d1,/המזומן בבלינק/); assert.match(d1,/כל המזומן בתיק: ₪/); assert.match(d2,/המזומן באקסלנס/);
+    row=await pg.evaluate(()=>({a:[...document.querySelectorAll('#pCashRow .pc-b')].map(x=>x.textContent.replace(/\s+/g,' ').trim()),on:[...document.querySelectorAll('#pCashRow .pc-b.on .pc-k')].map(x=>x.textContent),ox:document.documentElement.scrollWidth<=innerWidth+1}));
+    assert.match(row.a[0],/אקסלנס.*₪400.*למסלול המדדים/); assert.match(row.a[1],/בלינק.*למסלול המניות/); assert.match(row.a[2],/כל המזומן.*בכל החשבונות יחד/); assert.deepEqual(row.on,['אקסלנס'],'the box of the track on screen is marked'); assert.ok(row.ox);
+    assert.ok(Math.abs(num(s1)+num(i1)-num(a))<=2,'the two balances add up to all the cash: '+s1+' + '+i1+' = '+a);
+    for(let i=0;i<30&&!(store.getDoc('settings/main').data.planAcct||{}).stocks;i++)await pg.waitForTimeout(250);
+    assert.equal(store.getDoc('settings/main').data.planAcct.stocks,'blink','kept in the account');
+    // "כל החשבונות יחד" for a track brings the one shared balance back
+    await bal('stocks'); const f0=await bal('idx');
+    await pg.evaluate(()=>{const s=document.getElementById('inPlanAcct'); s.value='all'; s.dispatchEvent(new Event('change',{bubbles:true}))}); await pg.waitForTimeout(500);
+    assert.equal(f0,i1); assert.equal(await bal('stocks'),a,'"כל החשבונות יחד": the one balance again');
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{store.setDoc('settings/main',S0,{silent:true})}
 });
 
 test('the plan: a fund bought in the stocks track opens for its quantity and price like a share, and both can be open',T,async t=>{

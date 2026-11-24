@@ -3517,6 +3517,18 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 /* 17.11 (the owner's Figma "Dashboard": "change the look, keep the data as it is"): a white page, 8px corners, cards with a
    thin lavender border and no shade, pills for tabs, a flat white bottom bar with the words under the icons */
 :root{--bg:#FFFFFF;--r:8px;--shadow:none;--worth-sh:transparent}
+/* 24.11 (the owner): the plan's cash, a box an account and one for all of it */
+.pcash{margin:0 0 12px}
+.pcash[hidden]{display:none}
+.pcash .pc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.pcash .pc-b{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.pcash .pc-b.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.pcash .pc-b.all{background:var(--sunk)}
+.pcash .pc-k{font-size:13px;color:var(--ink2);font-weight:600}
+.pcash .pc-b b{font-size:17px;font-weight:600;color:var(--ink)}
+.pcash .pc-a{font-size:12px;color:var(--muted)}
+.pcash .pc-set{display:inline-block;margin-top:6px;padding:0;border:0;background:none;font:inherit;font-size:13px;min-height:24px;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
+body.hidenum .pcash .n{filter:blur(7px);user-select:none}
 /* 17.11 proposal 17: a report's title opens it */
 .cat button.am{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:start;cursor:pointer}
 /* 17.11 proposal 16: the deposits' line dashed in the legend too; the comparison while the indices load */
@@ -4509,6 +4521,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
       </div>
+      <div class="pcash" id="pCashRow" role="group" aria-label="המזומן בכל חשבון, ולאיזה מסלול הוא" hidden></div>
       <p class="note" id="trkTot" style="margin:-4px 0 10px"></p>
       <div class="dvtabs" id="dvTabs" role="tablist" aria-label="החלקים של התוכנית"><button type="button" class="chip" role="tab" data-dv="month" aria-pressed="true" aria-selected="true">החודש</button><button type="button" class="chip" role="tab" data-dv="rows" aria-pressed="false" aria-selected="false">הניירות</button><button type="button" class="chip" role="tab" data-dv="chart" aria-pressed="false" aria-selected="false">הגרף</button><button type="button" class="chip" role="tab" data-dv="once" aria-pressed="false" aria-selected="false">חד פעמית <span class="dv-n" id="dvOnceN"></span></button><button type="button" class="chip" role="tab" data-dv="set" aria-pressed="false" aria-selected="false">הגדרות</button></div>
       <div class="panel howbuy" data-dvp="rows">
@@ -4571,7 +4584,8 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
           <label for="inDepDay">יום ההפקדה בחודש<select id="inDepDay"></select></label>
           <label for="inTaxMonth" id="taxLab">תזכורת לדוח השנתי לרשות המיסים<span class="dd2"><select id="inTaxDay" aria-label="יום"></select><select id="inTaxMonth" aria-label="חודש"></select></span></label>
           <label for="inFee">עמלת מינימום לעסקה (₪)<input type="number" id="inFee" min="0" step="0.5"></label>
-          <div><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px">—</span></div>
+          <div><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px;direction:rtl;unicode-bidi:normal">—</span></div>
+          <label for="inPlanAcct" id="planAcctL" hidden><span class="pa-k">מאיזה חשבון קונה המסלול הזה</span><select id="inPlanAcct"></select></label>
         </div>
         <p class="note" id="feeNote" style="margin-top:12px"></p>
       </div>
@@ -19071,12 +19085,38 @@ function knownDay(ac,D){
 }
 const markDay=x=>x&&x.at?ilDay(x.at):'';
 const coveredBy=(day,accts)=>!!day&&accts.some(a=>{const s=stmtDay(a); return !!s&&s>=day});
+// 24.11 (the owner): each track of the plan invests the cash of its own account. The stocks track looks at the account that
+// holds its shares and the funds track at the account that holds its funds (S.planAcct says which; until it is chosen, the
+// account that holds most of the track's securities). When the two are different accounts the tracks are apart: each has
+// its own balance and its own queue, and the other account's cash no longer moves it. "כל המזומן" stays as one figure
+// beside them. With one account, or the same account for both, the balance is the shared one, as it was.
+const SEP_DAY='2026-11-24';   // what was ticked before the tracks came apart keeps the rule it was ticked under
+function trackAcct(t){const ids=acctIds(), ch=S&&S.planAcct&&S.planAcct[t]; if(ch==='all'||(ch&&ids.includes(ch)))return ch; if(ids.length<2)return 'all';
+  const X=t==='idx'?PLD.idx:PLD, syms=new Set(((X&&X.items)||[]).filter(i=>i.status!=='skip').map(i=>i.sym)), use=p=>syms.size?syms.has(p.sym):((t==='idx')===!!isIdx(p.sym));
+  const by={}; let tot=0; for(const p of (P&&P.positions)||[]){if(!use(p))continue; const px=+((Q&&Q.prices)||{})[p.sym]||0, rt=px?(rateOf(ccyOfPos(p,Q),Q)||0):0, v=(+p.qty||0)*px*rt||+p.costIls||0; if(!(v>0))continue; by[p.acct]=(by[p.acct]||0)+v; tot+=v}
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0]; return top&&top[1]/tot>=0.6?top[0]:'all'}
+const tracksApart=()=>{const a=trackAcct('stocks'), b=trackAcct('idx'); return a!=='all'&&b!=='all'&&a!==b};
+function acctCash(a){let c=0; const fx=(Q&&+Q.usdIls)||0; for(const x of (P&&P.cash)||[]){if(a!=='all'&&x.acct!==a)continue; c+=x.ccy==='USD'?(+x.amount||0)*fx:(+x.amount||0)} return c}
+// the day an account's cash is known for: its statement's day, or the day its cash was last typed or read from a screen
+const cashDay=a=>[stmtDay(a),((P&&P.cashAt)||{})[a]||''].sort().pop()||'';
+// what was ticked in a track and is not in the accounts' figures yet. Apart, and ticked since the tracks came apart: the
+// money of a tick is in the figures once the track's own account has a newer cash figure (cash), and a purchase's units
+// once the account that holds the security has a newer statement (buys). Otherwise the rule is the one it always was
+function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:[],cash:[]};
+  const a=tracksApart()?trackAcct(t):'all', ids=acctIds(), ilA=ids.filter(x=>acctCcy(x)!=='USD'), depA=ilA.length?ilA:ids, own=d=>a!=='all'&&markDay(d)>=SEP_DAY;
+  const deps=(X.deposits||[]).filter(d=>own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA));
+  const buys=(X.purchases||[]).filter(x=>{const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
+  const cash=a==='all'?buys:(X.purchases||[]).filter(x=>own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x));
+  return {deps,buys,cash}}
 function planOpen(){
+  if(typeof tracksApart==='function'&&tracksApart()){const a=trackOpen('stocks'), b=trackOpen('idx'); return {deps:a.deps.concat(b.deps),buys:a.buys.concat(b.buys),spent:a.cash.concat(b.cash).reduce((t,x)=>t+(+x.paidIls||0),0)}}
   const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
   const deps=allDep().filter(d=>!coveredBy(markDay(d),depA));
   const buys=allBuy().filter(x=>{const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
   return {deps,buys};
 }
+// a track's own balance: its account's cash, and what was ticked in the track since that cash was known
+function trackCash(t){const o=trackOpen(t); return acctCash(trackAcct(t))+o.deps.reduce((s,d)=>s+(+d.amount||0),0)-o.cash.reduce((s,x)=>s+(+x.paidIls||0),0)}
 // the plan's deposits that the history does not hold yet, each with its day (a history deposit within 10 days and 2% of the
 // amount is the same money; so is a month of a table uploaded from an app that describes it, see planCovered)
 function planExtraList(hs=HS){
@@ -19640,7 +19680,7 @@ function pxBoot(){
 window.__pxd={fire:pxFire,auto:pxAuto,open:mktOpen,us:usOpen,il:ilOpen,state:()=>({mcp:!!MCP,pxf:PXF,off:PXOFF,q:PXQ})};
 
 // ---- pure model -------------------------------------------------------
-const planAdj=()=>{const o=planOpen(); return {dep:o.deps.reduce((t,d)=>t+(+d.amount||0),0),buys:o.buys.map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1}))}};
+const planAdj=()=>{const o=planOpen(); return {dep:o.deps.reduce((t,d)=>t+(+d.amount||0),0),buys:o.buys.map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1})),...(o.spent!=null?{spent:o.spent}:{})}};
 const mAllNow=()=>model(P,Q,'all',planAdj());
 // adj: deposits and purchases ticked in the expansion plan, applied on top of the statement data.
 // the currency a position is priced in: the quote's own currency when the price came from the market, otherwise the one
@@ -19671,7 +19711,7 @@ function model(P,Q,acct,adj){
   const pos=Object.values(by).sort((a,b)=>b.val-a.val);
   let cash=0,usd=0;
   for(const c of P.cash||[]){ if(acct!=='all'&&c.acct!==acct)continue; const v=c.ccy==='USD'?c.amount*fx:c.amount; cash+=v; if(c.ccy==='USD')usd+=v }
-  const baseCash=cash; if(adj)cash+=adj.dep-spent;
+  const baseCash=cash; if(adj)cash+=adj.dep-(adj.spent!=null?adj.spent:spent);   // 24.11: apart, the purchases' money is counted by the track's own account (planOpen)
   const inv=pos.reduce((s,p)=>s+p.val,0), total=inv+cash;
   const groups={}; for(const k in GROUPS)groups[k]={id:k,val:0,members:[]};
   for(const p of pos){p.w=total?p.val/total*100:0; (groups[p.group]||groups.tech).val+=p.val; (groups[p.group]||groups.tech).members.push(p); if(p.ccy!=='ILS')usd+=p.val}   // every foreign currency counts toward the currency cap
@@ -20167,13 +20207,15 @@ function planState(mAll){
   // track, less the purchases ticked in either (mAll.cash). Each track keeps its own queue and monthly amount; the forecast
   // of the queue starts the stocks track from the statements' cash and the funds track from its own opening, so no shekel
   // is counted twice there
-  const bal=mAll.cash, base=TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>!d.once&&d.month===ymNow());
+  // 24.11 (the owner): apart, the balance and the queue are the track's own account's; the other account's cash does not move them
+  const apart=tracksApart(), tA=apart?trackAcct(TRACK):'all';
+  const bal=apart?trackCash(TRACK):mAll.cash, base=apart?acctCash(tA):TRACK==='idx'?(+PLD.idx.opening||0):mAll.baseCash, depNow=PL.deposits.some(d=>!d.once&&d.month===ymNow());
   const cur=ymDiff(ymNow(),start), when={}, at={};
   // a fixed amount for each fund, every month (fixedMode): no queue, every fund with an amount is bought each month
   if(fixedMode()){const F=fixedItems(); for(const i of F)cost[i.sym]=+i.amt;
     const lastDep=PL.deposits.reduce((mx,d)=>Math.max(mx,ymDiff(d.month,start)),-1), lastBuy=PL.purchases.reduce((mx,x)=>x.month?Math.max(mx,ymDiff(x.month,start)):mx,-1), n=Math.max(cur+12,lastDep,lastBuy)+1;
     const rows=Array.from({length:n},()=>F.map(i=>i.sym)); for(const i of F){when[i.sym]=0;at[i.sym]=cur}
-    return {rot:true,fixed:true,cost,name,bal,base,depNow,start,cur,lad:{rows,bals:[],complete:true},at,sch:{when}}}
+    return {rot:true,fixed:true,cost,name,bal,base,depNow,start,cur,lad:{rows,bals:[],complete:true},at,sch:{when},apart,acct:tA,all:mAll.cash}}
   // 30.10: what was bought stays in the month it was bought, whatever the cash does later; only what is still to buy is
   // laid out, from this month on, from the money there is now. Before, the whole ladder was played again from the plan's
   // first month starting with today's cash: once a new statement had taken a purchase out of the cash, the purchase was
@@ -20181,7 +20223,7 @@ function planState(mAll){
   // The track's cash now: the stocks track, the statements' cash and its own ticks the statements do not hold yet; the
   // funds track, its own opening and ticks (the two tracks share one cash, and neither counts the other's money)
   const O=planOpen(), mine=x=>PL.deposits.includes(x)||PL.purchases.includes(x);
-  const cash=TRACK==='idx'?(+PLD.idx.opening||0)+PL.deposits.reduce((t,d)=>t+(+d.amount||0),0)-PL.purchases.reduce((t,x)=>t+(+x.paidIls||0),0)
+  const cash=apart?bal:TRACK==='idx'?(+PLD.idx.opening||0)+PL.deposits.reduce((t,d)=>t+(+d.amount||0),0)-PL.purchases.reduce((t,x)=>t+(+x.paidIls||0),0)
     :mAll.baseCash+O.deps.filter(mine).reduce((t,d)=>t+(+d.amount||0),0)-O.buys.filter(mine).reduce((t,x)=>t+(+x.paidIls||0),0);
   const rows=[], put=(m,sym)=>{while(rows.length<=m)rows.push([]); rows[m].push(sym)};
   for(const i of PL.items)if(i.status==='done'&&i.pid){const x=PL.purchases.find(y=>y.id===i.pid)||PL.purchases.find(y=>y.sym===i.sym), mo=x&&x.month?ymDiff(x.month,start):i.doneAt?ymDiff(ilDay(i.doneAt).slice(0,7),start):cur; put(Math.max(0,mo),i.sym); at[i.sym]=Math.max(0,mo)}
@@ -20193,8 +20235,17 @@ function planState(mAll){
   while(rows.length<from)rows.push([]);
   const bals=[]; fwd.bals.forEach((b,k)=>{bals[from+k]=b});
   const lad={rows,bals,complete:fwd.complete,cash,from};
-  return {rot,cost,name,bal,base,depNow,start,cur,lad,at,sch:{when}};
+  return {rot,cost,name,bal,base,depNow,start,cur,lad,at,sch:{when},apart,acct:tA,all:mAll.cash};
 }
+// 24.11 (the owner): the cash of each account in a box of its own, with the track it serves, and all of it in one more
+const inAcct=a=>{const n=acctName(a); return (/^[A-Za-z0-9]/.test(n)?'ב-':'ב')+n};
+function planCashRow(st,mAll){const el=$('pCashRow'); if(!el)return; const ids=acctIds(); if(ids.length<2||noPf()){el.hidden=true; return}
+  const aS=trackAcct('stocks'), aI=trackAcct('idx'), apart=!!st.apart;
+  const box=a=>{const tr=apart?(a===aS?'stocks':a===aI?'idx':''):'', v=tr?trackCash(tr):acctCash(a), on=apart&&a===st.acct;
+    return `<div class="pc-b${on?' on':''}"><span class="pc-k">${esc(acctName(a))}</span><b class="n">${ils(v)}</b><span class="pc-a">${tr==='stocks'?'למסלול המניות':tr==='idx'?'למסלול המדדים':apart?'לא משויך למסלול':'&nbsp;'}</span></div>`};
+  el.hidden=false; setH(el,`<div class="pc-g">${ids.map(box).join('')}<div class="pc-b all${apart?'':' on'}"><span class="pc-k">כל המזומן</span><b class="n">${ils(mAll.cash)}</b><span class="pc-a">${apart?'בכל החשבונות יחד':'משותף לשני המסלולים'}</span></div></div>${canWrite?`<button type="button" class="lnk pc-set" data-pcset>${apart?'לשנות מאיזה חשבון קונה כל מסלול':'להפריד: לקבוע חשבון לכל מסלול'}</button>`:''}`)}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-pcset]'); if(!b)return; try{dvSet('set')}catch(e){} setTimeout(()=>{const s=$('inPlanAcct'); if(s){try{s.scrollIntoView({block:'center'})}catch(e){} try{s.focus({preventScroll:true})}catch(e){}}},80)});
+document.addEventListener('change',ev=>{const t=ev.target; if(!t||t.id!=='inPlanAcct'||!canWrite)return; S.planAcct={...((S&&S.planAcct)||{}),[TRACK]:t.value}; changed()});
 function renderPlan(mAll){
   const st=planState(mAll), B=TM(), fee=+S.minFeeIls||0, dis=canWrite?'':' disabled';
   const act=PL.items.filter(i=>i.status!=='skip'), done=act.filter(i=>i.status==='done').length;
@@ -20208,7 +20259,12 @@ function renderPlan(mAll){
     const h=of.length&&os.length?`<div class="bg"><span class="bl">קרנות</span>${of.map(ch).join('')}</div><div class="bg"><span class="bl">מניות</span>${os.map(ch).join('')}</div>`:pos.map(ch).join(''); setH($('obChips'),h);
     $('obGo').disabled=!canWrite||!sel.size}}
   $('pBal').textContent=(st.bal<0?LRM+'−':'')+ils(Math.abs(st.bal)); $('pBal').className='v'+(st.bal<0?' down':'');
-  $('pBalD').textContent='המזומן בכל התיק, משותף לשני המסלולים: יתרת החשבונות, ועוד הפקדות שסימנת, פחות קניות שסימנת'; $('pBase').textContent=ils(st.base,2);
+  {const ids=acctIds();
+   $('pBalD').textContent=st.apart?`המזומן ${inAcct(st.acct)}${Math.abs(st.bal-st.base)>=0.5?', ועוד מה שסימנת במסלול הזה':''} · כל המזומן בתיק: ${ils(st.all)}`:'המזומן בכל התיק, משותף לשני המסלולים: יתרת החשבונות, ועוד הפקדות שסימנת, פחות קניות שסימנת';
+   $('pBase').textContent=ids.length>1?ids.map(a=>`${acctName(a)} ${ils(acctCash(a))}`).join(' · ')+' · יחד '+ils(mAll.baseCash):ils(st.base,2);
+   const sel=$('inPlanAcct'), lb=$('planAcctL'); if(sel&&lb){lb.hidden=ids.length<2; const key=ids.map(a=>a+':'+acctName(a)).join('|'); if(sel.dataset.key!==key){sel.dataset.key=key; sel.innerHTML=ids.map(a=>`<option value="${esc(a)}">${esc(acctName(a))}</option>`).join('')+'<option value="all">כל החשבונות יחד</option>'}
+     if(document.activeElement!==sel)sel.value=trackAcct(TRACK); sel.disabled=!canWrite; const k=lb.querySelector('.pa-k'); if(k)k.textContent=TRACK==='idx'?'מאיזה חשבון קונה מסלול המדדים':'מאיזה חשבון קונה מסלול המניות'}
+   try{planCashRow(st,mAll)}catch(e){console.error(e)}}
   $('pDone').textContent=`${done} / ${act.length}`; $('pBar').style.width=(act.length?done/act.length*100:0)+'%';
   $('pLeft').textContent=ils(Math.max(0,need-st.bal)); {const nF=todo.filter(i=>isF(i.sym)).length, nS=todo.length-nF; $('pLeftD').textContent=`${nF&&nS?nF+' קרנות ו-'+nS+' מניות':todo.length+(nF?' קרנות':' ניירות')}, ${ils(need)} במחירי היום`}
   if(st.fixed){const n=PL.purchases.filter(x=>x.month).length; $('pDone').textContent=`${n} קניות`; $('pBar').style.width='0%'; $('pLeft').textContent=ils(B); $('pLeftD').textContent=`בכל חודש, ל-${fixedItems().length} קרנות`}
@@ -24585,7 +24641,7 @@ document.addEventListener('input',ev=>{
   else if(WIK[el.id]){WI[WIK[el.id]]=+el.value||0;try{renderGoal(mAllNow())}catch(e){}}
   else if(el.dataset.pf&&DRAFT){const p=DRAFT.positions[+el.dataset.i],f=el.dataset.pf; if(!p)return;
     if(f==='qty')p.qty=+el.value||0; else if(f==='costIls'||f==='costUsd'||f==='px')p[f]=el.value===''?null:+el.value; else if(f==='sym'){p.sym=el.value.trim().toUpperCase(); if(p.sym&&(!p._g||p._g==='auto')){const g=groupOf(p.sym); if(GK.includes(g)){p.group=g; p._g='auto'; const gs=el.closest('tr,.pfrow')&&el.closest('tr,.pfrow').querySelector('[data-pf="group"]'); if(gs)gs.value=g}}} else{p[f]=el.value; if(f==='group')p._g='user'; if(f==='ccy'&&el.value==='ILS')p.costUsd=null} pfDirty(); if(f==='ccy')renderMine(true)}
-  else if(el.dataset.cash&&DRAFT){const [a,c]=el.dataset.cash.split(':');(DRAFT.cash[a]=DRAFT.cash[a]||{ILS:0,USD:0})[c]=+el.value||0;pfDirty()}
+  else if(el.dataset.cash&&DRAFT){const [a,c]=el.dataset.cash.split(':');(DRAFT.cash[a]=DRAFT.cash[a]||{ILS:0,USD:0})[c]=+el.value||0;(DRAFT.cashAt=DRAFT.cashAt||{})[a]=ilDay();pfDirty()}
   else if(el.dataset.dep){planAct('depToggle',{ym:el.dataset.dep})}
   else if(el.dataset.buy){planAct('buyToggle',{sym:el.dataset.buy,ym:el.dataset.ym})}
   else if(el.id==='policy'){S.policy=el.value;dirty=true;S_SEQ++;clearTimeout(timer);timer=setTimeout(save,900)}
@@ -24993,7 +25049,7 @@ const canonSym=(sym,name)=>{let k=String(sym||'').toUpperCase().replace(/[^A-Z0-
   return k};
 const nameKey=name=>String(name||'').toLowerCase().replace(/\b(inc|corp|corporation|company|co|ltd|plc|holdings|group|class [abc]|the)\b|בע"מ|בע״מ|בעמ/g,'').replace(/[^a-z0-9֐-׿]/g,'');
 function draftFromP(){
-  const d={positions:[],cash:Object.fromEntries(acctIds().map(a=>[a,{ILS:0,USD:0}])),asOf:{...((P&&P.asOf)||{})},seen:{...((P&&P.seen)||{})},okBoth:!!(P&&P.okBoth)};
+  const d={positions:[],cash:Object.fromEntries(acctIds().map(a=>[a,{ILS:0,USD:0}])),asOf:{...((P&&P.asOf)||{})},seen:{...((P&&P.seen)||{})},cashAt:{...((P&&P.cashAt)||{})},okBoth:!!(P&&P.okBoth)};
   if(P){d.positions=(P.positions||[]).map(p=>({...p})); for(const c of P.cash||[])if(c&&c.acct&&(c.ccy==='ILS'||c.ccy==='USD'))(d.cash[c.acct]=d.cash[c.acct]||{ILS:0,USD:0})[c.ccy]+=+c.amount||0}
   return d;
 }
@@ -25055,7 +25111,8 @@ function mineDeck(){
     total++; r.classList.toggle('pf-cut',!MINE_ALL&&total>8&&!r.classList.contains('open')&&!r.classList.contains('acts-open'))}
   const b=$('pfAllB'); if(b){b.hidden=total<=8; b.textContent=MINE_ALL?'להציג רק 8':'להציג את כל '+total}
   const cs=$('cashSum'); if(cs){const C=DRAFT.cash||{}, fx=Q?Q.usdIls:3.3; let c=0, na=0; for(const a of Object.keys(C)){const v=(+C[a].ILS||0)+(+C[a].USD||0)*fx; c+=v; if(v>0)na++}
-    cs.textContent=c>0?ils(c)+(na>1?' ב-'+na+' חשבונות':''):'אין'}
+    const one=a=>(+C[a].ILS||0)+(+C[a].USD||0)*fx;   // 24.11 (the owner): each account's cash by its name, then together
+    cs.textContent=c>0?(na>1?Object.keys(C).filter(a=>one(a)>0).map(a=>acctName(a)+' '+ils(one(a))).join(' · ')+' · יחד '+ils(c):ils(c)):'אין'}
 }
 document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return;
   const menu=$('mineAddM'), btn=$('mineAdd'), shut=()=>{if(menu&&!menu.hidden){menu.hidden=true; if(btn)btn.setAttribute('aria-expanded','false')}};
@@ -25341,7 +25398,7 @@ function addList(){
   if(!DRAFT)DRAFT=draftFromP();
   const have=new Set(rows.map(r=>r.sym));
   DRAFT.positions=DRAFT.positions.filter(p=>!(p.acct===ac&&have.has(String(p.sym).toUpperCase()))).concat(rows);
-  if(cash.ILS||cash.USD)DRAFT.cash[ac]={ILS:cash.ILS||DRAFT.cash[ac].ILS,USD:cash.USD||DRAFT.cash[ac].USD};
+  if(cash.ILS||cash.USD){DRAFT.cash[ac]={ILS:cash.ILS||DRAFT.cash[ac].ILS,USD:cash.USD||DRAFT.cash[ac].USD}; (DRAFT.cashAt=DRAFT.cashAt||{})[ac]=ilDay()}
   if(rows.length)(DRAFT.seen=DRAFT.seen||{})[ac]=ilDay();
   pfDirty(); renderMine(true); $('listText').value='';
   st.textContent=`נוספו ${rows.length} ניירות${(cash.ILS||cash.USD)?' ויתרת מזומן':''}. בדוק את הטבלה ולחץ על "שמור את התיק".`+(bad.length?` לא הובנו ${bad.length} שורות: ${bad.slice(0,3).join(' | ')}`:'');
@@ -25970,7 +26027,7 @@ async function savePf(){
   // 8.11: what the statement changed against the site, as approved by this save (per account, the last one)
   const stmtCheck=(()=>{try{const out={...((P&&P.stmtCheck)||{})}; for(const ac of Object.keys((DRAFT.sdiff)||{})){const X=stmtDiff(ac); if(!X)continue;
     out[ac]={at:new Date().toISOString(),asOf:X.asOf,merge:X.merge,changed:X.changed,flag:X.flag,rows:X.rows.filter(r=>r.kind!=='same').slice(0,40).map(r=>({sym:r.sym,q0:r.q0,q1:r.q1,kind:r.kind}))}} return Object.keys(out).length?out:null}catch(e){return (P&&P.stmtCheck)||null}})();
-  const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),...(stmtCheck?{stmtCheck}:{}),updatedAt:new Date().toISOString()};
+  const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},cashAt:{...((P&&P.cashAt)||{}),...(DRAFT.cashAt||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),...(stmtCheck?{stmtCheck}:{}),updatedAt:new Date().toISOString()};
   if(!db&&!LOCAL){st.textContent='השינויים לא נשמרים בתצוגה הזו';return}
   st.textContent='שומר…'; $('btnPfSave').disabled=true;
   try{
@@ -31966,6 +32023,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.1',at:'2026-11-24',t:'התוכנית: מזומן נפרד לכל חשבון',d:'כל מסלול בתוכנית קונה מהמזומן של החשבון שלו: מסלול המניות מהחשבון שמחזיק את המניות, ומסלול המדדים מהחשבון שמחזיק את הקרנות. המזומן של החשבון השני כבר לא מזיז את התור. בראש התוכנית יש קופסה לכל חשבון ועוד אחת של כל המזומן יחד, ובהגדרות התוכנית קובעים מאיזה חשבון קונה כל מסלול. גם ב"התיק שלי" המזומן כתוב לכל חשבון בנפרד.',go:'plan'},
   {v:'2026-11-19.1',at:'2026-11-19',t:'הגדרות: רשימה אחת, כמו בטלפון',d:'בטלפון: ההגדרות הן רשימה אחת מקובצת במקום חמש לשוניות ושבע שורות של כפתורים. הפרופיל בשורה אחת; ב"תצוגה ונגישות" כל שורה כותבת את הבחירה הנוכחית (למשל "גודל הטקסט: רגיל") ונפתחת כדי לשנות; ו"התיק", "התראות וחדשות" ו"פרטיות ונתונים" הם שורות שכל אחת פותחת את הנושא שלה בדף משלו, עם "כל ההגדרות" כדי לחזור.',go:'me'},
   {v:'2026-11-17.36',at:'2026-11-17',t:'יומן: קודם מה שמחכה לתיעוד',d:'בטלפון: היומן נפתח במה שעוד לא תועד, למשל קנייה מהדוח בלי סיבה, עם כפתור גדול "לתעד: למה קניתי?" שממלא את הטופס מהתנועה. הטופס עצמו (שמונה שדות) נפתח רק כשרוצים, מ"+ רשומה חדשה", ומעל הרשימה כתוב "הרשומות שלי".',go:'jrn'},
   {v:'2026-11-17.35',at:'2026-11-17',t:'דוחות: הדוח של עכשיו למעלה, ורשימה לפי סוג',d:'בטלפון: "דוחות" נפתח בדוח החודשי עד היום, עם "לצפייה" והורדה. מתחתיו בוחרים סוג (שבועי, חודשי, רבעוני, שנתי) ורואים רק אותו. לחיצה על שורה פותחת את הדוח, ולכל שורה אייקון הורדה אחד, בלי כפתור סגול בכל שורה. הדוחות השמורים מקופלים תחת "עוד בדף הזה".',go:'reps'},
