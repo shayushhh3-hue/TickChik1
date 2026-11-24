@@ -198,6 +198,7 @@ body:not([data-page="overview"]) .hero .top .acts{display:none!important}
 @media (max-width:520px){.potadd{grid-template-columns:minmax(0,1fr) 90px}.potadd .btn{grid-column:1/-1}}
 .potadd label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink2)}
 .potadd input,.potadd select{width:100%}
+.potsug{margin-top:6px;max-height:340px;overflow-y:auto} .potsug[hidden]{display:none} .potsug .sit .nm b{white-space:normal}
 .potadd input[type="text"],.potadd input:not([type]){min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:var(--surface);color:var(--ink)}
 .pott{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))!important}
 .pott .v{white-space:nowrap;overflow:visible}
@@ -31567,7 +31568,7 @@ function renderPots(){
   const tiles=`<div class="mine3 pott">${anaTile('שווי החיסכון',ils(V.total),`${V.rows.length} ניירות${V.cash?' · מזומן '+ils(V.cash):''}`)}${V.tgt?anaTile('היעד',ils(V.tgt),pt.date?`עד ${potDayTxt(pt.date)}${leftTxt(V)?' · '+leftTxt(V):''}`:'בלי תאריך'):''}${V.cost?anaTile('מול העלות',sgn(V.costVal-V.cost),spct((V.costVal-V.cost)/V.cost*100),V.costVal>=V.cost?'up':'down'):''}${V.need!=null?anaTile('כדי להגיע ליעד',ils(V.need)+' בחודש','בלי תשואה, רק הפקדות'):''}</div>`;
   const prog=V.pctT!=null?`<div><div class="potprog" role="img" aria-label="${pct(V.pctT,0)} מהיעד"><i style="width:${V.pctT.toFixed(1)}%"></i></div><p class="note" style="margin:6px 0 0">${pct(V.pctT,0)} מהיעד${V.atDate!=null?` · בקצב של ${ils(+pt.monthly)} בחודש, בתאריך היעד יהיו כ-${ils(V.atDate)} בלי תשואה${V.tgt?(V.atDate>=V.tgt?', מעל היעד':`, ${ils(V.tgt-V.atDate)} מתחת ליעד`):''}`:''}.</p></div>`:'';
   const rows=V.rows.length?`<div class="potitems">${V.rows.map((r,i)=>`<div class="potit"><div class="pi-h"><span class="sym">${esc(lab(r.sym))}${potItemKind(r.sym)?` <span class="pk-t ${potItemKind(r.sym)}">${POTI[potItemKind(r.sym)]}</span>`:''}</span><span class="nm">${esc(r.name||'')}${r.from?(pt.sep?' · הועבר מהתיק':' · הועתק מהתיק'):''}</span></div>
-      <div class="pi-v"><span class="k">שווי</span><b class="n">${r.val!=null?ils(r.val):'—'}</b><span class="nm">${r.px!=null?(r.cc==='USD'?'$':'₪')+fmtN(r.px)+' ליחידה':'עוד אין מחיר'}${r.stale?' · '+esc(r.stale):''}</span></div>
+      <div class="pi-v"><span class="k">שווי</span><b class="n">${r.val!=null?ils(r.val):'—'}</b><span class="nm">${r.px!=null?(CCYSYM[r.cc]||(r.cc==='USD'?'$':r.cc==='ILS'?'₪':r.cc+' '))+fmtN(r.px)+' ליחידה':'עוד אין מחיר'}${r.stale?' · '+esc(r.stale):''}</span></div>
       <label class="pi-f">כמות<input type="number" min="0" step="0.0001" inputmode="decimal" data-poti="${i}" data-potk="qty" value="${+r.qty}"${dis}></label>
       <label class="pi-f">עלות כוללת ₪<input type="number" min="0" step="0.01" inputmode="decimal" data-poti="${i}" data-potk="costIls" value="${r.costIls!=null?+r.costIls:''}" placeholder="לא ידוע"${dis}></label>
       <button type="button" class="btn sm" data-potdel="${i}" aria-label="הסר את ${esc(r.sym)} מהחיסכון"${dis}>הסר</button></div>`).join('')}</div>${V.noPx.length?`<p class="note">עוד אין מחיר ל-${esc(V.noPx.map(lab).join(', '))}. הוא יגיע בעדכון המחירים הבא (עד 15 דקות).</p>`:''}`:'<p class="note">עוד אין ניירות בחיסכון הזה. אפשר להעתיק מהתיק או להוסיף נייר.</p>';
@@ -31575,7 +31576,9 @@ function renderPots(){
   const nOut=(pt.items||[]).filter(i=>i.from==='pf').length, outIls=pt.sep?(pt.items||[]).filter(i=>i.from==='pf').reduce((t,i)=>{const r=V.rows.find(x=>x.sym===i.sym);return t+(r&&r.val||0)},0):0;
   const sepH=`<div class="potsep"><div class="potkinds" role="group" aria-label="האם החיסכון נספר בתיק"><button type="button" class="chip" data-potsep="0" aria-pressed="${!pt.sep}"${dis}>נספר גם בתיק</button><button type="button" class="chip" data-potsep="1" aria-pressed="${!!pt.sep}"${dis}>חיסכון נפרד: להוציא מהתיק</button></div><p class="note" style="margin:6px 0 0">${pt.sep?(nOut?`${ils(outIls)} מהחיסכון הזה לא נספרים עכשיו בשווי התיק.`:'ניירות שתעביר לכאן מהתיק ייצאו משווי התיק.'):'הניירות שהועתקו מהתיק נשארים גם בשווי התיק. אפשר לבחור להוציא אותם.'}</p></div>`;
   const copy=held.length?`<div class="potadd"><label for="potCopy">${pt.sep?'להעביר נייר מהתיק':'להעתיק נייר מהתיק'}<select id="potCopy"${dis}>${held.map(p=>`<option value="${esc(p.sym)}" data-q="${+(+p.qty).toFixed(4)}">${esc(lab(p.sym))} · בתיק ${+(+p.qty).toFixed(4)}</option>`).join('')}</select></label><label for="potCopyQ">כמות<input id="potCopyQ" type="number" min="0" step="0.0001" inputmode="decimal" value="${+(+held[0].qty).toFixed(4)}"${dis}></label><button type="button" class="btn" id="potCopyGo"${dis}>${pt.sep?'העבר לחיסכון':'העתק לחיסכון'}</button></div>`:'';
-  const add=`<div class="potadd"><label for="potSym">או להוסיף נייר לפי סימול<input id="potSym" data-nofill maxlength="12" placeholder="למשל VOO או 5129283" autocomplete="off" dir="ltr"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div>`;
+  // 24.11 (the owner: "to add shares here as in the research's search"): the field is a search by name or symbol, with the
+  // list's own results and the ones from the other markets under it; a row chosen fills the symbol, then the quantity
+  const add=`<div class="potadd"><label for="potSym">או לחפש נייר להוספה: שם או סימול<input id="potSym" type="text" data-nofill maxlength="40" placeholder="למשל אפל, VOO, toyota או 5129283" autocomplete="off" autocorrect="off" spellcheck="false" aria-controls="potSug" aria-expanded="false"${dis}></label><label for="potSymQ">כמות<input id="potSymQ" type="number" min="0" step="0.0001" inputmode="decimal"${dis}></label><button type="button" class="btn" id="potAddGo"${dis}>הוסף</button></div><div class="sres potsug" id="potSug" role="listbox" aria-label="ניירות שנמצאו" hidden></div>`;
   box.innerHTML=tabsH+`<div class="panel"><div class="pothead"><h3>${esc(pt.name||'חיסכון')} <span class="sub">${esc([POTK[pt.kind],potInstTxt(pt)].filter(Boolean).join(' · '))}</span></h3><button type="button" class="btn sm" id="potDel"${dis}>${POTDEL===pt.id?'בטוח? לחץ שוב למחיקה':'מחק את החיסכון'}</button></div>${tiles}${prog}${sepH}</div>
     <div class="panel"><h3>הניירות בחיסכון</h3>${rows}${copy}${add}<span class="saved" id="potState" role="status"></span></div>
     <details class="panel"><summary><h3 style="display:inline">פרטי החיסכון</h3></summary>${potForm(pt)}</details>${note}`;
@@ -31601,12 +31604,36 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest||!t.clos
   if(t.closest('#potCopyGo')){const pt=potCur(), sel=$('potCopy'), q=+$('potCopyQ').value||0; if(!pt||!sel)return; const sym=sel.value; let m=null; try{m=mAllNow()}catch(x){} const p=m&&m.pos.find(x=>x.sym===sym); if(!p)return;
     if(!(q>0)){$('potState').textContent='כתוב כמות.';return} const share=Math.min(1,q/(+p.qty||q));
     pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:p.name||sym,qty:q,ccy:p.ccy==='ILS'?'ILS':p.ccy||'USD',costIls:p.cost>0&&!p.noCost?Math.round(p.cost*share*100)/100:null,from:'pf',at:new Date().toISOString()}]); potChanged(s0); return}
+  const pk=t.closest('[data-potpick]'); if(pk){const k=pk.dataset.potpick; POTPICK={sym:k,name:pk.dataset.name||k}; const i=$('potSym'); i.value=k; potSugHide(); $('potState').textContent=`${pk.dataset.name||k}: כתוב כמות ולחץ "הוסף".`; try{$('potSymQ').focus()}catch(x){} return}
   if(t.closest('#potAddGo')){const pt=potCur(), sym=$('potSym').value.trim().toUpperCase().replace(/^TLV:/,''), q=+$('potSymQ').value||0; if(!pt)return;
-    if(!/^[A-Z0-9.\-]{1,12}$/.test(sym)){$('potState').textContent='כתוב סימול, למשל VOO, או מספר נייר של קרן.';return} if(!(q>0)){$('potState').textContent='כתוב כמות.';return}
-    let it=null; try{it=itemOf(sym)}catch(x){} const il=NUMSYM.test(sym)||/^TA\d+$/.test(sym)||(it&&it.t==='T');
-    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:(it&&(it.he||it.name))||NAMEOF[sym]||sym,qty:q,ccy:il?'ILS':'USD',costIls:null,at:new Date().toISOString()}]); potChanged(s0); return}
+    if(!/^[A-Z0-9.\-]{1,12}$/.test(sym)){$('potState').textContent='בחר נייר מהרשימה, או כתוב סימול (למשל VOO) או מספר נייר של קרן.';return} if(!(q>0)){$('potState').textContent='כתוב כמות.';return}
+    let it=null; try{it=itemOf(sym)}catch(x){} const il=NUMSYM.test(sym)||/^TA\d+$/.test(sym)||(it&&it.t==='T'), pick=POTPICK&&POTPICK.sym===sym?POTPICK:null; POTPICK=null;
+    pt.items=(pt.items||[]).filter(i=>i.sym!==sym).concat([{sym,name:(pick&&pick.name)||(it&&(it.he||it.name))||NAMEOF[sym]||sym,qty:q,ccy:il?'ILS':'USD',costIls:null,at:new Date().toISOString()}]); potChanged(s0); return}
 });
 document.addEventListener('input',ev=>{const t=ev.target; if(t&&t.dataset&&t.dataset.potf&&t.closest('#potBox')&&potSel()==='new')POTDRAFT[t.dataset.potf]=t.value});
+// 24.11: the savings goal's own search: the page's list at once (shares and funds of the US, a fund by its number; a Tel
+// Aviv share is not offered, a goal's security is priced by its plain symbol), and the other markets a third of a second
+// after the typing stops, through the same search the research uses
+let POTPICK=null, POTSQ={q:'',t:null,w:null};
+function potSugHide(){const b=$('potSug'), i=$('potSym'); if(b){b.hidden=true; b.innerHTML=''} if(i)i.setAttribute('aria-expanded','false')}
+function potSugRow(k,name,sub){return `<button type="button" class="sit" role="option" data-potpick="${esc(k)}" data-name="${esc(name)}">${logoHtml(k)}<span class="nm"><b><bdi>${esc(name)}</bdi></b><span><i dir="ltr">${esc(k)}</i>${sub?' · '+sub:''}</span></span></button>`}
+function potSugPaint(){const b=$('potSug'), i=$('potSym'); if(!b||!i)return; const q=i.value.trim(); if(q.length<2||POTSQ.q!==q.toLowerCase()){potSugHide(); return}
+  let L=[]; try{L=findSyms(q).filter(it=>it.t==='S'||it.t==='E'||(it.t==='F'&&ilIsNum(it.sym))).slice(0,6)}catch(e){}
+  const shown=L.map(it=>it.sym), W=POTSQ.w&&POTSQ.w.q===POTSQ.q?POTSQ.w:null, far=W&&W.items?wsRows(W.items,shown).filter(x=>!String(x.k).startsWith('TLV:')&&!ilIsNum(x.k)).slice(0,6):[];
+  for(const x of far)if(!WSI.has(x.k)&&!inList(x.k)&&wsecCan(x.k))WSI.set(x.k,wItem(x.k,x));
+  const h=L.map(it=>potSugRow(it.sym,it.he||it.name||it.sym,[it.he&&it.he!==it.name?'<bdi>'+esc(it.name)+'</bdi>':'',esc(it.w?(it.tl||''):it.t==='S'&&it.sec?(SEC_HE[it.sec]||it.sec):(TYPEL[it.t]||''))].filter(Boolean).join(' · '))).join('')
+    +(far.length?'<div class="sq-wh"><span>מבורסות אחרות בעולם</span><small>Yahoo Finance · מחירים בעיכוב</small></div>'+far.map(x=>potSugRow(x.k,x.name,[x.exch?'<bdi>'+esc(x.exch)+'</bdi>':'',WS_TL[x.type]||''].filter(Boolean).join(' · '))).join(''):'')
+    +(!W&&wsqWant(q)&&!LOCAL&&db&&window.__tc?'<p class="sq-wn" role="status">מחפש גם בבורסות אחרות בעולם…</p>':W&&W.err?'<p class="sq-wn" role="status">החיפוש בבורסות אחרות לא זמין כרגע.</p>':'')
+    +(!L.length&&!far.length&&(W||!wsqWant(q))?'<p class="sq-wn">לא מצאתי נייר כזה. אפשר לכתוב את הסימול המדויק וללחוץ "הוסף".</p>':'');
+  b.innerHTML=h; b.hidden=!h; b.dataset.q=POTSQ.q; b.dataset.st=W?(W.err?'err':'ok'):'busy'; i.setAttribute('aria-expanded',String(!!h))}
+function potSugAsk(){const i=$('potSym'); if(!i)return; const q=i.value.trim(), key=q.toLowerCase(); clearTimeout(POTSQ.t); POTSQ.q=key; POTPICK=null;
+  if(q.length<2){potSugHide(); return} if(!SYMDB){loadSymDb().then(()=>{if(POTSQ.q===key)potSugPaint()})}
+  const c=WSQ_C.get(key); POTSQ.w=c||null; potSugPaint(); if(c||!wsqWant(q)||LOCAL||!db||!window.__tc)return;
+  POTSQ.t=setTimeout(async()=>{let R; try{const r=await fetch('/api/symsearch?q='+encodeURIComponent(q),{credentials:'same-origin'}), j=await r.json(); if(!r.ok)throw new Error('http'); R={q:key,items:j.items||[]}; WSQ_C.set(key,R); if(WSQ_C.size>60)WSQ_C.delete(WSQ_C.keys().next().value)}catch(e){R={q:key,err:true}}
+    if(POTSQ.q!==key)return; POTSQ.w=R; potSugPaint()},350)}
+document.addEventListener('input',ev=>{if(ev.target&&ev.target.id==='potSym')potSugAsk()});
+document.addEventListener('keydown',ev=>{if(ev.target&&ev.target.id==='potSym'){if(ev.key==='Escape')potSugHide(); else if(ev.key==='ArrowDown'){const f=$('potSug')&&$('potSug').querySelector('[data-potpick]'); if(f){ev.preventDefault(); f.focus()}} else if(ev.key==='Enter'){const f=$('potSug')&&!$('potSug').hidden&&$('potSug').querySelector('[data-potpick]'); if(f){ev.preventDefault(); f.click()}}}});
+document.addEventListener('click',ev=>{const b=$('potSug'); if(b&&!b.hidden&&!(ev.target.closest&&ev.target.closest('#potSug,#potSym')))potSugHide()});
 document.addEventListener('change',ev=>{const t=ev.target; if(!t.closest||!t.closest('#potBox')||!canWrite)return; const s0=potOutSnap();
   if(t.id==='potCopy'){const o=t.selectedOptions[0]; if(o)$('potCopyQ').value=o.dataset.q; return}
   if(potSel()==='new'){if(t.dataset.potf)POTDRAFT[t.dataset.potf]=t.value; return}
@@ -32278,6 +32305,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.9',at:'2026-11-24',t:'חיסכון: מוסיפים נייר בחיפוש, כמו במחקר שוק',d:'ב"הניירות בחיסכון" השדה להוספת נייר הוא עכשיו חיפוש: כותבים שם או סימול (אפל, VOO, toyota), בוחרים מהרשימה, כותבים כמות ולוחצים "הוסף". מופיעים ניירות מהרשימה של האתר, ומתחתם מניות וקרנות מבורסות אחרות בעולם. אפשר עדיין לכתוב סימול מדויק או מספר קרן בלי לבחור.',go:'pots'},
   {v:'2026-11-24.8',at:'2026-11-24',t:'חדש בבורסה: גם מניות חדשות בתל אביב',d:'מניה שנרשמת למסחר בבורסה בתל אביב מופיעה ב"חדש בבורסה" במחקר שוק ובעדכון השבועי בהתראות, מהיום שנרשם לה יום מסחר ראשון. המקור הוא הרשימה של הבורסה עצמה, ולכן זה פועל רק כשהאתר מחובר אליה. לונדון עדיין לא בלוח: האתר של הבורסה שם לא מאפשר קריאה אוטומטית.',go:'srch'},
   {v:'2026-11-24.7',at:'2026-11-24',t:'חדש בבורסה: גם טוקיו, אירופה, טורונטו והונג קונג',d:'"חדש בבורסה" במחקר שוק והעדכון השבועי בהתראות כוללים עכשיו גם ניירות שנרשמו למסחר מחוץ לארה״ב: בטוקיו, בבורסות Euronext (פריז, אמסטרדם, מילאנו, אוסלו ועוד), בטורונטו ובהונג קונג. כל נייר מופיע עם הבורסה שלו ויום המסחר הראשון, ונפתח לדף נייר במטבע שלו. נייר מוצג כחדש רק אחרי שנרשם לו יום מסחר ראשון, וחברה שרק עברה בין רשימות לא מוצגת. הנפקות עתידיות בטוקיו נמצאות ב"הנפקות צפויות".',go:'srch'},
   {v:'2026-11-24.6',at:'2026-11-24',t:'מחקר שוק: מניות וקרנות מכל העולם, וניירות חדשים בבורסה',d:'החיפוש במחקר שוק מוצא עכשיו גם מניות וקרנות מבורסות אחרות בעולם (טוקיו, לונדון, פרנקפורט ועוד). הן מופיעות מתחת לתוצאות הרגילות, עם הבורסה והסוג, ולכל אחת יש דף נייר עם מחיר במטבע שלה וגרף; אפשר להוסיף אותה למעקב ולתיק. ניירות שהתחילו להיסחר אחרי שהרשימה של האתר נבנתה, למשל Anthropic (ANT), נכנסים לחיפוש לבד. ב"חדש בבורסה" במחקר שוק רואים את ההנפקות האחרונות ואת הצפויות, ובהתראות מגיע עדכון אחד בשבוע על ניירות חדשים (אפשר לכבות אותו ב"סוגי אירועים"). המחירים של ניירות כאלה בעיכוב, ומה שהמקור לא נותן כתוב כ"אין נתון".',go:'srch'},

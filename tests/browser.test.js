@@ -1097,6 +1097,13 @@ test('savings goals: a sub-tab per goal in the plan, holdings copied from the po
     assert.equal(r.cards.length,1); assert.match(r.cards[0],/חיסכון לנועה\s*ילד או ילדה · קרן/); assert.match(r.cards[0],/עד 30\.9\.2036/); assert.ok(r.ox);
     await pg.click('#potBox .potcard'); await pg.waitForTimeout(300);
     assert.equal(await pg.evaluate(()=>(document.querySelector('#potTabs .chip[aria-pressed="true"]')||{}).textContent),'חיסכון לנועה');
+    // 24.11: the field is a search, as in the research: a name finds the security, a row chosen fills its symbol and goes to the quantity
+    await pg.fill('#potSym','costco'); await pg.waitForSelector('#potSug [data-potpick="COST"]',{timeout:8000});
+    {const g=await pg.evaluate(()=>({row:document.querySelector('#potSug [data-potpick="COST"]').textContent.replace(/\s+/g,' ').trim(),il:[...document.querySelectorAll('#potSug [data-potpick]')].some(x=>x.dataset.potpick.startsWith('TLV:')),ex:document.getElementById('potSym').getAttribute('aria-expanded'),ox:document.documentElement.scrollWidth<=innerWidth+1}));
+      assert.match(g.row,/Costco/i); assert.equal(g.il,false); assert.equal(g.ex,'true'); assert.ok(g.ox,'the suggestions on a phone')}
+    await pg.click('#potSug [data-potpick="COST"]'); await pg.waitForTimeout(200);
+    assert.deepEqual(await pg.evaluate(()=>[document.getElementById('potSym').value,document.getElementById('potSug').hidden,document.activeElement.id,/כתוב כמות/.test(document.getElementById('potState').textContent)]),['COST',true,'potSymQ',true]);
+    await pg.fill('#potSym',''); await pg.waitForTimeout(150);
     // copy 1 MSFT from the portfolio, and add VOO by its symbol
     await pg.selectOption('#potCopy','MSFT'); await pg.fill('#potCopyQ','1'); await pg.click('#potCopyGo'); await pg.waitForTimeout(400);
     await pg.fill('#potSym','VOO'); await pg.fill('#potSymQ','2'); await pg.click('#potAddGo'); await pg.waitForTimeout(1500);
