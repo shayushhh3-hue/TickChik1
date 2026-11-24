@@ -790,6 +790,14 @@ label select,.pf select,.pf input{font:inherit;font-size:13px;padding:5px 7px;bo
 .scr-fg{display:flex;flex-direction:column;gap:4px} .scr-fk{font-size:12px;color:var(--ink2)} .scr-fg .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .scr-fg .chips::-webkit-scrollbar{display:none} .scr-fg .chip{flex:none}
 .scr-tiny{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);min-height:32px;cursor:pointer} .scr-tiny input{width:18px;height:18px;accent-color:var(--accent)}
 .scr-tg{font-weight:600;color:var(--accent-ink)}
+/* 24.11: the search across markets under the list's own results, the new listings, and a new security's note on its page */
+.sq-w:empty{display:none} #sqNone[hidden]{display:none}
+.sq-wh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line);background:var(--sunk);font-size:12.5px;font-weight:600;color:var(--ink2)} .sq-wh small{font-weight:400;color:var(--muted)}
+.sq-wh+.sit{border-top:0} .sq-w:first-child .sq-wh,.sq-w:first-child .sq-wn{border-top:0}
+.sq-wn{margin:0;padding:10px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.sec-nw{margin:10px 0 0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent-soft);color:var(--ink);font-size:13px;line-height:1.55;overflow-wrap:anywhere} .sec-nw b{color:var(--accent-ink)}
+.scr-upc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px} .scr-upc li{font-size:13.5px;min-width:0;overflow-wrap:anywhere} .scr-upc li>span{display:block;color:var(--muted);font-size:12px} .scr-upc li i{font-style:normal;font-family:var(--mono);color:var(--ink2);unicode-bidi:isolate}
+.pl-ipo{margin:10px 0 6px} .pl-ipo .sit{min-height:48px} .pl-ipo .sit .nm b,.scr-nwl .sit .nm b{white-space:normal} .pl-ipo .sit .nm span span,.sit .nm span bdi{display:inline}
 .scr-fit{font-weight:600;color:var(--ink2)} .scr-fit.hi{color:var(--gain)} .scr-fit.mid{color:var(--accent-ink)}
 .scr-more{margin-top:10px;align-self:center}
 /* 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs"): tabs above the security's
@@ -23149,7 +23157,7 @@ const REPAUTO=new Set();
 function repTwin(k){if(!String(k).startsWith('TLV:'))return null; const u=k.slice(4); try{const it=SYMDB&&SYMDB.find(x=>x.sym===u&&x.t==='S'); return it?u:null}catch(e){return null}}
 function repStale(rs){const r=rs&&rs.rep; if(!r)return true; const today=tzDay('Asia/Jerusalem'); if(rs.next&&rs.next<today&&!(r.at&&r.at>=rs.next))return true;
   const end=Date.parse(String(r.q||'').slice(0,10)+'T00:00:00Z'); return end>0&&Date.now()-end>110*864e5}
-async function repAuto(k){if(!window.__tc||REPAUTO.has(k)||SEC!==k)return; const it=itemOf(k); if(!it||it.t==='E'||it.t==='F'||it.t==='I'||ilIsNum(k))return;
+async function repAuto(k){if(!window.__tc||REPAUTO.has(k)||SEC!==k)return; const it=itemOf(k); if(!it||it.t==='E'||it.t==='F'||it.t==='I'||ilIsNum(k)||wsFar(k))return;   // 24.11: a share of another exchange has no report here
   const tw=repTwin(k), key=tw||k; if(tw)try{noteSeen(tw)}catch(e){}   // the nightly run then keeps the twin's report fresh too
   if(RSX[key]===undefined){await loadResearch(key); if(SEC===k)renderSec(); return}
   const rs=RSX[key]; if(rs&&rs.rep&&!repStale(rs)&&rs.rating&&(rs.about||rs.aboutTry||rs.profAt||it.t!=='S'||!/^[A-Z][A-Z.\-]{0,5}$/.test(key)))return;   // 17.11: also when "מה החברה עושה" is not written yet (a US share)
@@ -24930,19 +24938,20 @@ function trCalc(){const v=trVals(), out=$('trSum'), btn=$('trSave'); if(!v||!out
     else{ok=true; H=`<b>סה״כ ${slB(slAmt(amt,T.ccy))}</b>`;
       if(sell&&avg!=null){const g=amt-q*avg; H+=` · <span class="${g>=0?'up':'down'}">${g>=0?'רווח':'הפסד'} של ${slB(slAmt(Math.abs(g),T.ccy))} (${slB(spct(g/(q*avg)*100,1))})</span>`}
       else if(!sell){const a2=avg!=null?(avg*have+amt)/(have+q):null; H+=` · ${have?`אחרי הקנייה: ${+(have+q).toFixed(4)} יחידות${a2!=null?`, מחיר ממוצע ${slB(slAmt(a2,T.ccy))}`:''}`:'אחזקה חדשה בתיק'}`}
-      H+=`<span class="nm">המזומן ב${esc(acctName(T.acct))} ${sell?'יעלה':'ירד'} ב-${slB(slAmt(amt,T.ccy))}.</span>`}}
+      H+=T.ccy==='ILS'||T.ccy==='USD'?`<span class="nm">המזומן ב${esc(acctName(T.acct))} ${sell?'יעלה':'ירד'} ב-${slB(slAmt(amt,T.ccy))}.</span>`:`<span class="nm">המזומן בחשבון לא ישתנה: הוא רשום בשקלים ובדולרים, והעסקה ב-${esc(CCYHE[T.ccy]||T.ccy)}.</span>`}}
   out.innerHTML=H; if(btn)btn.disabled=!ok}
 async function trSave(){const v=trVals(); if(!v||!canWrite)return; const {T,q,px,amt}=v, sell=T.side==='sell', m=$('trMsg');
   if(dDirty){m.textContent='יש שינויים בתיק שלי שלא נשמרו. שמור אותם קודם.'; return} if(!(q>0&&px>0))return;
-  const cl=x=>x==null?null:JSON.parse(JSON.stringify(x)), P0=cl(P), H0=cl(HS), P2=cl(P)||{positions:[],cash:[]}, fx=T.ccy==='USD'?((Q&&Q.usdIls)||null):T.ccy==='ILS'?1:null;
+  const cl=x=>x==null?null:JSON.parse(JSON.stringify(x)), P0=cl(P), H0=cl(HS), P2=cl(P)||{positions:[],cash:[]}, fx=T.ccy==='USD'?((Q&&Q.usdIls)||null):T.ccy==='ILS'?1:((Q&&Q.rates&&Q.rates[T.ccy]&&+Q.rates[T.ccy].rate)||null);   // 24.11: another currency at its kept rate to the shekel
   P2.positions=Array.isArray(P2.positions)?P2.positions:[]; P2.cash=Array.isArray(P2.cash)?P2.cash:[];
   let x=P2.positions.find(z=>z.sym===T.sym&&(z.acct||'')===(T.acct||'')&&+z.qty>0);
   if(sell&&(!x||q>+x.qty+1e-9)){m.textContent='האחזקה השתנתה בינתיים. נסה שוב.'; return}
-  const cc=T.ccy==='ILS'?'ILS':'USD'; let cash=P2.cash.find(z=>z.acct===T.acct&&z.ccy===cc); if(!cash){cash={acct:T.acct,ccy:cc,amount:0}; P2.cash.push(cash)}
+  // 24.11: the accounts keep cash in shekels and in dollars: a trade in another currency (a share in Tokyo, in Frankfurt) leaves the cash as it is
+  const cashOn=T.ccy==='ILS'||T.ccy==='USD', cc=T.ccy==='ILS'?'ILS':'USD'; let cash=cashOn?P2.cash.find(z=>z.acct===T.acct&&z.ccy===cc):null; if(!cash){cash={acct:T.acct,ccy:cc,amount:0}; if(cashOn)P2.cash.push(cash)}
   const avg=x?slAvg(x):null;
   let cutIls=null;   // 24.11: the shekel cost of the units sold, for the sale's result in shekels
   if(sell){const f=q/(+x.qty); cutIls=x.costIls!=null?+x.costIls*f:null; if(x.costUsd!=null)x.costUsd=slR(+x.costUsd*(1-f)); if(x.costIls!=null)x.costIls=slR(+x.costIls*(1-f)); x.qty=slR(+x.qty-q,6); cash.amount=slR((+cash.amount||0)+amt)}
-  else{if(!x){const g=(()=>{try{return groupOf(T.sym)}catch(e){return null}})(); x={sym:T.sym,name:T.name,acct:T.acct,qty:0,ccy:T.ccy,costIls:T.ccy==='ILS'?0:(fx?0:null),costUsd:T.ccy==='ILS'?null:0,px:null,group:g||(T.ccy==='ILS'?'il':T.t==='E'?'etf':'tech')}; P2.positions.push(x)}
+  else{if(!x){const g=(()=>{try{return groupOf(T.sym)}catch(e){return null}})(); x={sym:T.sym,name:T.name,acct:T.acct,qty:0,ccy:T.ccy,costIls:T.ccy==='ILS'?0:(fx?0:null),costUsd:T.ccy==='USD'?0:null,px:null,group:g||(T.ccy==='ILS'?'il':T.t==='E'?'etf':'tech')}; P2.positions.push(x)}
     if(T.ccy==='ILS'){x.costIls=slR((+x.costIls||0)+amt)} else {if(x.costUsd!=null)x.costUsd=slR(+x.costUsd+amt); if(x.costIls!=null&&fx)x.costIls=slR(+x.costIls+amt*fx)}
     x.qty=slR(+x.qty+q,6); cash.amount=slR(Math.max(0,(+cash.amount||0)-amt))}
   x.qAt=ilDay(); P2.positions=P2.positions.filter(z=>+z.qty>1e-9); P2.updatedAt=new Date().toISOString();
@@ -26962,6 +26971,103 @@ let lastTape='';
 // The list of names lives in the page (gzip, base64) and is unpacked on first use; prices come from quotes/latest,
 // daily closes from quotes/c_<key>, written by the scheduled tasks. Nothing here reaches the network.
 let SYMDB=null, SYMLOAD=null, SYMWHY='', SYMTRIES=0, MYID=null, WATCH=null, WVER=null, SQ='', SEC=null, SECRNG='3m', CLOSES={}, SQT=null;
+// ---- 24.11 (the owner: "every share and fund in the world; and every new listing, tell me there is one more"): the
+// search beyond the page's own list. Three layers, each said by name on the screen:
+//  - the page's list (US and Tel Aviv), as before, at once;
+//  - the new listings (research/ipos, kept by the server's job from the IPO calendar and the exchanges' symbol
+//    directory): merged into the list when the page loads, so a share listed this week is found like any other;
+//  - a search across markets through the server (/api/symsearch, the one "התיק שלי" uses), asked a third of a second
+//    after the typing stops, under the list's own results and without what they already show.
+// A security from outside the list has a page like any other: its name, kind, exchange, currency and delayed price come
+// from one lookup (/api/secinfo), its chart from the route every chart comes from. What the source does not give (a
+// sector, the market value, the analysts) is said to be missing, never filled in.
+// a symbol as the price source writes it: plain (ANT), or with an exchange's suffix (0700.HK, SAP.DE, 7203.T)
+const WKEY=/^[A-Z0-9][A-Z0-9\-]{0,8}(\.[A-Z]{1,3})?$/;
+const wsecCan=k=>{k=String(k||''); return k.length<=12&&WKEY.test(k)&&!/^\d+$/.test(k)};
+// a security of an exchange outside the US and Tel Aviv (a suffix of two or three letters, or Tokyo's, London's, Frankfurt's, Vancouver's one)
+const wsFar=k=>{k=String(k||''); return !k.startsWith('TLV:')&&(/\.[A-Z]{2,3}$/.test(k)||/\.[TLFV]$/.test(k))&&!/\.TA$/.test(k)};
+// the page's key of a security the search across markets found: Tel Aviv's as TLV:SYM (a fund there by its number), a US
+// class share with a dot as the list writes it (BRK.B), any other as the source writes it; '' when the page cannot price it
+function wsKey(sym){const s=String(sym||'').toUpperCase(); let m=s.match(/^(\d{6,9})\.TA$/); if(m)return m[1]; m=s.match(/^([A-Z0-9]{1,7})\.TA$/); if(m)return 'TLV:'+m[1];
+  if(/^[A-Z]{1,5}-[A-Z]$/.test(s))return s.replace('-','.'); return wsecCan(s)?s:''}
+const WS_TL={stock:'מניה',etf:'קרן סל',fund:'קרן נאמנות'};
+const WSI=new Map(), WSQ_C=new Map(); let WSEC={}, WSQ_R=null, WSQ_T=null, IPO_D=null, IPO_ASK=0, IPO_AUG='';
+// an item of the search for a security from outside the list: what the source said of it, nothing more
+function wItem(k,v){v=v||{}; const ty=String(v.type||v.t||''), fund=ty==='etf'||ty==='fund';
+  return {sym:k,name:String(v.name||v.n||k),t:fund?'E':'S',ex:String(v.exch||v.x||''),sec:'',cap:0,ls:String(k).toLowerCase(),ln:String(v.name||v.n||'').toLowerCase(),he:'',w:1,wt:ty,ccy:String(v.ccy||v.c||''),tl:WS_TL[ty]||''}}
+const inList=k=>!!(SYMDB&&SYMDB.some(x=>x.sym===k&&x.t!=='T'));
+// the results of the search across markets as the page shows them: no index, nothing the list's own results show, a row a security
+function wsRows(items,shown){const seen=new Set(shown||[]), out=[];
+  for(const x of (items||[])){if(!x||x.type==='index')continue; const k=wsKey(x.sym); if(!k||seen.has(k))continue; seen.add(k); out.push({k,sym:String(x.sym).toUpperCase(),name:String(x.name||x.sym),exch:String(x.exch||''),type:x.type||''})}
+  return out}
+// asked a third of a second after the typing stops: two letters at least, not Hebrew (the source knows names in Latin
+// letters) and not a number (an Israeli fund is looked up by its number at Maya). An answer is kept for the visit
+function wsqWant(q){q=String(q||'').trim(); return q.length>=2&&q.length<=40&&!HEBRX.test(q)&&!/^[\d\s]+$/.test(q)}
+function wsqAsk(){clearTimeout(WSQ_T); const q=SQ.trim(); if(!wsqWant(q)||LOCAL||!db||!window.__tc){WSQ_R=null; return}
+  const key=q.toLowerCase(), c=WSQ_C.get(key); if(c){WSQ_R=c; return}
+  WSQ_R={q:key,busy:true};
+  WSQ_T=setTimeout(async()=>{let R; try{const r=await fetch('/api/symsearch?q='+encodeURIComponent(q),{credentials:'same-origin'}), j=await r.json(); if(!r.ok)throw new Error('http'); R={q:key,items:j.items||[]}; WSQ_C.set(key,R); if(WSQ_C.size>60)WSQ_C.delete(WSQ_C.keys().next().value)}
+    catch(e){R={q:key,err:true}}
+    if(SQ.trim().toLowerCase()!==key)return; WSQ_R=R; try{wsqPaint()}catch(e){}},350)}
+function wsRow(x){const k=x.k, on=wmarks().includes(k); let pr=null; try{pr=priceOf(k)}catch(e){}
+  return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}" data-ws="1">${logoHtml(k)}<div class="nm"><b><bdi>${esc(x.name)}</bdi></b><span><i dir="ltr">${esc(x.sym)}</i>${x.exch?' · <bdi>'+esc(x.exch)+'</bdi>':''}${WS_TL[x.type]?' · '+WS_TL[x.type]:''}</span></div>`+
+    (pr?`<div class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</div>`:'')+
+    `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`}
+// the rows from the other markets, under the list's own results: only this part is drawn again when the answer comes
+function wsqPaint(){const box=$('sqWorld'); if(!box)return; const R=WSQ_R, q=SQ.trim().toLowerCase(), none=$('sqNone'), loc=[...document.querySelectorAll('#sqRes>.sit[data-open]')].map(x=>x.dataset.open);
+  box.dataset.q=q; box.dataset.st=!R||R.q!==q?'':R.busy?'busy':R.err?'err':'ok';   // what this part answers, and where the answer stands
+  if(!R||R.q!==q){box.innerHTML=''; if(none)none.hidden=false; return}
+  if(R.busy){box.innerHTML='<p class="sq-wn" role="status">מחפש גם בבורסות אחרות בעולם…</p>'; if(none)none.hidden=true; return}
+  if(R.err){box.innerHTML='<p class="sq-wn" role="status">החיפוש בבורסות אחרות לא זמין כרגע; התוצאות כאן הן מרשימת הניירות של הדף. <button type="button" class="lnk" data-wsretry="1">לנסות שוב</button></p>'; if(none)none.hidden=false; return}
+  // a Tel Aviv security has a page only when the list knows it (it is then among the list's own results)
+  const L=wsRows(R.items,loc).filter(x=>!(String(x.k).startsWith('TLV:')||ilIsNum(x.k))||!!itemOf(x.k));
+  for(const x of L)if(!WSI.has(x.k)&&!inList(x.k)&&wsecCan(x.k))WSI.set(x.k,wItem(x.k,x));
+  if(none)none.hidden=L.length>0;
+  box.innerHTML=L.length?'<div class="sq-wh"><span>מבורסות אחרות בעולם</span><small>Yahoo Finance · מחירים בעיכוב</small></div>'+L.map(wsRow).join(''):''}
+// "לנסות שוב" after the search across markets failed (the source pauses for a minute after a refusal): asked again now
+document.addEventListener('click',ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest('[data-wsretry]'); if(!b)return; ev.stopPropagation(); WSQ_R=null; try{wsqAsk(); wsqPaint()}catch(e){}});
+// one lookup at a time per symbol; while it is on its way every caller waits for the same answer
+function wsecLoad(k){const e=WSEC[k]; if(e&&e.v&&Date.now()-e.at<10*60e3)return Promise.resolve(e.v); if(e&&e.p)return e.p; if(e&&e.err&&Date.now()-e.at<60e3)return Promise.resolve(null);
+  if(LOCAL||!db||!wsecCan(k))return Promise.resolve(null);
+  const p=(async()=>{try{const r=await fetch('/api/secinfo?sym='+encodeURIComponent(k),{credentials:'same-origin'}), j=await r.json(); if(!r.ok)throw new Error((j.error&&j.error.message)||('HTTP '+r.status));
+      WSEC[k]={at:Date.now(),v:j}; if(!inList(k)){const was=WSI.get(k)||{}; WSI.set(k,wItem(k,{name:j.name||was.name,exch:j.exch||was.ex,type:j.type||was.wt,ccy:j.ccy||was.ccy}))} try{noteSeen(k)}catch(x){} return j}
+    catch(err){WSEC[k]={at:Date.now(),v:(e&&e.v)||null,err:String((err&&err.message)||err)}; return null}})();
+  WSEC[k]={at:Date.now(),v:(e&&e.v)||null,p}; return p}
+// a security from outside the list with no price on the page yet (nobody follows it, or it listed this week): asked once
+function wsecWant(k){if(!wsecCan(k)||ilIsNum(k)||String(k).startsWith('TLV:'))return; let it=null, pr=null; try{it=itemOf(k); pr=priceOf(k)}catch(e){}
+  if(it&&!it.w&&!it.dyn)return; if(pr&&!pr.ws)return; wsecLoad(k).then(v=>{if(v&&SEC===k)try{renderSec()}catch(e){}})}
+// the names of the securities from outside the list that the person follows, opened or holds: kept with their watch list
+// (their own document), so the page knows them on another device before any lookup
+function wsInfoFor(keys,old){const out={}; let n=0; for(const k of new Set(keys||[])){if(n>=120)break; const it=WSI.get(k), o=(old||{})[k];
+    if(it&&!inList(k)){out[k]={n:it.name,x:it.ex,t:it.wt||(it.t==='E'?'etf':'stock'),c:it.ccy||''}; n++} else if(o&&typeof o==='object'){out[k]=o; n++}}
+  return out}
+function wsFromWatch(){const I=(WATCH&&WATCH.info)||{}; for(const [k,v] of Object.entries(I))if(v&&typeof v==='object'&&wsecCan(k)&&!WSI.has(k))WSI.set(k,wItem(k,{name:v.n,exch:v.x,type:v.t,ccy:v.c}))}
+// ---- the new listings: what the server's job kept (research/ipos), merged into the list; asked again every three hours
+function ipoLoad(){if(!db||LOCAL||(IPO_ASK&&Date.now()-IPO_ASK<3*36e5))return; IPO_ASK=Date.now();
+  try{db.doc('research/ipos').get().then(s=>{IPO_D=s&&s.exists?s.data():null; ipoAugment(); try{if(SEC)renderSec(); else if(document.body.dataset.page==='search')srchRender()}catch(e){}}).catch(()=>{IPO_ASK=0})}catch(e){}}
+// the listings to tell about: an offering from the calendar, or a new symbol whose first day of trading is known; newest first
+function ipoFreshP(D,days,now){const t=now||Date.now(), iso=x=>new Date(x).toISOString().slice(0,10), from=iso(t-(days||10)*864e5), to=iso(t+864e5);
+  return ((D&&D.items)||[]).filter(it=>it&&it.sym&&!it.old&&(it.kind==='ipo'||it.first)).map(it=>({...it,d:it.first||it.date})).filter(it=>it.d&&it.d>=from&&it.d<=to)
+    .sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:0)||((a.kind==='ipo'?0:1)-(b.kind==='ipo'?0:1))||((a.spac?1:0)-(b.spac?1:0))||(a.sym<b.sym?-1:1))}
+function ipoAugment(){
+  if(!SYMDB||!IPO_D||!Array.isArray(IPO_D.syms))return; if(IPO_AUG===(IPO_D.updatedAt||'')+':'+SYMDB.length)return;
+  const have=new Set(SYMDB.filter(x=>x.t!=='T'&&!x.il).map(x=>x.sym)), NW=new Map(((IPO_D.items)||[]).filter(x=>x&&x.sym&&!x.old).map(x=>[x.sym,x]));
+  for(const r of IPO_D.syms){const sym=String((r&&r[0])||''); if(!/^[A-Z][A-Z.]{0,5}$/.test(sym)||have.has(sym))continue; have.add(sym); const nw=NW.get(sym), nm=String((nw&&nw.name)||r[1]||sym);
+    SYMDB.push({sym,name:nm,t:r[2]==='E'?'E':'S',ex:String(r[3]||''),sec:'',cap:0,ls:sym.toLowerCase(),ln:nm.toLowerCase(),he:HEBN[sym]||'',dyn:1})}
+  IPO_AUG=(IPO_D.updatedAt||'')+':'+SYMDB.length}
+// what the new listings say of one security (its first day of trading, the offering's price), or null
+const ipoOf=k=>((IPO_D&&IPO_D.items)||[]).find(x=>x&&x.sym===k&&!x.old)||null;
+const ipoDay=x=>x?(x.first||(x.kind==='ipo'?x.date:'')||''):'';
+// "חדש" beside a security that started trading in the last three weeks
+function ipoTag(it){if(!IPO_D||!it||it.t==='T'||it.il||it.w)return ''; const d=ipoDay(ipoOf(it.sym)); return d&&Date.now()-Date.parse(d+'T12:00:00Z')<21*864e5?` · <b class="scr-tg">חדש · נסחר מ-${dmy(d)}</b>`:''}
+// the new listings as rows of the list (the ones the page can open), newest first
+function ipoItems(days){return ipoFreshP(IPO_D,days||45).map(x=>{let it=null; try{it=itemOf(x.sym)}catch(e){} return it&&it.sym===x.sym&&it.t!=='T'?{it,x}:null}).filter(Boolean)}
+const ipoXtra=x=>` · <b class="scr-tg">${x.kind==='ipo'?'הנפקה':x.t==='E'?'קרן חדשה':'סימול חדש'} ${dmy(x.d)}</b>${x.price?` · מחיר ההנפקה <span dir="ltr">$${(+x.price).toFixed(2)}</span>`:''}${x.spac?' · חברת רכש ייעודית (SPAC)':''}`;
+// a new security's own page: when it started trading and at what price it was offered, each from its source
+function secIpoNote(k,it){const x=ipoOf(k); if(!x||!it||it.t==='T')return ''; const d=ipoDay(x); if(!d)return '';
+  // one short line that stays on a phone (the first day and the offering's price are the point); the rest is a note
+  return `<p class="sec-nw"><b>חדש בבורסה</b> · ${x.first?`יום המסחר הראשון ${dmy(x.first)}`:`תומחרה ב-${dmy(x.date)}, יום המסחר הראשון עוד לא נקלט`}${x.price?` · מחיר ההנפקה <bdi dir="ltr">$${(+x.price).toFixed(2)}</bdi>`:''}${x.exch?` · <bdi>${esc(x.exch)}</bdi>`:''}${x.spac?' · חברת רכש ייעודית (SPAC)':''}</p>
+    <p class="note" style="margin:6px 0 0;max-width:none">היסטוריית המחירים מתחילה ביום המסחר הראשון, ולכן הגרף קצר. מקור: ${esc((IPO_D&&IPO_D.source)||'לוח ההנפקות')}.</p>`}
 const TYPEL={S:'ניירות ערך זרים',E:'תעודת סל',T:'מניה ישראלית',H:'בתיק שלי',F:'קרן נאמנות או קרן סל',I:'מדד'};
 const EXL={Q:'Nasdaq',N:'NYSE',A:'NYSE American',P:'NYSE Arca',Z:'Cboe',TLV:'הבורסה בתל אביב'};
 const skey=it=>it.t==='T'?'TLV:'+it.sym:it.sym;
@@ -27005,7 +27111,7 @@ const HEBN={
  BA:'בואינג',LMT:'לוקהיד מרטין',CAT:'קטרפילר',RTX:'ארטיאקס (רייתאון)',GE:'ג׳נרל אלקטריק',HON:'האניוול',
  V:'ויזה',MA:'מאסטרקארד',PYPL:'פייפאל',JPM:'ג׳יי.פי מורגן',BAC:'בנק אוף אמריקה',GS:'גולדמן זאקס',MS:'מורגן סטנלי',AXP:'אמריקן אקספרס','BRK.B':'ברקשייר האת׳וויי',
  JNJ:'ג׳ונסון אנד ג׳ונסון',PFE:'פייזר',MRK:'מרק',ABBV:'אבווי',LLY:'אלי לילי',UNH:'יונייטד הלת׳',
- XOM:'אקסון מוביל',CVX:'שברון',PLTR:'פלנטיר',SPCX:'ספייס אקס',RKLB:'רוקט לאב',RDW:'רדווייר',MBLY:'מובילאיי',O:'ריאלטי אינקם',AEHR:'אייר טסט סיסטמס',UBER:'אובר',ABNB:'אייר בי אנד בי',COIN:'קוינבייס',UUUU:'אנרג׳י פיולס',
+ XOM:'אקסון מוביל',CVX:'שברון',PLTR:'פלנטיר',ANT:'אנתרופיק',SPCX:'ספייס אקס',RKLB:'רוקט לאב',RDW:'רדווייר',MBLY:'מובילאיי',O:'ריאלטי אינקם',AEHR:'אייר טסט סיסטמס',UBER:'אובר',ABNB:'אייר בי אנד בי',COIN:'קוינבייס',UUUU:'אנרג׳י פיולס',
  SPY:'אס אנד פי 500 (SPY)',VOO:'אס אנד פי 500 (VOO)',QQQ:'נאסד״ק 100 (QQQ)',XBI:'ביוטק (XBI)',IWM:'ראסל 2000 (IWM)',VTI:'כל השוק האמריקאי (VTI)',
  'TLV:TEVA':'טבע',  'TLV:LUMI':'בנק לאומי','TLV:POLI':'בנק הפועלים','TLV:DSCT':'בנק דיסקונט','TLV:MZTF':'מזרחי טפחות','TLV:FIBI':'הבינלאומי','TLV:FIBIH':'פיבי אחזקות','TLV:JBNK':'בנק ירושלים',
  'TLV:ESLT':'אלביט מערכות','TLV:NICE':'נייס','TLV:TSEM':'טאואר','TLV:NVMI':'נובה','TLV:CAMT':'קמטק','TLV:CYBR':'פאלו אלטו (סייברארק)','TLV:MTRX':'מטריקס','TLV:FORTY':'פורמולה','TLV:HLAN':'חילן','TLV:ONE':'וואן טכנולוגיות','TLV:MLTH':'מלם תים','TLV:TLSY':'טלסיס','TLV:AUDC':'אודיוקודס','TLV:GILT':'גילת','TLV:NNDM':'נאנו דימנשן','TLV:ARBE':'ארבה','TLV:NXSN':'נקסט ויז׳ן','TLV:SMSH':'סמארט שוטר','TLV:BSEN':'בית שמש מנועים','TLV:ASHO':'אשות אשקלון','TLV:TATT':'תאת טכנולוגיות','TLV:IMCO':'אימקו','TLV:ARYT':'ארית',
@@ -27060,8 +27166,9 @@ function loadSymDb(){
     SYMDB=txt.trim()?txt.split('\n').filter(l=>l.indexOf('\t')>0).map(l=>{const p=l.split('\t');const it={sym:p[0],name:p[1]||'',t:p[2]||'S',ex:p[3]||'',sec:p[4]||'',cap:+p[5]||0,ls:(p[0]||'').toLowerCase(),ln:(p[1]||'').toLowerCase()};it.he=HEBN[skey(it)]||'';return it}):[];
     SYMWHY=SYMDB.length?'':(why||'הרשימה ריקה');
     try{ilAugment(); ilLoad()}catch(e){}
+    try{ipoAugment(); ipoLoad()}catch(e){}   // 24.11: the securities listed since the list was built
     if(!SYMDB.length){SYMTRIES++;if(SYMTRIES<4){SYMLOAD=null;SYMDB=null;setTimeout(()=>{loadSymDb().then(srchRender)},1500);return []}}
-    try{const n=$('sqNote');if(n&&(SYMDB.length||SYMTRIES>=3)){n.textContent=SYMDB.length?`${SYMDB.length.toLocaleString('en-US')} ניירות מארה״ב ומתל אביב. נייר במעקב מתעדכן כל שעה.`:`רשימת הניירות לא נטענה (${SYMWHY}). סגור את הדף ופתח אותו מחדש; בינתיים אפשר לחפש רק ניירות שבתיק.`;lgNote()}}catch(e){}
+    try{const n=$('sqNote');if(n&&(SYMDB.length||SYMTRIES>=3)){n.textContent=SYMDB.length?`${SYMDB.length.toLocaleString('en-US')} ניירות מארה״ב ומתל אביב. חיפוש בשם או בסימול מוצא גם מניות וקרנות מבורסות אחרות בעולם. נייר במעקב מתעדכן כל שעה.`:`רשימת הניירות לא נטענה (${SYMWHY}). סגור את הדף ופתח אותו מחדש; בינתיים אפשר לחפש רק ניירות שבתיק.`;lgNote()}}catch(e){}
     return SYMDB;
   })();
   return SYMLOAD;
@@ -27091,16 +27198,17 @@ function findSyms(q){
 const recent=()=>{try{return JSON.parse(localStorage.getItem('tr_recent')||'[]')}catch(e){return[]}};
 // 17.11 (the owner: "keep the search history ten securities back")
 const pushRecent=k=>{try{const r=[k].concat(recent().filter(x=>x!==k)).slice(0,10);localStorage.setItem('tr_recent',JSON.stringify(r))}catch(e){}};
-const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||(ilIsNum(k)&&ILF[k]&&ILF[k].v?ilItem(k,ILF[k].v.name||('נייר '+k),'F',{he:ILF[k].v.name||''}):null)||null};
+const itemOf=k=>{if(!SYMDB)return null;const t=k.startsWith('TLV:');const s=t?k.slice(4):k;return SYMDB.find(x=>x.sym===s&&(t?x.t==='T':x.t!=='T'))||heldItems().find(x=>x.sym===s)||(ilIsNum(k)&&ILF[k]&&ILF[k].v?ilItem(k,ILF[k].v.name||('נייר '+k),'F',{he:ILF[k].v.name||''}):null)||WSI.get(k)||null};   // 24.11: and a security from outside the list (WSI)
 function wmarks(){if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_marks')||'[]')}catch(e){return[]}}return (WATCH&&WATCH.marks)||[]}
 const wmarkAt=()=>{if(LOCAL||!db){try{return JSON.parse(localStorage.getItem('tr_markat')||'{}')}catch(e){return {}}}return (WATCH&&WATCH.markAt)||{}};
 // one document per user: the securities to price (syms) = the held US symbols plus the bookmarks; the task reads only `syms`
 async function watchSave(patch){
   const marks=patch.marks||wmarks(), held=patch.held||(WATCH&&WATCH.held)||[], seen=patch.seen||(WATCH&&WATCH.seen)||[], potS=patch.pots||(WATCH&&WATCH.pots)||[];
-  const syms=[...new Set(held.concat(marks).filter(k=>/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$/.test(k)))].slice(0,40);
-  const markAt=patch.markAt||(WATCH&&WATCH.markAt)||{};
-  if(LOCAL||!db||!MYID){try{localStorage.setItem('tr_marks',JSON.stringify(marks)); localStorage.setItem('tr_markat',JSON.stringify(markAt))}catch(e){};WATCH={marks,held,syms,seen,pots:potS,markAt};return true}
-  const doc={syms,marks,held,seen,pots:potS,markAt,updatedAt:new Date().toISOString()};
+  // 24.11: a followed security of another exchange (0700.HK, SAP.DE) is priced too, and its name is kept beside the list
+  const syms=[...new Set(held.concat(marks).filter(k=>/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$/.test(k)||wsecCan(k)))].slice(0,40);
+  const markAt=patch.markAt||(WATCH&&WATCH.markAt)||{}, info=wsInfoFor(marks.concat(seen,held),(WATCH&&WATCH.info)||{});
+  if(LOCAL||!db||!MYID){try{localStorage.setItem('tr_marks',JSON.stringify(marks)); localStorage.setItem('tr_markat',JSON.stringify(markAt))}catch(e){};WATCH={marks,held,syms,seen,pots:potS,markAt,info};return true}
+  const doc={syms,marks,held,seen,pots:potS,markAt,info,updatedAt:new Date().toISOString()};
   try{await db.doc('watch/'+MYID).set(doc);WATCH=doc;return true}catch(e){return false}
 }
 async function toggleMark(k){const m=wmarks();const on=m.includes(k);const next=on?m.filter(x=>x!==k):m.concat([k]).slice(-40);
@@ -27222,6 +27330,10 @@ function plMktH(a){const k=a.mk||{}, m=(()=>{try{return mAllNow()}catch(e){retur
   if(k.t==='move'){const pc=+k.from>0&&+k.to>0?(k.to/k.from-1)*100:+k.pct, md=String(a.occ||''), w=md&&md<ilDay()?'ב-'+dmy(md):'היום';
     return `<p class="pl-p">נמדד: <span class="n ${pc>=0?'up':'down'}">${spct(pc,1)}</span> ${w}${p&&w==='היום'?`; השינוי בשווי שלך: <span class="n ${p.dayIls>=0?'up':'down'}">${sgn(p.dayIls)}</span>`:''}.</p>`;}
   if(k.t==='ins')return `<p class="pl-p">${esc(k.owner||'')} (${esc(k.role||'')}): ${INS_KH[k.kind]||k.kind} של <span class="n">${(k.shares||0).toLocaleString('en-US')}</span> מניות${k.value?` בשווי <span class="n">${usd0(k.value)}</span>`:''}${k.plan?', בתוכנית מסחר מתוכננת (10b5-1)':''}${k.after!=null?`; מחזיק אחרי העסקה <span class="n">${k.after.toLocaleString('en-US')}</span>`:''}.${(k.why||[]).length?` <b>מהותי:</b> ${esc(k.why.join('; '))}.`:''} <span class="srcref">לדיווח</span> · <button type="button" class="lnk" data-gosec="${esc(k.sym||'')}">לדף הנייר ›</button></p><p class="note" style="margin:0">עובדה על העסקה של המדווח, לא על עתיד החברה.</p>`;
+  // 24.11: the week's new listings: each a row that opens its page; the first day and the offering's price as the sources gave them
+  if(k.t==='ipo'){const L=k.list||[];
+    return `<div class="sres pl-ipo">${L.map(x=>`<button type="button" class="sit" data-gosec="${esc(x.sym)}">${logoHtml(x.sym)}<span class="nm"><b><bdi>${esc(x.name||x.sym)}</bdi></b><span><i dir="ltr">${esc(x.sym)}</i>${x.exch?' · <bdi>'+esc(x.exch)+'</bdi>':x.ex&&EXL[x.ex]?' · '+esc(EXL[x.ex]):''} · ${x.kind==='ipo'?'הנפקה':x.t==='E'?'קרן חדשה':'סימול חדש'} · ${x.first?'נסחר מ-'+dmy(x.first):'תומחרה ב-'+dmy(x.date||x.d)}${x.price?` · מחיר ההנפקה <bdi dir="ltr">$${(+x.price).toFixed(2)}</bdi>`:''}${x.spac?' · SPAC':''}</span></span></button>`).join('')}</div>
+      <div class="acts" style="justify-content:flex-start;margin:0 0 8px"><button type="button" class="btn sm" data-ipoall="1">לכל הניירות החדשים ›</button></div><p class="note" style="margin:0">מקורות: ${esc(k.src||'לוח ההנפקות')}. עובדה על מה שנרשם למסחר, לא המלצה לקנות.</p>`}
   if(k.t==='cal')return `<p class="pl-p">מהלוח: ${esc(k.src||'')}${k.est?' (מועד משוער)':''}. <button type="button" class="lnk" data-nxv2="cal" data-calid="${esc(k.id||'')}">ללוח האירועים ›</button>${k.sym?` <button type="button" class="lnk" data-gosec="${esc(k.sym)}">לדף הנייר ›</button>`:''}</p>`;
   if(k.t==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0; return uv>0?`<p class="pl-p">שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי התיק.</p>`:''}
   return ''}
@@ -27241,9 +27353,9 @@ function plCard(a,o={}){
     ${a.kind!=='mkt'?`<details class="pl-fol"><summary class="btn sm">לעקוב אחרי הנושא</summary><div class="nw-fol">${[...new Set([...(a.fac||[]).map(f=>f.k),...(a.themes||[])])].slice(0,3).map(t=>['themes',t]).concat((a.sectors||[]).slice(0,2).map(g=>['secs',g])).concat((a.holds||[]).filter(h=>SECKEY.test(h.sym)).slice(0,2).map(h=>['syms',h.sym]))
       .map(([k,v])=>{const on=nwPrefs()[k].includes(v); return `<button type="button" class="chip sm" data-nwfol="${k}:${esc(v)}" aria-pressed="${on}">${on?'✓ ':'+ '}${esc(NW_FK[k].he(v))}</button>`}).join('')||'<span class="nm">אין נושא לעקוב אחריו</span>'}</div></details>`:''}</div>`;
   return `<article class="pl lv-${a.lv}${un?' un':''}" data-plk="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}: ${esc(a.title)}">
-    <div class="pl-top"><span class="pl-lv lv-${a.lv}">${PL_LVS[a.lv]}</span>${isNew?'<span class="pl-nw">חדשה</span>':isUpd?'<span class="pl-nw up">עדכון</span>':''}${a.followed?'<span class="pl-nw f">במעקב, לא בתיק</span>':''}<span class="pl-when">${agoH(a.up||a.at)}${a.kind!=='mkt'?' · '+esc(NX_KIND[a.kind]||'ידיעה'):''}</span></div>
+    <div class="pl-top"><span class="pl-lv lv-${a.lv}">${a.mk&&a.mk.t==='ipo'?'עדכון שוק':PL_LVS[a.lv]}</span>${isNew?'<span class="pl-nw">חדשה</span>':isUpd?'<span class="pl-nw up">עדכון</span>':''}${a.followed?'<span class="pl-nw f">במעקב, לא בתיק</span>':''}<span class="pl-when">${agoH(a.up||a.at)}${a.kind!=='mkt'?' · '+esc(NX_KIND[a.kind]||'ידיעה'):''}</span></div>
     <h3>${esc(a.title)}</h3>${a.what?`<p class="pl-what">${esc(a.what)}</p>`:''}
-    <div class="pl-why"><b>למה זה נוגע לתיק שלך:</b> ${esc(a.relWhy||'')}${a.kind!=='mkt'&&(a.secs||[]).length&&(a.holds||[]).length?`; וגם ${a.secs.map(s=>`${pct(s.w,0)} מהתיק ב${esc(NX_SEC_HE[s.g]||s.g)}`).join(', ')}`:''}.${holds?`<div class="nw-ents">${holds}</div>`:''}</div>
+    <div class="pl-why"><b>${a.mk&&a.mk.t==='ipo'?'מה זה:':'למה זה נוגע לתיק שלך:'}</b> ${esc(a.relWhy||'')}${a.kind!=='mkt'&&(a.secs||[]).length&&(a.holds||[]).length?`; וגם ${a.secs.map(s=>`${pct(s.w,0)} מהתיק ב${esc(NX_SEC_HE[s.g]||s.g)}`).join(', ')}`:''}.${holds?`<div class="nw-ents">${holds}</div>`:''}</div>
     ${a.th?`<div class="pl-th"><b>התזה שלך על ${esc(a.th.sym)}${a.th.at?' (מ-'+dmy(a.th.at)+')':''}:</b> ${esc(imCut(a.th.why||'',220))}${a.th.minus?`<br><b>מה שכתבת שיחליש אותה:</b> ${esc(imCut(a.th.minus,200))}`:''}${a.th.plus?`<br><b>מה שכתבת שיחזק:</b> ${esc(imCut(a.th.plus,200))}`:''}<br><span class="nm">האירוע ${esc(a.th.bearing||'')} את התזה לפי הקריאה; ההכרעה שלך. <button type="button" class="lnk" data-chiko="th:${esc(a.th.sym)}">לבחון עם צ׳יקו ›</button> <button type="button" class="lnk" data-gosec="${esc(a.th.sym)}">לתזה בדף הנייר ›</button></span></div>`:''}
     ${plChain(a)}${plHowH(a)}${meas}${a.kind==='mkt'?plMktH(a):dirTxt+msH}${acts}${a.ev&&STORY_OPEN.has(a.ev)?storyH(a.ev):''}
     <details class="nx-more pl-more"${o.open?' open':''}><summary>פרטים: איך נקבעה הרמה, מקורות וציר זמן</summary>
@@ -27294,8 +27406,8 @@ function alWho(a){const H=a.holds||[], d=H.filter(h=>h.link==='direct'), L=d.len
   if((a.fol||[]).length)return `${esc(lab(a.fol[0].sym))} · במעקב, לא בתיק`;
   return ''}
 function alRow(a){const un=plUnread(a), h=(a.holds||[]).find(z=>z.link==='direct')||(a.holds||[])[0], sym=h&&h.sym, who=alWho(a);
-  const mark=sym?`<span class="al-lg">${logoHtml(sym,'s')}</span>`:`<span class="al-lg al-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${a.kind==='cal'?'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4':'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4'}"/></svg></span>`;
-  return `<button type="button" class="al-row lv-${a.lv}${un?' un':''}" data-alopen="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}${un?', לא נקראה':''}: ${esc(a.title)}${who?'. '+who.replace(/<[^>]+>/g,''):''}">${mark}<span class="al-tx"><b class="al-t">${esc(a.title)}</b><span class="al-m"><span class="al-lv">${PL_LV[a.lv]}</span>${who?` · ${who}`:''}</span></span><span class="al-tm">${agoH(a.up||a.at)}</span>${un?'<i class="al-dot" aria-hidden="true"></i>':''}</button>`}
+  const mark=sym?`<span class="al-lg">${logoHtml(sym,'s')}</span>`:`<span class="al-lg al-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${a.mk&&a.mk.t==='ipo'?'M12 8v8M8 12h8M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0z':a.kind==='cal'?'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4':'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4'}"/></svg></span>`;
+  return `<button type="button" class="al-row lv-${a.lv}${un?' un':''}" data-alopen="${esc(a.k)}" aria-label="${esc(PL_LVS[a.lv])}${un?', לא נקראה':''}: ${esc(a.title)}${who?'. '+who.replace(/<[^>]+>/g,''):''}">${mark}<span class="al-tx"><b class="al-t">${esc(a.title)}</b><span class="al-m"><span class="al-lv">${a.mk&&a.mk.t==='ipo'?'עדכון שוק':PL_LV[a.lv]}</span>${who?` · ${who}`:''}</span></span><span class="al-tm">${agoH(a.up||a.at)}</span>${un?'<i class="al-dot" aria-hidden="true"></i>':''}</button>`}
 // the count on התראות (the bottom bar and the menu): the unread alerts that need attention, the same as the inbox's first group
 function alBadge(){const L=plDedup(plItems()).filter(a=>plUnread(a)&&(a.lv==='crit'||a.lv==='imp')), n=L.length, crit=L.some(a=>a.lv==='crit');
   for(const b of document.querySelectorAll('#botbar [data-bb="alerts"],#tab_alerts')){let g=b.querySelector('.bbadge'); if(!n){if(g)g.remove(); b.removeAttribute('aria-description'); continue}
@@ -27318,6 +27430,10 @@ function renderAlertInbox(){
   if(box._h!==h){box._h=h; setH(box,h)}   // drawn again only when something changed (a focused row keeps its focus)
 }
 document.addEventListener('toggle',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('al-rd'))ALRD=e.target.open},true);
+// 24.11: from the week's new listings in an alert: a row opens that security's page, the link opens the whole list in מחקר שוק
+document.addEventListener('click',ev=>{const t=ev.target; if(!t||!t.closest)return;
+  if(t.closest('.pl-ipo [data-gosec]')){try{plClose()}catch(e){} return}
+  if(t.closest('[data-ipoall]')){try{plClose()}catch(e){} try{showTab('search')}catch(e){} try{setSV('search')}catch(e){} SEC=null; SQ=''; try{const i=$('sq'); if(i)i.value=''; $('sqx').hidden=true}catch(e){} try{loadSymDb().then(()=>{try{scrOpen('new')}catch(e){}})}catch(e){}}},true);
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const f=t.closest('[data-alf]'); if(f){ALF=f.dataset.alf; renderAlertInbox(); return}
   const r=t.closest('[data-alopen]'); if(r){plOpen(r.dataset.alopen,[...document.querySelectorAll('#alInbox [data-alopen]')].map(x=>x.dataset.alopen)); return}
@@ -27580,12 +27696,15 @@ function priceOf(k){
   const it=itemOf(k), ix=ilIdx(k);
   if(ix){const b=Q&&Q.bench&&Q.bench[ix]; if(b&&b.px>0)return {px:b.px,prev:b.prev,ccy:'PTS',chg:b.prev>0?b.px/b.prev-1:null,label:b.date?'סגירה '+dmy(b.date):'',live:true};
     const c=CLOSES[k]; if(c&&c.c&&c.c.length){const n=c.c.length; return {px:c.c[n-1],prev:n>1?c.c[n-2]:null,ccy:'PTS',chg:n>1&&c.c[n-2]>0?c.c[n-1]/c.c[n-2]-1:null,label:'סגירה '+dmy(c.d[n-1]),daily:true}} return null}
-  const ccy=k.startsWith('TLV:')||ilIsNum(k)||(it&&(it.t==='H'||it.t==='F')&&it.ex==='TLV')?'ILS':'USD';
+  // 24.11: a security of another exchange is priced in its own currency: the quote's (the price job found it), or the one its lookup gave
+  const wv=WSEC[k]&&WSEC[k].v, qc=Q&&Q.meta&&Q.meta[k]&&Q.meta[k].ccy, ccy=k.startsWith('TLV:')||ilIsNum(k)||(it&&(it.t==='H'||it.t==='F')&&it.ex==='TLV')?'ILS':qc||(it&&it.w&&((wv&&wv.ccy)||it.ccy))||'USD';
   if(ilIsNum(k)&&!(Q&&Q.prices&&Q.prices[k]!=null)){const v=ILF[k]&&ILF[k].v; if(v&&v.px>0)return {px:v.px,prev:v.prev,ccy:'ILS',chg:v.chg!=null?v.chg/100:v.prev>0?v.px/v.prev-1:null,label:v.date?'מחיר רשמי '+dmy(v.date):'',daily:true}}
   if(Q){const p=Q.prices||{},v=Q.prev||{};const px=p[k];
     if(px!=null){const pv=v[k], d=((Q.meta||{})[k]||{}).date;return {px,prev:pv,ccy,chg:pv>0?px/pv-1:null,label:(Q.stale||{})[k]||Q.priceLabel||'',live:true,today:!!d&&d===ilDay()}}}
   if(ALLQ){const r=k.startsWith('TLV:')?(ALLQ.tlv||{})[k.slice(4)]:(ALLQ.us||{})[k];
     if(r&&r[0]>0){const d=k.startsWith('TLV:')?ALLQ.tlvDate:ALLQ.date;return {px:r[0],prev:null,ccy,chg:r[1]!=null?r[1]/100:null,label:'סגירה '+dmy(d),daily:true}}}
+  // 24.11: a security nobody follows yet, from outside the list or listed this week: the delayed price its lookup gave, said to be delayed
+  if(wv&&wv.px>0)return {px:wv.px,prev:wv.prev>0?wv.prev:null,ccy:wv.ccy||ccy,chg:wv.prev>0?wv.px/wv.prev-1:null,label:'מחיר בעיכוב'+(wv.date?' · '+dmy(wv.date):''),daily:true,ws:true,src:wv.src||'',today:!!wv.date&&wv.date===ilDay()};
   return null}
 // the daily snapshot of every searchable security and the bulk close series (one document per bucket of symbols)
 let ALLQ=null, ALLQLOAD=null, RSX={};
@@ -27659,6 +27778,7 @@ function lgScan(){LGSCAN=0; const L=document.querySelectorAll('.lg[data-sh]:not(
 const lgSoon=()=>{if(!LGSCAN)LGSCAN=setTimeout(lgScan,60)};
 function srchRender(){
   const box=$('sqRes'),pg=$('secPage'); if(!box)return;
+  try{if(SYMDB)ipoLoad()}catch(e){}   // 24.11: the new listings, asked again when they are three hours old
   // 9.11: with a security open, the page is the whole screen: the research heading, the parts row and the search box wait
   // on the research landing (the phone's back, the bookmark page's back, or a tap on "מחקר" below return there)
   try{box.closest('[data-pane]').classList.toggle('sec-open',!!SEC); document.body.classList.toggle('sec-open',!!SEC)}catch(e){}
@@ -27666,15 +27786,15 @@ function srchRender(){
   pg.hidden=true;box.hidden=false;
   const row=srRow;
   if(!SYMDB){box.innerHTML='<div class="empty">טוען את רשימת הניירות…</div>';loadSymDb().then(()=>{if(SYMDB)srchRender()});return}
-  if(SQ.trim()){box.classList.remove('scr-on'); const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
-    box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'));return}
+  if(SQ.trim()){box.classList.remove('scr-on'); try{wsqAsk()}catch(e){} const r=findSyms(SQ), num=SQ.trim().replace(/\s/g,''), byNum=ilIsNum(num)&&!r.some(x=>x.sym===num)?`<div class="sit" role="button" tabindex="0" data-open="${esc(num)}">${logoHtml(num)}<div class="nm"><b>לחפש במאיה את נייר מספר <bdi dir="ltr">${esc(num)}</bdi></b><span>קרן נאמנות, קרן סל או נייר ישראלי לפי המספר שלו בבורסה</span></div></div>`:'';
+    box.innerHTML=byNum+(r.length?r.map(it=>row(it)).join(''):byNum?'':(SYMDB.length?'<div class="empty" id="sqNone">לא מצאתי נייר כזה. נסה את הסימול (למשל NVDA) או את תחילת השם, בעברית או באנגלית.</div>':'<div class="empty">רשימת הניירות לא נטענה ('+esc(SYMWHY)+'). סגור את הדף ופתח אותו מחדש.</div>'))+'<div class="sq-w" id="sqWorld"></div>'; try{wsqPaint()}catch(e){} return}
   // 17.11 (the owner: "market research"): the landing is the market's screener. The watched have a tab of their own
   // ("מניות במעקב"); the securities seen are under the search box when it is tapped
   box.classList.add('scr-on'); box.innerHTML=SCR?scrList(row):scrHome(row);
 }
 // 17.11: a security's row in the search's results, in the history under the box and in the screener's lists
 function srRow(it,extra){const k=skey(it),pr=priceOf(k),on=wmarks().includes(k);
-    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${esc(it.t==='S'&&it.sec?(SEC_HE[it.sec]||it.sec):(TYPEL[it.t]||''))}${extra||''}</span></div>`+
+    return `<div class="sit" role="button" tabindex="0" data-open="${esc(k)}">${logoHtml(k)}<div class="nm"><b><bdi>${esc((it.t==='T'&&it.he)||it.name||it.sym)}</bdi></b><span>${it.t==='I'?'':`<i dir="ltr">${esc(it.sym)}</i>`}${it.t==='T'&&it.he&&it.he!==it.name?' · <bdi>'+esc(it.name)+'</bdi>':it.he&&it.he!==it.name?(it.t==='I'?'':' · ')+esc(it.he):''} · ${it.w?[it.ex,it.tl||TYPEL[it.t]].filter(Boolean).map(x=>'<bdi>'+esc(x)+'</bdi>').join(' · '):esc(it.t==='S'&&it.sec?(SEC_HE[it.sec]||it.sec):(TYPEL[it.t]||''))}${extra||''}${extra?'':ipoTag(it)}</span></div>`+
       (pr?`<div class="px">${fmtPx(pr.px,pr.ccy)}${pr.chg!=null?`<small class="${pr.chg>=0?'up':'down'}">${spct(pr.chg*100)}</small>`:''}</div>`:'')+
       `<button type="button" class="mk" data-mark="${esc(k)}" aria-pressed="${on}" aria-label="${on?'הסר מהמעקב':'הוסף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>`}
 // 17.11 (the owner: "in the search box, when I tap it, the history of the securities I looked at"): the securities seen,
@@ -27735,8 +27855,9 @@ function scrCardCat(it){return !it?null:it.t==='T'?'il':it.t==='E'?'etf':it.t===
 function scrHeldIts(){const out=[]; for(const p of ((typeof P!=='undefined'&&P&&P.positions)||[])){if(!p||!p.sym)continue; let it=null; try{it=itemOf(p.sym)}catch(e){} if(it&&!out.includes(it))out.push(it)} return out}
 function scrNew(k){return {k,size:'all',sort:k==='up'||k==='down'?'chg':k==='etf'?'pop':'cap',sub:k==='etf'?'pop':'all',tiny:false,n:50}}
 const scrNm=it=>(it.t==='T'&&it.he)||it.name||it.sym;
-const scrLab=k=>{const q=SCR_Q.find(x=>x[0]===k); if(q)return q[1]; const c=SCR_CATS.find(x=>x[0]===k); return c?c[1]:''};
+const scrLab=k=>{if(k==='new')return 'חדש בבורסה'; const q=SCR_Q.find(x=>x[0]===k); if(q)return q[1]; const c=SCR_CATS.find(x=>x[0]===k); return c?c[1]:''};
 function scrItems(s){const D=SYMDB||[], cat=SCR_CATS.find(c=>c[0]===s.k); let L;
+  if(s.k==='new')return ipoItems(45).map(z=>z.it);   // 24.11: the new listings, newest first, as they are (no size or order to choose)
   if(s.k==='up'||s.k==='down')L=D.filter(it=>it.t==='S'&&it.cap>=2000).filter(it=>{const c=scrChg(it); return c!=null&&(s.k==='up'?c>0:c<0)});
   else if(s.k==='bigus')L=D.filter(it=>it.t==='S');
   else if(s.k==='bigil'||s.k==='il')L=D.filter(it=>it.t==='T');
@@ -27774,6 +27895,10 @@ function scrHome(row){
     out+=sec('תנועות היום',scrWhen()+' · חברות מעל 2 מיליארד דולר',`<div class="chips scr-mvsw" role="group" aria-label="עלו או ירדו"><button type="button" class="chip" data-scrmv="up" aria-pressed="${SCRMV==='up'}">עלו</button><button type="button" class="chip" data-scrmv="down" aria-pressed="${SCRMV==='down'}">ירדו</button></div>
       <div class="scr-mv">${L.map(it=>{const k=skey(it), c=scrChg(it); return `<button type="button" class="scr-mc" data-open="${esc(k)}">${logoHtml(k,'s')}<b dir="ltr">${esc(it.sym)}</b><span>${esc(scrNm(it))}</span><i class="n ${c>=0?'up':'down'}">${spct(c)}</i></button>`}).join('')||'<p class="note">אין נתון לסגירה הזאת.</p>'}</div>
       <button type="button" class="lnk scr-all" data-scr="${SCRMV}">לכל הרשימה ›</button>`)}
+  // 24.11 (the owner: "every new listing: tell me there is one more share or fund"): what started trading in the last two
+  // weeks, the companies' offerings first; the way to all of the last weeks, and to the offerings expected
+  {const NW=ipoItems(14).sort((a,b)=>((a.x.kind==='ipo'&&!a.x.spac?0:1)-(b.x.kind==='ipo'&&!b.x.spac?0:1))||(a.x.d<b.x.d?1:a.x.d>b.x.d?-1:0));
+    if(NW.length)out+=sec('חדש בבורסה','הנפקות וניירות חדשים · לא המלצה',`<div class="sres scr-nwl">${NW.slice(0,5).map(z=>srRow(z.it,ipoXtra(z.x))).join('')}</div><button type="button" class="lnk scr-all" data-scr="new">לכל הניירות החדשים ›</button>`)}
   // the categories: how many in each (the very small hidden), and how many of them are held
   const cnt=k=>k==='etf'?D.filter(it=>it.t==='E'&&!SCR_ETF.find(x=>x[0]==='lev')[2].includes(it.sec)).length:scrItems({...scrNew(k),sub:'all'}).length;
   out+=sec('לפי קטגוריה','כמה יש בכל אחת',`<div class="scr-cg">${SCR_CATS.map(c=>`<button type="button" class="scr-cat" data-scr="${c[0]}">${scrDuo(c[0])}<b>${c[1]}</b><span>${cnt(c[0]).toLocaleString('en-US')} ${c[0]==='etf'?'תעודות':'חברות'}</span>${mineN[c[0]]?`<i>${mineN[c[0]]} בתיק שלך</i>`:''}</button>`).join('')}</div><button type="button" class="lnk scr-cg-all" data-scrcg="1" aria-expanded="false">כל ${SCR_CATS.length} הקטגוריות ›</button>`);
@@ -27782,7 +27907,18 @@ function scrHome(row){
   for(const it of held){if(it.t!=='S')continue; const r=(RS&&RS.companies&&RS.companies[it.sym])||RSX[it.sym]||null; for(const s of ((r&&r.peers)||[])){if(pe.length>=8)break; if(H.has(s)||W.has(s)||pe.some(x=>x.sym===s))continue; let x=null; try{x=itemOf(s)}catch(e){} if(x&&x.t==='S'&&x.sym===s)pe.push(x)}}
   if(pe.length)out+=sec('דומות למה שיש לך','מתחרות של המניות בתיק',`<div class="chips scr-pe">${pe.map(x=>`<button type="button" class="chip" data-open="${esc(x.sym)}" title="${esc(x.name||x.sym)}"><b dir="ltr">${esc(x.sym)}</b> ${esc(String(x.name||'').split(/[ ,]/)[0])}</button>`).join('')}</div>`);
   return out}
-function scrList(row){const s=SCR, L=scrItems(s), etf=s.k==='etf', mv=s.k==='up'||s.k==='down', H=new Set(scrHeldIts().map(skey)), unit=etf?'תעודות':'חברות';
+// 24.11: the new listings' own list: every one of the last six weeks with its day and the offering's price, then the
+// offerings expected (not trading yet, so no page of their own), and where it all comes from
+function scrNewList(row){const L=ipoItems(45), U=((IPO_D&&IPO_D.upcoming)||[]).slice(0,12), H=new Set(scrHeldIts().map(skey)), n=(SCR&&SCR.n)||50;
+  const rows=L.slice(0,n).map(z=>row(z.it,ipoXtra(z.x)+(H.has(z.it.sym)?' · <b class="scr-tg">בתיק</b>':''))).join('');
+  const more=L.length>n?`<button type="button" class="btn sm scr-more" data-scrmore>עוד ${Math.min(50,L.length-n)} (מתוך ${L.length.toLocaleString('en-US')})</button>`:'';
+  const up=U.length?`<section class="scr-sec"><div class="scr-hd"><h3>הנפקות צפויות</h3><span>עוד לא נסחרות</span></div><ul class="scr-upc">${U.map(u=>`<li><b><bdi>${esc(u.name||u.sym)}</bdi></b><span><i dir="ltr">${esc(u.sym)}</i>${u.exch?' · <bdi>'+esc(u.exch)+'</bdi>':''} · צפויה ב-${dmy(u.date)}${u.range?` · טווח המחיר <bdi dir="ltr">$${esc(u.range)}</bdi>`:u.price?` · <bdi dir="ltr">$${(+u.price).toFixed(2)}</bdi>`:''}${u.spac?' · חברת רכש ייעודית (SPAC)':''}</span></li>`).join('')}</ul><p class="note">מועד צפוי יכול להשתנות או להתבטל. נייר נכנס לחיפוש כשהוא מתחיל להיסחר.</p></section>`:'';
+  return `<div class="scr-lh"><button type="button" class="scr-bk" data-scrback><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>מחקר שוק</button>
+    <h3>חדש בבורסה</h3><span class="scr-n">${L.length.toLocaleString('en-US')} ניירות ב-45 הימים האחרונים</span></div>
+    <div class="sres scr-ls">${rows||'<div class="empty">לא נרשמו ניירות חדשים ב-45 הימים האחרונים.</div>'}</div>${more}${up}
+    <p class="note">הנפקות בבורסות בארה״ב, וקרנות וסימולים חדשים מהיום שנרשם להם יום מסחר ראשון. ${IPO_D&&IPO_D.source?'מקורות: '+esc(IPO_D.source)+'. ':''}${IPO_D&&IPO_D.updatedAt?'נבדק '+agoH(IPO_D.updatedAt)+'. ':''}המחירים בעיכוב. רשימה לפי נתונים, לא המלצה.</p>`}
+function scrList(row){if(SCR&&SCR.k==='new')return scrNewList(row);
+  const s=SCR, L=scrItems(s), etf=s.k==='etf', mv=s.k==='up'||s.k==='down', H=new Set(scrHeldIts().map(skey)), unit=etf?'תעודות':'חברות';
   if((mv||s.sort==='chg')&&!ALLQ&&!SCRQ){SCRQ=true; try{loadAllQ().then(()=>{SCRQD=true; if(!SQ.trim()&&!SEC&&document.body.dataset.page==='search')srchRender()})}catch(e){SCRQD=true}}
   const ch=(key,val,txt)=>`<button type="button" class="chip" data-scrf="${key}:${val}" aria-pressed="${String(s[key])===String(val)}">${txt}</button>`;
   const grp=(lab,body)=>`<div class="scr-fg"><span class="scr-fk">${lab}</span><div class="chips" role="group" aria-label="${lab}">${body}</div></div>`;
@@ -27807,7 +27943,7 @@ function scrClose(){const y0=window.scrollY, st=(()=>{try{return history.state||
   if(SCR&&st.cat===SCR.k&&st.prev&&st.prev.tab==='search'&&!st.prev.sec&&!st.prev.cat){try{history.back(); return}catch(e){}}
   SCR=null; navWant({},y0); srchRender(); try{window.scrollTo({top:0})}catch(e){}}
 
-const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$/;
+const SECKEY=/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$|^\d{6,9}$|^IDX:[A-Z0-9]{2,6}$|^[A-Z0-9][A-Z0-9\-]{0,8}\.[A-Z]{1,3}$/;   // 24.11: and a security of another exchange (0700.HK)
 // from anywhere in the page (holdings, movers, research cards) to the security page in the research tab
 function goSec(k,o){if(!SECKEY.test(k))return;try{showTab('search')}catch(e){}openSec(k,o)}
 function openSec(k,o){const y0=window.scrollY; try{useAdd('sec')}catch(e){} if(SV==='fit')setSV('search');
@@ -27815,10 +27951,10 @@ function openSec(k,o){const y0=window.scrollY; try{useAdd('sec')}catch(e){} if(S
   // 11.11: through navWant, with the screen it was opened from (one entry with the research tab when that came in the same tap)
   if(!(o&&o.fromHistory))navWant({tab:'search',sec:k},y0);
   if(SEC!==k||(o&&o.tab))SECTAB=(o&&o.tab)||'ov'; if(SEC!==k){SECPX=false; SECHOLD=false} if(o&&o.px)SECPX=true;
-  SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);
+  SEC=k;pushRecent(k);SECRNG=SECRNG||'3m';if(!SYMDB){loadSymDb().then(()=>{if(SEC===k)srchRender()})}srchRender();loadCloses(k);noteSeen(k);try{wsecWant(k)}catch(e){}
   if(RSX[k]===undefined)loadResearch(k).then(()=>{if(SEC===k)renderSec()});try{window.scrollTo({top:0})}catch(e){}}
 function noteSeen(k){if(LOCAL||!db||!MYID||!WATCH)return;const seen=WATCH.seen||[];if(seen.includes(k)||(WATCH.marks||[]).includes(k)||(WATCH.held||[]).includes(k)||((P&&P.positions)||[]).some(p=>p.sym===k))return;
-  if(!/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(k))return;watchSave({seen:seen.concat([k]).slice(-60)}).catch(()=>{})}
+  if(!/^[A-Z][A-Z.\-]{0,5}$|^TLV:[A-Z0-9]{1,7}$/.test(k)&&!(WSI.has(k)&&wsecCan(k)))return;watchSave({seen:seen.concat([k]).slice(-60)}).catch(()=>{})}
 function mergeSeries(a,b){const m=new Map();for(const s of [b,a])if(s&&s.d&&s.c)for(let i=0;i<s.d.length;i++)if(s.c[i]!=null)m.set(s.d[i],+s.c[i]);
   const d=[...m.keys()].sort();return {d,c:d.map(x=>m.get(x))}}
 // three sources, most precise first: c_<key> (per-security, from the nightly task), h_<bucket> (daily snapshot accumulation), g_<bucket> (five-year backfill: daily + weekly)
@@ -28101,11 +28237,13 @@ function secPriceParts(it,pr,on,fx){const h=secPriceBlock(it,pr,on,fx), i=h.inde
 function secPriceBlock(it,pr,on,fx){
   const pf=(k,v,sub)=>`<div class="pf"><div class="k">${k}</div><div class="v">${v}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
   const exch=it.ex?esc(EXL[it.ex]||it.ex):'';
-  if(!pr)return `<div class="big"><div class="pxrow"><span class="v none">אין עדיין מחיר</span></div><div class="pxfacts">${pf('מטבע ובורסה',it.t==='T'?'שקל':'דולר',exch)}${pf('עדכון המחיר',on?'בשעה הקרובה':'בעדכון הבא',on?'הנייר במעקב, המחיר יגיע בעדכון השעתי.':'הנייר נרשם; הוסף למעקב כדי לקבל מחיר כבר בשעה הקרובה.')}</div></div>`;
-  const up=pr.chg!=null&&pr.chg>=0, when=esc(pr.label||''), conv=pr.ccy==='PTS'?'':pr.ccy==='USD'&&fx?pf('בשקלים',ils(pr.px*fx,2),'לפי שער '+fx):pr.ccy==='ILS'&&fx?pf('בדולרים','$'+(pr.px/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'לפי שער '+fx):'';
-  const upd=pf('עדכון המחיר <span class="tag mkt">נתון שוק</span>',when||'—',pr.daily?(on?'מחיר יומי · המחיר השעתי יגיע בעדכון הבא':'מחיר יומי · הוסף למעקב ויתעדכן כל שעה'):'מתעדכן כל שעה בימי מסחר');
+  if(!pr)return `<div class="big"><div class="pxrow"><span class="v none">אין עדיין מחיר</span></div><div class="pxfacts">${pf('מטבע ובורסה',it.w?(CCYHE[it.ccy]||it.ccy||'—'):it.t==='T'?'שקל':'דולר',exch)}${pf('עדכון המחיר',on?'בשעה הקרובה':'בעדכון הבא',on?'הנייר במעקב, המחיר יגיע בעדכון השעתי.':'הנייר נרשם; הוסף למעקב כדי לקבל מחיר כבר בשעה הקרובה.')}</div></div>`;
+  // 24.11: a price in another currency (a share in Tokyo, London, Frankfurt): its own currency by name, and in shekels when the rate is kept
+  const oc=pr.ccy&&pr.ccy!=='PTS'&&pr.ccy!=='USD'&&pr.ccy!=='ILS', ort=oc&&Q&&Q.rates&&Q.rates[pr.ccy]&&Q.rates[pr.ccy].rate>0?Q.rates[pr.ccy].rate:0;
+  const up=pr.chg!=null&&pr.chg>=0, when=esc(pr.label||''), conv=pr.ccy==='PTS'?'':oc?(ort?pf('בשקלים',ils(pr.px*ort,2),'לפי שער '+ort):''):pr.ccy==='USD'&&fx?pf('בשקלים',ils(pr.px*fx,2),'לפי שער '+fx):pr.ccy==='ILS'&&fx?pf('בדולרים','$'+(pr.px/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),'לפי שער '+fx):'';
+  const upd=pf('עדכון המחיר <span class="tag mkt">נתון שוק</span>',when||'—',pr.ws?(on?`מחיר בעיכוב מ-${esc(pr.src||'Yahoo Finance')} · הנייר במעקב, והמחיר יתעדכן עם שאר המחירים`:`מחיר בעיכוב מ-${esc(pr.src||'Yahoo Finance')} · הוסף למעקב ויתעדכן עם שאר המחירים`):pr.daily?(on?'מחיר יומי · המחיר השעתי יגיע בעדכון הבא':'מחיר יומי · הוסף למעקב ויתעדכן כל שעה'):'מתעדכן כל שעה בימי מסחר');
   return `<div class="big"><div class="pxrow"><span class="v">${fmtPx(pr.px,pr.ccy)}</span>${pr.chg!=null?`<span class="chg ${up?'up':'down'}"><b>${spct(pr.chg*100)}</b><small>${pr.today?'היום':'ביום המסחר האחרון'}</small></span>`:''}</div>
-    <div class="pxfacts">${conv}${pf(pr.ccy==='PTS'?'יחידה':'מטבע ובורסה',pr.ccy==='PTS'?'נקודות מדד':pr.ccy==='ILS'?'שקל':'דולר',pr.ccy==='PTS'?'':exch)}${upd}</div></div>`}
+    <div class="pxfacts">${conv}${pf(pr.ccy==='PTS'?'יחידה':'מטבע ובורסה',pr.ccy==='PTS'?'נקודות מדד':pr.ccy==='ILS'?'שקל':oc?(CCYHE[pr.ccy]||pr.ccy):'דולר',pr.ccy==='PTS'?'':exch)}${upd}</div></div>`}
 // ---- 1.11 (14): the comparison: two to four securities, the same figures side by side (the price over a period chosen
 // to fit, the market value, the valuation, growth, profitability, debt, cash flow, the analysts, the risk figures, the
 // coming report), each with its source and date. "Strong in" and "weak in" are relative to the securities compared, and
@@ -28197,7 +28335,12 @@ document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   const g=t.closest('[data-cmprng]'); if(g){CMP.rng=g.dataset.cmprng; cmpKeep(); renderCmp(); return}
   if(t.closest('[data-cmpclr]')){CMP.syms=[]; cmpKeep(); renderCmp(); return}});
 function renderSec(){SECHOV=-1;
-  const pg=$('secPage'),k=SEC,it=itemOf(k); if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.classList.remove('st-on'); pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
+  const pg=$('secPage'),k=SEC,it=itemOf(k);
+  // 24.11: a security the list does not have (a link, another device, the list still loading its new listings): looked up
+  // at the price source by its symbol; found, it has a page like any other
+  if(!it&&SYMDB&&!ilIsNum(k)&&!String(k).startsWith('TLV:')&&!String(k).startsWith('IDX:')&&wsecCan(k)){const e=WSEC[k]; if(!e||(!e.p&&!e.v&&!(e.err&&Date.now()-e.at<60e3)))wsecLoad(k).then(()=>{if(SEC===k)renderSec()});
+    const e2=WSEC[k]||{}; pg.classList.remove('st-on'); pg.innerHTML=`<div class="empty">${e2.err&&!e2.p?esc(e2.err):'מחפש את <bdi dir="ltr">'+esc(k)+'</bdi> במקור המחירים…'}</div><button type="button" class="btn" id="secBack">חזרה</button>`; return}
+  if(!it){const look=ilIsNum(k)&&!(ILF[k]&&ILF[k].err); if(look&&!(ILF[k]&&ILF[k].w)){ilFundLoad(k).then(()=>{if(ILF[k])ILF[k].w=0; if(SEC===k)renderSec()}); if(ILF[k])ILF[k].w=1} pg.classList.remove('st-on'); pg.innerHTML=`<div class="empty">${look?'מחפש במאיה את נייר מספר '+esc(k)+'…':ILF[k]&&ILF[k].err?esc(ILF[k].err):'הנייר לא נמצא.'}</div><button type="button" class="btn" id="secBack">חזרה</button>`;return}
   let pr=priceOf(k),on=wmarks().includes(k),rs=RSX[k]||(!k.startsWith('TLV:')&&RS&&RS.companies&&RS.companies[it.sym])||null,pos=((P&&P.positions)||[]).filter(p=>p.sym===it.sym);
   // 9.11: a share listed in Tel Aviv and in New York: the report and the analysts are the company's, from its US listing
   const twin=repTwin(k); if(twin&&RSX[twin]&&!(rs&&rs.rep&&!repStale(rs)))rs={...RSX[twin],twinOf:twin};
@@ -28208,11 +28351,11 @@ function renderSec(){SECHOV=-1;
   const f=(kk,v,t)=>v?`<div class="fact"><div class="k">${kk}</div><div class="v${t?' t':''}">${v}</div></div>`:'';
   const RNG=[['1w','שבוע','שבוע'],['1m','חודש','חודש'],['3m','3 חודשים','3 ח׳'],['6m','חצי שנה','6 ח׳'],['1y','שנה','שנה'],['5y','5 שנים','5 ש׳'],['max','מההנפקה','הכל']];
   const ilm=it.t==='F'||it.t==='I'||ilIsNum(k)||!!ilIdx(k), moreH=ilm?ilSecMore(k,it):`<details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
-    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt)}</div>
+    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec)||(it.w||it.dyn?'אין נתון':''),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt||(it.w||it.dyn?'אין נתון':''))}</div>
     <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
     ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
-      :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
+      :`<p class="note">${RSX[k]===undefined?'טוען…':it.t==='E'?'לתעודת סל אין דירוג אנליסטים ודוחות כספיים.':wsFar(k)?'אין נתון: אנליסטים ודוחות כספיים מגיעים לדף רק לניירות מארה״ב ומתל אביב.':'עדיין אין לנייר הזה נתוני אנליסטים ודוחות. הוא נרשם, והנתונים יימשכו בלילה הקרוב.'}</p>`}
     </details>`;
   // 17.11 (the owner: "the scroll on a security's page feels very long"; "let's build the tabs and not the fold"): the page in
   // parts. On a phone (TM) each tab is a screen: the overview (the trade buttons, the chart, the holding as one row that
@@ -28221,20 +28364,20 @@ function renderSec(){SECHOV=-1;
   // none but the overview there is no bar. On a wide screen (and in the page's tests of each part) the page is one page as
   // it was, and the bar jumps to the part. The price alert is behind the bell (SECPX) in both
   const TM=stOn(), tryH=f=>{try{return f()||''}catch(e){return ''}};
-  const hTools=`<div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>`, hTrade=`${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}`;
+  const hTools=`<div class="sectools">${(pr?pr.ccy==='USD':!(it.t==='T'||k.startsWith('TLV:')||it.w))&&it.t!=='I'&&!ilm?`<div class="ccsw" role="group" aria-label="מטבע הגרף"><button type="button" data-seccc="usd" aria-pressed="${SECCC!=='ils'}">בדולרים</button><button type="button" data-seccc="ils" aria-pressed="${SECCC==='ils'}">בשקלים</button></div>`:''}<button type="button" class="btn sm" data-cmpgo="${esc(k)}">להשוות לנייר אחר ⇄</button></div>`, hTrade=`${canWrite&&it.t!=='I'&&!ilIdx(k)?`<div class="sectrade" role="group" aria-label="לרשום פעולה בתיק"><button type="button" class="btn" data-sectrade="buy" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='buy'}">לקנייה</button>${pos.length?`<button type="button" class="btn" data-sectrade="sell" data-k="${esc(k)}" aria-expanded="${TRX&&TRX.k===k&&TRX.side==='sell'}">למכירה</button>`:''}<span class="nm">רישום בתיק שלך (לא ביצוע בבורסה)</span></div><div id="trBox" class="trbox" hidden></div>`:''}`;
   const hChart=`<p class="chline" id="secRead" aria-live="polite"></p>
     <canvas id="secChart" tabindex="0" role="slider" aria-label="גרף המחיר: בחירת יום בחיצים" aria-describedby="secRead" aria-valuemin="0"></canvas>
     <div class="chips rng" role="group" aria-label="טווח הגרף">${RNG.map(r=>`<button type="button" class="chip" data-rng="${r[0]}" aria-pressed="${SECRNG===r[0]}" aria-label="${r[1]}"><span class="rg-lng">${r[1]}</span><span class="rg-sht" aria-hidden="true">${r[2]}</span></button>`).join('')}</div><p class="note" id="secChartNote"></p>`;
   const hAsk=`<div class="secask"><button type="button" class="btn" data-ana="sec" data-sym="${esc(k)}"><span class="av chiko" aria-hidden="true"></span><span>צ׳יקו, הסבר לי את הנייר הזה</span></button><span class="sub">מה זה, מה המספרים אומרים ומה המקום שלו בתיק שלך. לא המלצה.</span></div>`, hNote=`<p class="note">נתון שוק = מהבורסה. נתון פיננסי = מהדוחות של החברה. דעת אנליסטים = מקור חיצוני. ניתוח = חישוב של הדף. הכלל שלך = מה שהגדרת בהגדרות. הדף לא נותן המלצות קנייה או מכירה.</p>`;
   const [pxA,pxB]=secPriceParts(it,pr,on,fx);
-  const hAb=tryH(()=>secAbout(it,k,rs)), hPos=it.t==='I'?'':tryH(()=>secPosStrip(it,k,rs)), hAn=tryH(()=>secAnalysts(it,k,rs,pr)), hRp=it.t!=='E'&&!ilm?repBlock(rs&&rs.twinOf||k,rs):'', hNw=nxSecBlock(k), hMine=it.t==='I'?'':secMine(it,on), hJrn=tryH(()=>secJournal(it));
+  const hAb=tryH(()=>secAbout(it,k,rs)), hPos=it.t==='I'?'':tryH(()=>secPosStrip(it,k,rs)), hAn=tryH(()=>secAnalysts(it,k,rs,pr)), hRp=it.t!=='E'&&!ilm&&!wsFar(k)?repBlock(rs&&rs.twinOf||k,rs):'', hNw=nxSecBlock(k), hMine=it.t==='I'?'':secMine(it,on), hJrn=tryH(()=>secJournal(it));
   const rpFull=hRp.includes('rq-card'), tabs=['ov'].concat([['co',hAb],['rp',rpFull],['an',hAn],['nw',hNw]].filter(x=>x[1]).map(x=>x[0])), bar=tabs.length>1, cur=TM&&bar&&tabs.includes(SECTAB)?SECTAB:'ov';
   // what is new in a tab (a dot on it, until the tab is opened): a report of the last two weeks, a news item of today
   const rp0=rs&&rs.rep, nw0=hNw?tryH(()=>nxSecNewest(k)):null, pa=((S&&S.pxAlerts)||{})[k]||{}, paHas=+pa.above>0||+pa.below>0;
   const marks={rp:rpFull&&rp0&&rp0.at&&Date.now()-Date.parse(String(rp0.at).slice(0,10)+'T12:00:00Z')<14*864e5?'r'+(rp0.q||rp0.at):'',nw:nw0&&Date.now()-Date.parse(nw0.at)<26*36e5?'n'+nw0.id:''};
   const isNew=t=>!!marks[t]&&(STSEEN[k]||{})[t]!==marks[t]; if(TM&&bar&&marks[cur])stSeen(k,cur,marks[cur]);
   const stBar=bar?`<div class="stabs" role="${TM?'tablist':'navigation'}" aria-label="החלקים של דף הנייר">${tabs.map(t=>`<button type="button"${TM?` role="tab" aria-selected="${t===cur}" tabindex="${t===cur?0:-1}"`:''} data-stab="${t}"${marks[t]?` data-mark="${esc(marks[t])}"`:''}>${ST_LAB[t]}${TM&&t!==cur&&isNew(t)?'<span class="dot" role="img" aria-label="חדש"></span>':''}</button>`).join('')}</div>`:'';
-  const W=(t,x)=>x?`<div class="stp" data-stp="${t}">${x}</div>`:'', hPx=SECPX?secPxAlert(k,pr):'';
+  const W=(t,x)=>x?`<div class="stp" data-stp="${t}">${x}</div>`:'', hPx=(SECPX?secPxAlert(k,pr):'')+W('ov',tryH(()=>secIpoNote(k,it)));
   let body;
   if(TM&&bar){
     const hold=stHoldH(it,hPos,hMine), more=pxB&&moreH.includes('<details class="more"')?moreH.replace('</summary>',()=>'</summary>'+pxB):'';
@@ -28246,7 +28389,7 @@ function renderSec(){SECHOV=-1;
     body=W('ov',hTools+hTrade)+pxA+hPx+W('ov',hChart+(more?'':pxB))+W('co',hAb)+W('ov',(hold||'')+(rows?`<div class="stsum" role="group" aria-label="בקצרה, ולכל לשונית">${rows}</div>`:''))+W('an',hAn)+W('rp',hRp)+W('nw',hNw)+W('ov',(rpFull?'':hRp)+(hold?'':hPos+hMine)+hJrn+hAsk+(more||moreH)+hNote)}
   else body=W('ov',hTools+hTrade)+pxA+hPx+W('ov',hChart+pxB)+W('co',hAb)+W('ov',hPos)+W('an',hAn)+W(rpFull?'rp':'ov',hRp)+W('nw',hNw)+W('ov',hMine+hJrn+hAsk+moreH+hNote);
   pg.classList.toggle('st-on',TM&&bar); pg.dataset.stcur=cur;
-  pg.innerHTML=`${stBar}<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
+  pg.innerHTML=`${stBar}<div class="top">${logoHtml(k,'l')}<div class="t"><h2><bdi>${esc(it.name||it.sym)}</bdi></h2><p class="sub" dir="rtl">${[it.he?`<bdi>${esc(it.he)}</bdi>`:'',`<bdi style="font-family:var(--mono);color:var(--ink2)" dir="ltr">${esc(it.sym)}</bdi>`,it.t==='S'&&it.sec?`<bdi>${esc(SEC_HE[it.sec]||it.sec)}</bdi>`:'',it.tl?esc(it.tl):it.t==='S'&&it.sec?'מניה זרה':esc(TYPEL[it.t]||''),it.ex?`<bdi>${esc(EXL[it.ex]||it.ex)}</bdi>`:''].filter(Boolean).map(x=>`<span class="si">${x}</span>`).join(' ')}</p></div>
     <button type="button" class="secmark secbell${paHas?' on':''}" id="secBell" aria-expanded="${SECPX}" aria-controls="pxAl" aria-label="${paHas?'התראת מחיר: פעילה':'התראת מחיר'}" title="התראת מחיר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></button>
     <button type="button" class="secmark${on?' on':''}" id="secMark" aria-pressed="${on}" aria-label="${on?'במעקב: להסיר מהמעקב':'להוסיף למעקב'}" title="${on?'במעקב · להסיר':'להוסיף למעקב'}"><svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>
     ${body}`;
@@ -28470,7 +28613,7 @@ function drawSec(){
     if(fxS&&fxS.d&&fxS.d.length){const o=[]; for(const q of pts){const f=serAt(fxS,isoDay(q[0])); if(f&&f.c>0)o.push([q[0],q[1]*f.c])} if(o.length>=3){pts=o; CC='ILS'} else fxNo=true}
     else{fxNo=true; try{benchLoad()}catch(e){}}}
   const W=cv.clientWidth||600,H=cv.clientHeight||220,dpr=window.devicePixelRatio||1; cv.width=W*dpr;cv.height=H*dpr; const g=cv.getContext('2d'); g.scale(dpr,dpr); g.clearRect(0,0,W,H); g.direction='ltr';
-  if(pts.length<3){cv.style.display='none';SECV=null;const rd=$('secRead');if(rd){rd.innerHTML='';rd.hidden=true}note.textContent=d===undefined?'טוען נתונים…':'אין עדיין מספיק נתונים לגרף בטווח הזה. הנייר נרשם: בלילה הקרוב תימשך ההיסטוריה שלו (יומי, שבועי וחודשי).';return}
+  if(pts.length<3){cv.style.display='none';SECV=null;const rd=$('secRead');if(rd){rd.innerHTML='';rd.hidden=true}note.textContent=d===undefined?'טוען נתונים…':ipoDay(ipoOf(SEC))?'הנייר חדש בבורסה: גרף יופיע כשיהיו לו שלושה ימי מסחר לפחות.':'אין עדיין מספיק נתונים לגרף בטווח הזה. הנייר נרשם: בלילה הקרוב תימשך ההיסטוריה שלו (יומי, שבועי וחודשי).';return}
   cv.style.display='block';
   const t0=pts[0][0],t1=pts[pts.length-1][0],base=pts[0][1];
   let lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1])); if(hi===lo){hi*=1.02;lo*=0.98}
@@ -28558,7 +28701,7 @@ function drawSec(){
   {const iv=SECHOV>=0&&SECHOV<pts.length?SECHOV:pts.length-1, q=pts[iv]; cv.setAttribute('aria-valuemax',String(pts.length-1)); cv.setAttribute('aria-valuenow',String(iv)); cv.setAttribute('aria-valuetext',`${fullDate(q[0])}: ${fmtPx(q[1],CC)}, ${(q[1]/base-1)>=0?'עלייה':'ירידה'} של ${pct(Math.abs(q[1]/base-1)*100,1)} מתחילת הטווח`)}
   SECV={pts,x,L,PW};
   const ch=last[1]/base-1;const late=days!==Infinity&&t0>from+days*864e5*0.25;
-  const itc=itemOf(SEC), ils=pr?pr.ccy==='ILS':String(SEC).startsWith('TLV:')||(itc&&(itc.t==='T'||(itc.t==='H'&&itc.ex==='TLV'))), cur=CC!==NAT?'בשקלים, לפי שער הדולר בכל יום':ils?'בשקלים':'בדולרים', dm=t=>dmy(new Date(t).toISOString());
+  const itc=itemOf(SEC), ils=pr?pr.ccy==='ILS':String(SEC).startsWith('TLV:')||(itc&&(itc.t==='T'||(itc.t==='H'&&itc.ex==='TLV'))), cur=CC!==NAT?'בשקלים, לפי שער הדולר בכל יום':ils?'בשקלים':NAT&&NAT!=='USD'&&NAT!=='PTS'?'במטבע המסחר ('+(CCYHE[NAT]||NAT)+')':'בדולרים', dm=t=>dmy(new Date(t).toISOString());   // 24.11: a share of another exchange: its own currency, by name
   // 5.11: the note only when there is something to know (a gap, data that starts late, the chart in shekels); otherwise none
   note.hidden=!(gaps.length||late||CC!==NAT);
   note.textContent=`${pts.length} נקודות (${freq}), מחירי סגירה ${cur}. השינוי בגרף הוא של המחיר בלבד, בלי דיבידנדים.`+(late?' הנתונים מתחילים מאוחר יותר מתחילת הטווח; ההיסטוריה המלאה תימשך בלילה הקרוב.':'')
@@ -28742,7 +28885,7 @@ function srchBoot(){
   document.addEventListener('pointerout',e=>{if(e.target&&e.target.id==='secChart'&&e.pointerType==='mouse')secHoverOff()});
   document.addEventListener('pointerdown',e=>{if(SECHOV!==-1&&!(e.target&&e.target.id==='secChart'))secHoverOff()});
   const inp=$('sq'); if(!inp)return;
-  inp.addEventListener('input',()=>{SQ=inp.value;$('sqx').hidden=!SQ;SEC=null;clearTimeout(SQT);SQT=setTimeout(srchRender,80)});
+  inp.addEventListener('input',()=>{SQ=inp.value;$('sqx').hidden=!SQ;SEC=null;clearTimeout(SQT);clearTimeout(WSQ_T);SQT=setTimeout(srchRender,80)});
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){const f=$('sqRes').querySelector('[data-open]');if(f)openSec(f.dataset.open)}});
   $('sqx').addEventListener('click',()=>{inp.value='';SQ='';$('sqx').hidden=true;SEC=null;srchRender();inp.focus()});
   $('sqRes').addEventListener('click',e=>{const m=e.target.closest('[data-mark]');if(m){e.stopPropagation();toggleMark(m.dataset.mark);return}
@@ -28784,7 +28927,7 @@ function srchBoot(){
 }
 // the parts that need the database: the watch list and the daily snapshot
 function srchDb(){
-  if(db&&!LOCAL&&MYID){try{db.doc('watch/'+MYID).onSnapshot(s=>{if(s.exists){const d=s.data();WATCH={syms:d.syms||[],marks:d.marks||[],held:d.held||[],seen:d.seen||[],pots:d.pots||[],markAt:d.markAt&&typeof d.markAt==='object'?d.markAt:{}}}else WATCH={syms:[],marks:[],held:[],seen:[],pots:[],markAt:{}};srchQ();try{potSyncWatch()}catch(e){}},()=>{})}catch(e){}}
+  if(db&&!LOCAL&&MYID){try{db.doc('watch/'+MYID).onSnapshot(s=>{if(s.exists){const d=s.data();WATCH={syms:d.syms||[],marks:d.marks||[],held:d.held||[],seen:d.seen||[],pots:d.pots||[],markAt:d.markAt&&typeof d.markAt==='object'?d.markAt:{},info:d.info&&typeof d.info==='object'?d.info:{}}}else WATCH={syms:[],marks:[],held:[],seen:[],pots:[],markAt:{},info:{}};try{wsFromWatch()}catch(e){}srchQ();try{potSyncWatch()}catch(e){}},()=>{})}catch(e){}}
   loadAllQ().then(()=>srchQ());
 }
 window.__srch={find:q=>findSyms(q),load:loadSymDb,open:openSec};
@@ -29028,7 +29171,7 @@ try{const v=JSON.parse(localStorage.getItem('tr_nxlv')||'null'); if(Array.isArra
 const NX_DIR={pos:'השפעה חיובית אפשרית',neg:'השפעה שלילית אפשרית',mixed:'השפעה מעורבת',unclear:'ההשפעה עוד לא ברורה'};
 const NX_CERT={fact:'עובדה מדווחת',interp:'פרשנות של המקור',est:'הערכה של צ׳יקו'};
 const NX_HOW={direct:'החברה עצמה',supplier:'ספק',customer:'לקוח',competitor:'מתחרה',sector:'אותו ענף',macro:'השפעה רחבה'};
-const NX_TYPE={earnings:'תוצאות כספיות',guidance:'צפי החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
+const NX_TYPE={earnings:'תוצאות כספיות',guidance:'צפי החברה',ma:'מיזוג ורכישה',regulation:'רגולציה',legal:'משפטי',product:'מוצר',contract:'חוזה ועסקה',rating:'אנליסטים',management:'הנהלה',macro_rates:'ריבית',inflation:'אינפלציה',geo:'גיאופוליטיקה',sanctions:'סנקציות וסחר',supply:'שרשרת אספקה',energy:'אנרגיה',ai_chips:'בינה מלאכותית ושבבים',ipo:'הנפקות וניירות חדשים',sector:'ענף',market:'שוק',company:'חברה',other:'אחר'};
 const NX_SEC_HE={Technology:'טכנולוגיה',Finance:'פיננסים','Health Care':'בריאות','Consumer Discretionary':'צריכה','Consumer Staples':'מוצרי יסוד',Industrials:'תעשייה',Energy:'אנרגיה',Utilities:'תשתיות','Real Estate':'נדל״ן','Basic Materials':'חומרי גלם',Telecommunications:'תקשורת',Defense:'ביטחון',Semiconductors:'שבבים',Retail:'קמעונאות',Automotive:'רכב',Transportation:'תחבורה'};
 // the page's sector names (the symbol list) onto the readings' sectors
 const NX_SEC_MAP={'Information Technology':'Technology',Financials:'Finance',Materials:'Basic Materials',REITs:'Real Estate','Consumer Services':'Consumer Discretionary',Healthcare:'Health Care'};
@@ -32111,6 +32254,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.6',at:'2026-11-24',t:'מחקר שוק: מניות וקרנות מכל העולם, וניירות חדשים בבורסה',d:'החיפוש במחקר שוק מוצא עכשיו גם מניות וקרנות מבורסות אחרות בעולם (טוקיו, לונדון, פרנקפורט ועוד). הן מופיעות מתחת לתוצאות הרגילות, עם הבורסה והסוג, ולכל אחת יש דף נייר עם מחיר במטבע שלה וגרף; אפשר להוסיף אותה למעקב ולתיק. ניירות שהתחילו להיסחר אחרי שהרשימה של האתר נבנתה, למשל Anthropic (ANT), נכנסים לחיפוש לבד. ב"חדש בבורסה" במחקר שוק רואים את ההנפקות האחרונות ואת הצפויות, ובהתראות מגיע עדכון אחד בשבוע על ניירות חדשים (אפשר לכבות אותו ב"סוגי אירועים"). המחירים של ניירות כאלה בעיכוב, ומה שהמקור לא נותן כתוב כ"אין נתון".',go:'srch'},
   {v:'2026-11-24.5',at:'2026-11-24',t:'הורדת יחידות מהטבלה? האתר שואל אם מכרת',d:'כששומרים את "התיק שלי" אחרי שיחידות ירדו או שנייר הוסר, והמזומן של החשבון לא עודכן, האתר שואל אם זו מכירה. אם כן, התמורה (לפי המחיר עכשיו) נכנסת למזומן של החשבון, המכירה נרשמת, ושווי התיק לא יורד.',go:'pfedit'},
   {v:'2026-11-24.4',at:'2026-11-24',t:'מכירה היא כסף שנכנס, לא הפסד',d:'כשרושמים מכירה, התמורה נכנסת למזומן ושווי התיק לא משתנה. עד היום "רווח מול עלות" ירד אחרי מכירה, כי הרווח של מה שנמכר יצא מהחישוב. עכשיו מה שמומש במכירות נשאר בתוך הרווח, וכתוב לידו כמה ממנו מומש.',go:'hist'},
   {v:'2026-11-24.3',at:'2026-11-24',t:'מבט לאחור: מכירה כתובה בטבלה החודשית',d:'ב"מבט לאחור" ← "לאורך זמן", בטבלת התשואה החודשית: חודש שבו מכרת נייר כותב את זה מתחת לשם החודש, עם הנייר, מספר היחידות, והרווח או ההפסד כשמחיר הקנייה ידוע.',go:'hist'},
@@ -32301,7 +32445,7 @@ try{refreshBack()}catch(e){}
     if(early){for(const k of ['read','saved','follow','cal','pl','snap'])if(early[k]&&typeof early[k]==='object')NEWSST[k]={...(NEWSST[k]||{}),...early[k]}; if(early.daily)NEWSST.daily=early.daily; if(Array.isArray(early.hist)&&early.hist.length)NEWSST.hist=[...early.hist,...(NEWSST.hist||[])].slice(0,150)}
     NXK=true; if(NXDIRTY)nxSave(); try{if(document.body.dataset.page==='news')renderNews()}catch(e){} try{renderLater()}catch(e){}},()=>{NEWSST=NEWSST||{read:{},saved:{}}; NXK=true})}catch(e){}
   // 30.10: the personal alerts, made on the server for this person alone
-  try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.kind==='cal'){a.kind='mkt'; a.mk={t:'cal',...(a.cal||{})}} else if(a&&a.kind==='insider'){a.kind='mkt'; a.mk={t:'ins',...(a.ins||{})}}}catch(e){}   // 31.10: a calendar reminder is drawn like a measured fact
+  try{pd('pulse').onSnapshot(s=>{PULSE=s&&s.exists?s.data():null; try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.kind==='cal'){a.kind='mkt'; a.mk={t:'cal',...(a.cal||{})}} else if(a&&a.kind==='ipo'){a.kind='mkt'; a.mk={t:'ipo',...(a.ipo||{})}} else if(a&&a.kind==='insider'){a.kind='mkt'; a.mk={t:'ins',...(a.ins||{})}}}catch(e){}   // 31.10: a calendar reminder is drawn like a measured fact
     try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&a.rules&&a.kind!=='mkt'){a.orig=a.orig||a.title; if(!/[\u0590-\u05FF]/.test(a.orig||''))a.title=nxPendTitle((a.holds||[]).map(h=>h.sym),((a.arts||[])[0]||{}).pub,a.orig); a.what=''; for(const z of (a.arts||[]))nxWant(z.id)}}catch(e){} try{for(const a of ((PULSE&&PULSE.items)||[]))if(a&&/^(ev|id):/.test(a.k||'')&&a.kind!=='mkt'){a.title=factFix(a.title); a.what=factFix(a.what)}}catch(e){}
     try{renderLater()}catch(e){} try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){} try{if(ST_GO)stGoOnce()}catch(e){}},()=>{})}catch(e){}
   // 1.11: the settings first (the name, the choices, the plans), then everything else: a document that arrives late is a

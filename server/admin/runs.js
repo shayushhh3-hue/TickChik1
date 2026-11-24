@@ -8,7 +8,7 @@ import {ilParts} from '../../shared/market.js';
 
 export const JOB_HE={prices:'מחירים',nightly:'ריצת הלילה',morning:'מייל הבוקר',consist:'בדיקת עקביות',pressure:'מד לחץ',monthly:'דוח חודשי',weekly:'סיכום שבועי',backup:'גיבוי',
   restore:'בדיקת שחזור',smoke:'בדיקת עשן',research:'נתוני חברות',ecocal:'לוח כלכלי',insiders:'בעלי עניין',etf:'הרכב קרנות סל',earnings:'דוחות ביום הדוחות',bench:'מדדים להשוואה',
-  ilsyms:'ניירות ישראליים',live:'התראות חיות',pxwatch:'בדיקת זרימת מחירים',news:'איסוף חדשות וקריאה',newsx:'קריאת כתבות',x:'פוסטים מ-X',quarterly:'דוח רבעוני','research-new':'נתונים לניירות חדשים'};
+  ilsyms:'ניירות ישראליים',ipos:'הנפקות וניירות חדשים',live:'התראות חיות',pxwatch:'בדיקת זרימת מחירים',news:'איסוף חדשות וקריאה',newsx:'קריאת כתבות',x:'פוסטים מ-X',quarterly:'דוח רבעוני','research-new':'נתונים לניירות חדשים'};
 // the big ones: their end is worth a notification when the owner asks for it
 export const BIG=new Set(['nightly','morning','research','backup','consist','pressure','restore','smoke','weekly','monthly','quarterly']);
 const MAX=500;

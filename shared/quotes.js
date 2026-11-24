@@ -33,6 +33,8 @@ export function tickerFor(sym,pos,map){
 export const CCYS=['EUR','GBP','JPY','CHF','CAD','AUD','HKD','SEK','NOK','DKK','SGD','INR','CNY','BRL','MXN','KRW','TWD'];
 
 const dayOf=(ts,off)=>{const d=new Date((ts+off)*1000);return d.toISOString().slice(0,10)};
+// a price quoted in a hundredth of its currency (Tel Aviv in agorot, London in pence, Johannesburg in cents)
+export const MINOR={ILA:'ILS',GBp:'GBP',GBX:'GBP',ZAc:'ZAR'};
 
 // one ticker from Yahoo's chart endpoint: last price, previous close, their dates, currency
 export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
@@ -51,8 +53,12 @@ export async function yahooChart(ticker,{fetch:f=timedFetch,range='10d'}={}){
       if(!(px>0))throw new Error('no price');
       const pday=dayOf(ptime,off); const before=bars.filter(b=>dayOf(b.t,off)<pday);
       let prev=before.length?before[before.length-1].c:(+m.chartPreviousClose||+m.previousClose||null), prevDate=before.length?dayOf(before[before.length-1].t,off):null;
-      const ccy=m.currency||''; const k=ccy==='ILA'||ccy==='GBp'?0.01:1;
-      return {px:px*k,prev:prev!=null?prev*k:null,ccy:ccy==='ILA'?'ILS':ccy==='GBp'?'GBP':ccy,time:ptime*1000,closeDate:pday,prevDate,exch:m.exchangeName||'',src:'yahoo'};
+      const ccy=m.currency||''; const k=MINOR[ccy]?0.01:1;
+      // 24.11: what the answer says about the security itself, for a security the page's list does not have (its page and
+      // the new listings): its name, its kind, the exchange's full name and the first day it traded
+      const ft=+m.firstTradeDate>0?dayOf(+m.firstTradeDate,off):'';
+      return {px:px*k,prev:prev!=null?prev*k:null,ccy:MINOR[ccy]||ccy,time:ptime*1000,closeDate:pday,prevDate,exch:m.exchangeName||'',src:'yahoo',
+        ...(m.longName||m.shortName?{name:String(m.longName||m.shortName).slice(0,80)}:{}),...(m.instrumentType?{type:String(m.instrumentType).slice(0,16)}:{}),...(m.fullExchangeName?{xname:String(m.fullExchangeName).slice(0,40)}:{}),...(ft?{first:ft}:{})};
     }catch(e){last=e}
   }
   throw last||new Error('yahoo failed');
@@ -365,9 +371,15 @@ export function buildQuotesDoc({prev:old={},fetched,symbols,positions=[],now=new
 const round=(x,n=2)=>{const k=Math.pow(10,n);return Math.round(x*k)/k};
 
 // a name or symbol search across markets, for the page: symbol, name, exchange, type. Names are data, nothing more
-export async function yahooSearch(q,{fetch:f=timedFetch}={}){
-  const u=`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&listsCount=0&enableFuzzyQuery=false`;
+// 24.11: a fund the source files under shares (a fund listed this week comes as "EQUITY"): its own name says what it is
+export const fundByName=n=>/\b(ETF|ETN|ETP|UCITS)\b|^(ProShares|Direxion|GraniteShares|iShares|YieldMax|Leverage Shares|Roundhill|Defiance|Tradr|T-REX|REX Shares)\b/i.test(String(n||''));
+export function searchParse(j){
+  return ((j&&j.quotes)||[]).filter(x=>x&&x.symbol&&/^(EQUITY|ETF|MUTUALFUND|INDEX)$/.test(x.quoteType||''))
+    .map(x=>{const name=String(x.longname||x.shortname||x.symbol).slice(0,80);
+      return {sym:String(x.symbol).toUpperCase().slice(0,16),name,exch:String(x.exchDisp||x.exchange||'').slice(0,24),type:x.quoteType==='ETF'||(x.quoteType==='EQUITY'&&fundByName(name))?'etf':x.quoteType==='EQUITY'?'stock':x.quoteType==='INDEX'?'index':'fund'}});
+}
+export async function yahooSearch(q,{fetch:f=timedFetch,count=12}={}){
+  const u=`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=${count}&newsCount=0&listsCount=0&enableFuzzyQuery=false`;
   const r=await f(u,{headers:{'user-agent':UA,accept:'application/json'}}); if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=await r.json(); return ((j&&j.quotes)||[]).filter(x=>x&&x.symbol&&/^(EQUITY|ETF|MUTUALFUND|INDEX)$/.test(x.quoteType||''))
-    .map(x=>({sym:String(x.symbol).toUpperCase().slice(0,16),name:String(x.longname||x.shortname||x.symbol).slice(0,80),exch:String(x.exchDisp||x.exchange||'').slice(0,24),type:x.quoteType==='ETF'?'etf':x.quoteType==='EQUITY'?'stock':x.quoteType==='INDEX'?'index':'fund'}));
+  return searchParse(await r.json());
 }

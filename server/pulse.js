@@ -24,6 +24,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {newsId, factFix} from './newsx.js';
 import {symsOfUser} from './store.js';
+import {ipoFresh, weekOf} from './ipos.js';
 
 const H=36e5, DAY=864e5;
 export const pathsOf=u=>!u||u.role==='owner'
@@ -224,6 +225,9 @@ export function pulseCompute(store,u,{now=new Date()}={}){
       arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null})}
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
   for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
+  // 24.11: the securities that started trading (server/ipos.js): one update a week, the same for everyone whatever they
+  // hold; switched off with the event type "הנפקות וניירות חדשים" (settings → "חדשות והתראות")
+  if(pr.types.ipo!==false)for(const a of ipoAlerts(store,now))if(pr.lv[a.lv])out.push(a);
   // 17.11 (the owner): no "בדיקת תזה" alerts; the thesis is off the site (thesisAlerts is kept, not called)
   // 17.11 (the owner): no insiders' alerts; "בעלי עניין" is off the site (insiderAlerts is kept, not called)
   return {pr,HD,alerts:out};
@@ -277,6 +281,29 @@ export function calAlerts(store,pa,now=new Date()){
       holds:[],secs:[],usd:null,fol:[],followed:false,sectors:[],themes:[],regions:[e.region].filter(Boolean),fac:[],secx:[],occ:e.d,unknown:'',arts:[],n:0,first:null,cal:{id:e.id,d:e.d,est:!!e.est,src:e.src||'',url:e.url||null,sym:e.sym||null}})}
   return out;
 }
+// 24.11 (the owner: "every new listing: tell me there is one more share or fund"): the securities that started trading in
+// the last ten days (research/ipos, server/ipos.js), as one update for each week of listings: an offering from the IPO
+// calendar, and a new fund or symbol once its first day of trading is known. It is about the market, not the portfolio,
+// and says so. Another listing in the same week develops the same update (it is new once more), never a second alert
+const coShort=n=>String(n||'').replace(/,?\s+(Inc|Corp|Corporation|Ltd|Limited|PLC|PBC|Co|Holdings?|Group)\b\.?/gi,'').replace(/\s+/g,' ').replace(/[,.\s]+$/,'').trim().slice(0,40);
+const dmHe=d=>/^\d{4}-\d\d-\d\d/.test(String(d))?`${+String(d).slice(8,10)}.${+String(d).slice(5,7)}`:'';
+export function ipoAlerts(store,now=new Date()){
+  let D=null; try{D=store.getDoc('research/ipos').data}catch(e){} const L=ipoFresh(D,{now}); if(!L.length)return [];
+  const W=new Map(); for(const it of L){const wk=weekOf(it.d); if(!wk)continue; if(!W.has(wk))W.set(wk,[]); W.get(wk).push(it)}
+  const out=[];
+  for(const [wk,A] of W){
+    // the companies' offerings first, then the new funds and symbols, the blank-check companies last
+    const rank=x=>x.kind==='ipo'&&!x.spac?0:x.kind==='ipo'?2:1; A.sort((a,b)=>rank(a)-rank(b)||(a.d<b.d?1:a.d>b.d?-1:0)||(a.sym<b.sym?-1:1));
+    const nm=x=>`${coShort(x.name)||x.sym} (${x.sym})`, nI=A.filter(x=>x.kind==='ipo').length, nF=A.length-nI;
+    const title=A.length===1?`${A[0].kind==='ipo'?'הנפקה חדשה':'נייר חדש בבורסה'}: ${nm(A[0])}`:`${A.length} ניירות חדשים בבורסה: ${A.slice(0,2).map(nm).join(', ')}${A.length>2?` ועוד ${A.length-2}`:''}`;
+    const parts=[nI?(nI===1?'הנפקה אחת':nI+' הנפקות'):'',nF?(nF===1?'קרן או סימול חדש אחד':nF+' קרנות וסימולים חדשים'):''].filter(Boolean).join(' ו-');
+    out.push({kind:'ipo',type:'ipo',cert:'fact',rules:false,conf:'high',confWhy:'מלוח ההנפקות ומרשימת הסימולים של הבורסות; יום המסחר הראשון ממקור המחירים',
+      k:`ipo:${wk}`,lv:'upd',lvWhy:'ניירות חדשים שהתחילו להיסחר; עדכון על השוק, לא אירוע בתיק שלך',title,what:A.length===1?`${A[0].kind==='ipo'?'הנפקה':'נייר חדש'} מהשבוע של ${dmHe(wk)}. הנייר נמצא בחיפוש של מחקר שוק, עם דף נייר משלו.`:`${parts} בשבוע של ${dmHe(wk)}. כולם נמצאים בחיפוש של מחקר שוק, כל אחד עם דף נייר משלו.`,
+      dir:'unclear',imp:'mid',rel:'none',relWhy:'לא נוגע לאחזקות שלך: אלה ניירות חדשים בבורסה, שאפשר לחפש ולהוסיף למעקב',holds:[],secs:[],usd:null,fol:[],followed:false,sectors:[],themes:[],regions:['us'],fac:[],secx:[],
+      occ:A[0].d,unknown:'',arts:[],n:A.length,first:null,
+      ipo:{wk,src:(D&&D.source)||'',list:A.slice(0,40).map(x=>({sym:x.sym,name:x.name||x.sym,t:x.t||'S',ex:x.ex||'',exch:x.exch||'',d:x.d,kind:x.kind,...(x.first?{first:x.first}:{}),...(x.date?{date:x.date}:{}),...(x.price?{price:x.price}:{}),...(x.spac?{spac:true}:{})}))}})}
+  return out;
+}
 // 30.10: the measured facts of the portfolio itself, as the stories had them: a holding's day beyond the share the person
 // set (5% unless set), a price they set crossed, the dollar's rates they set, a holding's report in the coming three days.
 // Each is a measurement or a date, said to be so; none says why the price moved
@@ -315,11 +342,12 @@ export function material(old,c){
   if(c.cert==='fact'&&old.cert!=='fact'&&!c.rules)why.push('fact');
   // 31.10: the event moved on (a decision taken, over), or, on a followed event, a new article since the last development
   if(c.st&&c.st!=='unknown'&&c.st!==old.st)why.push('stage');
+  if(c.kind==='ipo'&&(c.n||0)>(old.n||0))why.push('ipo');   // 24.11: another security joined the week's new listings
   if(c.followedEv&&(c.n||0)>(old.n||0)){const last=(old.hist||[]).map(h=>h.at).sort().pop()||old.at; if(!last||Date.now()-Date.parse(last)>=6*36e5)why.push('dev')}
   return why;
 }
-const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוון ההשפעה האפשרי השתנה',hold:'אחזקה נוספת שלך נוגעת לאירוע',fact:'מה שהיה הערכה או פרשנות דווח כעובדה',stage:'מצב האירוע השתנה',dev:'כתבה חדשה על אירוע שאתה עוקב אחריו'};
-const NOT_NEWS=new Set(['mkt','cal','thesis','insider']);
+const WHY_HE={new:'התראה חדשה',level:'הרמה עלתה',dir:'כיוון ההשפעה האפשרי השתנה',hold:'אחזקה נוספת שלך נוגעת לאירוע',fact:'מה שהיה הערכה או פרשנות דווח כעובדה',stage:'מצב האירוע השתנה',dev:'כתבה חדשה על אירוע שאתה עוקב אחריו',ipo:'נייר חדש נוסף לרשימת השבוע'};
+const NOT_NEWS=new Set(['mkt','cal','thesis','insider','ipo']);
 const asFund=h=>h&&h.link==='direct'&&h.how!=='fund'&&isFund(h.sym)&&!h.measured?{...h,link:'indirect',how:'fund'}:h;
 export function pulseUpdate(store,u,{now=new Date(),save=true}={}){
   const pa=pathsOf(u), iso=now.toISOString(), old=store.getDoc(pa.pulse), D=old.exists&&old.data?old.data:{items:[]};

@@ -8,7 +8,7 @@ import {reconcileSplits} from '../shared/splits.js';
 import {pressureSection} from './pressure.js';
 import {healthCheck} from './health.js';
 import {confirmSplits, symbolChanges} from './fmp.js';
-import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist} from '../shared/quotes.js';
+import {tickerFor, BENCH, PROXY, isIlFund, mayaFundSeries, stooqSeries, stooqHist, MINOR} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 import {comoveOf, longtermOf, monthlyCloses} from '../shared/comove.js';
 
@@ -116,7 +116,7 @@ async function series(t,range,interval){
   if(r.status===429){Y429++; throw Object.assign(new Error('HTTP 429 (Yahoo rate limit)'),{rate:true})} if(r.ok)Y429=0;
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json(); const res=j&&j.chart&&j.chart.result&&j.chart.result[0]; if(!res)throw new Error('no result');
-  const off=+res.meta.gmtoffset||0, k=res.meta.currency==='ILA'?0.01:1, q0=((res.indicators||{}).quote||[{}])[0], cl=q0.close||[], vo=q0.volume||[];
+  const off=+res.meta.gmtoffset||0, k=MINOR[res.meta.currency]?0.01:1, q0=((res.indicators||{}).quote||[{}])[0], cl=q0.close||[], vo=q0.volume||[];
   // 1.11: the day's volume beside the close (daily series only), for "an unusual volume" in the anomalies
   const d=[],c=[],v=[]; let anyV=false; (res.timestamp||[]).forEach((ts,i)=>{if(cl[i]!=null&&cl[i]>0){d.push(new Date((ts+off)*1000).toISOString().slice(0,10));c.push(Math.round(cl[i]*k*1e4)/1e4); v.push(vo[i]!=null?+vo[i]:null); if(vo[i]!=null)anyV=true}});
   if(!d.length)throw new Error('empty'); return anyV&&interval==='1d'?{d,c,v}:{d,c};

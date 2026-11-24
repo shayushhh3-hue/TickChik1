@@ -18,7 +18,8 @@ import {impactTask, impactForUser, impactHistory, impactPast, impactRelRun} from
 import {refreshQuotes} from '../shared/pxjob.js';
 import {reconcileSplits} from '../shared/splits.js';
 import {confirmSplits} from './fmp.js';
-import {yahooSearch, mayaFund, mayaFundSeries} from '../shared/quotes.js';
+import {yahooSearch, yahooChart, nasdaqQuote, tickerFor, mayaFund, mayaFundSeries} from '../shared/quotes.js';
+import {ipoTask, ipoStale} from './ipos.js';
 import {ilSymsFresh} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {runsSetup, runLog, deployOnStart} from './admin/runs.js';
@@ -236,14 +237,18 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     if(p==='research/ilsyms'){try{await Promise.race([ilSymsFresh(store),new Promise(r=>setTimeout(r,20000))])}catch(e){}}
     const d=store.getDoc(p);
     // a chart nobody has asked for yet: fetched now, kept for next time (the nightly run keeps the followed ones fresh)
-    const m=p.match(/^quotes\/c_((?:TLV_|IDX_)?[A-Z0-9.\-]{1,10})$/);
-    if(m&&(!d.exists||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>7*864e5))){
+    const m=p.match(/^quotes\/c_((?:TLV_|IDX_)?[A-Z0-9.\-]{1,12})$/);
+    // 24.11: a security of another exchange whose symbol the night's series do not cover (0700.HK, RELIANCE.NS) is fetched
+    // again when its saved chart is 20 hours old
+    const far=m&&d.exists&&d.data&&!d.data.missing&&/^[A-Z0-9][A-Z0-9\-]{0,8}\.[A-Z]{1,3}$/.test(m[1])&&!/^[A-Z][A-Z.\-]{0,5}$/.test(m[1])&&Date.now()-new Date(d.data.updatedAt)>20*36e5;
+    if(m&&(!d.exists||far||(d.data&&d.data.missing&&Date.now()-new Date(d.data.updatedAt)>7*864e5))){
       const key=m[1].replace(/^TLV_/,'TLV:').replace(/^IDX_/,'IDX:'); try{const doc=await chartOnce(key); return res.json({exists:true,data:doc,id:'c_'+m[1]})}catch(e){}}
     res.json(d.exists?{...d,data:partnerView(store,req.user,p,d.data)}:d)});
   const CHARTS=new Map();
   const chartOnce=key=>{if(CHARTS.has(key))return CHARTS.get(key); const pr=(async()=>{
       const map=(store.getDoc('settings/main').data||{}).symMap||{};
-      let doc; try{doc=await closesFor(key,map)}catch(e){doc={key,missing:true,updatedAt:new Date().toISOString()}}
+      let doc; try{doc=await closesFor(key,map)}catch(e){const was=store.getDoc('quotes/c_'+key.replace(':','_')); if(was.exists&&was.data&&!was.data.missing)return was.data; doc={key,missing:true,updatedAt:new Date().toISOString()};
+        if(e&&(e.paused||e.rate))return doc}   // 24.11: the source paused for a minute is not "no chart for a week": not kept, asked again on the next visit
       store.setDoc('quotes/c_'+key.replace(':','_'),doc,{silent:true}); return doc})().finally(()=>setTimeout(()=>CHARTS.delete(key),60000).unref());
     CHARTS.set(key,pr); return pr};
   app.put('/api/db/doc',needUser,(req,res)=>{const p=String(req.query.path||''); if(badPath(p)||p.split('/').length%2)return res.status(400).json({error:{code:'invalid_argument',message:'bad path'}});
@@ -459,6 +464,21 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
     const c=SYMQ.get(q.toLowerCase()); if(c&&Date.now()-c.at<36e5)return res.json({items:c.items,cached:true});
     try{const items=await yahooSearch(q); SYMQ.set(q.toLowerCase(),{at:Date.now(),items}); if(SYMQ.size>500)SYMQ.delete(SYMQ.keys().next().value); res.json({items})}
     catch(e){res.status(502).json({error:'החיפוש לא זמין כרגע: '+(e&&e.message||e)})}});
+  // 24.11: a security the page's list does not have (found by the search across markets, or listed this week): its name,
+  // kind, exchange, currency, delayed price and first day of trading, from the price source's chart. Public market data
+  // for any signed-in user; ten minutes per symbol (an unknown one: two), one lookup at a time per symbol. A field the
+  // source does not give is sent empty, never guessed
+  const SECI=new Map(), SECQ=new Map(), SECT={EQUITY:'stock',ETF:'etf',MUTUALFUND:'fund',INDEX:'index'};
+  app.get('/api/secinfo',needUser,async(req,res)=>{const k=String(req.query.sym||'').trim().toUpperCase();
+    if(k.length>12||!/^[A-Z0-9][A-Z0-9\-]{0,8}(\.[A-Z]{1,3})?$/.test(k)||/^\d+$/.test(k))return res.status(400).json({error:{code:'invalid_argument',message:'סימול לא תקין.'}});
+    const c=SECI.get(k); if(c&&Date.now()-c.at<(c.v?10:2)*60e3)return c.v?res.json({...c.v,cached:true}):res.status(404).json({error:{code:'not_found',message:c.msg}});
+    // a US security when the first source does not answer (it pauses for a minute after a refusal): Nasdaq's own quote, the
+    // price only (its answer has no name and no first day, and none is made up)
+    const look=async()=>{const t=tickerFor(k,null,{}); try{return await (app.locals.secChart||yahooChart)(t)}catch(e){if(!/^[A-Z]{1,5}(-[A-Z])?$/.test(t))throw e; return await (app.locals.secQuote||nasdaqQuote)(t)}};
+    try{if(!SECQ.has(k))SECQ.set(k,look().finally(()=>SECQ.delete(k)));
+      const q=await SECQ.get(k), v={sym:k,name:q.name||'',type:SECT[q.type]||'',exch:q.xname||q.exch||'',ccy:q.ccy||'',px:q.px,prev:q.prev,date:q.closeDate||'',at:q.time||null,first:q.first||null,src:q.src==='nasdaq'?'Nasdaq':'Yahoo Finance',delayed:true};
+      SECI.set(k,{at:Date.now(),v}); if(SECI.size>600)SECI.delete(SECI.keys().next().value); res.json(v)}
+    catch(e){const msg='לא מצאתי נתוני מסחר לסימול הזה במקור המחירים.'; SECI.set(k,{at:Date.now(),v:null,msg}); if(SECI.size>600)SECI.delete(SECI.keys().next().value); res.status(404).json({error:{code:'not_found',message:msg}})}});
   // an Israeli fund (or security) by its number, from Maya: its name, its price and date, and a month of prices for the
   // page's chart. Cached 30 minutes per number; every signed-in user may ask (it is public market data)
   const ILF=new Map();
@@ -611,6 +631,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   if(PERSIST)try{const st=backupStatus(store,{dataDir:DATA_DIR}); if(!st.files.some(f=>f.name.includes(new Date().toISOString().slice(0,10)))){const r=backupNow(store,{dataDir:DATA_DIR}); log('backup at start:',path.basename(r.file))}}catch(e){log('backup at start failed:',e.message)}
   // 31.10: the economic calendar, built at start when it is a day old or missing (a cheap build from what is kept)
   {const c=store.getDoc('research/ecocal'); const age=c.exists&&c.data.updatedAt?Date.now()-new Date(c.data.updatedAt).getTime():Infinity; if(age>20*36e5)setTimeout(()=>{try{ecocalTask(store,{log})}catch(e){log('ecocal at start failed:',e.message)}},3000)}
+  // 24.11: the new listings, when the list is missing or a day old (a new version, a server that was down at its hour)
+  if(env.JOBS!=='0'&&ipoStale(store)){const t=setTimeout(()=>{const j=app.locals.jobs; if(j)j.run('ipos'); else ipoTask(store,{log}).catch(e=>log('new listings at start failed:',e&&e.message||e))},25000); if(t&&t.unref)t.unref()}
   // no prices yet (a new server, or an import without them), or prices older than a quarter hour (a deploy): fetch them now
   // instead of waiting for the next run, so a change to the price sources reaches the page with the deploy that carries it
   {const q=store.getDoc('quotes/latest'); const age=q.exists&&q.data.updatedAt?Date.now()-new Date(q.data.updatedAt).getTime():Infinity;

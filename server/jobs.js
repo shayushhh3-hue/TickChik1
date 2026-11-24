@@ -22,6 +22,7 @@ import {insidersTask} from './insiders.js';
 import {etfTask} from './etf.js';
 import {newsSyms} from './newsfeed.js';
 import {jobNote, healthCheck} from './health.js';
+import {ipoTask} from './ipos.js';
 
 // 19.11 TikChik WORLD IMPACT: the event graph after every reading (server/impact.js); a failure there never stops the alerts
 const impactSafe=(s,o)=>{try{impactTask(s,o)}catch(e){(o&&o.log||console.log)('impact failed:',e&&e.message||e)}};
@@ -60,6 +61,10 @@ export const SCHEDULE=[
   {name:'bench',   when:p=>p.h===0&&p.min===35, run:(s,o)=>benchTask(s,o)},
   // the Israeli securities for the search (with a TASE key), before the morning
   {name:'ilsyms',  when:p=>p.h===5&&p.min===10, run:(s,o)=>ilSymsTask(s,o)},
+  // 24.11 (the owner: "every new listing"): the securities that started trading after the page's list was built
+  // (server/ipos.js): in the morning, before New York opens and while it trades (an offering's first trade is around
+  // noon there). What is new reaches everyone's alerts at once, as one update a week
+  {name:'ipos',    when:p=>(p.h===6&&p.min===20)||(p.h===16&&p.min===40)||(p.h===21&&p.min===40), run:async(s,o)=>{const r=await ipoTask(s,o); try{pulseTask(s,o)}catch(e){} return r}},
   // something stopped: every half hour from 09:05 to 23:35, an e-mail to the owner (with consent) about a new problem
   // 30.10: the owner's live alerts (prices set, a big day, the dollar, a critical reading), every 10 minutes by day
   // 30.10: all day: each person's quiet hours decide what may go out (server/pulse.js, settings → "חדשות והתראות")
@@ -79,7 +84,7 @@ export const SCHEDULE=[
 ];
 
 // the longest a job may hold the queue: after that the next job starts (the late one may still finish in the background)
-export const LIMIT={consist:6*60e3,pressure:2*60e3,ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
+export const LIMIT={ipos:3*60e3,consist:6*60e3,pressure:2*60e3,ilsyms:3*60e3,bench:3*60e3,pxwatch:60e3,prices:4*60e3,nightly:25*60e3,research:30*60e3,earnings:8*60e3,news:11*60e3,newsx:6*60e3,x:3*60e3,live:60e3};
 // 9.11: onRun(entry) hears every step of every run (server/admin/runs.js, "יומן ביצועים"): queued by hand, started, done,
 // failed, still running past its limit (and its end after that), and a due run dropped because the same job already waited
 export function startJobs(store,{log=console.log,every=20000,dataDir,limits=LIMIT,fallback=12*60e3,schedule=SCHEDULE,onRun=()=>{}}={}){

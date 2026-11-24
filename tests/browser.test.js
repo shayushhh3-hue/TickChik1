@@ -4104,3 +4104,83 @@ test('24.11 units taken off the table by hand: the page asks whether they were s
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('portfolio/main',P0,{silent:true}); if(H0.exists)store.setDoc('history/main',H0.data,{silent:true})}
 });
+
+test('24.11 מחקר שוק beyond the page\'s list: a share listed this week is found and has a page; the search across markets under the list\'s results, with no row twice; a share in yen: its page, the watch list, a purchase; the week\'s new listings in the alerts',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {pulseUpdate}=await import('../server/pulse.js'); const owner=store.users().find(u=>u.role==='owner');
+  const keep=Object.fromEntries(['portfolio/main','history/main','alerts/pulse','news/state','watch/'+owner.id,'research/ipos','quotes/c_7203.T','quotes/c_ANT'].map(p=>[p,store.getDoc(p)]));
+  const day=k=>new Date(Date.now()-k*864e5).toISOString().slice(0,10), dS=iso=>+iso.slice(8,10)+'.'+(+iso.slice(5,7));
+  // what the server's job would have kept: Anthropic listed three days ago (in the page's list it is not), a fund on it, an offering expected
+  store.setDoc('research/ipos',{items:[{sym:'ANT',name:'Anthropic, PBC',exch:'NASDAQ Global Select',ex:'Q',t:'S',date:day(3),first:day(3),price:83,kind:'ipo',src:['Nasdaq'],listed:true,at:new Date().toISOString()}],
+    upcoming:[{sym:'SOON',name:'Soon Corp',exch:'NYSE',date:day(-8),range:'18.00-20.00',src:'Nasdaq'}],syms:[['ANT','Anthropic, PBC','S','Q'],['ANTO','Direxion Daily Anthropic Bull 2X ETF','E','Q']],
+    source:'לוח ההנפקות של Nasdaq, רשימת הסימולים של הבורסות בארה״ב (Nasdaq Trader)',updatedAt:new Date().toISOString()},{silent:true});
+  const ser=(n,from,step)=>{const d=[],c=[]; for(let k=n;k>=1;k--){d.push(day(k)); c.push(Math.round((from+(n-k)*step)*100)/100)} return {d,c}};
+  store.setDoc('quotes/c_7203.T',{key:'7203.T',...ser(40,3200,2.8),source:'Yahoo Finance',updatedAt:new Date().toISOString()},{silent:true});
+  store.setDoc('quotes/c_ANT',{key:'ANT',d:[day(3),day(2),day(1)],c:[97.17,88.91,87.64],source:'Yahoo Finance',updatedAt:new Date().toISOString()},{silent:true});
+  pulseUpdate(store,null);
+  const asked=[], J=o=>({status:200,contentType:'application/json',body:JSON.stringify(o)});
+  const FOUND={anthropic:[{sym:'ANT',name:'Anthropic, PBC',exch:'NASDAQ',type:'stock'},{sym:'ANTO',name:'Direxion Daily Anthropic Bull 2X ETF',exch:'NASDAQ',type:'etf'},{sym:'AIL',name:'GraniteShares 2x Long Anthropic Daily ETF',exch:'NASDAQ',type:'etf'}],
+    toyota:[{sym:'TM',name:'Toyota Motor Corporation',exch:'NYSE',type:'stock'},{sym:'7203.T',name:'Toyota Motor Corporation',exch:'Tokyo Stock Exchange',type:'stock'},{sym:'^N225',name:'Nikkei 225',exch:'Osaka',type:'index'},{sym:'0P00000AWP.L',name:'A fund the page cannot price',exch:'LSE',type:'fund'}]};
+  const INFO={'7203.T':{sym:'7203.T',name:'Toyota Motor Corporation',type:'stock',exch:'Tokyo',ccy:'JPY',px:3311,prev:3300,date:day(0),first:'1999-05-06',src:'Yahoo Finance',delayed:true},
+    ANT:{sym:'ANT',name:'Anthropic, PBC',type:'stock',exch:'NasdaqGS',ccy:'USD',px:87.64,prev:88.91,date:day(1),first:day(3),src:'Yahoo Finance',delayed:true}};
+  const route=(r,u)=>{const m=u.match(/\/api\/symsearch\?q=([^&]+)/); if(m){const q=decodeURIComponent(m[1]).toLowerCase(); asked.push(q); r.fulfill(J({items:FOUND[q]||[]})); return true}
+    const s=u.match(/\/api\/secinfo\?sym=([^&]+)/); if(s){const k=decodeURIComponent(s[1]).toUpperCase(); r.fulfill(INFO[k]?J(INFO[k]):{status:404,contentType:'application/json',body:JSON.stringify({error:{code:'not_found',message:'לא מצאתי נתוני מסחר לסימול הזה במקור המחירים.'}})}); return true}
+    return false};
+  const {ctx,pg}=await open(390,{route});
+  try{
+    const T2=x=>String(x||'').replace(/\s+/g,' ').trim(), noSide=()=>pg.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1);
+    await tab(pg,'search'); await pg.waitForFunction(()=>!!document.querySelector('#sqRes .scr-nwl .sit'),null,{timeout:15000});
+    // the landing: what started trading, with its day and the offering's price, and the way to all of it
+    let r=await pg.evaluate(()=>{const s=[...document.querySelectorAll('#sqRes .scr-sec')].find(x=>x.querySelector('h3').textContent==='חדש בבורסה'); return {rows:[...s.querySelectorAll('.sit')].map(x=>x.dataset.open+' '+x.textContent.replace(/\s+/g,' ').trim()),all:!!s.querySelector('[data-scr="new"]'),first:document.querySelector('#sqRes .scr-sec h3').textContent}});
+    assert.equal(r.rows.length,1); assert.match(r.rows[0],new RegExp('^ANT .*Anthropic, PBC ?ANT .*הנפקה '+dS(day(3)).replace('.','\\.')+' · מחיר ההנפקה \\$83\\.00')); assert.ok(r.all); assert.equal(r.first,'מה חסר לך','the gap in the portfolio stays first');
+    assert.ok(await noSide(),'the landing on a phone');
+    await pg.click('#sqRes [data-scr="new"]'); await pg.waitForSelector('#sqRes .scr-lh');
+    r=await pg.evaluate(()=>({h:document.querySelector('#sqRes .scr-lh h3').textContent,rows:[...document.querySelectorAll('#sqRes .scr-ls .sit')].map(x=>x.dataset.open),up:[...document.querySelectorAll('#sqRes .scr-upc li')].map(x=>x.textContent.replace(/\s+/g,' ').trim()),note:document.querySelector('#sqRes>.note').textContent}));
+    assert.equal(r.h,'חדש בבורסה'); assert.deepEqual(r.rows,['ANT']); assert.equal(r.up.length,1); assert.match(r.up[0],/^Soon Corp ?SOON · NYSE · צפויה ב-.* · טווח המחיר \$18\.00-20\.00$/); assert.match(r.note,/מקורות: לוח ההנפקות של Nasdaq/); assert.match(r.note,/בעיכוב/); assert.ok(await noSide(),'the list on a phone');
+    await pg.click('#sqRes .scr-bk'); await pg.waitForFunction(()=>!!document.querySelector('#sqRes .scr-cat'));
+    // by its symbol and by its name: in the list's own results (the page's list was built before it was listed), once
+    const q=async v=>{await pg.fill('#sq',v); await pg.waitForFunction(v=>{const w=document.getElementById('sqWorld'); return !!w&&w.dataset.q===v.toLowerCase()&&w.dataset.st==='ok'},v,{timeout:8000}); await pg.waitForTimeout(300);   // the answer for what was typed, not the one before it
+      return pg.evaluate(()=>({loc:[...document.querySelectorAll('#sqRes>.sit[data-open]')].map(x=>x.dataset.open),world:[...document.querySelectorAll('#sqWorld .sit[data-open]')].map(x=>x.dataset.open+' | '+x.textContent.replace(/\s+/g,' ').trim()),head:(document.querySelector('#sqWorld .sq-wh')||{}).textContent||'',none:(()=>{const n=document.getElementById('sqNone'); return n?!n.hidden:false})()}))};
+    r=await q('ANT'); assert.equal(r.loc[0],'ANT','the symbol itself first: '+r.loc.slice(0,4)); assert.match(await pg.evaluate(()=>document.querySelector('#sqRes>.sit[data-open="ANT"]').textContent.replace(/\s+/g,' ')),/חדש · נסחר מ-/);
+    r=await q('anthropic'); assert.equal(r.loc[0],'ANT'); assert.ok(r.loc.includes('ANTO'),'the fund on it, from the new listings');
+    assert.deepEqual(r.world.map(x=>x.split(' | ')[0]),['AIL'],'the search across markets adds only what the list does not show');
+    assert.match(r.world[0],/^AIL \| .*GraniteShares 2x Long Anthropic Daily ETF ?AIL · NASDAQ · קרן סל/); assert.match(r.head,/מבורסות אחרות בעולם.*בעיכוב/); assert.equal(r.none,false);
+    assert.equal(await pg.evaluate(()=>document.querySelectorAll('#sqRes [data-open="ANT"]').length),1,'no row twice'); assert.ok(await noSide(),'the results on a phone');
+    // its page: the name, the delayed price said to be delayed, the day it started trading and the offering's price, a short chart
+    await pg.click('#sqRes>.sit[data-open="ANT"]'); await pg.waitForFunction(()=>/\$87\.64/.test(document.querySelector('#secPage .big .v')?.textContent||''),null,{timeout:10000}); await pg.waitForTimeout(600);
+    r=await pg.evaluate(()=>{const p=document.getElementById('secPage'), T=x=>String(x||'').replace(/\s+/g,' ').trim(); return {h:p.querySelector('h2').textContent,sub:T(p.querySelector('.top .sub').textContent),px:T(p.querySelector('.big').textContent),all:T(p.textContent),nw:T((p.querySelector('.sec-nw')||{}).textContent),nwSeen:!!(p.querySelector('.sec-nw')&&p.querySelector('.sec-nw').offsetParent),chart:getComputedStyle(document.getElementById('secChart')).display,more:T((p.querySelector('details.more')||{}).textContent)}});
+    assert.equal(r.h,'Anthropic, PBC'); assert.match(r.sub,/ANT/); assert.match(r.sub,/Nasdaq/); assert.match(r.px,/\$87\.64/); assert.match(r.all,/מחיר בעיכוב/); assert.match(r.all,/מחיר בעיכוב מ-Yahoo Finance/);
+    assert.match(r.nw,/^חדש בבורסה · יום המסחר הראשון \d+\.\d+ · מחיר ההנפקה \$83\.00 · NASDAQ Global Select$/); assert.equal(r.nwSeen,true,'the line stays on a phone, where the notes are hidden'); assert.match(r.all,/מקור: לוח ההנפקות של Nasdaq/); assert.equal(r.chart,'block','three days and now: a chart');
+    assert.match(r.more,/ענף ?אין נתון/,'what the source does not give is said to be missing'); assert.match(r.more,/שווי שוק .*אין נתון/); assert.ok(await noSide(),'the page on a phone');
+    await pg.click('#secMark'); await pg.waitForFunction(()=>document.getElementById('secMark').getAttribute('aria-pressed')==='true',null,{timeout:8000});
+    assert.ok((store.getDoc('watch/'+owner.id).data.syms||[]).includes('ANT'),'followed: the price job prices it from now on');
+    await pg.evaluate(()=>document.getElementById('secBack')?.click()); await pg.goBack().catch(()=>{}); await pg.waitForTimeout(500);
+    // a share in Tokyo: found by the search across markets (not an index, not what the page cannot price), a page in yen
+    await tab(pg,'search'); await pg.waitForTimeout(300); r=await q('toyota');
+    assert.ok(r.world.some(x=>/^7203\.T \| .*Toyota Motor Corporation ?7203\.T · Tokyo Stock Exchange · מניה/.test(x)),JSON.stringify(r.world)); assert.ok(!r.world.some(x=>/N225|0P0000/.test(x)),'no index, nothing the page cannot price');
+    assert.equal(asked.filter(x=>x==='toyota').length,1,'asked once for what was typed'); assert.ok(!asked.some(x=>/^t$|^to$/.test(x)),'not for every letter: '+asked.join(','));
+    await pg.click('#sqWorld .sit[data-open="7203.T"]'); await pg.waitForFunction(()=>/3,311/.test(document.querySelector('#secPage .big .v')?.textContent||''),null,{timeout:10000}); await pg.waitForFunction(()=>getComputedStyle(document.getElementById('secChart')).display==='block',null,{timeout:10000});
+    r=await pg.evaluate(()=>{const p=document.getElementById('secPage'), T=x=>String(x||'').replace(/\s+/g,' ').trim(); return {h:p.querySelector('h2').textContent,sub:T(p.querySelector('.top .sub').textContent),v:T(p.querySelector('.big .v').textContent),all:T(p.textContent),cc:!!p.querySelector('.ccsw'),rep:!!p.querySelector('.repbox:not(.th)')}});
+    assert.equal(r.h,'Toyota Motor Corporation'); assert.match(r.sub,/7203\.T/); assert.match(r.sub,/מניה/); assert.equal(r.v,'¥3,311.00','in its own currency'); assert.match(r.all,/ין יפני/); assert.match(r.all,/מחיר בעיכוב/); assert.match(r.all,/מחירי סגירה במטבע המסחר \(ין יפני\)/,'the chart says its own currency, not dollars');
+    assert.equal(r.cc,false,'no dollar/shekel switch for a yen chart'); assert.equal(r.rep,false,'no report block: the reports are of US and Tel Aviv shares'); assert.match(r.all,/אין נתון: אנליסטים ודוחות כספיים מגיעים לדף רק לניירות מארה״ב ומתל אביב/); assert.ok(await noSide(),'the yen page on a phone');
+    // followed: its symbol goes to the price job, its name stays with the list (another device knows it)
+    await pg.click('#secMark'); await pg.waitForFunction(()=>document.getElementById('secMark').getAttribute('aria-pressed')==='true',null,{timeout:8000});
+    {const w=store.getDoc('watch/'+owner.id).data; assert.ok(w.marks.includes('7203.T')&&w.syms.includes('7203.T'),JSON.stringify(w.syms)); assert.deepEqual(w.info['7203.T'],{n:'Toyota Motor Corporation',x:'Tokyo',t:'stock',c:'JPY'})}
+    // bought: a holding in yen; the account's cash (shekels and dollars) is not touched, and the page says so
+    const cash0=JSON.stringify(store.getDoc('portfolio/main').data.cash);
+    await pg.click('#secPage [data-sectrade="buy"]'); await pg.waitForSelector('#trQty'); await pg.fill('#trQty','2'); await pg.waitForTimeout(200);
+    r=await pg.evaluate(()=>({sum:document.getElementById('trSum').textContent.replace(/\s+/g,' '),px:document.getElementById('trPx').value,lab:document.querySelector('#trBox .tr-g').textContent.replace(/\s+/g,' ')}));
+    assert.equal(+r.px,3311); assert.match(r.lab,/מחיר ליחידה \(JPY\)/); assert.match(r.sum,/6622\.00 JPY/); assert.match(r.sum,/המזומן בחשבון לא ישתנה: הוא רשום בשקלים ובדולרים, והעסקה ב-ין יפני/);
+    await pg.click('#trSave'); await pg.waitForFunction(()=>!document.getElementById('trQty'),null,{timeout:10000}); await pg.waitForTimeout(500);
+    {const P2=store.getDoc('portfolio/main').data, x=P2.positions.find(p=>p.sym==='7203.T'); assert.ok(x,'the holding is in the portfolio'); assert.deepEqual([x.qty,x.ccy,x.name,x.costUsd],[2,'JPY','Toyota Motor Corporation',null],'in yen, with no dollar cost made up'); assert.equal(JSON.stringify(P2.cash),cash0,'the cash as it was')}
+    // the alerts: one update for the week's new listings, named a market update; its row opens the security's page
+    await tab(pg,'alerts'); await pg.waitForFunction(()=>!!document.querySelector('#alInbox [data-alopen^="ipo:"]'),null,{timeout:10000});
+    r=await pg.evaluate(()=>{const b=document.querySelectorAll('#alInbox [data-alopen^="ipo:"]'); return {n:b.length,t:b[0].textContent.replace(/\s+/g,' ').trim(),badge:!!document.querySelector('#botbar [data-bb="alerts"] .bbadge')}});
+    assert.equal(r.n,1,'one alert, not one a listing'); assert.match(r.t,/^הנפקה חדשה: Anthropic \(ANT\) ?עדכון שוק/); assert.ok(await noSide(),'the alerts on a phone');
+    await pg.click('#alInbox [data-alopen^="ipo:"]'); await pg.waitForSelector('#plSheet .pl-ipo .sit',{timeout:8000});
+    r=await pg.evaluate(()=>({row:document.querySelector('#plSheet .pl-ipo .sit').textContent.replace(/\s+/g,' ').trim(),all:document.getElementById('plSheet').textContent.replace(/\s+/g,' '),w:document.querySelector('#plSheet .pl-ipo').getBoundingClientRect().right<=innerWidth+1}));
+    assert.match(r.row,/Anthropic, PBC ?ANT · NASDAQ Global Select · הנפקה · נסחר מ-.* · מחיר ההנפקה \$83\.00/); assert.match(r.all,/מה זה: לא נוגע לאחזקות שלך/); assert.match(r.all,/עדכון שוק/); assert.match(r.all,/לא המלצה לקנות/); assert.ok(r.w);
+    await pg.click('#plSheet .pl-ipo .sit'); await pg.waitForFunction(()=>document.getElementById('plSheet').hidden&&document.body.dataset.page==='search'&&document.querySelector('#secPage h2')?.textContent==='Anthropic, PBC',null,{timeout:10000});
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
