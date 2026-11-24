@@ -3524,6 +3524,7 @@ html[data-theme="dark"]{--grad:var(--accent);--grad-mint:var(--accent);--shadow:
 .trend-nav .btn{flex:none;min-height:40px;white-space:nowrap}
 .trend-sel{flex:1;margin:0;min-height:2.9em;font-size:13px;line-height:1.45;color:var(--ink2);text-align:center}
 .trend-sel b{color:var(--ink)}
+table.mon .mon-sold{display:block;white-space:normal;color:var(--ink2)}
 .trend-sel .ts-ev{display:block;margin-top:2px}
 .legend i.lg-ev{width:9px;height:9px;border:1.6px solid var(--ink);background:var(--surface);transform:rotate(45deg);border-radius:1px}
 body.hidenum .trend-sel .n{filter:blur(7px);user-select:none}
@@ -21422,7 +21423,14 @@ function renderMonths(){
   const lagAll=(()=>{try{return P&&Q?pxLagInfo(one?model(P,Q,acct):mAllNow()):[]}catch(e){return []}})(), lagTag=lagAll.length?' · מחירי '+lagAll.map(g=>(g.k==='il'?'ת״א':'ארה״ב')+' מ-'+dmy(g.have)).join(', '):'';
   const tag=r=>r.now?'עד היום'+lagTag:r.asOf?'עד '+dmy(r.asOf):r.miss?'רק '+ids.filter(a=>!r.miss.includes(a)&&+r.by[a]>0).map(acctName).join(', '):r.src==='day'?'לפי '+dmy(r.day):r.src==='est'?'משוחזר':'';
   const mon=ym=>`<span class="ml">${esc(MONTHS[+ym.slice(5)-1])}</span><span class="ms">${esc(MSHORT[+ym.slice(5)-1])}</span> ${ym.slice(0,4)}`;
-  const h=R.map(r=>{const t=tag(r); return `<tr${r.miss?' class="part"':''}><td><b>${mon(r.ym)}</b>${t?`<span class="nm">${esc(t)}</span>`:''}</td><td class="num"><span class="n">${ils(r.val)}</span></td><td class="num"><span class="n">${r.flow==null?'—':Math.abs(r.flow)<0.5?ils(0):sgn(r.flow)}</span></td><td class="num"><span class="n ${r.ret>0?'up':r.ret<0?'down':''}">${r.ret==null?'—':spct(r.ret,2)}</span>${r.gain!=null?`<span class="nm"><span class="n">${sgn(r.gain)}</span></span>`:''}</td></tr>`}).join('');
+  // 24.11 (the owner): a month in which something was sold says so under its name: the security, the units, and the result when
+  // the buying price is known (a sale read from a statement, or one written in the page's own box; not twice)
+  const SL=(()=>{const by={}, money=(v,c)=>(c==='USD'?'$':'₪')+Math.abs(+v).toLocaleString('en-US',{maximumFractionDigits:2}); for(const A of (HS&&HS.accounts)||[]){if(one&&A.acct!==acct)continue; const cc=t=>t.ccy||A.ccy||acctCcy(A.acct), seen=new Set(), put=(d,x)=>(by[d.slice(0,7)]=by[d.slice(0,7)]||[]).push({d,h:x});
+      for(const t of A.trades||[])if(t&&!t.div&&t.sym&&t.date&&+t.qty<0){const d=String(t.date).slice(0,10); seen.add(d+'|'+t.sym+'|'+Math.abs(+t.qty)); put(d,`${symH(t.sym)} ${nn(+Math.abs(+t.qty).toFixed(4))} יח׳`)}
+      for(const t of A.manual||[])if(t&&t.side==='sell'&&t.sym&&t.date&&+t.qty>0){const d=String(t.date).slice(0,10); if(seen.has(d+'|'+t.sym+'|'+(+t.qty)))continue; put(d,`${symH(t.sym)} ${nn(+(+t.qty).toFixed(4))} יח׳${t.real!=null?` (${+t.real>=0?'רווח':'הפסד'} של ${nn(money(t.real,cc(t)))})`:''}`)}}
+    return by})();
+  const sold=ym=>{const L=(SL[ym]||[]).slice().sort((a,b)=>a.d<b.d?-1:1); return L.length?`<span class="nm mon-sold"><b>${L.length===1?'מכירה':'מכירות'}:</b> ${L.slice(0,3).map(x=>x.h).join(', ')}${L.length>3?` ועוד ${L.length-3}`:''}</span>`:''};
+  const h=R.map(r=>{const t=tag(r); return `<tr${r.miss?' class="part"':''}><td><b>${mon(r.ym)}</b>${t?`<span class="nm">${esc(t)}</span>`:''}${sold(r.ym)}</td><td class="num"><span class="n">${ils(r.val)}</span></td><td class="num"><span class="n">${r.flow==null?'—':Math.abs(r.flow)<0.5?ils(0):sgn(r.flow)}</span></td><td class="num"><span class="n ${r.ret>0?'up':r.ret<0?'down':''}">${r.ret==null?'—':spct(r.ret,2)}</span>${r.gain!=null?`<span class="nm"><span class="n">${sgn(r.gain)}</span></span>`:''}</td></tr>`}).join('');
   if(body.innerHTML!==h)body.innerHTML=h;
   const first=R[R.length-1];
   note.textContent=['תשואה: השינוי בשווי בחודש, בלי מה שהופקד.',
@@ -32078,6 +32086,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-24.3',at:'2026-11-24',t:'מבט לאחור: מכירה כתובה בטבלה החודשית',d:'ב"מבט לאחור" ← "לאורך זמן", בטבלת התשואה החודשית: חודש שבו מכרת נייר כותב את זה מתחת לשם החודש, עם הנייר, מספר היחידות, והרווח או ההפסד כשמחיר הקנייה ידוע.',go:'hist'},
   {v:'2026-11-24.2',at:'2026-11-24',t:'מבט לאחור: הגרף יום אחרי יום, והעסקאות שלך ביומן ובציר הזמן',d:'בגרף "שווי התיק מול סך ההפקדות" אפשר לנוע יום אחרי יום: נגיעה או גרירה על הגרף, החצים במקלדת, או הכפתורים "אחורה" ו"קדימה" שמתחתיו. ביום שנבחר מופיעה נקודת ציון על כל קו, והמספרים שלו כתובים מתחת לגרף, יחד עם מה שעשית באותו יום: קנייה, מכירה, הפקדה או משיכה. יום שיש בו פעולה מסומן במעוין על הקו. כל הימים שהאתר שמר נמצאים עכשיו על הגרף. וגם: קנייה או מכירה שרשמת באתר מופיעה ב"ציר הזמן שלי" ומחכה ביומן לסיבה שלך.',go:'hist'},
   {v:'2026-11-24.1',at:'2026-11-24',t:'התוכנית: מזומן נפרד לכל חשבון',d:'כל מסלול בתוכנית קונה מהמזומן של החשבון שלו: מסלול המניות מהחשבון שמחזיק את המניות, ומסלול המדדים מהחשבון שמחזיק את הקרנות. המזומן של החשבון השני כבר לא מזיז את התור. בראש התוכנית יש קופסה לכל חשבון ועוד אחת של כל המזומן יחד, ובהגדרות התוכנית קובעים מאיזה חשבון קונה כל מסלול. גם ב"התיק שלי" המזומן כתוב לכל חשבון בנפרד.',go:'plan'},
   {v:'2026-11-19.1',at:'2026-11-19',t:'הגדרות: רשימה אחת, כמו בטלפון',d:'בטלפון: ההגדרות הן רשימה אחת מקובצת במקום חמש לשוניות ושבע שורות של כפתורים. הפרופיל בשורה אחת; ב"תצוגה ונגישות" כל שורה כותבת את הבחירה הנוכחית (למשל "גודל הטקסט: רגיל") ונפתחת כדי לשנות; ו"התיק", "התראות וחדשות" ו"פרטיות ונתונים" הם שורות שכל אחת פותחת את הנושא שלה בדף משלו, עם "כל ההגדרות" כדי לחזור.',go:'me'},

@@ -3453,6 +3453,8 @@ test('9.11 a security\'s page: "לקנייה" / "למכירה" open a small box 
     await tab(pg,'history'); await pg.waitForTimeout(500);
     const tl=await pg.evaluate(()=>({hid:document.getElementById('tlSec').hidden,txt:document.getElementById('tl').textContent.replace(/s+/g,' ')}));
     assert.equal(tl.hid,false); assert.match(tl.txt,/מכירה.{0,12}MSFT · 1 יח׳/,'the sale: '+tl.txt.slice(0,300)); assert.match(tl.txt,/קנייה.{0,12}TSLA · 2 יח׳/);
+    // 24.11: the month's row in the monthly table says the sale
+    assert.match(await pg.evaluate(()=>document.querySelector('#monRows tr').textContent.replace(/s+/g,' ')),/מכירה: ?MSFT 1 יח׳/,'the sale under its month');
     // 24.11: and both wait in the journal for their reason
     await pg.evaluate(()=>document.querySelector('[data-pane="history"] .subtabs [data-tab="journal"]').click()); await pg.waitForTimeout(600);
     const jr=await pg.evaluate(()=>document.getElementById('jrnBox').textContent.replace(/s+/g,' '));
