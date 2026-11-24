@@ -4263,3 +4263,25 @@ for(const W of [390,1280])test(`24.11 every security page: an icon, and a chart 
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
 });
+
+// 24.11 (the owner: "משהו שם לא נגיש וקשה להבנה, זה אמור להיות די פשוט"): the deposit plan opens with two plain steps
+for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדתי", then "קניתי" beside each security; plain words, buttons a finger can press (${W}px)`,T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(W);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-steps',{timeout:10000});
+    const read=()=>pg.evaluate(()=>{const b=document.getElementById('planAns'), r=x=>{const q=x.getBoundingClientRect(); return [Math.round(q.width),Math.round(q.height)]};
+      return {txt:b.innerText.replace(/\s+/g,' '),dep:!!b.querySelector('[data-plandep]'),buys:[...b.querySelectorAll('[data-planbuy]')].map(x=>x.dataset.planbuy),btn:[...b.querySelectorAll('button')].map(r),
+        over:document.documentElement.scrollWidth>innerWidth+1,h2:document.getElementById('hPlan').textContent,strip:document.querySelector('[data-pane="plan"] .strip').innerText}});
+    let s=await read(); if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-${W}.png`,fullPage:false});
+    assert.equal(s.h2,'תוכנית ההפקדה'); assert.match(s.txt,/יש לך .*להשקעה/); assert.match(s.txt,/להפקיד ₪/); assert.match(s.txt,/נקנו \d+ מתוך \d+ ניירות/);
+    assert.doesNotMatch(s.txt+s.strip,/הוגדלו|נשאר לממן|בתור/,'no jargon'); assert.ok(!s.over,'nothing wider than the screen');
+    assert.ok(s.btn.length&&s.btn.every(([w,h])=>w>=44&&h>=44),'every button at least 44px: '+JSON.stringify(s.btn));
+    if(s.dep){await pg.click('#planAns [data-plandep]'); await pg.waitForFunction(()=>/הופקד/.test(document.getElementById('planAns').innerText),null,{timeout:8000}); s=await read(); assert.ok(!s.dep,'the deposit is marked once')}
+    if(s.buys.length){const id=s.buys[0]; await pg.click(`#planAns [data-planbuy="${id}"]`); await pg.waitForFunction(()=>/✓ נקנה/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+      assert.ok(await pg.evaluate(x=>{const c=document.getElementById(x); return !c||c.checked||c.disabled},id),'the table\'s own box is the one ticked')}
+    if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-after-${W}.png`});
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

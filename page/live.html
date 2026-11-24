@@ -1825,6 +1825,26 @@ details>summary{padding-block:4px}
 .achip .ax{min-width:24px;min-height:24px;display:inline-grid;place-items:center}
 .wi-r{height:28px}
 .ck{min-height:28px} .ck input{width:18px;height:18px}
+/* 24.11: the plan in two steps */
+.pstep{background:var(--accent-soft);border-radius:12px;padding:16px;margin:0 0 16px}
+.pstep[hidden]{display:none!important}
+.pstep .ma-k{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;color:var(--ink2)}
+.pstep .ps-bal{font-size:20px;font-weight:600;color:var(--ink);margin:6px 0 12px;line-height:1.3} .pstep .ps-bal .down{color:var(--loss)}
+.pstep .ps-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pstep .ps-step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.pstep .ps-h{display:flex;align-items:center;gap:10px;min-height:44px}
+.pstep .ps-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px}
+.pstep .ps-step.done .ps-n{background:var(--gain)}
+.pstep .ps-t{flex:1;font-size:16px;font-weight:600;color:var(--ink)}
+.pstep .ps-d{margin:6px 0 0;font-size:13px;color:var(--ink2);line-height:1.5}
+.pstep .ps-buys{list-style:none;margin:8px 0 0;padding:0}
+.pstep .ps-buys li{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 0;border-top:1px solid var(--line)}
+.pstep .ps-s{flex:1;font-weight:600;font-size:15px;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.pstep .ps-c{font-size:15px;color:var(--ink)} .pstep .ps-a{flex:none;min-width:76px;text-align:end}
+.pstep .btn.sm{min-height:44px;min-width:76px;font-size:15px}
+.pstep .ps-ok{color:var(--gain);font-weight:600;font-size:14px;white-space:nowrap} .pstep .ps-wait{color:var(--ink2);font-size:13px;white-space:nowrap}
+.pstep .ps-sum{margin:12px 0 0;font-size:14px;color:var(--ink);line-height:1.5}
+table.ladder .ck{min-height:44px} table.ladder .ck input{width:22px;height:22px}
 label.check{min-height:28px} label.check input[type=checkbox]{width:18px;height:18px;flex:none}
 @media (pointer:coarse){details>summary{padding-block:7px} .why>summary{padding:7px 0} .dk-go{padding:8px 6px} .ck,label.check{min-height:36px}}
 /* the holdings editor on a phone: each row is a card with a label over every field, so quantity and cost are not
@@ -3584,7 +3604,7 @@ section[aria-labelledby="hTrend"] .legend i.lg-l2::after{background:var(--s2)}
 .pot-tpl .pt-t:hover,.pot-tpl .pt-t:focus-visible{border-color:var(--accent)}
 .pot-tpl .pt-other{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--accent-ink);font:500 15px var(--sans);cursor:pointer}
 body.hidenum .m-ans .n{filter:blur(7px);user-select:none}
-@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#planAns,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why,#repAns,.cat-seg,.cat-h,#meOne,.set-gh,.vw-t,.set-nav,.set-back{display:none!important}}
+@media (min-width:760px){#mineAns,#mineAdd,#mineAddM,#pfXm,#mineAcctF,#pfAllB,.cash-ed,.cash-sum,#mixTabs,#mixAns,.more-h,#alAns,.al-pills,#alSetB,#nxAns,#nxSetB,#rtTabMap,.calnow .cn-k,.tcalv,.cal-soon,.calleg2,.scr-cg-all,#candPrefsB,#profAns,.cmp-more-b,#fwdAns,#fwdAsm,#riskAns,.dt-why,.dk-more2,.ana-fold,.sp-s,#histAns,.qk-why,#repAns,.cat-seg,.cat-h,#meOne,.set-gh,.vw-t,.set-nav,.set-back{display:none!important}}
 .panel,.pane:not([data-pane="overview"]) > section.seccard,.worth,.insight,.repbox,.ancard,.nqc,.abx,.mypos,.sec-jrn,.scr-cat,.scr-mc,.scr-f,.scr-gap,.sres,.stsum,.sthold,.sqhist{border-radius:8px!important;box-shadow:none!important}
 html body .worth.worth.worth.worth{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
 html body.home-clean .bt.bt{border-radius:8px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:none!important}
@@ -3970,7 +3990,6 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body [data-pane="plan"] .tracks{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0 0 12px!important}
   html body [data-pane="plan"] .trk.trk{padding:8px 12px!important;min-height:0!important;gap:0!important}
   html body [data-pane="plan"] .trk span{white-space:normal;max-width:100%}   /* 17.11: on a 320px phone it wraps, not cut */
-  html body [data-pane="plan"] .strip .cell .d{display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   /* 17.11 proposal 12, "יעד ותרחישים": the forecast first as the answer, the assumptions in one line, the flows folded */
   html body .pane[data-pane="forecast"]:not([hidden]){display:flex!important;flex-direction:column!important}
   html body .pane[data-pane="forecast"]>.pghead{order:-9}
@@ -4536,8 +4555,8 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
       <div class="panel goal" id="goalOv"></div>
     </section>
     <section aria-labelledby="hPlan">
-      <div class="row"><h2 id="hPlan">תוכנית ההגדלה</h2><span class="saved" id="planSaved"></span></div>
-      <div class="m-ans" id="planAns" role="group" aria-label="ההפקדה הבאה" hidden></div>
+      <div class="row"><h2 id="hPlan">תוכנית ההפקדה</h2><span class="saved" id="planSaved"></span></div>
+      <div class="m-ans pstep" id="planAns" role="group" aria-label="מה עושים החודש: להפקיד ולקנות" hidden></div>
       <div class="tracks" role="group" aria-label="מסלול">
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
@@ -4562,8 +4581,8 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
       </div>
       <div class="strip" data-dvp="month once">
         <div class="cell"><div class="k">יתרה להשקעה</div><span class="v" id="pBal">—</span><div class="d" id="pBalD">&nbsp;</div></div>
-        <div class="cell"><div class="k">הוגדלו</div><span class="v" id="pDone">—</span><div class="prog" style="margin-top:8px"><div id="pBar" style="width:0"></div></div></div>
-        <div class="cell"><div class="k">נשאר לממן</div><span class="v" id="pLeft">—</span><div class="d" id="pLeftD">&nbsp;</div></div>
+        <div class="cell"><div class="k">נקנו מהתוכנית</div><span class="v" id="pDone">—</span><div class="prog" style="margin-top:8px"><div id="pBar" style="width:0"></div></div></div>
+        <div class="cell"><div class="k">חסר כדי לקנות הכול</div><span class="v" id="pLeft">—</span><div class="d" id="pLeftD">&nbsp;</div></div>
         <div class="cell"><div class="k">סיום משוער</div><span class="v" id="pEnd" style="direction:rtl">—</span><div class="d" id="pEndD">&nbsp;</div></div>
       </div>
       <div class="panel scroll" data-dvp="month">
@@ -20330,7 +20349,7 @@ function renderPlan(mAll){
   $('pEndD').textContent=st.fixed?'הוראת קבע לכל קרן':!todo.length?'':!st.lad.complete?'קבע הפקדה חודשית':`${lastM+1} הפקדות, אם המחירים לא זזים`;
   $('depState').textContent=(st.depNow?`הפקדת ${MONTHS[new Date().getMonth()]} סומנה.`:`הפקדת ${MONTHS[new Date().getMonth()]} עוד לא סומנה.`)+(+S.depDay?` יום ההפקדה שלך: ${depDayTxt()}.`:'');
   for(const b of document.querySelectorAll('[data-track]'))b.setAttribute('aria-pressed',b.dataset.track===TRACK);
-  const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} הוגדלו · ${t} בתור`};
+  const tsum=x=>{const t=x.items.filter(i=>i.status==='todo').length,d=x.items.filter(i=>i.status==='done').length;return `${d} נקנו · ${t} מחכים`};
   // 1.11: only once the settings have loaded (SETK): before that S is the page's defaults, and this line wrote them over the
   // saved settings whenever the plan arrived first (the name, the choices and the deposit plan were lost on every visit)
   {const fs=fixedSum(PLD.idx); if(SETK&&fs!=null&&Math.abs(fs-(+S.monthlyIdx||0))>0.005&&canWrite){S.monthlyIdx=fs; dirty=true; S_SEQ++; clearTimeout(timer); timer=setTimeout(save,700)}
@@ -31463,13 +31482,29 @@ let DVV='month'; try{const v=localStorage.getItem('tr_dvv'); if(DVK.includes(v))
 // 17.11 (the owner's proposal 11, "תוכנית: ההפקדה הבאה"): the phone's answer card: this month's deposit, whether it was
 // marked, what is bought after it and for how much, and one button to mark that the money came (it ticks the month's
 // own box in the monthly table, so everything after it is the table's own)
-function planAnsFill(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start){box.hidden=true; return}
-  const ym=ymAdd(st.start,st.cur), d=depBy[ym], amt=d?(+d.amount||0):B, buys=(st.lad&&st.lad.rows&&st.lad.rows[st.cur])||[], cost=buys.reduce((t,s)=>t+(st.cost[s]||0),0);
+// 24.11 (the owner: "משהו שם לא נגיש וקשה להבנה, זה אמור להיות די פשוט"): the card is the plan in two plain steps, on
+// every screen: 1. deposit this month's sum ("הפקדתי"), 2. buy this month's securities, each with its price and its own
+// "קניתי". Under them one line: how many were bought and whether the money is enough. The buttons tick the monthly
+// table's own boxes (dep_<month>, buy_<sym>), so the figures and what is saved are the table's own, unchanged
+function planAnsFill(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st||st.cur==null||!st.start||!PL.items.length){box.hidden=true; return}
+  const ym=ymAdd(st.start,st.cur), d=depBy[ym], amt=d?(+d.amount||0):B, buys=(st.lad&&st.lad.rows&&st.lad.rows[st.cur])||[];
   const trk=document.querySelector('.trk[aria-pressed="true"] b'), dep=$('dep_'+ym), can=!!(dep&&!dep.disabled);
-  const J=L=>L.length>1?L.slice(0,-1).join(', ')+' ו-'+L[L.length-1]:(L[0]||'');
+  const act=PL.items.filter(i=>i.status!=='skip'), done=act.filter(i=>i.status==='done').length, todo=PL.items.filter(i=>i.status==='todo'), need=todo.reduce((t,i)=>t+(st.cost[i.sym]||0),0), gap=need-st.bal;
+  const row=sym=>{const c=$('buy_'+sym)||document.querySelector('#ladRows [data-buy="'+sym+'"][data-ym="'+ym+'"]'), cost=st.cost[sym]||0, got=!!(c&&c.checked), short=!got&&cost>st.bal+0.005;
+    const stH=got?'<span class="ps-ok">✓ נקנה</span>':short?`<span class="ps-wait">חסרים <span class="n" dir="ltr">${ils(Math.max(0.01,Math.ceil((cost-st.bal)*100)/100),2)}</span></span>`:c&&!c.disabled?`<button type="button" class="btn sm pri" data-planbuy="${esc(c.id)}" aria-label="קניתי ${esc(lab(sym))}">קניתי</button>`:'';
+    return `<li class="${got?'done':''}"><span class="ps-s">${esc(lab(sym))}</span><span class="ps-c n" dir="ltr">${ils(cost,2)}</span><span class="ps-a">${stH}</span></li>`};
+  const sum=st.fixed?'':!todo.length?'כל הניירות בתוכנית נקנו.':`נקנו ${done} מתוך ${act.length} ניירות · ${gap<=0.005?'יש מספיק כסף לכל מה שנשאר':`לשאר התוכנית צריך עוד <span class="n" dir="ltr">${ils(gap)}</span>, מההפקדות הבאות`}`;
   box.hidden=false;
-  box.innerHTML=`<div class="ma-k"><span>ההפקדה הבאה · ${esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div><div class="ma-v n">${ils(amt)}</div><div class="ma-l">${d?'סימנת שהכסף הגיע.':'עוד לא סימנת שהכסף הגיע.'}</div><div class="ma-l">${buys.length?`${d?'לקנות עכשיו':'אחריה קונים'}: ${esc(J(buys.map(lab)))} (<span class="n" dir="ltr">${ils(cost,2)}</span>)`:'החודש צבירה, בלי קנייה.'}</div>${!d&&can?`<div class="ma-ac"><button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הכסף הגיע</button></div>`:''}`}
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep]'); if(!b)return; const c=$('dep_'+b.dataset.plandep); if(c&&!c.checked&&!c.disabled)c.click()});
+  box.innerHTML=`<div class="ma-k"><span>תוכנית ההפקדה · ${esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div>
+    <div class="ps-bal">יש לך <b class="n${st.bal<0?' down':''}" dir="ltr">${(st.bal<0?'−':'')+ils(Math.abs(st.bal))}</b> להשקעה</div>
+    <ol class="ps-steps">
+      <li class="ps-step${d?' done':''}"><div class="ps-h"><span class="ps-n" aria-hidden="true">${d?'✓':'1'}</span><span class="ps-t">להפקיד <b class="n" dir="ltr">${ils(amt)}</b></span>${d?'<span class="ps-ok">הופקד</span>':can?`<button type="button" class="btn sm pri" data-plandep="${esc(ym)}">הפקדתי</button>`:''}</div>
+        ${d?'':'<p class="ps-d">אחרי שהעברת את הכסף לחשבון ההשקעות, לוחצים "הפקדתי".</p>'}</li>
+      <li class="ps-step"><div class="ps-h"><span class="ps-n" aria-hidden="true">2</span><span class="ps-t">${buys.length?'לקנות החודש':'החודש לא קונים'}</span></div>
+        ${buys.length?`<ul class="ps-buys">${buys.map(row).join('')}</ul><p class="ps-d">אחרי שקנית נייר אצל הברוקר, לוחצים "קניתי" לידו.</p>`:'<p class="ps-d">הכסף נצבר עד שיספיק לנייר הבא בתוכנית.</p>'}</li>
+    </ol>
+    ${sum?`<p class="ps-sum" role="status">${sum}</p>`:''}`}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-plandep],[data-planbuy]'); if(!b)return; const c=$(b.dataset.planbuy||('dep_'+b.dataset.plandep)); if(c&&!c.checked&&!c.disabled)c.click()});
 function dvSet(v){DVV=DVK.includes(v)?v:'month'; try{localStorage.setItem('tr_dvv',DVV)}catch(e){}
   const row=$('dvTabs'); if(!row)return; const sec=row.closest('section'); if(sec)sec.dataset.dvv=DVV;
   let all=false; try{all=localStorage.getItem('tr_pt_all')==='1'}catch(e){}
