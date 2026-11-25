@@ -393,7 +393,12 @@ test('22.11 the history by its dates, the board on past days, what the market di
 
 test('the API: a partner cannot reach the global graph by any route; their view is cut on the server; the admin\'s routes need "view" and "edit"',async()=>{
   const {createApp,bootstrap}=await import('../server/index.js');
-  const store=new Store(':memory:'); bootstrap(store); const U=fixture(store); impactTask(store);
+  const store=new Store(':memory:'); bootstrap(store); const U=fixture(store);
+  // 25.11: the fixture's articles are of 18.11.2026, and the server judges "the last seven days" by its own clock (a week
+  // later the registry was empty and this test failed by the calendar alone): the articles and their readings are moved to now
+  {const d=Date.now()-at.getTime(), mv=v=>typeof v==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d/.test(v)&&!isNaN(Date.parse(v))?new Date(Date.parse(v)+d).toISOString():Array.isArray(v)?v.map(mv):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,mv(x)])):v;
+    for(const p of ['research/news','research/newsx'])store.setDoc(p,mv(store.getDoc(p).data))}
+  impactTask(store);
   const app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false});
   const srv=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))}), base='http://127.0.0.1:'+srv.address().port, jar={};
   const req=async(who,method,url,body,hdr={})=>{const r=await fetch(base+url,{method,redirect:'manual',headers:{...(jar[who]?{cookie:jar[who]}:{}),'x-tc':'1',...(body!==undefined?{'content-type':'application/json'}:{}),...hdr},body:body===undefined?undefined:JSON.stringify(body)});

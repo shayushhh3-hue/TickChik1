@@ -29815,7 +29815,7 @@ const xShareUrl=(text,url)=>`https://x.com/intent/post?text=${encodeURIComponent
 // "במעקב", never hide the rest); saved articles and the reading history kept in the viewer's own document (newsst), with
 // a short copy, so they stay after the article leaves the week the site keeps. No image of the publishers' is shown
 // (their rights are not ours to give). Nothing here is advice or a forecast; an opinion is marked as one. ====
-const NX_KIND={news:'ידיעה',analysis:'ניתוח',opinion:'דעה',pr:'הודעה רשמית של החברה',social:'פוסט ב-X'};
+const NX_KIND={news:'ידיעה',analysis:'ניתוח',opinion:'דעה',pr:'הודעה רשמית של החברה',social:'פוסט ב-X',move:'תנועת מחיר'};   // 25.11: move = a report of a price move only, never an event
 const NX_KIND_NOTE={opinion:'דעה של הכותב, לא עובדה',analysis:'ניתוח של הכותב',pr:'ההודעה של החברה עצמה, לא דיווח עצמאי',social:'פוסט של משתמש ב-X: לא מקור מאומת'};
 const NX_REG={us:'ארה״ב',israel:'ישראל',europe:'אירופה',uk:'בריטניה',china:'סין',japan:'יפן',india:'הודו',russia:'רוסיה',ukraine:'אוקראינה',middle_east:'המזרח התיכון',latam:'אמריקה הלטינית',asia:'אסיה',global:'עולמי'};
 const NX_THEME={rates:'ריבית',inflation:'אינפלציה',usd:'הדולר',oil:'נפט',gas:'גז',chips:'שבבים',ai:'בינה מלאכותית',war:'מלחמה',sanctions:'סנקציות',tariffs:'מכסים',china:'סין',israel:'ישראל',europe:'אירופה',supply:'שרשרת אספקה',
@@ -29994,7 +29994,8 @@ function nwCard(z,E,o={}){
   const fol=nwMatch(it,F);
   const trust=NW_OFF.has(it.pub)?'<span class="nw-tr off" title="דיווח רשמי, מהגוף עצמו">מקור רשמי</span>':NW_TOP.has(it.pub)?'<span class="nw-tr" title="מו״ל חדשות מוביל">מו״ל מוביל</span>':'';
   // 10.11: the card's top line is its importance and where and when; the kind, the publisher's badge and the category are under "עוד"
-  const kindH=`<span class="nw-k k-${kind}">${esc(it.pub==='Federal Reserve'?'הודעה רשמית של הפד':NX_KIND[kind])}</span>${trust}${cats[0]?`<button type="button" class="nw-cat" data-nwset="cat:${cats[0]}">${esc(NX_CAT_L[cats[0]])}</button>`:''}`;
+  // 25.11: an article gathered by what a held company does (server/topicnews.js), not by its name: said so, with the phrase
+  const kindH=`<span class="nw-k k-${kind}">${esc(it.pub==='Federal Reserve'?'הודעה רשמית של הפד':NX_KIND[kind])}</span>${trust}${cats[0]?`<button type="button" class="nw-cat" data-nwset="cat:${cats[0]}">${esc(NX_CAT_L[cats[0]])}</button>`:''}${it.topic?`<span class="nw-k" title="הכתבה לא מזכירה בהכרח את הנייר שלך. היא נאספה כי היא עוסקת בתחום שהחברה פועלת בו; אם יש קשר לנייר, המנוע מסביר אותו במפת ההשפעה.">נאספה לפי תחום העיסוק · <bdi dir="ltr">${esc(it.topic)}</bdi></span>`:''}`;
   const meta=`${x?`<span class="nx-tag lv-${lv}">${NX_LV[lv]}</span>`:'<span class="nx-tag">עוד לא נקרא</span>'}<span class="nw-src"><bdi>${esc(it.pub||'מקור')}</bdi>${when?' · '+when:''}${it.upd?` · עודכן ${dmy(it.upd)} ${hm(it.upd)}`:''}</span>`;
   const impH=it.src!=='x'?nwImpactH(it,z.rel):'';
   const entsS=`${(impH?[]:syms).map(k=>{const h=held.get(k), ok=SECKEY.test(k); return `<${ok?'button type="button"':'span'} class="nw-e${h?' held':''}"${ok?` data-gosec="${esc(k)}"`:''}>${logoHtml(k,'xs')}<b>${esc(k)}</b>${h?` <span class="n">בתיק ${pct(h.w,0)}</span>`:''}</${ok?'button':'span'}>`}).join('')}`, ents=entsS, entsT=`${((x&&x.sectors)||[]).slice(0,3).map(g=>`<button type="button" class="nw-e t" data-nwset="sec:${esc(g)}">${esc(NX_SEC_HE[g]||g)}</button>`).join('')}${((x&&x.regions)||[]).slice(0,2).map(r=>`<span class="nw-e t r">${esc(NX_REG[r]||r)}</span>`).join('')}`;

@@ -6,6 +6,7 @@ import {newsFor, tick, usable} from './research.js';
 import {MARKET} from './newsx.js';
 import {ilNews} from './ilnews.js';
 import {moreNews} from './sources.js';
+import {topicNewsTask} from './topicnews.js';
 
 const DAY=864e5;
 export const NEWS_DOC='research/news';
@@ -18,7 +19,7 @@ export function newsSyms(store){
   return [...out].sort();
 }
 // one run: the last three days of articles per security (six each), merged into the document by link
-export async function newsTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=4*60e3,keep=7,max=320,only=null,market=MARKET,il=ilNews,more=moreNews}={}){
+export async function newsTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=4*60e3,keep=7,max=320,only=null,market=MARKET,il=ilNews,more=moreNews,topics=topicNewsTask}={}){
   const t0=Date.now(), iso=now.toISOString(), map=((store.getDoc('settings/main').data)||{}).symMap||{};
   // 30.10: and the market's anchors (server/newsx.js MARKET), so there is news without any portfolio
   const syms=only||[...new Set([...newsSyms(store),...(market||[])])], old=store.getDoc(NEWS_DOC), by=new Map();
@@ -43,11 +44,18 @@ export async function newsTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=ne
   let M={items:[],st:{}};
   if(more&&!only){try{M=await more(store,{syms:newsSyms(store),fetch:f,now})}catch(e){M={items:[],st:{first:'more: '+e.message}}}
     for(const a of M.items){const cur=by.get(a.link); if(cur){for(const s of a.syms)if(!cur.syms.includes(s))cur.syms.push(s)} else by.set(a.link,{...a,at:a.at||iso,seen:iso})}}
+  // 25.11 (the owner: "see what the company does and bring news related to it"): the news of each company's business, by
+  // the search phrases written from its own facts (server/topicnews.js), once an hour. An article gathered so is listed
+  // under the security and marked (topic); whether the event touches the security is the engine's decision, not this list's
+  let TP={items:[]};
+  if(topics&&!only&&now.getTime()-(+store.getMeta('srcAt:topics')||0)>=55*60e3){
+    try{TP=await topics(store,{syms:newsSyms(store),fetch:f,now,log}); if(TP.ok||TP.off||TP.capped)store.setMeta('srcAt:topics',String(now.getTime()))}catch(e){TP={items:[],first:'topics: '+e.message}}
+    for(const a of TP.items){const cur=by.get(a.link); if(cur){for(const s of a.syms)if(!cur.syms.includes(s))cur.syms.push(s)} else by.set(a.link,{...a,at:a.at||iso,seen:iso})}}
   const from=new Date(now.getTime()-keep*DAY).toISOString();
   const items=[...by.values()].filter(x=>(x.at||x.seen)>=from).sort((a,b)=>String(b.at||b.seen)<String(a.at||a.seen)?-1:1).slice(0,max);
   const pubs=new Set(items.map(x=>x.pub).filter(Boolean)), src=(process.env.FINNHUB_API_KEY?'Finnhub, Yahoo Finance':'Yahoo Finance')+(pubs.has('SEC EDGAR')?', SEC EDGAR':'')+(items.some(x=>/news\.google\.com/.test(x.link||''))?', Google News (מו"לים מובילים בלבד)':'')+(pubs.has('גלובס')?', גלובס':'');
   if(ok||I.ok||!old.exists)store.setDoc(NEWS_DOC,{items,updatedAt:iso,n:syms.length,ok,fail,first,source:src});
-  const st={at:iso,ok,fail,of:syms.length,items:items.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),il:{ok:I.ok,fail:I.fail,items:I.items.length,of:I.targets||0,...(I.off?{off:true}:{}),...(I.first?{first:I.first}:{})},more:M.st};
+  const st={at:iso,ok,fail,of:syms.length,items:items.length,stopped,first,seconds:Math.round((Date.now()-t0)/1000),il:{ok:I.ok,fail:I.fail,items:I.items.length,of:I.targets||0,...(I.off?{off:true}:{}),...(I.first?{first:I.first}:{})},more:M.st,...(TP.ok||TP.first||TP.off?{topics:{ok:TP.ok||0,fail:TP.fail||0,items:TP.items.length,...(TP.off?{off:true}:{}),...(TP.first?{first:TP.first}:{})}}:{})};
   store.setMeta('newsStatus',JSON.stringify(st));
   log(`news: ${ok}/${syms.length} securities, ${items.length} articles kept${I.targets?`, Globes: ${I.items.length} headlines for ${I.targets} Tel Aviv shares (${I.ok} feeds${I.first?', '+I.first:''})`:''}${M.st.sec?`, SEC: ${M.st.sec.items}`:''}${M.st.gnews?`, Google News: ${M.st.gnews.items} (${M.st.gnews.ok} searches${M.st.gnews.first?', '+M.st.gnews.first:''})`:''}${stopped?', stopped: '+stopped:''}${first?' (first: '+first+')':''}`);
   return st;

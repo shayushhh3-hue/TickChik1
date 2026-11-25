@@ -124,6 +124,8 @@ export function access(user,p){
   // 24.11 TikChik WORLD: the world's news (the headlines gathered, the readings, the symbols confirmed) are large, and are
   // served to a user through /api/impact (the map's view of the whole world), never as documents
   if(seg[0]==='research'&&/^world/.test(seg[1]||''))return owner?'r':'';
+  // 25.11: the search phrases of every held company's business (server/topicnews.js) are keyed by the securities people hold
+  if(seg[0]==='research'&&seg[1]==='topics')return owner?'r':'';
   if(seg[0]==='quotes'||seg[0]==='research')return owner?'rw':'r';
   if(seg[0]==='history'&&seg[1]==='prices')return owner?'rw':'r';
   if(OWN_DOCS.has(seg[0]))return isOwner(user)?'rw':'';

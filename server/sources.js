@@ -73,7 +73,7 @@ export function gnPick(items,{sym,name,aliases=null,he=false,alias=null,now=new 
     if(!named(title))continue;
     out.push({title:title.slice(0,200),pub,link:it.link,at:it.at||now.toISOString(),sum:null,syms:[sym]}); if(out.length>=n)break}
   return out}
-async function gnFetch(q,he,f){const r=await f(gnUrl(q,he),{headers:{'user-agent':UA,accept:'application/rss+xml, application/xml;q=0.9, text/xml;q=0.8'},signal:AbortSignal.timeout(15000)});
+export async function gnFetch(q,he,f){const r=await f(gnUrl(q,he),{headers:{'user-agent':UA,accept:'application/rss+xml, application/xml;q=0.9, text/xml;q=0.8'},signal:AbortSignal.timeout(15000)});
   if(!r.ok)throw new Error('HTTP '+r.status); return parseFeed(await rssText(r))}
 export async function gnewsTask(store,{syms=[],fetch:f=globalThis.fetch,now=new Date(),max=40,pause=400,budgetMs=90e3}={}){
   if(off('GNEWS'))return {items:[],ok:0,fail:0,off:true};

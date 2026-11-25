@@ -98,6 +98,9 @@ export function eventsOf(store,{now=new Date(),days=3,visible=null,alias=true,wo
         arts.set(it.id,it)}}}
   const E=new Map();
   for(const a of arts.values()){const x=by[a.id]; if(!x||(a.at||a.seen||'')<from||(visible&&!visible(a)))continue;   // posts on X are not a source for an alert: they are not in these two lists
+    // 25.11 (the owner): a report of a price move only ("the health shares fell at the end of the day") is not an event: no
+    // alert and no line on the impact map is made of it (the article itself stays in the news, said to be what it is)
+    if(x.kind==='move')continue;
     // 1.11: a reading by the rules has no event key, so every article about the same company on the same day was an
     // alert of its own; those are one event (its first symbol and the day) until Claude reads them and names the event
     const day=String(a.at||a.seen||'').slice(0,10), sym0=((x.aff||[]).find(z=>z&&z.sym)||{}).sym||((a.syms||[])[0])||'';
