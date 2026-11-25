@@ -89,6 +89,27 @@ export async function ilSchedTask(store,{fetch:f=timedFetch,key=process.env.TASE
   store.setDoc('research/ilsched',doc); setIlSched(doc);
   log(`israeli calendar: ${n} days from ${from} to ${to}, ${Object.values(days).filter(x=>!x[1]).length} without trading${errors.length?'; '+errors.join(' | '):''}`); return true;
 }
+// 25.11 (for a day): what the answers of the exchange's other free lists look like, before the site reads them (the
+// funds' details, an index's components, the companies, the delisted securities). The names in the exchange's documents
+// are not the names in its answers, so the first row and the small tables are kept as they came (research/ilprobe)
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+export async function ilProbeTask(store,{fetch:f=timedFetch,key=process.env.TASE_API_KEY,now=new Date(),log=()=>{}}={}){
+  if(!key)return false; const o={key,fetch:f}, out={};
+  const big=j=>{const a=resAny(j,''); return {top:j&&typeof j==='object'?Object.keys(j).slice(0,8):[],n:a.length,row:a[0]&&typeof a[0]==='object'?Object.keys(a[0]):[],first:JSON.stringify(a[0]??null).slice(0,3000),meta:j&&j.meta?JSON.stringify(j.meta).slice(0,300):''}};
+  const ask=async(name,path,opt={})=>{await wait(300); try{const j=await dw(path,{...o,...opt}); out[name]=big(j); return j}catch(e){out[name]={err:String(e&&e.message||e)}; return null}};
+  const tab=async(name,path)=>{const j=await ask(name,path); if(j)out[name].rows=resAny(j,'').slice(0,80)};
+  await ask('fundList','/fund/fund-list?listingStatusId=1');
+  for(const t of ['fund-type','mutual-fund-classification','tracking-fund-classification','share-exposure-profile','currency-exposure-profile','distribution-commission','tax-status','payment-policy','underlying-asset','stock-exchange','listing-status'])await tab('fund:'+t,'/fund/'+t);
+  const day=String((store.getDoc('research/ilsyms').data||{}).day||ilParts(now).iso), [y,m,d]=day.split('-').map(Number);
+  await ask('traded',`/basic-securities/trade-securities-list/${y}/${m}/${d}`);
+  await ask('tradedEn',`/basic-securities/trade-securities-list/${y}/${m}/${d}`,{lang:'en-US'});
+  await ask('companies','/basic-securities/companies-list');
+  await ask('delisted',`/basic-securities/delisted-securities-list/${y}/${m}`);
+  await ask('delistedPrev',`/basic-securities/delisted-securities-list/${m===1?y-1:y}/${m===1?12:m-1}`);
+  await ask('idxComp',`/basic-indices/index-components-basic?IndexId=142&TradeDate=${day}`,{base:DW2});
+  await ask('universes','/basic-indices/universes-list',{base:DW2});
+  store.setDoc('research/ilprobe',{out,day,at:now.toISOString()},{silent:true}); log('israeli probe: '+Object.keys(out).length+' answers kept'); return true;
+}
 // the calendar kept from the last run, for the server's own clock of the Tel Aviv market (at the start of the server)
 export function ilSchedLoad(store){try{const d=store.getDoc('research/ilsched'); setIlSched(d.exists?d.data:null); return !!(d.exists&&d.data&&d.data.from)}catch(e){return false}}
 
@@ -101,6 +122,7 @@ export async function ilSymsTask(store,{fetch:f=timedFetch,key=process.env.TASE_
   // the two lists beside the search's: each keeps its own document and says its own line; neither stops the other
   try{await ilListsTask(store,{fetch:f,key,now,log})}catch(e){log('israeli lists: '+(e&&e.message||e))}
   try{await ilSchedTask(store,{fetch:f,key,now,log})}catch(e){log('israeli calendar: '+(e&&e.message||e))}
+  if(process.env.NODE_ENV!=='test'&&f===timedFetch){ilProbeTask(store,{fetch:f,key,now,log}).catch(e=>log('israeli probe: '+(e&&e.message||e)))}   // 25.11, for a day: beside the run, never in its way
   let types=[], funds=[], indices=[];
   try{types=res(await dw('/basic-securities/securities-types',o),'securitiesTypes')}catch(e){errors.push('types: '+e.message)}
   try{funds=res(await dw('/fund/fund-list?listingStatusId=1',o),'funds')}catch(e){errors.push('funds: '+e.message)}
