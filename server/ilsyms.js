@@ -42,21 +42,26 @@ export function ilBuild({sec=[],en=[],types=[],funds=[],indices=[]}){
 // ---- 25.11 (the owner): two more of the exchange's free lists, with the same key ----
 // the shape of an answer, kept beside what was read from it: the exchange's documents were read, its answers were not
 // seen before the key was saved, and a list that comes back empty must be told from a list the site misread
-const shapeOf=(j,k)=>{const a=res(j,k); return {keys:j&&typeof j==='object'?Object.keys(j).slice(0,6):[],n:a.length,row:a[0]&&typeof a[0]==='object'?Object.keys(a[0]).slice(0,12):[]}};
+// the list in an answer: under the name the exchange's document gives it, or under the one name the answer does have.
+// The answers do not carry the documents' names (seen on 25.11 with the real key: "tase-schedules" where the document
+// says "taseSchedulesResponse", "illiquidMaintenanceAndSuspensionList" where it says "tradingListCode")
+const resAny=(j,k)=>{if(j&&j[k]&&Array.isArray(j[k].result))return j[k].result; for(const v of Object.values(j&&typeof j==='object'&&!Array.isArray(j)?j:{})){if(v&&Array.isArray(v.result))return v.result; if(Array.isArray(v))return v} return Array.isArray(j)?j:[]};
+const pick=(r,...ks)=>{for(const k of ks)if(r&&r[k]!=null&&r[k]!=='')return r[k]; return undefined};
+const shapeOf=(j,k)=>{const a=resAny(j,k); return {keys:j&&typeof j==='object'?Object.keys(j).slice(0,6):[],n:a.length,row:a[0]&&typeof a[0]==='object'?Object.keys(a[0]).slice(0,12):[],first:a[0]&&typeof a[0]==='object'?JSON.stringify(a[0]).slice(0,300):''}};
 const SRC='הבורסה לניירות ערך בתל אביב (TASE DataWise)';
 // the exchange's lists for the next trading day: suspended from trading, the maintenance list (a company that does not
 // meet the exchange's maintenance rules), low liquidity. The kind is read from the exchange's own name of each list
 export const ilListKind=d=>{d=String(d||''); return /השעי|suspen/i.test(d)?'susp':/שימור|mainten|preserv/i.test(d)?'maint':/סחירות|liquid/i.test(d)?'illiq':'other'};
 export async function ilListsTask(store,{fetch:f=timedFetch,key=process.env.TASE_API_KEY,now=new Date(),log=()=>{}}={}){
   if(!key)return false; const o={key,fetch:f}, errors=[], shape={}; let rows=null, codes=[];
-  try{const j=await dw('/basic-securities/illiquid-maintenance-suspension-list',o); rows=res(j,'tradingListCode'); shape.lists=shapeOf(j,'tradingListCode')}catch(e){errors.push('lists: '+e.message)}
-  try{const j=await dw('/basic-securities/trading-code-list',o); codes=res(j,'tradingListCode'); shape.codes=shapeOf(j,'tradingListCode')}catch(e){errors.push('list codes: '+e.message)}
+  try{const j=await dw('/basic-securities/illiquid-maintenance-suspension-list',o); rows=resAny(j,'illiquidMaintenanceAndSuspensionList'); shape.lists=shapeOf(j,'illiquidMaintenanceAndSuspensionList')}catch(e){errors.push('lists: '+e.message)}
+  try{const j=await dw('/basic-securities/trading-code-list',o); codes=resAny(j,'tradingListCode'); shape.codes=shapeOf(j,'tradingListCode')}catch(e){errors.push('list codes: '+e.message)}
   const old=store.getDoc('research/illists');
   if(rows===null){store.setDoc('research/illists',{...(old.exists?old.data:{}),errors,triedAt:now.toISOString()},{silent:true}); log('israeli lists: nothing came ('+errors.join(' | ')+')'); return false}
   const types={}; for(const c of codes)if(c&&c.listTypeId!=null)types[String(c.listTypeId)]={desc:String(c.listTypeDesc||'').trim(),kind:ilListKind(c.listTypeDesc)};
   // the names of the lists are kept from the last time they came (a day they are refused does not make every list "other")
   const T=Object.keys(types).length?types:(old.exists&&old.data&&old.data.types)||{};
-  const items=rows.map(r=>[+(r&&(r.securityID??r.securityId))||0,String(r&&r.listTypeId!=null?r.listTypeId:''),String(r&&r.statusDate||'').slice(0,10)]).filter(r=>r[0]>0).sort((a,b)=>a[0]-b[0]||(a[1]<b[1]?-1:1));
+  const items=rows.map(r=>[+pick(r,'securityID','securityId','securityid')||0,String(pick(r,'listTypeId','listTypeID','listType')??''),String(pick(r,'statusDate','StatusDate','date')||'').slice(0,10)]).filter(r=>r[0]>0).sort((a,b)=>a[0]-b[0]||(a[1]<b[1]?-1:1));
   store.setDoc('research/illists',{items,types:T,updatedAt:now.toISOString(),source:SRC,errors,shape});
   log(`israeli lists: ${items.length} securities on the exchange's suspension, maintenance and low-liquidity lists${errors.length?'; '+errors.join(' | '):''}`); return true;
 }
@@ -73,13 +78,13 @@ export function ilIdOf(IL){
 const isoAdd=(now,k)=>ilParts(new Date(now.getTime()+k*864e5)).iso;
 export async function ilSchedTask(store,{fetch:f=timedFetch,key=process.env.TASE_API_KEY,now=new Date(),log=()=>{}}={}){
   if(!key)return false; const o={key,fetch:f}, errors=[], shape={}; let rows=[], names=[];
-  try{const j=await dw(`/tase-schedules?fromDate=${isoAdd(now,-14)}&toDate=${isoAdd(now,400)}`,o); rows=res(j,'taseSchedulesResponse'); shape.days=shapeOf(j,'taseSchedulesResponse')}catch(e){errors.push('schedule: '+e.message)}
-  try{const j=await dw('/tase-schedules/day-types',o); names=res(j,'dayTypesResponse'); shape.types=shapeOf(j,'dayTypesResponse')}catch(e){errors.push('day types: '+e.message)}
+  try{const j=await dw(`/tase-schedules?fromDate=${isoAdd(now,-14)}&toDate=${isoAdd(now,400)}`,o); rows=resAny(j,'tase-schedules'); shape.days=shapeOf(j,'tase-schedules')}catch(e){errors.push('schedule: '+e.message)}
+  try{const j=await dw('/tase-schedules/day-types',o); names=resAny(j,'day-types'); shape.types=shapeOf(j,'day-types')}catch(e){errors.push('day types: '+e.message)}
   const old=store.getDoc('research/ilsched'), days={}; let from='', to='', n=0;
-  for(const r of rows){const d=String(r&&r.date||'').slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(d))continue; n++; if(!from||d<from)from=d; if(!to||d>to)to=d;
-    const open=r.isTradeDate===true||r.isTradeDate===1||/^(true|1)$/i.test(String(r.isTradeDate)), t=String(r.dayTypeId||''); if(!(open&&t==='T'))days[d]=[t,open?1:0]}
+  for(const r of rows){const d=String(pick(r,'date','Date','tradeDate','scheduleDate')||'').slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(d))continue; n++; if(!from||d<from)from=d; if(!to||d>to)to=d;
+    const tr=pick(r,'isTradeDate','isTradeDay','isTradingDay','isTrade'), open=tr===true||tr===1||/^(true|1|y|yes)$/i.test(String(tr)), t=String(pick(r,'dayTypeId','dayTypeID','dayType','dayTypeCode')||''); if(!(open&&t==='T'))days[d]=[t,open?1:0]}
   if(!n){store.setDoc('research/ilsched',{...(old.exists?old.data:{}),errors,triedAt:now.toISOString(),shape},{silent:true}); log('israeli calendar: nothing came ('+errors.join(' | ')+')'); return false}
-  const types={}; for(const t of names)if(t&&t.dayTypeId)types[String(t.dayTypeId)]=String(t.dayTypeName||'').trim();
+  const types={}; for(const t of names){const id=pick(t,'dayTypeId','dayTypeID','dayType','dayTypeCode'); if(id!=null)types[String(id)]=String(pick(t,'dayTypeName','dayTypeDesc','dayTypeDescription','name','desc')||'').trim()}
   const doc={days,types:Object.keys(types).length?types:(old.exists&&old.data&&old.data.types)||{},from,to,updatedAt:now.toISOString(),source:SRC,errors,shape};
   store.setDoc('research/ilsched',doc); setIlSched(doc);
   log(`israeli calendar: ${n} days from ${from} to ${to}, ${Object.values(days).filter(x=>!x[1]).length} without trading${errors.length?'; '+errors.join(' | '):''}`); return true;
