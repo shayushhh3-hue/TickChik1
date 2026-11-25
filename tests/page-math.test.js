@@ -115,6 +115,21 @@ test('fees: the trade\'s own fee, else the account\'s fee per US trade, plus fee
   assert.equal(F.feesOf({acct:'x'},3.5).ils,0);
 });
 
+test('the plan: a mark the account\'s cash already holds (cashOk) is not counted again in the cash; its units still are, and a later mark is', ()=>{
+  G.Q={usdIls:3.5,prices:{MSFT:100},prev:{}};
+  G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:350}],cash:[{acct:'exc',ccy:'ILS',amount:1000}],asOf:{exc:'2026-10-10'}};
+  plan([{amount:500,at:'2026-10-12T09:00:00Z'}],[{sym:'MSFT',paidIls:350,qty:1,at:'2026-10-12T10:00:00Z'}]);
+  const G2=Object.assign(Object.create(G),{trackAcct:()=>'all'});
+  const C=load(['GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','allDep','ilDay','usdRate','stmtDay','markDay','coveredBy','cashOkAt','inCashOk','buyAcct','depAcct','planOpen','planAdj','mAllNow','model'],G2);
+  // both marks came after the statement of 10.10: the deposit raises the cash, the purchase takes it and adds a unit
+  let m=C.mAllNow(); near(m.cash,1000+500-350); near(m.total,2*350+1150);
+  // the owner: the account's ₪1,000 already holds what was marked up to 12.10 noon
+  G.PLD.cashOk={exc:'2026-10-12T12:00:00Z'};
+  const o=C.planOpen(); assert.deepEqual(o.deps,[]); assert.deepEqual(o.buys.map(b=>b.sym),['MSFT'],'the unit is still to come in a statement'); assert.equal(o.inCash.length,1);
+  m=C.mAllNow(); near(m.cash,1000,'the account\'s own figure, no money counted twice'); near(m.total,2*350+1000);
+  G.PLD.deposits.push({amount:200,at:'2026-10-13T09:00:00Z'}); near(C.mAllNow().cash,1200,'a mark after that moment moves the cash again');
+  plan();
+});
 test('the plan: marks a later statement covers are not added again', ()=>{
   G.Q={usdIls:3.5,prices:{MSFT:100,NVDA:200},prev:{}};
   G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:350}],cash:[{acct:'exc',ccy:'ILS',amount:0}],asOf:{exc:'2026-10-10'}};

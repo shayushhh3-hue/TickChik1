@@ -4530,7 +4530,7 @@ test('24.11 a purchase or a sale asks about the deposit plan (in the card and th
   const inPlan=new Set([...(pl.items||[]),...((pl.idx||{}).items||[])].map(i=>i.sym)), held=pf.positions.filter(x=>x.sym&&+x.qty>0).map(x=>x.sym), bought=held.find(x=>!inPlan.has(x));
   const sold=(pl.items||[]).find(i=>i.status==='todo'&&held.includes(i.sym)).sym;
   if(!bought)return t.skip('no holding outside the plan in the fixture');
-  pl.held=[...new Set([...held])]; delete pl.ask; store.setDoc('plan/main',pl,{silent:true});
+  pl.held=held.filter(x=>x!==bought) /* the plan saw every holding but the one bought since */; delete pl.ask; store.setDoc('plan/main',pl,{silent:true});
   pf.positions=pf.positions.filter(x=>x.sym!==sold); store.setDoc('portfolio/main',pf,{silent:true});
   const {ctx,pg}=await open(390);
   try{
@@ -4540,14 +4540,14 @@ test('24.11 a purchase or a sale asks about the deposit plan (in the card and th
     assert.ok(await pg.evaluate(()=>[...document.querySelectorAll('#planAns .pc-hold button')].every(b=>b.getBoundingClientRect().height>=44)),'every answer a finger can press');
     // the same in the alerts of בקרה, with the way to the plan
     const al=await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^plan:/.test(i.key)).map(i=>i.key).sort());
-    assert.deepEqual(al,[...held.filter(x=>!inPlan.has(x)).map(x=>`plan:add:${x}`),`plan:drop:${sold}`].sort(),"every holding in no track, and the sale");
+    assert.deepEqual(al,[`plan:add:${bought}`,`plan:drop:${sold}`].sort(),"the purchase and the sale; a holding that was there all along and is in no track is not asked about");
     // answered: the purchase joins the stocks track, the sale leaves the queue
     await pg.click(`#planAns [data-pa="holdAdd"][data-sym="${bought}"][data-trk="stocks"]`); await pg.click(`#planAns [data-pa="holdDrop"][data-sym="${sold}"]`);
     await pg.waitForFunction(b=>!document.querySelector('#planAns [data-sym="'+b+'"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),bought,{timeout:8000}); await pg.waitForTimeout(700);
     let D=store.getDoc('plan/main').data; assert.ok(D.items.some(i=>i.sym===bought&&i.status==='todo'),'joined the stocks track'); assert.equal(D.items.find(i=>i.sym===sold).status,'skip','left the queue');
-    assert.deepEqual(await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^plan:/.test(i.key)).map(i=>i.key)),held.filter(x=>!inPlan.has(x)&&x!==bought).map(x=>`plan:add:${x}`),'only the questions not answered');
+    assert.deepEqual(await pg.evaluate(()=>(window.__model.alerts().items||[]).filter(i=>/^plan:/.test(i.key)).map(i=>i.key)),[],'answered: nothing left to ask');
     // "לא" is kept: taken out of the plan again and answered no, it is not asked again
-    {const d=JSON.parse(JSON.stringify(D)); d.items=d.items.filter(i=>i.sym!==bought); store.setDoc('plan/main',d,{silent:true})}
+    {const d=JSON.parse(JSON.stringify(D)); d.items=d.items.filter(i=>i.sym!==bought); d.ask={...(d.ask||{}),[bought]:'new'}; store.setDoc('plan/main',d,{silent:true})}
     await ctx.close(); const o2=await open(390); try{const p2=o2.pg; await tab(p2,'plan'); await p2.waitForSelector(`#planAns [data-pa="holdNo"][data-sym="${bought}"]`,{timeout:10000});
       await p2.click(`#planAns [data-pa="holdNo"][data-sym="${bought}"]`); await p2.waitForFunction(b=>!document.querySelector('#planAns [data-sym="'+b+'"]'),bought,{timeout:8000});
       await p2.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await p2.waitForTimeout(700);
@@ -4749,6 +4749,45 @@ test('25.11 the plan\'s balance and the portfolio\'s cash are one figure an acco
     let sv; for(let q=0;q<60&&!sv;q++){sv=(store.getDoc('plan/main').data.cashOk||{})[A1]; if(!sv)await pg.waitForTimeout(250)} assert.ok(sv,'kept with the plan');
     await pg.click('#toastUndo'); await pg.waitForSelector(`#pCashRow [data-pa="cashOk"][data-acct="${A1}"]`,{timeout:8000}); assert.equal(await box(A1),want,'undone');
     await pg.click('[data-track="stocks"]'); await pg.waitForFunction(()=>{const td=document.querySelector('#ladRows tr.cur td.num'); return !!td&&td.dataset.k==='יישאר בסוף החודש'},null,{timeout:8000});
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+test('25.11 a security taken out of the plan has two ways out, always shown: "להחזיר" (where it was) and "למחוק לגמרי" (asked once more, the purchases kept, undone in place)',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main'])keep[p]=store.getDoc(p);
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); if((pl.items||[]).length<2)return t.skip('no plan in the fixture');
+  const ym=new Date().toISOString().slice(0,7), prevYm=(()=>{const d=new Date(ym+'-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth()-1); return d.toISOString().slice(0,7)})();
+  // every security was bought once in an earlier round: those purchases are history, whatever happens to the security
+  Object.assign(pl,{start:prevYm,mode:'manual',deposits:[],purchases:pl.items.map(x=>({id:'old_'+x.sym,sym:x.sym,paidIls:50,qty:1,month:prevYm,at:prevYm+'-05T10:00:00.000Z'})),items:pl.items.map(x=>({sym:x.sym,status:'todo',note:''}))}); delete pl.until; delete pl.zero; delete pl.ask; delete pl.round; store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#planRows tr',{timeout:10000});
+    const D=()=>store.getDoc('plan/main').data, syms=()=>D().items.map(x=>x.sym+':'+x.status).join(','), wait=async f=>{for(let k=0;k<60;k++){if(f())return true; await pg.waitForTimeout(250)} return false};
+    const edit=async on=>{if(await pg.evaluate(()=>document.getElementById('planRowsP').classList.contains('pl-edit'))!==on)await pg.click('#planEditBtn'); await pg.waitForFunction(on=>document.getElementById('planRowsP').classList.contains('pl-edit')===on,on,{timeout:5000})};
+    // the first security the list lets take out (one the page ticked by itself from the history has no such button)
+    let ix0=-1, s0='';
+    const out=async()=>{await edit(true); await pg.waitForFunction(()=>[...document.querySelectorAll('#planRows [data-pa="skip"]')].some(b=>b.offsetParent),null,{timeout:8000});
+      if(ix0<0){ix0=await pg.evaluate(()=>+[...document.querySelectorAll('#planRows [data-pa="skip"]')].find(b=>b.offsetParent).dataset.ix); s0=D().items[ix0].sym}
+      await pg.click(`#planRows [data-pa="skip"][data-ix="${ix0}"]`); await pg.waitForSelector('#planRows tr.sec.gone',{timeout:8000}); await edit(false)};
+    const G=()=>pg.evaluate(()=>{const sec=document.querySelector('#planRows tr.sec.gone'), b=[...document.querySelectorAll('#planRows tr.pactr.isgone button')]; return {sec:sec?sec.innerText.replace(/\s+/g,' '):'',btn:b.map(x=>({pa:x.dataset.pa,t:x.textContent,name:x.getAttribute('aria-label')||'',h:x.getBoundingClientRect().height,vis:!!x.offsetParent}))}});
+    await out(); let g=await G();
+    assert.match(g.sec,/הוצאו מהתוכנית · 1 .*"להחזיר".*"למחוק לגמרי".*האחזקה בתיק ומה שכבר נקנה לא משתנים/,'the part of the ones taken out, and what each way does');
+    assert.deepEqual(g.btn.map(x=>x.pa),['unskip','delAsk']); assert.ok(g.btn.every(x=>x.vis&&x.h>=44),'both shown without the list\'s editing, a finger each: '+JSON.stringify(g.btn)); assert.match(g.btn[0].name,/^להחזיר את /); assert.match(g.btn[1].name,/לגמרי$/);
+    assert.match(await pg.evaluate(()=>document.getElementById('toast').hidden?'':document.getElementById('toastMsg').textContent),/הוצא מהתוכנית/,'said, with an undo');
+    if(process.env.SHOT){await pg.evaluate(()=>document.querySelector('#planRows tr.sec.gone').scrollIntoView({block:'center'})); await pg.screenshot({path:process.env.SHOT+'/plan-gone.png'})}
+    // right after: the undo; later: "להחזיר". Both put it back where it was
+    await pg.click('#toastUndo'); await pg.waitForFunction(()=>!document.querySelector('#planRows tr.sec.gone'),null,{timeout:8000});
+    await out(); await pg.click('#planRows [data-pa="unskip"]'); await pg.waitForFunction(()=>!document.querySelector('#planRows tr.sec.gone'),null,{timeout:8000});
+    assert.ok(await wait(()=>D().items[ix0].sym===s0&&D().items[ix0].status==='todo'),'back in its place: '+syms());
+    // "למחוק לגמרי": asked once more in place, "לא" keeps it
+    await out(); await pg.focus('#planRows [data-pa="delAsk"]'); await pg.keyboard.press('Enter'); await pg.waitForSelector('#planRows .pl-sure',{timeout:5000});
+    const q=await pg.evaluate(()=>({t:document.querySelector('#planRows .pl-sure').innerText.replace(/\s+/g,' '),f:document.activeElement&&document.activeElement.dataset.pa,g:document.querySelector('#planRows .pl-sure').getAttribute('role')}));
+    assert.match(q.t,/מהתוכנית לגמרי\?.*האחזקה בתיק ומה שכבר נקנה לא משתנים.*לא, להשאיר.*כן, למחוק לגמרי/); assert.equal(q.f,'delNo','the focus on the way that changes nothing'); assert.equal(q.g,'group');
+    await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>!document.querySelector('#planRows .pl-sure')&&document.activeElement&&document.activeElement.dataset.pa==='delAsk',null,{timeout:5000});
+    await pg.click('#planRows [data-pa="delAsk"]'); await pg.click('#planRows [data-pa="delYes"]'); await pg.waitForFunction(()=>!document.querySelector('#planRows tr.sec.gone'),null,{timeout:8000});
+    assert.ok(await wait(()=>!D().items.some(x=>x.sym===s0)),'out of the plan for good: '+syms()); assert.ok(D().purchases.some(x=>x.id==='old_'+s0),'what was bought is kept'); assert.equal((D().ask||{})[s0],'no','the holdings do not ask to add it again');
+    assert.match(await pg.evaluate(()=>document.getElementById('toastMsg').textContent),/נמחק מהתוכנית לגמרי/);
+    await pg.click('#toastUndo'); assert.ok(await wait(()=>D().items[ix0]&&D().items[ix0].sym===s0&&D().items[ix0].status==='skip'&&(D().ask||{})[s0]!=='no'),'a mistake is undone in place: '+syms());
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });

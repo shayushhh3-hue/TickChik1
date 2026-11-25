@@ -1872,7 +1872,9 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pstep .pc-sync{color:var(--ink)}
 .pl-gone{display:none!important}
 .pl-sum{margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--ink2)} .pl-sum:empty{display:none}
-#planRowsP:not(.pl-edit) tr.pactr{display:none!important}
+#planRowsP:not(.pl-edit) tr.pactr:not(.isgone){display:none!important}
+#planRows tr.sec.gone .nm{font-weight:400;margin-top:2px;line-height:1.45;white-space:normal} html body #planRows tr.isgone .pacts .btn{min-height:44px!important}
+.pl-sure{display:flex;flex-wrap:wrap;align-items:center;gap:8px} .pl-sure .pl-sq{flex-basis:100%;font-size:14px;color:var(--ink);line-height:1.45} .btn.crit{border-color:var(--crit-ink);color:var(--crit-ink)}
 #planEditBtn[hidden]{display:none!important}
 .pstep .pc-prog{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .pstep .pc-dn{flex:none;width:96px;height:96px}
@@ -19323,9 +19325,10 @@ function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:
 function planOpen(){
   if(typeof tracksApart==='function'&&tracksApart()){const a=trackOpen('stocks'), b=trackOpen('idx'); return {deps:a.deps.concat(b.deps),buys:a.buys.concat(b.buys),spent:a.cash.concat(b.cash).reduce((t,x)=>t+(+x.paidIls||0),0)}}
   const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
-  const deps=allDep().filter(d=>!d.tid&&(d.once&&d.acct&&ids.includes(d.acct)?!(cashDay(d.acct)>=markDay(d)):!coveredBy(markDay(d),depA))&&!inCashOk(d,depAcct(d)));
+  const OKC=!!(PLD&&PLD.cashOk&&Object.keys(PLD.cashOk).length);
+  const deps=allDep().filter(d=>!d.tid&&(d.once&&d.acct&&ids.includes(d.acct)?!(cashDay(d.acct)>=markDay(d)):!coveredBy(markDay(d),depA))&&!(OKC&&inCashOk(d,depAcct(d))));
   const buys=allBuy().filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
-  const inCash=buys.filter(x=>inCashOk(x,buyAcct(x)));   // their units are still to come, their money is in the cash already
+  const inCash=OKC?buys.filter(x=>inCashOk(x,buyAcct(x))):[];   // their units are still to come, their money is in the cash already
   return inCash.length?{deps,buys,inCash}:{deps,buys};
 }
 // a track's own balance: its account's cash, and what was ticked in the track since that cash was known
@@ -20719,7 +20722,9 @@ function renderPlan(mAll){
   // 5.11: three months ahead, the rest a tap away (the plan ran 17 rows to its end)
   // 24.11 (one page): the months ahead are in "הניירות בתוכנית" already (when each is bought), so this table opens with what was
   {const far=Math.max(0,nRows-(st.cur+1)); if(far>0)h+=`<tr class="lad-more"><td colspan="4"><button type="button" class="btn sm" data-ladall="1" aria-expanded="${LADALL}">${LADALL?'להסתיר את החודשים הבאים':`להציג גם את ${far===1?'החודש הבא':far+' החודשים הבאים'}, עד ${ymShort(ymAdd(st.start,nRows-1))}`}</button></td></tr>`}
-  if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number'))$('ladRows').innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>';
+  if(!(EDITS.size&&$('ladRows').contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&document.activeElement.type==='number')){const L=$('ladRows'), ae=document.activeElement, q=v=>String(v).replace(/["\\]/g,'\\$&'), D=ae&&L.contains(ae)?ae.dataset:null;
+    const key=!D?'':ae.id?`[id="${q(ae.id)}"]`:D.ladadd?`[data-ladadd="${q(D.ladadd)}"]`:D.pa&&D.sym?`[data-pa="${q(D.pa)}"][data-sym="${q(D.sym)}"]${D.ym?`[data-ym="${q(D.ym)}"]`:''}`:D.ladall?'[data-ladall]':'';
+    L.innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>'; if(key){const f=L.querySelector(key); if(f&&f!==document.activeElement)try{f.focus({preventScroll:true})}catch(e){}}}
   try{planAnsFill(st,depBy,B)}catch(e){console.error(e)}
   try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
@@ -20736,16 +20741,24 @@ function renderPlan(mAll){
     if(st.fixed&&it.status!=='skip'){
       return `<tr${canWrite?' class="hasacts"':''}><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td></tr>${canWrite?`<tr class="pactr"><td colspan="3"><div class="acts pacts"><button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button></div></td></tr>`:''}`}
     if(it.status==='done'){tag=`<span class="st done">נקנה</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
-    else if(it.status==='skip'){tag='<span class="st skip">מחוץ לתוכנית</span>';acts=`<button class="btn sm" type="button" data-pa="unskip" data-ix="${ix}">החזר</button>`}
+    // 25.11 (the owner: "אם אני מוחק מניה/מדד יש או החזר או אופצייה של למחוק לגמרי"): a security taken out had one small
+    // "החזר", shown only while the list was edited, and no way to say it is out for good. Taken out, it is kept in a part
+    // of its own with two ways out, always shown: "להחזיר" (back to the queue, where it was) and "למחוק לגמרי" (asked once
+    // more in place; the holding and what was already bought are not touched)
+    else if(it.status==='skip'){const nm=esc(lab(it.sym)); tag='<span class="st skip">הוצא מהתוכנית</span>';
+      acts=PDEL===it.sym?`<span class="pl-sure" role="group" aria-label="למחוק לגמרי את ${nm}"><span class="pl-sq">למחוק את <bdi>${nm}</bdi> מהתוכנית לגמרי? הוא לא יופיע יותר ברשימה הזו. האחזקה בתיק ומה שכבר נקנה לא משתנים.</span><button class="btn sm" type="button" data-pa="delNo" data-ix="${ix}">לא, להשאיר</button><button class="btn sm crit" type="button" data-pa="delYes" data-ix="${ix}">כן, למחוק לגמרי</button></span>`
+        :`<button class="btn sm pri" type="button" data-pa="unskip" data-ix="${ix}" aria-label="להחזיר את ${nm} לתוכנית">להחזיר</button><button class="btn sm" type="button" data-pa="delAsk" data-ix="${ix}" aria-label="למחוק את ${nm} מהתוכנית לגמרי">למחוק לגמרי</button>`}
     else{
       tag=w===0?'<span class="st now">אפשר החודש</span>':w!=null?`<span class="st wait">${ymShort(ymAdd(st.start,st.at[it.sym]))}</span> <span class="nm">עוד ${w} ${w===1?'חודש':'חודשים'}</span>`:'<span class="st wait">ממתין</span>';
       acts=(PL.mode!=='cheap'?`<button class="btn sm" type="button" data-pa="up" data-ix="${ix}" aria-label="הקדם את ${esc(it.sym)}">↑</button><button class="btn sm" type="button" data-pa="down" data-ix="${ix}" aria-label="דחה את ${esc(it.sym)}">↓</button>`:'')
         +`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר ל${TRACK==='idx'?'מניות':'מדדים'}</button>`}
-    const ha=canWrite&&acts, dn=it.status==='todo'?'':'isdone';
+    const ha=canWrite&&acts, dn=it.status==='todo'?'':it.status==='skip'?'isdone isgone':'isdone';
     return `<tr class="${dn}${ha?' hasacts':''}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c,2):'—'}</span></td><td>${tag}</td></tr>`+
       (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
-  const lf=list.filter(x=>isF(x.it.sym)), ls=list.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
-  $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):list.map(rowP).join('')):`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
+  const live=list.filter(x=>x.it.status!=='skip'), gone=list.filter(x=>x.it.status==='skip');
+  const lf=live.filter(x=>isF(x.it.sym)), ls=live.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
+  const goneH=gone.length?`<tr class="sec gone"><td colspan="3">הוצאו מהתוכנית · ${gone.length}<div class="nm">לא נקנים ולא מופיעים בלוח. "להחזיר": הנייר חוזר לתור, במקום שהיה. "למחוק לגמרי": הוא יוצא גם מהרשימה הזו. האחזקה בתיק ומה שכבר נקנה לא משתנים.</div></td></tr>`+gone.map(rowP).join(''):'';
+  $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):live.map(rowP).join(''))+goneH:`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
   try{planHoldSync()}catch(e){console.error(e)}
   try{planZeroFill(st)}catch(e){console.error(e)}
   try{planAddFill(mAll)}catch(e){console.error(e)}
@@ -20774,7 +20787,7 @@ function planAct(a,d){
     if(t.status==='done'){const pid=t.pid||(PL.purchases.slice().reverse().find(x=>x.sym===t.sym)||{}).id, gone=PL.purchases.filter(x=>pid?x.id===pid:x.sym===t.sym), snap={pid:t.pid,doneAt:t.doneAt,note:t.note}, X=PL;
       PL.purchases=PL.purchases.filter(x=>pid?x.id!==pid:x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note='';
       // 25.11: taken off by mistake? back with one press, in the month it was in
-      if(!LAD_QUIET&&gone.length)LAD_UNDO={msg:`הסימון של ${lab(t.sym)}${gone[0].month?' ב'+ymShort(gone[0].month):''} הוסר`,fn:()=>{if(t.status!=='todo')return; for(const g of gone)if(!X.purchases.some(x=>x.id===g.id))X.purchases.push(g); t.status='done'; t.note=snap.note||''; if(snap.pid)t.pid=snap.pid; if(snap.doneAt)t.doneAt=snap.doneAt; setTrack(); planChanged()}};
+      if(!LAD_QUIET&&gone.length)LAD_UNDO={msg:`הסימון של ${lab(t.sym)}${gone[0].month?' ב'+ymShort(gone[0].month):''} הוסר, והנייר חזר לתור`,fn:(trk=>()=>{const X2=trk==='idx'?PLD.idx:PLD, t2=X2&&(X2.items||[]).find(i=>i.sym===t.sym); if(!t2||t2.status!=='todo')return; for(const g of gone)if(!X2.purchases.some(x=>x.id===g.id))X2.purchases.push(g); t2.status='done'; t2.note=snap.note||''; if(snap.pid)t2.pid=snap.pid; if(snap.doneAt)t2.doneAt=snap.doneAt; setTrack(); planChanged()})(TRACK)};
       LAD_QUIET=false}
     else if((st.cost[t.sym]||0)>st.bal+0.005){render();return}
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
@@ -20785,8 +20798,13 @@ function planAct(a,d){
   else if(a==='saveBuy'){const it0=PL.items.find(i=>i.sym===d.sym), pu=(it0&&it0.pid&&PL.purchases.find(x=>x.id===it0.pid))||PL.purchases.find(x=>x.sym===d.sym), pp=mAllNow().pos.find(x=>x.sym===d.sym), qi=[...document.querySelectorAll('[data-ebq]')].find(x=>x.dataset.ebq===d.sym), pi=[...document.querySelectorAll('[data-ebp]')].find(x=>x.dataset.ebp===d.sym), q=qi?+qi.value:0, px=pi?+pi.value:0;
     if(!pu||!(q>0)||!(px>0)){return}
     pu.qty=q; pu.px=px; pu.ccy=pp&&pp.ccy==='USD'?'USD':'ILS'; pu.fx=Q.usdIls; pu.paidIls=Math.round((q*px*(pu.ccy==='USD'?Q.usdIls:1)+(+S.minFeeIls||0))*100)/100; EDITS.delete(d.sym)}
-  else if(a==='skip'&&it)it.status='skip';
-  else if(a==='unskip'&&it)it.status='todo';
+  else if(a==='skip'&&it){it.was=it.status; it.status='skip'; LAD_UNDO={msg:`${lab(it.sym)} הוצא מהתוכנית. אפשר להחזיר אותו מהרשימה שלמטה`,fn:(trk=>()=>{const X=trk==='idx'?PLD.idx:PLD, i2=X&&(X.items||[]).find(i=>i.sym===it.sym); if(!i2||i2.status!=='skip')return; planUnskip(i2); setTrack(); planChanged()})(TRACK)}}
+  else if(a==='unskip'&&it){planUnskip(it); if(PDEL===it.sym)PDEL=''}
+  else if((a==='delAsk'||a==='delNo')&&it){PDEL=a==='delAsk'&&it.status==='skip'?it.sym:''; render(); const want=a==='delAsk'?'delNo':'delAsk', ixn=PL.items.indexOf(it); setTimeout(()=>{const f=document.querySelector(`#planRows [data-pa="${want}"][data-ix="${ixn}"]`); if(f)try{f.focus({preventScroll:true})}catch(e){}},30); return}
+  else if(a==='delYes'&&it){if(it.status!=='skip')return; const trk=TRACK, ix0=PL.items.indexOf(it), sym=it.sym, prevAsk=(PLD.ask||{})[sym]; PL.items.splice(ix0,1); PDEL='';
+    // out for good: the holdings do not ask to add it again (until the holding itself changes)
+    PLD.ask=Object.assign({},PLD.ask||{},{[sym]:'no'});
+    LAD_UNDO={msg:`${lab(sym)} נמחק מהתוכנית לגמרי`,fn:()=>{const X=trk==='idx'?PLD.idx:PLD; if(!X||(X.items||[]).some(i=>i.sym===sym))return; X.items.splice(Math.min(ix0,X.items.length),0,{...it}); const y=Object.assign({},PLD.ask||{}); if(prevAsk)y[sym]=prevAsk; else delete y[sym]; PLD.ask=y; setTrack(); planChanged()}}}
   else if(a==='undo'&&it){if(it.pid)PL.purchases=PL.purchases.filter(x=>x.id!==it.pid);it.status='todo';delete it.pid;delete it.doneAt;it.note=''}
   else if((a==='up'||a==='down')&&it){let j=ix;do{j+=a==='up'?-1:1}while(PL.items[j]&&PL.items[j].status!=='todo');if(PL.items[j]){PL.items[ix]=PL.items[j];PL.items[j]=it}}
   else if(a==='mode'){PL.mode=d.mode;
@@ -20827,6 +20845,8 @@ function planAct(a,d){
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=OB_FROM&&ymDiff(OB_FROM,ymNow())>0?OB_FROM:ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null; OB_FROM=''; if(OB_UNTIL)PL.until=OB_UNTIL; else delete PL.until; PL.round=1; OB_UNTIL=''}
   planChanged();
 }
+// back from "הוצא מהתוכנית": where it was in the list, bought again when it was (and its purchase is still there)
+function planUnskip(it){const X=[PLD,PLD&&PLD.idx].find(T=>T&&(T.items||[]).includes(it)); it.status=it.was==='done'&&it.pid&&X&&(X.purchases||[]).some(x=>x.id===it.pid)?'done':'todo'; if(it.status==='todo'){delete it.pid; delete it.doneAt} delete it.was}
 function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500); if(LAD_UNDO){const u=LAD_UNDO; LAD_UNDO=null; try{offerUndo(u.msg,u.fn)}catch(e){}} if(PZ_UNDO){const w=PZ_UNDO; PZ_UNDO=false; const ac=typeof w==='string'?acctIds().find(x=>acctName(x)===w):''; try{offerUndo(ac?`המזומן של ${w} אופס בתוכנית ל-₪0`:'יתרת התוכנית אופסה ל-₪0',()=>ac?planAct('acctZeroOff',{acct:ac}):planAct('zeroOff',{}))}catch(e){}}}
 async function savePlan(){
   if(!db||!canWrite)return;
@@ -30125,7 +30145,7 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
 // already has: the readings, the markets' document, the calendar; צ׳יקו's lines ("מה קורה בשווקים") give the "why"
 // when he wrote them, the readings otherwise. With the time of the last gathering and reading; nothing of it is a
 // forecast, and a part with no data says so ----
-let ECO=null; var ETFD=null, etfAsked=false, LADALL=false, LADADD='', LAD_UNDO=null, LAD_QUIET=false;   // var: the plan is drawn before this line runs
+let ECO=null; var ETFD=null, etfAsked=false, LADALL=false, LADADD='', LAD_UNDO=null, LAD_QUIET=false, PDEL='';   // var: the plan is drawn before this line runs
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladall]'); if(!b)return; LADALL=!LADALL; try{render()}catch(x){}});
 function ladAddFocus(ym,sym){setTimeout(()=>{const pick=document.getElementById('ladAdd_'+ym), f=(pick&&pick.querySelector('button:not([disabled])'))||document.querySelector('[data-ladadd="'+ym+'"]')||(sym&&document.querySelector('#ladRows [data-buy="'+sym+'"]')); if(f)try{f.focus({preventScroll:true})}catch(e){}},30)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladadd]'); if(!b)return; const ym=b.dataset.ladadd, was=LADADD===ym; LADADD=was?'':ym; try{render()}catch(x){} if(was)setTimeout(()=>{const t=document.querySelector('[data-ladadd="'+ym+'"]'); if(t)try{t.focus({preventScroll:true})}catch(e){}},30); else ladAddFocus(ym)});
@@ -31939,14 +31959,22 @@ function planHeldNow(){const H=new Set(); for(const x of ((P&&P.positions)||[]))
 function planHoldAsk(){const out={add:[],drop:[]}; if(!PLD||!P)return out; const H=planHeldNow(), ask=PLD.ask||{}, was=new Set(PLD.held||[]);
   const T=[['stocks',PLD],['idx',PLD.idx]].filter(([,X])=>X), inAny=sym=>T.some(([,X])=>(X.items||[]).some(i=>i.sym===sym));
   if(!T.some(([,X])=>(X.items||[]).length))return out;
-  for(const sym of H)if(!inAny(sym)&&ask[sym]!=='no')out.add.push({sym,trk:isIdx(sym)?'idx':'stocks'});
+  // 25.11: "קנית X" was asked for every holding in no track, also one that was held all along and left out of the plan on
+  // purpose (CI's home test saw the extra alert since c4278b8; the owner's 33 holdings against a plan of a dozen). Asked
+  // only for a security that came into the holdings after the plan had seen them (ask 'new', or not in held yet)
+  const seen=Array.isArray(PLD.held);
+  for(const sym of H)if(!inAny(sym)&&(ask[sym]==='new'||(seen&&!was.has(sym)&&ask[sym]!=='no')))out.add.push({sym,trk:isIdx(sym)?'idx':'stocks'});
   for(const [trk,X] of T)for(const i of X.items||[])if(i.status!=='skip'&&!H.has(i.sym)&&was.has(i.sym)&&ask[i.sym]!=='keep')out.drop.push({sym:i.sym,trk});
   return out}
 // the plan's memory of what it saw held, and the answers that lapse when the holding changes; saved only when changed
 function planHoldSync(){if(!PLD||!P||!canWrite)return; try{if(!PLK&&!LOCAL)return}catch(e){return}
-  const H=planHeldNow(); if(!H.size)return; const was=new Set(PLD.held||[]), ask=Object.assign({},PLD.ask||{}); let ch=false;
-  for(const s0 of H)if(!was.has(s0)){was.add(s0); ch=true}
-  for(const k of Object.keys(ask)){if((ask[k]==='no'&&!H.has(k))||(ask[k]==='keep'&&H.has(k))){delete ask[k]; ch=true}}
+  const H=planHeldNow(); if(!H.size)return; const first=!Array.isArray(PLD.held), was=new Set(PLD.held||[]), ask=Object.assign({},PLD.ask||{}); let ch=false;
+  const inAny=sym=>[PLD,PLD.idx].some(X=>X&&(X.items||[]).some(i=>i.sym===sym));
+  // a security seen held for the first time: remembered, and (not on the plan's first look at the holdings) asked about
+  for(const s0 of H)if(!was.has(s0)){was.add(s0); ch=true; if(!first&&!inAny(s0)&&ask[s0]!=='no')ask[s0]='new'}
+  // sold, and not in the plan: forgotten, so bought again it is asked about again
+  for(const s0 of [...was])if(!H.has(s0)&&!inAny(s0)){was.delete(s0); ch=true}
+  for(const k of Object.keys(ask)){if((ask[k]==='no'&&!H.has(k))||(ask[k]==='keep'&&H.has(k))||(ask[k]==='new'&&(!H.has(k)||inAny(k)))){delete ask[k]; ch=true}}
   if(!ch)return; PLD.held=[...was].sort(); PLD.ask=ask; pDirty=true; P_SEQ++; clearTimeout(pTimer); pTimer=setTimeout(savePlan,800)}
 const trkHe=t=>t==='idx'?'מדדים':'מניות';
 function planHoldH(){const A=planHoldAsk(); if(!A.add.length&&!A.drop.length)return ''; const dis=canWrite?'':' disabled';
