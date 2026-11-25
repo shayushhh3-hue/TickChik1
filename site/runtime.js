@@ -29,28 +29,79 @@ async function call(method,url,body,signal){
 }
 
 // ---- the sign-in screen ----
+// 25.11 (the owner: "בדף של ההתחברות תוסיף ברקע דברים יפים שקשורים לבורסה והשקעות… וצבעים שתואמים את האתר"): the screen was a
+// grey page with a navy button (an orange one at night), none of them the site's. Its colours are the site's own now (the
+// page's tokens: the violet accent, the two backgrounds, the inks), and behind the card there is a market drawn in them:
+// candles that climb, the line of their closes with its area, a slower average, the volume, a ring of a portfolio's
+// parts. A drawing only (aria-hidden, no figures, no names), under a card that stays opaque enough to read; it moves
+// once on arrival, and not at all for someone who asked for less motion. The "loading" card of every visit has none
 const CSS=`
-#tcGate{position:fixed;inset:0;z-index:1000;background:#f3f5f8;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Heebo,"Segoe UI",Arial,sans-serif;direction:rtl;color:#1e293b;overflow:auto}
-#tcGate .card{width:min(400px,100%);background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 24px;box-shadow:0 8px 30px rgb(30 52 78 / .10)}
-#tcGate h1{margin:0 0 2px;font-size:26px;color:#1e344e;text-align:center}
-#tcGate .sub{margin:0 0 20px;color:#64748b;font-size:14px;text-align:center}
-#tcGate label{display:block;font-size:13.5px;color:#45566b;margin:12px 0 4px}
-#tcGate input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#1e293b}
-#tcGate input:focus{outline:2px solid #2e6da4;outline-offset:1px;border-color:#2e6da4}
+#tcGate{--g-bg:#F6F5FC;--g-surface:rgb(255 255 255 / .95);--g-ink:#14122E;--g-ink2:#44425F;--g-muted:#5F5D7C;--g-line:#D9D6EC;--g-accent:#7C3AED;--g-accent-ink:#6D28D9;--g-field:#FFFFFF;--g-err:#B91C1C;--g-up:#13773A;--g-down:#C81E1E;--g-ok:#0F6B33;--g-art:.34;
+  position:fixed;inset:0;z-index:1000;background:var(--g-bg);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Heebo,"Segoe UI",Arial,sans-serif;direction:rtl;color:var(--g-ink);overflow:auto}
+html[data-theme="dark"] #tcGate{--g-bg:#07071A;--g-surface:rgb(17 18 51 / .93);--g-ink:#F4F3FF;--g-ink2:#C9C8E6;--g-muted:#A5A4CC;--g-line:#3A3C78;--g-accent:#7C3AED;--g-accent-ink:#B9A3FF;--g-field:#0B0B24;--g-err:#FCA5A5;--g-up:#4ADE80;--g-down:#F87171;--g-ok:#86EFAC;--g-art:.62}
+html[data-theme="dark"] #tcGate .bgx .vol{opacity:.3} html[data-theme="dark"] #tcGate .bgx .grid{opacity:.7}
+#tcGate .bgx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#tcGate .bgx svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#tcGate .bgx .grid{stroke:var(--g-line);stroke-width:1;opacity:.55}
+#tcGate .bgx .up{fill:var(--g-up);stroke:var(--g-up)} #tcGate .bgx .dn{fill:var(--g-down);stroke:var(--g-down)}
+#tcGate .bgx .cd{opacity:0;animation:tcIn .5s ease-out forwards}
+#tcGate .bgx .vol{fill:var(--g-accent);opacity:.16}
+#tcGate .bgx .ln{fill:none;stroke:var(--g-accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.8;stroke-dasharray:3200;stroke-dashoffset:3200;animation:tcDraw 2.4s ease-out .2s forwards}
+#tcGate .bgx .avg{fill:none;stroke:var(--g-accent-ink);stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;opacity:.55}
+#tcGate .bgx .area{opacity:0;animation:tcArea 1.6s ease-out 1.2s forwards}
+#tcGate .bgx .blob{animation:tcFloat 16s ease-in-out infinite alternate}
+#tcGate .bgx .ring{fill:none;stroke-width:26;opacity:.5}
+@keyframes tcIn{to{opacity:var(--g-art)}} @keyframes tcDraw{to{stroke-dashoffset:0}} @keyframes tcArea{to{opacity:1}} @keyframes tcFloat{to{transform:translate(40px,-30px)}}
+@media (prefers-reduced-motion:reduce){#tcGate .bgx .cd{animation:none;opacity:var(--g-art)} #tcGate .bgx .ln{animation:none;stroke-dashoffset:0} #tcGate .bgx .area{animation:none;opacity:1} #tcGate .bgx .blob{animation:none}}
+#tcGate .card{position:relative;width:min(400px,100%);background:var(--g-surface);border:1px solid var(--g-line);border-radius:16px;padding:28px 24px;box-shadow:0 18px 50px rgb(76 29 149 / .18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+@media (max-width:600px) and (min-height:700px){#tcGate{align-items:flex-start;padding-top:max(150px,19vh)}}
+#tcGate .mark{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 12px;border-radius:15px;background:var(--g-accent);color:#fff}
+#tcGate h1{margin:0 0 2px;font-size:26px;color:var(--g-ink);text-align:center}
+#tcGate .sub{margin:0 0 20px;color:var(--g-muted);font-size:14px;text-align:center}
+#tcGate label{display:block;font-size:13.5px;color:var(--g-ink2);margin:12px 0 4px}
+#tcGate input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;min-height:46px;padding:10px 12px;border:1px solid var(--g-line);border-radius:10px;background:var(--g-field);color:var(--g-ink)}
+#tcGate input:focus{outline:2px solid var(--g-accent-ink);outline-offset:1px;border-color:var(--g-accent-ink)}
 #tcGate input[type=email]{direction:ltr;text-align:left}
-html[data-theme="dark"] #tcGate{background:#120B14;color:#F4ECF2} html[data-theme="dark"] #tcGate .card{background:#1D1321;border-color:#3A2B40;box-shadow:none}
-html[data-theme="dark"] #tcGate h1{color:#F4ECF2} html[data-theme="dark"] #tcGate .sub,html[data-theme="dark"] #tcGate label,html[data-theme="dark"] #tcGate .note,html[data-theme="dark"] #tcGate .hint{color:#A895A7}
-html[data-theme="dark"] #tcGate input{background:#120B14;border-color:#3A2B40;color:#F4ECF2}
-html[data-theme="dark"] #tcGate .btn{background:#FF9B54;color:#27152B} html[data-theme="dark"] #tcGate .err{color:#FFB4A8} html[data-theme="dark"] #tcGate .alt{border-color:#3A2B40;color:#A895A7} html[data-theme="dark"] #tcGate .lnk{color:#E8CFF0}
-#tcGate .btn{display:block;width:100%;margin-top:18px;border:0;background:#1e344e;color:#fff;border-radius:10px;padding:11px 18px;font:inherit;font-size:15.5px;font-weight:600;cursor:pointer}
+#tcGate .btn{display:block;width:100%;min-height:48px;margin-top:18px;border:0;background:var(--g-accent);color:#fff;border-radius:10px;padding:11px 18px;font:inherit;font-size:15.5px;font-weight:600;cursor:pointer}
+#tcGate .btn:focus-visible,#tcGate .lnk:focus-visible{outline:2px solid var(--g-accent-ink);outline-offset:3px}
 #tcGate .btn:disabled{opacity:.6;cursor:default}
-#tcGate .note{font-size:12.5px;color:#64748b;margin:16px 0 0;line-height:1.6;text-align:center}
-#tcGate .err{color:#b91c1c;font-size:13.5px;margin:12px 0 0;min-height:1em}
-#tcGate .alt{margin:18px 0 0;padding-top:14px;border-top:1px solid #eef1f4;text-align:center;font-size:14px;color:#45566b}
-#tcGate .lnk{border:0;background:none;padding:4px 2px;font:inherit;font-weight:600;color:#2e6da4;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-#tcGate .hint{font-size:12px;color:#64748b;margin:4px 0 0}
+#tcGate .note{font-size:12.5px;color:var(--g-muted);margin:16px 0 0;line-height:1.6;text-align:center}
+#tcGate .err{color:var(--g-err);font-size:13.5px;margin:12px 0 0;min-height:1em}
+#tcGate .alt{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--g-line);text-align:center;font-size:14px;color:var(--g-ink2)}
+#tcGate .lnk{border:0;background:none;min-height:44px;padding:4px 2px;font:inherit;font-weight:600;color:var(--g-accent-ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+#tcGate .fg{margin:10px 0 0;text-align:center} #tcGate .okm{color:var(--g-ok);font-size:13.5px;line-height:1.55;margin:10px 0 0} #tcGate .okm:empty{display:none}
+#tcGate .hint{font-size:12px;color:var(--g-muted);margin:4px 0 0}
 #tcGate input.code{direction:ltr;text-align:left;letter-spacing:.08em;text-transform:uppercase}
 `;
+// the market behind the card: the same drawing on every visit (a fixed seed), from the page's own colours
+function gateArt(){
+  let seed=20261125; const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296; return seed/4294967296};
+  // a phone held upright: the card covers the middle of the screen, so the candles fill the band above it and the volume
+  // and the ring sit below it; on a wide screen they are around the card
+  const por=(()=>{try{return innerHeight>innerWidth*1.15}catch(e){return false}})(), W=por?600:1200, H=por?1000:800, N=por?14:30, step=W/N, bw=por?18:18;
+  let c=560; const C=[];
+  for(let i=0;i<N;i++){const drift=-9.5+(rnd()-0.42)*46, o=c, cl=Math.max(150,Math.min(640,o+drift)), hi=Math.min(o,cl)-8-rnd()*26, lo=Math.max(o,cl)+8+rnd()*26; c=cl; C.push({x:step*i+step/2,o,cl,hi,lo,v:24+rnd()*86})}
+  const top=Math.min(...C.map(k=>k.hi)), bot=Math.max(...C.map(k=>k.lo)), Y=y=>por?22+(y-top)/(bot-top)*128:y;
+  let cd='', vol='', sum=0; const pts=[], avg=[];
+  C.forEach((k,i)=>{const up=k.cl<=k.o, y0=Y(Math.min(k.o,k.cl)), y1=Y(Math.max(k.o,k.cl));
+    cd+=`<g class="cd ${up?'up':'dn'}" style="animation-delay:${i*45}ms"><line x1="${k.x.toFixed(1)}" x2="${k.x.toFixed(1)}" y1="${Y(k.hi).toFixed(1)}" y2="${Y(k.lo).toFixed(1)}" stroke-width="2"/><rect x="${(k.x-bw/2).toFixed(1)}" y="${y0.toFixed(1)}" width="${bw}" height="${Math.max(4,y1-y0).toFixed(1)}" rx="3"/></g>`;
+    vol+=`<rect class="vol" x="${(k.x-bw/2).toFixed(1)}" y="${(H-k.v).toFixed(1)}" width="${bw}" height="${k.v.toFixed(1)}" rx="3"/>`;
+    pts.push([k.x,Y(k.cl)]); sum+=k.cl; avg.push([k.x,Y(sum/(i+1))+(por?10:34)])});
+  const path=P=>P.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ');
+  const grid=(por?[40,95,150,830,910]:[160,280,400,520,640]).map(y=>`<line class="grid" x1="0" x2="${W}" y1="${y}" y2="${y}"/>`).join('');
+  const rx=por?486:150, ry=por?872:150, floor=por?190:H;
+  const ring=(r,parts)=>{const L=2*Math.PI*r; let off=0; return parts.map(([f,col])=>{const q=`<circle class="ring" cx="${rx}" cy="${ry}" r="${r}" stroke="${col}" stroke-dasharray="${(L*f-10).toFixed(1)} ${(L-(L*f-10)).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 ${rx} ${ry})"/>`; off+=L*f; return q}).join('')};
+  return `<div class="bgx" aria-hidden="true"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" focusable="false">
+    <defs><linearGradient id="tcGa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C3AED" stop-opacity=".30"/><stop offset="1" stop-color="#7C3AED" stop-opacity="0"/></linearGradient>
+      <radialGradient id="tcGb"><stop offset="0" stop-color="#7C3AED" stop-opacity=".30"/><stop offset="1" stop-color="#7C3AED" stop-opacity="0"/></radialGradient>
+      <radialGradient id="tcGc"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".22"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></radialGradient></defs>
+    <circle class="blob" cx="${por?470:1010}" cy="130" r="${por?300:330}" fill="url(#tcGb)"/><circle class="blob" cx="${por?110:170}" cy="${por?880:690}" r="300" fill="url(#tcGc)" style="animation-delay:-6s"/>
+    ${grid}${vol}
+    <path class="area" d="${path(pts)} L${W} ${floor} L0 ${floor} Z" fill="url(#tcGa)"/>
+    ${cd}<path class="avg" d="${path(avg)}"/><path class="ln" d="${path(pts)}"/>
+    <g opacity=".85">${ring(por?64:86,[[0.46,'#7C3AED'],[0.3,'#2DD4BF'],[0.24,'#A78BFA']])}</g>
+  </svg></div>`}
+const GATE_MARK='<div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg></div>';
 function gateEl(){
   let el=document.getElementById('tcGate');
   if(!el){const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
@@ -61,18 +112,21 @@ function gateEl(){
 let GATE_DONE=null, SIGNUP=false;
 const INVITE=(()=>{try{return new URLSearchParams(location.search).get('invite')||''}catch(e){return ''}})();
 // 1.11: /admin sends a signed-out visitor here with ?next=admin; after signing in, someone allowed goes back there
+const RESET=(()=>{try{const u=new URL(location.href), t=u.searchParams.get('reset')||''; if(!t)return ''; u.searchParams.delete('reset'); history.replaceState(null,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams:'')+u.hash); return t}catch(e){return ''}})();
 const NEXT_ADMIN=(()=>{try{return new URLSearchParams(location.search).get('next')==='admin'}catch(e){return false}})();
 function showGate(kind,x={}){
-  const el=gateEl(), head=`<h1 id="tcGateH">תיק צ׳יק</h1><p class="sub">חדר המסחר שלי</p>`;
+  const el=gateEl(), head=`${GATE_MARK}<h1 id="tcGateH">תיק צ׳יק</h1><p class="sub">חדר המסחר שלי</p>`, art=gateArt();
   if(kind==='loading'){el.innerHTML=`<div class="card">${head}<p class="sub">טוען…</p></div>`;return}
   if(kind==='login'){
-    el.innerHTML=`<div class="card">${head}<form id="tcLogin" novalidate><label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
+    el.innerHTML=`${art}<div class="card">${head}<form id="tcLogin" novalidate><label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
       <label for="tcPass">סיסמה</label><input id="tcPass" type="password" autocomplete="current-password" required>
       <div id="tcCodeBox" hidden><label for="tcOtp">הקוד מאפליקציית האימות</label><input id="tcOtp" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="11" placeholder="6 ספרות"><p class="hint">אין את הטלפון? אפשר להקליד אחד מקודי הגיבוי.</p></div>
-      <button class="btn" type="submit">כניסה</button><p class="err" id="tcErr" role="alert">${esc(x.err||'')}</p></form>
+      <button class="btn" type="submit">כניסה</button><p class="err" id="tcErr" role="alert">${esc(x.err||'')}</p>${x.ok?`<p class="okm" role="status">${esc(x.ok)}</p>`:''}</form>
+      <p class="fg"><button type="button" class="lnk" id="tcForgot">שכחתי את הסיסמה</button></p>
       ${SIGNUP?'<p class="alt">משתמש חדש? <button type="button" class="lnk" id="tcToReg">הרשמה עם קוד הזמנה</button></p>':''}
       <p class="note">הנתונים שלך נשמרים בחשבון שלך ואינם גלויים למשתמשים אחרים.${SIGNUP?'':' את החשבון פותח בעל הדף.'}</p></div>`;
     const f=document.getElementById('tcLogin'), toReg=document.getElementById('tcToReg');
+    document.getElementById('tcForgot').addEventListener('click',()=>showGate('forgot',{email:document.getElementById('tcEmail').value}));
     if(toReg)toReg.addEventListener('click',()=>showGate('register',{email:document.getElementById('tcEmail').value})); setTimeout(()=>{try{document.getElementById(x.email?'tcPass':'tcEmail').focus()}catch(e){}},30);
     f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button'); b.disabled=true; document.getElementById('tcErr').textContent='';
       const cb=document.getElementById('tcCodeBox'), otp=document.getElementById('tcOtp');
@@ -81,8 +135,40 @@ function showGate(kind,x={}){
         document.getElementById('tcErr').textContent=e.message||'הכניסה לא הצליחה.'}});
     return;
   }
+  // "שכחתי את הסיסמה": the address, and a letter with a link; the answer is the same for an address the site does not know
+  if(kind==='forgot'){
+    el.innerHTML=`${art}<div class="card">${head}<p class="sub">שכחת את הסיסמה? נשלח קישור למייל שלך, ודרכו בוחרים סיסמה חדשה.</p><form id="tcFg" novalidate>
+      <label for="tcEmail">המייל של החשבון</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
+      <button class="btn" type="submit">לשלוח לי קישור</button><p class="err" id="tcErr" role="alert"></p><p class="okm" id="tcOkm" role="status"></p></form>
+      <p class="alt"><button type="button" class="lnk" id="tcToLog">חזרה לכניסה</button></p></div>`;
+    const f=document.getElementById('tcFg'); setTimeout(()=>{try{document.getElementById('tcEmail').focus()}catch(e){}},30);
+    document.getElementById('tcToLog').addEventListener('click',()=>showGate('login',{email:document.getElementById('tcEmail').value}));
+    f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button[type=submit]'), er=document.getElementById('tcErr'), ok=document.getElementById('tcOkm'), em=document.getElementById('tcEmail').value.trim(); er.textContent=''; ok.textContent='';
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){er.textContent='כתוב את כתובת המייל של החשבון.';return}
+      b.disabled=true;
+      try{const r=await call('POST','/forgot',{email:em}); ok.textContent=`אם הכתובת רשומה באתר, נשלח אליה עכשיו מייל עם קישור לבחירת סיסמה חדשה. הקישור תקף ל-${(r&&r.minutes)||30} דקות. לא הגיע? כדאי לבדוק גם בתיקיית הספאם.`; b.textContent='נשלח'}
+      catch(e){b.disabled=false; er.textContent=e.message||'השליחה לא הצליחה. נסה שוב.'}});
+    return;
+  }
+  // the link of the letter: a new password, twice; then the sign-in, with it
+  if(kind==='reset'){
+    el.innerHTML=`${art}<div class="card">${head}<p class="sub">בחירת סיסמה חדשה לחשבון</p><form id="tcRs" novalidate>
+      <label for="tcNew">סיסמה חדשה (8 תווים לפחות)</label><input id="tcNew" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="tcNew2">הסיסמה שוב</label><input id="tcNew2" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="btn" type="submit">שמירת הסיסמה</button><p class="err" id="tcErr" role="alert"></p></form>
+      <p class="alt"><button type="button" class="lnk" id="tcToLog">חזרה לכניסה</button></p></div>`;
+    const f=document.getElementById('tcRs'); setTimeout(()=>{try{document.getElementById('tcNew').focus()}catch(e){}},30);
+    document.getElementById('tcToLog').addEventListener('click',()=>showGate('login'));
+    f.addEventListener('submit',async ev=>{ev.preventDefault(); const b=f.querySelector('button[type=submit]'), er=document.getElementById('tcErr'), pw=document.getElementById('tcNew').value; er.textContent='';
+      if(pw.length<8){er.textContent='סיסמה של 8 תווים לפחות.';return}
+      if(pw!==document.getElementById('tcNew2').value){er.textContent='שתי הסיסמאות לא זהות.';return}
+      b.disabled=true;
+      try{const r=await call('POST','/reset',{token:x.token,password:pw}); showGate('login',{email:(r&&r.email)||'',ok:'הסיסמה הוחלפה. אפשר להיכנס איתה עכשיו.'})}
+      catch(e){b.disabled=false; er.textContent=e.message||'השמירה לא הצליחה.'; if(e.code==='bad_token'){const a=document.createElement('button'); a.type='button'; a.className='lnk'; a.textContent='לבקש קישור חדש'; a.addEventListener('click',()=>showGate('forgot')); er.appendChild(document.createTextNode(' ')); er.appendChild(a)}}});
+    return;
+  }
   if(kind==='register'){
-    el.innerHTML=`<div class="card">${head}<p class="sub">הרשמה עם קוד הזמנה מבעל הדף</p><form id="tcReg" novalidate>
+    el.innerHTML=`${art}<div class="card">${head}<p class="sub">הרשמה עם קוד הזמנה מבעל הדף</p><form id="tcReg" novalidate>
       <label for="tcEmail">מייל</label><input id="tcEmail" type="email" autocomplete="username" required value="${esc(x.email||'')}">
       <label for="tcPass">סיסמה (8 תווים לפחות)</label><input id="tcPass" type="password" autocomplete="new-password" minlength="8" required>
       <label for="tcPass2">הסיסמה שוב</label><input id="tcPass2" type="password" autocomplete="new-password" minlength="8" required>
@@ -103,7 +189,7 @@ function showGate(kind,x={}){
     return;
   }
   if(kind==='change'){
-    el.innerHTML=`<div class="card">${head}<p class="sub">ברוך הבא. בחר סיסמה משלך במקום זו שקיבלת.</p><form id="tcChg" novalidate>
+    el.innerHTML=`${art}<div class="card">${head}<p class="sub">ברוך הבא. בחר סיסמה משלך במקום זו שקיבלת.</p><form id="tcChg" novalidate>
       <label for="tcOld">הסיסמה שקיבלת</label><input id="tcOld" type="password" autocomplete="current-password">
       <label for="tcNew">סיסמה חדשה (8 תווים לפחות)</label><input id="tcNew" type="password" autocomplete="new-password" minlength="8">
       <button class="btn" type="submit">שמירה והמשך</button><p class="err" id="tcErr" role="alert"></p></form></div>`;
@@ -135,6 +221,7 @@ const addL=(map,k,f)=>{const s=map.get(k)||new Set(); s.add(f); map.set(k,s); re
 export async function boot(){
   showGate('loading');
   let who=null; try{who=await call('GET','/me')}catch(e){showGate('error',{err:'השרת לא זמין כרגע. נסה שוב בעוד רגע.'});return {use:async()=>null}}
+  if((!who||!who.me)&&RESET){SIGNUP=!!who&&!!who.signup; showGate('reset',{token:RESET}); return {use:()=>new Promise(()=>{})}}
   if(!who||!who.me){SIGNUP=!!who&&!!who.signup; showGate(SIGNUP&&INVITE?'register':'login',INVITE&&!SIGNUP?{err:'ההרשמה סגורה כרגע. בקש מבעל הדף קוד הזמנה חדש.'}:{}); return {use:()=>new Promise(()=>{})}}
   const me=who.me;
   if(NEXT_ADMIN&&me.mc&&!me.mustChange){location.replace('/admin'); return {use:()=>new Promise(()=>{})}}

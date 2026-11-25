@@ -75,7 +75,7 @@ const AI_MAX_TOKENS=8192, AI_MAX_TURNS=12, AI_MAX_IMAGES=12, AI_MAX_SYSTEM=4000,
 const AI_MAX_TOKENS_FILES=32000, AI_FILE_TIMEOUT=12*60*1000, AI_FILE_BUDGET=14*60*1000;
 const log=(...a)=>console.log(new Date().toISOString().slice(11,19),...a);
 
-export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
+export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR,mail=sendMail}={}){
   const app=express();
   // 1.11: the management center's tables (audit, sign-ins, activity, counters) and the counters' store
   adminSchema(store); setCounterStore(store); meterYahoo(store); if(!store.getMeta('countersSince'))store.setMeta('countersSince',JSON.stringify(new Date().toISOString()));
@@ -164,6 +164,40 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR}={}){
   app.post('/api/invite',needP('users'),(req,res)=>{let c=norm((req.body||{}).code); if(c&&!/^[A-Z0-9]{6,24}$/.test(c))return res.status(400).json({error:{code:'invalid_argument',message:'קוד של 6 עד 24 אותיות באנגלית וספרות.'}});
     if(!c)c=newCode(); const v={code:c,setAt:new Date().toISOString()}; store.setMeta('invite',JSON.stringify(v)); audit(store,{user:req.user,action:'invite.set',target:'invite',ip:req.ip}); res.json(v)});
   app.delete('/api/invite',needP('users'),(req,res)=>{store.setMeta('invite','null'); audit(store,{user:req.user,action:'invite.close',target:'invite',ip:req.ip}); res.json({ok:true})});
+  // 25.11 (the owner: "תוסיף אופציה של שכחתי את הסיסמה"): a forgotten password is chosen anew through the account's own
+  // e-mail. /api/forgot sends a link of one use, good for 30 minutes (its token is kept hashed, in meta reset:<id>); the
+  // answer is the same whether the address is known or not, so nobody learns who has an account, and one letter goes
+  // out in two minutes. The link is built from the site's own address (SITE_URL, or Railway's domain), never from the
+  // request's Host. /api/reset takes the token and a password: every session of that account ends, the two-step
+  // sign-in stays as it was, and nobody is signed in by it. Both sit behind the sign-in's brake and are audited
+  const RESET_MIN=30, canMail=()=>mail!==sendMail||mailReady();
+  const siteBase=req=>{const s=String(env.SITE_URL||'').trim().replace(/\/+$/,''); if(/^https?:\/\/[^\s/]+/.test(s))return s; const d=String(env.RAILWAY_PUBLIC_DOMAIN||'').trim(); if(/^[a-z0-9.-]+$/i.test(d))return 'https://'+d;
+    const h=String(req.headers.host||''); return /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(h)?'http://'+h:''};
+  app.post('/api/forgot',async(req,res)=>{
+    const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY); b.miss();
+    const base=siteBase(req); if(!canMail()||!base)return res.status(503).json({error:{code:'no_mail',message:'האתר לא מוגדר לשליחת מיילים, ולכן אי אפשר לשלוח קישור. פנה לבעל האתר כדי לקבל סיסמה חדשה.'}});
+    const email=String((req.body||{}).email||'').trim().toLowerCase(), u=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)?store.userByEmail(email):null, OK={ok:true,minutes:RESET_MIN}, ev={email,ip:req.ip,ua:req.headers['user-agent']};
+    if(!u||(u.status==='suspended'&&u.role!=='owner')){authEvent(store,{...ev,user:u,ok:false,reason:u?'reset_suspended':'reset_unknown'}); return res.json(OK)}
+    let cur=null; try{cur=JSON.parse(store.getMeta('reset:'+u.id)||'null')}catch(e){}
+    if(cur&&cur.at&&Date.now()-Date.parse(cur.at)<2*60*1000)return res.json(OK);
+    const tok=randomBytes(32).toString('hex'), link=`${base}/?reset=${u.id}.${tok}`;
+    store.setMeta('reset:'+u.id,JSON.stringify({h:createHash('sha256').update(tok).digest('hex'),at:new Date().toISOString(),exp:Date.now()+RESET_MIN*60*1000}));
+    audit(store,{user:u,action:'password.reset_ask',target:u.id,ip:req.ip});
+    try{await mail({to:[u.email],subject:'תיק צ׳יק – בחירת סיסמה חדשה',
+      text:`ביקשת לבחור סיסמה חדשה לחשבון שלך בתיק צ׳יק.\nהקישור תקף ל-${RESET_MIN} דקות ולשימוש אחד:\n${link}\n\nלא ביקשת? אפשר להתעלם מהמייל הזה. הסיסמה לא השתנתה.`,
+      html:`<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#14122E"><p>ביקשת לבחור סיסמה חדשה לחשבון שלך בתיק צ׳יק.</p><p><a href="${link}" style="display:inline-block;background:#7C3AED;color:#fff;padding:11px 20px;border-radius:10px;text-decoration:none;font-weight:bold">לבחירת סיסמה חדשה</a></p><p>הקישור תקף ל-${RESET_MIN} דקות ולשימוש אחד.</p><p style="color:#5F5D7C">לא ביקשת? אפשר להתעלם מהמייל הזה. הסיסמה לא השתנתה.</p></div>`})}catch(e){log('reset mail failed:',e.message)}
+    res.json(OK)});
+  app.post('/api/reset',(req,res)=>{
+    const b=brake(req); if(b.over)return res.status(429).json(TOO_MANY);
+    const {token,password}=req.body||{}, m=/^([A-Za-z0-9_]{1,64})\.([0-9a-f]{64})$/.exec(String(token||'')), BAD={error:{code:'bad_token',message:'הקישור לא תקף, או שעבר זמנו. אפשר לבקש קישור חדש.'}};
+    if(!m){b.miss(); return res.status(400).json(BAD)}
+    let cur=null; try{cur=JSON.parse(store.getMeta('reset:'+m[1])||'null')}catch(e){}
+    const hb=Buffer.from(String((cur&&cur.h)||''),'hex'), good=!!cur&&cur.exp>Date.now()&&hb.length===32&&timingSafeEqual(createHash('sha256').update(m[2]).digest(),hb), u=good?store.userById(m[1]):null;
+    if(!u||(u.status==='suspended'&&u.role!=='owner')){b.miss(); return res.status(400).json(BAD)}
+    try{store.setPassword(u.id,password)}catch(e){return res.status(400).json({error:{code:e.message,message:'סיסמה של 8 תווים לפחות.'}})}
+    store.setMeta('reset:'+u.id,'null'); store.endSessions(u.id); b.clear();
+    audit(store,{user:u,action:'password.reset',target:u.id,ip:req.ip}); authEvent(store,{user:u,email:u.email,ok:true,reason:'reset',ip:req.ip,ua:req.headers['user-agent']});
+    res.json({ok:true,email:u.email})});
   app.post('/api/logout',(req,res)=>{if(req.sid)store.endSession(req.sid);setCookie(res,'',0);res.json({ok:true})});
   // 8.11: a partner or an admin deletes their own account: their documents, their watch list, their devices, their
   // sessions and the user row, after their password; the owner cannot (the site is theirs). Audited by e-mail only.

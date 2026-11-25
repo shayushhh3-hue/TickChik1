@@ -85,6 +85,39 @@ test('users and passwords',()=>{
   s.setPassword(u.id,'abcdefgh'); assert.ok(s.checkPassword(s.userById(u.id),'abcdefgh')); assert.equal(s.userById(u.id).must_change,0);
 });
 
+test('a forgotten password: a letter with a link of one use (the same answer for an unknown address), a new password, every session ended', async()=>{
+  const {createApp,bootstrap}=await import('../server/index.js'); const store=new Store(':memory:'); bootstrap(store);
+  const sent=[], app=createApp({store,siteDir:new URL('../site',import.meta.url).pathname,jobs:false,mail:async m=>{sent.push(m); return true}});
+  const srv=await new Promise(r=>{const s=app.listen(0,'127.0.0.1',()=>r(s))}), base='http://127.0.0.1:'+srv.address().port, jar={};
+  const req=async(who,method,url,body)=>{const r=await fetch(base+url,{method,headers:{...(jar[who]?{cookie:jar[who]}:{}),'x-tc':'1','content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)}); const sc=r.headers.get('set-cookie'); if(sc)jar[who]=sc.split(';')[0]; let j=null; try{j=await r.json()}catch(e){} return {status:r.status,j}};
+  const old=process.env.SITE_URL; process.env.SITE_URL='https://tikchik.example';
+  try{
+    let r=await req('o','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'}); assert.equal(r.status,200);
+    // an address the site does not know: the same answer, and no letter
+    r=await req('x','POST','/api/forgot',{email:'nobody@example.com'}); assert.equal(r.status,200); assert.deepEqual(r.j,{ok:true,minutes:30}); assert.equal(sent.length,0);
+    r=await req('x','POST','/api/forgot',{email:'OWNER@example.com '}); assert.deepEqual(r.j,{ok:true,minutes:30}); assert.equal(sent.length,1);
+    const m=sent[0]; assert.deepEqual(m.to,['owner@example.com']); const link=/https:\/\/tikchik\.example\/\?reset=([A-Za-z0-9_]+\.[0-9a-f]{64})/.exec(m.text); assert.ok(link,'the link, from the site\'s own address: '+m.text); assert.ok(m.html.includes(link[0]));
+    const tok=link[1], kept=JSON.parse(store.getMeta('reset:'+tok.split('.')[0])); assert.ok(!JSON.stringify(kept).includes(tok.split('.')[1]),'only its hash is kept');
+    // asked again at once: the same answer, no second letter
+    r=await req('x','POST','/api/forgot',{email:'owner@example.com'}); assert.equal(r.status,200); assert.equal(sent.length,1);
+    // a wrong token, a short password
+    assert.equal((await req('x','POST','/api/reset',{token:tok.replace(/.$/,c=>c==='0'?'1':'0'),password:'brand-new-pass-1'})).status,400);
+    r=await req('x','POST','/api/reset',{token:tok,password:'short'}); assert.equal(r.status,400); assert.equal(r.j.error.code,'short_password');
+    // the new password: the old one is gone, the session that was open ended, nobody was signed in by it
+    r=await req('x','POST','/api/reset',{token:tok,password:'brand-new-pass-1'}); assert.equal(r.status,200); assert.equal(r.j.email,'owner@example.com'); assert.ok(!jar.x,'no session from a reset');
+    assert.equal((await req('o','GET','/api/me')).j.me,null,'the open session ended');
+    assert.equal((await req('y','POST','/api/login',{email:'owner@example.com',password:'owner-pass-123'})).status,401);
+    assert.equal((await req('y','POST','/api/login',{email:'owner@example.com',password:'brand-new-pass-1'})).status,200);
+    // of one use
+    r=await req('x','POST','/api/reset',{token:tok,password:'another-pass-22'}); assert.equal(r.status,400); assert.equal(r.j.error.code,'bad_token');
+    // a link whose time has passed
+    store.setMeta('reset:'+tok.split('.')[0],JSON.stringify({...kept,exp:Date.now()-1000})); assert.equal((await req('x','POST','/api/reset',{token:tok,password:'another-pass-22'})).j.error.code,'bad_token');
+    // without the site's address the link is never built from the request's Host
+    delete process.env.SITE_URL; const r2=await fetch(base+'/api/forgot',{method:'POST',headers:{'x-tc':'1','content-type':'application/json',host:'evil.example'},body:JSON.stringify({email:'owner@example.com'})}).catch(()=>null);
+    if(r2){assert.ok(r2.status===503||!sent.slice(1).some(x=>/evil\.example/.test(x.text)),'no link to a host the request named')}
+  }finally{if(old===undefined)delete process.env.SITE_URL; else process.env.SITE_URL=old; srv.close()}
+});
+
 async function startApp(){
   const {createApp,bootstrap}=await import('../server/index.js');
   const store=new Store(':memory:'); bootstrap(store);

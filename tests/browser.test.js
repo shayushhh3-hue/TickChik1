@@ -1377,7 +1377,7 @@ test('the top of the page: three buttons; "קרנות" next to the accounts show
     const top=await pg.evaluate(()=>({b:[...document.querySelectorAll('.hero .acts .hbtn')].filter(x=>x.getBoundingClientRect().width>0).map(x=>x.id),side:[...document.querySelectorAll('#tabsbar .sbx button[id]')].map(x=>x.id),c:[...document.querySelectorAll('#acctChips .chip')].map(x=>x.textContent)}));
     // 11.11 (the owner): nothing at the top of the home; refresh, the upload, night mode and the tape are in the side menu
     assert.deepEqual(top.b,[],'no buttons at the top of the home');
-    assert.deepEqual(top.side,['navRefresh','btnUpd','btnTheme','btnTape','tcAcctBtn','tcOutBtn'],'the side menu has them, the account (and its sign-out) last'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
+    assert.deepEqual(top.side,['navRefresh','btnUpd','btnTheme','btnTape','tcAcctBtn','tcOutBtn','sbOut','sbOutYes','sbOutNo'],'the side menu has them, the account last, and signing out in its own words under it (25.11)'); assert.deepEqual(top.c,['הכל','אקסלנס','בלינק'],'the kinds are the tiles under the value (28.10)');
     // today's biggest rise and fall, from the holdings' own day changes
     const movers=()=>pg.evaluate(()=>{const d=[...document.querySelectorAll('#rows tr:not(.sec)')].map(r=>{const s=r.querySelector('.sym'), n=r.children[1]&&r.children[1].querySelector('.n'); if(!s||!n||!/[▲▼]/.test(n.textContent))return null;
         return {s:s.textContent,v:(n.textContent.includes('▼')?-1:1)*parseFloat(n.textContent.replace(/[^\d.]/g,''))}}).filter(Boolean).sort((a,b)=>b.v-a.v);
@@ -4836,4 +4836,56 @@ test('25.11 a one-time deposit from the account\'s own box reaches the box at on
       await pg.click('#pCashRow [data-pa="onceOut"]'); await pg.waitForFunction(()=>!document.querySelector('#pCashRow [data-pa="onceOut"]'),null,{timeout:8000}); assert.equal(await box(A1),750,'added in one press')}
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+test('25.11 signing out is in the menu in its own words (asked once, by keyboard too), the sign-in screen wears the site\'s colours over a drawn market, and a forgotten password has its way',T,async t=>{
+  if(skip())return t.skip('no browser');
+  for(const W of [390,1280]){
+    const {ctx,pg}=await open(W);
+    try{
+      if(W<760){await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300)}
+      await pg.waitForSelector('#sbOut',{state:'visible',timeout:8000});
+      const b=await pg.evaluate(()=>{const b=document.getElementById('sbOut'), r=b.getBoundingClientRect(); return {t:b.textContent.trim(),h:r.height,exp:b.getAttribute('aria-expanded'),menu:document.getElementById('tcOutBtn').textContent}});
+      assert.equal(b.t,'להתנתק מהחשבון'); assert.ok(b.h>=44,'a finger: '+b.h); assert.equal(b.exp,'false'); assert.equal(b.menu,'להתנתק מהחשבון','the account\'s menu says the same');
+      // asked once: who is signed in, and the focus on the way that changes nothing
+      await pg.focus('#sbOut'); await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>!document.getElementById('sbOutQ').hidden&&document.activeElement&&document.activeElement.id==='sbOutNo',null,{timeout:5000});
+      const q=await pg.evaluate(()=>({who:document.getElementById('sbOutWho').textContent,exp:document.getElementById('sbOut').getAttribute('aria-expanded'),h:[...document.querySelectorAll('#sbOutQ button')].map(x=>x.getBoundingClientRect().height)}));
+      assert.match(q.who,/מחובר כ-owner@example\.com\. להתנתק במכשיר הזה\? הנתונים נשארים שמורים בחשבון\./); assert.equal(q.exp,'true'); assert.ok(q.h.every(h=>h>=44));
+      if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/signout-${W}.png`});
+      await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>document.getElementById('sbOutQ').hidden&&document.activeElement&&document.activeElement.id==='sbOut',null,{timeout:5000});
+      assert.ok(!await pg.evaluate(()=>!!document.getElementById('tcLogin')),'"להישאר מחובר" stays');
+      await pg.click('#sbOut'); await pg.click('#sbOutYes'); await pg.waitForSelector('#tcLogin',{timeout:20000});
+      // signed out: the sign-in screen, in the site\'s colours, a market drawn behind the card (a drawing only)
+      const G=()=>pg.evaluate(()=>{const G=document.getElementById('tcGate'), art=G.querySelector('.bgx'), card=G.querySelector('.card').getBoundingClientRect(); return {bg:getComputedStyle(G).backgroundColor,btn:getComputedStyle(G.querySelector('.btn')).backgroundColor,ink:getComputedStyle(G.querySelector('h1')).color,
+        art:!!art,hid:art&&art.getAttribute('aria-hidden'),cd:art?art.querySelectorAll('.cd').length:0,ln:!!(art&&art.querySelector('.ln')),ring:art?art.querySelectorAll('.ring').length:0,txt:art?art.textContent.trim():'x',
+        h:[...G.querySelectorAll('input:not([hidden]),button')].filter(x=>x.offsetParent).map(x=>Math.round(x.getBoundingClientRect().height)),over:document.documentElement.scrollWidth>innerWidth+1,in:card.left>=0&&card.right<=innerWidth+1,mark:!!G.querySelector('.mark')}});
+      let g=await G();
+      assert.equal(g.btn,'rgb(124, 58, 237)','the site\'s violet'); assert.equal(g.bg,'rgb(7, 7, 26)','the site\'s night'); assert.equal(g.ink,'rgb(244, 243, 255)');
+      assert.ok(g.art&&g.hid==='true'&&g.cd>=(W<760?12:24)&&g.ln&&g.ring===3,'candles, their line, a portfolio\'s ring: '+JSON.stringify(g)); assert.equal(g.txt,'','no figure and no name in it');
+      assert.ok(g.h.every(h=>h>=44),'every field and button a finger: '+g.h); assert.ok(!g.over&&g.in&&g.mark,'the card inside the screen');
+      if(process.env.SHOT){await pg.waitForTimeout(3200); await pg.screenshot({path:`${process.env.SHOT}/gate-dark-${W}.png`})}
+      // by day
+      await pg.evaluate(()=>localStorage.setItem('tr_theme','light')); await pg.reload(); await pg.waitForSelector('#tcLogin',{timeout:20000}); g=await G();
+      assert.equal(g.bg,'rgb(246, 245, 252)','the site\'s day'); assert.equal(g.btn,'rgb(124, 58, 237)'); assert.equal(g.ink,'rgb(20, 18, 46)');
+      if(process.env.SHOT){await pg.waitForTimeout(3200); await pg.screenshot({path:`${process.env.SHOT}/gate-light-${W}.png`})}
+      // someone who asked for less motion gets the finished drawing, still
+      await pg.emulateMedia({reducedMotion:'reduce'}); assert.deepEqual(await pg.evaluate(()=>{const a=document.querySelector('#tcGate .bgx'); return [getComputedStyle(a.querySelector('.ln')).animationName,getComputedStyle(a.querySelector('.cd')).animationName,getComputedStyle(a.querySelector('.ln')).strokeDashoffset]}),['none','none','0px']);
+      // "שכחתי את הסיסמה": the address, the letter asked for (this server has no way to send: said so), and the way back
+      await pg.click('#tcForgot'); await pg.waitForSelector('#tcFg',{timeout:5000});
+      assert.match(await pg.evaluate(()=>document.querySelector('#tcGate .card').innerText.replace(/\s+/g,' ')),/שכחת את הסיסמה\? נשלח קישור למייל שלך.*המייל של החשבון.*לשלוח לי קישור.*חזרה לכניסה/);
+      await pg.click('#tcFg button[type=submit]'); assert.match(await pg.textContent('#tcErr'),/כתוב את כתובת המייל/);
+      await pg.fill('#tcEmail','owner@example.com'); await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>/\S/.test(document.getElementById('tcErr').textContent+document.getElementById('tcOkm').textContent),null,{timeout:8000});
+      const fg=await pg.evaluate(()=>({err:document.getElementById('tcErr').textContent,ok:document.getElementById('tcOkm').textContent,role:document.getElementById('tcErr').getAttribute('role'),h:[...document.querySelectorAll('#tcGate input,#tcGate button')].map(x=>Math.round(x.getBoundingClientRect().height))}));
+      assert.ok(/לא מוגדר לשליחת מיילים/.test(fg.err)||/אם הכתובת רשומה באתר, נשלח אליה עכשיו מייל/.test(fg.ok),'an answer in words: '+JSON.stringify(fg)); assert.equal(fg.role,'alert'); assert.ok(fg.h.every(h=>h>=44),'a finger each: '+fg.h);
+      if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/gate-forgot-${W}.png`});
+      // the letter's link: the new password twice; the token leaves the address bar at once; a link that is not good says so and offers a new one
+      await pg.goto(U+'?reset=u_nobody.'+'ab'.repeat(32)); await pg.waitForSelector('#tcRs',{timeout:20000}); assert.ok(!/reset=/.test(pg.url()),'not left in the address: '+pg.url());
+      await pg.fill('#tcNew','brand-new-pass-1'); await pg.fill('#tcNew2','brand-new-pass-2'); await pg.click('#tcRs button[type=submit]'); assert.match(await pg.textContent('#tcErr'),/שתי הסיסמאות לא זהות/);
+      await pg.fill('#tcNew2','brand-new-pass-1'); await pg.click('#tcRs button[type=submit]'); await pg.waitForFunction(()=>/הקישור לא תקף/.test(document.getElementById('tcErr').textContent),null,{timeout:8000});
+      await pg.click('#tcErr .lnk'); await pg.waitForSelector('#tcFg',{timeout:5000}); await pg.click('#tcToLog'); await pg.waitForSelector('#tcLogin',{timeout:5000});
+      // and the way back in still works (the day's look was this test's own: not kept with the account)
+      await pg.evaluate(()=>localStorage.removeItem('tr_theme')); await pg.reload(); await pg.waitForSelector('#tcLogin',{timeout:20000});
+      await pg.fill('#tcEmail','owner@example.com'); await pg.fill('#tcPass','owner-pass-123'); await pg.click('#tcLogin button'); await pg.waitForFunction(()=>!document.getElementById('tcGate')&&/[₪$]\d/.test((document.getElementById('kTotal')||{}).textContent||''),null,{timeout:60000});
+      assert.deepEqual(pg.errs,[]);
+    }finally{await ctx.close()}
+  }
 });
