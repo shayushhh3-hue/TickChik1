@@ -4556,7 +4556,7 @@ test('24.11 a purchase or a sale asks about the deposit plan (in the card and th
       const bal0=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v0=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
       await p2.click('#planAns [data-planonce]'); await p2.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
       await p2.fill('#onceAmt','2000'); await p2.fill('#onceNote','בונוס'); await p2.click('#onceAdd');
-      await p2.waitForFunction(()=>/הפקדה חד-פעמית בונוס ₪2,000 ✓ נוספה/.test(document.getElementById('planAns').innerText.replace(/\s+/g,' ')),null,{timeout:8000});
+      await p2.waitForFunction(()=>/הפקדה חד-פעמית (ל\S+ · )?בונוס ₪2,000 ✓ נוספה/.test(document.getElementById('planAns').innerText.replace(/\s+/g,' ')),null,{timeout:8000});
       c=await p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')); assert.match(c,/כולל ₪2,000 מהפקדה חד-פעמית/);
       const bal1=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v1=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
       assert.ok(Math.abs(bal1-bal0-2000)<1,`the balance: ${bal0} → ${bal1}`); assert.ok(Math.abs(v1-v0-2000)<1,`the value: ${v0} → ${v1}`);
@@ -4625,4 +4625,57 @@ test('24.11 a reset of the funds track\'s balance (fixed sums too), and of one a
     assert.ok(Math.abs(await bal()-b0)<1,'undone');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+test('25.11 an account\'s box, the track\'s card and its table say one figure (a late tick, a one-time deposit under the other account\'s newer statement), and a one-time deposit goes to an account',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const day=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10), prevYm=(()=>{const d=new Date(day(0).slice(0,7)+'-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth()-1); return d.toISOString().slice(0,7)})();
+  const pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)), ids=[...new Set([...(pf.positions||[]).map(x=>x.acct),...(pf.cash||[]).map(x=>x.acct)])].filter(Boolean);
+  if(ids.length<2)return t.skip('one account in the fixture'); const F=(pf.positions||[]).filter(x=>/^TA\d/.test(x.sym)).map(x=>x.sym); if(!F.length)return t.skip('no fund in the fixture');
+  const [A0,A1]=ids;
+  // the funds' account: ₪400 by a statement of 20 days ago; the stocks' account: ₪1,000 by a statement of 2 days ago
+  pf.cash=(pf.cash||[]).filter(x=>x.acct!==A0&&x.acct!==A1).concat([{acct:A0,ccy:'ILS',amount:1000},{acct:A1,ccy:'ILS',amount:400}]); pf.asOf={...(pf.asOf||{}),[A0]:day(2),[A1]:day(20)}; pf.cashAt={}; store.setDoc('portfolio/main',pf,{silent:true});
+  const S0=JSON.parse(JSON.stringify((keep['settings/main'].exists&&keep['settings/main'].data)||{})); S0.planAcct={stocks:A0,idx:A1}; store.setDoc('settings/main',S0,{silent:true});
+  // last month: the deposit and the purchases, the last of them ticked only now; and a one-time ₪300 of 10 days ago
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); delete pl.zero; delete pl.acctZero;
+  pl.idx={start:prevYm,opening:0,mode:'fixed',items:F.map(s0=>({sym:s0,status:'todo',note:'',amt:100})),
+    deposits:[{id:'d1',month:prevYm,amount:100*F.length,at:prevYm+'-05T10:00:00.000Z'},{id:'o1',month:day(10).slice(0,7),amount:300,day:day(10),at:day(10)+'T12:00:00.000Z',once:true}],
+    purchases:F.map((s0,k)=>({id:'p'+k,sym:s0,paidIls:100,qty:1,month:prevYm,at:k===F.length-1?new Date().toISOString():prevYm+'-05T11:00:00.000Z'}))};
+  store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForSelector(`#pCashRow [data-pa="acctZero"][data-acct="${A1}"]`,{timeout:10000});
+    const num=t0=>(/−/.test(t0)?-1:1)*+t0.replace(/[^\d.]/g,'');
+    const box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-acct="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num);
+    const bal=()=>pg.evaluate(()=>document.querySelector('#planAns .ps-bal b').textContent).then(num), row=()=>pg.evaluate(()=>document.querySelector('#ladRows tr.cur td.num').textContent).then(num);
+    // the statement of 20 days ago holds last month's marks (the late tick too); the one-time deposit came after it
+    assert.equal(await box(A1),700,'the funds\' account: its ₪400 and the one-time ₪300, whatever the other account\'s statement'); assert.equal(await bal(),700,'the card, the same'); assert.equal(await row(),700,'the table\'s month, the same');
+    assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText),/400\.00 מזומן בחשבון נכון ל-.*ועוד .*300\.00 שסימנת/,'the box says what it is made of');
+    // the form: apart, the one choice is the account (its track beside it)
+    await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+    const F0=await pg.evaluate(()=>({l:document.getElementById('onceTrkL').textContent,o:[...document.getElementById('onceTrk').options].map(o=>o.textContent),a:document.getElementById('onceAcctW').hidden,h:document.getElementById('onceTrk').getBoundingClientRect().height}));
+    assert.equal(F0.l,'לחשבון'); assert.ok(F0.o.every(x=>/ · (מניות|מדדים)$/.test(x))&&F0.o[0]!==F0.o[1],'each account with its track: '+F0.o.join(', ')); assert.ok(F0.a,'no second choice'); assert.ok(F0.h>=44,'a field a finger can press');
+    if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('pCashRow').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-acct-boxes.png'}); await pg.evaluate(()=>document.querySelector('.oncebox').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-acct-once.png'})}
+    await pg.selectOption('#onceTrk','idx'); await pg.fill('#onceAmt','50'); await pg.click('#onceAdd');
+    await pg.waitForFunction(()=>/נוספה הפקדה/.test(document.getElementById('onceState').textContent),null,{timeout:8000});
+    assert.equal(await box(A1),750,'the deposit in its account\'s box'); assert.equal(await bal(),750); assert.equal(await row(),750);
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
+    const sv=store.getDoc('plan/main').data.idx.deposits.find(d=>d.once&&+d.amount===50); assert.equal(sv&&sv.acct,A1,'kept with its account');
+    assert.match(await pg.evaluate(()=>document.getElementById('onceList').innerText),/· מדדים/); assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+  // one balance for both tracks: the account is a choice of its own, and the deposit raises that account's box
+  S0.planAcct={stocks:'all',idx:'all'}; store.setDoc('settings/main',S0,{silent:true});
+  const o2=await open(1280);
+  try{const pg=o2.pg; await tab(pg,'plan'); await pg.waitForSelector(`#pCashRow [data-pa="acctZero"][data-acct="${A0}"]`,{timeout:10000});
+    const num=t0=>(/−/.test(t0)?-1:1)*+t0.replace(/[^\d.]/g,''), box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-acct="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num);
+    const b0=await box(A0), b1=await box(A1);
+    await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+    assert.equal(await pg.evaluate(()=>document.getElementById('onceTrkL').textContent),'למסלול'); assert.equal(await pg.evaluate(()=>document.getElementById('onceAcctW').hidden),false,'the account is asked');
+    await pg.selectOption('#onceAcct',A0); await pg.fill('#onceAmt','70'); await pg.click('#onceAdd');
+    await pg.waitForFunction(()=>/נוספה הפקדה/.test(document.getElementById('onceState').textContent),null,{timeout:8000});
+    assert.equal(await box(A0),b0+70,'the chosen account\'s box'); assert.equal(await box(A1),b1,'the other kept');
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
+    const D=store.getDoc('plan/main').data, sv=[...(D.deposits||[]),...((D.idx&&D.idx.deposits)||[])].find(d=>d.once&&+d.amount===70); assert.equal(sv&&sv.acct,A0,'kept with its account');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await o2.ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
