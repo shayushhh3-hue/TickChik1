@@ -20893,7 +20893,7 @@ function planAct(a,d){
 }
 // back from "הוצא מהתוכנית": where it was in the list, bought again when it was (and its purchase is still there)
 function planUnskip(it){const X=[PLD,PLD&&PLD.idx].find(T=>T&&(T.items||[]).includes(it)); it.status=it.was==='done'&&it.pid&&X&&(X.purchases||[]).some(x=>x.id===it.pid)?'done':'todo'; if(it.status==='todo'){delete it.pid; delete it.doneAt} delete it.was}
-function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500); if(LAD_UNDO){const u=LAD_UNDO; LAD_UNDO=null; try{offerUndo(u.msg,u.fn)}catch(e){}} if(PZ_UNDO){const w=PZ_UNDO; PZ_UNDO=false; const ac=typeof w==='string'?acctIds().find(x=>acctName(x)===w):''; try{offerUndo(ac?`המזומן של ${w} אופס בתוכנית ל-₪0`:'יתרת התוכנית אופסה ל-₪0',()=>ac?planAct('acctZeroOff',{acct:ac}):planAct('zeroOff',{}))}catch(e){}}}
+function planChanged(){pDirty=true;P_SEQ++; try{if(canWrite)$('planSaved').textContent='שומר…'}catch(e){} render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500); if(LAD_UNDO){const u=LAD_UNDO; LAD_UNDO=null; try{offerUndo(u.msg,u.fn)}catch(e){}} if(PZ_UNDO){const w=PZ_UNDO; PZ_UNDO=false; const ac=typeof w==='string'?acctIds().find(x=>acctName(x)===w):''; try{offerUndo(ac?`המזומן של ${w} אופס בתוכנית ל-₪0`:'יתרת התוכנית אופסה ל-₪0',()=>ac?planAct('acctZeroOff',{acct:ac}):planAct('zeroOff',{}))}catch(e){}}}
 async function savePlan(){
   if(!db||!canWrite)return;
   if(!PLK&&!LOCAL){clearTimeout(pTimer); pTimer=setTimeout(savePlan,700); return}   // 1.11: not before the saved plan has arrived
@@ -32168,7 +32168,8 @@ function renderOnce(){
    if(!aw.hidden&&document.activeElement!==as&&!as.dataset.own){const ta=trackAcct(sel.value==='idx'?'idx':'stocks'); as.value=ta!=='all'&&L.includes(ta)?ta:L[0]}
    as.disabled=dis}
   for(const id of ['onceAmt','onceDay','onceTrk','onceNote','onceAdd'])$(id).disabled=dis;
-  const all=[...(PLD.deposits||[]).filter(d=>d.once).map(d=>({d,trk:'stocks'})),...(((PLD.idx&&PLD.idx.deposits)||[]).filter(d=>d.once).map(d=>({d,trk:'idx'})))].sort((a,b)=>(b.d.day||b.d.month)<(a.d.day||a.d.month)?-1:1);
+  const byHand=d=>d.once&&!(d.tid&&/^a/.test(d.id||''));
+  const all=[...(PLD.deposits||[]).filter(byHand).map(d=>({d,trk:'stocks'})),...(((PLD.idx&&PLD.idx.deposits)||[]).filter(byHand).map(d=>({d,trk:'idx'})))].sort((a,b)=>(b.d.day||b.d.month)<(a.d.day||a.d.month)?-1:1);
   const ids=acctIds(), OPEN=(()=>{try{return new Set(planOpen().deps)}catch(e){return new Set()}})();
   {const n=$('dvOnceN'); if(n)n.textContent=all.length?String(all.length):''}
   $('onceSub').textContent=all.length?`${all.length===1?'הפקדה אחת':all.length+' הפקדות'} · ${ils(all.reduce((t,x)=>t+(+x.d.amount||0),0))}`:'';

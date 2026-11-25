@@ -1268,15 +1268,15 @@ test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and 
     const r=await pg.evaluate(()=>({bal:document.getElementById('pBal').textContent,list:document.getElementById('onceList').textContent,cur:document.querySelector('#ladRows tr.cur').textContent,st:document.getElementById('onceState').textContent,n:document.getElementById('dvOnceN').textContent}));
     assert.equal(r.n,'1','the count on its tab');
     assert.equal(num(r.bal),bal0+2000,'the plan\'s balance'); assert.match(r.list,/₪2,000.*מניות.*בונוס/); assert.match(r.cur,/\+ ₪2,000 חד פעמית · בונוס/); assert.match(r.st,/נכנסה ליתרה להשקעה ולשווי התיק/);
-    const d=(store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once); assert.equal(d.length,1); assert.equal(d[0].amount,2000);
+    const d=(store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once&&!x.tid) /* 25.11: a deposit of the files is a row too (tid); this is the one written by hand */; assert.equal(d.length,1); assert.equal(d[0].amount,2000);
     // the month's regular deposit is its own: ticking and unticking it leaves the one-time deposit
     const ym=await pg.evaluate(()=>document.querySelector('#ladRows tr.cur [data-dep]').dataset.dep);
     await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(600); await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(1200);
-    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once).length,1,'still there');
+    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once&&!x.tid).length,1,'still there');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.equal(num(await pg.evaluate(()=>document.getElementById('kTotal').textContent)),tot0+2000,'the portfolio\'s value, as cash');
     await tab(pg,'plan'); await pg.waitForTimeout(300); await pg.click('#onceList [data-oncedel]'); await pg.waitForTimeout(1500);
-    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once).length,0); assert.equal(num(await pg.textContent('#pBal')),bal0);
+    assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once&&!x.tid).length,0); assert.equal(num(await pg.textContent('#pBal')),bal0);
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{store.setDoc('plan/main',PL0)}
 });
