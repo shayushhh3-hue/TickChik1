@@ -7,12 +7,21 @@ import {timedFetch} from '../shared/quotes.js';
 import {ilParts} from '../shared/market.js';
 
 export const DW='https://datawise.tase.co.il/v1';
-async function dw(path,{key,fetch:f,lang='he-IL'}){
-  const r=await f(DW+path,{headers:{accept:'application/json',apikey:key,'accept-language':lang}});
+// 25.11: the exchange moved the indices to version 2 of the product (Indices - Basic 2.0.0): another address, and
+// another shape of answer ({data:[{indexId,indexname}],meta}). A key registered to it is refused (403) at the old one.
+export const DW2='https://datawise.tase.co.il/api/v2';
+async function dw(path,{key,fetch:f,lang='he-IL',base=DW}){
+  const r=await f(base+path,{headers:{accept:'application/json',apikey:key,'accept-language':lang}});
   if(!r.ok)throw new Error('HTTP '+r.status); const t=await r.text(); if(/Request Rejected/i.test(t))throw new Error('rejected');
   return JSON.parse(t);
 }
 const res=(j,k)=>((j&&j[k]&&j[k].result)||[]);
+// the list of indices: version 2 first, and the older address for a key that was registered to version 1
+async function ilIndices(o){
+  let e2=null;
+  try{const j=await dw('/basic-indices/indices-list',{...o,base:DW2}), a=(j&&j.data)||[]; if(a.length)return a.map(x=>({indexId:x.indexId,indexName:x.indexname||x.indexName||''}))}catch(e){e2=e}
+  try{return res(await dw('/basic-indices/indices-list',o),'indicesList')}catch(e){throw new Error(e2?e2.message+' (v2), '+e.message+' (v1)':e.message)}
+}
 // a security's type from the exchange's own table of types: shares, funds, bonds, options...
 const kindOf=d=>{d=String(d||''); return /מני|share|stock/i.test(d)&&!/אופצי|option|warrant|כתב/i.test(d)?'stock':/סל|etf|קרן/i.test(d)?'fund':/אג"?ח|bond|מלווה|תעוד/i.test(d)?'bond':'other'};
 export function ilBuild({sec=[],types=[],funds=[],indices=[]}){
@@ -33,7 +42,7 @@ export async function ilSymsTask(store,{fetch:f=timedFetch,key=process.env.TASE_
   let types=[], funds=[], indices=[];
   try{types=res(await dw('/basic-securities/securities-types',o),'securitiesTypes')}catch(e){errors.push('types: '+e.message)}
   try{funds=res(await dw('/fund/fund-list?listingStatusId=1',o),'funds')}catch(e){errors.push('funds: '+e.message)}
-  try{indices=res(await dw('/basic-indices/indices-list',o),'indicesList')}catch(e){errors.push('indices: '+e.message)}
+  try{indices=await ilIndices(o)}catch(e){errors.push('indices: '+e.message)}
   const B=ilBuild({sec,types,funds,indices});
   if(!B.stocks.length&&!B.funds.length){log('israeli securities: nothing came ('+errors.join(' | ')+')');
     const old=store.getDoc('research/ilsyms'); store.setDoc('research/ilsyms',{...(old.exists?old.data:{}),errors,triedAt:now.toISOString()},{silent:true}); return false}

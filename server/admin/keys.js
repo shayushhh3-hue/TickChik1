@@ -48,8 +48,8 @@ export async function keyTest(store,name,{env=process.env,fetch:f=globalThis.fet
       if(r.ok){st='ok'; try{const j=await r.json(); extra=(j.data||[]).length?`${(j.data||[]).length} מודלים זמינים`:''}catch(e){}} else st=r.status===401||r.status===403?'bad':r.status===429?'limit':'down'}
     else if(K.test==='finnhub'){const r=await get('https://finnhub.io/api/v1/quote?symbol=AAPL&token='+encodeURIComponent(key)); code=r.status;
       if(r.ok){let j=null; try{j=await r.json()}catch(e){} st=j&&+j.c>0?'ok':'down'; if(st==='ok')extra='מחיר AAPL התקבל'} else st=r.status===401||r.status===403?'bad':r.status===429?'limit':'down'}
-    else if(K.test==='tase'){const r=await get(DW+'/basic-indices/indices-list',{accept:'application/json',apikey:key,'accept-language':'he-IL'}); code=r.status;
-      const txt=r.ok?await r.text():''; st=r.ok&&!/Request Rejected/i.test(txt)?'ok':r.status===401||r.status===403||/Request Rejected/i.test(txt)?'bad':r.status===429?'limit':'down'; if(st==='ok')extra='רשימת המדדים התקבלה'}
+    else if(K.test==='tase'){const r=await get(DW+'/basic-securities/securities-types',{accept:'application/json',apikey:key,'accept-language':'he-IL'}); code=r.status;   // 25.11: the indices moved to version 2, and a new key is refused at the old address
+      const txt=r.ok?await r.text():''; st=r.ok&&!/Request Rejected/i.test(txt)?'ok':r.status===401||r.status===403||/Request Rejected/i.test(txt)?'bad':r.status===429?'limit':'down'; if(st==='ok')extra='סוגי הניירות התקבלו'}
     else if(K.test==='x'){const r=await get('https://api.twitter.com/2/users/by/username/Reuters',{authorization:'Bearer '+key}); code=r.status;
       st=r.ok?'ok':r.status===401||r.status===403?'bad':r.status===429?'limit':'down'}
     else if(K.test==='fmp'){const r=await get(FMP_BASE+'/quote?symbol=AAPL&apikey='+encodeURIComponent(key),{accept:'application/json'}); code=r.status;

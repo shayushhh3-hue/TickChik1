@@ -985,14 +985,18 @@ test('the site: the PDF and Excel libraries in files of their own, loaded when n
 });
 
 test('Israeli securities for the search: the exchange\'s own lists (shares, funds, indices) with a key; a fund by its number from Maya',async()=>{
-  const {ilBuild,ilSymsTask,DW}=await import('../server/ilsyms.js');
+  const {ilBuild,ilSymsTask,DW,DW2}=await import('../server/ilsyms.js');
   const B=ilBuild({types:[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'},{securityFullTypeCode:'0501',securityTypeDesc:'אג"ח קונצרני'},{securityFullTypeCode:'0601',securityTypeDesc:'כתבי אופציה'}],
     sec:[{securityId:604611,symbol:'LUMI',securityName:'לאומי',companyName:'בנק לאומי',companySector:'בנקים',securityFullTypeCode:'0101'},{securityId:1,symbol:'LUMI.B1',securityName:'לאומי אג"ח',securityFullTypeCode:'0501'},{securityId:2,symbol:'X.W1',securityName:'אופ',securityFullTypeCode:'0601'}],
     funds:[{fundId:5129283,fundName:'הראל מחקה נאסד"ק 100',classificationMajor:{code:1,value:'מניות'},classificationMain:{code:2,value:'חו"ל'},exposureProfile:'6A'}],indices:[{indexId:142,indexName:'ת"א-35'}]});
   assert.deepEqual(B.stocks,[['LUMI','לאומי','בנק לאומי','בנקים',604611]],'shares only');
   assert.deepEqual(B.funds,[['5129283','הראל מחקה נאסד"ק 100','מניות','חו"ל','6A']]); assert.deepEqual(B.indices,[['142','ת"א-35']]);
   const store=new Store(':memory:'), asked=[];
+  let v2=false;
   const f=async(u,o)=>{asked.push({u:String(u),h:o.headers}); const p=String(u).slice(DW.length);
+    // 25.11: the indices at version 2 (another address and shape); a key registered to it is refused at the old one
+    if(String(u)===DW2+'/basic-indices/indices-list')return v2?new Response(JSON.stringify({data:[{indexId:142,indexname:'ת"א-35',isin:'IL0001420000'},{indexId:137,indexname:'ת"א-125'}],meta:{total:2,hasMore:false}}),{status:200}):new Response('',{status:403});
+    if(v2&&p.startsWith('/basic-indices/indices-list'))return new Response('',{status:403});
     const J=p.startsWith('/basic-securities/trade-securities-list/')?{tradeSecuritiesList:{result:p.endsWith('/21')?[]:[{securityId:604611,symbol:'LUMI',securityName:'לאומי',companyName:'בנק לאומי',companySector:'בנקים',securityFullTypeCode:'0101'}],total:1}}
       :p.startsWith('/basic-securities/securities-types')?{securitiesTypes:{result:[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'}],total:1}}
       :p.startsWith('/fund/fund-list')?{funds:{result:[{fundId:5129283,fundName:'הראל מחקה נאסד"ק 100',classificationMajor:{code:1,value:'מניות'}}],total:1}}
@@ -1002,6 +1006,9 @@ test('Israeli securities for the search: the exchange\'s own lists (shares, fund
   assert.equal(await ilSymsTask(store,{fetch:f,key:'k-1',now:new Date('2026-10-21T08:00:00Z')}),true);
   const d=store.getDoc('research/ilsyms').data; assert.equal(d.day,'2026-10-20','the day before, when today has no list yet'); assert.equal(d.stocks[0][0],'LUMI'); assert.equal(d.funds[0][0],'5129283');
   assert.equal(asked[0].h.apikey,'k-1'); assert.equal(asked[0].h['accept-language'],'he-IL');
+  assert.deepEqual(d.indices,[['142','ת"א-35']],'a key of version 1: the older address still answers'); assert.deepEqual(d.errors,[]);
+  v2=true; assert.equal(await ilSymsTask(store,{fetch:f,key:'k-2',now:new Date('2026-10-21T08:00:00Z')}),true);
+  const d2=store.getDoc('research/ilsyms').data; assert.deepEqual(d2.indices,[['142','ת"א-35'],['137','ת"א-125']],'25.11 a key of version 2: the indices from the new address, by their new field'); assert.deepEqual(d2.errors,[],'and nothing is refused');
   assert.equal(access({id:'u_x',role:'friend'},'research/ilsyms'),'r');
   // a fund by its number, through the server, from Maya
   const {srv,req}=await startApp(); const real=globalThis.fetch;
