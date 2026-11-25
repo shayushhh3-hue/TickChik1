@@ -3625,7 +3625,7 @@ body.hidenum .trend-sel .n{filter:blur(7px);user-select:none}
 .pcash{margin:0 0 12px}
 .pcash[hidden]{display:none}
 .pcash .pc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
-.pcash .pc-why{list-style:none;margin:8px 0 0;padding:0;font-size:13px;color:var(--ink2);line-height:1.5} .pcash .pc-why b{font-weight:600;color:var(--ink)}
+.pcash .pc-why{list-style:none;margin:8px 0 0;padding:0;font-size:13px;color:var(--ink2);line-height:1.5} .pcash .pc-why li+li{margin-top:6px} html body .pcash .pc-why .pc-okb{display:block;margin-top:0} .pcash .pc-why b{font-weight:600;color:var(--ink)}
 .pcash .pc-zt{font-size:12px;color:var(--ink2)} html body .pcash .pc-zb{align-self:flex-start;min-height:44px!important;min-width:44px;margin-top:4px;padding:0 4px;border:0;background:none;font:inherit;font-size:13px;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
 .pcash .pc-b{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .pcash .pc-b.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -3859,7 +3859,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body table.ladder.ladder>tbody>tr>td:nth-child(2){grid-area:d}
   html body table.ladder.ladder>tbody>tr>td:nth-child(3){grid-area:x}
   html body table.ladder.ladder>tbody>tr>td:nth-child(4){grid-area:b;text-align:end!important;white-space:nowrap!important}
-  html body table.ladder.ladder>tbody>tr>td:nth-child(4)::before{content:"יתרה";margin-inline-end:6px;font-size:12px;color:var(--muted)}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(4)::before{content:attr(data-k);margin-inline-end:6px;font-size:12px;color:var(--muted)}
   html body table.ladder.ladder>tbody>tr>td:is(:nth-child(2),:nth-child(3)){display:flex!important;flex-wrap:wrap;align-items:center;gap:6px 10px}
   html body table.ladder.ladder>tbody>tr>td:is(:nth-child(2),:nth-child(3))::before{flex:0 0 44px;font-size:12px;color:var(--muted)}
   html body table.ladder.ladder>tbody>tr>td:nth-child(2)::before{content:"הפקדה"}
@@ -4696,7 +4696,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
       <div class="panel scroll" data-dvp="month">
         <div class="row" style="margin-bottom:8px"><h3>חודש אחרי חודש</h3><span class="sub" id="depState"></span></div>
         <table class="ladder">
-          <thead><tr><th>חודש</th><th>הפקדה</th><th>קנייה</th><th class="num">יתרה</th></tr></thead>
+          <thead><tr><th>חודש</th><th>הפקדה</th><th>קנייה</th><th class="num">יתרה בסוף החודש</th></tr></thead>
           <tbody id="ladRows"><tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr></tbody>
         </table>
         <p class="note" id="planNote" style="margin-top:10px"></p>
@@ -19302,22 +19302,31 @@ const cashDay=a=>[stmtDay(a),((P&&P.cashAt)||{})[a]||''].sort().pop()||'';
 // what was ticked in a track and is not in the accounts' figures yet. Apart, and ticked since the tracks came apart: the
 // money of a tick is in the figures once the track's own account has a newer cash figure (cash), and a purchase's units
 // once the account that holds the security has a newer statement (buys). Otherwise the rule is the one it always was
+// 25.11 (the owner: "התוכנית והשווי תיק אמורים להיות מסונכרנים מבחינת היתרה… מספרים שלא מדויקים ליתרה הקיימת"): a mark made after
+// the day an account's cash is known for is taken as money that moved since. When it was only ticked late (the cash
+// already holds it) the owner says so in one press, and every mark of that account up to that moment (cashOk) is in the
+// cash: neither the plan nor the portfolio counts its money again. The units of a purchase keep their own rule (a statement)
+const cashOkAt=a=>{const z=(PLD&&PLD.cashOk)||{}; return typeof z[a]==='string'&&/^\d{4}-\d\d-\d\dT/.test(z[a])?z[a]:''};
+const inCashOk=(x,a)=>{const z=a?cashOkAt(a):''; return !!z&&!!(x&&x.at)&&x.at<=z};
+// the account a purchase's money left: the one that holds the security, else the first shekel account
+const buyAcct=x=>{const ids=acctIds(), h=((P&&P.positions)||[]).find(q=>q.sym===x.sym&&ids.includes(q.acct)); if(h)return h.acct; const il=ids.filter(y=>acctCcy(y)!=='USD'); return il[0]||ids[0]||''};
 function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:[],cash:[]};
   const a=tracksApart()?trackAcct(t):'all', ids=acctIds(), ilA=ids.filter(x=>acctCcy(x)!=='USD'), depA=ilA.length?ilA:ids, own=d=>a!=='all'&&markDay(d)>=SEP_DAY;
   // 25.11 (the owner: "ההפקדה החד פעמית שתשתייך לאחת מפלטפורמות המסחר"): a one-time deposit went to one account (apart, its
   // track's; else the one chosen for it, acct), so it is in the figures only once that account's own cash is newer. Before,
   // a newer statement of the other account took it out of the balance
   const oneA=d=>d.once?(a!=='all'?a:(d.acct&&ids.includes(d.acct)?d.acct:'')):'';
-  const deps=(X.deposits||[]).filter(d=>d.tid?false:oneA(d)?!(cashDay(oneA(d))>=markDay(d)):own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA));
+  const deps=(X.deposits||[]).filter(d=>d.tid?false:oneA(d)?!(cashDay(oneA(d))>=markDay(d)):own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA)).filter(d=>!inCashOk(d,a!=='all'?a:depAcct(d)));
   const buys=(X.purchases||[]).filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
-  const cash=a==='all'?buys:(X.purchases||[]).filter(x=>x.tid?false:own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x));
+  const cash=a==='all'?buys.filter(x=>!inCashOk(x,buyAcct(x))):(X.purchases||[]).filter(x=>x.tid?false:own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x)).filter(x=>!inCashOk(x,a));
   return {deps,buys,cash}}
 function planOpen(){
   if(typeof tracksApart==='function'&&tracksApart()){const a=trackOpen('stocks'), b=trackOpen('idx'); return {deps:a.deps.concat(b.deps),buys:a.buys.concat(b.buys),spent:a.cash.concat(b.cash).reduce((t,x)=>t+(+x.paidIls||0),0)}}
   const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
-  const deps=allDep().filter(d=>!d.tid&&(d.once&&d.acct&&ids.includes(d.acct)?!(cashDay(d.acct)>=markDay(d)):!coveredBy(markDay(d),depA)));
+  const deps=allDep().filter(d=>!d.tid&&(d.once&&d.acct&&ids.includes(d.acct)?!(cashDay(d.acct)>=markDay(d)):!coveredBy(markDay(d),depA))&&!inCashOk(d,depAcct(d)));
   const buys=allBuy().filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
-  return {deps,buys};
+  const inCash=buys.filter(x=>inCashOk(x,buyAcct(x)));   // their units are still to come, their money is in the cash already
+  return inCash.length?{deps,buys,inCash}:{deps,buys};
 }
 // a track's own balance: its account's cash, and what was ticked in the track since that cash was known
 // 24.11 (the owner: "ואם מפקידים חד פעמית בתיק צ'יק שזה יעלה ביתרת המזומן"): a one-time deposit raised "כל המזומן" and the
@@ -19328,7 +19337,7 @@ function depAcct(d){const ids=acctIds(); if(d&&d.acct&&ids.includes(d.acct))retu
 function acctOpenIn(a){try{const O=planOpen(), ids=acctIds(), il=ids.filter(x=>acctCcy(x)!=='USD'), def=il[0]||ids[0];
   const ofDep=depAcct;
   const ofBuy=x=>{const h=((P&&P.positions)||[]).find(q=>q.sym===x.sym&&ids.includes(q.acct)); return h?h.acct:def};
-  return (O.deps||[]).filter(d=>ofDep(d)===a).reduce((t,d)=>t+(+d.amount||0),0)-(O.buys||[]).filter(x=>ofBuy(x)===a).reduce((t,x)=>t+(+x.paidIls||0),0)}catch(e){return 0}}
+  return (O.deps||[]).filter(d=>ofDep(d)===a).reduce((t,d)=>t+(+d.amount||0),0)-(O.buys||[]).filter(x=>ofBuy(x)===a&&!(O.inCash&&O.inCash.includes(x))).reduce((t,x)=>t+(+x.paidIls||0),0)}catch(e){return 0}}
 // 24.11 (the owner: "ובבלינק ובאקסלנס בתוכנית ההפקדה"): an account's cash reset to ₪0 for the plan (PLD.acctZero, a moment an
 // account). From then the plan counts in that account only what was marked in the plan since (deposits to it, purchases
 // from it), not the statement's cash; the portfolio's value is untouched. acctPlan: the account's cash as the plan sees it
@@ -19945,7 +19954,15 @@ function pxBoot(){
 window.__pxd={fire:pxFire,auto:pxAuto,open:mktOpen,us:usOpen,il:ilOpen,state:()=>({mcp:!!MCP,pxf:PXF,off:PXOFF,q:PXQ})};
 
 // ---- pure model -------------------------------------------------------
-const planAdj=()=>{const o=planOpen(); return {dep:o.deps.reduce((t,d)=>t+(+d.amount||0),0),buys:o.buys.map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1})),...(o.spent!=null?{spent:o.spent}:{})}};
+const planAdj=()=>{const o=planOpen(); return {dep:o.deps.reduce((t,d)=>t+(+d.amount||0),0),buys:o.buys.map(x=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1,...(o.inCash&&o.inCash.includes(x)?{inCash:1}:{})})),...(o.spent!=null?{spent:o.spent}:{})}};
+// 25.11 (the owner: the plan and the portfolio's value, one balance): one account's view had the statement's cash alone,
+// while the plan's box of that account, and the whole portfolio's value, also had what was marked in the plan since. An
+// account's view now counts the marks that are its own: its deposits, the purchases' money that left it, and the units
+// ticked for securities it holds. The accounts' views add up to the whole portfolio's
+function planAdjFor(a){try{const ids=acctIds(); if(!PLD||!ids.includes(a))return null; const sum=(L,f)=>L.reduce((t,x)=>t+(+f(x)||0),0), B=(x,O)=>({sym:x.sym,paid:+x.paidIls||0,qty:+x.qty>0?+x.qty:1,...(O&&O.inCash&&O.inCash.includes(x)?{inCash:1}:{})});
+  if(tracksApart()){let dep=0, spent=0; const buys=[]; for(const t of ['stocks','idx']){const o=trackOpen(t); if(trackAcct(t)===a){dep+=sum(o.deps,d=>d.amount); spent+=sum(o.cash,x=>x.paidIls)} for(const x of o.buys)if(buyAcct(x)===a)buys.push(B(x))}
+    return {dep,buys,spent}}
+  const O=planOpen(); return {dep:sum(O.deps.filter(d=>depAcct(d)===a),d=>d.amount),buys:O.buys.filter(x=>buyAcct(x)===a).map(x=>B(x,O))}}catch(e){return null}}
 const mAllNow=()=>model(P,Q,'all',planAdj());
 // adj: deposits and purchases ticked in the expansion plan, applied on top of the statement data.
 // the currency a position is priced in: the quote's own currency when the price came from the market, otherwise the one
@@ -19972,7 +19989,7 @@ function model(P,Q,acct,adj){
     if(p.costIls==null)m.noCost=true; else{const c=cut&&p.qty>0?p.costIls*q/p.qty:p.costIls; m.cost+=c;m.costVal+=val}
   }
   let spent=0;
-  if(adj)for(const b of adj.buys){const m=by[b.sym]; if(!m)continue; const q=b.qty||1; m.qty+=q; m.val+=q*m.pxIls; if(m.dayPct!=null)m.dayIls+=q*(m.pxIls-m.pxIls/(1+m.dayPct/100)); m.cost+=b.paid; m.costVal+=q*m.pxIls; m.planQty=Math.round(((m.planQty||0)+q)*1e4)/1e4; spent+=b.paid}
+  if(adj)for(const b of adj.buys){const m=by[b.sym]; if(!m)continue; const q=b.qty||1; m.qty+=q; m.val+=q*m.pxIls; if(m.dayPct!=null)m.dayIls+=q*(m.pxIls-m.pxIls/(1+m.dayPct/100)); m.cost+=b.paid; m.costVal+=q*m.pxIls; m.planQty=Math.round(((m.planQty||0)+q)*1e4)/1e4; if(!b.inCash)spent+=b.paid}
   const pos=Object.values(by).sort((a,b)=>b.val-a.val);
   let cash=0,usd=0;
   for(const c of P.cash||[]){ if(acct!=='all'&&c.acct!==acct)continue; const v=c.ccy==='USD'?c.amount*fx:c.amount; cash+=v; if(c.ccy==='USD')usd+=v }
@@ -20056,6 +20073,7 @@ function planAhead(queue,round,cash,monthly,months,mode){
   return {rows,count,rounds,buys,deposits:monthly*rows.length,spent,left:b};
 }
 window.__model={model,planDeposit,project,schedule,ladder,planAhead};
+window.__model.cashOf=a=>{const x=model(P,Q,a,a==='all'?planAdj():planAdjFor(a)); return {cash:x.cash,base:x.baseCash,total:x.total}};
 
 // ---- the alert engine: one list of [severity, category, text, items, rich] per model; the overview and the assistant both use it ----
 // the annual tax-return reminder: S.taxMonth/S.taxDay is the date the person set (month 0 = off); S.taxDone is the year
@@ -20316,7 +20334,7 @@ function render(){
   try{fillInputs()}catch(e){console.error(e)} try{renderMine()}catch(e){console.error(e)} try{renderMonths()}catch(e){}
   if(!P||!Q){return}
   setTimeout(fillPeriods,0); setTimeout(renderCatalog,0);
-  const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules;
+  const m=model(P,Q,acct,acct==='all'?planAdj():planAdjFor(acct)), R=S.rules;
   // the holdings in dollars (HC, the chips above the table): the dollar side of each holding, from the dollar costs
   const fxV=Q.usdIls, DC=HC!=='ils'&&fxV>0?(()=>{try{return dollarCost(P,Q,HS,m.acct==='all'?planOpen().buys:[],m.acct)}catch(e){return {}}})():null;
   const DU=DC?Object.entries(DC).filter(([k])=>KV==='all'||(KV==='fund')===isF(k)).map(x=>x[1]).reduce((t,o)=>({cost:t.cost+o.cost,val:t.val+o.val,est:t.est||o.est}),{cost:0,val:0,est:false}):null;   // all of them together: profit in dollars
@@ -20459,7 +20477,7 @@ function render(){
         if(HVe!=='fund')return ''; const out=hvRows.filter(p=>p.group!=='il'); if(!out.length)return ''; const ov=out.reduce((t,p)=>t+p.val,0);
         return `<div class="nm" style="font-weight:400">מתוכן ${ils(ov)} ב${out.length===1?'קרן אחת':out.length+' קרנות'} שבפיזור לפי הקבוצות נספרות בקבוצה אחרת: ${esc(out.map(p=>lab(p.sym)+' ('+(GROUPS[p.group]||p.group)+')').join(', '))}. לכן "ישראל (קרנות ומדדים)" שם קטנה ב-${ils(ov)}.</div>`})()}</td></tr>`}
   else $('rows').innerHTML=(fP.length&&sP.length?secH('קרנות',fP.length,'',fP)+fP.map(rowH).join('')+secH('מניות',sP.length,'',sP)+sP.map(rowH).join(''):m.pos.map(rowH).join(''))
-    +(Math.abs(+m.cash||0)>=1?`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`:'');   // 10.11: no "מזומן ₪0" row
+    +(Math.abs(+m.cash||0)>=1?`<tr class="cashrow"><td>מזומן<div class="nm">שקלים ודולרים בחשבון${Math.abs((+m.cash||0)-(+m.baseCash||0))>=0.5?`, אחרי מה שסימנת בתוכנית ההפקדה (<span class="n" dir="ltr">${(m.cash<m.baseCash?'−':'+')+ils(Math.abs(m.cash-m.baseCash),2)}</span>)`:''}</div></td><td></td><td></td><td></td><td class="num">${vcell(`<span class="n">${ils(m.cash)}</span>`,`<span class="n">${dlr(m.cash/fxV)}</span>`)}</td><td class="num"><span class="n">${pct(m.total?m.cash/m.total*100:0)}</span></td><td></td><td></td></tr>`:'');   // 10.11: no "מזומן ₪0" row
 
   // the home shows the five largest holdings; "הצג הכל" opens the rest (the section's rows stay in the page, hidden)
   {const sec=$('holdSec'), trs=[...$('rows').querySelectorAll('tr:not(.sec):not(.hdet)')]; let n=0; for(const tr of trs){tr.classList.toggle('xtra',n>=5); const dt=tr.nextElementSibling; if(dt&&dt.classList.contains('hdet'))dt.classList.toggle('xtra',n>=5); n++}
@@ -20551,7 +20569,7 @@ function planState(mAll){
   // funds track, its own opening and ticks (the two tracks share one cash, and neither counts the other's money)
   const O=planOpen(), mine=x=>PL.deposits.includes(x)||PL.purchases.includes(x);
   const cash=own0!=null?own0:apart?bal:zd+(TRACK==='idx'?(+PLD.idx.opening||0)+PL.deposits.reduce((t,d)=>t+(+d.amount||0),0)-PL.purchases.reduce((t,x)=>t+(+x.paidIls||0),0)
-    :mAll.baseCash+O.deps.filter(mine).reduce((t,d)=>t+(+d.amount||0),0)-O.buys.filter(mine).reduce((t,x)=>t+(+x.paidIls||0),0));
+    :mAll.baseCash+O.deps.filter(mine).reduce((t,d)=>t+(+d.amount||0),0)-O.buys.filter(x=>mine(x)&&!(O.inCash&&O.inCash.includes(x))).reduce((t,x)=>t+(+x.paidIls||0),0));
   const rows=[], put=(m,sym)=>{while(rows.length<=m)rows.push([]); rows[m].push(sym)};
   for(const i of PL.items)if(i.status==='done'&&i.pid){const x=PL.purchases.find(y=>y.id===i.pid)||PL.purchases.find(y=>y.sym===i.sym), mo=x&&x.month?ymDiff(x.month,start):i.doneAt?ymDiff(ilDay(i.doneAt).slice(0,7),start):cur; put(Math.max(0,mo),i.sym); at[i.sym]=Math.max(0,mo)}
   // rotating: one purchase a month, so a month that already has one lays the rest out from the next
@@ -20583,7 +20601,10 @@ function planCashRow(st,mAll){const el=$('pCashRow'); if(!el)return; const ids=a
   const why=a=>{const v=val(a), c=acctCash(a), dy=cashDay(a), dl=Math.round((v-c)*100)/100, nm=esc(acctName(a));
     if(t0(a)!=null)return `<li><b>${nm}</b>: המסלול מאופס, נספר רק מה שהופקד ונקנה בו מאז.</li>`;
     if(acctZ(a))return `<li><b>${nm}</b>: מאופס בתוכנית, נספר רק מה שסומן מאז.</li>`;
-    return `<li><b>${nm}</b>: <span class="n" dir="ltr">${ils(c,2)}</span> מזומן בחשבון${dy?` נכון ל-${esc(dmy(dy))}`:''}${Math.abs(dl)>=0.005?`, ${dl>0?'ועוד':'פחות'} <span class="n" dir="ltr">${ils(Math.abs(dl),2)}</span> שסימנת בתוכנית מאז`:''}.</li>`};
+    const tr=trOf(a), M=(()=>{try{if(tr){const o=trackOpen(tr); return {d:o.deps,b:o.cash}} const O=planOpen(); return {d:O.deps.filter(x=>depAcct(x)===a),b:O.buys.filter(x=>buyAcct(x)===a&&!(O.inCash&&O.inCash.includes(x)))}}catch(e){return {d:[],b:[]}}})();
+    const it=[...M.d.map(x=>`${x.once?'הפקדה חד-פעמית':'הפקדה'} <span class="n" dir="ltr">+${ils(+x.amount||0,2)}</span>`),...M.b.map(x=>`קנייה <bdi>${esc(lab(x.sym))}</bdi> <span class="n" dir="ltr">−${ils(+x.paidIls||0,2)}</span>`)], sh=it.slice(0,5), dzb=canWrite?'':' disabled';
+    const since=it.length?` מאז סימנת בתוכנית: ${sh.join(' · ')}${it.length>sh.length?` ועוד ${it.length-sh.length}`:''}. לכן כאן, וגם ב"התיק שלי": <b class="n" dir="ltr">${ils(v,2)}</b>.`:Math.abs(dl)>=0.005?` ${dl>0?'ועוד':'פחות'} <span class="n" dir="ltr">${ils(Math.abs(dl),2)}</span> שסימנת בתוכנית מאז.`:' זה גם המזומן ב"התיק שלי".';
+    return `<li><b>${nm}</b>: <span class="n" dir="ltr">${ils(c,2)}</span> מזומן בחשבון${dy?` נכון ל-${esc(dmy(dy))}`:''}.${since}${it.length?` <button type="button" class="pc-zb pc-okb" data-pa="cashOk" data-acct="${esc(a)}"${dzb} aria-label="המזומן של ${nm} כבר כולל את מה שסימנתי בתוכנית">ה-<span class="n" dir="ltr">${ils(c,2)}</span> כבר כולל את אלה</button>`:''}</li>`};
   const box=a=>{const tr=trOf(a), v=val(a), on=apart&&a===st.acct, z=acctZ(a), dz=canWrite?'':' disabled';
     return `<div class="pc-b${on?' on':''}"><span class="pc-k">${esc(acctName(a))}</span><b class="n">${ils(v)}</b><span class="pc-a">${tr==='stocks'?'למסלול המניות':tr==='idx'?'למסלול המדדים':apart?'לא משויך למסלול':'&nbsp;'}</span>${z?`<span class="pc-zt">מאופס בתוכנית מ-${esc(dmy(ilDay(z)))}</span><button type="button" class="pc-zb" data-pa="acctZeroOff" data-acct="${esc(a)}"${dz} aria-label="לבטל את האיפוס של ${esc(acctName(a))}">לבטל איפוס</button>`:`<button type="button" class="pc-zb" data-pa="acctZero" data-acct="${esc(a)}"${dz} aria-label="לאפס בתוכנית את המזומן של ${esc(acctName(a))}">לאפס</button>`}</div>`};
   el.hidden=false; setH(el,`<div class="pc-g">${ids.map(box).join('')}<div class="pc-b all${apart?'':' on'}"><span class="pc-k">כל המזומן${anyZ?' בתוכנית':''}</span><b class="n">${ils(anyZ?ids.reduce((t,a)=>t+val(a),0):mAll.cash)}</b><span class="pc-a">${apart?'בכל החשבונות יחד':'משותף לשני המסלולים'}</span></div></div><ul class="pc-why" aria-label="ממה מורכב המזומן של כל חשבון">${ids.map(why).join('')}</ul>${canWrite?`<button type="button" class="lnk pc-set" data-pcset>${apart?'לשנות מאיזה חשבון קונה כל מסלול':'להפריד: לקבוע חשבון לכל מסלול'}</button>`:''}`)}
@@ -20682,7 +20703,7 @@ function renderPlan(mAll){
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur?'far':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?`<div class="nm">${st.wait?'חודש ההתחלה':'החודש'}</div>`:m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
-    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':m<st.cur&&!st.fixed?'<span class="nm">לא סומנה קנייה בחודש הזה.</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div>${addH(m,ym,buys)}</td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
+    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':m<st.cur&&!st.fixed?'<span class="nm">לא סומנה קנייה בחודש הזה.</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div>${addH(m,ym,buys)}</td><td class="num" data-k="${m<st.cur?'נשאר בסוף החודש':m===st.cur&&st.fixed?'יתרה עכשיו':'יישאר בסוף החודש'}">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
   // then the plan's months from today's real numbers on: its monthly deposit, and the purchases of the ladder not done yet
@@ -20791,6 +20812,8 @@ function planAct(a,d){
     else if(a==='holdAdd'){const X=d.trk==='idx'?PLD.idx:PLD; if(!X)return; const ex=(X.items||[]).find(i=>i.sym===sym); if(ex)ex.status=ex.status==='skip'?'todo':ex.status; else{X.items=X.items||[]; X.items.push({sym,status:'todo',note:''}); if(!X.start)X.start=ymNow()}}
     else{const X=d.trk==='idx'?PLD.idx:PLD, it=X&&(X.items||[]).find(i=>i.sym===sym); if(it&&it.status==='todo')it.status='skip'; else if(it&&it.status==='done'){it.status='skip'; delete it.pid}}
     setTrack()}
+  else if(a==='cashOk'){const ac=String(d.acct||''); if(!acctIds().includes(ac))return; const prev=(PLD.cashOk||{})[ac]; PLD.cashOk=Object.assign({},PLD.cashOk||{},{[ac]:now});
+    LAD_UNDO={msg:`המזומן של ${acctName(ac)} כולל את מה שסימנת עד עכשיו`,fn:()=>{const y=Object.assign({},PLD.cashOk||{}); if(prev)y[ac]=prev; else delete y[ac]; PLD.cashOk=y; planChanged()}}}
   else if(a==='acctZero'||a==='acctZeroOff'){const ac=String(d.acct||''); if(!acctIds().includes(ac))return; const z=Object.assign({},PLD.acctZero||{}); if(a==='acctZero')z[ac]=new Date().toISOString(); else delete z[ac]; PLD.acctZero=z;
     if(a==='acctZero')PZ_UNDO=acctName(ac)}
   else if(a==='zeroBal'){PL.zero=new Date().toISOString(); PZ_UNDO=true}
@@ -21329,7 +21352,7 @@ function renderState(){
   const body=$('stateBody'), per=$('statePer'); if(!body)return;
   if(!P||!Q||!Q.prices||!Q.usdIls){body.innerHTML='<div class="empty">התיק והמחירים עוד נטענים.</div>';return}
   if(!hasPf()){body.innerHTML='<div class="empty">עוד אין כאן תיק. אחרי שתוסיף אותו, כאן תופיע תמונת המצב.</div>';setH(per,'');return}
-  const m=model(P,Q,acct,acct==='all'?planAdj():null), R=S.rules||{}, usd=Q.usdIls, depNow=(()=>{try{return HS?depTotal():null}catch(e){return null}})();
+  const m=model(P,Q,acct,acct==='all'?planAdj():planAdjFor(acct)), R=S.rules||{}, usd=Q.usdIls, depNow=(()=>{try{return HS?depTotal():null}catch(e){return null}})();
   const keys={week:stateKey(DY,7),month:stateKey(DY,30)}, top=stateTop(DY,acct); keys.peak=top?top.k:null;
   const avail={day:m.hasDay,week:!!keys.week,month:!!keys.month,peak:!!keys.peak}; if(!avail[SPER])SPER='day';
   setH(per,[['day','<span class="sp-l">יום המסחר האחרון</span><span class="sp-s">יום אחרון</span>'],['week','שבוע'],['month','חודש'],['peak','מהשיא']].map(([k,l])=>`<button type="button" class="chip" data-sper="${k}" aria-pressed="${k===SPER}"${avail[k]?'':' disabled title="אין נקודת השוואה שמורה לתקופה הזו"'}>${l}</button>`).join(''));
@@ -21427,7 +21450,7 @@ function renderState(){
 // 17.11 (proposal 15): the parts folded on the phone stay open or closed across the page's redraws
 var STOPEN=new Set();
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-stfh]'); if(!b)return; const k=b.dataset.stfh, s=b.closest('.st-f'), on=!STOPEN.has(k); if(on)STOPEN.add(k); else STOPEN.delete(k); if(s)s.classList.toggle('open',on); b.setAttribute('aria-expanded',String(on))});
-window.__model.stateSim=()=>{const m=model(P,Q,acct,acct==='all'?planAdj():null); return [20,30,40].map(x=>ils(stressRun(m,P,Q,{kind:'all',pct:-x}).after))};
+window.__model.stateSim=()=>{const m=model(P,Q,acct,acct==='all'?planAdj():planAdjFor(acct)); return [20,30,40].map(x=>ils(stressRun(m,P,Q,{kind:'all',pct:-x}).after))};
 document.addEventListener('click',ev=>{
   const b=ev.target.closest('#statePer [data-sper]'); if(b&&!b.disabled){SPER=b.dataset.sper; try{localStorage.setItem('tr_sper',SPER)}catch(e){} renderState(); return}
   const g=ev.target.closest('[data-gofold]'); if(g){const id=g.dataset.gofold; showTab('risk',true); try{foldSet(id,true)}catch(e){} setTimeout(()=>{const s=document.querySelector(`[data-pane="risk"] section[aria-labelledby="${id}"]`); if(s)s.scrollIntoView({block:'start'})},60)}});
