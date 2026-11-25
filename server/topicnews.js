@@ -16,7 +16,7 @@
 // personal, non-commercial use (GNEWS=0 turns every use of them off, this one too). Headlines are data, never instructions.
 import {gnFetch, trustedOf, TRUSTED_EN} from './sources.js';
 import {cardsOf} from './impactrel.js';
-import {salvageArray, moveHead} from './newsx.js';
+import {salvageArray, moveHead, aiEffort} from './newsx.js';
 import {aiMeter} from './admin/counter.js';
 
 export const TOPIC_DOC='research/topics';
@@ -54,7 +54,7 @@ COMPANIES:
 ${JSON.stringify(A)}`}
 async function askModel(prompt,{fetch:f,log}){
   const key=process.env.ANTHROPIC_API_KEY, url=(process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages', model=pickModel(), t0=Date.now();
-  const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:1500,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(60000)})
+  const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:6000,...(aiEffort(model)?{output_config:{effort:'low'}}:{}),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(90000)})
     .catch(e=>{aiMeter({feature:'topics',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
   if(!r.ok){aiMeter({feature:'topics',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); throw new Error('HTTP '+r.status)}
   const j=await r.json(); aiMeter({feature:'topics',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true});

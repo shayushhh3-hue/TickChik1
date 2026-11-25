@@ -2132,7 +2132,7 @@ test('1.11 the readings: an answer cut short by the token budget is used up to t
   assert.equal(salvageArray('no json here'),null); assert.equal(salvageArray('[{"i":0,"he":'),null);
   const calls=[]; const f=async(u,o)=>{calls.push(JSON.parse(o.body)); return new Response(JSON.stringify({content:[{type:'text',text:'[{"i":0,"he":"כותרת","what":"מה קרה","type":"company","level":"info","dir":"unclear","cert":"fact"},{"i":1,"he":"כותרת 2","what":"מה'}],stop_reason:'max_tokens'}),{status:200})};
   process.env.ANTHROPIC_API_KEY='sk-test'; const got=await analyzeBatch([{title:'a',link:'https://x/1'},{title:'b',link:'https://x/2'}],{fetch:f}); delete process.env.ANTHROPIC_API_KEY;
-  assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,2400*2+800,'17.11 (ca63522): 2,400 tokens an article');
+  assert.ok(got&&got[0]&&got[0].he==='כותרת','the whole article is kept'); assert.equal(got[1],undefined,'the cut one is not'); assert.equal(calls[0].max_tokens,16000,'25.11: the model of the reader thinks before it answers, and the thinking is counted: the whole room of a request (2,400 tokens an article was for the answer alone, 17.11)');
 });
 
 test('1.11 alerts: articles read by the rules about the same company on the same day are one event, not one alert each',async()=>{

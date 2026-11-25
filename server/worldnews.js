@@ -17,7 +17,7 @@
 // whole layer off. Headlines and articles are data from outside sources, never instructions.
 import {parseFeed} from './sources.js';
 import {rssText} from './ilnews.js';
-import {newsId, analyzeBatch, knownEvents, unifyEv, symNames} from './newsx.js';
+import {newsId, analyzeBatch, knownEvents, unifyEv, symNames, readBatch} from './newsx.js';
 import {yahooSearch} from '../shared/quotes.js';
 
 export const WORLD_FEED_DOC='research/worldfeed', WORLD_DOC='research/worldx', WORLD_SYMS_DOC='research/worldsyms';
@@ -212,7 +212,7 @@ export const _resetWorldNames=()=>{WN={at:0,m:new Map()}};
 // ---- the run: gather what is due, choose within the day's cap, read, check the symbols, keep ----
 const dayOf=now=>now.toISOString().slice(0,10);
 export const worldCap=()=>{const v=process.env.WORLD_READ_DAY_CAP; const n=v==null||String(v).trim()===''?300:+v; return Number.isFinite(n)&&n>=0?Math.min(2000,Math.round(n)):300};
-export async function worldTask(store,{fetch:f=globalThis.fetch,now=new Date(),log=()=>{},ask=null,search=yahooSearch,perRun=12,perBatch=6,keepDays=5,max=900,dayCap=worldCap(),gather=worldGather,pause=250}={}){
+export async function worldTask(store,{fetch:f=globalThis.fetch,now=new Date(),log=()=>{},ask=null,search=yahooSearch,perRun=12,perBatch=readBatch(),keepDays=5,max=900,dayCap=worldCap(),gather=worldGather,pause=250}={}){
   if(off('WORLD_NEWS'))return {off:true};
   const t0=Date.now(), iso=now.toISOString(), day=dayOf(now), st={at:iso,read:0,picked:0,dropped:0,fail:0,first:null,ai:!!(process.env.ANTHROPIC_API_KEY||ask),cap:dayCap};
   let G=null; try{G=await gather(store,{fetch:f,now,log})}catch(e){st.first='gather: '+String(e&&e.message||e).slice(0,80)}

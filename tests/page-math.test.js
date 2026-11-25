@@ -12,7 +12,7 @@ const dayAgo=k=>new Date(Date.now()-k*864e5).toLocaleDateString('en-CA',{timeZon
 const G={P:null,Q:null,HS:null,DY:null,DRAFT:null,PLD:null,S:null,NAMEOF:{},FUNDOF:{},
   acctIds:()=>['exc','blink'], acctCcy:a=>a==='blink'?'USD':'ILS'};
 const F=load(['GROUPS','NAMEOF','isFundLike','effGroup','allDep','ilDay','usdRate','depNet','stmtDay','markDay','coveredBy','planOpen','planDepExtra','depTotal','feesOf',
-  'planAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
+  'planAdj','resetAdj','mAllNow','model','planDeposit','project','ymAdd','resultOf','realizedOf','CR_DAY','crisisInfo','historyWithTx',
   'numOr','ymNow','upMonths','fxOfMonth','savedBefore','upCovers','planCovered','planExtraList','depUp','monthSeries','acctOpens','pots','potOutQ','potOutSnap','potFlowRec','potFlowList','potFlowTotal','monRows','seriesMap','depBumps','dailyBumped','dateBack','knownDay','ccyOfPos','rateOf','CCYHE','CCYSYM','fmtPx','pxLag','pxLagInfo','dayOfIso','HDAY',
   'fxAvg','costBasis','realizedIls','divNetIls','decompOf','dollarCost','monthFlow','planActual','DIV_WH','divHistory'],G,['allBuy']);
 const plan=(deposits=[],purchases=[])=>{G.PLD={deposits,purchases,idx:{deposits:[],purchases:[]}}};
@@ -120,7 +120,7 @@ test('the plan: a mark the account\'s cash already holds (cashOk) is not counted
   G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:350}],cash:[{acct:'exc',ccy:'ILS',amount:1000}],asOf:{exc:'2026-10-10'}};
   plan([{amount:500,at:'2026-10-12T09:00:00Z'}],[{sym:'MSFT',paidIls:350,qty:1,at:'2026-10-12T10:00:00Z'}]);
   const G2=Object.assign(Object.create(G),{trackAcct:()=>'all'});
-  const C=load(['GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','allDep','ilDay','usdRate','stmtDay','markDay','coveredBy','cashOkAt','inCashOk','buyAcct','depAcct','planOpen','planAdj','mAllNow','model'],G2);
+  const C=load(['GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','allDep','ilDay','usdRate','stmtDay','markDay','coveredBy','cashOkAt','inCashOk','buyAcct','depAcct','planOpen','planAdj','resetAdj','mAllNow','model'],G2);
   // both marks came after the statement of 10.10: the deposit raises the cash, the purchase takes it and adds a unit
   let m=C.mAllNow(); near(m.cash,1000+500-350); near(m.total,2*350+1150);
   // the owner: the account's ₪1,000 already holds what was marked up to 12.10 noon
@@ -691,7 +691,7 @@ test('the tax if everything were sold today: the gain in shekels, the losses tha
   const G3={...G,S:{taxPct:25},HS:null,PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}}};
   G3.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:2800,costUsd:800,group:'tech'},{sym:'KO',acct:'blink',ccy:'USD',qty:10,costIls:2500,group:'cons'},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:500}],cash:[]};
   G3.Q={usdIls:3.5,prices:{MSFT:500,KO:60,'1159250':40},prev:{}};
-  const T=load(['taxNow','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','divHistory','fxOfMonth','DIV_WH','ilDay'],G3,['allBuy']);
+  const T=load(['taxNow','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','resetAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','divHistory','fxOfMonth','DIV_WH','ilDay'],G3,['allBuy']);
   const x=T.taxNow(T.model(G3.P,G3.Q,'all'));
   // MSFT 3500 − 2800 = +700; KO 2100 − 2500 = −400; the fund 400 − 500 = −100
   near(x.gains,700); near(x.losses,500); near(x.net,200); near(x.tax,50); near(x.saved,125,'the losses save 25% of 500');
@@ -703,7 +703,7 @@ test('the profit against the cost, split: the prices\' part and the dollar\'s pa
   const G4={...G,S:{},HS:null,KV:'all',acct:'all',PLD:{deposits:[],purchases:[],idx:{deposits:[],purchases:[]}}};
   G4.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:2,costIls:2400,costUsd:800,group:'tech'},{sym:'KO',acct:'blink',ccy:'USD',qty:10,costIls:2500,group:'cons'},{sym:'1159250',acct:'exc',ccy:'ILS',qty:10,costIls:500}],cash:[]};
   G4.Q={usdIls:3.5,prices:{MSFT:500,KO:60,'1159250':40},prev:{}};
-  const names=['fxSplit','fxAvg','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','fxOfMonth','ilDay'];
+  const names=['fxSplit','fxAvg','model','GROUPS','NAMEOF','isFundLike','effGroup','ccyOfPos','rateOf','CCYHE','CCYSYM','mAllNow','planAdj','resetAdj','planOpen','allDep','usdRate','markDay','stmtDay','coveredBy','acctIds','dollarCost','costBasis','fxOfMonth','ilDay'];
   let X=load(names,G4,['allBuy']);
   assert.equal(X.fxSplit(X.model(G4.P,G4.Q,'all')),null,'KO\'s dollar cost unknown: too little is known to split');
   G4.P.positions[1].costUsd=700; X=load(names,G4,['allBuy']);

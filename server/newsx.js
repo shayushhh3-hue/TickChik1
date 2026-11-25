@@ -65,6 +65,14 @@ export const MARKET=['AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','AVGO','J
 
 // ---- the analysis: a batch of articles in one call, a JSON array back ----
 const pickModel=()=>{const L=String(process.env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean); return process.env.NEWS_MODEL||L.find(m=>/haiku/.test(m))||L[0]};
+// 25.11 (the live server's log: "the answer was cut by the token budget" on nearly every call, and answers with no text):
+// the models of the 5 family think before they answer unless told otherwise, and the thinking is counted in max_tokens; the
+// budget of 2,400 tokens an article was measured for the answer alone. For a model that thinks: the whole room a request
+// without streaming may take (16,000), fewer articles a call (four), and a low effort, which the reading needs no more
+// than. A model that does not think by default is asked as before; "effort" is sent only to a model that takes it
+export const aiThinks=m=>/fable|mythos|opus-5|sonnet-5|haiku-5/.test(String(m||''));
+export const aiEffort=m=>/fable|mythos|opus-5|opus-4-[5-8]|sonnet-5|sonnet-4-6|haiku-5/.test(String(m||''));
+export const readBatch=()=>aiThinks(pickModel())?4:6;
 // 4.11: the article itself, not only its headline and its line of summary. The page is fetched once, its paragraphs taken
 // (no scripts, menus or footers), cut at about 5,000 letters, and handed to the reading only: it is never stored or shown.
 // A page that answers with too little text (a paywall, a video, a refusal) leaves the headline and the summary, as before
@@ -219,7 +227,7 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
     // went unread), six articles a call so the whole stays under 16,000
     // 1.11: a reading in Hebrew is long (a Hebrew token is a letter or two), and a
     // reading cut short by the budget is still used up to the last whole article (salvageArray), and said in the log
-    else{const t0=Date.now(); const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:Math.min(16000,2400*arts.length+800),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)}).catch(e=>{aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
+    else{const t0=Date.now(); const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:aiThinks(model)?16000:Math.min(16000,2400*arts.length+800),...(aiEffort(model)?{output_config:{effort:'low'}}:{}),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(180000)}).catch(e=>{aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
       if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} log('news analysis failed: HTTP '+r.status+' '+why); aiMeter({feature:'newsx',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); return null}
       const j=await r.json(); aiMeter({feature:world?'world':'newsx',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true}); text=((j.content||[]).find(x=>x.type==='text')||{}).text||''; if(j.stop_reason==='max_tokens')log('news analysis: the answer was cut by the token budget; the whole articles are kept')}
   }catch(e){log('news analysis failed: '+(e&&e.message||e)); return null}
@@ -238,7 +246,7 @@ export async function analyzeBatch(arts,{fetch:f=globalThis.fetch,log=()=>{},ask
 
 // ---- the run: the articles not yet read (the securities' from research/news, the general ones from Finnhub), newest
 // first, a few batches a run; the analyses kept by article id for a week ----
-export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=6,maxBatches=6,keep=7,ask=null,general=generalNews,fed=fedNews,market=MARKET,genMax=300}={}){
+export async function newsxTask(store,{log=()=>{},fetch:f=globalThis.fetch,now=new Date(),budgetMs=5*60e3,perBatch=readBatch(),maxBatches=6,keep=7,ask=null,general=generalNews,fed=fedNews,market=MARKET,genMax=300}={}){
   const t0=Date.now(), iso=now.toISOString(), from=new Date(now.getTime()-keep*DAY).toISOString();
   const old=store.getDoc(NEWSX_DOC), D=old.exists&&old.data?old.data:{}, by={...(D.by||{})}, gen=new Map();
   for(const it of (D.gen||[]))if(it&&it.link&&(it.at||it.seen)>=from)gen.set(it.link,it);
@@ -303,7 +311,7 @@ export async function newsxReadNow(store,ids,{visible=null,ask=null,fetch:f=glob
   const D=store.getDoc(NEWSX_DOC).data||{}, by=D.by||{}, arts=new Map();
   for(const it of ((store.getDoc('research/news').data||{}).items||[]))if(it&&it.link){const id=newsId(it.link); arts.set(id,{...it,id,src:'co'})}
   for(const it of (D.gen||[]))if(it&&it.id&&!arts.has(it.id))arts.set(it.id,it);
-  const todo=want.map(id=>arts.get(id)).filter(a=>a&&(!by[a.id]||by[a.id].rules)&&(!visible||visible(a))).slice(0,Math.min(6,dayCap-used));   // 17.11: six a call, as the runs
+  const todo=want.map(id=>arts.get(id)).filter(a=>a&&(!by[a.id]||by[a.id].rules)&&(!visible||visible(a))).slice(0,Math.min(readBatch(),dayCap-used));   // 17.11: a call's worth, as the runs (25.11: four for a model that thinks)
   if(!todo.length)return {read:0,none:true};
   NOW_BUSY=true;
   try{const got=await analyzeBatch(todo,{fetch:f,log,ask,known:knownEvents(by,{now})}); if(!got)return {read:0,fail:true};

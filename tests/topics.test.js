@@ -7,7 +7,8 @@ import {Store} from '../server/store.js';
 import {adminSchema} from '../server/admin/core.js';
 import {newsId, cleanX, newsPrompt, ruleRead, kindOf, moveHead, KINDS} from '../server/newsx.js';
 import {eventsOf, _setSectors, _setKinds} from '../server/pulse.js';
-import {relPrompt, cardOf} from '../server/impactrel.js';
+import {relPrompt, cardOf, relTask, REL_DOC} from '../server/impactrel.js';
+import {analyzeBatch, aiThinks, aiEffort, readBatch} from '../server/newsx.js';
 import {access} from '../server/store.js';
 import {newsTask} from '../server/newsfeed.js';
 import {TOPIC_DOC, cleanTopics, ruleTopics, topicsPrompt, topicsTask, topicPick, topicNewsTask, topicCap} from '../server/topicnews.js';
@@ -81,4 +82,37 @@ test('the gathering by the business: trusted publishers, a word of the phrase in
   await newsTask(s3,{fetch:noNet,now:new Date(at.getTime()+864e5),market:[],il:null,more:null,topics});
   const N=s3.getDoc('research/news').data.items.filter(a=>a.topic); assert.equal(N.length,2); assert.ok(N.every(a=>a.syms.join()==='RKLB'&&a.topic==='satellite launch contracts'));
   await newsTask(s3,{fetch:noNet,now:new Date(at.getTime()+864e5+10*60e3),market:[],il:null,more:null,topics}); assert.equal(n,1,'not again within the hour');
+});
+
+test('the reader\'s request: a model that thinks gets the whole room and a low effort, four articles a call; an older model is asked as before',async()=>{
+  assert.ok(aiThinks('claude-haiku-5-5')&&aiThinks('claude-sonnet-5-5')&&aiThinks('claude-opus-5-5')&&!aiThinks('claude-haiku-4-5')&&!aiThinks('claude-opus-4-8'));
+  assert.ok(aiEffort('claude-haiku-5-5')&&aiEffort('claude-opus-4-8')&&aiEffort('claude-sonnet-4-6')&&!aiEffort('claude-haiku-4-5')&&!aiEffort('claude-sonnet-4-5'),'"effort" is an error on the models that do not take it');
+  const env={k:process.env.ANTHROPIC_API_KEY,b:process.env.ANTHROPIC_BASE_URL,m:process.env.NEWS_MODEL}, bodies=[];
+  const f=async(u,o)=>{if(!String(u).startsWith('http://ai.test'))return new Response('',{status:404}); bodies.push(JSON.parse(o.body)); return new Response(JSON.stringify({model:bodies.at(-1).model,stop_reason:'end_turn',usage:{input_tokens:1,output_tokens:1},content:[{type:'thinking',thinking:''},{type:'text',text:'[{"i":0,"he":"כותרת","what":"מה קרה"}]'}]}),{status:200})};
+  try{process.env.ANTHROPIC_API_KEY='test-key'; process.env.ANTHROPIC_BASE_URL='http://ai.test';
+    process.env.NEWS_MODEL='claude-haiku-5-5'; assert.equal(readBatch(),4);
+    let r=await analyzeBatch([{id:'a',title:'t',link:'https://x.test/a',pub:'Reuters'}],{fetch:f}); assert.equal(r[0].he,'כותרת','the text is read past the thinking block');
+    assert.equal(bodies[0].max_tokens,16000); assert.deepEqual(bodies[0].output_config,{effort:'low'}); assert.equal(bodies[0].thinking,undefined,'the thinking is left to the model, with room for it');
+    process.env.NEWS_MODEL='claude-haiku-4-5'; assert.equal(readBatch(),6);
+    await analyzeBatch([{id:'a',title:'t',link:'https://x.test/a',pub:'Reuters'}],{fetch:f}); assert.equal(bodies[1].max_tokens,3200); assert.equal(bodies[1].output_config,undefined);
+  }finally{for(const [k,v] of [['ANTHROPIC_API_KEY',env.k],['ANTHROPIC_BASE_URL',env.b],['NEWS_MODEL',env.m]]){if(v===undefined)delete process.env[k]; else process.env[k]=v}}
+});
+
+test('the relations\' order: the securities\' own events before the world\'s; a world event only on a strong sign and within its share of the day; a call that fails uses nothing',async()=>{
+  const s=mk(); _setKinds({NVDA:'S'}); _setSectors({NVDA:'Technology'});
+  s.setDoc('portfolio/main',{positions:[{sym:'NVDA',qty:1}],cash:[]});
+  s.setDoc('research/s_NVDA',{name:'NVIDIA',prof:{desc:'NVIDIA Corporation designs graphics processing units and chips for data centers, gaming and artificial intelligence.',industry:'Semiconductors',sector:'Technology',country:'US'}});
+  const E=(k,o)=>({k,he:k,title:k,what:'w',more:'',kind:'news',cert:'fact',cat:'industry',cats:['industry'],level:'imp',cc:[],facs:[],secs:[],themes:[],named:[],listed:[],nodes:[],last:h(1),first:h(1),...o});
+  const nm=how=>[{sym:'NVDA',how,dir:'unclear',why:'',said:false}];
+  const events=[E('ev:world-chips-only',{world:true,level:'crit',themes:['chips'],facs:[{k:'chips',move:'up',why:'x'}]}),E('ev:world-names-it',{world:true,level:'crit',named:nm('customer')}),E('ev:own-watch',{level:'watch',named:nm('supplier')}),
+    ...[1,2,3,4,5].map(i=>E('ev:world-more-'+i,{world:true,named:nm('competitor')}))];
+  const seen=[], ask=async(p,batch)=>{seen.push(...batch.map(b=>b.e.k)); return JSON.stringify(batch.flatMap((b,i)=>b.pairs.map(q=>({e:i,sym:q.c.sym,rel:'none',why_none:'אין מסלול עסקי מסוים'}))))};
+  // a call that fails: nothing is counted in the day
+  let st=await relTask(s,events,{now:at,ask:async()=>{throw new Error('HTTP 401')},dayCap:10}); assert.equal(st.judged,0); assert.equal(st.used,0,'nothing was decided: nothing is used');
+  st=await relTask(s,events,{now:at,ask,dayCap:10});
+  assert.equal(seen[0],'ev:own-watch','the security\'s own event first, though the world\'s are critical'); assert.equal(seen[1],'ev:world-names-it');
+  assert.ok(!seen.includes('ev:world-chips-only'),'a factor in common alone does not send a world event to be examined');
+  assert.equal(seen.filter(k=>k.startsWith('ev:world')).length,4,'the world\'s share of a day of 10 is 4 pairs'); assert.equal(st.worldCapped,true); assert.equal(st.used,5); assert.equal(s.getDoc(REL_DOC).data.usedW,4);
+  // the same event of the securities' own news is examined on a factor in common, as before
+  seen.length=0; await relTask(s,[E('ev:own-chips',{level:'imp',themes:['chips'],facs:[{k:'chips',move:'up',why:'x'}]})],{now:at,ask,dayCap:50}); assert.deepEqual(seen,['ev:own-chips']);
 });

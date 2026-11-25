@@ -24,7 +24,7 @@
 import {createHash} from 'node:crypto';
 import {aiMeter} from './admin/counter.js';
 import {isFund, sectorMap} from './pulse.js';
-import {salvageArray} from './newsx.js';
+import {salvageArray, aiThinks, aiEffort} from './newsx.js';
 
 export const REL_DOC='research/impactrel';
 const DAY=864e5;
@@ -198,7 +198,7 @@ export function markGeneric(rels){const L=Object.entries(rels||{}).filter(([,r])
 const pickModel=()=>{const L=String(process.env.ALLOWED_MODELS||'claude-haiku-5-5,claude-sonnet-5-5').split(',').map(s=>s.trim()).filter(Boolean); return process.env.IMPACT_MODEL||L.find(m=>/sonnet/.test(m))||L[0]};
 async function askClaude(prompt,{fetch:f,log,maxTokens}){
   const key=process.env.ANTHROPIC_API_KEY, url=(process.env.ANTHROPIC_BASE_URL||'https://api.anthropic.com')+'/v1/messages', model=pickModel(), t0=Date.now();
-  const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(120000)})
+  const r=await f(url,{method:'POST',headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'},body:JSON.stringify({model,max_tokens:aiThinks(model)?16000:maxTokens,...(aiEffort(model)?{output_config:{effort:'medium'}}:{}),messages:[{role:'user',content:prompt}]}),signal:AbortSignal.timeout(aiThinks(model)?240000:120000)})
     .catch(e=>{aiMeter({feature:'impactrel',model,ms:Date.now()-t0,ok:false,code:e&&e.name==='TimeoutError'?'timeout':'network'}); throw e});
   if(!r.ok){let why=''; try{why=(await r.text()).slice(0,200)}catch(e){} aiMeter({feature:'impactrel',model,ms:Date.now()-t0,ok:false,code:'HTTP '+r.status}); throw new Error('HTTP '+r.status+' '+why)}
   const j=await r.json(); aiMeter({feature:'impactrel',model:j.model||model,usage:j.usage,ms:Date.now()-t0,ok:true,addModel:true});
@@ -215,24 +215,36 @@ export async function relTask(store,events,{now=new Date(),log=()=>{},fetch:f=gl
   const cards=cardsOf(store,universeOf(store),{names}), from=new Date(now.getTime()-days*DAY).toISOString(), st={at:iso,ai,asked:0,judged:0,none:0,calls:0,fail:0,waiting:0,first:null,capped:false};
   // the events that are here now keep their decisions; the others go
   const live=new Set(events.map(e=>e.k)); for(const k of Object.keys(by))if(!live.has(k))delete by[k];
+  // 25.11 (the live server's log: 396 of the day's 400 used by the morning, over a thousand pairs waiting, the securities'
+  // own news behind them): the world's events are many, and a factor in common ("oil", "rates") tied each of them to
+  // every holding. Now: the securities' and the market's own events first, whatever the level; an event of the world's
+  // news is examined against an asset only on a strong sign (the reading names the asset, a competitor of the article's
+  // subject, a fund that holds a named company); and the world's events take a share of the day's cap at most
+  // (IMPACT_REL_WORLD_SHARE, 0.4), never the cap itself
+  const wsh=process.env.IMPACT_REL_WORLD_SHARE, share=wsh!=null&&String(wsh).trim()!==''&&Number.isFinite(+wsh)?Math.max(0,Math.min(1,+wsh)):0.4, worldCap=Math.floor(dayCap*share); let usedW=D0.day===day?(+D0.usedW||0):0, planW=0;
   const todo=[];
-  for(const e of events.slice().sort((a,b)=>(LV[b.level]-LV[a.level])||((a.world?1:0)-(b.world?1:0))||(String(b.last)>String(a.last)?1:-1))){
+  for(const e of events.slice().sort((a,b)=>((a.world?1:0)-(b.world?1:0))||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1))){
     if(e.hidden||e.rules||(e.last||'')<from)continue; const cand=candidatesOf(e,cards), rec=by[e.k]||{rels:{},miss:{}}, pairs=[];
+    if(e.world)for(const [k,cd] of [...cand])if(!(cd.named||cd.peers||cd.holds))cand.delete(k);
     // the order of asking: a company the reading names, a competitor of the article's subject, a channel in common, a fund's
     // holdings; last, an article that only sat in the share's feed (most of those are refused)
     const pr=cd=>cd.named?0:cd.peers?1:cd.ch?2:cd.holds?3:4;
     for(const cd of [...cand.values()].sort((a,b)=>pr(a)-pr(b))){const c=cards.get(cd.sym); if(!c||!needsAI(e,c,cd))continue;
       const r=rec.rels&&rec.rels[cd.sym], sig=sigOf(e,c); if(r&&r.sig===sig)continue; if(((rec.miss||{})[cd.sym]||0)>=2)continue;
       if(pairs.length<perEvent)pairs.push({c,cd,sig}); else st.waiting++}
-    if(pairs.length)todo.push({e,pairs})}
+    if(!pairs.length)continue;
+    if(e.world){if(usedW+planW+pairs.length>worldCap){st.waiting+=pairs.length; st.worldCapped=true; continue} planW+=pairs.length}
+    todo.push({e,pairs})}
   st.waiting+=todo.slice(maxEvents).reduce((t,b)=>t+b.pairs.length,0);
   if(ai)for(let i=0;i<Math.min(todo.length,maxEvents);i+=perCall){
     const batch=todo.slice(i,Math.min(i+perCall,maxEvents)), n=batch.reduce((t,b)=>t+b.pairs.length,0);
     if(used+n>dayCap){st.capped=true; st.waiting+=todo.slice(i,maxEvents).reduce((t,b)=>t+b.pairs.length,0); break}
     if(Date.now()-t0>budgetMs){st.first=st.first||'stopped: time'; st.waiting+=todo.slice(i,maxEvents).reduce((t,b)=>t+b.pairs.length,0); break}
-    st.asked+=n; st.calls++; used+=n; let text='', model='';
+    st.asked+=n; st.calls++; let text='', model='';
     try{if(ask){text=await ask(relPrompt(batch),batch); model='test'} else{const r=await askClaude(relPrompt(batch),{fetch:f,log,maxTokens:Math.min(8000,260*n+500)}); text=r.text; model=r.model}}
     catch(x){st.fail++; st.first=st.first||String(x&&x.message||x).slice(0,160); if(st.fail>=2)break; continue}
+    // 25.11: only a call that answered is counted in the day (a refused key used the whole cap with nothing decided)
+    used+=n; usedW+=batch.filter(b=>b.e.world).reduce((t,b)=>t+b.pairs.length,0);
     const arr=salvageArray(text)||[];
     batch.forEach((b,bi)=>{const rec=by[b.e.k]={rels:{...((by[b.e.k]||{}).rels||{})},miss:{...((by[b.e.k]||{}).miss||{})},at:iso};
       for(const p of b.pairs){const raw=arr.find(x=>x&&(Number.isInteger(x.e)?x.e:0)===bi&&String(x.sym||'').toUpperCase()===p.c.sym.toUpperCase()), r=raw?cleanRel(raw,b.e,p.c,p.cd):null;
@@ -241,7 +253,7 @@ export async function relTask(store,events,{now=new Date(),log=()=>{},fetch:f=gl
       markGeneric(rec.rels)})}
   else st.waiting+=todo.slice(0,maxEvents).reduce((t,b)=>t+b.pairs.length,0);
   const changed=st.judged>0||Object.keys(by).length!==Object.keys(D0.by||{}).length||st.fail>0;
-  if(changed)store.setDoc(REL_DOC,{v:1,at:iso,day,used,by},{silent:true});
+  if(changed||used!==used0)store.setDoc(REL_DOC,{v:1,at:iso,day,used,usedW,by},{silent:true});
   const S={...st,used,seconds:Math.round((Date.now()-t0)/1000)}; store.setMeta('impactRelStatus',JSON.stringify(S));
   if(st.asked||st.waiting)log(`impact relations: ${st.judged} of ${st.asked} pairs decided (${st.none} with no link), ${st.waiting} waiting, ${used}/${dayCap} today${st.first?' (first: '+st.first+')':''}`);
   return S;
