@@ -20,7 +20,7 @@ import {reconcileSplits} from '../shared/splits.js';
 import {confirmSplits} from './fmp.js';
 import {yahooSearch, yahooChart, nasdaqQuote, tickerFor, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ipoTask, ipoStale} from './ipos.js';
-import {ilSymsFresh} from './ilsyms.js';
+import {ilSymsFresh, ilSchedLoad} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {runsSetup, runLog, deployOnStart} from './admin/runs.js';
 import {cspState, cspReport} from './csp.js';
@@ -669,6 +669,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1
   // 9.11 "יומן ביצועים": every run, every manual run and every new version, with alerts (server/admin/runs.js)
   runsSetup({push:pushTo,canSystem:u=>canMc(u,'system')});
   try{deployOnStart(store,{version:app.locals.verOf?app.locals.verOf():''})}catch(e){log('deploy log: '+e.message)}
+  // 25.11: the exchange's calendar of trading days kept from the last run, for the server's clock of the Tel Aviv market
+  try{ilSchedLoad(store)}catch(e){}
   if(env.JOBS!=='0')app.locals.jobs=startJobs(store,{log,dataDir:DATA_DIR,onRun:e=>runLog(store,e)});
   // 8.11: live US prices from Finnhub's trade stream during the New York session (server/rt.js)
   if(env.JOBS!=='0'&&env.RT!=='0')try{app.locals.rt=startRt(store,{log})}catch(e){log('rt: '+e.message)}

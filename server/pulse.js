@@ -25,6 +25,7 @@ import {fileURLToPath} from 'node:url';
 import {newsId, factFix} from './newsx.js';
 import {symsOfUser} from './store.js';
 import {ipoFresh, weekOf} from './ipos.js';
+import {ilIdOf} from './ilsyms.js';
 
 const H=36e5, DAY=864e5;
 export const pathsOf=u=>!u||u.role==='owner'
@@ -231,6 +232,7 @@ export function pulseCompute(store,u,{now=new Date()}={}){
       sectors:x.sectors||[],themes:x.themes||[],regions:x.regions||[],fac:x.fac||[],secx:x.secx||[],occ:x.occ||null,unknown:x.unknown||'',
       arts:e.arts.slice(0,8).map(z=>artOut(z.a,z.x)),n:e.arts.length,first:e.arts.map(z=>z.a.at||z.a.seen).filter(Boolean).sort()[0]||null})}
   if(hasPf)for(const a of mktAlerts(store,P,S,Q,HD,now))if(pr.lv[a.lv])out.push(a);
+  if(hasPf)for(const a of ilListAlerts(store,P,HD,now))if(pr.lv[a.lv])out.push(a);   // 25.11: a holding on one of the exchange's lists
   for(const a of calAlerts(store,pa,now))if(pr.lv[a.lv])out.push(a);
   // 24.11: the securities that started trading (server/ipos.js): one update a week, the same for everyone whatever they
   // hold; switched off with the event type "הנפקות וניירות חדשים" (settings → "חדשות והתראות")
@@ -338,6 +340,35 @@ export function mktAlerts(store,P,S,Q,HD,now=new Date()){
     for(const h of HD.pos){const c=C[h.sym]; if(!c||!c.next||c.next<today||c.next>end||(c.rep&&c.rep.at&&c.rep.at>=c.next))continue;
       out.push({...base,k:`rep:${h.sym}:${c.next}`,lv:'upd',lvWhy:'מועד ידוע בלוח הדוחות; עדכון, לא אירוע',title:`${h.sym} מפרסמת דוח ${c.next===today?'היום':'ב-'+c.next.split('-').reverse().slice(0,2).join('.')}`,what:c.nextEst?'המועד משוער עד שהחברה תאשר.':'המועד אושר.',
         dir:'unclear',imp:'mid',rel:relOf(h),relWhy:relW(h),occ:c.next,holds:[{sym:h.sym,w:h.w,how:'direct',dir:'unclear',why:'הדוח של החברה עצמה',link:'direct'}],first:null,mk:{t:'rep',date:c.next,est:!!c.nextEst}})}}
+  return out;
+}
+// 25.11 (the owner): a Tel Aviv security the person holds that is on one of the exchange's own lists for the next trading
+// day (research/illists, kept every morning by server/ilsyms.js with the exchange's key): suspended from trading, on the
+// maintenance list, or newly among the low-liquidity securities. A fact from the exchange's list, said to be so; it does
+// not say why (the company's and the exchange's notices do). One alert for each security, list and date of the status:
+// a suspension or the maintenance list is said for as long as it lasts (again after a month), low liquidity only in the
+// month it began (most of the small securities are there for years, and that is not news)
+const ILL_HE={susp:'השעיית מסחר',maint:'רשימת השימור',illiq:'רשימת דלי הסחירות'};
+const dmyHe=d=>/^\d{4}-\d\d-\d\d/.test(String(d))?`${+String(d).slice(8,10)}.${+String(d).slice(5,7)}.${String(d).slice(0,4)}`:'';
+export function ilListAlerts(store,P,HD,now=new Date()){
+  let L=null; try{L=store.getDoc('research/illists').data}catch(e){} if(!L||!Array.isArray(L.items)||!L.items.length)return [];
+  const by=new Map(); for(const r of L.items){if(!Array.isArray(r))continue; const a=by.get(+r[0])||[]; a.push(r); by.set(+r[0],a)}
+  let IL=null; try{IL=store.getDoc('research/ilsyms').data}catch(e){} const idOf=ilIdOf(IL), names=new Map(((IL&&IL.stocks)||[]).filter(Array.isArray).map(r=>[+r[4],r[1]||r[2]||'']));
+  const H=new Map(HD.pos.map(h=>[h.sym,h])), today=ilDay(now), recent=ilDay(new Date(now.getTime()-30*DAY)), out=[], seen=new Set();
+  for(const p of ((P&&P.positions)||[])){if(!p||!p.sym||seen.has(p.sym))continue; seen.add(p.sym); const id=idOf(p.sym,p.ccy), rows=id?by.get(id):null; if(!rows)continue;
+    const h=H.get(p.sym)||{sym:p.sym,w:null}, big=h.w==null||h.w>=SENS_T.mid.dHigh, nm=String(p.name||names.get(id)||'').trim()||String(p.sym).replace(/^TLV:/,''), relWhy=h.w!=null?`${nm}, ${h.w}% מהתיק`:`${nm} שבתיק`;
+    for(const r of rows){const T=(L.types||{})[String(r[1])]||{}, kind=ILL_HE[T.kind]?T.kind:'other', since=/^\d{4}-\d\d-\d\d$/.test(String(r[2]||''))?r[2]:'', S=since?` מאז ${dmyHe(since)}`:'';
+      if(kind==='illiq'&&!(since&&since>=recent))continue;
+      const lv=kind==='susp'?(big?'crit':'imp'):kind==='maint'?'imp':'upd', dir=kind==='susp'||kind==='maint'?'neg':'unclear';
+      const title=kind==='susp'?`המסחר ב${/^[A-Za-z0-9]/.test(nm)?'-':''}${nm} מושעה`:kind==='maint'?`${nm} ברשימת השימור של הבורסה`:kind==='illiq'?`${nm} עברה לרשימת דלי הסחירות`:`${nm} ברשימה מיוחדת של הבורסה`;
+      const what=kind==='susp'?`הנייר מופיע ברשימת ההשעיה של הבורסה ליום המסחר הבא${S}. בזמן השעיה לא מתבצע בו מסחר, ולכן אי אפשר לקנות או למכור אותו בבורסה. הסיבה מתפרסמת בהודעות החברה והבורסה במאיה.`
+        :kind==='maint'?`הנייר מופיע ברשימת השימור של הבורסה${S}. לרשימה עוברות חברות שלא עומדות בכללי השימור של הבורסה; המסחר בהן מצומצם, וחברה שלא חוזרת לעמוד בכללים עלולה להימחק מהמסחר. הסיבה מתפרסמת בהודעות החברה והבורסה במאיה.`
+        :kind==='illiq'?`הנייר נכנס לרשימת דלי הסחירות של הבורסה${S}. ניירות ברשימה נסחרים במתכונת מצומצמת, ולכן קנייה או מכירה עשויות לקחת יותר זמן ובמחיר פחות נוח.`
+        :`הנייר מופיע ברשימה של הבורסה ליום המסחר הבא${T.desc?` (${T.desc})`:''}${S}.`;
+      out.push({kind:'mkt',type:'market',cert:'fact',rules:false,conf:'high',confWhy:'הרשימה הרשמית של הבורסה לניירות ערך בתל אביב, ליום המסחר הבא',sectors:[],themes:[],regions:['il'],fac:[],secx:[],secs:[],usd:null,fol:[],followed:false,unknown:'',arts:[],n:0,
+        k:`ill:${id}:${kind}:${since||'0'}`,lv,lvWhy:kind==='susp'?`נייר שבתיק שלך מושעה ממסחר${big?'':'; אחזקה קטנה, ולכן התראה חשובה ולא קריטית'}`:kind==='maint'?'נייר שבתיק שלך ברשימת השימור של הבורסה':kind==='illiq'?'נייר שבתיק שלך עבר למסחר מצומצם; עדכון, לא אירוע':'נייר שבתיק שלך ברשימה של הבורסה; עדכון',
+        title,what,dir,imp:kind==='susp'||kind==='maint'?'high':'mid',rel:big?'high':'mid',relWhy,occ:since||today,first:L.updatedAt||null,
+        holds:[{sym:h.sym,w:h.w,how:'direct',dir,why:`הנייר עצמו ב${kind==='other'?'רשימה של הבורסה':ILL_HE[kind]}`,link:'direct'}],mk:{t:'ill',list:kind,since:since||null,desc:T.desc||'',id}})}}
   return out;
 }
 // what makes a development material, against the alert that was kept

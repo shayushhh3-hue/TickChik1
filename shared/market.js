@@ -7,19 +7,26 @@ const parts=(d,tz)=>{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12
   return {wd,y:+g('year'),m:+g('month'),d:+g('day'),h:+g('hour')%24,min:+g('minute'),iso:`${g('year')}-${g('month')}-${g('day')}`}};
 export const ilParts=d=>parts(d||new Date(),'Asia/Jerusalem');
 export const nyParts=d=>parts(d||new Date(),'America/New_York');
-export function ilOpen(d){const p=ilParts(d),t=p.h*60+p.min;if(p.wd===0||p.wd===6)return false;return t>=600&&t<(p.wd===5?14*60:17*60+30)}
+// 25.11: the exchange's own calendar of trading days (research/ilsched, kept by server/ilsyms.js with the exchange's
+// key): {days:{iso:[type,trades]}, from, to}; a day inside its dates that is not listed is a regular trading day.
+// true = no trading that day, false = it trades, null = the calendar does not reach that day (the weekday decides)
+let IL_SCHED=null;
+export function setIlSched(d){IL_SCHED=d&&d.days&&typeof d.days==='object'&&d.from&&d.to?d:null}
+export const ilClosedDay=iso=>{const S=IL_SCHED; if(!S||iso<S.from||iso>S.to)return null; const x=S.days[iso]; return x?!x[1]:false};
+export function ilOpen(d){const p=ilParts(d),t=p.h*60+p.min;if(p.wd===0||p.wd===6)return false;if(ilClosedDay(p.iso)===true)return false;return t>=600&&t<(p.wd===5?14*60:17*60+30)}
 export const NYSE_CLOSED=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
   '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']);
 export const NYSE_EARLY=new Set(['2026-11-27','2026-12-24','2027-11-26']); // close at 13:00 New York time
 export function usOpen(d){const p=nyParts(d),t=p.h*60+p.min;if(p.wd<1||p.wd>5||NYSE_CLOSED.has(p.iso))return false;return t>=570&&t<(NYSE_EARLY.has(p.iso)?780:960)}
 export const anyOpen=d=>ilOpen(d)||usOpen(d);
 // the last session a market should have reported by now: today once it has traded for half an hour, otherwise the last
-// weekday before (New York skips its holidays; a Tel Aviv holiday is not known here, so that day shows as "not received")
+// weekday before (New York skips its holidays; Tel Aviv skips the days the exchange's calendar closes, when the site has
+// it: without it a Tel Aviv holiday is not known here, and that day shows as "not received")
 export function lastSession(mkt,d){
   let t=(d||new Date()).getTime();
   for(let i=0;i<12;i++,t-=864e5){
     const p=mkt==='us'?nyParts(new Date(t)):ilParts(new Date(t)), m=p.h*60+p.min;
-    const day=p.wd>=1&&p.wd<=5&&!(mkt==='us'&&NYSE_CLOSED.has(p.iso));
+    const day=p.wd>=1&&p.wd<=5&&!(mkt==='us'?NYSE_CLOSED.has(p.iso):ilClosedDay(p.iso)===true);
     if(day&&(i>0||m>=(mkt==='us'?600:630)))return p.iso;
   }
   return '';

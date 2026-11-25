@@ -1298,6 +1298,30 @@ test('the trading calendar: both markets per day, the month\'s special days, the
   await pg.screenshot({path:'/tmp/claude-0/-home-claude/b22281cb-4d7c-579a-92b3-f89ef1145114/scratchpad/cal.png',fullPage:false});
   assert.deepEqual(pg.errs,[]); await ctx.close();
 });
+// 25.11 (the owner, with the exchange's key): the exchange's own calendar decides which days trade (the Hebrew calendar
+// names the holiday and stands in beyond the calendar's dates); a holding on one of the exchange's lists is an alert
+test('25.11 the exchange\'s calendar decides the trading days; a holding on the exchange\'s suspension list opens as an alert',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const C0=store.getDoc('research/ilsched'), P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym, k='ill:604611:susp:2026-11-20';
+  // September 2026 by the exchange: an ordinary Wednesday closed, Yom Kippur closed; the eve of Rosh Hashana (11.9, closed by the rules) is not listed, so it trades
+  store.setDoc('research/ilsched',{days:{'2026-09-16':['C',0],'2026-09-21':['C',0]},types:{T:'יום מסחר',C:'שבתון'},from:'2026-09-01',to:'2026-09-30',updatedAt:new Date().toISOString(),source:'בדיקה'});
+  store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k,kind:'mkt',type:'market',cert:'fact',conf:'high',lv:'crit',title:'המסחר ב-'+sym+' מושעה',what:'הנייר מופיע ברשימת ההשעיה של הבורסה ליום המסחר הבא.',at:new Date().toISOString(),holds:[{sym,link:'direct',how:'direct',w:10,dir:'neg'}],dir:'neg',imp:'high',rel:'high',relWhy:sym+', 10% מהתיק',mk:{t:'ill',list:'susp',since:'2026-11-20',id:604611}}]});
+  try{const {ctx,pg}=await open(390); await pg.waitForTimeout(800);
+    await pg.click('#botbar [data-bb="more"]'); await pg.waitForTimeout(300); await pg.click('#tab_calendar'); await pg.waitForTimeout(300); await pg.click('#calBox [data-tcalv="month"]'); await pg.waitForTimeout(200);
+    await pg.evaluate(()=>{for(let i=0;i<24;i++){const d=document.querySelector('#calBox h3').textContent; if(/ספטמבר 2026/.test(d))break; const back=/2027|נובמבר 2026|דצמבר 2026|אוקטובר 2026/.test(d); document.querySelector(`#calBox [data-calmv="${back?-1:1}"]`).click()}});
+    const L=await pg.evaluate(()=>document.querySelector('#calBox .callist').textContent), note=await pg.evaluate(()=>[...document.querySelectorAll('#calBox .cal-spec .note')].pop().textContent);
+    assert.match(L,/16\.9 · תל אביב: אין מסחר · שבתון/,'a day only the exchange closes, by the exchange\'s name for it'); assert.match(L,/21\.9 · תל אביב: אין מסחר · יום כיפור/,'the holiday keeps its name');
+    assert.doesNotMatch(L,/(^|\D)11\.9 · תל אביב/,'a day the rules would close and the exchange does not: it trades'); assert.match(L,/28\.9 · תל אביב: מסחר 10:00–14:30 · חול המועד סוכות/,'a short day stays short');
+    assert.match(note,/לפי הלוח הרשמי של הבורסה/); assert.ok(await pg.evaluate(()=>document.querySelector('#calBox [data-calday="2026-09-16"]').classList.contains('sp-c')),'the closed day is marked in the month');
+    // a month the exchange's calendar does not reach is said to be computed
+    await pg.click('#calBox [data-calmv="-1"]'); await pg.waitForTimeout(200); assert.match(await pg.evaluate(()=>[...document.querySelectorAll('#calBox .cal-spec .note')].pop().textContent),/מחושב לפי כללי הבורסה/);
+    // the alert of a holding on the suspension list: a row in התראות that opens with the list, since when, and the source
+    await tab(pg,'alerts'); await pg.waitForTimeout(400); await pg.click(`#alInbox [data-alopen="${k}"]`); await pg.waitForTimeout(400);
+    const card=await pg.evaluate(()=>document.getElementById('plShB').textContent);
+    assert.match(card,/מושעה/); assert.match(card,/ברשימת ההשעיה מאז 20\.11/); assert.match(card,/הרשימה הרשמית של הבורסה לניירות ערך בתל אביב/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(C0.exists)store.setDoc('research/ilsched',C0.data); else store.deleteDoc('research/ilsched'); if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
+});
 
 test('the trading calendar with the held securities\' days: reports (the next one, the ones out) and dividends (ex-dividend, payment, the ones that came in)',T,async t=>{
   if(skip())return t.skip('no browser');

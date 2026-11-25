@@ -19865,7 +19865,12 @@ const NYSE_CLOSED=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','
 const tzDay=(()=>{const TZDF=new Map(); return (tz,d)=>{try{let f=TZDF.get(tz); if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:tz}); TZDF.set(tz,f)} return f.format(d||new Date())}catch(e){return ''}}})();
 const usOpen=now=>{const p=tzParts('America/New_York',now||new Date()), day=tzDay('America/New_York',now); return !!p&&p.wd>=1&&p.wd<=5&&!NYSE_CLOSED.has(day)&&p.t>=570&&p.t<(NYSE_EARLY.has(day)?780:960)};
 // Tel Aviv 10:00-17:30 Monday to Thursday, until 14:00 on Friday
-const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); return !!p&&p.wd>=1&&p.wd<=5&&p.t>=600&&p.t<(p.wd===5?840:1050)};
+// 25.11 (the owner): the exchange's own calendar of trading days, when the site has the exchange's key (research/ilsched:
+// {days:{iso:[the exchange's type of day, 1 when it trades]}, types, from, to}; a day inside its dates that is not listed
+// is a regular trading day). It decides whether a day trades; beyond its dates the Hebrew calendar below stands in
+let ILSCHED=null;
+const ilOff=iso=>{const S=ILSCHED; if(!S||!S.days||!S.from||!S.to||!iso||iso<S.from||iso>S.to)return null; const x=S.days[iso]; return x?{open:!!x[1],t:String(x[0]||''),name:String((S.types||{})[x[0]]||'')}:{open:true,t:'T',name:''}};
+const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); if(!p||p.wd<1||p.wd>5)return false; const o=ILSCHED?ilOff(tzDay('Asia/Jerusalem',now||new Date())):null; if(o&&!o.open)return false; return p.t>=600&&p.t<(p.wd===5?840:1050)};
 const mktOpen=now=>usOpen(now)||ilOpen(now);
 // ---- the trading calendar: for every day, is Tel Aviv open, short or closed, and New York, with the hours in Israel time.
 // New York: the NYSE's own list of closures and 13:00 closes. Tel Aviv: the Jewish holidays from the Hebrew calendar the
@@ -19896,8 +19901,12 @@ function usHolName(iso){const md=iso.slice(5); if(/^(01-01|12-31)$/.test(md))ret
 // one day of both markets: {il:{st,h,why}, us:{st,h,why}}; st is 'open', 'short' or 'closed'; h the hours in Israel time
 function mktDay(iso){
   const wd=wdOf(iso), noon=new Date(iso+'T16:00:00Z');
-  let il; {const hol=ilHoliday(iso), nextSun=wd===5?ilHoliday(isoAdd(iso,2)):null;
+  let il; {const hol=ilHoliday(iso), nextSun=wd===5?ilHoliday(isoAdd(iso,2)):null, off=wd===0||wd===6?null:ilOff(iso);
+    // 25.11: the exchange's calendar decides the day; the Hebrew calendar gives the holiday its name
+    const offName=off&&off.name&&!/^(יום מסחר|trading day)$/i.test(off.name.trim())?off.name.trim():'', sunRule=nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]);
     if(wd===0||wd===6)il={st:'closed',why:wd===6?'שבת':'יום ראשון'};
+    else if(off&&!off.open)il={st:'closed',why:hol?hol[1]:sunRule?`${nextSun[1]} ביום ראשון, ולפי כללי הבורסה אין מסחר ביום שישי שלפניו`:offName||'אין מסחר, לפי לוח הבורסה',off:true};
+    else if(off&&off.open)il=(hol&&hol[0]==='short')||/מקוצר|קצר|short|half/i.test(off.name)?{st:'short',h:'10:00–14:30',why:hol&&hol[0]==='short'?hol[1]:offName||'יום מקוצר',off:true}:{st:'open',h:wd===5?'10:00–14:00':'10:00–17:30',why:'',off:true};
     else if(hol&&hol[0]==='closed')il={st:'closed',why:hol[1]};
     else if(nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]))il={st:'closed',why:`${nextSun[1]} ביום ראשון, ולפי כללי הבורסה אין מסחר ביום שישי שלפניו`,rule:true};
     else if(hol&&hol[0]==='short')il={st:'short',h:'10:00–14:30',why:hol[1]};
@@ -27824,6 +27833,10 @@ function plMktH(a){const k=a.mk||{}, m=(()=>{try{return mAllNow()}catch(e){retur
       <div class="acts" style="justify-content:flex-start;margin:0 0 8px"><button type="button" class="btn sm" data-ipoall="1">לכל הניירות החדשים ›</button></div><p class="note" style="margin:0">מקורות: ${esc(k.src||'לוח ההנפקות')}. עובדה על מה שנרשם למסחר, לא המלצה לקנות.</p>`}
   if(k.t==='cal')return `<p class="pl-p">מהלוח: ${esc(k.src||'')}${k.est?' (מועד משוער)':''}. <button type="button" class="lnk" data-nxv2="cal" data-calid="${esc(k.id||'')}">ללוח האירועים ›</button>${k.sym?` <button type="button" class="lnk" data-gosec="${esc(k.sym)}">לדף הנייר ›</button>`:''}</p>`;
   if(k.t==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0; return uv>0?`<p class="pl-p">שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי התיק.</p>`:''}
+  // 25.11 (the owner): a holding on one of the exchange's lists (suspension, maintenance, low liquidity): what it is worth here, and where the reason is published
+  if(k.t==='ill'){const LN={susp:'רשימת ההשעיה',maint:'רשימת השימור',illiq:'רשימת דלי הסחירות'}[k.list]||'רשימה של הבורסה';
+    return `<p class="pl-p">${p?`השווי של הנייר בתיק: <span class="n">${ils(p.val)}</span>${p.w!=null?` (<span class="n">${(+p.w).toFixed(1)}%</span> מהתיק)`:''}. `:''}${k.since?`ב${LN} מאז ${nn(dmy(k.since))}.`:`מופיע ב${LN}.`}</p>
+      <p class="note" style="margin:0">מקור: הרשימה הרשמית של הבורסה לניירות ערך בתל אביב ליום המסחר הבא, נבדקת כל בוקר. היא אומרת שהנייר ברשימה, לא למה; הסיבה מתפרסמת בהודעות החברה והבורסה במאיה.</p>`}
   return ''}
 // one alert, whole: what happened; why it touches this portfolio; the chain; the three measures apart; the possible
 // direction against what was measured; the actions; the sources and the timeline
@@ -31978,7 +31991,7 @@ function renderCal(){
     <section class="cal-mine"><div class="row"><h3>המניות שלך ב${HMON[M-1]}: דוחות ודיבידנדים</h3></div>${mineList}<div class="rsStatus"></div>
     <p class="note">דוחות: Finnhub, Yahoo Finance ו-SEC. דיבידנדים: הכרזות (Nasdaq), והבאים לפי הקצב, משוערים.</p></section>
     <div class="cal-spec"><h3>ימים מיוחדים ב${HMON[M-1]}</h3>${list}
-    <p class="note">ארה״ב: <bdi dir="ltr">16:30–23:00</bdi> שעון ישראל (<bdi dir="ltr">15:30–22:00</bdi> כשרק מדינה אחת בשעון קיץ). תל אביב: ב׳–ה׳ <bdi dir="ltr">10:00–17:30</bdi>, ו׳ <bdi dir="ltr">10:00–14:00</bdi>; חגים לפי כללי הבורסה, והלוח הרשמי שלה קובע.</p></div>`;
+    <p class="note">ארה״ב: <bdi dir="ltr">16:30–23:00</bdi> שעון ישראל (<bdi dir="ltr">15:30–22:00</bdi> כשרק מדינה אחת בשעון קיץ). תל אביב: ב׳–ה׳ <bdi dir="ltr">10:00–17:30</bdi>, ו׳ <bdi dir="ltr">10:00–14:00</bdi>; ${ILSCHED&&ILSCHED.to?(CALM<=ILSCHED.to.slice(0,7)&&CALM>=ILSCHED.from.slice(0,7)?`ימי המסחר והחופשות לפי הלוח הרשמי של הבורסה (מתעדכן כל בוקר, עד ${nn(dmy(ILSCHED.to))}).`:`הלוח הרשמי של הבורסה מגיע עד ${nn(dmy(ILSCHED.to))}; החודש הזה מחושב לפי כללי הבורסה.`):'חגים לפי כללי הבורסה, והלוח הרשמי שלה קובע.'}</p></div>`;
   try{rsStatusFill()}catch(e){} try{foldSec(box.querySelector('.cal-mine'))}catch(e){}
 }
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-calday],[data-calmv]'); if(!t||!t.closest('#calBox'))return;
@@ -33265,6 +33278,8 @@ try{refreshBack()}catch(e){}
     // a held fund without its holdings yet: the server is asked once a visit (it reads at most once in ten minutes)
     try{if(!LOCAL&&!etfAsked&&P&&(P.positions||[]).some(p=>isF(p.sym)&&!((ETFD&&ETFD.by)||{})[p.sym])){etfAsked=true; fetch('/api/etf/refresh',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-tc':'1'},body:'{}'}).catch(()=>{})}}catch(e){}},()=>{})}catch(e){}
   try{db.doc('research/ecocal').onSnapshot(s=>{ECO=s.exists?s.data():null; try{if(document.body.dataset.page==='news')renderNewsX()}catch(e){}},()=>{})}catch(e){}
+  // 25.11: the exchange's calendar of trading days (research/ilsched): the trading calendar, the coming two weeks and "open now" follow it
+  try{db.doc('research/ilsched').onSnapshot(s=>{const d=s.exists?s.data():null, was=ILSCHED&&ILSCHED.updatedAt; ILSCHED=d&&d.days&&d.from&&d.to?d:null; if((ILSCHED&&ILSCHED.updatedAt)!==was){try{render()}catch(e){} try{if(document.body.dataset.page==='calendar')renderCal()}catch(e){}}},()=>{})}catch(e){}
   // 8.11: the pressure gauge and its record: the owner's alone (the access matrix refuses everybody else)
   if(OWNER){try{db.doc('research/pressure').onSnapshot(s=>{PRESS=s.exists?s.data():null; try{renderPress()}catch(e){console.error(e)}},()=>{})}catch(e){}
     try{db.doc('research/pressure_track').onSnapshot(s=>{PTRACK=s.exists?s.data():null; try{renderPress()}catch(e){}},()=>{})}catch(e){}}

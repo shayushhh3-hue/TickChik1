@@ -1056,6 +1056,58 @@ test('Israeli securities for the search: the exchange\'s own lists (shares, fund
     assert.equal((await req('o','GET','/api/ilfund?id=12')).status,400); assert.equal((await req('o','GET','/api/ilfund?id=5999999')).status,404);
   }finally{globalThis.fetch=real; srv.close()}
 });
+// 25.11 (the owner, the day the exchange's key was saved): the shares under their English symbols; a holding on one of
+// the exchange's lists is an alert; the exchange's calendar of trading days decides whether Tel Aviv trades
+test('25.11 the exchange\'s key: English symbols for the shares, a holding on the suspension or maintenance list, the official calendar of trading days',async()=>{
+  const {ilBuild,ilSymsTask,ilListsTask,ilSchedTask,ilSchedLoad,ilIdOf,ilListKind,DW}=await import('../server/ilsyms.js');
+  const {ilListAlerts,holdingsOf,pulseCompute}=await import('../server/pulse.js');
+  const {setIlSched,ilClosedDay}=await import('../shared/market.js');
+  // asked in Hebrew the symbol is Hebrew: the English one comes from the same list asked in English, by the number
+  const T=[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'}];
+  const he=[{securityId:604611,symbol:'לאומי',securityName:'לאומי',companyName:'בנק לאומי',companySector:'בנקים',securityFullTypeCode:'0101'},{securityId:629014,symbol:'טבע',securityName:'טבע',companyName:'טבע',companySector:'ביומד',securityFullTypeCode:'0101'},{securityId:777,symbol:'בלי',securityName:'בלי סימול',securityFullTypeCode:'0101'}];
+  const en=[{securityId:604611,symbol:'LUMI'},{securityId:629014,symbol:'TEVA'}];
+  const B=ilBuild({sec:he,en,types:T});
+  assert.deepEqual(B.stocks,[['LUMI','לאומי','בנק לאומי','בנקים',604611],['TEVA','טבע','טבע','ביומד',629014]],'the English symbol with the Hebrew names; a share with no English symbol is left out');
+  assert.deepEqual(ilBuild({sec:he,types:T}).stocks,[],'without the English list a Hebrew symbol is never offered as a symbol');
+  assert.equal(ilListKind('SUSPENSION LIST'),'susp'); assert.equal(ilListKind('רשימת שימור'),'maint'); assert.equal(ilListKind('Illiquid securities'),'illiq'); assert.equal(ilListKind('משהו אחר'),'other');
+  const idOf=ilIdOf(B); assert.equal(idOf('TLV:LUMI'),604611); assert.equal(idOf('TEVA','ILS'),629014); assert.equal(idOf('TEVA','USD'),0,'the New York listing is not the Tel Aviv one'); assert.equal(idOf('1159094'),1159094); assert.equal(idOf('NVDA'),0);
+  // the two lists, as the exchange's documents describe their answers
+  const store=new Store(':memory:'), asked=[], now=new Date('2026-11-25T08:00:00Z');
+  let lists=[{securityID:604611,listTypeId:'2',statusDate:'2026-11-20'},{securityID:1159094,listTypeId:'3',statusDate:'2023-07-16'},{securityID:629014,listTypeId:'3',statusDate:'2026-11-18'}];
+  const f=async(u,o)=>{asked.push({u:String(u),lang:o.headers['accept-language']}); const p=String(u).slice(DW.length);
+    const J=p.startsWith('/basic-securities/illiquid-maintenance-suspension-list')?{tradingListCode:{result:lists,total:lists.length}}
+      :p.startsWith('/basic-securities/trading-code-list')?{tradingListCode:{result:[{listTypeId:1,listTypeDesc:'MAINTENANCE LIST'},{listTypeId:2,listTypeDesc:'SUSPENSION LIST'},{listTypeId:3,listTypeDesc:'ILLIQUID SECURITIES LIST'}],total:3}}
+      :p.startsWith('/tase-schedules/day-types')?{dayTypesResponse:{result:[{dayTypeId:'T',dayTypeName:'יום מסחר'},{dayTypeId:'C',dayTypeName:'אין מסחר'},{dayTypeId:'S',dayTypeName:'יום מסחר מקוצר'}]}}
+      :p.startsWith('/tase-schedules')?{taseSchedulesResponse:{result:[{date:'2026-11-24',dayTypeId:'T',isTradeDate:true},{date:'2026-11-25',dayTypeId:'T',isTradeDate:true},{date:'2026-11-26',dayTypeId:'C',isTradeDate:false},{date:'2026-11-27',dayTypeId:'S',isTradeDate:true},{date:'2026-11-28',dayTypeId:'C',isTradeDate:false},{date:'2026-12-31',dayTypeId:'T',isTradeDate:true}]}}
+      :p.startsWith('/basic-securities/trade-securities-list/')?{tradeSecuritiesList:{result:o.headers['accept-language']==='en-US'?en:he,total:3}}
+      :p.startsWith('/basic-securities/securities-types')?{securitiesTypes:{result:T,total:1}}:{};
+    return new Response(JSON.stringify(J),{status:200})};
+  try{
+    assert.equal(await ilListsTask(store,{fetch:f,key:''}),false,'no key: nothing asked'); assert.equal(asked.length,0);
+    assert.equal(await ilSymsTask(store,{fetch:f,key:'k-1',now}),true,'the one morning run keeps the three documents');
+    assert.ok(asked.some(a=>/trade-securities-list/.test(a.u)&&a.lang==='en-US'),'the traded list is asked in English too');
+    assert.equal(store.getDoc('research/ilsyms').data.stocks[0][0],'LUMI');
+    const L=store.getDoc('research/illists').data; assert.deepEqual(L.items,[[604611,'2','2026-11-20'],[629014,'3','2026-11-18'],[1159094,'3','2023-07-16']]); assert.equal(L.types['2'].kind,'susp'); assert.deepEqual(L.shape.lists.row,['securityID','listTypeId','statusDate'],'the shape of the answer is kept beside it');
+    const C=store.getDoc('research/ilsched').data; assert.deepEqual(C.days,{'2026-11-26':['C',0],'2026-11-27':['S',1],'2026-11-28':['C',0]},'only the days that are not a regular trading day'); assert.equal(C.from,'2026-11-24'); assert.equal(C.to,'2026-12-31'); assert.equal(C.types.S,'יום מסחר מקוצר');
+    // the server's clock of Tel Aviv: a Thursday the exchange closed is closed, the day before it trades, beyond the calendar the weekday decides
+    assert.equal(ilClosedDay('2026-11-26'),true); assert.equal(ilClosedDay('2026-11-25'),false); assert.equal(ilClosedDay('2027-03-01'),null);
+    assert.equal(ilOpen(new Date('2026-11-26T10:00:00Z')),false,'12:00 on a Thursday without trading'); assert.equal(ilOpen(new Date('2026-11-25T10:00:00Z')),true); assert.equal(ilOpen(new Date('2026-11-27T09:00:00Z')),true,'a short day still trades');
+    assert.equal(lastSession('il',new Date('2026-11-26T12:00:00Z')),'2026-11-25','the last session skips the closed day');
+    setIlSched(null); assert.equal(ilOpen(new Date('2026-11-26T10:00:00Z')),true,'without the calendar the weekday decides, as before'); assert.equal(ilSchedLoad(store),true,'the kept calendar is loaded at the start of the server'); assert.equal(ilClosedDay('2026-11-26'),true);
+    // the alerts: Leumi suspended (a large holding: critical), Teva newly of low liquidity (an update), an old low-liquidity mark of a fund says nothing, NVDA is not Tel Aviv's
+    const P={positions:[{sym:'TLV:LUMI',qty:100,ccy:'ILS',name:'בנק לאומי'},{sym:'TEVA',qty:10,ccy:'ILS'},{sym:'1159094',qty:5,ccy:'ILS'},{sym:'NVDA',qty:1,ccy:'USD'}]}, Q={usdIls:3.7,prices:{'TLV:LUMI':50,TEVA:60,'1159094':100,NVDA:900}};
+    const A=ilListAlerts(store,P,holdingsOf(P,Q),now), by=Object.fromEntries(A.map(a=>[a.mk.list,a]));
+    assert.deepEqual(A.map(a=>a.k).sort(),['ill:604611:susp:2026-11-20','ill:629014:illiq:2026-11-18']);
+    assert.equal(by.susp.lv,'crit'); assert.equal(by.susp.title,'המסחר בבנק לאומי מושעה'); assert.match(by.susp.what,/מאז 20\.11\.2026/); assert.equal(by.susp.holds[0].sym,'TLV:LUMI'); assert.equal(by.susp.kind,'mkt'); assert.equal(by.susp.cert,'fact');
+    assert.equal(by.illiq.lv,'upd'); assert.match(by.illiq.title,/טבע עברה לרשימת דלי הסחירות/);
+    lists=[{securityID:604611,listTypeId:1,statusDate:'2025-01-05'}]; await ilListsTask(store,{fetch:f,key:'k-1',now});
+    const M=ilListAlerts(store,P,holdingsOf(P,Q),now); assert.equal(M.length,1); assert.equal(M[0].lv,'imp','the maintenance list: important, however long ago it began'); assert.equal(M[0].mk.since,'2025-01-05');
+    // through the alerts of a person: with the portfolio's other alerts, under the levels they chose
+    store.setDoc('portfolio/main',P); store.setDoc('quotes/latest',Q);
+    assert.ok(pulseCompute(store,{id:'owner',role:'owner'},{now}).alerts.some(a=>a.k==='ill:604611:maint:2025-01-05'));
+    lists=[]; await ilListsTask(store,{fetch:f,key:'k-1',now}); assert.deepEqual(ilListAlerts(store,P,holdingsOf(P,Q),now),[],'off the list: no alert');
+  }finally{setIlSched(null)}
+});
 
 // ---- co-movement, long-term ties and month-end closes from the close series ----
 import {comoveOf, longtermOf, monthlyCloses, corr} from '../shared/comove.js';
