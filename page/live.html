@@ -2633,7 +2633,10 @@ html[data-theme="dark"] .ix-kv.rel-high{color:#4ADE80} html[data-theme="dark"] .
 .ix-x{width:28px;height:28px;border-radius:50%;border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer} .ix-x:hover{background:var(--sunk);color:var(--ink)}
 .ix-af{margin:0;font-size:13px;color:var(--ink2)} .ix-rel{margin:0;font-size:13px;display:flex;align-items:center;gap:6px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#94A3B8} .dot.rel-high{background:#22C55E} .dot.rel-mid{background:#F59E0B} .dot.rel-low{background:#60A5FA}
-.ix-ab{display:flex;flex-wrap:wrap;gap:6px} .ix-ab .btn{min-height:36px} .ix-more{align-self:center}
+.ix-ab{display:flex;flex-wrap:wrap;gap:6px}
+/* 25.11: an event's card on the globe, the map, the network and the history: the alerts' clear view first, the record folded under it */
+.wi-clear .wi-what{margin:6px 0 10px;line-height:1.6}.wi-clear .ix-ab{margin-top:10px}.wi-clear .pl-how{margin-top:8px}
+.wi-more{margin-top:12px}.wi-more>summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;gap:6px} .ix-ab .btn{min-height:36px} .ix-more{align-self:center}
 .ix-views{display:flex;gap:6px;flex-wrap:wrap} .ix-views [role="tab"]{font:inherit;font-size:13px;font-weight:600;padding:0 14px;min-height:34px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);cursor:pointer}
 .ix-views [aria-selected="true"]{background:rgb(124 58 237 / .14);border-color:#8B5CF6;color:var(--vio-ink)}
 .ix-exp{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;display:grid;place-items:center} .ix-exp svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
@@ -29905,7 +29908,7 @@ function nwSaveToggle(id,on){const st=NEWSST=nxState(); if(on){const it=newsAll(
 const CH_MOVE={up:['mv','↑','השערה: עלייה'],down:['mv','↓','השערה: ירידה'],unclear:['unc','↕','השערה: תנודה, בלי כיוון ברור']};
 const CH_DIR={pos:['pos','▲','השערה: לטובה'],neg:['neg','▼','השערה: לרעה'],mixed:['mix','◆','השערה: השפעה מעורבת'],unclear:['unc','•','הכיוון לא ברור']};
 const CH_DIRF=CH_DIR;
-const CH_HOW={direct:'החברה שהידיעה עוסקת בה',supplier:'ספקית של החברה שבחדשות',customer:'לקוחה של החברה שבחדשות',competitor:'מתחרה של החברה שבחדשות',sector:'באותו ענף כמו החברה שבחדשות',macro:'מושפעת מאירוע רחב'};
+const CH_HOW={direct:'החברה שהידיעה עוסקת בה',supplier:'ספקית של החברה שבחדשות',customer:'לקוחה של החברה שבחדשות',competitor:'מתחרה של החברה שבחדשות',sector:'באותו ענף כמו החברה שבחדשות',macro:'מושפעת מאירוע רחב',indirect:'קשר עקיף, לפי ניתוח הנכס מול עובדות העסק שלו'};   // 25.11: indirect = the impact engine's relation to an asset the article does not name
 const chBadge=(dir,fem,mv)=>{const w=mv?(CH_MOVE[dir]||CH_MOVE.unclear):((fem?CH_DIRF:CH_DIR)[dir]||CH_DIR.unclear); return `<span class="ix-dw ${w[0]}"><span aria-hidden="true">${w[1]}</span> ${w[2]}</span>`};
 function chainH(S,bottom=''){return `<ol class="chn">${S.map((s,i)=>`<li class="chn-s t-${s.t}"><span class="chn-i" aria-hidden="true">${i+1}</span><div class="chn-b"><span class="chn-k">${esc(s.k)}</span><span class="chn-m"><b><bdi>${esc(s.main)}</bdi></b>${s.dir?' '+chBadge(s.dir,s.fem,s.t==='fac'):''}</span>${s.why?`<span class="chn-w">${s.t==='ev'||s.t==='hold'?'':'למה: '}${esc(s.why)}</span>`:''}${s.extra||''}</div></li>`).join('')}</ol>${bottom}`}
 // the holding at the end of the chain: its weight, what 1% of it is, and the price measured since (never the cause)
@@ -29947,7 +29950,7 @@ function nxPendTitle(syms,pub,orig){const L=(syms||[]).filter(k=>SECKEY.test(k))
 // 31.10: the publishers the site takes from Google News (server/sources.js), and the official sources
 const NW_TOP=new Set(['Reuters','Bloomberg','Associated Press','CNBC','The Wall Street Journal','Financial Times','MarketWatch',"Barron's",'The New York Times','Fortune','Axios','The Economist','BBC','Nikkei Asia','The Washington Post','TechCrunch','The Verge','גלובס','כלכליסט','Calcalist Tech','TheMarker','ynet','ביזפורטל','הארץ','N12','ice','The Times of Israel','Globes']);
 const NW_OFF=new Set(['SEC EDGAR','Federal Reserve']);
-const CH_HOWT={direct:'בחדשות',supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'אותו ענף',macro:'אירוע רחב'};
+const CH_HOWT={direct:'בחדשות',supplier:'ספקית',customer:'לקוחה',competitor:'מתחרה',sector:'אותו ענף',macro:'אירוע רחב',indirect:'קשר עקיף'};
 // one company: a line (held or followed, how it is linked, the direction in words, why) that opens its whole way
 function chRowH(x,r,o={}){const S=chFromX(x,{...r,at:o.at}), tag=r.p?`<span class="nwi-t h">בתיק ${pct(r.p.w,0)}</span>`:r.w?'<span class="nwi-t">במעקב</span>':'', ht=r.expo?'דרך הענף':CH_HOWT[r.how]||'';
   const line=r.expo?`לא מוזכרת בשמה; נמצאת בענף ${NX_SEC_HE[r.g]||r.g}, שהאירוע נוגע בו`:r.why||(r.how==='direct'?'החברה עצמה בחדשות':CH_HOW[r.how]||'');
@@ -31187,6 +31190,21 @@ function wiEvidH(e){const E=e.evidence||(e.sources||[]).map(x=>({pub:x.pub,title
       ${v.rd?`<span class="wi-note">${v.rd==='full'?'הכתבה נקראה במלואה':v.rd==='head'?'נקראו הכותרת והתקציר בלבד; גוף הכתבה לא נפתח':'נקראה הכותרת בלבד, לפי כללים'}${(v.supports||[]).length?' · מזכיר את '+v.supports.map(s=>esc(lab(s))).join(', '):''}</span>`:''}</li>`).join('')}</ul>`}
 // on a wide screen the card stands beside the map, not over it: the screen leaves it room (the class) while it is open
 const wiSheetRoom=()=>{const sh=$('wiSheet'), w=$('wi'); if(w)w.classList.toggle('wi-sheeted',!!sh&&!sh.hidden)};
+// 25.11 (the owner: "every event I open, in the globe or in the impact map, should look like the alert; take the news
+// card off"): the face of an event's card, in every view (globe, map, network, history), is the alerts' clear view: the
+// level when it is an alert of the person's, what happened in one line, and for each asset the engine linked the way to
+// it step by step (what happened, the company, the holding) with its bottom line: the same drawing the impact map's
+// short card and the alerts use (plHowH). The record (times, place, sources and evidence, the companies named, what the
+// market did, the engine's decisions for an admin) is one part under it, closed until asked for
+function wiEvClearH(e,d,world){
+  const a0=plByK(e.k), A=new Map(wiAssets().map(x=>[x.sym,x]));
+  const holds=world?[]:(e.impacts||[]).filter(i=>i&&i.sym).map(i=>({sym:i.sym,w:(A.get(i.sym)||{}).w,link:i.rel==='direct'?'direct':'indirect',how:i.rel==='direct'?'direct':'indirect',dir:i.dir,why:i.mech||''}))
+    .sort((x,y)=>(x.link==='direct'?0:1)-(y.link==='direct'?0:1)||(+y.w||0)-(+x.w||0));   // the asset the article is about first, then the larger holding
+  const how=holds.length?plHowH({k:e.k,kind:'news',title:e.he,what:e.what,rules:false,cert:e.cert,first:e.first,at:e.first,fac:[],secx:[],secs:[],usd:null,holds},{open:true}):'';
+  return `<div class="wi-clear"><span class="wi-tags">${a0&&PL_LV[a0.lv]?`<span class="pl-lv lv-${esc(a0.lv)}">${PL_LV[a0.lv]}</span>`:''}<span class="wi-tag cat">${esc(WI_CAT[e.cat]||'')}</span>${e.past?`<span class="wi-tag upd">היסטוריה · ${esc(wiDay(e.day))}</span>`:''}</span>
+    <h4 id="wiSheetH">${esc(e.he)}</h4>${e.what?`<p class="wi-what"><b>מה קרה:</b> ${esc(e.what)}</p>`:''}
+    ${world?'':how||`<p class="wi-note">${e.rules?'האירוע נקרא לפי הכותרת בלבד, ועוד לא נותח מול הנכסים שלך.':'לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך.'}</p>`}
+    ${a0?`<div class="ix-ab"><button type="button" class="btn sm" data-ixask="${esc(a0.k)}">שאל את צ׳יקו</button><button type="button" class="btn sm" data-ixopen="${esc(a0.k)}">להתראה</button></div>`:''}</div>`}
 function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD(); if(!s||!d){sh.hidden=true; sh.innerHTML=''; wiSheetRoom(); return}
   const X='<button type="button" class="wi-x" data-wix="1" aria-label="סגירה">×</button>', world=WIMP.mode==='world';
   if(s.t==='ev'){const e=(d.events||[]).find(x=>x.k===s.k); if(!e){sh.hidden=true; wiSheetRoom(); return}
@@ -31202,9 +31220,9 @@ function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD
         <td>${esc(r.mech||r.why||'')}${r.fact?`<br><small>נשען על: "${esc(r.fact)}"</small>`:''}<br><small>${r.rel==='direct'||r.rel==='indirect'?`${esc(WI_DIRS[r.dir]||'')} · עוצמה ${esc(WI_S[r.s]||'')} · ביטחון ${esc(WI_C[r.conf]||'')} · ${esc(WI_BASIS[r.basis]||'')}`:''} · נבחר לבדיקה: ${esc((r.sigs||[]).map(x=>WI_SIG[x]||x).join(', '))}${r.model?' · '+esc(r.model):''}${r.st&&r.st!=='auto'?' · ביד מנהל':''}</small></td>
         <td class="acts">${wiAdminOk()?`<button type="button" class="wi-fixb ok" data-wifix='${j({st:'ok'})}'>אישור</button><button type="button" class="wi-fixb no" data-wifix='${j({st:'no'})}'>דחייה</button>${r.rel==='direct'||r.rel==='indirect'?['pos','neg','unclear'].filter(x=>x!==r.dir).map(x=>`<button type="button" class="wi-fixb" data-wifix='${j({st:'edit',dir:x})}'>${x==='pos'?'לחיובי':x==='neg'?'לשלילי':'ללא כיוון'}</button>`).join(''):''}${r.st&&r.st!=='auto'?`<button type="button" class="wi-fixb" data-wifix='${j({st:'auto'})}'>חזרה למנוע</button>`:''}`:''}</td></tr>`}).join(''):'';
     const chains=world?(e.links||[]).slice(0,30).map(l=>`<div class="wi-chain">${wiNodeH(l.from,d)}${wiLinkH(l,0,e.k)}${wiNodeH(l.to,d)}</div>`).join(''):'';
-    sh.innerHTML=X+`<span class="wi-tags"><span class="wi-tag cat">${esc(WI_CAT[e.cat]||'')}</span>${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${e.stHe?`<span class="wi-tag">${esc(e.stHe)}</span>`:''}${e.past?`<span class="wi-tag upd">היסטוריה · ${esc(wiDay(e.day))}</span>`:''}${e.rules?'<span class="wi-tag">נקרא לפי כותרת בלבד</span>':''}</span>
-      <h4 id="wiSheetH">${esc(e.he)}</h4>
-      <section class="wi-sec wi-a"><h5><i>א</i>מה קרה</h5><p>${esc(e.what||'')}</p>${e.chg?`<p><b>מה השתנה:</b> ${esc(e.chg)}</p>`:''}
+    sh.innerHTML=X+wiEvClearH(e,d,world)+`<details class="wi-more"${world?' open':''}><summary>כל הפרטים: זמנים, מקורות וראיות, חברות ומה קרה בשוק</summary>
+      <span class="wi-tags"><span class="wi-tag cat">${esc(WI_CAT[e.cat]||'')}</span>${e.status==='new'?'<span class="wi-tag new">חדש</span>':e.status==='update'?'<span class="wi-tag upd">עודכן</span>':''}${e.stHe?`<span class="wi-tag">${esc(e.stHe)}</span>`:''}${e.past?`<span class="wi-tag upd">היסטוריה · ${esc(wiDay(e.day))}</span>`:''}${e.rules?'<span class="wi-tag">נקרא לפי כותרת בלבד</span>':''}</span>
+      <section class="wi-sec wi-a"><h5><i>א</i>זמנים, מקום ומה ידוע</h5>${e.chg?`<p><b>מה השתנה:</b> ${esc(e.chg)}</p>`:''}
         <div class="wi-times">${times}</div><p class="wi-note"><b>איפה:</b> ${where}${who.length?` · <b>מי מעורב:</b> ${esc(who.join(', '))}`:''}</p>
         <p class="wi-note"><b>מה ידוע כרגע:</b> ${esc(WI_CERT[e.cert]||(e.rules?'קריאה אוטומטית לפי הכותרת':'לא סווג'))}${e.stHe?' · '+esc(e.stHe):''}${e.nPubs?` · ${e.nPubs===1?'מקור אחד':e.nPubs+' מקורות'}`:''}${e.dups?` · ${typeof e.dups==='number'?e.dups:e.dups.length} כפילויות אוחדו`:''}</p>
         ${e.unknown?`<p class="wi-note"><b>מה עוד לא ידוע:</b> ${esc(e.unknown)}</p>`:''}${e.more?`<p class="wi-note"><b>רקע:</b> ${esc(e.more)}</p>`:''}</section>
@@ -31217,7 +31235,7 @@ function wiSheet(){const sh=$('wiSheet'); if(!sh)return; const s=WIMP.sel, d=wiD
       <div id="wiLkD"></div>
       <section class="wi-sec wi-b"><h5><i>ב</i>הראיות והמקורות</h5>${wiEvidH(e)}</section>
       ${hist?`<section class="wi-sec"><h5>מה השתנה באירוע</h5><ul class="wi-ul">${hist}</ul></section>`:''}
-      ${world&&wiAdminOk()?wiEvFix(e):''}
+      ${world&&wiAdminOk()?wiEvFix(e):''}</details>
       <p class="wi-note">הכיוון הוא השערה מניתוח החדשות, לא תחזית ולא המלצה. שני דברים שקרו יחד לא אומרים שאחד גרם לשני.</p>`}
   else if(s.t==='as'){const a=wiAssets().find(x=>x.sym===s.sym)||((WIMP.me&&WIMP.me.assets)||[]).find(x=>x.sym===s.sym); if(!a){sh.hidden=true; return} const E=(d.events||[]).filter(e=>(e.touches||[]).includes(a.sym));
     sh.innerHTML=X+`<h4 id="wiSheetH" dir="ltr" style="text-align:start">${esc(lab(a.sym))}${a.name&&a.name!==a.sym?` <small class="wi-note">${esc(a.name)}</small>`:''}</h4>

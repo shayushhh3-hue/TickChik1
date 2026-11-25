@@ -4051,12 +4051,19 @@ test('19.11 TikChik WORLD IMPACT (22.11 the correction): four views, one asset a
       await pg.evaluate(()=>window.__wi.reset()); await pg.waitForFunction(n=>document.querySelectorAll('#wiEvL [data-wiev]').length===n,all,{timeout:10000})}
     // less noise: before a choice only the leading events' lines; a choice draws its own lines only
     const d0=await pg.evaluate(()=>({d:window.__wi.state().data(),g:window.__wi.state().globe})); assert.ok(d0.d.loud<=d0.d.arcs&&d0.g.arcsOn===d0.d.loud,JSON.stringify(d0));
-    // an event: its card in four parts
+    // an event: its card. 25.11 (the owner: "every event I open, in the globe or in the impact map, as the alert looks; take the
+    // news card off"): the face of the card is the alerts' clear view: what happened in a line, and for each asset of the
+    // person's the way to it step by step with its bottom line; the record (times, companies, evidence, the market) is folded
     await pg.click('#wiEvL [data-wiev="ev:nvda-q3-report"]'); await pg.waitForTimeout(600);
+    {const cv=await pg.evaluate(()=>{const S=document.getElementById('wiSheet'), C=S.querySelector('.wi-clear'), M=S.querySelector('details.wi-more'); return {t:C?C.innerText.replace(/\s+/g,' '):'',steps:[...S.querySelectorAll('.wi-clear .chn-k')].map(x=>x.textContent),rows:[...S.querySelectorAll('.wi-clear .nwi-r')].map(r=>(r.querySelector('summary bdi')||{}).textContent),more:!!M,open:M&&M.open,seen:S.innerText.replace(/\s+/g,' ')}});
+      assert.match(cv.t,/מה קרה:/); assert.match(cv.t,/איך זה עשוי להשפיע על המניות שלך/); assert.deepEqual(cv.rows,['NVDA','MSFT'],'each asset the engine linked, a line of its own');
+      assert.ok(cv.steps.includes('מה קרה')&&cv.steps.includes('החברה')&&cv.steps.includes('ההחזקה שלך'),'the way step by step: '+cv.steps); assert.match(cv.t,/בשורה התחתונה:/); assert.match(cv.t,/קשר עקיף/,'an asset the article does not name says so');
+      assert.equal(cv.more,true); assert.equal(cv.open,false,'the record is folded until asked for'); for(const w of ['התרחש:','פורסם לראשונה:','התקבל באתר:','מי מעורב'])assert.ok(!cv.seen.includes(w),'the news card is off the face of the card: '+w);
+      await pg.click('#wiSheet details.wi-more > summary'); await pg.waitForTimeout(200)}
     const sh=await pg.evaluate(()=>{const S=document.getElementById('wiSheet'); return {hidden:S.hidden,t:S.innerText.replace(/\s+/g,' '),h5:[...S.querySelectorAll('h5')].map(h=>h.textContent),imps:[...S.querySelectorAll('.wi-imp')].map(a=>a.id+'|'+a.innerText.replace(/\s+/g,' ').slice(0,1400)),
       evd:[...S.querySelectorAll('.wi-evd li')].map(l=>l.innerText.replace(/\s+/g,' ')),links:S.querySelectorAll('.wi-evd a[href]').length,cos:[...S.querySelectorAll('.wi-co')].map(c=>c.innerText.replace(/\s+/g,' ')),sel:window.__wi.state().sel,on:window.__wi.state().globe.arcsOn,all:window.__wi.state().globe.arcs,room:document.getElementById('wi').classList.contains('wi-sheeted')}});
     assert.equal(sh.hidden,false); assert.deepEqual(sh.sel,{t:'ev',k:'ev:nvda-q3-report'}); assert.equal(sh.room,true,'the card stands beside the map'); assert.ok(sh.on<=sh.all,'lines drawn: '+sh.on+' of '+sh.all);
-    assert.deepEqual(sh.h5.map(x=>x.replace(/^[אבג]/,'')),['מה קרה','למה זה חשוב מבחינה כלכלית','חברות ונכסים','למה זה משפיע על הנכסים שלך','הראיות והמקורות','מה השתנה באירוע'],'what happened, why it matters, the companies, each asset, the evidence, the event\'s own changes: '+sh.h5);
+    assert.deepEqual(sh.h5.map(x=>x.replace(/^[אבג]/,'')),['זמנים, מקום ומה ידוע','למה זה חשוב מבחינה כלכלית','חברות ונכסים','למה זה משפיע על הנכסים שלך','הראיות והמקורות','מה השתנה באירוע'],'what happened, why it matters, the companies, each asset, the evidence, the event\'s own changes: '+sh.h5);
     for(const w of ['התרחש:','פורסם לראשונה:','התקבל באתר:','מה ידוע כרגע:','הוזכרו במקור','זוהו על ידי המנוע','מה קרה בשוק בפועל','סמיכות בזמן אינה סיבתיות','לא תחזית'])assert.ok(sh.t.includes(w),w+' in '+sh.t.slice(0,500));
     // each asset its own explanation: NVIDIA the subject of the article; Microsoft by the analysis, with the fact it rests on
     const nv=sh.imps.find(x=>x.startsWith('wiImp-NVDA|')), ms=sh.imps.find(x=>x.startsWith('wiImp-MSFT|')); assert.ok(nv&&ms,'both assets, each with a card of its own: '+sh.imps.map(x=>x.slice(0,14)));
@@ -4538,6 +4545,9 @@ test('24.11 TikChik WORLD, the whole world: a button beside "התיק שלי" sh
     assert.ok(allK.length>mineK.length&&mineK.every(k=>allK.includes(k))&&allK.includes('ev:vw-closes-plants-wt'),'the portfolio\'s events and the world\'s: '+allK.join()); assert.match(v.foot,/מוצגים אירועים מכל העולם/,v.foot);
     // the card of a world event: the company of another exchange, named in the source; no relation to the portfolio, said plainly
     await pg.$eval('#wiEvL [data-wiev="ev:toyota-raises-forecast-wt"]',b=>b.click()); await pg.waitForFunction(()=>!document.getElementById('wiSheet').hidden&&/טויוטה/.test(document.getElementById('wiSheet').innerText),null,{timeout:8000});
+    // 25.11: the face of the card says plainly that nothing links the event to the portfolio; the record is under it, folded
+    assert.match(await pg.evaluate(()=>document.querySelector('#wiSheet .wi-clear').innerText.replace(/\s+/g,' ')),/מה קרה:[^]*לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך/);
+    await pg.$eval('#wiSheet details.wi-more',d=>{d.open=true});
     const c=await pg.evaluate(()=>document.getElementById('wiSheet').innerText.replace(/\s+/g,' '));
     assert.match(c,/הוזכרו במקור[^]*7203\.T[^]*Toyota Motor Corporation[^]*Tokyo Stock Exchange/,'the company, its name and its exchange: '+c.slice(0,700)); assert.match(c,/חברות נוספות שהכתבה מזכירה[^]*Huawei/,c.slice(0,900));
     assert.match(c,/לא נמצא קשר עסקי מוסבר בין האירוע הזה לנכסים בתיק שלך/,c.slice(0,1200)); assert.match(c,/Toyota City[^]*מטה החברה/,'placed at the company\'s headquarters: '+c.slice(0,500));
