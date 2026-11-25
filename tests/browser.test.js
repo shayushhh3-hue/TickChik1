@@ -4972,3 +4972,16 @@ test('25.11 signing out is in the menu in its own words (asked once, by keyboard
     }finally{await ctx.close()}
   }
 });
+
+test('25.11 the sign-in screen\'s market is the site\'s background too: fixed behind every screen, fainter, still, never in the way of a tap or a reader',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const {ctx,pg}=await open(390);
+  try{
+    const st=()=>pg.evaluate(()=>{const e=document.getElementById('tcBg'), cs=getComputedStyle(e), ln=e.querySelector('.ln'), top=document.elementFromPoint(innerWidth/2,innerHeight/2);
+      return {hidden:e.getAttribute('aria-hidden'),pos:cs.position,z:cs.zIndex,pe:cs.pointerEvents,op:+cs.opacity,candles:e.querySelectorAll('.cd').length,still:getComputedStyle(ln).animationName,first:document.body.firstElementChild===e||document.body.children[1]===e,under:!e.contains(top),gate:!!document.getElementById('tcGate'),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    let s=await st(); assert.deepEqual([s.hidden,s.pos,s.z,s.pe,s.still,s.gate],['true','fixed','-1','none','none',false]); assert.ok(s.op>0.3&&s.op<=0.5,'fainter than on the sign-in screen: '+s.op); assert.ok(s.candles>=8); assert.ok(s.under,'the page is over it'); assert.ok(s.ox);
+    await tab(pg,'search'); await pg.waitForTimeout(400); s=await st(); assert.equal(s.pos,'fixed','on every screen'); assert.ok(s.ox);
+    await pg.setViewportSize({width:1280,height:900}); await pg.waitForFunction(()=>document.querySelectorAll('#tcBg .cd').length>20,null,{timeout:5000}); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcBg').length),1,'drawn again for the wide screen, once');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close()}
+});
