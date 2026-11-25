@@ -36,10 +36,10 @@ async function call(method,url,body,signal){
 // parts. A drawing only (aria-hidden, no figures, no names), under a card that stays opaque enough to read; it moves
 // once on arrival, and not at all for someone who asked for less motion. The "loading" card of every visit has none
 const CSS=`
-#tcGate{--g-bg:#F6F5FC;--g-surface:rgb(255 255 255 / .95);--g-ink:#14122E;--g-ink2:#44425F;--g-muted:#5F5D7C;--g-line:#D9D6EC;--g-accent:#7C3AED;--g-accent-ink:#6D28D9;--g-field:#FFFFFF;--g-err:#B91C1C;--g-up:#13773A;--g-down:#C81E1E;--g-ok:#0F6B33;--g-art:.34;
+#tcGate{--g-bg:#F6F5FC;--g-surface:rgb(255 255 255 / .95);--g-ink:#14122E;--g-ink2:#44425F;--g-muted:#5F5D7C;--g-line:#D9D6EC;--g-accent:#7C3AED;--g-accent-ink:#6D28D9;--g-field:#FFFFFF;--g-err:#B91C1C;--g-up:#13773A;--g-down:#C81E1E;--g-ok:#0F6B33;--g-art:.34;--g-r1:#7C3AED;--g-r2:#2DD4BF;--g-r3:#A78BFA;--g-glow:.30;--g-teal:.22;--g-fill:.30;
   position:fixed;inset:0;z-index:1000;background:var(--g-bg);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Heebo,"Segoe UI",Arial,sans-serif;direction:rtl;color:var(--g-ink);overflow:auto}
-html[data-theme="dark"] #tcGate{--g-bg:#07071A;--g-surface:rgb(17 18 51 / .93);--g-ink:#F4F3FF;--g-ink2:#C9C8E6;--g-muted:#A5A4CC;--g-line:#3A3C78;--g-accent:#7C3AED;--g-accent-ink:#B9A3FF;--g-field:#0B0B24;--g-err:#FCA5A5;--g-up:#4ADE80;--g-down:#F87171;--g-ok:#86EFAC;--g-art:.62}
-html[data-theme="dark"] #tcGate .bgx .vol{opacity:.3} html[data-theme="dark"] #tcGate .bgx .grid{opacity:.7}
+html[data-theme="dark"] #tcGate{--g-bg:#07071A;--g-surface:rgb(17 18 51 / .93);--g-ink:#F4F3FF;--g-ink2:#C9C8E6;--g-muted:#A5A4CC;--g-line:#3A3C78;--g-accent:#7C3AED;--g-accent-ink:#B9A3FF;--g-field:#0B0B24;--g-err:#FCA5A5;--g-up:#4ADE80;--g-down:#F87171;--g-ok:#86EFAC;--g-art:.7;--g-r1:#8B5CF6;--g-r2:#2DD4BF;--g-r3:#C4B5FD;--g-glow:.46;--g-teal:.26;--g-fill:.42}
+html[data-theme="dark"] #tcGate .bgx .vol{opacity:.34} html[data-theme="dark"] #tcGate .bgx .grid{opacity:.6} html[data-theme="dark"] #tcGate .bgx .ln{stroke:#8B5CF6;opacity:.95} html[data-theme="dark"] #tcGate .bgx .avg{opacity:.7}
 #tcGate .bgx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 #tcGate .bgx svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 #tcGate .bgx .grid{stroke:var(--g-line);stroke-width:1;opacity:.55}
@@ -50,11 +50,13 @@ html[data-theme="dark"] #tcGate .bgx .vol{opacity:.3} html[data-theme="dark"] #t
 #tcGate .bgx .avg{fill:none;stroke:var(--g-accent-ink);stroke-width:2;stroke-dasharray:3 9;stroke-linecap:round;opacity:.55}
 #tcGate .bgx .area{opacity:0;animation:tcArea 1.6s ease-out 1.2s forwards}
 #tcGate .bgx .blob{animation:tcFloat 16s ease-in-out infinite alternate}
-#tcGate .bgx .ring{fill:none;stroke-width:26;opacity:.5}
+#tcGate .bgx .ring{fill:none} #tcGate .bgx .rg{opacity:.45} html[data-theme="dark"] #tcGate .bgx .rg{opacity:.7}
+#tcGate .bgx .ga0{stop-color:var(--g-accent);stop-opacity:var(--g-fill)} #tcGate .bgx .ga1{stop-color:var(--g-accent);stop-opacity:0}
+#tcGate .bgx .gb0{stop-color:var(--g-accent);stop-opacity:var(--g-glow)} #tcGate .bgx .gb1{stop-color:var(--g-accent);stop-opacity:0}
+#tcGate .bgx .gc0{stop-color:#2DD4BF;stop-opacity:var(--g-teal)} #tcGate .bgx .gc1{stop-color:#2DD4BF;stop-opacity:0}
 @keyframes tcIn{to{opacity:var(--g-art)}} @keyframes tcDraw{to{stroke-dashoffset:0}} @keyframes tcArea{to{opacity:1}} @keyframes tcFloat{to{transform:translate(40px,-30px)}}
 @media (prefers-reduced-motion:reduce){#tcGate .bgx .cd{animation:none;opacity:var(--g-art)} #tcGate .bgx .ln{animation:none;stroke-dashoffset:0} #tcGate .bgx .area{animation:none;opacity:1} #tcGate .bgx .blob{animation:none}}
 #tcGate .card{position:relative;width:min(400px,100%);background:var(--g-surface);border:1px solid var(--g-line);border-radius:16px;padding:28px 24px;box-shadow:0 18px 50px rgb(76 29 149 / .18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-@media (max-width:600px) and (min-height:700px){#tcGate{align-items:flex-start;padding-top:max(150px,19vh)}}
 #tcGate .mark{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 12px;border-radius:15px;background:var(--g-accent);color:#fff}
 #tcGate h1{margin:0 0 2px;font-size:26px;color:var(--g-ink);text-align:center}
 #tcGate .sub{margin:0 0 20px;color:var(--g-muted);font-size:14px;text-align:center}
@@ -75,32 +77,38 @@ html[data-theme="dark"] #tcGate .bgx .vol{opacity:.3} html[data-theme="dark"] #t
 `;
 // the market behind the card: the same drawing on every visit (a fixed seed), from the page's own colours
 function gateArt(){
+  // 25.11 (the owner, on the wide screen's day picture: "אני רוצה שזה ייראה בדיוק ככה גם במחשב וגם במובייל כולל מצב יום ולילה"):
+  // one composition on every screen and in both looks: the ring at the top corner, the candles and their line across the
+  // screen behind the card, the volume along the bottom, a violet glow above and a teal one below. The drawing is made
+  // for the screen's own shape (a unit of it is about a pixel, as on the wide screen), so a phone gets the same picture
+  // with fewer candles, not a strip cut out of the wide one
   let seed=20261125; const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296; return seed/4294967296};
-  // a phone held upright: the card covers the middle of the screen, so the candles fill the band above it and the volume
-  // and the ring sit below it; on a wide screen they are around the card
-  const por=(()=>{try{return innerHeight>innerWidth*1.15}catch(e){return false}})(), W=por?600:1200, H=por?1000:800, N=por?14:30, step=W/N, bw=por?18:18;
+  const vw=(()=>{try{return Math.max(320,innerWidth||1280)}catch(e){return 1280}})(), vh=(()=>{try{return Math.max(480,innerHeight||900)}catch(e){return 900}})();
+  const W=Math.round(vw/1.0667), H=Math.round(vh/1.0667), k=H/800, small=W<700, N=Math.max(8,Math.round(W/40)), step=W/N, bw=18, Y=y=>y*k;
   let c=560; const C=[];
-  for(let i=0;i<N;i++){const drift=-9.5+(rnd()-0.42)*46, o=c, cl=Math.max(150,Math.min(640,o+drift)), hi=Math.min(o,cl)-8-rnd()*26, lo=Math.max(o,cl)+8+rnd()*26; c=cl; C.push({x:step*i+step/2,o,cl,hi,lo,v:24+rnd()*86})}
-  const top=Math.min(...C.map(k=>k.hi)), bot=Math.max(...C.map(k=>k.lo)), Y=y=>por?22+(y-top)/(bot-top)*128:y;
+  for(let n=0;n<N;n++){const drift=-9.5*30/N+(rnd()-0.42)*46, o=c, cl=Math.max(150,Math.min(640,o+drift)), hi=Math.min(o,cl)-8-rnd()*26, lo=Math.max(o,cl)+8+rnd()*26; c=cl; C.push({x:step*n+step/2,o,cl,hi,lo,v:24+rnd()*86})}
   let cd='', vol='', sum=0; const pts=[], avg=[];
-  C.forEach((k,i)=>{const up=k.cl<=k.o, y0=Y(Math.min(k.o,k.cl)), y1=Y(Math.max(k.o,k.cl));
-    cd+=`<g class="cd ${up?'up':'dn'}" style="animation-delay:${i*45}ms"><line x1="${k.x.toFixed(1)}" x2="${k.x.toFixed(1)}" y1="${Y(k.hi).toFixed(1)}" y2="${Y(k.lo).toFixed(1)}" stroke-width="2"/><rect x="${(k.x-bw/2).toFixed(1)}" y="${y0.toFixed(1)}" width="${bw}" height="${Math.max(4,y1-y0).toFixed(1)}" rx="3"/></g>`;
-    vol+=`<rect class="vol" x="${(k.x-bw/2).toFixed(1)}" y="${(H-k.v).toFixed(1)}" width="${bw}" height="${k.v.toFixed(1)}" rx="3"/>`;
-    pts.push([k.x,Y(k.cl)]); sum+=k.cl; avg.push([k.x,Y(sum/(i+1))+(por?10:34)])});
-  const path=P=>P.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ');
-  const grid=(por?[40,95,150,830,910]:[160,280,400,520,640]).map(y=>`<line class="grid" x1="0" x2="${W}" y1="${y}" y2="${y}"/>`).join('');
-  const rx=por?486:150, ry=por?872:150, floor=por?190:H;
-  const ring=(r,parts)=>{const L=2*Math.PI*r; let off=0; return parts.map(([f,col])=>{const q=`<circle class="ring" cx="${rx}" cy="${ry}" r="${r}" stroke="${col}" stroke-dasharray="${(L*f-10).toFixed(1)} ${(L-(L*f-10)).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 ${rx} ${ry})"/>`; off+=L*f; return q}).join('')};
+  C.forEach((q,n)=>{const up=q.cl<=q.o, y0=Y(Math.min(q.o,q.cl)), y1=Y(Math.max(q.o,q.cl));
+    cd+=`<g class="cd ${up?'up':'dn'}" style="animation-delay:${n*45}ms"><line x1="${q.x.toFixed(1)}" x2="${q.x.toFixed(1)}" y1="${Y(q.hi).toFixed(1)}" y2="${Y(q.lo).toFixed(1)}" stroke-width="2"/><rect x="${(q.x-bw/2).toFixed(1)}" y="${y0.toFixed(1)}" width="${bw}" height="${Math.max(4,y1-y0).toFixed(1)}" rx="3"/></g>`;
+    vol+=`<rect class="vol" x="${(q.x-bw/2).toFixed(1)}" y="${(H-q.v).toFixed(1)}" width="${bw}" height="${q.v.toFixed(1)}" rx="3"/>`;
+    pts.push([q.x,Y(q.cl)]); sum+=q.cl; avg.push([q.x,Y(sum/(n+1)+34)])});
+  // the line and its area reach both edges of the screen
+  const edge=P=>[[0,P[0][1]],...P,[W,P[P.length-1][1]]], path=P=>P.map((q,n)=>(n?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ');
+  const grid=[160,280,400,520,640].map(y=>`<line class="grid" x1="0" x2="${W}" y1="${Y(y).toFixed(1)}" y2="${Y(y).toFixed(1)}"/>`).join('');
+  const rr=small?46:86, rc=rr+(small?26:64), sw=small?16:26;
+  const ring=parts=>{const L=2*Math.PI*rr; let off=0; return parts.map(([f,col])=>{const q=`<circle class="ring" cx="${rc}" cy="${rc}" r="${rr}" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${(L*f-10).toFixed(1)} ${(L-(L*f-10)).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 ${rc} ${rc})"/>`; off+=L*f; return q}).join('')};
   return `<div class="bgx" aria-hidden="true"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" focusable="false">
-    <defs><linearGradient id="tcGa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C3AED" stop-opacity=".30"/><stop offset="1" stop-color="#7C3AED" stop-opacity="0"/></linearGradient>
-      <radialGradient id="tcGb"><stop offset="0" stop-color="#7C3AED" stop-opacity=".30"/><stop offset="1" stop-color="#7C3AED" stop-opacity="0"/></radialGradient>
-      <radialGradient id="tcGc"><stop offset="0" stop-color="#2DD4BF" stop-opacity=".22"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></radialGradient></defs>
-    <circle class="blob" cx="${por?470:1010}" cy="130" r="${por?300:330}" fill="url(#tcGb)"/><circle class="blob" cx="${por?110:170}" cy="${por?880:690}" r="300" fill="url(#tcGc)" style="animation-delay:-6s"/>
+    <defs><linearGradient id="tcGa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="ga0"/><stop offset="1" class="ga1"/></linearGradient>
+      <radialGradient id="tcGb"><stop offset="0" class="gb0"/><stop offset="1" class="gb1"/></radialGradient>
+      <radialGradient id="tcGc"><stop offset="0" class="gc0"/><stop offset="1" class="gc1"/></radialGradient></defs>
+    <circle class="blob" cx="${(W-190*Math.min(1,W/1200)*1.6).toFixed(0)}" cy="130" r="${Math.min(330,W*0.62).toFixed(0)}" fill="url(#tcGb)"/><circle class="blob" cx="${Math.min(170,W*0.3).toFixed(0)}" cy="${(H-110).toFixed(0)}" r="${Math.min(300,W*0.6).toFixed(0)}" fill="url(#tcGc)" style="animation-delay:-6s"/>
     ${grid}${vol}
-    <path class="area" d="${path(pts)} L${W} ${floor} L0 ${floor} Z" fill="url(#tcGa)"/>
-    ${cd}<path class="avg" d="${path(avg)}"/><path class="ln" d="${path(pts)}"/>
-    <g opacity=".85">${ring(por?64:86,[[0.46,'#7C3AED'],[0.3,'#2DD4BF'],[0.24,'#A78BFA']])}</g>
+    <path class="area" d="${path(edge(pts))} L${W} ${H} L0 ${H} Z" fill="url(#tcGa)"/>
+    ${cd}<path class="avg" d="${path(edge(avg))}"/><path class="ln" d="${path(edge(pts))}"/>
+    <g class="rg">${ring([[0.46,'var(--g-r1)'],[0.3,'var(--g-r2)'],[0.24,'var(--g-r3)']])}</g>
   </svg></div>`}
+// the drawing follows the screen when its shape changes (a phone turned on its side, a window pulled)
+let GATE_RS=0; try{addEventListener('resize',()=>{clearTimeout(GATE_RS); GATE_RS=setTimeout(()=>{const b=document.querySelector('#tcGate .bgx'); if(b)b.outerHTML=gateArt()},200)})}catch(e){}
 const GATE_MARK='<div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg></div>';
 function gateEl(){
   let el=document.getElementById('tcGate');

@@ -4886,7 +4886,7 @@ test('25.11 signing out is in the menu in its own words (asked once, by keyboard
         h:[...G.querySelectorAll('input:not([hidden]),button')].filter(x=>x.offsetParent).map(x=>Math.round(x.getBoundingClientRect().height)),over:document.documentElement.scrollWidth>innerWidth+1,in:card.left>=0&&card.right<=innerWidth+1,mark:!!G.querySelector('.mark')}});
       let g=await G();
       assert.equal(g.btn,'rgb(124, 58, 237)','the site\'s violet'); assert.equal(g.bg,'rgb(7, 7, 26)','the site\'s night'); assert.equal(g.ink,'rgb(244, 243, 255)');
-      assert.ok(g.art&&g.hid==='true'&&g.cd>=(W<760?12:24)&&g.ln&&g.ring===3,'candles, their line, a portfolio\'s ring: '+JSON.stringify(g)); assert.equal(g.txt,'','no figure and no name in it');
+      assert.ok(g.art&&g.hid==='true'&&g.cd>=(W<760?8:24)&&g.ln&&g.ring===3,'candles, their line, a portfolio\'s ring: '+JSON.stringify(g)); assert.equal(g.txt,'','no figure and no name in it');
       assert.ok(g.h.every(h=>h>=44),'every field and button a finger: '+g.h); assert.ok(!g.over&&g.in&&g.mark,'the card inside the screen');
       if(process.env.SHOT){await pg.waitForTimeout(3200); await pg.screenshot({path:`${process.env.SHOT}/gate-dark-${W}.png`})}
       // by day
