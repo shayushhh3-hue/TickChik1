@@ -4791,3 +4791,49 @@ test('25.11 a security taken out of the plan has two ways out, always shown: "ל
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+test('25.11 a one-time deposit from the account\'s own box reaches the box at once (written after the cash was given), one taken as held can be added in a press, and the files\' deposits are in the plan',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const day=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10), ym=day(0).slice(0,7), prevYm=(()=>{const d=new Date(ym+'-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth()-1); return d.toISOString().slice(0,7)})();
+  const pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)), ids=[...new Set([...(pf.positions||[]).map(x=>x.acct),...(pf.cash||[]).map(x=>x.acct)])].filter(Boolean);
+  if(ids.length<2)return t.skip('one account in the fixture'); const F=(pf.positions||[]).filter(x=>/^TA\d/.test(x.sym)).map(x=>x.sym); if(!F.length)return t.skip('no fund in the fixture');
+  const [A0,A1]=ids, n=F.length, M=100*n;
+  // the cash of both accounts was given an hour ago, for today
+  pf.cash=(pf.cash||[]).filter(x=>x.acct!==A0&&x.acct!==A1).concat([{acct:A0,ccy:'ILS',amount:1000},{acct:A1,ccy:'ILS',amount:400}]); pf.asOf={...(pf.asOf||{}),[A0]:day(0),[A1]:day(0)}; pf.cashAt={}; delete pf.figT; pf.updatedAt=new Date(Date.now()-36e5).toISOString(); store.setDoc('portfolio/main',pf,{silent:true});
+  const S0=JSON.parse(JSON.stringify((keep['settings/main'].exists&&keep['settings/main'].data)||{})); S0.planAcct={stocks:A0,idx:A1}; S0.monthlyIdx=M; store.setDoc('settings/main',S0,{silent:true});
+  // the funds' account's files: last month's monthly deposit, and another deposit of ₪257
+  const H=JSON.parse(JSON.stringify((keep['history/main'].exists&&keep['history/main'].data)||{accounts:[],depIlsNow:0,monthly:[]})); H.accounts=(H.accounts||[]).filter(x=>x.acct!==A1).concat([{acct:A1,ccy:'ILS',deposits:[{date:prevYm+'-10',amount:M},{date:prevYm+'-12',amount:257}],trades:[]}]); store.setDoc('history/main',H,{silent:true});
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); delete pl.zero; delete pl.acctZero; delete pl.cashOk;
+  pl.idx={start:prevYm,opening:0,mode:'fixed',items:F.map(s0=>({sym:s0,status:'todo',note:'',amt:100})),deposits:[],purchases:[]}; store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForSelector(`#pCashRow [data-pcdep="${A1}"]`,{timeout:10000});
+    const num=t0=>(/−/.test(t0)?-1:1)*+t0.replace(/[^\d.]/g,''), box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-pcdep="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num);
+    const idx=()=>(store.getDoc('plan/main').data.idx||{}).deposits||[], wait=async f=>{for(let k=0;k<60;k++){if(f())return true; await pg.waitForTimeout(250)} return false};
+    // the files' deposits came into the plan by themselves: last month ticked, the other one a row of its own; the cash holds them
+    assert.ok(await wait(()=>idx().some(d=>!d.once&&d.month===prevYm&&d.tid)&&idx().some(d=>d.once&&d.tid&&+d.amount===257)),'from the files: '+JSON.stringify(idx()));
+    const fd=idx().find(d=>d.once&&d.tid); assert.equal(fd.acct,A1); assert.equal(fd.note,'מהקובץ'); assert.equal(await box(A1),400,'in the account\'s cash already, not added again');
+    assert.match(await pg.evaluate(ym=>[...document.querySelectorAll('#ladRows tr')].map(r=>r.innerText.replace(/\s+/g,' ')).join(' | '),prevYm),/257.{0,4} חד פעמית · מהקובץ/,'said in its month');
+    // the account\'s own box: "+ הפקדה", a finger\'s size, opens the small form for that account
+    const b0=await pg.evaluate(a=>{const b=document.querySelector(`#pCashRow [data-pcdep="${a}"]`), r=b.getBoundingClientRect(); return {h:r.height,name:b.getAttribute('aria-label'),exp:b.getAttribute('aria-expanded'),over:document.documentElement.scrollWidth>innerWidth+1}},A1);
+    assert.ok(b0.h>=44,'a finger: '+b0.h); assert.match(b0.name,/^להוסיף הפקדה חד-פעמית ל/); assert.equal(b0.exp,'false'); assert.ok(!b0.over,'the boxes fit the phone');
+    await pg.focus(`#pCashRow [data-pcdep="${A1}"]`); await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>!document.getElementById('pcDep').hidden&&document.activeElement&&document.activeElement.id==='pcDepAmt',null,{timeout:5000});
+    const f0=await pg.evaluate(()=>({t:document.getElementById('pcDepT').textContent,h:[...document.querySelectorAll('#pcDep input, #pcDep button')].map(x=>x.getBoundingClientRect().height),d:document.getElementById('pcDepDay').value}));
+    assert.match(f0.t,/^הפקדה חד-פעמית ל.* · מסלול המדדים$/); assert.ok(f0.h.every(h=>h>=44),'every field and button a finger: '+f0.h); assert.equal(f0.d,day(0).length===10?f0.d:'');
+    if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('pCashRow').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-box-dep.png'})}
+    // written now, after the cash was given: in the box at once, though the cash is known for today
+    await pg.fill('#pcDepAmt','300'); await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>document.getElementById('pcDep').hidden&&!document.getElementById('pcDepSay').hidden,null,{timeout:8000});
+    assert.equal(await box(A1),700,'the box of its account, at once'); assert.match(await pg.evaluate(()=>document.getElementById('pcDepSay').textContent),/נוספה הפקדה של .*היא נכנסה למזומן של החשבון/);
+    assert.equal(await pg.evaluate(()=>(/−/.test(document.querySelector('#planAns .ps-bal b').textContent)?-1:1)*+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')),700,'the card, the same');
+    assert.ok(Math.abs((await pg.evaluate(a=>window.__model.cashOf(a),A1)).cash-700)<0.01,'the portfolio\'s view of the account, the same');
+    assert.ok(await wait(()=>idx().some(d=>d.once&&!d.tid&&+d.amount===300&&d.acct===A1&&d.ent)),'kept with its account');
+    // one dated yesterday: the cash of today is taken to hold it, said so, and one press says it does not
+    if(day(1).slice(0,7)===ym){
+      await pg.click(`#pCashRow [data-pcdep="${A1}"]`); await pg.waitForFunction(()=>!document.getElementById('pcDep').hidden,null,{timeout:5000}); await pg.fill('#pcDepDay',day(1)); await pg.fill('#pcDepAmt','50'); await pg.click('#pcDepAdd');
+      await pg.waitForFunction(()=>/נחשבת כבר בתוכו/.test(document.getElementById('pcDepSay').textContent),null,{timeout:8000}); assert.equal(await box(A1),700,'not added');
+      await pg.waitForSelector('#pCashRow [data-pa="onceOut"]',{timeout:8000}); assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText.replace(/\s+/g,' ')),/הפקדה חד-פעמית של .{0,3}50\.00 מ-.* נחשבת כבר בתוך המזומן הזה\. היא לא בפנים, להוסיף אותה/);
+      assert.ok(await pg.evaluate(()=>document.querySelector('#pCashRow [data-pa="onceOut"]').getBoundingClientRect().height>=44));
+      await pg.click('#pCashRow [data-pa="onceOut"]'); await pg.waitForFunction(()=>!document.querySelector('#pCashRow [data-pa="onceOut"]'),null,{timeout:8000}); assert.equal(await box(A1),750,'added in one press')}
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

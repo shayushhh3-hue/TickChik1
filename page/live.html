@@ -3629,6 +3629,13 @@ body.hidenum .trend-sel .n{filter:blur(7px);user-select:none}
 .pcash .pc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
 .pcash .pc-why{list-style:none;margin:8px 0 0;padding:0;font-size:13px;color:var(--ink2);line-height:1.5} .pcash .pc-why li+li{margin-top:6px} html body .pcash .pc-why .pc-okb{display:block;margin-top:0} .pcash .pc-why b{font-weight:600;color:var(--ink)}
 .pcash .pc-zt{font-size:12px;color:var(--ink2)} html body .pcash .pc-zb{align-self:flex-start;min-height:44px!important;min-width:44px;margin-top:4px;padding:0 4px;border:0;background:none;font:inherit;font-size:13px;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
+html body .pcash .pc-db{align-self:flex-start;min-height:44px!important;margin-top:6px;padding:0 12px;white-space:nowrap}
+.pc-dep{margin:0 0 12px;padding:12px 14px;border:1px solid var(--accent);border-radius:10px;background:var(--surface)} .pc-dep[hidden],.pc-say[hidden]{display:none}
+.pc-dep .pc-dt{font-weight:600;font-size:15px;margin-bottom:4px;color:var(--ink)}
+html body .pc-dep>label{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:6px 0;margin:0;border-top:1px solid var(--line);font-size:15px;font-weight:400;color:var(--ink)} .pc-dep>label:first-of-type{border-top:0}
+html body .pc-dep>label>input{flex:none;width:170px!important;max-width:60%;min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:var(--surface);color:var(--ink)} .pc-dep>label>input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html body .pc-dep .acts .btn{min-height:48px!important} .pc-dep .acts{gap:8px;margin-top:8px}
+.pc-say{margin:0 0 12px;padding:10px 12px;border-radius:8px;background:var(--accent-soft);color:var(--ink);font-size:14px;line-height:1.45}
 .pcash .pc-b{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .pcash .pc-b.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .pcash .pc-b.all{background:var(--sunk)}
@@ -4678,6 +4685,14 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
       </div>
       <div class="m-ans pstep" id="planAns" role="group" aria-label="מה עושים החודש: להפקיד ולקנות" hidden></div>
       <div class="pcash" id="pCashRow" role="group" aria-label="המזומן בכל חשבון, ולאיזה מסלול הוא" hidden></div>
+      <div class="pc-dep" id="pcDep" role="group" aria-labelledby="pcDepT" hidden>
+        <div class="pc-dt" id="pcDepT">הפקדה חד-פעמית</div>
+        <label for="pcDepAmt">סכום (₪)<input type="number" id="pcDepAmt" min="0" step="50" inputmode="decimal" placeholder="למשל 300"></label>
+        <label for="pcDepDay">תאריך<input type="date" id="pcDepDay"></label>
+        <label for="pcDepNote">הערה<input id="pcDepNote" maxlength="40" placeholder="לא חובה, למשל בונוס"></label>
+        <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="pcDepAdd">להוסיף</button><button type="button" class="btn" id="pcDepNo">ביטול</button></div>
+      </div>
+      <p class="pc-say" id="pcDepSay" role="status" hidden></p>
       <div class="panel scroll" data-dvp="rows" id="planRowsP">
         <div class="row" style="margin-bottom:4px"><h3>הניירות בתוכנית</h3><button type="button" class="btn sm" id="planEditBtn" aria-pressed="false">עריכת הרשימה</button></div>
         <p class="pl-sum" id="planSum"></p>
@@ -19301,6 +19316,16 @@ const tracksApart=()=>{const a=trackAcct('stocks'), b=trackAcct('idx'); return a
 function acctCash(a){let c=0; const fx=(Q&&+Q.usdIls)||0; for(const x of (P&&P.cash)||[]){if(a!=='all'&&x.acct!==a)continue; c+=x.ccy==='USD'?(+x.amount||0)*fx:(+x.amount||0)} return c}
 // the day an account's cash is known for: its statement's day, or the day its cash was last typed or read from a screen
 const cashDay=a=>[stmtDay(a),((P&&P.cashAt)||{})[a]||''].sort().pop()||'';
+// 25.11 (the owner: "שאני מעלה הפקדה חד פעמית אתה לא מזהה אותה בריבועים הגדולים של אקסלנס ובלינק"): a mark was taken as held by
+// the account's cash whenever the cash was known for the same day or a later one. So a one-time deposit written an hour
+// after the cash was typed (the same day) never reached the account's box. The cash holds a mark only when it was given
+// after the mark was written: figMoment is the moment an account's cash was last given (stamped on the save of the
+// portfolio, figT; before there was a stamp, the portfolio's last save), entOf the moment a mark was written (a one-time
+// deposit's id carries it). A mark written for an earlier day keeps the day's rule (a statement of a later day holds it).
+// add: the owner's own "it is not in the cash, add it" (counted as written then); held: "it is in the cash already"
+const figMoment=a=>((P&&P.figT)||{})[a]||(P&&P.updatedAt)||'';
+const entOf=x=>{if(!x)return ''; if(x.ent)return x.ent; if(x.once&&/^o[0-9a-z]+$/.test(x.id||'')){const n=parseInt(x.id.slice(1),36); if(n>1.6e12&&n<4e12)return new Date(n).toISOString()} return x.at||''};
+function heldByFig(x,a){const fd=cashDay(a), ov=x&&x.add, md=ov?ilDay(ov):markDay(x); if(!fd||!md||fd<md)return false; const en=ov||entOf(x); if(en&&ilDay(en)===md){const ft=figMoment(a); if(ft&&en>ft)return false} return true}
 // what was ticked in a track and is not in the accounts' figures yet. Apart, and ticked since the tracks came apart: the
 // money of a tick is in the figures once the track's own account has a newer cash figure (cash), and a purchase's units
 // once the account that holds the security has a newer statement (buys). Otherwise the rule is the one it always was
@@ -19318,15 +19343,15 @@ function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:
   // track's; else the one chosen for it, acct), so it is in the figures only once that account's own cash is newer. Before,
   // a newer statement of the other account took it out of the balance
   const oneA=d=>d.once?(a!=='all'?a:(d.acct&&ids.includes(d.acct)?d.acct:'')):'';
-  const deps=(X.deposits||[]).filter(d=>d.tid?false:oneA(d)?!(cashDay(oneA(d))>=markDay(d)):own(d)?!(cashDay(a)>=markDay(d)):!coveredBy(markDay(d),depA)).filter(d=>!inCashOk(d,a!=='all'?a:depAcct(d)));
+  const deps=(X.deposits||[]).filter(d=>d.tid||d.held?false:oneA(d)?!heldByFig(d,oneA(d)):own(d)?!heldByFig(d,a):!coveredBy(markDay(d),depA)).filter(d=>!inCashOk(d,a!=='all'?a:depAcct(d)));
   const buys=(X.purchases||[]).filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
-  const cash=a==='all'?buys.filter(x=>!inCashOk(x,buyAcct(x))):(X.purchases||[]).filter(x=>x.tid?false:own(x)?!(cashDay(a)>=markDay(x)):buys.includes(x)).filter(x=>!inCashOk(x,a));
+  const cash=a==='all'?buys.filter(x=>!inCashOk(x,buyAcct(x))):(X.purchases||[]).filter(x=>x.tid?false:own(x)?!heldByFig(x,a):buys.includes(x)).filter(x=>!inCashOk(x,a));
   return {deps,buys,cash}}
 function planOpen(){
   if(typeof tracksApart==='function'&&tracksApart()){const a=trackOpen('stocks'), b=trackOpen('idx'); return {deps:a.deps.concat(b.deps),buys:a.buys.concat(b.buys),spent:a.cash.concat(b.cash).reduce((t,x)=>t+(+x.paidIls||0),0)}}
   const ids=acctIds(), ilA=ids.filter(a=>acctCcy(a)!=='USD'), depA=ilA.length?ilA:ids;
   const OKC=!!(PLD&&PLD.cashOk&&Object.keys(PLD.cashOk).length);
-  const deps=allDep().filter(d=>!d.tid&&(d.once&&d.acct&&ids.includes(d.acct)?!(cashDay(d.acct)>=markDay(d)):!coveredBy(markDay(d),depA))&&!(OKC&&inCashOk(d,depAcct(d))));
+  const deps=allDep().filter(d=>!d.tid&&!d.held&&(d.once&&d.acct&&ids.includes(d.acct)?!heldByFig(d,d.acct):!coveredBy(markDay(d),depA))&&!(OKC&&inCashOk(d,depAcct(d))));
   const buys=allBuy().filter(x=>{if(x.tid)return false; const hold=[...new Set(((P&&P.positions)||[]).filter(p=>p.sym===x.sym).map(p=>p.acct))]; return !coveredBy(markDay(x),hold.length?hold:depA)});
   const inCash=OKC?buys.filter(x=>inCashOk(x,buyAcct(x))):[];   // their units are still to come, their money is in the cash already
   return inCash.length?{deps,buys,inCash}:{deps,buys};
@@ -19379,6 +19404,22 @@ function planSyncDo(){if(!P||!HS||!Q||!PLD)return 0; const ym=ymNow(), R=realBuy
       for(const A of HS.accounts||[]){if(a!=='all'&&A.acct!==a)continue; for(const d of A.deposits||[]){if(!d||!(+d.amount>0)||String(d.date||'').slice(0,7)!==ym)continue; const v=(+d.amount)*((d.ccy||A.ccy)==='USD'?fx:1), k0=`d|${A.acct}|${d.date}|${+d.amount}`, near=(x,y)=>Math.abs(x-y)<=Math.max(1,y*0.02);
           const k=near(v,M)&&!depTaken(k0)?k0:both&&near(v,tot)?k0+'#'+t:''; if(!k||seen.has(k)||depTaken(k))continue; hit={k,day:String(d.date).slice(0,10)}; break} if(hit)break}
       if(hit){X.deposits.push({id:'a'+Date.now().toString(36)+n,month:ym,amount:M,at:hit.day+'T09:00:00.000Z',tid:hit.k}); seen.add(hit.k); n++}}
+    // 25.11 (the owner: "כל מה שמעלים בקבצים צריך שיעלה… אם אני מעלה הפקדות… צריך שהם יעלו גם לתוכנית ההפקדה"): every deposit of
+    // the uploaded files, from the plan's first month on, is in the plan. One of the monthly amount ticks its month (an
+    // earlier month too); any other is a one-time deposit of its day: the one written by hand when there is one like it
+    // (same amount, within ten days: it is the file's now, never counted twice), else a row of its own ("מהקובץ"). All carry
+    // the file's key (tid): the money is in the account's cash already. Only where the balance comes from the accounts'
+    // cash (the stocks track, and a track with an account of its own); a row removed by hand stays removed (seen)
+    if(t==='stocks'||apart){const near=(x,y)=>Math.abs(x-y)<=Math.max(1,y*0.02), tot=TR.reduce((q,[,,m])=>q+m,0), from=/^\d{4}-\d\d$/.test(X.start||'')?X.start:ym;
+      for(const A of HS.accounts||[]){if(a!=='all'&&A.acct!==a)continue; for(const d of A.deposits||[]){const mo=String((d&&d.date)||'').slice(0,7); if(!d||!(+d.amount>0)||mo<from||mo>ym)continue;
+          const v=Math.round((+d.amount)*((d.ccy||A.ccy)==='USD'?fx:1)*100)/100, k0=`d|${A.acct}|${d.date}|${+d.amount}`, day=String(d.date).slice(0,10); if([k0,k0+'#stocks',k0+'#idx'].some(k=>seen.has(k)||depTaken(k)))continue;
+          if(TR.some(([,Y])=>Y&&(Y.seen||[]).includes(k0)))continue;
+          if(M>0&&mo<ym&&near(v,M)&&!(X.deposits||[]).some(q=>!q.once&&q.month===mo)){X.deposits.push({id:'a'+Date.now().toString(36)+n,month:mo,amount:M,at:day+'T09:00:00.000Z',tid:k0}); seen.add(k0); n++; continue}
+          if(M>0&&(near(v,M)||near(v,tot)))continue;
+          const mine=TR.flatMap(([,Y])=>((Y&&Y.deposits)||[]).filter(q=>q.once&&!q.tid)).find(q=>near(+q.amount||0,v)&&Math.abs(new Date(q.day||markDay(q)||day)-new Date(day))<=10*864e5);
+          if(mine){mine.tid=k0; delete mine.add; delete mine.held; seen.add(k0); n++; continue}
+          if(a==='all'&&t!=='stocks')continue;
+          X.deposits=X.deposits||[]; X.deposits.push({id:'a'+Date.now().toString(36)+n,month:mo,amount:v,day,at:day+'T09:00:00.000Z',once:true,tid:k0,acct:A.acct,note:'מהקובץ'}); seen.add(k0); n++}}}
     if(n>n0)X.seen=[...seen].slice(-300)}
   return n}
 let SYNCING=false, SYNC_SAY='';
@@ -20604,12 +20645,14 @@ function planCashRow(st,mAll){const el=$('pCashRow'); if(!el)return; const ids=a
   const why=a=>{const v=val(a), c=acctCash(a), dy=cashDay(a), dl=Math.round((v-c)*100)/100, nm=esc(acctName(a));
     if(t0(a)!=null)return `<li><b>${nm}</b>: המסלול מאופס, נספר רק מה שהופקד ונקנה בו מאז.</li>`;
     if(acctZ(a))return `<li><b>${nm}</b>: מאופס בתוכנית, נספר רק מה שסומן מאז.</li>`;
+    const inIt=(()=>{try{const ymN=ymNow(), opn=new Set(planOpen().deps); return [PLD,PLD.idx].flatMap((X,ti)=>((X&&X.deposits)||[]).filter(d=>d.once&&!d.tid&&d.month===ymN&&!opn.has(d)&&depAcct(d)===a).map(d=>({d,trk:ti?'idx':'stocks'})))}catch(e){return []}})();
+    const inH=inIt.map(({d,trk})=>` הפקדה חד-פעמית של <span class="n" dir="ltr">${ils(+d.amount||0,2)}</span> מ-${esc(dmy(d.day||markDay(d)))} נחשבת כבר בתוך המזומן הזה. <button type="button" class="pc-zb pc-okb" data-pa="onceOut" data-id="${esc(d.id)}" data-trk="${trk}"${canWrite?'':' disabled'} aria-label="ההפקדה של ${ils(+d.amount||0)} לא בתוך המזומן של ${nm}: להוסיף אותה">היא לא בפנים, להוסיף אותה</button>`).join('');
     const tr=trOf(a), M=(()=>{try{if(tr){const o=trackOpen(tr); return {d:o.deps,b:o.cash}} const O=planOpen(); return {d:O.deps.filter(x=>depAcct(x)===a),b:O.buys.filter(x=>buyAcct(x)===a&&!(O.inCash&&O.inCash.includes(x)))}}catch(e){return {d:[],b:[]}}})();
     const it=[...M.d.map(x=>`${x.once?'הפקדה חד-פעמית':'הפקדה'} <span class="n" dir="ltr">+${ils(+x.amount||0,2)}</span>`),...M.b.map(x=>`קנייה <bdi>${esc(lab(x.sym))}</bdi> <span class="n" dir="ltr">−${ils(+x.paidIls||0,2)}</span>`)], sh=it.slice(0,5), dzb=canWrite?'':' disabled';
     const since=it.length?` מאז סימנת בתוכנית: ${sh.join(' · ')}${it.length>sh.length?` ועוד ${it.length-sh.length}`:''}. לכן כאן, וגם ב"התיק שלי": <b class="n" dir="ltr">${ils(v,2)}</b>.`:Math.abs(dl)>=0.005?` ${dl>0?'ועוד':'פחות'} <span class="n" dir="ltr">${ils(Math.abs(dl),2)}</span> שסימנת בתוכנית מאז.`:' זה גם המזומן ב"התיק שלי".';
-    return `<li><b>${nm}</b>: <span class="n" dir="ltr">${ils(c,2)}</span> מזומן בחשבון${dy?` נכון ל-${esc(dmy(dy))}`:''}.${since}${it.length?` <button type="button" class="pc-zb pc-okb" data-pa="cashOk" data-acct="${esc(a)}"${dzb} aria-label="המזומן של ${nm} כבר כולל את מה שסימנתי בתוכנית">ה-<span class="n" dir="ltr">${ils(c,2)}</span> כבר כולל את אלה</button>`:''}</li>`};
-  const box=a=>{const tr=trOf(a), v=val(a), on=apart&&a===st.acct, z=acctZ(a), dz=canWrite?'':' disabled';
-    return `<div class="pc-b${on?' on':''}"><span class="pc-k">${esc(acctName(a))}</span><b class="n">${ils(v)}</b><span class="pc-a">${tr==='stocks'?'למסלול המניות':tr==='idx'?'למסלול המדדים':apart?'לא משויך למסלול':'&nbsp;'}</span>${z?`<span class="pc-zt">מאופס בתוכנית מ-${esc(dmy(ilDay(z)))}</span><button type="button" class="pc-zb" data-pa="acctZeroOff" data-acct="${esc(a)}"${dz} aria-label="לבטל את האיפוס של ${esc(acctName(a))}">לבטל איפוס</button>`:`<button type="button" class="pc-zb" data-pa="acctZero" data-acct="${esc(a)}"${dz} aria-label="לאפס בתוכנית את המזומן של ${esc(acctName(a))}">לאפס</button>`}</div>`};
+    return `<li><b>${nm}</b>: <span class="n" dir="ltr">${ils(c,2)}</span> מזומן בחשבון${dy?` נכון ל-${esc(dmy(dy))}`:''}.${since}${it.length?` <button type="button" class="pc-zb pc-okb" data-pa="cashOk" data-acct="${esc(a)}"${dzb} aria-label="המזומן של ${nm} כבר כולל את מה שסימנתי בתוכנית">ה-<span class="n" dir="ltr">${ils(c,2)}</span> כבר כולל את אלה</button>`:''}${inH}</li>`};
+  const box=a=>{const tr=trOf(a), v=val(a), on=apart&&a===st.acct, z=acctZ(a), dz=canWrite?'':' disabled', depB=canWrite&&(!apart||tr)?`<button type="button" class="btn sm pc-db" data-pcdep="${esc(a)}" aria-expanded="${PCDEP===a}" aria-controls="pcDep" aria-label="להוסיף הפקדה חד-פעמית ל${esc(acctName(a))}"><span aria-hidden="true">＋</span> הפקדה</button>`:'';
+    return `<div class="pc-b${on?' on':''}"><span class="pc-k">${esc(acctName(a))}</span><b class="n">${ils(v)}</b><span class="pc-a">${tr==='stocks'?'למסלול המניות':tr==='idx'?'למסלול המדדים':apart?'לא משויך למסלול':'&nbsp;'}</span>${depB}${z?`<span class="pc-zt">מאופס בתוכנית מ-${esc(dmy(ilDay(z)))}</span><button type="button" class="pc-zb" data-pa="acctZeroOff" data-acct="${esc(a)}"${dz} aria-label="לבטל את האיפוס של ${esc(acctName(a))}">לבטל איפוס</button>`:`<button type="button" class="pc-zb" data-pa="acctZero" data-acct="${esc(a)}"${dz} aria-label="לאפס בתוכנית את המזומן של ${esc(acctName(a))}">לאפס</button>`}</div>`};
   el.hidden=false; setH(el,`<div class="pc-g">${ids.map(box).join('')}<div class="pc-b all${apart?'':' on'}"><span class="pc-k">כל המזומן${anyZ?' בתוכנית':''}</span><b class="n">${ils(anyZ?ids.reduce((t,a)=>t+val(a),0):mAll.cash)}</b><span class="pc-a">${apart?'בכל החשבונות יחד':'משותף לשני המסלולים'}</span></div></div><ul class="pc-why" aria-label="ממה מורכב המזומן של כל חשבון">${ids.map(why).join('')}</ul>${canWrite?`<button type="button" class="lnk pc-set" data-pcset>${apart?'לשנות מאיזה חשבון קונה כל מסלול':'להפריד: לקבוע חשבון לכל מסלול'}</button>`:''}`)}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-pcset]'); if(!b)return; try{dvSet('set')}catch(e){} setTimeout(()=>{const s=$('inPlanAcct'); if(s){try{s.scrollIntoView({block:'center'})}catch(e){} try{s.focus({preventScroll:true})}catch(e){}}},80)});
 document.addEventListener('change',ev=>{const t=ev.target; if(!t||t.id!=='inPlanAcct'||!canWrite)return; S.planAcct={...((S&&S.planAcct)||{}),[TRACK]:t.value}; changed()});
@@ -20830,6 +20873,9 @@ function planAct(a,d){
     else if(a==='holdAdd'){const X=d.trk==='idx'?PLD.idx:PLD; if(!X)return; const ex=(X.items||[]).find(i=>i.sym===sym); if(ex)ex.status=ex.status==='skip'?'todo':ex.status; else{X.items=X.items||[]; X.items.push({sym,status:'todo',note:''}); if(!X.start)X.start=ymNow()}}
     else{const X=d.trk==='idx'?PLD.idx:PLD, it=X&&(X.items||[]).find(i=>i.sym===sym); if(it&&it.status==='todo')it.status='skip'; else if(it&&it.status==='done'){it.status='skip'; delete it.pid}}
     setTrack()}
+  else if(a==='onceOut'||a==='onceIn'){const X=d.trk==='idx'?PLD.idx:PLD, dp=X&&(X.deposits||[]).find(q=>q.id===d.id&&q.once); if(!dp)return;
+    if(a==='onceOut'){delete dp.held; dp.add=now; LAD_UNDO={msg:`ההפקדה של ${ils(+dp.amount||0)} נוספה למזומן`,fn:(trk=>()=>{const Y=trk==='idx'?PLD.idx:PLD, q=Y&&(Y.deposits||[]).find(z=>z.id===dp.id); if(!q)return; delete q.add; planChanged()})(d.trk)}}
+    else{dp.held=true; delete dp.add}}
   else if(a==='cashOk'){const ac=String(d.acct||''); if(!acctIds().includes(ac))return; const prev=(PLD.cashOk||{})[ac]; PLD.cashOk=Object.assign({},PLD.cashOk||{},{[ac]:now});
     LAD_UNDO={msg:`המזומן של ${acctName(ac)} כולל את מה שסימנת עד עכשיו`,fn:()=>{const y=Object.assign({},PLD.cashOk||{}); if(prev)y[ac]=prev; else delete y[ac]; PLD.cashOk=y; planChanged()}}}
   else if(a==='acctZero'||a==='acctZeroOff'){const ac=String(d.acct||''); if(!acctIds().includes(ac))return; const z=Object.assign({},PLD.acctZero||{}); if(a==='acctZero')z[ac]=new Date().toISOString(); else delete z[ac]; PLD.acctZero=z;
@@ -26551,7 +26597,9 @@ async function savePf(){
   // 8.11: what the statement changed against the site, as approved by this save (per account, the last one)
   const stmtCheck=(()=>{try{const out={...((P&&P.stmtCheck)||{})}; for(const ac of Object.keys((DRAFT.sdiff)||{})){const X=stmtDiff(ac); if(!X)continue;
     out[ac]={at:new Date().toISOString(),asOf:X.asOf,merge:X.merge,changed:X.changed,flag:X.flag,rows:X.rows.filter(r=>r.kind!=='same').slice(0,40).map(r=>({sym:r.sym,q0:r.q0,q1:r.q1,kind:r.kind}))}} return Object.keys(out).length?out:null}catch(e){return (P&&P.stmtCheck)||null}})();
-  const doc={...(P||{}),positions:pos,cash,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},cashAt:{...((P&&P.cashAt)||{}),...(DRAFT.cashAt||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),...(stmtCheck?{stmtCheck}:{}),updatedAt:new Date().toISOString()};
+  const figT=(()=>{const o={...((P&&P.figT)||{})}, now=new Date().toISOString(), sum=(L,a,c)=>(L||[]).filter(x=>x.acct===a&&(x.ccy==='USD'?'USD':'ILS')===c).reduce((t,x)=>t+(+x.amount||0),0);
+    try{for(const a of new Set([...cash.map(x=>x.acct),...((P&&P.cash)||[]).map(x=>x.acct),...Object.keys(DRAFT.asOf||{})])){if(['ILS','USD'].some(c=>Math.abs(sum(cash,a,c)-sum(P&&P.cash,a,c))>0.005)||((DRAFT.asOf||{})[a]||'')!==(((P&&P.asOf)||{})[a]||''))o[a]=now}}catch(e){} return o})();
+  const doc={...(P||{}),positions:pos,cash,figT,asOf:{...(DRAFT.asOf||{})},seen:{...(DRAFT.seen||{})},cashAt:{...((P&&P.cashAt)||{}),...(DRAFT.cashAt||{})},okBoth:!!DRAFT.okBoth,...(DRAFT.recon||(P&&P.recon)?{recon:{...((P&&P.recon)||{}),...(DRAFT.recon||{})}}:{}),...(stmtCheck?{stmtCheck}:{}),updatedAt:new Date().toISOString()};
   if(!db&&!LOCAL){st.textContent='השינויים לא נשמרים בתצוגה הזו';return}
   st.textContent='שומר…'; $('btnPfSave').disabled=true;
   try{
@@ -30145,7 +30193,7 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
 // already has: the readings, the markets' document, the calendar; צ׳יקו's lines ("מה קורה בשווקים") give the "why"
 // when he wrote them, the readings otherwise. With the time of the last gathering and reading; nothing of it is a
 // forecast, and a part with no data says so ----
-let ECO=null; var ETFD=null, etfAsked=false, LADALL=false, LADADD='', LAD_UNDO=null, LAD_QUIET=false, PDEL='';   // var: the plan is drawn before this line runs
+let ECO=null; var PCDEP='', ETFD=null, etfAsked=false, LADALL=false, LADADD='', LAD_UNDO=null, LAD_QUIET=false, PDEL='';   // var: the plan is drawn before this line runs
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladall]'); if(!b)return; LADALL=!LADALL; try{render()}catch(x){}});
 function ladAddFocus(ym,sym){setTimeout(()=>{const pick=document.getElementById('ladAdd_'+ym), f=(pick&&pick.querySelector('button:not([disabled])'))||document.querySelector('[data-ladadd="'+ym+'"]')||(sym&&document.querySelector('#ladRows [data-buy="'+sym+'"]')); if(f)try{f.focus({preventScroll:true})}catch(e){}},30)}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladadd]'); if(!b)return; const ym=b.dataset.ladadd, was=LADADD===ym; LADADD=was?'':ym; try{render()}catch(x){} if(was)setTimeout(()=>{const t=document.querySelector('[data-ladadd="'+ym+'"]'); if(t)try{t.focus({preventScroll:true})}catch(e){}},30); else ladAddFocus(ym)});
@@ -32074,7 +32122,7 @@ function planAnsFill0(st,depBy,B){const box=$('planAns'); if(!box)return; if(!st
   // 24.11 (the owner: "למה אתה לא מתייחס להפקדה החד פעמית… מוסיף שיש עוד יתרה?"): the one-time deposits of this month are rows of
   // "החודש" with what they were for, the balance says how much of it they are, and the card asks for one in place
   const onceAll=(PL.deposits||[]).filter(x=>x.once), onceNow=onceAll.filter(x=>x.month===ymAdd(st.start,st.cur)), onceOpen=(()=>{try{const o=TRACK==='idx'||tracksApart()?trackOpen(TRACK):planOpen(); return (o.deps||[]).filter(x=>x.once&&onceAll.includes(x))}catch(e){return []}})(), onceSum=onceOpen.reduce((t,x)=>t+(+x.amount||0),0);
-  const onceRow=x=>{const da=acctIds().length>1?depAcct(x):'', q=[da?'ל'+esc(acctName(da)):'',x.note?esc(x.note):'',!x.tid&&!onceOpen.includes(x)?`כבר במזומן של ${da?esc(acctName(da)):'החשבון'}`:''].filter(Boolean).join(' · '); return `<li class="done"><span class="pc-s">הפקדה חד-פעמית${q?` <span class="pc-q">${q}</span>`:''}</span><span class="pc-c n" dir="ltr">${ils(+x.amount||0)}</span><span class="pc-a"><span class="ps-ok">✓ נוספה</span>${canWrite?`<button type="button" class="pc-un" data-oncedel="${esc(x.id)}" data-trk="${TRACK==='idx'?'idx':'stocks'}" aria-label="ביטול ההפקדה החד-פעמית של ${ils(+x.amount||0)}">ביטול</button>`:''}</span></li>`};
+  const onceRow=x=>{const da=acctIds().length>1?depAcct(x):'', q=[da?'ל'+esc(acctName(da)):'',x.note?esc(x.note):'',!onceOpen.includes(x)?`כבר במזומן של ${da?esc(acctName(da)):'החשבון'}`:''].filter(Boolean).join(' · '); return `<li class="done"><span class="pc-s">הפקדה חד-פעמית${q?` <span class="pc-q">${q}</span>`:''}</span><span class="pc-c n" dir="ltr">${ils(+x.amount||0)}</span><span class="pc-a"><span class="ps-ok">✓ נוספה</span>${canWrite?`<button type="button" class="pc-un" data-oncedel="${esc(x.id)}" data-trk="${TRACK==='idx'?'idx':'stocks'}" aria-label="ביטול ההפקדה החד-פעמית של ${ils(+x.amount||0)}">ביטול</button>`:''}</span></li>`};
   const head=`<div class="ma-k"><span>תוכנית ההפקדה${st.wait?'':' · '+esc(ymShort(ym))}</span>${trk?`<span class="ma-tag2">מסלול ${esc(trk.textContent)}</span>`:''}</div>`;
   box.hidden=false;
   if(st.wait){const n=ymDiff(st.start,ymNow());
@@ -32124,18 +32172,35 @@ function renderOnce(){
   const ids=acctIds(), OPEN=(()=>{try{return new Set(planOpen().deps)}catch(e){return new Set()}})();
   {const n=$('dvOnceN'); if(n)n.textContent=all.length?String(all.length):''}
   $('onceSub').textContent=all.length?`${all.length===1?'הפקדה אחת':all.length+' הפקדות'} · ${ils(all.reduce((t,x)=>t+(+x.d.amount||0),0))}`:'';
-  setH(L,all.map(({d,trk})=>{const inStmt=!d.tid&&!OPEN.has(d), da=ids.length>1?depAcct(d):''; return `<li><span><b class="n">${ils(+d.amount||0)}</b> · ${dmy(d.day||d.month+'-01')} · ${da?esc(acctName(da))+' · ':''}${trk==='idx'?'מדדים':'מניות'}${d.note?' · '+esc(d.note):''}${inStmt?` · <span class="nm">כבר במזומן של ${da?esc(acctName(da)):'החשבון'}</span>`:''}</span><button type="button" class="btn sm" data-oncedel="${esc(d.id)}" data-trk="${trk}"${dis?' disabled':''}>הסר</button></li>`}).join(''));
+  setH(L,all.map(({d,trk})=>{const inStmt=!OPEN.has(d), da=ids.length>1?depAcct(d):''; return `<li><span><b class="n">${ils(+d.amount||0)}</b> · ${dmy(d.day||d.month+'-01')} · ${da?esc(acctName(da))+' · ':''}${trk==='idx'?'מדדים':'מניות'}${d.note?' · '+esc(d.note):''}${inStmt?` · <span class="nm">כבר במזומן של ${da?esc(acctName(da)):'החשבון'}</span>`:''}</span><button type="button" class="btn sm" data-oncedel="${esc(d.id)}" data-trk="${trk}"${dis?' disabled':''}>הסר</button></li>`}).join(''));
 }
 document.addEventListener('change',ev=>{const t=ev.target; if(!t)return; if(t.id==='onceAcct')t.dataset.own='1'; else if(t.id==='onceTrk'){const as=$('onceAcct'); if(as){as.dataset.own=''; try{renderOnce()}catch(e){}}}});
+// writes a one-time deposit and says where it went: {dep, acct, held} (held: the account's cash is taken to hold it already)
+function onceWrite(amt,day,trk,acct,note){const X=trk==='idx'?PLD.idx:PLD; X.deposits=X.deposits||[]; const now=new Date().toISOString();
+  const dep={id:'o'+Date.now().toString(36),month:day.slice(0,7),amount:amt,day,at:day===ilDay()?now:day+'T12:00:00.000Z',ent:now,once:true,note:String(note||'').trim().slice(0,40)||undefined,...(acct?{acct}:{})};
+  X.deposits.push(dep); return {dep,acct,held:!!acct&&heldByFig(dep,acct)}}
+const onceSay=(r,amt)=>r.held?`נוספה הפקדה של ${ils(amt)} ל${acctName(r.acct)}. המזומן של ${acctName(r.acct)} מעודכן ל-${dmy(cashDay(r.acct))}, אחרי היום של ההפקדה, אז היא נחשבת כבר בתוכו ולא נוספה לריבוע.`:`נוספה הפקדה של ${ils(amt)}${r.acct?' ל'+acctName(r.acct):''}. היא נכנסה למזומן של החשבון, ליתרה להשקעה ולשווי התיק.`;
+// the account's box: "+ הפקדה" opens the small form under the boxes, for that account (apart: for the track it serves)
+function pcDepShow(a){const box=$('pcDep'); if(!box)return; PCDEP=a||''; box.hidden=!PCDEP; if(!PCDEP)return;
+  const tr=tracksApart()?(trackAcct('stocks')===a?'stocks':trackAcct('idx')===a?'idx':''):''; box.dataset.acct=a; box.dataset.trk=tr||(TRACK==='idx'?'idx':'stocks');
+  $('pcDepT').textContent=`הפקדה חד-פעמית ל${acctName(a)}${tr?' · מסלול ה'+(tr==='idx'?'מדדים':'מניות'):''}`; $('pcDepAdd').textContent='להוסיף ל'+acctName(a);
+  if(!$('pcDepDay').value)$('pcDepDay').value=ilDay(); $('pcDepSay').hidden=true; setTimeout(()=>{try{$('pcDepAmt').focus()}catch(e){}},30)}
+document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
+  const ob=t.closest('[data-pcdep]'); if(ob){const a=ob.dataset.pcdep; pcDepShow(PCDEP===a?'':a); try{render()}catch(e){} return}
+  if(t.closest('#pcDepNo')){const a=PCDEP; pcDepShow(''); try{render()}catch(e){} setTimeout(()=>{const b=document.querySelector('[data-pcdep="'+a+'"]'); if(b)try{b.focus()}catch(e){}},30); return}
+  if(t.closest('#pcDepAdd')){if(!canWrite||!PCDEP)return; const box=$('pcDep'), a=box.dataset.acct, amt=Math.round((+$('pcDepAmt').value||0)*100)/100, day=$('pcDepDay').value||ilDay(), say=$('pcDepSay'); say.hidden=false;
+    if(!(amt>0)){say.textContent='כתוב סכום.'; $('pcDepAmt').focus(); return} if(day>ilDay()){say.textContent='התאריך עוד לא הגיע. הפקדה מסמנים אחרי שהיא נעשתה.'; return}
+    const r=onceWrite(amt,day,box.dataset.trk==='idx'?'idx':'stocks',a,$('pcDepNote').value); $('pcDepAmt').value=''; $('pcDepNote').value=''; pcDepShow(''); say.hidden=false; say.textContent=onceSay(r,amt);
+    const id=r.dep.id, trk=box.dataset.trk; LAD_UNDO={msg:`נוספה הפקדה של ${ils(amt)} ל${acctName(a)}`,fn:()=>{const Y=trk==='idx'?PLD.idx:PLD; if(!Y)return; Y.deposits=(Y.deposits||[]).filter(q=>q.id!==id); setTrack(); planChanged()}};
+    setTrack(); planChanged(); setTimeout(()=>{const b=document.querySelector('[data-pcdep="'+a+'"]'); if(b)try{b.focus({preventScroll:true})}catch(e){}},30); return}});
+document.addEventListener('keydown',ev=>{if(!PCDEP||!(ev.target.closest&&ev.target.closest('#pcDep')))return; if(ev.key==='Enter'&&ev.target.tagName==='INPUT'){ev.preventDefault(); $('pcDepAdd').click()} else if(ev.key==='Escape')$('pcDepNo').click()});
 document.addEventListener('click',ev=>{const t=ev.target; if(!t.closest)return;
   if(t.closest('#onceAdd')){if(!canWrite)return; const amt=Math.round((+$('onceAmt').value||0)*100)/100, day=$('onceDay').value||ilDay(), trk=$('onceTrk').value==='idx'?'idx':'stocks', st=$('onceState');
     if(!(amt>0)){st.textContent='כתוב סכום.';$('onceAmt').focus();return} if(day>ilDay()){st.textContent='התאריך עוד לא הגיע. הפקדה מסמנים אחרי שהיא נעשתה.';return}
-    const X=trk==='idx'?PLD.idx:PLD; X.deposits=X.deposits||[]; const now=new Date().toISOString();
     // the day it was made is its day for everything that dates a deposit (a statement dated on or after it already holds it)
-    const A=acctIds(), ta=trackAcct(trk), acct=A.length<2?'':tracksApart()&&ta!=='all'?ta:A.includes($('onceAcct').value)?$('onceAcct').value:'';
-    X.deposits.push({id:'o'+Date.now().toString(36),month:day.slice(0,7),amount:amt,day,at:day===ilDay()?now:day+'T12:00:00.000Z',once:true,note:$('onceNote').value.trim().slice(0,40)||undefined,...(acct?{acct}:{})});
+    const A=acctIds(), ta=trackAcct(trk), acct=A.length<2?(A[0]||''):tracksApart()&&ta!=='all'?ta:A.includes($('onceAcct').value)?$('onceAcct').value:'';
+    const r=onceWrite(amt,day,trk,acct,$('onceNote').value), held=r.held;
     $('onceAmt').value=''; $('onceNote').value=''; $('onceAcct').dataset.own='';
-    const held=acct&&cashDay(acct)>=day;
     st.textContent=held?`נוספה הפקדה של ${ils(amt)} ל${acctName(acct)}. המזומן של ${acctName(acct)} מעודכן ל-${dmy(cashDay(acct))}, אחרי ההפקדה, אז היא כבר בתוכו.`:`נוספה הפקדה של ${ils(amt)}${acct?' ל'+acctName(acct):''}. היא נכנסה ליתרה להשקעה ולשווי התיק.`;
     setTrack(); planChanged(); return}
   const del=t.closest('[data-oncedel]'); if(del){if(!canWrite)return; const X=del.dataset.trk==='idx'?PLD.idx:PLD, gone=(X.deposits||[]).find(d=>d.id===del.dataset.oncedel); if(!gone)return;
