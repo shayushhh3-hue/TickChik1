@@ -20,7 +20,7 @@ import {reconcileSplits} from '../shared/splits.js';
 import {confirmSplits} from './fmp.js';
 import {yahooSearch, yahooChart, nasdaqQuote, tickerFor, mayaFund, mayaFundSeries} from '../shared/quotes.js';
 import {ipoTask, ipoStale} from './ipos.js';
-import {ilSymsFresh, ilSchedLoad} from './ilsyms.js';
+import {ilSymsFresh, ilSchedLoad, ilxOf} from './ilsyms.js';
 import {startJobs} from './jobs.js';
 import {runsSetup, runLog, deployOnStart} from './admin/runs.js';
 import {cspState, cspReport} from './csp.js';
@@ -517,6 +517,10 @@ export function createApp({store,siteDir,jobs=true,dataDir=DATA_DIR,mail=sendMai
       const q=await SECQ.get(k), v={sym:k,name:q.name||'',type:SECT[q.type]||'',exch:q.xname||q.exch||'',ccy:q.ccy||'',px:q.px,prev:q.prev,date:q.closeDate||'',at:q.time||null,first:q.first||null,src:q.src==='nasdaq'?'Nasdaq':'Yahoo Finance',delayed:true};
       SECI.set(k,{at:Date.now(),v}); if(SECI.size>600)SECI.delete(SECI.keys().next().value); res.json(v)}
     catch(e){const msg='לא מצאתי נתוני מסחר לסימול הזה במקור המחירים.'; SECI.set(k,{at:Date.now(),v:null,msg}); if(SECI.size>600)SECI.delete(SECI.keys().next().value); res.status(404).json({error:{code:'not_found',message:msg}})}});
+  // 25.11: what the exchange's own lists say about one Tel Aviv security (a share's ISIN, sub-sector and indices; a fund's
+  // kind, classification and exposures; a main index's components): public market data, read from the morning's documents
+  // (a security the lists do not have is answered {kind:''}, not an error: the page asks for every Tel Aviv security it opens)
+  app.get('/api/ilx',needUser,(req,res)=>{const k=String(req.query.k||'').trim().slice(0,24); let r=null; try{r=ilxOf(store,k)}catch(e){} res.json(r||{kind:''})});
   // an Israeli fund (or security) by its number, from Maya: its name, its price and date, and a month of prices for the
   // page's chart. Cached 30 minutes per number; every signed-in user may ask (it is public market data)
   const ILF=new Map();

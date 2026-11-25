@@ -1108,6 +1108,61 @@ test('25.11 the exchange\'s key: English symbols for the shares, a holding on th
     lists=[]; await ilListsTask(store,{fetch:f,key:'k-1',now}); assert.deepEqual(ilListAlerts(store,P,holdingsOf(P,Q),now),[],'off the list: no alert');
   }finally{setIlSched(null)}
 });
+// 25.11 (the owner: "the rest of these lists too"): what the exchange's three free products say about one security.
+// The rows are as the exchange's answers have them (seen with the real key on 25.11)
+test('25.11 the exchange\'s lists about one security: a share\'s ISIN, sub-sector and indices, a fund\'s kind and exposures, an index\'s components, a holding deleted from trading',async()=>{
+  const {ilMoreBuild,ilSymsTask,ilxOf,DW,DW2}=await import('../server/ilsyms.js');
+  const {ilListAlerts,holdingsOf}=await import('../server/pulse.js');
+  const {setIlSched}=await import('../shared/market.js');
+  const T=[{securityFullTypeCode:'0101',securityTypeDesc:'מניות'}];
+  const he=[{tradeDate:'2026-11-25T00:00:00',securityId:604611,securityFullTypeCode:'0101',isin:'IL0006046119',corporateId:'520018078',issuerId:604,securityIsIncludedInContinuousIndices:[142,137,2],securityName:'לאומי',symbol:'לאומי',companySuperSector:'פיננסים',companySector:'בנקים',companySubSector:'בנקים מסחריים',companyName:'לאומי'}];
+  const en=[{securityId:604611,symbol:'LUMI'}];
+  const funds=[{fundId:5129283,isin:'IL0051292832',fundName:'הראל מחקה נאסד"ק 100',fundLongName:'הראל מחקה נאסד"ק 100 (4D)',listingStatusId:1,exposureProfile:'4D',underlyingAsset:[{code:77,weight:100,value:'NASDAQ 100 - NTR'}],classificationMajor:{code:3,value:'מניות בחו"ל'},classificationMain:{code:21,value:'מניות גאוגרפי'},classificationSecondary:{code:124,value:'ארה"ב חשופת מט"ח'},fundType:[{code:1,value:'קרן פתוחה'},{code:4,value:'קרן מחקה'}]},
+    {fundId:5100169,isin:'IL0051001696',fundName:'הראל 4D אודם',fundLongName:'הראל (4D) אודם',listingStatusId:1,exposureProfile:'4D',underlyingAsset:[{code:999999,weight:100,value:'אחר'}],classificationMajor:{code:1,value:'גמישות'},classificationMain:null,classificationSecondary:null,fundType:[{code:1,value:'קרן פתוחה'}]}];
+  const cos=[{companyName:'לאומי',taseSector:'פיננסים - בנקים',companyFullName:'בנק לאומי לישראל בע"מ',issuerId:604,corporateId:'520018078',isDual:false}];
+  const B=ilMoreBuild({sec:he,funds,companies:cos,tabs:{shareExp:{'4':'עד 120%'},ccyExp:{D:'עד 120%'}}});
+  assert.deepEqual(B.sec[604611],['IL0006046119','פיננסים','בנקים מסחריים',[142,137,2],604]);
+  assert.deepEqual(B.funds[5129283],['IL0051292832',['קרן פתוחה','קרן מחקה'],'ארה"ב חשופת מט"ח',[['NASDAQ 100 - NTR',100]],'הראל מחקה נאסד"ק 100 (4D)']);
+  assert.deepEqual(B.funds[5100169].slice(1,4),[['קרן פתוחה'],'',[['אחר',100]]],'a fund with no finer classification'); assert.deepEqual(B.co[604],['בנק לאומי לישראל בע"מ','פיננסים - בנקים',0]);
+  // the morning run: the same answers, and a few more lists, under the names the answers carry
+  const store=new Store(':memory:'), asked=[], now=new Date('2026-11-25T08:00:00Z');
+  const f=async(u,o)=>{const s=String(u), lang=o.headers['accept-language']; asked.push(s+' '+lang); const p=s.startsWith(DW2)?'v2'+s.slice(DW2.length):s.slice(DW.length);
+    const J=p.startsWith('/basic-securities/trade-securities-list/')?{tradeSecuritiesList:{result:lang==='en-US'?en:he,total:1}}
+      :p.startsWith('/basic-securities/securities-types')?{securitiesTypes:{result:T,total:1}}
+      :p.startsWith('/fund/fund-list')?{funds:{result:funds,total:2}}
+      :p.startsWith('v2/basic-indices/indices-list')?{data:[{indexId:142,indexname:'ת"א-35'},{indexId:137,indexname:'ת"א-125'},{indexId:2,indexname:'מניות כללי'}],meta:{total:3,hasMore:false}}
+      :p.startsWith('v2/basic-indices/index-components-basic?IndexId=142&')?{data:[{securityId:604611,isin:'IL0006046119',securityName:'לאומי',symbol:'לאומי'},{securityId:224014,isin:'IL0002240146',securityName:'כלל עסקי ביטוח',symbol:'כללבט'}],meta:{total:2,hasMore:false,keyset:null}}
+      :p.startsWith('v2/basic-indices/index-components-basic')?{data:[],meta:{total:0,hasMore:false,keyset:null}}
+      :p.startsWith('/basic-securities/companies-list')?{companiesList:{result:cos,total:1}}
+      :p.startsWith('/fund/share-exposure-profile')?{shareExposureProfile:{result:[{code:'0',value:'ללא חשיפה'},{code:'4',value:'עד 120% מהשווי הנקי של נכסי הקרן'}]}}
+      :p.startsWith('/fund/currency-exposure-profile')?{currencyExposureProfile:{result:[{code:'0',value:'ללא חשיפה'},{code:'D',value:'עד 120% מהשווי הנקי של נכסי הקרן'}]}}
+      :p.startsWith('/basic-securities/delisted-securities-list/2026/10')?{delistedSecuritiesList:{result:[{dateLastTrade:'2026-10-20T00:00:00',securityId:448019,securityName:lang==='en-US'?'GIBUI':'גיבוי אחזקות',symbol:lang==='en-US'?'GIBU':'גיבו'}],total:1}}
+      :p.startsWith('/basic-securities/delisted-securities-list/')?{delistedSecuritiesList:{result:[],total:0}}:{};
+    return new Response(JSON.stringify(J),{status:200})};
+  try{
+    assert.equal(ilxOf(store,'TLV:LUMI'),null,'before the lists came: nothing to say');
+    assert.equal(await ilSymsTask(store,{fetch:f,key:'k-1',now}),true);
+    assert.ok(asked.some(a=>a.includes('index-components-basic?IndexId=142&TradeDate=2026-11-25')),'the components are asked for the list\'s own trading day');
+    const M=store.getDoc('research/ilmore').data; assert.deepEqual(Object.keys(M.idx),['TA35'],'an index whose components did not come is not kept empty'); assert.deepEqual(M.idx.TA35.items,[[604611,'לאומי'],[224014,'כלל עסקי ביטוח']]); assert.deepEqual(M.errors,[]);
+    // a share, by the key the page knows it under
+    const s=ilxOf(store,'TLV:LUMI'); assert.equal(s.kind,'share'); assert.equal(s.isin,'IL0006046119'); assert.equal(s.sub,'בנקים מסחריים'); assert.deepEqual(s.indices.map(i=>i.name),['ת"א-35','ת"א-125','מניות כללי']); assert.deepEqual(s.company,{name:'בנק לאומי לישראל בע"מ',sector:'פיננסים - בנקים',dual:false}); assert.deepEqual(s.lists,[]);
+    assert.equal(ilxOf(store,'lumi').id,604611,'the bare symbol too');
+    store.setDoc('research/illists',{items:[[604611,'1','2026-11-05']],types:{'1':{desc:'רשימת שימור',kind:'maint'}}}); assert.deepEqual(ilxOf(store,'TLV:LUMI').lists,[{kind:'maint',since:'2026-11-05'}],'a list the share is on is said on its page');
+    store.deleteDoc('research/illists');
+    // a mutual fund: its kind, the three levels of its classification, the exposures in the exchange's words, what it tracks
+    const fu=ilxOf(store,'5129283'); assert.equal(fu.kind,'fund'); assert.deepEqual(fu.types,['קרן פתוחה','קרן מחקה']); assert.deepEqual(fu.cls,['מניות בחו"ל','מניות גאוגרפי','ארה"ב חשופת מט"ח']);
+    assert.deepEqual(fu.exp,{code:'4D',share:'עד 120% מהשווי הנקי של נכסי הקרן',ccy:'עד 120% מהשווי הנקי של נכסי הקרן'}); assert.deepEqual(fu.under,[{name:'NASDAQ 100 - NTR',w:100}]); assert.equal(fu.isin,'IL0051292832');
+    // a main index: its components, each with the symbol its own page is under when the list has it
+    const ix=ilxOf(store,'IDX:TA35'); assert.equal(ix.kind,'index'); assert.equal(ix.name,'ת"א-35'); assert.deepEqual(ix.items,[{id:604611,name:'לאומי',sym:'LUMI'},{id:224014,name:'כלל עסקי ביטוח',sym:''}]);
+    assert.equal(ilxOf(store,'IDX:TA125'),null); assert.equal(ilxOf(store,'NVDA'),null); assert.equal(ilxOf(store,'9999999'),null); assert.equal(ilxOf(store,''),null);
+    // deleted from trading: the Hebrew name with the English symbol; a holding by its symbol (it is no longer in the traded list) or by its number
+    assert.deepEqual(store.getDoc('research/ildelisted').data.items,[[448019,'2026-10-20','גיבוי אחזקות','GIBU']]);
+    const P={positions:[{sym:'TLV:GIBU',qty:10,ccy:'ILS'},{sym:'TLV:LUMI',qty:5,ccy:'ILS'}]}, Q={prices:{'TLV:GIBU':10,'TLV:LUMI':50}};
+    const A=ilListAlerts(store,P,holdingsOf(P,Q),now); assert.equal(A.length,1); assert.equal(A[0].k,'ill:448019:delist:2026-10-20'); assert.equal(A[0].lv,'imp'); assert.equal(A[0].title,'גיבוי אחזקות נמחקה מהמסחר בבורסה'); assert.match(A[0].what,/יום המסחר האחרון בנייר היה 20\.10\.2026/); assert.equal(A[0].mk.list,'delist'); assert.equal(A[0].holds[0].sym,'TLV:GIBU');
+    const P2={positions:[{sym:'448019',qty:1,ccy:'ILS'}]}; assert.equal(ilListAlerts(store,P2,holdingsOf(P2,{prices:{'448019':1}}),now).length,1,'by the number too');
+    const P3={positions:[{sym:'GIBU',qty:1,ccy:'USD'}]}; assert.equal(ilListAlerts(store,P3,holdingsOf(P3,{usdIls:3.7,prices:{GIBU:1}}),now).length,0,'the same letters in New York are another security');
+  }finally{setIlSched(null)}
+});
 
 // ---- co-movement, long-term ties and month-end closes from the close series ----
 import {comoveOf, longtermOf, monthlyCloses, corr} from '../shared/comove.js';

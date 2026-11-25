@@ -1324,6 +1324,43 @@ test('25.11 the exchange\'s calendar decides the trading days; a holding on the 
     assert.deepEqual(pg.errs,[]); await ctx.close();
   }finally{if(C0.exists)store.setDoc('research/ilsched',C0.data); else store.deleteDoc('research/ilsched'); if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
 });
+// 25.11 (the owner: "the rest of the exchange's lists too"): what the exchange's lists say about a security, on its page
+// (GET /api/ilx, asked once for a Tel Aviv security): a fund's kind, classification, exposures and tracked asset; a main
+// index's components, each opening its own page; a share's sub-sector, ISIN, indices and a list it is on. And the card
+// of a holding deleted from trading
+test('25.11 the exchange\'s lists on a security\'s page: a fund\'s kind and exposures, an index\'s components, a share\'s ISIN and indices; a holding deleted from trading',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym, k='ill:448019:delist:2026-10-20', asked=[];
+  const FUND={id:'5129283',name:'הראל מחקה נאסד"ק 100',px:367.77,prev:365.1,chg:0.73,date:'2026-10-19',src:'מאיה',series:{d:['2026-10-14','2026-10-15','2026-10-16','2026-10-19'],c:[360,362.5,365.1,367.77]}};
+  const X={'5129283':{kind:'fund',id:5129283,isin:'IL0051292832',types:['קרן פתוחה','קרן מחקה'],cls:['מניות בחו"ל','מניות גאוגרפי','ארה"ב חשופת מט"ח'],exp:{code:'4E',share:'עד 120% מהשווי הנקי של נכסי הקרן',ccy:'עד 200% מהשווי הנקי של נכסי הקרן'},under:[{name:'NASDAQ 100 - NTR',w:100}],day:'2026-11-24'},
+    'IDX:TA35':{kind:'index',id:142,name:'ת"א-35',day:'2026-11-24',items:[{id:604611,name:'לאומי',sym:'LUMI'},{id:224014,name:'כלל עסקי ביטוח',sym:''}]},
+    'TLV:LUMI':{kind:'share',id:604611,isin:'IL0006046119',superSector:'פיננסים',sub:'בנקים מסחריים',indices:[{id:142,name:'ת"א-35'},{id:137,name:'ת"א-125'}],company:{name:'בנק לאומי לישראל בע"מ',sector:'פיננסים - בנקים',dual:false},lists:[{kind:'maint',since:'2026-11-05'}],day:'2026-11-24'}};
+  const route=(r,u)=>{if(u.includes('/api/ilfund?id=5129283')){r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(FUND)});return true}
+    const m=/\/api\/ilx\?k=([^&]+)/.exec(u); if(m){const q=decodeURIComponent(m[1]); asked.push(q); r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(X[q]||{kind:''})}); return true} return false};
+  store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k,kind:'mkt',type:'market',cert:'fact',conf:'high',lv:'imp',title:sym+' נמחקה מהמסחר בבורסה',what:'לפי רשימת הניירות שנמחקו מהמסחר בבורסה.',at:new Date().toISOString(),holds:[{sym,link:'direct',how:'direct',w:10,dir:'unclear'}],dir:'unclear',imp:'high',rel:'high',relWhy:sym+', 10% מהתיק',mk:{t:'ill',list:'delist',since:'2026-10-20',id:448019}}]});
+  try{const {ctx,pg}=await open(390,{route}); await tab(pg,'search'); await pg.waitForTimeout(600);
+    const txt=()=>pg.evaluate(()=>document.getElementById('secPage').textContent.replace(/\s+/g,' '));
+    // a mutual fund: what the exchange's list of funds says, in words
+    await pg.evaluate(()=>window.__srch.open('5129283')); await pg.waitForFunction(()=>/סוג הקרן/.test(document.getElementById('secPage').textContent),null,{timeout:8000});
+    let s=await txt(); assert.match(s,/סוג הקרן\s*קרן פתוחה · קרן מחקה/); assert.match(s,/סיווג\s*מניות בחו"ל · מניות גאוגרפי · ארה"ב חשופת מט"ח/); assert.match(s,/חשיפה למניות\s*עד 120% מהשווי הנקי/); assert.match(s,/חשיפה למט״ח\s*עד 200% מהשווי הנקי/);
+    assert.match(s,/נכס המעקב\s*NASDAQ 100 - NTR/); assert.match(s,/ISIN\s*IL0051292832/); assert.match(s,/מרשימת הקרנות של הבורסה לניירות ערך בתל אביב/); assert.doesNotMatch(s,/דמי ניהול, חשיפות, מנהל ההשקעות/,'the exposures are no longer said to be missing');
+    // a main index: its components; a row opens the share's own page
+    await pg.evaluate(()=>window.__srch.open('IDX:TA35')); await pg.waitForFunction(()=>!!document.querySelector('#secPage .ilx-comp'),null,{timeout:8000});
+    s=await txt(); assert.match(s,/הרכב המדד: 2 ניירות/); assert.match(s,/כלל עסקי ביטוח/); assert.match(s,/המשקל של כל נייר במדד לא נכלל/);
+    await pg.evaluate(()=>document.querySelector('#secPage .ilx-comp [data-gosec="TLV:LUMI"]').click());
+    // a share: beside its sector, the exchange's sub-sector, ISIN, the indices that include it, and the list it is on
+    await pg.waitForFunction(()=>/תת־ענף/.test(document.getElementById('secPage').textContent),null,{timeout:8000});
+    s=await txt(); assert.match(s,/תת־ענף\s*בנקים מסחריים/); assert.match(s,/ISIN\s*IL0006046119/); assert.match(s,/נכלל ב-2 מדדים\s*ת"א-35 · ת"א-125/); assert.match(s,/בנק לאומי לישראל בע"מ/); assert.match(s,/רשימות הבורסה\s*ברשימת השימור מאז 5\.11/);
+    // each key is asked once, however many times its page is drawn; a security that is not Tel Aviv's is never asked
+    await pg.evaluate(()=>window.__srch.open('IDX:SPX')); await pg.waitForTimeout(500); await pg.evaluate(()=>window.__srch.open('TLV:LUMI')); await pg.waitForTimeout(500);
+    assert.deepEqual([...asked].sort(),['5129283','IDX:TA35','TLV:LUMI']);
+    // the card of a holding deleted from trading: its last day of trading, and the source as what it is
+    await tab(pg,'alerts'); await pg.waitForTimeout(400); await pg.click(`#alInbox [data-alopen="${k}"]`); await pg.waitForTimeout(400);
+    const card=await pg.evaluate(()=>document.getElementById('plShB').textContent);
+    assert.match(card,/נמחקה מהמסחר בבורסה/); assert.match(card,/יום המסחר האחרון: 20\.10/); assert.match(card,/רשימת הניירות שנמחקו מהמסחר, של הבורסה לניירות ערך בתל אביב/);
+    assert.deepEqual(pg.errs,[]); await ctx.close();
+  }finally{if(P0.exists)store.setDoc('alerts/pulse',P0.data); else store.deleteDoc('alerts/pulse')}
+});
 
 test('the trading calendar with the held securities\' days: reports (the next one, the ones out) and dividends (ex-dividend, payment, the ones that came in)',T,async t=>{
   if(skip())return t.skip('no browser');

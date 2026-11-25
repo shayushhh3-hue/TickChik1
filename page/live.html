@@ -27838,6 +27838,9 @@ function plMktH(a){const k=a.mk||{}, m=(()=>{try{return mAllNow()}catch(e){retur
   if(k.t==='usd'){const uv=m&&m.total?m.total*m.usdPct/100:0; return uv>0?`<p class="pl-p">שינוי של 1% בשער הוא בערך <span class="n">${ils(uv/100)}</span> בשווי התיק.</p>`:''}
   // 25.11 (the owner): a holding on one of the exchange's lists (suspension, maintenance, low liquidity): what it is worth here, and where the reason is published
   if(k.t==='ill'){const LN={susp:'רשימת ההשעיה',maint:'רשימת השימור',illiq:'רשימת דלי הסחירות'}[k.list]||'רשימה של הבורסה';
+    // 25.11: a holding deleted from trading: its last day of trading, and the same source said as what it is
+    if(k.list==='delist')return `<p class="pl-p">${p?`השווי של הנייר בתיק, לפי המחיר האחרון שהגיע: <span class="n">${ils(p.val)}</span>${p.w!=null?` (<span class="n">${(+p.w).toFixed(1)}%</span> מהתיק)`:''}. `:''}${k.since?`יום המסחר האחרון: ${nn(dmy(k.since))}.`:''}</p>
+      <p class="note" style="margin:0">מקור: רשימת הניירות שנמחקו מהמסחר, של הבורסה לניירות ערך בתל אביב, נבדקת כל בוקר. היא אומרת שהנייר נמחק, לא למה ולא מה מקבל מי שמחזיק בו; זה מתפרסם בהודעות החברה במאיה.</p>`;
     return `<p class="pl-p">${p?`השווי של הנייר בתיק: <span class="n">${ils(p.val)}</span>${p.w!=null?` (<span class="n">${(+p.w).toFixed(1)}%</span> מהתיק)`:''}. `:''}${k.since?`ב${LN} מאז ${nn(dmy(k.since))}.`:`מופיע ב${LN}.`}</p>
       <p class="note" style="margin:0">מקור: הרשימה הרשמית של הבורסה לניירות ערך בתל אביב ליום המסחר הבא, נבדקת כל בוקר. היא אומרת שהנייר ברשימה, לא למה; הסיבה מתפרסמת בהודעות החברה והבורסה במאיה.</p>`}
   return ''}
@@ -28870,8 +28873,9 @@ function renderSec(){SECHOV=-1;
   const capTxt=it.cap?(it.t==='T'?'₪':'$')+(it.cap>=1e6?(it.cap/1e6).toFixed(2)+'T':it.cap>=1000?(it.cap/1000).toFixed(it.cap>=1e4?0:1)+'B':it.cap+'M'):'';
   const f=(kk,v,t)=>v?`<div class="fact"><div class="k">${kk}</div><div class="v${t?' t':''}">${v}</div></div>`:'';
   const RNG=[['1w','שבוע','שבוע'],['1m','חודש','חודש'],['3m','3 חודשים','3 ח׳'],['6m','חצי שנה','6 ח׳'],['1y','שנה','שנה'],['5y','5 שנים','5 ש׳'],['max','מההנפקה','הכל']];
+  try{ilxWant(k,it)}catch(e){}   // 25.11: what the exchange's lists say about a Tel Aviv security, asked once; the page is drawn again when it comes
   const ilm=it.t==='F'||it.t==='I'||ilIsNum(k)||!!ilIdx(k), moreH=ilm?ilSecMore(k,it):`<details class="more"${rs?'':' open'}><summary>פרטים נוספים: ענף, שווי שוק, אנליסטים ודוחות</summary>
-    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec)||(it.w||it.dyn?'אין נתון':''),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt||(it.w||it.dyn?'אין נתון':''))}</div>
+    <div class="facts" style="margin-top:10px">${f('ענף',esc(it.sec)||(it.w||it.dyn?'אין נתון':''),1)}${f('שווי שוק <span class="tag mkt">נתון שוק</span>',capTxt||(it.w||it.dyn?'אין נתון':''))}${ilxShareH(k,it,f)}</div>
     <div class="row" style="margin-top:12px"><h3>אנליסטים ודוחות כספיים</h3><span class="sub">${rs?esc(rs.source||(RS&&RS.source)||'מקור לא ידוע')+(rs.updatedAt?' · '+rsWhen(rs.updatedAt):''):''}</span></div>
     ${rs?`<div class="facts">${f('קונסנזוס אנליסטים <span class="tag an">דעת אנליסטים</span>','<bdi>'+esc(rs.rating||'—')+'</bdi>'+(rs.analysts?` <small>· ${rs.analysts} אנליסטים</small>`:''),1)}${f('יעד מחיר ממוצע <span class="tag an">דעת אנליסטים</span>',rs.target?'$'+Number(rs.target).toLocaleString('en-US')+(pr&&pr.ccy==='USD'&&pr.px?` <small class="${rs.target>=pr.px?'up':'down'}">${spct((rs.target/pr.px-1)*100)}</small>`:''):'')}${f('ציון פיננסי <span class="tag an">ניתוח</span>',fsc?fsc.grade+' <small>('+fsc.score+')</small>':'')}${f('מכפיל רווח <span class="tag fin">נתון פיננסי</span>',rs.pe!=null?Number(rs.pe).toFixed(1):'')}${f('מכפיל עתידי <span class="tag fin">נתון פיננסי</span>',rs.fpe!=null?Number(rs.fpe).toFixed(1):'')}${f('תשואת דיבידנד <span class="tag fin">נתון פיננסי</span>',rs.dy?pct(rs.dy):'')}${f('צמיחת הכנסות <span class="tag fin">נתון פיננסי</span>',rs.revg!=null?spct(rs.revg):'')}${f('שולי רווח נקי <span class="tag fin">נתון פיננסי</span>',rs.pm!=null?pct(rs.pm):'')}${f('תשואה על ההון <span class="tag fin">נתון פיננסי</span>',rs.roe!=null?pct(rs.roe):'')}${f('חוב להון <span class="tag fin">נתון פיננסי</span>',rs.de!=null?Number(rs.de).toFixed(2):'')}${f('דוח כספי הבא <span class="tag fin">נתון פיננסי</span>',rs.next?dmy(rs.next)+'.'+String(rs.next).slice(0,4):'')}</div>
     <p class="note">${fsc?'הציון הפיננסי מחושב מהדוחות: '+fsc.parts.map(x=>x[0]+' '+Math.round(x[1]*100)).join(' · ')+'. ':''}קונסנזוס האנליסטים ויעד המחיר הם נתוני אנליסטים ממקור חיצוני, לא המלצה של הדף.</p>`
@@ -32769,14 +32773,37 @@ const ilIdx=k=>String(k||'').startsWith('IDX:')?k.slice(4):'';
 // the links for an Israeli fund's own pages
 function ilLinks(id){   // 4.11: the source named, the person kept here (no way out to other sites)
   return `<p class="note ilx">נתוני הקרן מגיעים ממאיה (הבורסה לניירות ערך בתל אביב), מספר נייר ${esc(String(id))}.</p>`}
+// 25.11 (the owner: "the rest of the exchange's lists too"): what the exchange's own lists say about a Tel Aviv security
+// (GET /api/ilx, from the morning run with the exchange's key): a share's sub-sector, ISIN, full company name, the
+// indices that include it and a list it is on; a mutual fund's kind, full classification, its exposure to shares and to
+// foreign currency in the exchange's words and the assets it tracks; the components of ת״א 35, 125 and 90. Asked once
+// for a key, when its page opens; a security the lists do not have (or a site without the key) shows what it showed before
+const ILX={};
+function ilxKey(k,it){k=String(k||''); const ix=ilIdx(k); if(ix)return IDXIL.has(ix)?k:''; if(ilIsNum(k)||k.startsWith('TLV:'))return k; return it&&it.t==='T'&&it.ex==='TLV'&&it.sym?'TLV:'+it.sym:''}
+const ilxOfKey=(k,it)=>{const e=ILX[ilxKey(k,it)]; return e&&e.v&&e.v.kind?e.v:null};
+function ilxWant(k,it){const q=ilxKey(k,it); if(!q||ILX[q]||typeof fetch!=='function'||location.protocol==='file:')return; ILX[q]={at:Date.now(),v:null};
+  fetch('/api/ilx?k='+encodeURIComponent(q),{credentials:'same-origin',headers:{'x-tc':'1'}}).then(r=>r.ok?r.json():null).then(j=>{ILX[q]={at:Date.now(),v:j||null}; if(j&&j.kind&&SEC===k){try{renderSec()}catch(e){}}}).catch(()=>{})}
+// a share's page: the exchange's facts beside the sector and the market value
+function ilxShareH(k,it,f){const x=ilxOfKey(k,it); if(!x||x.kind!=='share')return ''; const ix=x.indices||[], LN={susp:'מושעה ממסחר',maint:'ברשימת השימור',illiq:'ברשימת דלי הסחירות'};
+  return ((x.lists||[]).length?f('רשימות הבורסה',x.lists.map(l=>`<b class="down">${LN[l.kind]||'ברשימה מיוחדת'}</b>${l.since?' מאז '+nn(dmy(l.since)):''}`).join(' · '),1):'')
+    +(x.sub?f('תת־ענף',esc(x.sub),1):'')+(x.company&&x.company.name?f('שם החברה המלא',`<bdi>${esc(x.company.name)}</bdi>${x.company.dual?' <small>· רישום כפול</small>':''}`,1):'')
+    +(x.isin?f('ISIN',`<span dir="ltr">${esc(x.isin)}</span>`):'')
+    +(ix.length?f(`נכלל ב-${ix.length} מדדים`,ix.slice(0,10).map(i=>`<bdi>${esc(i.name)}</bdi>`).join(' · ')+(ix.length>10?` ועוד ${ix.length-10}`:''),1):'')
+    +f('מקור הפרטים','הבורסה לניירות ערך בתל אביב'+(x.day?', ליום '+dmy(x.day):''),1)}
 // what the page of a fund or an index says in place of a company's analysts and reports
 function ilSecMore(k,it){
-  const ix=ilIdx(k);
-  if(ix)return `<div class="facts" style="margin-top:6px"><div class="fact"><div class="k">מה זה</div><div class="v t">${esc(it.sec||it.name)}</div></div><div class="fact"><div class="k">מקור</div><div class="v t">Yahoo Finance, נקודות המדד</div></div></div>
-    <p class="note">מדד הוא לא נייר שקונים ישירות: חשיפה אליו היא דרך קרן מחקה או קרן סל שעוקבת אחריו. חפש "${esc(it.name)}" כדי למצוא קרנות כאלה.</p>`;
-  const f=ILF[k]&&ILF[k].v, cls=it.sec||'';
-  return `<div class="facts" style="margin-top:6px">${cls?`<div class="fact"><div class="k">סיווג</div><div class="v t">${esc(cls)}</div></div>`:''}${it.kind?`<div class="fact"><div class="k">פרופיל חשיפה</div><div class="v t">${esc(it.kind)}</div></div>`:''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
-    <p class="note" style="margin:8px 0 4px">דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.</p>${ilLinks(k)}
+  const ix=ilIdx(k), x=ilxOfKey(k,it);
+  if(ix){const C=x&&x.kind==='index'?x.items||[]:[];
+    return `<div class="facts" style="margin-top:6px"><div class="fact"><div class="k">מה זה</div><div class="v t">${esc(it.sec||it.name)}</div></div><div class="fact"><div class="k">מקור</div><div class="v t">Yahoo Finance, נקודות המדד</div></div></div>
+    ${C.length?`<details class="more ilx-comp"${C.length<=40?' open':''}><summary>הרכב המדד: ${C.length} ניירות${x.day?' · ליום '+dmy(x.day):''}</summary>
+      <div class="sres" style="margin-top:8px">${C.map(c=>c.sym?`<button type="button" class="sit" data-gosec="TLV:${esc(c.sym)}">${logoHtml('TLV:'+c.sym)}<span class="nm"><b><bdi>${esc(c.name)}</bdi></b><span><i dir="ltr">${esc(c.sym)}</i></span></span></button>`:`<div class="sit"><span class="nm"><b><bdi>${esc(c.name)}</bdi></b></span></div>`).join('')}</div>
+      <p class="note" style="margin:8px 0 0">הרכב המדד מרשימת הבורסה לניירות ערך בתל אביב. המשקל של כל נייר במדד לא נכלל ברשימה.</p></details>`:''}
+    <p class="note">מדד הוא לא נייר שקונים ישירות: חשיפה אליו היא דרך קרן מחקה או קרן סל שעוקבת אחריו. חפש "${esc(it.name)}" כדי למצוא קרנות כאלה.</p>`}
+  const f=ILF[k]&&ILF[k].v, cls=it.sec||'', F=x&&x.kind==='fund'?x:null, fc=(a,b,t)=>b?`<div class="fact"><div class="k">${a}</div><div class="v${t?' t':''}">${b}</div></div>`:'';
+  // the assets a fund tracks, with their weights; "אחר" alone says nothing
+  const U=F?(F.under||[]).filter(u=>u&&u.name&&!(F.under.length===1&&/^אחר$/.test(u.name))):[];
+  return `<div class="facts" style="margin-top:6px">${F?fc('סוג הקרן',esc((F.types||[]).join(' · ')),1):''}${F&&(F.cls||[]).length?fc('סיווג',esc(F.cls.join(' · ')),1):fc('סיווג',esc(cls),1)}${F&&F.exp&&(F.exp.share||F.exp.ccy)?fc('חשיפה למניות',esc(F.exp.share||''),1)+fc('חשיפה למט״ח',esc(F.exp.ccy||''),1)+fc('פרופיל חשיפה',`<span dir="ltr">${esc(F.exp.code||'')}</span>`):fc('פרופיל חשיפה',esc(it.kind||''),1)}${U.length?fc(U.length>1?'נכסי המעקב':'נכס המעקב',U.map(u=>`<bdi>${esc(u.name)}</bdi>${u.w&&U.length>1?` <small>${(+u.w).toFixed(0)}%</small>`:''}`).join(' · '),1):''}${F&&F.isin?fc('ISIN',`<span dir="ltr">${esc(F.isin)}</span>`):''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
+    <p class="note" style="margin:8px 0 4px">${F?'סוג הקרן, הסיווג, החשיפות ונכסי המעקב: מרשימת הקרנות של הבורסה לניירות ערך בתל אביב. דמי ניהול, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.':'דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.'}</p>${ilLinks(k)}
     <p class="note">המחיר הרשמי של קרן נאמנות נקבע פעם ביום, אחרי סגירת הבורסה, ומתפרסם במאיה. פאנדר וביזפורטל הם אתרים חיצוניים, והקישורים פותחים אותם בחלון חדש.</p>`;
 }
 // ---- ux:start (21.10) the simple home, the prices' trust mark, the way to any screen, "מה חדש" and a short tour ----

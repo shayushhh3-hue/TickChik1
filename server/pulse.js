@@ -351,12 +351,23 @@ export function mktAlerts(store,P,S,Q,HD,now=new Date()){
 const ILL_HE={susp:'השעיית מסחר',maint:'רשימת השימור',illiq:'רשימת דלי הסחירות'};
 const dmyHe=d=>/^\d{4}-\d\d-\d\d/.test(String(d))?`${+String(d).slice(8,10)}.${+String(d).slice(5,7)}.${String(d).slice(0,4)}`:'';
 export function ilListAlerts(store,P,HD,now=new Date()){
-  let L=null; try{L=store.getDoc('research/illists').data}catch(e){} if(!L||!Array.isArray(L.items)||!L.items.length)return [];
+  let L=null; try{L=store.getDoc('research/illists').data}catch(e){} if(!L||!Array.isArray(L.items))L={items:[],types:{}};
+  // 25.11: and a holding deleted from trading (research/ildelisted: this month and the one before): one alert, by the
+  // security's number, or by its symbol for a share (a deleted share is no longer in the traded list)
+  let DL=null; try{DL=store.getDoc('research/ildelisted').data}catch(e){} const del=(DL&&Array.isArray(DL.items)?DL.items:[]).filter(r=>Array.isArray(r)&&/^\d{4}-\d\d-\d\d$/.test(String(r[1]||'')));
+  if(!L.items.length&&!del.length)return [];
   const by=new Map(); for(const r of L.items){if(!Array.isArray(r))continue; const a=by.get(+r[0])||[]; a.push(r); by.set(+r[0],a)}
   let IL=null; try{IL=store.getDoc('research/ilsyms').data}catch(e){} const idOf=ilIdOf(IL), names=new Map(((IL&&IL.stocks)||[]).filter(Array.isArray).map(r=>[+r[4],r[1]||r[2]||'']));
   const H=new Map(HD.pos.map(h=>[h.sym,h])), today=ilDay(now), recent=ilDay(new Date(now.getTime()-30*DAY)), out=[], seen=new Set();
-  for(const p of ((P&&P.positions)||[])){if(!p||!p.sym||seen.has(p.sym))continue; seen.add(p.sym); const id=idOf(p.sym,p.ccy), rows=id?by.get(id):null; if(!rows)continue;
-    const h=H.get(p.sym)||{sym:p.sym,w:null}, big=h.w==null||h.w>=SENS_T.mid.dHigh, nm=String(p.name||names.get(id)||'').trim()||String(p.sym).replace(/^TLV:/,''), relWhy=h.w!=null?`${nm}, ${h.w}% מהתיק`:`${nm} שבתיק`;
+  const since45=ilDay(new Date(now.getTime()-62*DAY));   // the two months the list of the deleted is kept for
+  for(const p of ((P&&P.positions)||[])){if(!p||!p.sym||seen.has(p.sym))continue; seen.add(p.sym); const id=idOf(p.sym,p.ccy), rows=(id&&by.get(id))||[];
+    const sy=String(p.sym).trim().toUpperCase(), tlv=/^TLV:/.test(sy)||p.ccy==='ILS', bare=sy.replace(/^TLV:/,''), dl=del.find(r=>r[1]>=since45&&((id&&+r[0]===id)||(tlv&&r[3]&&r[3]===bare)))||null;
+    if(!rows.length&&!dl)continue;
+    const h=H.get(p.sym)||{sym:p.sym,w:null}, big=h.w==null||h.w>=SENS_T.mid.dHigh, nm=String(p.name||names.get(id)||(dl&&dl[2])||'').trim()||String(p.sym).replace(/^TLV:/,''), relWhy=h.w!=null?`${nm}, ${h.w}% מהתיק`:`${nm} שבתיק`;
+    if(dl)out.push({kind:'mkt',type:'market',cert:'fact',rules:false,conf:'high',confWhy:'רשימת הניירות שנמחקו מהמסחר, של הבורסה לניירות ערך בתל אביב',sectors:[],themes:[],regions:['il'],fac:[],secx:[],secs:[],usd:null,fol:[],followed:false,unknown:'',arts:[],n:0,
+      k:`ill:${+dl[0]}:delist:${dl[1]}`,lv:'imp',lvWhy:'נייר שבתיק שלך נמחק מהמסחר בבורסה',title:`${nm} נמחקה מהמסחר בבורסה`,
+      what:`לפי רשימת הניירות שנמחקו מהמסחר בבורסה, יום המסחר האחרון בנייר היה ${dmyHe(dl[1])}. מחיקה יכולה לנבוע ממיזוג או מהצעת רכש, מפדיון סופי של הנייר או מאי־עמידה בכללי הבורסה; הסיבה, ומה מקבל מי שמחזיק בנייר, מתפרסמים בהודעות החברה במאיה.`,
+      dir:'unclear',imp:'high',rel:big?'high':'mid',relWhy,occ:dl[1],first:(DL&&DL.updatedAt)||null,holds:[{sym:h.sym,w:h.w,how:'direct',dir:'unclear',why:'הנייר עצמו נמחק מהמסחר',link:'direct'}],mk:{t:'ill',list:'delist',since:dl[1],desc:'',id:+dl[0]}});
     for(const r of rows){const T=(L.types||{})[String(r[1])]||{}, kind=ILL_HE[T.kind]?T.kind:'other', since=/^\d{4}-\d\d-\d\d$/.test(String(r[2]||''))?r[2]:'', S=since?` מאז ${dmyHe(since)}`:'';
       if(kind==='illiq'&&!(since&&since>=recent))continue;
       const lv=kind==='susp'?(big?'crit':'imp'):kind==='maint'?'imp':'upd', dir=kind==='susp'||kind==='maint'?'neg':'unclear';

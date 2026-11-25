@@ -89,26 +89,69 @@ export async function ilSchedTask(store,{fetch:f=timedFetch,key=process.env.TASE
   store.setDoc('research/ilsched',doc); setIlSched(doc);
   log(`israeli calendar: ${n} days from ${from} to ${to}, ${Object.values(days).filter(x=>!x[1]).length} without trading${errors.length?'; '+errors.join(' | '):''}`); return true;
 }
-// 25.11 (for a day): what the answers of the exchange's other free lists look like, before the site reads them (the
-// funds' details, an index's components, the companies, the delisted securities). The names in the exchange's documents
-// are not the names in its answers, so the first row and the small tables are kept as they came (research/ilprobe)
+// ---- 25.11 (the owner: "the rest of these lists too"): what the three free products say about one security ----
+// A share: its ISIN, sub-sector, the indices that include it and its company's full name (the traded list and the
+// companies' list). A mutual fund: its kind, its full classification, its exposure to shares and to foreign currency in
+// the exchange's words, the assets it tracks (the funds' list and its two tables of exposure). The three main indices:
+// their components. The securities deleted from trading in this month and the one before. Read from the answers as they
+// came on 25.11 with the real key (their names are not the documents'); kept apart from the search's list, which every
+// page reads: research/ilmore is read on the server only, a security at a time (GET /api/ilx)
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-export async function ilProbeTask(store,{fetch:f=timedFetch,key=process.env.TASE_API_KEY,now=new Date(),log=()=>{}}={}){
-  if(!key)return false; const o={key,fetch:f}, out={};
-  const big=j=>{const a=resAny(j,''); return {top:j&&typeof j==='object'?Object.keys(j).slice(0,8):[],n:a.length,row:a[0]&&typeof a[0]==='object'?Object.keys(a[0]):[],first:JSON.stringify(a[0]??null).slice(0,3000),meta:j&&j.meta?JSON.stringify(j.meta).slice(0,300):''}};
-  const ask=async(name,path,opt={})=>{await wait(300); try{const j=await dw(path,{...o,...opt}); out[name]=big(j); return j}catch(e){out[name]={err:String(e&&e.message||e)}; return null}};
-  const tab=async(name,path)=>{const j=await ask(name,path); if(j)out[name].rows=resAny(j,'').slice(0,80)};
-  await ask('fundList','/fund/fund-list?listingStatusId=1');
-  for(const t of ['fund-type','mutual-fund-classification','tracking-fund-classification','share-exposure-profile','currency-exposure-profile','distribution-commission','tax-status','payment-policy','underlying-asset','stock-exchange','listing-status'])await tab('fund:'+t,'/fund/'+t);
-  const day=String((store.getDoc('research/ilsyms').data||{}).day||ilParts(now).iso), [y,m,d]=day.split('-').map(Number);
-  await ask('traded',`/basic-securities/trade-securities-list/${y}/${m}/${d}`);
-  await ask('tradedEn',`/basic-securities/trade-securities-list/${y}/${m}/${d}`,{lang:'en-US'});
-  await ask('companies','/basic-securities/companies-list');
-  await ask('delisted',`/basic-securities/delisted-securities-list/${y}/${m}`);
-  await ask('delistedPrev',`/basic-securities/delisted-securities-list/${m===1?y-1:y}/${m===1?12:m-1}`);
-  await ask('idxComp',`/basic-indices/index-components-basic?IndexId=142&TradeDate=${day}`,{base:DW2});
-  await ask('universes','/basic-indices/universes-list',{base:DW2});
-  store.setDoc('research/ilprobe',{out,day,at:now.toISOString()},{silent:true}); log('israeli probe: '+Object.keys(out).length+' answers kept'); return true;
+const str=x=>String(x==null?'':x).trim();
+export const IL_IDX={TA35:[142,/^ת"א[\s\-־]*35$/],TA125:[137,/^ת"א[\s\-־]*125$/],TA90:[143,/^ת"א[\s\-־]*90$/]};
+export function ilMoreBuild({sec=[],funds=[],companies=[],tabs={}}={}){
+  const S={}, F={}, C={};
+  for(const s of sec){const id=+pick(s,'securityId','securityID'); if(!id)continue; const ix=pick(s,'securityIsIncludedInContinuousIndices');
+    S[id]=[str(s.isin),str(s.companySuperSector),str(s.companySubSector),(Array.isArray(ix)?ix:[]).map(Number).filter(n=>n>0),+s.issuerId||0]}
+  for(const f of funds){const id=+pick(f,'fundId','fundID'); if(!id)continue;
+    F[id]=[str(f.isin),(Array.isArray(f.fundType)?f.fundType:[]).map(t=>str(t&&t.value)).filter(Boolean),str((f.classificationSecondary||{}).value),
+      (Array.isArray(f.underlyingAsset)?f.underlyingAsset:[]).filter(u=>u&&str(u.value)).map(u=>[str(u.value),+u.weight||0]).slice(0,6),str(f.fundLongName)]}
+  for(const c of companies){const id=+pick(c,'issuerId','issuerID'); if(!id)continue; C[id]=[str(c.companyFullName||c.companyName),str(c.taseSector),c.isDual===true||c.isDual===1?1:0]}
+  return {sec:S,funds:F,co:C,tabs:{shareExp:(tabs&&tabs.shareExp)||{},ccyExp:(tabs&&tabs.ccyExp)||{}}};
+}
+export async function ilMoreTask(store,{fetch:f=timedFetch,key=process.env.TASE_API_KEY,now=new Date(),log=()=>{},sec=[],funds=[],day='',gap=250}={}){
+  if(!key||(!sec.length&&!funds.length))return false; const o={key,fetch:f}, errors=[], tabs={shareExp:{},ccyExp:{}}, iso=now.toISOString();
+  const get=async(name,path,k,opt={})=>{if(gap)await wait(gap); try{return resAny(await dw(path,{...o,...opt}),k)}catch(e){errors.push(name+': '+e.message); return null}};
+  const old=store.getDoc('research/ilmore'), O=(old.exists&&old.data)||{};
+  const companies=await get('companies','/basic-securities/companies-list','companiesList');
+  for(const [t,p,k] of [['shareExp','/fund/share-exposure-profile','shareExposureProfile'],['ccyExp','/fund/currency-exposure-profile','currencyExposureProfile']])
+    for(const r of (await get(t,p,k))||[])if(r&&r.code!=null)tabs[t][String(r.code)]=str(r.value);
+  // a table that did not come today stays as it last came
+  for(const t of ['shareExp','ccyExp'])if(!Object.keys(tabs[t]).length&&O.tabs&&O.tabs[t])tabs[t]=O.tabs[t];
+  // the components of the three main indices, on the list's own trading day
+  const IL=store.getDoc('research/ilsyms').data||{}, d=/^\d{4}-\d\d-\d\d$/.test(day)?day:ilParts(now).iso, idx={...(O.idx||{})};
+  for(const [k,[id,re]] of Object.entries(IL_IDX)){const row=(IL.indices||[]).find(r=>re.test(str(r[1])))||(IL.indices||[]).find(r=>+r[0]===id); if(!row)continue;
+    const a=await get('index '+k,`/basic-indices/index-components-basic?IndexId=${+row[0]}&TradeDate=${d}`,'data',{base:DW2});
+    if(a&&a.length)idx[k]={id:+row[0],name:str(row[1]),day:d,items:a.map(x=>[+pick(x,'securityId','securityID')||0,str(x.securityName)]).filter(x=>x[0])}}
+  const B=ilMoreBuild({sec,funds,companies:companies||[],tabs}); if(companies===null&&O.co)B.co=O.co;
+  store.setDoc('research/ilmore',{...B,idx,day:d,updatedAt:iso,source:SRC,errors},{silent:true});
+  // the securities deleted from trading, this month and the one before: the names in Hebrew, the symbols in English (a
+  // deleted share is no longer in the traded list, and a position "TLV:XXXX" is found by its symbol alone)
+  const [y,m]=d.split('-').map(Number), months=[[y,m],[m===1?y-1:y,m===1?12:m-1]], by=new Map(); let came=false;
+  for(const [yy,mm] of months){const p=`/basic-securities/delisted-securities-list/${yy}/${mm}`, he=await get('deleted '+yy+'-'+mm,p,'delistedSecuritiesList'), en=he&&he.length?await get('deleted (symbols) '+yy+'-'+mm,p,'delistedSecuritiesList',{lang:'en-US'}):[];
+    if(he)came=true; const E=new Map((en||[]).map(r=>[+pick(r,'securityId','securityID'),str(r.symbol).toUpperCase()]));
+    for(const r of he||[]){const id=+pick(r,'securityId','securityID'); if(!id)continue; const e=E.get(id)||''; by.set(id,[id,str(pick(r,'dateLastTrade','lastTradeDate','date')).slice(0,10),str(r.securityName),LAT.test(e)?e:''])}}
+  if(came)store.setDoc('research/ildelisted',{items:[...by.values()].sort((a,b)=>a[1]<b[1]?1:a[1]>b[1]?-1:a[0]-b[0]),months:months.map(([yy,mm])=>`${yy}-${String(mm).padStart(2,'0')}`),updatedAt:iso,source:SRC},{silent:true});
+  try{if(store.getDoc('research/ilprobe').exists)store.deleteDoc('research/ilprobe')}catch(e){}   // the answers kept for a day on 25.11, to learn their shape
+  log(`israeli details: ${Object.keys(B.sec).length} securities, ${Object.keys(B.funds).length} funds, ${Object.keys(B.co).length} companies, ${Object.keys(idx).length} indices' components, ${by.size} deleted from trading${errors.length?'; '+errors.join(' | '):''}`); return true;
+}
+// what the exchange says about one security, by the key the page knows it under: "TLV:LUMI" (or "LUMI"), a number
+// ("5129283" a mutual fund, "1159094" a fund traded on the exchange), "IDX:TA35". null when the exchange's lists do not
+// have it (or the site has no key): the page then shows what it showed before
+export function ilxOf(store,key){
+  const k=str(key).toUpperCase(); let M=null, IL=null; try{M=store.getDoc('research/ilmore').data; IL=store.getDoc('research/ilsyms').data}catch(e){} if(!M||!IL||!k)return null;
+  const base={source:M.source||SRC,at:M.updatedAt||null,day:M.day||''};
+  if(k.startsWith('IDX:')){const x=(M.idx||{})[k.slice(4)]; if(!x||!(x.items||[]).length)return null; const symOf=new Map((IL.stocks||[]).filter(Array.isArray).map(r=>[+r[4],r[0]]));
+    return {kind:'index',id:x.id,name:x.name,...base,day:x.day||base.day,items:x.items.map(r=>({id:r[0],name:r[1],sym:symOf.get(+r[0])||''}))}}
+  const num=/^(?:TLV:)?(\d{5,9})$/.exec(k), id=num?+num[1]:ilIdOf(IL)(k,'ILS'); if(!id)return null;
+  const f=num?(M.funds||{})[id]:null;
+  if(f){const row=(IL.funds||[]).find(r=>Array.isArray(r)&&String(r[0])===String(id))||[], e=str(row[4]), T=M.tabs||{};
+    return {kind:'fund',id,...base,isin:f[0],name:f[4]||row[1]||'',types:f[1]||[],cls:[row[2],row[3],f[2]].map(str).filter(Boolean),exp:{code:e,share:e?str((T.shareExp||{})[e[0]]):'',ccy:e.length>1?str((T.ccyExp||{})[e[1]]):''},under:(f[3]||[]).map(u=>({name:u[0],w:u[1]}))}}
+  const s=(M.sec||{})[id]; if(!s)return null;
+  const names=new Map((IL.indices||[]).filter(Array.isArray).map(r=>[+r[0],str(r[1])])), co=(M.co||{})[s[4]]||null;
+  let L=null; try{L=store.getDoc('research/illists').data}catch(e){}
+  const lists=((L&&L.items)||[]).filter(r=>Array.isArray(r)&&+r[0]===id).map(r=>({kind:((L.types||{})[String(r[1])]||{}).kind||'other',since:r[2]||''}));
+  return {kind:'share',id,...base,isin:s[0],superSector:s[1],sub:s[2],indices:(s[3]||[]).map(i=>({id:i,name:names.get(+i)||''})).filter(x=>x.name),company:co?{name:co[0],sector:co[1],dual:!!co[2]}:null,lists};
 }
 // the calendar kept from the last run, for the server's own clock of the Tel Aviv market (at the start of the server)
 export function ilSchedLoad(store){try{const d=store.getDoc('research/ilsched'); setIlSched(d.exists?d.data:null); return !!(d.exists&&d.data&&d.data.from)}catch(e){return false}}
@@ -122,7 +165,6 @@ export async function ilSymsTask(store,{fetch:f=timedFetch,key=process.env.TASE_
   // the two lists beside the search's: each keeps its own document and says its own line; neither stops the other
   try{await ilListsTask(store,{fetch:f,key,now,log})}catch(e){log('israeli lists: '+(e&&e.message||e))}
   try{await ilSchedTask(store,{fetch:f,key,now,log})}catch(e){log('israeli calendar: '+(e&&e.message||e))}
-  if(process.env.NODE_ENV!=='test'&&f===timedFetch){ilProbeTask(store,{fetch:f,key,now,log}).catch(e=>log('israeli probe: '+(e&&e.message||e)))}   // 25.11, for a day: beside the run, never in its way
   let types=[], funds=[], indices=[];
   try{types=res(await dw('/basic-securities/securities-types',o),'securitiesTypes')}catch(e){errors.push('types: '+e.message)}
   try{funds=res(await dw('/fund/fund-list?listingStatusId=1',o),'funds')}catch(e){errors.push('funds: '+e.message)}
@@ -131,7 +173,10 @@ export async function ilSymsTask(store,{fetch:f=timedFetch,key=process.env.TASE_
   if(!B.stocks.length&&!B.funds.length){log('israeli securities: nothing came ('+errors.join(' | ')+')');
     const old=store.getDoc('research/ilsyms'); store.setDoc('research/ilsyms',{...(old.exists?old.data:{}),errors,triedAt:now.toISOString()},{silent:true}); return false}
   store.setDoc('research/ilsyms',{...B,day,updatedAt:now.toISOString(),source:'הבורסה לניירות ערך בתל אביב (TASE DataWise)',errors});
-  log(`israeli securities: ${B.stocks.length} shares, ${B.funds.length} funds, ${B.indices.length} indices${errors.length?'; '+errors.join(' | '):''}`); return true;
+  log(`israeli securities: ${B.stocks.length} shares, ${B.funds.length} funds, ${B.indices.length} indices${errors.length?'; '+errors.join(' | '):''}`);
+  // 25.11: what the same answers say about each security (and a few more lists), after the search's list is kept
+  try{await ilMoreTask(store,{fetch:f,key,now,log,sec,funds,day,gap:f===timedFetch?250:0})}catch(e){log('israeli details: '+(e&&e.message||e))}
+  return true;
 }
 let RUN=null;
 export function ilSymsFresh(store,{fetch,maxAgeH=20}={}){
