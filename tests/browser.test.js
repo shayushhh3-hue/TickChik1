@@ -4659,8 +4659,7 @@ test('25.11 an account\'s box, the track\'s card and its table say one figure (a
     await pg.selectOption('#onceTrk','idx'); await pg.fill('#onceAmt','50'); await pg.click('#onceAdd');
     await pg.waitForFunction(()=>/נוספה הפקדה/.test(document.getElementById('onceState').textContent),null,{timeout:8000});
     assert.equal(await box(A1),750,'the deposit in its account\'s box'); assert.equal(await bal(),750); assert.equal(await row(),750);
-    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
-    const sv=store.getDoc('plan/main').data.idx.deposits.find(d=>d.once&&+d.amount===50); assert.equal(sv&&sv.acct,A1,'kept with its account');
+    let sv; for(let k=0;k<60&&!sv;k++){sv=((store.getDoc('plan/main').data.idx||{}).deposits||[]).find(d=>d.once&&+d.amount===50); if(!sv)await pg.waitForTimeout(250)} assert.equal(sv&&sv.acct,A1,'kept with its account');
     assert.match(await pg.evaluate(()=>document.getElementById('onceList').innerText),/· מדדים/); assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close()}
   // one balance for both tracks: the account is a choice of its own, and the deposit raises that account's box
@@ -4674,8 +4673,45 @@ test('25.11 an account\'s box, the track\'s card and its table say one figure (a
     await pg.selectOption('#onceAcct',A0); await pg.fill('#onceAmt','70'); await pg.click('#onceAdd');
     await pg.waitForFunction(()=>/נוספה הפקדה/.test(document.getElementById('onceState').textContent),null,{timeout:8000});
     assert.equal(await box(A0),b0+70,'the chosen account\'s box'); assert.equal(await box(A1),b1,'the other kept');
-    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
-    const D=store.getDoc('plan/main').data, sv=[...(D.deposits||[]),...((D.idx&&D.idx.deposits)||[])].find(d=>d.once&&+d.amount===70); assert.equal(sv&&sv.acct,A0,'kept with its account');
+    let sv; for(let k=0;k<60&&!sv;k++){const D=store.getDoc('plan/main').data; sv=[...(D.deposits||[]),...((D.idx&&D.idx.deposits)||[])].find(d=>d.once&&+d.amount===70); if(!sv)await pg.waitForTimeout(250)} assert.equal(sv&&sv.acct,A0,'kept with its account');
     assert.deepEqual(pg.errs,[]);
   }finally{await o2.ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
+test('25.11 a month of the plan\'s table takes back a security (a "+" in every month up to this one, one press, undone in place), and on a phone a month\'s purchases are one list',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','settings/main'])keep[p]=store.getDoc(p);
+  const prevYm=(()=>{const d=new Date(new Date().toISOString().slice(0,7)+'-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth()-1); return d.toISOString().slice(0,7)})();
+  // a plan that began last month, with nothing bought in it: the month the owner emptied
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); if(!(pl.items||[]).length)return t.skip('no plan in the fixture');
+  Object.assign(pl,{start:prevYm,mode:'cheap',purchases:[],deposits:[],items:pl.items.map(x=>({sym:x.sym,status:x.status==='skip'?'skip':'todo',note:''}))}); delete pl.until; delete pl.zero; delete pl.acctZero; delete pl.round; store.setDoc('plan/main',pl,{silent:true});
+  for(const W of [390,1280]){
+    store.setDoc('plan/main',pl,{silent:true}); const {ctx,pg}=await open(W);
+    try{
+      await tab(pg,'plan'); await pg.waitForSelector(`#ladRows [data-ladadd="${prevYm}"]`,{timeout:10000});
+      const R=()=>pg.evaluate(ym=>{const b=document.querySelector('[data-ladadd="'+ym+'"]'), tr=b.closest('tr'), r=b.getBoundingClientRect(); return {txt:tr.innerText.replace(/\s+/g,' '),h:r.height,exp:b.getAttribute('aria-expanded'),name:b.getAttribute('aria-label'),ctl:b.getAttribute('aria-controls'),ticked:[...tr.querySelectorAll('input[data-buy]')].filter(x=>x.checked).map(x=>x.dataset.buy),chips:[...tr.querySelectorAll('.lad-pick [data-pa="addBuy"]')].map(x=>({sym:x.dataset.sym,h:x.getBoundingClientRect().height,dis:x.disabled}))}},prevYm);
+      let r=await R(); if(!r.ticked.length)assert.match(r.txt,/לא סומנה קנייה בחודש הזה/,'the emptied month says so: '+r.txt); assert.ok(r.h>=44,'a "+" a finger can press: '+r.h); assert.equal(r.exp,'false'); assert.match(r.name,/^להוסיף קנייה ל/); assert.equal(r.chips.length,0);
+      // by the keyboard: Enter opens, the focus goes into the list; Escape closes and returns it
+      await pg.focus(`[data-ladadd="${prevYm}"]`); await pg.keyboard.press('Enter'); await pg.waitForSelector(`#ladAdd_${prevYm} [data-pa="addBuy"]`,{timeout:5000});
+      r=await R(); assert.equal(r.exp,'true'); assert.equal(r.ctl,'ladAdd_'+prevYm); assert.ok(r.chips.length>=1&&r.chips.every(c=>c.h>=44&&!c.dis),'every security still to buy, a press each: '+JSON.stringify(r.chips));
+      await pg.waitForFunction(()=>!!(document.activeElement&&document.activeElement.closest('.lad-pick')),null,{timeout:3000});
+      await pg.keyboard.press('Escape'); await pg.waitForFunction(ym=>document.activeElement===document.querySelector('[data-ladadd="'+ym+'"]')&&document.activeElement.getAttribute('aria-expanded')==='false',prevYm,{timeout:3000});
+      // one press returns one, into that month
+      await pg.click(`[data-ladadd="${prevYm}"]`); await pg.waitForSelector(`#ladAdd_${prevYm} [data-pa="addBuy"]`); const sym=(await R()).chips[0].sym, n0=(await R()).chips.length;
+      if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/lad-add-${W}.png`});
+      await pg.click(`#ladAdd_${prevYm} [data-pa="addBuy"]`); await pg.waitForFunction(([ym,sy])=>{const c=document.querySelector('#ladRows [data-buy="'+sy+'"]'); return !!c&&c.checked&&c.dataset.ym===ym},[prevYm,sym],{timeout:8000});
+      r=await R().catch(()=>null); if(n0>1){assert.ok(r&&r.exp==='true'&&r.chips.length===n0-1,'the list stays open for the next one'); assert.ok(!r.chips.some(c=>c.sym===sym))}
+      assert.match(await pg.evaluate(()=>document.getElementById('toast').hidden?'':document.getElementById('toastMsg').textContent),/סומן כנקנה ב/,'said, with an undo');
+      let D, pu; for(let k=0;k<60&&!pu;k++){D=store.getDoc('plan/main').data; pu=(D.purchases||[]).find(x=>x.sym===sym); if(!pu)await pg.waitForTimeout(250)} assert.ok(pu&&pu.month===prevYm&&+pu.paidIls>0,'a purchase of that month'); assert.equal(D.items.find(x=>x.sym===sym).pid,pu.id);
+      // a tick taken off: back with one press
+      await pg.evaluate(sy=>document.querySelector('#ladRows [data-buy="'+sy+'"]').click(),sym); await pg.waitForFunction(()=>/הסימון של .* הוסר/.test(document.getElementById('toastMsg').textContent)&&!document.getElementById('toast').hidden,null,{timeout:5000});
+      assert.ok(await pg.evaluate(sy=>{const c=document.querySelector('#ladRows [data-buy="'+sy+'"]'); return !c||!c.checked||c.dataset.ym!==arguments[1]},sym),'off');
+      await pg.click('#toastUndo'); await pg.waitForFunction(([ym,sy])=>{const c=document.querySelector('#ladRows [data-buy="'+sy+'"]'); return !!c&&c.checked&&c.dataset.ym===ym},[prevYm,sym],{timeout:8000});
+      if(W<760){   // the phone: "קנייה" above the list, a row a security the width of the card, the price at its end
+        const L=await pg.evaluate(()=>{const tr=document.querySelector('#ladRows tr.cur')||document.querySelector('#ladRows tr'), td=tr.children[2], ck=[...td.querySelectorAll('.buys .ck')], bx=td.getBoundingClientRect(); return {bef:getComputedStyle(td,'::before').display,w:bx.width,ck:ck.map(c=>{const r=c.getBoundingClientRect(), i=c.querySelector('input').getBoundingClientRect(); return {w:r.width,h:r.height,i:i.width}}),over:document.documentElement.scrollWidth>innerWidth+1}});
+        assert.equal(L.bef,'block','the heading above the list'); assert.ok(!L.over,'nothing past the screen\'s edge'); assert.ok(L.ck.every(c=>c.w>=L.w-2&&c.h>=44&&c.i>=22),'a row a security: '+JSON.stringify(L));
+        if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('ladRows').scrollIntoView({block:'start'})); await pg.screenshot({path:`${process.env.SHOT}/lad-phone.png`})}}
+      assert.deepEqual(pg.errs,[]);
+    }finally{await ctx.close()}
+  }
+  for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}
 });

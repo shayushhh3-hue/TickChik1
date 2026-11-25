@@ -1744,6 +1744,9 @@ html[data-theme="dark"] .gl:hover,html[data-theme="dark"] .gl[aria-expanded="tru
 /* 4.11: on the control screen צ׳יקו is a slim strip (the button that opens him is everywhere anyway) */
 #anaSec .ae-t .sub{display:none} #anaSec .ana-chips .btn:not([data-ana="explain"]):not([data-ana="open"]){display:none}
 .ladder tr.far{display:none} .ladder tr.lad-more td{text-align:center;padding-top:10px}
+.lad-add{margin-top:8px;width:100%;flex-basis:100%} html body .lad-add .btn{min-height:44px!important}
+.lad-pick{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)} .lad-pick>.nm{display:block;margin:0 0 8px;line-height:1.45}
+.lad-chips{display:flex;flex-wrap:wrap;gap:8px} .lad-chips .btn{white-space:normal;text-align:start}
 [data-pane="risk"] > section[aria-labelledby="hHeat"]{display:none!important}   /* 5.11: "מה זז היום" is on the home and in "מה קורה בתיק" */
 .ptnav{position:sticky;top:var(--subH,0px);z-index:6;display:flex;flex-wrap:nowrap;gap:0;padding:4px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
 .ptnav .chip{flex:1 0 auto;justify-content:center;border:0;background:transparent;min-height:38px;font-size:14px;font-weight:600;color:var(--ink2);border-radius:999px;white-space:nowrap;padding-inline:12px}
@@ -3864,6 +3867,20 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body table.ladder.ladder>tbody>tr>td:nth-child(2) .ck{margin:0}
   html body table.ladder.ladder>tbody>tr>td:nth-child(2) .once1{flex-basis:100%;padding-inline-start:54px}
   html body table.ladder.ladder>tbody>tr>td:nth-child(3)>.buys{flex:1 1 0;min-width:0}
+  /* 25.11 (the owner: "זה נראה גרוע וזה מסורבל"): a month's purchases are one list: "קנייה" a heading above it (it hung at the
+     side, in the middle of the list), a row a security: the box, the name in full, the price at the row's end */
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3){display:block!important}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3)::before{display:block;margin-bottom:2px;font-weight:600}
+  html body table.ladder.ladder>tbody>tr>td:nth-child(3)>.buys{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:0}
+  html body table.ladder.ladder .buys .bg.col{align-items:stretch;gap:0;width:100%} html body table.ladder.ladder .buys .bl{margin-top:8px}
+  html body table.ladder.ladder .buys .ck{display:flex;flex-wrap:wrap;width:100%;margin:0;gap:2px 10px;padding:4px 0;border-bottom:1px solid var(--line)}
+  html body table.ladder.ladder .buys .ck:last-of-type{border-bottom:0}
+  html body table.ladder.ladder .buys .ck .sym{flex:1 1 0;min-width:0;max-width:none;font-size:15px;text-align:end}
+  html body table.ladder.ladder .buys .ck>.n{margin-inline-start:auto;font-size:15px}
+  html body table.ladder.ladder .buys .ck>.nm,html body table.ladder.ladder .buys .ck>.flag{flex-basis:100%;margin-inline-start:32px}
+  html body table.ladder.ladder .buys>.nm:not(:only-child),html body table.ladder.ladder .buys .bg>.nm{padding-inline-start:32px}
+  html body table.ladder.ladder .buys .ebox{width:100%}
+  html body table.ladder.ladder .buys>.btn,html body table.ladder.ladder .buys .bg>.btn{align-self:flex-start;margin-inline-start:32px;margin-bottom:6px}
   html body table.ladder.ladder>tbody>tr.lad-more,  html body table.ladder.ladder>tbody>tr:has(>td[colspan]){display:block!important;border-bottom:0}
   html body table.ladder.ladder>tbody>tr>td[colspan]{text-align:center!important}
   html body table.ladder.ladder>tbody>tr>td[colspan]::before{content:none!important}
@@ -20648,6 +20665,13 @@ function renderPlan(mAll){
       if(!EDITS.has(sym))return lb+`<span class="nm">${pu.px?`<span class="n">${+(+pu.qty||1).toFixed(4)}</span> יח׳ ב-<span class="n">${usd?'$':'₪'}${(+pu.px).toFixed(2)}</span>`:'לפי מחיר השוק ברגע הסימון'}</span><button class="btn sm" type="button" data-pa="editBuy" data-sym="${esc(sym)}">עדכן מחיר ששולם</button>`;
       const ei=esc(sym).replace(/[^A-Za-z0-9_-]/g,'_');
       return lb+`<span class="ebox"><label for="eb_qty_${ei}">כמות<input type="number" id="eb_qty_${ei}" data-ebq="${esc(sym)}" min="0" step="0.0001" value="${+pu.qty||1}"></label><label for="eb_px_${ei}">מחיר ליחידה (${usd?'$':'₪'})<input type="number" id="eb_px_${ei}" data-ebp="${esc(sym)}" min="0" step="0.01" value="${pu.px?pu.px:(pp?(+pp.px).toFixed(2):'')}"></label><button class="btn sm pri" type="button" data-pa="saveBuy" data-sym="${esc(sym)}">שמור</button><button class="btn sm" type="button" data-pa="cancelBuy" data-sym="${esc(sym)}">בטל</button></span>`};
+  // 25.11 (the owner: "באוקטובר מחקתי את המניות, אבל אין אפשרות להחזיר כלום… פלוס בצד של כל חודש"): a tick taken off a past month
+  // sent its security to the months ahead, and nothing in that month could bring it back. Every month up to this one has
+  // a "+" that opens the plan's securities still to buy (those not in the month already): one press marks one as bought
+  // in that month, at today's price (the price paid can be corrected, as for any tick). One list is open at a time
+  const addable=(m,buys)=>st.fixed||st.wait||m>st.cur||!canWrite||(st.rot&&buys.length)?[]:PL.items.filter(i=>i.status==='todo'&&st.cost[i.sym]!=null&&!buys.includes(i.sym));
+  const addH=(m,ym,buys)=>{const L=addable(m,buys); if(!L.length)return ''; const open=LADADD===ym, mn=ymShort(ym);
+    return `<div class="lad-add"><button type="button" class="btn sm lad-plus" data-ladadd="${ym}" aria-expanded="${open}" aria-controls="ladAdd_${ym}" aria-label="להוסיף קנייה ל${mn}"><span aria-hidden="true">＋</span> להוסיף קנייה</button>${open?`<div class="lad-pick" id="ladAdd_${ym}" role="group" aria-label="ניירות שאפשר לסמן כנקנו ב${mn}"><p class="nm">בחר נייר, והוא יסומן כנקנה ב${mn} במחיר של היום. את המחיר ששילמת אפשר לתקן אחר כך.</p><div class="lad-chips">${L.map(i=>{const c=st.cost[i.sym], short=m===st.cur&&c>st.bal+0.005; return `<button type="button" class="btn sm" data-pa="addBuy" data-sym="${esc(i.sym)}" data-ym="${ym}"${short?' disabled':''}><span aria-hidden="true">＋</span> <bdi>${esc(lab(i.sym))}</bdi> <span class="n">${ils(c,2)}</span>${short?' <span class="nm">חסר ביתרה</span>':''}</button>`}).join('')}</div></div>`:''}</div>`};
   const buyGroups=(buys,m,fn)=>{const ym=ymAdd(st.start,m), f=buys.filter(isF), k=buys.filter(x=>!isF(x)); if(!f.length||!k.length)return buys.map(x=>fn(x,m,ym)).join(''); return `<div class="bg col"><span class="bl">קרנות</span>${f.map(x=>fn(x,m,ym)).join('')}</div><div class="bg col"><span class="bl">מניות</span>${k.map(x=>fn(x,m,ym)).join('')}</div>`};
   for(let m=0;m<nRows;m++){
     const ym=ymAdd(st.start,m), d=depBy[ym], buys=st.lad.rows[m]||[], on=onceBy[ym]||[], onAmt=on.reduce((t,x)=>t+(+x.amount||0),0);
@@ -20658,7 +20682,7 @@ function renderPlan(mAll){
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur?'far':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?`<div class="nm">${st.wait?'חודש ההתחלה':'החודש'}</div>`:m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
     <td><label class="ck" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${dis}><span class="n">${ils(d?d.amount:B)}</span></label>${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}</div>`).join('')}</td>
-    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div></td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
+    <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':m<st.cur&&!st.fixed?'<span class="nm">לא סומנה קנייה בחודש הזה.</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div>${addH(m,ym,buys)}</td><td class="num">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
   // then the plan's months from today's real numbers on: its monthly deposit, and the purchases of the ladder not done yet
@@ -20719,8 +20743,18 @@ function planAct(a,d){
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
       if(pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
       PL.purchases.push(rec)}}
+  else if(a==='addBuy'){const t=PL.items.find(i=>i.sym===d.sym), ym=String(d.ym||''), c=t?st.cost[t.sym]:null; if(!t||t.status!=='todo'||st.fixed||st.wait||c==null||!/^\d{4}-\d\d$/.test(ym)||ym>ymNow()||ym<st.start)return;
+    if(ym===ymNow()&&c>st.bal+0.005){render();return}
+    const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round(c*100)/100, rec={id,sym:t.sym,paidIls:paid,month:ym,at:now};
+    if(st.rot&&pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
+    PL.purchases.push(rec);t.status='done';t.doneAt=now;t.note='';t.pid=id;
+    const sym=t.sym; LAD_UNDO={msg:`${lab(sym)} סומן כנקנה ב${ymShort(ym)}`,fn:()=>{LAD_QUIET=true; planAct('buyToggle',{sym,ym})}}; ladAddFocus(ym,sym)}
   else if(a==='buyToggle'){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
-    if(t.status==='done'){const pid=t.pid||(PL.purchases.slice().reverse().find(x=>x.sym===t.sym)||{}).id; PL.purchases=PL.purchases.filter(x=>pid?x.id!==pid:x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note=''}
+    if(t.status==='done'){const pid=t.pid||(PL.purchases.slice().reverse().find(x=>x.sym===t.sym)||{}).id, gone=PL.purchases.filter(x=>pid?x.id===pid:x.sym===t.sym), snap={pid:t.pid,doneAt:t.doneAt,note:t.note}, X=PL;
+      PL.purchases=PL.purchases.filter(x=>pid?x.id!==pid:x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note='';
+      // 25.11: taken off by mistake? back with one press, in the month it was in
+      if(!LAD_QUIET&&gone.length)LAD_UNDO={msg:`הסימון של ${lab(t.sym)}${gone[0].month?' ב'+ymShort(gone[0].month):''} הוסר`,fn:()=>{if(t.status!=='todo')return; for(const g of gone)if(!X.purchases.some(x=>x.id===g.id))X.purchases.push(g); t.status='done'; t.note=snap.note||''; if(snap.pid)t.pid=snap.pid; if(snap.doneAt)t.doneAt=snap.doneAt; setTrack(); planChanged()}};
+      LAD_QUIET=false}
     else if((st.cost[t.sym]||0)>st.bal+0.005){render();return}
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
       if(st.rot&&pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
@@ -20770,7 +20804,7 @@ function planAct(a,d){
   else if(a==='initPlan'){if(PL.items.length)return;const sel=OB_SEL;PL.items=mAllNow().pos.filter(p=>(!sel||sel.has(p.sym))&&(TRACK==='idx'?isIdx(p.sym):!isIdx(p.sym))).map(p=>({sym:p.sym,status:'todo',note:''}));if(!PL.items.length)return;PL.start=OB_FROM&&ymDiff(OB_FROM,ymNow())>0?OB_FROM:ymNow();PL.mode=PL.mode||'cheap';OB_SEL=null; OB_FROM=''; if(OB_UNTIL)PL.until=OB_UNTIL; else delete PL.until; PL.round=1; OB_UNTIL=''}
   planChanged();
 }
-function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500); if(PZ_UNDO){const w=PZ_UNDO; PZ_UNDO=false; const ac=typeof w==='string'?acctIds().find(x=>acctName(x)===w):''; try{offerUndo(ac?`המזומן של ${w} אופס בתוכנית ל-₪0`:'יתרת התוכנית אופסה ל-₪0',()=>ac?planAct('acctZeroOff',{acct:ac}):planAct('zeroOff',{}))}catch(e){}}}
+function planChanged(){pDirty=true;P_SEQ++;render();clearTimeout(pTimer);pTimer=setTimeout(savePlan,500); if(LAD_UNDO){const u=LAD_UNDO; LAD_UNDO=null; try{offerUndo(u.msg,u.fn)}catch(e){}} if(PZ_UNDO){const w=PZ_UNDO; PZ_UNDO=false; const ac=typeof w==='string'?acctIds().find(x=>acctName(x)===w):''; try{offerUndo(ac?`המזומן של ${w} אופס בתוכנית ל-₪0`:'יתרת התוכנית אופסה ל-₪0',()=>ac?planAct('acctZeroOff',{acct:ac}):planAct('zeroOff',{}))}catch(e){}}}
 async function savePlan(){
   if(!db||!canWrite)return;
   if(!PLK&&!LOCAL){clearTimeout(pTimer); pTimer=setTimeout(savePlan,700); return}   // 1.11: not before the saved plan has arrived
@@ -30068,8 +30102,11 @@ function nwBriefH(){const b=NXD&&NXD.brief; if(!b||!Array.isArray(b.lines)||!b.l
 // already has: the readings, the markets' document, the calendar; צ׳יקו's lines ("מה קורה בשווקים") give the "why"
 // when he wrote them, the readings otherwise. With the time of the last gathering and reading; nothing of it is a
 // forecast, and a part with no data says so ----
-let ECO=null; var ETFD=null, etfAsked=false, LADALL=false;   // var: the plan is drawn before this line runs
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladall]'); if(!b)return; LADALL=!LADALL; try{render()}catch(x){}});   // 4.11: research/etf, what is inside the held funds
+let ECO=null; var ETFD=null, etfAsked=false, LADALL=false, LADADD='', LAD_UNDO=null, LAD_QUIET=false;   // var: the plan is drawn before this line runs
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladall]'); if(!b)return; LADALL=!LADALL; try{render()}catch(x){}});
+function ladAddFocus(ym,sym){setTimeout(()=>{const pick=document.getElementById('ladAdd_'+ym), f=(pick&&pick.querySelector('button:not([disabled])'))||document.querySelector('[data-ladadd="'+ym+'"]')||(sym&&document.querySelector('#ladRows [data-buy="'+sym+'"]')); if(f)try{f.focus({preventScroll:true})}catch(e){}},30)}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ladadd]'); if(!b)return; const ym=b.dataset.ladadd, was=LADADD===ym; LADADD=was?'':ym; try{render()}catch(x){} if(was)setTimeout(()=>{const t=document.querySelector('[data-ladadd="'+ym+'"]'); if(t)try{t.focus({preventScroll:true})}catch(e){}},30); else ladAddFocus(ym)});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!LADADD||!(e.target.closest&&e.target.closest('.lad-add')))return; const ym=LADADD; LADADD=''; try{render()}catch(x){} setTimeout(()=>{const t=document.querySelector('[data-ladadd="'+ym+'"]'); if(t)try{t.focus({preventScroll:true})}catch(x){}},30)});   // 4.11: research/etf, what is inside the held funds
 // the double exposure, in the X-ray: a share held directly and again through funds, with its total
 function etfLookH(E){const L=E.look; if(!L)return ''; const rows=(L.double.length?L.double:L.top.slice(0,5)).slice(0,8);
   return `<div class="xr-look"><h3>חשיפה כוללת, כולל מה שבתוך הקרנות</h3><p class="nm">${esc(E.overlap.text)}. ${esc(L.note)}.</p>
