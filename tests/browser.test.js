@@ -4948,6 +4948,51 @@ test('25.11 a purchase ticked today for an earlier month does not come off the c
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+test('25.11 a month is locked once its deposit is ticked, at that day\'s dollar rate: not unticked or re-priced by a press, not moved by the dollar, opened only by its own action; a one-time deposit keeps its own rate and joins the dollars',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','quotes/latest','history/main'])keep[p]=store.getDoc(p);
+  const ym=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem'}).format(new Date()).slice(0,7), Q0=JSON.parse(JSON.stringify(keep['quotes/latest'].data)), fx0=+Q0.usdIls;
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); if((pl.items||[]).length<3)return t.skip('no plan in the fixture');
+  Object.assign(pl,{start:ym,mode:'cheap',deposits:[],purchases:[],items:pl.items.map(x=>({sym:x.sym,status:x.status==='skip'?'skip':'todo',note:''}))}); delete pl.until; delete pl.zero; delete pl.acctZero; delete pl.cashOk; delete pl.round; store.setDoc('plan/main',pl,{silent:true});
+  store.setDoc('history/main',{accounts:[],depIlsNow:0,monthly:[]},{silent:true});
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#dep_'+ym,{timeout:10000});
+    const D=()=>store.getDoc('plan/main').data, wait=async f=>{for(let k=0;k<60;k++){if(f())return true; await pg.waitForTimeout(250)} return false};
+    const cell=()=>pg.evaluate(ym=>{const c=document.getElementById('dep_'+ym), td=c.closest('td'); return {dis:c.disabled,chk:c.checked,txt:td.innerText.replace(/\s+/g,' '),btn:[...td.querySelectorAll('button')].map(b=>({pa:b.dataset.pa,h:Math.round(b.getBoundingClientRect().height)}))}},ym);
+    const costs=()=>pg.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#ladRows tr.cur input[data-buy]')].map(c=>[c.dataset.buy,c.closest('label').querySelector('.n').textContent])));
+    // the deposit is ticked: the month is locked, with the dollar\'s rate of the day and the deposit\'s dollars
+    await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); assert.ok(await wait(()=>(D().deposits||[]).some(d=>d.month===ym&&!d.once&&d.fx)),'kept with its rate');
+    const d0=D().deposits.find(d=>d.month===ym&&!d.once); assert.equal(d0.fx,fx0); assert.ok(d0.fxDay&&d0.cost&&Object.keys(d0.cost).length>=1,'and with the day\'s prices of what is still to buy');
+    let c=await cell(); assert.ok(c.dis&&c.chk,'the tick is not pressed by accident'); assert.match(c.txt,new RegExp('נעול · \\$'+(d0.amount/fx0).toFixed(2).replace('.','\\.')+' בשער '+fx0.toFixed(3).replace('.','\\.')+' מ-'),'said with its rate and day: '+c.txt);
+    assert.deepEqual(c.btn.map(b=>b.pa),['monthOpenAsk']); assert.ok(c.btn.every(b=>b.h>=44),'a finger: '+JSON.stringify(c.btn)+' '+await pg.evaluate(()=>{const b=document.querySelector('#ladRows [data-pa="monthOpenAsk"]'), cs=getComputedStyle(b); return [cs.display,cs.minHeight,cs.height,cs.lineHeight,b.className].join('|')}));
+    assert.match(await pg.evaluate(()=>document.getElementById('toast').hidden?'':document.getElementById('toastMsg').textContent),/והחודש ננעל בשער/);
+    assert.match(await pg.evaluate(()=>document.querySelector('#planAns .pc-list li').innerText.replace(/\s+/g,' ')),/הפקדה חודשית .* ✓ הופקד נעול/,'the card: no "ביטול" on a locked tick');
+    // the dollar moves: what is still to buy this month keeps its prices, and the deposit its dollars
+    const c0=await costs(); store.setDoc('quotes/latest',{...Q0,usdIls:Math.round((fx0+1)*1000)/1000}); await pg.waitForTimeout(1500);
+    assert.deepEqual(await costs(),c0,'the month does not move with the dollar'); assert.equal((await cell()).txt,c.txt);
+    // a purchase is added at the locked price; then it cannot be unticked or re-priced
+    const sym=Object.keys(c0)[0]; if(sym){await pg.evaluate(sy=>document.getElementById('buy_'+sy).click(),sym); assert.ok(await wait(()=>(D().purchases||[]).some(x=>x.sym===sym)),'a purchase can still be added');
+      assert.equal(D().purchases.find(x=>x.sym===sym).paidIls,d0.cost[sym],'at the locked price');
+      await pg.waitForFunction(sy=>{const b=document.getElementById('buy_'+sy); return !!b&&b.checked&&b.disabled},sym,{timeout:8000});
+      assert.ok(await pg.evaluate(()=>!!document.querySelector('#ladRows tr.cur [data-pa="editBuy"]')),'the price paid can be corrected on the day of the tick');
+      // from the next day on it is part of the locked month
+      {const d2=JSON.parse(JSON.stringify(D())); for(const x of d2.purchases)x.at=new Date(Date.now()-2*864e5).toISOString(); store.setDoc('plan/main',d2); await pg.waitForFunction(()=>!document.querySelector('#ladRows tr.cur [data-pa="editBuy"]'),null,{timeout:8000})}}
+    // opened only by its own action, asked once; "לא" keeps it locked
+    await pg.focus(`#ladRows [data-pa="monthOpenAsk"][data-ym="${ym}"]`); await pg.keyboard.press('Enter'); await pg.waitForSelector('#ladRows .lk-q',{timeout:5000});
+    assert.equal(await pg.evaluate(()=>document.activeElement&&document.activeElement.dataset.pa),'monthOpenNo'); await pg.keyboard.press('Enter'); await pg.waitForFunction(()=>!document.querySelector('#ladRows .lk-q'),null,{timeout:5000}); assert.ok((await cell()).dis);
+    await pg.click(`#ladRows [data-pa="monthOpenAsk"][data-ym="${ym}"]`); await pg.click('#ladRows [data-pa="monthOpen"]'); await pg.waitForFunction(ym=>!document.getElementById('dep_'+ym).disabled,ym,{timeout:8000});
+    c=await cell(); assert.match(c.txt,/פתוח לשינויים/); assert.deepEqual(c.btn.map(b=>b.pa),['monthLock']);
+    await pg.click(`#ladRows [data-pa="monthLock"][data-ym="${ym}"]`); await pg.waitForFunction(ym=>document.getElementById('dep_'+ym).disabled,ym,{timeout:8000});
+    assert.ok(await wait(()=>{const d=D().deposits.find(x=>x.month===ym&&!x.once); return d&&!d.open&&d.fx===fx0}),'locked again, at its own rate');
+    // a one-time deposit now, at the new rate: its own dollars, joined to the first\'s without re-rating them
+    await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000}); await pg.fill('#onceAmt','400'); await pg.click('#onceAdd');
+    assert.ok(await wait(()=>(D().deposits||[]).some(x=>x.once&&+x.amount===400&&x.fx)),'the one-time deposit with its rate'); const o1=D().deposits.find(x=>x.once&&+x.amount===400); assert.equal(o1.fx,Math.round((fx0+1)*1000)/1000);
+    const want=Math.round((d0.amount/fx0+400/o1.fx)*100)/100; await pg.waitForFunction(w=>(document.querySelector('#planAns .pc-usd')||{innerText:''}).innerText.includes('$'+w),want.toFixed(2),{timeout:8000});
+    assert.match(await pg.evaluate(()=>document.querySelector('#ladRows tr.cur').innerText.replace(/\s+/g,' ')),new RegExp('\\+ ₪400 חד פעמית · \\$'+(400/o1.fx).toFixed(2).replace('.','\\.')+' בשער '),'and it says its own rate');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
 test('25.11 signing out is in the menu in its own words (asked once, by keyboard too), the sign-in screen wears the site\'s colours over a drawn market, and a forgotten password has its way',T,async t=>{
   if(skip())return t.skip('no browser');
   for(const W of [390,1280]){

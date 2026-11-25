@@ -130,6 +130,16 @@ test('the plan: a mark the account\'s cash already holds (cashOk) is not counted
   G.PLD.deposits.push({amount:200,at:'2026-10-13T09:00:00Z'}); near(C.mAllNow().cash,1200,'a mark after that moment moves the cash again');
   plan();
 });
+test('the deposits\' dollars are a sum of parts, each at its own day\'s rate: a new deposit joins and re-rates nothing', ()=>{
+  const U=load(['depUsd','usdParts'],{});
+  // ₪700 when a dollar was ₪3.50, then ₪400 when it was ₪4.00
+  const first=[{amount:700,fx:3.5,fxDay:'2026-10-01'}]; assert.deepEqual(U.usdParts(first),{usd:200,ils:700,n:1,miss:0});
+  const both=[...first,{amount:400,fx:4,fxDay:'2026-11-25',once:true}], r=U.usdParts(both);
+  assert.equal(r.usd,300,'$200 as they were, and $100 at the new rate; not ₪1,100 at today\'s rate ($275)'); assert.equal(r.ils,1100); assert.equal(r.n,2);
+  near(U.depUsd(both[0]),200); near(U.depUsd(both[1]),100);
+  // a deposit recorded before rates were kept is said, not guessed
+  assert.deepEqual(U.usdParts([...both,{amount:500}]),{usd:300,ils:1100,n:2,miss:1}); assert.equal(U.depUsd({amount:500}),null);
+});
 test('the plan: marks a later statement covers are not added again', ()=>{
   G.Q={usdIls:3.5,prices:{MSFT:100,NVDA:200},prev:{}};
   G.P={positions:[{sym:'MSFT',acct:'exc',ccy:'USD',qty:1,costIls:350}],cash:[{acct:'exc',ccy:'ILS',amount:0}],asOf:{exc:'2026-10-10'}};
