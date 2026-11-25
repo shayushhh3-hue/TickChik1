@@ -19870,7 +19870,7 @@ const usOpen=now=>{const p=tzParts('America/New_York',now||new Date()), day=tzDa
 // is a regular trading day). It decides whether a day trades; beyond its dates the Hebrew calendar below stands in
 let ILSCHED=null;
 const ilOff=iso=>{const S=ILSCHED; if(!S||!S.days||!S.from||!S.to||!iso||iso<S.from||iso>S.to)return null; const x=S.days[iso]; return x?{open:!!x[1],t:String(x[0]||''),name:String((S.types||{})[x[0]]||'')}:{open:true,t:'T',name:''}};
-const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); if(!p||p.wd<1||p.wd>5)return false; const o=ILSCHED?ilOff(tzDay('Asia/Jerusalem',now||new Date())):null; if(o&&!o.open)return false; return p.t>=600&&p.t<(p.wd===5?840:1050)};
+const ilOpen=now=>{const p=tzParts('Asia/Jerusalem',now||new Date()); if(!p||p.wd<1||p.wd>5)return false; const o=ILSCHED?ilOff(tzDay('Asia/Jerusalem',now||new Date())):null; if(o&&!o.open)return false; return p.t>=600&&p.t<(p.wd===5?840:o&&o.t==='M'?870:1050)};
 const mktOpen=now=>usOpen(now)||ilOpen(now);
 // ---- the trading calendar: for every day, is Tel Aviv open, short or closed, and New York, with the hours in Israel time.
 // New York: the NYSE's own list of closures and 13:00 closes. Tel Aviv: the Jewish holidays from the Hebrew calendar the
@@ -19903,10 +19903,13 @@ function mktDay(iso){
   const wd=wdOf(iso), noon=new Date(iso+'T16:00:00Z');
   let il; {const hol=ilHoliday(iso), nextSun=wd===5?ilHoliday(isoAdd(iso,2)):null, off=wd===0||wd===6?null:ilOff(iso);
     // 25.11: the exchange's calendar decides the day; the Hebrew calendar gives the holiday its name
-    const offName=off&&off.name&&!/^(יום מסחר|trading day)$/i.test(off.name.trim())?off.name.trim():'', sunRule=nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]);
+    // the exchange's types of day (seen with its key): T a trading day (Monday to Thursday), F the short trading day of
+    // every Friday, M a trading day of Chol HaMoed (until 14:30); without trading: C a day of rest, E a holiday's eve,
+    // B and S days the banks work and the exchange does not
+    const offName=off?({E:'ערב חג',B:'אין מסחר, לפי לוח הבורסה',S:'אין מסחר, לפי לוח הבורסה'})[off.t]||off.name.trim():'', sunRule=nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]);
     if(wd===0||wd===6)il={st:'closed',why:wd===6?'שבת':'יום ראשון'};
     else if(off&&!off.open)il={st:'closed',why:hol?hol[1]:sunRule?`${nextSun[1]} ביום ראשון, ולפי כללי הבורסה אין מסחר ביום שישי שלפניו`:offName||'אין מסחר, לפי לוח הבורסה',off:true};
-    else if(off&&off.open)il=(hol&&hol[0]==='short')||/מקוצר|קצר|short|half/i.test(off.name)?{st:'short',h:'10:00–14:30',why:hol&&hol[0]==='short'?hol[1]:offName||'יום מקוצר',off:true}:{st:'open',h:wd===5?'10:00–14:00':'10:00–17:30',why:'',off:true};
+    else if(off&&off.open)il=wd!==5&&(off.t==='M'||(hol&&hol[0]==='short'))?{st:'short',h:'10:00–14:30',why:hol&&hol[0]==='short'?hol[1]:'חול המועד',off:true}:{st:'open',h:wd===5?'10:00–14:00':'10:00–17:30',why:'',off:true};
     else if(hol&&hol[0]==='closed')il={st:'closed',why:hol[1]};
     else if(nextSun&&nextSun[0]==='closed'&&/ערב|ראש השנה|סוכות|פסח|שבועות|שמחת תורה|יום כיפור/.test(nextSun[1]))il={st:'closed',why:`${nextSun[1]} ביום ראשון, ולפי כללי הבורסה אין מסחר ביום שישי שלפניו`,rule:true};
     else if(hol&&hol[0]==='short')il={st:'short',h:'10:00–14:30',why:hol[1]};

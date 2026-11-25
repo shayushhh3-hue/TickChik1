@@ -13,7 +13,10 @@ export const nyParts=d=>parts(d||new Date(),'America/New_York');
 let IL_SCHED=null;
 export function setIlSched(d){IL_SCHED=d&&d.days&&typeof d.days==='object'&&d.from&&d.to?d:null}
 export const ilClosedDay=iso=>{const S=IL_SCHED; if(!S||iso<S.from||iso>S.to)return null; const x=S.days[iso]; return x?!x[1]:false};
-export function ilOpen(d){const p=ilParts(d),t=p.h*60+p.min;if(p.wd===0||p.wd===6)return false;if(ilClosedDay(p.iso)===true)return false;return t>=600&&t<(p.wd===5?14*60:17*60+30)}
+// the exchange's type of a day inside the calendar ('T' a regular trading day, 'F' the short Friday, 'M' a trading day of
+// Chol HaMoed that ends at 14:30; C, E, B and S do not trade); '' beyond the calendar
+export const ilDayType=iso=>{const S=IL_SCHED; if(!S||iso<S.from||iso>S.to)return ''; const x=S.days[iso]; return x?String(x[0]||''):'T'};
+export function ilOpen(d){const p=ilParts(d),t=p.h*60+p.min;if(p.wd===0||p.wd===6)return false;if(ilClosedDay(p.iso)===true)return false;return t>=600&&t<(p.wd===5?14*60:ilDayType(p.iso)==='M'?14*60+30:17*60+30)}
 export const NYSE_CLOSED=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
   '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']);
 export const NYSE_EARLY=new Set(['2026-11-27','2026-12-24','2027-11-26']); // close at 13:00 New York time
