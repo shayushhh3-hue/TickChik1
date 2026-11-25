@@ -19344,7 +19344,7 @@ const inCashOk=(x,a)=>{const z=a?cashOkAt(a):''; return !!z&&!!(x&&x.at)&&x.at<=
 // the account a purchase's money left: the one that holds the security, else the first shekel account
 const buyAcct=x=>{const ids=acctIds(), h=((P&&P.positions)||[]).find(q=>q.sym===x.sym&&ids.includes(q.acct)); if(h)return h.acct; const il=ids.filter(y=>acctCcy(y)!=='USD'); return il[0]||ids[0]||''};
 function trackOpen(t){const X=t==='idx'?PLD.idx:PLD; if(!X)return {deps:[],buys:[],cash:[]};
-  const a=tracksApart()?trackAcct(t):'all', ids=acctIds(), ilA=ids.filter(x=>acctCcy(x)!=='USD'), depA=ilA.length?ilA:ids, own=d=>a!=='all'&&markDay(d)>=SEP_DAY;
+  const a=tracksApart()?trackAcct(t):'all', ids=acctIds(), ilA=ids.filter(x=>acctCcy(x)!=='USD'), depA=ilA.length?ilA:ids, own=d=>a!=='all'&&!!(d&&d.at)&&ilDay(d.at)>=SEP_DAY;   // 25.11: by the day it was ticked (a tick made now for an earlier month was sent to the old rule by its month)
   // 25.11 (the owner: "ההפקדה החד פעמית שתשתייך לאחת מפלטפורמות המסחר"): a one-time deposit went to one account (apart, its
   // track's; else the one chosen for it, acct), so it is in the figures only once that account's own cash is newer. Before,
   // a newer statement of the other account took it out of the balance
@@ -20837,6 +20837,8 @@ function renderPlan(mAll){
   const live=list.filter(x=>x.it.status!=='skip'), gone=list.filter(x=>x.it.status==='skip');
   const lf=live.filter(x=>isF(x.it.sym)), ls=live.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
   const goneH=gone.length?`<tr class="sec gone"><td colspan="3">הוצאו מהתוכנית · ${gone.length}<div class="nm">לא נקנים ולא מופיעים בלוח. "להחזיר": הנייר חוזר לתור, במקום שהיה. "למחוק לגמרי": הוא יוצא גם מהרשימה הזו. האחזקה בתיק ומה שכבר נקנה לא משתנים.</div></td></tr>`+gone.map(rowP).join(''):'';
+  const prF=(()=>{const ae=document.activeElement; return ae&&$('planRows').contains(ae)&&ae.dataset&&ae.dataset.pa?`[data-pa="${ae.dataset.pa}"]`+(ae.dataset.ix!=null?`[data-ix="${ae.dataset.ix}"]`:''):''})();
+  setTimeout(()=>{if(!prF)return; const ae=document.activeElement; if(ae&&ae!==document.body&&!$('planRows').contains(ae))return; const q=$('planRows').querySelector(prF); if(q&&q!==ae)try{q.focus({preventScroll:true})}catch(e){}},0);
   $('planRows').innerHTML=list.length?(lf.length&&ls.length?secP('קרנות',lf.length)+lf.map(rowP).join('')+secP('מניות',ls.length)+ls.map(rowP).join(''):live.map(rowP).join(''))+goneH:`<tr><td colspan="3" class="empty">עדיין אין תוכנית הגדלה.${canWrite?' <button class="btn sm" type="button" data-pa="initPlan">בנה תוכנית מהאחזקות שלי</button>':''}</td></tr>`;
   try{planHoldSync()}catch(e){console.error(e)}
   try{planZeroFill(st)}catch(e){console.error(e)}

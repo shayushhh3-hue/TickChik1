@@ -4920,6 +4920,34 @@ test('25.11 a one-time deposit from the account\'s own box reaches the box at on
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+test('25.11 a purchase ticked today for an earlier month does not come off the cash of the track\'s account again (its cash is of a later day): the plan and the portfolio keep the account\'s figure',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const day=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10), ago=m=>new Date(Date.now()-m*6e4).toISOString(), il0=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem'}).format(new Date()), ym=il0.slice(0,7), prevYm=(()=>{const d=new Date(ym+'-15T00:00:00Z'); d.setUTCMonth(d.getUTCMonth()-1); return d.toISOString().slice(0,7)})();
+  const pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)), ids=[...new Set([...(pf.positions||[]).map(x=>x.acct),...(pf.cash||[]).map(x=>x.acct)])].filter(Boolean);
+  if(ids.length<2)return t.skip('one account in the fixture'); const [A0,A1]=ids;
+  // as in the partner\'s account: every holding is listed under one account, whose statement is old; the stocks track buys from
+  // the other account, whose cash (₪100) was given today
+  pf.positions=(pf.positions||[]).map(x=>({...x,acct:A1})); pf.cash=[{acct:A0,ccy:'ILS',amount:100},{acct:A1,ccy:'ILS',amount:262.15}]; pf.asOf={[A0]:day(5),[A1]:day(70)}; pf.cashAt={[A0]:il0,[A1]:il0}; pf.figT={[A0]:ago(60),[A1]:ago(55)}; pf.updatedAt=ago(40); store.setDoc('portfolio/main',pf,{silent:true});
+  const S0=JSON.parse(JSON.stringify((keep['settings/main'].exists&&keep['settings/main'].data)||{})); S0.planAcct={stocks:A0,idx:A1}; store.setDoc('settings/main',S0,{silent:true});
+  store.setDoc('history/main',{accounts:[],depIlsNow:0,monthly:[]},{silent:true});
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); if((pl.items||[]).length<4)return t.skip('no plan in the fixture'); delete pl.cashOk; delete pl.until; delete pl.round; delete pl.zero; delete pl.acctZero;
+  // last month\'s deposit and three purchases, all ticked half an hour ago
+  const paid=[221.58,120.67,200.05];
+  Object.assign(pl,{start:prevYm,mode:'manual',deposits:[{id:'d1',month:prevYm,amount:500,at:ago(31)}],purchases:pl.items.slice(0,3).map((x,k)=>({id:'b'+k,sym:x.sym,paidIls:paid[k],qty:1,month:prevYm,at:ago(30-k)})),
+    items:pl.items.map((x,k)=>k<3?{sym:x.sym,status:'done',note:'',pid:'b'+k,doneAt:ago(30-k)}:{sym:x.sym,status:'todo',note:''})});
+  pl.idx=Object.assign({start:prevYm,opening:0,mode:'manual',items:[],deposits:[],purchases:[]},pl.idx||{},{deposits:[],purchases:[]}); delete pl.idx.zero; store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(1280);
+  try{
+    const num=t0=>(/[−-]/.test(t0)?-1:1)*+String(t0).replace(/[^\d.]/g,''), cashOf=a=>pg.evaluate(a=>window.__model.cashOf(a),a), near=(a,b,m)=>assert.ok(Math.abs(a-b)<0.011,`${m}: ${a} / ${b}`);
+    // the account\'s cash is of today: it holds last month\'s deposit and purchases, whenever they were ticked
+    near((await cashOf(A0)).cash,100,'the stocks\' account, in its own view'); near((await cashOf('all')).cash,362.15,'the whole portfolio\'s cash');
+    await tab(pg,'plan'); await pg.click('[data-track="stocks"]'); await pg.waitForSelector(`#pCashRow [data-pcdep="${A0}"]`,{timeout:10000});
+    const box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-pcdep="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num);
+    assert.equal(await box(A0),100,'the plan\'s box of that account'); assert.equal(await box(A1),262); assert.equal(await pg.evaluate(()=>document.querySelector('#planAns .ps-bal b').textContent).then(num),100,'and the track\'s balance');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});
 test('25.11 signing out is in the menu in its own words (asked once, by keyboard too), the sign-in screen wears the site\'s colours over a drawn market, and a forgotten password has its way',T,async t=>{
   if(skip())return t.skip('no browser');
   for(const W of [390,1280]){
