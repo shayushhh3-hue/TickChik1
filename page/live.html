@@ -32781,10 +32781,14 @@ function ilLinks(id){   // 4.11: the source named, the person kept here (no way 
 const ILX={};
 function ilxKey(k,it){k=String(k||''); const ix=ilIdx(k); if(ix)return IDXIL.has(ix)?k:''; if(ilIsNum(k)||k.startsWith('TLV:'))return k; return it&&it.t==='T'&&it.ex==='TLV'&&it.sym?'TLV:'+it.sym:''}
 const ilxOfKey=(k,it)=>{const e=ILX[ilxKey(k,it)]; return e&&e.v&&e.v.kind?e.v:null};
-function ilxWant(k,it){const q=ilxKey(k,it); if(!q||ILX[q]||typeof fetch!=='function'||location.protocol==='file:')return; ILX[q]={at:Date.now(),v:null};
-  fetch('/api/ilx?k='+encodeURIComponent(q),{credentials:'same-origin',headers:{'x-tc':'1'}}).then(r=>r.ok?r.json():null).then(j=>{ILX[q]={at:Date.now(),v:j||null}; if(j&&j.kind&&SEC===k){try{renderSec()}catch(e){}}}).catch(()=>{})}
+// (an answer is kept; a request the server refused or that did not arrive is asked again after a minute: seen on the live
+// site, a moment of "too many requests" left a share's page without its facts until the page was loaded again)
+function ilxWant(k,it){const q=ilxKey(k,it), e=q&&ILX[q]; if(!q||(e&&!(e.err&&Date.now()-e.at>60e3))||typeof fetch!=='function'||location.protocol==='file:')return; ILX[q]={at:Date.now(),v:null};
+  fetch('/api/ilx?k='+encodeURIComponent(q),{credentials:'same-origin',headers:{'x-tc':'1'}}).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status))).then(j=>{ILX[q]={at:Date.now(),v:j||null}; if(j&&j.kind&&SEC===k){try{renderSec()}catch(e){}}}).catch(()=>{ILX[q]={at:Date.now(),v:null,err:1}})}
 // a share's page: the exchange's facts beside the sector and the market value
-function ilxShareH(k,it,f){const x=ilxOfKey(k,it); if(!x||x.kind!=='share')return ''; const ix=x.indices||[], LN={susp:'מושעה ממסחר',maint:'ברשימת השימור',illiq:'ברשימת דלי הסחירות'};
+function ilxShareH(k,it,f){const x=ilxOfKey(k,it); if(!x||x.kind!=='share')return ''; const LN={susp:'מושעה ממסחר',maint:'ברשימת השימור',illiq:'ברשימת דלי הסחירות'};
+  // the three main indices first, then the exchange's other "ת"א" indices, then the general ones (a large share is in twenty and more)
+  const pri=n=>/^ת"א[\s\-־]*(35|125|90)$/.test(n)?0:/^ת"א/.test(n)?1:2, ix=(x.indices||[]).slice().sort((a,b)=>pri(a.name)-pri(b.name));
   return ((x.lists||[]).length?f('רשימות הבורסה',x.lists.map(l=>`<b class="down">${LN[l.kind]||'ברשימה מיוחדת'}</b>${l.since?' מאז '+nn(dmy(l.since)):''}`).join(' · '),1):'')
     +(x.sub?f('תת־ענף',esc(x.sub),1):'')+(x.company&&x.company.name?f('שם החברה המלא',`<bdi>${esc(x.company.name)}</bdi>${x.company.dual?' <small>· רישום כפול</small>':''}`,1):'')
     +(x.isin?f('ISIN',`<span dir="ltr">${esc(x.isin)}</span>`):'')
@@ -32802,7 +32806,11 @@ function ilSecMore(k,it){
   const f=ILF[k]&&ILF[k].v, cls=it.sec||'', F=x&&x.kind==='fund'?x:null, fc=(a,b,t)=>b?`<div class="fact"><div class="k">${a}</div><div class="v${t?' t':''}">${b}</div></div>`:'';
   // the assets a fund tracks, with their weights; "אחר" alone says nothing
   const U=F?(F.under||[]).filter(u=>u&&u.name&&!(F.under.length===1&&/^אחר$/.test(u.name))):[];
-  return `<div class="facts" style="margin-top:6px">${F?fc('סוג הקרן',esc((F.types||[]).join(' · ')),1):''}${F&&(F.cls||[]).length?fc('סיווג',esc(F.cls.join(' · ')),1):fc('סיווג',esc(cls),1)}${F&&F.exp&&(F.exp.share||F.exp.ccy)?fc('חשיפה למניות',esc(F.exp.share||''),1)+fc('חשיפה למט״ח',esc(F.exp.ccy||''),1)+fc('פרופיל חשיפה',`<span dir="ltr">${esc(F.exp.code||'')}</span>`):fc('פרופיל חשיפה',esc(it.kind||''),1)}${U.length?fc(U.length>1?'נכסי המעקב':'נכס המעקב',U.map(u=>`<bdi>${esc(u.name)}</bdi>${u.w&&U.length>1?` <small>${(+u.w).toFixed(0)}%</small>`:''}`).join(' · '),1):''}${F&&F.isin?fc('ISIN',`<span dir="ltr">${esc(F.isin)}</span>`):''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
+  // the weights are said only when they are parts of one whole (an index and the dollar beside it are 100% each)
+  const uw=U.length>1&&Math.abs(U.reduce((t,u)=>t+(+u.w||0),0)-100)<1;
+  // a fund traded on the exchange (kept under its number): the exchange's list of securities knows it, not its list of mutual funds
+  const S=x&&x.kind==='share'?x:null;
+  return `<div class="facts" style="margin-top:6px">${S?fc('סוג הנייר',esc(S.sub||''),1)+fc('המנפיק',S.company&&S.company.name?`<bdi>${esc(S.company.name)}</bdi>`:'',1)+fc('ISIN',S.isin?`<span dir="ltr">${esc(S.isin)}</span>`:''):''}${F?fc('סוג הקרן',esc((F.types||[]).join(' · ')),1):''}${F&&(F.cls||[]).length?fc('סיווג',esc(F.cls.join(' · ')),1):fc('סיווג',esc(cls),1)}${F&&F.exp&&(F.exp.share||F.exp.ccy)?fc('חשיפה למניות',esc(F.exp.share||''),1)+fc('חשיפה למט״ח',esc(F.exp.ccy||''),1)+fc('פרופיל חשיפה',`<span dir="ltr">${esc(F.exp.code||'')}</span>`):fc('פרופיל חשיפה',esc(it.kind||''),1)}${U.length?fc(U.length>1?'נכסי המעקב':'נכס המעקב',U.map(u=>`<bdi>${esc(u.name)}</bdi>${u.w&&uw?` <small>${(+u.w).toFixed(0)}%</small>`:''}`).join(' · '),1):''}${F&&F.isin?fc('ISIN',`<span dir="ltr">${esc(F.isin)}</span>`):''}<div class="fact"><div class="k">מספר הקרן</div><div class="v"><span dir="ltr">${esc(k)}</span></div></div>${f&&f.date?`<div class="fact"><div class="k">המחיר הרשמי</div><div class="v">${nn(dmy(f.date))}</div></div>`:''}</div>
     <p class="note" style="margin:8px 0 4px">${F?'סוג הקרן, הסיווג, החשיפות ונכסי המעקב: מרשימת הקרנות של הבורסה לניירות ערך בתל אביב. דמי ניהול, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.':'דמי ניהול, חשיפות, מנהל ההשקעות ותשואות לאורך זמן לא מגיעים לדף הזה; הם מתפרסמים במאיה, באתר הבורסה.'}</p>${ilLinks(k)}
     <p class="note">המחיר הרשמי של קרן נאמנות נקבע פעם ביום, אחרי סגירת הבורסה, ומתפרסם במאיה. פאנדר וביזפורטל הם אתרים חיצוניים, והקישורים פותחים אותם בחלון חדש.</p>`;
 }
