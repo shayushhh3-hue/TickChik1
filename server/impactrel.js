@@ -97,6 +97,10 @@ export function candidatesOf(e,cards){
     if(c.fund){const hs=c.fund.top.filter(([s,w])=>+w>=1&&named.has(s)&&s!==sym); if(hs.length)put(sym,'holds',hs)}
     // a channel in common: only for an event that counts, and for a lesser one only through a factor the reading itself gave
     const ov=(c.ch||[]).filter(k=>evc.has(k)); if(ov.length&&lv>=1&&(lv>=2||ov.some(k=>facs.has(k))))put(sym,'ch',ov)}
+  // 25.11: an event of the world's news (server/worldnews.js) is a candidate for an asset only on a strong sign: the
+  // reading names the asset, a competitor of the article's subject, a fund that holds a named company. A factor in common
+  // alone ("oil", "rates") tied every one of hundreds of world events to every holding
+  if(e.world)for(const [k,cd] of [...out])if(!(cd.named||cd.peers||cd.holds))out.delete(k);
   return out;
 }
 const inTitle=(e,sym)=>new RegExp(`(^|[^A-Za-z0-9])${String(sym).replace(/^TLV:/,'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^A-Za-z0-9]|$)`).test(`${e.title||''} ${e.he||''}`);
@@ -225,7 +229,6 @@ export async function relTask(store,events,{now=new Date(),log=()=>{},fetch:f=gl
   const todo=[];
   for(const e of events.slice().sort((a,b)=>((a.world?1:0)-(b.world?1:0))||(LV[b.level]-LV[a.level])||(String(b.last)>String(a.last)?1:-1))){
     if(e.hidden||e.rules||(e.last||'')<from)continue; const cand=candidatesOf(e,cards), rec=by[e.k]||{rels:{},miss:{}}, pairs=[];
-    if(e.world)for(const [k,cd] of [...cand])if(!(cd.named||cd.peers||cd.holds))cand.delete(k);
     // the order of asking: a company the reading names, a competitor of the article's subject, a channel in common, a fund's
     // holdings; last, an article that only sat in the share's feed (most of those are refused)
     const pr=cd=>cd.named?0:cd.peers?1:cd.ch?2:cd.holds?3:4;
