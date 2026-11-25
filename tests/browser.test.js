@@ -4681,11 +4681,21 @@ test('24.11 a reset of the funds track\'s balance (fixed sums too), and of one a
     await pg.click(`#pCashRow [data-pa="acctZero"][data-acct="${ids[0]}"]`); await pg.waitForFunction(()=>/מאופס בתוכנית מ-/.test(document.getElementById('pCashRow').innerText),null,{timeout:8000});
     const x1=await boxes(), names=Object.keys(x1); const n0=names.find(k=>Math.abs(x0[k]-1000)<1&&!/כל/.test(k)), n1=names.find(k=>Math.abs(x0[k]-400)<1&&!/כל/.test(k));
     assert.ok(n0&&n1,'the two accounts: '+JSON.stringify(x0)); assert.equal(x1[n0],0,'the reset account: ₪0 in the plan'); assert.equal(x1[n1],400,'the other kept');
-    assert.ok(Math.abs(await bal()-(b0-1000))<1,'the plan\'s balance without that account\'s cash'); assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),v0,'the portfolio\'s value untouched');
+    assert.ok(Math.abs(await bal()-(b0-1000))<1,'the plan\'s balance without that account\'s cash');
+    // 25.11 (the owner: "אתה מנתק בין היתרה של התיק לבין תוכנית ההפקדה… אני צריך שתסתנכרן"; in a partner's account the home said
+    // ₪220 and the plan ₪262): a reset holds on every screen. The home's cash, each account's own view and the portfolio's
+    // value say what the plan's boxes say (before, the value was untouched and the two disagreed)
+    const num=s=>+String(s).replace(/[^\d.]/g,''), all1=Object.keys(x1).find(k=>/כל המזומן/.test(k)), v1=await pg.evaluate(()=>document.getElementById('kTotal').textContent);
+    const C1=await pg.evaluate(a=>({all:window.__model.cashOf('all').cash,a0:window.__model.cashOf(a[0]).cash,a1:window.__model.cashOf(a[1]).cash}),ids);
+    assert.ok(Math.abs(C1.all-x1[all1])<1,`the portfolio's cash is the plan's "כל המזומן": ${C1.all} and ${x1[all1]}`); assert.ok(Math.abs(C1.a0)<1&&Math.abs(C1.a1-400)<1,'each account\'s own view is its box: '+JSON.stringify(C1)); assert.ok(Math.abs(C1.a0+C1.a1-C1.all)<1,'the accounts add up to all of it');
+    assert.ok(Math.abs(num(v0)-num(v1)-1000)<=1,`the portfolio's value without the reset account's cash: ${v0} → ${v1}`); assert.equal(all1,'כל המזומן','one name for the one figure');
+    await tab(pg,'overview'); await pg.waitForTimeout(300); const home=await pg.evaluate(()=>{const r=document.querySelector('#rows tr.cashrow, tr.cashrow'), n=r&&r.querySelector('td.num .n'); return r?{t:r.textContent,v:n?n.textContent:''}:{t:'',v:''}});
+    assert.match(home.t,/חשבון שאופס בתוכנית ההפקדה/,'the home\'s cash line says a reset account is in it'); assert.ok(Math.abs(num(home.v)-C1.all)<1,'and shows the same figure: '+home.v+' in '+home.t.slice(0,120));
+    await tab(pg,'plan'); await pg.waitForSelector(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`,{timeout:8000}); assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').textContent),/וגם ב"התיק שלי" ובשווי התיק/);
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
     assert.ok(store.getDoc('plan/main').data.acctZero[ids[0]],'kept with the plan');
     await pg.click(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`); await pg.waitForFunction(()=>!/מאופס בתוכנית/.test(document.getElementById('pCashRow').innerText),null,{timeout:8000});
-    assert.ok(Math.abs(await bal()-b0)<1,'undone');
+    assert.ok(Math.abs(await bal()-b0)<1,'undone'); assert.equal(await pg.evaluate(()=>document.getElementById('kTotal').textContent),v0,'and the portfolio\'s value is back');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
