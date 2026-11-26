@@ -1271,7 +1271,14 @@ test('a one-time deposit: in the plan\'s balance, in the portfolio\'s value and 
     const d=(store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once&&!x.tid) /* 25.11: a deposit of the files is a row too (tid); this is the one written by hand */; assert.equal(d.length,1); assert.equal(d[0].amount,2000);
     // the month's regular deposit is its own: ticking and unticking it leaves the one-time deposit
     const ym=await pg.evaluate(()=>document.querySelector('#ladRows tr.cur [data-dep]').dataset.dep);
-    await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(600); await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(1200);
+    // 26.11: a ticked month is locked (e4f131d): the deposit's box cannot be unticked until the month is opened by its own
+    // action, asked once; then it is unticked, and the one-time deposit stays through all of it
+    await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(600);
+    assert.equal(await pg.evaluate(ym=>{const c=document.getElementById('dep_'+ym); return !!(c&&c.checked&&c.disabled)},ym),true,'the month is locked once its deposit is ticked');
+    await pg.evaluate(ym=>document.querySelector(`#ladRows [data-pa="monthOpenAsk"][data-ym="${ym}"]`).click(),ym); await pg.waitForTimeout(300);
+    await pg.evaluate(ym=>document.querySelector(`#ladRows [data-pa="monthOpen"][data-ym="${ym}"]`).click(),ym); await pg.waitForTimeout(600);
+    await pg.evaluate(ym=>document.getElementById('dep_'+ym).click(),ym); await pg.waitForTimeout(1200);
+    assert.equal(await pg.evaluate(ym=>document.getElementById('dep_'+ym).checked,ym),false,'opened, the deposit is unticked');
     assert.equal((store.getDoc('plan/main').data.deposits||[]).filter(x=>x.once&&!x.tid).length,1,'still there');
     await tab(pg,'overview'); await pg.waitForTimeout(300);
     assert.equal(num(await pg.evaluate(()=>document.getElementById('kTotal').textContent)),tot0+2000,'the portfolio\'s value, as cash');
@@ -3665,12 +3672,15 @@ test('9.11 the phone\'s home without clutter: the range\'s change in the chart\'
   if(skip())return t.skip('no browser');
   const P0=store.getDoc('alerts/pulse'), sym=store.getDoc('portfolio/main').data.positions[0].sym;
   store.setDoc('alerts/pulse',{...(P0.exists?P0.data:{}),items:[...((P0.exists&&P0.data.items)||[]),{k:'ev:zz-home',kind:'news',lv:'crit',title:'ידיעת בדיקה לבית',at:new Date().toISOString(),holds:[{sym,link:'direct',w:10,dir:'neg'}],dir:'neg',relWhy:'x'}]});
+  // 26.11: in the alerts' quiet hours (by default at night, Israel time) the banner is hidden on purpose, and this test
+  // failed by the clock alone: the quiet hours are off for it, and put back after
+  const S0=store.getDoc('settings/main'); {const s0=S0.exists?S0.data:{}, pu=s0.pulse||{}; store.setDoc('settings/main',{...s0,pulse:{...pu,quiet:{...(pu.quiet||{}),on:false}}})}
   try{const {ctx,pg}=await open(390); await pg.waitForTimeout(800);
     const r=await pg.evaluate(()=>{const vis=id=>{const e=document.getElementById(id); return !!e&&!!(e.offsetWidth||e.offsetHeight)}, b=document.getElementById('plBan');
       return {range:vis('wChR')&&/\S/.test(document.getElementById('wChR').textContent),acts:vis('quickActs'),bub:vis('stBub'),ban:!b.hidden&&!!b.closest('.worth')&&getComputedStyle(b).position==='static',lite:document.getElementById('holdSec').classList.contains('lite')===(localStorage.getItem('tr_holdlite')!=='0'),hx:!!document.querySelector('#rows td.hx')}});
     assert.deepEqual(r,{range:true,acts:false,bub:false,ban:true,lite:true,hx:false},JSON.stringify(r));
     assert.deepEqual(pg.errs,[]); await ctx.close();
-  }finally{store.setDoc('alerts/pulse',P0.exists?P0.data:{items:[]})}
+  }finally{store.setDoc('alerts/pulse',P0.exists?P0.data:{items:[]}); if(S0.exists)store.setDoc('settings/main',S0.data); else store.deleteDoc('settings/main')}
 });
 
 test('11.11 the home on a phone as tiles ("לוח פסיפס", the owner\'s choice of three): the value card violet with the chart in white, the day and the period, the split, the coming weeks, what to check; a wide screen as before',T,async t=>{
