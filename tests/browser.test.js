@@ -4474,7 +4474,8 @@ test('24.11 the plan from a month of one\'s own, and the earlier rounds in the m
     // a plan that begins in two months, for a year
     {const d=JSON.parse(JSON.stringify(base)); d.items.forEach(i=>{if(i.status!=='skip'){i.status='todo'; delete i.pid; delete i.doneAt}}); d.deposits=[]; d.purchases=[]; d.start=ymOf(2); d.until=ymOf(13); store.setDoc('plan/main',d,{silent:true})}
     let o=await open(390); try{const pg=o.pg, card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
-      await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
+      // 26.11: a plan ahead shows no list of purchases until 'aheadAll' (ae15c3b); the card is waited for by its own words
+      await tab(pg,'plan'); await pg.waitForFunction(()=>{const b=document.getElementById('planAns'); return b&&!b.hidden&&/מתחילה ב/.test(b.innerText)},null,{timeout:10000});
       let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); await pg.click('#planAns [data-pa="aheadAll"]'); assert.match(await card(),/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
       assert.match(await pg.evaluate(()=>document.querySelector('#ladRows tr.cur').innerText),/חודש ההתחלה/);
       // nothing ticked yet: the first month moves, here back to this month, and the plan is on
