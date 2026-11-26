@@ -1922,6 +1922,10 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pm-dq .pm-dqc button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(20 18 46 / .14)}
 html body .pm-dq .btn.sm{min-height:44px!important}
 html body #pmCard .btn.sm{min-height:44px!important}
+#pmCard .pm-ch{flex-wrap:wrap} #pmCard .pm-ccy{display:inline-flex;margin-inline-start:auto;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+#pmCard .pm-ccy button{min-width:44px;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:600 16px var(--sans,inherit);cursor:pointer}
+#pmCard .pm-ccy button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(20 18 46 / .14)}
+#pmCard .pm-ccyn{margin:-4px 0 8px;font-size:12.5px;color:var(--ink2)}
 html body #pmCard .pm-once{min-height:44px!important;display:inline-flex;align-items:center;margin:2px 0 6px;font-size:14px}
 .pm-dq .pm-dqr{flex-basis:100%;text-align:end;font-size:12.5px;color:var(--ink2)}
 /* 26.11 (the owner: "כמה מלל"): each thing once; what is not needed every month, folded */
@@ -21021,7 +21025,7 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#pl
 // colour alone
 let PMSEL=null, PMFIX='', PMDLG=null, PMDQ=null;
 // 26.11: the month's deposit in shekels or in dollars (PMDQ: {ccy, amt}; amt null = the plan's monthly sum in that currency)
-function pmDq(B){if(!PMDQ){const last=(PL.deposits||[]).filter(d=>!d.once).slice().sort((a,b)=>String(a.month)<String(b.month)?-1:1).pop(); PMDQ={ccy:last&&last.usd!=null?'USD':'ILS',amt:null}}
+function pmDq(B){if(!PMDQ){const last=(PL.deposits||[]).filter(d=>!d.once).slice().sort((a,b)=>String(a.month)<String(b.month)?-1:1).pop(); PMDQ={ccy:last&&last.usd!=null||PMCCY==='USD'?'USD':'ILS',amt:null}}
   const f=fxOnDay(ilDay()), fx=f?+f.fx:((Q&&+Q.usdIls)||0), def=PMDQ.ccy==='USD'?(fx>0?Math.round(B/fx*100)/100:0):B; return {ccy:PMDQ.ccy,amt:PMDQ.amt!=null?PMDQ.amt:def,fx}}
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='pmDqAmt'){const v=e.target.value; if(!PMDQ)PMDQ={ccy:'ILS',amt:null}; PMDQ.amt=v===''?null:+v}});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pmdq]'); if(!b)return; const c=b.dataset.pmdq==='USD'?'USD':'ILS'; if(!PMDQ||PMDQ.ccy!==c){PMDQ={ccy:c,amt:null}; try{render()}catch(x){} setTimeout(()=>{const s=document.querySelector(`[data-pmdq="${c}"]`); if(s)try{s.focus()}catch(x){}},0)}});
@@ -21047,7 +21051,13 @@ function pmGaps(M){const G=[];
   for(const x of M.bought)if(!pmAcct(x))G.push({k:'acct',id:x.id,t:`קניית ${lab(x.sym)} בלי חשבון`});
   const end=M.cur?M.now:M.close; if(end<-0.005)G.push({k:'neg',t:'היתרה בסוף החודש במינוס'});
   return G}
+// the month's card's money: shekels, or dollars at today's rate (PMCCY, kept on the device)
+let PMCCY='ILS'; try{if(localStorage.getItem('tr_pm_ccy')==='USD')PMCCY='USD'}catch(e){}
+const ilsAll=ils;
+function pmMoney(){const fx=(Q&&+Q.usdIls)||0; if(PMCCY!=='USD'||!(fx>0))return ilsAll; const C=new Map(); return (x,d=0)=>{let f=C.get(d); if(!f){f=new Intl.NumberFormat('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); C.set(d,f)} return '$'+f.format(Number(x)/fx)}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pmccy]'); if(!b)return; PMCCY=b.dataset.pmccy==='USD'?'USD':'ILS'; try{localStorage.setItem('tr_pm_ccy',PMCCY)}catch(x){} try{render()}catch(x){} setTimeout(()=>{const s=document.querySelector(`#planMonth [data-pmccy="${PMCCY}"]`); if(s)try{s.focus({preventScroll:true})}catch(x){}},0)});
 function pmRender(st,MON,X){
+  const ils=pmMoney();   // 26.11: every sum of the month in the chosen currency
   const box=$('planMonth'); if(!box)return; const B=X.B;
   {const s=$('pmSub'), t=$('pmTrk'); if(s&&t){const a=st.apart?st.acct:trackAcct(TRACK); t.textContent=PL.items.length?(TRACK==='idx'?'מסלול מדדים':'מסלול מניות'):'';
     s.textContent=PL.items.length?[`${ils(B)} בחודש`,a&&a!=='all'?`קונה מ${acctName(a)}`:'קונה מכל החשבונות',st.until?`עד ${ymLong(st.until)}`:''].filter(Boolean).join(' · '):''}}
@@ -21063,7 +21073,8 @@ function pmRender(st,MON,X){
   const acctsTxt=st.apart?acctName(st.acct):acctIds().map(acctName).join(' + ');
   const tag=M.lk?'<span class="pm-tag lk">🔒 נעול</span>':M.cur?'<span class="pm-tag">החודש</span>':M.fut?'<span class="pm-tag fut">בהמשך · לפי המחירים של היום</span>':'<span class="pm-tag fut">עבר</span>';
   const wr=canWrite&&!M.lk;
-  let h=`<div class="pm-ch"><h3 id="pmT">${esc(ymLong(M.ym))}</h3>${tag}</div>`;
+  const ccyH=(Q&&+Q.usdIls)>0?`<span class="pm-ccy" role="group" aria-label="סכומי החודש בשקלים או בדולרים"><button type="button" data-pmccy="ILS" aria-pressed="${PMCCY!=='USD'}" aria-label="בשקלים">₪</button><button type="button" data-pmccy="USD" aria-pressed="${PMCCY==='USD'}" aria-label="בדולרים">$</button></span>`:'';
+  let h=`<div class="pm-ch"><h3 id="pmT">${esc(ymLong(M.ym))}</h3>${tag}${ccyH}</div>${PMCCY==='USD'&&ccyH?`<p class="pm-ccyn">בדולרים לפי שער היום, ${(+Q.usdIls).toFixed(3)}</p>`:''}`;
   h+=M.fut?`<div class="pm-open"><span class="k">יתרה בתחילת החודש · צפויה</span><div class="r"><span><bdi>${esc(acctsTxt)}</bdi></span><span class="n">${ils(MON[i-1]?MON[i-1].close:M.now,2)}</span></div></div>`
     :`<div class="pm-open"><span class="k">יתרת פתיחה · ${st.apart?'החשבון של המסלול':'כל המזומן'}</span><div class="r"><span><bdi>${esc(acctsTxt)}</bdi></span><span class="n">${M.open<0?'−':''}${ils(Math.abs(M.open),2)}</span></div></div>`;
   // the deposit
@@ -33474,6 +33485,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.6',at:'2026-11-26',t:'החודש כולו בדולרים או בשקלים',d:'בראש הכרטיס של החודש יש ₪ ו-$. בבחירה של $ כל הסכומים של החודש, יתרת הפתיחה, ההפקדה, מחירי הניירות והיתרה, מוצגים בדולרים לפי שער היום. הבחירה נשמרת במכשיר.',go:'plan'},
   {v:'2026-11-26.5',at:'2026-11-26',t:'הפקדה חודשית בשקלים או בדולרים',d:'בכרטיס של החודש כותבים כמה הפקדת ובוחרים ₪ או $ לפני "סימנתי שהפקדתי". הפקדה בדולרים נשמרת בדולרים בדיוק, ובשקלים לפי שער היום. הבחירה נשמרת לחודש הבא.',go:'plan'},
   {v:'2026-11-26.4',at:'2026-11-26',t:'תוכנית ההפקדה: פחות מלל, כל דבר פעם אחת',d:'למעלה כרטיס אחד: כמה יש להשקעה, ועיגול של כמה הפקדות וקניות כבר מאחוריך. מסמנים הפקדה וקנייה בכרטיס של החודש, שאפשר לדפדף בו קדימה ואחורה. אחריו הניירות בתוכנית. ההגדרות (סכומים, עד מתי, חשבון ואופן הקנייה), ההפקדות החד-פעמיות והטבלה המלאה מקופלים בתחתית.',go:'plan'},
   {v:'2026-11-26.3',at:'2026-11-26',t:'תוכנית ההפקדה: חודש אחרי חודש, ונעילה בסוף החודש',d:'בתוכנית ההפקדה יש עכשיו כרטיס לכל חודש: יתרת הפתיחה, ההפקדה החודשית (מסמנים בלחיצה), והקניות, כל אחת עם הלוגו של המניה, החשבון שממנו נקנתה והתאריך. שורת החודשים למעלה, או "הקודם" ו"הבא" (או החלקה על הכרטיס), עוברים בין החודשים. החודש כבר לא ננעל לבד כשמסמנים הפקדה: בסוף החודש לוחצים "לנעול", ורואים קודם סיכום של החודש עם יתרת הסגירה. אפשר לנעול רק כשאין פערים פתוחים, למשל הפקדה שלא סומנה או קנייה בלי חשבון, ולכל פער יש "לסדר עכשיו". חודש נעול לא משתנה, גם כשעולה דוח חדש, עד שפותחים אותו. הטבלה המלאה של כל החודשים נמצאת מתחת, ב"כל החודשים בטבלה".',go:'plan'},
