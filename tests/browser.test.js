@@ -3087,7 +3087,7 @@ test('5.11 the crowded screens in parts like the control screen: the deposit pla
   // 24.11 (the owner: one page, nothing there for show): no tabs and nothing folded. The month, the securities, the months' table, the
   // one-time deposit and the settings are on the page in that order; the four figures and the chart are not
   assert.deepEqual(await pg.evaluate(()=>['planAns','planRows','ladRows','onceAmt','inMonthly','dvTabs','planMore','pBal','chart'].map(id=>!!document.getElementById(id).offsetParent)),[true,true,true,true,true,false,false,false,false]);
-  assert.ok(await pg.evaluate(()=>{const ys=['planAns','inMonthly','planRows','ladRows','onceAmt'].map(id=>document.getElementById(id).getBoundingClientRect().top); return ys.every((y,i)=>!i||y>ys[i-1])&&document.getElementById('planAns').contains(document.getElementById('inMonthly'))}),'in the order they are read (24.11: the settings in the card, in the rectangle of the period)');
+  assert.ok(await pg.evaluate(()=>{const ys=['planAns','planRows','ladRows','onceAmt','inMonthly'].map(id=>document.getElementById(id).getBoundingClientRect().top); return ys.every((y,i)=>!i||y>ys[i-1])&&!document.getElementById('planAns').contains(document.getElementById('inMonthly'))}),'in the order they are read (26.11: the settings folded at the foot)');
   assert.equal(await pg.evaluate(()=>{const L=[...document.querySelectorAll('#planRows tr.pactr')]; return L.length>0&&L.every(r=>!r.getClientRects().length)}),true,'the actions of each security wait for the edit button');
   await pg.click('#planEditBtn'); assert.ok(await pg.evaluate(()=>document.querySelector('#planRows tr.pactr').getClientRects().length>0)); assert.equal(await pg.getAttribute('#planEditBtn','aria-pressed'),'true');
   assert.match(await pg.textContent('#planSum'),/נשארו \d+ לקנות בסבב/); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#ladRows tr.far').length>0&&!!document.querySelector('#ladRows [data-ladall]')),true,'the months ahead on request');
@@ -4355,22 +4355,21 @@ for(const W of [390,1280])test(`24.11 the deposit plan as two steps: "הפקדת
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(W);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
-    const read=()=>pg.evaluate(()=>{const b=document.getElementById('planAns'), r=x=>{const q=x.getBoundingClientRect(); return [Math.round(q.width),Math.round(q.height)]};
-      return {txt:b.innerText.replace(/\s+/g,' '),dep:!!b.querySelector('[data-plandep]'),buys:[...b.querySelectorAll('[data-planbuy]')].map(x=>x.dataset.planbuy),btn:[...b.querySelectorAll('button')].map(r),
-        over:document.documentElement.scrollWidth>innerWidth+1,h2:document.getElementById('hPlan').textContent,strip:document.querySelector('[data-pane="plan"] .strip').innerText}});
+    // 26.11 (the owner: "כמה מלל"): the card on top is the balance and the ring; the deposit and the purchases are ticked in the month's card
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-bal',{timeout:10000}); await pg.waitForSelector('#pmCard',{timeout:10000});
+    const read=()=>pg.evaluate(()=>{const b=document.getElementById('planAns'), m=document.getElementById('pmCard'), r=x=>{const q=x.getBoundingClientRect(); return [Math.round(q.width),Math.round(q.height)]};
+      return {top:b.innerText.replace(/\s+/g,' '),txt:m.innerText.replace(/\s+/g,' '),dep:!!m.querySelector('[data-pa="pmDep"]'),buys:[...m.querySelectorAll('[data-pa="pmBuy"]')].map(x=>x.dataset.sym),btn:[...m.querySelectorAll('.btn')].map(r),
+        over:document.documentElement.scrollWidth>innerWidth+1,h2:document.getElementById('hPlan').textContent}});
     let s=await read(); if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-${W}.png`,fullPage:false});
-    assert.equal(s.h2,'תוכנית ההפקדה'); assert.match(s.txt,/יש לך .*להשקעה/); assert.match(s.txt,/החודש/); assert.match(s.txt,/הפקדה חודשית ₪/); assert.match(s.txt,/נקנו \d+ מתוך \d+ בסבב הזה/); assert.match(s.txt,/לא המלצה/);
-    assert.doesNotMatch(s.txt+s.strip,/הוגדלו|נשאר לממן|בתור/,'no jargon'); assert.ok(!s.over,'nothing wider than the screen');
+    assert.equal(s.h2,'תוכנית ההפקדה'); assert.match(s.top,/יש לך .*להשקעה/); assert.match(s.top,/נקנו \d+ מתוך \d+ ניירות בסבב/); assert.doesNotMatch(s.top,/הפקדה חודשית/,'the month is not said twice');
+    assert.match(s.txt,/החודש/); assert.match(s.txt,/הפקדה חודשית/); assert.match(await pg.evaluate(()=>document.querySelector('[data-pane="plan"]').innerText),/לא המלצה/);
+    assert.doesNotMatch(s.top+s.txt,/הוגדלו|נשאר לממן|בתור/,'no jargon'); assert.ok(!s.over,'nothing wider than the screen');
     assert.ok(s.btn.length&&s.btn.every(([w,h])=>w>=44&&h>=44),'every button at least 44px: '+JSON.stringify(s.btn));
-    if(s.dep){await pg.click('#planAns [data-plandep]'); await pg.waitForFunction(()=>/הופקד/.test(document.getElementById('planAns').innerText),null,{timeout:8000}); s=await read(); assert.ok(!s.dep,'the deposit is marked once')}
-    if(s.buys.length){const id=s.buys[0]; await pg.click(`#planAns [data-planbuy="${id}"]`); await pg.waitForFunction(()=>/✓ נקנה/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
-      assert.ok(await pg.evaluate(x=>{const c=document.getElementById(x); return !c||c.checked||c.disabled},id),'the table\'s own box is the one ticked')}
-    if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-after-${W}.png`});
-    // the same place undoes it: "ביטול" beside what was ticked, and the button is back
-    if(await pg.locator('#planAns .pc-list li.done:not(:first-child) [data-planun]').count()){
-      const before=await pg.locator('#planAns [data-planbuy]').count(); await pg.click('#planAns .pc-list li.done:not(:first-child) [data-planun]');
-      await pg.waitForFunction(k=>document.querySelectorAll('#planAns [data-planbuy]').length===k+1,before,{timeout:8000})}
+    if(s.dep){await pg.click('#pmCard .pm-dq [data-pa="pmDep"]'); await pg.waitForFunction(()=>/הופקד/.test(document.getElementById('pmCard').innerText),null,{timeout:8000}); s=await read(); assert.ok(!s.dep,'the deposit is marked once')}
+    if(s.buys.length){const sym=s.buys[0]; await pg.click(`#pmCard [data-pa="pmBuy"][data-sym="${sym}"]`); await pg.waitForSelector(`#pmCard [data-pa="pmUnbuy"][data-sym="${sym}"]`,{timeout:8000});
+      if(process.env.SHOT)await pg.screenshot({path:`${process.env.SHOT}/plan-after-${W}.png`});
+      // the same place undoes it: "ביטול" beside what was ticked, and the button is back
+      await pg.click(`#pmCard [data-pa="pmUnbuy"][data-sym="${sym}"]`); await pg.waitForSelector(`#pmCard [data-pa="pmBuy"][data-sym="${sym}"]`,{timeout:8000})}
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
@@ -4395,19 +4394,19 @@ test('24.11 the plan ticks by itself a purchase that is already in the portfolio
   A.manual=[...(A.manual||[]),{id:'tsync1',date:day,sym:it.sym,side:'buy',qty:1,px:123.45,amt:123.45,ccy:'ILS',at:new Date().toISOString()}]; store.setDoc('history/main',H,{silent:true});
   const {ctx,pg}=await open(390);
   try{
-    // the row of this test's own security
-    const mine=sym=>[...document.querySelectorAll('#planAns:not([hidden]) .pc-src')].map(x=>x.closest('li')).find(li=>li&&li.innerText.trim().startsWith(sym));
+    // the row of this test's own security, in the month's card (26.11)
+    const mine=sym=>[...document.querySelectorAll('#pmCard li.pm-buy')].find(li=>li.querySelector('bdi')&&li.querySelector('bdi').textContent.trim()===sym&&/לפי קנייה שרשומה בתיק/.test(li.innerText));
     await tab(pg,'plan'); await pg.waitForFunction(`(${mine})(${JSON.stringify(it.sym)})`,null,{timeout:12000});
-    const s=await pg.evaluate(sym=>{const b=document.getElementById('planAns'), li=[...b.querySelectorAll('.pc-src')].map(x=>x.closest('li')).find(l=>l&&l.innerText.trim().startsWith(sym)), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),done:li.classList.contains('done'),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}},it.sym);
-    assert.ok(s.done); assert.match(s.li,/לפי קנייה שרשומה בתיק/); assert.match(s.li,/123.45/,'what was really paid: '+s.li); assert.match(s.li,/✓ נקנה/); assert.match(s.say,/סימנתי בתוכנית/);
-    assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ בסבב הזה/); assert.ok(!s.over);
+    const s=await pg.evaluate(sym=>{const b=document.getElementById('planAns'), li=[...document.querySelectorAll('#pmCard li.pm-buy')].find(l=>l.querySelector('bdi')&&l.querySelector('bdi').textContent.trim()===sym), dn=b.querySelector('.pc-dn'); return {li:li.innerText.replace(/\s+/g,' '),ring:dn?dn.getAttribute('aria-label'):'',lg:(b.querySelector('.pc-lg')||{}).innerText||'',say:(b.querySelector('.pc-sync')||{}).innerText||'',over:document.documentElement.scrollWidth>innerWidth+1}},it.sym);
+    assert.match(s.li,/לפי קנייה שרשומה בתיק/); assert.match(s.li,/123.45/,'what was really paid: '+s.li); assert.match(s.li,/נקנה/); assert.match(s.say,/סימנתי בתוכנית/);
+    assert.match(s.ring,/התקדמות התוכנית: \d+%/); assert.match(s.lg,/נקנו \d+ מתוך \d+ ניירות בסבב/); assert.ok(!s.over);
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-sync.png'})}
     await pg.waitForFunction(()=>{try{return /נשמר/.test(document.getElementById('planSaved').textContent)}catch(e){return false}},null,{timeout:8000});
     const sv=store.getDoc('plan/main').data, pu=sv.purchases.find(x=>x.tid==='m|tsync1'); assert.ok(pu&&pu.paidIls===123.45,'saved with the key of the trade'); assert.ok((sv.seen||[]).includes('m|tsync1'));
     // taken back: the button returns, and the page does not tick it again
-    await pg.evaluate(()=>document.querySelector('#planAns .pc-src').closest('li').querySelector('[data-planun]').click());
-    await pg.waitForFunction(()=>!document.querySelector('#planAns .pc-src'),null,{timeout:8000}); await pg.waitForTimeout(1500);
-    assert.equal(await pg.locator('#planAns .pc-src').count(),0,'not ticked again'); assert.deepEqual(pg.errs,[]);
+    await pg.click(`#pmCard [data-pa="pmUnbuy"][data-sym="${it.sym}"]`);
+    await pg.waitForFunction(`!(${mine})(${JSON.stringify(it.sym)})`,null,{timeout:8000}); await pg.waitForTimeout(1500);
+    assert.equal(await pg.evaluate(`!!(${mine})(${JSON.stringify(it.sym)})`),false,'not ticked again'); assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
 
@@ -4418,20 +4417,20 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000});
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-bal',{timeout:10000});
     // the engine: 100 a month, A costs 100 and B 250, in order: A now, B when 250 is there, then a second round
     const E=await pg.evaluate(()=>{const f=(window.__model&&window.__model.planAhead)||planAhead, q=[{sym:'A',c:100},{sym:'B',c:250}]; return {m:f(q,q,0,100,8,'manual'),c:f(q,q,0,100,8,'cheap'),none:f([],[],50,100,3,'manual'),zero:f(q,q,0,0,5,'manual')}});
     assert.deepEqual(E.m.rows,[['A'],[],[],['B'],['A'],[],['B'],['A']]); assert.deepEqual(E.m.count,{A:3,B:2}); assert.equal(E.m.rounds,2,'two more rounds begun'); assert.equal(E.m.deposits,800); assert.equal(E.m.spent,800); assert.equal(E.m.left,0);
     assert.deepEqual(E.c.count,{A:3,B:2},'the cheap one first, the round still ends before the next begins'); assert.deepEqual(E.none.rows,[[],[],[]]); assert.equal(E.none.left,350); assert.equal(E.zero.buys,0);
     // the card asks until when; a year chosen: the plan to its last month, the deposits left, what will be bought
-    const card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
+    const card=()=>pg.evaluate(()=>(document.getElementById('planAns').innerText+' '+document.getElementById('planPeriod').innerText).replace(/\s+/g,' '));   // 26.11: the period is in the settings
     assert.match(await card(),/לקבוע עד מתי/); assert.doesNotMatch(await card(),/התוכנית עד /);
-    await pg.click('#planAns [data-pa="untilEdit"]'); await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/התוכנית עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    await pg.click('#planPeriod [data-pa="untilEdit"]'); await pg.click('#planPeriod .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/התוכנית עד /.test(document.getElementById('planPeriod').innerText),null,{timeout:8000});
     let s=await card(); assert.match(s,/לא המלצה/); assert.match(s,/נשארו 1[12] הפקדות של ₪/,'26.11: the period in one line of figures');
-    const A=await pg.evaluate(()=>{const b=document.getElementById('planAns'); return {li:b.querySelectorAll('.pc-sec:last-of-type .pc-list li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
+    const A=await pg.evaluate(()=>{const b=document.getElementById('planPeriod'); return {li:b.querySelectorAll('.pc-list li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
     assert.equal(A.li,0,'26.11: no list of the next purchases (each security says when)'); assert.ok(A.all,'the months on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-period.png'})}
-    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pc-sec:last-of-type .pc-list li').length)>=10,'every month of the period');
+    await pg.click('#planPeriod [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planPeriod .pc-list li').length)>=10,'every month of the period');
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
     const U=store.getDoc('plan/main').data.until; assert.match(U,/^\d{4}-\d\d$/,'the period is saved with the plan');
     // every security bought: the round is done, and the next one begins with the same securities waiting again
@@ -4439,13 +4438,13 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
     const o2=await open(390); try{const p2=o2.pg, card2=()=>p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/s+/g,' '));
       // every security bought this month: nothing more to tick, the next round is next month's (no security twice in a month)
       await tab(p2,'plan'); await p2.waitForFunction(()=>/כל הניירות נקנו\. הסבב הבא מתחיל ב/.test(document.getElementById('planAns').innerText),null,{timeout:10000});
-      assert.equal(await p2.locator('#planAns [data-planbuy]').count(),0); assert.equal(await p2.locator('#planAns [data-pa="nextRound"]').count(),0,'no button for a round in the card');
+      assert.equal(await p2.locator('#planAns [data-planbuy]').count(),0); assert.equal(await p2.locator('#planPeriod [data-pa="nextRound"]').count(),0,'no button for a round in the card');
       await p2.waitForTimeout(600); assert.ok(!(store.getDoc('plan/main').data.round>1),'not begun by itself in the month of the purchases');
       // on request, in the period's own place, a round can begin now
-      await p2.click('#planAns [data-pa="untilEdit"]'); await p2.waitForSelector('#planAns [data-pa="nextRound"]');
-      const n0=store.getDoc('plan/main').data.purchases.length; await p2.click('#planAns [data-pa="nextRound"]'); await p2.waitForFunction(()=>!document.querySelector('#planAns [data-pa="nextRound"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+      await p2.click('#planPeriod [data-pa="untilEdit"]'); await p2.waitForSelector('#planPeriod [data-pa="nextRound"]');
+      const n0=store.getDoc('plan/main').data.purchases.length; await p2.click('#planPeriod [data-pa="nextRound"]'); await p2.waitForFunction(()=>!document.querySelector('#planPeriod [data-pa="nextRound"]')&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
       const D=store.getDoc('plan/main').data, L=D.items.filter(i=>i.status!=='skip');
-      assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); await p2.click('#planAns [data-pa="aheadAll"]'); assert.match(await card2(),/עד עכשיו נקנו/);
+      assert.equal(D.round,2); assert.ok(L.length&&L.every(i=>i.status==='todo'&&!i.pid),'everything waits again'); assert.equal(D.purchases.length,n0,'what was bought stays'); await p2.click('#planPeriod [data-pa="aheadAll"]'); assert.match(await card2(),/עד עכשיו נקנו/);
       // the round begun now: what was bought this month is listed once, ticked, and is not asked for again this month; its tick is taken back in the same place
       {const v=await p2.evaluate(()=>({buy:document.querySelectorAll('#planAns [data-planbuy]').length,old:document.querySelectorAll('#planAns .pc-list li.done [data-pa="dropBuy"]').length})); assert.equal(v.buy,0,'no security twice in a month'); assert.equal(v.old,n0,'everything bought this month is in the list');
         await p2.click('#planAns [data-pa="dropBuy"]'); for(let k=0;k<40&&store.getDoc('plan/main').data.purchases.length!==n0-1;k++)await p2.waitForTimeout(200); assert.equal(store.getDoc('plan/main').data.purchases.length,n0-1,'that purchase only')}
@@ -4471,13 +4470,13 @@ test('24.11 the plan from a month of one\'s own, and the earlier rounds in the m
   try{
     // a plan that begins in two months, for a year
     {const d=JSON.parse(JSON.stringify(base)); d.items.forEach(i=>{if(i.status!=='skip'){i.status='todo'; delete i.pid; delete i.doneAt}}); d.deposits=[]; d.purchases=[]; d.start=ymOf(2); d.until=ymOf(13); store.setDoc('plan/main',d,{silent:true})}
-    let o=await open(390); try{const pg=o.pg, card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
+    let o=await open(390); try{const pg=o.pg, card=()=>pg.evaluate(()=>(document.getElementById('planAns').innerText+' '+document.getElementById('planPeriod').innerText).replace(/\s+/g,' '));
       // 26.11: a plan ahead shows no list of purchases until 'aheadAll' (ae15c3b); the card is waited for by its own words
       await tab(pg,'plan'); await pg.waitForFunction(()=>{const b=document.getElementById('planAns'); return b&&!b.hidden&&/מתחילה ב/.test(b.innerText)},null,{timeout:10000});
-      let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); await pg.click('#planAns [data-pa="aheadAll"]'); assert.match(await card(),/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
+      let s=await card(); assert.match(s,/מתחילה ב/); assert.match(s,/עוד 2 חודשים להתחלה/); await pg.click('#planPeriod [data-pa="aheadAll"]'); assert.match(await card(),/נשארו 12 הפקדות/); assert.equal(await pg.locator('#planAns [data-plandep]').count(),0,'nothing to tick before it begins');
       assert.match(await pg.evaluate(()=>document.querySelector('#ladRows tr.cur').innerText),/חודש ההתחלה/);
       // nothing ticked yet: the first month moves, here back to this month, and the plan is on
-      await pg.click('#planAns [data-pa="untilEdit"]'); await pg.waitForSelector('#puFrom');
+      await pg.click('#planPeriod [data-pa="untilEdit"]'); await pg.waitForSelector('#puFrom');
       await pg.evaluate(v=>{const i=document.getElementById('puFrom'); i.value=v; i.dispatchEvent(new Event('change',{bubbles:true}))},ymOf(0));
       await pg.waitForFunction(()=>/הפקדה חודשית/.test(document.getElementById('planAns').innerText)&&/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
       assert.equal(store.getDoc('plan/main').data.start,ymOf(0)); assert.doesNotMatch(await card(),/מתחילה ב/);
@@ -4501,25 +4500,24 @@ test('24.11 the plan from a month of one\'s own, and the earlier rounds in the m
 
 // 24.11 (the owner: "את הגדרת התוכנית… תעלה למעלה מתחת לאיפה שרשום לשנות, באותו מלבן", "צריך להנגיש את הגדרת התוכנית ואת
 // ההפקדה החד פעמית"): the settings sit in the card's rectangle of the period; both forms are rows with fields a finger can press
-for(const W of [390,1280])test(`24.11 the plan's settings in the card's rectangle under "לשנות", and the two forms as rows: fields of 44px, typing keeps the cursor, the card follows (${W}px)`,T,async t=>{
+for(const W of [390,1280])test(`24.11 the plan's settings (26.11: folded at the foot, with the period), and the two forms as rows: fields of 44px, typing keeps the cursor, the card follows (${W}px)`,T,async t=>{
   if(skip())return t.skip('no browser');
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(W);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .pc-list',{timeout:10000}); await pg.waitForSelector('#planAns #planSetP #inMonthly');
+    await tab(pg,'plan'); await pg.waitForSelector('#planAns:not([hidden]) .ps-bal',{timeout:10000}); await pg.waitForSelector('#planSetP #inMonthly');
     const v=await pg.evaluate(()=>{const p=document.getElementById('planSetP'), sec=p.closest('.pc-sec'), box=el=>{const r=el.getBoundingClientRect(); return [Math.round(r.width),Math.round(r.height)]};
       const fields=[...document.querySelectorAll('#planSetP .form>label:not([hidden]) input, #planSetP .form>label:not([hidden]) select, .oncebox .onceform input, .oncebox .onceform select')].filter(x=>x.offsetParent);
       const rows=[...document.querySelectorAll('#planSetP .form>label:not([hidden]), .oncebox .onceform>label')].filter(x=>x.offsetParent).map(l=>{const c=l.querySelector('input,select,.dd2'), a=l.getBoundingClientRect(), b=c.getBoundingClientRect(); return Math.abs((a.top+a.height/2)-(b.top+b.height/2))<a.height/2+1&&b.height<=a.height+1});
-      return {same:!!(sec&&sec.querySelector('[data-pa="untilEdit"]')),home:document.getElementById('planSetHome').children.length,n:fields.length,small:fields.map(x=>x.id+':'+box(x)).filter((s,i)=>box(fields[i])[1]<44),font:fields.every(x=>parseFloat(getComputedStyle(x).fontSize)>=16),rows:rows.every(Boolean),
+      return {same:!!p.closest('#planSetD')&&!!document.querySelector('#planSetD #planPeriod [data-pa="untilEdit"]'),home:document.getElementById('planSetHome').contains(p)?0:1,n:fields.length,small:fields.map(x=>x.id+':'+box(x)).filter((s,i)=>box(fields[i])[1]<44),font:fields.every(x=>parseFloat(getComputedStyle(x).fontSize)>=16),rows:rows.every(Boolean),
         btn:box(document.getElementById('onceAdd')),over:document.documentElement.scrollWidth>innerWidth+1}});
-    assert.ok(v.same,'in the rectangle that holds "לשנות"'); assert.equal(v.home,0,'not left at the bottom of the page'); assert.ok(v.n>=8,'the fields of both forms: '+v.n);
+    assert.ok(v.same,'26.11: with the period, in the folded settings'); assert.equal(v.home,0,'in its own place'); assert.ok(v.n>=8,'the fields of both forms: '+v.n);
     assert.deepEqual(v.small,[],'every field at least 44px high'); assert.ok(v.font,'16px text in the fields'); assert.ok(v.rows,'a row a field: the name beside it'); assert.ok(v.btn[1]>=44); assert.ok(!v.over,'nothing wider than the screen');
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planSetP').scrollIntoView({block:'start'})); await pg.screenshot({path:`${process.env.SHOT}/plan-set-${W}.png`}); await pg.evaluate(()=>document.querySelector('.oncebox').scrollIntoView({block:'start'})); await pg.screenshot({path:`${process.env.SHOT}/plan-once-${W}.png`})}
     // typing the monthly sum: the cursor stays in the field while the page saves and draws; left, the card shows the sum
     await pg.click('#inMonthly'); await pg.fill('#inMonthly',''); await pg.type('#inMonthly','650',{delay:120}); await pg.waitForTimeout(900);
     assert.deepEqual(await pg.evaluate(()=>[document.activeElement&&document.activeElement.id,document.getElementById('inMonthly').value]),['inMonthly','650'],'still typing in it');
-    await pg.evaluate(()=>document.getElementById('inMonthly').blur()); await pg.waitForFunction(()=>/₪650/.test(document.getElementById('planAns').innerText),null,{timeout:8000});
-    assert.ok(await pg.evaluate(()=>!!document.querySelector('#planAns #planSetP #inMonthly')),'the settings are back in the card after it was drawn');
+    await pg.evaluate(()=>document.getElementById('inMonthly').blur()); await pg.waitForFunction(()=>/₪650/.test(document.getElementById('trkS').textContent),null,{timeout:8000});   // 26.11: the track's button says the sum
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
@@ -4579,10 +4577,10 @@ test('24.11 a security added to the plan after it was built (a holding in no tra
   const rows=pf.positions.filter(x=>x.sym&&+x.qty>0).length, dist=new Set(pf.positions.filter(x=>x.sym&&+x.qty>0).map(x=>x.sym)).size, n0=pl.items.filter(i=>i.status!=='skip').length;
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAddBox:not([hidden]) .pl-cnt',{timeout:10000});
-    const box=()=>pg.evaluate(()=>document.getElementById('planAddBox').innerText.replace(/\s+/g,' '));
+    await tab(pg,'plan'); await pg.waitForSelector('#planAddBox:not([hidden]) .pl-cnt',{timeout:10000,state:'attached'});
+    const box=()=>pg.evaluate(()=>document.getElementById('planAddBox').textContent.replace(/\s+/g,' '));
     let s=await box(); assert.match(s,new RegExp(`בתוכנית של מסלול המניות ${n0} ניירות`)); assert.match(s,new RegExp(`בתיק ${dist} ניירות שונים`),'a security in two accounts is one security: '+s);
-    assert.match(await pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')),new RegExp(`מתוך ${n0} בסבב הזה [(]${n0} הם הניירות שבתוכנית של המסלול`));
+    assert.match(await pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')),new RegExp(`מתוך ${n0} ניירות בסבב`));
     // a holding in no track: one press, and it waits at the end of the queue
     const chips=await pg.evaluate(()=>[...document.querySelectorAll('#planAddBox [data-pa="addIt"]')].map(b=>[b.dataset.sym,Math.round(b.getBoundingClientRect().height)]));
     assert.ok(cut.every(x=>chips.some(c=>c[0]===x)),'what is held and in no track is offered: '+JSON.stringify(chips)); assert.ok(chips.every(c=>c[1]>=44));
@@ -4636,9 +4634,9 @@ test('24.11 a purchase or a sale asks about the deposit plan (in the card and th
       assert.equal(store.getDoc('plan/main').data.ask[bought],'no');
       // a one-time deposit: a row of the month, the balance says it, the value has it
       const bal0=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v0=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
-      await p2.click('#planAns [data-planonce]'); await p2.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+      await p2.click('#pmCard [data-planonce]'); await p2.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
       await p2.fill('#onceAmt','2000'); await p2.fill('#onceNote','בונוס'); await p2.click('#onceAdd');
-      await p2.waitForFunction(()=>/הפקדה חד-פעמית (ל\S+ · )?בונוס ₪2,000 ✓ נוספה/.test(document.getElementById('planAns').innerText.replace(/\s+/g,' ')),null,{timeout:8000});
+      await p2.waitForFunction(()=>/הפקדה חד-פעמית בונוס \+₪2,000/.test(document.getElementById('pmCard').innerText.replace(/\s+/g,' ')),null,{timeout:8000});   // 26.11: a row of the month's card
       c=await p2.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' ')); assert.match(c,/כולל ₪2,000 מהפקדה חד-פעמית/);
       const bal1=await p2.evaluate(()=>+document.querySelector('#planAns .ps-bal b').textContent.replace(/[^\d.]/g,'')), v1=await p2.evaluate(()=>+document.getElementById('kTotal').textContent.replace(/[^\d.]/g,''));
       assert.ok(Math.abs(bal1-bal0-2000)<1,`the balance: ${bal0} → ${bal1}`); assert.ok(Math.abs(v1-v0-2000)<1,`the value: ${v0} → ${v1}`);
@@ -4654,7 +4652,7 @@ test('24.11 the plan\'s balance reset to ₪0 (its own deposits and purchases si
   const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.waitForSelector('#planAns #planZeroRow [data-pa="zeroBal"]',{timeout:10000});
+    await tab(pg,'plan'); await pg.waitForSelector('#planZeroRow [data-pa="zeroBal"]',{timeout:10000});
     const bal=()=>pg.evaluate(()=>{const t=document.querySelector('#planAns .ps-bal b').textContent; return (/−/.test(t)?-1:1)*+t.replace(/[^\d.]/g,'')});
     const boxes=()=>pg.evaluate(()=>{const n=x=>+String(x||'').replace(/[^\d.]/g,''); const B=[...document.querySelectorAll('#pCashRow .pc-b')]; return B.length?{acc:B.filter(b=>!b.classList.contains('all')).map(b=>n(b.querySelector('b').textContent)),all:n(B.find(b=>b.classList.contains('all')).querySelector('b').textContent)}:null});
     // a one-time deposit: the balance, and the box of its account (the boxes add up to all the cash)
@@ -4663,14 +4661,14 @@ test('24.11 the plan\'s balance reset to ₪0 (its own deposits and purchases si
     assert.ok(Math.abs(await bal()-b0-1500)<1,'the plan\'s balance');
     if(x0){const x1=await boxes(); assert.ok(Math.abs(x1.all-x0.all-1500)<1,'all the cash'); assert.ok(Math.abs(x1.acc.reduce((a,b)=>a+b,0)-x0.acc.reduce((a,b)=>a+b,0)-1500)<1,'an account\'s box: '+JSON.stringify([x0,x1])); assert.ok(Math.abs(x1.acc.reduce((a,b)=>a+b,0)-x1.all)<1.5,'the boxes add up to all the cash')}
     // reset: ₪0, and from now on only the plan's own money
-    await pg.click('#planAns [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
+    await pg.click('#planZeroRow [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
     assert.equal(await bal(),0); assert.match(await pg.evaluate(()=>document.getElementById('planAns').innerText),/מאז האיפוס/);
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
     assert.match(store.getDoc('plan/main').data.zero,/^\d{4}-\d\d-\d\dT/,'saved with the plan, a moment');
     await pg.fill('#onceAmt','700'); await pg.click('#onceAdd'); await pg.waitForFunction(()=>/700/.test(document.querySelector('#planAns .ps-bal b').textContent),null,{timeout:8000});
     assert.equal(await bal(),700,'a deposit after the reset counts');
     // undone in place: the balance as it was
-    await pg.click('#planAns [data-pa="zeroOff"]'); await pg.waitForFunction(()=>!!document.querySelector('#planAns [data-pa="zeroBal"]'),null,{timeout:8000});
+    await pg.click('#planZeroRow [data-pa="zeroOff"]'); await pg.waitForFunction(()=>!!document.querySelector('#planZeroRow [data-pa="zeroBal"]'),null,{timeout:8000});
     assert.ok(Math.abs(await bal()-b0-2200)<1,'the accounts\' cash is back in it');
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
@@ -4688,10 +4686,10 @@ test('24.11 a reset of the funds track\'s balance (fixed sums too), and of one a
   if(!F.length)return t.skip('no fund in the fixture'); pl.idx.mode='fixed'; pl.idx.items=F.map(s0=>({sym:s0,status:'todo',note:'',amt:100})); pl.idx.start=pl.idx.start||new Date().toISOString().slice(0,7); store.setDoc('plan/main',pl,{silent:true});
   const {ctx,pg}=await open(390);
   try{
-    await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForSelector('#planAns #planZeroRow [data-pa="zeroBal"]',{timeout:10000});
+    await tab(pg,'plan'); await pg.click('[data-track="idx"]'); await pg.waitForSelector('#planZeroRow [data-pa="zeroBal"]',{timeout:10000});
     const bal=()=>pg.evaluate(()=>{const t=document.querySelector('#planAns .ps-bal b').textContent; return (/−/.test(t)?-1:1)*+t.replace(/[^\d.]/g,'')});
-    await pg.click('#planAns [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
-    assert.equal(await bal(),0,'the funds track from ₪0'); await pg.click('#planAns [data-pa="zeroOff"]'); await pg.waitForSelector('#planAns [data-pa="zeroBal"]');
+    await pg.click('#planZeroRow [data-pa="zeroBal"]'); await pg.waitForFunction(()=>/מאופסת מ-/.test(document.getElementById('planZeroRow').innerText),null,{timeout:8000});
+    assert.equal(await bal(),0,'the funds track from ₪0'); await pg.click('#planZeroRow [data-pa="zeroOff"]'); await pg.waitForSelector('#planZeroRow [data-pa="zeroBal"]');
     // the stocks track: one account reset, the other kept; the value of the portfolio untouched
     await pg.click('[data-track="stocks"]'); await pg.waitForSelector(`#pCashRow [data-pa="acctZero"][data-acct="${ids[0]}"]`,{timeout:8000});
     const boxes=()=>pg.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#pCashRow .pc-b')].map(b=>[b.querySelector('.pc-k').textContent,+b.querySelector('b').textContent.replace(/[^\d.]/g,'')])));
@@ -4744,7 +4742,7 @@ test('25.11 an account\'s box, the track\'s card and its table say one figure (a
     assert.equal(await box(A1),700,'the funds\' account: its ₪400 and the one-time ₪300, whatever the other account\'s statement'); assert.equal(await bal(),700,'the card, the same'); assert.equal(await row(),700,'the table\'s month, the same');
     assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText),/400\.00 מזומן בחשבון נכון ל-.* מאז: הפקדה חד-פעמית \+\$[\d.]+\. עכשיו ₪400\.00 ו-\$[\d.]+, שהם ₪700\.00 בשער /,'the box says what it is made of (a deposit to a dollar account, in dollars)');
     // the form: apart, the one choice is the account (its track beside it)
-    await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+    await pg.click('#pmCard [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
     const F0=await pg.evaluate(()=>({l:document.getElementById('onceTrkL').textContent,o:[...document.getElementById('onceTrk').options].map(o=>o.textContent),a:document.getElementById('onceAcctW').hidden,h:document.getElementById('onceTrk').getBoundingClientRect().height}));
     assert.equal(F0.l,'לחשבון'); assert.ok(F0.o.every(x=>/ · (מניות|מדדים)$/.test(x))&&F0.o[0]!==F0.o[1],'each account with its track: '+F0.o.join(', ')); assert.ok(F0.a,'no second choice'); assert.ok(F0.h>=44,'a field a finger can press');
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('pCashRow').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-acct-boxes.png'}); await pg.evaluate(()=>document.querySelector('.oncebox').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-acct-once.png'})}
@@ -4760,7 +4758,7 @@ test('25.11 an account\'s box, the track\'s card and its table say one figure (a
   try{const pg=o2.pg; await tab(pg,'plan'); await pg.waitForSelector(`#pCashRow [data-pa="acctZero"][data-acct="${A0}"]`,{timeout:10000});
     const num=t0=>(/−/.test(t0)?-1:1)*+t0.replace(/[^\d.]/g,''), box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-acct="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num);
     const b0=await box(A0), b1=await box(A1);
-    await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
+    await pg.click('#pmCard [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
     assert.equal(await pg.evaluate(()=>document.getElementById('onceTrkL').textContent),'למסלול'); assert.equal(await pg.evaluate(()=>document.getElementById('onceAcctW').hidden),false,'the account is asked');
     await pg.selectOption('#onceAcct',A0); await pg.fill('#onceAmt','70'); await pg.click('#onceAdd');
     await pg.waitForFunction(()=>/נוספה הפקדה/.test(document.getElementById('onceState').textContent),null,{timeout:8000});
@@ -5009,7 +5007,7 @@ test('26.11 the deposit plan a month at a time (the owner\'s design): the month\
     // the months' row and the pager move along the months
     await tap('#planMonth .pm-pg .btn.pri'); await pg.waitForFunction(()=>/בהמשך/.test(document.getElementById('pmCard').innerText),null,{timeout:5000}); assert.match(await pg.evaluate(()=>document.querySelector('#planMonth .pm-pg .n').textContent),/^2 \/ /);
     // a one-time deposit now, at the new rate: its own dollars, joined to the first\'s without re-rating them
-    await tap('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000}); await pg.fill('#onceAmt','400'); await tap('#onceAdd');
+    await tap('#pmCard [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000}); await pg.fill('#onceAmt','400'); await tap('#onceAdd');
     assert.ok(await wait(()=>(D().deposits||[]).some(x=>x.once&&+x.amount===400&&x.fx)),'the one-time deposit with its rate'); const o1=D().deposits.find(x=>x.once&&+x.amount===400); assert.equal(o1.fx,Math.round((fx0+1)*1000)/1000);
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
@@ -5119,7 +5117,7 @@ test('26.11 one ledger of the cash: an opening point, then every deposit and pur
     await tab(pg,'plan'); await pg.click('[data-track="stocks"]'); await pg.waitForSelector('#pCashRow [data-pcdep="blink"]',{timeout:10000});
     const box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-pcdep="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num), allBox=()=>pg.evaluate(()=>document.querySelector('#pCashRow .pc-b.all b').textContent).then(num), card=()=>pg.evaluate(()=>document.querySelector('#planAns .ps-bal b').textContent).then(num);
     assert.equal(await box('exc'),Math.round(W.exc)); assert.equal(await box('blink'),Math.round(W.blink)); assert.equal(await allBox(),Math.round(W.exc+W.blink)); assert.equal(await card(),Math.round(W.blink),'the stocks track: בלינק\'s figure');
-    assert.match(await pg.evaluate(()=>document.querySelector('#planAns .ps-bal').innerText.replace(/\s+/g,' ')),/המזומן בבלינק, שממנו קונה המסלול\. בכל החשבונות יחד:/,'the card says it is a part');
+    assert.match(await pg.evaluate(()=>document.querySelector('#planAns .ps-bal').innerText.replace(/\s+/g,' ')),/המזומן בבלינק, שממנו קונה המסלול/,'the card says it is a part');
     const line=await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText.replace(/\s+/g,' '));
     assert.match(line,/אקסלנס: ₪1,000\.00 ו-\$100\.00 מזומן בחשבון נכון ל-[^ ]+ מאז: הפקדה \+₪300\.00 · קנייה .* −₪100\.00\. עכשיו ₪1,200\.00 ו-\$100\.00, שהם ₪[\d,.]+ בשער [\d.]+\. זה המספר כאן, ב"התיק שלי" ובשווי התיק\./,'אקסלנס\'s line: '+line);
     assert.match(line,/בלינק: ₪0\.00 ו-\$50\.00 מזומן בחשבון .* מאז: הפקדה \+\$[\d.]+ · קנייה .* −\$[\d.]+\./,'בלינק\'s line, in dollars');
