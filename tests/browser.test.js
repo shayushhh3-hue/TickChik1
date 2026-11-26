@@ -5177,3 +5177,25 @@ test('26.11 the month\'s deposit in shekels or in dollars: $ chosen, an amount t
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 26.11 (the owner: "לשנות את מחיר הקנייה של המניה לפי שער הקנייה באותו יום"): a purchase's price corrected in the month's card
+test('26.11 a purchase\'s price corrected in the month\'s card: quantity, a unit\'s price, and a dollar one at its day\'s rate',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#pmCard [data-pa="pmBuy"]',{timeout:12000});
+    const sym=await pg.evaluate(()=>document.querySelector('#pmCard [data-pa="pmBuy"]').dataset.sym);
+    await pg.click(`#pmCard [data-pa="pmBuy"][data-sym="${sym}"]`); await pg.waitForSelector(`#pmCard [data-pa="pmUnbuy"][data-sym="${sym}"]`,{timeout:8000});
+    const id=await pg.evaluate(s=>[...document.querySelectorAll('#pmCard [data-pa="pmPx"]')].find(b=>b.closest('li').querySelector('[data-pa="pmUnbuy"]')?.dataset.sym===s).dataset.id,sym);
+    await pg.click(`#pmCard [data-pa="pmPx"][data-id="${id}"]`); await pg.waitForSelector('#pmPxQ',{timeout:5000});
+    const usd=await pg.evaluate(()=>!!document.getElementById('pmPxR'));
+    await pg.fill('#pmPxQ','2'); await pg.fill('#pmPxP','10'); if(usd)await pg.fill('#pmPxR','3.5');
+    await pg.click(`#pmCard [data-pa="pmPxSave"][data-id="${id}"]`); await pg.waitForFunction(()=>!document.getElementById('pmPxQ'),null,{timeout:5000});
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+    const D=store.getDoc('plan/main').data, x=[...(D.purchases||[]),...((D.idx&&D.idx.purchases)||[])].find(y=>y.id===id), fee=+(store.getDoc('settings/main').data.minFeeIls||0);
+    assert.ok(x,'the purchase'); assert.equal(x.qty,2); assert.equal(x.px,10); if(usd){assert.equal(x.fx,3.5); assert.ok(x.fxDay)}
+    assert.equal(x.paidIls,Math.round((2*10*(usd?3.5:1)+fee)*100)/100,'its shekels from the quantity, the price and the day\'s rate');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

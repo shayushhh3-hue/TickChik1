@@ -1979,6 +1979,10 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pm-dq .pm-dqc button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(20 18 46 / .14)}
 html body .pm-dq .btn.sm{min-height:44px!important}
 html body #pmCard .btn.sm{min-height:44px!important}
+#pmCard .pm-buy{flex-wrap:wrap} #pmCard .pm-px{flex-basis:100%;order:9;display:flex;flex-direction:column;gap:8px;margin:8px 0 4px;padding:12px;border-radius:8px;background:var(--accent-soft)}
+#pmCard .pm-px label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink)}
+#pmCard .pm-px input{width:120px;min-height:44px;padding:6px 10px;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);direction:ltr;text-align:end}
+#pmCard .pm-pxn{margin:0;font-size:12.5px;color:var(--ink2)} #pmCard .pm-pxa{display:flex;gap:8px}
 #pmCard .pm-ch{flex-wrap:wrap} #pmCard .pm-ccy{display:inline-flex;margin-inline-start:auto;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
 #pmCard .pm-ccy button{min-width:44px;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:600 16px var(--sans,inherit);cursor:pointer}
 #pmCard .pm-ccy button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(20 18 46 / .14)}
@@ -21093,7 +21097,8 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#pl
 // change, from a statement uploaded later either, until it is opened again. Real buttons and a native dialog; the
 // month's row is a set of buttons (the arrows move along it), a swipe on the card moves a month, and nothing is told by
 // colour alone
-let PMSEL=null, PMFIX='', PMDLG=null, PMDQ=null;
+let PMSEL=null, PMFIX='', PMDLG=null, PMDQ=null, PMPX='', PMPXV={};
+document.addEventListener('input',e=>{const t=e.target; if(t&&/^pmPx[QPR]$/.test(t.id))PMPXV[t.id]=t.value});
 // 26.11: the month's deposit in shekels or in dollars (PMDQ: {ccy, amt}; amt null = the plan's monthly sum in that currency)
 function pmDq(B){if(!PMDQ){const last=(PL.deposits||[]).filter(d=>!d.once).slice().sort((a,b)=>String(a.month)<String(b.month)?-1:1).pop(); PMDQ={ccy:last&&last.usd!=null||PMCCY==='USD'?'USD':'ILS',amt:null}}
   const f=fxOnDay(ilDay()), fx=f?+f.fx:((Q&&+Q.usdIls)||0), def=PMDQ.ccy==='USD'?(fx>0?Math.round(B/fx*100)/100:0):B; return {ccy:PMDQ.ccy,amt:PMDQ.amt!=null?PMDQ.amt:def,fx}}
@@ -21126,6 +21131,10 @@ let PMCCY='ILS'; try{if(localStorage.getItem('tr_pm_ccy')==='USD')PMCCY='USD'}ca
 const ilsAll=ils;
 function pmMoney(){const fx=(Q&&+Q.usdIls)||0; if(PMCCY!=='USD'||!(fx>0))return ilsAll; const C=new Map(); return (x,d=0)=>{let f=C.get(d); if(!f){f=new Intl.NumberFormat('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); C.set(d,f)} return '$'+f.format(Number(x)/fx)}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pmccy]'); if(!b)return; PMCCY=b.dataset.pmccy==='USD'?'USD':'ILS'; try{localStorage.setItem('tr_pm_ccy',PMCCY)}catch(x){} try{render()}catch(x){} setTimeout(()=>{const s=document.querySelector(`#planMonth [data-pmccy="${PMCCY}"]`); if(s)try{s.focus({preventScroll:true})}catch(x){}},0)});
+// the form that corrects a purchase's price (the month open to changes)
+function pmPxForm(x,day){const usd=secCcy(x.sym)==='USD', f=usd?fxOnDay(day||ilDay()):null, rate0=+x.fx>0&&x.fxDay===day?+x.fx:f?+f.fx:(+x.fx||0), pr=(()=>{try{return priceOf(x.sym)}catch(e){return null}})();
+  const v=(id,d)=>PMPXV[id]!=null?PMPXV[id]:d, q0=+x.qty>0?+x.qty:'', p0=+x.px>0?+x.px:pr&&pr.px>0?Math.round(pr.px*100)/100:'', c=usd?'$':'₪';
+  return `<div class="pm-px" role="group" aria-label="עדכון המחיר של ${esc(lab(x.sym))}"><label for="pmPxQ">כמות יחידות<input type="number" id="pmPxQ" inputmode="decimal" min="0" step="any" value="${esc(String(v('pmPxQ',q0)))}"></label><label for="pmPxP">מחיר ליחידה (${c})<input type="number" id="pmPxP" inputmode="decimal" min="0" step="any" value="${esc(String(v('pmPxP',p0)))}"></label>${usd?`<label for="pmPxR">שער הדולר ב-${esc(dmy(day||ilDay()))}<input type="number" id="pmPxR" inputmode="decimal" min="0" step="any" value="${esc(String(v('pmPxR',rate0?Math.round(rate0*1000)/1000:'')))}"></label>`:''}<p class="pm-pxn">${usd?'הסכום בשקלים לפי השער של יום הקנייה. ':''}${+S.minFeeIls>0?`כולל עמלה של ${ils(+S.minFeeIls)}. `:''}</p><div class="pm-pxa"><button type="button" class="btn sm pri" data-pa="pmPxSave" data-id="${esc(x.id)}">לשמור</button><button type="button" class="btn sm" data-pa="pmPx" data-id="${esc(x.id)}">ביטול</button></div></div>`}
 function pmRender(st,MON,X){
   const ils=pmMoney();   // 26.11: every sum of the month in the chosen currency
   const box=$('planMonth'); if(!box)return; const B=X.B;
@@ -21157,7 +21166,7 @@ function pmRender(st,MON,X){
   const live=x=>st.fixed||PL.items.some(it=>it.sym===x.sym&&it.status==='done'&&(!it.pid||it.pid===x.id));
   const rowB=x=>{const a=pmAcct(x), day=x.at?ilDay(x.at):'', fix=PMFIX===x.id&&wr;
     return `<li class="pm-buy">${logoHtml(x.sym,'pm-lg')}<div class="t"><b><bdi>${esc(lab(x.sym))}</bdi>${a?`<span class="pm-ac">${esc(acctName(a))}</span>`:'<span class="pm-ac no">חשבון לא ידוע</span>'}</b><small>${day?esc(dmy(day))+' · ':''}נקנה${x.tid?(/^a/.test(x.id||'')?' · לפי קנייה שרשומה בתיק':' · מדוח החשבון'):''}</small>${fix?`<span class="pm-fix"><label for="pmFixSel">מאיזה חשבון נקנה</label><select id="pmFixSel" data-fixid="${esc(x.id)}"><option value="">לבחור…</option>${acctIds().map(z=>`<option value="${esc(z)}">${esc(acctName(z))}</option>`).join('')}</select></span>`:''}</div>
-      <div class="e"><span class="pm-amt${a?'':' warn'}">−${ils(+x.paidIls||0,2)}</span>${wr&&(!x.tid||/^a/.test(x.id||''))&&live(x)?`<button type="button" class="lnk" data-pa="pmUnbuy" data-sym="${esc(x.sym)}" data-ym="${M.ym}" aria-label="לבטל את הקנייה של ${esc(lab(x.sym))}">ביטול</button>`:''}</div></li>`};
+      ${PMPX===x.id&&wr&&!x.tid?pmPxForm(x,day):''}<div class="e"><span class="pm-amt${a?'':' warn'}">−${ils(+x.paidIls||0,2)}</span>${wr&&!x.tid?`<button type="button" class="lnk" data-pa="pmPx" data-id="${esc(x.id)}" aria-expanded="${PMPX===x.id}" aria-label="לעדכן את המחיר של ${esc(lab(x.sym))}">${PMPX===x.id?'סגירה':'עדכון מחיר'}</button>`:''}${wr&&(!x.tid||/^a/.test(x.id||''))&&live(x)?`<button type="button" class="lnk" data-pa="pmUnbuy" data-sym="${esc(x.sym)}" data-ym="${M.ym}" aria-label="לבטל את הקנייה של ${esc(lab(x.sym))}">ביטול</button>`:''}</div></li>`};
   const rowP=sym=>{const c=st.cost[sym], short=M.cur&&c>M.now+0.005;
     return `<li class="pm-buy">${logoHtml(sym,'pm-lg')}<div class="t"><b><bdi>${esc(lab(sym))}</bdi></b><small>${M.cur?'לקנות החודש':'מתוכנן'}${short?` · חסרים ${ils(c-M.now,2)}`:''}</small></div>
       <div class="e"><span class="pm-amt" style="color:var(--ink2)">${c!=null?ils(c,2):'—'}</span>${M.cur&&wr&&!short&&c!=null?`<button type="button" class="btn sm" data-pa="pmBuy" data-sym="${esc(sym)}" data-ym="${M.ym}" aria-label="סימנתי שקניתי ${esc(lab(sym))}">קניתי</button>`:''}</div></li>`};
@@ -21257,6 +21266,11 @@ function planAct(a,d){
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
       if(st.rot&&pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
       if(!(+rec.fx>0)&&Q&&+Q.usdIls>0)rec.fx=+Q.usdIls; PL.purchases.push(rec);t.status='done';t.doneAt=now;t.note='';t.pid=id}}
+  else if(a==='pmPx'){PMPX=PMPX===String(d.id||'')?'':String(d.id||''); PMPXV={}; render(); return}
+  else if(a==='pmPxSave'){const x=PL.purchases.find(y=>y.id===String(d.id||'')); if(!x||x.tid)return; if(lockedOf(x)){lockNo();return}
+    const v=id=>+((($(id)||{}).value)||0), usd=secCcy(x.sym)==='USD', q=v('pmPxQ'), px=v('pmPxP'), r=usd?v('pmPxR'):1; if(!(q>0)||!(px>0)||!(r>0)){try{rtSay('צריך כמות, מחיר'+(usd?' ושער':'')+' גדולים מאפס')}catch(e){} return}
+    const day=x.at?ilDay(x.at):ilDay(); x.qty=q; x.px=px; x.ccy=usd?'USD':'ILS'; if(usd){x.fx=r; x.fxDay=day} x.paidIls=Math.round((q*px*r+(+S.minFeeIls||0))*100)/100; PMPX=''; PMPXV={};
+    try{rtSay(`המחיר של ${lab(x.sym)} עודכן: ${ils(x.paidIls,2)}`)}catch(e){}}
   else if(a==='editBuy'){const i0=PL.items.find(i=>i.sym===d.sym), p0=(i0&&i0.pid&&PL.purchases.find(x=>x.id===i0.pid))||PL.purchases.find(x=>x.sym===d.sym); if(lockedOf(p0)&&!(p0.at&&ilDay(p0.at)===ilDay())){lockNo();return} EDITS.add(d.sym);render();return}
   else if(a==='cancelBuy'){EDITS.delete(d.sym);render();return}
   else if(a==='saveBuy'){const it0=PL.items.find(i=>i.sym===d.sym), pu=(it0&&it0.pid&&PL.purchases.find(x=>x.id===it0.pid))||PL.purchases.find(x=>x.sym===d.sym), pp=mAllNow().pos.find(x=>x.sym===d.sym), qi=[...document.querySelectorAll('[data-ebq]')].find(x=>x.dataset.ebq===d.sym), pi=[...document.querySelectorAll('[data-ebp]')].find(x=>x.dataset.ebp===d.sym), q=qi?+qi.value:0, px=pi?+pi.value:0;
@@ -33555,6 +33569,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.10',at:'2026-11-26',t:'עדכון מחיר של קנייה, לפי השער של אותו יום',d:'בחודש פתוח לשינויים, ליד כל קנייה יש "עדכון מחיר": כמות, מחיר ליחידה, ולנייר בדולרים גם שער הדולר של יום הקנייה (השער שנשמר לאותו יום, ואפשר לשנות). הסכום בשקלים מחושב מהם.',go:'plan'},
   {v:'2026-11-26.9',at:'2026-11-26',t:'הגדרות התוכנית, מסודרות',d:'ההגדרות מחולקות לפי מה שהן קובעות: כמה ומתי מפקידים, עד מתי, מאיזה חשבון קונים, איך קונים, הניירות בתוכנית, ובסוף עמלה ואיפוס. כל כפתור ושדה בגודל נוח לאצבע.',go:'plan'},
   {v:'2026-11-26.8',at:'2026-11-26',t:'תוכנית ההפקדה: בלי הטבלה',d:'הטבלה "כל החודשים בטבלה" ירדה מהעמוד. כל חודש מופיע בכרטיס החודש, ועוברים בין החודשים בכפתורים שמעליו או ב"הקודם" ו"הבא".',go:'plan'},
   {v:'2026-11-26.7',at:'2026-11-26',t:'תוכנית ההפקדה בעיצוב של דף הבית',d:'אותו סדר ואותו מראה כמו בסקירה: מניות ומדדים בכפתורים עגולים, כרטיס סגול למעלה עם היתרה להשקעה, אריחים למזומן בכל חשבון, כרטיס לבן לכל חלק, והניירות ברשימה עם הלוגו שלהם.',go:'plan'},
