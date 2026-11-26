@@ -1096,6 +1096,47 @@ body:not([data-page="overview"]) .hero .status{margin-top:0;align-self:center}
 .lg .rl{position:absolute;inset:12%;width:76%;height:76%;object-fit:contain;opacity:0;pointer-events:none} .lg.rlon{background:#FFFFFF!important;box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgb(46 74 102 / .08)} .lg.rlon .rl{opacity:1} .lg.rlon i{visibility:hidden}
 .lg.mono{background:var(--mbg)!important;color:#fff} .lg.mono i{font-weight:600;letter-spacing:-.02em;line-height:1} .lg.mono.m3 i{font-size:.85em} .lg.mono.m4 i{font-size:.7em} .lg.on i{display:none} .lg .sp{position:absolute;inset:12%;background-repeat:no-repeat;background-size:2000% auto} .lg.lt .sp{inset:9%}
 .lg.s{width:22px;height:22px;font-size:7.5px} .lg.l{width:48px;height:48px;font-size:13px}
+/* 26.11: the deposit plan a month at a time (pmRender) */
+.pm-head{gap:8px;flex-wrap:wrap} .pm-trk:empty{display:none} .pm-trk{font-size:12.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.pm-sub{margin:-4px 0 8px;font-size:14px;color:var(--ink2)} .pm-sub:empty{display:none}
+.pm{display:flex;flex-direction:column;gap:12px} .pm[hidden]{display:none}
+.pm-prog{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.pm-prog .pm-pt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:14px} .pm-prog .pm-pt b{font-weight:700} .pm-prog .pm-pt span{color:var(--ink2)}
+.pm-seg{display:flex;gap:6px;margin-top:10px;padding:0;list-style:none} .pm-seg li{flex:1;height:8px;border-radius:99px;background:var(--sunk);border:1px solid var(--line)} .pm-seg li.on{background:var(--accent);border-color:var(--accent)}
+.pm-mos{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin}
+.pm-mo{flex:none;min-width:54px;min-height:48px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 8px}
+.pm-mo .pm-yr{display:block;font-size:10.5px;font-weight:500;line-height:1;opacity:.8} .pm-mo[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)} .pm-mo .pm-dot{width:5px;height:5px;border-radius:50%;background:currentColor} .pm-mo .pm-lk{font-size:10px;font-weight:500}
+.pm-mo:focus-visible,.pm-card button:focus-visible,.pm-pg button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.pm-card{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px} .pm-card.cur{border-color:var(--accent)}
+.pm-ch{display:flex;justify-content:space-between;align-items:center;gap:8px} .pm-ch h3{margin:0;font-size:20px}
+.pm-tag{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;border:1px solid var(--line);background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap} .pm-tag.lk{background:var(--sunk);color:var(--ink2)} .pm-tag.fut{background:var(--sunk);color:var(--ink2)}
+.pm-open{background:var(--sunk);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px} .pm-open .k{font-size:12.5px;color:var(--ink2)} .pm-open .r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600}
+.pm-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)} .pm-row .t{display:flex;flex-direction:column;min-width:0} .pm-row .t small{color:var(--ink2);font-size:12.5px}
+.pm-ok{color:var(--gain);font-weight:600;white-space:nowrap} .pm-amt{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums} .pm-amt.in{color:var(--gain)} .pm-amt.warn{color:var(--warn)}
+.pm-h4{margin:4px 0 0;font-size:14px;color:var(--ink2);font-weight:600}
+.pm-buys{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pm-buy{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)} .pm-buy:first-child{border-top:0}
+.lg.pm-lg{width:36px;height:36px;border-radius:8px;font-size:11px}
+.pm-buy .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .pm-buy .t b{font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap} .pm-buy .t small{color:var(--ink2);font-size:12.5px}
+.pm-ac{font-size:11.5px;font-weight:600;border-radius:6px;padding:1px 7px;background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--line)} .pm-ac.no{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-c)}
+.pm-buy .e{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.pm-lock{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px} .pm-lock h4{margin:0;font-size:15px;display:flex;justify-content:space-between;gap:8px} .pm-lock h4 small{font-weight:400;color:var(--ink2);font-size:12.5px}
+.pm-chk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px} .pm-chk li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap} .pm-chk .i{font-weight:700;width:1.1em;flex:none;text-align:center} .pm-chk .ok .i{color:var(--gain)} .pm-chk .gap{color:var(--warn)} .pm-chk .gap .i{color:var(--warn)}
+.pm-fix{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px} .pm-fix select{min-height:40px;font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:4px 8px}
+.pm-go{min-height:48px;border-radius:999px;font-size:16px;font-weight:700} .pm-go[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.pm-why{font-size:12.5px;color:var(--ink2);text-align:center;margin:0}
+.pm-close{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--navy);color:#fff;border-radius:12px;padding:12px 14px;font-weight:700} .pm-close .v{font-size:20px}
+html[data-theme="dark"] .pm-close{background:#2A2660}
+.pm-lkd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--ink2);flex-wrap:wrap}
+.pm-card.lkd .pm-buy .t b,.pm-card.lkd .pm-amt{color:var(--ink2)}
+.pm-pg{display:flex;justify-content:space-between;align-items:center;gap:8px} .pm-pg button{min-height:48px;min-width:96px;border-radius:999px} .pm-pg .n{color:var(--ink2);font-size:14px}
+.pm-ft{margin:0;font-size:12.5px;color:var(--ink2);text-align:center}
+.pm-dlg{border:0;border-radius:20px 20px 0 0;padding:16px;width:min(520px,100%);max-width:100%;margin:auto auto 0;background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgb(20 18 46 / .25)}
+@media (min-width:700px){.pm-dlg{border-radius:20px;margin:auto}}
+.pm-dlg::backdrop{background:rgb(20 18 46 / .45)}
+.pm-dlg h3{margin:0 0 10px;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:8px} .pm-dlg .x{min-width:44px;min-height:44px;border:0;background:none;font-size:22px;color:var(--ink2);cursor:pointer}
+.pm-sum{background:var(--sunk);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin:0} .pm-sum div{display:flex;justify-content:space-between;gap:8px;font-size:14px} .pm-sum dt{color:var(--ink2)} .pm-sum dd{margin:0;font-weight:600;white-space:nowrap} .pm-sum .tot{border-top:1px solid var(--line);padding-top:8px;font-size:16px} .pm-sum .tot dd{font-size:18px;font-weight:800}
+.pm-dlg p{font-size:13.5px;color:var(--ink2);line-height:1.6} .pm-dlg .acts{display:flex;flex-direction:column;gap:8px}
 td .lg.s{margin-inline-end:6px} .wt .lg.s{align-self:center}
 .secl{cursor:pointer} tr.secl:hover td,.mrow.secl:hover{background:var(--sunk)} .secl:hover .sym{text-decoration:underline;text-underline-offset:3px}
 .golink{font-size:12px;color:var(--navy-t);background:var(--sunk);border-radius:6px;padding:1px 6px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
@@ -4690,7 +4731,8 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
       <div class="panel goal" id="goalOv"></div>
     </section>
     <section aria-labelledby="hPlan">
-      <div class="row"><h2 id="hPlan">תוכנית ההפקדה</h2><span class="saved" id="planSaved"></span></div>
+      <div class="row pm-head"><h2 id="hPlan">תוכנית ההפקדה</h2><span class="pm-trk" id="pmTrk"></span><span class="saved" id="planSaved"></span></div>
+      <p class="pm-sub" id="pmSub"></p>
       <div class="tracks" role="group" aria-label="מסלול">
         <button type="button" class="trk" data-track="stocks"><b>מניות</b><span id="trkS"></span></button>
         <button type="button" class="trk" data-track="idx"><b>מדדים</b><span id="trkI"></span></button>
@@ -4713,6 +4755,11 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="acts" style="justify-content:flex-start"><button type="button" class="btn pri" id="pcDepAdd">להוסיף</button><button type="button" class="btn" id="pcDepNo">ביטול</button></div>
       </div>
       <p class="pc-say" id="pcDepSay" role="status" hidden></p>
+      <!-- 26.11 (the owner's design: "תוכנית ההפקדה… מאוד נגישה"): the plan a month at a time: how far the deposits are, a
+           row of the months, the month's card (its opening, its deposit, its purchases with their logos, the lock) and a
+           pager. The full table of the months is below it, folded -->
+      <section class="pm" id="planMonth" aria-labelledby="pmT" hidden></section>
+      <dialog class="pm-dlg" id="pmDlg" aria-labelledby="pmDlgT"></dialog>
       <div class="panel scroll" data-dvp="rows" id="planRowsP">
         <div class="row" style="margin-bottom:4px"><h3>הניירות בתוכנית</h3><button type="button" class="btn sm" id="planEditBtn" aria-pressed="false">עריכת הרשימה</button></div>
         <p class="pl-sum" id="planSum"></p>
@@ -4731,12 +4778,13 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <p class="note" id="kindNote"></p>
       </div>
       <div class="panel scroll" data-dvp="month">
-        <div class="row" style="margin-bottom:8px"><h3>חודש אחרי חודש</h3><span class="sub" id="depState"></span></div>
+        <details class="lad-full" id="ladFull"><summary><span>כל החודשים בטבלה</span><span class="sub" id="depState"></span></summary>
         <table class="ladder">
           <thead><tr><th>חודש</th><th>הפקדה</th><th>קנייה</th><th class="num">יתרה בסוף החודש</th></tr></thead>
           <tbody id="ladRows"><tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr></tbody>
         </table>
         <p class="note" id="planNote" style="margin-top:10px"></p>
+        </details>
       </div>
       <div class="panel oncebox" aria-labelledby="hOnce" data-dvp="once">
         <div class="row"><h3 id="hOnce">הפקדה חד פעמית</h3><span class="sub" id="onceSub"></span></div>
@@ -19457,6 +19505,7 @@ function planSyncDo(){if(!P||!HS||!Q||!PLD)return 0; const ym=ymNow(), R=realBuy
       for(const A of HS.accounts||[]){if(a!=='all'&&A.acct!==a)continue; for(const d of A.deposits||[]){const mo=String((d&&d.date)||'').slice(0,7); if(!d||!(+d.amount>0)||mo<from||mo>ym)continue;
           const v=Math.round((+d.amount)*((d.ccy||A.ccy)==='USD'?fx:1)*100)/100, k0=`d|${A.acct}|${d.date}|${+d.amount}`, day=String(d.date).slice(0,10); if([k0,k0+'#stocks',k0+'#idx'].some(k=>seen.has(k)||depTaken(k)))continue;
           if(TR.some(([,Y])=>Y&&(Y.seen||[]).includes(k0)))continue;
+          if(monthLocked(X,mo))continue;   // 26.11: a locked month does not change, whatever a file brings
           if(M>0&&mo<ym&&near(v,M)&&!(X.deposits||[]).some(q=>!q.once&&q.month===mo)){X.deposits.push({id:'a'+Date.now().toString(36)+n,month:mo,amount:M,at:day+'T09:00:00.000Z',tid:k0}); seen.add(k0); n++; continue}
           if(M>0&&(near(v,M)||near(v,tot)))continue;
           const mine=TR.flatMap(([,Y])=>((Y&&Y.deposits)||[]).filter(q=>q.once&&!q.tid)).find(q=>near(+q.amount||0,v)&&Math.abs(new Date(q.day||markDay(q)||day)-new Date(day))<=10*864e5);
@@ -19501,7 +19550,8 @@ const fxOnDay=day=>{try{const pts=(DY&&DY.points)||{}; let best=''; for(const k 
 const depUsd=d=>d&&+d.fx>0?(+d.amount||0)/+d.fx:null;
 function usdParts(L){let usd=0, ils=0, n=0, miss=0; for(const d of L||[]){const u=depUsd(d); if(u==null){miss++; continue} usd+=u; ils+=+d.amount||0; n++} return {usd:Math.round(usd*100)/100,ils:Math.round(ils*100)/100,n,miss}}
 const monthDep=(X,ym)=>((X&&X.deposits)||[]).find(d=>!d.once&&d.month===ym)||null;
-const monthLocked=(X,ym)=>{const d=monthDep(X,ym); return !!d&&!d.open&&!d.tid};
+// 26.11: locked by its own action (X.locks[ym]); a month whose deposit was ticked before that (no "open" on it) stays locked
+const monthLocked=(X,ym)=>{if(X&&X.locks&&X.locks[ym])return true; const d=monthDep(X,ym); return !!d&&!d.open&&!d.tid};
 function fxOfMonth(ym,hs=HS){const b=((hs&&hs.monthly)||[]).find(r=>r&&r.ym===ym); if(b&&+b.fx>0)return +b.fx; const pts=(DY&&DY.points)||{}; let fx=null;
   for(const k of Object.keys(pts).sort())if(k.slice(0,7)===ym&&pts[k]&&+pts[k].fx>0)fx=+pts[k].fx; return fx}
 // a saved month-end that was there before the table was uploaded holds that month's money in already (its deposits)
@@ -20793,7 +20843,7 @@ function renderPlan(mAll){
   const paidBy={}; if(st.fixed||!OLD.length){for(const x of PL.purchases)paidBy[x.sym]=+x.paidIls||0} else for(const i of PL.items){const x=puOf(i.sym); if(x)paidBy[i.sym]=+x.paidIls||0}
   const paidAt={}; for(const x of PL.purchases)if(x.month)paidAt[x.sym+'|'+x.month]=+x.paidIls||0;
   const paidOf=(sym,ym)=>st.fixed?paidAt[sym+'|'+ym]:paidBy[sym];
-  let h='', run=st.base, lastMark=-1, pd=st.base, pi=0, ad=st.base, ai=0; const CH=[];
+  let h='', run=st.base, lastMark=-1, pd=st.base, pi=0, ad=st.base, ai=0; const CH=[], MON=[];
   // 30.10: the balance at each month's end: up to this month from the track's cash now, going back through what was ticked
   // in each month; from this month on, the plan's own months (st.lad.bals)
   const endBal={}, inM=ym=>{const d=depBy[ym], on=(onceBy[ym]||[]).reduce((t,x)=>t+(+x.amount||0),0), buy=PL.purchases.filter(x=>x.month===ym).reduce((t,x)=>t+(+x.paidIls||0),0); return (d?+d.amount||0:0)+on-buy};
@@ -20821,7 +20871,7 @@ function renderPlan(mAll){
     return `<div class="lad-add"><button type="button" class="btn sm lad-plus" data-ladadd="${ym}" aria-expanded="${open}" aria-controls="ladAdd_${ym}" aria-label="להוסיף קנייה ל${mn}"><span aria-hidden="true">＋</span> להוסיף קנייה</button>${open?`<div class="lad-pick" id="ladAdd_${ym}" role="group" aria-label="ניירות שאפשר לסמן כנקנו ב${mn}"><p class="nm">בחר נייר, והוא יסומן כנקנה ב${mn} במחיר של היום. את המחיר ששילמת אפשר לתקן אחר כך.</p><div class="lad-chips">${L.map(i=>{const c=st.cost[i.sym], short=m===st.cur&&c>st.bal+0.005; return `<button type="button" class="btn sm" data-pa="addBuy" data-sym="${esc(i.sym)}" data-ym="${ym}"${short?' disabled':''}><span aria-hidden="true">＋</span> <bdi>${esc(lab(i.sym))}</bdi> <span class="n">${ils(c,2)}</span>${short?' <span class="nm">חסר ביתרה</span>':''}</button>`}).join('')}</div></div>`:''}</div>`};
   const rateH=x=>{const u=depUsd(x); return u==null?'':` · <span class="n" dir="ltr">$${u.toFixed(2)}</span> בשער <span class="n" dir="ltr">${(+x.fx).toFixed(3)}</span>${x.fxDay?' מ-'+esc(dmy(x.fxDay)):''}`};
   const lockH=(d,ym)=>{const mn=ymShort(ym);
-    if(d.open)return `<div class="nm lk-l">פתוח לשינויים${rateH(d)}</div>${canWrite?`<button type="button" class="btn sm lk-b" data-pa="monthLock" data-ym="${ym}">לנעול את ${mn}</button>`:''}`;
+    if(!monthLocked(PL,ym))return `<div class="nm lk-l">פתוח לשינויים${rateH(d)}</div>${canWrite?`<button type="button" class="btn sm lk-b" data-pa="pmLockAsk" data-ym="${ym}">לנעול את ${mn}</button>`:''}`;
     return `<div class="nm lk-l"><b>נעול</b>${rateH(d)}</div>${!canWrite?'':LKASK===ym?`<span class="pl-sure lk-q" role="group" aria-label="לפתוח את ${mn} לשינויים"><span class="pl-sq">לפתוח את ${mn} לשינויים? אחרי הפתיחה אפשר לבטל את ההפקדה ואת הקניות שנרשמו בו.</span><button type="button" class="btn sm" data-pa="monthOpenNo" data-ym="${ym}">לא, להשאיר נעול</button><button type="button" class="btn sm crit" data-pa="monthOpen" data-ym="${ym}">כן, לפתוח</button></span>`:`<button type="button" class="lnk lk-b" data-pa="monthOpenAsk" data-ym="${ym}" aria-label="לפתוח את ${mn} לשינויים">לפתוח לשינויים</button>`}`};
   const buyGroups=(buys,m,fn)=>{const ym=ymAdd(st.start,m), f=buys.filter(isF), k=buys.filter(x=>!isF(x)); if(!f.length||!k.length)return buys.map(x=>fn(x,m,ym)).join(''); return `<div class="bg col"><span class="bl">קרנות</span>${f.map(x=>fn(x,m,ym)).join('')}</div><div class="bg col"><span class="bl">מניות</span>${k.map(x=>fn(x,m,ym)).join('')}</div>`};
   for(let m=0;m<nRows;m++){
@@ -20830,9 +20880,10 @@ function renderPlan(mAll){
     run+=(d?+d.amount||0:0)+onAmt-oldAmt-buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0);
     pd+=B+onAmt; pi+=buys.reduce((t,sym)=>t+(paidOf(sym,ym)!=null?paidOf(sym,ym):(st.cost[sym]||0)),0); ad+=(d?+d.amount||0:0)+onAmt; ai+=oldAmt+buys.reduce((t,sym)=>t+(paidOf(sym,ym)||0),0); pi+=oldAmt;
     CH.push({ym,pd,pi,ad,ai,act:m<=lastMark,buys:buys.slice(),cur:m===st.cur});
+    MON.push({m,ym,d,on,buys:buys.slice(),close:endBal[m]!=null?endBal[m]:run});
     const cls=[m===st.cur?'cur':'',buys.length&&m!==st.cur?'buy':'',m<st.cur&&!d?'miss':'',!LADALL&&m>st.cur?'far':''].join(' ');
     h+=`<tr class="${cls}"><td><b>${ymShort(ym)}</b>${m===st.cur?`<div class="nm">${st.wait?'חודש ההתחלה':'החודש'}</div>`:m<st.cur&&!d?'<div class="nm">הפקדה לא סומנה</div>':''}</td>
-    <td><label class="ck${d&&!d.open&&!d.tid?' lkd':''}" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${d&&!d.open&&!d.tid?' disabled':dis}><span class="n">${ils(d?d.amount:B)}</span></label>${d&&!d.tid?lockH(d,ym):''}${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}${rateH(x)}</div>`).join('')}</td>
+    <td><label class="ck${monthLocked(PL,ym)?' lkd':''}" for="dep_${ym}"><input type="checkbox" id="dep_${ym}" data-dep="${ym}"${d?' checked':''}${monthLocked(PL,ym)?' disabled':dis}><span class="n">${ils(d?d.amount:B)}</span></label>${d?lockH(d,ym):''}${on.map(x=>`<div class="nm once1">+ <span class="n">${ils(+x.amount||0)}</span> חד פעמית${x.note?' · '+esc(x.note):''}${rateH(x)}</div>`).join('')}</td>
     <td><div class="buys">${buys.length?buyGroups(buys,m,buyHtml):old.length?'':m===st.cur&&st.wait?'<span class="nm">מתחילים</span>':m<st.cur&&!st.fixed?'<span class="nm">לא סומנה קנייה בחודש הזה.</span>':'<span class="nm">צבירה</span>'}${old.length?`<div class="nm oldr">נקנו בסבב קודם: ${old.map(x=>`<bdi>${esc(lab(x.sym))} <span class="n">${ils(+x.paidIls||0,2)}</span></bdi>`).join(' · ')}</div>`:''}</div>${addH(m,ym,buys)}</td><td class="num" data-k="${m<st.cur?'נשאר בסוף החודש':m===st.cur&&st.fixed?'יתרה עכשיו':'יישאר בסוף החודש'}">${(()=>{const v=endBal[m]!=null?endBal[m]:run; return `<span class="n${v<0?' down':''}"${m>lastMark?' style="color:var(--muted)"':''}>${(v<0?'−':'')+ils(Math.abs(v),2)}</span>`})()}</td></tr>`;
   }
   // the chart: the real months up to today (planActual: the deposits and the holdings, as the rest of the page has them),
@@ -20853,6 +20904,7 @@ function renderPlan(mAll){
     const key=!D?'':ae.id?`[id="${q(ae.id)}"]`:D.ladadd?`[data-ladadd="${q(D.ladadd)}"]`:D.pa&&D.sym?`[data-pa="${q(D.pa)}"][data-sym="${q(D.sym)}"]${D.ym?`[data-ym="${q(D.ym)}"]`:''}`:D.ladall?'[data-ladall]':'';
     L.innerHTML=h||'<tr><td colspan="4" class="empty">לוח החודשים יופיע כאן.</td></tr>'; if(key){const f=L.querySelector(key); if(f&&f!==document.activeElement)try{f.focus({preventScroll:true})}catch(e){}}}
   try{planAnsFill(st,depBy,B)}catch(e){console.error(e)}
+  try{pmRender(st,MON,{B,isDone,paidOf})}catch(e){console.error(e)}
   try{renderOnce()}catch(e){}
   const nowSyms=todo.filter(i=>st.sch.when[i.sym]===0).map(i=>i.sym);
   $('planNote').textContent=!PL.items.length?'':!todo.length?'כל הניירות בתוכנית הוגדלו.':st.rot?`בכל חודש כל ההפקדה, ${ils(B)}, הולכת לנייר הבא בתור, בשברי מניה ובלי עמלה. הסדר נקבע ברשימה שלמטה בעזרת החיצים. ${nowSyms.length?'החודש בתור: '+nowSyms.join(', ')+'. ':''}קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.`:(nowSyms.length?`החודש אפשר להגדיל: ${nowSyms.join(', ')}. `:'החודש ההפקדה נצברת, אין נייר שיחידה שלו נכנסת ביתרה. ')+'הלוח במחירי היום. קנייה שסומנה ננעלת במחיר השוק, ואפשר לתקן למחיר ששילמת.';
@@ -20895,19 +20947,137 @@ function renderPlan(mAll){
 }
 let PEDIT=false;
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#planEditBtn')){PEDIT=!PEDIT; try{render()}catch(x){}}});
+// ---- 26.11 (the owner's design: the deposit plan "very accessible", the logos square beside the names): the plan a
+// month at a time. The figures are the plan's own (the same as the table of the months): a month opens with what it
+// had, its deposits come in, its purchases go out, and what is left is its closing; a month ahead is the plan's layout
+// at today's prices. A month up to this one is locked by its own action once nothing is open in it (its deposit ticked,
+// every purchase with its account, no balance under zero): asked once in a window that sums it up. Locked, it does not
+// change, from a statement uploaded later either, until it is opened again. Real buttons and a native dialog; the
+// month's row is a set of buttons (the arrows move along it), a swipe on the card moves a month, and nothing is told by
+// colour alone
+let PMSEL=null, PMFIX='', PMDLG=null;
+const pmMoOf=x=>x&&(x.month||(x.at?ilDay(x.at).slice(0,7):''));
+// the account a purchase came out of: its own, the statement's line it was read from, the track's account, the only one
+function pmAcct(x){const ids=acctIds(); if(x.acct&&ids.includes(x.acct))return x.acct;
+  const t=String(x.tid||''); if(t&&!/^[md]\|/.test(t)){const a=t.split('|')[0]; if(ids.includes(a))return a}
+  if(/^m\|/.test(t)){const id=t.slice(2); for(const A of (HS&&HS.accounts)||[])if((A.manual||[]).some(m=>m&&m.id===id))return A.acct}
+  const tr=trackAcct(TRACK); if(tr&&tr!=='all')return tr; return ids.length===1?ids[0]:''}
+const pmShort=ym=>{const n=MONTHS[+ym.slice(5)-1]; return n.length>4?n.slice(0,3)+'׳':n};
+function pmMonth(st,R,X){
+  const ym=R.ym, m=R.m, cur=m===st.cur, past=m<st.cur, fut=m>st.cur, lk=monthLocked(PL,ym), L=(PL.locks||{})[ym]||null;
+  const dep=R.d?+R.d.amount||0:0, once=(R.on||[]).reduce((t,x)=>t+(+x.amount||0),0);
+  const bought=PL.purchases.filter(x=>pmMoOf(x)===ym), spent=bought.reduce((t,x)=>t+(+x.paidIls||0),0);
+  const got=sym=>st.fixed?X.paidOf(sym,ym)!=null:bought.some(x=>x.sym===sym)||X.isDone(sym);
+  const plan=(fut||cur)&&!lk?(R.buys||[]).filter(sym=>!got(sym)):[], planCost=plan.reduce((t,s)=>t+(st.cost[s]||0),0);
+  const now=st.lad&&st.lad.cash!=null&&!st.fixed?st.lad.cash:st.bal;
+  // what the month had when it opened, from what it closed with (or, this month, from the money now) and what moved in it
+  const closeNow=cur?now:R.close, open=fut?null:Math.round((closeNow-dep-once+spent)*100)/100;
+  return {ym,m,cur,past,fut,lk,L,dep,once,bought,spent,plan,planCost,now,open,close:R.close,d:R.d,on:R.on||[]}}
+function pmGaps(M){const G=[];
+  if(!M.d&&TM()>0)G.push({k:'dep',t:`ההפקדה של ${MONTHS[+M.ym.slice(5)-1]} עוד לא סומנה`});
+  for(const x of M.bought)if(!pmAcct(x))G.push({k:'acct',id:x.id,t:`קניית ${lab(x.sym)} בלי חשבון`});
+  const end=M.cur?M.now:M.close; if(end<-0.005)G.push({k:'neg',t:'היתרה בסוף החודש במינוס'});
+  return G}
+function pmRender(st,MON,X){
+  const box=$('planMonth'); if(!box)return; const B=X.B;
+  {const s=$('pmSub'), t=$('pmTrk'); if(s&&t){const a=st.apart?st.acct:trackAcct(TRACK); t.textContent=PL.items.length?(TRACK==='idx'?'מסלול מדדים':'מסלול מניות'):'';
+    s.textContent=PL.items.length?[`${ils(B)} בחודש`,a&&a!=='all'?`קונה מ${acctName(a)}`:'קונה מכל החשבונות',st.until?`עד ${ymLong(st.until)}`:''].filter(Boolean).join(' · '):''}}
+  {const lf=$('ladFull'); if(lf&&!lf.dataset.init){lf.dataset.init='1'; try{if(localStorage.getItem('tr_pt_all')==='1')lf.open=true}catch(e){}}}   // the page's tests of each part see the table open
+  if(!PL.items.length||!MON.length){box.hidden=true; box.innerHTML=''; return} box.hidden=false;
+  const curYm=ymAdd(st.start,st.cur); if(!PMSEL||!MON.some(r=>r.ym===PMSEL))PMSEL=curYm;
+  const i=MON.findIndex(r=>r.ym===PMSEL), M=pmMonth(st,MON[i],X), N=MON.length, nm=MONTHS[+M.ym.slice(5)-1];
+  // how far: the monthly deposits ticked of the months the plan has
+  const nd=MON.filter(r=>r.d).length, ds=MON.reduce((t,r)=>t+(r.d?+r.d.amount||0:0),0);
+  const prog=st.fixed?'':`<div class="pm-prog" role="group" aria-label="ההתקדמות של ההפקדות"><div class="pm-pt"><b>הפקדה ${nd} מתוך ${N}</b><span>${ils(ds)} מתוך ${ils(B*N)}</span></div><ul class="pm-seg" aria-hidden="true">${MON.map(r=>`<li class="${r.d?'on':''}"></li>`).join('')}</ul></div>`;
+  const mos=`<div class="pm-mos" role="group" aria-label="חודשי התוכנית">${MON.map(r=>{const on=r.ym===PMSEL, c=r.ym===curYm, l=monthLocked(PL,r.ym);
+      return `<button type="button" class="pm-mo" data-pa="pmSel" data-keep="1" data-ym="${r.ym}" aria-pressed="${on}"${c?' aria-current="date"':''} aria-label="${esc(ymLong(r.ym))}${c?', החודש':''}${l?', נעול':''}"><span aria-hidden="true">${esc(pmShort(r.ym))}${r.ym.slice(0,4)!==curYm.slice(0,4)?'<small class="pm-yr">'+r.ym.slice(2,4)+'</small>':''}</span>${c?'<span class="pm-dot" aria-hidden="true"></span>':l?'<span class="pm-lk" aria-hidden="true">נעול</span>':''}</button>`}).join('')}</div>`;
+  const acctsTxt=st.apart?acctName(st.acct):acctIds().map(acctName).join(' + ');
+  const tag=M.lk?'<span class="pm-tag lk">🔒 נעול</span>':M.cur?'<span class="pm-tag">החודש</span>':M.fut?'<span class="pm-tag fut">בהמשך · לפי המחירים של היום</span>':'<span class="pm-tag fut">עבר</span>';
+  const wr=canWrite&&!M.lk;
+  let h=`<div class="pm-ch"><h3 id="pmT">${esc(ymLong(M.ym))}</h3>${tag}</div>`;
+  h+=M.fut?`<div class="pm-open"><span class="k">יתרה בתחילת החודש · צפויה</span><div class="r"><span><bdi>${esc(acctsTxt)}</bdi></span><span class="n">${ils(MON[i-1]?MON[i-1].close:M.now,2)}</span></div></div>`
+    :`<div class="pm-open"><span class="k">יתרת פתיחה · ${st.apart?'החשבון של המסלול':'כל המזומן'}</span><div class="r"><span><bdi>${esc(acctsTxt)}</bdi></span><span class="n">${M.open<0?'−':''}${ils(Math.abs(M.open),2)}</span></div></div>`;
+  // the deposit
+  {const a=st.apart?st.acct:trackAcct(TRACK), to=a&&a!=='all'?`ל${acctName(a)}`:'לחשבונות';
+    const right=M.d?`<span class="pm-ok">✓ הופקד</span><span class="pm-amt in">+${ils(M.dep,2)}</span>`:M.fut?`<span class="pm-amt">${ils(B,2)}</span>`:wr?`<button type="button" class="btn sm pri" data-pa="pmDep" data-ym="${M.ym}">סימנתי שהפקדתי ${ils(B)}</button>`:`<span class="nm">לא סומנה</span>`;
+    h+=`<div class="pm-row"><div class="t"><span>הפקדה חודשית${M.fut?' · מתוכננת':''}</span><small>${esc(to)}</small></div><div class="e" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${right}${M.d&&wr&&!M.d.tid?`<button type="button" class="lnk" data-pa="pmDep" data-ym="${M.ym}" aria-label="לבטל את הסימון של ההפקדה">ביטול</button>`:''}</div></div>`}
+  for(const x of M.on)h+=`<div class="pm-row"><div class="t"><span>הפקדה חד-פעמית</span><small>${esc(x.note||'')}</small></div><span class="pm-amt in">+${ils(+x.amount||0,2)}</span></div>`;
+  // the purchases: the logo square beside the name, the account, the day, the amount
+  const live=x=>st.fixed||PL.items.some(it=>it.sym===x.sym&&it.status==='done'&&(!it.pid||it.pid===x.id));
+  const rowB=x=>{const a=pmAcct(x), day=x.at?ilDay(x.at):'', fix=PMFIX===x.id&&wr;
+    return `<li class="pm-buy">${logoHtml(x.sym,'pm-lg')}<div class="t"><b><bdi>${esc(lab(x.sym))}</bdi>${a?`<span class="pm-ac">${esc(acctName(a))}</span>`:'<span class="pm-ac no">חשבון לא ידוע</span>'}</b><small>${day?esc(dmy(day))+' · ':''}נקנה${x.tid?' · מדוח החשבון':''}</small>${fix?`<span class="pm-fix"><label for="pmFixSel">מאיזה חשבון נקנה</label><select id="pmFixSel" data-fixid="${esc(x.id)}"><option value="">לבחור…</option>${acctIds().map(z=>`<option value="${esc(z)}">${esc(acctName(z))}</option>`).join('')}</select></span>`:''}</div>
+      <div class="e"><span class="pm-amt${a?'':' warn'}">−${ils(+x.paidIls||0,2)}</span>${wr&&!x.tid&&live(x)?`<button type="button" class="lnk" data-pa="pmUnbuy" data-sym="${esc(x.sym)}" data-ym="${M.ym}" aria-label="לבטל את הקנייה של ${esc(lab(x.sym))}">ביטול</button>`:''}</div></li>`};
+  const rowP=sym=>{const c=st.cost[sym], short=M.cur&&c>M.now+0.005;
+    return `<li class="pm-buy">${logoHtml(sym,'pm-lg')}<div class="t"><b><bdi>${esc(lab(sym))}</bdi></b><small>${M.cur?'לקנות החודש':'מתוכנן'}${short?` · חסרים ${ils(c-M.now,2)}`:''}</small></div>
+      <div class="e"><span class="pm-amt" style="color:var(--ink2)">${c!=null?ils(c,2):'—'}</span>${M.cur&&wr&&!short&&c!=null?`<button type="button" class="btn sm" data-pa="pmBuy" data-sym="${esc(sym)}" data-ym="${M.ym}" aria-label="סימנתי שקניתי ${esc(lab(sym))}">קניתי</button>`:''}</div></li>`};
+  h+=`<h4 class="pm-h4">קניות</h4>`+(M.bought.length||M.plan.length?`<ul class="pm-buys">${M.bought.map(rowB).join('')}${M.plan.map(rowP).join('')}</ul>`:`<p class="nm" style="margin:0">${M.fut?'החודש הזה צובר: אין נייר שנכנס ביתרה.':'לא נרשמה קנייה בחודש הזה.'}</p>`);
+  // the end of the month: locked, or what is open before it can be
+  if(M.lk){const at=M.L&&M.L.at?ilDay(M.L.at):'', v=M.L&&M.L.bal!=null?+M.L.bal:M.cur?M.now:M.close;
+    h+=`<div class="pm-close" role="group" aria-label="יתרת סגירה"><span>יתרת סגירה</span><span class="v n">${v<0?'−':''}${ils(Math.abs(v),2)}</span></div><div class="pm-lkd"><span>🔒 ${at?'ננעל ב-'+esc(dmy(at)):'נעול'}</span>${canWrite?`<button type="button" class="lnk" data-pa="pmOpenAsk" data-ym="${M.ym}">לפתוח לשינויים</button>`:''}</div>`}
+  else if(M.fut)h+=`<div class="pm-row"><div class="t"><span>יתרה צפויה בסוף החודש</span><small>לפי המחירים של היום</small></div><span class="pm-amt">${M.close<0?'−':''}${ils(Math.abs(M.close),2)}</span></div>`;
+  else{const G=pmGaps(M), n=M.bought.length, kn=M.bought.filter(x=>pmAcct(x)).length;
+    h+=`<div class="pm-row"><div class="t"><span>${M.cur?'יתרה עכשיו':'יתרה בסוף החודש'}</span>${M.cur&&M.plan.length?`<small>אחרי הקניות שנשארו: ${ils(M.close,2)}</small>`:''}</div><span class="pm-amt">${(M.cur?M.now:M.close)<0?'−':''}${ils(Math.abs(M.cur?M.now:M.close),2)}</span></div>`;
+    h+=`<div class="pm-lock"><h4>נעילת ${esc(nm)}<small>${M.cur?'בסוף החודש':'החודש נגמר'}</small></h4><ul class="pm-chk">`
+      +(M.d?'<li class="ok"><span class="i" aria-hidden="true">✓</span>ההפקדה סומנה</li>':'')
+      +(n&&kn===n?`<li class="ok"><span class="i" aria-hidden="true">✓</span>${n===1?'הקנייה משויכת לחשבון':n+' קניות משויכות לחשבון'}</li>`:'')
+      +G.map(g=>`<li class="gap"><span class="i" aria-hidden="true">!</span><span><span class="vh">פער: </span>${esc(g.t)}</span>${g.k==='acct'&&canWrite?`<button type="button" class="lnk" data-pa="pmFix" data-id="${esc(g.id)}" aria-expanded="${PMFIX===g.id}">לסדר עכשיו</button>`:g.k==='dep'&&canWrite?`<button type="button" class="lnk" data-pa="pmDep" data-ym="${M.ym}">לסמן עכשיו</button>`:''}</li>`).join('')
+      +`</ul>${canWrite?`<button type="button" class="btn pri pm-go" data-pa="pmLockAsk" data-ym="${M.ym}"${G.length?' aria-disabled="true" aria-describedby="pmWhy"':''}>🔒 לנעול את ${esc(nm)}</button><p class="pm-why" id="pmWhy">${G.length?'אפשר לנעול רק כשאין פערים פתוחים.':'אחרי הנעילה החודש לא משתנה, עד שפותחים אותו שוב.'}</p>`:''}</div>`}
+  const card=`<div class="pm-card${M.cur?' cur':''}${M.lk?' lkd':''}" id="pmCard">${h}</div>`;
+  const pg=`<div class="pm-pg"><button type="button" class="btn" data-pa="pmSel" data-ym="${i>0?MON[i-1].ym:''}"${i>0?'':' disabled'} aria-label="החודש הקודם"><span aria-hidden="true">›</span> הקודם</button><span class="n" aria-live="polite">${i+1} / ${N}</span><button type="button" class="btn pri" data-pa="pmSel" data-ym="${i<N-1?MON[i+1].ym:''}"${i<N-1?'':' disabled'} aria-label="החודש הבא">הבא <span aria-hidden="true">‹</span></button></div>`;
+  const ae=document.activeElement, keep=ae&&box.contains(ae)?(ae.dataset.pa?`[data-pa="${ae.dataset.pa}"]${ae.dataset.ym?`[data-ym="${ae.dataset.ym}"]`:''}${ae.dataset.sym?`[data-sym="${ae.dataset.sym}"]`:''}`:ae.id?'#'+ae.id:''):'';
+  const html=prog+mos+card+pg+`<p class="pm-ft">החליקו ימינה לחודש הבא, שמאלה לקודם. לפי המחירים של היום; הדף מציג נתונים ואין בו המלצה לקנות או למכור.</p>`;
+  if(box._h!==html){box._h=html; box.innerHTML=html; if(keep){const f=box.querySelector(keep); if(f)try{f.focus({preventScroll:true})}catch(e){}}
+    const s=box.querySelector('.pm-mo[aria-pressed="true"]'); if(s)try{s.scrollIntoView({block:'nearest',inline:'center'})}catch(e){}}
+  try{if(PMDLG&&$('pmDlg').open)pmDlgFill(st,MON,X)}catch(e){}
+  pmRender.ctx={st,MON,X}}
+// the window that asks before a month is locked (its sums) or opened
+function pmDlgOpen(kind,ym){const c=pmRender.ctx, g=$('pmDlg'); if(!c||!g)return; const M=pmMonth(c.st,c.MON.find(r=>r.ym===ym)||{ym,m:0},c.X);
+  if(kind==='lock'&&pmGaps(M).length){try{rtSay('אפשר לנעול רק כשאין פערים פתוחים. הם כתובים ברשימה מעל הכפתור.')}catch(e){} return}
+  PMDLG={kind,ym,from:document.activeElement}; pmDlgFill(c.st,c.MON,c.X); try{g.showModal()}catch(e){g.setAttribute('open','')} const f=g.querySelector('.pm-ok-b'); if(f)try{f.focus()}catch(e){}}
+function pmDlgFill(st,MON,X){const g=$('pmDlg'), D=PMDLG; if(!g||!D)return; const R=MON.find(r=>r.ym===D.ym); if(!R)return; const M=pmMonth(st,R,X), nm=MONTHS[+D.ym.slice(5)-1];
+  if(D.kind==='open'){g.innerHTML=`<h3 id="pmDlgT"><span>לפתוח את ${esc(nm)} לשינויים?</span><button type="button" class="x" data-pmx aria-label="סגירה">×</button></h3><p>אחרי הפתיחה אפשר לבטל את ההפקדה ואת הקניות שנרשמו בחודש, ודוח שיעלה יכול לעדכן אותו. כדי לנעול שוב, סוגרים את הפערים ולוחצים "לנעול".</p><div class="acts"><button type="button" class="btn pri pm-go pm-ok-b" data-pa="monthOpen" data-ym="${D.ym}">לפתוח את ${esc(nm)}</button><button type="button" class="btn" data-pmx>להשאיר נעול</button></div>`; return}
+  const end=M.cur?M.now:M.close, nb=M.bought.length, nx=ymAdd(D.ym,1);
+  g.innerHTML=`<h3 id="pmDlgT"><span>🔒 לנעול את ${esc(nm)}?</span><button type="button" class="x" data-pmx aria-label="סגירה">×</button></h3>
+    <dl class="pm-sum"><div><dt>יתרת פתיחה</dt><dd class="n">${M.open<0?'−':''}${ils(Math.abs(M.open),2)}</dd></div>${M.dep||M.once?`<div><dt>הפקדות</dt><dd class="n" style="color:var(--gain)">+${ils(M.dep+M.once,2)}</dd></div>`:''}${nb?`<div><dt>${nb===1?'קנייה אחת':nb+' קניות'}</dt><dd class="n">−${ils(M.spent,2)}</dd></div>`:''}<div class="tot"><dt>יתרת סגירה</dt><dd class="n">${end<0?'−':''}${ils(Math.abs(end),2)}</dd></div></dl>
+    <p>אחרי הנעילה ההפקדה והקניות של ${esc(nm)} לא ישתנו, גם כשיעלה דוח חדש מהבנק. כדי לשנות משהו צריך לפתוח את החודש מחדש.</p>
+    <div class="acts"><button type="button" class="btn pri pm-go pm-ok-b" data-pa="monthLock" data-ym="${D.ym}" data-bal="${Math.round(end*100)/100}">🔒 לנעול</button><button type="button" class="btn" data-pmx>לא עכשיו</button></div>
+    <p class="pm-why">${esc(MONTHS[+nx.slice(5)-1])} יתחיל ביתרה של ${ils(end,2)}.</p>`}
+function pmDlgClose(){const g=$('pmDlg'), D=PMDLG; PMDLG=null; try{if(g&&g.open)g.close()}catch(e){} if(g)g.removeAttribute('open');
+  setTimeout(()=>{const f=D&&D.ym?document.querySelector(`#planMonth [data-pa="${D.kind==='open'?'pmOpenAsk':'pmLockAsk'}"][data-ym="${D.ym}"]`)||document.querySelector('#planMonth .pm-mo[aria-pressed="true"]'):null; if(f)try{f.focus({preventScroll:true})}catch(e){}},0)}
+document.addEventListener('click',e=>{const t=e.target; if(!t||!t.closest)return; if(t.closest('[data-pmx]')){pmDlgClose(); return} if(t.id==='pmDlg'&&PMDLG)pmDlgClose()});
+try{document.addEventListener('close',e=>{if(e.target&&e.target.id==='pmDlg'&&PMDLG){PMDLG=null}},true)}catch(e){}
+// an account given to a purchase that had none
+document.addEventListener('change',e=>{const s=e.target; if(!s||s.id!=='pmFixSel'||!canWrite||!s.value)return; const x=PL.purchases.find(q=>q.id===s.dataset.fixid); if(!x||monthLocked(PL,pmMoOf(x)))return; x.acct=s.value; PMFIX=''; planChanged()});
+// the months' row: the arrows move along it (the page reads right to left: the left arrow is the next month)
+document.addEventListener('keydown',e=>{const b=e.target&&e.target.closest&&e.target.closest('#planMonth .pm-mo'); if(!b||!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+  const A=[...b.parentElement.querySelectorAll('.pm-mo')], i=A.indexOf(b), n=e.key==='Home'?0:e.key==='End'?A.length-1:Math.max(0,Math.min(A.length-1,i+(e.key==='ArrowLeft'?1:-1)));
+  e.preventDefault(); if(n!==i)planAct('pmSel',{ym:A[n].dataset.ym,keep:1})});
+// a swipe on the month's card: to the right, the next month; to the left, the one before
+{let sx=null, sy=null; document.addEventListener('touchstart',e=>{const c=e.target&&e.target.closest&&e.target.closest('#pmCard'); if(!c||e.touches.length!==1){sx=null; return} sx=e.touches[0].clientX; sy=e.touches[0].clientY},{passive:true});
+  document.addEventListener('touchend',e=>{if(sx==null)return; const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; sx=null; if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.6)return;
+    const b=document.querySelector(`#planMonth .pm-pg [data-pa="pmSel"]:${dx>0?'last-of-type':'first-of-type'}`); if(b&&!b.disabled)b.click()},{passive:true})}
 function planAct(a,d){
   if(!P||!Q)return; const st=planState(mAllNow()), now=new Date().toISOString(), id='e'+Date.now().toString(36);
   const ix=+d.ix, it=PL.items[ix];
   const lockedOf=x=>{const m=x&&(x.month||(x.at?ilDay(x.at).slice(0,7):'')); return !!m&&!x.tid&&monthLocked(PL,m)}, lockNo=()=>{try{rtSay('החודש הזה נעול. כדי לשנות בו, קודם "לפתוח את החודש לשינויים".')}catch(e){} render()};
   if(a==='monthOpenAsk'||a==='monthOpenNo'){LKASK=a==='monthOpenAsk'?String(d.ym||''):''; render(); const want=a==='monthOpenAsk'?'monthOpenNo':'monthOpenAsk', ym0=String(d.ym||''); setTimeout(()=>{const f=document.querySelector(`#ladRows [data-pa="${want}"][data-ym="${ym0}"]`); if(f)try{f.focus({preventScroll:true})}catch(e){}},30); return}
-  if(a==='monthOpen'||a==='monthLock'){const cur=monthDep(PL,d.ym); if(!cur)return; LKASK=''; if(a==='monthOpen')cur.open=true; else delete cur.open}
-  else if(a==='depToggle'){const cur=monthDep(PL,d.ym); if(cur&&!cur.open&&!cur.tid){lockNo();return}
+  // 26.11: a month is locked by its own action at its end (the owner's design), not by ticking its deposit: PL.locks[ym]
+  // keeps when, and the balance it closed with. Opening it takes the lock away, and its deposit is open for changes
+  if(a==='pmLockAsk'||a==='pmOpenAsk'){pmDlgOpen(a==='pmLockAsk'?'lock':'open',String(d.ym||'')); return}
+  if(a==='pmDep')a='depToggle'; else if(a==='pmBuy'||a==='pmUnbuy')a='buyToggle';
+  if(a==='monthLock'||a==='monthOpen'){try{const g=$('pmDlg'); PMDLG=null; if(g&&g.open)g.close(); if(g)g.removeAttribute('open')}catch(e){}}
+  if(a==='pmSel'){PMSEL=String(d.ym||''); render(); setTimeout(()=>{const f=document.querySelector('#planMonth [data-pa="pmSel"][data-ym="'+PMSEL+'"]'); if(f&&d.keep)try{f.focus({preventScroll:true})}catch(e){}},0); return}
+  if(a==='pmFix'){PMFIX=PMFIX===String(d.id)?'':String(d.id); render(); setTimeout(()=>{const f=document.getElementById('pmFixSel'); if(f)try{f.focus()}catch(e){}},0); return}
+  if(a==='monthOpen'||a==='monthLock'){const cur=monthDep(PL,d.ym); LKASK=''; PL.locks=PL.locks&&typeof PL.locks==='object'?PL.locks:{};
+    if(a==='monthOpen'){delete PL.locks[d.ym]; if(cur)cur.open=true}
+    else{if(!cur)return; PL.locks[d.ym]={at:now,bal:d.bal!=null&&isFinite(+d.bal)?Math.round(+d.bal*100)/100:null}; delete cur.open}}
+  else if(a==='depToggle'){const cur=monthDep(PL,d.ym); if(monthLocked(PL,d.ym)){lockNo();return}
     PL.deposits=PL.deposits.filter(x=>x.once||x.month!==d.ym);
-    if(!cur){const f=fxOnDay(ilDay()), rec={id,month:d.ym,amount:TM(),at:now}; if(f){rec.fx=f.fx; rec.fxDay=f.day}
+    if(!cur){const f=fxOnDay(ilDay()), rec={id,month:d.ym,amount:TM(),at:now,open:true}; if(f){rec.fx=f.fx; rec.fxDay=f.day}   // 26.11: open until the month is locked
       rec.bal=Math.round((st.bal+(+rec.amount||0))*100)/100;
       if(!st.rot&&!st.fixed){const cs={}; for(const i of PL.items)if(i.status==='todo'&&st.cost[i.sym]!=null)cs[i.sym]=Math.round(st.cost[i.sym]*100)/100; rec.cost=cs}
       PL.deposits.push(rec); const trk=TRACK, ym0=d.ym;
-      LAD_UNDO={msg:`ההפקדה של ${ymShort(ym0)} סומנה, והחודש ננעל${f?' בשער '+(+f.fx).toFixed(3):''}`,fn:()=>{const X=trk==='idx'?PLD.idx:PLD; if(!X)return; X.deposits=(X.deposits||[]).filter(q=>q.id!==id); setTrack(); planChanged()}}}}
+      LAD_UNDO={msg:`ההפקדה של ${ymShort(ym0)} סומנה${f?' בשער '+(+f.fx).toFixed(3):''}`,fn:()=>{const X=trk==='idx'?PLD.idx:PLD; if(!X)return; X.deposits=(X.deposits||[]).filter(q=>q.id!==id); setTrack(); planChanged()}}}}
   else if(a==='buyToggle'&&st.fixed){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
     const k=PL.purchases.findIndex(x=>x.sym===t.sym&&x.month===d.ym);
     if(k>=0&&lockedOf(PL.purchases[k])){lockNo();return}
@@ -33238,6 +33408,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.3',at:'2026-11-26',t:'תוכנית ההפקדה: חודש אחרי חודש, ונעילה בסוף החודש',d:'בתוכנית ההפקדה יש עכשיו כרטיס לכל חודש: יתרת הפתיחה, ההפקדה החודשית (מסמנים בלחיצה), והקניות, כל אחת עם הלוגו של המניה, החשבון שממנו נקנתה והתאריך. שורת החודשים למעלה, או "הקודם" ו"הבא" (או החלקה על הכרטיס), עוברים בין החודשים. החודש כבר לא ננעל לבד כשמסמנים הפקדה: בסוף החודש לוחצים "לנעול", ורואים קודם סיכום של החודש עם יתרת הסגירה. אפשר לנעול רק כשאין פערים פתוחים, למשל הפקדה שלא סומנה או קנייה בלי חשבון, ולכל פער יש "לסדר עכשיו". חודש נעול לא משתנה, גם כשעולה דוח חדש, עד שפותחים אותו. הטבלה המלאה של כל החודשים נמצאת מתחת, ב"כל החודשים בטבלה".',go:'plan'},
   {v:'2026-11-26.2',at:'2026-11-26',t:'רקע שקט יותר, ואפשר לבחור',d:'הציור של הבורסה מאחורי כל המסכים הוחלף ברקע רך: הילה עדינה בצבעי האתר בפינות המסך, בלי שום דבר מאחורי הטקסט והמספרים. בהגדרות ← תצוגה ונגישות ← "רקע" אפשר לבחור "ציור לכל מסך" (איור קטן ושקט של הנושא בפינה העליונה: קו עולה בבית, זכוכית מגדלת במחקר שוק, פעמון בהתראות ועוד) או "ללא". הרקע לא זז, ובניגודיות גבוהה הוא כבוי. מסך הכניסה נשאר כמו שהיה.',go:'me'},
   {v:'2026-11-26.1',at:'2026-11-26',t:'תוכנית ההפקדה: בלי כפילויות',d:'בכרטיס של החודש כבר אין רשימה של שלוש הקניות הבאות, כי מתי כל נייר נקנה כתוב ברשימת הניירות. במקומה שורה אחת על התקופה: כמה הפקדות נשארו ומה ייקנה עד הסוף. התזכורת לדוח השנתי לרשות המיסים עברה מהגדרות התוכנית להגדרות, תחת "התיק".',go:'plan'},
   {v:'2026-11-24.11',at:'2026-11-24',t:'תוכנית ההפקדה בעמוד אחד',d:'אין יותר לשוניות ואין כפתור "כל הפירוט". מלמעלה למטה: המסלול, מה עושים החודש, הניירות בתוכנית ומתי כל אחד נקנה, החודשים, הפקדה חד פעמית וההגדרות. ארבעת המספרים והגרף שחזרו על מה שכבר כתוב ירדו מהעמוד. כפתורי הסדר וההוצאה של כל נייר מופיעים רק אחרי "עריכת הרשימה".',go:'plan'},
