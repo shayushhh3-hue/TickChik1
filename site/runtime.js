@@ -109,17 +109,7 @@ function gateArt(){
     <g class="rg">${ring([[0.46,'var(--g-r1)'],[0.3,'var(--g-r2)'],[0.24,'var(--g-r3)']])}</g>
   </svg></div>`}
 // the drawing follows the screen when its shape changes (a phone turned on its side, a window pulled)
-let GATE_RS=0; try{addEventListener('resize',()=>{clearTimeout(GATE_RS); GATE_RS=setTimeout(()=>{for(const b of document.querySelectorAll('#tcGate .bgx,#tcBg .bgx'))b.outerHTML=gateArt()},200)})}catch(e){}
-// 25.11 (the owner: "the background of the sign-in page, on the site too"): the same market, behind every screen of the
-// site once signed in. Fixed behind the page (under its text and cards, never taking a tap), fainter than on the sign-in
-// screen so the figures over it stay easy to read, and still: nothing moves behind a page one works in. Not printed
-const BG_CSS=`#tcBg{--g-line:#D9D6EC;--g-accent:#7C3AED;--g-accent-ink:#6D28D9;--g-up:#13773A;--g-down:#C81E1E;--g-art:.34;--g-r1:#7C3AED;--g-r2:#2DD4BF;--g-r3:#A78BFA;--g-glow:.30;--g-teal:.22;--g-fill:.30;position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5}
-html[data-theme="dark"] #tcBg{--g-line:#3A3C78;--g-accent-ink:#B9A3FF;--g-up:#4ADE80;--g-down:#F87171;--g-art:.7;--g-r1:#8B5CF6;--g-r3:#C4B5FD;--g-glow:.46;--g-teal:.26;--g-fill:.42;opacity:.42}
-`+CSS.split('\n').filter(l=>l.includes('.bgx')&&!l.startsWith('@media')).join('\n').replace(/#tcGate/g,'#tcBg')+`
-#tcBg .bgx .cd{animation:none;opacity:var(--g-art)} #tcBg .bgx .ln{animation:none;stroke-dashoffset:0} #tcBg .bgx .area{animation:none;opacity:1} #tcBg .bgx .blob{animation:none}
-@media print{#tcBg{display:none}}`;
-function siteBg(){try{if(document.getElementById('tcBg')||!document.body)return; const st=document.createElement('style'); st.textContent=BG_CSS; document.head.appendChild(st);
-  const el=document.createElement('div'); el.id='tcBg'; el.setAttribute('aria-hidden','true'); el.innerHTML=gateArt(); document.body.prepend(el)}catch(e){}}
+let GATE_RS=0; try{addEventListener('resize',()=>{clearTimeout(GATE_RS); GATE_RS=setTimeout(()=>{const b=document.querySelector('#tcGate .bgx'); if(b)b.outerHTML=gateArt()},200)})}catch(e){}
 const GATE_MARK='<div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg></div>';
 function gateEl(){
   let el=document.getElementById('tcGate');
@@ -245,7 +235,7 @@ export async function boot(){
   const me=who.me;
   if(NEXT_ADMIN&&me.mc&&!me.mustChange){location.replace('/admin'); return {use:()=>new Promise(()=>{})}}
   if(me.mustChange){await new Promise(r=>{GATE_DONE=r;showGate('change')})}
-  hideGate(); siteBg();
+  hideGate();
   if((me.owner||me.manage)&&who.persist===false){try{const w=document.createElement('div');w.setAttribute('role','alert');w.style.cssText='position:sticky;top:0;z-index:999;background:#b42318;color:#fff;padding:10px 16px;font:600 14px/1.5 Heebo,Arial,sans-serif;text-align:center;direction:rtl';
     w.textContent='אזהרה: הנתונים לא נשמרים לצמיתות. לשרת ב-Railway לא מחובר דיסק (Volume), ולכן כל עדכון של האתר מוחק את התיקים ואת המשתמשים. אל תעלה נתונים עד שזה יתוקן.';document.body.prepend(w)}catch(e){}}
   // 31.10: owner is the one person whose documents are the site's shared paths; an admin manages the site (manage) and

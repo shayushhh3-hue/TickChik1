@@ -2122,6 +2122,17 @@ table.use td:first-child{max-width:60vw;white-space:normal}
 @media (max-width:374px){.hero .acts{justify-content:stretch}.hero #acctChips{flex:1 1 100%;display:flex}.hero #acctChips .chip{flex:1 1 0;padding-inline:6px}}
 /* 21.10 (4) accessibility: the text size, a stronger contrast, less motion */
 html[data-tsize="l"] .wrap{zoom:1.1} html[data-tsize="xl"] .wrap{zoom:1.2}
+/* 26.11: the site's background (bgApply): fixed behind the page, under its text and cards, taking no tap, never moving */
+#pgBg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+html[data-bg="soft"] #pgBg,html[data-bg="page"] #pgBg{background:radial-gradient(60vmax 45vmax at 100% 0%,rgb(124 58 237 / .10),transparent 70%),radial-gradient(55vmax 40vmax at 0% 100%,rgb(45 212 191 / .08),transparent 70%)}
+html[data-theme="dark"][data-bg="soft"] #pgBg,html[data-theme="dark"][data-bg="page"] #pgBg{background:radial-gradient(60vmax 45vmax at 100% 0%,rgb(139 92 246 / .16),transparent 70%),radial-gradient(55vmax 40vmax at 0% 100%,rgb(45 212 191 / .08),transparent 70%)}
+/* the screen's drawing sits at the top of the screen, beside its title (the screens are full of cards: a corner of the
+   window was covered by them), and scrolls away with it */
+#pgIc{position:absolute;z-index:-1;pointer-events:none;inset-inline-end:10px;width:clamp(96px,16vw,150px);height:auto;fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;opacity:.14}
+html[data-theme="dark"] #pgIc{opacity:.22}
+@media (min-width:1100px){#pgIc{inset-inline-end:24px}}
+html[data-bg="none"] #pgBg,html.a11y-hc #pgBg,html:not([data-bg="page"]) #pgIc,html.a11y-hc #pgIc{display:none}
+@media (prefers-contrast:more),(forced-colors:active),print{#pgBg,#pgIc{display:none}}
 html.a11y-hc{--muted:#4A3B4E;--ink2:#2A1D2E;--line:#B5A28F;--focus:#7A2E00}
 html.a11y-hc .note,html.a11y-hc .sub,html.a11y-hc .k{color:#33263A}
 html.a11y-hc .chip,html.a11y-hc .btn,html.a11y-hc .dk-ack{border-color:#7A6A7E}
@@ -4196,7 +4207,7 @@ html body[data-page="overview"] #ovTabs#ovTabs button.ov-here{background:var(--a
   html body .set-gh{margin:20px 0 6px;font-size:13px;font-weight:600;color:var(--ink2)}
   html body #setDispH{order:0}
   html body #meSec .viewwrap{display:block;margin:0;background:var(--surface);border:1px solid var(--line);border-bottom-width:0;padding:0 14px}
-  html body #meSec .vw-theme{order:1;border-radius:8px 8px 0 0} html body #meSec .vw-size{order:2} html body #meSec .vw-con{order:3} html body #meSec .vw-mot{order:4} html body #meSec .vw-num{order:5} html body #meSec .vw-view{order:6}
+  html body #meSec .vw-theme{order:1;border-radius:8px 8px 0 0} html body #meSec .vw-size{order:2} html body #meSec .vw-con{order:3} html body #meSec .vw-bg{order:4} html body #meSec .vw-mot{order:4} html body #meSec .vw-num{order:5} html body #meSec .vw-view{order:6}
   html body #meSec .vw-home{order:7;border-bottom-width:1px;border-radius:0 0 8px 8px}
   html body #meSec .viewwrap>.sub{display:none!important}
   html body #meSec .viewwrap:not(.open)>.chips{display:none!important}
@@ -5483,6 +5494,7 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="viewwrap vw-home" role="group" aria-label="סגנון דף הבית בטלפון"><button type="button" class="vw-t" aria-expanded="false"><span>דף הבית בטלפון</span> <span class="vw-v"></span></button><span class="sub">דף הבית בטלפון</span><div class="chips"><button class="chip" type="button" data-homeset="clean" aria-pressed="true">כרטיס נקי</button><button class="chip" type="button" data-homeset="bento" aria-pressed="false">פסיפס</button></div></div>
         <div class="viewwrap vw-size" role="group" aria-label="גודל הטקסט"><button type="button" class="vw-t" aria-expanded="false"><span>גודל הטקסט</span> <span class="vw-v"></span></button><span class="sub">גודל הטקסט</span><div class="chips"><button class="chip" type="button" data-a11y="size:m" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="size:l" aria-pressed="false">גדול</button><button class="chip" type="button" data-a11y="size:xl" aria-pressed="false">גדול מאוד</button></div></div>
         <div class="viewwrap vw-con" role="group" aria-label="ניגודיות"><button type="button" class="vw-t" aria-expanded="false"><span>ניגודיות</span> <span class="vw-v"></span></button><span class="sub">ניגודיות</span><div class="chips"><button class="chip" type="button" data-a11y="contrast:false" aria-pressed="true">רגילה</button><button class="chip" type="button" data-a11y="contrast:true" aria-pressed="false">גבוהה</button></div></div>
+        <div class="viewwrap vw-bg" role="group" aria-label="רקע האתר"><button type="button" class="vw-t" aria-expanded="false"><span>רקע</span> <span class="vw-v"></span></button><span class="sub">רקע</span><div class="chips"><button class="chip" type="button" data-bgset="soft" aria-pressed="true">רך</button><button class="chip" type="button" data-bgset="page" aria-pressed="false">ציור לכל מסך</button><button class="chip" type="button" data-bgset="none" aria-pressed="false">ללא</button></div></div>
         <div class="viewwrap vw-mot" role="group" aria-label="תנועה"><button type="button" class="vw-t" aria-expanded="false"><span>אנימציות ותנועה</span> <span class="vw-v"></span></button><span class="sub">אנימציות ותנועה</span><div class="chips"><button class="chip" type="button" data-a11y="motion:false" aria-pressed="true">רגיל</button><button class="chip" type="button" data-a11y="motion:true" aria-pressed="false">מעט תנועה</button></div></div>
         <div class="viewwrap vw-num" role="group" aria-label="הסכומים במסך"><button type="button" class="vw-t" aria-expanded="false"><span>הסכומים במסך</span> <span class="vw-v"></span></button><span class="sub">הסכומים במסך</span><div class="chips"><button class="chip" type="button" data-hidenum="0" aria-pressed="true">מוצגים</button><button class="chip" type="button" data-hidenum="1" aria-pressed="false">מוסתרים</button></div></div>
         <p class="note" style="margin:0;max-width:none">הבחירות נשמרות בחשבון ומופיעות בכל מכשיר.</p>
@@ -32760,7 +32772,7 @@ const UXK=k=>{try{return localStorage.getItem(k)}catch(e){return null}}, UXS=(k,
 const UI_KEYS=['tr_view','tr_holdccy','tr_holdv','tr_holdlite','tr_expv','tr_mixview','tr_tape','tr_fold','tr_more','tr_side','tr_sper','tr_rng','tr_sv','tr_fitk','tr_stress','tr_news','tr_tour','tr_tipmail','tr_repban','tr_depban','tr_crisis','tr_ob_skip','tr_prof_later','tr_a11y','tr_theme','tr_home','acct','tr_kv',
   // 31.10: and these, which stayed in one browser: the amounts hidden, the news' filters and its tab, the Impact's period,
   // its map and its levels, the views of the dividends, the regions and the watch chart, the pot, the recent searches
-  'tr_hidenum','tr_nwf','tr_rtt','tr_ixr','tr_ixmap','tr_nxlv','tr_dvv','tr_rgv','tr_wr','tr_pot','tr_recent','tr_daily','tr_calv'];
+  'tr_hidenum','tr_nwf','tr_rtt','tr_ixr','tr_ixmap','tr_nxlv','tr_dvv','tr_rgv','tr_wr','tr_pot','tr_recent','tr_daily','tr_calv','tr_bg'];
 const uiLocal=()=>{const o={}; for(const k of UI_KEYS){const v=UXK(k); if(v!=null)o[k]=String(v).slice(0,6000)} return o};
 let UI_APPLIED=false;
 function uiApply(){
@@ -32784,7 +32796,7 @@ function uiApply(){
   try{const v=UXK('tr_wr'); if(v!=null&&/^(0|6|12|24)$/.test(v))WR=+v}catch(e){} try{const v=UXK('tr_pot'); if(v)POT=v}catch(e){}
   try{const d=$('ixMapD'), v=UXK('tr_ixmap'); if(d&&(v==='1'||v==='0'))d.open=v==='1'}catch(e){}
   try{eyeOn()}catch(e){}
-  try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
+  try{a11yApply()}catch(e){} try{themeApply()}catch(e){} try{bgApply()}catch(e){} try{sideMore()}catch(e){} try{newsDot()}catch(e){}
   try{render()}catch(e){} try{renderNewsX()}catch(e){}
 }
 function uiPush(){
@@ -32804,6 +32816,43 @@ function a11yApply(){const a=a11yGet(), r=document.documentElement; r.classList.
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-a11y]'); if(!b)return; const [k,v]=b.dataset.a11y.split(':'), a=a11yGet(); a[k]=k==='size'?v:v==='true';
   UXS('tr_a11y',JSON.stringify(a)); a11yApply(); try{useAdd('a11y:'+k)}catch(e){} try{uiPush()}catch(e){}});
 try{a11yApply()}catch(e){}
+// 26.11 (the owner: "the background is not accessible; an optional one, maybe another for each page; the sign-in stays"):
+// the site's background, a choice kept like the others (tr_bg, S.ui). "רך" (the default): a soft glow of the site's two
+// colours at the screen's corners, nothing drawn. "ציור לכל מסך": a small line drawing of the screen's subject (a rising
+// line on the home, a magnifier on the research, a bell on the alerts...) at the top corner only, faint, never behind the
+// figures. "ללא": one colour. Nothing in it moves, a reader skips it (aria-hidden), and with a high contrast (the site's or
+// the device's), forced colours or a printout there is none
+const BG_ICONS={
+  rise:'<path d="M14 150 L58 112 L92 128 L138 72 L186 40"/><path d="M150 40 h36 v36"/><path d="M14 176 H190" opacity=".5"/>',
+  find:'<circle cx="86" cy="86" r="54"/><path d="M126 126 L182 182"/><path d="M60 106 V82 M78 112 V66 M96 100 V74 M114 92 V58" opacity=".7"/>',
+  bell:'<path d="M50 140 V96 a50 50 0 0 1 100 0 V140 l14 18 H36 z"/><path d="M84 172 a16 16 0 0 0 32 0"/><path d="M100 30 v16"/>',
+  globe:'<circle cx="100" cy="100" r="70"/><ellipse cx="100" cy="100" rx="30" ry="70"/><path d="M30 100 H170 M42 62 H158 M42 138 H158"/>',
+  coins:'<ellipse cx="100" cy="60" rx="56" ry="18"/><path d="M44 60 v28 a56 18 0 0 0 112 0 V60"/><path d="M44 88 v28 a56 18 0 0 0 112 0 V88"/><path d="M44 116 v28 a56 18 0 0 0 112 0 v-28"/>',
+  target:'<circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="44"/><circle cx="100" cy="100" r="16"/><path d="M100 100 L170 30 M150 30 h20 v20"/>',
+  shield:'<path d="M100 26 L164 50 V98 c0 42 -28 68 -64 80 c-36 -12 -64 -38 -64 -80 V50 z"/><path d="M72 100 l20 20 l38 -42"/>',
+  cal:'<rect x="34" y="46" width="132" height="122" rx="14"/><path d="M34 82 H166 M70 30 v30 M130 30 v30"/><path d="M62 110 h16 M96 110 h16 M130 110 h16 M62 140 h16 M96 140 h16" opacity=".7"/>',
+  case:'<rect x="30" y="66" width="140" height="100" rx="14"/><path d="M76 66 V48 a10 10 0 0 1 10 -10 h28 a10 10 0 0 1 10 10 v18"/><path d="M30 108 H170"/>',
+  pie:'<circle cx="100" cy="100" r="70"/><path d="M100 100 V30 M100 100 L162 132 M100 100 L44 142"/>',
+  doc:'<path d="M54 26 h66 l34 34 v114 H54 z"/><path d="M120 26 v34 h34"/><path d="M76 98 h56 M76 122 h56 M76 146 h36"/>',
+  gear:'<path d="M30 60 H170 M30 100 H170 M30 140 H170"/><circle cx="72" cy="60" r="12"/><circle cx="128" cy="100" r="12"/><circle cx="90" cy="140" r="12"/>'};
+const BG_PAGE={overview:'rise',state:'rise',history:'rise',forecast:'rise',mix:'pie',search:'find',watch:'find',fit:'find',compare:'find',ratings:'find',alerts:'bell',news:'globe',
+  plan:'target',pots:'coins',risk:'shield',calendar:'cal',mine:'case',reports:'doc',journal:'doc',settings:'gear'};
+const bgGet=()=>{const v=UXK('tr_bg'); return v==='page'||v==='none'?v:'soft'};
+function bgApply(){const r=document.documentElement, v=bgGet(); r.dataset.bg=v; let el=document.getElementById('pgBg');
+  if(!el&&document.body){el=document.createElement('div'); el.id='pgBg'; el.setAttribute('aria-hidden','true'); document.body.prepend(el)}
+  // the drawing: at the top of the screen that is open, beside its title (placed from the screen's own top)
+  let ic=document.getElementById('pgIc'); const k=v==='page'?(BG_PAGE[document.body.dataset.page]||'rise'):'';
+  if(!k){if(ic)ic.remove()}
+  else if(document.body){if(!ic){ic=document.createElementNS('http://www.w3.org/2000/svg','svg'); ic.id='pgIc'; ic.setAttribute('viewBox','0 0 200 200'); ic.setAttribute('aria-hidden','true'); ic.setAttribute('focusable','false'); document.body.prepend(ic)}
+    if(ic.dataset.ic!==k){ic.dataset.ic=k; ic.innerHTML=BG_ICONS[k]}
+    const pn=(document.body.dataset.page==='overview'?null:document.querySelector('[data-pane="'+document.body.dataset.page+'"]:not([hidden])'))||document.querySelector('.wrap'), br=document.body.getBoundingClientRect();
+    const pt=pn?Math.round(pn.getBoundingClientRect().top-br.top):80; ic.style.top=(innerWidth>=1100?Math.max(8,pt-(ic.getBoundingClientRect().height||150)+24):Math.max(0,pt))+'px'}   // a wide screen: in the free space above the screen's first card
+  for(const b of document.querySelectorAll('[data-bgset]'))b.setAttribute('aria-pressed',String(b.dataset.bgset===v)); try{vwSync()}catch(e){}}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-bgset]'); if(!b)return; UXS('tr_bg',b.dataset.bgset); bgApply(); try{useAdd('bg:'+b.dataset.bgset)}catch(e){} try{uiPush()}catch(e){}});
+// the drawing follows the screen that is open
+try{new MutationObserver(()=>{try{if(bgGet()==='page')setTimeout(bgApply,0)}catch(e){}}).observe(document.body,{attributes:true,attributeFilter:['data-page']})}catch(e){}
+try{let t=0; addEventListener('resize',()=>{clearTimeout(t); t=setTimeout(()=>{try{if(bgGet()==='page')bgApply()}catch(e){}},200)})}catch(e){}
+try{bgApply()}catch(e){}
 // 22.10: day and night (tr_theme: light, dark, or auto = as the phone is set). Kept like the other choices (S.ui), set
 // before the page is drawn (the site's head), and the chart is drawn again in the colours of the mode
 const THEME_Q=(()=>{try{return matchMedia('(prefers-color-scheme: dark)')}catch(e){return null}})();
@@ -33186,6 +33235,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.2',at:'2026-11-26',t:'רקע שקט יותר, ואפשר לבחור',d:'הציור של הבורסה מאחורי כל המסכים הוחלף ברקע רך: הילה עדינה בצבעי האתר בפינות המסך, בלי שום דבר מאחורי הטקסט והמספרים. בהגדרות ← תצוגה ונגישות ← "רקע" אפשר לבחור "ציור לכל מסך" (איור קטן ושקט של הנושא בפינה העליונה: קו עולה בבית, זכוכית מגדלת במחקר שוק, פעמון בהתראות ועוד) או "ללא". הרקע לא זז, ובניגודיות גבוהה הוא כבוי. מסך הכניסה נשאר כמו שהיה.',go:'me'},
   {v:'2026-11-26.1',at:'2026-11-26',t:'תוכנית ההפקדה: בלי כפילויות',d:'בכרטיס של החודש כבר אין רשימה של שלוש הקניות הבאות, כי מתי כל נייר נקנה כתוב ברשימת הניירות. במקומה שורה אחת על התקופה: כמה הפקדות נשארו ומה ייקנה עד הסוף. התזכורת לדוח השנתי לרשות המיסים עברה מהגדרות התוכנית להגדרות, תחת "התיק".',go:'plan'},
   {v:'2026-11-24.11',at:'2026-11-24',t:'תוכנית ההפקדה בעמוד אחד',d:'אין יותר לשוניות ואין כפתור "כל הפירוט". מלמעלה למטה: המסלול, מה עושים החודש, הניירות בתוכנית ומתי כל אחד נקנה, החודשים, הפקדה חד פעמית וההגדרות. ארבעת המספרים והגרף שחזרו על מה שכבר כתוב ירדו מהעמוד. כפתורי הסדר וההוצאה של כל נייר מופיעים רק אחרי "עריכת הרשימה".',go:'plan'},
   {v:'2026-11-24.10',at:'2026-11-24',t:'תוכנית ההפקדה מסמנת לבד, ועיגול התקדמות',d:'קנייה של החודש שכבר רשומה בתיק שלך (מדוח שהעלית, או שרשמת באתר) מסומנת בתוכנית לבד, עם הסכום ששולם באמת. גם הפקדה חודשית שנקראה מדוח. ליד כל סימון כזה כתוב מאיפה הוא, ו"ביטול" מחזיר אותו. בראש הכרטיס יש עכשיו עיגול שמראה כמה מהתוכנית כבר מאחוריך: ההפקדות של התקופה והקניות של הסבב.',go:'plan'},

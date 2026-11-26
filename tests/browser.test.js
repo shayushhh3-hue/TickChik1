@@ -5057,15 +5057,26 @@ test('25.11 signing out is in the menu in its own words (asked once, by keyboard
   }
 });
 
-test('25.11 the sign-in screen\'s market is the site\'s background too: fixed behind every screen, fainter, still, never in the way of a tap or a reader',T,async t=>{
+test('26.11 the site\'s background, a choice (the owner): soft by default, a drawing of each screen\'s subject at the top corner, or none; kept with the account; never moving, never taking a tap; off with a high contrast',T,async t=>{
   if(skip())return t.skip('no browser');
   const {ctx,pg}=await open(390);
   try{
-    const st=()=>pg.evaluate(()=>{const e=document.getElementById('tcBg'), cs=getComputedStyle(e), ln=e.querySelector('.ln'), top=document.elementFromPoint(innerWidth/2,innerHeight/2);
-      return {hidden:e.getAttribute('aria-hidden'),pos:cs.position,z:cs.zIndex,pe:cs.pointerEvents,op:+cs.opacity,candles:e.querySelectorAll('.cd').length,still:getComputedStyle(ln).animationName,first:document.body.firstElementChild===e||document.body.children[1]===e,under:!e.contains(top),gate:!!document.getElementById('tcGate'),ox:document.documentElement.scrollWidth<=innerWidth+1}});
-    let s=await st(); assert.deepEqual([s.hidden,s.pos,s.z,s.pe,s.still,s.gate],['true','fixed','-1','none','none',false]); assert.ok(s.op>0.3&&s.op<=0.5,'fainter than on the sign-in screen: '+s.op); assert.ok(s.candles>=8); assert.ok(s.under,'the page is over it'); assert.ok(s.ox);
-    await tab(pg,'search'); await pg.waitForTimeout(400); s=await st(); assert.equal(s.pos,'fixed','on every screen'); assert.ok(s.ox);
-    await pg.setViewportSize({width:1280,height:900}); await pg.waitForFunction(()=>document.querySelectorAll('#tcBg .cd').length>20,null,{timeout:5000}); assert.equal(await pg.evaluate(()=>document.querySelectorAll('#tcBg').length),1,'drawn again for the wide screen, once');
+    const st=()=>pg.evaluate(()=>{const e=document.getElementById('pgBg'), cs=getComputedStyle(e), ic=document.getElementById('pgIc'), r=ic&&ic.getBoundingClientRect(), top=document.elementFromPoint(innerWidth/2,innerHeight/2);
+      return {bg:document.documentElement.dataset.bg,hidden:e.getAttribute('aria-hidden'),pos:cs.position,z:cs.zIndex,pe:cs.pointerEvents,disp:cs.display,grad:/gradient/.test(cs.backgroundImage),ic:ic?ic.dataset.ic:'',icTop:r?Math.round(r.top+scrollY):null,icOp:ic?+getComputedStyle(ic).opacity:null,
+        anim:[e,...(ic?[ic,...ic.querySelectorAll('*')]:[])].some(x=>getComputedStyle(x).animationName!=='none'),under:!e.contains(top),old:!!document.getElementById('tcBg'),ox:document.documentElement.scrollWidth<=innerWidth+1}});
+    let s=await st(); assert.deepEqual([s.bg,s.hidden,s.pos,s.z,s.pe,s.disp,s.grad,s.ic,s.old],['soft','true','fixed','-1','none','block',true,'',false],'soft by default: a glow, nothing drawn, and the old market is gone'); assert.ok(s.under&&s.ox);
+    // the choice, in the settings' "תצוגה ונגישות"
+    await pg.evaluate(()=>document.querySelector('[data-bgset="page"]').click()); await pg.waitForTimeout(200); s=await st();
+    assert.deepEqual([s.bg,s.ic],['page','rise'],'the home: a rising line'); assert.ok(s.icTop!=null&&s.icTop<220,'at the top only: '+s.icTop); assert.ok(s.icOp>0&&s.icOp<=0.22,'faint: '+s.icOp); assert.equal(s.anim,false,'still');
+    await tab(pg,'search'); await pg.waitForTimeout(300); assert.equal((await st()).ic,'find','the research: a magnifier');
+    await tab(pg,'alerts'); await pg.waitForTimeout(300); assert.equal((await st()).ic,'bell','the alerts: a bell'); assert.ok((await st()).ox);
+    for(let i=0;i<40&&((store.getDoc('settings/main').data||{}).ui||{}).tr_bg!=='page';i++)await pg.waitForTimeout(150);
+    assert.equal(store.getDoc('settings/main').data.ui.tr_bg,'page','kept with the account');
+    // a high contrast: none; and "ללא"
+    await pg.evaluate(()=>document.querySelector('[data-a11y="contrast:true"]').click()); await pg.waitForTimeout(200); assert.equal((await st()).disp,'none');
+    await pg.evaluate(()=>document.querySelector('[data-a11y="contrast:false"]').click()); await pg.evaluate(()=>document.querySelector('[data-bgset="none"]').click()); await pg.waitForTimeout(200); s=await st(); assert.deepEqual([s.bg,s.disp],['none','none']);
+    assert.equal(await pg.evaluate(()=>document.querySelector('[data-bgset="none"]').getAttribute('aria-pressed')),'true');
+    await pg.evaluate(()=>document.querySelector('[data-bgset="soft"]').click());
     assert.deepEqual(pg.errs,[]);
-  }finally{await ctx.close()}
+  }finally{await ctx.close(); const S0=store.getDoc('settings/main').data; if(S0&&S0.ui){const u={...S0.ui}; delete u.tr_bg; store.setDoc('settings/main',{...S0,ui:u},{silent:true})}}
 });
