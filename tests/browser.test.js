@@ -5159,3 +5159,23 @@ test('26.11 a purchase taken off after "already in the cash" gives its money bac
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 26.11 (the owner: "אופציית בחירה של שקלים או דולרים… סכום ההפקדה"): the month's deposit in dollars, its amount as typed
+test('26.11 the month\'s deposit in shekels or in dollars: $ chosen, an amount typed, kept in dollars exactly and in shekels at the day\'s rate',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#pmCard [data-pa="pmDep"]',{timeout:12000});
+    const sz=await pg.evaluate(()=>[...document.querySelectorAll('#pmCard .pm-dq button,#pmCard .pm-dq input')].map(x=>Math.round(x.getBoundingClientRect().height)));
+    assert.ok(sz.length>=4&&sz.every(v=>v>=38),'the choice is large enough: '+sz);
+    await pg.click('#pmCard [data-pmdq="USD"]'); await pg.waitForFunction(()=>document.querySelector('#pmCard [data-pmdq="USD"]').getAttribute('aria-pressed')==='true');
+    await pg.fill('#pmDqAmt','150'); await pg.click('#pmCard .pm-dq [data-pa="pmDep"]');
+    await pg.waitForFunction(()=>/הופקד/.test(document.getElementById('pmCard').innerText),null,{timeout:8000});
+    assert.match(await pg.evaluate(()=>document.getElementById('pmCard').innerText),/\+\$150\.00/);
+    await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
+    const D=store.getDoc('plan/main').data, all=[...(D.deposits||[]),...((D.idx&&D.idx.deposits)||[])], dep=all.find(x=>x.usd===150);
+    assert.ok(dep,'saved in dollars'); assert.equal(dep.ccy,'USD'); assert.ok(dep.fx>0&&Math.abs(dep.amount-150*dep.fx)<0.01,'its shekels at the rate: '+JSON.stringify(dep));
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

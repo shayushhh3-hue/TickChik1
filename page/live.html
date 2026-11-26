@@ -1914,6 +1914,14 @@ html body .pstep .pc-un{min-height:44px!important;min-width:44px;padding:0 6px;b
 .pstep .pc-note{margin:8px 0 0;font-size:14px;color:var(--ink2);line-height:1.5}
 .pstep .pc-src{display:block;font-size:12.5px;font-weight:400;color:var(--ink2);line-height:1.35}
 .pstep .pc-sync{color:var(--ink)}
+/* 26.11: the month's deposit, an amount in ₪ or $ */
+.pm-dq{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.pm-dq .pm-dqa{width:104px;min-height:44px;padding:6px 10px;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);direction:ltr;text-align:end}
+.pm-dq .pm-dqc{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+.pm-dq .pm-dqc button{min-width:44px;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:600 16px var(--sans,inherit);cursor:pointer}
+.pm-dq .pm-dqc button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(20 18 46 / .14)}
+html body .pm-dq .btn.sm{min-height:44px!important}
+.pm-dq .pm-dqr{flex-basis:100%;text-align:end;font-size:12.5px;color:var(--ink2)}
 /* 26.11 (the owner: "כמה מלל"): each thing once; what is not needed every month, folded */
 #pmTrk,#pmSub,#depState,.pl-add .pl-cnt{display:none!important}
 details.pl-fd{padding:0!important} details.pl-fd>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:6px 16px;cursor:pointer;list-style:none}
@@ -19517,7 +19525,7 @@ function buyBack(gone,trk){if(!PLD||!gone||!gone.length)return; const now=new Da
 const ledgerCounts=(x,a)=>{const e=markEff(x); return e!=null&&e>cashAnchor(a).at};
 function cashLedger(a){const A=cashAnchor(a), fx=(Q&&+Q.usdIls)||0, r2=v=>Math.round(v*100)/100; let ils=A.ils, usd=A.usd; const since=[];
   for(const m of ledgerMarks(a)){const e=markEff(m.x); if(e==null||!(e>A.at))continue; const amt=m.dep?(+m.x.amount||0):-(+m.x.paidIls||0), inUsd=m.dep?acctCcy(a)==='USD':secCcy(m.x.sym)==='USD';
-    const r=inUsd?(+m.x.fx>0?+m.x.fx:fxAtMoment(e)):0; if(inUsd&&r>0){usd+=amt/r; since.push({...m,e,usd:amt/r,fx:r})} else{ils+=amt; since.push({...m,e,ils:amt})}}
+    const r=inUsd?(+m.x.fx>0?+m.x.fx:fxAtMoment(e)):0, own=m.dep&&inUsd&&m.x.usd!=null&&+m.x.usd>0?+m.x.usd:null; if(own!=null){usd+=own; since.push({...m,e,usd:own,fx:r})} else if(inUsd&&r>0){usd+=amt/r; since.push({...m,e,usd:amt/r,fx:r})} else{ils+=amt; since.push({...m,e,ils:amt})}}
   {const live=new Set([...((PLD&&PLD.purchases)||[]),...((PLD&&PLD.idx&&PLD.idx.purchases)||[])].map(x=>x.id));
    for(const r of (PLD&&PLD.cashBack)||[]){if(!r||r.acct!==a||live.has(r.pid)||!(isoOK(r.at)>A.at))continue; if(r.usd!=null){usd+=+r.usd||0; since.push({x:r,back:true,e:r.at,usd:+r.usd||0})} else{ils+=+r.ils||0; since.push({x:r,back:true,e:r.at,ils:+r.ils||0})}}}
   since.sort((p,q)=>p.e<q.e?-1:1); return {anchor:A,ils:r2(ils),usd:r2(usd),fx,now:r2(ils+usd*fx),since}}
@@ -19606,7 +19614,7 @@ function upMonths(hs=HS){const U={}; for(const A of (hs&&hs.accounts)||[])for(co
 //   the dollar's moves do not change the month. Read as "nothing recorded changes, and nothing is re-rated"; a purchase
 //   can still be added to a locked month, at the locked price. Opened only by its own action, asked once (open)
 const fxOnDay=day=>{try{const pts=(DY&&DY.points)||{}; let best=''; for(const k of Object.keys(pts))if(k<=day&&k>best&&pts[k]&&+pts[k].fx>0)best=k; if(best&&(new Date(day)-new Date(best))<=7*864e5&&best!==ilDay())return {fx:+pts[best].fx,day:best}}catch(e){} const f=(Q&&+Q.usdIls)||0; return f>0?{fx:f,day:ilDay()}:null};
-const depUsd=d=>d&&+d.fx>0?(+d.amount||0)/+d.fx:null;
+const depUsd=d=>d&&d.usd!=null&&+d.usd>0?+d.usd:d&&+d.fx>0?(+d.amount||0)/+d.fx:null;
 function usdParts(L){let usd=0, ils=0, n=0, miss=0; for(const d of L||[]){const u=depUsd(d); if(u==null){miss++; continue} usd+=u; ils+=+d.amount||0; n++} return {usd:Math.round(usd*100)/100,ils:Math.round(ils*100)/100,n,miss}}
 const monthDep=(X,ym)=>((X&&X.deposits)||[]).find(d=>!d.once&&d.month===ym)||null;
 // 26.11: locked by its own action (X.locks[ym]); a month whose deposit was ticked before that (no "open" on it) stays locked
@@ -21009,7 +21017,12 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#pl
 // change, from a statement uploaded later either, until it is opened again. Real buttons and a native dialog; the
 // month's row is a set of buttons (the arrows move along it), a swipe on the card moves a month, and nothing is told by
 // colour alone
-let PMSEL=null, PMFIX='', PMDLG=null;
+let PMSEL=null, PMFIX='', PMDLG=null, PMDQ=null;
+// 26.11: the month's deposit in shekels or in dollars (PMDQ: {ccy, amt}; amt null = the plan's monthly sum in that currency)
+function pmDq(B){if(!PMDQ){const last=(PL.deposits||[]).filter(d=>!d.once).slice().sort((a,b)=>String(a.month)<String(b.month)?-1:1).pop(); PMDQ={ccy:last&&last.usd!=null?'USD':'ILS',amt:null}}
+  const f=fxOnDay(ilDay()), fx=f?+f.fx:((Q&&+Q.usdIls)||0), def=PMDQ.ccy==='USD'?(fx>0?Math.round(B/fx*100)/100:0):B; return {ccy:PMDQ.ccy,amt:PMDQ.amt!=null?PMDQ.amt:def,fx}}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='pmDqAmt'){const v=e.target.value; if(!PMDQ)PMDQ={ccy:'ILS',amt:null}; PMDQ.amt=v===''?null:+v}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-pmdq]'); if(!b)return; const c=b.dataset.pmdq==='USD'?'USD':'ILS'; if(!PMDQ||PMDQ.ccy!==c){PMDQ={ccy:c,amt:null}; try{render()}catch(x){} setTimeout(()=>{const s=document.querySelector(`[data-pmdq="${c}"]`); if(s)try{s.focus()}catch(x){}},0)}});
 const pmMoOf=x=>x&&(x.month||(x.at?ilDay(x.at).slice(0,7):''));
 // the account a purchase came out of: its own, the statement's line it was read from, the track's account, the only one
 function pmAcct(x){const ids=acctIds(); if(x.acct&&ids.includes(x.acct))return x.acct;
@@ -21053,7 +21066,7 @@ function pmRender(st,MON,X){
     :`<div class="pm-open"><span class="k">יתרת פתיחה · ${st.apart?'החשבון של המסלול':'כל המזומן'}</span><div class="r"><span><bdi>${esc(acctsTxt)}</bdi></span><span class="n">${M.open<0?'−':''}${ils(Math.abs(M.open),2)}</span></div></div>`;
   // the deposit
   {const a=st.apart?st.acct:trackAcct(TRACK), to=a&&a!=='all'?`ל${acctName(a)}`:'לחשבונות';
-    const right=M.d?`<span class="pm-ok">✓ הופקד</span><span class="pm-amt in">+${ils(M.dep,2)}</span>`:M.fut?`<span class="pm-amt">${ils(B,2)}</span>`:wr?`<button type="button" class="btn sm pri" data-pa="pmDep" data-ym="${M.ym}">סימנתי שהפקדתי ${ils(B)}</button>`:`<span class="nm">לא סומנה</span>`;
+    const q=pmDq(B), right=M.d?`<span class="pm-ok">✓ הופקד</span><span class="pm-amt in">${M.d.usd!=null?`+$${(+M.d.usd).toFixed(2)} <small class="nm">(${ils(+M.d.amount||0)})</small>`:'+'+ils(M.dep,2)}</span>`:M.fut?`<span class="pm-amt">${ils(B,2)}</span>`:wr?`<span class="pm-dq" role="group" aria-label="כמה הפקדת, ובאיזה מטבע"><input type="number" id="pmDqAmt" class="pm-dqa" inputmode="decimal" min="0" step="any" value="${q.amt>0?q.amt:''}" aria-label="סכום ההפקדה ב${q.ccy==='USD'?'דולרים':'שקלים'}"><span class="pm-dqc" role="group" aria-label="מטבע"><button type="button" data-pmdq="ILS" aria-pressed="${q.ccy!=='USD'}" aria-label="בשקלים">₪</button><button type="button" data-pmdq="USD" aria-pressed="${q.ccy==='USD'}" aria-label="בדולרים">$</button></span><button type="button" class="btn sm pri" data-pa="pmDep" data-ym="${M.ym}">סימנתי שהפקדתי</button>${q.ccy==='USD'&&q.fx>0?`<small class="pm-dqr">שער היום ${q.fx.toFixed(3)}</small>`:''}</span>`:`<span class="nm">לא סומנה</span>`;
     h+=`<div class="pm-row"><div class="t"><span>הפקדה חודשית${M.fut?' · מתוכננת':''}</span><small>${esc(to)}</small></div><div class="e" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">${right}${M.d&&wr&&!M.d.tid?`<button type="button" class="lnk" data-pa="pmDep" data-ym="${M.ym}" aria-label="לבטל את הסימון של ההפקדה">ביטול</button>`:''}</div></div>`}
   for(const x of M.on)h+=`<div class="pm-row"><div class="t"><span>הפקדה חד-פעמית</span><small>${esc(x.note||'')}</small></div><span class="pm-amt in">+${ils(+x.amount||0,2)}</span></div>`;
   // the purchases: the logo square beside the name, the account, the day, the amount
@@ -21118,7 +21131,7 @@ function planAct(a,d){
   // 26.11: a month is locked by its own action at its end (the owner's design), not by ticking its deposit: PL.locks[ym]
   // keeps when, and the balance it closed with. Opening it takes the lock away, and its deposit is open for changes
   if(a==='pmLockAsk'||a==='pmOpenAsk'){pmDlgOpen(a==='pmLockAsk'?'lock':'open',String(d.ym||'')); return}
-  if(a==='pmDep')a='depToggle'; else if(a==='pmBuy'||a==='pmUnbuy')a='buyToggle';
+  if(a==='pmDep'){a='depToggle'; if(!monthDep(PL,d.ym)){const q=pmDq(TM()); if(!(q.amt>0)){try{rtSay('כתבו כמה הפקדתם')}catch(x){} return} d={...d,amt:q.amt,ccy:q.ccy}}} else if(a==='pmBuy'||a==='pmUnbuy')a='buyToggle';
   if(a==='monthLock'||a==='monthOpen'){try{const g=$('pmDlg'); PMDLG=null; if(g&&g.open)g.close(); if(g)g.removeAttribute('open')}catch(e){}}
   if(a==='pmSel'){PMSEL=String(d.ym||''); render(); setTimeout(()=>{const f=document.querySelector('#planMonth [data-pa="pmSel"][data-ym="'+PMSEL+'"]'); if(f&&d.keep)try{f.focus({preventScroll:true})}catch(e){}},0); return}
   if(a==='pmFix'){PMFIX=PMFIX===String(d.id)?'':String(d.id); render(); setTimeout(()=>{const f=document.getElementById('pmFixSel'); if(f)try{f.focus()}catch(e){}},0); return}
@@ -21127,7 +21140,9 @@ function planAct(a,d){
     else{if(!cur)return; PL.locks[d.ym]={at:now,bal:d.bal!=null&&isFinite(+d.bal)?Math.round(+d.bal*100)/100:null}; delete cur.open}}
   else if(a==='depToggle'){const cur=monthDep(PL,d.ym); if(monthLocked(PL,d.ym)){lockNo();return}
     PL.deposits=PL.deposits.filter(x=>x.once||x.month!==d.ym);
-    if(!cur){const f=fxOnDay(ilDay()), rec={id,month:d.ym,amount:TM(),at:now,open:true}; if(f){rec.fx=f.fx; rec.fxDay=f.day}   // 26.11: open until the month is locked
+    if(!cur){const f=fxOnDay(ilDay()), rec={id,month:d.ym,amount:TM(),at:now,open:true}; if(f){rec.fx=f.fx; rec.fxDay=f.day}
+      // 26.11: an amount and a currency chosen in the month's card: dollars kept as they are, their shekels at the day's rate
+      if(+d.amt>0){if(d.ccy==='USD'){const r=f?+f.fx:((Q&&+Q.usdIls)||0); if(!(r>0))return; rec.usd=Math.round(+d.amt*100)/100; rec.amount=Math.round(rec.usd*r*100)/100; rec.ccy='USD'; if(!f){rec.fx=r}} else rec.amount=Math.round(+d.amt*100)/100}   // 26.11: open until the month is locked
       rec.bal=Math.round((st.bal+(+rec.amount||0))*100)/100;
       if(!st.rot&&!st.fixed){const cs={}; for(const i of PL.items)if(i.status==='todo'&&st.cost[i.sym]!=null)cs[i.sym]=Math.round(st.cost[i.sym]*100)/100; rec.cost=cs}
       PL.deposits.push(rec); const trk=TRACK, ym0=d.ym;
@@ -33455,6 +33470,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.5',at:'2026-11-26',t:'הפקדה חודשית בשקלים או בדולרים',d:'בכרטיס של החודש כותבים כמה הפקדת ובוחרים ₪ או $ לפני "סימנתי שהפקדתי". הפקדה בדולרים נשמרת בדולרים בדיוק, ובשקלים לפי שער היום. הבחירה נשמרת לחודש הבא.',go:'plan'},
   {v:'2026-11-26.4',at:'2026-11-26',t:'תוכנית ההפקדה: פחות מלל, כל דבר פעם אחת',d:'למעלה כרטיס אחד: כמה יש להשקעה, ועיגול של כמה הפקדות וקניות כבר מאחוריך. מסמנים הפקדה וקנייה בכרטיס של החודש, שאפשר לדפדף בו קדימה ואחורה. אחריו הניירות בתוכנית. ההגדרות (סכומים, עד מתי, חשבון ואופן הקנייה), ההפקדות החד-פעמיות והטבלה המלאה מקופלים בתחתית.',go:'plan'},
   {v:'2026-11-26.3',at:'2026-11-26',t:'תוכנית ההפקדה: חודש אחרי חודש, ונעילה בסוף החודש',d:'בתוכנית ההפקדה יש עכשיו כרטיס לכל חודש: יתרת הפתיחה, ההפקדה החודשית (מסמנים בלחיצה), והקניות, כל אחת עם הלוגו של המניה, החשבון שממנו נקנתה והתאריך. שורת החודשים למעלה, או "הקודם" ו"הבא" (או החלקה על הכרטיס), עוברים בין החודשים. החודש כבר לא ננעל לבד כשמסמנים הפקדה: בסוף החודש לוחצים "לנעול", ורואים קודם סיכום של החודש עם יתרת הסגירה. אפשר לנעול רק כשאין פערים פתוחים, למשל הפקדה שלא סומנה או קנייה בלי חשבון, ולכל פער יש "לסדר עכשיו". חודש נעול לא משתנה, גם כשעולה דוח חדש, עד שפותחים אותו. הטבלה המלאה של כל החודשים נמצאת מתחת, ב"כל החודשים בטבלה".',go:'plan'},
   {v:'2026-11-26.2',at:'2026-11-26',t:'רקע שקט יותר, ואפשר לבחור',d:'הציור של הבורסה מאחורי כל המסכים הוחלף ברקע רך: הילה עדינה בצבעי האתר בפינות המסך, בלי שום דבר מאחורי הטקסט והמספרים. בהגדרות ← תצוגה ונגישות ← "רקע" אפשר לבחור "ציור לכל מסך" (איור קטן ושקט של הנושא בפינה העליונה: קו עולה בבית, זכוכית מגדלת במחקר שוק, פעמון בהתראות ועוד) או "ללא". הרקע לא זז, ובניגודיות גבוהה הוא כבוי. מסך הכניסה נשאר כמו שהיה.',go:'me'},
