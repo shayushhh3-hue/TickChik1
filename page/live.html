@@ -1,4 +1,49 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* 26.11 (the owner): the deposit plan in the home's look */
+html body [data-pane="plan"] section[aria-labelledby="hPlan"]{display:flex;flex-direction:column;gap:16px}
+html body [data-pane="plan"] section[aria-labelledby="hPlan"]>*{margin-block:0!important}
+html body [data-pane="plan"] section[aria-labelledby="hPlan"]>.row h2{font-size:15px;font-weight:600;margin:0}
+/* the tracks: the home's pills */
+html body [data-pane="plan"] .tracks.tracks{display:flex!important;gap:8px!important;grid-template-columns:none!important}
+html body [data-pane="plan"] .trk.trk{flex:none;flex-direction:row!important;align-items:center;min-height:40px!important;padding:0 20px!important;border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;box-shadow:none!important;opacity:1!important;font-weight:500}
+html body [data-pane="plan"] .trk.trk[aria-pressed="true"]{background:var(--accent)!important;color:var(--on-accent,#fff)!important}
+html body [data-pane="plan"] .trk.trk b{color:inherit!important;font-weight:inherit;font-size:15px} html body [data-pane="plan"] .trk.trk>span{display:none!important} html body [data-pane="plan"] .trk.trk::after{content:none!important}
+/* the summary: the home's lavender card */
+html body [data-pane="plan"] #planAns.pstep{background:var(--accent-soft)!important;border:0!important;border-radius:8px!important;padding:16px!important;box-shadow:none!important}
+html body [data-pane="plan"] #planAns .ps-bal{font-size:15px;font-weight:500;color:var(--ink2);margin:0 0 12px;line-height:1.3}
+html body [data-pane="plan"] #planAns .ps-bal{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}
+html body [data-pane="plan"] #planAns .ps-bal .pc-of{flex-basis:100%}
+html body [data-pane="plan"] #planAns .ps-bal b{display:inline;font-size:28px;font-weight:600;color:var(--ink);line-height:1.25;margin:2px 0}
+html body [data-pane="plan"] #planAns .ps-bal .pc-of{display:block;font-size:13.5px;color:var(--ink2);font-weight:400}
+html body [data-pane="plan"] #planAns .pc-prog{background:none!important;border:0!important;padding:0!important;margin:0!important}
+html body [data-pane="plan"] #planAns .pc-foot{margin-top:10px}
+/* the accounts' cash: the home's tiles */
+html body [data-pane="plan"] .pcash .pc-g{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+html body [data-pane="plan"] .pcash .pc-b{background:var(--accent-soft)!important;border:0!important;border-radius:8px!important;padding:12px!important;box-shadow:none!important}
+html body [data-pane="plan"] .pcash .pc-b.on{box-shadow:inset 0 0 0 2px var(--accent)!important}
+html body [data-pane="plan"] .pcash .pc-b.all{grid-column:1/-1}
+html body [data-pane="plan"] .pcash .pc-k{font-size:14px;color:var(--ink);font-weight:500} html body [data-pane="plan"] .pcash .pc-b>b{font-size:18px;font-weight:600}
+/* each part a white card, its heading as the home's */
+html body [data-pane="plan"] :is(#planMonth,#ladFull,#onceD,#planSetD){background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:8px!important;box-shadow:none!important}
+html body [data-pane="plan"] #planMonth{padding:16px!important;display:flex;flex-direction:column;gap:12px}
+html body [data-pane="plan"] #planRowsP{padding:0!important;margin-top:16px!important;border:0!important;background:none!important;box-shadow:none!important} html body [data-pane="plan"] .panel:has(>#ladFull){padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+html body [data-pane="plan"] #ladFull{padding:0 16px!important} html body [data-pane="plan"] #ladFull>summary{min-height:52px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;cursor:pointer}
+html body [data-pane="plan"] :is(#planRowsP>.row h3,#planMonth .pm-ch h3){font-size:15px;font-weight:600;margin:0}
+/* the month: the home's pills for the months, the card without a frame of its own */
+html body [data-pane="plan"] #pmCard :is(.pm-once,.pm-chk .lnk){border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;padding:0 14px!important;min-height:40px!important;font-weight:500;text-decoration:none!important;box-shadow:none!important;align-self:flex-start}
+html body [data-pane="plan"] #planMonth .pm-mo{border:0!important;border-radius:20px!important;background:var(--accent-soft)!important;color:var(--accent-ink)!important;min-height:44px}
+html body [data-pane="plan"] #planMonth .pm-mo[aria-pressed="true"]{background:var(--accent)!important;color:var(--on-accent,#fff)!important}
+html body [data-pane="plan"] #planMonth .pm-card{border:0!important;border-radius:0!important;padding:0!important;background:none!important;box-shadow:none!important}
+/* the securities: the home's list, a logo beside the name */
+html body [data-pane="plan"] #planRowsP thead{display:none}
+html body [data-pane="plan"] #planRowsP table{border-collapse:collapse;width:100%}
+html body [data-pane="plan"] #planRowsP tbody td{border:0!important;border-top:1px solid var(--line)!important;padding:10px 0!important;vertical-align:middle;background:none!important}
+html body [data-pane="plan"] #planRowsP tbody tr:first-child td{border-top:0!important}
+html body [data-pane="plan"] #planRowsP tr.sec td{font-size:13px;color:var(--ink2);font-weight:600;padding:12px 0 6px!important}
+html body [data-pane="plan"] .pl-sec{display:flex;align-items:center;gap:10px;min-width:0} html body [data-pane="plan"] .pl-nm{min-width:0}
+html body [data-pane="plan"] .lg.pl-lg{flex:none;width:36px;height:36px;border-radius:50%;font-size:11px}
+html body [data-pane="plan"] #planRowsP td.num{text-align:end;white-space:nowrap;padding-inline:8px!important}
+</style></head><body>
 <title>תיק צ׳יק – חדר המסחר שלי</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Assistant:wght@400;600;700&display=swap">
 <style>
@@ -4782,15 +4827,6 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
            pager. The full table of the months is below it, folded -->
       <section class="pm" id="planMonth" aria-labelledby="pmT" hidden></section>
       <dialog class="pm-dlg" id="pmDlg" aria-labelledby="pmDlgT"></dialog>
-      <div class="panel scroll" data-dvp="rows" id="planRowsP">
-        <div class="row" style="margin-bottom:4px"><h3>הניירות בתוכנית</h3><button type="button" class="btn sm" id="planEditBtn" aria-pressed="false">עריכת הרשימה</button></div>
-        <p class="pl-sum" id="planSum"></p>
-        <table>
-          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
-          <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
-        </table>
-        <div class="pl-add" id="planAddBox" hidden></div>
-      </div>
       <div class="panel scroll" data-dvp="month">
         <details class="lad-full" id="ladFull"><summary><span>כל החודשים בטבלה</span><span class="sub" id="depState"></span></summary>
         <table class="ladder">
@@ -4830,7 +4866,16 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <details class="hbset"><summary>הגדרות הקנייה: איך קונים וסדר הקנייה</summary>
         <div class="hb"><span class="k" id="lblKind">איך קונים</span><div class="chips" role="group" aria-labelledby="lblKind"><button class="chip" type="button" id="kindWhole" data-mode="manual">מניות שלמות</button><button class="chip" type="button" id="kindFrac" data-mode="rotate">שברי מניה</button><button class="chip" type="button" id="kindFix" data-mode="fixed" hidden>סכום קבוע לכל קרן</button></div></div>
         <div class="hb" id="orderWrap"><span class="k" id="lblOrder">סדר הקנייה</span><div class="chips" role="group" aria-labelledby="lblOrder"><button class="chip" type="button" data-order data-mode="manual">לפי הסדר שלי</button><button class="chip" type="button" data-order data-mode="cheap">הזול ראשון</button></div></div>
-        </details>
+        <div class="scroll pl-inset" data-dvp="rows" id="planRowsP">
+        <div class="row" style="margin-bottom:4px"><h3>הניירות בתוכנית ומתי כל אחד נקנה</h3><button type="button" class="btn sm" id="planEditBtn" aria-pressed="false">עריכת הרשימה</button></div>
+        <p class="pl-sum" id="planSum"></p>
+        <table>
+          <thead><tr><th>נייר</th><th class="num" id="thCost">עלות יחידה ₪</th><th>מתי</th></tr></thead>
+          <tbody id="planRows"><tr><td colspan="3" class="empty">רשימת הניירות להגדלה תופיע כאן.</td></tr></tbody>
+        </table>
+        <div class="pl-add" id="planAddBox" hidden></div>
+      </div>
+      </details>
         <p class="note" id="kindNote"></p>
       </div>
       </details>
@@ -20986,7 +21031,7 @@ function renderPlan(mAll){
   const rowP=({it,ix})=>{
     const c=st.cost[it.sym], w=st.sch.when[it.sym]; let tag,acts='';
     if(st.fixed&&it.status!=='skip'){
-      return `<tr${canWrite?' class="hasacts"':''}><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td></tr>${canWrite?`<tr class="pactr"><td colspan="3"><div class="acts pacts"><button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button></div></td></tr>`:''}`}
+      return `<tr${canWrite?' class="hasacts"':''}><td><div class="pl-sec">${logoHtml(it.sym,'pl-lg')}<div class="pl-nm"><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></div></div></td><td class="num"><input type="number" class="amt" data-amt="${ix}" value="${+it.amt||''}" min="0" step="10" placeholder="0" aria-label="סכום בחודש ל${esc(lab(it.sym))}" style="width:90px"${canWrite?'':' disabled'}></td><td>${+it.amt>0?'<span class="st now">כל חודש</span>':'<span class="st wait">בלי סכום</span>'}</td></tr>${canWrite?`<tr class="pactr"><td colspan="3"><div class="acts pacts"><button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר למניות</button></div></td></tr>`:''}`}
     if(it.status==='done'){tag=`<span class="st done">נקנה</span> <span class="nm">${esc(it.note||dmy(it.doneAt))}</span>`;acts=`<button class="btn sm" type="button" data-pa="undo" data-ix="${ix}">החזר לרשימה</button>`}
     // 25.11 (the owner: "אם אני מוחק מניה/מדד יש או החזר או אופצייה של למחוק לגמרי"): a security taken out had one small
     // "החזר", shown only while the list was edited, and no way to say it is out for good. Taken out, it is kept in a part
@@ -21000,7 +21045,7 @@ function renderPlan(mAll){
       acts=(PL.mode!=='cheap'?`<button class="btn sm" type="button" data-pa="up" data-ix="${ix}" aria-label="הקדם את ${esc(it.sym)}">↑</button><button class="btn sm" type="button" data-pa="down" data-ix="${ix}" aria-label="דחה את ${esc(it.sym)}">↓</button>`:'')
         +`<button class="btn sm" type="button" data-pa="skip" data-ix="${ix}">הוצא מהתוכנית</button><button class="btn sm" type="button" data-pa="move" data-ix="${ix}">העבר ל${TRACK==='idx'?'מניות':'מדדים'}</button>`}
     const ha=canWrite&&acts, dn=it.status==='todo'?'':it.status==='skip'?'isdone isgone':'isdone';
-    return `<tr class="${dn}${ha?' hasacts':''}"><td><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></td><td class="num"><span class="n">${c!=null?ils(c,2):'—'}</span></td><td>${tag}</td></tr>`+
+    return `<tr class="${dn}${ha?' hasacts':''}"><td><div class="pl-sec">${logoHtml(it.sym,'pl-lg')}<div class="pl-nm"><span class="sym">${esc(lab(it.sym))}</span><div class="nm">${NUMSYM.test(it.sym)?'מספר נייר '+esc(it.sym):esc(st.name[it.sym]||'')}</div></div></div></td><td class="num"><span class="n">${c!=null?ils(c,2):'—'}</span></td><td>${tag}</td></tr>`+
       (ha?`<tr class="pactr ${dn}"><td colspan="3"><div class="acts pacts">${acts}</div></td></tr>`:'')};
   const live=list.filter(x=>x.it.status!=='skip'), gone=list.filter(x=>x.it.status==='skip');
   const lf=live.filter(x=>isF(x.it.sym)), ls=live.filter(x=>!isF(x.it.sym)), secP=(t,n)=>`<tr class="sec"><td colspan="3">${t} · ${n}</td></tr>`;
@@ -33485,6 +33530,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.7',at:'2026-11-26',t:'תוכנית ההפקדה בעיצוב של דף הבית',d:'אותו סדר ואותו מראה כמו בסקירה: מניות ומדדים בכפתורים עגולים, כרטיס סגול למעלה עם היתרה להשקעה, אריחים למזומן בכל חשבון, כרטיס לבן לכל חלק, והניירות ברשימה עם הלוגו שלהם.',go:'plan'},
   {v:'2026-11-26.6',at:'2026-11-26',t:'החודש כולו בדולרים או בשקלים',d:'בראש הכרטיס של החודש יש ₪ ו-$. בבחירה של $ כל הסכומים של החודש, יתרת הפתיחה, ההפקדה, מחירי הניירות והיתרה, מוצגים בדולרים לפי שער היום. הבחירה נשמרת במכשיר.',go:'plan'},
   {v:'2026-11-26.5',at:'2026-11-26',t:'הפקדה חודשית בשקלים או בדולרים',d:'בכרטיס של החודש כותבים כמה הפקדת ובוחרים ₪ או $ לפני "סימנתי שהפקדתי". הפקדה בדולרים נשמרת בדולרים בדיוק, ובשקלים לפי שער היום. הבחירה נשמרת לחודש הבא.',go:'plan'},
   {v:'2026-11-26.4',at:'2026-11-26',t:'תוכנית ההפקדה: פחות מלל, כל דבר פעם אחת',d:'למעלה כרטיס אחד: כמה יש להשקעה, ועיגול של כמה הפקדות וקניות כבר מאחוריך. מסמנים הפקדה וקנייה בכרטיס של החודש, שאפשר לדפדף בו קדימה ואחורה. אחריו הניירות בתוכנית. ההגדרות (סכומים, עד מתי, חשבון ואופן הקנייה), ההפקדות החד-פעמיות והטבלה המלאה מקופלים בתחתית.',go:'plan'},
