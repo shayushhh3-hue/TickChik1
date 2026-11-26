@@ -5138,3 +5138,24 @@ test('26.11 one ledger of the cash: an opening point, then every deposit and pur
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
+
+// 26.11 (the owner: "בהוראה של ביטול קניה הוא לא מחשב את היתרה"): a purchase ticked, the account's cash said to hold it, then the
+// purchase taken off: its money comes back to the balance; ticked again, it goes out again
+test('26.11 a purchase taken off after "already in the cash" gives its money back to the balance',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main'])keep[p]=store.getDoc(p);
+  const {ctx,pg}=await open(390);
+  try{
+    await tab(pg,'plan'); await pg.waitForSelector('#pmCard [data-pa="pmBuy"]',{timeout:12000});
+    const bal=()=>pg.evaluate(()=>+document.getElementById('planAns').querySelector('.ps-bal b').textContent.replace(/[^\d.]/g,'')*(/−/.test(document.getElementById('planAns').querySelector('.ps-bal b').textContent)?-1:1));
+    const sym=await pg.evaluate(()=>document.querySelector('#pmCard [data-pa="pmBuy"]').dataset.sym);
+    await pg.click(`#pmCard [data-pa="pmBuy"][data-sym="${sym}"]`); await pg.waitForSelector(`#pmCard [data-pa="pmUnbuy"][data-sym="${sym}"]`,{timeout:8000});
+    await pg.evaluate(()=>{const d=document.querySelector('.pc-whyd'); if(d)d.open=true});
+    const ok=pg.locator('#pCashRow [data-pa="cashOk"]').first(); if(!(await ok.count()))return t.skip('one account: no "already in the cash" here');
+    await ok.click(); await pg.waitForTimeout(600); const b0=await bal();
+    await pg.click(`#pmCard [data-pa="pmUnbuy"][data-sym="${sym}"]`); await pg.waitForSelector(`#pmCard [data-pa="pmBuy"][data-sym="${sym}"]`,{timeout:8000}); await pg.waitForTimeout(400); const b1=await bal();
+    const paid=await pg.evaluate(s=>{const c=document.querySelector(`#pmCard [data-pa="pmBuy"][data-sym="${s}"]`).closest('li'); return +c.querySelector('.pm-amt').textContent.replace(/[^\d.]/g,'')},sym);
+    assert.ok(Math.abs(b1-b0-paid)<=1.5,`the balance went up by the purchase: ${b0} → ${b1}, paid about ${paid}`);
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
+});

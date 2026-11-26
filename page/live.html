@@ -19509,10 +19509,17 @@ const fxAtMoment=e=>{const d=/^\d{4}/.test(e||'')&&e!=='0000'?ilDay(e):ilDay(); 
 function ledgerMarks(a){const out=[]; if(!PLD)return out;
   for(const [t,X] of [['stocks',PLD],['idx',PLD.idx]]){if(!X)continue; for(const d of X.deposits||[])if(markAcct(d,t,true)===a)out.push({x:d,dep:true,trk:t}); for(const x of X.purchases||[])if(markAcct(x,t,false)===a)out.push({x,dep:false,trk:t})}
   return out}
+// 26.11 (the owner): a purchase taken off after the account's cash was known to hold it: its money comes back (PLD.cashBack,
+// one row a purchase, kept while the purchase is gone; the purchase put back by "undo" makes its row count no more)
+function buyBack(gone,trk){if(!PLD||!gone||!gone.length)return; const now=new Date().toISOString(); PLD.cashBack=(PLD.cashBack||[]).filter(r=>!gone.some(x=>x&&x.id===r.pid));
+  for(const x of gone){if(!x||x.tid||!(+x.paidIls>0))continue; let a=''; try{a=markAcct(x,trk,false)}catch(e){} if(!a||a==='all')continue; const e=markEff(x); if(!(x.held||(e!=null&&!(e>cashAnchor(a).at))))continue;
+    const usd=secCcy(x.sym)==='USD', r=usd?(+x.fx>0?+x.fx:fxAtMoment(e)):0; PLD.cashBack.push({pid:x.id,sym:x.sym,acct:a,at:now,...(usd&&r>0?{usd:Math.round(x.paidIls/r*100)/100}:{ils:+x.paidIls})})}}
 const ledgerCounts=(x,a)=>{const e=markEff(x); return e!=null&&e>cashAnchor(a).at};
 function cashLedger(a){const A=cashAnchor(a), fx=(Q&&+Q.usdIls)||0, r2=v=>Math.round(v*100)/100; let ils=A.ils, usd=A.usd; const since=[];
   for(const m of ledgerMarks(a)){const e=markEff(m.x); if(e==null||!(e>A.at))continue; const amt=m.dep?(+m.x.amount||0):-(+m.x.paidIls||0), inUsd=m.dep?acctCcy(a)==='USD':secCcy(m.x.sym)==='USD';
     const r=inUsd?(+m.x.fx>0?+m.x.fx:fxAtMoment(e)):0; if(inUsd&&r>0){usd+=amt/r; since.push({...m,e,usd:amt/r,fx:r})} else{ils+=amt; since.push({...m,e,ils:amt})}}
+  {const live=new Set([...((PLD&&PLD.purchases)||[]),...((PLD&&PLD.idx&&PLD.idx.purchases)||[])].map(x=>x.id));
+   for(const r of (PLD&&PLD.cashBack)||[]){if(!r||r.acct!==a||live.has(r.pid)||!(isoOK(r.at)>A.at))continue; if(r.usd!=null){usd+=+r.usd||0; since.push({x:r,back:true,e:r.at,usd:+r.usd||0})} else{ils+=+r.ils||0; since.push({x:r,back:true,e:r.at,ils:+r.ils||0})}}}
   since.sort((p,q)=>p.e<q.e?-1:1); return {anchor:A,ils:r2(ils),usd:r2(usd),fx,now:r2(ils+usd*fx),since}}
 const ledgerAll=()=>{let ils=0, usd=0, now=0; for(const a of acctIds()){const L=cashLedger(a); ils+=L.ils; usd+=L.usd; now+=L.now} return {ils:Math.round(ils*100)/100,usd:Math.round(usd*100)/100,now:Math.round(now*100)/100}};
 const acctTrk=a=>{try{if(!tracksApart())return ''; return a===trackAcct('stocks')?'stocks':a===trackAcct('idx')?'idx':''}catch(e){return ''}};
@@ -20821,7 +20828,7 @@ function planCashRow(st,mAll){const el=$('pCashRow'); if(!el)return; const ids=a
   // the line of an account: its opening point, what was marked since (each in its currency), and the figure now
   const why=a=>{const L=lg(a), A=L.anchor, nm=esc(acctName(a)), dy=cashDay(a), dzb=canWrite?'':' disabled';
     const open=A.kind==='zero'?`אופס ל-₪0 ב-${esc(dmy(ilDay(A.at)))}`:A.kind==='ok'?`${both(A.ils,A.usd)} מזומן בחשבון, שאישרת ב-${esc(dmy(ilDay(A.at)))} שהוא כבר כולל את מה שסומן עד אז`:`${both(A.ils,A.usd)} מזומן בחשבון${dy?` נכון ל-${esc(dmy(dy))}`:''}`;
-    const it=L.since.map(m=>{const v=m.usd!=null?m.usd:m.ils, w=m.dep?(m.x.once?'הפקדה חד-פעמית':'הפקדה'):`קנייה <bdi>${esc(lab(m.x.sym))}</bdi>`; return `${w} <span class="n" dir="ltr">${v<0?'−':'+'}${m.usd!=null?usdT(v):ils(Math.abs(v),2)}</span>`}), sh=it.slice(0,6);
+    const it=L.since.map(m=>{const v=m.usd!=null?m.usd:m.ils, w=m.back?`ביטול קנייה <bdi>${esc(lab(m.x.sym))}</bdi>`:m.dep?(m.x.once?'הפקדה חד-פעמית':'הפקדה'):`קנייה <bdi>${esc(lab(m.x.sym))}</bdi>`; return `${w} <span class="n" dir="ltr">${v<0?'−':'+'}${m.usd!=null?usdT(v):ils(Math.abs(v),2)}</span>`}), sh=it.slice(0,6);
     const nowT=Math.abs(L.usd)>=0.005?`עכשיו ${both(L.ils,L.usd)}, שהם <b class="n" dir="ltr">${ils(L.now,2)}</b> בשער ${L.fx.toFixed(3)}`:`עכשיו <b class="n" dir="ltr">${L.now<0?"−":""}${ils(Math.abs(L.now),2)}</b>`;
     const inIt=(()=>{try{const ymN=ymNow(); return ledgerMarks(a).filter(m=>m.dep&&m.x.once&&!m.x.tid&&!m.x.held&&m.x.month===ymN&&!ledgerCounts(m.x,a))}catch(e){return []}})();
     const inH=inIt.map(m=>` הפקדה חד-פעמית של <span class="n" dir="ltr">${ils(+m.x.amount||0,2)}</span> מ-${esc(dmy(m.x.day||markDay(m.x)))} נחשבת כבר בתוך המזומן הזה. <button type="button" class="pc-zb pc-okb" data-pa="onceOut" data-id="${esc(m.x.id)}" data-trk="${m.trk}"${dzb} aria-label="ההפקדה של ${ils(+m.x.amount||0)} לא בתוך המזומן של ${nm}: להוסיף אותה">היא לא בפנים, להוסיף אותה</button>`).join('');
@@ -21128,7 +21135,7 @@ function planAct(a,d){
   else if(a==='buyToggle'&&st.fixed){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
     const k=PL.purchases.findIndex(x=>x.sym===t.sym&&x.month===d.ym);
     if(k>=0&&lockedOf(PL.purchases[k])){lockNo();return}
-    if(k>=0)PL.purchases.splice(k,1);
+    if(k>=0){try{buyBack([PL.purchases[k]],TRACK==='idx'?'idx':'stocks')}catch(e){} PL.purchases.splice(k,1)}
     else if((st.cost[t.sym]||0)>st.bal+0.005){render();return}
     else{const pp=mAllNow().pos.find(x=>x.sym===t.sym), paid=Math.round((st.cost[t.sym]||0)*100)/100, rec={id,sym:t.sym,paidIls:paid,month:d.ym,at:now};
       if(pp&&pp.pxIls>0){rec.qty=Math.round(paid/pp.pxIls*1e4)/1e4;rec.px=Math.round(pp.px*100)/100;rec.ccy=pp.ccy;rec.fx=Q.usdIls}
@@ -21143,7 +21150,7 @@ function planAct(a,d){
   else if(a==='buyToggle'){const t=PL.items.find(i=>i.sym===d.sym);if(!t)return;
     if(t.status==='done'){const pid=t.pid||(PL.purchases.slice().reverse().find(x=>x.sym===t.sym)||{}).id, gone=PL.purchases.filter(x=>pid?x.id===pid:x.sym===t.sym), snap={pid:t.pid,doneAt:t.doneAt,note:t.note}, X=PL;
       if(gone.some(lockedOf)){lockNo();return}
-      PL.purchases=PL.purchases.filter(x=>pid?x.id!==pid:x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note='';
+      try{buyBack(gone,TRACK==='idx'?'idx':'stocks')}catch(e){} PL.purchases=PL.purchases.filter(x=>pid?x.id!==pid:x.sym!==t.sym);t.status='todo';delete t.pid;delete t.doneAt;t.note='';
       // 25.11: taken off by mistake? back with one press, in the month it was in
       if(!LAD_QUIET&&gone.length)LAD_UNDO={msg:`הסימון של ${lab(t.sym)}${gone[0].month?' ב'+ymShort(gone[0].month):''} הוסר, והנייר חזר לתור`,fn:(trk=>()=>{const X2=trk==='idx'?PLD.idx:PLD, t2=X2&&(X2.items||[]).find(i=>i.sym===t.sym); if(!t2||t2.status!=='todo')return; for(const g of gone)if(!X2.purchases.some(x=>x.id===g.id))X2.purchases.push(g); t2.status='done'; t2.note=snap.note||''; if(snap.pid)t2.pid=snap.pid; if(snap.doneAt)t2.doneAt=snap.doneAt; setTrack(); planChanged()})(TRACK)};
       LAD_QUIET=false}
@@ -21163,7 +21170,7 @@ function planAct(a,d){
     // out for good: the holdings do not ask to add it again (until the holding itself changes)
     PLD.ask=Object.assign({},PLD.ask||{},{[sym]:'no'});
     LAD_UNDO={msg:`${lab(sym)} נמחק מהתוכנית לגמרי`,fn:()=>{const X=trk==='idx'?PLD.idx:PLD; if(!X||(X.items||[]).some(i=>i.sym===sym))return; X.items.splice(Math.min(ix0,X.items.length),0,{...it}); const y=Object.assign({},PLD.ask||{}); if(prevAsk)y[sym]=prevAsk; else delete y[sym]; PLD.ask=y; setTrack(); planChanged()}}}
-  else if(a==='undo'&&it){if(it.pid)PL.purchases=PL.purchases.filter(x=>x.id!==it.pid);it.status='todo';delete it.pid;delete it.doneAt;it.note=''}
+  else if(a==='undo'&&it){if(it.pid){try{buyBack(PL.purchases.filter(x=>x.id===it.pid),TRACK==='idx'?'idx':'stocks')}catch(e){} PL.purchases=PL.purchases.filter(x=>x.id!==it.pid)}it.status='todo';delete it.pid;delete it.doneAt;it.note=''}
   else if((a==='up'||a==='down')&&it){let j=ix;do{j+=a==='up'?-1:1}while(PL.items[j]&&PL.items[j].status!=='todo');if(PL.items[j]){PL.items[ix]=PL.items[j];PL.items[j]=it}}
   else if(a==='mode'){PL.mode=d.mode;
     if(d.mode==='fixed'){const L=PL.items.filter(i=>i.status!=='skip'); if(L.length&&!L.some(i=>+i.amt>0)){const each=Math.floor((+S.monthlyIdx||0)/L.length); for(const i of L)i.amt=each}
@@ -21178,7 +21185,7 @@ function planAct(a,d){
   else if(a==='aheadAll'){PLU_ALL=!PLU_ALL; render(); return}
   // a new round: every security bought in this one waits again, in the same order; what was bought stays in the purchases
   // a purchase of an earlier round taken back (the card's "ביטול" beside it): that one only, never one an item points at
-  else if(a==='dropBuy'){const id=String(d.id||''); if(!id||PL.items.some(i=>i.pid===id)||!PL.purchases.some(x=>x.id===id))return; if(lockedOf(PL.purchases.find(x=>x.id===id))){lockNo();return} PL.purchases=PL.purchases.filter(x=>x.id!==id)}
+  else if(a==='dropBuy'){const id=String(d.id||''); if(!id||PL.items.some(i=>i.pid===id)||!PL.purchases.some(x=>x.id===id))return; if(lockedOf(PL.purchases.find(x=>x.id===id))){lockNo();return} try{buyBack(PL.purchases.filter(x=>x.id===id),TRACK==='idx'?'idx':'stocks')}catch(e){} PL.purchases=PL.purchases.filter(x=>x.id!==id)}
   // 24.11 (the owner: "אני לא מצליח להוסיף את קרן 5128905… למה אי אפשר להוסיף אותה לתוכנית ההפקדה"): a security joins the plan of
   // the track on screen after the plan was built (the list was fixed at its building: what was bought later could not
   // enter). At the end of the queue; one taken out before comes back; one that is in the other track stays there
