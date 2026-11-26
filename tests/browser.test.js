@@ -5067,7 +5067,7 @@ test('26.11 the site\'s background, a choice (the owner): soft by default, a dra
     let s=await st(); assert.deepEqual([s.bg,s.hidden,s.pos,s.z,s.pe,s.disp,s.grad,s.ic,s.old],['soft','true','fixed','-1','none','block',true,'',false],'soft by default: a glow, nothing drawn, and the old market is gone'); assert.ok(s.under&&s.ox);
     // the choice, in the settings' "תצוגה ונגישות"
     await pg.evaluate(()=>document.querySelector('[data-bgset="page"]').click()); await pg.waitForTimeout(200); s=await st();
-    assert.deepEqual([s.bg,s.ic],['page','rise'],'the home: a rising line'); assert.ok(s.icTop!=null&&s.icTop<220,'at the top only: '+s.icTop); assert.ok(s.icOp>0&&s.icOp<=0.22,'faint: '+s.icOp); assert.equal(s.anim,false,'still');
+    assert.deepEqual([s.bg,s.ic],['page','rise'],'the home: a rising line'); assert.ok(s.icTop!=null&&s.icTop<220,'at the top only: '+s.icTop); assert.ok(s.icOp>0&&s.icOp<=0.3,'faint: '+s.icOp); assert.equal(s.anim,false,'still');
     await tab(pg,'search'); await pg.waitForTimeout(300); assert.equal((await st()).ic,'find','the research: a magnifier');
     await tab(pg,'alerts'); await pg.waitForTimeout(300); assert.equal((await st()).ic,'bell','the alerts: a bell'); assert.ok((await st()).ox);
     for(let i=0;i<40&&((store.getDoc('settings/main').data||{}).ui||{}).tr_bg!=='page';i++)await pg.waitForTimeout(150);

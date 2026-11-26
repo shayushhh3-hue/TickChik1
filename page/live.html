@@ -2128,9 +2128,9 @@ html[data-bg="soft"] #pgBg,html[data-bg="page"] #pgBg{background:radial-gradient
 html[data-theme="dark"][data-bg="soft"] #pgBg,html[data-theme="dark"][data-bg="page"] #pgBg{background:radial-gradient(60vmax 45vmax at 100% 0%,rgb(139 92 246 / .16),transparent 70%),radial-gradient(55vmax 40vmax at 0% 100%,rgb(45 212 191 / .08),transparent 70%)}
 /* the screen's drawing sits at the top of the screen, beside its title (the screens are full of cards: a corner of the
    window was covered by them), and scrolls away with it */
-#pgIc{position:absolute;z-index:-1;pointer-events:none;inset-inline-end:10px;width:clamp(96px,16vw,150px);height:auto;fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;opacity:.14}
-html[data-theme="dark"] #pgIc{opacity:.22}
-@media (min-width:1100px){#pgIc{inset-inline-end:24px}}
+#pgIc{position:absolute;z-index:-1;pointer-events:none;inset-inline-end:4px;width:clamp(170px,46vw,210px);height:auto;fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;opacity:.2}
+html[data-theme="dark"] #pgIc{opacity:.3}
+@media (min-width:1100px){#pgIc{inset-inline-end:28px;width:240px}}   /* 26.11 (the owner: "bigger, more prominent") */
 html[data-bg="none"] #pgBg,html.a11y-hc #pgBg,html:not([data-bg="page"]) #pgIc,html.a11y-hc #pgIc{display:none}
 @media (prefers-contrast:more),(forced-colors:active),print{#pgBg,#pgIc{display:none}}
 html.a11y-hc{--muted:#4A3B4E;--ink2:#2A1D2E;--line:#B5A28F;--focus:#7A2E00}
@@ -32846,7 +32846,10 @@ function bgApply(){const r=document.documentElement, v=bgGet(); r.dataset.bg=v; 
   else if(document.body){if(!ic){ic=document.createElementNS('http://www.w3.org/2000/svg','svg'); ic.id='pgIc'; ic.setAttribute('viewBox','0 0 200 200'); ic.setAttribute('aria-hidden','true'); ic.setAttribute('focusable','false'); document.body.prepend(ic)}
     if(ic.dataset.ic!==k){ic.dataset.ic=k; ic.innerHTML=BG_ICONS[k]}
     const pn=(document.body.dataset.page==='overview'?null:document.querySelector('[data-pane="'+document.body.dataset.page+'"]:not([hidden])'))||document.querySelector('.wrap'), br=document.body.getBoundingClientRect();
-    const pt=pn?Math.round(pn.getBoundingClientRect().top-br.top):80; ic.style.top=(innerWidth>=1100?Math.max(8,pt-(ic.getBoundingClientRect().height||150)+24):Math.max(0,pt))+'px'}   // a wide screen: in the free space above the screen's first card
+    const pt=pn?Math.round(pn.getBoundingClientRect().top-br.top):80, hd=document.getElementById('dHd'), hb=hd&&hd.offsetParent?Math.round(hd.getBoundingClientRect().bottom-br.top):0;
+    // a wide screen: whole, in the free space above the screen's first card (as large as that space allows, up to 240);
+    // a phone: under the header with the site's name, never over it
+    if(innerWidth>=1100){const sz=Math.max(110,Math.min(240,pt-20)); ic.style.width=sz+'px'; ic.style.top=Math.max(8,pt-sz-8)+'px'} else{ic.style.width=''; ic.style.top=Math.max(pt,hb+4)+'px'}}   // a wide screen: in the free space above the screen's first card
   for(const b of document.querySelectorAll('[data-bgset]'))b.setAttribute('aria-pressed',String(b.dataset.bgset===v)); try{vwSync()}catch(e){}}
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-bgset]'); if(!b)return; UXS('tr_bg',b.dataset.bgset); bgApply(); try{useAdd('bg:'+b.dataset.bgset)}catch(e){} try{uiPush()}catch(e){}});
 // the drawing follows the screen that is open
