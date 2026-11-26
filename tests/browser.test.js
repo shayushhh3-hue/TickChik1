@@ -4709,8 +4709,8 @@ test('24.11 a reset of the funds track\'s balance (fixed sums too), and of one a
     assert.ok(Math.abs(C1.all-x1[all1])<1,`the portfolio's cash is the plan's "כל המזומן": ${C1.all} and ${x1[all1]}`); assert.ok(Math.abs(C1.a0)<1&&Math.abs(C1.a1-400)<1,'each account\'s own view is its box: '+JSON.stringify(C1)); assert.ok(Math.abs(C1.a0+C1.a1-C1.all)<1,'the accounts add up to all of it');
     assert.ok(Math.abs(num(v0)-num(v1)-1000)<=1,`the portfolio's value without the reset account's cash: ${v0} → ${v1}`); assert.equal(all1,'כל המזומן','one name for the one figure');
     await tab(pg,'overview'); await pg.waitForTimeout(300); const home=await pg.evaluate(()=>{const r=document.querySelector('#rows tr.cashrow, tr.cashrow'), n=r&&r.querySelector('td.num .n'); return r?{t:r.textContent,v:n?n.textContent:''}:{t:'',v:''}});
-    assert.match(home.t,/חשבון שאופס בתוכנית ההפקדה/,'the home\'s cash line says a reset account is in it'); assert.ok(Math.abs(num(home.v)-C1.all)<1,'and shows the same figure: '+home.v+' in '+home.t.slice(0,120));
-    await tab(pg,'plan'); await pg.waitForSelector(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`,{timeout:8000}); assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').textContent),/וגם ב"התיק שלי" ובשווי התיק/);
+    assert.match(home.t,/כמו בתוכנית ההפקדה: המזומן האחרון שנמסר \(או איפוס\) ומה שסומן מאז/,'the home\'s cash line says it is the plan\'s figure, a reset in it'); assert.ok(Math.abs(num(home.v)-C1.all)<1,'and shows the same figure: '+home.v+' in '+home.t.slice(0,120));
+    await tab(pg,'plan'); await pg.waitForSelector(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`,{timeout:8000}); assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').textContent),/אופס ל-₪0 ב-[^ ]+ עכשיו ₪0.00. זה המספר כאן, ב"התיק שלי" ובשווי התיק/);
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000}); await pg.waitForTimeout(600);
     assert.ok(store.getDoc('plan/main').data.acctZero[ids[0]],'kept with the plan');
     await pg.click(`#pCashRow [data-pa="acctZeroOff"][data-acct="${ids[0]}"]`); await pg.waitForFunction(()=>!/מאופס בתוכנית/.test(document.getElementById('pCashRow').innerText),null,{timeout:8000});
@@ -4742,7 +4742,7 @@ test('25.11 an account\'s box, the track\'s card and its table say one figure (a
     const bal=()=>pg.evaluate(()=>document.querySelector('#planAns .ps-bal b').textContent).then(num), row=()=>pg.evaluate(()=>document.querySelector('#ladRows tr.cur td.num').textContent).then(num);
     // the statement of 20 days ago holds last month's marks (the late tick too); the one-time deposit came after it
     assert.equal(await box(A1),700,'the funds\' account: its ₪400 and the one-time ₪300, whatever the other account\'s statement'); assert.equal(await bal(),700,'the card, the same'); assert.equal(await row(),700,'the table\'s month, the same');
-    assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText),/400\.00 מזומן בחשבון נכון ל-.* מאז סימנת בתוכנית: הפקדה חד-פעמית .*300\.00/,'the box says what it is made of');
+    assert.match(await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText),/400\.00 מזומן בחשבון נכון ל-.* מאז: הפקדה חד-פעמית \+\$[\d.]+\. עכשיו ₪400\.00 ו-\$[\d.]+, שהם ₪700\.00 בשער /,'the box says what it is made of (a deposit to a dollar account, in dollars)');
     // the form: apart, the one choice is the account (its track beside it)
     await pg.click('#planAns [data-planonce]'); await pg.waitForFunction(()=>document.activeElement&&document.activeElement.id==='onceAmt',null,{timeout:5000});
     const F0=await pg.evaluate(()=>({l:document.getElementById('onceTrkL').textContent,o:[...document.getElementById('onceTrk').options].map(o=>o.textContent),a:document.getElementById('onceAcctW').hidden,h:document.getElementById('onceTrk').getBoundingClientRect().height}));
@@ -4829,7 +4829,7 @@ test('25.11 the plan\'s balance and the portfolio\'s cash are one figure an acco
     assert.equal(await box(A1),want,'the plan: the account\'s cash and what was marked since'); let c1=await cashOf(A1); assert.ok(Math.abs(c1.cash-want)<0.01&&Math.abs(c1.base-400)<0.01,'the account\'s own view of the portfolio, the same figure: '+JSON.stringify(c1));
     const all=await cashOf('all'); let sum=0; for(const a of ids)sum+=(await cashOf(a)).cash; assert.ok(Math.abs(sum-all.cash)<0.01,`the accounts add up to the whole portfolio: ${sum} / ${all.cash}`);
     const line=()=>pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText.replace(/\s+/g,' '));
-    assert.match(await line(),/400\.00 מזומן בחשבון נכון ל-[^ ]+ מאז סימנת בתוכנית: הפקדה \+₪?[\d,]+\.00.* · קנייה .* −₪?100\.00\. לכן כאן, וגם ב"התיק שלי":/,'each mark said');
+    assert.match(await line(),/400\.00 מזומן בחשבון נכון ל-[^ ]+ מאז: הפקדה \+\$[\d.]+ · קנייה .* −₪100\.00\. עכשיו .* זה המספר כאן, ב"התיק שלי" ובשווי התיק\./,'each mark said');
     const ok=await pg.evaluate(a=>{const b=document.querySelector(`#pCashRow [data-pa="cashOk"][data-acct="${a}"]`), r=b.getBoundingClientRect(); return {h:r.height,name:b.getAttribute('aria-label')}},A1); assert.ok(ok.h>=44,'a press a finger can make'); assert.match(ok.name,/כבר כולל/);
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('pCashRow').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-sync-acct.png'})}
     // a month's balance is named: now (a fixed sum each fund), what will be left (the queue)
@@ -4837,7 +4837,7 @@ test('25.11 the plan\'s balance and the portfolio\'s cash are one figure an acco
     let k=await K(); assert.equal(k.k,'יתרה עכשיו'); assert.match(k.bef,/יתרה עכשיו/,'said on the phone\'s card'); assert.equal(num(k.v),want,'and it is the same figure');
     // "the cash already holds these": the plan and the portfolio go back to the account\'s own figure, in one press, undone in place
     await pg.click(`#pCashRow [data-pa="cashOk"][data-acct="${A1}"]`); await pg.waitForFunction(()=>!document.querySelector('#pCashRow [data-pa="cashOk"]'),null,{timeout:8000});
-    assert.equal(await box(A1),400); c1=await cashOf(A1); assert.ok(Math.abs(c1.cash-400)<0.01,'the portfolio too: '+JSON.stringify(c1)); assert.match(await line(),/400\.00 מזומן בחשבון נכון ל-[^ ]+ זה גם המזומן ב"התיק שלי"/);
+    assert.equal(await box(A1),400); c1=await cashOf(A1); assert.ok(Math.abs(c1.cash-400)<0.01,'the portfolio too: '+JSON.stringify(c1)); assert.match(await line(),/400\.00 מזומן בחשבון, שאישרת ב-[^ ]+ שהוא כבר כולל את מה שסומן עד אז\. עכשיו ₪400\.00\. זה המספר כאן/);
     let sv; for(let q=0;q<60&&!sv;q++){sv=(store.getDoc('plan/main').data.cashOk||{})[A1]; if(!sv)await pg.waitForTimeout(250)} assert.ok(sv,'kept with the plan');
     await pg.click('#toastUndo'); await pg.waitForSelector(`#pCashRow [data-pa="cashOk"][data-acct="${A1}"]`,{timeout:8000}); assert.equal(await box(A1),want,'undone');
     await pg.click('[data-track="stocks"]'); await pg.waitForFunction(()=>{const td=document.querySelector('#ladRows tr.cur td.num'); return !!td&&td.dataset.k==='יישאר בסוף החודש'},null,{timeout:8000});
@@ -5089,4 +5089,52 @@ test('26.11 the site\'s background, a choice (the owner): soft by default, a dra
     await pg.evaluate(()=>document.querySelector('[data-bgset="soft"]').click());
     assert.deepEqual(pg.errs,[]);
   }finally{await ctx.close(); const S0=store.getDoc('settings/main').data; if(S0&&S0.ui){const u={...S0.ui}; delete u.tr_bg; store.setDoc('settings/main',{...S0,ui:u},{silent:true})}}
+});
+
+test('26.11 one ledger of the cash: an opening point, then every deposit and purchase in the currency it sits in (dollars at their own day\'s rate), shown at the rate of now; the same figure in the plan, its boxes, the home and the accounts\' views; new cash opens a new point',T,async t=>{
+  if(skip())return t.skip('no browser');
+  const keep={}; for(const p of ['plan/main','portfolio/main','history/main','settings/main','quotes/latest'])keep[p]=store.getDoc(p);
+  const Q0=JSON.parse(JSON.stringify(keep['quotes/latest'].data)), fx0=+Q0.usdIls, ago=m=>new Date(Date.now()-m*6e4).toISOString(), il0=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem'}).format(new Date()), ym=il0.slice(0,7);
+  const pf=JSON.parse(JSON.stringify(keep['portfolio/main'].data)); if(!(pf.positions||[]).some(x=>x.acct==='blink'))return t.skip('no blink account in the fixture');
+  const usdSym=(pf.positions||[]).find(x=>x.ccy==='USD').sym, ilSym=(pf.positions||[]).find(x=>/^TA\d/.test(x.sym)).sym;
+  // the cash given an hour ago: אקסלנס ₪1,000 and $100; בלינק $50
+  pf.cash=[{acct:'exc',ccy:'ILS',amount:1000},{acct:'exc',ccy:'USD',amount:100},{acct:'blink',ccy:'USD',amount:50}]; pf.asOf={exc:il0,blink:il0}; pf.cashAt={exc:il0,blink:il0}; pf.figT={exc:ago(60),blink:ago(60)}; pf.updatedAt=ago(60); store.setDoc('portfolio/main',pf,{silent:true});
+  const S0=JSON.parse(JSON.stringify((keep['settings/main'].exists&&keep['settings/main'].data)||{})); S0.planAcct={stocks:'blink',idx:'exc'}; store.setDoc('settings/main',S0,{silent:true});
+  store.setDoc('history/main',{accounts:[],depIlsNow:0,monthly:[]},{silent:true});
+  // since then: to בלינק (a dollar account) ₪500 at ${fx0}, and a purchase of a dollar share for ₪200; to אקסלנס (shekels) ₪300, and a fund for ₪100
+  const pl=JSON.parse(JSON.stringify(keep['plan/main'].data)); delete pl.zero; delete pl.acctZero; delete pl.cashOk; delete pl.until; delete pl.round;
+  Object.assign(pl,{start:ym,mode:'manual',items:[{sym:usdSym,status:'done',note:'',pid:'s1'}],deposits:[{id:'d1',month:ym,amount:500,at:ago(50),fx:fx0}],purchases:[{id:'s1',sym:usdSym,paidIls:200,qty:1,month:ym,at:ago(45),fx:fx0}]});
+  pl.idx={start:ym,opening:0,mode:'manual',items:[{sym:ilSym,status:'done',note:'',pid:'i1'}],deposits:[{id:'d2',month:ym,amount:300,at:ago(40),fx:fx0}],purchases:[{id:'i1',sym:ilSym,paidIls:100,qty:1,month:ym,at:ago(35),fx:fx0}]};
+  store.setDoc('plan/main',pl,{silent:true});
+  const {ctx,pg}=await open(1280);
+  try{
+    const num=t0=>(/[−-]/.test(t0)?-1:1)*+String(t0).replace(/[^\d.]/g,''), near=(a,b,m)=>assert.ok(Math.abs(a-b)<0.02,`${m}: ${a} / ${b}`);
+    const led=a=>pg.evaluate(a=>window.__model.ledger(a),a), cashOf=a=>pg.evaluate(a=>window.__model.cashOf(a).cash,a);
+    // the parts, each in its own currency
+    const ex=await led('exc'), bl=await led('blink'), uB=50+(500-200)/fx0;
+    near(ex.ils,1200,'אקסלנס, its shekels'); near(ex.usd,100,'and its dollars'); near(bl.ils,0,'בלינק has no shekels'); near(bl.usd,uB,'בלינק\'s dollars: $50, and ₪300 at the day\'s rate');
+    const want=fx=>({exc:1200+100*fx,blink:uB*fx});
+    let W=want(fx0); near(await cashOf('exc'),W.exc,'אקסלנס\'s own view'); near(await cashOf('blink'),W.blink,'בלינק\'s own view'); near(await cashOf('all'),W.exc+W.blink,'the whole portfolio');
+    // the plan: the boxes, "כל המזומן", and the stocks track's card (בלינק\'s, said so)
+    await tab(pg,'plan'); await pg.click('[data-track="stocks"]'); await pg.waitForSelector('#pCashRow [data-pcdep="blink"]',{timeout:10000});
+    const box=a=>pg.evaluate(a=>document.querySelector(`#pCashRow [data-pcdep="${a}"]`).closest('.pc-b').querySelector('b').textContent,a).then(num), allBox=()=>pg.evaluate(()=>document.querySelector('#pCashRow .pc-b.all b').textContent).then(num), card=()=>pg.evaluate(()=>document.querySelector('#planAns .ps-bal b').textContent).then(num);
+    assert.equal(await box('exc'),Math.round(W.exc)); assert.equal(await box('blink'),Math.round(W.blink)); assert.equal(await allBox(),Math.round(W.exc+W.blink)); assert.equal(await card(),Math.round(W.blink),'the stocks track: בלינק\'s figure');
+    assert.match(await pg.evaluate(()=>document.querySelector('#planAns .ps-bal').innerText.replace(/\s+/g,' ')),/המזומן בבלינק, שממנו קונה המסלול\. בכל החשבונות יחד:/,'the card says it is a part');
+    const line=await pg.evaluate(()=>document.querySelector('#pCashRow .pc-why').innerText.replace(/\s+/g,' '));
+    assert.match(line,/אקסלנס: ₪1,000\.00 ו-\$100\.00 מזומן בחשבון נכון ל-[^ ]+ מאז: הפקדה \+₪300\.00 · קנייה .* −₪100\.00\. עכשיו ₪1,200\.00 ו-\$100\.00, שהם ₪[\d,.]+ בשער [\d.]+\. זה המספר כאן, ב"התיק שלי" ובשווי התיק\./,'אקסלנס\'s line: '+line);
+    assert.match(line,/בלינק: ₪0\.00 ו-\$50\.00 מזומן בחשבון .* מאז: הפקדה \+\$[\d.]+ · קנייה .* −\$[\d.]+\./,'בלינק\'s line, in dollars');
+    // the home: the holdings\' cash row is the same total
+    await tab(pg,'overview'); near(num(await pg.evaluate(()=>(document.querySelector('#rows tr.cashrow .num .n')||{}).textContent||'0')),Math.round(W.exc+W.blink),'the home\'s cash');
+    // the dollar moves: only the dollar parts move, each at the same dollars
+    const fx1=Math.round((fx0+0.5)*1000)/1000; store.setDoc('quotes/latest',{...Q0,usdIls:fx1}); await pg.waitForFunction(f=>{const L=window.__model.ledger('blink'); return Math.abs(L.now-L.usd*f)<0.05},fx1,{timeout:10000});
+    W=want(fx1); near(await cashOf('all'),W.exc+W.blink,'the whole portfolio, at the new rate'); near((await led('blink')).usd,uB,'the dollars did not change');
+    await tab(pg,'plan'); await pg.click('[data-track="stocks"]'); await pg.waitForSelector('#pCashRow [data-pcdep="blink"]',{timeout:10000}); assert.equal(await box('blink'),Math.round(W.blink)); assert.equal(await card(),Math.round(W.blink));
+    // a one-time deposit now: ₪400 at the new rate joins the dollars and re-rates nothing
+    await pg.click('#pCashRow [data-pcdep="blink"]'); await pg.waitForFunction(()=>!document.getElementById('pcDep').hidden,null,{timeout:5000}); await pg.fill('#pcDepAmt','400'); await pg.click('#pcDepAdd');
+    await pg.waitForFunction(u=>Math.abs(window.__model.ledger('blink').usd-u)<0.02,uB+400/fx1,{timeout:8000}); W.blink=(uB+400/fx1)*fx1; assert.equal(await box('blink'),Math.round(W.blink));
+    // new cash given for בלינק: a new opening point, which holds everything before it
+    const p2=JSON.parse(JSON.stringify(pf)); p2.cash=p2.cash.filter(c=>c.acct!=='blink').concat([{acct:'blink',ccy:'USD',amount:10}]); p2.figT={...p2.figT,blink:new Date(Date.now()+1000).toISOString()}; p2.updatedAt=new Date().toISOString(); store.setDoc('portfolio/main',p2);
+    await pg.waitForFunction(()=>Math.abs(window.__model.ledger('blink').usd-10)<0.01,null,{timeout:10000}); for(let k=0;k<40&&await box('blink')!==Math.round(10*fx1);k++)await pg.waitForTimeout(250); assert.equal(await box('blink'),Math.round(10*fx1),'the new opening point');; near(await cashOf('all'),W.exc+10*fx1,'and the portfolio');
+    assert.deepEqual(pg.errs,[]);
+  }finally{await ctx.close(); for(const [p,d] of Object.entries(keep)){if(d.exists)store.setDoc(p,d.data,{silent:true}); else store.deleteDoc(p)}}
 });
