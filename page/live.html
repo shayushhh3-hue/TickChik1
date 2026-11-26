@@ -4746,7 +4746,6 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
           <label for="inMonthly">הפקדה חודשית למניות (₪)<input type="number" id="inMonthly" min="0" step="50"></label>
           <label for="inMonthlyIdx">הפקדה חודשית למדדים (₪)<input type="number" id="inMonthlyIdx" min="0" step="50"></label>
           <label for="inDepDay">יום ההפקדה בחודש<select id="inDepDay"></select></label>
-          <label for="inTaxMonth" id="taxLab">תזכורת לדוח השנתי לרשות המיסים<span class="dd2"><select id="inTaxDay" aria-label="יום"></select><select id="inTaxMonth" aria-label="חודש"></select></span></label>
           <label for="inFee">עמלת מינימום לעסקה (₪)<input type="number" id="inFee" min="0" step="0.5"></label>
           <div class="pz-row" id="planZeroRow"></div>
           <div class="pl-gone"><div class="k">מזומן בחשבונות</div><span class="n" id="pBase" style="font-size:13.5px;padding-block:6px;direction:rtl;unicode-bidi:normal">—</span></div>
@@ -5492,7 +5491,8 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <h3 class="set-gh">התיק</h3><ul class="set-l">
           <li><button type="button" data-setgo="hAccts"><span>חשבונות המסחר</span> <span class="v" id="sgAccts"></span></button></li>
           <li><button type="button" data-setgo="hRules"><span>הכללים שלי</span> <span class="v" id="sgRules"></span></button></li>
-          <li><button type="button" data-setgo="hAlloc"><span>יעדי הקצאה</span></button></li></ul>
+          <li><button type="button" data-setgo="hAlloc"><span>יעדי הקצאה</span></button></li>
+          <li><button type="button" data-setgo="hTaxSet"><span>תזכורת לדוח השנתי</span> <span class="v" id="sgTax"></span></button></li></ul>
         <h3 class="set-gh">התראות וחדשות</h3><ul class="set-l">
           <li><button type="button" data-setgo="hNotifGo"><span>התראות, צלילים ומיילים</span></button></li>
           <li><button type="button" data-setgo="hNwSet"><span>חדשות</span></button></li></ul>
@@ -5517,6 +5517,15 @@ html[data-theme="dark"] .wi-past{background:#422c06;color:#fde68a;border-color:#
         <div class="acctchips" id="acctChipsSet"></div>
         <div class="acctpick" id="acctPick" hidden></div>
         <p class="note" style="margin:0;max-width:none">אפשר כמה חשבונות. חשבון עם ניירות לא מוסר עד שמוחקים אותם.</p>
+      </div>
+    </section>
+
+    <!-- 26.11 (the owner): the yearly tax reminder is a setting of its own, not a part of the deposit plan -->
+    <section aria-labelledby="hTaxSet" id="taxSetSec">
+      <div class="row"><h2 id="hTaxSet">תזכורת לדוח השנתי</h2></div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+        <label for="inTaxMonth" id="taxLab">מתי להזכיר לי להגיש את הדוח השנתי לרשות המיסים<span class="dd2"><select id="inTaxDay" aria-label="יום"></select><select id="inTaxMonth" aria-label="חודש"></select></span></label>
+        <p class="note" style="margin:0;max-width:none">התזכורת מופיעה 45 יום לפני התאריך, עד שמסמנים שהדוח נשלח. "כבוי" מבטל אותה.</p>
       </div>
     </section>
 
@@ -20187,7 +20196,7 @@ function renderTaxBanner(){
   el.hidden=false; el.innerHTML=`<div class="dup tx ${tx.days<=7?'warn':''}"><b>תזכורת: הדוח השנתי לרשות המיסים.</b> המועד שקבעת: <span class="n">${dmy(tx.iso)}</span>${tx.days>0?`, בעוד <span class="n">${tx.days}</span> ימים`:tx.days===0?', היום':`, עבר לפני <span class="n">${-tx.days}</span> ימים`}. המועד בפועל תלוי במצבך; בדוק באתר רשות המיסים או אצל רואה חשבון.
     <div class="acts" style="margin-top:8px"><button type="button" class="btn sm" id="taxDoneBtn"${canWrite?'':' disabled'}>שלחתי את הדוח ל-${tx.year}</button> <button type="button" class="btn sm ghost" id="taxGoBtn">לשנות תאריך</button></div></div>`;
 }
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#taxGoBtn')){showTab('settings',true); setTimeout(()=>{const el=$('inTaxMonth'); if(el){el.scrollIntoView({block:'center'}); el.focus()}},150)}});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#taxGoBtn')){showTab('settings',true); try{setGo('hTaxSet')}catch(x){} setTimeout(()=>{const el=$('inTaxMonth'); if(el){el.scrollIntoView({block:'center'}); el.focus()}},150)}});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#taxDoneBtn'); if(!b||!canWrite)return; try{const tx=taxDue(); if(tx){S.taxDone=tx.year; changed()}}catch(x){}});
 function alertsOf(m){
   const R=S.rules, stale=Q.updatedAt?Math.floor((Date.now()-new Date(Q.updatedAt))/864e5):null;
@@ -27016,7 +27025,7 @@ function profMaybe(){
 function meOneFill(p){const b=$('meOne'); if(!b)return; if(!p){b.hidden=true; return}
   const nm=((p.first||'')+(p.last?' '+p.last:'')).trim(), t=[nm,RISK[p.risk]?'משקיע: '+RISK[p.risk]:'',LEVEL[p.level]||'',+S.years>0?`אופק ${S.years} שנים`:''].filter(Boolean).join(' · ');
   b.hidden=!t; b.textContent=t; b.setAttribute('aria-label','הפרופיל שלי: '+t+'. לעריכה')}
-function setNavFill(){try{const a=$('sgAccts'); if(a)a.textContent=Object.keys(ACCTS).filter(k=>k!=='all').map(acctName).join(', '); const r=$('sgRules'); if(r)r.textContent=rulesDefault()?'ברירת המחדל':'שקבעת';
+function setNavFill(){try{const a=$('sgAccts'); if(a)a.textContent=Object.keys(ACCTS).filter(k=>k!=='all').map(acctName).join(', '); const r=$('sgRules'); if(r)r.textContent=rulesDefault()?'ברירת המחדל':'שקבעת'; const tx=$('sgTax'); if(tx)tx.textContent=+S.taxMonth?`${Math.max(1,Math.min(31,+S.taxDay||30))} ב${MONTHS[+S.taxMonth-1]}`:'כבוי';
   const sy=$('sgSysLi'), ss=$('sysSec'); if(sy)sy.hidden=!ss||ss.hidden}catch(e){}}
 function vwSync(){for(const w of document.querySelectorAll('#meSec .viewwrap')){const v=w.querySelector('.vw-v'), on=w.querySelector('.chips [aria-pressed="true"]'); if(v)v.textContent=on?on.textContent.replace(/[^\p{L}\p{N}\s]/gu,'').trim():''}}
 try{const ms=document.getElementById('meSec'); if(ms&&'MutationObserver' in window)new MutationObserver(vwSync).observe(ms,{subtree:true,attributes:true,attributeFilter:['aria-pressed']}); vwSync()}catch(e){}
@@ -32183,10 +32192,12 @@ function planLaterH(st,B){
   if(!st.until)return `<div class="pc-sec pc-ask"><span>${allDone?'כל הניירות נקנו. כדי שהתוכנית תמשיך, קובעים עד מתי.':'התוכנית נגמרת אחרי שכל נייר נקנה פעם אחת.'}</span><button type="button" class="btn sm" data-pa="untilEdit">לקבוע עד מתי</button></div>`;
   const nowYm=ymNow(), months=A.rows.map((r,k)=>[ymAdd(st.start,A.from+k),r]), ahead=months.filter(([ym,r])=>r.length&&ym>nowYm), show=PLU_ALL?months.filter(([ym])=>ym>nowYm):ahead.slice(0,3), cnt=Object.entries(A.count);
   const li=([ym,r])=>`<li><span class="pc-s">${esc(ymShort(ym))}</span><span class="pc-b">${r.length?esc(r.map(lab).join(', ')):'<span class="pc-m">צוברים</span>'}</span></li>`;
-  const more=PLU_ALL?`<p class="pc-note">נשארו <b class="n">${A.n}</b> הפקדות של ${ils(B)}, יחד <b class="n" dir="ltr">${ils(A.deposits)}</b>.${cnt.length?` ייקנו עד אז: ${J(cnt.map(([k,n])=>`<bdi>${esc(lab(k))} <span class="n">×${n}</span></bdi>`))}.`:''}${Object.keys(got).length?` עד עכשיו נקנו: ${J(Object.entries(got).map(([k,n])=>`<bdi>${esc(lab(k))} <span class="n">×${n}</span></bdi>`))}.`:''}</p>`:'';
-  return `<div class="pc-sec"><div class="pc-nh"><h3 class="pc-h">בהמשך, עד ${esc(ymLong(st.until))}</h3><button type="button" class="btn sm" data-pa="untilEdit">לשנות</button></div>
-    ${show.length?`<ul class="pc-list" aria-label="הקניות הבאות">${show.map(li).join('')}</ul>`:`<p class="pc-note">בהפקדה של ${ils(B)} בחודש אין קנייה נוספת עד סוף התקופה.</p>`}${more}
-    ${months.length?`<button type="button" class="btn sm pc-all" data-pa="aheadAll" aria-expanded="${PLU_ALL}">${PLU_ALL?'להציג פחות':'כל התוכנית'}</button>`:''}</div>`}
+  // 26.11 (the owner): the next purchases are beside each security ("מתי"), so the card says only what the period adds: the deposits
+  // left and how many of each security will be bought by its end; its months on request
+  const fig=`<p class="pc-note">נשארו <b class="n">${A.n}</b> הפקדות של ${ils(B)}, יחד <b class="n" dir="ltr">${ils(A.deposits)}</b>.${cnt.length?` ייקנו עד אז: ${J(cnt.map(([k,n])=>`<bdi>${esc(lab(k))} <span class="n">×${n}</span></bdi>`))}.`:` בהפקדה של ${ils(B)} בחודש אין קנייה נוספת עד סוף התקופה.`}${PLU_ALL&&Object.keys(got).length?` עד עכשיו נקנו: ${J(Object.entries(got).map(([k,n])=>`<bdi>${esc(lab(k))} <span class="n">×${n}</span></bdi>`))}.`:''}</p>`;
+  return `<div class="pc-sec"><div class="pc-nh"><h3 class="pc-h">התוכנית עד ${esc(ymLong(st.until))}</h3><button type="button" class="btn sm" data-pa="untilEdit">לשנות</button></div>
+    ${fig}${PLU_ALL&&show.length?`<ul class="pc-list" aria-label="החודשים עד סוף התקופה">${show.map(li).join('')}</ul>`:''}
+    ${months.some(([ym])=>ym>nowYm)?`<button type="button" class="btn sm pc-all" data-pa="aheadAll" aria-expanded="${PLU_ALL}">${PLU_ALL?'להסתיר את החודשים':'כל החודשים עד הסוף'}</button>`:''}</div>`}
 // every security of the round was bought in an earlier month, and the period goes on: the next round begins (once)
 function planOldNow(){const live=new Set(PL.items.filter(i=>i.pid).map(i=>i.pid)), ym=ymNow(); return PL.purchases.filter(x=>x.id&&!live.has(x.id)&&(x.month||(x.at?ilDay(x.at).slice(0,7):''))===ym&&PL.items.some(i=>i.sym===x.sym&&i.status!=='skip'&&(i.pid||i.status==='todo')))}
 let ROLLING=false;
@@ -33175,6 +33186,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.clos
 
 // ---- "מה חדש": what changed lately, each with a way to it. Seen once it is opened (this browser) ----
 const NEWS=[
+  {v:'2026-11-26.1',at:'2026-11-26',t:'תוכנית ההפקדה: בלי כפילויות',d:'בכרטיס של החודש כבר אין רשימה של שלוש הקניות הבאות, כי מתי כל נייר נקנה כתוב ברשימת הניירות. במקומה שורה אחת על התקופה: כמה הפקדות נשארו ומה ייקנה עד הסוף. התזכורת לדוח השנתי לרשות המיסים עברה מהגדרות התוכנית להגדרות, תחת "התיק".',go:'plan'},
   {v:'2026-11-24.11',at:'2026-11-24',t:'תוכנית ההפקדה בעמוד אחד',d:'אין יותר לשוניות ואין כפתור "כל הפירוט". מלמעלה למטה: המסלול, מה עושים החודש, הניירות בתוכנית ומתי כל אחד נקנה, החודשים, הפקדה חד פעמית וההגדרות. ארבעת המספרים והגרף שחזרו על מה שכבר כתוב ירדו מהעמוד. כפתורי הסדר וההוצאה של כל נייר מופיעים רק אחרי "עריכת הרשימה".',go:'plan'},
   {v:'2026-11-24.10',at:'2026-11-24',t:'תוכנית ההפקדה מסמנת לבד, ועיגול התקדמות',d:'קנייה של החודש שכבר רשומה בתיק שלך (מדוח שהעלית, או שרשמת באתר) מסומנת בתוכנית לבד, עם הסכום ששולם באמת. גם הפקדה חודשית שנקראה מדוח. ליד כל סימון כזה כתוב מאיפה הוא, ו"ביטול" מחזיר אותו. בראש הכרטיס יש עכשיו עיגול שמראה כמה מהתוכנית כבר מאחוריך: ההפקדות של התקופה והקניות של הסבב.',go:'plan'},
   {v:'2026-11-24.9',at:'2026-11-24',t:'חיסכון: מוסיפים נייר בחיפוש, כמו במחקר שוק',d:'ב"הניירות בחיסכון" השדה להוספת נייר הוא עכשיו חיפוש: כותבים שם או סימול (אפל, VOO, toyota), בוחרים מהרשימה, כותבים כמות ולוחצים "הוסף". מופיעים ניירות מהרשימה של האתר, ומתחתם מניות וקרנות מבורסות אחרות בעולם. אפשר עדיין לכתוב סימול מדויק או מספר קרן בלי לבחור.',go:'pots'},

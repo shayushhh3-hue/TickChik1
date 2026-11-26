@@ -4417,13 +4417,13 @@ test('24.11 the plan to the end of its period: a period chosen in the card, the 
     assert.deepEqual(E.c.count,{A:3,B:2},'the cheap one first, the round still ends before the next begins'); assert.deepEqual(E.none.rows,[[],[],[]]); assert.equal(E.none.left,350); assert.equal(E.zero.buys,0);
     // the card asks until when; a year chosen: the plan to its last month, the deposits left, what will be bought
     const card=()=>pg.evaluate(()=>document.getElementById('planAns').innerText.replace(/\s+/g,' '));
-    assert.match(await card(),/לקבוע עד מתי/); assert.doesNotMatch(await card(),/בהמשך, עד /);
-    await pg.click('#planAns [data-pa="untilEdit"]'); await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/בהמשך, עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
-    let s=await card(); assert.match(s,/לא המלצה/); assert.doesNotMatch(s,/נשארו \d+ הפקדות/,'the figures only on request');
+    assert.match(await card(),/לקבוע עד מתי/); assert.doesNotMatch(await card(),/התוכנית עד /);
+    await pg.click('#planAns [data-pa="untilEdit"]'); await pg.click('#planAns .pu-pick [data-pa="until"]:nth-of-type(2)'); await pg.waitForFunction(()=>/התוכנית עד /.test(document.getElementById('planAns').innerText),null,{timeout:8000});
+    let s=await card(); assert.match(s,/לא המלצה/); assert.match(s,/נשארו 1[12] הפקדות של ₪/,'26.11: the period in one line of figures');
     const A=await pg.evaluate(()=>{const b=document.getElementById('planAns'); return {li:b.querySelectorAll('.pc-sec:last-of-type .pc-list li').length,all:!!b.querySelector('[data-pa="aheadAll"]'),over:document.documentElement.scrollWidth>innerWidth+1,btn:[...b.querySelectorAll('button')].map(x=>Math.round(x.getBoundingClientRect().height))}});
-    assert.ok(A.li>=1&&A.li<=3,'the next three purchases at most: '+A.li); assert.ok(A.all,'and the rest on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
+    assert.equal(A.li,0,'26.11: no list of the next purchases (each security says when)'); assert.ok(A.all,'the months on request'); assert.ok(!A.over); assert.ok(A.btn.every(h=>h>=44),JSON.stringify(A.btn));
     if(process.env.SHOT){await pg.evaluate(()=>document.getElementById('planAns').scrollIntoView({block:'start'})); await pg.screenshot({path:process.env.SHOT+'/plan-period.png'})}
-    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pc-sec:last-of-type .pc-list li').length)>=10,'every month of the period'); assert.match(await card(),/נשארו 1[12] הפקדות של ₪/);
+    await pg.click('#planAns [data-pa="aheadAll"]'); assert.ok(await pg.evaluate(()=>document.querySelectorAll('#planAns .pc-sec:last-of-type .pc-list li').length)>=10,'every month of the period');
     await pg.waitForFunction(()=>/נשמר/.test(document.getElementById('planSaved').textContent),null,{timeout:8000});
     const U=store.getDoc('plan/main').data.until; assert.match(U,/^\d{4}-\d\d$/,'the period is saved with the plan');
     // every security bought: the round is done, and the next one begins with the same securities waiting again
